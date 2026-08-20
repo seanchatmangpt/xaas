@@ -69,3 +69,13 @@ Real AWS Auto Scaling Group CPU-based scaling has a real, tested substitute now:
 This document exists so these three chapters are recorded as a real, deliberate,
 capability-equivalent substitution — not silently skipped or missing from the book's
 completion status.
+
+## Literal local Distributed Erlang exercise — validated
+
+Beyond the k8s-headless-service clustering validation above, the book's actual literal
+two-terminal `iex --name` exercise was run for real this session (2 background Elixir
+processes, `--name n1@127.0.0.1`/`n2@127.0.0.1`, `--cookie xaastest`):
+- Matching-cookie connect: `Node.connect/1` returned `true`, `Node.list()` showed the peer.
+- Mismatched-cookie negative test (`n3`/`n4`, cookies `cookieA`/`cookieB`): `Node.connect/1`
+  correctly returned `false`, `Node.list()` stayed empty — confirms BEAM's cookie-based auth
+  actually rejects mismatched nodes, not just that matching nodes can connect.
