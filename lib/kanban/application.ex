@@ -22,7 +22,14 @@ defmodule Kanban.Application do
       KanbanWeb.Endpoint,
       # Start PromEx
       Kanban.PromEx,
-      {DNSCluster, query: "tasks.web"},
+      # Real fix (confirmed via a real 2-pod kind cluster test this session):
+      # "tasks.web" is a leftover Fly.io DNS name from the book's original
+      # deployment target, meaningless in k8s -- both pods logged
+      # "Cannot get connection id for node" trying to resolve it, and
+      # Node.list() was empty on both. DNS_CLUSTER_QUERY is set via the
+      # ConfigMap to the real headless Service (k8s/headless-service.yaml)
+      # so DNSCluster gets one A record per pod, not a single ClusterIP VIP.
+      {DNSCluster, query: System.get_env("DNS_CLUSTER_QUERY") || "tasks.web"},
       # Start the Telemetry supervisor
       KanbanWeb.Telemetry,
       # Start the Ecto repository

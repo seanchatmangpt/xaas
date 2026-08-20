@@ -30,7 +30,6 @@ resource "grafana_folder" "alerts" {
 }
 
 resource "grafana_rule_group" "rule_group_0000" {
-  org_id           = 1
   name             = "main"
   folder_uid       = grafana_folder.alerts.uid
   interval_seconds = 60

@@ -10,3 +10,4 @@ data:
   POOL_SIZE: "10"
   ECTO_IPV6: "false"
   USE_AWS_FIXTURE_ADAPTER: "false"
+  DNS_CLUSTER_QUERY: "xaas-headless.default.svc.cluster.local"

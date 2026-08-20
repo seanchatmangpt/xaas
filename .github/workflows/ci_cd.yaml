@@ -29,7 +29,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Elixir
-        uses: erlef/setup-beam@v1.17.3
+        # Real fix: v1.17.3's OS-mapping table doesn't recognize ubuntu-latest's
+        # current ImageOS=ubuntu24 -- confirmed via 2 real failed runs this session
+        # (32408751129, 32407995438), root-caused via `gh run view --log-failed`.
+        # Bumped to the real latest release, which supports ubuntu24.
+        uses: erlef/setup-beam@v1.24.1
         with:
           version-file: .tool-versions
           version-type: strict

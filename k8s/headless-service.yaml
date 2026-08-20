@@ -1,0 +1,19 @@
+# Real headless Service for DNSCluster-based BEAM clustering, matching
+# k8s/deployment.yaml's `app: xaas` selector. A standard ClusterIP Service
+# (k8s/deployment.yaml's `xaas` Service) returns only its single virtual IP
+# via DNS -- confirmed this session by scaling to 2 real pods and finding
+# DNSCluster couldn't discover either one through it. A headless Service
+# (clusterIP: None) returns one A record per real pod, which DNSCluster
+# needs to actually find peers.
+apiVersion: v1
+kind: Service
+metadata:
+  name: xaas-headless
+  namespace: default
+spec:
+  clusterIP: None
+  selector:
+    app: xaas
+  ports:
+    - port: 4000
+      targetPort: 4000

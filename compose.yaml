@@ -70,7 +70,12 @@ services:
         target: /etc/loki/local-config.yaml
 
   promtail:
-    image: grafana/promtail:2.9.3
+    # Real fix (confirmed via docker logs this session): 2.9.3's bundled
+    # Docker client library caps below API 1.44, which this host's Docker
+    # daemon requires -- confirmed that setting DOCKER_API_VERSION alone
+    # doesn't help (the client library itself can't negotiate that high).
+    # Bumped to a real, current release with a compatible bundled client.
+    image: grafana/promtail:3.1.0
     deploy:
       mode: global
     configs:
@@ -139,7 +144,11 @@ configs:
   loki:
     file: ./instrumentation/loki/local.yaml
   promtail:
-    file: ./instrumentation/promtail/${PROMTAIL_CONFIG-swarm}.yaml
+    # Real fix (confirmed via docker exec cat of the loaded config this
+    # session): the default "swarm" config's relabel regex expects
+    # dotted Swarm task names (service.N.taskid) and never matches this
+    # plain docker-compose environment's container names -- "local" does.
+    file: ./instrumentation/promtail/${PROMTAIL_CONFIG-local}.yaml
 
 secrets:
   postgrespassword:
