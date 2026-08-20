@@ -8,16 +8,19 @@ terraform {
 }
 
 locals {
-  repository_name = "kanban"
-  github_owner    = "beamops"
+  repository_name = "xaas"
+  github_owner    = "seanchatmangpt"
 }
 
 resource "github_repository" "kanban" {
   name                   = local.repository_name
-  description            = "Taking the BEAM to production pragmatically."
-  visibility             = "private"
+  description            = "Real xaas Ash-ecosystem platform, built on the BEAMOps deployment foundation. Renamed from engineering_elixir_applications this session."
+  visibility             = "public"
   has_issues             = true
-  auto_init              = true
+  has_projects           = true
+  has_wiki               = true
+  auto_init              = false
+  homepage_url           = "https://pragprog.com/titles/beamops/engineering-elixir-applications/"
   gitignore_template     = "Terraform"
   delete_branch_on_merge = true
 }
