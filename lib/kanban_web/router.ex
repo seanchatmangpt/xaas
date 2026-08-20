@@ -32,6 +32,17 @@ defmodule KanbanWeb.Router do
     plug :accepts, ["json-api"]
   end
 
+  # Real fix: this specific route must be registered BEFORE the catch-all
+  # `forward "/internal-api"` below -- a Phoenix `forward` matches every
+  # sub-path under its prefix, so declared after this one it would shadow
+  # it (confirmed via a real 404 from AshJsonApi.Router's own
+  # "no_route_found" before this reorder).
+  scope "/internal-api", KanbanWeb do
+    pipe_through :api
+
+    get "/capability_liveness_regressions", CapabilityRegressionsController, :index
+  end
+
   scope "/" do
     pipe_through :internal_api
 
