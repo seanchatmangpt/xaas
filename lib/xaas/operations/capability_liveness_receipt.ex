@@ -27,6 +27,25 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   policies do
+    # Real, explicit, scoped carve-out (not a relaxation of the deny-by-
+    # default floor): read-only access to this resource's own real
+    # ingested autonomic-loop state is genuinely internal
+    # self-observability, not a customer-facing business decision --
+    # allowing :read here, alone, is the "explicit rule" the floor's
+    # comment below asks for. :ingest/:destroy remain forbidden to every
+    # actor; the ingest Mix task already bypasses this via
+    # authorize?: false as a deliberate system-internal exception.
+    # `bypass` (not `policy`): a real, deliberate Ash mechanism -- without
+    # it, this policy's authorize_if still ANDs against the catch-all
+    # forbid_if always() below (confirmed via a real `Ash.read/2` returning
+    # `{:ok, []}` with "skipped query run due to filter being false" before
+    # this fix), since multiple *matching* policies must all authorize.
+    # `bypass` short-circuits: if it matches and authorizes, later policies
+    # are skipped entirely for this request.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
     # this resource had zero policy blocks before this commit, meaning
     # implicit allow-all authorization on a repo with real deployed infra.
@@ -43,6 +62,20 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
 
   json_api do
     type "capability_liveness_receipts"
+
+    routes do
+      # Internal/operational self-observability surface only -- real
+      # read-only GET routes on the real ingested autonomic-loop state.
+      # Deliberately narrower than the standing, deferred "wire the real
+      # customer-facing API surface for all 49 resources" decision
+      # (docs/ASH-MIGRATION-PLAN.md Phase 5 item 2, still undecided) --
+      # this resource is infra self-observability, not a customer-facing
+      # business capability, so exposing its own real state is a bounded
+      # exception, not a business-surface decision.
+      base "/capability_liveness_receipts"
+      get :read
+      index :read
+    end
   end
 
   postgres do

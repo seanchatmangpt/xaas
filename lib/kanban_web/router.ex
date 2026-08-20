@@ -28,6 +28,16 @@ defmodule KanbanWeb.Router do
     get "/", PageController, :home
   end
 
+  pipeline :internal_api do
+    plug :accepts, ["json-api"]
+  end
+
+  scope "/" do
+    pipe_through :internal_api
+
+    forward "/internal-api", KanbanWeb.InternalApiRouter
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", KanbanWeb do
   #   pipe_through :api
