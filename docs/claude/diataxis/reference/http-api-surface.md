@@ -146,8 +146,30 @@ Platform (`lib/xaas/platform/`):
 | `/route_projects_backups` | `Xaas.Platform.RouteProjectsBackups` |
 | `/route_secrets` | `Xaas.Platform.RouteSecrets` |
 
-Every one of the above has exactly the same real shape (example, `approval_pricing_override.ex`
-lines 42-50):
+Every one of the above (except `Xaas.Billing.ApprovalPricingOverride`, see below) has exactly
+the same real shape, e.g.:
+
+```elixir
+json_api do
+  type "..."
+
+  routes do
+    base "/..."
+    get :read
+    index :read
+  end
+end
+```
+
+So each resource is real-reachable at `GET /api/<base>` (index) and `GET /api/<base>/:id` (get),
+both requiring the `Authorization: Bearer` header above.
+
+### First real mutation route (issue #20): `Xaas.Billing.ApprovalPricingOverride`
+
+`Xaas.Billing.ApprovalPricingOverride` additionally exposes a real `PATCH
+/api/approval_pricing_override/:id` route on a new `:approve` update action — the first
+real customer-facing mutation route in the repo, proving the pattern issue #20 asks for
+before generalizing to other resources:
 
 ```elixir
 json_api do
@@ -157,12 +179,37 @@ json_api do
     base "/approval_pricing_override"
     get :read
     index :read
+    patch :approve
+  end
+end
+
+actions do
+  update :approve do
+    accept [:approved_by]
+    require_atomic? false
+    change Xaas.Billing.Changes.ApprovalPricingOverrideApprove
+    validate Xaas.Billing.Validations.ApprovalPricingOverrideRequiresApprover
+  end
+end
+
+policies do
+  bypass action(:approve) do
+    authorize_if always()
   end
 end
 ```
 
-So each resource is real-reachable at `GET /api/<base>` (index) and `GET /api/<base>/:id` (get),
-both requiring the `Authorization: Bearer` header above.
+Real business rule (`Xaas.Billing.Validations.ApprovalPricingOverrideRequiresApprover`):
+`approved_by` must be present, and must differ from `requested_by` (a requester cannot
+approve their own pricing-override request). Both attributes needed `public? true` added
+for `AshJsonApi` to serialize them at all — without it, every read route on this resource
+was already silently returning `"attributes": {}` (found while building this feature, not
+yet checked across the other 43 read-only resources).
+
+Real Chicago-style coverage: `test/kanban_web/controllers/approval_pricing_override_controller_test.exs`
+— real Postgres-backed accept case, plus the two real reject cases (missing approver, self-
+approval) and the real no-token-401 case, per this repo's testing discipline of asserting the
+reject path, not just the accept path.
 
 ### Deliberately unwired (5 resources, no `json_api` block at all)
 
