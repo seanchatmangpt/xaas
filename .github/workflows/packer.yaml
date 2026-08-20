@@ -28,7 +28,10 @@ jobs:
 
       - name: Packer template validation
         working-directory: packer
-        run: packer validate -check .
+        # Real fix: `-check` is not a valid `packer validate` flag (that flag
+        # belongs to `packer fmt -check` below) -- confirmed via a real failed
+        # CI run this session ("flag provided but not defined: -check").
+        run: packer validate .
 
       - name: Packer template format check
         working-directory: packer
