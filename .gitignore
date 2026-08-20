@@ -1,57 +1,68 @@
-# Local .terraform directories
-**/.terraform/*
 
-# .tfstate files
-*.tfstate
-*.tfstate.*
-
-# Crash log files
-crash.log
-crash.*.log
-
-# Exclude all .tfvars files, which are likely to contain sensitive data, such as
-# password, private keys, and other secrets. These should not be part of version
-# control as they are data points which are potentially sensitive and subject
-# to change depending on the environment.
-# *.tfvars
-*.tfvars.json
-
-# Ignore override files as they are usually used to override resources locally and so
-# are not checked in
-override.tf
-override.tf.json
+_build/
+.DS_Store
+.elixir_ls/
+.lh/
+.terraformrc
 *_override.tf
 *_override.tf.json
-
-# Include override files you do wish to add to version control using negated pattern
-# !example_override.tf
-
-# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
-# example: *tfplan*
-
-# Ignore CLI configuration files
-.terraformrc
-terraform.rc
-
-svn/Book/bib_extract.xml
-svn/Book/book-screen.fo
-svn/Book/book-screen.pdf
-svn/Book/book-paper.fo
-svn/Book/book-paper.pdf
-svn/Book/xslt-output.log
-svn/Book/image_list
-svn/Book/book.xml
-svn/Book/Chapter*
-svn/Book/_bw/
-svn/Admin/
-svn/Common/
-svn/PerBook/
-*.svn
-
-node_modules/
-
-.devenv*
-.pre-commit-config.yaml
-build-book.log
-
+*.beam
+*.ez
 *.pem
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+**/.terraform/*
+**/key.txt
+/_build/
+/.fetch
+/assets/node_modules/
+/cover/
+/deps/
+/doc/
+/priv/plts/*.plt
+/priv/plts/*.plt.hash
+/priv/static/assets/
+/priv/static/cache_manifest.json
+/tmp/
+# !example_override.tf
+# .tfstate files
+# Also ignore archive artifacts (built via "mix archive.build").
+# are not checked in
+# control as they are data points which are potentially sensitive and subject 
+# Crash log files
+# Elixir ignore files
+# example: *tfplan*
+# Exclude all .tfvars files, which are likely to contain sensitive data, such as
+# If the VM crashes, it generates a dump, let's ignore it too.
+# If you run "mix test --cover", coverage assets end up here.
+# Ignore .fetch files in case you like to edit your project deps locally.
+# Ignore assets that are produced by build tools.
+# Ignore CLI configuration files
+# Ignore dialyzer files
+# Ignore digested assets cache.
+# Ignore override files as they are usually used to override resources locally and so
+# Ignore package tarball (built via "mix hex.build").
+# In case you use Node.js/npm, you want to ignore these.
+# Include override files you do wish to add to version control using negated pattern
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+# Local .terraform directories
+# password, private keys, and other secrets. These should not be part of version 
+# Private key 
+# Sops
+# Temporary files, for example, from tests.
+# The directory Mix downloads your dependencies sources to.
+# The directory Mix will write compiled artifacts to.
+# to change depending on the environment.
+# Where 3rd-party dependencies like ExDoc output generated docs.
+crash.*.log
+crash.log
+deps/
+erl_crash.dump
+kanban-*.tar
+npm-debug.log
+override.tf
+override.tf.json
+secrets/.* 
+terraform.rc
