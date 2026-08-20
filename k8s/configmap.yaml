@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xaas-config
+  namespace: default
+data:
+  PHX_SERVER: "true"
+  PHX_HOST: "localhost"
+  PORT: "4000"
+  POOL_SIZE: "10"
+  ECTO_IPV6: "false"
+  USE_AWS_FIXTURE_ADAPTER: "false"

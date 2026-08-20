@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xaas
+  namespace: default
+  labels:
+    app: xaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xaas
+  template:
+    metadata:
+      labels:
+        app: xaas
+    spec:
+      containers:
+        - name: xaas
+          image: xaas:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: xaas-config
+            - secretRef:
+                name: xaas-secrets
+          readinessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xaas
+  namespace: default
+spec:
+  selector:
+    app: xaas
+  ports:
+    - port: 80
+      targetPort: 4000
+  type: ClusterIP
