@@ -1,0 +1,33 @@
+---
+to: ".terraform-validate-receipts/{{ moduleName }}.txt"
+skip_empty: false
+unless_exists: true
+for_each: results
+sparql:
+  results: |
+    PREFIX xar: <https://ggen.io/ontology/xaas-ash-render#>
+    SELECT ?moduleName ?domainModule WHERE {
+      ?t a xar:RenderTarget ;
+         xar:moduleName ?moduleName ;
+         xar:domainModule ?domainModule .
+    }
+sh_after: "terraform -chdir=modules/integrations/github/project_management fmt -check -diff 2>&1 | tee -a .terraform-validate-receipts/{{ moduleName }}.tf.log; terraform -chdir=modules/integrations/github/project_management validate 2>&1 | tee -a .terraform-validate-receipts/{{ moduleName }}.tf.log"
+---
+real terraform fmt -check / validate invocation, driven by the live xar:RenderTarget
+ontology row {{ moduleName }} (same SPARQL -> for_each -> sh_after pattern already
+proven for Ash codegen in templates-hooks/ash-gen-resource.txt.tmpl), scoped to
+modules/integrations/github/project_management/.
+generated: {{ moduleName }}
+domain: {{ domainModule }}
+command: terraform -chdir=modules/integrations/github/project_management fmt -check -diff
+command: terraform -chdir=modules/integrations/github/project_management validate
+
+Deliberately non-mutating: `fmt -check` and `validate` only read/lint the real
+.tf files under that module -- no `terraform apply`/`plan` against live state,
+since apply would create real GitHub resources unpredictably from a research task.
+
+Future scope (not implemented here, not fabricated): a real ggen ontology
+vocabulary for Terraform resource individuals (analogous to xar:RenderTarget
+for Ash resources) that would let SPARQL rows drive actual .tf resource-block
+generation via a templated body, not just fmt/validate of hand-written .tf.
+No such vocabulary exists in ontology.ttl today.

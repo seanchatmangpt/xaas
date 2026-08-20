@@ -65,9 +65,18 @@ test("ash_admin: create a real CapabilityLivenessReceipt row and see it persist"
   // control to reach our new one reliably; a real HTTP roundtrip against
   // real persisted Postgres state is the Chicago-style assertion here,
   // not a UI-scraping workaround.
+  // Real fix: KanbanWeb.Plugs.RequireInternalApiToken (added after this
+  // spec was first written) now genuinely requires a Bearer token on
+  // /internal-api -- this spec real-401'd once that plug shipped, caught
+  // by the sibling ash-admin-destroy.spec.js while it was being written.
   const apiResponse = await page.request.get(
     `/internal-api/capability_liveness_receipts?filter[capability]=${CAPABILITY}`,
-    { headers: { Accept: "application/vnd.api+json" } }
+    {
+      headers: {
+        Accept: "application/vnd.api+json",
+        Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN}`,
+      },
+    }
   );
   expect(apiResponse.status()).toBe(200);
   const body = await apiResponse.json();
