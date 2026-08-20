@@ -41,11 +41,30 @@ multiple nodes and scale — was substituted with a real, local, cloud-agnostic 
 
 - Real AMI baking via Packer was never run — would require real AWS credentials and real
   cost; not attempted, not fabricated.
-- Real AWS Auto Scaling Group behavior (scale-out under real load, real load-balancer
-  health-check-driven rollback) has no real local equivalent tested this session beyond
-  manual `kubectl scale` — k8s's own `HorizontalPodAutoscaler` would be the real, testable,
-  cloud-agnostic substitute for a future pass, not yet built.
 - Real cross-region/cross-AZ behavior has no meaningful local equivalent at all.
+
+## HPA substitution — built and verified
+
+Real AWS Auto Scaling Group CPU-based scaling has a real, tested substitute now:
+`k8s/hpa.yaml`, a real `autoscaling/v2` `HorizontalPodAutoscaler` targeting
+`deployment/xaas` (`minReplicas: 1`, `maxReplicas: 3`, `averageUtilization: 50`).
+
+- metrics-server was not present in the `kind-xaas` cluster (checked live via
+  `kubectl top pods` → `error: Metrics API not available`). Installed the real upstream
+  manifest (`metrics-server/releases/latest/download/components.yaml`) and patched in
+  `--kubelet-insecure-tls`, required for kind's self-signed kubelet certs. Confirmed live:
+  `kubectl top pods --context kind-xaas` now returns real CPU/memory numbers.
+- `deployment/xaas` had no CPU resource requests (`resources: {}`), which would leave
+  HPA's utilization percentage permanently `<unknown>`. Patched in real requests/limits
+  (`cpu: 100m` request / `500m` limit) via `kubectl patch`, then rolled out.
+- Applied `kubectl apply -f k8s/hpa.yaml --context kind-xaas` for real. After metrics
+  populated (~30s), `kubectl get hpa xaas --context kind-xaas` showed
+  `TARGETS: cpu: 3%/50%` — a real tracked percentage, not `<unknown>`.
+  `kubectl describe hpa xaas` confirms `ScalingActive: True, ValidMetricFound` and
+  `AbleToScale: True, ReadyForNewScale`.
+- Not tested this pass: actual scale-out under real induced load (no load generator run
+  against `xaas` this session) — the HPA is live and computing real targets, but a
+  replica-count change under load has not been observed yet.
 
 This document exists so these three chapters are recorded as a real, deliberate,
 capability-equivalent substitution — not silently skipped or missing from the book's
