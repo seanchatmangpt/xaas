@@ -38,6 +38,9 @@ defmodule Kanban.Application do
       # ported Xaas.* Ash.Resource modules -- additive, Kanban.Repo above is
       # untouched.
       Xaas.Repo,
+      # Rate-limiter backend for AshRateLimiter (Xaas.Billing.ApprovalPricingOverride
+      # :create action) -- ETS-backed, in-process.
+      {Xaas.Hammer, clean_period: :timer.minutes(1)},
       # Start the PubSub system
       {Phoenix.PubSub, name: Kanban.PubSub},
       # Start Finch

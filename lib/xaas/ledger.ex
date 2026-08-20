@@ -6,5 +6,6 @@ defmodule Xaas.Ledger do
     resource Xaas.Ledger.Account
     resource Xaas.Ledger.Balance
     resource Xaas.Ledger.Transfer
+    resource Xaas.Ledger.EventLog
   end
 end

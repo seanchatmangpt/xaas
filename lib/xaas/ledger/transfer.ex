@@ -3,7 +3,12 @@ defmodule Xaas.Ledger.Transfer do
     domain: Elixir.Xaas.Ledger,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshDoubleEntry.Transfer]
+    extensions: [AshDoubleEntry.Transfer, AshEvents.Events]
+
+  events do
+    event_log Xaas.Ledger.EventLog
+    current_action_versions transfer: 1
+  end
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --

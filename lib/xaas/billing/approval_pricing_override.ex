@@ -4,7 +4,21 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshRateLimiter]
+
+  rate_limit do
+    backend Xaas.Hammer
+
+    # Throttle pricing-override request creation: at most 5 per requester
+    # per minute, so a scripted/compromised client can't flood the
+    # approval queue.
+    action :create,
+      limit: 5,
+      per: :timer.minutes(1),
+      key: fn changeset, _context ->
+        "approval_pricing_override:create:#{Ash.Changeset.get_attribute(changeset, :requested_by)}"
+      end
+  end
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -32,6 +46,10 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:requested_by, :approved_by]
+    end
   end
 
   attributes do
