@@ -41,6 +41,7 @@ defmodule KanbanWeb.Router do
     pipe_through :api
 
     get "/capability_liveness_regressions", CapabilityRegressionsController, :index
+    get "/ocel_summary", OcelSummaryController, :index
   end
 
   scope "/" do
