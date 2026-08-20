@@ -18,8 +18,58 @@
 import Config
 
 config :kanban,
-  ecto_repos: [Kanban.Repo],
-  ash_domains: [Xaas.Operations, Xaas.Governance, Xaas.Billing, Xaas.Platform]
+  ecto_repos: [Kanban.Repo, Xaas.Repo],
+  ash_domains: [
+    Xaas.Accounts,
+    Xaas.Billing,
+    Xaas.Governance,
+    Xaas.Ledger,
+    Xaas.Operations,
+    Xaas.Platform
+  ],
+  ash_authentication: [return_error_on_invalid_magic_link_token?: true],
+  base_resources: [Xaas.Resource]
+
+# ash-migration Phase 3: real Ash-ecosystem config ported verbatim from
+# ~/dev-fresh/xaas/config/config.exs (the source the 89 resource files were
+# actually written against) -- the resource files use short type codes
+# (:money) and custom types (:capability_class, :interface) that only
+# resolve via this real custom_types/known_types registration, confirmed by
+# a real compile error (":money is not a valid type") before this was added.
+config :ash_oban, pro?: false
+
+config :kanban, Oban,
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  queues: [default: 10],
+  repo: Xaas.Repo,
+  plugins: [{Oban.Plugins.Cron, []}]
+
+config :ash_graphql, authorize_update_destroy_with_error?: true
+
+config :ash_json_api,
+  show_public_calculations_when_loaded?: false,
+  authorize_update_destroy_with_error?: true
+
+config :ash,
+  allow_forbidden_field_for_relationships_by_default: true,
+  include_embedded_source_by_default?: false,
+  show_keysets_for_all_actions?: false,
+  default_page_type: :keyset,
+  policies: [no_filter_static_forbidden_reads?: false],
+  keep_read_action_loads_when_loading?: false,
+  default_actions_require_atomic?: true,
+  read_action_after_action_hooks_in_order?: true,
+  bulk_actions_default_to_errors?: true,
+  transaction_rollback_on_error?: true,
+  redact_sensitive_values_in_errors?: true,
+  many_to_many_destroy_destination_on_match?: true,
+  known_types: [AshPostgres.Timestamptz, AshPostgres.TimestamptzUsec, AshMoney.Types.Money],
+  custom_types: [
+    money: AshMoney.Types.Money,
+    capability_class: Xaas.Governance.Types.CapabilityClass,
+    interface: Xaas.Governance.Types.Interface
+  ]
 
 # Configures the endpoint
 config :kanban, KanbanWeb.Endpoint,

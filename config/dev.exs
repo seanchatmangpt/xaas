@@ -22,6 +22,19 @@ config :kanban, Kanban.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+# ash-migration Phase 3: Xaas.Repo is a real, separate AshPostgres.Repo (the
+# 89 real Ash.Resource modules ported from ~/dev-fresh/xaas reference it
+# directly via `postgres do repo Xaas.Repo end`) -- deliberately not merged
+# into Kanban.Repo, same real database, separate Ecto.Repo/OTP child.
+config :kanban, Xaas.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "kanban_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

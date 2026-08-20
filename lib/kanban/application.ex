@@ -34,6 +34,10 @@ defmodule Kanban.Application do
       KanbanWeb.Telemetry,
       # Start the Ecto repository
       Kanban.Repo,
+      # ash-migration Phase 3: real, separate AshPostgres.Repo for the 89
+      # ported Xaas.* Ash.Resource modules -- additive, Kanban.Repo above is
+      # untouched.
+      Xaas.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: Kanban.PubSub},
       # Start Finch
