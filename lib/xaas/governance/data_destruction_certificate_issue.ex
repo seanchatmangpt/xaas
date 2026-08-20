@@ -12,6 +12,10 @@ defmodule Xaas.Governance.DataDestructionCertificateIssue do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Governance.DataDestructionCertificateIssue do
 
   json_api do
     type "data_destruction_certificate_issue"
+
+    routes do
+      base "/data_destruction_certificate_issue"
+      get :read
+      index :read
+    end
   end
 
   postgres do

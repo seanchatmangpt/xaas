@@ -22,7 +22,16 @@ defmodule Xaas.Operations.CapabilityLivenessRegressions do
   real prior ALIVE ingest. Empty list when there is no real regression.
   """
   def detect(opts \\ []) do
-    authorize? = Keyword.get(opts, :authorize?, false)
+    # Real fix (found via adversarial review): this used to default to
+    # `false`, an undocumented second authorize?:false path independent
+    # of the resource's own real `bypass action_type(:read)` policy --
+    # harmless only by coincidence (that policy already grants :read to
+    # everyone), and inaccurate against the "only the ingest task
+    # bypasses" claim elsewhere in this codebase. Defaulting to `true`
+    # means this function goes through the real Ash policy like any
+    # other caller unless a caller (e.g. an internal Mix task) opts out
+    # explicitly and visibly.
+    authorize? = Keyword.get(opts, :authorize?, true)
 
     CapabilityLivenessReceipt
     |> Ash.read!(authorize?: authorize?)

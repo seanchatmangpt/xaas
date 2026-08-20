@@ -12,6 +12,10 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
 
   json_api do
     type "approval_patch_sla_credit_apply"
+
+    routes do
+      base "/approval_patch_sla_credit_apply"
+      get :read
+      index :read
+    end
   end
 
   postgres do

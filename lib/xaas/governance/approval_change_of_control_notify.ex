@@ -12,6 +12,10 @@ defmodule Xaas.Governance.ApprovalChangeOfControlNotify do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Governance.ApprovalChangeOfControlNotify do
 
   json_api do
     type "approval_change_of_control_notify"
+
+    routes do
+      base "/approval_change_of_control_notify"
+      get :read
+      index :read
+    end
   end
 
   postgres do

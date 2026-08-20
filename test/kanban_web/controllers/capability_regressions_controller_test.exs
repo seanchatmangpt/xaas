@@ -14,8 +14,12 @@ defmodule KanbanWeb.CapabilityRegressionsControllerTest do
     :ok
   end
 
+  defp with_internal_api_token(conn) do
+    put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
   test "GET /internal-api/capability_liveness_regressions returns real, empty regressions when none exist", %{conn: conn} do
-    conn = get(conn, "/internal-api/capability_liveness_regressions")
+    conn = conn |> with_internal_api_token() |> get("/internal-api/capability_liveness_regressions")
 
     assert %{"count" => 0, "regressions" => []} = json_response(conn, 200)
   end
@@ -46,7 +50,7 @@ defmodule KanbanWeb.CapabilityRegressionsControllerTest do
     })
     |> Ash.create!(authorize?: false)
 
-    conn = get(conn, "/internal-api/capability_liveness_regressions")
+    conn = conn |> with_internal_api_token() |> get("/internal-api/capability_liveness_regressions")
     body = json_response(conn, 200)
 
     assert body["count"] >= 1

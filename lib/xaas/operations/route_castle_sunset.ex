@@ -12,6 +12,10 @@ defmodule Xaas.Operations.RouteCastleSunset do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Operations.RouteCastleSunset do
 
   json_api do
     type "route_castle_sunset"
+
+    routes do
+      base "/route_castle_sunset"
+      get :read
+      index :read
+    end
   end
 
   postgres do

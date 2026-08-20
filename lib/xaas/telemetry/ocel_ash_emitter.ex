@@ -11,8 +11,24 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
 
   This module does not invent a new tracing mechanism: it attaches to
   those real `:telemetry` events (`:telemetry.attach_many/4`, standard
-  OTP telemetry, not a mock), and on every real `:stop`/`:exception`
-  event:
+  OTP telemetry, not a mock), and on every real `:stop` event:
+
+  Real, honest correction (found via an adversarial review of this
+  module, not by original design): `Ash.Tracer.telemetry_span/4`
+  (`deps/ash/lib/ash/tracer/tracer.ex`) wraps the action in `try/after`,
+  not `try/rescue` -- it emits ONLY a `[..., :stop]` event, unconditionally,
+  whether the action returns normally or raises (the raise then
+  propagates after `:stop` fires). There is no `[..., :exception]` event
+  anywhere in Ash's own action pipeline. An earlier version of this
+  module attached handlers for both `:stop` and a nonexistent
+  `:exception` suffix -- those `:exception` handlers were real, verified
+  dead code (never once invoked) and have been removed. This means:
+  every real event this module writes has `outcome: "stop"`; a raised
+  exception still produces one (the action's own error surfaces via its
+  normal `{:error, ...}` return or a propagated raise, not via a
+  distinguishable telemetry outcome). This module cannot currently tell
+  a successful action from a failed one -- only "ran to completion of
+  the span."
 
   1. Builds one real OCEL v2 JSON-OCEL event record (`ocel:eid`,
      `ocel:activity`, `ocel:timestamp`, `ocel:omap`, `ocel:vmap` -- the
@@ -45,8 +61,9 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
 
   @doc """
   Attach real `:telemetry` handlers for every real configured Ash domain's
-  real short name, for all 4 real action types, on `:stop` (successful)
-  and `:exception` (real failure) events.
+  real short name, for all 4 real action types, on the real `:stop`
+  event (Ash never emits a real `:exception` suffix -- see the
+  moduledoc's real correction).
   """
   def attach! do
     File.mkdir_p!(Path.dirname(@log_path))
@@ -55,17 +72,16 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
 
     handler_ids =
       for domain <- domains,
-          action_type <- @action_types,
-          event_suffix <- [:stop, :exception] do
+          action_type <- @action_types do
         short_name = Ash.Domain.Info.short_name(domain)
-        event = [:ash, short_name, action_type, event_suffix]
-        handler_id = {__MODULE__, domain, action_type, event_suffix}
+        event = [:ash, short_name, action_type, :stop]
+        handler_id = {__MODULE__, domain, action_type, :stop}
 
         :telemetry.attach(
           handler_id,
           event,
           &__MODULE__.handle_event/4,
-          %{outcome: event_suffix}
+          %{outcome: :stop}
         )
 
         handler_id

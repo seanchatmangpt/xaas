@@ -22,6 +22,12 @@ defmodule KanbanWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Real fix (adversarial review finding): neither /internal-api nor /api
+  # had any auth plug at all -- both real 200'd for any anonymous client.
+  pipeline :require_internal_api_token do
+    plug KanbanWeb.Plugs.RequireInternalApiToken
+  end
+
   scope "/", KanbanWeb do
     pipe_through :browser
 
@@ -38,16 +44,17 @@ defmodule KanbanWeb.Router do
   # it (confirmed via a real 404 from AshJsonApi.Router's own
   # "no_route_found" before this reorder).
   scope "/internal-api", KanbanWeb do
-    pipe_through :api
+    pipe_through [:api, :require_internal_api_token]
 
     get "/capability_liveness_regressions", CapabilityRegressionsController, :index
     get "/ocel_summary", OcelSummaryController, :index
   end
 
   scope "/" do
-    pipe_through :internal_api
+    pipe_through [:internal_api, :require_internal_api_token]
 
     forward "/internal-api", KanbanWeb.InternalApiRouter
+    forward "/api", KanbanWeb.ApiRouter
   end
 
   # Other scopes may use custom stacks.

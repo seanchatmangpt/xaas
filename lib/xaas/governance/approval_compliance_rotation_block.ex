@@ -12,6 +12,10 @@ defmodule Xaas.Governance.ApprovalComplianceRotationBlock do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Governance.ApprovalComplianceRotationBlock do
 
   json_api do
     type "approval_compliance_rotation_block"
+
+    routes do
+      base "/approval_compliance_rotation_block"
+      get :read
+      index :read
+    end
   end
 
   postgres do

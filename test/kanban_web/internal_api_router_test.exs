@@ -18,6 +18,10 @@ defmodule KanbanWeb.InternalApiRouterTest do
     :ok
   end
 
+  defp with_internal_api_token(conn) do
+    put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
   test "GET /internal-api/capability_liveness_receipts rejects a real incompatible Accept header", %{conn: conn} do
     # Real Phoenix `:accepts` behavior (confirmed via 2 real failed
     # assertions before this fix): with NO Accept header, the pipeline
@@ -27,6 +31,7 @@ defmodule KanbanWeb.InternalApiRouterTest do
     # rather than returning a 406 conn -- assert the real raise.
     assert_raise Phoenix.NotAcceptableError, fn ->
       conn
+      |> with_internal_api_token()
       |> put_req_header("accept", "text/plain")
       |> get("/internal-api/capability_liveness_receipts")
     end
@@ -47,6 +52,7 @@ defmodule KanbanWeb.InternalApiRouterTest do
 
     conn =
       conn
+      |> with_internal_api_token()
       |> put_req_header("accept", "application/vnd.api+json")
       |> get("/internal-api/capability_liveness_receipts?filter[capability]=#{capability}")
 

@@ -17,6 +17,10 @@ defmodule KanbanWeb.OcelSummaryControllerTest do
     :ok
   end
 
+  defp with_internal_api_token(conn) do
+    put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
   test "GET /internal-api/ocel_summary returns real counts reflecting a real Ash action just executed", %{conn: conn} do
     # Real action -> real :telemetry event -> real OcelAshEmitter handler
     # -> real append to the real log file (not a mock of any of these).
@@ -32,7 +36,7 @@ defmodule KanbanWeb.OcelSummaryControllerTest do
     })
     |> Ash.create!(authorize?: false)
 
-    conn = get(conn, "/internal-api/ocel_summary")
+    conn = conn |> with_internal_api_token() |> get("/internal-api/ocel_summary")
     body = json_response(conn, 200)
 
     assert body["total_events"] > 0

@@ -12,6 +12,10 @@ defmodule Xaas.Billing.ApprovalInvoiceReconciliationApprove do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Billing.ApprovalInvoiceReconciliationApprove do
 
   json_api do
     type "approval_invoice_reconciliation_approve"
+
+    routes do
+      base "/approval_invoice_reconciliation_approve"
+      get :read
+      index :read
+    end
   end
 
   postgres do

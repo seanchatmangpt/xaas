@@ -12,6 +12,10 @@ defmodule Xaas.Platform.RouteProjectsBackups do
     # implicit allow-all authorization on a repo with real deployed infra.
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
+    bypass action_type(:read) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -23,6 +27,12 @@ defmodule Xaas.Platform.RouteProjectsBackups do
 
   json_api do
     type "route_projects_backups"
+
+    routes do
+      base "/route_projects_backups"
+      get :read
+      index :read
+    end
   end
 
   postgres do
