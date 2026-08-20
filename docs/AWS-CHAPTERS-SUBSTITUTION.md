@@ -1,13 +1,22 @@
 # AWS-Only Chapters: Real, Deliberate Substitution (not a gap)
 
-Three of the book's 12 chapters are fundamentally AWS-specific and cannot be validated
-without a real AWS account, real credentials, and real cloud spend:
+Three of the book's 12 chapters, plus one CI job, are fundamentally AWS-specific and
+cannot be validated without a real AWS account, real credentials, and real cloud spend:
 
 - **`the_production_environment_and_packer`** — builds a real AMI on real EC2 via Packer.
 - **`revise_your_aws_stack_to_create_a_multinode_swarm`** — real EC2 instances, real Docker
   Swarm join tokens via real AWS SSM Parameter Store.
 - **`autoscaling_and_optimizing_your_deployment_strategy`** — real AWS Auto Scaling Groups,
   real AWS load balancers.
+- **`.github/workflows/ci_cd.yaml`'s `deploy` job** — invokes `.github/actions/deploy`,
+  which needs real `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `GH_PAT`, `AGE_KEY`, and
+  `PRIVATE_KEY` secrets to reach the real AWS EC2 swarm from the chapters above. None of
+  these secrets are configured in this environment, so the job is expected to fail or be
+  skipped on every real CI run here — that is correct, not a regression. A guard comment
+  (`if: false # requires real AWS credentials, see docs/AWS-CHAPTERS-SUBSTITUTION.md`) sits
+  above the job definition in `ci_cd.yaml` as an honest marker; it is a comment only, not
+  live workflow logic, since disabling the job outright would misrepresent what the real
+  pipeline does when real credentials are present.
 
 Per an explicit instruction this session ("use colima and kind for devops"), these three
 chapters' real underlying *capability* — a production deployment target that can run

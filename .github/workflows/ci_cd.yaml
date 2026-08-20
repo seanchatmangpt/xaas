@@ -149,6 +149,7 @@ jobs:
                       | awk '{print $1}')
           echo "sha_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+  # if: false # requires real AWS credentials, see docs/AWS-CHAPTERS-SUBSTITUTION.md
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
