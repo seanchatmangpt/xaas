@@ -3,6 +3,10 @@ defmodule Xaas.Operations do
     otp_app: :kanban,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
 
+  admin do
+    show? true
+  end
+
 
   resources do
     resource Xaas.Operations.ApprovalCastleVerbSchedule

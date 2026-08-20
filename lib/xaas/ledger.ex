@@ -3,6 +3,10 @@ defmodule Xaas.Ledger do
     otp_app: :kanban,
     extensions: [AshAdmin.Domain]
 
+  admin do
+    show? true
+  end
+
   resources do
     resource Xaas.Ledger.Account
     resource Xaas.Ledger.Balance

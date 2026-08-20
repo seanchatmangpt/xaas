@@ -3,6 +3,10 @@ defmodule Xaas.Governance do
     otp_app: :kanban,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshPaperTrail.Domain, AshAdmin.Domain]
 
+  admin do
+    show? true
+  end
+
   paper_trail do
     include_versions? true
   end
