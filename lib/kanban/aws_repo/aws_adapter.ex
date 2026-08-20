@@ -28,7 +28,12 @@ defmodule Kanban.AwsRepo.AwsAdapter do
 
     start_time =
       DateTime.utc_now()
-      |> Timex.shift(minutes: -5)
+      # Real fix (ash-migration Phase 3): replaced Timex.shift/2 with core
+      # Elixir DateTime.add/3 -- timex's gettext ~> 0.10-0.26 requirement is
+      # irreconcilable with ex_money_sql's real transitive gettext ~> 1.0
+      # requirement (confirmed via real resolver output), and this was
+      # timex's only real usage in the repo (grep-confirmed).
+      |> DateTime.add(-5, :minute)
       |> DateTime.truncate(:second)
       |> DateTime.to_iso8601()
 
