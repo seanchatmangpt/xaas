@@ -89,3 +89,4 @@ priv/ocel/
 test-results/
 node_modules/
 .terraform-validate-receipts/
+.agp-receipts/

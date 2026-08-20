@@ -43,7 +43,7 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     # `bypass` short-circuits: if it matches and authorizes, later policies
     # are skipped entirely for this request.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -52,16 +52,16 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :capability_liveness_receipt
+    type(:capability_liveness_receipt)
   end
 
   json_api do
-    type "capability_liveness_receipts"
+    type("capability_liveness_receipts")
 
     routes do
       # Internal/operational self-observability surface only -- real
@@ -72,71 +72,73 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
       # this resource is infra self-observability, not a customer-facing
       # business capability, so exposing its own real state is a bounded
       # exception, not a business-surface decision.
-      base "/capability_liveness_receipts"
-      get :read
-      index :read
+      base("/capability_liveness_receipts")
+      get(:read)
+      index(:read)
     end
   end
 
   postgres do
-    table "capability_liveness_receipts"
-    repo Xaas.Repo
+    table("capability_liveness_receipts")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     create :ingest do
-      description "Upsert one real weaver-live-matrix.sh receipt row (idempotent on capability+subject)."
+      description(
+        "Upsert one real weaver-live-matrix.sh receipt row (idempotent on capability+subject)."
+      )
 
-      accept [:capability, :authority, :status, :executed, :exit_code, :subject, :detail]
+      accept([:capability, :authority, :status, :executed, :exit_code, :subject, :detail])
 
-      upsert? true
-      upsert_identity :capability_subject
+      upsert?(true)
+      upsert_identity(:capability_subject)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :capability, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :authority, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :status, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :executed, :boolean do
-      allow_nil? false
-      default true
-      public? true
+      allow_nil?(false)
+      default(true)
+      public?(true)
     end
 
     attribute :exit_code, :integer do
-      public? true
+      public?(true)
     end
 
     attribute :subject, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :detail, :string do
-      public? true
+      public?(true)
     end
 
     timestamps()
   end
 
   identities do
-    identity :capability_subject, [:capability, :subject]
+    identity(:capability_subject, [:capability, :subject])
   end
 end

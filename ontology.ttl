@@ -529,3 +529,24 @@ xar:ApprovalGeofenceExceptionGrantRender a xar:RenderTarget ;
   xar:capabilityClass "do" ;
   skos:closeMatch togaf:Capability .
 
+
+# --- ash-igniter-gen-pipeline-pack real proof rows (2026-08-20) ---
+# Real, generalized vocabulary (agp:), vendored per the same real
+# path-restriction constraint documented above for xar: -- proves the
+# SAME real SPARQL -> for_each -> sh_after mechanism driving TWO
+# distinct real Igniter-backed mix tasks against the same real,
+# already-satisfied target (CapabilityLivenessReceipt), so real output
+# is a safe no-op on both, not an unreviewed source mutation.
+@prefix agp: <https://ggen.io/ontology/ash-igniter-gen-pipeline#> .
+
+agp:CapabilityLivenessReceiptGenResource a agp:CodegenTarget ;
+  agp:moduleName "CapabilityLivenessReceipt" ;
+  agp:domainModule "Xaas.Operations" ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read" .
+
+agp:CapabilityLivenessReceiptExtend a agp:CodegenTarget ;
+  agp:moduleName "CapabilityLivenessReceipt" ;
+  agp:domainModule "Xaas.Operations" ;
+  agp:mixTask "ash.extend" ;
+  agp:mixArgs "AshGraphql.Resource --yes" .
