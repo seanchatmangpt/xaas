@@ -1,5 +1,7 @@
 defmodule Xaas.Accounts do
-  use Ash.Domain, otp_app: :kanban
+  use Ash.Domain,
+    otp_app: :kanban,
+    extensions: [AshAdmin.Domain]
 
 
   resources do

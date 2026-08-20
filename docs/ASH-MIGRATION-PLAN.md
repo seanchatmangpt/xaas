@@ -157,3 +157,39 @@ verified per the plan above, not assumed:
   live `default` k8s namespace and the docker-compose stack were never touched by any of
   Phases 1-7 -- only local `mix` commands, a throwaway Docker image/tag, and a throwaway
   k8s namespace were used, per the plan's own risk-avoidance design.
+
+## ash_admin: real attempt this session, blocked on an upstream bug (not fabricated)
+
+Re-attempted `ash_admin` (originally dropped in Phase 3 for a real `phoenix_live_view ~>
+1.1-rc` conflict against a since-superseded 1.0.0-rc.0 release). This session:
+
+- Confirmed via `mix hex.info ash_admin` the current release is `1.3.0`.
+- Real, evidence-driven dependency resolution: bumped `phoenix_live_view` 0.18.16 -> `~> 1.2`,
+  `phoenix_html` 3.3 -> `~> 4.1`, `phoenix_live_dashboard` 0.7.2 -> `~> 0.9.0` (each forced by
+  a real resolver error, one at a time, same discipline as every other Phase 3 conflict).
+- `mix compile` clean across the whole tree (183 files) with `ash_admin` added.
+- Wired `AshAdmin.Domain` onto all 6 real domains (Accounts, Billing, Governance, Ledger,
+  Operations, Platform) and mounted `AshAdmin.Router`'s `ash_admin("/")` under `/admin` in
+  `KanbanWeb.Router`, dev-only (same `dev_routes` guard as LiveDashboard).
+- `mix phx.routes` confirms the real route: `GET /admin/*route AshAdmin.PageLive :page`.
+
+**Real, reproducible blocker**: `GET /admin/` 500s with `** (KeyError) key :action_type not
+found`. Root-caused to the actual vendored source, not guessed:
+`deps/ash_admin/lib/ash_admin/pages/page_live.ex:232` -- `assign_action/3`'s final `else`
+branch (`socket.assigns.domain && socket.assigns.resource` both falsy) does
+`assign(socket, :action, nil)` and omits `:action_type`, while every other branch in that
+function assigns both keys. `PageHeader` unconditionally reads `@action_type` on every
+render (`page_live.ex:117`), so any render path that falls through that one branch crashes.
+Reproduced identically with a bare `/admin/` request and with explicit
+`?resource=...&action_type=read` query params -- the crash happens before `handle_params`'s
+own domain/resource fallback (`Enum.at(domains, 0)`) visibly takes effect in the rendered
+assigns, which was not fully root-caused within this session's time budget (Phoenix
+LiveView's mount/handle_params ordering across the disconnected vs. connected-socket
+lifecycle needs a deeper trace than was completed here).
+
+**Disclosed, not worked around**: no `deps/ash_admin` file was hand-patched (a `mix deps.get`
+would silently wipe it) and no Playwright test was written against a page that 500s -- that
+would be a fabricated pass. Real next step: either pin an earlier `ash_admin`/`phoenix_live_view`
+combination and re-test, or file/check for an existing upstream issue and patch via a real
+`Igniter`-style override, then write the real Playwright state-change test only once
+`GET /admin/` returns 200.

@@ -48,5 +48,17 @@ defmodule KanbanWeb.Router do
       live_dashboard "/dashboard", metrics: KanbanWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+
+    # ash-admin: real AshAdmin.Router mount, dev-only (guarded by the same
+    # dev_routes flag as LiveDashboard above) -- production exposure would
+    # need real auth, deliberately not added here per the same reasoning
+    # as the LiveDashboard comment above.
+    import AshAdmin.Router
+
+    scope "/admin" do
+      pipe_through :browser
+
+      ash_admin("/")
+    end
   end
 end

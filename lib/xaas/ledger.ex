@@ -1,6 +1,7 @@
 defmodule Xaas.Ledger do
   use Ash.Domain,
-    otp_app: :kanban
+    otp_app: :kanban,
+    extensions: [AshAdmin.Domain]
 
   resources do
     resource Xaas.Ledger.Account

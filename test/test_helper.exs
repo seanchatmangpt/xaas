@@ -7,6 +7,9 @@
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
 ExUnit.start()
+# Real, concurrent-connection-pool-hungry stress tests are excluded by
+# default -- run explicitly with `mix test --include stress`.
+ExUnit.configure(exclude: [:stress])
 Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the

@@ -14,20 +14,22 @@ import Config
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :kanban, Kanban.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: System.get_env("DEV_DB_USERNAME", "postgres"),
+  password: System.get_env("DEV_DB_PASSWORD", "postgres"),
+  hostname: System.get_env("DEV_DB_HOSTNAME", "localhost"),
+  port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
   database: "kanban_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: 20
 
 config :kanban, Xaas.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: System.get_env("DEV_DB_USERNAME", "postgres"),
+  password: System.get_env("DEV_DB_PASSWORD", "postgres"),
+  hostname: System.get_env("DEV_DB_HOSTNAME", "localhost"),
+  port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
   database: "kanban_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: 20
 
 # Same-service HMAC key for Xaas.Accounts.Token.RevokeVerifier's ash_onetime nonce
 # protection on :revoke_token. Fixed test value; production reads it from env at

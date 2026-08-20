@@ -1,7 +1,7 @@
 defmodule Xaas.Operations do
   use Ash.Domain,
     otp_app: :kanban,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
 
 
   resources do

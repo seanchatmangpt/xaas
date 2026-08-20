@@ -1,7 +1,7 @@
 defmodule Xaas.Governance do
   use Ash.Domain,
     otp_app: :kanban,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshPaperTrail.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshPaperTrail.Domain, AshAdmin.Domain]
 
   paper_trail do
     include_versions? true

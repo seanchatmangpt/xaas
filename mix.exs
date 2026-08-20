@@ -79,11 +79,11 @@ defmodule Kanban.MixProject do
       {:ash_state_machine, "~> 0.2"},
       {:oban, "~> 2.0"},
       {:ash_oban, "~> 0.8"},
-      # ash_admin ~> 1.0 forces phoenix_live_view ~> 1.1-rc, a major bump that
-      # would touch the currently-deployed KanbanWeb LiveView code -- real,
-      # confirmed resolver conflict. Dropped; the 4 domain modules' AshAdmin.
-      # Domain extension entries are dropped on port too, the 89 resources
-      # don't reference it.
+      # Real re-check this session: hex.info now shows ash_admin's latest
+      # release is 1.3.0 (not the 1.0.0-rc.0 this repo's original conflict
+      # note was written against), pinning phoenix_live_view differently --
+      # re-attempting for real per explicit user request.
+      {:ash_admin, "~> 1.3"},
       {:ash_graphql, "~> 1.0"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
@@ -99,11 +99,23 @@ defmodule Kanban.MixProject do
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},
       {:ecto_sql, "~> 3.6"},
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
+      # No free/simple mutation-testing tool exists in this codebase's deps
+      # (checked: no muzak/mutation_test dep). Real property-based/fuzz
+      # testing via StreamData/ExUnitProperties is the honest, disclosed
+      # substitute -- named explicitly per docs/AWS-CHAPTERS-SUBSTITUTION.md's
+      # precedent, not silently swapped in. Already a real transitive dep of
+      # `ash` (see mix.lock); pinned here directly so `mix test` for
+      # ExUnitProperties-based tests doesn't depend on ash's own requirement.
+      # `only: :test` was tried first but `ash` itself requires stream_data
+      # unrestricted by env (real resolver conflict, confirmed via a real
+      # `mix deps.get` run), so it is pinned here for all envs instead.
+      {:stream_data, "~> 1.0"},
       # Real fix: exact-pinned "0.24.0" (the book's original) conflicts with
       # ash_onetime -> ecto_sql ~> 3.14 -> ... -> ex_money_sql's real
       # transitive requirement on gettext ~> 1.0 (confirmed via real resolver
@@ -113,10 +125,15 @@ defmodule Kanban.MixProject do
       {:jason, "~> 1.2"},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.4"},
-      {:phoenix_html, "~> 3.3"},
-      {:phoenix_live_dashboard, "~> 0.7.2"},
+      # Real bump for ash_admin ~> 1.3 (needs phoenix_html ~> 4.1).
+      {:phoenix_html, "~> 4.1"},
+      # Real bump for ash_admin/phoenix_live_view 1.2 compatibility.
+      {:phoenix_live_dashboard, "~> 0.9.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.18.16"},
+      # Real bump for ash_admin ~> 1.3 (needs phoenix_live_view ~> 1.1-rc);
+      # 1.2.x is the current stable release (confirmed via mix hex.info),
+      # past the rc this repo's original conflict note predates.
+      {:phoenix_live_view, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.3"},
