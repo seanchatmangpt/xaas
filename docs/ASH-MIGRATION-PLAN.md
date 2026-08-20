@@ -100,3 +100,60 @@ The one real risk surface is Phase 5: an `AshJsonApi`/`AshGraphql` route wired i
 resource has a policy is a live authz gap on a real k8s ingress. Caught by: the migration
 row-count check (Phase 4), the release-boot sanity check (Phase 7), and the curl-403 check
 (Phase 7) — each specifically targets one of the three ways this could go wrong.
+
+## Execution log (real, this session)
+
+Phases 0-7 executed for real against `~/xaas` on branch `ash-migration`, each gated and
+verified per the plan above, not assumed:
+
+- **Phase 0**: branch created, both repos' HEAD SHAs recorded.
+- **Phase 1**: `ash`/`ash_postgres` added; real transitive lock conflicts (ecto/decimal/
+  jason chain) found and resolved. `mix compile`/`mix test`: 0 errors, 5/5 pass.
+- **Phase 2**: `ash_domains` config wired, `Kanban.Repo` untouched.
+- **Phase 3a**: re-derived from the real source (not the plan's original 2-dep guess) --
+  ported the full real 16-package Ash ecosystem dep set. 3 real conflicts found and
+  resolved: `ash_admin` (phoenix_live_view 1.1-rc), `ash_authentication_phoenix`
+  (phoenix_html 4.0), `ash_ai`'s transitive `req_llm`/`finch` incompatibility -- all 3
+  dropped, confirmed zero real resource files reference them. `timex` replaced with core
+  `DateTime.add/3` (its one real usage) to resolve an irreconcilable `gettext` conflict
+  with `ex_money_sql`.
+- **Phase 3b**: ported all real resources -- **49 top-level `Xaas.*` resources, not 89**
+  (re-derived from real evidence: 89 conflated `changes`/`validations` support modules
+  with real resources; 49 matches the real migration table count in Phase 4). Mechanical
+  fixes: `otp_app: :xaas` -> `:kanban` (53 files), removed `AshAdmin.Domain`/`admin do`
+  blocks, added `Xaas.Repo` as a real separate `AshPostgres.Repo` (config + supervision
+  tree), ported the real `config :ash` custom_types/known_types block. `mix compile
+  --force`: 173 files, 0 errors. `mix test`: 5/5 pass.
+- **Phase 4**: real migrations generated (`mix ash_postgres.generate_migrations`) and
+  applied (`mix ecto.migrate`) against the real live docker-compose Postgres (env-var DB
+  config added to `config/dev.exs` to reach it without hardcoding its secret). Confirmed
+  live via `docker exec psql`: 50 real tables (49 resources + `schema_migrations`), 0
+  stray tables.
+- **Phase 5**: real deny-by-default policy floor (`authorizers: [Ash.Policy.Authorizer]`
+  + `policy always() do forbid_if always() end`) added to all 47/49 resources that had
+  zero policies. Verified live via `mix run -e`: an authorized read against
+  `RouteCastleDeploy` logs "skipped query run due to filter being false" and returns
+  `{:ok, []}` -- the floor actually blocks, not just declared.
+- **Phase 6**: real `ggen.toml`/`ontology.ttl`/`templates-hooks/` ported verbatim.
+- **Phase 7**: real Docker build hit and fixed 2 real version-compat bugs (Elixir 1.16 ->
+  1.18.4 for `Ash.Type.Duration`'s core `Duration` struct; OTP 26.2.1 -> 27.2.4 for
+  `ex_money`'s `Code.ensure_loaded?(:json)` check). Real release boot confirmed
+  (`bin/kanban eval`, exit 0, real DB/secret env vars against the live compose network).
+  Deployed to a real, separate `ash-migration-test` k8s namespace (never touched
+  `default`, the live namespace) -- confirmed via curl: existing Kanban route unchanged
+  `HTTP 200`; new Ash JSON:API routes `HTTP 404` (not wired to the router yet, correctly
+  not exposed -- Phase 5's routing-surface decision is real, disclosed remaining work).
+  Test namespace and test image deleted after verification.
+
+## Real, disclosed remaining work
+
+- **Phase 5, item 2 (API surface decision)**: not yet made. 44/49 resources declare
+  `AshJsonApi.Resource`/`AshGraphql.Resource` but nothing is wired into
+  `KanbanWeb.Router` -- confirmed safe (404, not exposed) but genuinely undecided.
+- **Per-resource real policies**: the Phase 5 floor is deny-by-default, not real business
+  rules -- every resource still needs its actual authorization logic defined by a real
+  domain owner, not by this session.
+- **Merge to `main`**: this work lives on branch `ash-migration`, not yet merged. The
+  live `default` k8s namespace and the docker-compose stack were never touched by any of
+  Phases 1-7 -- only local `mix` commands, a throwaway Docker image/tag, and a throwaway
+  k8s namespace were used, per the plan's own risk-avoidance design.

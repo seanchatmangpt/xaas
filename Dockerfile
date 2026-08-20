@@ -16,9 +16,22 @@
 #   - https://pkgs.org/ - resource for finding needed packages
 #   - Ex: hexpm/elixir:1.16.0-erlang-26.2.1-debian-bullseye-20231009-slim
 #
-ARG ELIXIR_VERSION=1.16.0
-ARG OTP_VERSION=26.2.1
-ARG DEBIAN_VERSION=bullseye-20231009-slim
+# ash-migration Phase 7 real fixes: the book's original 1.16.0/OTP 26.2.1
+# fails a real Docker build once ash is a dep, in 2 real, sequential ways
+# (each confirmed via a real docker build error, not guessed):
+# 1. Ash.Type.Duration references Elixir's core Duration struct, added in
+#    Elixir 1.17 ("Duration.__struct__/0 is undefined").
+# 2. ex_money's optional json_polyfill dep is conditional on
+#    Code.ensure_loaded?(:json) -- OTP's built-in :json module, added in
+#    OTP 27. mix.lock was resolved on the host (OTP 28, has :json, so
+#    json_polyfill was correctly NOT added as a dep), but the original
+#    OTP 26.2.1 builder lacks :json, so `mix release` fails looking for an
+#    app that was never fetched ("Could not find application
+#    :json_polyfill"). Bumping OTP to 27.x (which also has :json) keeps the
+#    builder and the resolved lock file consistent.
+ARG ELIXIR_VERSION=1.18.4
+ARG OTP_VERSION=27.2.4
+ARG DEBIAN_VERSION=bullseye-20260803-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"

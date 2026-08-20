@@ -13,10 +13,32 @@ import Config
 port = String.to_integer(System.get_env("PORT") || "4000")
 
 # Configure your database
+# Real fix: username/password/hostname/port now read from env vars with the
+# book's original plaintext defaults as fallback -- needed to point local
+# `mix ash_postgres.generate_migrations`/`mix ecto.migrate` at the real
+# running docker-compose Postgres (whose POSTGRES_PASSWORD_FILE-backed
+# secret and randomly-published host port differ from the book's hardcoded
+# "postgres"/5432 defaults), without hardcoding that real secret into a
+# committed file.
 config :kanban, Kanban.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: System.get_env("DEV_DB_USERNAME", "postgres"),
+  password: System.get_env("DEV_DB_PASSWORD", "postgres"),
+  hostname: System.get_env("DEV_DB_HOSTNAME", "localhost"),
+  port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
+  database: "kanban_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
+# ash-migration Phase 3: Xaas.Repo is a real, separate AshPostgres.Repo (the
+# 89 real Ash.Resource modules ported from ~/dev-fresh/xaas reference it
+# directly via `postgres do repo Xaas.Repo end`) -- deliberately not merged
+# into Kanban.Repo, same real database, separate Ecto.Repo/OTP child.
+config :kanban, Xaas.Repo,
+  username: System.get_env("DEV_DB_USERNAME", "postgres"),
+  password: System.get_env("DEV_DB_PASSWORD", "postgres"),
+  hostname: System.get_env("DEV_DB_HOSTNAME", "localhost"),
+  port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
   database: "kanban_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
