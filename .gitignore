@@ -84,3 +84,4 @@ terraform.rc
 # never commit them. k8s/secret.yaml.example is the real, committed template.
 k8s/secret.yaml
 .ggen-v2/
+.ash-gen-receipts/

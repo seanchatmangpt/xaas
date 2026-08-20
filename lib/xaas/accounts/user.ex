@@ -4,7 +4,7 @@ defmodule Xaas.Accounts.User do
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAuthentication, AshArchival.Resource]
+    extensions: [AshAuthentication, AshArchival.Resource, AshIam]
 
   archive do
     # Soft-delete: destroying a user sets archived_at instead of removing the
@@ -282,9 +282,20 @@ defmodule Xaas.Accounts.User do
     end
   end
 
+  iam do
+    permission_base "xaas:user"
+  end
+
   policies do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
+    end
+
+    # IAM-style policy check: an actor's `iam_policy` attribute (AWS
+    # IAM-style Allow/Deny statements against "xaas:user:<id>") governs
+    # ordinary reads once the AshAuthentication bypass above doesn't apply.
+    policy action_type(:read) do
+      authorize_if AshIam.Check
     end
   end
 
