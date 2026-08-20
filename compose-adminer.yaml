@@ -7,4 +7,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      # Default changed from the book's 8080:8080 -- 8080 real-collides with
+      # a pre-existing local kind cluster's control-plane port mapping on
+      # this machine. Override with ADMINER_PORT if 8081 also collides.
+      - ${ADMINER_PORT:-8081}:8080

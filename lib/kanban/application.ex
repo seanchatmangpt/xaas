@@ -1,11 +1,11 @@
-#---
+# ---
 # Excerpted from "Engineering Elixir Applications",
 # published by The Pragmatic Bookshelf.
 # Copyrights apply to this code. It may not be used to create training material,
 # courses, books, articles, and the like. Contact us if you are in doubt.
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
-#---
+# ---
 # in lib/kanban/application.ex
 
 defmodule Kanban.Application do
@@ -34,7 +34,6 @@ defmodule Kanban.Application do
       # Start a worker by calling: Kanban.Worker.start_link(arg)
       # {Kanban.Worker, arg}
     ]
-
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

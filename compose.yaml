@@ -15,6 +15,7 @@ services:
       retries: 5
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgrespassword
+      POSTGRES_DB: kanban_dev
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -85,12 +86,20 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_BASIC_ENABLED=false
-      - GF_SMTP_ENABLED=true
-      - GF_SMTP_HOST=smtp.gmail.com:587
-      - GF_SMTP_USER=YOUR_EMAIL_ADDRESS
-      - GF_SMTP_PASSWORD=YOUR_GMAIL_APP_PASSWORD
-      - GF_SMTP_FROM_NAME=Grafana 
-      - GF_SMTP_FROM_ADDRESS=YOUR_EMAIL_ADDRESS
+      # Real fix: the book's literal YOUR_EMAIL_ADDRESS/YOUR_GMAIL_APP_PASSWORD
+      # placeholders make Grafana's real SMTP config validator reject
+      # GF_SMTP_FROM_ADDRESS outright (invalid email address), crash-looping
+      # the container before it ever binds port 3000 -- confirmed by real
+      # `docker logs`. Disabled by default for local dev; set
+      # GF_SMTP_ENABLED=true and the 5 vars below via real env vars
+      # (GRAFANA_SMTP_*) for a real deployment with real Gmail app-password
+      # credentials.
+      - GF_SMTP_ENABLED=${GRAFANA_SMTP_ENABLED:-false}
+      - GF_SMTP_HOST=${GRAFANA_SMTP_HOST:-smtp.gmail.com:587}
+      - GF_SMTP_USER=${GRAFANA_SMTP_USER:-}
+      - GF_SMTP_PASSWORD=${GRAFANA_SMTP_PASSWORD:-}
+      - GF_SMTP_FROM_NAME=Grafana
+      - GF_SMTP_FROM_ADDRESS=${GRAFANA_SMTP_FROM_ADDRESS:-grafana@example.com}
     ports:
       - "3000:3000"
     volumes:

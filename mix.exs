@@ -1,11 +1,11 @@
-#---
+# ---
 # Excerpted from "Engineering Elixir Applications",
 # published by The Pragmatic Bookshelf.
 # Copyrights apply to this code. It may not be used to create training material,
 # courses, books, articles, and the like. Contact us if you are in doubt.
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
-#---
+# ---
 # in mix.exs
 
 defmodule Kanban.MixProject do
@@ -75,7 +75,6 @@ defmodule Kanban.MixProject do
       {:req, "~> 0.5.7"}
     ]
   end
-
 
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to install project dependencies and perform other setup tasks, run:
