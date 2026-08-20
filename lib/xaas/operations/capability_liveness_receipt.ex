@@ -51,7 +51,7 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
 
     create :ingest do
       description "Upsert one real weaver-live-matrix.sh receipt row (idempotent on capability+subject)."

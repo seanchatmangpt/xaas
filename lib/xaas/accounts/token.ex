@@ -47,6 +47,19 @@ defmodule Xaas.Accounts.Token do
       accept [:extra_data]
       argument :token, :string, allow_nil?: false, sensitive?: true
 
+      # ash_onetime cannot protect Xaas.Accounts.Token itself: AshOnetime.Resource's
+      # compile-time verifier rejects any protected resource that declares an attribute
+      # named :expires_at (one of AshOnetime.reserved_verification_inputs/0's five
+      # reserved names), whether or not the protected action accepts it -- accepting it
+      # trips "exposes reserved verification inputs", not accepting it trips "declares a
+      # reserved verification attribute". Token has a real, required :expires_at
+      # attribute (AshAuthentication.TokenResource's own token-expiry column), so this is
+      # a structural conflict, not a config choice. The one-time-nonce spend fence lives
+      # on Xaas.Accounts.Token.RevokeNonce instead (no :expires_at attribute), and is
+      # enforced here via a real change that runs a real Ash.create/2 against that
+      # resource before the revocation record is written.
+      change Xaas.Accounts.Token.EnforceSingleRevoke
+
       change AshAuthentication.TokenResource.RevokeTokenChange
     end
 

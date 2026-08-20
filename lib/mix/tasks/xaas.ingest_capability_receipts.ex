@@ -67,5 +67,22 @@ defmodule Mix.Tasks.Xaas.IngestCapabilityReceipts do
       Mix.shell().error("#{length(errors)} rows failed:")
       Enum.each(errors, fn {:error, e} -> Mix.shell().error(inspect(e)) end)
     end
+
+    # Real autonomic "Analyze" step: after a real ingest, check for real
+    # regressions against the real history already in the DB (see
+    # Xaas.Operations.CapabilityLivenessRegressions moduledoc).
+    case Xaas.Operations.CapabilityLivenessRegressions.detect() do
+      [] ->
+        Mix.shell().info("No capability regressions detected against prior real ingests.")
+
+      regressions ->
+        Mix.shell().error("#{length(regressions)} REAL capability regression(s) detected:")
+
+        Enum.each(regressions, fn r ->
+          Mix.shell().error(
+            "  #{r.capability}: #{r.was.status} (#{r.was.subject}) -> #{r.now.status} (#{r.now.subject})"
+          )
+        end)
+    end
   end
 end

@@ -29,6 +29,12 @@ config :kanban, Xaas.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
+# Same-service HMAC key for Xaas.Accounts.Token.RevokeVerifier's ash_onetime nonce
+# protection on :revoke_token. Fixed test value; production reads it from env at
+# runtime (config/runtime.exs).
+config :kanban, Xaas.Accounts.Token,
+  onetime_revoke_key: "test-only-onetime-revoke-key-do-not-use-in-prod"
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :kanban, KanbanWeb.Endpoint,

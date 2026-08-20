@@ -34,6 +34,9 @@ config :kanban, Kanban.Repo,
 # 89 real Ash.Resource modules ported from ~/dev-fresh/xaas reference it
 # directly via `postgres do repo Xaas.Repo end`) -- deliberately not merged
 # into Kanban.Repo, same real database, separate Ecto.Repo/OTP child.
+config :kanban, Xaas.Accounts.Token,
+  onetime_revoke_key: System.get_env("DEV_ONETIME_REVOKE_KEY", "dev-only-onetime-revoke-key")
+
 config :kanban, Xaas.Repo,
   username: System.get_env("DEV_DB_USERNAME", "postgres"),
   password: System.get_env("DEV_DB_PASSWORD", "postgres"),

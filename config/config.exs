@@ -36,6 +36,12 @@ config :kanban,
 # (:money) and custom types (:capability_class, :interface) that only
 # resolve via this real custom_types/known_types registration, confirmed by
 # a real compile error (":money is not a valid type") before this was added.
+# Real fix: opentelemetry_ash was added as a dep but never actually
+# configured as Ash's tracer (confirmed via grep -- no `config :ash,
+# :tracer` existed anywhere in this repo before this line). Without this,
+# OpentelemetryAsh.start_span/2 is dead code -- Ash never calls it.
+config :ash, :tracer, [OpentelemetryAsh]
+
 config :ash_oban, pro?: false
 
 config :kanban, Oban,

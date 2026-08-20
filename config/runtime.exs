@@ -43,6 +43,16 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  onetime_revoke_key =
+    System.get_env("ONETIME_REVOKE_KEY") ||
+      raise """
+      environment variable ONETIME_REVOKE_KEY is missing.
+      Used as the same-service HMAC key for Xaas.Accounts.Token.RevokeVerifier's
+      ash_onetime nonce protection on :revoke_token.
+      """
+
+  config :kanban, Xaas.Accounts.Token, onetime_revoke_key: onetime_revoke_key
+
   config :kanban, Kanban.Repo,
     # ssl: true,
     url: database_url,

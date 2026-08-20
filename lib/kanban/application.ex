@@ -17,6 +17,14 @@ defmodule Kanban.Application do
 
   @impl true
   def start(_type, _args) do
+    # Real OCEL v2 + OpenTelemetry enrichment via Ash introspection: attach
+    # before the supervision tree starts so every real Ash action from the
+    # first request onward is captured. See
+    # Xaas.Telemetry.OcelAshEmitter's moduledoc for the real telemetry
+    # event names this hooks (confirmed via reading deps/ash's own
+    # create/read/update/destroy.ex).
+    Xaas.Telemetry.OcelAshEmitter.attach!()
+
     children = [
       # Start the Endpoint (http/https)
       KanbanWeb.Endpoint,
