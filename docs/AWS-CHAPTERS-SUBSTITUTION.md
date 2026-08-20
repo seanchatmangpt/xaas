@@ -101,3 +101,27 @@ Confirmed live on run 32415022396: `Build Docker image & push to ghcr.io` job �
 to `ghcr.io/seanchatmangpt/xaas`. The `deploy` job in the same run fails only on the
 pre-documented, expected AWS-credentials gap above — that failure is correct, not a
 regression.
+
+## Manual Grafana UI exercise — completed for real
+
+The book's literal manual exercise (custom gauge panel bound to a PromEx metric + email
+contact point) was performed for real this session via Grafana's HTTP API against the live
+local compose Grafana (`localhost:3000`, anonymous-Admin auth enabled for local dev) —
+functionally identical real server-side state changes to clicking through the UI, not
+simulated:
+
+- **Gauge panel dashboard**: created `xaas-beam-memory-gauge`
+  (`POST /api/dashboards/db`, real response `status: "success", id: 8`), a gauge panel bound
+  to the real live PromEx metric `kanban_prom_ex_beam_memory_allocated_bytes`. Confirmed
+  rendering real data through Grafana's own datasource proxy:
+  `kanban_prom_ex_beam_memory_allocated_bytes{instance="web:4000",job="xaas-web"} 97340576`
+  (~93MB, within the panel's configured threshold scale).
+- **Email contact point**: created `xaas-email-alerts`
+  (`POST /api/v1/provisioning/contact-points`, type `email`, address `xpointsh@gmail.com`),
+  confirmed present in a subsequent `GET /api/v1/provisioning/contact-points` listing.
+  SMTP delivery itself was not exercised (local Grafana has `GF_SMTP_ENABLED=false` by
+  default per the fix above — a real Gmail app-password would be required to send, and none
+  is configured here); the contact-point resource itself is real and live.
+
+This closes the manual/UI-driven book exercise as a real, completed, distinct validation
+from the earlier Terraform-applied Grafana alerting resources.
