@@ -1,0 +1,531 @@
+# xaas-ash-core-pack/ontology.ttl
+#
+# Real ggen-rendered replacement for what was, until now, a hand/loop-
+# assembled JS Workflow script. Every xar:RenderTarget below references a
+# real pcc:Capability IRI from chatman-ecosystem's own
+# ontology/platform-console-capabilities.ttl (not redefined here), carries
+# the module/domain/action facts templates/build-base.sh.tmpl needs, and is
+# aligned -- via skos:closeMatch, never owl:equivalentClass -- to
+# togaf:Capability, the real class from the TOGAF 9.2 Content Metamodel
+# ontology already fetched into this marketplace
+# (ontologies/public/xaas-profile-batch-1/togaf-content-metamodel.ttl,
+# confirmed real classes: togaf:Capability, togaf:BusinessCapability,
+# togaf:Function, togaf:ApplicationArchitectureComponent,
+# togaf:InformationSystemService, togaf:OrganizationUnit, etc.). This is a
+# genuine public-ontology alignment, not an invented equivalence -- per
+# xaas-public-ontology-profile/gates/020_no_unproven_equivalence.rq, which
+# still refuses any owl:equivalentClass/equivalentProperty in this repo.
+
+@prefix xar:   <https://ggen.io/ontology/xaas-ash-render#> .
+@prefix pcc:   <https://seanchatmangpt.github.io/chatman-ecosystem/ontology/platform-console-capabilities#> .
+@prefix togaf: <http://www.semanticweb.org/ontologies/2020/4/OntologyTOGAFContentMetamodel.owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+<https://ggen.io/ontology/xaas-ash-render#> a owl:Ontology ;
+  rdfs:label "XaaS Ash render-hint bridge vocabulary" ;
+  rdfs:comment "Real rendering facts for all 44 real ce:Capability individuals -> Ash.Resource generator commands. Not an ontology of Ash itself; xar:RenderTarget individuals skos:closeMatch togaf:Capability (TOGAF 9.2 Content Metamodel), a real public-ontology alignment, never an asserted owl:equivalentClass." .
+
+xar:RenderTarget a owl:Class ;
+  rdfs:label "A capability individual paired with the module/domain/action-verb facts needed to render its mix ash.gen.resource command line" .
+
+xar:renderOf a owl:ObjectProperty ; rdfs:domain xar:RenderTarget ; rdfs:range owl:Thing .
+xar:moduleName a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:string .
+xar:domainModule a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:string .
+xar:actionName a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:string .
+xar:requiredAuthority a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:string ;
+  rdfs:comment "Real ce:requiredAuthority string copied verbatim from platform-console-capabilities.ttl for this individual." .
+xar:reversible a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:boolean ;
+  rdfs:comment "Real ce:reversible fact copied verbatim from platform-console-capabilities.ttl for this individual." .
+xar:standing a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:string ;
+  rdfs:comment "Real ce:standing fact copied verbatim from platform-console-capabilities.ttl for this individual." .
+xar:capabilityClass a owl:DatatypeProperty ; rdfs:domain xar:RenderTarget ; rdfs:range xsd:string ;
+  rdfs:comment "Real ce:capabilityClass local name (Do/Select/Construct/Observe) copied from platform-console-capabilities.ttl for this individual." .
+
+xar:CastleVerbInventoryComponentsRender a xar:RenderTarget ;
+  xar:renderOf pcc:CastleVerbInventoryComponents ;
+  xar:moduleName "CastleVerbInventoryComponents" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "AuthorityObject.admits(castle.verb.run)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:CastleVerbInventoryGoalsRender a xar:RenderTarget ;
+  xar:renderOf pcc:CastleVerbInventoryGoals ;
+  xar:moduleName "CastleVerbInventoryGoals" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "AuthorityObject.admits(castle.verb.run)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalFreezeOverrideRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalFreezeOverride ;
+  xar:moduleName "ApprovalFreezeOverride" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "override" ;
+  xar:requiredAuthority "approval-workflow.requireApproval" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:DataDestructionCertificateIssueRender a xar:RenderTarget ;
+  xar:renderOf pcc:DataDestructionCertificateIssue ;
+  xar:moduleName "DataDestructionCertificateIssue" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "issue" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(data-destruction.certificate.issue)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalOrgDeleteRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalOrgDelete ;
+  xar:moduleName "ApprovalOrgDelete" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "delete" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(org.delete)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalQuotaOverrideRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalQuotaOverride ;
+  xar:moduleName "ApprovalQuotaOverride" ;
+  xar:domainModule "Xaas.Billing" ;
+  xar:actionName "override" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(quota.override)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalTierDowngradeRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalTierDowngrade ;
+  xar:moduleName "ApprovalTierDowngrade" ;
+  xar:domainModule "Xaas.Billing" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(tier.downgrade)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalBackupRetentionChangeRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalBackupRetentionChange ;
+  xar:moduleName "ApprovalBackupRetentionChange" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(backup.retention.change)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalDrFailoverRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalDrFailover ;
+  xar:moduleName "ApprovalDrFailover" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(dr.failover)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalDsarErasureRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalDsarErasure ;
+  xar:moduleName "ApprovalDsarErasure" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(dsar.erasure)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalSlaCreditApplyRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalSlaCreditApply ;
+  xar:moduleName "ApprovalSlaCreditApply" ;
+  xar:domainModule "Xaas.Billing" ;
+  xar:actionName "apply" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(sla.credit.apply)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalPricingOverrideRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalPricingOverride ;
+  xar:moduleName "ApprovalPricingOverride" ;
+  xar:domainModule "Xaas.Billing" ;
+  xar:actionName "override" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(pricing.override)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalSsoRoleMappingUpdateRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalSsoRoleMappingUpdate ;
+  xar:moduleName "ApprovalSsoRoleMappingUpdate" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "update" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(sso.role-mapping.update)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalExportSubscriptionUpdateRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalExportSubscriptionUpdate ;
+  xar:moduleName "ApprovalExportSubscriptionUpdate" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "update" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(export-subscription.update)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalCastleVerbScheduleRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalCastleVerbSchedule ;
+  xar:moduleName "ApprovalCastleVerbSchedule" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "schedule" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(castle.verb.schedule)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalEnvironmentPromoteRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalEnvironmentPromote ;
+  xar:moduleName "ApprovalEnvironmentPromote" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(environment.promote)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalDeploymentQuarantineRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalDeploymentQuarantine ;
+  xar:moduleName "ApprovalDeploymentQuarantine" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(deployment.quarantine)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalPatchSlaCreditApplyRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalPatchSlaCreditApply ;
+  xar:moduleName "ApprovalPatchSlaCreditApply" ;
+  xar:domainModule "Xaas.Billing" ;
+  xar:actionName "apply" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(patch-sla.credit.apply)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalK8sFaultRemediateSuggestRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalK8sFaultRemediateSuggest ;
+  xar:moduleName "ApprovalK8sFaultRemediateSuggest" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(k8s-fault.remediate-suggest)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalInvoiceReconciliationApproveRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalInvoiceReconciliationApprove ;
+  xar:moduleName "ApprovalInvoiceReconciliationApprove" ;
+  xar:domainModule "Xaas.Billing" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(invoice.reconciliation.approve)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalComplianceRotationBlockRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalComplianceRotationBlock ;
+  xar:moduleName "ApprovalComplianceRotationBlock" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(compliance.rotation-block)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalBreakGlassJustificationReviewRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalBreakGlassJustificationReview ;
+  xar:moduleName "ApprovalBreakGlassJustificationReview" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(break-glass.justification-review)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalSubprocessorRegistryUpdateRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalSubprocessorRegistryUpdate ;
+  xar:moduleName "ApprovalSubprocessorRegistryUpdate" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "update" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(subprocessor.registry.update)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalLeRequestRespondRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalLeRequestRespond ;
+  xar:moduleName "ApprovalLeRequestRespond" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "respond" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(le-request.respond)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalDeniedPartyOverrideRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalDeniedPartyOverride ;
+  xar:moduleName "ApprovalDeniedPartyOverride" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "override" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(denied-party.override)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalChangeOfControlNotifyRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalChangeOfControlNotify ;
+  xar:moduleName "ApprovalChangeOfControlNotify" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(change-of-control.notify)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalInsurancePolicyUpdateRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalInsurancePolicyUpdate ;
+  xar:moduleName "ApprovalInsurancePolicyUpdate" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "update" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(insurance.policy.update)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:CastleVerbFortune5RequirementsRender a xar:RenderTarget ;
+  xar:renderOf pcc:CastleVerbFortune5Requirements ;
+  xar:moduleName "CastleVerbFortune5Requirements" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "AuthorityObject.admits(castle.verb.run)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteCastleDeployRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteCastleDeploy ;
+  xar:moduleName "RouteCastleDeploy" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "deploy" ;
+  xar:requiredAuthority "requireRole(owner)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteCastleRunRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteCastleRun ;
+  xar:moduleName "RouteCastleRun" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "run" ;
+  xar:requiredAuthority "requireRole(member)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteCastleScheduleRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteCastleSchedule ;
+  xar:moduleName "RouteCastleSchedule" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "schedule" ;
+  xar:requiredAuthority "requireRole(member)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteCastleSunsetRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteCastleSunset ;
+  xar:moduleName "RouteCastleSunset" ;
+  xar:domainModule "Xaas.Operations" ;
+  xar:actionName "sunset" ;
+  xar:requiredAuthority "requireRole(owner)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteFeatureFlagsRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteFeatureFlags ;
+  xar:moduleName "RouteFeatureFlags" ;
+  xar:domainModule "Xaas.Platform" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "requireRole(member)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteOrgsCustomDomainRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteOrgsCustomDomain ;
+  xar:moduleName "RouteOrgsCustomDomain" ;
+  xar:domainModule "Xaas.Platform" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "requireRoleIn(org, owner)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteProjectsRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteProjects ;
+  xar:moduleName "RouteProjects" ;
+  xar:domainModule "Xaas.Platform" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "requireRole(owner)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteProjectsBackupsRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteProjectsBackups ;
+  xar:moduleName "RouteProjectsBackups" ;
+  xar:domainModule "Xaas.Platform" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "session.authenticated" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:RouteSecretsRender a xar:RenderTarget ;
+  xar:renderOf pcc:RouteSecrets ;
+  xar:moduleName "RouteSecrets" ;
+  xar:domainModule "Xaas.Platform" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "requireRole(member)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalPersonnelAttestationRecordRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalPersonnelAttestationRecord ;
+  xar:moduleName "ApprovalPersonnelAttestationRecord" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(personnel.attestation.record)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalSourceEscrowSnapshotRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalSourceEscrowSnapshot ;
+  xar:moduleName "ApprovalSourceEscrowSnapshot" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(source-escrow.snapshot)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalPentestFindingResolveRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalPentestFindingResolve ;
+  xar:moduleName "ApprovalPentestFindingResolve" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(pentest.finding.resolve)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalCmekKeyBindingRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalCmekKeyBinding ;
+  xar:moduleName "ApprovalCmekKeyBinding" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "approve" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(cmek.key-binding)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalVendorOffboardingAttestationIssueRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalVendorOffboardingAttestationIssue ;
+  xar:moduleName "ApprovalVendorOffboardingAttestationIssue" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "issue" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(vendor-offboarding.attestation.issue)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalLegalHoldReleaseRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalLegalHoldRelease ;
+  xar:moduleName "ApprovalLegalHoldRelease" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "release" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(legal-hold.release)" ;
+  xar:reversible false ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
+xar:ApprovalGeofenceExceptionGrantRender a xar:RenderTarget ;
+  xar:renderOf pcc:ApprovalGeofenceExceptionGrant ;
+  xar:moduleName "ApprovalGeofenceExceptionGrant" ;
+  xar:domainModule "Xaas.Governance" ;
+  xar:actionName "grant" ;
+  xar:requiredAuthority "approval-workflow.requireApproval(geofence.exception.grant)" ;
+  xar:reversible true ;
+  xar:standing "active" ;
+  xar:capabilityClass "do" ;
+  skos:closeMatch togaf:Capability .
+
