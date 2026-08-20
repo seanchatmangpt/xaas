@@ -18,7 +18,8 @@
 import Config
 
 config :kanban,
-  ecto_repos: [Kanban.Repo]
+  ecto_repos: [Kanban.Repo],
+  ash_domains: [Xaas.Operations, Xaas.Governance, Xaas.Billing, Xaas.Platform]
 
 # Configures the endpoint
 config :kanban, KanbanWeb.Endpoint,
