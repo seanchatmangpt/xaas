@@ -47,6 +47,8 @@ defmodule Kanban.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ash, "~> 3.32"},
+      {:ash_postgres, "~> 2.0"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dns_cluster, "~> 0.1.3"},
       {:ecto_sql, "~> 3.6"},
