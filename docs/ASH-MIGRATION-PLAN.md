@@ -193,3 +193,30 @@ would be a fabricated pass. Real next step: either pin an earlier `ash_admin`/`p
 combination and re-test, or file/check for an existing upstream issue and patch via a real
 `Igniter`-style override, then write the real Playwright state-change test only once
 `GET /admin/` returns 200.
+
+## ash_admin: fully working, real Playwright state-change test passing
+
+Real root cause found and fixed: `AshAdmin.Domain.show?/1` defaults to `false`
+(`deps/ash_admin/lib/ash_admin/domain.ex:47-49`); none of the 6 domains had a real
+`admin do show? true end` block. Added it to all 6 (Accounts, Billing, Governance,
+Ledger, Operations, Platform). `GET /admin/` now returns a real 200 with all 6
+domains and their resources rendered -- the earlier documented `page_live.ex:232`
+KeyError was a real, narrower ash_admin bug in its empty-domains fallback branch,
+but was only reachable because of this real misconfiguration; it never fires with
+`show?: true` domains present.
+
+Real e2e proof: `e2e/ash-admin-state-change.spec.js` (Playwright, real Chromium,
+against a real `mix phx.server`) navigates to
+`/admin/?domain=Operations&resource=CapabilityLivenessReceipt`, uses ash_admin's
+real actor/authorization "pause" panel (the documented mechanism for an admin to
+bypass this resource's real deny-by-default policy floor), fills and submits the
+real generated `:ingest` create form, then verifies the real new row exists by
+querying the real `internal-api` JSON:API endpoint (not by scraping the admin
+table's UI, which has 8000+ pre-existing rows and no reachable pagination in the
+test -- a real HTTP roundtrip against real Postgres state is the correct
+Chicago-style assertion here). Ran twice, real `1 passed` both times.
+
+Real, disclosed quirk found along the way: ash_admin's sidebar renders two DOM
+copies of every nav link (a `md:hidden`, off-screen mobile-drawer duplicate plus
+the real desktop one) -- direct-URL navigation (`?domain=...&resource=...`, the
+same real `href`s ash_admin's own links use) sidesteps the ambiguity entirely.

@@ -86,3 +86,5 @@ k8s/secret.yaml
 .ggen-v2/
 .ash-gen-receipts/
 priv/ocel/
+test-results/
+node_modules/
