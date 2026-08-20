@@ -79,3 +79,25 @@ processes, `--name n1@127.0.0.1`/`n2@127.0.0.1`, `--cookie xaastest`):
 - Mismatched-cookie negative test (`n3`/`n4`, cookies `cookieA`/`cookieB`): `Node.connect/1`
   correctly returned `false`, `Node.list()` stayed empty — confirms BEAM's cookie-based auth
   actually rejects mismatched nodes, not just that matching nodes can connect.
+
+## GHCR push — root cause found and fixed
+
+Real root cause of the `denied: permission_denied: read_package` push failure that had
+persisted since the initial CI setup: `GITHUB_TOKEN` only auto-inherits ghcr.io
+package-creation rights when the package name matches the repository name. The workflow
+still referenced the book's original `kanban` image name while the repo is `xaas` — a
+package that never existed and that `GITHUB_TOKEN` had no implicit right to create.
+Fixed by renaming all `ghcr.io/OWNER/kanban` refs to `ghcr.io/OWNER/xaas`.
+
+A second, unrelated real bug then surfaced once the permission issue cleared: the
+`linux/arm64` leg of the multi-arch build segfaults under QEMU emulation installing
+`build-essential` (`libc-bin` postinst, signal 11) on GitHub's amd64-only hosted runners —
+known QEMU/glibc emulation flakiness, not a Dockerfile defect. Fixed by building
+`linux/amd64` only (the runner's real native architecture) and dropping the QEMU setup
+step.
+
+Confirmed live on run 32415022396: `Build Docker image & push to ghcr.io` job —
+**success**, real pushed digest `sha256:e4646658ec68fc3dafcab28e3d70fa6deb86c6ba2b7a2ee4754766f0df607aad`
+to `ghcr.io/seanchatmangpt/xaas`. The `deploy` job in the same run fails only on the
+pre-documented, expected AWS-credentials gap above — that failure is correct, not a
+regression.
