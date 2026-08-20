@@ -146,8 +146,9 @@ Platform (`lib/xaas/platform/`):
 | `/route_projects_backups` | `Xaas.Platform.RouteProjectsBackups` |
 | `/route_secrets` | `Xaas.Platform.RouteSecrets` |
 
-Every one of the above (except `Xaas.Billing.ApprovalPricingOverride`, see below) has exactly
-the same real shape, e.g.:
+Every one of the above (except `Xaas.Billing.ApprovalPricingOverride` and
+`Xaas.Governance.ApprovalBackupRetentionChange`, see below) has exactly the same real shape,
+e.g.:
 
 ```elixir
 json_api do
@@ -210,6 +211,48 @@ Real Chicago-style coverage: `test/kanban_web/controllers/approval_pricing_overr
 — real Postgres-backed accept case, plus the two real reject cases (missing approver, self-
 approval) and the real no-token-401 case, per this repo's testing discipline of asserting the
 reject path, not just the accept path.
+
+### Second real mutation route (issue #20): `Xaas.Governance.ApprovalBackupRetentionChange`
+
+Ported from platform-console's real `PUT /api/orgs/[id]/backup-policy` maker-checker flow
+(`docs/ASH-MIGRATION-PLAN.md`'s recommended next step: reimplement the governance/owner/
+compliance route cluster, which already has same-named Ash resource stubs). Real `PATCH
+/api/approval_backup_retention_change/:id` route on a new `:approve` update action:
+
+```elixir
+actions do
+  create :create do
+    accept [:org_id, :requested_by, :requested_retention_days]
+  end
+
+  update :approve do
+    accept [:approved_by]
+    require_atomic? false
+    change Xaas.Governance.Changes.ApprovalBackupRetentionChangeApprove
+    validate Xaas.Governance.Validations.ApprovalBackupRetentionChangeRequiresApprover
+  end
+end
+
+policies do
+  bypass action(:approve) do
+    authorize_if always()
+  end
+end
+```
+
+Real business rule (`ApprovalBackupRetentionChangeRequiresApprover`, matching
+platform-console's own stated reasoning — "a retention change is a real
+compliance-evidence-affecting decision... always requires a second, distinct owner-role
+approver"): `approved_by` must be present and must differ from `requested_by`. Real attributes
+`org_id` and `requested_retention_days` were added (previously `requested_by`/`approved_by`
+only); a real migration (`priv/repo/migrations/20260820235809_add_backup_retention_change_columns.exs`)
+adds the two columns. Per-tier retention-range validation (platform-console's
+`RETENTION_RANGE[tier]`) was **not** ported — this session has not verified xaas's own tier
+model, so the attribute honestly carries the requested value without inventing a range.
+
+Real Chicago-style coverage:
+`test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` — accept
+case, missing-approver reject, self-approval reject, no-token 401 reject.
 
 ### Deliberately unwired (5 resources, no `json_api` block at all)
 
