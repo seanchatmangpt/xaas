@@ -3,7 +3,19 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     otp_app: :kanban,
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+
+  policies do
+    # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
+    # this resource had zero policy blocks before this commit, meaning
+    # implicit allow-all authorization on a repo with real deployed infra.
+    # Replace with real per-action rules as domain owners define them; never
+    # relax this to allow-all without an explicit rule.
+    policy always() do
+      forbid_if always()
+    end
+  end
 
   graphql do
     type :approval_tier_downgrade

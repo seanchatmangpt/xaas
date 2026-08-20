@@ -2,7 +2,19 @@ defmodule Xaas.Ledger.Transfer do
   use Xaas.Resource,
     domain: Elixir.Xaas.Ledger,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshDoubleEntry.Transfer]
+
+  policies do
+    # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
+    # this resource had zero policy blocks before this commit, meaning
+    # implicit allow-all authorization on a repo with real deployed infra.
+    # Replace with real per-action rules as domain owners define them; never
+    # relax this to allow-all without an explicit rule.
+    policy always() do
+      forbid_if always()
+    end
+  end
 
   transfer do
     account_resource Xaas.Ledger.Account
