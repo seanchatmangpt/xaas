@@ -70,5 +70,5 @@ variable "purge_file" {
 variable "image_to_deploy" {
   type        = string
   description = "Image to deploy"
-  default     = "ghcr.io/YOUR_GITHUB_USERNAME/kanban:latest"
+  default     = "ghcr.io/seanchatmangpt/kanban:latest"
 }

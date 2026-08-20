@@ -4,5 +4,5 @@ module "grafana_setup" {
   grafana_auth        = "anonymous"
   prometheus_url      = "http://prometheus:9090"
   loki_url            = "http://loki:3100"
-  alert_contact_email = "YOUR_EMAIL_ADDRESS"
+  alert_contact_email = "xpointsh@gmail.com"
 }

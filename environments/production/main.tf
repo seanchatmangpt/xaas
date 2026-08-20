@@ -22,7 +22,7 @@ module "repository_secrets" {
     "GH_PAT"                = var.gh_pat
   }
   repository   = "kanban"
-  github_owner = "YOUR_GITHUB_USERNAME"
+  github_owner = "seanchatmangpt"
 }
 
 module "contributing_workflow" {
