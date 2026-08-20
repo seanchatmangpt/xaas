@@ -1,8 +1,11 @@
 defmodule Xaas.Governance do
   use Ash.Domain,
     otp_app: :kanban,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshPaperTrail.Domain]
 
+  paper_trail do
+    include_versions? true
+  end
 
   resources do
     resource Xaas.Governance.ApprovalBackupRetentionChange

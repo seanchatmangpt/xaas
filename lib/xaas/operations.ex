@@ -10,6 +10,7 @@ defmodule Xaas.Operations do
     resource Xaas.Operations.CastleVerbFortune5Requirements
     resource Xaas.Operations.CastleVerbInventoryComponents
     resource Xaas.Operations.CastleVerbInventoryGoals
+    resource Xaas.Operations.CapabilityLivenessReceipt
     resource Xaas.Operations.RouteCastleDeploy
     resource Xaas.Operations.RouteCastleRun
     resource Xaas.Operations.RouteCastleSchedule

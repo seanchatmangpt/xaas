@@ -4,7 +4,11 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource]
+
+  paper_trail do
+    change_tracking_mode :full_diff
+  end
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --

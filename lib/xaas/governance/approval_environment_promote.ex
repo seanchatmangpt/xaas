@@ -4,7 +4,7 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshStateMachine]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -30,8 +30,34 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     repo Xaas.Repo
   end
 
+  state_machine do
+    initial_states([:pending])
+    default_initial_state(:pending)
+    state_attribute(:status)
+
+    transitions do
+      transition(:approve, from: :pending, to: :approved)
+      transition(:reject, from: :pending, to: :rejected)
+    end
+  end
+
   actions do
     defaults [:read]
+
+    create :request do
+      accept [:requested_by]
+    end
+
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      change transition_state(:approved)
+    end
+
+    update :reject do
+      require_atomic? false
+      change transition_state(:rejected)
+    end
   end
 
   attributes do

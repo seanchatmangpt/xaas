@@ -4,7 +4,12 @@ defmodule Xaas.Accounts.Token do
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAuthentication.TokenResource]
+    extensions: [AshAuthentication.TokenResource, AshCloak]
+
+  cloak do
+    vault Xaas.Vault
+    attributes [:extra_data]
+  end
 
   postgres do
     table "tokens"

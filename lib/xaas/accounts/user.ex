@@ -4,7 +4,16 @@ defmodule Xaas.Accounts.User do
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAuthentication]
+    extensions: [AshAuthentication, AshArchival.Resource]
+
+  archive do
+    # Soft-delete: destroying a user sets archived_at instead of removing the
+    # row. AshAuthentication's :get_by_email / :get_by_subject reads must
+    # keep excluding archived users by default (no exclude_read_actions), so
+    # an archived user can no longer sign in or be looked up by identity.
+    attribute :archived_at
+    base_filter? true
+  end
 
   authentication do
     add_ons do
@@ -63,6 +72,11 @@ defmodule Xaas.Accounts.User do
 
   actions do
     defaults [:read]
+
+    destroy :destroy do
+      description "Archive (soft-delete) a user instead of removing the row."
+      primary? true
+    end
 
     read :get_by_subject do
       description "Get a user by the subject claim in a JWT"
@@ -287,6 +301,10 @@ defmodule Xaas.Accounts.User do
     end
 
     attribute :confirmed_at, :utc_datetime_usec
+
+    attribute :archived_at, :utc_datetime_usec do
+      public? true
+    end
   end
 
   identities do
