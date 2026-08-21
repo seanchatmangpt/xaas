@@ -99,6 +99,16 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
 
     assert persisted.approved_by == "owner-real-1"
     assert persisted.requested_retention_days == 90
+
+    # Real AshPaperTrail assertion: a version row exists after :approve.
+    versions =
+      ApprovalBackupRetentionChange.Version
+      |> Ash.Query.filter(version_source_id == ^change.id)
+      |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: change.org_id)
+      |> Ash.read!()
+
+    assert length(versions) == 2
+    assert Enum.map(versions, & &1.version_action_type) |> Enum.sort() == [:create, :update]
   end
 
   test "PATCH .../:id rejects approval missing an approver", %{conn: conn} do

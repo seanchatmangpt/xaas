@@ -6,6 +6,7 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
   mocking.
   """
   use KanbanWeb.ConnCase
+  require Ash.Query
 
   alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalDeploymentQuarantine
@@ -81,6 +82,16 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
     persisted = ApprovalDeploymentQuarantine |> Ash.get!(id, authorize?: false, tenant: org_id)
     assert persisted.deployment_name == "checkout-api"
     assert persisted.environment == :prod
+
+    # Real AshPaperTrail assertion: a version row exists after :approve.
+    versions =
+      ApprovalDeploymentQuarantine.Version
+      |> Ash.Query.filter(version_source_id == ^id)
+      |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: org_id)
+      |> Ash.read!()
+
+    assert length(versions) == 2
+    assert Enum.map(versions, & &1.version_action_type) |> Enum.sort() == [:create, :update]
   end
 
   test "PATCH rejects a requester approving their own quarantine", %{conn: conn} do

@@ -7,6 +7,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
   (Xaas.Repo). No mocking.
   """
   use KanbanWeb.ConnCase
+  require Ash.Query
 
   alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalDrFailover
@@ -93,6 +94,18 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
     persisted = ApprovalDrFailover |> Ash.get!(id, authorize?: false, tenant: org_id)
     assert persisted.from_region == "us-east-1"
     assert persisted.to_region == "us-west-2"
+
+    # Real AshPaperTrail assertion: a version row exists after :approve,
+    # proving the maker-checker decision now has a real change-tracking
+    # record (this batch's target gap), not just the authorization check.
+    versions =
+      ApprovalDrFailover.Version
+      |> Ash.Query.filter(version_source_id == ^id)
+      |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: org_id)
+      |> Ash.read!()
+
+    assert length(versions) == 2
+    assert Enum.map(versions, & &1.version_action_type) |> Enum.sort() == [:create, :update]
   end
 
   test "PATCH rejects a requester approving their own failover", %{conn: conn} do

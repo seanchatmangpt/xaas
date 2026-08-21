@@ -7,6 +7,7 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
   mocking.
   """
   use KanbanWeb.ConnCase
+  require Ash.Query
 
   alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalLegalHoldRelease
@@ -81,6 +82,16 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
 
     persisted = ApprovalLegalHoldRelease |> Ash.get!(id, authorize?: false, tenant: org_id)
     assert persisted.release_reason == "litigation concluded, hold no longer required"
+
+    # Real AshPaperTrail assertion: a version row exists after :approve.
+    versions =
+      ApprovalLegalHoldRelease.Version
+      |> Ash.Query.filter(version_source_id == ^id)
+      |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: org_id)
+      |> Ash.read!()
+
+    assert length(versions) == 2
+    assert Enum.map(versions, & &1.version_action_type) |> Enum.sort() == [:create, :update]
   end
 
   test "PATCH rejects an owner approving their own legal hold release", %{conn: conn} do
