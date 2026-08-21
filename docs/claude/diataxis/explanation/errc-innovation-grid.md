@@ -6,8 +6,135 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (twenty-first pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (twenty-second pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Twenty-second-pass update
+
+**Real HEAD confirmed: `f8119db`.** `git rev-parse HEAD` →
+`f8119db3652f0abf4aed8a2637f5df283124b06e`. One real commit landed since the
+twenty-first-pass grid's own `1a79970`: `f8119db` ("round 20" in its own commit message —
+implements the twenty-first-pass grid's own selected CREATE item, item 29/`PentestFinding`
+below). Real-verified via `git show f8119db --stat`: 6 files, 751 insertions —
+`errc-innovation-grid.md` (the twenty-first-pass section itself),
+`lib/kanban_web/plugs/resolve_org_actor.ex`, two new check modules
+(`lib/xaas/governance/checks/pentest_finding_actor_org_matches.ex`,
+`lib/xaas/governance/checks/pentest_finding_actor_org_filter.ex`),
+`lib/xaas/governance/pentest_finding.ex`, and a new
+`test/kanban_web/controllers/pentest_finding_controller_test.exs` (342 lines). **The
+twenty-first-pass CREATE item (the live-HTTP-proven cross-org status-flip on an existing
+victim-org `PentestFinding` row) is now RESOLVED, independently re-verified this pass, not
+just cited from the commit message**: `pentest_finding.ex`'s `:create`/`:remediate` bypasses
+(real-read this pass, lines 46-52) now call `authorize_if
+Xaas.Governance.Checks.PentestFindingActorOrgMatches` and `authorize_if
+Xaas.Governance.Checks.PentestFindingActorOrgFilter` respectively, in place of the old bare
+`authorize_if always()` on both; `PentestFindingActorOrgMatches` (real-read in full) is a
+genuine `Ash.Policy.SimpleCheck`, direct-changeset-attribute `match?/3`, fail-closed;
+`PentestFindingActorOrgFilter` (real-read in full) is a genuine `Ash.Policy.FilterCheck`,
+`expr(org_id == ^actor(:org_id))`, mirroring `Xaas.Marketplace.Provider`'s proven
+`:create`/`:update` split rather than risking the `changeset.data`-unavailable atomic
+pathology on an action (`:remediate`) whose only 2 clauses are atomic-capable Ash built-ins;
+`resolve_org_actor.ex`'s `@tenant_scoped_path_segments` (real-read this pass, now a 14-entry
+list) includes `pentest_findings`. **Per this pass's own task instruction — do not
+re-propose this fix, it's fixed.** (Real, disclosed doc-hygiene note: the twenty-first-pass
+section's own structured item 29 still reads "Selected as this pass's CREATE item" without a
+`RESOLVED` marker, because that analysis and its implementation landed in the same commit
+[`f8119db`] rather than the usual analyze-then-separate-implementation-commit split — item 30
+below corrects the structured list to reflect the real committed state, the underlying prose
+section is left as the real historical record of that pass's own reasoning, not rewritten.)
+
+**Real-verified, not merely re-accepted: `ApprovalOrgDelete` and `ApprovalFreezeOverride`'s
+own `:approve` actions are genuinely inert, exactly as round 20's commit message and the
+task's own framing state — but that framing covers `:approve` only, not `:create`, and this
+pass checked the distinction explicitly rather than let the "genuinely inert" label bleed
+onto the whole resource.** Both files real-read again this pass, byte-for-byte unchanged
+since the twenty-first-pass read: `approval_org_delete.ex:84-88` and
+`approval_freeze_override.ex:81-85` each show `:approve` wires only a `validate
+*RequiresApprover` line, no `change` of any kind — real-confirmed inert, matching the task's
+framing exactly. `:create` on both (`approval_org_delete.ex:62-64`,
+`approval_freeze_override.ex:72-74`) is unchanged too: still a bare `bypass action(:create) do
+authorize_if always() end` with a real, caller-accepted `org_id` attribute — a real, live,
+still-unfixed forgery gap, not itself inert. Per this pass's own task instruction, this
+org-scoping gap on `:create` is **not** re-proposed as this round's item (the "no fix needed"
+verdict is accepted for `:approve`'s zero-live-effect shape, which is the actual reason these
+2 resources are lower priority than `PentestFinding` was); it remains real, disclosed, deferred
+scope, not silently erased from the grid.
+
+**This pass's task: real-verify round 20's own separately-disclosed `ApprovalFreezeOverride`
+`FreezeWindow`-reference gap against the CURRENT codebase, and independently retrospective-
+check 5 of the earliest-fixed resources (rounds 14-16) for regressions introduced by the 5
+subsequent rounds of changes (17-20) — then select whichever surfaces the more concrete
+finding.**
+
+- **Retrospective re-verification of rounds 14-16 (`ApprovalTierDowngrade`,
+  `ApprovalSlaCreditApply`, `ApprovalPatchSlaCreditApply`, `Incident`, `ApprovalDrFailover`):
+  real, clean result — zero regression found, both statically and at real test-run time, not
+  assumed from a prior pass's citation.** All 5 resources' `policies do` blocks real-read this
+  pass (`lib/xaas/billing/approval_tier_downgrade.ex:98-103`,
+  `lib/xaas/billing/approval_sla_credit_apply.ex:65-70`,
+  `lib/xaas/billing/approval_patch_sla_credit_apply.ex:59-64`,
+  `lib/xaas/operations/incident.ex:83-88`, `lib/xaas/governance/approval_dr_failover.ex:38-43`)
+  — every one of the 5 org-scoping checks landed in rounds 14-17 is still wired exactly as
+  fixed, byte-for-byte. `resolve_org_actor.ex`'s `@tenant_scoped_path_segments` (real-read,
+  the current 14-entry list) still includes all 5 of `approval_tier_downgrade`,
+  `approval_sla_credit_apply`, `approval_patch_sla_credit_apply`, `incidents`,
+  `approval_dr_failover` — none dropped by later edits. The round-16 cross-resource fix
+  (`ApprovalDrFailoverRequiresOpenIncident`'s precondition query filtering on `org_id`, not
+  just `region`/`status`) is real-read and unchanged
+  (`lib/xaas/governance/validations/approval_dr_failover_requires_open_incident.ex:54`). Real
+  test-run evidence, not just static reading: `mix test
+  test/kanban_web/controllers/{incident,approval_tier_downgrade,
+  approval_patch_sla_credit_apply,approval_dr_failover,approval_sla_credit_apply}_controller_test.exs`
+  → **36 tests, 0 failures**, run once against the current `f8119db` tree. A real, valuable
+  confirmation — 20 real rounds of subsequent changes have not silently eroded any of these 5
+  fixes — but a negative result: no new, actionable defect to hand to the Create phase.
+- **Round 20's `ApprovalFreezeOverride`/`FreezeWindow`-reference gap: real-verified still
+  accurate against the current tree, and sharpened into a concrete 3-part finding with exact
+  evidence, not just re-cited.** `approval_freeze_override.ex:72-74` (`:create`, real-read):
+  `accept [:org_id, :requested_by, :freeze_window_id, :reason]` — `freeze_window_id` is a
+  plain `:string` attribute (its own comment at `approval_freeze_override.ex:105-108`: "Kept
+  as a plain string id (not a `belongs_to`) to match this domain's existing Governance
+  resources"), never checked against any real `Xaas.Governance.FreezeWindow` row anywhere in
+  the `:create` action. `approval_freeze_override_requires_approver.ex` (real-read in full, 32
+  lines) — the only validation gating `:approve` — checks solely `approved_by`/`requested_by`
+  identity; zero reference to `FreezeWindow`, `freeze_window_id`, or
+  `allow_emergency_override` anywhere in the file. `freeze_window.ex:138-142` (real-read):
+  `allow_emergency_override` is a real, meaningful boolean (default `false`) whose own comment
+  states its purpose is exactly "whether a maker-checker `ApprovalFreezeOverride` request may
+  be filed against this window at all." Zero test coverage of any kind confirmed this pass:
+  `find test -iname "*approval_freeze_override*"` → zero matches. **Concretely, this is 3
+  distinct, real gaps in one action, not one**: (1) no existence check — a caller can supply
+  any string, including one matching zero real `FreezeWindow` rows; (2) no cross-resource
+  org-match check — a caller can reference a real `FreezeWindow` belonging to a **different**
+  org than the override request's own `org_id`, a real integrity gap independent of (and
+  additive to) the already-deferred actor-vs-request org-scoping question on this resource's
+  own bypasses; (3) no `allow_emergency_override` check — a caller can file, and get approved,
+  an override against a real, same-org `FreezeWindow` whose own creator explicitly set
+  `allow_emergency_override: false`, producing a persisted "approved" maker-checker record
+  that directly contradicts that window's own configured policy. Real severity: because
+  `:approve` is confirmed metadata-only (no cascading infra effect, per the finding above),
+  today's real, live harm is a compliance/audit-trail integrity break — a real, persisted,
+  SOC2-CC8-adjacent (per this domain's own `FreezeWindow`/`ApprovalEnvironmentPromote`
+  moduledocs) record that misrepresents a real freeze-override decision — not an infra-level
+  compromise.
+- **Selected: the `FreezeWindow`-reference gap, not the retrospective sweep, is this pass's
+  concrete finding.** The retrospective (5 resources, 36 real tests, 0 failures) is real and
+  worth having run, but it is a clean bill of health, not an actionable defect — nothing for
+  the Create phase to fix. The `FreezeWindow`-reference gap is real, citable to exact
+  file:line evidence, has zero existing test coverage, is orthogonal to the deliberately
+  deferred org-scoping decision on this same resource (a new `validate` on `:create` needs no
+  change to the `policies do` block's bypasses, so it does not re-propose the deferred fix),
+  and is independently confirmable as unfixed by both round 20's own disclosure and this
+  pass's own fresh read. Full spec in the structured output below.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this pass
+shows the same real artifacts recent passes have already logged as other standing activities'
+own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and untracked
+`GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl`. None touch
+`lib/xaas/governance/`, `lib/xaas/billing/`, `lib/xaas/operations/`, or any file this pass's
+finding depends on. None read beyond filenames, none touched.
 
 ## Twenty-first-pass update
 
@@ -2691,6 +2818,39 @@ sequence cover these):
     needed; both resources' `*RequiresApprover` validations already disqualify atomic mode,
     real-confirmed via a full read of both — neither implements `atomic/3`). Full spec in
     "Twenty-first-pass update" above.
+30. **RESOLVED** (was this grid's own item 29's `PentestFinding` half, twenty-first pass): a
+    real `Xaas.Governance.Checks.PentestFindingActorOrgMatches` (`SimpleCheck`) wired onto
+    `:create` and a real `Xaas.Governance.Checks.PentestFindingActorOrgFilter` (`FilterCheck`)
+    wired onto `:remediate`, plus `pentest_findings` added to `ResolveOrgActor`'s
+    `@tenant_scoped_path_segments` — **landed for real as `f8119db`** (round 20), confirmed
+    live this (twenty-second) pass: all 3 changed/new `lib/` files real-read in full,
+    `test/kanban_web/controllers/pentest_finding_controller_test.exs` (342 lines, new)
+    provides `PentestFinding`'s first-ever real HTTP-level coverage. Closed the cross-org
+    status-flip on an existing victim-org row. The item 29 sub-items for `ApprovalOrgDelete`
+    and `ApprovalFreezeOverride` remain real, disclosed, deferred follow-up scope — not
+    resolved, not dropped. See "Twenty-second-pass update" above.
+31. **Selected as this pass's (twenty-second) CREATE item.** Real-verified round 20's own
+    disclosed `ApprovalFreezeOverride`/`FreezeWindow`-reference gap is still accurate and
+    sharpened it into a concrete 3-part finding (no existence check, no cross-org check, no
+    `allow_emergency_override` check on the referenced `FreezeWindow`), against a real,
+    independently-run retrospective test sweep of 5 rounds-14-16 resources
+    (`ApprovalTierDowngrade`, `ApprovalSlaCreditApply`, `ApprovalPatchSlaCreditApply`,
+    `Incident`, `ApprovalDrFailover`) that found zero regression (36 real tests, 0 failures,
+    all 5 org-scoping checks and the round-16 cross-resource `org_id` precondition fix
+    confirmed byte-for-byte intact) — a real, valuable, but non-actionable clean bill of
+    health. The `FreezeWindow`-reference gap is selected as the more concrete finding: real,
+    zero existing test coverage of any kind, orthogonal to (and does not re-propose) the
+    deliberately deferred org-scoping decision on this same resource's `policies do` bypasses
+    — the fix is a new `validate` on `:create` only, touching no `bypass`/`authorize_if` line.
+    Scope: a new `Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists`
+    (`Ash.Resource.Validation`, real `Ash.get(Xaas.Governance.FreezeWindow, freeze_window_id,
+    authorize?: false)` lookup — the same `authorize?: false` cross-resource-read discipline
+    `Xaas.Billing.Checks.ActorOrgMatches`'s own `subscription_org_id/1` already uses — checking
+    (a) the row exists, (b) its `org_id` matches the override request's own `org_id`, (c) its
+    `allow_emergency_override` is `true`) wired onto `ApprovalFreezeOverride:create`; a new
+    controller/unit test file (currently zero coverage of any kind) proving the missing-window,
+    cross-org-window, and `allow_emergency_override: false` rejection cases plus the legitimate
+    accept path. Full spec in "Twenty-second-pass update" above and the structured output below.
 
 ## See Also
 
@@ -2873,3 +3033,26 @@ sequence cover these):
   `lib/xaas/billing/subscription.ex` — the real, confirmed-correct-as-is negatives (2
   permanently-denied-by-design resources, 1 already-known read-only route-declaration drift)
   this pass's systematic 56-resource sweep re-confirmed rather than flagged
+- `lib/xaas/governance/pentest_finding.ex`,
+  `lib/xaas/governance/checks/pentest_finding_actor_org_matches.ex`,
+  `lib/xaas/governance/checks/pentest_finding_actor_org_filter.ex`,
+  `lib/kanban_web/plugs/resolve_org_actor.ex`,
+  `test/kanban_web/controllers/pentest_finding_controller_test.exs` — the real files item 30
+  (round 20, `f8119db`) landed, re-verified this (twenty-second) pass
+- `lib/xaas/billing/approval_tier_downgrade.ex:98-103`,
+  `lib/xaas/billing/approval_sla_credit_apply.ex:65-70`,
+  `lib/xaas/billing/approval_patch_sla_credit_apply.ex:59-64`,
+  `lib/xaas/operations/incident.ex:83-88`,
+  `lib/xaas/governance/approval_dr_failover.ex:38-43`,
+  `lib/xaas/governance/validations/approval_dr_failover_requires_open_incident.ex:54` — the 5
+  rounds-14-16 fixes this pass's retrospective re-read confirmed byte-for-byte intact, plus the
+  real `mix test` run (5 controller test files, 36 tests, 0 failures) that backs the claim
+- `lib/xaas/governance/approval_freeze_override.ex:72-85`,
+  `lib/xaas/governance/validations/approval_freeze_override_requires_approver.ex`,
+  `lib/xaas/governance/freeze_window.ex:138-142`,
+  `lib/xaas/billing/checks/actor_org_matches.ex` (the `authorize?: false` cross-resource-read
+  pattern this pass's selected CREATE item — item 31 — reuses) — the real files this pass's
+  own selected CREATE item is grounded in and would touch
+- `lib/xaas/governance/approval_org_delete.ex:62-64,84-88` — the real, still-unfixed `:create`
+  forgery gap and the real, confirmed-inert `:approve`, distinguished explicitly this pass
+  rather than let round 20's "genuinely inert" framing blur the two

@@ -14,6 +14,22 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
   convention and maker-checker shape of the other 22 `Approval*`
   Governance resources), and add a separate `FreezeWindow` resource for
   the freeze-declaration concept that actually matches the real route.
+
+  ## `freeze_window_id` reference validation (twenty-second-pass ERRC fix)
+
+  `:create` accepts a caller-supplied `freeze_window_id` that was
+  previously never validated against any real `Xaas.Governance.
+  FreezeWindow` row. `Xaas.Governance.Validations.
+  ApprovalFreezeOverrideFreezeWindowExists` now closes 3 real gaps:
+  existence, cross-org integrity (the referenced window must belong to
+  this request's own `org_id`), and the window's own
+  `allow_emergency_override` flag must be `true`. See that module's
+  moduledoc for the full real gap this closes. This is orthogonal to, and
+  does not resolve, the separately-deferred actor-vs-request org-scoping
+  question on this resource's own `policies do` bypasses (both `:create`
+  and `:approve` remain on `authorize_if always()`, unchanged by this
+  fix) -- see `docs/claude/diataxis/explanation/errc-innovation-grid.md`
+  for that standing, disclosed deferral.
   """
   use Xaas.Resource,
     otp_app: :kanban,
@@ -69,8 +85,13 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
   actions do
     defaults [:read]
 
+    # Real business rule lives in
+    # Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists --
+    # freeze_window_id must reference a real, same-org FreezeWindow row
+    # whose own allow_emergency_override flag is true.
     create :create do
       accept [:org_id, :requested_by, :freeze_window_id, :reason]
+      validate Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists
     end
 
     # Real mutation route: approve a pending emergency override of an
