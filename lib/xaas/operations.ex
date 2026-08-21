@@ -14,6 +14,7 @@ defmodule Xaas.Operations do
     resource(Xaas.Operations.CastleVerbInventoryComponents)
     resource(Xaas.Operations.CastleVerbInventoryGoals)
     resource(Xaas.Operations.CapabilityLivenessReceipt)
+    resource(Xaas.Operations.Incident)
     resource(Xaas.Operations.RouteCastleDeploy)
     resource(Xaas.Operations.RouteCastleRun)
     resource(Xaas.Operations.RouteCastleSchedule)

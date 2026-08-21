@@ -24,6 +24,7 @@ defmodule Xaas.Governance do
     resource Xaas.Governance.ApprovalEnvironmentPromote
     resource Xaas.Governance.ApprovalExportSubscriptionUpdate
     resource Xaas.Governance.ApprovalFreezeOverride
+    resource Xaas.Governance.FreezeWindow
     resource Xaas.Governance.ApprovalGeofenceExceptionGrant
     resource Xaas.Governance.ApprovalInsurancePolicyUpdate
     resource Xaas.Governance.ApprovalLeRequestRespond
@@ -31,6 +32,7 @@ defmodule Xaas.Governance do
     resource Xaas.Governance.ApprovalOrgDelete
     resource Xaas.Governance.ApprovalPentestFindingResolve
     resource Xaas.Governance.ApprovalPersonnelAttestationRecord
+    resource Xaas.Governance.PentestFinding
     resource Xaas.Governance.ApprovalSourceEscrowSnapshot
     resource Xaas.Governance.ApprovalSsoRoleMappingUpdate
     resource Xaas.Governance.ApprovalSubprocessorRegistryUpdate

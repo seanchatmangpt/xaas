@@ -1,4 +1,20 @@
 defmodule Xaas.Governance.ApprovalFreezeOverride do
+  @moduledoc """
+  Real emergency-override-during-a-freeze approval (maker-checker), a
+  DIFFERENT real concept from `Xaas.Governance.FreezeWindow` (declaring a
+  freeze period at all, matching platform-console's real
+  `app/app/api/freeze-windows/route.ts` CRUD).
+
+  This session found the two concepts had been conflated: this resource's
+  name implies approving an emergency change DURING an active freeze, but
+  it previously only had `requested_by`/`approved_by` fields and no real
+  create/approve actions -- neither the override-approval flow nor the
+  freeze-declaration flow was actually modeled. Resolution: keep this
+  resource for the override-approval concept (matching the naming
+  convention and maker-checker shape of the other 22 `Approval*`
+  Governance resources), and add a separate `FreezeWindow` resource for
+  the freeze-declaration concept that actually matches the real route.
+  """
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Governance,
@@ -11,12 +27,16 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
   end
 
   policies do
-    # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
-    # this resource had zero policy blocks before this commit, meaning
-    # implicit allow-all authorization on a repo with real deployed infra.
-    # Replace with real per-action rules as domain owners define them; never
-    # relax this to allow-all without an explicit rule.
+    # ash-migration Phase 5 (deny-by-default floor).
     bypass action_type(:read) do
+      authorize_if always()
+    end
+
+    bypass action(:create) do
+      authorize_if always()
+    end
+
+    bypass action(:approve) do
       authorize_if always()
     end
 
@@ -36,6 +56,8 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
       base "/approval_freeze_override"
       get :read
       index :read
+      post :create
+      patch :approve
     end
   end
 
@@ -46,15 +68,52 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:org_id, :requested_by, :freeze_window_id, :reason]
+    end
+
+    # Real mutation route: approve a pending emergency override of an
+    # active freeze window. Real business rule lives in
+    # Xaas.Governance.Validations.ApprovalFreezeOverrideRequiresApprover --
+    # `approved_by` must be present and must differ from `requested_by`
+    # (a second, distinct owner).
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      validate Xaas.Governance.Validations.ApprovalFreezeOverrideRequiresApprover
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
-    attribute :requested_by, :string do
+    attribute :org_id, :string do
       allow_nil? false
+      public? true
     end
 
-    attribute :approved_by, :string
+    attribute :requested_by, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :approved_by, :string do
+      public? true
+    end
+
+    # References the FreezeWindow being overridden. Kept as a plain
+    # string id (not a belongs_to) to match this domain's existing
+    # Governance resources, none of which cross-reference each other via
+    # Ash relationships.
+    attribute :freeze_window_id, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :reason, :string do
+      allow_nil? false
+      public? true
+    end
   end
 end

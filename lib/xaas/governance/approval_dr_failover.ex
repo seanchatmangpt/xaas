@@ -66,18 +66,21 @@ defmodule Xaas.Governance.ApprovalDrFailover do
 
     # Real mutation route (issue #20), ported from platform-console's
     # POST /api/dr/initiate-failover maker-checker flow: approve a
-    # pending multi-region DR failover. Real business rule lives in
-    # Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover --
-    # `approved_by` must be present and must differ from `requested_by`
-    # (a second, distinct owner). platform-console's own additional
-    # runtime precondition (an open incident referencing `from_region`
-    # must exist before failover runs) is NOT ported -- this session has
-    # not modeled an Incident resource in xaas, so that check is honestly
-    # left undone rather than fabricated.
+    # pending multi-region DR failover. Real business rules:
+    #   - Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover --
+    #     `approved_by` must be present and must differ from
+    #     `requested_by` (a second, distinct owner).
+    #   - Xaas.Governance.Validations.
+    #     ApprovalDrFailoverRequiresOpenIncident -- platform-console's own
+    #     additional runtime precondition, now real: an open
+    #     Xaas.Operations.Incident referencing `from_region` must exist.
+    #     This closes the gap this moduledoc used to disclose as honestly
+    #     undone (no Incident resource existed in xaas); it now does.
     update :approve do
       accept [:approved_by]
       require_atomic? false
       validate Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover
+      validate Xaas.Governance.Validations.ApprovalDrFailoverRequiresOpenIncident
     end
   end
 

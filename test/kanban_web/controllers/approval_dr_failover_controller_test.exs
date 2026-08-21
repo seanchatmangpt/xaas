@@ -9,6 +9,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
   use KanbanWeb.ConnCase
 
   alias Xaas.Governance.ApprovalDrFailover
+  alias Xaas.Operations.Incident
 
   setup do
     Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -17,6 +18,20 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
   defp with_internal_api_token(conn) do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
+  # Real, required since ApprovalDrFailoverRequiresOpenIncident was added
+  # this session: approving a failover now requires a real open Incident
+  # referencing the same from_region to exist first.
+  defp open_incident!(org_id, region) do
+    Incident
+    |> Ash.Changeset.for_create(:create, %{
+      org_id: org_id,
+      title: "Test incident for #{region}",
+      region: region,
+      opened_at: DateTime.utc_now()
+    })
+    |> Ash.create!(authorize?: false)
   end
 
   defp json_headers(conn) do
@@ -28,11 +43,14 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
   test "POST creates a real pending failover request, PATCH approves it from a distinct owner",
        %{conn: conn} do
+    org_id = "org-#{System.unique_integer([:positive])}"
+    open_incident!(org_id, "us-east-1")
+
     create_body = %{
       "data" => %{
         "type" => "approval_dr_failover",
         "attributes" => %{
-          "org_id" => "org-#{System.unique_integer([:positive])}",
+          "org_id" => org_id,
           "requested_by" => "requester-1",
           "from_region" => "us-east-1",
           "to_region" => "us-west-2",
@@ -64,11 +82,13 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
   test "PATCH rejects a requester approving their own failover", %{conn: conn} do
     requester = "requester-self-#{System.unique_integer([:positive])}"
+    org_id = "org-x-#{System.unique_integer([:positive])}"
+    open_incident!(org_id, "us-east-1")
 
     change =
       ApprovalDrFailover
       |> Ash.Changeset.for_create(:create, %{
-        org_id: "org-x",
+        org_id: org_id,
         requested_by: requester,
         from_region: "us-east-1",
         to_region: "us-west-2",

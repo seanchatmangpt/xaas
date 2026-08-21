@@ -89,7 +89,12 @@ config :ash,
     subprocessor_category: Xaas.Governance.Types.SubprocessorCategory,
     subprocessor_change_action: Xaas.Governance.Types.SubprocessorChangeAction,
     org_role: Xaas.Governance.Types.OrgRole,
-    deployment_quarantine_reason: Xaas.Governance.Types.DeploymentQuarantineReason
+    deployment_quarantine_reason: Xaas.Governance.Types.DeploymentQuarantineReason,
+    incident_severity: Xaas.Operations.Types.IncidentSeverity,
+    incident_status: Xaas.Operations.Types.IncidentStatus,
+    incident_postmortem_status: Xaas.Operations.Types.IncidentPostmortemStatus,
+    pentest_finding_severity: Xaas.Governance.Types.PentestFindingSeverity,
+    pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus
   ]
 
 # Configures the endpoint

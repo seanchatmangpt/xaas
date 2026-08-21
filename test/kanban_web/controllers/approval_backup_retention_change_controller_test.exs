@@ -11,6 +11,7 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
   use KanbanWeb.ConnCase
   require Ash.Query
 
+  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalBackupRetentionChange
   alias Xaas.Ledger.{Account, Balance}
 
@@ -23,8 +24,21 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
+  # Real, required since this resource's real Ash-core multitenancy
+  # wiring: org_id is now a real FK to orgs.slug, so every test needs a
+  # real Org row to reference, not just a made-up string.
+  defp real_org_slug! do
+    Org
+    |> Ash.Changeset.for_create(:create, %{
+      name: "Test Org",
+      slug: "org-#{System.unique_integer([:positive])}"
+    })
+    |> Ash.create!(authorize?: false)
+    |> Map.fetch!(:slug)
+  end
+
   defp create_pending!(requested_by, opts \\ []) do
-    org_id = Keyword.get(opts, :org_id, "org-#{System.unique_integer([:positive])}")
+    org_id = Keyword.get_lazy(opts, :org_id, &real_org_slug!/0)
     tier = Keyword.get(opts, :tier, :pro)
     days = Keyword.get(opts, :days, 90)
 
@@ -151,7 +165,7 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     result =
       ApprovalBackupRetentionChange
       |> Ash.Changeset.for_create(:create, %{
-        org_id: "org-#{System.unique_integer([:positive])}",
+        org_id: real_org_slug!(),
         requested_by: "requester-range-test",
         requested_retention_days: 200,
         tier: :pro
@@ -166,7 +180,7 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
        %{conn: conn} do
     # pro tier's real default is 30 days; requesting 90 is 60 days of real
     # overage at the invented $0.10/day placeholder rate = $6.00.
-    org_id = "org-overage-#{System.unique_integer([:positive])}"
+    org_id = real_org_slug!()
     change = create_pending!("requester-#{System.unique_integer([:positive])}", org_id: org_id, tier: :pro, days: 90)
 
     body = %{
@@ -194,7 +208,7 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
   test "approving a change within the tier default charges no real overage fee", %{conn: conn} do
     # starter tier's real default is 7 days; requesting 5 (within range,
     # under default) -- no overage, no ledger transfer should be created.
-    org_id = "org-no-overage-#{System.unique_integer([:positive])}"
+    org_id = real_org_slug!()
     change = create_pending!("requester-#{System.unique_integer([:positive])}", org_id: org_id, tier: :starter, days: 5)
 
     body = %{
