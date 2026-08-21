@@ -1,0 +1,10 @@
+@prefix aacm: <https://xaas.dev/ontology/autofde-monitor#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+aacm:PlannerCandidate_de16ca76-6338-46f5-8d09-98a0a3d7784b
+  a aacm:PlannerCandidate ;
+  aacm:query "{\"domain_path\":\"tests/domains/python/pddl_domains/blocks/domain.pddl\",\"problem_path\":\"tests/domains/python/pddl_domains/blocks/probBLOCKS-3-0.pddl\"}" ;
+  aacm:trajectorySha256 "552b0104cf2645c0da10dcc18ed97d68ac3fc140774c51a14d8c11fa7e9417ed" ;
+  aacm:solver "Astar" ;
+  aacm:domain "PDDLDomain" ;
+  aacm:requestedAt "2026-08-21T02:49:30.909650Z"^^xsd:dateTime .
