@@ -533,20 +533,74 @@ xar:ApprovalGeofenceExceptionGrantRender a xar:RenderTarget ;
 # --- ash-igniter-gen-pipeline-pack real proof rows (2026-08-20) ---
 # Real, generalized vocabulary (agp:), vendored per the same real
 # path-restriction constraint documented above for xar: -- proves the
-# SAME real SPARQL -> for_each -> sh_after mechanism driving TWO
-# distinct real Igniter-backed mix tasks against the same real,
-# already-satisfied target (CapabilityLivenessReceipt), so real output
-# is a safe no-op on both, not an unreviewed source mutation.
+# SAME real SPARQL -> for_each -> sh_after mechanism driving real
+# Igniter-backed mix tasks against real, already-satisfied targets
+# (CapabilityLivenessReceipt / Xaas.Operations), so real output is a
+# safe no-op on all four rows below, not an unreviewed source mutation.
+#
+# Extended 2026-08-20 with agp:rank (ordered task-graph fan-out): now
+# proves a full real rank-ordered chain -- domain (0) -> resource (1)
+# -> extend (2) -> migration (3) -- against this same already-satisfied
+# target, in addition to the original two-task proof.
 @prefix agp: <https://ggen.io/ontology/ash-igniter-gen-pipeline#> .
+
+agp:XaasOperationsGenDomain a agp:CodegenTarget ;
+  agp:moduleName "Operations" ;
+  agp:domainModule "Xaas" ;
+  agp:mixTask "ash.gen.domain" ;
+  agp:rank 0 .
 
 agp:CapabilityLivenessReceiptGenResource a agp:CodegenTarget ;
   agp:moduleName "CapabilityLivenessReceipt" ;
   agp:domainModule "Xaas.Operations" ;
   agp:mixTask "ash.gen.resource" ;
-  agp:mixArgs "--ignore-if-exists --default-actions read" .
+  agp:mixArgs "--ignore-if-exists --default-actions read" ;
+  agp:rank 1 .
 
 agp:CapabilityLivenessReceiptExtend a agp:CodegenTarget ;
   agp:moduleName "CapabilityLivenessReceipt" ;
   agp:domainModule "Xaas.Operations" ;
   agp:mixTask "ash.extend" ;
-  agp:mixArgs "AshGraphql.Resource --yes" .
+  agp:mixArgs "AshGraphql.Resource --yes" ;
+  agp:rank 2 .
+
+agp:CapabilityLivenessReceiptMigrations a agp:CodegenTarget ;
+  agp:moduleName "CapabilityLivenessReceipt" ;
+  agp:domainModule "Xaas.Operations" ;
+  agp:mixTask "ash_postgres.generate_migrations" ;
+  agp:mixArgs "--name add_capability_liveness_receipt" ;
+  agp:rank 3 .
+
+# ---------------------------------------------------------------------------
+# xaas-terraform-validate: real terraform module paths for fmt/validate-only
+# targets, distinct from xar: (Ash render) and agp: (Ash codegen) semantics.
+# Fixes Generalization L0: terraform-validate.txt.tmpl previously hardcoded
+# a single literal -chdir=modules/integrations/github/project_management,
+# ignoring any SPARQL-bound path. tv:terraformModulePath now carries that
+# path so the same unmodified template can validate multiple real modules.
+# ---------------------------------------------------------------------------
+@prefix tv: <https://ggen.io/ontology/xaas-terraform-validate#> .
+
+tv:ValidateTarget a owl:Class ;
+  rdfs:label "A real terraform module directory paired with the facts needed to run fmt -check / validate against it" .
+
+tv:terraformModulePath a owl:DatatypeProperty ;
+  rdfs:domain tv:ValidateTarget ; rdfs:range xsd:string ;
+  rdfs:comment "Real relative path (from xaas repo root) to a terraform module directory, passed to terraform -chdir=<path>. Fmt/validate only -- never used to drive apply/plan." .
+
+tv:moduleName a owl:DatatypeProperty ;
+  rdfs:domain tv:ValidateTarget ; rdfs:range xsd:string ;
+  rdfs:comment "Short name used for the receipt filename, distinct from the filesystem path." .
+
+tv:domainModule a owl:DatatypeProperty ;
+  rdfs:domain tv:ValidateTarget ; rdfs:range xsd:string .
+
+tv:ProjectManagementValidate a tv:ValidateTarget ;
+  tv:moduleName "project_management" ;
+  tv:domainModule "Xaas.Operations" ;
+  tv:terraformModulePath "modules/integrations/github/project_management" .
+
+tv:ContributingWorkflowValidate a tv:ValidateTarget ;
+  tv:moduleName "contributing_workflow" ;
+  tv:domainModule "Xaas.Operations" ;
+  tv:terraformModulePath "modules/integrations/github/contributing_workflow" .
