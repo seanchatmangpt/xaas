@@ -62,6 +62,19 @@ defmodule KanbanWeb.Router do
     get "/prometheus/query", PrometheusQueryController, :query
   end
 
+  # Real reverse-proxy for the real Ontop SPARQL endpoint (see
+  # KanbanWeb.OntopProxyPlug's moduledoc and
+  # docs/claude/diataxis/explanation/r2rml-ontop-prototype.md). Registered
+  # BEFORE the catch-all `forward "/internal-api"` below for the same real
+  # reason as `/capability_liveness_regressions` etc. above -- `forward`
+  # matches every sub-path under its prefix and would otherwise shadow
+  # this route.
+  scope "/internal-api" do
+    pipe_through [:api, :require_internal_api_token]
+
+    forward "/sparql", KanbanWeb.OntopProxyPlug
+  end
+
   scope "/" do
     pipe_through [:internal_api, :require_internal_api_token]
 

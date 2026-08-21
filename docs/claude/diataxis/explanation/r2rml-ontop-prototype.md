@@ -37,10 +37,28 @@ against real rows in the real dev database.
   prototype's goal (prove the SQL-to-SPARQL round trip); would matter for reasoning/inference
   use cases later.
 - Not evaluated: write access (Ontop is read-only/virtual by design), performance at real
-  data volume, or how this would integrate with Ash's own authorization layer — a
-  SPARQL endpoint bypasses Ash policies entirely, so exposing it beyond localhost needs its
-  own access-control design (same standing rule this repo already applies to the
-  `Xaas.Ledger`/`Xaas.Accounts` resources).
+  data volume.
+- **Network exposure — fixed 2026-08-20.** Ontop's host-published port was real
+  `0.0.0.0:8888` (publicly reachable on the host's network interfaces, confirmed via
+  `docker ps`). Now `docker-compose.ontop.yaml` publishes `127.0.0.1:8888` only, and the
+  only sanctioned way to reach it is `KanbanWeb.OntopProxyPlug`
+  (`lib/kanban_web/plugs/ontop_proxy_plug.ex`), mounted at `/internal-api/sparql` behind
+  the same `KanbanWeb.Plugs.RequireInternalApiToken` pipeline every other `/internal-api`
+  route uses. The proxy talks to Ontop over the real internal `xaas_default` Docker
+  network (`http://ontop:8080`), not the host-published port. Real-proven this session
+  (local `mix phx.server`, real running `xaas-ontop-prototype` container): `GET
+  /internal-api/sparql` with no `Authorization` header → real `401`; with a wrong Bearer
+  token → real `401`; with the real correct `INTERNAL_API_TOKEN` → real `200` with the
+  same real SPARQL JSON the original prototype query returned. Real unit tests for the
+  proxy plug's own auth-and-forwarding behavior:
+  `test/kanban_web/plugs/ontop_proxy_plug_test.exs`.
+- **Still NOT resolved (disclosed, unchanged in kind from before)**: this is host-level
+  network binding + a proxy-level bearer-token check, not per-query Ash policy
+  enforcement — SPARQL still bypasses Ash's authorization layer entirely once past the
+  proxy, and anyone holding the shared `INTERNAL_API_TOKEN` can run arbitrary SPARQL
+  against all 4 mapped tables (no row-level or resource-level authorization inside Ontop
+  itself). Same standing limitation already disclosed for `Xaas.Ledger`/`Xaas.Accounts` —
+  token possession, not per-actor Ash policy, is the real access-control boundary here.
 
 ## Files
 

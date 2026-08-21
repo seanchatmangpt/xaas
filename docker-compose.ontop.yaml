@@ -21,7 +21,18 @@ services:
     networks:
       - xaas_default
     ports:
-      - "8888:8080"
+      # Real hardening (this session): was "8888:8080" (0.0.0.0, publicly
+      # reachable on the host's real network interfaces -- confirmed via
+      # `docker ps` showing "0.0.0.0:8888->8080/tcp" before this change).
+      # Ontop has no native auth of its own in front of /sparql, and a
+      # SPARQL endpoint bypasses Ash policies entirely (see
+      # docs/claude/diataxis/explanation/r2rml-ontop-prototype.md's
+      # disclosed-gap section) -- so it must never be reachable except via
+      # the real KanbanWeb.OntopProxyPlug at /internal-api/sparql, which
+      # enforces the same real Bearer INTERNAL_API_TOKEN as this repo's
+      # other internal routes. Binding to 127.0.0.1 means only processes
+      # on this host (i.e. the real Phoenix app) can reach Ontop directly.
+      - "127.0.0.1:8888:8080"
     volumes:
       - ./priv/ontop:/opt/ontop/input
       # Real fix (confirmed via docker logs this session): the base image
