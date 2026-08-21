@@ -7,6 +7,11 @@ defmodule Xaas.Accounts.OrgTest do
   IAM-gated, since that real-tested as broken this session (see
   lib/xaas/accounts/org.ex's policies block for the disclosed
   limitation). No mocking of the authorizer.
+
+  Also proves the bypass-audit fix (prompt #10): :create/:update are
+  scoped to `actor_present()` rather than a blanket `authorize_if
+  always()` -- a real authenticated actor still succeeds, an anonymous
+  (`actor: nil`) caller is really denied.
   """
   use ExUnit.Case, async: true
 
@@ -79,6 +84,51 @@ defmodule Xaas.Accounts.OrgTest do
   # exact combination. Not fully root-caused within this session's time
   # budget; the precise-Allow-list pattern above is the real, verified-
   # working alternative for scoping reads to specific orgs.
+
+  test "a real authenticated actor can still create and update an org (legitimate case)" do
+    actor = %{
+      iam_policy: %{
+        "Statement" => [
+          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:org:*"]}
+        ]
+      }
+    }
+
+    org =
+      Org
+      |> Ash.Changeset.for_create(:create, %{name: "Beta LLC", slug: "beta-#{System.unique_integer([:positive])}"}, actor: actor)
+      |> Ash.create!()
+
+    assert org.name == "Beta LLC"
+
+    updated =
+      org
+      |> Ash.Changeset.for_update(:update, %{name: "Beta LLC Renamed"}, actor: actor)
+      |> Ash.update!()
+
+    assert updated.name == "Beta LLC Renamed"
+  end
+
+  test "an anonymous (actor-less) caller is really denied create -- not silently allowed" do
+    changeset =
+      Org
+      |> Ash.Changeset.for_create(:create, %{name: "Malicious Co", slug: "mal-#{System.unique_integer([:positive])}"}, actor: nil)
+
+    assert {:error, %Ash.Error.Forbidden{}} = Ash.create(changeset)
+  end
+
+  test "an anonymous (actor-less) caller is really denied update -- not silently allowed" do
+    org = create!("target")
+
+    changeset =
+      org
+      |> Ash.Changeset.for_update(:update, %{name: "Hijacked"}, actor: nil)
+
+    assert {:error, %Ash.Error.Forbidden{}} = Ash.update(changeset)
+
+    persisted = Org |> Ash.get!(org.id, authorize?: false)
+    assert persisted.name == org.name
+  end
 
   test "slug uniqueness is really enforced" do
     slug = "dup-#{System.unique_integer([:positive])}"

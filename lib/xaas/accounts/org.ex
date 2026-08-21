@@ -67,15 +67,27 @@ defmodule Xaas.Accounts.Org do
     # budget (likely an ash_iam library gap/version mismatch on
     # non-read/filter-type checks against create/update actions, not an
     # xaas-side misconfiguration -- the policy DSL compiled and the read
-    # case works identically). Falling back to the same bypass pattern
-    # every other resource this session uses rather than shipping a
-    # mutation path that real-tested as broken.
+    # case works identically).
+    #
+    # Bypass-audit fix (prompt #10): a blanket `authorize_if always()`
+    # here was genuinely over-broad for a tenant-root resource -- it let
+    # a fully anonymous (`actor: nil`) caller create or mutate (rename,
+    # suspend/reactivate) any Org row. Org has no membership/ownership
+    # relationship modeled yet (see moduledoc: multitenancy wiring is
+    # real, disclosed follow-up work), so a per-org scoping condition
+    # (e.g. "actor belongs to this org") does not exist as a real fact
+    # this resource can check today. `actor_present()` is the strongest
+    # real condition actually available given that constraint: it keeps
+    # every legitimate authenticated caller working exactly as before
+    # while denying the unauthenticated case that was previously
+    # silently allowed. Full IAM-gated create/update remains the real
+    # follow-up once the ash_iam create/update gap above is root-caused.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if actor_present()
     end
 
     bypass action(:update) do
-      authorize_if always()
+      authorize_if actor_present()
     end
 
     # No :destroy action exists on this resource (see actions block) --
