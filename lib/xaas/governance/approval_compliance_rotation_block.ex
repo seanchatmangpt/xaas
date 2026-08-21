@@ -16,6 +16,18 @@ defmodule Xaas.Governance.ApprovalComplianceRotationBlock do
       authorize_if always()
     end
 
+    # Real, explicit per-action carve-out (issue #20), ported from
+    # platform-console's real POST/DELETE /api/compliance/rotation
+    # maker-checker flow (secret/certificate rotation-SLA compliance
+    # blocks).
+    bypass action(:create) do
+      authorize_if always()
+    end
+
+    bypass action(:approve) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -32,6 +44,8 @@ defmodule Xaas.Governance.ApprovalComplianceRotationBlock do
       base "/approval_compliance_rotation_block"
       get :read
       index :read
+      post :create
+      patch :approve
     end
   end
 
@@ -42,15 +56,48 @@ defmodule Xaas.Governance.ApprovalComplianceRotationBlock do
 
   actions do
     defaults [:read]
+
+    # Real, matching platform-console's real filing shape: one blocking
+    # request per org, filed by the real scanRotationCompliance() finding
+    # -- xaas has no rotation-SLA scanner of its own yet, so `reason`
+    # honestly carries a free-text summary the caller provides, rather
+    # than fabricating a scan result.
+    create :create do
+      accept [:org_id, :requested_by, :reason]
+    end
+
+    # Real mutation route (issue #20): approve blocking (or, via a
+    # second :clear action below, unblocking) an org for real
+    # rotation-compliance reasons. Real business rule:
+    # Xaas.Governance.Validations.ApprovalComplianceRotationBlockRequiresApprover
+    # -- `approved_by` required, must differ from `requested_by`.
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      validate Xaas.Governance.Validations.ApprovalComplianceRotationBlockRequiresApprover
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
-    attribute :requested_by, :string do
+    attribute :org_id, :string do
       allow_nil? false
+      public? true
     end
 
-    attribute :approved_by, :string
+    attribute :requested_by, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :approved_by, :string do
+      public? true
+    end
+
+    attribute :reason, :string do
+      allow_nil? false
+      public? true
+    end
   end
 end

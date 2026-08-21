@@ -76,7 +76,8 @@ config :ash,
     capability_class: Xaas.Governance.Types.CapabilityClass,
     interface: Xaas.Governance.Types.Interface,
     project_tier: Xaas.Governance.Types.ProjectTier,
-    cmek_provider: Xaas.Governance.Types.CmekProvider
+    cmek_provider: Xaas.Governance.Types.CmekProvider,
+    pentest_finding_resolution: Xaas.Governance.Types.PentestFindingResolution
   ]
 
 # Configures the endpoint
