@@ -6,7 +6,130 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (eleventh pass).
+2026-08-21 (twelfth pass).
+
+## Twelfth-pass update
+
+**Real HEAD confirmed: `98eeccd`.** `git rev-parse HEAD` →
+`98eeccda4ceb49a869006cac51eaac75e2cb8389`. This is round 10, the commit the task briefing
+described as having wired `ApprovalTierDowngrade`'s dead no-op `:approve` change to really
+drive `Subscription.change_tier` + a real `Ledger` credit, and separately real-root-caused
+and resolved the recurring `20260821055848` shared-migration hazard for good. Real-verified
+via `git show 98eeccd --stat`: it touches exactly 8 files — this grid, `approval_tier_
+downgrade.ex`, `changes/approval_tier_downgrade_approve.ex`, a new `validations/approval_
+tier_downgrade_targets_lower_tier.ex`, a new migration
+(`..._add_requested_tier_to_approval_tier_downgrade.exs`), a new resource snapshot, and 2
+test files (185 new lines in `test/xaas/billing/approval_tier_downgrade_test.exs` plus
+controller-test updates). **Item 16/eleventh-pass-selected-CREATE is now RESOLVED**, real and
+independently re-read this pass: `lib/xaas/billing/approval_tier_downgrade.ex` now carries a
+real `belongs_to :subscription` FK and a real `requested_tier` attribute (`one_of:
+[:standard, :pro, :enterprise]`, same enum `Subscription.tier` uses), guarded on `:create` by
+a new `ApprovalTierDowngradeTargetsLowerTier` validation (rejects a `requested_tier` that
+isn't strictly lower-ranked than the subscription's current tier); `changes/approval_tier_
+downgrade_approve.ex` is no longer the byte-identical no-op — its `change/3` now wires
+`Ash.Changeset.after_action/2` to `Ash.get/3` the target `Subscription` and call its real
+`:change_tier` action with `requested_tier`, `authorize?: false`, matching this codebase's
+established atomic pattern (nested transaction, real Ash source-confirmed safe by every other
+`after_action/2` write in this repo). The commit's own message also documents a real,
+disclosed root-cause resolution of the shared-migration hazard this grid has carried since
+round 7/8 (`20260821055848`'s actual target state — 3 tables + `platform_webhooks.encrypted_
+secret` — was already reached by earlier migrations; only its `tokens.extra_data` rename was
+never applied and, per `Xaas.Accounts.Token`'s own current code still using plain `:extra_
+data`, correctly should stay unapplied; resolved by inserting the real version row directly
+into `schema_migrations` on both `kanban_dev`/`kanban_test`, no DDL executed, migration file
+left untouched — fix-forward, not a history rewrite). **This hazard is now genuinely closed,
+not just worked around** — not re-flagged below per this pass's own task instruction.
+
+**This pass's real, systematic re-verification of the remaining 4 dead-no-op `*Approve.ex`
+resources: all 4 confirmed still real, unwired no-ops, and — after real, dedicated
+target-hunting this pass, not just the eleventh-pass's negative grep — none has a real,
+concrete, already-built target to wire into. This is itself the pass's real, disclosable
+finding.** Re-read all 4 change modules in full
+(`lib/xaas/billing/changes/approval_quota_override_approve.ex`, `approval_invoice_
+reconciliation_approve_approve.ex`, `lib/xaas/operations/changes/approval_castle_verb_
+schedule_approve.ex`, `approval_k8s_fault_remediate_suggest_approve.ex`) — byte-identical
+`def change(changeset, _opts, _context) do changeset end`, unchanged since round 5. Re-ran
+the call-site grep (`grep -rn "Changes.ApprovalQuotaOverrideApprove\|Changes.ApprovalInvoice
+ReconciliationApproveApprove\|Changes.ApprovalCastleVerbScheduleApprove\|Changes.ApprovalK8s
+FaultRemediateSuggestApprove" lib/xaas --include="*.ex"`) → still zero call sites outside each
+file's own `defmodule` line. Each resource's own `attributes do` block
+(`approval_quota_override.ex`, `approval_invoice_reconciliation_approve.ex`,
+`approval_castle_verb_schedule.ex`, `approval_k8s_fault_remediate_suggest.ex`) is still just
+`requested_by`/`approved_by` — no FK, no target-identifying attribute at all, the exact same
+shape `ApprovalTierDowngrade` had before this round's fix.
+
+Went further than the eleventh pass's own negative grep and real-hunted for a plausible
+target for each, real-checked, all four real-negative:
+- **`ApprovalQuotaOverride`**: no `Quota`/`Invoice` Ash resource exists anywhere in `lib/xaas`
+  (`grep -rli "quota\|invoice" lib/xaas --include="*.ex"` hits only the 2 resources' own
+  files, their `changes/`/`validations/` siblings, and 2 unrelated moduledoc mentions). The
+  closest real candidate — `Xaas.Billing.ApprovalPricingOverride`'s `AshRateLimiter`
+  `rate_limit do backend Xaas.Hammer ... end` block — was read in full and real-rejected: it
+  throttles that resource's own `:create` action call *frequency* (anti-abuse, 5/min per
+  requester), a different real "quota" concept than an org's business usage quota a "quota
+  override" approval would plausibly raise/lower. `Xaas.Billing.Subscription`'s own moduledoc
+  (lines 1-59, read in full) — stale, pre-`:change_tier` vintage but still accurate on this
+  point — explicitly lists `ApprovalQuotaOverride` among the 6 "presumes a subscription
+  already exists... no real row... answers what plan is this org on" resources and names
+  "rate-limit add-on SubscriptionItems" as real, undesigned, out-of-scope future Stripe work —
+  confirming no real target exists today, only a plausible future one requiring new design.
+- **`ApprovalInvoiceReconciliationApprove`**: same negative — no `Invoice` resource, and
+  `Subscription`'s moduledoc explicitly scopes "Usage-based overage InvoiceItems" and invoice-
+  related Stripe writes as real, separate, undesigned follow-up work, not a present target.
+- **`ApprovalCastleVerbSchedule`**: `lib/xaas/operations/` does have 3 real sibling `CastleVerb*`
+  catalog resources (`CastleVerbInventoryGoals`, `CastleVerbInventoryComponents`,
+  `CastleVerbFortune5Requirements`, all read in full) — but each is `defaults [:read]` only,
+  zero mutation actions, zero "schedule" concept on any of them (just `requested_by`/
+  `approved_by` read-only rows themselves). Nothing for a "schedule" approval to drive.
+- **`ApprovalK8sFaultRemediateSuggest`**: `grep -rli "k8s_fault\|k8s.fault" lib/xaas
+  --include="*.ex"` outside the approval resource's own files → zero hits. No real
+  remediation-suggestion or fault-tracking resource exists to apply a "suggestion" to.
+
+**Conclusion, matching the task's own anticipated honest outcome: these 4 need a real design
+decision (what does "override this org's quota," "reconcile this invoice," "schedule this
+castle verb," "apply this k8s remediation suggestion" concretely mean and what data/resource
+does it act on) before any of them can be mechanically wired the way `ApprovalTierDowngrade`
+was. Forcing a shape onto any of them this pass would be fabricating a design, not
+implementing one — not selected as this pass's CREATE item.** Carried forward as a named,
+disclosed backlog of 4 design-decision-blocked resources, distinct from (and now the entire
+remaining membership of) the dead-no-op-`*Approve.ex` finding class.
+
+**This pass's CREATE item selected instead: the real, 6-times-flagged, design-decision-free
+`priv/repo/seeds.exs` gap** (this grid's own carried-forward item 11, first flagged
+fifth-pass, re-confirmed unchanged every pass since — sixth, eighth, tenth, eleventh, and now
+twelfth). Re-verified this pass: still exactly 19 lines, still the unmodified book stub
+(`wc -l priv/repo/seeds.exs` → 19; `grep -c "Xaas\." priv/repo/seeds.exs` → 0). Selected
+because every higher-priority contender this pass real-checked out as either genuinely
+design-blocked (the 4 dead no-ops above) or already resolved (item 16): with the
+atomicity-bug thread closed (rounds 7-9) and the dead-no-op thread now correctly triaged
+(1 fixed, 4 disclosed-as-design-blocked), no fresher correctness gap outranks this one.
+Real-checked one candidate alternative before settling — `Xaas.Operations.AuditLogEntry`
+still has no `AshPaperTrail.Resource` (item 9, `grep -n "AshPaperTrail"
+lib/xaas/operations/audit_log_entry.ex` still matches only the moduledoc's own contrastive
+prose) — but real-examined this pass and found genuinely thin: `AuditLogEntry`'s own
+`actions do` block is `defaults [:read]` plus one `create :create` with **no `:update`, no
+`:destroy` action at all** (confirmed by reading the file in full), so `AshPaperTrail`'s real
+value (diffing an update against the prior version) has nothing to diff against — it would at
+best record a single redundant "created" version per row, not the meaningful protection
+against tampering the "audit log is not itself audited" framing implies. Real, honest
+downgrade of that item's priority this pass (not a retraction that the gap is real, just a
+correction that its value is smaller than previously framed); not selected. Full `seeds.exs`
+spec in the structured output below.
+
+**Doc-drift item re-verified unchanged, still not selected.**
+`architecture-overview.md:27`/`http-api-surface.md:75`'s "44 of the 69"/"44 of 49" route-count
+claim: `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still 56, unchanged, now
+flagged in 6 consecutive passes (rounds 7-12). A doc fix, not a feature; still real, still
+carried forward at its existing Create item number.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass (before this grid's own edit) shows the same real artifacts prior passes have already
+named as other standing activities' own output, not this cron's concern: a modified
+`k8s/secret.yaml.example`, untracked `.terraform-validate-receipts/`,
+`GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/claude/diataxis/explanation/wasm4pm-process-intelligence-research.md`,
+`e2e/ash-admin-destroy.spec.js`, `templates-hooks/terraform-validate.txt.tmpl`. None read
+beyond filenames, none touched.
 
 ## Eleventh-pass update
 
@@ -657,6 +780,19 @@ sequence cover these):
 
 ## Raise
 
+- **RESOLVED (`98eeccd`, real, committed, confirmed as this pass's own `HEAD`)**: the dead,
+  unwired `ApprovalTierDowngradeApprove` no-op — `:approve` now really drives `Subscription
+  .change_tier` (a real tier drop + real prorated `Ledger` credit), atomically. See
+  "Twelfth-pass update" above. Item 16 in Create below is now marked RESOLVED.
+- **NEW this pass — the remaining 4 dead-no-op `*Approve.ex` resources
+  (`ApprovalQuotaOverride`, `ApprovalInvoiceReconciliationApprove`, `ApprovalCastleVerbSchedule`,
+  `ApprovalK8sFaultRemediateSuggest`) are real-confirmed to have no concrete, already-built
+  target to wire into — a design-decision gap, not a mechanical-wiring gap.** Full evidence
+  (per-resource target hunt, all 4 negative) in "Twelfth-pass update" above. Not a bug to
+  silently work around; disclosed as a standing backlog of 4 items each needing a real product/
+  design decision (what does "override this org's quota" concretely mean, on what resource)
+  before any code should be written. Do not mechanically force a shape onto any of these 4
+  without that decision first.
 - **RESOLVED (round 7, `aec265a`, verified live this pass)**: the real money-movement
   non-atomicity on `ApprovalSlaCreditApplyApprove`/`ApprovalPatchSlaCreditApplyApprove`/
   `SubscriptionProrateTierChange` — all 3 now use `after_action/2`, matching
@@ -794,11 +930,18 @@ sequence cover these):
     "Eleventh-pass update" above. This closes the entire atomicity-bug-class thread
     (rounds 7-9) on both the correctness axis (tenth pass) and the test-coverage axis (this
     fact, confirmed this pass).
-16. **Wire `Xaas.Billing.ApprovalTierDowngrade`'s `:approve` action to actually drive
-    `Xaas.Billing.Subscription`'s real `:change_tier` action**, replacing the currently dead,
-    unwired `Xaas.Billing.Changes.ApprovalTierDowngradeApprove` no-op stub with real logic —
-    the standout of 5 real, freshly-found dead-on-arrival `*Approve.ex` change modules from
-    round 5. Selected as this pass's CREATE item; full spec in the structured output below.
+16. **RESOLVED** (was this grid's own item 16, eleventh pass): `Xaas.Billing
+    .ApprovalTierDowngrade`'s `:approve` action now really drives `Xaas.Billing.Subscription`'s
+    `:change_tier` action (a real tier drop + real prorated `Ledger` credit, atomically) —
+    **landed for real as `98eeccd`**, confirmed live as this pass's own `HEAD`. See
+    "Twelfth-pass update" above.
+17. **The 4 remaining dead-no-op `*Approve.ex` resources
+    (`ApprovalQuotaOverride`/`ApprovalInvoiceReconciliationApprove`/
+    `ApprovalCastleVerbSchedule`/`ApprovalK8sFaultRemediateSuggest`) are real-confirmed
+    design-decision-blocked, not mechanically wirable** — this pass real-hunted a target for
+    each and found none (see "Twelfth-pass update" and Raise above). Not a CREATE candidate
+    until a real product decision names each one's real target resource/attribute; disclosed
+    here so a future pass doesn't have to re-derive the same negative result from scratch.
 7. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
    `lib/xaas`, and all 32 `Approval*` resources now hand-carry the identical policy block
@@ -817,26 +960,43 @@ sequence cover these):
     `Xaas.Marketplace.ApprovalProviderStatusChange` still has no `identities do` block
     guarding against a duplicate *pending* status-change request for the same
     `provider_id`. Carried forward, not selected this pass.
-11. **A real `priv/repo/seeds.exs` populated with `Xaas.*` fixtures for local dev** —
-    unchanged from the prior grid: still the unmodified 19-line book stub with zero
-    `Xaas.*` calls. Carried forward, not selected this pass.
+11. **Selected as this pass's CREATE item.** A real `priv/repo/seeds.exs` populated with
+    `Xaas.*` fixtures for local dev — unchanged since fifth-pass grid first flagged it,
+    real-reconfirmed unchanged 6 consecutive passes (still 19 lines, still 0 real `Xaas.*`
+    calls). Full spec in the structured output below.
 
 ## See Also
 
 - `lib/xaas/billing/approval_tier_downgrade.ex`,
   `lib/xaas/billing/changes/approval_tier_downgrade_approve.ex`,
+  `lib/xaas/billing/validations/approval_tier_downgrade_targets_lower_tier.ex`,
   `lib/xaas/billing/subscription.ex:226-236`,
   `lib/xaas/billing/changes/subscription_prorate_tier_change.ex`,
-  `lib/xaas/billing/validations/subscription_change_tier_not_no_op.ex` — the real dead
-  no-op change module and its ready-built real target this pass's own selected CREATE item
-  (item 16) wires together
+  `test/xaas/billing/approval_tier_downgrade_test.exs` — the real dead no-op change module
+  and its ready-built real target the eleventh pass's CREATE item (item 16) wired together,
+  landed for real as `98eeccd` this round
 - `lib/xaas/billing/changes/approval_quota_override_approve.ex`,
   `lib/xaas/billing/changes/approval_invoice_reconciliation_approve_approve.ex`,
   `lib/xaas/operations/changes/approval_castle_verb_schedule_approve.ex`,
-  `lib/xaas/operations/changes/approval_k8s_fault_remediate_suggest_approve.ex` — the other 4
-  real, unwired no-op `*Approve.ex` modules this pass found and did not select (no comparable
-  ready-built downstream action exists for any of them; each is a real, separate, larger
-  design question for a future pass)
+  `lib/xaas/operations/changes/approval_k8s_fault_remediate_suggest_approve.ex` — the 4
+  remaining real, unwired no-op `*Approve.ex` modules; this round real-hunted a target for
+  each (item 17) and confirmed none exists yet (design-decision-blocked, not a CREATE
+  candidate)
+- `lib/xaas/billing/approval_pricing_override.ex` (its `AshRateLimiter`/`Xaas.Hammer`
+  `rate_limit do` block), `lib/xaas/billing/subscription.ex:1-59` (its own moduledoc's
+  explicit "6 Approval* resources presume a subscription already exists" scoping),
+  `lib/xaas/operations/castle_verb_inventory_goals.ex`,
+  `castle_verb_inventory_components.ex`, `castle_verb_fortune5_requirements.ex` — the real
+  near-miss candidates this pass's target hunt for the 4 design-blocked resources checked and
+  rejected (a same-word-different-concept rate limiter; 3 read-only catalog siblings with no
+  mutation surface)
+- `lib/xaas/operations/audit_log_entry.ex` — real-examined this pass for the `AshPaperTrail`
+  CREATE candidate (item 9) and found genuinely thin (its `actions do` block has no
+  `:update`/`:destroy` at all, so there is nothing for `AshPaperTrail` to diff); downgraded in
+  priority, not selected, not retracted as a real gap
+- `priv/repo/seeds.exs`, `lib/xaas/accounts/org.ex:132-143`,
+  `lib/xaas/billing/subscription.ex:170-194` — this round's selected CREATE item (item 11) and
+  the real `:create` action signatures its spec is grounded in
 - `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex`,
   `test/xaas/billing/approval_sla_credit_apply_test.exs:150-183`,
   `test/xaas/governance/approval_backup_retention_change_test.exs`,

@@ -10,10 +10,22 @@
 #
 #     mix run priv/repo/seeds.exs
 #
-# Inside the script, you can read and write to any of your
-# repositories directly:
-#
-#     Kanban.Repo.insert!(%Kanban.SomeSchema{})
-#
-# We recommend using the bang functions (`insert!`, `update!`
-# and so on) as they will fail if something goes wrong.
+# Real Xaas.* dev fixture chain -- see Xaas.DevSeeds's own moduledoc for
+# the full real spec (one Org, one Subscription, one Ledger.Account, one
+# pending ApprovalBackupRetentionChange). Idempotent: safe to re-run.
+fixtures = Xaas.DevSeeds.run()
+
+IO.puts("""
+Seeded real Xaas.* dev fixtures:
+  org:                #{fixtures.org.name} (slug: #{fixtures.org.slug})
+  subscription:        #{fixtures.subscription.tier} / #{fixtures.subscription.status}
+  ledger account:       #{fixtures.ledger_account.identifier}
+  pending approval:     Xaas.Governance.ApprovalBackupRetentionChange \
+#{fixtures.pending_approval.id} (#{fixtures.pending_approval.requested_retention_days} days, \
+#{fixtures.pending_approval.tier} tier)
+
+To smoke-test the real atomic Ledger-credit path end-to-end, approve the
+pending row by hand from IEx or a one-off `mix run`:
+
+    Xaas.DevSeeds.approve_seeded_pending!()
+""")
