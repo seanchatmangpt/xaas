@@ -20,6 +20,7 @@ defmodule Xaas.Governance.ApprovalDrFailoverStressTest do
   use ExUnit.Case, async: false
   @moduletag :stress
 
+  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalDrFailover
   alias Xaas.Operations.Incident
 
@@ -37,6 +38,15 @@ defmodule Xaas.Governance.ApprovalDrFailoverStressTest do
   test "50 real concurrent Tasks each open an incident, create, and approve a DR failover" do
     run_tag = System.unique_integer([:positive, :monotonic])
 
+    # Real, required since ApprovalDrFailover's real Ash-core multitenancy
+    # wiring: org_id is now a real FK to orgs.slug, so a real Org row must
+    # exist before any concurrent task creates a failover referencing it.
+    org_slug =
+      Org
+      |> Ash.Changeset.for_create(:create, %{name: "Stress Org", slug: "stress-org-#{run_tag}"})
+      |> Ash.create!(authorize?: false)
+      |> Map.fetch!(:slug)
+
     tasks =
       for i <- 1..50 do
         Task.async(fn ->
@@ -45,7 +55,7 @@ defmodule Xaas.Governance.ApprovalDrFailoverStressTest do
           Ash.create!(
             Incident,
             %{
-              org_id: "stress-org-#{run_tag}",
+              org_id: org_slug,
               title: "stress incident ##{i}",
               description: "concurrent stress DR precondition ##{i}",
               region: region,
@@ -60,7 +70,7 @@ defmodule Xaas.Governance.ApprovalDrFailoverStressTest do
             Ash.create!(
               ApprovalDrFailover,
               %{
-                org_id: "stress-org-#{run_tag}",
+                org_id: org_slug,
                 requested_by: "stress-requester-#{i}",
                 from_region: region,
                 to_region: "stress-target-#{run_tag}-#{i}",

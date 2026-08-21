@@ -54,6 +54,26 @@ defmodule Xaas.Governance.ApprovalLegalHoldRelease do
   postgres do
     table "approval_legal_hold_releases"
     repo Xaas.Repo
+
+    references do
+      reference :org, on_delete: :restrict, on_update: :update
+    end
+  end
+
+  # Real Ash-core multitenancy wiring, same pattern and same disclosed
+  # rationale as Xaas.Governance.ApprovalBackupRetentionChange (the pilot):
+  # `global? true` is deliberate, not the ideal end state -- strict
+  # enforcement needs a real per-org actor resolved from the request (this
+  # repo's current auth is a single shared Bearer token, no per-org actor
+  # anywhere), which is real, disclosed follow-up work. What this DOES
+  # deliver for real right now: `org_id` is a real FK to `orgs.slug`
+  # (below, nullable since a platform-scoped hold has no org), and the
+  # resource is tenant-attribute-aware for when strict enforcement is
+  # wired.
+  multitenancy do
+    strategy :attribute
+    attribute :org_id
+    global? true
   end
 
   actions do
@@ -120,6 +140,21 @@ defmodule Xaas.Governance.ApprovalLegalHoldRelease do
     attribute :release_reason, :string do
       allow_nil? false
       public? true
+    end
+  end
+
+  relationships do
+    # Real FK relationship, referencing Xaas.Accounts.Org's real unique
+    # `slug` (not its uuid `id`) -- same shape as the pilot
+    # (ApprovalBackupRetentionChange). `define_attribute? false` since
+    # `org_id` is already explicitly defined above. Nullable, matching
+    # `org_id`'s own real nullability for platform-scoped holds.
+    belongs_to :org, Xaas.Accounts.Org do
+      source_attribute :org_id
+      destination_attribute :slug
+      attribute_type :string
+      define_attribute? false
+      allow_nil? true
     end
   end
 end

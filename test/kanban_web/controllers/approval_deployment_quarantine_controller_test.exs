@@ -7,11 +7,25 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
   """
   use KanbanWeb.ConnCase
 
+  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalDeploymentQuarantine
 
   setup do
     Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     :ok
+  end
+
+  # Real, required since this resource's real Ash-core multitenancy
+  # wiring: org_id is now a real FK to orgs.slug, so every test needs a
+  # real Org row to reference, not just a made-up string.
+  defp real_org_slug! do
+    Org
+    |> Ash.Changeset.for_create(:create, %{
+      name: "Test Org",
+      slug: "org-#{System.unique_integer([:positive])}"
+    })
+    |> Ash.create!(authorize?: false)
+    |> Map.fetch!(:slug)
   end
 
   defp json_headers(conn) do
@@ -28,7 +42,7 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
       "data" => %{
         "type" => "approval_deployment_quarantine",
         "attributes" => %{
-          "org_id" => "org-#{System.unique_integer([:positive])}",
+          "org_id" => real_org_slug!(),
           "requested_by" => "requester-1",
           "deployment_name" => "checkout-api",
           "environment" => "prod",
@@ -72,7 +86,7 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
     change =
       ApprovalDeploymentQuarantine
       |> Ash.Changeset.for_create(:create, %{
-        org_id: "org-x",
+        org_id: real_org_slug!(),
         requested_by: requester,
         deployment_name: "billing-worker",
         environment: "staging",
@@ -104,7 +118,7 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
       "data" => %{
         "type" => "approval_deployment_quarantine",
         "attributes" => %{
-          "org_id" => "org-#{System.unique_integer([:positive])}",
+          "org_id" => real_org_slug!(),
           "requested_by" => "requester-1",
           "deployment_name" => "checkout-api",
           "environment" => "prod",

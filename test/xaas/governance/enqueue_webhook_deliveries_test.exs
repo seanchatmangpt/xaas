@@ -127,12 +127,21 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
        %{listener_url: listener_url} do
     run = System.unique_integer([:positive, :monotonic])
 
+    org =
+      Org
+      |> Ash.Changeset.for_create(
+        :create,
+        %{name: "DR Org #{run}", slug: "dr-org-#{run}"},
+        authorize?: false
+      )
+      |> Ash.create!()
+
     incident =
       Incident
       |> Ash.Changeset.for_create(
         :create,
         %{
-          org_id: "dr-org-#{run}",
+          org_id: org.slug,
           title: "real open incident for webhook-delivery test #{run}",
           description: "real open incident for webhook-delivery test #{run}",
           severity: :major,
@@ -151,7 +160,7 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
       |> Ash.Changeset.for_create(
         :create,
         %{
-          org_id: "dr-org-#{run}",
+          org_id: org.slug,
           requested_by: "requester-#{run}",
           from_region: incident.region,
           to_region: "us-west-#{run}",
@@ -188,12 +197,21 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
         enabled: false
       )
 
+    org =
+      Org
+      |> Ash.Changeset.for_create(
+        :create,
+        %{name: "LHR Org #{run}", slug: "lhr-org-#{run}"},
+        authorize?: false
+      )
+      |> Ash.create!()
+
     approval =
       ApprovalLegalHoldRelease
       |> Ash.Changeset.for_create(
         :create,
         %{
-          org_id: "lhr-org-#{run}",
+          org_id: org.slug,
           requested_by: "requester-#{run}",
           hold_id: "hold-#{run}",
           release_reason: "real no-match test #{run}"

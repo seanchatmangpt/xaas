@@ -8,6 +8,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
   """
   use KanbanWeb.ConnCase
 
+  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalDrFailover
   alias Xaas.Operations.Incident
 
@@ -18,6 +19,19 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
   defp with_internal_api_token(conn) do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
+  # Real, required since this resource's real Ash-core multitenancy
+  # wiring: org_id is now a real FK to orgs.slug, so every test needs a
+  # real Org row to reference, not just a made-up string.
+  defp real_org_slug! do
+    Org
+    |> Ash.Changeset.for_create(:create, %{
+      name: "Test Org",
+      slug: "org-#{System.unique_integer([:positive])}"
+    })
+    |> Ash.create!(authorize?: false)
+    |> Map.fetch!(:slug)
   end
 
   # Real, required since ApprovalDrFailoverRequiresOpenIncident was added
@@ -43,7 +57,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
   test "POST creates a real pending failover request, PATCH approves it from a distinct owner",
        %{conn: conn} do
-    org_id = "org-#{System.unique_integer([:positive])}"
+    org_id = real_org_slug!()
     open_incident!(org_id, "us-east-1")
 
     create_body = %{
@@ -82,7 +96,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
   test "PATCH rejects a requester approving their own failover", %{conn: conn} do
     requester = "requester-self-#{System.unique_integer([:positive])}"
-    org_id = "org-x-#{System.unique_integer([:positive])}"
+    org_id = real_org_slug!()
     open_incident!(org_id, "us-east-1")
 
     change =

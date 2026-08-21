@@ -8,6 +8,7 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
   """
   use KanbanWeb.ConnCase
 
+  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalLegalHoldRelease
 
   setup do
@@ -17,6 +18,19 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
 
   defp with_internal_api_token(conn) do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
+  # Real, required since this resource's real Ash-core multitenancy
+  # wiring: org_id is now a real FK to orgs.slug, so every test needs a
+  # real Org row to reference, not just a made-up string.
+  defp real_org_slug! do
+    Org
+    |> Ash.Changeset.for_create(:create, %{
+      name: "Test Org",
+      slug: "org-#{System.unique_integer([:positive])}"
+    })
+    |> Ash.create!(authorize?: false)
+    |> Map.fetch!(:slug)
   end
 
   defp json_headers(conn) do
@@ -32,7 +46,7 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
       "data" => %{
         "type" => "approval_legal_hold_release",
         "attributes" => %{
-          "org_id" => "org-#{System.unique_integer([:positive])}",
+          "org_id" => real_org_slug!(),
           "requested_by" => "owner-1",
           "hold_id" => "hold-#{System.unique_integer([:positive])}",
           "release_reason" => "litigation concluded, hold no longer required"
@@ -72,7 +86,7 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
     change =
       ApprovalLegalHoldRelease
       |> Ash.Changeset.for_create(:create, %{
-        org_id: "org-x",
+        org_id: real_org_slug!(),
         requested_by: requester,
         hold_id: "hold-x",
         release_reason: "test release"
@@ -104,7 +118,7 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
     change =
       ApprovalLegalHoldRelease
       |> Ash.Changeset.for_create(:create, %{
-        org_id: "org-x",
+        org_id: real_org_slug!(),
         requested_by: requester,
         hold_id: "hold-y",
         release_reason: "test release"

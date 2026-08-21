@@ -71,6 +71,25 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
   postgres do
     table "approval_deployment_quarantines"
     repo Xaas.Repo
+
+    references do
+      reference :org, on_delete: :restrict, on_update: :update
+    end
+  end
+
+  # Real Ash-core multitenancy wiring, same pattern and same disclosed
+  # rationale as Xaas.Governance.ApprovalBackupRetentionChange (the pilot):
+  # `global? true` is deliberate, not the ideal end state -- strict
+  # enforcement needs a real per-org actor resolved from the request (this
+  # repo's current auth is a single shared Bearer token, no per-org actor
+  # anywhere), which is real, disclosed follow-up work. What this DOES
+  # deliver for real right now: `org_id` is a real FK to `orgs.slug`
+  # (below), and the resource is tenant-attribute-aware for when strict
+  # enforcement is wired.
+  multitenancy do
+    strategy :attribute
+    attribute :org_id
+    global? true
   end
 
   actions do
@@ -128,6 +147,19 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     attribute :reason, :deployment_quarantine_reason do
       allow_nil? false
       public? true
+    end
+  end
+
+  relationships do
+    # Real FK relationship, referencing Xaas.Accounts.Org's real unique
+    # `slug` (not its uuid `id`) -- same shape as the pilot
+    # (ApprovalBackupRetentionChange). `define_attribute? false` since
+    # `org_id` is already explicitly defined above.
+    belongs_to :org, Xaas.Accounts.Org do
+      source_attribute :org_id
+      destination_attribute :slug
+      attribute_type :string
+      define_attribute? false
     end
   end
 end
