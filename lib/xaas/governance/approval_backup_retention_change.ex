@@ -24,12 +24,19 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChange do
     # ApprovalBackupRetentionChangeRequiresApprover on :approve). This is a
     # deliberate decision for these two actions, not a blanket allow of
     # every mutation.
+    # Updated this pass: `:create`/`:approve` are no longer bare
+    # `authorize_if always()` -- they now real-check
+    # `Xaas.Governance.Checks.ActorOrgMatches` (the actor's
+    # `X-Org-Id`-resolved org must match the create payload's/existing
+    # record's real `org_id`), on top of the real per-action
+    # validations named above. See that module's moduledoc for why this
+    # is needed on top of `multitenancy`'s own row-scoping.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Governance.Checks.ActorOrgMatches
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if Xaas.Governance.Checks.ActorOrgMatches
     end
 
     policy always() do

@@ -136,4 +136,85 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
     resp = conn |> json_headers(org_id) |> post("/api/approval_deployment_quarantine", create_body)
     assert resp.status == 400
   end
+
+  test "POST with a payload org_id of org B while asserting org A really lands under org A, never org B",
+       %{conn: conn} do
+    # Real, verified finding (this pass): Ash's attribute-strategy
+    # multitenancy force-overwrites the changeset's `org_id` attribute
+    # with the resolved tenant on `:create` regardless of the payload's
+    # own `org_id` -- see `approval_dr_failover_controller_test.exs`'s
+    # sibling test for the live-verified repro. The real security
+    # property still holds, just via multitenancy normalization instead
+    # of a rejected request: the row really lands under the caller's own
+    # asserted org, never the target org named in the payload.
+    caller_org = real_org_slug!()
+    target_org = real_org_slug!()
+
+    create_body = %{
+      "data" => %{
+        "type" => "approval_deployment_quarantine",
+        "attributes" => %{
+          "org_id" => target_org,
+          "requested_by" => "requester-cross-org",
+          "deployment_name" => "checkout-api",
+          "environment" => "prod",
+          "reason" => "failed_healthcheck"
+        }
+      }
+    }
+
+    resp =
+      conn |> json_headers(caller_org) |> post("/api/approval_deployment_quarantine", create_body)
+
+    created = json_response(resp, 201)
+    id = created["data"]["id"]
+
+    persisted = ApprovalDeploymentQuarantine |> Ash.get!(id, authorize?: false, tenant: caller_org)
+    assert persisted.org_id == caller_org
+
+    assert ApprovalDeploymentQuarantine
+           |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: target_org)
+           |> Ash.read!() == []
+  end
+
+  test "PATCH rejects approving a DIFFERENT org's real quarantine, not silently allowed",
+       %{conn: conn} do
+    owner_org = real_org_slug!()
+    other_org = real_org_slug!()
+
+    change =
+      ApprovalDeploymentQuarantine
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: owner_org,
+          requested_by: "requester-1",
+          deployment_name: "billing-worker",
+          environment: "staging",
+          reason: "manual_hold"
+        },
+        tenant: owner_org
+      )
+      |> Ash.create!(authorize?: false)
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_deployment_quarantine",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => "hijacker-1"}
+      }
+    }
+
+    resp =
+      conn
+      |> json_headers(other_org)
+      |> patch("/api/approval_deployment_quarantine/#{change.id}", approve_body)
+
+    assert resp.status in [403, 404]
+
+    persisted =
+      ApprovalDeploymentQuarantine |> Ash.get!(change.id, authorize?: false, tenant: owner_org)
+
+    assert persisted.approved_by == nil
+  end
 end

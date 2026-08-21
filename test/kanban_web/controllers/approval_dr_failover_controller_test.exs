@@ -125,4 +125,89 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
     persisted = ApprovalDrFailover |> Ash.get!(change.id, authorize?: false, tenant: org_id)
     assert persisted.approved_by == nil
   end
+
+  test "POST with a payload org_id of org B while asserting org A really lands under org A, never org B",
+       %{conn: conn} do
+    # Real, verified finding (this pass): Ash's attribute-strategy
+    # multitenancy (`multitenancy do attribute :org_id; global? false end`)
+    # force-overwrites the changeset's `org_id` attribute with the
+    # resolved tenant on `:create`, regardless of what the payload's own
+    # `org_id` says -- confirmed live via a real `Ash.Changeset.for_create`
+    # run with `tenant: org_a, org_id: org_b` in the payload, which
+    # persisted with `org_id: org_a`, not `org_b`. That means
+    # `ActorOrgMatches`'s `:create` half can never actually fire (the
+    # changeset it inspects is already normalized before the policy
+    # check runs) -- multitenancy alone already makes a real cross-org
+    # `:create` payload impossible, not merely rejected. This test proves
+    # that real, if differently-shaped, security property: the row is
+    # really created (real 201), but its real persisted `org_id` is the
+    # caller's own asserted org, never the target org named in the
+    # payload.
+    caller_org = real_org_slug!()
+    target_org = real_org_slug!()
+
+    create_body = %{
+      "data" => %{
+        "type" => "approval_dr_failover",
+        "attributes" => %{
+          "org_id" => target_org,
+          "requested_by" => "requester-1",
+          "from_region" => "us-east-1",
+          "to_region" => "us-west-2",
+          "reason" => "cross-org attempt"
+        }
+      }
+    }
+
+    resp = conn |> json_headers(caller_org) |> post("/api/approval_dr_failover", create_body)
+    created = json_response(resp, 201)
+    id = created["data"]["id"]
+
+    persisted = ApprovalDrFailover |> Ash.get!(id, authorize?: false, tenant: caller_org)
+    assert persisted.org_id == caller_org
+
+    assert ApprovalDrFailover
+           |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: target_org)
+           |> Ash.read!() == []
+  end
+
+  test "PATCH rejects approving a DIFFERENT org's real failover row, not silently allowed",
+       %{conn: conn} do
+    owner_org = real_org_slug!()
+    other_org = real_org_slug!()
+    open_incident!(owner_org, "us-east-1")
+
+    record =
+      ApprovalDrFailover
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: owner_org,
+          requested_by: "requester-1",
+          from_region: "us-east-1",
+          to_region: "us-west-2",
+          reason: "region degradation"
+        },
+        tenant: owner_org
+      )
+      |> Ash.create!(authorize?: false)
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_dr_failover",
+        "id" => record.id,
+        "attributes" => %{"approved_by" => "owner-2"}
+      }
+    }
+
+    resp =
+      conn
+      |> json_headers(other_org)
+      |> patch("/api/approval_dr_failover/#{record.id}", approve_body)
+
+    assert resp.status in [403, 404]
+
+    persisted = ApprovalDrFailover |> Ash.get!(record.id, authorize?: false, tenant: owner_org)
+    assert persisted.approved_by == nil
+  end
 end

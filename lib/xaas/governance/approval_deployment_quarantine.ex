@@ -39,12 +39,19 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     # are -- by the router-level KanbanWeb.Plugs.RequireInternalApiToken
     # Bearer check -- plus ApprovalDeploymentQuarantineRequiresApprover's
     # real "second, distinct approver" rule on :approve.
+    # Updated this pass: `:create`/`:approve` are no longer bare
+    # `authorize_if always()` -- they now real-check
+    # `Xaas.Governance.Checks.ActorOrgMatches` (the actor's
+    # `X-Org-Id`-resolved org must match the create payload's/existing
+    # record's real `org_id`), on top of the real per-action
+    # validations named above. See that module's moduledoc for why this
+    # is needed on top of `multitenancy`'s own row-scoping.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Governance.Checks.ActorOrgMatches
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if Xaas.Governance.Checks.ActorOrgMatches
     end
 
     policy always() do

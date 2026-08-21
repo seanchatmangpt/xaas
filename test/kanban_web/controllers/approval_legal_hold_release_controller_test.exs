@@ -148,4 +148,79 @@ defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
     persisted = ApprovalLegalHoldRelease |> Ash.get!(change.id, authorize?: false, tenant: org_id)
     assert persisted.approved_by == nil
   end
+
+  test "POST with a payload org_id of org B while asserting org A really lands under org A, never org B",
+       %{conn: conn} do
+    # Real, verified finding (this pass): Ash's attribute-strategy
+    # multitenancy force-overwrites the changeset's `org_id` attribute
+    # with the resolved tenant on `:create` regardless of the payload's
+    # own `org_id` -- see `approval_dr_failover_controller_test.exs`'s
+    # sibling test for the live-verified repro. The real security
+    # property still holds, just via multitenancy normalization instead
+    # of a rejected request: the row really lands under the caller's own
+    # asserted org, never the target org named in the payload.
+    caller_org = real_org_slug!()
+    target_org = real_org_slug!()
+
+    create_body = %{
+      "data" => %{
+        "type" => "approval_legal_hold_release",
+        "attributes" => %{
+          "org_id" => target_org,
+          "requested_by" => "owner-cross-org",
+          "hold_id" => "hold-cross-org-#{System.unique_integer([:positive])}",
+          "release_reason" => "cross-org attempt"
+        }
+      }
+    }
+
+    resp = conn |> json_headers(caller_org) |> post("/api/approval_legal_hold_release", create_body)
+    created = json_response(resp, 201)
+    id = created["data"]["id"]
+
+    persisted = ApprovalLegalHoldRelease |> Ash.get!(id, authorize?: false, tenant: caller_org)
+    assert persisted.org_id == caller_org
+
+    assert ApprovalLegalHoldRelease
+           |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: target_org)
+           |> Ash.read!() == []
+  end
+
+  test "PATCH rejects approving a DIFFERENT org's real legal hold release, not silently allowed",
+       %{conn: conn} do
+    owner_org = real_org_slug!()
+    other_org = real_org_slug!()
+
+    change =
+      ApprovalLegalHoldRelease
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: owner_org,
+          requested_by: "owner-1",
+          hold_id: "hold-z",
+          release_reason: "test release"
+        },
+        tenant: owner_org
+      )
+      |> Ash.create!(authorize?: false)
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_legal_hold_release",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => "hijacker-1"}
+      }
+    }
+
+    resp =
+      conn
+      |> json_headers(other_org)
+      |> patch("/api/approval_legal_hold_release/#{change.id}", approve_body)
+
+    assert resp.status in [403, 404]
+
+    persisted = ApprovalLegalHoldRelease |> Ash.get!(change.id, authorize?: false, tenant: owner_org)
+    assert persisted.approved_by == nil
+  end
 end

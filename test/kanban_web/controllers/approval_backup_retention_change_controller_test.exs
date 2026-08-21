@@ -256,4 +256,76 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     assert real_balance_for(org_id) == nil,
            "expected no real Xaas.Ledger.Account to have been opened for #{org_id} -- no overage occurred"
   end
+
+  test "POST with a payload org_id of org B while asserting org A really lands under org A, never org B",
+       %{conn: conn} do
+    # Real, verified finding (this pass): Ash's attribute-strategy
+    # multitenancy force-overwrites the changeset's `org_id` attribute
+    # with the resolved tenant on `:create` regardless of the payload's
+    # own `org_id` -- see `approval_dr_failover_controller_test.exs`'s
+    # sibling test for the live-verified repro. The real security
+    # property still holds, just via multitenancy normalization instead
+    # of a rejected request: the row really lands under the caller's own
+    # asserted org, never the target org named in the payload.
+    caller_org = real_org_slug!()
+    target_org = real_org_slug!()
+
+    body = %{
+      "data" => %{
+        "type" => "approval_backup_retention_change",
+        "attributes" => %{
+          "org_id" => target_org,
+          "requested_by" => "requester-cross-org",
+          "requested_retention_days" => 30,
+          "tier" => "pro"
+        }
+      }
+    }
+
+    resp =
+      conn
+      |> with_internal_api_token()
+      |> with_org_header(caller_org)
+      |> put_req_header("content-type", "application/vnd.api+json")
+      |> post("/api/approval_backup_retention_change", body)
+
+    created = json_response(resp, 201)
+    id = created["data"]["id"]
+
+    persisted = ApprovalBackupRetentionChange |> Ash.get!(id, authorize?: false, tenant: caller_org)
+    assert persisted.org_id == caller_org
+
+    assert ApprovalBackupRetentionChange
+           |> Ash.Query.for_read(:read, %{}, authorize?: false, tenant: target_org)
+           |> Ash.read!() == []
+  end
+
+  test "PATCH .../:id rejects approving a DIFFERENT org's real change, not silently allowed",
+       %{conn: conn} do
+    owner_org = real_org_slug!()
+    other_org = real_org_slug!()
+    change = create_pending!("requester-cross-org-patch", org_id: owner_org)
+
+    body = %{
+      "data" => %{
+        "type" => "approval_backup_retention_change",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => "hijacker-1"}
+      }
+    }
+
+    resp =
+      conn
+      |> with_internal_api_token()
+      |> with_org_header(other_org)
+      |> put_req_header("content-type", "application/vnd.api+json")
+      |> patch("/api/approval_backup_retention_change/#{change.id}", body)
+
+    assert resp.status in [403, 404]
+
+    persisted =
+      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: owner_org)
+
+    assert persisted.approved_by == nil
+  end
 end
