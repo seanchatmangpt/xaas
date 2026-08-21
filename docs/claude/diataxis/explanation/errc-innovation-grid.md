@@ -6,7 +6,109 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (ninth pass).
+2026-08-21 (tenth pass).
+
+## Tenth-pass update
+
+**Real HEAD confirmed: `db17f3b`.** `git rev-parse HEAD` → `db17f3bab854e33ed41395ddb400c9ae9f6b83d8`.
+This is the commit the task briefing named ("round 8 ... just fixed the same
+after_transaction/after_action atomicity bug on WriteAuditLogEntry, the 4th resource in that
+bug class"). Real-verified via `git show db17f3b --stat`: it touches exactly 3 files —
+`errc-innovation-grid.md`, `lib/xaas/governance/changes/write_audit_log_entry.ex`, and
+`test/xaas/governance/audit_log_entry_test.exs` — and its commit message documents the same
+real fix (`after_action/2` + non-bang `Ash.create/2`), the same real regression test (a
+sandboxed-transaction-scoped raw-SQL `CHECK` constraint), and the same real stash/restore
+regression-guard proof this grid's own Ninth-pass section already described. **Correction to
+that section**: its closing line ("Left uncommitted per this session's own convention...") is
+now stale — the fix landed for real as part of `db17f3b`, not left uncommitted. `git status
+--short` this pass shows zero diff on `write_audit_log_entry.ex`,
+`audit_log_entry_test.exs`, or this grid file itself; the only tracked-file modification is
+an unrelated `templates-hooks/terraform-validate.txt.tmpl` (a different session's real work,
+not touched). Create item 14 below is updated to cite `db17f3b` as its real resolving commit.
+
+**This pass's real, systematic answer to "is there a 5th `after_transaction` misuse
+anywhere in `lib/xaas/`": no — the bug class is definitively closed.** Ran the exact
+requested sweep: `grep -rn "after_transaction(" lib/xaas/ --include="*.ex" | grep -v
+"^\s*#"` (the real call-site pattern, not moduledoc prose mentioning the term) returns
+**exactly one match**: `lib/xaas/governance/changes/enqueue_webhook_deliveries.ex:79`. Read
+that module's moduledoc in full this pass (lines 17-55): it is the one real,
+correctly-scoped usage — `after_transaction/2` holding a real blocking outbound HTTP
+dispatch decision until after the parent transaction durably commits, precisely the case
+`after_transaction/2` exists for. Every other hit from the broader `grep -rn
+"after_transaction"` (no paren) — `write_audit_log_entry.ex` (3 moduledoc lines describing
+the now-fixed history), `approval_sla_credit_apply_approve.ex` /
+`approval_patch_sla_credit_apply_approve.ex` / `subscription_prorate_tier_change.ex` (each 3
+moduledoc lines, same shape, round 7's real fix narrative), and 2 stale file-level comments
+(`approval_sla_credit_apply.ex:86`, `approval_patch_sla_credit_apply.ex:86`, both already
+flagged in this grid's Raise section as minor doc-drift, not re-flagged as a new finding) —
+is prose, not code. Cross-checked the positive side too: `grep -rln "after_action\b"
+lib/xaas/ --include="*.ex"` → 9 files, and reading each confirms every real internal
+Postgres-only write in this codebase (`WriteAuditLogEntry`,
+`ApprovalBackupRetentionChangeChargeOverage`, `ApprovalSlaCreditApplyApprove`,
+`ApprovalPatchSlaCreditApplyApprove`, `SubscriptionProrateTierChange`,
+`SubscriptionChargeOnActivate`, `ApplyProviderStatusChange`) now correctly uses
+`after_action/2`, while the 2 real outbound-HTTP dispatchers (`EnqueueWebhookDeliveries`,
+`DeliverWebhook`) correctly stay on `after_transaction/2` (`DeliverWebhook` doesn't even
+call either hook directly — it's a `:deliver` generic action's `run` implementation, not a
+changeset hook, so it was never a candidate for this bug class at all). **Zero live
+instances of the misuse remain; do not re-open this bug class without a genuinely new
+`after_transaction(` call site appearing in a future `git log`.**
+
+**Fresh finding — a real test-coverage parity gap, not a bug, on the pattern's own original
+exemplar.** Every one of the 4 resources round 7-8 fixed
+(`ApprovalSlaCreditApplyApprove`, `ApprovalPatchSlaCreditApplyApprove`,
+`SubscriptionProrateTierChange`, `WriteAuditLogEntry`) now carries a real, deterministic,
+forced-failure regression test proving its `after_action/2` atomicity — verified this pass
+via `grep -n "test \""` on each file:
+`test/xaas/billing/approval_sla_credit_apply_test.exs:164`,
+`test/xaas/billing/approval_patch_sla_credit_apply_test.exs:164`,
+`test/xaas/billing/subscription_test.exs:278`, and
+`test/xaas/governance/audit_log_entry_test.exs`'s 4th test. But
+`Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`
+(`lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex`) — the
+resource every one of those 4 fixes' moduledocs cites as the pre-existing correct pattern
+to match ("approval and the money movement succeed or fail together," its own moduledoc
+line 11) — has **no such test of its own**. Real-verified: `find test/xaas/governance
+-iname "*backup_retention*"` → only `approval_backup_retention_change_stress_test.exs` (one
+test, "30 real concurrent Tasks..."; round 7's own investigation already real-verified
+`Task.async`/`Sandbox.allow/3` does NOT reproduce this TOCTOU race — 0/120 collisions across
+8x15 trials — so this stress test cannot be the atomicity proof); the only other coverage,
+`test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs`, has 9
+real tests (`grep -n "test \""`) covering auth, org-isolation, and the happy-path overage
+charge, but none forces a real `Ledger.Transfer` failure mid-approval. No
+`test/xaas/governance/approval_backup_retention_change_test.exs` unit-test file exists at
+all (`find` returns nothing at that path). The exact deterministic technique the 4 sibling
+tests already use transfers directly: `charge_overage/2`
+(`approval_backup_retention_change_charge_overage.ex:52-53`) calls `open_or_get_account/1`
+twice, once for `record.org_id` and once for the fixed
+`@platform_revenue_account_identifier` (`"platform:revenue:backup-retention-overage"`,
+line 22) — setting a request's real `org_id` to that exact literal string makes both calls
+resolve to the identical `Xaas.Ledger.Account` row, deterministically tripping
+`AshDoubleEntry.Transfer.Changes.VerifyTransfer`'s real `from_account_id == to_account_id`
+rejection, the identical mechanism `approval_sla_credit_apply_test.exs:164-183` already
+uses and documents in its own comment. Selected as this pass's CREATE item; full spec in
+the structured output below.
+
+**Doc-drift and dev-fixture items re-verified unchanged, not re-selected.**
+`architecture-overview.md:27` / `http-api-surface.md:75`'s "44 of 69"/"44 of 49" real
+route-block count is still wrong (`grep -rl "routes do" lib/xaas --include="*.ex" | wc -l`
+→ still 56, unchanged since round 7 first found it). `priv/repo/seeds.exs` is still the
+unmodified 19-line book stub (`grep -c "Xaas\." priv/repo/seeds.exs` → still 0). Both
+carried forward in Create below at their existing item numbers, not re-litigated further —
+neither is more concrete or more valuable this pass than the test-parity gap above.
+
+**Concurrent peer-session churn, observed and left untouched, per this task's own
+instruction.** `git status --short` this pass shows 3 untracked migration files
+(`priv/repo/migrations/20260821073032_gauge_rr_op1_happy_v2.exs`,
+`20260821073059_gauge_verify_op3_widget_a.exs`, `20260821073114_gauge_rr_op1_happy_v3.exs`)
+— the same `gauge_rr_op*`/`gauge_verify_op*` naming pattern round 8 already documented
+seeing appear/disappear during its own verification. Also untracked:
+`GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl` — real artifacts of
+this session's other concurrently-running standing activities (ggen, innovation-explorer,
+Terraform), not this ERRC cron's own output. None read or referenced beyond their filenames;
+none are xaas backlog items.
 
 ## Ninth-pass update
 
@@ -461,12 +563,22 @@ sequence cover these):
   non-atomicity on `ApprovalSlaCreditApplyApprove`/`ApprovalPatchSlaCreditApplyApprove`/
   `SubscriptionProrateTierChange` — all 3 now use `after_action/2`, matching
   `ApprovalBackupRetentionChangeChargeOverage`. See "Eighth-pass update" above.
-- **NEW this pass — the identical bug class round 7 fixed is still live on the audit-trail
-  write**: `Xaas.Governance.Changes.WriteAuditLogEntry` wires its own internal
-  `AuditLogEntry` `Ash.create!/2` write via `after_transaction/2`, the same over-generalized
-  HTTP-dispatch rationale round 7 already diagnosed and corrected elsewhere, on a resource
-  round 7's own diff never touched. Full evidence in "Eighth-pass update" above. Selected as
-  this pass's CREATE item.
+- **RESOLVED (`db17f3b`, real, committed, confirmed as this pass's own `HEAD`)**: the
+  identical bug class round 7 fixed, found live on the audit-trail write in round 8 —
+  `Xaas.Governance.Changes.WriteAuditLogEntry` now uses `after_action/2`, matching the other
+  3. See "Tenth-pass update" above.
+- **CLOSED this pass — the whole `after_transaction/2`-misused-for-a-purely-internal-write
+  bug class, systematically, not just instance-by-instance.** A real
+  `grep -rn "after_transaction(" lib/xaas/ --include="*.ex" | grep -v "^\s*#"` sweep (the
+  exact audit this grid has been asked for across rounds 7-10) returns exactly one real call
+  site in the whole codebase — `enqueue_webhook_deliveries.ex:79`, the one genuinely
+  HTTP-blocking, correctly-scoped usage. Full evidence in "Tenth-pass update" above. Do not
+  re-propose this bug class again absent a new `after_transaction(` call site appearing in a
+  future `git log`.
+- **NEW this pass — test-coverage parity gap, not a bug: `ApprovalBackupRetentionChangeChargeOverage`
+  (the pattern's own original correct exemplar) has no forced-failure atomicity test of its
+  own, unlike all 4 resources fixed to match it.** Full evidence in "Tenth-pass update"
+  above. Selected as this pass's CREATE item.
 - **STILL OPEN — `architecture-overview.md:27`'s "44 of the 69" real HTTP-route-block
   claim does not match current code** (`grep -rl "routes do" lib/xaas --include="*.ex" | wc
   -l` → 56); the "44" figure traces to `http-api-surface.md:75`'s own stale "44 of 49"
@@ -559,12 +671,18 @@ sequence cover these):
     `architecture-overview.md:27` and `http-api-surface.md:75`** against the real current
     `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → 56 — still open, real-
     reconfirmed this pass; a doc fix rather than a feature so not selected over item 14.
-14. **RESOLVED** (was this grid's own item 14, eighth pass): real atomic (`after_action`,
-    not `after_transaction`) write of `Xaas.Operations.AuditLogEntry` from
+14. **RESOLVED** (was this grid's own item 14, eighth/ninth pass): real atomic
+    (`after_action`, not `after_transaction`) write of `Xaas.Operations.AuditLogEntry` from
     `Xaas.Governance.Changes.WriteAuditLogEntry`, plus a real test proving an audit-write
     failure rolls the parent `:approve` action's `approved_by` back instead of leaving it
-    silently un-audited — implemented and independently re-verified this (ninth) pass,
-    uncommitted (see "Ninth-pass update" above for the real verification evidence).
+    silently un-audited — **landed for real as `db17f3b`**, confirmed live as this pass's
+    own `HEAD` (see "Tenth-pass update" above; supersedes the ninth-pass section's stale
+    "uncommitted" framing).
+15. **Real forced-`Ledger.Transfer`-failure atomicity regression test for
+    `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`** — the one real
+    money-moving `after_action/2` write in this codebase's now-closed atomicity-bug class
+    that still lacks the deterministic same-account regression proof its own 4 siblings all
+    carry. Selected as this pass's CREATE item; full spec in the structured output below.
 7. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
    `lib/xaas`, and all 32 `Approval*` resources now hand-carry the identical policy block
@@ -589,6 +707,12 @@ sequence cover these):
 
 ## See Also
 
+- `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex`,
+  `test/xaas/billing/approval_sla_credit_apply_test.exs:150-183`,
+  `test/xaas/governance/approval_backup_retention_change_stress_test.exs`,
+  `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` — the
+  real atomic exemplar this pass's own selected CREATE item (item 15) closes the test-parity
+  gap on, and the deterministic same-account forced-failure technique it reuses verbatim
 - `docs/claude/diataxis/explanation/architecture-overview.md` — the sixth-pass Create item
   this grid identified: the whole-system onboarding map that previously did not exist; its
   own "44 of the 69" route-count claim (line 27) has drifted from current code and is still
