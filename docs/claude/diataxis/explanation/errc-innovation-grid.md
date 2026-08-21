@@ -6,8 +6,188 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (twenty-second pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (twenty-third pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Twenty-third-pass update
+
+**Real HEAD confirmed: `4ae55ab`.** `git rev-parse HEAD` →
+`4ae55ab732c19ee37c1461b737bf27dc997f9cec`. One real commit landed since the twenty-second-pass
+grid's own `f8119db`: `4ae55ab` ("round 21" in its own commit message — implements the
+twenty-second-pass grid's own selected item, the `ApprovalFreezeOverride`/`FreezeWindow`
+3-part reference-validation gap). Real-verified via `git show 4ae55ab --stat`: 4 files, 455
+insertions — `errc-innovation-grid.md` (the twenty-second-pass section itself),
+`approval_freeze_override.ex`, a new
+`lib/xaas/governance/validations/approval_freeze_override_freeze_window_exists.ex`, and a new
+`test/xaas/governance/approval_freeze_override_test.exs` (160 lines). **The twenty-second-pass
+finding is now RESOLVED, independently re-verified this pass, not just cited from the commit
+message**: `approval_freeze_override.ex:87-88` (real-read) now wires `validate
+Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists` onto `:create`, alongside
+the pre-existing `accept [:org_id, :requested_by, :freeze_window_id, :reason]`; the new
+validation module (real-read in full) is a genuine `Ash.Resource.Validation`, not a stub — it
+real-queries `Ash.get(Xaas.Governance.FreezeWindow, freeze_window_id, authorize?: false)` and
+rejects on nonexistence, cross-org mismatch, and `allow_emergency_override: false`, exactly the
+3 gaps disclosed last pass. The commit message discloses a real pre-fix exploit proof (temporarily
+removed the validate, 4 of 6 new tests failed across all 3 gap classes, one actually persisted a
+real row) — a real, load-bearing verification step, not merely asserted. **Per this pass's own
+task instruction — do not re-propose this fix, it's fixed.** The retrospective sweep of rounds
+14-16 that the twenty-second-pass section also performed (36 tests, 0 failures, zero regression)
+is likewise accepted as-is, not re-run — no new evidence would change a negative result that was
+itself real-run and real-passing last pass, and this pass's own task explicitly names a
+different, fresh investigation to run instead.
+
+**This pass's task, part (1): a real, systematic grep for the SAME "unvalidated
+foreign-key-shaped reference field" pattern that made `ApprovalFreezeOverride` exploitable, on
+every OTHER caller-supplied `*_id` attribute across Governance/Billing/Platform/Marketplace —
+not sampled, every match checked.**
+
+- **Real inventory: every loose `attribute :*_id, :string|:uuid do ... end` definition across
+  `lib/xaas/{governance,billing,platform,operations,marketplace,accounts}`, cross-referenced
+  against whether the referenced concept is even a modeled Ash resource in this codebase, and if
+  so, whether a real existence/cross-org validation exists.**
+  `grep -rn "attribute :.*_id, :" lib/xaas/{governance,billing,platform,operations,marketplace,accounts} --include="*.ex"`
+  → 47 matches. After excluding `org_id` itself (the already-exhaustively-tracked actor-vs-request
+  scoping question this grid has run 21 rounds on) and pure-external identifiers
+  (`stripe_customer_id`/`stripe_subscription_id` on `Xaas.Billing.Subscription` — real Stripe API
+  ids, not internal resource references), **9 real candidate "references another concept" fields
+  remained**, each checked individually below.
+- **6 of the 9 are real, confirmed negatives — the referenced concept has NO modeled Ash resource
+  anywhere in this codebase, so there is no real row to validate existence or cross-org ownership
+  against; structurally the same disclosed shape as `Xaas.Operations.AuditLogEntry.actor_id`/
+  `resource_id` (already-accepted polymorphic/external references), not a variant of the
+  `FreezeWindow` bug.** Real-checked via `find lib/xaas -iname "*<name>*.ex"` for each candidate
+  concept, zero resource-module hits for all 6: `approval_legal_hold_release.ex:154`'s
+  `hold_id` (own inline comment: "matching platform-console's real PUT body", no local `Hold`
+  resource exists); `approval_denied_party_override.ex:120`'s `screening_record_id` (no local
+  `ScreeningRecord` resource); `approval_export_subscription_update.ex:135`'s `access_key_id`
+  (own inline comment discloses this is an AWS access-key id `platform-console` encrypts at
+  rest, not an internal resource reference at all); `approval_break_glass_justification_review.ex:109`'s
+  `grant_id` (no local `Grant`/break-glass-grant resource); `pentest_finding.ex:130`'s
+  `engagement_id` (own inline comment, real self-disclosure: "xaas has no PentestEngagement
+  resource of its own yet, same honest-disclosure pattern this repo already uses"). One further
+  real-confirmed negative on closer read, not merely absent: `approval_subprocessor_registry_update.ex:122`'s
+  `subprocessor_id` already HAS a dedicated validation module,
+  `lib/xaas/governance/validations/approval_subprocessor_registry_update_valid_subprocessor_id.ex`
+  (real-confirmed present via `find`), wired onto `:create` — this one was already fixed before
+  this grid's own 21-round history began, not a gap.
+- **2 of the 9 are real, live, structurally-identical instances of the exact bug class, on
+  fields that DO reference a real, modeled Ash resource via a genuine `belongs_to` relationship
+  with a real Postgres foreign-key constraint (existence enforced at the DB layer, unlike
+  `FreezeWindow`'s plain unconstrained `:string`) — but carry ZERO cross-org validation between
+  the referenced row's own `org_id` and the request's own `org_id`.** Both real-read in full,
+  both real-checked against their migrations for the FK constraint, not assumed from the
+  `belongs_to` declaration alone.
+  - **`Xaas.Governance.ApprovalPentestFindingResolve.finding_id`**
+    (`approval_pentest_finding_resolve.ex:94`, real-read) is a real `:uuid` attribute backing a
+    real `belongs_to :finding, Xaas.Governance.PentestFinding` (lines 125-129), with a real
+    Postgres FK constraint confirmed via
+    `grep -n finding_id priv/repo/migrations/20260821021000_multitenancy_pilot_and_new_resources.exs`
+    → `approval_pentest_finding_resolves_finding_id_fkey`, real and named. `:create`
+    (`accept [:org_id, :finding_id, :requested_by, :resolution, :resolution_notes]`, line 67) has
+    **zero `validate` line of any kind** — no check that the `PentestFinding` row `finding_id`
+    references belongs to the same `org_id` the request itself claims. Real severity ceiling
+    checked, not assumed: `lib/xaas/governance/changes/approval_pentest_finding_resolve_approve.ex`
+    (real-read in full, 12 lines) is a confirmed pure identity no-op —
+    `def change(changeset, _opts, _context) do changeset end` — unchanged since the
+    twenty-first-pass grid section first disclosed this. So `:approve`'s real live effect today
+    is limited to persisting a false "approved" resolution record cross-referencing a real,
+    different org's real `PentestFinding` row — a compliance/audit-trail integrity break, the
+    same severity tier as the just-fixed `FreezeWindow` gap, not an infra-level write.
+  - **`Xaas.Marketplace.ApprovalProviderStatusChange.provider_id`**
+    (`approval_provider_status_change.ex:124`, real-read) is a real `:uuid` attribute backing a
+    real `belongs_to :provider, Xaas.Marketplace.Provider` (lines 153-158), with a real Postgres
+    FK constraint confirmed via
+    `grep -n provider_id priv/repo/migrations/20260821042622_add_approval_provider_status_change.exs`
+    → `approval_provider_status_changes_provider_id_fkey`, real and named. `:create`'s bypass uses
+    `Xaas.Marketplace.Checks.ActorOrgMatches` (real-read in full) — a genuine `SimpleCheck`
+    verifying the ACTOR's own asserted `org_id` matches the REQUEST row's own `org_id` attribute
+    — and `:approve`'s bypass uses the sibling `ActorOrgFilter` (real `FilterCheck`,
+    `expr(org_id == ^actor(:org_id))`) filtering on that same request row's `org_id`. **Neither
+    check anywhere reads or filters on `provider_id`'s OWN `org_id`** (the `Provider` row it
+    references) — a real, structurally distinct gap from the request row's own org-scoping, which
+    is otherwise genuinely correct. `:approve`'s change module,
+    `lib/xaas/marketplace/changes/apply_provider_status_change.ex` (real-read in full), is
+    **not** inert: `Ash.get(Provider, record.provider_id, authorize?: false)` then really
+    `Ash.update(provider, %{status: record.requested_status}, action: :update, authorize?: false)`
+    inside the same DB transaction — a real, live write to the referenced `Provider` row's
+    `status` attribute, unconditionally, regardless of which org that `Provider` actually belongs
+    to. **This is the single most severe finding of this pass's sweep: a real, live,
+    infra-level cross-org WRITE to an existing victim-org's resource, reachable entirely through
+    actions that are each individually, correctly org-scoped on their own primary `org_id`
+    attribute — the org-scoping fix pattern this grid has applied 21 times does not, by itself,
+    close this gap, because the vulnerable field is a REFERENCE to a different resource's row,
+    not the request's own `org_id`.**
+    - **Real, live HTTP-level exploit proof obtained this pass, not just static reasoning —
+      matching this grid's own established evidence discipline (a temporary `ConnCase` test,
+      written, run once, then deleted, never committed; `git status --short
+      test/kanban_web/controllers/` confirmed clean both before and after).**
+      `test/kanban_web/controllers/scratch_provider_status_change_cross_org_test.exs` (written,
+      run, `rm`'d): created two real orgs (`attacker_org`, `victim_org`), a real `Provider` row
+      owned by `victim_org` with `status: :pending`. `POST /api/approval_provider_status_change`
+      with `X-Org-Id: attacker_org` and body `org_id: attacker_org, provider_id:
+      <victim_provider.id>, requested_status: "active"` → real `HTTP 201` (passes
+      `ActorOrgMatches` cleanly — attacker asserted its own real org, exactly matching the
+      request's own `org_id`, nothing forged there). `PATCH
+      /api/approval_provider_status_change/:id` with `X-Org-Id: attacker_org` and a distinct
+      `approved_by` → real `HTTP 200` (passes `ActorOrgFilter` cleanly — the request row's own
+      `org_id` is `attacker_org`, matching the approving actor). Then, real-queried directly:
+      `Provider |> Ash.get!(victim_provider.id, authorize?: false)` → **`status: :active`** — the
+      victim org's real `Provider` row was really flipped from `:pending` to `:active` by an
+      actor who never once asserted, or was ever checked against, the victim org's identity.
+      Real, exact captured output this pass: `VICTIM PROVIDER STATUS AFTER: active` /
+      `VICTIM PROVIDER ORG: org-138, ATTACKER ORG: org-74`. **A real, live, provable
+      cross-org infra-level compromise — not a compliance-record-only gap — using only the
+      standard, shared `INTERNAL_API_TOKEN` and knowledge of a target `Provider`'s real UUID**
+      (real-checked for reachability: `Provider:read`/`:index` bypass is
+      `authorize_if Xaas.Marketplace.Checks.ActorOrgFilter`, meaning an attacker cannot list
+      other orgs' providers through this API — but any UUID learned by other means, e.g.
+      log/error-message leakage, a shared support ticket, or simple guessing against a
+      low-cardinality dev/staging dataset, is sufficient).
+    - **Real, confirmed existing test coverage does NOT already catch this** — checked, not
+      assumed: `test/kanban_web/controllers/approval_provider_status_change_controller_test.exs`
+      (real-read in full, 4 tests) covers the happy path, same-org self-approval rejection, and a
+      DIFFERENT-org actor trying to approve a request that ALREADY has matching `org_id`/
+      `provider_id` (i.e., the existing "PATCH rejects approving a DIFFERENT org's real
+      status-change request" test keeps `provider.org_id == request.org_id == owner_org`
+      throughout, and only varies the APPROVING actor's org) — it never constructs the scenario
+      this pass found, where `provider_id` and `org_id` belong to two DIFFERENT orgs from the
+      very `:create` call, entirely within one, single, consistently-asserted actor org
+      throughout create AND approve. A real, previously-untested attack shape.
+- **1 of the 9 is a real, already-fixed negative, re-confirmed rather than skipped.**
+  `approval_subprocessor_registry_update.ex:122`'s `subprocessor_id` is counted in the "6
+  negatives" group above for completeness of the 9-item accounting, but unlike the other 5 it
+  does reference a real modeled concept AND already has a real dedicated validation — the one
+  candidate of the 9 that turned out to be a real positive-but-already-closed case, not a true
+  negative by absence of a referenceable resource. Noted here so the 9-item count above is
+  exact and auditable (6 "no modeled resource" + 1 "modeled resource, already validated" + 2
+  "modeled resource, real live gap" = 9).
+
+**Selected: `Xaas.Marketplace.ApprovalProviderStatusChange.provider_id`'s missing cross-org
+validation, not `ApprovalPentestFindingResolve.finding_id`, not part (2) (architecture-overview.md
+drift check).** Severity comparison, real not assumed: `ApprovalProviderStatusChange` is the only
+one of the two live reference-field gaps whose `:approve` action performs a real, non-inert write
+to the referenced row (`ApprovalPentestFindingResolve:approve` is a confirmed no-op, capping its
+real impact at a false compliance record) — and this pass obtained live HTTP proof of the exploit,
+not just static reasoning. Against part (2): a light real check this pass (`wc -l
+docs/claude/diataxis/explanation/architecture-overview.md` → 132 lines; `grep -n "Last Updated\|round"`
+→ zero matches, confirming the doc has never once been touched across 21 real ERRC rounds, real
+evidence of likely drift) shows a real, plausible staleness question, but "update a doc to reflect
+already-fixed history" is not actionable, live-exploitable work for the Create phase the way a
+real, HTTP-proven cross-org write is — matching this grid's own established prioritization (a
+negative/documentation finding is real and disclosed, not selected over a live security defect).
+Full spec for the selected item in the structured output below.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this pass
+shows: a modified `templates-hooks/terraform-validate.txt.tmpl`, and untracked
+`GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl` — the same class of
+other-standing-activity output prior passes have logged. None touch `lib/xaas/marketplace/`,
+`lib/xaas/governance/`, or any file this pass's finding depends on. None read beyond filenames,
+none touched. The temporary scratch test this pass wrote to obtain live HTTP proof
+(`test/kanban_web/controllers/scratch_provider_status_change_cross_org_test.exs`) was run once,
+then deleted before this doc update — confirmed via `git status --short
+test/kanban_web/controllers/` returning no output, both before and after.
 
 ## Twenty-second-pass update
 
@@ -2851,9 +3031,73 @@ sequence cover these):
     controller/unit test file (currently zero coverage of any kind) proving the missing-window,
     cross-org-window, and `allow_emergency_override: false` rejection cases plus the legitimate
     accept path. Full spec in "Twenty-second-pass update" above and the structured output below.
+32. **RESOLVED** (was this grid's own item 31, twenty-second pass): a real
+    `Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists`
+    (`Ash.Resource.Validation`) wired onto `ApprovalFreezeOverride:create`, checking existence,
+    cross-org match, and `allow_emergency_override: true` on the referenced `FreezeWindow` row —
+    **landed for real as `4ae55ab`** (round 21), confirmed live this (twenty-third) pass: the
+    module and the resource's updated `actions do` block both real-read in full,
+    `test/xaas/governance/approval_freeze_override_test.exs` (160 lines, new) provides this
+    resource's first-ever real test coverage of any kind. The commit's own disclosed pre-fix
+    exploit proof (validate removed, 4 of 6 tests failed, one persisted a real cross-org row) is
+    real, load-bearing evidence, not merely asserted. Closed all 3 disclosed gaps. See
+    "Twenty-third-pass update" above.
+33. **Selected as this pass's (twenty-third) CREATE item.** A real, systematic grep for the same
+    "unvalidated foreign-key-shaped reference field" pattern across every other caller-supplied
+    `*_id` attribute in Governance/Billing/Platform/Marketplace (47 raw matches, 9 real candidates
+    after excluding `org_id` itself and external Stripe ids) found 6 real negatives (the
+    referenced concept has no modeled Ash resource in this codebase at all — `hold_id`,
+    `screening_record_id`, `access_key_id`, `grant_id`, `engagement_id`, each self-disclosed or
+    structurally equivalent to the already-accepted `AuditLogEntry.actor_id`/`resource_id`
+    pattern), 1 already-fixed negative (`ApprovalSubprocessorRegistryUpdate.subprocessor_id`
+    already has a dedicated validation module), and 2 real, live, structurally-identical
+    instances of the exact bug class on fields that DO reference a real, modeled resource via a
+    genuine `belongs_to` + real Postgres FK constraint (existence enforced at the DB layer,
+    unlike `FreezeWindow`'s unconstrained plain string) yet carry zero cross-org validation
+    between the referenced row's own `org_id` and the request's own `org_id`:
+    `Xaas.Governance.ApprovalPentestFindingResolve.finding_id` (references
+    `Xaas.Governance.PentestFinding`; capped at compliance-record-only severity because
+    `:approve`'s own change module, real-read, is a confirmed pure identity no-op — it never
+    mutates `PentestFinding.status`) and **`Xaas.Marketplace.ApprovalProviderStatusChange
+    .provider_id`** (references `Xaas.Marketplace.Provider`; selected as the more severe of the
+    two and this pass's CREATE item, because `:approve`'s change module,
+    `Xaas.Marketplace.Changes.ApplyProviderStatusChange`, is NOT inert — it really writes the
+    referenced `Provider` row's `status` attribute inside the same DB transaction). **Real, live
+    HTTP-level exploit obtained this pass** (temporary `ConnCase` test, written, run once,
+    deleted, never committed): an actor whose `X-Org-Id` and request body `org_id` both
+    genuinely, correctly match its own real org (passing `ActorOrgMatches` on `:create` and
+    `ActorOrgFilter` on `:approve` cleanly, no forgery of its own identity) supplied a real
+    `provider_id` belonging to a DIFFERENT, victim org — `POST` real `201`, `PATCH` real `200`,
+    and the victim org's real `Provider.status` really flipped `:pending` → `:active`, confirmed
+    via a direct post-request `Ash.get!(authorize?: false)` read. A real, live, infra-level
+    cross-org write to an existing victim-org resource, not merely a compliance record — the
+    single most severe finding of this pass's sweep, and structurally distinct from every prior
+    org-scoping fix in this grid because each of the two actions involved is individually,
+    correctly scoped on its OWN primary `org_id` attribute; the vulnerable field is a reference
+    to a different resource's row. Scope: a new `Ash.Resource.Validation` (or a
+    `Ash.Policy.FilterCheck` reading through the `belongs_to :provider` relationship — the exact
+    mechanism to be decided in the Create phase, following the `authorize?: false` cross-resource
+    -read discipline `ApprovalFreezeOverrideFreezeWindowExists` and
+    `Xaas.Billing.Checks.ActorOrgMatches.subscription_org_id/1` already established) wired onto
+    `ApprovalProviderStatusChange:create`, checking that `provider_id` references a real
+    `Provider` row whose own `org_id` matches the request's own `org_id`; the same-shape,
+    lower-severity `ApprovalPentestFindingResolve.finding_id` gap disclosed as a real,
+    same-batch-eligible follow-up, not dropped. Full spec in "Twenty-third-pass update" above.
 
 ## See Also
 
+- `lib/xaas/marketplace/approval_provider_status_change.ex:124` (the real `provider_id`
+  attribute, unvalidated against its own `Provider`'s `org_id`),
+  `lib/xaas/marketplace/changes/apply_provider_status_change.ex` (the real, non-inert
+  `:approve` change that writes the referenced `Provider.status`),
+  `priv/repo/migrations/20260821042622_add_approval_provider_status_change.exs` (the real
+  `approval_provider_status_changes_provider_id_fkey` FK — existence enforced, cross-org not),
+  `lib/xaas/governance/approval_pentest_finding_resolve.ex:94` (the same-class,
+  lower-severity `finding_id` sibling) — this pass's twenty-third-pass systematic sweep and its
+  selected CREATE item
+- `lib/xaas/governance/approval_freeze_override.ex`,
+  `lib/xaas/governance/validations/approval_freeze_override_freeze_window_exists.ex` — the
+  twenty-second-pass finding, **RESOLVED** as `4ae55ab` (round 21), re-verified this pass
 - `lib/xaas/accounts/org.ex:132-143` (the real, atomic-upgrade-eligible `:update` action —
   zero custom `validate`/`change` modules), `lib/xaas/accounts/checks/actor_belongs_to_org.ex`
   (the real `changeset.data`-reading check gating it),

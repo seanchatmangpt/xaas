@@ -170,6 +170,44 @@ defmodule KanbanWeb.ApprovalProviderStatusChangeControllerTest do
     assert persisted_provider.status == :pending
   end
 
+  test "POST rejects a provider_id belonging to a DIFFERENT org, even when the actor's own org_id genuinely matches on both create and approve -- the real, twenty-third-pass ERRC grid fix",
+       %{conn: conn} do
+    attacker_org = real_org_slug!()
+    victim_org = real_org_slug!()
+    victim_provider = create_provider!(victim_org, :pending)
+
+    create_body = %{
+      "data" => %{
+        "type" => "approval_provider_status_change",
+        "attributes" => %{
+          "org_id" => attacker_org,
+          "provider_id" => victim_provider.id,
+          "requested_by" => "attacker-requester",
+          "requested_status" => "active"
+        }
+      }
+    }
+
+    create_resp =
+      conn
+      |> json_headers(attacker_org)
+      |> post("/api/approval_provider_status_change", create_body)
+
+    assert create_resp.status == 400
+
+    # No real cross-org request row was persisted.
+    persisted =
+      ApprovalProviderStatusChange
+      |> Ash.read!(authorize?: false)
+      |> Enum.filter(&(&1.org_id == attacker_org))
+
+    assert persisted == []
+
+    # The victim's real Provider status was never touched.
+    victim_after = Provider |> Ash.get!(victim_provider.id, authorize?: false)
+    assert victim_after.status == :pending
+  end
+
   test "POST without X-Org-Id really 400s", %{conn: conn} do
     org_id = real_org_slug!()
     provider = create_provider!(org_id, :pending)

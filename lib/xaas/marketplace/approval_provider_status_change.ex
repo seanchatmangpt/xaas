@@ -94,6 +94,8 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChange do
 
     create :create do
       accept [:org_id, :provider_id, :requested_by, :requested_status]
+
+      validate Xaas.Marketplace.Validations.ApprovalProviderStatusChangeProviderOrgMatches
     end
 
     update :approve do
