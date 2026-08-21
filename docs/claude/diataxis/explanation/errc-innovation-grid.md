@@ -6,7 +6,157 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (twelfth pass).
+2026-08-21 (thirteenth pass).
+
+## Thirteenth-pass update
+
+**Real HEAD confirmed: `cf233af`.** `git rev-parse HEAD` →
+`cf233af8a8cc860484325fe9e7a4bf0ec70ea9e6`. Two real commits landed since the twelfth-pass
+grid's own `98eeccd`: `e90d478` (round 11 — real-verified via `git show e90d478 --stat`, 4
+files, 477 insertions — implements exactly item 11/this grid's own twelfth-pass CREATE spec:
+`lib/xaas/dev_seeds.ex`, new `priv/repo/seeds.exs` body, `test/xaas/dev_seeds_test.exs`, and
+this grid file itself, refreshed in place by that commit to what is now the "Twelfth-pass
+update" section above) and `cf233af` (a real `mix xaas.capability_coverage` 3-run
+repeatability report, `docs/COVERAGE-TREND-2026-08-21.md`, from this session's separate
+Measure-phase standing activity — not this ERRC cron's own output, read for context, not
+touched). **Item 11 is now RESOLVED for real**, confirmed independently this pass (not just
+citing the commit message): `wc -l priv/repo/seeds.exs` → 45 lines (up from the 19-line stub),
+`grep -c "Xaas\." priv/repo/seeds.exs` → 2 real calls, `lib/xaas/dev_seeds.ex` exists and was
+read in full this pass (168 lines).
+
+**This pass's real, run-verified answer to the task's own scoped question — does
+`Xaas.DevSeeds.approve_seeded_pending!/0` double-charge under repeat calls — is nuanced: the
+helper itself is safe, but the resource it exercises has a real, freshly-proven double-charge
+bug on direct re-approval, unrelated to the helper's own idempotency design.**
+
+- **The helper itself (`approve_seeded_pending!/0`, `lib/xaas/dev_seeds.ex:88-96`) does not
+  double-charge on repeat calls, but not because it is idempotent — because each call
+  operates on a fresh row.** Real-traced: `run/0`'s `get_or_create_pending_approval/1`
+  (`dev_seeds.ex:144-167`) filters `is_nil(approved_by)` to find an existing unapproved row.
+  After a first `approve_seeded_pending!/0` call approves that row (`approved_by` now
+  non-nil), a second call's same filter no longer matches it, so `run/0` creates a **second**
+  pending `ApprovalBackupRetentionChange` row and approves that one instead. Net real effect
+  of calling the helper N times: N distinct approved rows, N real $6.00 overage charges (not
+  one row double-charged N times) — a real, disclosed, honest characterization: not a bug
+  (each charge corresponds to a distinct real approval event, not a duplicate of the same
+  one), but also not the no-op idempotency `run/0`'s own moduledoc claims for itself acting
+  alone — `approve_seeded_pending!/0`'s own doc comment does not make an idempotency claim,
+  so this is a correct behavior for a smoke-test helper, not a doc/behavior mismatch.
+- **The real, freshly-proven bug is one level down: `Xaas.Governance.Changes
+  .ApprovalBackupRetentionChangeChargeOverage` — the exact resource/change `DevSeeds`'
+  helper exercises, and the atomicity thread's own repeatedly-cited "reference exemplar"
+  (rounds 7-9, `docs/claude/diataxis/explanation/errc-innovation-grid.md`'s own prior
+  language) — has no guard against being run twice on the SAME already-approved record, and
+  a real, live-run test this pass proves it double-charges.** Real-verified by writing and
+  running a temporary, uncommitted test this pass (deleted immediately after, never landed —
+  `git status --short test/xaas/governance/` confirmed clean before and after): create one
+  real `Org` + one real `ApprovalBackupRetentionChange` (`:pro` tier, 90 requested days, 60
+  real overage days), call `:approve` once (`approved_by: "approver-scratch"`), read the real
+  `Xaas.Ledger.Balance` — `Money.new(:USD, "-6")`, matching the controller test's own known
+  60-day-overage math. Call `:approve` a **second time on the identical record** with the same
+  `approved_by` (passes `ApprovalBackupRetentionChangeRequiresApprover` — that validation only
+  checks `approved_by` is present and differs from `requested_by`, never that the record's
+  *prior* `approved_by` was nil) — real output: `Money.new(:USD, "-12")`. **A real, live,
+  double-charge.** Root cause read in full,
+  `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex:29-45`:
+  `change/3` wires `Ash.Changeset.after_action/2` (correct, atomic — this part of the pattern
+  is fine) but its callback unconditionally calls `charge_overage/2` any time
+  `overage_days(record) > 0`, with **no check of `changeset.data.approved_by`'s pre-write
+  value** — unlike its own Billing-domain siblings.
+- **This is a real, disclosed regression relative to a pattern this exact codebase already
+  established twice, just never applied here.** `lib/xaas/billing/changes
+  /approval_sla_credit_apply_approve.ex:75-90` and
+  `approval_patch_sla_credit_apply_approve.ex` (same shape) both wrap their real Ledger credit
+  in a `newly_approved?(changeset, record)` guard (`prev = changeset.data.approved_by; is_nil
+  (prev) or prev == ""`, real-read this pass) — `test/xaas/billing/approval_sla_credit_apply_
+  test.exs:93-113`'s own "approving twice does not double-credit" test proves it holds there.
+  `Xaas.Billing.Changes.ApprovalTierDowngradeApprove` (round 10's own CREATE item) was
+  real-checked this pass for the identical gap and found protected, but by a different,
+  incidental mechanism, not a `newly_approved?/2` guard of its own: its `apply_downgrade/1`
+  (`approval_tier_downgrade_approve.ex:38-44`) calls `Subscription.change_tier` unconditionally
+  too, but `Xaas.Billing.Validations.SubscriptionChangeTierNotNoOp`
+  (`lib/xaas/billing/subscription.ex:226-233`'s `validate` line, real-read this pass) rejects
+  a `:change_tier` call whose target tier matches the subscription's real current tier — so a
+  second `:approve` call (subscription already at `requested_tier` from the first) fails
+  validation cleanly and rolls back the second approval's own `approved_by`, inside the same
+  outer transaction, with zero double-charge. Real, verified negative, not asserted from
+  reading alone — this pass traced the actual validation and confirmed the mechanism, not
+  just its absence of a `newly_approved?` call. **`ApprovalBackupRetentionChangeChargeOverage`
+  is therefore the one real remaining unguarded instance among this session's own
+  5-member "atomic `after_action/2` money/audit write" set** (the other 4 —
+  `ApprovalSlaCreditApplyApprove`, `ApprovalPatchSlaCreditApplyApprove`,
+  `SubscriptionProrateTierChange`/`ApprovalTierDowngradeApprove`, `WriteAuditLogEntry` — are
+  each protected, by 2 different but real mechanisms).
+- **Zero existing test coverage of this exact scenario, confirmed by direct grep, not
+  inference**: `grep -n "test \""
+  test/xaas/governance/approval_backup_retention_change_test.exs
+  test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` shows 1
+  unit test (the round-9 forced-Ledger-failure atomicity test) and 9 controller tests (auth,
+  org-isolation, happy-path overage/no-overage) — none calls `:approve` twice on the same
+  record. `test/xaas/dev_seeds_test.exs` (round 11's own new file) similarly has exactly one
+  test of `approve_seeded_pending!/0`, called once. Selected as this pass's CREATE item; full
+  spec in the structured output below.
+
+**Doc-drift item real-recounted and fixed this pass, not just carried forward again — the
+task's own invitation ("maybe it's time") was correct, and the fix was real but not quite the
+predicted one-liner.** Re-ran `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still
+56 (unchanged since round 7, now the 7th consecutive pass confirming this exact number).
+`architecture-overview.md:27`'s "44 of the 69" **fixed to "56 of the 69"** — a real one-line
+correction, applied this pass (the 69 denominator was independently re-verified accurate: a
+real `Ash.Domain.Info.resources/1` count across all 7 domains run this pass returns 75 total,
+but 6 of those are `AshPaperTrail`'s own auto-generated `.Version` shadow resources
+(`ApprovalBackupRetentionChange.Version`, `ApprovalDeploymentQuarantine.Version`,
+`ApprovalDrFailover.Version`, `ApprovalFreezeOverride.Version`,
+`ApprovalLegalHoldRelease.Version`, `FreezeWindow.Version` — real-enumerated this pass via
+`Ash.Domain.Info.resources(Xaas.Governance)`, 33 total, 27 non-`.Version`) — 75 − 6 = 69,
+matching the doc's own explicitly-declared-`resources do`-block definition exactly; not a
+bug, two real, consistent, differently-scoped counts, worth knowing apart). `http-api-surface
+.md:75`'s "44 of 49" needed more than a number swap: real-checked, its own next sentence
+("every one of the 44 declares **only** `get :read` and `index :read` — no create/update/
+destroy route was added for any resource") is now flatly false — real-verified this pass via
+a per-resource `routes do` block scan for `post :create|patch :approve|patch :update|delete
+:destroy`: **44 of the 56** resources with a `routes do` block now carry a real mutation
+route (the maker-checker wiring rounds 5-10 landed), only 12 are still read-only-only. Fixed
+in place: corrected count (56 of 69), corrected mutation-route claim (44 of 56 now mutate, not
+0 of 44), and a real, honest downgrade of the Phase-5-still-open framing to "substantially
+addressed, not fully resolved" (the 5 deliberately-unwired sensitive resources are still
+zero-route regardless of mutation status). Both fixes verified by direct `Read` of the edited
+files after editing, not just the `Edit` tool's own success signal.
+
+**This pass's real, task-directed check of `ApprovalTierDowngrade`'s and `DevSeeds`'s own
+AshIam/multitenancy/audit-log coverage relative to the patterns rounds 1-9 established — real,
+honest, mostly-negative finding, correctly disclosed rather than silently skipped.**
+`Xaas.DevSeeds` is not an `Ash.Resource` at all (`grep -n "use Ash.Resource\|use Xaas.Resource"
+lib/xaas/dev_seeds.ex` → zero matches, real-confirmed this pass) — it is a plain Elixir module
+invoked by `mix run priv/repo/seeds.exs`, so AshIam/multitenancy/`AshPaperTrail`/audit-log
+concepts (which apply to Ash resources under HTTP policy authorization) do not literally apply
+to it; a real N/A, not an oversight. `Xaas.Billing.ApprovalTierDowngrade`
+(`lib/xaas/billing/approval_tier_downgrade.ex`, real-read in full this pass) has **none** of
+`multitenancy do`, `AshPaperTrail.Resource`/`paper_trail do`, or `WriteAuditLogEntry` wired —
+but real-checked and confirmed this pass: **this is not a resource-specific regression, it is
+the whole `Xaas.Billing` domain's real, consistent, existing scope** — `grep -rl
+"multitenancy do\|AshPaperTrail.Resource\|WriteAuditLogEntry"
+lib/xaas/billing --include="*.ex"` → zero hits across all 7 real Billing resources, not just
+this one. The 3 mechanisms rounds 1-9 established are real but were only ever extended to the
+Governance domain's `Approval*` resources (per this grid's own "What changed" section,
+`dc7c3e9`/`7320791`), never proposed or landed for Billing. This is a real, larger,
+cross-cutting question worth naming honestly — Billing's `Approval*` resources now move real
+Ledger money (SLA credits, tier-change prorations, and now this pass's own found overage-charge
+bug), the same real risk class Governance's multitenancy/audit-log treatment was built to
+cover — but extending 3 mechanisms across 7 resources is real, larger-scoped work than one
+batch, not this pass's selected CREATE item; carried forward as a named backlog item distinct
+from (and broader than) the already-carried-forward item 7 (`MakerChecker` shared DSL).
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this pass
+(before this grid's own edit) showed: a modified `templates-hooks/terraform-validate.txt.tmpl`,
+and untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl` — real artifacts of
+this session's other standing activities (Terraform, ggen, innovation-explorer), not this ERRC
+cron's own output. None read beyond filenames, none touched. `docs/COVERAGE-TREND-2026-08-21.md`
+(the Measure-phase report landed as `cf233af`) was read in full for context (its real
+"75 total resources" figure fed this pass's own denominator cross-check above) but not edited
+— not this cron's own file.
 
 ## Twelfth-pass update
 
@@ -780,7 +930,37 @@ sequence cover these):
 
 ## Raise
 
-- **RESOLVED (`98eeccd`, real, committed, confirmed as this pass's own `HEAD`)**: the dead,
+- **NEW this pass, real, live-run-verified — `Xaas.Governance.Changes
+  .ApprovalBackupRetentionChangeChargeOverage` double-charges on re-approval of the same
+  record.** No `newly_approved?/2`-style guard (unlike its 2 Billing SLA-credit siblings);
+  a real, temporary, deleted-after-run test proved `-$6.00` → `-$12.00` across 2 real
+  `:approve` calls on 1 record. Full evidence in "Thirteenth-pass update" above. Selected as
+  this pass's CREATE item; item 18 in Create below.
+- **NEW this pass, real, negative-checked — `ApprovalTierDowngrade`'s equivalent path is
+  safe, but by an incidental mechanism, not a deliberate guard.**
+  `SubscriptionChangeTierNotNoOp` rejects a same-tier `:change_tier` call, so a second
+  `:approve` on an already-downgraded record fails validation and rolls back cleanly. Real,
+  traced, not assumed. See "Thirteenth-pass update" above.
+- **NEW this pass, real, domain-wide, not resource-specific — `Xaas.Billing`'s entire 7-resource
+  surface (including `ApprovalTierDowngrade`, round 10's own CREATE item) has zero
+  `multitenancy`, zero `AshPaperTrail.Resource`, zero `WriteAuditLogEntry` wiring.** The 3
+  mechanisms rounds 1-9 established were only ever extended to Governance's `Approval*`
+  resources, never proposed for Billing, despite Billing's `Approval*` resources now moving
+  real Ledger money (SLA credits, tier-change prorations, and this pass's own found overage
+  bug) — the same real risk class the Governance treatment was built to cover. Real, larger
+  than one batch (7 resources × 3 mechanisms); named as a standing backlog item, not this
+  pass's CREATE selection. `Xaas.DevSeeds` itself is confirmed real N/A — not an `Ash.Resource`
+  at all, a plain module.
+- **RESOLVED this pass — the "44 of the 69"/"44 of 49" real HTTP-route-block/mutation-route
+  claims, flagged unchanged across 6 consecutive prior passes, are fixed in place.**
+  `architecture-overview.md:27`: "44" → "56" (real current `grep -rl "routes do" lib/xaas
+  --include="*.ex" | wc -l` count). `http-api-surface.md:75`: "44 of 49" → "56 of 69", plus
+  its own now-false "every one of the 44... only get :read/index :read" claim corrected to
+  "44 of those 56 now declare a real mutation route... only 12 of 56 are still read-only" —
+  real-recounted this pass via a per-resource `routes do` block scan. Both edits verified by
+  reading the files back after editing. Full evidence in "Thirteenth-pass update" above. Do
+  not re-flag this specific figure without a fresh recount showing new drift.
+- **RESOLVED (`98eeccd`, real, committed)**: the dead,
   unwired `ApprovalTierDowngradeApprove` no-op — `:approve` now really drives `Subscription
   .change_tier` (a real tier drop + real prorated `Ledger` credit), atomically. See
   "Twelfth-pass update" above. Item 16 in Create below is now marked RESOLVED.
@@ -823,14 +1003,10 @@ sequence cover these):
   in "Eleventh-pass update" above. `ApprovalTierDowngrade` selected as this pass's CREATE
   item (the one of the 5 with a real, ready-built target — `Subscription.change_tier` — to
   wire into); the other 4 remain real, open, larger-scoped gaps for a future pass.
-- **STILL OPEN — `architecture-overview.md:27`'s "44 of the 69" real HTTP-route-block
-  claim does not match current code** (`grep -rl "routes do" lib/xaas --include="*.ex" | wc
-  -l` → 56); the "44" figure traces to `http-api-surface.md:75`'s own stale "44 of 49"
-  count from before the domain surface grew to 69 resources. Flagged fresh two passes ago;
-  real-reconfirmed this pass that `aec265a` (which found and documented it) did not fix
-  either doc — its diff touched only the grid and the 3 Ledger changes. Both reference docs
-  still need a real re-count pass; not selected as this pass's CREATE item (a doc fix, not a
-  feature, and a more concrete correctness gap was found instead — see above).
+- **RESOLVED — thirteenth pass.** This bullet is historical (eighth-pass) context, preserved
+  for the record; see the new "RESOLVED this pass" Raise bullet near the top of this section
+  and "Thirteenth-pass update" above for the real fix (both docs corrected, "44" → "56 of
+  69", plus http-api-surface.md's now-false read-only-only claim also corrected).
 - **NEW this pass, minor — stale rationale comments in 2 resource files**:
   `lib/xaas/billing/approval_sla_credit_apply.ex:85` and
   `lib/xaas/billing/approval_patch_sla_credit_apply.ex:85` still say "why
@@ -911,10 +1087,12 @@ sequence cover these):
     `ApprovalPatchSlaCreditApplyApprove`/`SubscriptionProrateTierChange`, plus real tests
     proving a Ledger failure rolls the parent approval/tier-change back — `aec265a`, round 7,
     verified live this pass. See "Eighth-pass update" above.
-13. **Re-count and fix the "44 of the 69"/"44 of 49" real HTTP-route-block claims in
-    `architecture-overview.md:27` and `http-api-surface.md:75`** against the real current
-    `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → 56 — still open, real-
-    reconfirmed this pass; a doc fix rather than a feature so not selected over item 14.
+13. **RESOLVED — thirteenth pass.** Re-counted and fixed the "44 of the 69"/"44 of 49" real
+    HTTP-route-block/mutation-route claims in `architecture-overview.md:27` and
+    `http-api-surface.md:75` against the real current `grep -rl "routes do" lib/xaas
+    --include="*.ex" | wc -l` → 56, plus corrected http-api-surface.md's now-false
+    read-only-only claim (44 of 56 now carry a real mutation route). See "Thirteenth-pass
+    update" above.
 14. **RESOLVED** (was this grid's own item 14, eighth/ninth pass): real atomic
     (`after_action`, not `after_transaction`) write of `Xaas.Operations.AuditLogEntry` from
     `Xaas.Governance.Changes.WriteAuditLogEntry`, plus a real test proving an audit-write
@@ -960,13 +1138,39 @@ sequence cover these):
     `Xaas.Marketplace.ApprovalProviderStatusChange` still has no `identities do` block
     guarding against a duplicate *pending* status-change request for the same
     `provider_id`. Carried forward, not selected this pass.
-11. **Selected as this pass's CREATE item.** A real `priv/repo/seeds.exs` populated with
-    `Xaas.*` fixtures for local dev — unchanged since fifth-pass grid first flagged it,
-    real-reconfirmed unchanged 6 consecutive passes (still 19 lines, still 0 real `Xaas.*`
-    calls). Full spec in the structured output below.
+11. **RESOLVED** (was this grid's own item 11, twelfth pass): a real `priv/repo/seeds.exs`
+    populated with `Xaas.*` fixtures for local dev, via new `lib/xaas/dev_seeds.ex` —
+    **landed for real as `e90d478`**, confirmed live as `wc -l priv/repo/seeds.exs` → 45,
+    `Xaas.DevSeeds` module read in full this pass. See "Thirteenth-pass update" above.
+18. **Selected as this pass's CREATE item.** A real `newly_approved?/2` guard on
+    `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`, matching the exact
+    pattern already proven in its 2 Billing siblings — closing a real, live-run-verified
+    double-charge bug on re-approval of the same record (`-$6.00` → `-$12.00` across 2
+    `:approve` calls, real-reproduced this pass with a temporary, deleted-after-run test).
+    Full spec in the structured output below.
 
 ## See Also
 
+- `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex:29-45`
+  (the real, unguarded `change/3`), `lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex:75-90`
+  and `approval_patch_sla_credit_apply_approve.ex` (the real `newly_approved?/2` pattern this
+  pass's selected CREATE item — item 18 — extends), `lib/xaas/billing/subscription.ex:226-233`
+  and `lib/xaas/billing/validations/subscription_change_tier_not_no_op.ex` (the real, different
+  mechanism that incidentally protects `ApprovalTierDowngrade`'s equivalent path, checked and
+  confirmed this pass), `test/xaas/governance/approval_backup_retention_change_test.exs`,
+  `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` (the real,
+  confirmed-empty existing coverage of the re-approval scenario) — this pass's own
+  live-run-verified double-charge finding and its selected fix target
+- `lib/xaas/dev_seeds.ex`, `priv/repo/seeds.exs`, `test/xaas/dev_seeds_test.exs` — round 11's
+  real, landed implementation (`e90d478`) of the twelfth pass's own CREATE item (item 11),
+  independently re-verified this pass
+- `docs/claude/diataxis/explanation/architecture-overview.md:27`,
+  `docs/claude/diataxis/reference/http-api-surface.md:75` — the real "44 of 69"/"44 of 49"
+  route-count and read-only-only claims this pass fixed in place (item 13), after 6+
+  consecutive passes carrying the same unfixed drift
+- `docs/COVERAGE-TREND-2026-08-21.md` — the separate Measure-phase standing activity's own
+  real `mix xaas.capability_coverage` 3-run report (`cf233af`), read for this pass's own
+  75-total-resource denominator cross-check, not this ERRC cron's own output
 - `lib/xaas/billing/approval_tier_downgrade.ex`,
   `lib/xaas/billing/changes/approval_tier_downgrade_approve.ex`,
   `lib/xaas/billing/validations/approval_tier_downgrade_targets_lower_tier.ex`,

@@ -24,9 +24,12 @@ real `resources do ... end` block (69 total):
 
 Every domain uses `AshJsonApi.Domain` + `AshGraphql.Domain` + `AshAdmin.Domain`; `Billing`
 additionally uses `AshTypescript.Rpc` for its `Subscription` resource (see
-`ash-typescript-adoption.md`). Full resource-by-resource route detail (which 44 of the 69 get
+`ash-typescript-adoption.md`). Full resource-by-resource route detail (which 56 of the 69 get
 a real `json_api routes do` block, which 5 sensitive resources are deliberately unwired) is in
 `docs/claude/diataxis/reference/http-api-surface.md` — this doc does not restate that table.
+(Corrected 2026-08-21, thirteenth ERRC pass: real-recounted via `grep -rl "routes do" lib/xaas
+--include="*.ex" | wc -l` → 56, not the stale 44 this line carried for 6 consecutive audit
+passes; see `docs/claude/diataxis/explanation/errc-innovation-grid.md`.)
 
 Two more directories exist under `lib/xaas/` without a domain module of their own:
 `autofde/` (`DemoPlannerReactor`, `StatusParser` — real Reactor-orchestrated planner demo, see

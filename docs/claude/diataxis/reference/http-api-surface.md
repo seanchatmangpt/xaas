@@ -72,12 +72,20 @@ curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
 `Xaas.Accounts`, `Xaas.Billing`, `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Operations`,
 `Xaas.Platform`. Mounting a domain does not itself expose anything — only resources that
 declare their own `json_api do routes do ... end end` block are actually reachable. Per the
-router's own moduledoc, 44 of 49 real resources have that block, and every one of the 44
-declares **only** `get :read` and `index :read` — no create/update/destroy route was added for
-any resource, since a real mutation route needs a real per-resource decision (which action,
-what input validation, what auth) that the mechanical pass making this addition could not make.
-This leaves `docs/ASH-MIGRATION-PLAN.md` Phase 5 item 2 (a real customer-facing mutation
-surface) open, not resolved by this router.
+router's own moduledoc, 56 of 69 real resources have that block (real-recounted 2026-08-21,
+thirteenth ERRC pass, via `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l`; the prior
+"44 of 49" figure was stale on both the numerator and the denominator — 49 was the real
+resource-surface total before the domain set grew to 69). The claim that follows was also
+stale and is corrected here: **44 of those 56 now declare a real mutation route** (`post
+:create`, `patch :approve`, or `patch :update`, not just `get :read`/`index :read`) —
+real-recounted via the same sweep, matching the per-resource maker-checker mutation-route work
+this session's own history landed (see
+`docs/claude/diataxis/explanation/errc-innovation-grid.md`'s Sixth-pass update onward). Only
+the remaining 12 of the 56 are still read-only. `docs/ASH-MIGRATION-PLAN.md` Phase 5 item 2 (a
+real customer-facing mutation surface) is accordingly **substantially addressed**, not fully
+resolved — the 5 deliberately-unwired sensitive resources (`Ledger.Balance`/`Account`/
+`Transfer`, `Accounts.User`/`Token`) still have zero route regardless of mutation status, by
+the same deliberate design this doc's own "Deliberately unwired" section documents below.
 
 ### Wired resources (real `base` path, real domain, both routed under `/api`)
 

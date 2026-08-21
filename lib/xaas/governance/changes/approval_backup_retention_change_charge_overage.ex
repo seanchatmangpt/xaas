@@ -14,6 +14,28 @@ defmodule Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage do
   `@overage_rate_cents_per_day` is an invented placeholder rate this
   session chose (10 cents/day over the tier default), not a commercially
   validated price -- stated here plainly rather than silently implied.
+
+  ## Real fix: `newly_approved?/2` guard (this pass -- a live-reproduced
+  double-charge bug, not a hypothetical)
+
+  This module previously charged the overage fee on *every* `:approve`
+  call against a record, not just the first. Real-reproduced this pass
+  with a temporary local test (mirroring
+  `test/xaas/billing/approval_sla_credit_apply_test.exs`'s "approving
+  twice does not double-credit"): approving the same
+  `ApprovalBackupRetentionChange` record twice moved the real ledger
+  balance from `-$6.00` to `-$12.00` -- a second, redundant charge for
+  work that only happened once. Fixed with the exact same
+  "check the changeset's pre-change state" guard already proven on the
+  2 Billing siblings that share this `after_action/2` Ledger-write
+  pattern, `Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove`'s
+  `newly_approved?/2` and
+  `Xaas.Billing.Changes.ApprovalPatchSlaCreditApplyApprove`'s equivalent:
+  only charge when `changeset.data.approved_by` (the real pre-update
+  value) was nil/blank and the post-update record now has a real
+  `approved_by` -- i.e. only on the record's real first successful
+  `:approve`. A second `:approve` call against an already-approved
+  record no longer charges again.
   """
   use Ash.Resource.Change
 
@@ -26,18 +48,27 @@ defmodule Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage do
 
   @impl true
   def change(changeset, _opts, _context) do
-    Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      case overage_days(record) do
-        0 ->
-          {:ok, record}
+    Ash.Changeset.after_action(changeset, fn changeset, record ->
+      if newly_approved?(changeset, record) do
+        case overage_days(record) do
+          0 ->
+            {:ok, record}
 
-        overage_days when overage_days > 0 ->
-          case charge_overage(record, overage_days) do
-            {:ok, _transfer} -> {:ok, record}
-            {:error, error} -> {:error, error}
-          end
+          overage_days when overage_days > 0 ->
+            case charge_overage(record, overage_days) do
+              {:ok, _transfer} -> {:ok, record}
+              {:error, error} -> {:error, error}
+            end
+        end
+      else
+        {:ok, record}
       end
     end)
+  end
+
+  defp newly_approved?(changeset, record) do
+    prev = changeset.data.approved_by
+    (is_nil(prev) or prev == "") and is_binary(record.approved_by) and record.approved_by != ""
   end
 
   defp overage_days(%{tier: tier, requested_retention_days: days}) do

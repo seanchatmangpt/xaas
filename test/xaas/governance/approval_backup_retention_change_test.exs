@@ -104,6 +104,42 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
     |> Ash.create!(authorize?: false)
   end
 
+  # Real Chicago-style regression test for this pass's fix: a
+  # `newly_approved?/2` guard added to
+  # `ApprovalBackupRetentionChangeChargeOverage`, mirroring
+  # `test/xaas/billing/approval_sla_credit_apply_test.exs`'s "approving
+  # twice does not double-credit". Before the fix, a real second
+  # `:approve` call against an already-approved record moved the real
+  # ledger balance from -$6.00 to -$12.00 (live-reproduced this pass with
+  # a temporary local test, deleted after confirming the bug -- see this
+  # change module's own moduledoc).
+  test "approving twice does not double-charge the overage fee" do
+    org_id = "org-backup-retention-noduplicate-#{System.unique_integer([:positive])}"
+    create_org!(org_id)
+
+    request = create_pending!(org_id, "requester-noduplicate")
+
+    approved =
+      request
+      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"}, tenant: org_id)
+      |> Ash.update!(authorize?: false)
+
+    # A second real :approve call against an already-approved record
+    # (re-confirming the same approved_by) must not charge a second real
+    # overage fee.
+    _ =
+      approved
+      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"}, tenant: org_id)
+      |> Ash.update!(authorize?: false)
+
+    org_balance = real_balance_for(org_id)
+
+    # pro tier's default is 30 days; the request asked for 90, so 60
+    # overage days at 10 cents/day == a real $6.00 charge, exactly once.
+    assert Money.equal?(org_balance, Money.new(:USD, "-6.00")),
+           "expected exactly one real -$6.00 overage charge, not a duplicate"
+  end
+
   test "a real forced Ledger.Transfer failure on overage-charge rolls back approved_by too -- never approved-but-uncharged" do
     org_id = @platform_revenue_account_identifier
     create_org!(org_id)
