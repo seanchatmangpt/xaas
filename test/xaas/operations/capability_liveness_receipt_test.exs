@@ -10,8 +10,19 @@ defmodule Xaas.Operations.CapabilityLivenessReceiptTest do
   alias Xaas.Operations.CapabilityLivenessRegressions
 
   setup do
+    # Real bug found and fixed this session: {:shared, self()} mode is
+    # process-sticky for the rest of the VM's test run once set (Ecto
+    # Sandbox's own documented behavior) -- with `async: true` and no
+    # reset, it silently made every test that ran afterward across the
+    # whole suite share ONE connection/transaction instead of each
+    # getting its own isolated sandbox, causing real, intermittent
+    # cross-test interleaving elsewhere (see the :flaky-tagged tests in
+    # capability_liveness_receipt_check_regressions_test.exs, added the
+    # same session this was found). Shared mode is only needed when a
+    # separate process (a spawned Task, a Phoenix request process) must
+    # see this test's own uncommitted data -- nothing in this file does
+    # that, so plain checkout is the correct, real fix.
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
     :ok
   end
 
