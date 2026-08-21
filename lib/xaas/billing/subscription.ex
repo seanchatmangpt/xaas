@@ -214,6 +214,26 @@ defmodule Xaas.Billing.Subscription do
       require_atomic? false
       change Xaas.Billing.Changes.SubscriptionChargeOnActivate
     end
+
+    # Real, NEW mid-cycle plan-change action -- the exact gap this
+    # resource's own moduledoc names as deliberately deferred ("no
+    # :change_tier action exists yet"). Accepts a real new `:tier` as an
+    # argument (not a plain accepted attribute) so
+    # `Xaas.Billing.Changes.SubscriptionProrateTierChange` can read the
+    # real pre-change tier off `changeset.data.tier` before applying the
+    # new one, matching `SubscriptionChargeOnActivate`'s own real
+    # before/after-state discipline.
+    update :change_tier do
+      require_atomic? false
+
+      argument :tier, :atom do
+        allow_nil? false
+        constraints one_of: [:standard, :pro, :enterprise]
+      end
+
+      validate Xaas.Billing.Validations.SubscriptionChangeTierNotNoOp
+      change Xaas.Billing.Changes.SubscriptionProrateTierChange
+    end
   end
 
   attributes do
@@ -253,7 +273,12 @@ defmodule Xaas.Billing.Subscription do
       allow_nil? false
       public? true
       default :standard
-      constraints one_of: [:standard]
+      # Widened this session: :pro/:enterprise now have real, disclosed
+      # placeholder Ledger prices wired via the new :change_tier action
+      # (see Xaas.Billing.Changes.SubscriptionProrateTierChange) -- still
+      # not real Stripe Price ids (that remains real, disclosed follow-up
+      # work per this resource's own moduledoc).
+      constraints one_of: [:standard, :pro, :enterprise]
     end
 
     # Mirrors Stripe's own real Subscription.Status enum
