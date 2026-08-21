@@ -41,6 +41,8 @@ defmodule Xaas.SparqlBridge do
   alias Xaas.Operations.AutofdePlannerCandidate
   alias Xaas.Operations.AutofdePlannerCatalog
   alias Xaas.Operations.AutofdePlannerMatch
+  alias Xaas.Operations.AutofdePlannerCacheHotset
+  alias Xaas.Operations.AutofdePlannerCacheStats
 
   @prefix "https://xaas.dev/ontology/autofde-monitor#"
 
@@ -53,6 +55,8 @@ defmodule Xaas.SparqlBridge do
     {:ok, candidates} = Ash.read(AutofdePlannerCandidate)
     {:ok, catalog_requests} = Ash.read(AutofdePlannerCatalog)
     {:ok, match_requests} = Ash.read(AutofdePlannerMatch)
+    {:ok, cache_stats_requests} = Ash.read(AutofdePlannerCacheStats)
+    {:ok, cache_hotset_requests} = Ash.read(AutofdePlannerCacheHotset)
 
     header = """
     @prefix aacm: <#{@prefix}> .
@@ -63,7 +67,9 @@ defmodule Xaas.SparqlBridge do
     body =
       (Enum.map(candidates, &candidate_to_turtle/1) ++
          Enum.map(catalog_requests, &catalog_to_turtle/1) ++
-         Enum.map(match_requests, &match_to_turtle/1))
+         Enum.map(match_requests, &match_to_turtle/1) ++
+         Enum.map(cache_stats_requests, &cache_stats_row_to_turtle/1) ++
+         Enum.map(cache_hotset_requests, &cache_hotset_row_to_turtle/1))
       |> Enum.join("\n")
 
     header <> body
@@ -109,6 +115,26 @@ defmodule Xaas.SparqlBridge do
     turtle_document(Enum.map(rows, &match_to_turtle/1))
   end
 
+  @doc """
+  Query the real autofde_planner_cache_hotset_requests table (via Ash) and return
+  real Turtle text -- one aacm:PlannerCacheHotsetRequest individual per row.
+  """
+  @spec cache_hotset_to_turtle() :: String.t()
+  def cache_hotset_to_turtle do
+    {:ok, rows} = Ash.read(AutofdePlannerCacheHotset)
+    turtle_document(Enum.map(rows, &cache_hotset_row_to_turtle/1))
+  end
+
+  @doc """
+  Query the real autofde_planner_cache_stats_requests table (via Ash) and return
+  real Turtle text -- one aacm:PlannerCacheStatsRequest individual per row.
+  """
+  @spec cache_stats_to_turtle() :: String.t()
+  def cache_stats_to_turtle do
+    {:ok, rows} = Ash.read(AutofdePlannerCacheStats)
+    turtle_document(Enum.map(rows, &cache_stats_row_to_turtle/1))
+  end
+
   defp turtle_document(bodies) do
     header = """
     @prefix aacm: <#{@prefix}> .
@@ -149,6 +175,28 @@ defmodule Xaas.SparqlBridge do
 
     render_individual(subject, [
       {"a", "aacm:PlannerMatchRequest"},
+      {"aacm:query", turtle_string(row.query)},
+      {"aacm:trajectorySha256", turtle_maybe_string(row.trajectory_sha256)},
+      {"aacm:requestedAt", turtle_maybe_datetime(row.requested_at)}
+    ])
+  end
+
+  defp cache_hotset_row_to_turtle(%AutofdePlannerCacheHotset{} = row) do
+    subject = "aacm:PlannerCacheHotsetRequest_#{row.id}"
+
+    render_individual(subject, [
+      {"a", "aacm:PlannerCacheHotsetRequest"},
+      {"aacm:query", turtle_string(row.query)},
+      {"aacm:trajectorySha256", turtle_maybe_string(row.trajectory_sha256)},
+      {"aacm:requestedAt", turtle_maybe_datetime(row.requested_at)}
+    ])
+  end
+
+  defp cache_stats_row_to_turtle(%AutofdePlannerCacheStats{} = row) do
+    subject = "aacm:PlannerCacheStatsRequest_#{row.id}"
+
+    render_individual(subject, [
+      {"a", "aacm:PlannerCacheStatsRequest"},
       {"aacm:query", turtle_string(row.query)},
       {"aacm:trajectorySha256", turtle_maybe_string(row.trajectory_sha256)},
       {"aacm:requestedAt", turtle_maybe_datetime(row.requested_at)}
