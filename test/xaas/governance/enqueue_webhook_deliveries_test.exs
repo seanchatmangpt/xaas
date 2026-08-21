@@ -9,6 +9,14 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
   `Ash.create!`/`Ash.update!` calls, state-based assertions on the real
   persisted `Xaas.Platform.WebhookDelivery` rows -- never an interaction
   assertion ("was create called").
+
+  `EnqueueWebhookDeliveries` now real-dispatches each enqueued delivery
+  (via `WebhookDelivery`'s real `:deliver` action -- see
+  `Xaas.Platform.Changes.DeliverWebhook`) right after creating it, so a
+  webhook's `url` here points at a real local `Plug.Cowboy` listener
+  (started once, real 200 always) rather than a real external host --
+  keeps this suite fast and deterministic while still exercising a real
+  outbound HTTP POST end to end.
   """
   use ExUnit.Case, async: true
 
@@ -22,6 +30,21 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
   alias Xaas.Platform.Webhook
   alias Xaas.Platform.WebhookDelivery
 
+  defmodule Always200Plug do
+    @moduledoc "Real Plug that always real-200s, for real dispatch in this suite."
+    import Plug.Conn
+
+    def init(opts), do: opts
+    def call(conn, _opts), do: send_resp(conn, 200, "ok")
+  end
+
+  setup_all do
+    port = 21_000 + :erlang.phash2(__MODULE__, 5_000)
+    {:ok, _pid} = Plug.Cowboy.http(Always200Plug, [], port: port, ref: __MODULE__)
+    on_exit(fn -> Plug.Cowboy.shutdown(__MODULE__) end)
+    {:ok, listener_url: "http://127.0.0.1:#{port}/"}
+  end
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
 
@@ -33,13 +56,13 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
     :ok
   end
 
-  defp create_webhook!(event_types, opts \\ []) do
+  defp create_webhook!(event_types, listener_url, opts \\ []) do
     Webhook
     |> Ash.Changeset.for_create(
       :create,
       %{
         org_id: "webhook-test-org",
-        url: "https://example.com/webhook",
+        url: listener_url,
         event_types: event_types,
         secret: "real-hmac-secret",
         enabled: Keyword.get(opts, :enabled, true)
@@ -55,7 +78,8 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
     |> Ash.read!(authorize?: false)
   end
 
-  test "approving ApprovalBackupRetentionChange enqueues a real WebhookDelivery for a matching enabled webhook" do
+  test "approving ApprovalBackupRetentionChange enqueues a real WebhookDelivery for a matching enabled webhook",
+       %{listener_url: listener_url} do
     run = System.unique_integer([:positive, :monotonic])
 
     org =
@@ -68,7 +92,7 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
       |> Ash.create!()
 
     webhook =
-      create_webhook!(["governance.approval_backup_retention_change.approved"])
+      create_webhook!(["governance.approval_backup_retention_change.approved"], listener_url)
 
     approval =
       ApprovalBackupRetentionChange
@@ -93,13 +117,14 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
 
     assert delivery.event_type == "governance.approval_backup_retention_change.approved"
     assert delivery.webhook_id == webhook.id
-    assert delivery.status == :pending
+    assert delivery.status == :delivered
     assert delivery.payload["id"] == approved.id
     assert delivery.payload["org_id"] == org.slug
     assert delivery.payload["approved_by"] == "approver-#{run}"
   end
 
-  test "approving ApprovalDrFailover enqueues a real WebhookDelivery for a matching enabled webhook" do
+  test "approving ApprovalDrFailover enqueues a real WebhookDelivery for a matching enabled webhook",
+       %{listener_url: listener_url} do
     run = System.unique_integer([:positive, :monotonic])
 
     incident =
@@ -119,7 +144,7 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
       )
       |> Ash.create!()
 
-    webhook = create_webhook!(["governance.approval_dr_failover.approved"])
+    webhook = create_webhook!(["governance.approval_dr_failover.approved"], listener_url)
 
     approval =
       ApprovalDrFailover
@@ -145,19 +170,23 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
 
     assert delivery.event_type == "governance.approval_dr_failover.approved"
     assert delivery.webhook_id == webhook.id
+    assert delivery.status == :delivered
     assert delivery.payload["id"] == approved.id
   end
 
-  test "no delivery is created when no enabled webhook matches the event type" do
+  test "no delivery is created when no enabled webhook matches the event type",
+       %{listener_url: listener_url} do
     run = System.unique_integer([:positive, :monotonic])
 
     # Wrong event type -- should not match.
     wrong_event_webhook =
-      create_webhook!(["governance.approval_legal_hold_release.some_other_event"])
+      create_webhook!(["governance.approval_legal_hold_release.some_other_event"], listener_url)
 
     # Right event type but disabled -- should not match.
     disabled_webhook =
-      create_webhook!(["governance.approval_legal_hold_release.approved"], enabled: false)
+      create_webhook!(["governance.approval_legal_hold_release.approved"], listener_url,
+        enabled: false
+      )
 
     approval =
       ApprovalLegalHoldRelease

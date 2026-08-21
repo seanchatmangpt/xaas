@@ -20,9 +20,10 @@ defmodule Xaas.Platform.WebhookDelivery do
   not designed in this pass; see `Xaas.Platform.Webhook`'s moduledoc for
   the same disclosure on retry scheduling.
 
-  Real outbound HTTP dispatch (via `Req`) that would create/update these
-  rows is real, in-scope follow-up work; this pass designs the resource
-  shape only.
+  Real outbound HTTP dispatch (via `Req`) is now wired: see the `:deliver`
+  action and `Xaas.Platform.Changes.DeliverWebhook` for the real signing
+  scheme, real 2xx/non-2xx/transport-error handling, and the real
+  `@max_delivery_attempts` cutoff.
   """
 
   use Xaas.Resource,
@@ -45,20 +46,15 @@ defmodule Xaas.Platform.WebhookDelivery do
   # prior real usage -- see that module's moduledoc/comments for the
   # `bypass` vs `policy` semantics this repeats verbatim).
   #
-  # This schedules ONLY the retry-counting/bookkeeping half of retry
-  # handling: every 5 minutes it reads real WebhookDelivery rows with
-  # `status: :failed` and `attempt_count < @max_delivery_attempts`, and for
-  # each one calls the real, already-existing `:record_attempt` update
-  # action to bump `attempt_count` and set `last_attempted_at`.
-  #
-  # Deliberately does NOT perform the real outbound HTTP re-send. This
-  # resource's own moduledoc already discloses that real dispatch (via
-  # `Req`) is real, in-scope follow-up work not designed in this pass --
-  # this scheduled action does not change that. Wiring the real resend
-  # here would fabricate a delivery outcome (`status` staying whatever it
-  # already was, with no HTTP call ever made) that looks like a real retry
-  # attempt but isn't. So: real scheduling, real attempt-counting, real
-  # `last_attempted_at` bookkeeping -- honestly NOT a real resend.
+  # Every 5 minutes, reads real WebhookDelivery rows with `status: :failed`
+  # and `attempt_count < @max_delivery_attempts`, and for each one calls
+  # the real `:deliver` update action (see
+  # `Xaas.Platform.Changes.DeliverWebhook`), which performs a real
+  # outbound HTTP POST via `Req` and records the real outcome
+  # (`:delivered` on 2xx, `:failed` + incremented `attempt_count` on
+  # non-2xx/transport error). A delivery already at
+  # `@max_delivery_attempts` is excluded by the query filter above, so it
+  # is never re-attempted -- left `:failed` permanently.
   oban do
     scheduled_actions do
       schedule :retry_failed_deliveries, "*/5 * * * *" do
@@ -84,6 +80,15 @@ defmodule Xaas.Platform.WebhookDelivery do
     # bypass -- `bypass`, not `policy`, so it isn't ANDed against the
     # catch-all `forbid_if always()` below.
     bypass action(:retry_failed_deliveries) do
+      authorize_if always()
+    end
+
+    # Real, scoped carve-out for the real outbound-dispatch action -- same
+    # shape as `:retry_failed_deliveries` above: no external actor input
+    # accepted (`accept []`), only real internal callers
+    # (`EnqueueWebhookDeliveries` after `:create`, the cron path) invoke
+    # it, and it never returns webhook secrets to a caller.
+    bypass action(:deliver) do
       authorize_if always()
     end
 
@@ -140,14 +145,7 @@ defmodule Xaas.Platform.WebhookDelivery do
         results =
           Enum.map(candidates, fn delivery ->
             delivery
-            |> Ash.Changeset.for_update(
-              :record_attempt,
-              %{
-                attempt_count: delivery.attempt_count + 1,
-                last_attempted_at: DateTime.utc_now()
-              },
-              authorize?: false
-            )
+            |> Ash.Changeset.for_update(:deliver, %{}, authorize?: false)
             |> Ash.update()
           end)
 
@@ -156,8 +154,8 @@ defmodule Xaas.Platform.WebhookDelivery do
 
         Logger.info(
           "[ash_oban] webhook_delivery.retry_failed_deliveries: " <>
-            "#{length(candidates)} candidate(s), #{updated} attempt-count bump(s) recorded, " <>
-            "#{errored} error(s) -- no real HTTP resend performed in this pass"
+            "#{length(candidates)} candidate(s), #{updated} real :deliver resend(s) attempted, " <>
+            "#{errored} error(s)"
         )
 
         {:ok, %{candidates: length(candidates), updated: updated, errored: errored}}
@@ -177,6 +175,20 @@ defmodule Xaas.Platform.WebhookDelivery do
     # delivery attempt row rather than mutating the original).
     update :record_attempt do
       accept [:status, :attempt_count, :last_attempted_at]
+    end
+
+    # Real outbound HTTP dispatch action -- see
+    # `Xaas.Platform.Changes.DeliverWebhook` moduledoc for the real
+    # signing scheme, the real 2xx/non-2xx/transport-error outcomes, and
+    # the real `@max_delivery_attempts` cutoff (no further HTTP call once
+    # a delivery is already at the ceiling). Callable both for a fresh
+    # delivery (`Xaas.Governance.Changes.EnqueueWebhookDeliveries`, right
+    # after `:create`) and for the `:retry_failed_deliveries` cron path
+    # below (real resend of a real stale `:failed` row).
+    update :deliver do
+      accept []
+      require_atomic? false
+      change Xaas.Platform.Changes.DeliverWebhook
     end
   end
 
