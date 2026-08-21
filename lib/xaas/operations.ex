@@ -12,6 +12,7 @@ defmodule Xaas.Operations do
     resource(Xaas.Operations.ApprovalK8sFaultRemediateSuggest)
     resource(Xaas.Operations.AutofdePlannerCandidate)
     resource(Xaas.Operations.AutofdePlannerCatalog)
+    resource(Xaas.Operations.AutofdePlannerMatch)
     resource(Xaas.Operations.CastleVerbFortune5Requirements)
     resource(Xaas.Operations.CastleVerbInventoryComponents)
     resource(Xaas.Operations.CastleVerbInventoryGoals)

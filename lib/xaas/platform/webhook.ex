@@ -18,8 +18,9 @@ defmodule Xaas.Platform.Webhook do
   secret store this codebase has no client for.
 
   Real outbound HTTP dispatch (signing + POSTing a delivery via `Req`,
-  already a project dep) is real, in-scope follow-up work built on top of
-  this resource + `Xaas.Platform.WebhookDelivery`. Real retry
+  already a project dep) is now wired -- see
+  `Xaas.Platform.Changes.DeliverWebhook` and `WebhookDelivery`'s
+  `:deliver` action. Real retry
   scheduling (ash_oban-driven backoff / dead-lettering, mirroring
   platform-console's `lib/webhook-poller.ts`) is NOT designed in this
   pass -- it is a real state machine (attempt counts, backoff intervals,
@@ -34,15 +35,16 @@ defmodule Xaas.Platform.Webhook do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshCloak]
 
-  # Same real AshCloak pattern as `Xaas.Accounts.Token`'s `cloak` block
-  # (the only other real usage in this repo): encrypts `secret` at rest
-  # via `Xaas.Vault`, transparently at the Ash level -- the underlying
-  # `secret` column stays `:string` (same real, deliberate non-rename
-  # this repo already applied to `tokens.extra_data`: see the repeated
-  # "codegen proposed tokens.extra_data -> tokens.encrypted_extra_data,
-  # excluded" migration comments across priv/repo/migrations -- AshCloak
-  # encrypts/decrypts in place without changing the Ash attribute's
-  # storage type, so no destructive rename is needed here either).
+  # Same real AshCloak pattern as `Xaas.Accounts.Token`'s `cloak` block:
+  # encrypts `secret` at rest via `Xaas.Vault`. Real correction (see
+  # `priv/repo/migrations/20260821031500_fix_webhook_secret_encryption_column.exs`):
+  # AshCloak's `SetupEncryption` transformer *does* require a real,
+  # differently-named `:binary` column -- it removes the plain `secret`
+  # attribute and replaces it with a real `encrypted_secret :binary`
+  # attribute + decrypt calculation. The earlier "no rename needed"
+  # migration comment on this repo's `tokens.extra_data` precedent was a
+  # real mistaken analogy; the storage column here genuinely is
+  # `platform_webhooks.encrypted_secret`, not `secret`.
   cloak do
     vault Xaas.Vault
     attributes [:secret]
