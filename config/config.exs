@@ -77,7 +77,19 @@ config :ash,
     interface: Xaas.Governance.Types.Interface,
     project_tier: Xaas.Governance.Types.ProjectTier,
     cmek_provider: Xaas.Governance.Types.CmekProvider,
-    pentest_finding_resolution: Xaas.Governance.Types.PentestFindingResolution
+    pentest_finding_resolution: Xaas.Governance.Types.PentestFindingResolution,
+    environment: Xaas.Governance.Types.Environment,
+    change_of_control_event_type: Xaas.Governance.Types.ChangeOfControlEventType,
+    export_subscription_cadence: Xaas.Governance.Types.ExportSubscriptionCadence,
+    export_subscription_scope: Xaas.Governance.Types.ExportSubscriptionScope,
+    le_request_type: Xaas.Governance.Types.LeRequestType,
+    le_response_status: Xaas.Governance.Types.LeResponseStatus,
+    insurance_coverage_type: Xaas.Governance.Types.InsuranceCoverageType,
+    override_decision: Xaas.Governance.Types.OverrideDecision,
+    subprocessor_category: Xaas.Governance.Types.SubprocessorCategory,
+    subprocessor_change_action: Xaas.Governance.Types.SubprocessorChangeAction,
+    org_role: Xaas.Governance.Types.OrgRole,
+    deployment_quarantine_reason: Xaas.Governance.Types.DeploymentQuarantineReason
   ]
 
 # Configures the endpoint

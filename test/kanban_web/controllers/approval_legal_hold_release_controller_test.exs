@@ -1,0 +1,132 @@
+defmodule KanbanWeb.ApprovalLegalHoldReleaseControllerTest do
+  @moduledoc """
+  Real Chicago-style tests: real Phoenix ConnCase HTTP requests against the
+  real `/api/approval_legal_hold_release` POST/PATCH routes, ported from
+  platform-console's real `PUT /api/owner/legal-hold` maker-checker flow,
+  real Ash-persisted rows in the real sandboxed Postgres (Xaas.Repo). No
+  mocking.
+  """
+  use KanbanWeb.ConnCase
+
+  alias Xaas.Governance.ApprovalLegalHoldRelease
+
+  setup do
+    Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+    :ok
+  end
+
+  defp with_internal_api_token(conn) do
+    put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
+  defp json_headers(conn) do
+    conn
+    |> with_internal_api_token()
+    |> put_req_header("content-type", "application/vnd.api+json")
+    |> put_req_header("accept", "application/vnd.api+json")
+  end
+
+  test "POST creates a real pending legal hold release, PATCH approves it from a distinct owner",
+       %{conn: conn} do
+    create_body = %{
+      "data" => %{
+        "type" => "approval_legal_hold_release",
+        "attributes" => %{
+          "org_id" => "org-#{System.unique_integer([:positive])}",
+          "requested_by" => "owner-1",
+          "hold_id" => "hold-#{System.unique_integer([:positive])}",
+          "release_reason" => "litigation concluded, hold no longer required"
+        }
+      }
+    }
+
+    create_resp =
+      conn |> json_headers() |> post("/api/approval_legal_hold_release", create_body)
+
+    created = json_response(create_resp, 201)
+    id = created["data"]["id"]
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_legal_hold_release",
+        "id" => id,
+        "attributes" => %{"approved_by" => "owner-2"}
+      }
+    }
+
+    approve_resp =
+      conn
+      |> json_headers()
+      |> patch("/api/approval_legal_hold_release/#{id}", approve_body)
+
+    approved = json_response(approve_resp, 200)
+    assert approved["data"]["attributes"]["approved_by"] == "owner-2"
+
+    persisted = ApprovalLegalHoldRelease |> Ash.get!(id, authorize?: false)
+    assert persisted.release_reason == "litigation concluded, hold no longer required"
+  end
+
+  test "PATCH rejects an owner approving their own legal hold release", %{conn: conn} do
+    requester = "owner-self-#{System.unique_integer([:positive])}"
+
+    change =
+      ApprovalLegalHoldRelease
+      |> Ash.Changeset.for_create(:create, %{
+        org_id: "org-x",
+        requested_by: requester,
+        hold_id: "hold-x",
+        release_reason: "test release"
+      })
+      |> Ash.create!(authorize?: false)
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_legal_hold_release",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => requester}
+      }
+    }
+
+    resp =
+      conn
+      |> json_headers()
+      |> patch("/api/approval_legal_hold_release/#{change.id}", approve_body)
+
+    assert resp.status == 400
+
+    persisted = ApprovalLegalHoldRelease |> Ash.get!(change.id, authorize?: false)
+    assert persisted.approved_by == nil
+  end
+
+  test "PATCH rejects when approved_by is missing", %{conn: conn} do
+    requester = "owner-missing-#{System.unique_integer([:positive])}"
+
+    change =
+      ApprovalLegalHoldRelease
+      |> Ash.Changeset.for_create(:create, %{
+        org_id: "org-x",
+        requested_by: requester,
+        hold_id: "hold-y",
+        release_reason: "test release"
+      })
+      |> Ash.create!(authorize?: false)
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_legal_hold_release",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => ""}
+      }
+    }
+
+    resp =
+      conn
+      |> json_headers()
+      |> patch("/api/approval_legal_hold_release/#{change.id}", approve_body)
+
+    assert resp.status == 400
+
+    persisted = ApprovalLegalHoldRelease |> Ash.get!(change.id, authorize?: false)
+    assert persisted.approved_by == nil
+  end
+end

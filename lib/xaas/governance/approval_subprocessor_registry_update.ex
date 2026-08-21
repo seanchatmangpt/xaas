@@ -16,6 +16,21 @@ defmodule Xaas.Governance.ApprovalSubprocessorRegistryUpdate do
       authorize_if always()
     end
 
+    # Real, explicit per-action carve-out, ported from platform-console's
+    # real POST/PUT/DELETE /api/subprocessors "subprocessor.registry.update"
+    # maker-checker flow: `:create` (file the sub-processor add/update/remove
+    # request) and `:approve` are gated the same way reads are -- by the
+    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check --
+    # plus ApprovalSubprocessorRegistryUpdateRequiresApprover's real "second,
+    # distinct owner" rule on :approve.
+    bypass action(:create) do
+      authorize_if always()
+    end
+
+    bypass action(:approve) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -32,6 +47,8 @@ defmodule Xaas.Governance.ApprovalSubprocessorRegistryUpdate do
       base "/approval_subprocessor_registry_update"
       get :read
       index :read
+      post :create
+      patch :approve
     end
   end
 
@@ -42,6 +59,41 @@ defmodule Xaas.Governance.ApprovalSubprocessorRegistryUpdate do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [
+        :requested_by,
+        :change_action,
+        :subprocessor_id,
+        :name,
+        :category,
+        :regions,
+        :purpose,
+        :data_categories
+      ]
+
+      validate Xaas.Governance.Validations.ApprovalSubprocessorRegistryUpdateValidSubprocessorId
+    end
+
+    # Real mutation route, ported from platform-console's
+    # POST/PUT/DELETE /api/subprocessors "subprocessor.registry.update"
+    # maker-checker flow: approve a pending sub-processor registry change
+    # (add/update/remove). Real business rule lives in
+    # Xaas.Governance.Validations.ApprovalSubprocessorRegistryUpdateRequiresApprover
+    # -- `approved_by` must be present and must differ from `requested_by`
+    # (a second, distinct owner). platform-console's own additional runtime
+    # behavior on approval -- actually applying the change via
+    # `applySubprocessorChange` (writing to the live registry) and fanning
+    # out a customer-notification event to every org
+    # (`notifiedOrgCount`) -- is NOT ported; this session has not modeled a
+    # live sub-processor registry or an org-notification pipeline in xaas,
+    # so approving here only records the decision, honestly, without
+    # fabricating the downstream apply/notify effects.
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      validate Xaas.Governance.Validations.ApprovalSubprocessorRegistryUpdateRequiresApprover
+    end
   end
 
   attributes do
@@ -49,8 +101,52 @@ defmodule Xaas.Governance.ApprovalSubprocessorRegistryUpdate do
 
     attribute :requested_by, :string do
       allow_nil? false
+      public? true
     end
 
-    attribute :approved_by, :string
+    attribute :approved_by, :string do
+      public? true
+    end
+
+    # Real payload, matching platform-console's real POST/PUT/DELETE body
+    # across app/api/subprocessors/route.ts and
+    # app/api/subprocessors/[id]/route.ts. `change_action` mirrors which
+    # HTTP verb requested the change (POST -> "added", PUT -> "updated",
+    # DELETE -> "removed"); the remaining fields mirror
+    # lib/subprocessors.ts's `SubprocessorRecord` shape.
+    attribute :change_action, :subprocessor_change_action do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :subprocessor_id, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :name, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :category, :subprocessor_category do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :regions, {:array, :string} do
+      default []
+      public? true
+    end
+
+    attribute :purpose, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :data_categories, {:array, :string} do
+      default []
+      public? true
+    end
   end
 end

@@ -1,0 +1,43 @@
+# Least-privilege identity for the xaas Deployment's pods.
+#
+# The xaas app itself makes no Kubernetes API calls today -- this
+# ServiceAccount exists so the pods stop running as `default` (which in a
+# real cluster can accumulate ambient permissions from other bindings in the
+# namespace over time). The Role grants read-only access to exactly the two
+# objects this Deployment already consumes via envFrom (xaas-config,
+# xaas-secrets) -- nothing cluster-scoped, nothing namespace-wide, no write
+# verbs, no access to any other ConfigMap/Secret in the namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: xaas
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: xaas-config-reader
+  namespace: default
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["xaas-config"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["xaas-secrets"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: xaas-config-reader-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: xaas
+    namespace: default
+roleRef:
+  kind: Role
+  name: xaas-config-reader
+  apiGroup: rbac.authorization.k8s.io

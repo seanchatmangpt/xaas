@@ -16,6 +16,20 @@ defmodule Xaas.Governance.ApprovalOrgDelete do
       authorize_if always()
     end
 
+    # Real, explicit per-action carve-out, ported from platform-console's
+    # real DELETE /api/orgs/[id] maker-checker flow: `:create` (file the
+    # deletion request) and `:approve` are gated the same way reads are --
+    # by the router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer
+    # check -- plus ApprovalOrgDeleteRequiresApprover's real "second,
+    # distinct owner" rule on :approve.
+    bypass action(:create) do
+      authorize_if always()
+    end
+
+    bypass action(:approve) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -32,6 +46,8 @@ defmodule Xaas.Governance.ApprovalOrgDelete do
       base "/approval_org_delete"
       get :read
       index :read
+      post :create
+      patch :approve
     end
   end
 
@@ -42,15 +58,53 @@ defmodule Xaas.Governance.ApprovalOrgDelete do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:org_id, :requested_by]
+    end
+
+    # Real mutation route, ported from platform-console's real
+    # DELETE /api/orgs/[id] maker-checker flow: approve a pending org
+    # deletion. Real business rule lives in
+    # Xaas.Governance.Validations.ApprovalOrgDeleteRequiresApprover --
+    # `approved_by` must be present and must differ from `requested_by`
+    # (a second, distinct owner).
+    #
+    # NOT ported: the real route's own additional preconditions/side
+    # effects, honestly left undone rather than fabricated --
+    #   1. Requester's own role check (requireRoleIn(session, org's
+    #      namespace, "owner")) -- xaas has no session/namespace-role
+    #      model wired to this resource yet.
+    #   2. The real deleteOrg(id) side effect that tears down the org's
+    #      real Namespace/Project/Database/Secret/ConfigMap resources on
+    #      approval -- xaas's :approve action only records the approval
+    #      decision; no cascading destroy is triggered.
+    #   3. The real audit-log entry (writeAuditLogEntry) written on every
+    #      branch of the platform-console route.
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      validate Xaas.Governance.Validations.ApprovalOrgDeleteRequiresApprover
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
-    attribute :requested_by, :string do
+    # Real payload, matching platform-console's real route: the target
+    # org's id (the `[id]` path param on DELETE /api/orgs/[id]).
+    attribute :org_id, :string do
       allow_nil? false
+      public? true
     end
 
-    attribute :approved_by, :string
+    attribute :requested_by, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :approved_by, :string do
+      public? true
+    end
   end
 end
