@@ -18,14 +18,39 @@ defmodule Xaas.E2E.KindDeploymentTest do
   Requires: `kind-xaas` cluster up, `xaas`/`postgres` Deployments
   `Running`, and a real `INTERNAL_API_TOKEN`/`ONETIME_REVOKE_KEY` applied
   to the live `xaas-secrets` Secret (see k8s/secret.yaml.example's
-  comments on both). Also requires a real `kubectl port-forward -n
-  default deployment/xaas 4001:4000` already running in the background
-  before `mix test --include kind` -- this test attempts to start one
-  itself if unreachable (see `start_port_forward!/0`), but that
-  self-managed path hung in real verification this session (root cause
-  not fully diagnosed within this session's time budget -- disclosed
-  honestly rather than left as an unverified claim); starting it manually
-  first is the verified-working path:
+  comments on both).
+
+  This test self-starts `kubectl port-forward -n default deployment/xaas
+  4001:4000` if port 4001 isn't already reachable (see
+  `start_port_forward!/0`), and it does not require one to be started
+  manually first. A prior session's disclosure here said the self-start
+  path "hung" and was not fully diagnosed; a real re-diagnosis this
+  session (`Port.open`/`wait_for_reachable!` isolated in a standalone
+  `mix run` script outside ExUnit, and 4 real repro runs of the full
+  `mix test --include kind` suite against the live cluster, all passing
+  in 0.7-0.8s) found the actual root cause was NOT this code: it was
+  `mix`'s own `_build` directory lock being held by a second, concurrent
+  `mix compile`/`mix test` process running elsewhere in that session,
+  which blocks a fresh `mix test` invocation silently (no ExUnit output
+  at all, since the stall happens before `setup_all` ever runs) and
+  produces exactly the "hung with no output" symptom that was previously
+  attributed to `Port.open`. If `mix test --include kind` appears to
+  hang here, check for a concurrent `mix compile`/`mix test` holding the
+  build lock (`Waiting for lock on the build directory` in another
+  session's output) before suspecting this module.
+
+  A real, separate, minor issue this re-diagnosis did find: the spawned
+  `kubectl port-forward` `Port` was not being reaped when the BEAM
+  process exited, so it briefly lingered as an orphan reparented to
+  `launchd`. `start_port_forward!/0` now registers a real `System.at_exit`
+  callback that kills the child OS process by PID, and drains the port's
+  stdout in a linked process so `kubectl`'s "Forwarding from ..." line
+  never sits undrained. Neither of these was the cause of any hang --
+  they close out real, if minor, process-hygiene gaps found while
+  re-verifying.
+
+  Manually starting a port-forward first is no longer required, but
+  still works if you prefer an independently-running one:
 
       kubectl --context kind-xaas port-forward -n default deployment/xaas 4001:4000 &
 
@@ -131,18 +156,42 @@ defmodule Xaas.E2E.KindDeploymentTest do
   end
 
   defp start_port_forward! do
-    Port.open(
-      {:spawn_executable, System.find_executable("kubectl")},
-      args: [
-        "--context",
-        @kind_context,
-        "port-forward",
-        "-n",
-        "default",
-        "deployment/xaas",
-        "#{@local_port}:4000"
-      ]
-    )
+    port =
+      Port.open(
+        {:spawn_executable, System.find_executable("kubectl")},
+        args: [
+          "--context",
+          @kind_context,
+          "port-forward",
+          "-n",
+          "default",
+          "deployment/xaas",
+          "#{@local_port}:4000"
+        ]
+      )
+
+    # Real process hygiene: drain the port's stdout so kubectl's
+    # "Forwarding from ..." line never sits undrained in this process's
+    # mailbox, and kill the real OS child on VM exit so it doesn't
+    # linger as an orphan reparented to launchd.
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+
+    spawn(fn -> drain_port!(port) end)
+
+    System.at_exit(fn _status ->
+      System.cmd("kill", [Integer.to_string(os_pid)], stderr_to_stdout: true)
+    end)
+
+    port
+  end
+
+  defp drain_port!(port) do
+    receive do
+      {^port, {:data, _data}} -> drain_port!(port)
+      {^port, {:exit_status, _status}} -> :ok
+    after
+      120_000 -> :ok
+    end
   end
 
   defp wait_for_reachable!(attempts \\ 20)
