@@ -6,7 +6,105 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (tenth pass).
+2026-08-21 (eleventh pass).
+
+## Eleventh-pass update
+
+**Real HEAD confirmed: `77c7c13`.** `git rev-parse HEAD` →
+`77c7c132bf9d4f3532c0ac76be5d7fbd13118e9c`. This is round 9, the commit the task briefing
+named as having "closed the whole after_transaction/after_action atomicity-bug thread
+definitively... and added the missing regression test for the reference-pattern resource
+itself." Real-verified via `git show 77c7c13 --stat`: it touches exactly 2 files —
+`errc-innovation-grid.md` and a new `test/xaas/governance/approval_backup_retention_change_test.exs`
+(132 lines) — and the commit message documents the same real forced-`Ledger.Transfer`-failure
+technique this grid's own tenth-pass Create item 15 specified (an `Org.slug` equal to the
+fixed `platform:revenue:backup-retention-overage` identifier, tripping
+`AshDoubleEntry.Transfer.Changes.VerifyTransfer`'s same-account rejection), plus a real
+disclosed extra verification step (temporarily reintroducing the historical
+`after_transaction`-instead-of-`after_action` bug, confirming the new test genuinely fails,
+then restoring the source file with zero diff). **Item 15/tenth-pass-selected-CREATE is now
+RESOLVED** — the test-coverage parity gap on `ApprovalBackupRetentionChangeChargeOverage`
+(the atomicity pattern's own reference exemplar) is closed; all 5 real money/audit-moving
+`after_action/2` writes in this codebase now carry a real forced-failure regression test.
+**This closes the entire atomicity-bug-class thread (rounds 7-9) for real, on both axes**:
+zero live `after_transaction(` misuse (tenth-pass systematic sweep, unchanged) and zero
+remaining test-coverage gaps on the fixed pattern (this pass, confirmed). Not re-opened;
+per the task's own instruction, this thread is done.
+
+**Fresh finding — a real, concretely-verified case of "wired but functionally dead":
+5 of the 7 `Approval*` resources round 5 (`cec5025`) gave real `:create`/`:approve` mutation
+routes to have an `*Approve.ex` Change module that is a pure no-op AND is never even wired
+into the resource's `:approve` action at all.** Real-verified this pass, read in full:
+`lib/xaas/billing/changes/approval_tier_downgrade_approve.ex`,
+`approval_quota_override_approve.ex`, `approval_invoice_reconciliation_approve_approve.ex`,
+and `lib/xaas/operations/changes/approval_castle_verb_schedule_approve.ex`,
+`approval_k8s_fault_remediate_suggest_approve.ex` — all 5 are byte-for-byte the same shape:
+`def change(changeset, _opts, _context) do changeset end`. Cross-checked whether any resource
+actually references its own module: `grep -rn "Changes.ApprovalTierDowngradeApprove\|
+Changes.ApprovalQuotaOverrideApprove\|Changes.ApprovalInvoiceReconciliationApproveApprove\|
+Changes.ApprovalCastleVerbScheduleApprove\|Changes.ApprovalK8sFaultRemediateSuggestApprove"
+lib/xaas --include="*.ex"` matches **only each file's own `defmodule` line** — zero call
+sites anywhere. Reading each resource's real `update :approve do ... end` block
+(`approval_tier_downgrade.ex`, `approval_quota_override.ex`, etc.) confirms why: the action
+body has `accept`, `require_atomic? false`, and the `*RequiresApprover` validation, but no
+`change {...}` line at all. These 5 modules are real, disclosed-as-dead-on-arrival code:
+created (presumably scaffolded alongside their siblings' real wiring) but never connected —
+distinct from the `after_transaction/after_action` bug class (which was live-and-wrong code),
+this is unreachable code that does nothing, silently, forever. The other 2 of the 7
+(`ApprovalSlaCreditApplyApprove`, `ApprovalPatchSlaCreditApplyApprove`) are real exceptions —
+both correctly wired and (since round 7/8) atomicity-tested, which is exactly why the grid's
+prior passes never flagged this: the 2 loudest, money-moving siblings got fixed and tested,
+and the 5 quieter, currently-inert siblings were never independently checked.
+- **The standout among the 5 — `Xaas.Billing.ApprovalTierDowngrade` — has a real, ready-made
+  target already built and battle-tested to wire into, unlike the other 4.**
+  `Xaas.Billing.Subscription`'s real `:change_tier` update action
+  (`lib/xaas/billing/subscription.ex:226-236`) already exists, already accepts a `:tier`
+  argument constrained to the exact same `one_of: [:standard, :pro, :enterprise]` enum
+  `Subscription.tier` itself uses, already atomically (`after_action/2`, confirmed in the
+  tenth-pass systematic `after_action` sweep) moves a real prorated `Xaas.Ledger.Transfer` via
+  `Xaas.Billing.Changes.SubscriptionProrateTierChange`
+  (`lib/xaas/billing/changes/subscription_prorate_tier_change.ex`), and that module's own
+  moduledoc (lines 33-40, read in full this pass) explicitly documents handling **both**
+  directions symmetrically: an upgrade charges the org, "a **downgrade** (`new_monthly_cents
+  < old_monthly_cents`) is a real credit back to the org... the natural double-entry mirror of
+  the upgrade charge." `ApprovalTierDowngrade`'s own real gap, by contrast: it currently has
+  **no `subscription_id` and no target-tier attribute at all** — just `requested_by`/
+  `approved_by` (`approval_tier_downgrade.ex`'s `attributes do` block, read in full) — so even
+  with its dead Change module wired up as-is, there is no data on the record to say which
+  subscription or which tier. The other 4 (`castle_verb_schedule`, `k8s_fault_remediate_suggest`,
+  `quota_override`, `invoice_reconciliation_approve`) have no comparable real, already-built
+  downstream action to drive at all (real-checked this pass: `grep -rli
+  "castle_verb\|k8s_fault_remediat" lib/xaas --include="*.ex"` finds only unrelated
+  `CastleVerbInventoryGoals`/`Components`/`Fortune5Requirements` catalog resources, no
+  scheduling action; no `Invoice`/`Quota` resource exists anywhere in `lib/xaas` for the other
+  two to target), so wiring them is a real, separate, larger design question each — not this
+  pass's scoped pick. Selected as this pass's CREATE item; full spec in the structured output
+  below.
+
+**Doc-drift and dev-fixture items re-verified unchanged, real-reconfirmed, still not
+selected.** `architecture-overview.md:27` / `http-api-surface.md:75`'s "44 of the 69"/"44 of
+49" route-count claim: `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still 56,
+unchanged since round 7 first found it, now flagged in 5 consecutive passes (rounds 7-11).
+`priv/repo/seeds.exs`: still the unmodified 19-line book stub, `grep -c "Xaas\."
+priv/repo/seeds.exs` → still 0, now flagged in 5 consecutive passes. Both carried forward at
+their existing Create item numbers below — this pass's dead-code-wiring finding on
+`ApprovalTierDowngrade` is more concrete (a real, checkable behavioral gap with a ready-made
+fix target) and more valuable (closes an actual functional hole in a shipped mutation route,
+not a stale prose number or a missing dev convenience) than either, so it is selected instead
+— but both remaining items are real and neither should keep losing the priority contest
+forever; a future pass with no fresher functional gap should take one of them.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass (re-run after this grid's own edit, to separate this cron's own diff from everyone
+else's) shows: a modified `templates-hooks/terraform-validate.txt.tmpl`, and untracked
+`GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`, and
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl` — real artifacts of
+this session's other standing activities (ggen, innovation-explorer, Terraform), not this
+ERRC cron's own output. None read beyond filenames, none touched. No `gauge_rr_op*`/
+`gauge_verify_op*` migration churn observed this pass — the untracked migrations a couple of
+passes back are gone from `git status` now, either committed or cleaned up by the peer
+session; not this cron's concern either way.
 
 ## Tenth-pass update
 
@@ -575,10 +673,20 @@ sequence cover these):
   HTTP-blocking, correctly-scoped usage. Full evidence in "Tenth-pass update" above. Do not
   re-propose this bug class again absent a new `after_transaction(` call site appearing in a
   future `git log`.
-- **NEW this pass — test-coverage parity gap, not a bug: `ApprovalBackupRetentionChangeChargeOverage`
-  (the pattern's own original correct exemplar) has no forced-failure atomicity test of its
-  own, unlike all 4 resources fixed to match it.** Full evidence in "Tenth-pass update"
-  above. Selected as this pass's CREATE item.
+- **RESOLVED (`77c7c13`, real, committed, confirmed as this pass's own `HEAD`)**: the
+  test-coverage parity gap on `ApprovalBackupRetentionChangeChargeOverage` — a real,
+  deterministic forced-`Ledger.Transfer`-failure test now exists
+  (`test/xaas/governance/approval_backup_retention_change_test.exs`), matching its 4
+  siblings. See "Eleventh-pass update" above. The atomicity-bug-class thread (rounds 7-9) is
+  now closed on both axes; do not re-open without genuinely new evidence.
+- **NEW this pass — 5 of the 7 round-5 (`cec5025`) `Approval*` resources' `*Approve.ex`
+  Change modules are real, unwired no-ops: the `:approve` action never calls them at all.**
+  `ApprovalTierDowngrade`, `ApprovalQuotaOverride`, `ApprovalInvoiceReconciliationApprove`,
+  `ApprovalCastleVerbSchedule`, `ApprovalK8sFaultRemediateSuggest` all accept a mutation
+  request and record who approved it, but none has any real downstream effect. Full evidence
+  in "Eleventh-pass update" above. `ApprovalTierDowngrade` selected as this pass's CREATE
+  item (the one of the 5 with a real, ready-built target — `Subscription.change_tier` — to
+  wire into); the other 4 remain real, open, larger-scoped gaps for a future pass.
 - **STILL OPEN — `architecture-overview.md:27`'s "44 of the 69" real HTTP-route-block
   claim does not match current code** (`grep -rl "routes do" lib/xaas --include="*.ex" | wc
   -l` → 56); the "44" figure traces to `http-api-surface.md:75`'s own stale "44 of 49"
@@ -678,11 +786,19 @@ sequence cover these):
     silently un-audited — **landed for real as `db17f3b`**, confirmed live as this pass's
     own `HEAD` (see "Tenth-pass update" above; supersedes the ninth-pass section's stale
     "uncommitted" framing).
-15. **Real forced-`Ledger.Transfer`-failure atomicity regression test for
-    `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`** — the one real
-    money-moving `after_action/2` write in this codebase's now-closed atomicity-bug class
-    that still lacks the deterministic same-account regression proof its own 4 siblings all
-    carry. Selected as this pass's CREATE item; full spec in the structured output below.
+15. **RESOLVED** (was this grid's own item 15, tenth pass): real forced-`Ledger.Transfer`-
+    failure atomicity regression test for
+    `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage` —
+    **landed for real as `77c7c13`**, confirmed live as this pass's own `HEAD`
+    (`test/xaas/governance/approval_backup_retention_change_test.exs`, new, 132 lines). See
+    "Eleventh-pass update" above. This closes the entire atomicity-bug-class thread
+    (rounds 7-9) on both the correctness axis (tenth pass) and the test-coverage axis (this
+    fact, confirmed this pass).
+16. **Wire `Xaas.Billing.ApprovalTierDowngrade`'s `:approve` action to actually drive
+    `Xaas.Billing.Subscription`'s real `:change_tier` action**, replacing the currently dead,
+    unwired `Xaas.Billing.Changes.ApprovalTierDowngradeApprove` no-op stub with real logic —
+    the standout of 5 real, freshly-found dead-on-arrival `*Approve.ex` change modules from
+    round 5. Selected as this pass's CREATE item; full spec in the structured output below.
 7. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
    `lib/xaas`, and all 32 `Approval*` resources now hand-carry the identical policy block
@@ -707,12 +823,27 @@ sequence cover these):
 
 ## See Also
 
+- `lib/xaas/billing/approval_tier_downgrade.ex`,
+  `lib/xaas/billing/changes/approval_tier_downgrade_approve.ex`,
+  `lib/xaas/billing/subscription.ex:226-236`,
+  `lib/xaas/billing/changes/subscription_prorate_tier_change.ex`,
+  `lib/xaas/billing/validations/subscription_change_tier_not_no_op.ex` — the real dead
+  no-op change module and its ready-built real target this pass's own selected CREATE item
+  (item 16) wires together
+- `lib/xaas/billing/changes/approval_quota_override_approve.ex`,
+  `lib/xaas/billing/changes/approval_invoice_reconciliation_approve_approve.ex`,
+  `lib/xaas/operations/changes/approval_castle_verb_schedule_approve.ex`,
+  `lib/xaas/operations/changes/approval_k8s_fault_remediate_suggest_approve.ex` — the other 4
+  real, unwired no-op `*Approve.ex` modules this pass found and did not select (no comparable
+  ready-built downstream action exists for any of them; each is a real, separate, larger
+  design question for a future pass)
 - `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex`,
   `test/xaas/billing/approval_sla_credit_apply_test.exs:150-183`,
+  `test/xaas/governance/approval_backup_retention_change_test.exs`,
   `test/xaas/governance/approval_backup_retention_change_stress_test.exs`,
   `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` — the
-  real atomic exemplar this pass's own selected CREATE item (item 15) closes the test-parity
-  gap on, and the deterministic same-account forced-failure technique it reuses verbatim
+  real atomic exemplar whose test-parity gap round 9 (`77c7c13`) closed, and the
+  deterministic same-account forced-failure technique it reuses verbatim
 - `docs/claude/diataxis/explanation/architecture-overview.md` — the sixth-pass Create item
   this grid identified: the whole-system onboarding map that previously did not exist; its
   own "44 of the 69" route-count claim (line 27) has drifted from current code and is still
