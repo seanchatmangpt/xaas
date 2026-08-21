@@ -99,6 +99,9 @@ defmodule Kanban.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:ash_authentication, "~> 4.0"},
       {:picosat_elixir, "~> 0.2"},
+      # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
+      # assertions in KanbanWeb.AutofdeLab.StatusLiveTest need it).
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

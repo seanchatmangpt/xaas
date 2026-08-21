@@ -6,15 +6,27 @@ defmodule KanbanWeb.AutofdeLab.StatusLive do
   use KanbanWeb, :live_view
 
   alias Xaas.Autofde.StatusParser
+  alias Xaas.Platform.WebhookDelivery
+
+  # Real second panel's data source: the real, most-recent N
+  # `Xaas.Platform.WebhookDelivery` rows (status, event_type,
+  # attempt_count, inserted_at) -- chosen over the Ledger balance option
+  # because a delivery row is a simple, already-final read (no
+  # cross-account aggregation math needed to make the panel honest) and
+  # this table is the one every `Subscription`/`BackupRetention`/
+  # `SlaCredit` webhook-dispatch path in this session actually writes to
+  # via `Xaas.Platform.Changes.DeliverWebhook`, so it is real live
+  # platform activity, not synthetic data invented for this panel.
+  @recent_deliveries_limit 10
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, load_status(socket)}
+    {:ok, socket |> load_status() |> load_webhook_deliveries()}
   end
 
   @impl true
   def handle_event("refresh", _params, socket) do
-    {:noreply, load_status(socket)}
+    {:noreply, socket |> load_status() |> load_webhook_deliveries()}
   end
 
   defp load_status(socket) do
@@ -30,6 +42,20 @@ defmodule KanbanWeb.AutofdeLab.StatusLive do
         |> Phoenix.Component.assign(:error, nil)
         |> Phoenix.Component.assign(:passes, passes)
     end
+  end
+
+  # Real read of the real, most-recent `WebhookDelivery` rows. Internal
+  # dev-only dashboard behind the same `dev_routes` guard as
+  # `ash_admin`/`live_dashboard` on this route -- `authorize?: false`
+  # matches that existing trust boundary, not a new one.
+  defp load_webhook_deliveries(socket) do
+    deliveries =
+      WebhookDelivery
+      |> Ash.Query.sort(inserted_at: :desc)
+      |> Ash.Query.limit(@recent_deliveries_limit)
+      |> Ash.read!(authorize?: false)
+
+    Phoenix.Component.assign(socket, :webhook_deliveries, deliveries)
   end
 
   @impl true
@@ -67,6 +93,41 @@ defmodule KanbanWeb.AutofdeLab.StatusLive do
           </li>
         </ul>
       <% end %>
+
+      <div class="flex items-center justify-between mt-10 mb-4">
+        <h2 class="text-xl font-bold">xaas platform: recent webhook deliveries</h2>
+      </div>
+
+      <table class="w-full text-sm border border-slate-200">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="text-left p-2 border-b border-slate-200">Event type</th>
+            <th class="text-left p-2 border-b border-slate-200">Status</th>
+            <th class="text-left p-2 border-b border-slate-200">Attempts</th>
+            <th class="text-left p-2 border-b border-slate-200">Inserted at</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={delivery <- @webhook_deliveries} class="border-b border-slate-100">
+            <td class="p-2 font-mono">{delivery.event_type}</td>
+            <td class="p-2">
+              <span class={[
+                "text-xs font-semibold uppercase px-2 py-0.5 rounded",
+                delivery_status_class(delivery.status)
+              ]}>
+                {delivery.status}
+              </span>
+            </td>
+            <td class="p-2">{delivery.attempt_count}</td>
+            <td class="p-2 text-slate-500">{delivery.inserted_at}</td>
+          </tr>
+          <tr :if={@webhook_deliveries == []}>
+            <td colspan="4" class="p-4 text-center text-slate-500">
+              No webhook deliveries yet.
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     """
   end
@@ -74,4 +135,9 @@ defmodule KanbanWeb.AutofdeLab.StatusLive do
   defp verdict_class(:pass), do: "bg-green-100 text-green-800"
   defp verdict_class(:blocked), do: "bg-red-100 text-red-800"
   defp verdict_class(:mixed), do: "bg-amber-100 text-amber-800"
+
+  defp delivery_status_class(:delivered), do: "bg-green-100 text-green-800"
+  defp delivery_status_class(:failed), do: "bg-red-100 text-red-800"
+  defp delivery_status_class(:pending), do: "bg-amber-100 text-amber-800"
+  defp delivery_status_class(_), do: "bg-slate-100 text-slate-800"
 end

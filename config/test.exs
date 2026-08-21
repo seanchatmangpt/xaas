@@ -44,6 +44,12 @@ config :kanban, KanbanWeb.Endpoint,
   secret_key_base: "R0hv8DBm2eLIGQsu63NgN+Na/ZLpvVaZ0lU3P2XHhYL7qwQf4o802taC0lfEF12L",
   server: false
 
+# Compile the same dev-only routes (live_dashboard, ash_admin, and this
+# session's autofde-lab dashboard LiveView) under test as under dev, so
+# Phoenix.LiveViewTest can real-mount them -- same compile-time guard,
+# same dev/test-only trust boundary, never set true in prod.
+config :kanban, dev_routes: true
+
 # In test we don't send emails.
 config :kanban, Kanban.Mailer, adapter: Swoosh.Adapters.Test
 
