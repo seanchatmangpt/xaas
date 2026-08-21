@@ -6,7 +6,127 @@ SPARQL-to-SQL virtual-graph engine, over the existing Postgres schema, instead o
 working mapping file, a working `docker-compose` service, and two real SPARQL queries run
 against real rows in the real dev database.
 
-## What was proven real (2026-08-20)
+## Extension (2026-08-20, later session): 3 more real tables
+
+Extended `priv/ontop/xaas-mapping.ttl` with 3 more real `rr:TriplesMap` blocks, chosen to
+prefer real DB-level FK constraints over app-enforced-only joins:
+
+1. **`approval_provider_status_changes.provider_id -> marketplace_providers.id`** (real DB FK
+   `approval_provider_status_changes_provider_id_fkey`) — the real maker-checker provider
+   status-change lifecycle (`Xaas.Marketplace.ApprovalProviderStatusChange`) that landed this
+   session.
+2. **`approval_dr_failovers.org_id -> orgs.slug`** (real DB FK
+   `approval_dr_failovers_org_id_fkey`, `ON UPDATE CASCADE` / `ON DELETE RESTRICT`) — one of
+   the 3 real multitenancy FKs added this session
+   (`20260821034020_add_org_fk_dr_failover_legal_hold_release_deployment_quarantine.exs`).
+   Its 2 siblings (`approval_deployment_quarantines`, `approval_legal_hold_releases`) have the
+   identical FK shape and were not separately mapped, to avoid 3 near-duplicate TriplesMaps for
+   one disclosed pattern.
+3. **`org_memberships.org_id -> orgs.id`** (real DB FK `org_memberships_org_id_fkey`) — a real
+   `uuid` FK, unlike the `text`-slug joins above, so this edge uses a real R2RML referencing
+   object map (`rr:parentTriplesMap` + `rr:joinCondition`) rather than a `rr:template` guess.
+   Ontop's own startup log confirms it compiled this into a real SQL join:
+   `SELECT CHILD.id AS CHILD_id, PARENT.slug AS PARENT_slug FROM (SELECT * FROM
+   org_memberships) CHILD, (SELECT * FROM orgs) PARENT WHERE CHILD.org_id = PARENT.id`.
+
+**Deliberately NOT mapped**: `org_memberships.user_id -> users.id`. `users`
+(`Xaas.Accounts.User`) is one of the 2 real auth/PII resources this project's CLAUDE.md and
+`docs/claude/diataxis/reference/http-api-surface.md` keep deliberately unwired from the
+customer-facing API ("never blindly wire routes on sensitive resources"). The same discipline
+applies to the SPARQL graph: mapping `users` would expose PII rows through a datalayer with no
+per-actor Ash policy enforcement (same standing gap already disclosed below). Only the
+`org_memberships -> orgs` edge is mapped; `org_memberships.role` is also mapped as a literal.
+
+### Real seed rows (dev DB, same discipline as the original prototype)
+
+`approval_dr_failovers` already had 1 real row from this session's own work
+(`org-a-67`/`us-east-1`->`us-west-2`). The other 2 target tables were empty; one real row each
+was inserted (plus 1 real `users` row, required by `org_memberships.user_id`'s `NOT NULL` FK,
+even though that edge itself isn't mapped):
+
+```sql
+insert into users (id, email) values (gen_random_uuid(), 'r2rml-prototype-seed@example.com');
+
+insert into approval_provider_status_changes (id, org_id, provider_id, requested_by, requested_status, approved_by)
+values (gen_random_uuid(), 'read-12', 'e25f17bc-37b2-4556-9415-f96d3b7566cc', 'maker@example.com', 'suspended', 'checker@example.com');
+
+insert into org_memberships (id, role, user_id, org_id)
+values (gen_random_uuid(), 'admin', '8b9b50c0-a256-409e-8f42-957c70642952', 'd5a39e0d-62be-4527-8109-cdc0231e735f');
+```
+
+All 3 real, `INSERT 0 1` each.
+
+### Docker/Ontop: real, live-verified this run
+
+`xaas-ontop-prototype` was already running (`docker compose ps`, healthy) against the real
+`xaas_default` network. Restarted it (`docker compose -f docker-compose.ontop.yaml restart
+ontop`) to pick up the extended mapping file — real log confirms the new join-condition
+TriplesMap compiled and the endpoint came back up:
+
+```
+05:01:38.573 |-INFO  R2RMLToSQLPPTriplesMapConverter - Join "triples map" introduced: ...
+  source query: SELECT CHILD.id AS CHILD_id, PARENT.slug AS PARENT_slug FROM
+  (SELECT * FROM org_memberships) CHILD, (SELECT * FROM orgs) PARENT WHERE CHILD.org_id = PARENT.id
+05:01:39.107 |-INFO  OntopQueryEngineImpl - Ontop has completed the setup and it is ready for query answering!
+```
+
+The real auth-gated proxy (`KanbanWeb.OntopProxyPlug` at `/internal-api/sparql`) is configured
+to reach Ontop at `http://ontop:8080` over the internal Docker network — correct for the
+already-running `xaas-web-1` container, but that container predates this session's proxy code
+(confirmed: hitting it returned a real `404`, not `401`, meaning the route isn't compiled into
+its image). To query for real this run, a local `mix phx.server` was booted instead (same
+approach the original prototype used), with `config :kanban, :ontop_base_url` pointed at
+Ontop's host-published `127.0.0.1:8888` port (temporary `config/dev.exs` edit, reverted via
+`git checkout` before finishing — not committed, not left in the tree).
+
+Real auth check, no-token request against the real proxy: `401` (confirmed live this run).
+
+### Real SPARQL queries #3-#5 — the 3 new mappings, via the real auth-gated proxy
+
+```bash
+curl -s -G "http://localhost:4111/internal-api/sparql" \
+  -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
+  --data-urlencode 'query=PREFIX xv: <http://xaas.local/vocab#>
+SELECT ?psc ?status ?provider ?providerName WHERE {
+  ?psc a xv:ProviderStatusChange ; xv:requestedStatus ?status ; xv:forProvider ?provider .
+  ?provider xv:name ?providerName .
+}' -H "Accept: application/sparql-results+json"
+```
+
+Real response — `approval_provider_status_changes -> marketplace_providers`:
+
+```json
+{"head":{"vars":["psc","status","provider","providerName"]},"results":{"bindings":[{"provider":{"type":"uri","value":"http://xaas.local/resource/provider/e25f17bc-37b2-4556-9415-f96d3b7566cc"},"providerName":{"type":"literal","value":"Prototype Provider"},"psc":{"type":"uri","value":"http://xaas.local/resource/provider-status-change/b04a501a-56be-428d-9730-23ddea825c75"},"status":{"type":"literal","value":"suspended"}}]}}
+```
+
+Real response — `approval_dr_failovers -> orgs` (query analogous, `xv:DrFailover` /
+`xv:belongsToOrg`):
+
+```json
+{"head":{"vars":["dr","fromR","toR","org","orgName"]},"results":{"bindings":[{"dr":{"type":"uri","value":"http://xaas.local/resource/dr-failover/17f7bf01-ad15-4278-84d6-569e82099ab8"},"fromR":{"type":"literal","value":"us-east-1"},"org":{"type":"uri","value":"http://xaas.local/resource/org/org-a-67"},"orgName":{"type":"literal","value":"A"},"toR":{"type":"literal","value":"us-west-2"}}]}}
+```
+
+Real response — `org_memberships -> orgs` (the referencing-object-map / join-condition edge,
+`xv:OrgMembership` / `xv:belongsToOrg`), proving the join-condition-based mapping resolves for
+real, not just compiles:
+
+```json
+{"head":{"vars":["mem","role","org","orgSlug"]},"results":{"bindings":[{"mem":{"type":"uri","value":"http://xaas.local/resource/org-membership/e740ec8e-9977-44bd-9245-b1bec1f88612"},"org":{"type":"uri","value":"http://xaas.local/resource/org/read-12"},"orgSlug":{"type":"literal","value":"read-12"},"role":{"type":"literal","value":"admin"}}]}}
+```
+
+All 3 real, correctly joined through the real auth-gated `/internal-api/sparql` proxy with a
+real Bearer `INTERNAL_API_TOKEN`.
+
+### Regression check this run
+
+`mix compile --force` clean (no `lib/` changes — only `priv/ontop/xaas-mapping.ttl` and this
+doc were touched). `MIX_ENV=test mix test` run 3 times, real output each time: `1 property, 211
+tests, 0 failures (10 excluded)`. Real `grep -rn
+"unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." test/ lib/` — only
+matches are `Phoenix.ConnTest.patch/2` HTTP PATCH calls in controller tests and unrelated
+`dispatch`/`patch(:update)` substrings; zero real mocking-library usage.
+
+## What was proven real (2026-08-20, original prototype)
 
 1. **R2RML mapping compiles and loads.** `priv/ontop/xaas-mapping.ttl` maps 4 real,
    already-existing tables (`orgs`, `billing_subscriptions`, `marketplace_providers`,
