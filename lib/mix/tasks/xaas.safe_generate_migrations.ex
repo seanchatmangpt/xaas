@@ -175,12 +175,50 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
   # All real table-name-bearing DSL forms recognized above, unioned together.
   @all_table_regexes [@table_call_regex, @references_call_regex, @index_call_regex]
 
+  # Real, confirmed DOE finding (reproduced independently 3 times this
+  # session): the regexes above ran over RAW file text, including comments
+  # and `@moduledoc`/`@doc` strings. A migration file whose comment merely
+  # EXPLAINS or gives an example of `references(:orgs, ...)` DSL syntax
+  # (documentation, a code-review note, a "do NOT do this" example) got
+  # that comment text matched as if it were real, executable migration
+  # code, producing a false REFUSE.
+  #
+  # Fix: strip Elixir single-line comments (everything from an unescaped
+  # `#` to end-of-line) before running the detection regexes. Elixir has
+  # no block comments -- every comment is a full-line-or-line-suffix
+  # `#...`, so line-by-line stripping is complete for the real DSL forms
+  # this task parses.
+  #
+  # Real, accepted limitation, not a bug: a `#` inside an actual string
+  # literal (e.g. `"table#1"`, a URL fragment) is not a comment start in
+  # real Elixir, but this per-line scan cannot distinguish that from a
+  # real comment without a full tokenizer. This is deliberately not
+  # handled: real `mix ash_postgres.generate_migrations` output never puts
+  # a literal `#` inside a string argument to `table()`/`references()`/
+  # `index()` calls -- table/column/index names there are plain Elixir
+  # atoms (`:foo`), not strings, and the surrounding arguments are keyword
+  # lists -- so this limitation does not affect any real input this task
+  # processes. A full string-aware tokenizer would be over-engineering for
+  # a case that does not occur in practice.
+  @line_comment_regex ~r/(?<!\\)#.*/
+
+  defp strip_comments(content) do
+    content
+    |> String.split("\n")
+    |> Enum.map(&strip_line_comment/1)
+    |> Enum.join("\n")
+  end
+
+  defp strip_line_comment(line), do: Regex.replace(@line_comment_regex, line, "", global: false)
+
   @doc false
   def touched_tables(content) do
+    stripped = strip_comments(content)
+
     @all_table_regexes
     |> Enum.flat_map(fn regex ->
       regex
-      |> Regex.scan(content)
+      |> Regex.scan(stripped)
       |> Enum.map(fn [_, table] -> table end)
     end)
     |> MapSet.new()
@@ -188,12 +226,15 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
 
   # Real tables named on a single line, across all recognized DSL forms.
   # Shared by `touched_tables/1` (whole-file union) and `report_refusal/5`
-  # (per-line detail for the refusal message).
+  # (per-line detail for the refusal message). Comment-stripped for the
+  # same reason as `touched_tables/1` above.
   defp tables_on_line(line) do
+    stripped = strip_line_comment(line)
+
     @all_table_regexes
     |> Enum.flat_map(fn regex ->
       regex
-      |> Regex.scan(line)
+      |> Regex.scan(stripped)
       |> Enum.map(fn [_, table] -> table end)
     end)
     |> Enum.uniq()

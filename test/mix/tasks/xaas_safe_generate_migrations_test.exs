@@ -88,6 +88,92 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrationsTest do
     end
   end
 
+  describe "touched_tables/1 -- comment stripping (real DOE false-REFUSE finding)" do
+    # Real, confirmed finding from a real 2^3 factorial DOE this session,
+    # reproduced independently 3 times across 3 separate runs: the regexes
+    # above ran over RAW file text, including comments. A migration file
+    # whose comment merely EXPLAINS or gives an example of
+    # `references(:orgs, ...)` DSL syntax (documentation, a code-review
+    # note, a "do NOT do this" example) got that comment text matched as
+    # if it were real, executable migration code, producing a false
+    # REFUSE for a migration that only actually touches its own table.
+    test "does not pick up a table name that only appears inside a # comment" do
+      content = """
+      defmodule Xaas.Repo.Migrations.AddOrgIdToWidgets do
+        @moduledoc \"\"\"
+        Adds org_id to widgets.
+
+        # Example of what NOT to do -- do not add a raw FK constraint inline
+        # like this: modify :org_id, references(:orgs, column: :id, on_delete: :restrict)
+        # Instead this migration only adds the plain column; the FK is added
+        # separately once the orgs table itself is confirmed stable.
+        \"\"\"
+        use Ecto.Migration
+
+        def up do
+          alter table(:widgets) do
+            add :org_id, :uuid, null: true
+          end
+        end
+
+        def down do
+          alter table(:widgets) do
+            remove :org_id
+          end
+        end
+      end
+      """
+
+      touched = Task.touched_tables(content)
+
+      refute MapSet.member?(touched, "orgs"),
+             "expected the commented-out example references(:orgs, ...) to be ignored, got: #{inspect(touched)}"
+
+      assert touched == MapSet.new(["widgets"])
+    end
+
+    test "still catches a real references(:x, ...) call on the same line as a trailing comment" do
+      content = """
+      alter table(:widgets) do
+        modify :org_id, references(:orgs, column: :id) # keep this FK
+      end
+      """
+
+      touched = Task.touched_tables(content)
+
+      assert touched == MapSet.new(["widgets", "orgs"])
+    end
+
+    test "a comment-only mention of index()/unique_index() is ignored" do
+      content = """
+      # Do not forget to also run: create unique_index(:customers, [:email])
+      # in a follow-up migration once the column backfill is done.
+      alter table(:orders) do
+        add :customer_id, :uuid, null: true
+      end
+      """
+
+      touched = Task.touched_tables(content)
+
+      refute MapSet.member?(touched, "customers")
+      assert touched == MapSet.new(["orders"])
+    end
+
+    test "an entire comment line naming create table(:x) is ignored" do
+      content = """
+      # create table(:archived_widgets, primary_key: false) do ... end -- NOT done here, see ticket XAAS-123
+      alter table(:widgets) do
+        add :archived, :boolean, default: false
+      end
+      """
+
+      touched = Task.touched_tables(content)
+
+      refute MapSet.member?(touched, "archived_widgets")
+      assert touched == MapSet.new(["widgets"])
+    end
+  end
+
   describe "touched_tables/1 -- happy path preserved" do
     test "a real single-table migration with no references()/index() calls still returns exactly its one table" do
       # Real file: `create table(:ledger_events, ...) do ... end` /
