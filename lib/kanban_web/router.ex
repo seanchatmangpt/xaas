@@ -60,6 +60,7 @@ defmodule KanbanWeb.Router do
     get "/capability_liveness_regressions", CapabilityRegressionsController, :index
     get "/ocel_summary", OcelSummaryController, :index
     get "/prometheus/query", PrometheusQueryController, :query
+    get "/health", HealthController, :index
   end
 
   # Real reverse-proxy for the real Ontop SPARQL endpoint (see

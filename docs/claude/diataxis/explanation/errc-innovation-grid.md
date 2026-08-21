@@ -2,12 +2,28 @@
 
 Blue Ocean Strategy ERRC grid (Eliminate-Reduce-Raise-Create) grounded in what actually
 exists on disk, re-verified against real `find`/`grep`/`git log` runs. One evolving doc, not
-a new dated file per pass — this revision updates the 2026-08-20 grid in place after the
-`ActorOrgMatches`-on-Governance / `Marketplace.Provider` mutation-route / marketplace
-listing-lifecycle / MAPE-K close-the-loop commits landed (`7320791`, `d9a7006`, `adc839a`,
-`53788ea`, 4 commits since the last pass). Last Updated 2026-08-20 (same day, third pass).
+a new dated file per pass — this revision updates the 2026-08-20 grid in place after this
+pass's own real-verified commits (`dc7c3e9` AshPaperTrail extended to 4 Governance
+resources, `e5206bd` Reactor step/compensate, `0ff2b97` Ontop SPARQL auth hardening,
+`3016c59` R2RML 3-more-tables, `9f4255f` stress coverage — all from the separately-running
+25-prompt sequence, now at prompt 15/25) landed since the third pass. Last Updated
+2026-08-20 (same day, fourth pass).
 
 ## What changed since the last grid (resolved / advanced items)
+
+- **This grid's own prior #1 CREATE item — extending real `AshPaperTrail` change-tracking to
+  the 4 already-org-scoped Governance `Approval*` resources — is now real and landed**
+  (`dc7c3e9`, landed inside this same session, outside this pass's own authorship but
+  verified live): `grep -rl "AshPaperTrail.Resource" lib/xaas` now returns 6 files
+  (`approval_freeze_override.ex`, `approval_backup_retention_change.ex`,
+  `approval_legal_hold_release.ex`, `freeze_window.ex`, `approval_dr_failover.ex`,
+  `approval_deployment_quarantine.ex`) — up from 2 last pass. The prior grid's Raise
+  finding ("31 of 32 Approval* resources are unaudited") is now real-narrower: 26 of 32.
+- The concurrently-running 25-prompt sequence advanced from prompt 10/25 to prompt 15/25
+  since the last grid pass, landing real Reactor compensate mechanics (`e5206bd`), real
+  Ontop SPARQL auth hardening (`0ff2b97`), real R2RML mapping for 3 more tables
+  (`3016c59`), and real stress coverage for `WebhookDelivery`/`ApprovalProviderStatusChange`
+  (`9f4255f`) — none of these are re-proposed below, per task instructions.
 
 - **This grid's own prior #1 CREATE item — wiring `ActorOrgMatches` onto the 4 Governance
   resources' `:create`/`:approve` policies — is real and landed** (`7320791`):
@@ -126,20 +142,31 @@ listing-lifecycle / MAPE-K close-the-loop commits landed (`7320791`, `d9a7006`, 
 - **RESOLVED this pass**: the 4 `X-Org-Id`-disclosure Governance resources' `:create`/
   `:approve` policies now authorize via `ActorOrgMatches`, not bare `always()` (see "What
   changed" above, `7320791`).
-- **Audit-log coverage is real but confined to 2 of 49 resources, despite `AshPaperTrail`
-  being installed and domain-configured for exactly this purpose.** Real-verified: `grep -rl
-  "AshPaperTrail.Resource" lib/xaas` → only `approval_freeze_override.ex` and
-  `freeze_window.ex`. `Xaas.Governance` is the one domain with `AshPaperTrail.Domain` in its
-  `extensions:` list (`lib/xaas/governance.ex:4`) — but of the 32 real `Approval*` resources
-  (`find lib/xaas -iname "approval*.ex" ! -path "*/changes/*" ! -path "*/validations/*" | wc
-  -l` → 32, up from 31 last pass with the new `ApprovalProviderStatusChange`), only 1 uses
-  it. The 4 resources this pass just gave real org-scoped authorization
-  (`approval_backup_retention_change`, `approval_dr_failover`, `approval_legal_hold_release`,
-  `approval_deployment_quarantine`) still have zero change-tracking — real-verified
-  `extensions: [AshJsonApi.Resource, AshGraphql.Resource]`, no `AshPaperTrail.Resource`, no
-  `paper_trail do` block, in all 4. For a maker-checker/compliance domain whose entire
-  purpose is "who approved what, when, over what prior state," this is a real, sharper gap
-  than raw test-coverage: the approval *decision* itself is unaudited on 31 of 32 resources.
+- **RESOLVED this pass**: `AshPaperTrail.Resource` change-tracking now covers 6 of 49
+  resources, up from 2 (`dc7c3e9`) — the 4 Governance resources this grid's prior Raise
+  section flagged as newly org-scoped-but-unaudited (`approval_backup_retention_change`,
+  `approval_dr_failover`, `approval_legal_hold_release`, `approval_deployment_quarantine`)
+  all now carry it. 26 of 32 real `Approval*` resources remain unaudited — real, smaller gap
+  than the prior 31-of-32, not closed.
+- **There is still no real health-check or readiness aggregation endpoint anywhere in this
+  repo**, despite 9 domains and a real internal-API surface (`lib/kanban_web/router.ex:57-62`
+  wires 3 distinct `/internal-api` GET routes — `capability_liveness_regressions`,
+  `ocel_summary`, `prometheus/query` — each its own single-purpose controller). Real-verified:
+  `ls lib/kanban_web/controllers` → `capability_regressions_controller.ex`,
+  `ocel_summary_controller.ex`, `prometheus_query_controller.ex`,
+  `stripe_webhook_controller.ex`, `page_controller.ex`, `error_html.ex`, `error_json.ex` — no
+  `health_controller.ex` or equivalent; no `get "/health"` / `get "/live"` / `get "/ready"` in
+  the router. A k8s-deployed app (this repo targets `colima`+`kind`, per
+  `docs/AWS-CHAPTERS-SUBSTITUTION.md`) with no liveness/readiness endpoint has no real signal
+  for its own orchestrator beyond Phoenix's bare TCP accept — fresh gap, not touched by any
+  prior grid pass or the concurrent sequence's queued items (its k8s item is network-policy
+  application, not health-check wiring).
+- **`priv/repo/seeds.exs` is still the unmodified book-original stub — real-verified 19
+  lines, still reads "Script for populating the database... Repo.insert!(%Kanban.SomeSchema
+  {})" with zero actual `Xaas.*` fixture calls.** For a 49-resource, 9-domain Ash app, there
+  is no real local-dev path to a populated database short of manually driving each Ash
+  action by hand — a genuine developer-experience gap, fresh this pass, distinct from and not
+  covered by the concurrent sequence's remaining items.
 - **`Xaas.Accounts.Org`'s `:create` authorization is still real-degraded, `:update` is now
   fixed.** `org.ex:90-98`: `:update` now uses `ActorBelongsToOrg` (closed, see "What
   changed"). `:create` remains on `actor_present()` by real, disclosed design (no
@@ -149,44 +176,43 @@ listing-lifecycle / MAPE-K close-the-loop commits landed (`7320791`, `d9a7006`, 
 
 ## Create
 
-1. **RESOLVED this pass** (was item 1 last grid): `ActorOrgMatches` wired onto the 4
-   Governance resources — see "What changed" above (`7320791`).
-2. **Extend real `AshPaperTrail` change-tracking to the 4 already-org-scoped Governance
-   `Approval*` resources** (`approval_backup_retention_change.ex`,
-   `approval_dr_failover.ex`, `approval_legal_hold_release.ex`,
-   `approval_deployment_quarantine.ex`) — the concrete, scoped, unblocked new CREATE item
-   this pass selected; full spec in the structured output below.
-3. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
+1. **RESOLVED** (was item 1, two grids back): `ActorOrgMatches` wired onto the 4 Governance
+   resources — `7320791`.
+2. **RESOLVED** (was item 2 last grid): real `AshPaperTrail` change-tracking extended to the
+   4 already-org-scoped Governance `Approval*` resources — `dc7c3e9`, see "What changed".
+3. **A real `/internal-api/health` aggregation endpoint** — the concrete, scoped, fresh
+   CREATE item this pass selected; full spec in the structured output below.
+4. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
-   `lib/xaas`, and the 32 `Approval*` resources (up from 31, new
-   `ApprovalProviderStatusChange`) still hand-carry the identical policy block this item
-   would extract (see Reduce). Carried forward verbatim as a real, still-valid candidate.
-4. **Real HTTP-level controller tests for the 9 zero-coverage `Approval*` resources** —
+   `lib/xaas`, and the 32 `Approval*` resources still hand-carry the identical policy block
+   this item would extract (see Reduce). Carried forward verbatim as a real, still-valid
+   candidate.
+5. **Real HTTP-level controller tests for the 9 zero-coverage `Approval*` resources** —
    unchanged from the prior grid, still real and still not done (see Raise); the same 9
    real file paths remain the concrete scope.
-5. **Extend `ActorBelongsToOrg`-style user-membership authorization past `Org` itself** —
+6. **Extend `ActorBelongsToOrg`-style user-membership authorization past `Org` itself** —
    unchanged from the prior grid; still used on exactly one resource/action
    (`Org`, `:update`).
-6. **A real `mix xaas.audit_coverage_report` task** (developer-experience/observability
-   gap, fresh this pass) — the codebase already has a precedent for exactly this shape of
-   tool (`bd1e433`'s `mix xaas.capability_coverage`,
-   `lib/mix/tasks/xaas.capability_coverage.ex`), but nothing enumerates which of the 49
-   real Ash resources carry `AshPaperTrail.Resource` vs. not. Real, scoped, smaller than
-   item 2, and a natural follow-on to it once more resources adopt paper-trail — not
-   selected this pass because item 2 is the more concrete, higher-value single unit of
-   work (the reporting task is only useful once there is more than 2-of-49 real coverage
-   to report on).
-7. **Real `identities do` uniqueness constraints across the 49 resources are thin** (data-
-   integrity gap, fresh this pass): real-verified `grep -rl "identities do" lib/xaas | wc
-   -l` → 8 of 49 resources. `Xaas.Marketplace.ApprovalProviderStatusChange`
-   (`adc839a`, this session's newest maker-checker resource) has no `identities do` block
+7. **A real `mix xaas.audit_coverage_report` task** — the codebase already has a precedent
+   for exactly this shape of tool (`bd1e433`'s `mix xaas.capability_coverage`,
+   `lib/mix/tasks/xaas.capability_coverage.ex`), and now that 6-of-49 resources carry
+   `AshPaperTrail.Resource` (up from 2), a real enumerator has something non-trivial to
+   report. Carried forward, not selected this pass (item 3 is more scoped and has zero
+   existing partial coverage to build on top of, unlike this item which layers on
+   already-shipped paper-trail work).
+8. **Real `identities do` uniqueness constraints across the 49 resources are thin**: real-
+   verified `grep -rl "identities do" lib/xaas | wc -l` → 8 of 49 resources.
+   `Xaas.Marketplace.ApprovalProviderStatusChange` still has no `identities do` block
    guarding against a duplicate *pending* status-change request for the same
-   `provider_id` — real-verified: `lib/xaas/marketplace/approval_provider_status_change.ex`
-   has no `identities` section, so two concurrent `:create`s against the same provider can
-   both persist as `pending` with no DB-level or Ash-level uniqueness stopping it. Real,
-   scoped, but broader than item 2 (a constraint-by-constraint audit across resources
-   rather than one already-identified extension) — kept as a listed, not-selected
-   candidate this pass; a real follow-on to the maker-checker CREATE items already landed.
+   `provider_id`. Carried forward, not selected this pass.
+9. **A real `priv/repo/seeds.exs` populated with `Xaas.*` fixtures for local dev** (fresh
+   this pass, developer-experience gap): real-verified — the file is still the unmodified
+   19-line book stub with zero `Xaas.*` calls, so there is no one-command path to a
+   populated local database across 9 domains / 49 resources. Real, scoped, but a close
+   second to item 3 this pass — a health endpoint has zero existing surface anywhere in the
+   repo (a sharper, cleaner gap) where seed data at least has `mix xaas.capability_coverage`
+   and the K-graph MAPE-K loop's own real-action-invocation pattern
+   (`mix xaas.close_coverage_gap`, `53788ea`) as partial precedent to build from.
 
 ## See Also
 
@@ -205,7 +231,9 @@ listing-lifecycle / MAPE-K close-the-loop commits landed (`7320791`, `d9a7006`, 
   `lib/xaas/governance/checks/actor_org_matches.ex`,
   `lib/xaas/marketplace/checks/actor_org_filter.ex`,
   `lib/xaas/marketplace/approval_provider_status_change.ex`,
-  `lib/xaas/governance/approval_freeze_override.ex` (the one real `AshPaperTrail.Resource`
-  example this revision's Create item 2 replicates),
-  `lib/kanban_web/plugs/resolve_org_actor.ex` — the real resources/checks/plug this
-  revision's "What changed" section verifies against
+  `lib/xaas/governance/approval_freeze_override.ex` (the real `AshPaperTrail.Resource`
+  precedent 4 more Governance resources adopted in `dc7c3e9`),
+  `lib/kanban_web/plugs/resolve_org_actor.ex`, `lib/kanban_web/router.ex:57-62` (the real
+  `/internal-api` route surface this revision's selected Create item extends),
+  `priv/repo/seeds.exs` — the real resources/checks/plugs/gaps this revision's "What
+  changed" and Create sections verify against
