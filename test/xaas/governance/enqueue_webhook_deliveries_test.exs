@@ -25,14 +25,11 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
 
-    # Real `Xaas.Vault` (AshCloak's backing Cloak.Vault, used by
-    # `Xaas.Platform.Webhook`'s `cloak do attributes [:secret] end`) is not
-    # in this app's supervision tree (`lib/kanban/application.ex` never
-    # starts it -- a real, pre-existing gap this test does not attempt to
-    # fix). `start_supervised!` here starts the real vault for the
-    # duration of this test only, so `Webhook.secret`'s real
-    # encrypt/decrypt round-trip runs for real rather than being mocked.
-    start_supervised!(Xaas.Vault)
+    # `Xaas.Vault` (AshCloak's backing Cloak.Vault, used by
+    # `Xaas.Platform.Webhook`'s `cloak do attributes [:secret] end`) is now
+    # a real, permanent child of the app's supervision tree
+    # (`lib/kanban/application.ex`), so it's already running for real by
+    # the time this test boots -- no per-test workaround needed.
     :ok
   end
 

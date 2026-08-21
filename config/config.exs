@@ -58,6 +58,12 @@ config :ash_json_api,
   show_public_calculations_when_loaded?: false,
   authorize_update_destroy_with_error?: true
 
+config :ash_typescript,
+  otp_app: :kanban,
+  output_file: "assets/js/ash_rpc.ts",
+  output_field_formatter: :camel_case,
+  input_field_formatter: :camel_case
+
 config :ash,
   allow_forbidden_field_for_relationships_by_default: true,
   include_embedded_source_by_default?: false,

@@ -54,7 +54,11 @@ defmodule Xaas.Marketplace.Provider do
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
+
+  typescript do
+    type_name "MarketplaceProvider"
+  end
 
   iam do
     permission_base "xaas:marketplace_provider"

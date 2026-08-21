@@ -87,6 +87,7 @@ defmodule Kanban.MixProject do
       {:ash_graphql, "~> 1.0"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
+      {:ash_typescript, "~> 0.17"},
       # Real re-check this session: the original conflict was
       # ash_authentication_phoenix needing phoenix_html ~> 4.0 against a
       # then-pinned ~> 3.3. phoenix_html is now ~> 4.1 (bumped for

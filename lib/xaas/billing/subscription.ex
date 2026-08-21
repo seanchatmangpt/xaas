@@ -107,7 +107,11 @@ defmodule Xaas.Billing.Subscription do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
+
+  typescript do
+    type_name "BillingSubscription"
+  end
 
   iam do
     permission_base "xaas:billing_subscription"

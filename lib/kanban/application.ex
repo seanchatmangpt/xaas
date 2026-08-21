@@ -46,6 +46,14 @@ defmodule Kanban.Application do
       # ported Xaas.* Ash.Resource modules -- additive, Kanban.Repo above is
       # untouched.
       Xaas.Repo,
+      # AshCloak's backing Cloak.Vault -- must start before anything that
+      # might read/write an encrypted attribute (Xaas.Accounts.Token's
+      # encrypted_extra_data, Xaas.Platform.Webhook's encrypted secret), so
+      # right after the repos it depends on and before Endpoint-adjacent
+      # request-serving children. Real, previously-missing supervision --
+      # tests used to work around this with a per-test
+      # start_supervised!(Xaas.Vault); now the app boots it for real.
+      Xaas.Vault,
       # Rate-limiter backend for AshRateLimiter (Xaas.Billing.ApprovalPricingOverride
       # :create action) -- ETS-backed, in-process.
       {Xaas.Hammer, clean_period: :timer.minutes(1)},

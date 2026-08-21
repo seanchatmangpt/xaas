@@ -5,10 +5,16 @@ defmodule Xaas.Marketplace do
   """
   use Ash.Domain,
     otp_app: :kanban,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do
     show? true
+  end
+
+  typescript_rpc do
+    resource Xaas.Marketplace.Provider do
+      rpc_action :list_marketplace_providers, :read
+    end
   end
 
   resources do

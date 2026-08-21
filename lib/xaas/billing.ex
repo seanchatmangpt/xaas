@@ -1,10 +1,16 @@
 defmodule Xaas.Billing do
   use Ash.Domain,
     otp_app: :kanban,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do
     show? true
+  end
+
+  typescript_rpc do
+    resource Xaas.Billing.Subscription do
+      rpc_action :list_billing_subscriptions, :read
+    end
   end
 
 
