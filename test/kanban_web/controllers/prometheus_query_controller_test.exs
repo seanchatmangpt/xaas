@@ -27,7 +27,7 @@ defmodule KanbanWeb.PrometheusQueryControllerTest do
     conn =
       conn
       |> with_internal_api_token()
-      |> get("/internal-api/prometheus/query", query: "up")
+      |> get("/internal-api/prometheus/query", query: "phoenix_endpoint_stop_duration_milliseconds_sum")
 
     body = json_response(conn, 200)
     assert body["status"] in ["success", "error"]
@@ -49,7 +49,7 @@ defmodule KanbanWeb.PrometheusQueryControllerTest do
       conn =
         conn
         |> with_internal_api_token()
-        |> get("/internal-api/prometheus/query", query: "up")
+        |> get("/internal-api/prometheus/query", query: "phoenix_endpoint_stop_duration_milliseconds_sum")
 
       body = json_response(conn, 502)
       assert body["error"] == "prometheus_unreachable"
@@ -60,6 +60,81 @@ defmodule KanbanWeb.PrometheusQueryControllerTest do
       else
         System.delete_env("PROMETHEUS_URL")
       end
+    end
+  end
+
+  describe "real PromQL query allowlist" do
+    # Shared real-closed-port setup: a real, instantly-refusing local
+    # TCP listener. Used to prove -- via real network behavior, not an
+    # interaction assertion -- whether the controller ever attempted a
+    # real HTTP call to Prometheus for a given query.
+    defp with_closed_port(fun) do
+      {:ok, listen_socket} = :gen_tcp.listen(0, [:binary, active: false])
+      {:ok, port} = :inet.port(listen_socket)
+      :ok = :gen_tcp.close(listen_socket)
+
+      original = System.get_env("PROMETHEUS_URL")
+      System.put_env("PROMETHEUS_URL", "http://127.0.0.1:#{port}")
+
+      try do
+        fun.(port)
+      after
+        if original do
+          System.put_env("PROMETHEUS_URL", original)
+        else
+          System.delete_env("PROMETHEUS_URL")
+        end
+      end
+    end
+
+    test "an allowed query (real emitted metric name) is forwarded -- real 502 on the real closed port proves a real HTTP attempt was made",
+         %{conn: conn} do
+      with_closed_port(fn port ->
+        conn =
+          conn
+          |> with_internal_api_token()
+          |> get("/internal-api/prometheus/query", query: "phoenix_endpoint_stop_duration_milliseconds_sum")
+
+        # Reaching the real 502 (rather than a real 400) is the
+        # state-based proof that this query passed the allowlist and
+        # the controller went on to really attempt an HTTP call to
+        # Prometheus on the real closed port.
+        body = json_response(conn, 502)
+        assert body["error"] == "prometheus_unreachable"
+        assert body["detail"] =~ "127.0.0.1:#{port}"
+      end)
+    end
+
+    test "a query for a metric name outside the real allowlist is real-400-rejected before any real HTTP call is attempted",
+         %{conn: conn} do
+      with_closed_port(fn _port ->
+        conn =
+          conn
+          |> with_internal_api_token()
+          |> get("/internal-api/prometheus/query", query: "node_filesystem_free_bytes")
+
+        # Real 400, not the real 502 the closed-port path would produce
+        # if an HTTP call had actually been attempted -- state-based
+        # proof the rejection happened before any network call.
+        body = json_response(conn, 400)
+        assert body["error"] == "query_not_allowed"
+        assert body["detail"] =~ "node_filesystem_free_bytes"
+        assert body["detail"] =~ "allowlist"
+      end)
+    end
+
+    test "a query with a real unbounded range-vector selector is real-400-rejected before any real HTTP call is attempted",
+         %{conn: conn} do
+      with_closed_port(fn _port ->
+        conn =
+          conn
+          |> with_internal_api_token()
+          |> get("/internal-api/prometheus/query", query: "rate(phoenix_endpoint_stop_duration_milliseconds_sum[365d])")
+
+        body = json_response(conn, 400)
+        assert body["error"] == "query_not_allowed"
+        assert body["detail"] =~ "365d"
+      end)
     end
   end
 end
