@@ -74,7 +74,8 @@ config :ash,
   custom_types: [
     money: AshMoney.Types.Money,
     capability_class: Xaas.Governance.Types.CapabilityClass,
-    interface: Xaas.Governance.Types.Interface
+    interface: Xaas.Governance.Types.Interface,
+    project_tier: Xaas.Governance.Types.ProjectTier
   ]
 
 # Configures the endpoint

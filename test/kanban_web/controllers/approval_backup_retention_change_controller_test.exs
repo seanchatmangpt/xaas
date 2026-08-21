@@ -9,8 +9,10 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
   ApprovalBackupRetentionChange, its validation, or the DB.
   """
   use KanbanWeb.ConnCase
+  require Ash.Query
 
   alias Xaas.Governance.ApprovalBackupRetentionChange
+  alias Xaas.Ledger.{Account, Balance}
 
   setup do
     Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -21,14 +23,32 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
-  defp create_pending!(requested_by) do
+  defp create_pending!(requested_by, opts \\ []) do
+    org_id = Keyword.get(opts, :org_id, "org-#{System.unique_integer([:positive])}")
+    tier = Keyword.get(opts, :tier, :pro)
+    days = Keyword.get(opts, :days, 90)
+
     ApprovalBackupRetentionChange
     |> Ash.Changeset.for_create(:create, %{
-      org_id: "org-#{System.unique_integer([:positive])}",
+      org_id: org_id,
       requested_by: requested_by,
-      requested_retention_days: 90
+      requested_retention_days: days,
+      tier: tier
     })
     |> Ash.create!(authorize?: false)
+  end
+
+  defp real_balance_for(identifier) do
+    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+      nil ->
+        nil
+
+      account ->
+        Balance
+        |> Ash.Query.filter(account_id: account.id)
+        |> Ash.read!(authorize?: false)
+        |> Enum.reduce(Money.new(:USD, 0), fn b, acc -> Money.add!(acc, b.balance) end)
+    end
   end
 
   test "PATCH .../:id accepts a real approval from a distinct owner", %{conn: conn} do
@@ -123,5 +143,75 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
 
     persisted = ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false)
     assert persisted.approved_by == nil
+  end
+
+  test "create rejects a retention request outside the tier's real range" do
+    # pro tier's real range is 7-90 days (ported verbatim from
+    # platform-console's RETENTION_RANGE) -- 200 is out of range.
+    result =
+      ApprovalBackupRetentionChange
+      |> Ash.Changeset.for_create(:create, %{
+        org_id: "org-#{System.unique_integer([:positive])}",
+        requested_by: "requester-range-test",
+        requested_retention_days: 200,
+        tier: :pro
+      })
+      |> Ash.create(authorize?: false)
+
+    assert {:error, %Ash.Error.Invalid{errors: errors}} = result
+    assert Enum.any?(errors, &(&1.field == :requested_retention_days))
+  end
+
+  test "approving a change that exceeds the tier default charges a real ledger overage fee",
+       %{conn: conn} do
+    # pro tier's real default is 30 days; requesting 90 is 60 days of real
+    # overage at the invented $0.10/day placeholder rate = $6.00.
+    org_id = "org-overage-#{System.unique_integer([:positive])}"
+    change = create_pending!("requester-#{System.unique_integer([:positive])}", org_id: org_id, tier: :pro, days: 90)
+
+    body = %{
+      "data" => %{
+        "type" => "approval_backup_retention_change",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => "owner-overage-1"}
+      }
+    }
+
+    conn
+    |> with_internal_api_token()
+    |> put_req_header("content-type", "application/vnd.api+json")
+    |> patch("/api/approval_backup_retention_change/#{change.id}", body)
+    |> json_response(200)
+
+    org_balance = real_balance_for(org_id)
+    revenue_balance = real_balance_for("platform:revenue:backup-retention-overage")
+
+    assert org_balance != nil, "expected a real Xaas.Ledger.Account/Balance to exist for #{org_id}"
+    assert Money.equal?(org_balance, Money.new(:USD, "-6.00"))
+    assert Money.compare!(revenue_balance, Money.new(:USD, "0")) == :gt
+  end
+
+  test "approving a change within the tier default charges no real overage fee", %{conn: conn} do
+    # starter tier's real default is 7 days; requesting 5 (within range,
+    # under default) -- no overage, no ledger transfer should be created.
+    org_id = "org-no-overage-#{System.unique_integer([:positive])}"
+    change = create_pending!("requester-#{System.unique_integer([:positive])}", org_id: org_id, tier: :starter, days: 5)
+
+    body = %{
+      "data" => %{
+        "type" => "approval_backup_retention_change",
+        "id" => change.id,
+        "attributes" => %{"approved_by" => "owner-no-overage-1"}
+      }
+    }
+
+    conn
+    |> with_internal_api_token()
+    |> put_req_header("content-type", "application/vnd.api+json")
+    |> patch("/api/approval_backup_retention_change/#{change.id}", body)
+    |> json_response(200)
+
+    assert real_balance_for(org_id) == nil,
+           "expected no real Xaas.Ledger.Account to have been opened for #{org_id} -- no overage occurred"
   end
 end

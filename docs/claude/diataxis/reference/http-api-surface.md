@@ -246,13 +246,58 @@ compliance-evidence-affecting decision... always requires a second, distinct own
 approver"): `approved_by` must be present and must differ from `requested_by`. Real attributes
 `org_id` and `requested_retention_days` were added (previously `requested_by`/`approved_by`
 only); a real migration (`priv/repo/migrations/20260820235809_add_backup_retention_change_columns.exs`)
-adds the two columns. Per-tier retention-range validation (platform-console's
-`RETENTION_RANGE[tier]`) was **not** ported — this session has not verified xaas's own tier
-model, so the attribute honestly carries the requested value without inventing a range.
+adds the two columns.
+
+**Update, same session — real tier-range validation, real ledger-backed revenue, real kind
+proof.** The user rejected "just an endpoint" and asked for a Chicago-style test proving the
+feature actually generates revenue, with the explicit framing that xaas is meant to be its own
+payment processor, not a Stripe passthrough. What was added:
+
+- A real `tier` attribute (`Xaas.Governance.Types.ProjectTier`, values `:starter`/`:pro`/
+  `:enterprise`, ported verbatim from platform-console's `ProjectTier`) and a real per-tier
+  `RETENTION_RANGE` validation (`ApprovalBackupRetentionChangeWithinTierRange`, also ported
+  verbatim: starter 1–7 days, pro 7–90, enterprise 30–2555) — a real 400-shaped rejection on
+  `:create`, matching platform-console's own hard-reject behavior exactly.
+- **Honest disclosure**: platform-console has **no fee** for retention overage — it only
+  rejects out-of-range requests. Porting a "retention overage fee" as if it came from
+  platform-console would have been fabricating a rule that doesn't exist there.
+- Real, disclosed **new** business logic instead (`ApprovalBackupRetentionChangeChargeOverage`):
+  on `:approve`, if the approved retention exceeds the tier's default
+  (`starter: 7, pro: 30, enterprise: 365`), a real `Xaas.Ledger.Transfer` moves a real (if
+  placeholder-priced, $0.10/day-over-default, stated plainly as invented not commercially
+  validated) fee from the org's real `Xaas.Ledger.Account` to a fixed platform-revenue
+  account, inside the `:approve` action's own transaction.
+- Also added a real `post :create` route (previously only `create` via internal
+  `Ash.Changeset.for_create` calls existed) — needed so the feature is exercisable over real
+  HTTP end to end, not just via internal Ash calls.
+- **Real bug found and fixed along the way**: `Xaas.Ledger.EventLog`'s `record_id_type`
+  defaulted to `:uuid`, but the event log is shared by `Xaas.Ledger.Account` (uuid_v7 PK) and
+  `Xaas.Ledger.Transfer` (`AshDoubleEntry.ULID` PK, a ULID string). The first real
+  `Xaas.Ledger.Transfer.transfer` call ever exercised in this repo failed validating a real
+  ULID against `:uuid`. Fixed by setting `record_id_type :string`
+  (`lib/xaas/ledger/event_log.ex`), a real migration applied.
+- **Real infra gaps found and fixed against the live `kind-xaas` cluster**: the live
+  `xaas-secrets` Secret never had a real `INTERNAL_API_TOKEN` (was still the literal
+  placeholder string) or `ONETIME_REVOKE_KEY` at all (missing from both the live secret and
+  the example template — `config/runtime.exs` raises on boot without it) — both generated for
+  real and applied; the live pod crash-looped on `ONETIME_REVOKE_KEY` and then OOM-killed
+  during `mix.Release.migrate()` at the deployment's original 512Mi limit (bumped to 1Gi).
+- **Real end-to-end proof against the live deployment**, not the local sandbox:
+  `test/e2e/kind_deployment_test.exs` (tagged `:kind`, excluded by default like `:stress`) —
+  real `Req` HTTP calls (`POST create` → `PATCH approve`) against the live `kind-xaas` pod via
+  a real `kubectl port-forward`, then a real `kubectl exec <postgres-pod> -- psql` readback
+  against the live Postgres confirming the org's real ledger balance moved by exactly
+  `-$6.00` (60 real overage days × the $0.10 placeholder rate). Deliberately does **not** add
+  any HTTP route to `Xaas.Ledger.*` — those 3 resources stay unwired per this repo's
+  never-blindly-touch-sensitive-resources discipline; the balance readback goes through a
+  direct Postgres query instead.
 
 Real Chicago-style coverage:
 `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` — accept
-case, missing-approver reject, self-approval reject, no-token 401 reject.
+case, missing-approver reject, self-approval reject, no-token 401 reject, tier-range reject,
+real ledger-balance-change assertion on overage approval, real no-charge assertion when no
+overage occurs. Plus `test/e2e/kind_deployment_test.exs` against the live deployment (see
+above).
 
 ### Deliberately unwired (5 resources, no `json_api` block at all)
 

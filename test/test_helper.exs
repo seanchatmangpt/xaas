@@ -15,7 +15,10 @@ System.put_env("INTERNAL_API_TOKEN", "test-only-internal-api-token")
 ExUnit.start()
 # Real, concurrent-connection-pool-hungry stress tests are excluded by
 # default -- run explicitly with `mix test --include stress`.
-ExUnit.configure(exclude: [:stress])
+# Real tests against a live-deployed kind pod (test/e2e/) are excluded by
+# default too -- they need a real `kubectl port-forward` to kind-xaas
+# already running; run explicitly with `mix test --include kind`.
+ExUnit.configure(exclude: [:stress, :kind])
 Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the
