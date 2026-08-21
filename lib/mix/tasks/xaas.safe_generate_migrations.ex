@@ -16,7 +16,12 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
        `priv/repo/migrations` directory before/after the run -- the
        underlying task does not report the path it wrote).
     3. Parse the real generated Ecto.Migration DSL for `create table(:x)`,
-       `alter table(:x) do ... end`, `drop table(:x)`, and `rename` calls,
+       `alter table(:x) do ... end`, `drop table(:x)`, `rename` calls,
+       `references(:x, ...)` calls (embedded inside `add`/`modify` column
+       definitions -- e.g. `modify :org_id, references(:orgs, ...)`), and
+       `index(:x, ...)` / `unique_index(:x, ...)` calls (which are never
+       nested inside a `table(:x) do ... end` block at all -- they name
+       their table directly, e.g. `create unique_index(:orgs, [:slug])`),
        to get the real set of tables the migration touches.
     4. Resolve the target resource's real table from its
        `postgres do table "..." end` block (compiled at runtime via
@@ -138,24 +143,60 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
     end
   end
 
-  # Parses the real Ecto.Migration DSL that
+  # Parses the real Ecto.Migration DSL forms that
   # `mix ash_postgres.generate_migrations` actually emits for this project
-  # (confirmed against a real generated file):
+  # (confirmed against real generated files -- see the real FMEA finding
+  # this fixes, RPN=490: `priv/repo/migrations/20260821034020_add_org_fk_dr_
+  # failover_legal_hold_release_deployment_quarantine.exs` has 3 real
+  # `references(:orgs, ...)` calls embedded inside `alter table(:x) do
+  # modify :org_id, references(:orgs, ...) end` blocks that the original,
+  # `table(`-only regex silently missed; `priv/repo/migrations/2026082102451
+  # 1_add_marketplace_providers.exs` and `..._add_org_membership.exs` have
+  # real top-level `create unique_index(:x, [...])` calls that never appear
+  # nested inside a `table(:x) do ... end` block at all):
   #
   #   create table(:foo, primary_key: false) do ... end
   #   alter table(:foo) do ... end
   #   drop table(:foo)
   #   rename table(:foo), :old, to: :new
+  #   references(:foo, column: :id, ...)          -- inside add/modify column defs
+  #   create index(:foo, [:bar])
+  #   create unique_index(:foo, [:bar])
+  #   drop_if_exists index(:foo, [:bar])
+  #   drop_if_exists unique_index(:foo, [:bar])
   #
   # Table identifiers are always the `:table_name` atom-literal argument
-  # immediately following `table(`.
+  # immediately following `table(`, `references(`, `index(`, or
+  # `unique_index(`.
   @table_call_regex ~r/\b(?:create|alter|drop|rename)\s+table\(\s*:([a-zA-Z_][a-zA-Z0-9_]*)/
+  @references_call_regex ~r/\breferences\(\s*:([a-zA-Z_][a-zA-Z0-9_]*)/
+  @index_call_regex ~r/\b(?:unique_)?index\(\s*:([a-zA-Z_][a-zA-Z0-9_]*)/
 
-  defp touched_tables(content) do
-    @table_call_regex
-    |> Regex.scan(content)
-    |> Enum.map(fn [_, table] -> table end)
+  # All real table-name-bearing DSL forms recognized above, unioned together.
+  @all_table_regexes [@table_call_regex, @references_call_regex, @index_call_regex]
+
+  @doc false
+  def touched_tables(content) do
+    @all_table_regexes
+    |> Enum.flat_map(fn regex ->
+      regex
+      |> Regex.scan(content)
+      |> Enum.map(fn [_, table] -> table end)
+    end)
     |> MapSet.new()
+  end
+
+  # Real tables named on a single line, across all recognized DSL forms.
+  # Shared by `touched_tables/1` (whole-file union) and `report_refusal/5`
+  # (per-line detail for the refusal message).
+  defp tables_on_line(line) do
+    @all_table_regexes
+    |> Enum.flat_map(fn regex ->
+      regex
+      |> Regex.scan(line)
+      |> Enum.map(fn [_, table] -> table end)
+    end)
+    |> Enum.uniq()
   end
 
   defp report_refusal(file, path, target_table, cross_table, content) do
@@ -182,14 +223,9 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
     content
     |> String.split("\n")
     |> Enum.with_index(1)
-    |> Enum.filter(fn {line, _} -> Regex.match?(@table_call_regex, line) end)
     |> Enum.each(fn {line, lineno} ->
-      case Regex.run(@table_call_regex, line) do
-        [_, table] when table != target_table ->
-          Mix.shell().error("  line #{lineno}: #{String.trim(line)}")
-
-        _ ->
-          :ok
+      if Enum.any?(tables_on_line(line), &(&1 != target_table)) do
+        Mix.shell().error("  line #{lineno}: #{String.trim(line)}")
       end
     end)
 
