@@ -87,12 +87,14 @@ defmodule Kanban.MixProject do
       {:ash_graphql, "~> 1.0"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
-      # ash_authentication_phoenix forces phoenix_html ~> 4.0, a major bump
-      # risking existing KanbanWeb templates -- real, confirmed resolver
-      # conflict. Dropped; zero real resource files under lib/xaas/{operations,
-      # governance,billing,platform,accounts,ledger} reference it (confirmed
-      # via grep), only the core, non-Phoenix ash_authentication lib is used
-      # (AshAuthentication.Sender in the 3 email-sender modules).
+      # Real re-check this session: the original conflict was
+      # ash_authentication_phoenix needing phoenix_html ~> 4.0 against a
+      # then-pinned ~> 3.3. phoenix_html is now ~> 4.1 (bumped for
+      # ash_admin, commit 062f3d0) -- re-attempting for real, Ash-maximal
+      # per explicit user direction (prefer real Ash-ecosystem libraries
+      # over hand-rolled/non-Ash equivalents, e.g. Petal's plain
+      # Ecto-based auth-adjacent components).
+      {:ash_authentication_phoenix, "~> 2.17"},
       {:bcrypt_elixir, "~> 3.0"},
       {:ash_authentication, "~> 4.0"},
       {:picosat_elixir, "~> 0.2"},
