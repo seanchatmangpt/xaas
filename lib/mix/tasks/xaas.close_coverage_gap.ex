@@ -42,7 +42,8 @@ defmodule Mix.Tasks.Xaas.CloseCoverageGap do
   # domain=PDDLDomain/solver=Astar and treats :query as the raw
   # domain-arguments JSON string).
   @query_by_class %{
-    "PlannerCandidate" => Jason.encode!(%{"grid" => [[0, 0], [0, 0]], "start" => [0, 0], "goal" => [1, 1]}),
+    "PlannerCandidate" =>
+      Jason.encode!(%{"grid" => [[0, 0], [0, 0]], "start" => [0, 0], "goal" => [1, 1]}),
     "PlannerCatalogRequest" => "close_coverage_gap catalog probe",
     "PlannerMatchRequest" => "Maze",
     "PlannerCacheStatsRequest" => "close_coverage_gap cache-stats probe",
@@ -74,10 +75,25 @@ defmodule Mix.Tasks.Xaas.CloseCoverageGap do
     {mod, action} = Map.fetch!(@action_by_class, target_class)
     query = Map.fetch!(@query_by_class, target_class)
 
-    Mix.shell().info("== Act: invoking #{inspect(mod)}.#{action} with real query=#{inspect(query)} ==")
+    # PlannerCandidate's request_candidate action defaults to
+    # domain="PDDLDomain"/solver="Astar", which needs real domain_path/
+    # problem_path file arguments the generic query-based call never
+    # supplies -- that combination is what produces the real SKD-FABRIC-006
+    # error from cnv-deploy. Override with the real, already-proven-working
+    # zero-arg fixture domain (Maze/Astar, no domain-arguments needed) for
+    # this class only; the other 4 classes keep the unchanged query-only call.
+    act_params =
+      case target_class do
+        "PlannerCandidate" -> %{query: "{}", domain: "Maze", solver: "Astar"}
+        _ -> %{query: query}
+      end
+
+    Mix.shell().info(
+      "== Act: invoking #{inspect(mod)}.#{action} with real params=#{inspect(act_params)} =="
+    )
 
     case mod
-         |> Ash.Changeset.for_create(action, %{query: query})
+         |> Ash.Changeset.for_create(action, act_params)
          |> Ash.create() do
       {:ok, record} ->
         Mix.shell().info("Act succeeded, real record id=#{record.id}")
@@ -116,7 +132,13 @@ defmodule Mix.Tasks.Xaas.CloseCoverageGap do
   @spec sparql_count_by_class() :: %{String.t() => non_neg_integer()}
   defp sparql_count_by_class do
     turtle = Xaas.SparqlBridge.to_turtle()
-    ttl_path = Path.join(System.tmp_dir!(), "xaas_close_coverage_gap_#{System.unique_integer([:positive])}.ttl")
+
+    ttl_path =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas_close_coverage_gap_#{System.unique_integer([:positive])}.ttl"
+      )
+
     File.write!(ttl_path, turtle)
 
     python_script = """
@@ -142,7 +164,12 @@ defmodule Mix.Tasks.Xaas.CloseCoverageGap do
     print(json.dumps(out))
     """
 
-    script_path = Path.join(System.tmp_dir!(), "xaas_close_coverage_gap_#{System.unique_integer([:positive])}.py")
+    script_path =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas_close_coverage_gap_#{System.unique_integer([:positive])}.py"
+      )
+
     File.write!(script_path, python_script)
 
     {output, 0} = System.cmd("python3", [script_path, ttl_path], stderr_to_stdout: false)

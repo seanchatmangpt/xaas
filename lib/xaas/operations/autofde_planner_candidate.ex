@@ -16,39 +16,46 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "autofde_planner_candidates"
-    repo Xaas.Repo
+    table("autofde_planner_candidates")
+    repo(Xaas.Repo)
   end
 
   attributes do
-    uuid_primary_key :id
-    attribute :query, :string, allow_nil?: false, public?: true
-    attribute :cnv_response, :map, allow_nil?: true, public?: true
-    attribute :trajectory_sha256, :string, allow_nil?: true, public?: true
-    attribute :requested_at, :utc_datetime_usec, allow_nil?: true, public?: true
+    uuid_primary_key(:id)
+    attribute(:query, :string, allow_nil?: false, public?: true)
+    attribute(:domain, :string, allow_nil?: true, public?: true)
+    attribute(:solver, :string, allow_nil?: true, public?: true)
+    attribute(:cnv_response, :map, allow_nil?: true, public?: true)
+    attribute(:trajectory_sha256, :string, allow_nil?: true, public?: true)
+    attribute(:requested_at, :utc_datetime_usec, allow_nil?: true, public?: true)
     timestamps()
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :request_candidate do
-      accept [:query]
-      change fn changeset, _context ->
+      accept([:query, :domain, :solver])
+
+      change(fn changeset, _context ->
         query = Ash.Changeset.get_attribute(changeset, :query)
+        # domain/solver are optional overrides -- absent them, preserve this
+        # action's original, still-real PDDLDomain/Astar behavior (the
+        # existing autofde_planner_candidate_test.exs fixture relies on
+        # this default, unchanged).
+        domain = Ash.Changeset.get_attribute(changeset, :domain) || "PDDLDomain"
+        solver = Ash.Changeset.get_attribute(changeset, :solver) || "Astar"
+
         base_url =
           Application.get_env(:xaas, :cnv_deploy_base_url, "http://127.0.0.1:8080")
 
         body = %{
           tool: "fabric__solve",
-          arguments:
-
-            %{
-              domain: "PDDLDomain",
-              solver: "Astar",
-              "domain-arguments": query
-            }
-
+          arguments: %{
+            domain: domain,
+            solver: solver,
+            "domain-arguments": query
+          }
         }
 
         case Req.post(base_url <> "/invoke", json: body) do
@@ -67,7 +74,7 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
               message: "cnv-deploy /invoke request failed: #{inspect(reason)}"
             )
         end
-      end
+      end)
     end
   end
 
@@ -80,7 +87,6 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
   # line instead.
   defp apply_record(changeset, %{"execution" => %{"stdout" => stdout, "exit_code" => 0}}) do
     case last_json_object(stdout) do
-
       {:ok, %{"trajectory_sha256" => sha}} when is_binary(sha) ->
         changeset
         |> Ash.Changeset.force_change_attribute(:cnv_response, %{"stdout" => stdout})
@@ -92,7 +98,6 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
           field: :query,
           message: "cnv-deploy /invoke succeeded but stdout had no trajectory_sha256 JSON payload"
         )
-
     end
   end
 
@@ -104,7 +109,10 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
   end
 
   defp apply_record(changeset, _other) do
-    Ash.Changeset.add_error(changeset, field: :query, message: "unexpected cnv-deploy /invoke response shape")
+    Ash.Changeset.add_error(changeset,
+      field: :query,
+      message: "unexpected cnv-deploy /invoke response shape"
+    )
   end
 
   defp last_json_object(stdout) do
