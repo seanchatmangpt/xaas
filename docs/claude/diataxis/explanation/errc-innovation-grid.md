@@ -7,7 +7,60 @@ pass's own real-verified commits and the concurrently-running 25-prompt sequence
 landings since the fourth pass (`97768fb` health-check aggregation endpoint — closes this
 grid's own prior #3 CREATE item; `c5fe889` real cross-resource `AuditLogEntry` audit trail;
 `c03669c`/`c03fc9c` e2e negative-path hardening; `9caa85d` real k8s NetworkPolicy
-application). Last Updated 2026-08-20 (same day, fifth pass).
+application). Last Updated 2026-08-20 (same day, sixth pass).
+
+## Sixth-pass update (this revision)
+
+Since the fifth-pass grid, `cec5025` (round 5, real per-30min ultracode cadence) landed
+**both** of that grid's top two CREATE items in one commit, verified live this pass:
+
+- **RESOLVED — prior CREATE item 4** (wire real `:create`/`:approve` maker-checker actions
+  onto the 7 read-only `Approval*` skeletons). Real-verified: `grep -n "actions do" -A8
+  lib/xaas/operations/approval_castle_verb_schedule.ex` and the same check on the other 6
+  (`approval_invoice_reconciliation_approve.ex`, `approval_k8s_fault_remediate_suggest.ex`,
+  `approval_patch_sla_credit_apply.ex`, `approval_quota_override.ex`,
+  `approval_sla_credit_apply.ex`, `approval_tier_downgrade.ex`) now show real `:create`/
+  `:approve` actions plus a paired `*_approve.ex` change and `*_requires_approver.ex`
+  validation module for each (`find lib/xaas -iname "*requires_approver*" | wc -l` → 45, up
+  from 2 at the fifth-pass count).
+- **RESOLVED — prior CREATE item 6** (HTTP-level controller tests for those 7, plus the 2
+  already-complete-but-untested resources). Real-verified: `find test/kanban_web/controllers
+  -iname "approval*controller_test*" | wc -l` → 30, and each of the 7 new test files
+  (`approval_castle_verb_schedule_controller_test.exs`, etc.) contains a real `401`
+  no-token assertion (`grep -n 401 test/.../approval_castle_verb_schedule_controller_test.exs`
+  → lines 63 and 153, matching the existing `RequireInternalApiToken` pattern this project's
+  CLAUDE.md requires). Only **2 of 32** `Approval*` resources (`comm -23` between the real
+  32-resource list and the real 30-test list) still lack a controller test:
+  `approval_freeze_override` and `approval_org_delete` — both are the same 2 the fifth-pass
+  grid already named as the narrower residual, not a new finding.
+- The concurrent 25-prompt sequence advanced from prompt 20/25 (etcd encryption) to prompt
+  21/25 (`9f6831f`, real `Subscription :change_tier` action with prorated Ledger
+  adjustment) since the fifth-pass grid — not re-proposed below, per task instructions. It
+  is now in flight on prompt 22/25 (SLA-credit Ledger integration).
+
+Fresh, real-verified findings this pass (neither prior grid rounds nor the concurrent
+sequence cover these):
+
+- **No single onboarding/architecture-overview doc exists.** Real-verified: `find docs
+  -iname "*overview*" -o -iname "*architecture*"` → zero hits. `ls
+  docs/claude/diataxis/explanation/` lists 8 files, each a narrow single-topic explainer
+  (`ashiam-create-update-limitation.md`, `r2rml-ontop-prototype.md`,
+  `reactor-autofde-planners-design.md`, `security-and-testing-decisions.md`,
+  `wasm4pm-process-intelligence-research.md`, this grid, 2 others) — none is a top-level map
+  of the real 9-domain/49-resource surface, the real routing tiers
+  (`lib/kanban_web/router.ex:31-99` — `/webhooks`, `/internal-api` (3 separately-piped
+  sub-scopes for capability-liveness, SPARQL proxy, and the general internal API router),
+  `/api`), or how AshIam/multitenancy/AshPaperTrail/AuditLogEntry/webhooks/Reactor/Ontop/
+  R2RML fit together. A new reader has to reconstruct that picture by reading this ERRC grid
+  plus 7+ other explanation docs plus individual moduledocs — real, scattered, no single
+  entry point.
+- **`priv/repo/seeds.exs` is still the unmodified 19-line book stub** (`wc -l` re-verified
+  this pass, unchanged from fifth-pass grid) — carried forward, not re-analyzed further here
+  since fifth pass already covered it in full.
+- **`Xaas.Operations.AuditLogEntry` still carries no `AshPaperTrail.Resource`**
+  (`grep -n "AshPaperTrail" lib/xaas/operations/audit_log_entry.ex` still matches only the
+  moduledoc's contrastive prose, line 4) — unchanged from fifth pass, real-reconfirmed, not
+  touched by `cec5025` or the concurrent sequence's prompt 21.
 
 ## What changed since the last grid (resolved / advanced items)
 
@@ -173,24 +226,14 @@ application). Last Updated 2026-08-20 (same day, fifth pass).
 - **RESOLVED since the last pass**: the real `/internal-api/health` aggregation endpoint
   this grid's prior CREATE item selected is now real and landed (`97768fb`, see "What
   changed").
-- **NEW this pass — 7 of 32 `Approval*` resources are not real maker-checker resources at
-  all, just read-only skeletons.** Real-verified by reading all 7 files this pass's own
-  `comm -23` diff identified (the same 9 resources the prior grid flagged as zero
-  controller-test-coverage, minus the 2 — `approval_freeze_override`, `approval_org_delete`
-  — that do carry a real `*RequiresApprover` self-approval-rejection validation):
-  `approval_castle_verb_schedule.ex`, `approval_invoice_reconciliation_approve.ex`,
-  `approval_k8s_fault_remediate_suggest.ex`, `approval_patch_sla_credit_apply.ex`,
-  `approval_quota_override.ex`, `approval_sla_credit_apply.ex`,
-  `approval_tier_downgrade.ex` — every one of the 7 has `actions do defaults [:read] end`
-  (line 43-45 in each, byte-identical) and nothing else: no `:create`, no `:approve`, no
-  `validations do` block, only the deny-by-default `policies do bypass action_type(:read)
-  ... policy always() do forbid_if always() end end` floor. This is the real root cause the
-  prior grid's "9 resources, zero controller tests" finding was pointing at without naming
-  it: there is no maker-checker action to test or to self-approval-guard on these 7, because
-  the mutation actions were never written. `approval_org_delete.ex` and
-  `approval_freeze_override.ex` (the other 2 of the original 9) are real, full maker-checker
-  resources with `:create`/`:approve` actions and a wired `*RequiresApprover` validation —
-  they just lack HTTP-level controller tests, a narrower, already-flagged gap.
+- **RESOLVED this pass**: the 7 read-only `Approval*` skeletons flagged by the fifth-pass
+  grid now all carry real `:create`/`:approve` actions, a paired `*_approve.ex` change, and
+  a `*_requires_approver.ex` validation (`cec5025`) — see "Sixth-pass update" above.
+- **RESOLVED this pass**: controller test coverage now reaches 30 of 32 `Approval*`
+  resources, each with a real `401` no-token assertion — up from 23 of 32
+  (`cec5025`, see "Sixth-pass update"). Only `approval_freeze_override` and
+  `approval_org_delete` remain untested — real-narrower, unchanged residual (both were
+  already full maker-checker resources before this pass, so this is not a new gap).
 - **NEW this pass — `Xaas.Operations.AuditLogEntry` itself carries no `AshPaperTrail.Resource`
   and its own writes are not captured by any audit mechanism.** Real-verified:
   `grep -n "AshPaperTrail" lib/xaas/operations/audit_log_entry.ex` matches only the
@@ -206,6 +249,13 @@ application). Last Updated 2026-08-20 (same day, fifth pass).
   is no real local-dev path to a populated database short of manually driving each Ash
   action by hand — a genuine developer-experience gap, fresh this pass, distinct from and not
   covered by the concurrent sequence's remaining items.
+- **NEW this pass — no single onboarding/architecture-overview doc ties the real 9-domain,
+  49-resource surface together for a new reader.** See "Sixth-pass update" above for the
+  real `find`/`ls` evidence. This is the largest real meta-level gap this pass surfaced: the
+  session has landed AshIam, multitenancy, AshPaperTrail, `AuditLogEntry`, webhooks
+  (inbound Stripe + outbound HTTP dispatch), Reactor, Ontop/R2RML, and a 3-tier
+  `/internal-api` routing scheme, each documented in its own narrow explainer or moduledoc,
+  with no document that says "here is the whole system and how these pieces compose."
 - **`Xaas.Accounts.Org`'s `:create` authorization is still real-degraded, `:update` is now
   fixed.** `org.ex:90-98`: `:update` now uses `ActorBelongsToOrg` (closed, see "What
   changed"). `:create` remains on `actor_present()` by real, disclosed design (no
@@ -222,42 +272,37 @@ application). Last Updated 2026-08-20 (same day, fifth pass).
 3. **RESOLVED** (was item 3 last grid): a real `/internal-api/health` aggregation
    endpoint — `97768fb`, landed by the concurrent sequence's own per-30min cadence, verified
    live this pass. See "What changed".
-4. **Wire real `:create`/`:approve` maker-checker actions onto the 7 `Approval*` resources
-   that are currently read-only skeletons** — the concrete, scoped, fresh CREATE item this
-   pass selected; full spec in the structured output below.
-5. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
+4. **RESOLVED** (was item 4 last grid): real `:create`/`:approve` maker-checker actions
+   wired onto the 7 read-only `Approval*` skeletons — `cec5025`.
+5. **RESOLVED** (was item 6 last grid): real HTTP-level controller tests for those 7,
+   reaching 30 of 32 `Approval*` resources — `cec5025`.
+6. **A real top-level architecture-overview / onboarding doc** — the concrete, scoped,
+   fresh CREATE item this pass selected; full spec in the structured output below.
+7. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
-   `lib/xaas`, and the 32 `Approval*` resources still hand-carry the identical policy block
-   this item would extract (see Reduce). Carried forward verbatim as a real, still-valid
-   candidate; item 4 above will hand-write 7 more instances of that same duplicated shape
-   before this item is picked, which strengthens rather than weakens the case for it next.
-6. **Real HTTP-level controller tests for the (now real) `:approve` action on the 7
-   resources item 4 wires up, plus the 2 already-complete-but-untested resources
-   (`approval_freeze_override`, `approval_org_delete`)** — narrowed from the prior grid's
-   9-resource framing now that the root cause (item 4) is understood; carried forward, not
-   selected this pass because it depends on item 4 landing first.
-7. **Extend `ActorBelongsToOrg`-style user-membership authorization past `Org` itself** —
+   `lib/xaas`, and all 32 `Approval*` resources now hand-carry the identical policy block
+   this item would extract (see Reduce) — item 4's landing added 7 more duplicated
+   instances of that shape, strengthening rather than weakening the case for this next.
+8. **Extend `ActorBelongsToOrg`-style user-membership authorization past `Org` itself** —
    unchanged from the prior grid; still used on exactly one resource/action
    (`Org`, `:update`).
-8. **Real `AshPaperTrail.Resource` (or equivalent second-order audit) on
-   `Xaas.Operations.AuditLogEntry` itself** — fresh this pass (see Raise): the audit trail
-   that 3 Governance `:approve` actions write to is not itself audited. Real, scoped,
-   genuinely new — not proposed by any prior grid pass or by the concurrent sequence (whose
-   own `AuditLogEntry` commit, `c5fe889`, did not add this). A close second to item 4 this
-   pass: item 4 is the sharper gap because it is a real, exploitable maker-checker floor
-   (no self-approval guard is possible when there's no `:approve` action at all yet), while
-   this item is a defense-in-depth gap on an already-real, already-working feature.
-9. **Real `identities do` uniqueness constraints across the 49 resources are thin**: real-
-   verified `grep -rl "identities do" lib/xaas | wc -l` → 8 of 49 resources.
-   `Xaas.Marketplace.ApprovalProviderStatusChange` still has no `identities do` block
-   guarding against a duplicate *pending* status-change request for the same
-   `provider_id`. Carried forward, not selected this pass.
-10. **A real `priv/repo/seeds.exs` populated with `Xaas.*` fixtures for local dev** —
+9. **Real `AshPaperTrail.Resource` (or equivalent second-order audit) on
+   `Xaas.Operations.AuditLogEntry` itself** — carried forward from the fifth-pass grid,
+   real-reconfirmed this pass (see Raise): still not touched by `cec5025` or the concurrent
+   sequence's prompt 21. A close second to item 6 this pass.
+10. **Real `identities do` uniqueness constraints across the 49 resources are thin**: real-
+    verified `grep -rl "identities do" lib/xaas | wc -l` → 8 of 49 resources.
+    `Xaas.Marketplace.ApprovalProviderStatusChange` still has no `identities do` block
+    guarding against a duplicate *pending* status-change request for the same
+    `provider_id`. Carried forward, not selected this pass.
+11. **A real `priv/repo/seeds.exs` populated with `Xaas.*` fixtures for local dev** —
     unchanged from the prior grid: still the unmodified 19-line book stub with zero
     `Xaas.*` calls. Carried forward, not selected this pass.
 
 ## See Also
 
+- `docs/claude/diataxis/explanation/architecture-overview.md` — the sixth-pass Create item
+  this grid identified: the whole-system onboarding map that previously did not exist
 - `docs/ASH-MIGRATION-PLAN.md` — the real 7-phase migration history and standing deferred
   decisions this grid builds on
 - `docs/claude/diataxis/reference/http-api-surface.md` — the real, current HTTP route

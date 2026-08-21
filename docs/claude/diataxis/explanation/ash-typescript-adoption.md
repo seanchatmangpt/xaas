@@ -146,6 +146,7 @@ warning; zero errors, zero new warnings from this change).
 
 ## See Also
 
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of
 - `docs/claude/diataxis/reference/http-api-surface.md` -- real current HTTP route surface
   these 3 resources already had before this pass
 - `docs/claude/diataxis/how-to/add-a-real-json-api-route-to-an-ash-resource.md` -- the

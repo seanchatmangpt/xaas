@@ -135,3 +135,7 @@ repository URL Hex publishes for this package is not currently reachable.
   is byte-identical to before this task (`git diff` clean).
 - `test/xaas/accounts/org_iam_create_repro_test.exs` -- throwaway repro test, deleted
   before finishing.
+
+## See Also
+
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of

@@ -195,6 +195,7 @@ succeeded.
 
 ## See Also
 
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of
 - `lib/xaas/operations/capability_liveness_receipt.ex` — the real `bypass`/floor policy code
   discussed in section 1
 - `lib/mix/tasks/xaas.ingest_capability_receipts.ex` — the real `authorize?: false` ingest

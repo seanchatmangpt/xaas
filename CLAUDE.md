@@ -7,6 +7,10 @@ reference, explanation).
 
 ## Read first
 
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map: the 7 Ash
+  domains, the 3-tier `/internal-api` routing split, and how the cross-cutting mechanisms
+  (AshIam, multitenancy, AshPaperTrail, audit log, webhooks, Reactor, Ontop) compose. Start
+  here if you're new to the codebase.
 - `docs/ASH-MIGRATION-PLAN.md` — the real 7-phase migration history + the standing,
   explicitly-deferred decisions (Phase 5: customer-facing mutation API surface,
   per-resource authorization policies). Deferred means genuinely undecided, not done —

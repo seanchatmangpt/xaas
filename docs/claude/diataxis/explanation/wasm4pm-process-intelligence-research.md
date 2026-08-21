@@ -167,3 +167,7 @@ self-reported `PARTIAL_ALIVE` standing, and a real (if currently
 unconnected) OCEL v2 shape match with this codebase's real
 `OcelAshEmitter` output — but connecting them is unbuilt work, not a
 documentation gap.
+
+## See Also
+
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of

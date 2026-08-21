@@ -301,6 +301,7 @@ not asserted as done here.
 
 ## See Also
 
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of
 - `docs/claude/diataxis/reference/ash-configuration.md` — real, current domain/extension setup
 - `docs/claude/diataxis/reference/http-api-surface.md` — real HTTP route precedent this design
   would follow if a `PlanningRun` resource is ever added

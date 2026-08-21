@@ -267,3 +267,7 @@ scan here was workload-config-only, not etcd-at-rest).
 `scripts/enable-etcd-encryption.sh` **was** run in a later session (2026-08-20) — see
 finding 3's updated real before/after verification above; this line is left as the
 original scan's scope note, superseded by that update.
+
+## See Also
+
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of
