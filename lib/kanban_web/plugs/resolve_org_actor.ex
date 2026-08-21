@@ -78,6 +78,15 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   minting under a fabricated org_id, real and live-tested, closed this
   pass).
 
+  Extended twenty-first pass: `pentest_findings`
+  (`Xaas.Governance.PentestFinding`) closes a real, live-HTTP-proven gap
+  from the same sweep -- see that resource's own moduledoc and
+  `Xaas.Governance.Checks.PentestFindingActorOrgMatches`/
+  `PentestFindingActorOrgFilter` for the full disclosed finding (real
+  forged-row minting on `:create` AND a real cross-org status flip on an
+  EXISTING different org's row via `:remediate`, real and live-tested,
+  closed this pass).
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -152,6 +161,7 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     route_orgs_custom_domain
     route_projects_backups
     audit_export_tokens
+    pentest_findings
   )
 
   def init(opts), do: opts

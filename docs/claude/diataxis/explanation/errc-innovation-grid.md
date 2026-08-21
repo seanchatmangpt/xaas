@@ -6,8 +6,203 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (twentieth pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (twenty-first pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Twenty-first-pass update
+
+**Real HEAD confirmed: `1a79970`.** `git rev-parse HEAD` →
+`1a79970bf8605fe75fade2a4395abfc6f06252bf`. One real commit landed since the
+twentieth-pass grid's own `868ddd6`: `1a79970` ("round 19" in its own commit message —
+implements the twentieth-pass grid's own selected CREATE item, item 27 below). Real-verified
+via `git show 1a79970 --stat`: 5 files, 678 insertions — `errc-innovation-grid.md` (the
+twentieth-pass section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`,
+`lib/xaas/governance/audit_export_token.ex`, a new
+`lib/xaas/governance/checks/audit_export_token_actor_org_matches.ex`, and a new
+`test/kanban_web/controllers/audit_export_token_controller_test.exs` (316 lines). **The
+twentieth-pass CREATE item (the live-HTTP-proven unauthenticated audit-export-credential-
+minting gap on `AuditExportToken`) is now RESOLVED, independently re-verified this pass, not
+just cited from the commit message**: `audit_export_token.ex`'s `:issue`/`:revoke` bypasses
+(real-read this pass, lines 28-34) now call `authorize_if
+Xaas.Governance.Checks.AuditExportTokenActorOrgMatches` in place of the old bare
+`authorize_if always()`; the check module (real-read in full) is a genuine
+`Ash.Policy.SimpleCheck`, not a stub — direct-attribute-read `match?/3`, fail-closed;
+`resolve_org_actor.ex`'s `@tenant_scoped_path_segments` (real-read this pass, lines 141-155,
+now a 13-entry list) includes `audit_export_tokens`. Real-noted, not treated as a new gap
+(matches the domain's own established, disclosed design): `AuditExportToken`'s own
+`bypass action_type(:read) do authorize_if always() end` (line 17-19) is deliberately
+unchanged — its own moduledoc (real-read, lines 10-19) discloses reads staying open by design
+so operators/UI can list token metadata, the same read-open/write-scoped split every other
+already-fixed Governance resource uses. **Per this pass's own task instruction — do not
+re-propose this fix, it's fixed.**
+
+**This pass's task: real, per-resource business-logic investigation of the 3 same-root-shape
+siblings round 19 named but deliberately did not fix — `ApprovalFreezeOverride`,
+`ApprovalOrgDelete` (self-disclosed inert), and `PentestFinding` — each resource file and its
+change/validation modules read in full, not sampled, to determine (a) whether its mutation
+action has a real, live effect (not inert) and (b) what real design decision, if any, is
+needed before wiring org-scoping.**
+
+- **`Xaas.Governance.ApprovalOrgDelete` — real-confirmed live on `:create`, real-confirmed
+  fully inert on `:approve`, exactly as its own moduledoc discloses; org-scoping needs no new
+  design.** `approval_org_delete.ex:25-31` (real-read): `bypass action(:create)`/
+  `bypass action(:approve)` both `authorize_if always()`, no check at all. `:create`
+  (`accept [:org_id, :requested_by]`, line 62-64) persists a real row under any
+  caller-supplied `org_id` — real, live metadata forgery, same tier as every already-fixed
+  sibling's `:create` half. `:approve` (`accept [:approved_by]`, lines 84-88) wires only
+  `validate Xaas.Governance.Validations.ApprovalOrgDeleteRequiresApprover` — **no `change` line
+  at all**, confirmed by a full read of the `actions do` block. The resource's own moduledoc
+  (lines 73-83, real-read) explicitly discloses why: "xaas's `:approve` action only records
+  the approval decision; no cascading destroy is triggered" — real self-disclosure, not this
+  pass's inference. Cross-checked for a hidden functional dependency, not assumed from the
+  disclosure alone: `grep -rln "ApprovalOrgDelete\b" lib/ test/` → matches only
+  `lib/xaas/governance.ex` (domain registration), the resource's own 2 files, and
+  `lib/xaas/accounts/org.ex:164-165` — real-read, a plain comment on `Org`'s own commented-out
+  `:destroy` action noting the real deletion path is the maker-checker flow and "`ApprovalOrgDelete`
+  does not yet actually delete the Org row" — confirms, does not contradict, the inertness.
+  **Org-scoping design is the simplest of the 3, needing no new business-rule invention**:
+  `ApprovalOrgDeleteRequiresApprover` (real-read in full) implements only `validate/3`, no
+  `atomic/3` — it already disqualifies `:approve` from Ash's atomic-upgrade path (the
+  established "custom validate/change module with no `atomic/3`" safe shape this grid's
+  nineteenth-pass sweep confirmed for 5 of 7 sibling checks), so a direct-attribute-read
+  `SimpleCheck` (the `SlaCreditActorOrgMatches`/`AuditExportTokenActorOrgMatches`-shaped
+  2-clause `resolve_org_id/1`) works on both `:create` and `:approve` with zero
+  `changeset.data`-availability risk. Real live severity today: an attacker holding only the
+  shared token can forge a deletion request AND force a false "approved" stamp onto it under
+  any org, with zero cascading consequence — a real, but the least severe, of the 3.
+- **`Xaas.Governance.ApprovalFreezeOverride` — real-confirmed live on `:create`, real-confirmed
+  metadata-only (no cascading effect) on `:approve`, plus a real, SEPARATE business-rule gap
+  this pass re-confirmed rather than re-derived from scratch; org-scoping itself needs no new
+  design.** `approval_freeze_override.ex:35-41` (real-read): identical bare
+  `authorize_if always()` shape on both `:create`/`:approve`. `:create`
+  (`accept [:org_id, :requested_by, :freeze_window_id, :reason]`, lines 72-74) persists a real
+  row under any `org_id`, including a `freeze_window_id` value that is never validated to
+  reference a real, existing `FreezeWindow` row. `:approve` (lines 81-85, real-read) wires only
+  `validate Xaas.Governance.Validations.ApprovalFreezeOverrideRequiresApprover` — **no `change`
+  line**, same fully-metadata-only shape as `ApprovalOrgDelete`. Cross-checked:
+  `grep -rln "ApprovalFreezeOverride\b" lib/ test/` → matches only `lib/xaas/governance.ex`,
+  the resource's own 2 files, `lib/xaas/governance/freeze_window.ex` (its own moduledoc
+  cross-referencing the sibling concept, not a functional read), and 3 unrelated `Approval*`
+  resources' shared moduledoc intro paragraphs (`approval_sla_credit_apply.ex:7`,
+  `approval_tier_downgrade.ex:7`, `approval_castle_verb_schedule.ex:7`, all real-read at the
+  cited line) — each a plain naming-convention citation ("following the established pattern
+  in ... `ApprovalFreezeOverride`"), not a functional dependency, matching this grid's own
+  already-established discipline for reading such citations (see seventeenth-pass update's
+  identical check on `ApprovalFreezeOverride`). **Re-confirmed, not re-derived: the real,
+  separate business-rule gap round 19 already disclosed still stands** —
+  `freeze_window.ex:138-142` (real-read) shows `FreezeWindow.allow_emergency_override` is a
+  real, meaningful boolean attribute ("whether a maker-checker `ApprovalFreezeOverride` request
+  may be filed against this window at all," per its own comment) that neither
+  `ApprovalFreezeOverride:create` nor `ApprovalFreezeOverrideRequiresApprover` (both real-read
+  in full this pass) ever queries — no existence check, no active-window check, no
+  `allow_emergency_override` check. **This is a real, separate design gap from org-scoping**
+  (whether the referenced `FreezeWindow` is real/active/override-eligible is orthogonal to
+  whether the actor's own org matches the request's `org_id`) and is NOT required to land a
+  real org-scoping fix — the same distinction round 19 itself drew. **Org-scoping design is as
+  simple as `ApprovalOrgDelete`'s**: `ApprovalFreezeOverrideRequiresApprover` (real-read)
+  implements only `validate/3`, no `atomic/3`, so a direct-attribute-read `SimpleCheck` is
+  safe on both actions with no atomic-eligibility risk. Real live severity today: identical
+  shape to `ApprovalOrgDelete` — self-contained forgery plus a false approval stamp, zero
+  automated downstream consumer.
+- **`Xaas.Governance.PentestFinding` — the real, live, most-severe finding of the 3: BOTH
+  `:create` and `:remediate` are live, `:remediate` is a real cross-org WRITE against an
+  EXISTING victim-org record (not just new-row forgery), and its org-scoping design is
+  genuinely different from the other two — not a design any prior single-check pattern in
+  this repo covers as-is, but one this codebase already has a proven, established answer
+  for.** `pentest_finding.ex:46-52` (real-read): identical bare `authorize_if always()` on
+  both `bypass action(:create)`/`bypass action(:remediate)`. `:create`
+  (`accept [:org_id, :engagement_id, :severity, :title, :description, :filed_by]`, lines
+  88-92) persists a real row (real severity/title/description) under any `org_id` — same
+  forgery tier as the other two. **`:remediate`** (lines 97-106, real-read: `accept []`,
+  `require_atomic? false`, `validate attribute_equals(:status, :open)`,
+  `change set_attribute(:status, :remediation_in_progress)`) is structurally different from
+  either sibling's `:approve`: it is reached by `PATCH /pentest_findings/:id` against an
+  **existing** row (no `org_id` in its own `accept` list, so the only way to scope it is
+  against the persisted record), and it has a real, non-inert effect — it really flips
+  `status` on a real row, unlike `ApprovalOrgDelete`/`ApprovalFreezeOverride`'s `:approve`
+  (both metadata-only, zero `change`). An actor holding only the shared token could locate or
+  guess a real victim org's real `PentestFinding` id (ids are real UUIDs, not
+  org-namespaced, and `:read`/`:index` stay open by this domain's own established,
+  already-accepted design — same as `AuditExportToken`'s read side, not a new gap) and flip
+  its `status` to `remediation_in_progress` with zero relationship to that org — a real
+  compliance/security-posture misrepresentation on an existing record, not merely an
+  extra forged row. Real-checked for a functional consumer, not assumed:
+  `grep -rln "PentestFinding\b" lib/ test/` → the domain registration, the resource's own
+  file, `ApprovalPentestFindingResolve` (its real `belongs_to :finding` relationship,
+  `approval_pentest_finding_resolve.ex:125-129`, real-read), and that sibling's own test
+  files. **Real, newly-checked-this-pass finding on that relationship**:
+  `ApprovalPentestFindingResolve:approve`'s own change module,
+  `lib/xaas/governance/changes/approval_pentest_finding_resolve_approve.ex` (real-read in
+  full, 12 lines) — `def change(changeset, _opts, _context) do changeset end`, a pure
+  identity no-op. So even the resource's own moduledoc's claimed legitimate path to
+  `resolved`/`accepted_risk` ("it happens exclusively via
+  `Xaas.Governance.ApprovalPentestFindingResolve` create+approve," `pentest_finding.ex:16-19`)
+  is itself never actually wired to update `PentestFinding.status` — a real, separate,
+  disclosed finding (the terminal transition is aspirational in the moduledoc, not live
+  anywhere in the codebase today), out of scope for this pass's org-scoping question but
+  named so a future pass does not have to re-derive it.
+  - **Real, load-bearing design question this pass actually answered, not assumed: does
+    `:remediate` hit the same atomic-upgrade `changeset.data`-unavailable pathology rounds
+    16-18 found on `Incident`/`RouteOrgsCustomDomain`/`Org`?** Real-checked against the
+    installed dependency source, not inferred from the pattern alone:
+    `deps/ash/lib/ash/resource/validation/attribute_equals.ex:33-51` shows
+    `Ash.Resource.Validation.AttributeEquals` (the built-in backing `attribute_equals(:status,
+    :open)`) implements a real `atomic/3` callback; `deps/ash/lib/ash/resource/change/
+    set_attribute.ex:88-89` shows `Ash.Resource.Change.SetAttribute` (backing
+    `set_attribute(:status, :remediation_in_progress)`) also implements `atomic/3`. **Both of
+    `:remediate`'s only 2 clauses are atomic-capable built-ins — unlike `ApprovalOrgDelete`/
+    `ApprovalFreezeOverride`'s hand-written `*RequiresApprover` validations (real-confirmed,
+    no `atomic/3` in either), `:remediate` carries nothing that disqualifies atomic mode.** A
+    naive direct-attribute `SimpleCheck` reading `changeset.data.org_id` on `:remediate` would
+    therefore risk the identical silent-`OriginalDataNotAvailable` failure mode those 3 prior
+    fixes each had to work around — a real, genuine design question, not a mechanical
+    copy-paste of the `AuditExportToken`/`ApprovalOrgDelete` pattern.
+  - **Real, already-established answer exists in this codebase, so this is NOT a
+    product-decision-blocked item: `Xaas.Marketplace.Provider`'s own `:create`/`:update` split
+    (real-read this pass, `provider.ex:86-100`; the underlying `ActorOrgFilter` module
+    real-read at `lib/xaas/marketplace/checks/actor_org_filter.ex`) is a direct, proven
+    precedent for exactly this shape.** `Provider:create` uses a `SimpleCheck`
+    (`Xaas.Marketplace.Checks.ActorOrgMatches`, direct attribute read); `Provider:update`
+    uses a real `Ash.Policy.FilterCheck` (`ActorOrgFilter`, `expr(org_id == ^actor(:org_id))`)
+    instead — a `FilterCheck` composes into a real `WHERE org_id = ...` clause Ash evaluates
+    directly against the database row, never touching `changeset.data` at all, sidestepping
+    the atomic-eligibility question entirely rather than needing an invented disqualifying
+    validation. That module's own moduledoc (real-read in full) discloses the real, live-
+    verified reason `FilterCheck` is used only on `:update`, not `:create`, in that pattern:
+    a `FilterCheck` on `:create` was live-verified to force Ash's field-authorization layer
+    into `access_type: :filter`, which real-caused a live bug (a real `POST` returning `201`
+    with the just-written field serialized as `null`) — a real, disclosed reason `:create`
+    keeps the `SimpleCheck` shape and only the update-type action gets the `FilterCheck`. This
+    is exactly `PentestFinding`'s own shape: `:create` (new row, no atomic risk) keeps a
+    `SimpleCheck`; `:remediate` (existing-row update, real atomic risk, no field-serialization
+    concern since it accepts zero fields) gets a `FilterCheck`. Real design, needs no new
+    product decision — reuses an already-proven-in-this-codebase pattern for a second
+    resource, the same bar item 27 (`AuditExportToken`) itself set for "needs no design."
+
+**Real, disclosed severity ranking and selection rationale — `PentestFinding` selected as this
+pass's CREATE item, `ApprovalOrgDelete` and `ApprovalFreezeOverride` named as real,
+same-batch-eligible follow-ups, not dropped.** All 3 are real, live (on at least `:create`),
+and have a clear, non-product-decision-blocked design — none of the 3 is the "genuinely
+undecided" case the task's own instructions named as a possible outcome. `PentestFinding` is
+selected as the single most severe: it is the only one of the 3 whose live-exploitable action
+(`:remediate`) mutates an **existing** row a real, different org already legitimately created,
+not merely persisting an extra self-contained forged row — a real integrity break on a live
+security/compliance record, not just an audit-log-adjacent inert stamp. `ApprovalOrgDelete`
+(self-disclosed fully inert cascade) and `ApprovalFreezeOverride` (metadata-only `:approve`,
+plus its own separate, already-disclosed `FreezeWindow`-validation gap) remain real, lower-
+severity, same-shape gaps with an even simpler fix (a single `SimpleCheck` per resource, no
+`FilterCheck` needed) — disclosed here as real, ready-to-fix follow-up scope for the same
+batch or a subsequent pass, not silently deprioritized. Full spec for the selected item in the
+structured output below.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this pass
+shows: a newly staged `docs/SPARQL-BRIDGE-SCALE-BENCHMARK-2026-08-21.md`, a modified
+`templates-hooks/terraform-validate.txt.tmpl`, and untracked `GGEN-SH-AFTER-MIX-COMPILE.log`,
+`GGEN-SH-AFTER-PROOF.txt`, `docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl` — the same class of
+other-standing-activity output prior passes have logged. None touch `lib/xaas/governance/`,
+`lib/xaas/marketplace/`, `lib/kanban_web/plugs/resolve_org_actor.ex`, or any file this pass's
+finding depends on. None read beyond filenames, none touched.
 
 ## Twentieth-pass update
 
@@ -2450,6 +2645,52 @@ sequence cover these):
     `freeze_window` precondition gap, and self-contained metadata forgery respectively) are
     named, not silently dropped, as real follow-up scope for the same batch or a subsequent
     pass. Full spec in the structured output below.
+28. **RESOLVED** (was this grid's own item 27, twentieth pass): a real
+    `Xaas.Governance.Checks.AuditExportTokenActorOrgMatches` wired onto
+    `Xaas.Governance.AuditExportToken`'s `:issue`/`:revoke` bypasses, plus `audit_export_tokens`
+    added to `ResolveOrgActor`'s `@tenant_scoped_path_segments` — **landed for real as
+    `1a79970`** (round 19), confirmed live this (twenty-first) pass: both files real-read in
+    full, `test/kanban_web/controllers/audit_export_token_controller_test.exs` (316 lines,
+    new) provides `AuditExportToken`'s first-ever real HTTP-level coverage. Closed the
+    unauthenticated-arbitrary-org bearer-credential-minting gap. See "Twenty-first-pass
+    update" above.
+29. **Selected as this pass's (twenty-first) CREATE item.** A real, per-resource
+    business-logic investigation of the 3 same-root-shape Governance siblings round 19 named
+    but deliberately did not fix (`ApprovalFreezeOverride`, `ApprovalOrgDelete`,
+    `PentestFinding`) found all 3 real, live (on at least `:create`), and clearly fixable —
+    none genuinely product-decision-blocked. `Xaas.Governance.PentestFinding` selected as the
+    most severe: unlike its 2 siblings' fully metadata-only `:approve` (zero `change` wired,
+    confirmed via a full read of both actions blocks), `PentestFinding:remediate` really
+    flips `status` on an **existing** row any org may already have legitimately created, with
+    zero org-scoping check today — a real integrity break on a live security/compliance
+    record, not just an extra self-contained forged row. Scope: (a) a new
+    `Xaas.Governance.Checks.PentestFindingActorOrgMatches` (`Ash.Policy.SimpleCheck`, direct-
+    attribute-read, same 2-clause shape as `AuditExportTokenActorOrgMatches`) wired onto
+    `:create`'s bypass; (b) a new `Xaas.Governance.Checks.PentestFindingActorOrgFilter`
+    (`Ash.Policy.FilterCheck`, `expr(org_id == ^actor(:org_id))`, direct port of
+    `Xaas.Marketplace.Checks.ActorOrgFilter`) wired onto `:remediate`'s bypass instead of a
+    `SimpleCheck` — real-required because `:remediate`'s only 2 clauses
+    (`attribute_equals(:status, :open)`, `set_attribute(:status, :remediation_in_progress)`)
+    are both real, atomic-capable Ash built-ins (`deps/ash/lib/ash/resource/validation/
+    attribute_equals.ex:33-51`, `deps/ash/lib/ash/resource/change/set_attribute.ex:88-89`,
+    both real-read this pass) with no disqualifying custom validation, so a naive
+    `changeset.data`-reading `SimpleCheck` would risk the same silent
+    `OriginalDataNotAvailable` failure rounds 16-18 found and fixed elsewhere — a
+    `FilterCheck` sidesteps the question entirely, matching `Xaas.Marketplace.Provider`'s own
+    proven `:create`/`:update` split; (c) `pentest_findings` added to `ResolveOrgActor`'s
+    `@tenant_scoped_path_segments`; (d) a real, live HTTP-level regression test suite
+    (`test/kanban_web/controllers/pentest_finding_controller_test.exs`, currently zero-
+    existing) proving both the legitimate same-org `:create`/`:remediate` path and the
+    cross-org/fabricated-org rejection on each. The 2 same-batch-eligible follow-ups,
+    disclosed not dropped: `Xaas.Governance.ApprovalOrgDelete` (self-disclosed fully inert
+    `:approve` — "no cascading destroy is triggered," its own moduledoc) and
+    `Xaas.Governance.ApprovalFreezeOverride` (metadata-only `:approve`, plus a real, separate,
+    already-disclosed gap where neither `:create` nor its `RequiresApprover` validation checks
+    the referenced `FreezeWindow` exists/is active/has `allow_emergency_override: true`) — both
+    real, both need only a single direct-attribute `SimpleCheck` per resource (no `FilterCheck`
+    needed; both resources' `*RequiresApprover` validations already disqualify atomic mode,
+    real-confirmed via a full read of both — neither implements `atomic/3`). Full spec in
+    "Twenty-first-pass update" above.
 
 ## See Also
 
