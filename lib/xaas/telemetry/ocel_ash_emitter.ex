@@ -57,13 +57,26 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
   require OpenTelemetry.Tracer
 
   @log_path Path.join([:code.priv_dir(:kanban), "ocel", "ash-actions.ndjson"])
-  @action_types [:create, :read, :update, :destroy]
+  @action_types [:create, :read, :update, :destroy, :action]
 
   @doc """
   Attach real `:telemetry` handlers for every real configured Ash domain's
-  real short name, for all 4 real action types, on the real `:stop`
-  event (Ash never emits a real `:exception` suffix -- see the
-  moduledoc's real correction).
+  real short name, for all 4 CRUD action types plus real Ash generic
+  actions (`action :name, :type do ... end`), on the real `:stop` event
+  (Ash never emits a real `:exception` suffix -- see the moduledoc's real
+  correction).
+
+  Real, confirmed gap found and closed in this change: a generic Ash
+  action (e.g. `Xaas.Operations.CapabilityLivenessReceipt.check_regressions`)
+  is dispatched through `Ash.Actions.Action.run/4`
+  (`deps/ash/lib/ash/actions/action.ex`), which opens its telemetry span as
+  `[:ash, short_name, :action]` -- a distinct event name from the 4 CRUD
+  action types this module previously subscribed to. That module's own
+  `:action` telemetry metadata carries the same real `:resource`,
+  `:resource_short_name`, and `:action` keys the CRUD handler already
+  reads (confirmed by reading `action.ex`'s `metadata` function directly),
+  so `handle_event/4`'s existing logic needs no other change -- only the
+  missing event-name subscription.
   """
   def attach! do
     File.mkdir_p!(Path.dirname(@log_path))
