@@ -144,22 +144,39 @@ The listed "plaintext leaks" are the real secret **key names** (`DATABASE_URL`,
 what plaintext-at-rest looks like. `scripts/enable-etcd-encryption.sh` exists in this repo
 to close this gap but was not run (out of scope — scan only).
 
-### 4. No NetworkPolicies enforced — CONFIRMED (MEDIUM, environment-limited)
+### 4. NetworkPolicy — APPLIED and CONFIRMED ENFORCED on kind-xaas (2026-08-20 update)
 
-```
-$ kubectl get networkpolicy -A
-No resources found
-```
+**2026-08-20 re-verification (this session, `kind-xaas`, `kind v0.30.0`, kindnet only
+CNI pod present — `kubectl get pods -n kube-system` showed no calico-node/cilium, only
+`kindnet-sxpff`):** the file's original disclosed caveat ("kindnet does not enforce
+NetworkPolicy") is **no longer accurate for this cluster** — real, repeated before/after
+testing shows kindnet on this `kind v0.30.0` cluster DOES enforce NetworkPolicy.
 
-`k8s/network-policy.yaml` (default-deny + scoped allow for `xaas`) exists in the repo but
-is unapplied. Its own header comment already discloses the real limitation for this
-cluster: **kind's default CNI (kindnet) does not enforce NetworkPolicy** — applying the
-file to this specific `kind-xaas` cluster would create the objects but not actually
-restrict traffic unless the CNI is swapped for one that enforces policy (e.g. Calico).
-Confirmed by inspecting `k8s/network-policy.yaml` directly rather than re-deriving this
-independently — the file's own documentation is accurate and was not re-verified against
-kindnet's source, so this specific sub-claim is UNVERIFIED (taken from the file, not
-independently confirmed against kindnet's behavior this session).
+Real test performed: from the live `xaas` pod, `curl -sv --max-time 3
+telnet://prometheus:9090` (a path the applied policy's default-deny should block, since
+no allow rule permits xaas -> prometheus):
+
+- **Before applying** `k8s/network-policy.yaml`: `Connected to prometheus ... port 9090`
+  (TCP handshake succeeds).
+- **After applying**: `Connection timed out after 3001 milliseconds` (TCP handshake
+  blocked) — reproduced 3x consecutively, then reconfirmed by removing the policy again
+  (`Connected...` returns) and reapplying (`timed out` again).
+- The policy's intended-allowed path (`xaas` -> `postgres:5432`) stayed reachable both
+  before and after, as expected (`xaas-allow-egress-postgres` rule).
+
+The manifest is now **applied** on `kind-xaas` (`kubectl apply -f
+k8s/network-policy.yaml`; all 5 NetworkPolicy objects created:
+`xaas-default-deny`, `xaas-allow-ingress-http`, `xaas-allow-egress-postgres`,
+`xaas-allow-egress-dns`, `postgres-allow-ingress-from-xaas`).
+
+Originally (this finding as first written): `kubectl get networkpolicy -A` returned no
+resources — the file existed but was unapplied, and its header asserted kindnet does not
+enforce NetworkPolicy (UNVERIFIED at the time, taken from the file rather than
+independently checked). That specific sub-claim has now been checked directly against
+this cluster's live behavior and found **not currently true** — kind's kindnet
+implementation evidently gained real NetworkPolicy enforcement at some point before/at
+`kind v0.30.0`, contradicting the file's original disclosure. `k8s/network-policy.yaml`'s
+own header comment has been updated to reflect this real, current result.
 
 ### 5. No ResourceQuotas enforced — CONFIRMED (LOW)
 
@@ -178,7 +195,7 @@ container-level ceiling and no namespace-level ceiling either.
 | File | Closes |
 |---|---|
 | `k8s/rbac.yaml` | Finding 2 — gives `xaas` pods their own `xaas` ServiceAccount scoped to `get` on exactly `xaas-config`/`xaas-secrets`, off the shared `default` SA. Does not touch `postgres`/`prometheus`, which would still run as `default`. |
-| `k8s/network-policy.yaml` | Finding 4 — default-deny + scoped allows for `app: xaas`, **but ineffective on kind-xaas as-is** because kindnet doesn't enforce NetworkPolicy (per the file's own disclosed caveat). Would need a policy-enforcing CNI to actually take effect on this cluster. |
+| `k8s/network-policy.yaml` | Finding 4 — default-deny + scoped allows for `app: xaas`. **Applied and confirmed enforced on kind-xaas as of 2026-08-20** (kindnet on `kind v0.30.0` does enforce NetworkPolicy — see finding 4's updated real before/after test; supersedes the file's original disclosed caveat that kindnet doesn't enforce it). |
 | `k8s/resource-quotas.yaml` | Finding 5 (namespace-level) — does not add missing per-container limits to `postgres.yaml`/`prometheus.yaml` themselves (finding 1's resource half), only bounds the namespace total. |
 | `scripts/enable-etcd-encryption.sh` | Finding 3 — not a manifest, a cluster-config script; would add a real `EncryptionConfiguration` to the kind control-plane's apiserver. |
 | *(none exists yet)* | Finding 1's securityContext half (runAsNonRoot, allowPrivilegeEscalation, readOnlyRootFilesystem, seccompProfile) — no manifest in `k8s/` currently adds `securityContext` blocks to `deployment.yaml`, `postgres.yaml`, or `prometheus.yaml`. This is a real, undocumented gap: none of the existing hardening files address it. |

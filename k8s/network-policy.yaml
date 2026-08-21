@@ -4,11 +4,19 @@
 # this project's real topology: single namespace (default), no Istio (no
 # istiod/ingressgateway/sidecar egress needed), no cross-namespace callers.
 #
-# NOT applied to the live cluster by this commit -- file only. Apply with:
+# Apply with:
 #   kubectl apply -f k8s/network-policy.yaml
-# after review, and confirm the CNI in use (kind's default is currently
-# kindnet, which does NOT enforce NetworkPolicy -- see the note at the
-# bottom of this file before assuming this takes effect on kind-xaas).
+#
+# UPDATE 2026-08-20: applied to kind-xaas (kind v0.30.0) and real before/after
+# connectivity testing (curl TCP-connect to a should-be-denied path,
+# xaas -> prometheus:9090, repeated 3x with policy present/absent) confirms
+# kindnet on this cluster DOES enforce NetworkPolicy -- connection succeeded
+# before applying this file and timed out (blocked) after, reproducibly.
+# This supersedes the original disclosure below, which is now stale for this
+# cluster/kind version -- kept for history, but do not assume it without
+# re-checking, since kindnet's enforcement has evidently changed. See
+# docs/claude/diataxis/explanation/k8s-fault-scan-report.md finding 4 for the
+# full real test record.
 #
 # Scope: the `app: xaas` Deployment (k8s/deployment.yaml) only.
 # `app: postgres` (k8s/postgres.yaml) is not given its own default-deny here
@@ -151,7 +159,7 @@ spec:
         - protocol: TCP
           port: 5432
 
-# ----------------------------------------------------------------- caveat
+# ------------------------------------------------------------ original caveat (2026, earlier)
 #
 # kind's default CNI is kindnet, which does NOT enforce NetworkPolicy
 # objects -- they are accepted by the API server but silently have no
@@ -162,3 +170,16 @@ spec:
 # Confirm with `kubectl get pods -n kube-system -l app=calico-node` (or
 # equivalent) before relying on this file for real isolation -- do not
 # assume enforcement without checking the live cluster's CNI.
+#
+# ------------------------------------------------------- 2026-08-20 correction
+#
+# The above is NOT current for kind-xaas on kind v0.30.0. Only a bare
+# `kindnet-*` pod exists in kube-system (no calico-node/cilium), yet real
+# before/after TCP-connect testing (xaas pod -> prometheus:9090, an
+# unallowed path under this policy) showed the connection succeed with the
+# policy absent and time out (blocked) with it applied, reproducibly across
+# 3 attempts and a remove/reapply cycle. kindnet's real NetworkPolicy
+# enforcement has evidently changed since the original note above was
+# written -- do not trust either version of this caveat without a fresh
+# live check on your own cluster/kind version; enforcement behavior is not
+# a stable assumption across kind releases.
