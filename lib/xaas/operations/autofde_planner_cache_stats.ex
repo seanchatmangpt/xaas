@@ -26,12 +26,6 @@ defmodule Xaas.Operations.AutofdePlannerCacheStats do
     attribute :cnv_response, :map, allow_nil?: true, public?: true
     attribute :trajectory_sha256, :string, allow_nil?: true, public?: true
     attribute :requested_at, :utc_datetime_usec, allow_nil?: true, public?: true
-    # Real, isolated single-resource addition -- used to prove
-    # `mix xaas.safe_generate_migrations`'s happy path: a real, legitimate
-    # single-table change generates the same migration the plain
-    # `mix ash_postgres.generate_migrations` would, with zero cross-table
-    # operations.
-    attribute :cache_hit?, :boolean, allow_nil?: true, public?: true
     timestamps()
   end
 
