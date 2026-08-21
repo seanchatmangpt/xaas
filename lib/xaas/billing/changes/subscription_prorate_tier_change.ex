@@ -54,20 +54,37 @@ defmodule Xaas.Billing.Changes.SubscriptionProrateTierChange do
   so the sign is always expressed via which account is `:from` and which
   is `:to`, never via a negative `Money` value.
 
-  ## Transaction boundary (this session's own real lesson, commit f2d57ac)
+  ## Real fix: `after_action/2`, not `after_transaction/2` (corrected --
+  this module previously got this backwards)
 
-  Wired via `Ash.Changeset.after_transaction/2`, NOT `after_action/2`. Real
-  Ash source (`deps/ash/lib/ash/changeset/changeset.ex`) confirms
-  `after_action` hooks run inside the same DB transaction as the parent
-  action; `after_transaction` hooks run once the transaction has already
-  committed (or rolled back). The real `Xaas.Ledger.Transfer` write this
-  module makes is a second, independent real write (its own real
-  double-entry transaction via `AshDoubleEntry.Transfer`) that must not
-  hold open the `:change_tier` update's own transaction while it runs --
-  exactly the real blocking-I/O-inside-a-transaction bug commit f2d57ac
-  found and fixed for the outbound-webhook dispatcher. `after_transaction`
-  only fires on a real `{:ok, record}` result (real failed `:change_tier`
-  updates skip proration entirely, per the pattern-match below).
+  This module originally used `after_transaction/2`, over-applying this
+  session's own real `f2d57ac` transaction-boundary lesson (documented in
+  `Xaas.Governance.Changes.EnqueueWebhookDeliveries`'s moduledoc). That
+  lesson is specifically about not holding a DB transaction open across
+  *blocking I/O to an external system* (an outbound HTTP webhook
+  dispatch) -- it does not apply to a `Xaas.Ledger.Transfer`/
+  `Xaas.Ledger.Account` write, which is a second real write to the *same*
+  Postgres database. `after_transaction/2` only runs once the parent
+  `:change_tier` transaction has already committed, so a real Ledger
+  failure here (including the real, concretely-triggerable
+  unique-constraint race on `Xaas.Ledger.Account`'s
+  `identity :unique_identifier, [:identifier]`, hit when two concurrent
+  first-time writes race to open the same not-yet-existing account) left
+  the subscription's `:tier` **permanently changed with the proration
+  transfer silently failed and no automatic remediation path** --
+  `:tier` was already committed and could not be rolled back after the
+  fact.
+
+  `Ash.Changeset.after_action/2` runs *inside* the parent `:change_tier`
+  transaction (real Ash source, `deps/ash/lib/ash/changeset/changeset.ex`'s
+  `transaction_hooks/2`) and a `{:error, _}` return from it rolls the
+  whole transaction -- including the forced `:tier` attribute change --
+  back. This is the exact same real, already-proven-working pattern
+  `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`
+  uses for its own Ledger charge; this module now matches it instead of
+  being one of its two silent exceptions. `after_action/2` only fires on
+  a real successful write (real failed `:change_tier` updates skip
+  proration entirely, matching the prior behavior).
   """
   use Ash.Resource.Change
 
@@ -90,16 +107,10 @@ defmodule Xaas.Billing.Changes.SubscriptionProrateTierChange do
 
     changeset
     |> Ash.Changeset.force_change_attribute(:tier, new_tier)
-    |> Ash.Changeset.after_transaction(fn _changeset, result ->
-      case result do
-        {:ok, record} ->
-          case prorate_tier_change(record, old_tier) do
-            {:ok, _transfer_or_nil} -> {:ok, record}
-            {:error, error} -> {:error, error}
-          end
-
-        {:error, error} ->
-          {:error, error}
+    |> Ash.Changeset.after_action(fn _changeset, record ->
+      case prorate_tier_change(record, old_tier) do
+        {:ok, _transfer_or_nil} -> {:ok, record}
+        {:error, error} -> {:error, error}
       end
     end)
   end

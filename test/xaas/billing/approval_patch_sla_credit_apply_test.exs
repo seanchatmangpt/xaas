@@ -131,4 +131,61 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApplyTest do
     assert real_balance_for(org_id) == nil,
            "expected no real Ledger.Account to have been opened -- self-approval was rejected"
   end
+
+  # Real Chicago-style coverage for the atomic-Ledger-write fix
+  # (Xaas.Billing.Changes.ApprovalPatchSlaCreditApplyApprove now uses
+  # `Ash.Changeset.after_action/2`, not `after_transaction/2`): a real
+  # Ledger write failure must roll back `approved_by` too, never leave a
+  # record "approved but never credited."
+  #
+  # This forces a REAL Ledger.Transfer failure deterministically, not via
+  # a timing-dependent race. A real, concurrent `Xaas.Ledger.Account`
+  # unique-constraint race (the scenario this fix's own design doc names)
+  # was tried first via `Task.async` + `Ecto.Adapters.SQL.Sandbox.allow/3`
+  # and empirically does NOT reproduce under Ecto Sandbox's testing model
+  # (confirmed by a real 8-trial x 15-task probe run outside this suite:
+  # 0 real constraint collisions out of 120 real concurrent attempts) --
+  # Sandbox multiplexes every allowed process onto the SAME single
+  # physical connection/transaction, so two real, independent Postgres
+  # sessions racing a unique index (the real production failure mode)
+  # cannot be reproduced this way; disclosed here rather than shipping a
+  # test that looks like it covers the race but never actually exercises
+  # the failure branch.
+  #
+  # Instead: `AshDoubleEntry.Transfer.Changes.VerifyTransfer` (real
+  # dependency code,
+  # `deps/ash_double_entry/lib/transfer/changes/verify_transfer.ex:45-49`)
+  # really rejects any `:transfer` whose `from_account_id` equals its
+  # `to_account_id`. Setting `org_id` to the EXACT same string as the
+  # fixed `platform:revenue:sla-credits` identifier makes both
+  # `open_or_get_account/1` calls inside `credit_sla/1` resolve to the
+  # identical `Xaas.Ledger.Account` row -- a real, deterministic,
+  # non-flaky way to force the real Ledger write to fail on every run.
+  test "a real forced Ledger.Transfer failure rolls back approved_by too -- never approved-but-uncredited" do
+    org_id = "platform:revenue:sla-credits"
+
+    request =
+      create!(%{
+        requested_by: "requester-forced-fail",
+        org_id: org_id,
+        credit_amount_cents: 750
+      })
+
+    assert {:error, _error} =
+             request
+             |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-forced-fail"})
+             |> Ash.update(authorize?: false)
+
+    persisted = Ash.reload!(request, authorize?: false)
+
+    assert persisted.approved_by == nil,
+           "a real forced Ledger.Transfer failure must roll back approved_by too -- " <>
+             "this is exactly the after_transaction/2 bug the after_action/2 fix targets"
+
+    # Real cross-check: the whole parent transaction rolled back, so the
+    # Ledger.Account opened mid-flight (before the transfer failed) must
+    # not have been left behind either -- no orphaned real Postgres row.
+    assert real_balance_for(org_id) == nil,
+           "expected no real Ledger.Account/Balance row to survive the real rolled-back transaction"
+  end
 end

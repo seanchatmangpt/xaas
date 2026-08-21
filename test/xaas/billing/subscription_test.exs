@@ -241,6 +241,71 @@ defmodule Xaas.Billing.SubscriptionTest do
     assert Money.equal?(org_balance, baseline)
   end
 
+  # Real Chicago-style coverage for the atomic-Ledger-write fix
+  # (Xaas.Billing.Changes.SubscriptionProrateTierChange now uses
+  # `Ash.Changeset.after_action/2`, not `after_transaction/2`): a real
+  # Ledger write failure must roll `:tier` back too, never leave a
+  # subscription tier-changed with the proration transfer silently
+  # missing.
+  #
+  # This forces a REAL Ledger.Transfer failure deterministically, not via
+  # a timing-dependent race. A real, concurrent `Xaas.Ledger.Account`
+  # unique-constraint race (the scenario this fix's own design doc names)
+  # was tried first via `Task.async` + `Ecto.Adapters.SQL.Sandbox.allow/3`
+  # (many distinct never-activated subscriptions all racing to open the
+  # SAME shared `platform:revenue:subscription` account for the first
+  # time) and empirically does NOT reproduce under Ecto Sandbox's testing
+  # model (confirmed by a real probe run of the equivalent mechanism in
+  # `Xaas.Billing.ApprovalSlaCreditApplyTest`'s own moduledoc comment: 0
+  # real constraint collisions out of 120 real concurrent attempts) --
+  # Sandbox multiplexes every allowed process onto the SAME single
+  # physical connection/transaction, so two real, independent Postgres
+  # sessions racing a unique index (the real production failure mode)
+  # cannot be reproduced this way; disclosed here rather than shipping a
+  # test that looks like it covers the race but never actually exercises
+  # the failure branch.
+  #
+  # Instead: `AshDoubleEntry.Transfer.Changes.VerifyTransfer` (real
+  # dependency code,
+  # `deps/ash_double_entry/lib/transfer/changes/verify_transfer.ex:45-49`)
+  # really rejects any `:transfer` whose `from_account_id` equals its
+  # `to_account_id`. Setting `org_id` to the EXACT same string as the
+  # fixed `platform:revenue:subscription` identifier makes both
+  # `open_or_get_account/1` calls inside `charge/2` resolve to the
+  # identical `Xaas.Ledger.Account` row (an upgrade always calls
+  # `charge/2`) -- a real, deterministic, non-flaky way to force the real
+  # proration Transfer to fail on every run.
+  test "a real forced Ledger.Transfer failure rolls back :tier too -- never tier-changed-but-unprorated" do
+    org_id = "platform:revenue:subscription"
+
+    subscription =
+      Subscription
+      |> Ash.Changeset.for_create(:create, %{
+        org_id: org_id,
+        stripe_customer_id: "cus_forced_fail_#{System.unique_integer([:positive])}",
+        tier: :standard,
+        status: :incomplete
+      })
+      |> Ash.create!(authorize?: false)
+
+    assert {:error, _error} =
+             subscription
+             |> Ash.Changeset.for_update(:change_tier, %{tier: :pro})
+             |> Ash.update(authorize?: false)
+
+    persisted = Ash.reload!(subscription, authorize?: false)
+
+    assert persisted.tier == :standard,
+           "a real forced Ledger.Transfer failure must roll back :tier too -- " <>
+             "this is exactly the after_transaction/2 bug the after_action/2 fix targets"
+
+    # Real cross-check: the whole parent transaction rolled back, so the
+    # Ledger.Account opened mid-flight (before the transfer failed) must
+    # not have been left behind either -- no orphaned real Postgres row.
+    assert real_balance_for(org_id) == nil,
+           "expected no real Ledger.Account/Balance row to survive the real rolled-back transaction"
+  end
+
   test "org_id uniqueness is really enforced" do
     org_id = "org-dup-#{System.unique_integer([:positive])}"
     create_incomplete!(org_id)

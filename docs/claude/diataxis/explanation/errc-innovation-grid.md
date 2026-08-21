@@ -7,9 +7,107 @@ pass's own real-verified commits and the concurrently-running 25-prompt sequence
 landings since the fourth pass (`97768fb` health-check aggregation endpoint — closes this
 grid's own prior #3 CREATE item; `c5fe889` real cross-resource `AuditLogEntry` audit trail;
 `c03669c`/`c03fc9c` e2e negative-path hardening; `9caa85d` real k8s NetworkPolicy
-application). Last Updated 2026-08-20 (same day, sixth pass).
+application). Last Updated 2026-08-20 (same day, seventh pass).
 
-## Sixth-pass update (this revision)
+## Seventh-pass update (this revision)
+
+**Honest correction on the 25-prompt sequence's claimed completion.** The task briefing for
+this pass stated the sequence "has now reached its FINAL prompt... and is
+completing/complete." Real `git log --oneline -5` as run this pass shows the opposite of that
+claim: HEAD is still `008927d` ("prompt 23/25"), the same commit the sixth-pass grid already
+cited. No commit for prompt 24/25 or prompt 25/25 exists in `git log` as of this pass. `git
+status --short` does show working-tree changes, but they are not that sequence's own: a
+deleted `priv/repo/migrations/20260821055848_resolve_pending_backlog_20260821.exs` (last
+touched by `53c7340`, the `xaas.safe_generate_migrations` mix task, unrelated to prompts
+24-25), a modified `templates-hooks/terraform-validate.txt.tmpl`, and untracked
+`docs/innovation-exploration-v26.9.1-cycle-report.md` plus a `modules/integrations/github/`
+Terraform lock file — real artifacts of the separate `innovation-explorer` and Terraform/ggen
+work this session also has running, not the 25-prompt sequence. Per this task's own
+instruction ("note the 25-prompt sequence's own completion **if git log confirms it**"): it
+does not. Real, current, verifiable state is prompt 23/25 landed, 24-25 not yet in `git log`.
+
+**Fresh finding — a real money-movement atomicity gap on 3 of the session's newest
+Ledger-writing changes, exactly the failure-path class this pass was asked to hunt.** Four
+`Ash.Resource.Change` modules move real `Xaas.Ledger.Transfer` money as a side effect of a
+parent `:approve`/`:change_tier` action, and they split into two real, contradictory patterns:
+
+- **Atomic (correct)**: `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`
+  (`lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex:29`) wires
+  its Ledger write via `Ash.Changeset.after_action/2`, which real Ash source
+  (`deps/ash/lib/ash/changeset/changeset.ex`'s `transaction_hooks/2`, confirmed by reading it
+  this pass) runs *inside* the parent action's own DB transaction. Its own moduledoc states
+  the reason plainly: "approval and the money movement succeed or fail together" (lines
+  10-12) — a real Ledger failure here rolls the whole `:approve` back, so the record can never
+  end up "approved but uncharged."
+- **Non-atomic (a real, freshly-found gap)**: `Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove`
+  (`lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex:60`),
+  `Xaas.Billing.Changes.ApprovalPatchSlaCreditApplyApprove` (same shape,
+  `approval_patch_sla_credit_apply_approve.ex:60`), and
+  `Xaas.Billing.Changes.SubscriptionProrateTierChange`
+  (`lib/xaas/billing/changes/subscription_prorate_tier_change.ex:93`) all instead wire their
+  Ledger write via `Ash.Changeset.after_transaction/2`, which real Ash source confirms runs
+  only *after* the parent transaction has already committed. All three moduledocs justify this
+  by citing the same real prior lesson (commit `f2d57ac`, `EnqueueWebhookDeliveries`'s fix for
+  holding a transaction open during a blocking outbound HTTP call) — but none of these three
+  make an HTTP call; each does a second, purely-internal Postgres write
+  (`Xaas.Ledger.Account` read/open + `Xaas.Ledger.Transfer` create), the exact same shape
+  `ApprovalBackupRetentionChangeChargeOverage` correctly keeps atomic. The HTTP-specific lesson
+  was over-generalized to a same-database write it doesn't apply to.
+- **Real, concretely triggerable failure mode, not theoretical**: `Xaas.Ledger.Account`
+  carries a real unique constraint, `identity :unique_identifier, [:identifier]`
+  (`lib/xaas/ledger/account.ex:98-99`), and all four changes' shared `open_or_get_account/1`
+  helper does a plain read-then-create with no `upsert` — a real TOCTOU race. Two concurrent
+  `:approve`/`:change_tier` calls that are each the first to touch a given not-yet-opened
+  Ledger account identifier (a real possibility for any org's first SLA credit, first tier
+  change, or a client-side retry racing the original request) can both observe `{:ok, nil}`
+  from the read and both attempt `Ash.Changeset.for_create(:open, ...)`; the loser hits the
+  real unique-constraint violation and `credit_sla/1`/`prorate_tier_change/2` returns
+  `{:error, error}`. On the atomic path this rolls the whole approval back — safe. On the
+  non-atomic path, the parent record's `approved_by` (SLA credit resources) or `tier`
+  (`Subscription`) is **already committed** by the time that error surfaces, the HTTP caller
+  gets an error response that looks like the approval/tier-change itself failed, and no money
+  ever moved. Worse: each resource's own idempotency guard
+  (`newly_approved?/2`/`newly_activated?/2`-style, checking `changeset.data`'s *pre*-write
+  value) now sees the record as no longer newly-transitioning on any retry, so the credit/
+  charge can never be automatically re-driven — the record is stuck "approved but never
+  credited/charged" with no compensating action anywhere in the codebase.
+- **Real, verified zero test coverage of this exact failure mode.** `grep -n "test \""
+  test/xaas/billing/approval_sla_credit_apply_test.exs
+  test/xaas/billing/approval_patch_sla_credit_apply_test.exs` shows 4 tests each (create,
+  approve-credits, double-approve-no-double-credit, self-approval-rejected); `grep -n "test
+  \"" test/xaas/billing/subscription_test.exs` shows the equivalent set for `:change_tier`.
+  None of them force a real `Xaas.Ledger.Transfer`/`Xaas.Ledger.Account` failure mid-approval
+  and assert what state the parent record is left in — the exact scenario this pass was
+  asked to investigate ("what happens if the Ledger.Transfer itself fails mid-approval").
+  Selected as this pass's CREATE item; full spec in the structured output below.
+
+**Fresh finding — real drift between `architecture-overview.md`'s own route-count claim and
+current code, not previously spot-checked.** `architecture-overview.md:27` states "which 44 of
+the 69 get a real `json_api routes do` block." Real-verified this pass: `grep -rl "routes do"
+lib/xaas --include="*.ex" | wc -l` → **56**, not 44. Tracing the number's origin:
+`http-api-surface.md:75` itself still says "44 of 49 real resources have that block" — a
+real, stale count from when the domain surface totaled 49 resources (before the 25-prompt
+sequence grew `Governance` alone to 27 and the total to 69, per both docs' own current
+7-domain table). `architecture-overview.md` (written in round 6, after the total had already
+reached 69) copied the "44" numerator forward unchanged and only updated the denominator to
+69, producing a claim neither doc's own current code supports. Neither doc is more than a
+partial-day stale by wall-clock time (`http-api-surface.md` and `architecture-overview.md`
+are both dated 2026-08-20), which is itself the real finding: at this session's real commit
+velocity (multiple resource-route-adding commits per hour across `b3a169a`/`9f6831f`/
+`008927d` alone), a same-day "verified" timestamp is not a same-hour guarantee, and a
+cross-doc numeric claim copied instead of re-derived carries the stale source forward
+silently. Not selected as this pass's CREATE item (a doc fix, not a feature), but flagged in
+Raise below since the task asked for a real drift spot-check.
+
+**`priv/repo/seeds.exs` — third pass flagging the identical, unchanged gap.** Re-verified
+this pass: still 19 lines, `grep -c "Xaas\." priv/repo/seeds.exs` → 0. Fifth-pass grid found
+it, sixth-pass grid re-confirmed it unchanged, this pass re-confirms it unchanged a third
+time. Carried forward in Create below, still not selected (the Ledger-atomicity gap above is
+more concrete, more valuable, and more tightly scoped for one batch), but the flag count
+itself is now a real signal that this item keeps losing the CREATE-list priority contest
+round after round rather than that it isn't real.
+
+## Sixth-pass update
 
 Since the fifth-pass grid, `cec5025` (round 5, real per-30min ultracode cadence) landed
 **both** of that grid's top two CREATE items in one commit, verified live this pass:
@@ -207,6 +305,18 @@ sequence cover these):
 
 ## Raise
 
+- **NEW this pass — real money-movement non-atomicity on 3 of the newest Ledger-writing
+  changes** (`ApprovalSlaCreditApplyApprove`, `ApprovalPatchSlaCreditApplyApprove`,
+  `SubscriptionProrateTierChange`, all wired via `after_transaction/2` instead of the
+  atomic `after_action/2` their own sibling `ApprovalBackupRetentionChangeChargeOverage`
+  correctly uses) — full evidence in "Seventh-pass update" above. Selected as this pass's
+  CREATE item.
+- **NEW this pass — `architecture-overview.md:27`'s "44 of the 69" real HTTP-route-block
+  claim does not match current code** (`grep -rl "routes do" lib/xaas --include="*.ex" | wc
+  -l` → 56); the "44" figure traces to `http-api-surface.md:75`'s own stale "44 of 49"
+  count from before the domain surface grew to 69 resources. Both reference docs need a
+  real re-count pass; not selected as this pass's CREATE item since it is a doc fix, not a
+  feature — full evidence above.
 - **Controller test coverage on 9 of 31 `Approval*` resources is still real zero — unchanged
   by this pass.** Re-verified with the same `comm -23` check: `approval_castle_verb_schedule`,
   `approval_freeze_override`, `approval_invoice_reconciliation_approve`,
@@ -276,8 +386,18 @@ sequence cover these):
    wired onto the 7 read-only `Approval*` skeletons — `cec5025`.
 5. **RESOLVED** (was item 6 last grid): real HTTP-level controller tests for those 7,
    reaching 30 of 32 `Approval*` resources — `cec5025`.
-6. **A real top-level architecture-overview / onboarding doc** — the concrete, scoped,
-   fresh CREATE item this pass selected; full spec in the structured output below.
+6. **RESOLVED** (was item 6 last grid): a real top-level architecture-overview / onboarding
+   doc — `docs/claude/diataxis/explanation/architecture-overview.md`, landed `d2fd0e9`.
+12. **Real atomic (`after_action`, not `after_transaction`) Ledger writes on
+    `ApprovalSlaCreditApplyApprove`/`ApprovalPatchSlaCreditApplyApprove`/
+    `SubscriptionProrateTierChange`, plus real tests proving a Ledger failure rolls the
+    parent approval/tier-change back instead of leaving it silently uncredited/uncharged** —
+    the fresh, concrete, scoped CREATE item this pass selected; full spec in the structured
+    output below.
+13. **Re-count and fix the "44 of the 69"/"44 of 49" real HTTP-route-block claims in
+    `architecture-overview.md:27` and `http-api-surface.md:75`** against the real current
+    `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → 56 — fresh this pass, a doc
+    fix rather than a feature so not selected over item 12.
 7. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
    `lib/xaas`, and all 32 `Approval*` resources now hand-carry the identical policy block
@@ -302,11 +422,19 @@ sequence cover these):
 ## See Also
 
 - `docs/claude/diataxis/explanation/architecture-overview.md` — the sixth-pass Create item
-  this grid identified: the whole-system onboarding map that previously did not exist
+  this grid identified: the whole-system onboarding map that previously did not exist; this
+  pass found its own "44 of the 69" route-count claim (line 27) has drifted from current code
+- `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex`,
+  `lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex`,
+  `lib/xaas/billing/changes/approval_patch_sla_credit_apply_approve.ex`,
+  `lib/xaas/billing/changes/subscription_prorate_tier_change.ex`,
+  `lib/xaas/ledger/account.ex` — the real atomic-vs-non-atomic Ledger-write split and the
+  real unique-constraint race this pass's selected CREATE item fixes
 - `docs/ASH-MIGRATION-PLAN.md` — the real 7-phase migration history and standing deferred
   decisions this grid builds on
 - `docs/claude/diataxis/reference/http-api-surface.md` — the real, current HTTP route
-  enumeration referenced above
+  enumeration referenced above; its own line 75 "44 of 49" count is the real, traced source
+  of this pass's found route-count drift
 - `docs/claude/diataxis/explanation/ashiam-create-update-limitation.md` — the real,
   investigated root cause for why `AshIam.Check` still can't be used on `:create`/`:update`
   anywhere in this repo, cited throughout this revision

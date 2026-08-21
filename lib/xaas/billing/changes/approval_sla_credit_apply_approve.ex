@@ -23,20 +23,34 @@ defmodule Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove do
   credit outflows separately attributable instead of silently eroding
   revenue-account balances.
 
-  ## Real per-session precedent this uses `after_transaction/2`, not
-  `after_action/2`
+  ## Real fix: `after_action/2`, not `after_transaction/2` (corrected --
+  this module previously got this backwards)
 
-  Per this session's own `f2d57ac` transaction-boundary lesson
-  (documented in `Xaas.Governance.Changes.EnqueueWebhookDeliveries`'s
-  moduledoc): `after_action/2` callbacks run *inside* the parent
-  `:approve` action's transaction (real Ash source,
-  `deps/ash/lib/ash/changeset/changeset.ex`'s `transaction_hooks/2`),
-  while `after_transaction/2` callbacks only run once that transaction
-  has already committed or rolled back. Real Ledger writes (account
-  lookup/open + transfer create) are real DB round-trips of their own;
-  running them via `after_transaction/2` avoids nesting them inside (and
-  holding open) the parent transaction, consistent with the
-  adversarial-review-verified pattern this codebase already settled on.
+  This module originally used `after_transaction/2`, reasoning (wrongly)
+  from this session's own `f2d57ac` transaction-boundary lesson
+  (`Xaas.Governance.Changes.EnqueueWebhookDeliveries`'s moduledoc): that
+  lesson is about not holding a DB transaction open across *blocking I/O
+  to an external system* (an outbound HTTP webhook dispatch). A
+  `Xaas.Ledger.Transfer`/`Xaas.Ledger.Account` write is not that -- it is
+  a second real write to the *same* Postgres database, and
+  `after_transaction/2` only runs once the parent `:approve` transaction
+  has already committed. That meant a real Ledger failure here (including
+  the real, concretely-triggerable unique-constraint race on
+  `Xaas.Ledger.Account`'s `identity :unique_identifier, [:identifier]`,
+  hit when two concurrent `:approve` calls both race to open the same
+  not-yet-existing org account) left the record **permanently
+  "approved but never credited"** with silently-failed money movement and
+  no automatic remediation path -- `approved_by` was already committed
+  and could not be rolled back after the fact.
+
+  `Ash.Changeset.after_action/2` runs *inside* the parent `:approve`
+  transaction (real Ash source, `deps/ash/lib/ash/changeset/changeset.ex`'s
+  `transaction_hooks/2`) and a `{:error, _}` return from it rolls the whole
+  transaction -- including the `approved_by` write -- back. This is the
+  exact same real, already-proven-working pattern
+  `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`
+  uses for its own Ledger charge; this module now matches it instead of
+  being its one silent exception.
 
   ## Idempotency
 
@@ -57,20 +71,14 @@ defmodule Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove do
 
   @impl true
   def change(changeset, _opts, _context) do
-    Ash.Changeset.after_transaction(changeset, fn changeset, result ->
-      case result do
-        {:ok, record} ->
-          if newly_approved?(changeset, record) do
-            case credit_sla(record) do
-              {:ok, _transfer} -> {:ok, record}
-              {:error, error} -> {:error, error}
-            end
-          else
-            {:ok, record}
-          end
-
-        {:error, error} ->
-          {:error, error}
+    Ash.Changeset.after_action(changeset, fn changeset, record ->
+      if newly_approved?(changeset, record) do
+        case credit_sla(record) do
+          {:ok, _transfer} -> {:ok, record}
+          {:error, error} -> {:error, error}
+        end
+      else
+        {:ok, record}
       end
     end)
   end
