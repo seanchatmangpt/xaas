@@ -28,21 +28,24 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
     |> Map.fetch!(:slug)
   end
 
-  defp json_headers(conn) do
+  defp json_headers(conn, org_id) do
     conn
     |> put_req_header("authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
     |> put_req_header("content-type", "application/vnd.api+json")
     |> put_req_header("accept", "application/vnd.api+json")
+    |> put_req_header("x-org-id", org_id)
   end
 
   test "POST creates a real pending quarantine, PATCH approves it from a distinct owner", %{
     conn: conn
   } do
+    org_id = real_org_slug!()
+
     create_body = %{
       "data" => %{
         "type" => "approval_deployment_quarantine",
         "attributes" => %{
-          "org_id" => real_org_slug!(),
+          "org_id" => org_id,
           "requested_by" => "requester-1",
           "deployment_name" => "checkout-api",
           "environment" => "prod",
@@ -53,7 +56,7 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
 
     created =
       conn
-      |> json_headers()
+      |> json_headers(org_id)
       |> post("/api/approval_deployment_quarantine", create_body)
       |> json_response(201)
 
@@ -69,29 +72,30 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
 
     approved =
       conn
-      |> json_headers()
+      |> json_headers(org_id)
       |> patch("/api/approval_deployment_quarantine/#{id}", approve_body)
       |> json_response(200)
 
     assert approved["data"]["attributes"]["approved_by"] == "owner-2"
 
-    persisted = ApprovalDeploymentQuarantine |> Ash.get!(id, authorize?: false)
+    persisted = ApprovalDeploymentQuarantine |> Ash.get!(id, authorize?: false, tenant: org_id)
     assert persisted.deployment_name == "checkout-api"
     assert persisted.environment == :prod
   end
 
   test "PATCH rejects a requester approving their own quarantine", %{conn: conn} do
     requester = "requester-self-#{System.unique_integer([:positive])}"
+    org_id = real_org_slug!()
 
     change =
       ApprovalDeploymentQuarantine
       |> Ash.Changeset.for_create(:create, %{
-        org_id: real_org_slug!(),
+        org_id: org_id,
         requested_by: requester,
         deployment_name: "billing-worker",
         environment: "staging",
         reason: "manual_hold"
-      })
+      }, tenant: org_id)
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -104,21 +108,23 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
 
     resp =
       conn
-      |> json_headers()
+      |> json_headers(org_id)
       |> patch("/api/approval_deployment_quarantine/#{change.id}", approve_body)
 
     assert resp.status == 400
 
-    persisted = ApprovalDeploymentQuarantine |> Ash.get!(change.id, authorize?: false)
+    persisted = ApprovalDeploymentQuarantine |> Ash.get!(change.id, authorize?: false, tenant: org_id)
     assert persisted.approved_by == nil
   end
 
   test "POST rejects an invalid deployment_quarantine_reason enum value", %{conn: conn} do
+    org_id = real_org_slug!()
+
     create_body = %{
       "data" => %{
         "type" => "approval_deployment_quarantine",
         "attributes" => %{
-          "org_id" => real_org_slug!(),
+          "org_id" => org_id,
           "requested_by" => "requester-1",
           "deployment_name" => "checkout-api",
           "environment" => "prod",
@@ -127,7 +133,7 @@ defmodule KanbanWeb.ApprovalDeploymentQuarantineControllerTest do
       }
     }
 
-    resp = conn |> json_headers() |> post("/api/approval_deployment_quarantine", create_body)
+    resp = conn |> json_headers(org_id) |> post("/api/approval_deployment_quarantine", create_body)
     assert resp.status == 400
   end
 end

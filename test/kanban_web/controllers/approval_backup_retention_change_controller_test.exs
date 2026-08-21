@@ -24,6 +24,10 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
+  defp with_org_header(conn, org_id) do
+    put_req_header(conn, "x-org-id", org_id)
+  end
+
   # Real, required since this resource's real Ash-core multitenancy
   # wiring: org_id is now a real FK to orgs.slug, so every test needs a
   # real Org row to reference, not just a made-up string.
@@ -43,12 +47,16 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     days = Keyword.get(opts, :days, 90)
 
     ApprovalBackupRetentionChange
-    |> Ash.Changeset.for_create(:create, %{
-      org_id: org_id,
-      requested_by: requested_by,
-      requested_retention_days: days,
-      tier: tier
-    })
+    |> Ash.Changeset.for_create(
+      :create,
+      %{
+        org_id: org_id,
+        requested_by: requested_by,
+        requested_retention_days: days,
+        tier: tier
+      },
+      tenant: org_id
+    )
     |> Ash.create!(authorize?: false)
   end
 
@@ -79,13 +87,16 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     conn =
       conn
       |> with_internal_api_token()
+      |> with_org_header(change.org_id)
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_backup_retention_change/#{change.id}", body)
 
     response = json_response(conn, 200)
     assert response["data"]["attributes"]["approved_by"] == "owner-real-1"
 
-    persisted = ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false)
+    persisted =
+      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+
     assert persisted.approved_by == "owner-real-1"
     assert persisted.requested_retention_days == 90
   end
@@ -104,12 +115,15 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     conn =
       conn
       |> with_internal_api_token()
+      |> with_org_header(change.org_id)
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_backup_retention_change/#{change.id}", body)
 
     assert conn.status == 400
 
-    persisted = ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false)
+    persisted =
+      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+
     assert persisted.approved_by == nil
   end
 
@@ -128,12 +142,15 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
     conn =
       conn
       |> with_internal_api_token()
+      |> with_org_header(change.org_id)
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_backup_retention_change/#{change.id}", body)
 
     assert conn.status == 400
 
-    persisted = ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false)
+    persisted =
+      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+
     assert persisted.approved_by == nil
   end
 
@@ -150,26 +167,35 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
 
     conn =
       conn
+      |> with_org_header(change.org_id)
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_backup_retention_change/#{change.id}", body)
 
     assert conn.status == 401
 
-    persisted = ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false)
+    persisted =
+      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+
     assert persisted.approved_by == nil
   end
 
   test "create rejects a retention request outside the tier's real range" do
     # pro tier's real range is 7-90 days (ported verbatim from
     # platform-console's RETENTION_RANGE) -- 200 is out of range.
+    org_id = real_org_slug!()
+
     result =
       ApprovalBackupRetentionChange
-      |> Ash.Changeset.for_create(:create, %{
-        org_id: real_org_slug!(),
-        requested_by: "requester-range-test",
-        requested_retention_days: 200,
-        tier: :pro
-      })
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: org_id,
+          requested_by: "requester-range-test",
+          requested_retention_days: 200,
+          tier: :pro
+        },
+        tenant: org_id
+      )
       |> Ash.create(authorize?: false)
 
     assert {:error, %Ash.Error.Invalid{errors: errors}} = result
@@ -193,6 +219,7 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
 
     conn
     |> with_internal_api_token()
+    |> with_org_header(org_id)
     |> put_req_header("content-type", "application/vnd.api+json")
     |> patch("/api/approval_backup_retention_change/#{change.id}", body)
     |> json_response(200)
@@ -221,6 +248,7 @@ defmodule KanbanWeb.ApprovalBackupRetentionChangeControllerTest do
 
     conn
     |> with_internal_api_token()
+    |> with_org_header(org_id)
     |> put_req_header("content-type", "application/vnd.api+json")
     |> patch("/api/approval_backup_retention_change/#{change.id}", body)
     |> json_response(200)

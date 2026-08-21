@@ -61,7 +61,8 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeStressTest do
                 tier: :pro
               },
               action: :create,
-              authorize?: false
+              authorize?: false,
+              tenant: org.slug
             )
 
           Ash.update!(
@@ -87,7 +88,7 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeStressTest do
 
     persisted =
       ApprovalBackupRetentionChange
-      |> Ash.read!(authorize?: false)
+      |> Ash.read!(authorize?: false, tenant: org.slug)
       |> Enum.filter(&MapSet.member?(expected_requesters, &1.requested_by))
 
     assert length(persisted) == 30

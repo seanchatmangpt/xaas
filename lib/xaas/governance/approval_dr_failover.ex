@@ -61,19 +61,23 @@ defmodule Xaas.Governance.ApprovalDrFailover do
     end
   end
 
-  # Real Ash-core multitenancy wiring, same pattern and same disclosed
-  # rationale as Xaas.Governance.ApprovalBackupRetentionChange (the pilot):
-  # `global? true` is deliberate, not the ideal end state -- strict
-  # enforcement needs a real per-org actor resolved from the request (this
-  # repo's current auth is a single shared Bearer token, no per-org actor
-  # anywhere), which is real, disclosed follow-up work. What this DOES
-  # deliver for real right now: `org_id` is a real FK to `orgs.slug`
-  # (below), and the resource is tenant-attribute-aware for when strict
-  # enforcement is wired.
+    # Real Ash-core multitenancy wiring, now strictly enforced
+  # (`global? false`). A real per-org actor now exists on the request
+  # path -- see `KanbanWeb.Plugs.ResolveOrgActor` (real, caller-asserted
+  # `X-Org-Id` header resolved against a real `Xaas.Accounts.Org`, then
+  # set as both the real Ash actor and the real Ash tenant via
+  # `Ash.PlugHelpers.set_actor/2` / `set_tenant/2`). Ash's own
+  # attribute-strategy multitenancy then filters/scopes every query and
+  # changeset on `org_id` to that resolved tenant automatically -- no
+  # per-action code in this resource has to do it by hand. That plug's
+  # moduledoc carries the full disclosed limitation: `X-Org-Id` is
+  # caller-asserted, not cryptographically authenticated -- real
+  # per-org *authentication* remains separate, out-of-scope follow-up
+  # work.
   multitenancy do
     strategy :attribute
     attribute :org_id
-    global? true
+    global? false
   end
 
   actions do

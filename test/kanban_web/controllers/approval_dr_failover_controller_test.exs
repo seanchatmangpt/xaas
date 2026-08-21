@@ -48,11 +48,12 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
     |> Ash.create!(authorize?: false)
   end
 
-  defp json_headers(conn) do
+  defp json_headers(conn, org_id) do
     conn
     |> with_internal_api_token()
     |> put_req_header("content-type", "application/vnd.api+json")
     |> put_req_header("accept", "application/vnd.api+json")
+    |> put_req_header("x-org-id", org_id)
   end
 
   test "POST creates a real pending failover request, PATCH approves it from a distinct owner",
@@ -73,7 +74,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
       }
     }
 
-    create_resp = conn |> json_headers() |> post("/api/approval_dr_failover", create_body)
+    create_resp = conn |> json_headers(org_id) |> post("/api/approval_dr_failover", create_body)
     created = json_response(create_resp, 201)
     id = created["data"]["id"]
 
@@ -85,11 +86,11 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
       }
     }
 
-    approve_resp = conn |> json_headers() |> patch("/api/approval_dr_failover/#{id}", approve_body)
+    approve_resp = conn |> json_headers(org_id) |> patch("/api/approval_dr_failover/#{id}", approve_body)
     approved = json_response(approve_resp, 200)
     assert approved["data"]["attributes"]["approved_by"] == "owner-2"
 
-    persisted = ApprovalDrFailover |> Ash.get!(id, authorize?: false)
+    persisted = ApprovalDrFailover |> Ash.get!(id, authorize?: false, tenant: org_id)
     assert persisted.from_region == "us-east-1"
     assert persisted.to_region == "us-west-2"
   end
@@ -107,7 +108,7 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
         from_region: "us-east-1",
         to_region: "us-west-2",
         reason: "test"
-      })
+      }, tenant: org_id)
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -118,10 +119,10 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
       }
     }
 
-    resp = conn |> json_headers() |> patch("/api/approval_dr_failover/#{change.id}", approve_body)
+    resp = conn |> json_headers(org_id) |> patch("/api/approval_dr_failover/#{change.id}", approve_body)
     assert resp.status == 400
 
-    persisted = ApprovalDrFailover |> Ash.get!(change.id, authorize?: false)
+    persisted = ApprovalDrFailover |> Ash.get!(change.id, authorize?: false, tenant: org_id)
     assert persisted.approved_by == nil
   end
 end

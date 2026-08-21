@@ -66,6 +66,22 @@ defmodule KanbanWeb.Router do
     pipe_through [:internal_api, :require_internal_api_token]
 
     forward "/internal-api", KanbanWeb.InternalApiRouter
+  end
+
+  # Real per-org actor/tenant resolution (KanbanWeb.Plugs.ResolveOrgActor),
+  # scoped to /api only. The plug itself is path-aware and only enforces
+  # X-Org-Id resolution for the 4 non-global-multitenancy governance
+  # resources (ApprovalDrFailover/ApprovalLegalHoldRelease/
+  # ApprovalDeploymentQuarantine/ApprovalBackupRetentionChange) -- every
+  # other /api route passes through unaffected. See that plug's moduledoc
+  # for the full, disclosed design decision.
+  pipeline :resolve_org_actor do
+    plug KanbanWeb.Plugs.ResolveOrgActor
+  end
+
+  scope "/" do
+    pipe_through [:internal_api, :require_internal_api_token, :resolve_org_actor]
+
     forward "/api", KanbanWeb.ApiRouter
   end
 

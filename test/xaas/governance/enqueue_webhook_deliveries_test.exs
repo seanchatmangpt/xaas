@@ -104,7 +104,8 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
           requested_retention_days: 30,
           tier: :pro
         },
-        authorize?: false
+        authorize?: false,
+        tenant: org.slug
       )
       |> Ash.create!()
 
@@ -166,7 +167,8 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
           to_region: "us-west-#{run}",
           reason: "real failover test #{run}"
         },
-        authorize?: false
+        authorize?: false,
+        tenant: org.slug
       )
       |> Ash.create!()
 
@@ -216,7 +218,8 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
           hold_id: "hold-#{run}",
           release_reason: "real no-match test #{run}"
         },
-        authorize?: false
+        authorize?: false,
+        tenant: org.slug
       )
       |> Ash.create!()
 

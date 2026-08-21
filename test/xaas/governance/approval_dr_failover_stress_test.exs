@@ -77,7 +77,8 @@ defmodule Xaas.Governance.ApprovalDrFailoverStressTest do
                 reason: "concurrent stress failover ##{i}"
               },
               action: :create,
-              authorize?: false
+              authorize?: false,
+              tenant: org_slug
             )
 
           Ash.update!(
@@ -100,7 +101,7 @@ defmodule Xaas.Governance.ApprovalDrFailoverStressTest do
 
     persisted =
       ApprovalDrFailover
-      |> Ash.read!(authorize?: false)
+      |> Ash.read!(authorize?: false, tenant: org_slug)
       |> Enum.filter(&MapSet.member?(expected_set, &1.reason))
 
     assert length(persisted) == 50
