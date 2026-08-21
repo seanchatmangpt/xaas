@@ -12,7 +12,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   be present and must differ from `requested_by` (a second, distinct
   approver; no self-approval).
 
-  ## Real fix (this pass) -- was wired but functionally dead
+  ## Real fix (eleventh pass) -- was wired but functionally dead
 
   Real, disclosed dead code found by the eleventh-pass ERRC grid sweep
   (`docs/claude/diataxis/explanation/errc-innovation-grid.md`): the
@@ -23,11 +23,11 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   Change module was a byte-identical no-op, never even referenced by the
   `:approve` action. Approving a tier downgrade had zero real effect.
 
-  This pass adds real `subscription_id` (a real `belongs_to`
+  That pass added real `subscription_id` (a real `belongs_to`
   `Xaas.Billing.Subscription` FK) and `requested_tier` attributes, a real
   `Xaas.Billing.Validations.ApprovalTierDowngradeTargetsLowerTier`
   validation on `:create` (rejects a `requested_tier` that is not a real,
-  strictly lower tier than the subscription's current tier), and wires
+  strictly lower tier than the subscription's current tier), and wired
   the previously-dead `ApprovalTierDowngradeApprove` change into
   `:approve` with real logic: it drives `Xaas.Billing.Subscription`'s
   real, already-atomic `:change_tier` action
@@ -38,6 +38,34 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   succeed or fail together -- matching this codebase's now-established
   atomic pattern (`ApprovalBackupRetentionChangeChargeOverage`,
   `SubscriptionProrateTierChange` itself).
+
+  ## Real fix (fifteenth pass) -- the `:create`/`:approve` bypass had
+  no per-org access control at all
+
+  Real, live-HTTP-proven gap found by the fifteenth-pass ERRC grid sweep:
+  unlike its 4 Governance cousins (`ApprovalDrFailover` et al.), this
+  resource's `:create`/`:approve` bypass was a bare `authorize_if
+  always()` -- no `ActorOrgMatches`-style check -- and
+  `KanbanWeb.Plugs.ResolveOrgActor`'s hardcoded tenant-scoped path list
+  didn't even cover `approval_tier_downgrade`. A real, temporary
+  (deleted-after-run) HTTP test proved live exploitability: an actor
+  asserting `X-Org-Id: org-attacker-*` could `PATCH .../:id` approve
+  `org-victim-*`'s pending tier downgrade, dropping the victim's real
+  `Subscription` tier and posting a real `$50.00` `Xaas.Ledger.Transfer`
+  credit -- an actor holding only the single shared `INTERNAL_API_TOKEN`
+  could trigger real cross-org money movement by guessing/discovering a
+  UUID.
+
+  This pass adds `Xaas.Billing.Checks.ActorOrgMatches` (see that module's
+  own moduledoc for why it is a real, adapted twin of
+  `Xaas.Governance.Checks.ActorOrgMatches` rather than a mechanical
+  copy -- this resource has no `org_id` of its own, only
+  `subscription_id`, so the check loads the related `Subscription` and
+  compares *its* `org_id`), wires it into `:create`/`:approve` in place
+  of `authorize_if always()`, and adds `approval_tier_downgrade` to
+  `ResolveOrgActor`'s `@tenant_scoped_path_segments` so the route
+  actually receives a resolved org actor (a real, caller-asserted
+  `X-Org-Id` header) instead of `nil`.
   """
   use Xaas.Resource,
     otp_app: :kanban,
@@ -59,12 +87,20 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     # (`ApprovalTierDowngradeRequiresApprover`) rejecting a missing or
     # self-approving `approved_by`. Deliberate per-action carve-out, not
     # a blanket allow of every mutation.
+    #
+    # Updated fifteenth pass: no longer a bare `authorize_if always()` --
+    # both now real-check `Xaas.Billing.Checks.ActorOrgMatches` (the
+    # actor's `X-Org-Id`-resolved org must match the real `org_id` of the
+    # `Subscription` this downgrade targets/already targeted). See that
+    # module's moduledoc for why this is needed -- this resource has no
+    # `multitenancy` block of its own to backstop it the way the
+    # Governance `Approval*` resources have.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Billing.Checks.ActorOrgMatches
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if Xaas.Billing.Checks.ActorOrgMatches
     end
 
     policy always() do

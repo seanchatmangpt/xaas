@@ -6,7 +6,169 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (fourteenth pass).
+2026-08-21 (fifteenth pass, analysis-only — implementation deferred to the separate Create
+phase).
+
+## Fifteenth-pass update
+
+**Real HEAD confirmed: `391d110`**, unchanged since the fourteenth-pass grid's own commit
+(`git rev-parse HEAD` → `391d1101f97a0aba645c39fabc38dcec0f20dee8`; `git log --oneline -3`
+shows no new commit landed on top of it). Item 18/the fourteenth pass's own AshEvents
+advisory-lock deadlock fix is confirmed still real and resolved — not re-verified by a fresh
+`mix test` sweep this pass (out of this pass's own scope, and the fourteenth-pass section
+already documents 23 consecutive clean runs), not re-opened.
+
+**This pass is analysis-only per its own task briefing — no code, test, or doc file other
+than this grid was edited or committed.** One real, temporary, deleted-after-run
+investigation test was written and executed to obtain live proof for the finding below
+(`test/kanban_web/controllers/scratch_cross_org_tier_downgrade_test.exs`), matching this
+session's own established evidence discipline (the thirteenth pass's temporary double-charge
+proof, the eleventh/tenth passes' stash/restore regression-guard proofs) — written, run once,
+then `rm`'d; `git status --short test/kanban_web/controllers/` confirmed clean before and
+after.
+
+**NEW this pass, real, live-HTTP-proven — `Xaas.Billing.ApprovalTierDowngrade`'s real
+`:create`/`:approve` mutation route has NONE of the real per-org access-control pattern its
+Governance-domain siblings have, and the gap is concretely exploitable for real cross-org
+Ledger money movement, not just theoretically thin.** This is the task's own first-named
+investigation lead, checked for real rather than re-asserted from the prior grid's own more
+general Billing-domain finding (thirteenth pass: "zero multitenancy, zero AshPaperTrail,
+zero WriteAuditLogEntry" across all 7 Billing resources).
+
+- **The policies block itself, real-read**: `lib/xaas/billing/approval_tier_downgrade.ex:49-72`
+  — `bypass action(:create) do authorize_if always() end` (line 62) and `bypass
+  action(:approve) do authorize_if always() end` (line 66). Compared directly against
+  `lib/xaas/governance/approval_backup_retention_change.ex`'s real equivalent block (real-read
+  this pass): that resource's `:create`/`:approve` bypasses call `authorize_if
+  Xaas.Governance.Checks.ActorOrgMatches` — a real `Ash.Policy.SimpleCheck` (`lib/xaas/
+  governance/checks/actor_org_matches.ex`, real-read in full this pass) that rejects a
+  mismatch between the caller-asserted `X-Org-Id` and the record's real `org_id`.
+  `ApprovalTierDowngrade` has **no equivalent check wired at all** — real-confirmed by direct
+  read, not inference.
+- **Real-checked all 6 other `Xaas.Billing.Approval*` resources for the identical shape, not
+  assumed from one file**: `lib/xaas/billing/approval_invoice_reconciliation_approve.ex`,
+  `approval_patch_sla_credit_apply.ex`, `approval_pricing_override.ex`,
+  `approval_quota_override.ex`, `approval_sla_credit_apply.ex` all share the byte-identical
+  `bypass action(:create/:approve) do authorize_if always() end` shape (real-read each
+  `policies do` block this pass) — this is a real, domain-wide gap, not one resource's
+  oversight, but `ApprovalTierDowngrade` is the one this pass scoped a concrete fix for (see
+  below for why).
+- **Real-confirmed the gap is not merely "no check exists" but "the plug that would even
+  supply an org actor for this route doesn't run on it either."**
+  `KanbanWeb.Plugs.ResolveOrgActor`'s `@tenant_scoped_path_segments` (`lib/kanban_web/plugs/
+  resolve_org_actor.ex:70-76`, real-read this pass) is a hardcoded 6-entry list
+  (`approval_dr_failover`, `approval_legal_hold_release`, `approval_deployment_quarantine`,
+  `approval_backup_retention_change`, `marketplace_providers`,
+  `approval_provider_status_change`) — `approval_tier_downgrade` (and no other Billing path)
+  is not in it. So even sending a real `X-Org-Id` header on a request to
+  `/api/approval_tier_downgrade` currently has **zero effect**: the plug's own
+  `tenant_scoped?/1` passthrough leaves `conn` unchanged, no Ash actor/tenant is ever set, and
+  the resource's policy layer never sees an org identity to check against.
+- **Real, live HTTP-level proof, not just static reasoning from the two gaps above.** Wrote
+  and ran a temporary `ConnCase` test (see above): created a real `Xaas.Billing.Subscription`
+  for `org-victim-*` (`:pro` tier), a real pending `ApprovalTierDowngrade` targeting it
+  (`requested_tier: :standard`), then sent a real `PATCH /api/approval_tier_downgrade/:id`
+  with the real internal API Bearer token plus `X-Org-Id: org-attacker-*` (a org that has no
+  relationship to the subscription at all) approving it as `attacker-approver`. **Real
+  result: HTTP 200, `approved_by == "attacker-approver"`, the victim org's real Subscription
+  really dropped from `:pro` to `:standard`, and a real prorated `Xaas.Ledger.Transfer` posted
+  a real `Money.new(:USD, "50")` credit to the victim org's real Ledger account** — printed
+  and asserted non-nil in the real test run
+  (`SCRATCH RESULT: victim org balance after attacker-org approval = Money.new(:USD, "50")`,
+  `1 test, 0 failures`). An actor that knows only the single shared `INTERNAL_API_TOKEN` (no
+  per-org credential exists anywhere in this repo, per `ResolveOrgActor`'s own disclosed trust
+  model) can trigger real, uninvited Ledger money movement against any org's subscription by
+  guessing or discovering its `ApprovalTierDowngrade`/`Subscription` UUIDs — this is not a
+  theoretical gap, it is a live-demonstrated one.
+- **Real, disclosed reason `ApprovalTierDowngrade` was selected as this pass's scoped CREATE
+  target over its 6 Billing siblings, rather than proposing a whole-domain rewrite (explicitly
+  out of scope per the thirteenth-pass grid's own disclaimer: "extending 3 mechanisms across 7
+  resources is real, larger-scoped work than one batch").** It is the one Billing `Approval*`
+  resource that already, for real, drives Ledger money movement end-to-end
+  (`Subscription.change_tier` → `SubscriptionProrateTierChange`'s real `Ledger.Transfer`,
+  landed round 10) — the others either have no live downstream effect yet
+  (`ApprovalQuotaOverride`/`ApprovalInvoiceReconciliationApprove`, item 17, design-blocked) or
+  move smaller, already-separately-tracked SLA-credit amounts. It is also structurally the
+  hardest of the 7 to protect with a direct copy of `Xaas.Governance.Checks.ActorOrgMatches`:
+  unlike the 4 Governance resources (each carries its own `org_id` attribute plus a real
+  `multitenancy do end` block), `ApprovalTierDowngrade` itself has **no `org_id` attribute at
+  all** — only `subscription_id` (real-confirmed, `attributes do` block, real-read this pass).
+  The org identity lives one hop away, on `Xaas.Billing.Subscription.org_id`
+  (`lib/xaas/billing/subscription.ex:246`, a plain `:string` attribute, no `multitenancy`
+  block of its own either, real-confirmed via `grep -n "org_id\|multitenancy"
+  lib/xaas/billing/subscription.ex`). A Billing-domain check would need to load the related
+  `Subscription` (from `changeset.attributes.subscription_id` on `:create`, or
+  `changeset.data.subscription_id` on `:approve`) and compare **its** `org_id` to the actor's
+  asserted org — genuinely different logic from the Governance twin's direct
+  `changeset`/`record` attribute read, not a mechanical copy-paste. Selected as this pass's
+  CREATE item; full spec in the structured output below.
+
+**NEW this pass, real, live-run-verified via a direct `mix run -e` call, not inferred from
+source alone — `Xaas.Ledger.EventLog` is structurally write-only: it has exactly 2 real
+actions (`create: :create`, `action: :replay`), zero `:read` action, and zero authorizers.**
+Real-checked the task's own third investigation lead ("is the event log ever read back/queried
+by anything, or is it write-only with no real consumer"). `lib/xaas/ledger/event_log.ex`
+(36 lines, real-read in full — no `actions do` block of its own at all, relying entirely on
+whatever `AshEvents.EventLog`'s own DSL transformer injects) plus a real, live
+`Ash.Resource.Info.actions(Xaas.Ledger.EventLog)` call against the running dev app returned
+`[create: :create, action: :replay]` — confirmed against the actual installed `ash_events`
+dependency source (`deps/ash_events/lib/event_log/transformers/add_actions.ex:88-101`, which
+adds exactly those two and nothing else; no `:read` is ever added by the extension). A second
+live call, `Ash.Resource.Info.authorizers(Xaas.Ledger.EventLog)`, returned `[]` — this resource
+declares no `authorizers:` option at all (unlike every other resource in this codebase, which
+follows the CLAUDE.md deny-by-default `Ash.Policy.Authorizer` floor).
+`grep -rn "EventLog\|event_log" lib/ test/ --include="*.ex" --include="*.exs"` outside the
+resource's own 2 files matches only the domain's `resource Xaas.Ledger.EventLog` declaration,
+`Account`/`Transfer`'s own `event_log Xaas.Ledger.EventLog` DSL wiring, and 6 test-file
+comments about the advisory-lock key (not real reads) — zero controllers, zero LiveViews,
+zero mix tasks, zero HTTP routes (`grep -n "json_api\|graphql" lib/xaas/ledger/event_log.ex`
+→ zero matches) reference it. `AshEvents.EventLog.ClearAllRecords`'s own `replay` path
+(`lib/xaas/ledger/event_log/clear_all_records.ex`) is the only real consumer, and it is never
+invoked anywhere in this repo outside its own module definition (`grep -rn "\.replay\b"
+lib/ test/` → zero call sites). **Every ledger create/update event (every `Xaas.Ledger.Account`/
+`Transfer` write, real audit-trail data per this resource's own moduledoc: "gives the ledger a
+real audit trail and replay capability") is durably persisted to `ledger_events` and then
+permanently unreachable through Ash** — not "no consumer built yet" but "structurally
+impossible to query short of raw SQL," a stronger and more precise finding than the task's own
+framing anticipated. Real, valuable, but **not selected as this pass's CREATE item** — per
+CLAUDE.md's own explicit "never blindly wire routes on sensitive resources" discipline
+(`Xaas.Ledger.Balance`/`Account`/`Transfer` are deliberately unwired; `EventLog` carries the
+same real financial-audit sensitivity, and its zero-authorizers state means any future route
+addition needs the deny-by-default floor designed in from the start, not bolted on after).
+Disclosed as a named, distinct backlog item (see Raise/Create below) rather than mechanically
+wiring a route this pass.
+
+**Re-checked the task's own second investigation lead — architecture-overview.md/
+http-api-surface.md's real route-count claims — for drift since the thirteenth-pass fix
+(cf233af era) given 2 more real commits (`20d91f2` round 12, `391d110` round 13) have since
+landed. Real, small, pre-existing drift found, not caused by either of those 2 commits.**
+`grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still 56, unchanged (both docs'
+"56 of 69" figure is still accurate). But http-api-surface.md:78-80's more granular claim —
+"44 of those 56 now declare a real mutation route... only the remaining 12 of the 56 are still
+read-only" — is real-recounted this pass via a direct per-file scan for
+`post :create|patch :approve|patch :update|delete :destroy` and is now off by one: **43
+mutation, 13 read-only, not 44/12.** Real cause, real-traced to one specific file, not a
+recount slip: `lib/xaas/billing/subscription.ex` has 3 real mutation actions in its own
+`actions do` block (`create :create` at line 185, `update :sync_from_stripe` at line 212,
+`update :change_tier` at line 226 — the last one landed `9f6831f`, real Ledger-crediting
+logic, round 9-era) but its own `json_api routes do` block (lines 158-162) declares only
+`get :read` / `index :read` — no mutation route exposed at all, so the file matches the
+`grep -rl "routes do"` denominator but not the mutation-route numerator's intended pattern.
+This predates both `20d91f2` and `391d110` (neither touches `subscription.ex` or either doc,
+confirmed via `git log --oneline -- lib/xaas/billing/subscription.ex` showing `9f6831f` well
+before `cf233af`) — a real, small, pre-existing off-by-one in the thirteenth-pass's own
+recount, not fresh drift from the 2 newest commits the task asked about. Minor (a 1-number doc
+correction), real, and disclosed; not selected as this pass's CREATE item, and — per this
+pass's own analysis-only scope — not fixed in place this round either (carried forward, see
+Create below).
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass shows the same real artifacts recent passes have already logged as other standing
+activities' own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and
+untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl`. None read beyond
+filenames, none touched.
 
 ## Fourteenth-pass update
 
@@ -1076,6 +1238,37 @@ sequence cover these):
 
 ## Raise
 
+- **NEW this pass (fifteenth), real, live-HTTP-proven — `Xaas.Billing.ApprovalTierDowngrade`'s
+  `:create`/`:approve` route has zero real per-org access control, and an actor holding only
+  the shared `INTERNAL_API_TOKEN` can trigger real cross-org Ledger money movement.** No
+  `ActorOrgMatches`-equivalent check (unlike its 4 Governance siblings); no `org_id` on the
+  resource itself to check even if one existed (the org identity is one hop away, on the
+  related `Subscription`); `ResolveOrgActor`'s tenant-scoped path list doesn't even cover this
+  route. A real, temporary, deleted-after-run HTTP test proved an actor asserting
+  `X-Org-Id: org-attacker-*` can approve `org-victim-*`'s pending tier downgrade, dropping its
+  real Subscription tier and posting a real `$50.00` Ledger credit to the victim org. Full
+  evidence in "Fifteenth-pass update" above. Selected as this pass's CREATE item; item 19 in
+  Create below.
+- **NEW this pass (fifteenth), real, live-run-verified — `Xaas.Ledger.EventLog` is
+  structurally write-only: exactly 2 actions (`:create`, `:replay`), zero `:read` action,
+  zero authorizers.** Confirmed via a live `Ash.Resource.Info.actions/1`/`authorizers/1` call
+  against the running app, cross-checked against the installed `ash_events` dependency's own
+  action-generating transformer. Every `Xaas.Ledger.Account`/`Transfer` write is durably
+  logged but permanently unqueryable through Ash — stronger than "no consumer built yet."
+  Real, valuable, not selected this pass per CLAUDE.md's "never blindly wire routes on
+  sensitive resources" discipline (this is real financial-audit data, same sensitivity class
+  as `Ledger.Balance`/`Account`/`Transfer`) — a real access-control design is needed before any
+  read surface is added, not mechanical generation. Full evidence in "Fifteenth-pass update"
+  above; named as a standing backlog item, not this pass's CREATE selection.
+- **NEW this pass (fifteenth), real, small, pre-existing (not caused by the 2 newest
+  commits) — http-api-surface.md's "44 of those 56... only the remaining 12" mutation-route
+  recount is off by one: real count is 43 mutation / 13 read-only.** Real cause:
+  `lib/xaas/billing/subscription.ex` has 3 real mutation actions (`:create`,
+  `:sync_from_stripe`, `:change_tier`) but its own `routes do` block exposes only `get :read`/
+  `index :read` — no mutation route at all — so it was miscounted on the mutation side during
+  the thirteenth-pass recount. Full evidence in "Fifteenth-pass update" above. Minor, not
+  selected as this pass's CREATE item; per this pass's own analysis-only scope, not fixed in
+  place this round either (carried forward in Create below).
 - **NEW this pass, real, live-run-verified — `Xaas.Governance.Changes
   .ApprovalBackupRetentionChangeChargeOverage` double-charges on re-approval of the same
   record.** No `newly_approved?/2`-style guard (unlike its 2 Billing SLA-credit siblings);
@@ -1288,14 +1481,56 @@ sequence cover these):
     populated with `Xaas.*` fixtures for local dev, via new `lib/xaas/dev_seeds.ex` —
     **landed for real as `e90d478`**, confirmed live as `wc -l priv/repo/seeds.exs` → 45,
     `Xaas.DevSeeds` module read in full this pass. See "Thirteenth-pass update" above.
-18. **Selected as this pass's CREATE item.** A real `newly_approved?/2` guard on
-    `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`, matching the exact
-    pattern already proven in its 2 Billing siblings — closing a real, live-run-verified
-    double-charge bug on re-approval of the same record (`-$6.00` → `-$12.00` across 2
-    `:approve` calls, real-reproduced this pass with a temporary, deleted-after-run test).
-    Full spec in the structured output below.
+18. **RESOLVED** (was this grid's own item 18, thirteenth pass): a real `newly_approved?/2`
+    guard on `Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`, matching
+    the pattern already proven in its 2 Billing siblings — **landed for real as `20d91f2`**
+    (round 12), confirmed via the fourteenth-pass grid's own real-verified `git show
+    20d91f2 --stat` (5 files). Closed the live-run-verified double-charge bug on re-approval
+    of the same record (`-$6.00` → `-$12.00` across 2 `:approve` calls). See
+    "Fourteenth-pass update" above.
+19. **Selected as this pass's (fifteenth) CREATE item.** A real, Billing-domain
+    `Xaas.Billing.Checks.ActorOrgMatches`-equivalent — real Ash policy protection on
+    `Xaas.Billing.ApprovalTierDowngrade`'s `:create`/`:approve` actions, closing a real,
+    live-HTTP-proven cross-org Ledger money movement gap (an actor holding only the shared
+    `INTERNAL_API_TOKEN` can approve any org's tier downgrade and trigger a real prorated
+    Ledger credit for an org it has no relationship to). Full spec in the structured output
+    below.
+20. **`Xaas.Ledger.EventLog` has no real, designed read surface — a real, disclosed
+    design-decision-blocked item, not a mechanical-wiring gap** (same shape as item 17's 4
+    dead-no-op resources, different cause). Live-verified this pass: exactly 2 actions
+    (`:create`, `:replay`), zero authorizers, zero real consumer anywhere in this codebase.
+    Per CLAUDE.md's "never blindly wire routes on sensitive resources" discipline (this is
+    real financial-audit data, the same sensitivity class as `Ledger.Balance`/`Account`/
+    `Transfer`), a real access-control design (who may query which org's ledger events, via
+    what surface — HTTP route, internal-api-only, or a mix task) is needed before a `:read`
+    action or authorizer is added. Not selected this pass; disclosed so a future pass doesn't
+    have to re-derive the same finding. See "Fifteenth-pass update" above.
+21. **Doc-drift, real, minor, carried forward** — `http-api-surface.md:78-80`'s "44 of those
+    56 now declare a real mutation route... only the remaining 12" is off by one: real count
+    is 43 mutation / 13 read-only, real cause `lib/xaas/billing/subscription.ex` (3 real
+    mutation actions, zero exposed via its own `routes do` block). A 1-line fix
+    (`git grep` command + edit), deliberately not applied this pass per its own
+    analysis-only scope. See "Fifteenth-pass update" above.
 
 ## See Also
+
+- `lib/xaas/billing/approval_tier_downgrade.ex:49-72` (the real, unprotected `bypass
+  action(:create/:approve) do authorize_if always() end` policies block),
+  `lib/xaas/governance/approval_backup_retention_change.ex`,
+  `lib/xaas/governance/checks/actor_org_matches.ex` (the real Governance pattern this pass's
+  selected CREATE item — item 19 — adapts, not copies verbatim),
+  `lib/kanban_web/plugs/resolve_org_actor.ex:70-76` (the real `@tenant_scoped_path_segments`
+  list this pass confirmed does not cover `approval_tier_downgrade`),
+  `lib/xaas/billing/subscription.ex:246` (the real `org_id` attribute one hop away from
+  `ApprovalTierDowngrade` itself) — this pass's own live-HTTP-proven cross-org Ledger
+  money-movement finding and its selected fix target
+- `lib/xaas/ledger/event_log.ex`, `lib/xaas/ledger/event_log/clear_all_records.ex`,
+  `deps/ash_events/lib/event_log/transformers/add_actions.ex:88-101` — the real, live-verified
+  write-only/replay-only shape of `Xaas.Ledger.EventLog` (item 20, design-decision-blocked,
+  not selected)
+- `docs/claude/diataxis/reference/http-api-surface.md:78-80`, `lib/xaas/billing/subscription.ex`
+  — the real, small, pre-existing 44/12 vs. 43/13 mutation-route recount drift this pass found
+  and disclosed but, per its own analysis-only scope, did not fix in place (item 21)
 
 - `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex:29-45`
   (the real, unguarded `change/3`), `lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex:75-90`

@@ -8,6 +8,14 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   `Xaas.Marketplace.Checks.ActorOrgMatches` for the real, disclosed
   design decision (a direct policy check, not full `multitenancy` DSL).
 
+  Extended fifteenth pass: `approval_tier_downgrade` (`Xaas.Billing.
+  ApprovalTierDowngrade`) closes a real, live-HTTP-proven gap this path
+  list previously left open -- that resource's `:create`/`:approve`
+  routes had no org resolution at all before this pass, meaning
+  `Xaas.Billing.Checks.ActorOrgMatches` (added the same pass) would
+  always see a `nil` actor and always deny. See that resource's own
+  moduledoc and check module for the full disclosed finding.
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -40,9 +48,10 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   Restructuring the forward into per-resource scopes was out of scope for
   this change and would risk breaking every other resource's routing.
   Instead, this plug inspects `conn.path_info` itself and only enforces
-  org resolution for the 4 known tenant-scoped resource path segments
-  below; every other `/api` request (including the other ~20 Governance
-  resources still `global? true`) passes through completely unaffected.
+  org resolution for the known tenant-scoped resource path segments
+  below (7 as of the fifteenth pass); every other `/api` request
+  (including the other ~20 Governance resources still `global? true`)
+  passes through completely unaffected.
 
   ## Behavior
 
@@ -74,6 +83,7 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     approval_backup_retention_change
     marketplace_providers
     approval_provider_status_change
+    approval_tier_downgrade
   )
 
   def init(opts), do: opts
