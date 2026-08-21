@@ -49,13 +49,50 @@ defmodule Xaas.Accounts.OrgMembershipTest do
     assert persisted.role == :admin
   end
 
-  test "reads are bypassed to any actor (real, disclosed scope: read is not yet membership-scoped)" do
+  test "an actor with a real Allow statement can read via the real AshIam.Check policy" do
     org = create_org!("acme")
     user = create_user!("bob")
     membership = create_membership!(user, org)
 
-    results = OrgMembership |> Ash.read!(actor: nil)
+    actor = %{
+      iam_policy: %{
+        "Statement" => [
+          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:org_membership:*"]}
+        ]
+      }
+    }
+
+    results = OrgMembership |> Ash.read!(actor: actor)
     assert Enum.any?(results, &(&1.id == membership.id))
+  end
+
+  test "an actor with no real iam_policy is really denied read -- not silently allowed" do
+    org = create_org!("acme")
+    user = create_user!("bob-hidden")
+    membership = create_membership!(user, org)
+
+    results = OrgMembership |> Ash.read!(actor: %{})
+    refute Enum.any?(results, &(&1.id == membership.id))
+  end
+
+  test "an actor whose Allow statement names a different membership row cannot read this one" do
+    org = create_org!("acme")
+    visible_user = create_user!("visible")
+    other_user = create_user!("other")
+    visible = create_membership!(visible_user, org)
+    other = create_membership!(other_user, org)
+
+    scoped_actor = %{
+      iam_policy: %{
+        "Statement" => [
+          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:org_membership:#{visible.id}"]}
+        ]
+      }
+    }
+
+    results = OrgMembership |> Ash.read!(actor: scoped_actor)
+    assert Enum.any?(results, &(&1.id == visible.id))
+    refute Enum.any?(results, &(&1.id == other.id))
   end
 
   test "an anonymous (actor-less) caller is really denied create -- not silently allowed" do

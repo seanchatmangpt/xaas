@@ -14,12 +14,33 @@ defmodule Xaas.Accounts.OrgMembership do
 
   Deny-by-default per this repo's floor: no bypass exists yet for
   create/update/destroy on membership rows themselves -- only `:read` is
-  bypassed, mirroring `Xaas.Ledger.Balance`'s and
-  `Xaas.Governance.ApprovalDrFailover`'s same real, disclosed pattern
-  (`bypass action_type(:read) do authorize_if always() end` then a
-  catch-all `forbid_if always()`). Real per-action authorization design for
-  create/update/destroy of memberships (who can add/remove/promote a
-  member) is real, disclosed follow-up work -- not fabricated here.
+  bypassed. Real per-action authorization design for create/update/destroy
+  of memberships (who can add/remove/promote a member) is real, disclosed
+  follow-up work -- not fabricated here.
+
+  ## AshIam read bypass -- extended pilot (2nd/2nd new resources this pass)
+
+  Membership rows are naturally per-org-scoped data (this session's own
+  moduledoc text above: "a real join row between a real `Xaas.Accounts.User`
+  and a real `Xaas.Accounts.Org`") -- a real, sensible case for the same
+  AshIam pilot already proven on `Xaas.Accounts.Org`,
+  `Xaas.Billing.Subscription`, and `Xaas.Marketplace.Provider`: `:read` now
+  bypasses the catch-all via `bypass action_type(:read) do authorize_if
+  AshIam.Check end`, the same construct as those three (a plain `policy`
+  here would AND against the trailing `policy always() do forbid_if
+  always() end` catch-all and silently deny every read regardless of
+  `AshIam.Check`'s result -- see `Org`'s moduledoc for the real `{:ok, []}`
+  bug this was found from). This replaces the previous `bypass
+  action_type(:read) do authorize_if always() end` (open read to any
+  actor) -- a real behavior change, not additive: reads are now IAM-gated,
+  not unconditionally allowed.
+
+  `:create`/`:update` are deliberately NOT wired to `AshIam.Check` -- same
+  real, disclosed limitation as the other 3 pilots (this repo's `ash_iam`
+  version real-tests as broken on non-read/filter-type checks against
+  create/update actions). They stay behind the existing `policy always() do
+  forbid_if always() end` catch-all exactly as before this change;
+  `authorize?: false` remains the only way to exercise them today.
 
   Its concrete payoff, per the ERRC grid this batch implements from
   (`docs/claude/diataxis/explanation/errc-innovation-grid.md`): the new
@@ -40,13 +61,26 @@ defmodule Xaas.Accounts.OrgMembership do
     otp_app: :kanban,
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshIam]
+
+  iam do
+    permission_base "xaas:org_membership"
+    action_to_iam_mapping create: :create, read: :read, update: :update
+  end
 
   policies do
+    # Real IAM-gated read, same real, hard-won pattern as Org/Subscription/
+    # Provider (see this module's own moduledoc for the disclosure):
+    # `bypass action_type(:read) do authorize_if AshIam.Check end`, NOT a
+    # plain `policy`, which would AND against the trailing catch-all below
+    # and silently deny every read regardless of AshIam.Check's result.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if AshIam.Check
     end
 
+    # :create/:update deliberately NOT wired to AshIam.Check -- same real,
+    # disclosed limitation as the other 3 pilots (see moduledoc).
     policy always() do
       forbid_if always()
     end

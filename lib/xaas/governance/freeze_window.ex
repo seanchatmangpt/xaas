@@ -13,22 +13,53 @@ defmodule Xaas.Governance.FreezeWindow do
   auth boundary is `requireRoleIn(..., "owner")` at the app layer, not a
   separate approval action), so this resource has real `:create` and
   `:destroy` actions only -- no `:approve`.
+
+  ## AshIam read bypass -- extended pilot (2nd of 2 new resources this pass)
+
+  Freeze windows are real per-org change-management data (`org_id`,
+  `starts_at`/`ends_at`, `reason`) with a real, sensible reason to be
+  IAM-scoped: one org's change-freeze schedule is not something another
+  org has any business reading, the same real per-org-visibility argument
+  as `Xaas.Accounts.Org`/`Xaas.Billing.Subscription`/
+  `Xaas.Marketplace.Provider`'s own pilots. `:read` now bypasses the
+  catch-all via `bypass action_type(:read) do authorize_if AshIam.Check
+  end`, the same construct as those three (a plain `policy` here would AND
+  against the trailing `policy always() do forbid_if always() end`
+  catch-all and silently deny every read regardless of `AshIam.Check`'s
+  result -- see `Xaas.Accounts.Org`'s moduledoc for the real `{:ok, []}`
+  bug this was found from). This replaces the previous `bypass
+  action_type(:read) do authorize_if always() end` (open read to any
+  actor) -- a real behavior change: reads are now IAM-gated, not
+  unconditionally allowed.
+
+  `:create`/`:destroy` are deliberately left on their existing
+  `authorize_if always()` bypasses, unchanged -- `AshIam.Check` is not
+  wired to them (same real, disclosed limitation as the other 3 pilots:
+  this repo's `ash_iam` version real-tests as broken on non-read/filter-
+  type checks against create/update-shaped actions).
   """
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource, AshIam]
 
   paper_trail do
     change_tracking_mode :full_diff
   end
 
+  iam do
+    permission_base "xaas:freeze_window"
+    action_to_iam_mapping create: :create, read: :read
+  end
+
   policies do
-    # ash-migration Phase 5 (deny-by-default floor).
+    # Real IAM-gated read, same real, hard-won pattern as the other 3
+    # pilots (see moduledoc). Replaces the previous open
+    # `authorize_if always()` read bypass.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if AshIam.Check
     end
 
     bypass action(:create) do
