@@ -64,8 +64,15 @@ defmodule Xaas.Platform.RouteProjectsBackups do
     # (RouteProjectsBackupsValidProjectName). No maker-checker here: the
     # real route.ts POST /api/orgs/[id]/backups has no second-approver
     # step, unlike the retention-policy PUT (ApprovalBackupRetentionChange).
+    #
+    # Real fix (eighteenth-pass ERRC grid sweep): the bare
+    # `authorize_if always()` this bypass previously used let any actor
+    # holding only the shared internal token fabricate backup-history rows
+    # under a completely invented, never-authenticated org_id -- see
+    # `Xaas.Platform.Checks.ActorOrgMatches`'s own moduledoc for the full
+    # disclosed finding and the live-HTTP proof.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Platform.Checks.ActorOrgMatches
     end
 
     policy always() do

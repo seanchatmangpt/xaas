@@ -6,8 +6,150 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (seventeenth pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (eighteenth pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Eighteenth-pass update
+
+**Real HEAD confirmed: `283426c`.** `git rev-parse HEAD` →
+`283426c333a06ccc919ed14f2620b9cd194742b2`. One real commit landed since the
+seventeenth-pass grid's own `0260997`: `283426c` ("round 16" in its own commit message —
+implements the seventeenth-pass grid's own selected CREATE item). Real-verified via
+`git show 283426c --stat`: 9 files, 1015 insertions — `errc-innovation-grid.md` (the
+seventeenth-pass section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`,
+`lib/xaas/operations/incident.ex`, a new `lib/xaas/operations/checks/actor_org_matches.ex`,
+`lib/xaas/governance/validations/approval_dr_failover_requires_open_incident.ex`, a new
+`lib/xaas/operations/validations/incident_resolved_requires_resolved_at.ex`, and 3 test
+files. **The seventeenth-pass CREATE item (the live-HTTP-proven cross-resource escalation
+through `Incident` into `ApprovalDrFailoverRequiresOpenIncident`'s precondition) is now
+RESOLVED, independently re-verified this pass, not just cited from the commit message**:
+`incident.ex`'s `:create`/`:update` bypasses (real-read this pass) now call `authorize_if
+Xaas.Operations.Checks.ActorOrgMatches` in place of the old bare `authorize_if(always())`;
+`Xaas.Operations.Checks.ActorOrgMatches` (real-read in full, a genuine
+`Ash.Policy.SimpleCheck`, direct-attribute-read `match?/3`, fail-closed) is real and wired;
+`approval_dr_failover_requires_open_incident.ex`'s precondition query (real-read) now
+filters `org_id == ^org_id` in addition to `region`/`status`; `resolve_org_actor.ex`'s
+`@tenant_scoped_path_segments` (real-read this pass, now a 10-entry list) includes
+`incidents`. **Not re-proposed, per this pass's own task instruction — it's fixed.**
+
+**This pass's task: real-verify round 16's own named follow-up —
+`Xaas.Platform.RouteOrgsCustomDomain` and `Xaas.Platform.RouteProjectsBackups` — is still
+accurate, and select it as this round's CREATE item if so. Real-verified: both are still
+real, still unfixed, still live. Selected as this pass's CREATE item, scoped to fix both in
+one comprehensive batch, matching how rounds 7-9, 14, and 16 each closed their own
+bug-class sweep in a single pass.**
+
+- **Both resources' `policies do` blocks real-read in full this pass, unchanged since round
+  16's own characterization.** `route_orgs_custom_domain.ex:23-53`: `bypass action(:create)
+  do authorize_if always() end` (line 42-44) and `bypass action(:update) do authorize_if
+  always() end` (line 46-48) — bare, no check at all, same shape every already-fixed
+  resource in this grid had before its fix. `route_projects_backups.ex:50-74`: `bypass
+  action(:create) do authorize_if always() end` (line 67-69) — the resource has no `:update`
+  action at all (`actions do` block, real-read, declares only `defaults [:read]` plus
+  `create :create`), so `:create` is its only real mutation surface.
+- **Both carry a real, caller-accepted `org_id` attribute with zero `multitenancy` block —
+  real-confirmed, not assumed.** `route_orgs_custom_domain.ex:111-114`:
+  `attribute :org_id, :string do allow_nil? false; public? true end`, accepted directly in
+  `:create`'s own `accept [:org_id, :hostname]` (line 89); `:update`'s own `accept` list
+  (line 101, `[:status, :certificate_reason, :certificate_message,
+  :certificate_secret_name]`) does **not** include `org_id` — same "org_id absent from the
+  mutating action's accept list on update, present on create" shape
+  `Xaas.Billing.Checks.SlaCreditActorOrgMatches` (real-read this pass,
+  `lib/xaas/billing/checks/sla_credit_actor_org_matches.ex:92-101`) already solves via a
+  2-clause `resolve_org_id/1` (changeset attribute on `:create`, `changeset.data`/record on
+  other action types). `route_projects_backups.ex:108-111`: identical
+  `attribute :org_id, :string do allow_nil? false; public? true end`, accepted in `:create`'s
+  own `accept` list (line 100). Neither file declares a `multitenancy do` block anywhere
+  (real-confirmed via full read of both, and via `grep -n "multitenancy"
+  lib/xaas/platform/route_orgs_custom_domain.ex lib/xaas/platform/route_projects_backups.ex`
+  → zero matches) — so, exactly as `SlaCreditActorOrgMatches`'s own moduledoc already
+  disclosed for its own 2 resources, a per-resource direct-attribute-read check's `:create`
+  half would be real, live, load-bearing rejection here too, not defense-in-depth over an
+  already-tenant-normalized value.
+- **Real-confirmed neither route is in `ResolveOrgActor`'s scoped-path list — the second half
+  of the double-gap, same shape every prior fix in this grid closed.**
+  `resolve_org_actor.ex:97-108`'s `@tenant_scoped_path_segments` (real-read this pass, the
+  post-round-16 10-entry list: `approval_dr_failover`, `approval_legal_hold_release`,
+  `approval_deployment_quarantine`, `approval_backup_retention_change`,
+  `marketplace_providers`, `approval_provider_status_change`, `approval_tier_downgrade`,
+  `approval_sla_credit_apply`, `approval_patch_sla_credit_apply`, `incidents`) contains
+  neither `route_orgs_custom_domain` nor `route_projects_backups`. So even a real
+  `X-Org-Id` header sent on either route today has zero effect: no Ash actor/tenant is ever
+  set, and `authorize_if always()` needs no actor to pass anyway.
+- **Real-confirmed both mutation actions have a genuine, live persisted effect today — not a
+  design-blocked no-op like the 3 Operations `Approval*` siblings round 16 correctly
+  excluded.** `route_orgs_custom_domain_controller_test.exs` (real-read in full, 3 tests, all
+  pre-existing, none newly added this pass) proves `POST /api/route_orgs_custom_domain`
+  really returns `HTTP 201` and really persists a `RouteOrgsCustomDomain` row (asserted via
+  `Ash.get!(id, authorize?: false)`), and `PATCH .../:id` really returns `HTTP 200` and
+  really updates `status`/`certificate_reason`/`certificate_message`/
+  `certificate_secret_name` on that row. `route_projects_backups_controller_test.exs`
+  (real-read in full, 2 tests) proves the same for `POST /api/route_projects_backups`. Both
+  test files send only the shared `Authorization: Bearer` internal token — **neither test
+  sends an `X-Org-Id` header or exercises any cross-org scenario at all** (real-confirmed via
+  full read; zero occurrences of `x-org-id`/`X-Org-Id` in either file) — real, existing
+  happy-path/validation coverage, zero authorization coverage, matching this grid's own
+  repeated "zero existing test coverage of the cross-org exposure" finding pattern for every
+  prior sibling fix.
+- **Real-checked for a cross-resource consumer analogous to
+  `ApprovalDrFailoverRequiresOpenIncident` reading `Incident` — a real, honest negative,
+  confirming round 16's own characterization rather than merely repeating it.**
+  `grep -rln "RouteOrgsCustomDomain\b" lib/ test/ --include="*.ex" --include="*.exs"` and the
+  same for `RouteProjectsBackups\b` each return only: the domain registration
+  (`lib/xaas/platform.ex`), the resource's own file, its own dead orphaned
+  `changes/*_approve.ex` / `validations/*_requires_approver.ex` stub pair (see next bullet),
+  and its own controller test — no other resource, validation, or precondition anywhere in
+  the codebase ever queries `route_orgs_custom_domains`/`route_projects_backups`
+  (`grep -rln "route_orgs_custom_domain\|route_projects_backup" lib/xaas --include="*.ex" |
+  grep -v "platform/route_orgs_custom_domain.ex\|platform/route_projects_backups.ex"` → zero
+  matches). This real-confirms round 16's own disclosed reason these 2 were correctly
+  deprioritized below the Incident finding: worst real, live-provable consequence today is
+  self-contained metadata forgery (hostname-squatting / fabricated backup-history rows under
+  an invented `org_id`), not a proven escalation into a separate resource's authorization
+  decision the way `Incident` → `ApprovalDrFailover` was. Real, unfixed, but correctly a
+  lower-severity item than round 16's own — consistent with, not contradicting, that pass's
+  own triage.
+- **Real, incidental finding while checking for cross-resource consumers: both resources
+  carry a real pair of dead, orphaned, no-op stub modules — disclosed, not treated as
+  evidence of an approval flow.** `lib/xaas/platform/changes/route_orgs_custom_domain_approve.ex`
+  (real-read in full: `def change(changeset, _opts, _context) do changeset end`, a pure
+  identity no-op) and `lib/xaas/platform/validations/
+  route_orgs_custom_domain_requires_approver.ex` (real-read: `def validate(_changeset, _opts,
+  _context) do :ok end`, always-passes), plus the byte-identical pair for
+  `RouteProjectsBackups`, are **never referenced by either resource's own `actions do` block**
+  (real-confirmed: neither resource declares an `:approve` action at all — `defaults [:read]`
+  plus one or two plain `create`/`update` actions only) **and never referenced anywhere else
+  in the codebase** (`grep -rln "RouteOrgsCustomDomainApprove\|
+  RouteOrgsCustomDomainRequiresApprover\|RouteProjectsBackupsApprove\|
+  RouteProjectsBackupsRequiresApprover" lib/ test/` → matches only the 4 stub files' own
+  module definitions). Real, dead scaffold from an earlier, un-landed maker-checker design —
+  not evidence either resource has a real approval gate today, and not this pass's concern
+  to clean up (out of scope for a security-sweep CREATE item; noted for the record only).
+- **Real, disclosed reason the fix is a direct application of the already-established
+  `SlaCreditActorOrgMatches` pattern, not a new design.** Both resources are structurally
+  identical to `ApprovalSlaCreditApply`/`ApprovalPatchSlaCreditApply`'s own shape: a plain
+  `org_id, :string` attribute directly on the record, no relation hop, no `multitenancy`
+  block, `org_id` present in `:create`'s accept list but absent from any other mutating
+  action's accept list. The right fix is a new `Xaas.Platform.Checks.ActorOrgMatches`
+  (direct port of `SlaCreditActorOrgMatches`'s `match?/3` — 2-clause `resolve_org_id/1`,
+  changeset attribute on `:create`, `changeset.data`/record otherwise), wired as
+  `bypass action(:create)/(:update) do authorize_if
+  Xaas.Platform.Checks.ActorOrgMatches end` on `RouteOrgsCustomDomain` (both actions) and
+  `bypass action(:create) do authorize_if Xaas.Platform.Checks.ActorOrgMatches end` on
+  `RouteProjectsBackups` (its only mutation), plus adding both resources' real route base
+  paths (`route_orgs_custom_domain`, `route_projects_backups`) to `ResolveOrgActor`'s
+  `@tenant_scoped_path_segments`. One shared check module across both resources (matching how
+  `SlaCreditActorOrgMatches` is already shared across its own 2 resources), not 2 separate
+  modules. Selected as this pass's CREATE item; full spec in the structured output below.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass shows the same real artifacts recent passes have already logged as other standing
+activities' own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and
+untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl`. None touch
+`lib/xaas/platform/` or any file this pass's finding depends on. None read beyond filenames,
+none touched.
 
 ## Seventeenth-pass update
 

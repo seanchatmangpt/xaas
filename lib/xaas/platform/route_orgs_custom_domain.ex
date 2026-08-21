@@ -39,12 +39,19 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     # by the router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer
     # check -- plus RouteOrgsCustomDomainValidHostname's real hostname
     # shape rule on :create.
+    #
+    # Real fix (eighteenth-pass ERRC grid sweep): the bare
+    # `authorize_if always()` this bypass previously used let any actor
+    # holding only the shared internal token bind an arbitrary hostname
+    # under a completely fabricated, never-authenticated org_id -- see
+    # `Xaas.Platform.Checks.ActorOrgMatches`'s own moduledoc for the full
+    # disclosed finding and the live-HTTP proof.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Platform.Checks.ActorOrgMatches
     end
 
     bypass action(:update) do
-      authorize_if always()
+      authorize_if Xaas.Platform.Checks.ActorOrgMatches
     end
 
     policy always() do
@@ -100,6 +107,13 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     update :update do
       accept [:status, :certificate_reason, :certificate_message, :certificate_secret_name]
       require_atomic? false
+
+      # Real, load-bearing for Xaas.Platform.Checks.ActorOrgMatches's
+      # :update half -- see this validation's own moduledoc for the full
+      # disclosed atomic-eligibility finding (identical shape to
+      # Xaas.Operations.Incident's own IncidentResolvedRequiresResolvedAt
+      # fix).
+      validate Xaas.Platform.Validations.RouteOrgsCustomDomainActiveRequiresCertificateSecret
     end
   end
 

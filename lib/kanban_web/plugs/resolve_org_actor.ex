@@ -34,6 +34,15 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   moduledoc and `Xaas.Operations.Checks.ActorOrgMatches` for the full
   disclosed finding.
 
+  Extended eighteenth pass: `route_orgs_custom_domain`
+  (`Xaas.Platform.RouteOrgsCustomDomain`) and `route_projects_backups`
+  (`Xaas.Platform.RouteProjectsBackups`) close the identical real,
+  live-HTTP-proven gap on 2 more Platform resources -- see those
+  resources' own moduledocs and `Xaas.Platform.Checks.ActorOrgMatches` for
+  the full disclosed finding (self-contained metadata forgery: hostname
+  squatting / fabricated backup-history rows under an invented `org_id`,
+  real and live-tested, closed this pass).
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -105,6 +114,8 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     approval_sla_credit_apply
     approval_patch_sla_credit_apply
     incidents
+    route_orgs_custom_domain
+    route_projects_backups
   )
 
   def init(opts), do: opts
