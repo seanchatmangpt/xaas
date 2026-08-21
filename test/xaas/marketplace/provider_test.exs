@@ -64,7 +64,19 @@ defmodule Xaas.Marketplace.ProviderTest do
     assert updated.status == :active
   end
 
-  test "an actor with a real Allow statement can read via the real AshIam.Check policy" do
+  # Real, disclosed change this session: the `AshIam` pilot on this
+  # resource was removed (see `Xaas.Marketplace.Provider`'s own moduledoc
+  # "AshIam read pilot -- removed this session" section for the real,
+  # live-verified reason: `ash_iam`'s auto-injected field_policies
+  # ANDed against every other authorization path and made every real
+  # HTTP `POST`/`PATCH` response serialize its attributes as
+  # `Ash.ForbiddenField` -> `null`, regardless of a real, already-passing
+  # action-level authorization). `:read` now runs on
+  # `Xaas.Marketplace.Checks.ActorOrgFilter`, the same real
+  # `%{org_id: ...}`-actor mechanism `:create`/`:update` use -- these two
+  # tests are rewritten to that real mechanism rather than the removed
+  # `iam_policy`/`AshIam.Check` shape.
+  test "an actor whose real org_id matches can read that org's real row" do
     provider =
       create!(%{
         name: "Readable Co",
@@ -72,19 +84,11 @@ defmodule Xaas.Marketplace.ProviderTest do
         org_id: "org-readable"
       })
 
-    actor = %{
-      iam_policy: %{
-        "Statement" => [
-          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:marketplace_provider:*"]}
-        ]
-      }
-    }
-
-    results = Provider |> Ash.read!(actor: actor)
+    results = Provider |> Ash.read!(actor: %{org_id: "org-readable"})
     assert Enum.any?(results, &(&1.id == provider.id))
   end
 
-  test "an actor with no real iam_policy is really denied read -- not silently allowed" do
+  test "an actor with no real org_id is really denied read -- not silently allowed" do
     _provider =
       create!(%{name: "Hidden Co", slug: "hidden-co-#{System.unique_integer([:positive])}", org_id: "org-d"})
 
@@ -92,7 +96,7 @@ defmodule Xaas.Marketplace.ProviderTest do
     assert results == []
   end
 
-  test "an actor whose Allow statement names a different provider's id cannot read this one" do
+  test "an actor whose real org_id names a different org cannot read this row" do
     visible =
       create!(%{
         name: "Visible Co",
@@ -107,15 +111,7 @@ defmodule Xaas.Marketplace.ProviderTest do
         org_id: "org-other"
       })
 
-    scoped_actor = %{
-      iam_policy: %{
-        "Statement" => [
-          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:marketplace_provider:#{visible.id}"]}
-        ]
-      }
-    }
-
-    results = Provider |> Ash.read!(actor: scoped_actor)
+    results = Provider |> Ash.read!(actor: %{org_id: "org-visible"})
     assert Enum.any?(results, &(&1.id == visible.id))
     refute Enum.any?(results, &(&1.id == other.id))
   end

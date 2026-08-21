@@ -8,6 +8,7 @@ defmodule KanbanWeb.MarketplaceProviderControllerTest do
   """
   use KanbanWeb.ConnCase
 
+  alias Xaas.Accounts.Org
   alias Xaas.Marketplace.Provider
 
   setup do
@@ -19,6 +20,27 @@ defmodule KanbanWeb.MarketplaceProviderControllerTest do
     conn
     |> put_req_header("authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
     |> put_req_header("accept", "application/vnd.api+json")
+  end
+
+  # Real, required for the :create/:update mutation tests below:
+  # KanbanWeb.Plugs.ResolveOrgActor resolves the real X-Org-Id header
+  # against a real Xaas.Accounts.Org row (by slug) -- a made-up string
+  # 404s at the plug, before Provider's own policy is ever reached.
+  defp real_org_slug! do
+    Org
+    |> Ash.Changeset.for_create(:create, %{
+      name: "Test Org",
+      slug: "org-#{System.unique_integer([:positive])}"
+    })
+    |> Ash.create!(authorize?: false)
+    |> Map.fetch!(:slug)
+  end
+
+  defp mutation_headers(conn, org_id) do
+    conn
+    |> json_headers()
+    |> put_req_header("content-type", "application/vnd.api+json")
+    |> put_req_header("x-org-id", org_id)
   end
 
   defp create_provider!(attrs) do
@@ -34,7 +56,7 @@ defmodule KanbanWeb.MarketplaceProviderControllerTest do
     assert resp.status in [401, 403, 503]
   end
 
-  test "GET /api/marketplace_providers with a valid token but no policy bypass is really forbidden",
+  test "GET /api/marketplace_providers with a valid token but a mismatched org is really forbidden",
        %{conn: conn} do
     _provider =
       create_provider!(%{
@@ -43,20 +65,23 @@ defmodule KanbanWeb.MarketplaceProviderControllerTest do
         org_id: "org-http"
       })
 
-    body = conn |> json_headers() |> get("/api/marketplace_providers") |> json_response(200)
+    caller_org = real_org_slug!()
 
-    # Real deny-by-default floor: this resource has no real actor-scoping
-    # rule designed yet (see the resource's own moduledoc). AshJsonApi's
-    # index route is filter-based, so a real, authenticated-to-the-app
-    # (valid internal API token) request that fails the resource's real
-    # policy comes back 200 with a really-empty result set -- the just-
-    # created row is really excluded, not silently returned.
+    body =
+      conn |> mutation_headers(caller_org) |> get("/api/marketplace_providers") |> json_response(200)
+
+    # Real deny-by-default floor: neither AshIam (no Allow statement on
+    # this anonymous actor) nor ActorOrgMatches (caller's real org does
+    # not equal the row's real "org-http") authorizes this row.
+    # AshJsonApi's index route is filter-based, so a real request that
+    # fails the resource's real policy comes back 200 with a really-empty
+    # result set -- the just-created row is really excluded, not
+    # silently returned.
     assert body["data"] == []
   end
 
-  test "GET /api/marketplace_providers/:id with a valid token is really not found", %{
-    conn: conn
-  } do
+  test "GET /api/marketplace_providers/:id with a valid token but a mismatched org is really not found",
+       %{conn: conn} do
     provider =
       create_provider!(%{
         name: "Beta Co",
@@ -64,11 +89,133 @@ defmodule KanbanWeb.MarketplaceProviderControllerTest do
         org_id: "org-http-2"
       })
 
-    resp = conn |> json_headers() |> get("/api/marketplace_providers/#{provider.id}")
+    caller_org = real_org_slug!()
+
+    resp = conn |> mutation_headers(caller_org) |> get("/api/marketplace_providers/#{provider.id}")
 
     # Same real deny-by-default floor via the get-by-id route: the row is
     # really excluded by the policy filter before the id lookup can match
     # it, so AshJsonApi reports a real 404, not a 403 or a leaked 200.
     assert resp.status == 404
+  end
+
+  test "POST /api/marketplace_providers with a real X-Org-Id creates a real row for that org",
+       %{conn: conn} do
+    org_id = real_org_slug!()
+
+    body = %{
+      "data" => %{
+        "type" => "marketplace_provider",
+        "attributes" => %{
+          "name" => "Acme Widgets",
+          "slug" => "acme-widgets-#{System.unique_integer([:positive])}",
+          "org_id" => org_id
+        }
+      }
+    }
+
+    resp = conn |> mutation_headers(org_id) |> post("/api/marketplace_providers", body)
+    created = json_response(resp, 201)
+    assert created["data"]["attributes"]["name"] == "Acme Widgets"
+    id = created["data"]["id"]
+
+    persisted = Provider |> Ash.get!(id, authorize?: false)
+    assert persisted.org_id == org_id
+  end
+
+  test "POST /api/marketplace_providers rejects an actor asserting a DIFFERENT org than the payload's org_id",
+       %{conn: conn} do
+    caller_org = real_org_slug!()
+    target_org = real_org_slug!()
+
+    body = %{
+      "data" => %{
+        "type" => "marketplace_provider",
+        "attributes" => %{
+          "name" => "Mismatched Co",
+          "slug" => "mismatched-co-#{System.unique_integer([:positive])}",
+          "org_id" => target_org
+        }
+      }
+    }
+
+    resp = conn |> mutation_headers(caller_org) |> post("/api/marketplace_providers", body)
+    assert resp.status in [403, 400]
+  end
+
+  test "PATCH /api/marketplace_providers/:id from the same org's actor really succeeds",
+       %{conn: conn} do
+    org_id = real_org_slug!()
+
+    provider =
+      create_provider!(%{
+        name: "Original Name",
+        slug: "same-org-update-#{System.unique_integer([:positive])}",
+        org_id: org_id
+      })
+
+    body = %{
+      "data" => %{
+        "type" => "marketplace_provider",
+        "id" => provider.id,
+        "attributes" => %{"name" => "Updated Name"}
+      }
+    }
+
+    resp =
+      conn |> mutation_headers(org_id) |> patch("/api/marketplace_providers/#{provider.id}", body)
+
+    updated = json_response(resp, 200)
+    assert updated["data"]["attributes"]["name"] == "Updated Name"
+
+    persisted = Provider |> Ash.get!(provider.id, authorize?: false)
+    assert persisted.name == "Updated Name"
+  end
+
+  test "PATCH /api/marketplace_providers/:id attempting to update a DIFFERENT org's row really fails, not silently allowed",
+       %{conn: conn} do
+    owner_org = real_org_slug!()
+    other_org = real_org_slug!()
+
+    provider =
+      create_provider!(%{
+        name: "Owner Org Provider",
+        slug: "owner-org-provider-#{System.unique_integer([:positive])}",
+        org_id: owner_org
+      })
+
+    body = %{
+      "data" => %{
+        "type" => "marketplace_provider",
+        "id" => provider.id,
+        "attributes" => %{"name" => "Hijacked Name"}
+      }
+    }
+
+    resp =
+      conn
+      |> mutation_headers(other_org)
+      |> patch("/api/marketplace_providers/#{provider.id}", body)
+
+    assert resp.status in [403, 404]
+
+    persisted = Provider |> Ash.get!(provider.id, authorize?: false)
+    assert persisted.name == "Owner Org Provider"
+  end
+
+  test "POST /api/marketplace_providers without X-Org-Id really 400s", %{conn: conn} do
+    body = %{
+      "data" => %{
+        "type" => "marketplace_provider",
+        "attributes" => %{
+          "name" => "No Org Header Co",
+          "slug" => "no-org-header-#{System.unique_integer([:positive])}",
+          "org_id" => "org-whatever"
+        }
+      }
+    }
+
+    resp = conn |> json_headers() |> put_req_header("content-type", "application/vnd.api+json") |> post("/api/marketplace_providers", body)
+    assert resp.status == 400
   end
 end

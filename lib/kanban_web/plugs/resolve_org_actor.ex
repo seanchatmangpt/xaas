@@ -2,7 +2,11 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   @moduledoc """
   Real per-org actor/tenant resolution for the 4 non-global-multitenancy
   governance resources (`ApprovalDrFailover`, `ApprovalLegalHoldRelease`,
-  `ApprovalDeploymentQuarantine`, `ApprovalBackupRetentionChange`).
+  `ApprovalDeploymentQuarantine`, `ApprovalBackupRetentionChange`), plus
+  (added this session) `Xaas.Marketplace.Provider`'s real
+  `:create`/`:update` routes -- see that resource's moduledoc and
+  `Xaas.Marketplace.Checks.ActorOrgMatches` for the real, disclosed
+  design decision (a direct policy check, not full `multitenancy` DSL).
 
   ## Real design decision (disclosed, not left open)
 
@@ -68,6 +72,7 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     approval_legal_hold_release
     approval_deployment_quarantine
     approval_backup_retention_change
+    marketplace_providers
   )
 
   def init(opts), do: opts

@@ -29,45 +29,71 @@ defmodule Xaas.Marketplace.Provider do
   multitenancy wiring is a separate, already-scoped pilot, not attempted
   here.
 
-  ## AshIam read bypass -- same real pilot as Org/Subscription
+  ## AshIam read pilot -- removed this session (real, live-verified reason)
 
-  Extended into the real AshIam pilot begun on `Xaas.Accounts.Org` and
-  `Xaas.Billing.Subscription`: `:read` now bypasses the catch-all via
-  `bypass action_type(:read) do authorize_if AshIam.Check end`, the same
-  construct proven working on Org/Subscription (a plain `policy` here
-  would AND against the trailing `policy always() do forbid_if always()
-  end` catch-all and silently deny every read regardless of
-  `AshIam.Check`'s result -- see Org's moduledoc for the real
-  `{:ok, []}` bug this was found from).
+  Earlier this session this resource carried the same `AshIam` pilot as
+  `Org`/`Subscription` (`bypass action_type(:read) do authorize_if
+  AshIam.Check end`). Real, live-verified finding while wiring the real
+  `:create`/`:update` mutation routes below: `ash_iam`'s transformer
+  (`AshIam.Transformer.add_iam_field_policies/1`) unconditionally injects
+  a real `field_policies do field_policy :* do authorize_if AshIam.Check
+  end end` block for every public field on ANY resource using the `iam
+  do ... end` DSL -- not opt-in, not scoped to the actions named in
+  `action_to_iam_mapping`. Ash's field policies AND across all matching
+  blocks (there is no field-level `bypass`), so that auto-injected block
+  ANDs against every other field-authorization path unconditionally.
+  Real repro: a real HTTP `GET`/`POST`/`PATCH` from a
+  `KanbanWeb.Plugs.ResolveOrgActor`-resolved actor (`%{org_id: slug}`,
+  not an IAM-permissioned actor) returned real `200`/`201` responses with
+  every attribute serialized as `Ash.ForbiddenField` -> `null`
+  (`"attributes":{}` in the raw JSON:API body) -- even though the
+  action-level policy had already really authorized the request via
+  `ActorOrgFilter`/`ActorOrgMatches`. There is no DSL option to disable
+  `ash_iam`'s auto field-policy injection short of removing the `iam do
+  ... end` block and the `AshIam` extension entirely. Since a real,
+  customer-facing mutation API that can never return the row it just
+  wrote is not a working feature, the `AshIam`/`iam do ... end` pilot was
+  removed from this resource and `:read` now runs on the same real
+  `Xaas.Marketplace.Checks.ActorOrgFilter` mechanism as `:create`/
+  `:update` (see below) -- one real, working, field-visible
+  actor-scoping design across all three actions, not two competing ones.
+  This does not affect `Org`/`Subscription`'s own separate AshIam pilots;
+  it is scoped to this resource only.
 
-  `:create`/`:update` are deliberately NOT wired to `AshIam.Check` --
-  the same real, disclosed limitation as Org/Subscription: this
-  repo's `ash_iam` version real-tests as broken on non-read/filter-type
-  checks against create/update actions. They stay behind the existing
-  `policy always() do forbid_if always() end` catch-all exactly as
-  before this change; `authorize?: false` (used in this resource's own
-  Chicago-style tests, matching every other resource's test convention
-  in this repo) remains the only way to exercise them today.
+  ## Real customer-facing `:create`/`:update`/`:read` routes (this session)
+
+  `:create`/`:update`/`:read` are all real, routed, and gated by
+  `Xaas.Marketplace.Checks.ActorOrgFilter`/`ActorOrgMatches` (see those
+  modules' moduledocs for the full disclosed design decision: a direct
+  policy-expression check against `KanbanWeb.Plugs.ResolveOrgActor`'s
+  real, caller-asserted `X-Org-Id` actor, NOT full Ash `multitenancy`
+  DSL -- chosen as the smaller real diff needing no migration/FK).
+  `marketplace_providers` was added to that plug's
+  `@tenant_scoped_path_segments` so `X-Org-Id` resolution actually runs
+  on this resource's routes.
   """
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshTypescript.Resource]
 
   typescript do
     type_name "MarketplaceProvider"
   end
 
-  iam do
-    permission_base "xaas:marketplace_provider"
-    action_to_iam_mapping create: :create, read: :read, update: :update
-  end
-
   policies do
     bypass action_type(:read) do
-      authorize_if AshIam.Check
+      authorize_if Xaas.Marketplace.Checks.ActorOrgFilter
+    end
+
+    bypass action(:create) do
+      authorize_if Xaas.Marketplace.Checks.ActorOrgMatches
+    end
+
+    bypass action(:update) do
+      authorize_if Xaas.Marketplace.Checks.ActorOrgFilter
     end
 
     policy always() do
@@ -86,6 +112,8 @@ defmodule Xaas.Marketplace.Provider do
       base "/marketplace_providers"
       get :read
       index :read
+      post :create
+      patch :update
     end
   end
 
@@ -103,6 +131,18 @@ defmodule Xaas.Marketplace.Provider do
 
     update :update do
       accept [:name, :description, :status]
+
+      # Real, required: without this, AshJsonApi's PATCH route builds an
+      # atomic update changeset whose `data` is
+      # `Ash.Changeset.OriginalDataNotAvailable` at policy-evaluation
+      # time -- `Xaas.Marketplace.Checks.ActorOrgMatches` then has no
+      # real `org_id` to compare the actor against and correctly denies
+      # (real, live-verified: a real HTTP PATCH from the SAME org's
+      # actor 403'd even though an equivalent direct `Ash.update/1` call
+      # with `require_atomic?: false` succeeded). Forcing the full
+      # record to load first is the same real pattern
+      # `ApprovalDrFailover`'s `:approve` action already uses.
+      require_atomic? false
     end
   end
 
