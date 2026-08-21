@@ -2,14 +2,166 @@
 
 Blue Ocean Strategy ERRC grid (Eliminate-Reduce-Raise-Create) grounded in what actually
 exists on disk, re-verified against real `find`/`grep`/`git log` runs. One evolving doc, not
-a new dated file per pass — this revision updates the 2026-08-20 grid in place after this
-pass's own real-verified commits and the concurrently-running 25-prompt sequence's real
-landings since the fourth pass (`97768fb` health-check aggregation endpoint — closes this
-grid's own prior #3 CREATE item; `c5fe889` real cross-resource `AuditLogEntry` audit trail;
-`c03669c`/`c03fc9c` e2e negative-path hardening; `9caa85d` real k8s NetworkPolicy
-application). Last Updated 2026-08-20 (same day, seventh pass).
+a new dated file per pass — this revision updates the grid in place after this pass's own
+real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
+this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
+active; this ERRC cron is now the sole standing activity on this repo. Last Updated
+2026-08-21 (ninth pass).
 
-## Seventh-pass update (this revision)
+## Ninth-pass update
+
+**This grid's own item 14 (the eighth pass's selected CREATE item) is real,
+implemented, and independently verified this pass — RESOLVED, uncommitted.**
+`Xaas.Governance.Changes.WriteAuditLogEntry` (`lib/xaas/governance/changes/
+write_audit_log_entry.ex`) is switched from `Ash.Changeset.after_transaction/2` +
+`Ash.create!/2` to `Ash.Changeset.after_action/2` + `Ash.create/2` (non-bang), matching
+round 7's now-established atomic-write pattern exactly. Moduledoc rewritten in place to
+honestly correct the prior, over-generalized `after_transaction/2` rationale (the same
+correction shape round 7 applied to its 3 Ledger changes), rather than leaving the stale
+claim in place.
+
+Real regression coverage added to `test/xaas/governance/audit_log_entry_test.exs` (now 4
+tests, not 3): a new test forces a genuine `AuditLogEntry` write failure and asserts the
+parent `Approval*` record's `approved_by` rolls back rather than being left
+approved-but-unaudited. `AuditLogEntry` has no real, legitimately-triggerable unique/check
+constraint reachable from valid `Approval*` data (unlike round 7's
+`AshDoubleEntry.Transfer.Changes.VerifyTransfer` trick, there was no pre-existing real
+validation to lean on) — disclosed and solved differently: a real Postgres `CHECK`
+constraint added via raw SQL, scoped to the test's own sandboxed transaction only
+(Postgres DDL is transactional; `Ecto.Adapters.SQL.Sandbox` rolls the whole test's
+transaction back at checkin, so the constraint never touches the real schema or any other
+test). Real stash/restore regression-guard proof performed (matching round 7's own
+verification discipline): temporarily reverted the fix via `git stash`, re-ran the new
+test, confirmed it fails with a real unhandled `Ecto.ConstraintError` raised through
+`Ash.create!/2` (crashing instead of cleanly rolling back — exactly the bug being fixed),
+then restored the fix and re-confirmed all 4 tests pass.
+
+Verified for real, independently re-run this pass: `mix compile --force` clean; no schema
+change needed (dev + test Postgres both `Migrations already up` with zero code changes to
+`priv/repo/migrations/`); the known shared-migration hazard
+(`20260821055848_resolve_pending_backlog_20260821.exs`) was still present and still blocks
+`mix test` with a real `duplicate_table` error as documented — moved out for verification
+runs only and restored unedited immediately after each run, confirmed clean via `git
+status` before and after; `mix test` run 3× on the full suite, 1 property + 285 tests, 0
+failures each run; `grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\
+|:meck\|meck\."` over `test/` and `lib/` — only the known false positives (Phoenix
+`ConnTest.patch/2` HTTP-verb calls and one `json_api` `patch(:update)` route DSL line),
+zero real matches.
+
+Left uncommitted per this session's own convention of leaving commits to whoever lands the
+paired code fix (this grid update was itself left uncommitted by the eighth pass for the
+same reason) — item 14 below marked RESOLVED to reflect real, on-disk, verified state.
+
+## Eighth-pass update
+
+**Round 7's selected CREATE item is real, landed, and independently re-verified this
+pass — RESOLVED.** `aec265a` (HEAD's parent's parent at the start of this pass) switched
+`ApprovalSlaCreditApplyApprove`, `ApprovalPatchSlaCreditApplyApprove`, and
+`SubscriptionProrateTierChange` from `after_transaction/2` to `after_action/2`. Real-verified
+this pass: `grep -n "after_action\|after_transaction"` on all 3 files plus their sibling
+`ApprovalBackupRetentionChangeChargeOverage` shows all 4 now call
+`Ash.Changeset.after_action/2` for the actual Ledger write; each moduledoc carries a "Real
+fix: `after_action/2`, not `after_transaction/2` (corrected...)" section explaining the
+original wrong generalization from the HTTP-dispatch lesson. Round 7's own commit message
+also reports a real, disclosed test-methodology finding (`Task.async`/`Sandbox.allow/3` does
+NOT reproduce the race under Ecto Sandbox — 0/120 real collisions across 8×15 trials — so the
+regression test instead forces a deterministic failure via `AshDoubleEntry.Transfer.Changes
+.VerifyTransfer`'s real `from_account_id == to_account_id` rejection) and a real stash/restore
+regression-guard proof. Not re-proposed; item 12 in Create below is now marked RESOLVED.
+
+**A second, real commit landed since round 7 — `6fdca0c`, unrelated to the Ledger-atomicity
+work, from the same session's other standing activity (the `xaas.safe_generate_migrations`
+mix task).** Fixes a real Design-FMEA-scored gap (RPN=490): `touched_tables/1`'s regex only
+recognized the literal `<verb> table(:x)` wrapper, missing `references(:other_table, ...)`
+calls nested inside `alter table(:x) do ... end` blocks and bare top-level
+`index(:other_table, ...)`/`unique_index(...)` calls — both real forms
+`ash_postgres.generate_migrations` emits. Real before/after proof in the commit against the
+actual cited file (`.../20260821034020_add_org_fk_....exs`): before, `orgs` (the real FK
+target) was silently dropped from the detected table set; after, it's caught. Not this ERRC
+cron's own authorship; verified live and not re-proposed.
+
+**The disclosed shared-migration hazard is resolved to a stable, non-blocking state — not
+itself rewritten, but no longer an in-progress file to avoid touching.** Real-verified:
+`priv/repo/migrations/20260821055848_resolve_pending_backlog_20260821.exs` is fully committed
+(`git log --oneline -- <path>` → `53c7340`), present in `HEAD`'s tree
+(`git cat-file -e HEAD:<path>` succeeds), and `git status --short -- <path>` is clean — the
+prior pass's "deleted" working-tree state was transient and has since resolved itself. Read
+in full this pass: it is a real, still-uncorrected instance of the exact cross-table sweep
+`xaas.safe_generate_migrations` now exists to prevent (`create table(:autofde_planner_
+cache_stats_requests, ...)`, a second `create table(:autofde_planner_match_requests, ...)`,
+`alter table(:platform_webhooks)`, `create table(:autofde_planner_cache_hotset_requests,
+...)`, and `alter table(:tokens)` all in one `up/0`). It is history now, not a live edit target
+— splitting or rewriting an already-committed, presumptively-already-applied migration is its
+own real operational hazard (rewriting migration history that may have already run against a
+real database) rather than a fix, and the forward-looking guard (`xaas.safe_generate_
+migrations`, now also FMEA-hardened by `6fdca0c`) is the correct real mitigation already in
+place. Not a CREATE candidate.
+
+**Spot-checked `architecture-overview.md`'s domain/resource-count table and cross-cutting
+claims against real code — accurate except the one already-known drift.** Real-verified
+per-domain resource counts by reading each `resources do ... end` block directly
+(`lib/xaas/{accounts,billing,ledger,marketplace,operations,platform,governance}.ex`): 5 + 7 +
+4 + 2 + 17 + 7 + 27 = **69**, matching the doc's table exactly, including the easy-to-miscount
+`Operations` 17 (uses `resource(Module)` call syntax, not a DSL block naive grep patterns
+expect). `AshPaperTrail` "6 of 69" claim (line 82) also real-verified:
+`grep -rl "AshPaperTrail.Resource" lib/xaas | wc -l` → 6. Router tier line-number claims
+(`router.ex:57-64`, `73-77`, `79-83`, `96-100`) are all within a few lines of the real
+anchors (`scope "/internal-api"` at 57, `forward "/internal-api"` at 82, `forward "/api"` at
+99) — accurate close enough to navigate by. The one real drift already on record —
+`architecture-overview.md:27`'s "44 of the 69" `json_api routes do` count, real count now 56
+— is **still unfixed**: `aec265a`'s commit message documents finding it (as this grid's prior
+pass did) but its diff never touched either `architecture-overview.md` or
+`http-api-surface.md`, only this grid file and the 3 Ledger changes. Carried forward
+unchanged in Raise/Create below, still not selected (a doc fix, not a feature, and a fresh
+higher-value item was found this pass — see next finding).
+
+**Fresh finding — the exact same atomicity-bug class round 7 fixed on Ledger writes is
+still live on a 4th resource round 7 never touched: the audit-trail write itself.**
+`Xaas.Governance.Changes.WriteAuditLogEntry`
+(`lib/xaas/governance/changes/write_audit_log_entry.ex:42`) wires its own `Ash.create!/2`
+write of `Xaas.Operations.AuditLogEntry` via `Ash.Changeset.after_transaction/2`. Its own
+moduledoc (lines 7-17) justifies this explicitly by citing
+`EnqueueWebhookDeliveries`'s real, correct `after_transaction/2` pattern ("for the same
+reason documented there") — but its own next sentence undercuts that justification: "This
+change's own work (a single `Ash.create!/2` on `AuditLogEntry`) is comparatively cheap" (line
+12) and, unlike `EnqueueWebhookDeliveries`, it makes **no blocking outbound HTTP call** — it
+is a second, purely-internal Postgres write, the identical over-generalization shape round
+7's own fix diagnosed and corrected on the 3 Ledger changes ("The HTTP-specific lesson was
+over-generalized to a same-database write it doesn't apply to" — this grid's own prior-pass
+language, which applies to this file verbatim). Round 7's diff never touched
+`write_audit_log_entry.ex` — confirmed via `git show aec265a --stat`, which lists only the 3
+Billing changes, the 3 new Billing tests, and this grid file.
+- **Where it's wired**: real-verified `grep -rln "WriteAuditLogEntry" lib/xaas` → 3 Governance
+  `:approve` actions (`approval_backup_retention_change.ex`, `approval_legal_hold_release.ex`,
+  `approval_dr_failover.ex`), each via `change {WriteAuditLogEntry, action: "...", 
+  resource_type: "..."}`.
+- **Real, concretely triggerable failure mode**: `write_entry/3`
+  (`write_audit_log_entry.ex:54-73`) calls `Ash.create!/2` — raises on any failure, does not
+  return `{:error, _}` — inside the `after_transaction/2` callback, which fires only once the
+  parent `:approve` transaction has **already durably committed**
+  (`Ash.Changeset.after_transaction/2` semantics, the same real Ash source
+  `deps/ash/lib/ash/changeset/changeset.ex` round 7's own investigation already read). Any
+  real failure at that point — a transient Postgres connection error, pool exhaustion, a
+  future schema/validation change on `AuditLogEntry` — crashes the request *after* the
+  approval is permanently persisted, with **zero compensating action anywhere in this
+  codebase**: the caller likely sees a 500 that reads as "the approval failed," when it
+  actually succeeded and silently has no corresponding audit-trail row, forever. For a
+  resource whose own moduledoc states its job is "who did what, when" compliance record-
+  keeping (`audit_log_entry.ex:1-8`), a silent, permanent, undetectable gap in that record is
+  a real correctness defect in the audit trail's own core guarantee.
+- **Real, verified zero test coverage of this exact scenario**: `grep -n "test \""
+  test/xaas/governance/audit_log_entry_test.exs` → exactly 3 tests, all happy-path ("approving
+  a real DR failover/legal hold release/backup retention change writes a real AuditLogEntry
+  row"). None force a real `write_entry/3` failure and assert what state the parent `Approval*`
+  record is left in — the same class of gap round 7 closed for the Ledger writes, still open
+  here.
+- **Minor, related doc-drift, not itself a bug**: `lib/xaas/billing/approval_sla_credit_apply.ex:85`
+  and `lib/xaas/billing/approval_patch_sla_credit_apply.ex:85` (resource-file comments, not the
+  `changes/` moduledocs round 7 rewrote) still read "why after_transaction/2" — stale, since
+  the actual code these comments describe now uses `after_action/2`. Flagged in Raise, not
+  selected as a CREATE item on its own (a one-line comment fix, folds naturally into whichever
+  pass next touches these files).
+- Selected as this pass's CREATE item; full spec in the structured output below.
 
 **Honest correction on the 25-prompt sequence's claimed completion.** The task briefing for
 this pass stated the sequence "has now reached its FINAL prompt... and is
@@ -305,18 +457,28 @@ sequence cover these):
 
 ## Raise
 
-- **NEW this pass — real money-movement non-atomicity on 3 of the newest Ledger-writing
-  changes** (`ApprovalSlaCreditApplyApprove`, `ApprovalPatchSlaCreditApplyApprove`,
-  `SubscriptionProrateTierChange`, all wired via `after_transaction/2` instead of the
-  atomic `after_action/2` their own sibling `ApprovalBackupRetentionChangeChargeOverage`
-  correctly uses) — full evidence in "Seventh-pass update" above. Selected as this pass's
-  CREATE item.
-- **NEW this pass — `architecture-overview.md:27`'s "44 of the 69" real HTTP-route-block
+- **RESOLVED (round 7, `aec265a`, verified live this pass)**: the real money-movement
+  non-atomicity on `ApprovalSlaCreditApplyApprove`/`ApprovalPatchSlaCreditApplyApprove`/
+  `SubscriptionProrateTierChange` — all 3 now use `after_action/2`, matching
+  `ApprovalBackupRetentionChangeChargeOverage`. See "Eighth-pass update" above.
+- **NEW this pass — the identical bug class round 7 fixed is still live on the audit-trail
+  write**: `Xaas.Governance.Changes.WriteAuditLogEntry` wires its own internal
+  `AuditLogEntry` `Ash.create!/2` write via `after_transaction/2`, the same over-generalized
+  HTTP-dispatch rationale round 7 already diagnosed and corrected elsewhere, on a resource
+  round 7's own diff never touched. Full evidence in "Eighth-pass update" above. Selected as
+  this pass's CREATE item.
+- **STILL OPEN — `architecture-overview.md:27`'s "44 of the 69" real HTTP-route-block
   claim does not match current code** (`grep -rl "routes do" lib/xaas --include="*.ex" | wc
   -l` → 56); the "44" figure traces to `http-api-surface.md:75`'s own stale "44 of 49"
-  count from before the domain surface grew to 69 resources. Both reference docs need a
-  real re-count pass; not selected as this pass's CREATE item since it is a doc fix, not a
-  feature — full evidence above.
+  count from before the domain surface grew to 69 resources. Flagged fresh two passes ago;
+  real-reconfirmed this pass that `aec265a` (which found and documented it) did not fix
+  either doc — its diff touched only the grid and the 3 Ledger changes. Both reference docs
+  still need a real re-count pass; not selected as this pass's CREATE item (a doc fix, not a
+  feature, and a more concrete correctness gap was found instead — see above).
+- **NEW this pass, minor — stale rationale comments in 2 resource files**:
+  `lib/xaas/billing/approval_sla_credit_apply.ex:85` and
+  `lib/xaas/billing/approval_patch_sla_credit_apply.ex:85` still say "why
+  after_transaction/2," describing the pre-round-7 code. Not selected on its own.
 - **Controller test coverage on 9 of 31 `Approval*` resources is still real zero — unchanged
   by this pass.** Re-verified with the same `comm -23` check: `approval_castle_verb_schedule`,
   `approval_freeze_override`, `approval_invoice_reconciliation_approve`,
@@ -388,16 +550,21 @@ sequence cover these):
    reaching 30 of 32 `Approval*` resources — `cec5025`.
 6. **RESOLVED** (was item 6 last grid): a real top-level architecture-overview / onboarding
    doc — `docs/claude/diataxis/explanation/architecture-overview.md`, landed `d2fd0e9`.
-12. **Real atomic (`after_action`, not `after_transaction`) Ledger writes on
-    `ApprovalSlaCreditApplyApprove`/`ApprovalPatchSlaCreditApplyApprove`/
-    `SubscriptionProrateTierChange`, plus real tests proving a Ledger failure rolls the
-    parent approval/tier-change back instead of leaving it silently uncredited/uncharged** —
-    the fresh, concrete, scoped CREATE item this pass selected; full spec in the structured
-    output below.
+12. **RESOLVED** (was this grid's own item 12, seventh pass): real atomic (`after_action`,
+    not `after_transaction`) Ledger writes on `ApprovalSlaCreditApplyApprove`/
+    `ApprovalPatchSlaCreditApplyApprove`/`SubscriptionProrateTierChange`, plus real tests
+    proving a Ledger failure rolls the parent approval/tier-change back — `aec265a`, round 7,
+    verified live this pass. See "Eighth-pass update" above.
 13. **Re-count and fix the "44 of the 69"/"44 of 49" real HTTP-route-block claims in
     `architecture-overview.md:27` and `http-api-surface.md:75`** against the real current
-    `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → 56 — fresh this pass, a doc
-    fix rather than a feature so not selected over item 12.
+    `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → 56 — still open, real-
+    reconfirmed this pass; a doc fix rather than a feature so not selected over item 14.
+14. **RESOLVED** (was this grid's own item 14, eighth pass): real atomic (`after_action`,
+    not `after_transaction`) write of `Xaas.Operations.AuditLogEntry` from
+    `Xaas.Governance.Changes.WriteAuditLogEntry`, plus a real test proving an audit-write
+    failure rolls the parent `:approve` action's `approved_by` back instead of leaving it
+    silently un-audited — implemented and independently re-verified this (ninth) pass,
+    uncommitted (see "Ninth-pass update" above for the real verification evidence).
 7. **`Xaas.Resource.MakerChecker` shared DSL fragment** — unchanged from the prior grid,
    still real and still not done: no file matching `*maker_checker*` exists anywhere in
    `lib/xaas`, and all 32 `Approval*` resources now hand-carry the identical policy block
@@ -410,8 +577,9 @@ sequence cover these):
    `Xaas.Operations.AuditLogEntry` itself** — carried forward from the fifth-pass grid,
    real-reconfirmed this pass (see Raise): still not touched by `cec5025` or the concurrent
    sequence's prompt 21. A close second to item 6 this pass.
-10. **Real `identities do` uniqueness constraints across the 49 resources are thin**: real-
-    verified `grep -rl "identities do" lib/xaas | wc -l` → 8 of 49 resources.
+10. **Real `identities do` uniqueness constraints across the 69 resources are thin**: real-
+    verified this pass `grep -rl "identities do" lib/xaas | wc -l` → 8 of 69 resources
+    (denominator corrected this pass — 49 was the pre-growth resource-surface total).
     `Xaas.Marketplace.ApprovalProviderStatusChange` still has no `identities do` block
     guarding against a duplicate *pending* status-change request for the same
     `provider_id`. Carried forward, not selected this pass.
@@ -422,14 +590,28 @@ sequence cover these):
 ## See Also
 
 - `docs/claude/diataxis/explanation/architecture-overview.md` — the sixth-pass Create item
-  this grid identified: the whole-system onboarding map that previously did not exist; this
-  pass found its own "44 of the 69" route-count claim (line 27) has drifted from current code
+  this grid identified: the whole-system onboarding map that previously did not exist; its
+  own "44 of the 69" route-count claim (line 27) has drifted from current code and is still
+  unfixed as of this pass
 - `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex`,
   `lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex`,
   `lib/xaas/billing/changes/approval_patch_sla_credit_apply_approve.ex`,
   `lib/xaas/billing/changes/subscription_prorate_tier_change.ex`,
-  `lib/xaas/ledger/account.ex` — the real atomic-vs-non-atomic Ledger-write split and the
-  real unique-constraint race this pass's selected CREATE item fixes
+  `lib/xaas/ledger/account.ex` — the real atomic Ledger-write pattern round 7 (`aec265a`)
+  landed; the pattern this pass's own selected CREATE item (item 14) extends to the
+  audit-trail write
+- `lib/xaas/governance/changes/write_audit_log_entry.ex`,
+  `lib/xaas/governance/changes/enqueue_webhook_deliveries.ex`,
+  `lib/xaas/operations/audit_log_entry.ex`,
+  `test/xaas/governance/audit_log_entry_test.exs` — the real `after_transaction/2`
+  over-generalization this pass found on the audit-trail write, the correctly-scoped
+  `after_transaction/2` sibling it was (wrongly) generalized from, and the zero-coverage
+  test file item 14's spec targets
+- `lib/mix/tasks/xaas.safe_generate_migrations.ex`,
+  `priv/repo/migrations/20260821055848_resolve_pending_backlog_20260821.exs` — the real,
+  disclosed cross-table migration hazard and the now-FMEA-hardened (`6fdca0c`) forward-
+  looking guard against its recurrence; the migration itself is historical, not a live edit
+  target (see "Eighth-pass update")
 - `docs/ASH-MIGRATION-PLAN.md` — the real 7-phase migration history and standing deferred
   decisions this grid builds on
 - `docs/claude/diataxis/reference/http-api-surface.md` — the real, current HTTP route

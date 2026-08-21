@@ -5,8 +5,8 @@ defmodule Xaas.Governance.AuditLogEntryTest do
   `Xaas.Repo`), asserting a real `Xaas.Operations.AuditLogEntry` row is
   created with the real correct `action`/`resource_type`/`resource_id`/
   `actor_id`. No mocking -- `Xaas.Governance.Changes.WriteAuditLogEntry`
-  runs for real via `Ash.Changeset.after_transaction/2`, exactly as it
-  would in production.
+  runs for real via `Ash.Changeset.after_action/2`, exactly as it would
+  in production.
   """
   use ExUnit.Case, async: true
 
@@ -148,5 +148,72 @@ defmodule Xaas.Governance.AuditLogEntryTest do
     assert entry.resource_id == approved.id
     assert entry.actor_id == "owner-2"
     assert entry.org_id == org_id
+  end
+
+  # Real Chicago-style coverage for the atomic-write fix
+  # (Xaas.Governance.Changes.WriteAuditLogEntry now uses
+  # `Ash.Changeset.after_action/2`, not `after_transaction/2`): a real
+  # AuditLogEntry write failure must roll back the parent `:approve`
+  # action's own committed state too -- never leave a record
+  # "approved but silently un-audited forever."
+  #
+  # This forces a REAL write failure, not a mock and not a timing-
+  # dependent race. `Xaas.Operations.AuditLogEntry` has no real,
+  # legitimately-triggerable unique/check constraint today: `action`/
+  # `resource_type` are static strings owned by the calling resource's
+  # own action definition, `resource_id` is always `to_string(record.id)`,
+  # and every other column real `Approval*` data can reach is nullable --
+  # so unlike round 7's `AshDoubleEntry.Transfer.Changes.VerifyTransfer`
+  # trick, there is no pre-existing real validation to lean on here.
+  # Disclosed here rather than silently reaching for a mock: instead, add
+  # a real Postgres CHECK constraint via raw SQL, scoped to *this test's
+  # own* sandboxed transaction only. Postgres DDL (including ADD
+  # CONSTRAINT) is fully transactional, and `Ecto.Adapters.SQL.Sandbox`
+  # wraps this whole test in one transaction that is rolled back at
+  # checkin -- so the constraint never touches the real schema, is
+  # invisible to every other (possibly concurrent, `async: true`) test's
+  # own connection, and disappears automatically when this test ends. The
+  # constraint is written to be trivially violated by the real, static
+  # `action` string this change module always writes, forcing a genuine
+  # constraint-violation error out of the real `Ash.create/2` call.
+  test "a real forced AuditLogEntry write failure rolls back approved_by too -- never approved-but-unaudited" do
+    Xaas.Repo.query!(
+      "ALTER TABLE audit_log_entries ADD CONSTRAINT force_test_write_failure " <>
+        "CHECK (action = 'IMPOSSIBLE_VALUE_TO_FORCE_A_REAL_CONSTRAINT_FAILURE')"
+    )
+
+    org_id = real_org_slug!()
+
+    record =
+      ApprovalLegalHoldRelease
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: org_id,
+          requested_by: "requester-forced-fail",
+          hold_id: "hold-forced-fail",
+          release_reason: "forced-failure regression test"
+        },
+        tenant: org_id
+      )
+      |> Ash.create!(authorize?: false)
+
+    assert {:error, _error} =
+             record
+             |> Ash.Changeset.for_update(:approve, %{approved_by: "owner-forced-fail"}, tenant: org_id)
+             |> Ash.update(authorize?: false)
+
+    reloaded =
+      ApprovalLegalHoldRelease
+      |> Ash.Query.filter(id == ^record.id)
+      |> Ash.Query.for_read(:read, %{}, tenant: org_id, authorize?: false)
+      |> Ash.read_one!()
+
+    assert reloaded.approved_by == nil,
+           "a real forced AuditLogEntry write failure must roll back approved_by too -- " <>
+             "this is exactly the after_transaction/2 bug the after_action/2 fix targets"
+
+    assert audit_entries_for(record.id) == [],
+           "expected no real AuditLogEntry row to survive the real rolled-back transaction"
   end
 end
