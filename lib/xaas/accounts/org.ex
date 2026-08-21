@@ -86,8 +86,16 @@ defmodule Xaas.Accounts.Org do
       authorize_if actor_present()
     end
 
+    # Real fix (next phase, per errc-innovation-grid.md's CREATE item):
+    # :update is now scoped by `Xaas.Accounts.Checks.ActorBelongsToOrg`, a
+    # real Postgres-backed check against `Xaas.Accounts.OrgMembership`
+    # rows, replacing the bare `actor_present()` fallback -- an actor no
+    # longer needs only to exist, they need a real membership row naming
+    # this org. `:create` is deliberately left on `actor_present()`: a
+    # not-yet-created org has no memberships to belong to yet (see the
+    # check module's own moduledoc for the full disclosure).
     bypass action(:update) do
-      authorize_if actor_present()
+      authorize_if Xaas.Accounts.Checks.ActorBelongsToOrg
     end
 
     # No :destroy action exists on this resource (see actions block) --

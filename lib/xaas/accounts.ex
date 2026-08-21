@@ -16,6 +16,7 @@ defmodule Xaas.Accounts do
 
   resources do
     resource Xaas.Accounts.Org
+    resource Xaas.Accounts.OrgMembership
     resource Xaas.Accounts.Token
     resource Xaas.Accounts.Token.RevokeNonce
     resource Xaas.Accounts.User

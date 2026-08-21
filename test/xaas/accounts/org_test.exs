@@ -8,14 +8,20 @@ defmodule Xaas.Accounts.OrgTest do
   lib/xaas/accounts/org.ex's policies block for the disclosed
   limitation). No mocking of the authorizer.
 
-  Also proves the bypass-audit fix (prompt #10): :create/:update are
-  scoped to `actor_present()` rather than a blanket `authorize_if
-  always()` -- a real authenticated actor still succeeds, an anonymous
-  (`actor: nil`) caller is really denied.
+  Also proves the bypass-audit fix (prompt #10): :create is scoped to
+  `actor_present()` rather than a blanket `authorize_if always()` -- a
+  real authenticated actor still succeeds, an anonymous (`actor: nil`)
+  caller is really denied.
+
+  :update's policy was strengthened again this session (see org.ex) from
+  `actor_present()` to the real `Xaas.Accounts.Checks.ActorBelongsToOrg`
+  check -- see `test/xaas/accounts/org_membership_test.exs` for the real
+  membership-scoped :update tests (an actor now needs a real
+  `Xaas.Accounts.OrgMembership` row for the org, not just to exist).
   """
   use ExUnit.Case, async: true
 
-  alias Xaas.Accounts.Org
+  alias Xaas.Accounts.{Org, OrgMembership, User}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -85,7 +91,7 @@ defmodule Xaas.Accounts.OrgTest do
   # budget; the precise-Allow-list pattern above is the real, verified-
   # working alternative for scoping reads to specific orgs.
 
-  test "a real authenticated actor can still create and update an org (legitimate case)" do
+  test "a real authenticated actor can still create an org (legitimate case)" do
     actor = %{
       iam_policy: %{
         "Statement" => [
@@ -100,13 +106,32 @@ defmodule Xaas.Accounts.OrgTest do
       |> Ash.create!()
 
     assert org.name == "Beta LLC"
+  end
 
-    updated =
-      org
-      |> Ash.Changeset.for_update(:update, %{name: "Beta LLC Renamed"}, actor: actor)
-      |> Ash.update!()
+  test "an actor with a real OrgMembership row can update the org (legitimate case)" do
+    org = create!("gamma")
 
-    assert updated.name == "Beta LLC Renamed"
+    user =
+      Ash.Seed.seed!(User, %{
+        email: "gamma-#{System.unique_integer([:positive])}@example.com"
+      })
+
+    OrgMembership
+    |> Ash.Changeset.for_create(:create, %{user_id: user.id, org_id: org.id, role: :admin})
+    |> Ash.create!(authorize?: false)
+
+    org
+    |> Ash.Changeset.for_update(:update, %{name: "Gamma Renamed"}, actor: user)
+    |> Ash.update!()
+
+    # Read back via authorize?: false (system-internal path, per this
+    # module's own top-of-file convention): the returned struct's :name
+    # field itself is redacted (`Ash.ForbiddenField`) because Org's read
+    # policy is IAM-gated and this plain `user` actor carries no
+    # `iam_policy` -- a real, separate authorization concern from the
+    # :update policy under test here.
+    persisted = Org |> Ash.get!(org.id, authorize?: false)
+    assert persisted.name == "Gamma Renamed"
   end
 
   test "an anonymous (actor-less) caller is really denied create -- not silently allowed" do
