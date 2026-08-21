@@ -74,7 +74,62 @@ defmodule Xaas.E2E.KindChaosPodRecoveryTest do
     assert %Req.Response{status: 200} = Req.get!(@base_url <> "/")
   end
 
+  test "real /api create with a real malformed JSON:API body (wrong attribute type) is really rejected" do
+    unless port_forward_reachable?() do
+      start_port_forward!()
+      wait_for_http_reachable!()
+    end
+
+    token = live_internal_api_token!()
+
+    # requested_retention_days is a real integer attribute on
+    # Xaas.Governance.ApprovalBackupRetentionChange -- sending a string
+    # here is a real type mismatch, not a missing/absent field, giving
+    # this test a distinct negative shape from
+    # kind_deployment_test.exs's missing-data.type case.
+    malformed_body = %{
+      "data" => %{
+        "type" => "approval_backup_retention_change",
+        "attributes" => %{
+          "org_id" => "kind-e2e-malformed-type-#{System.unique_integer([:positive])}",
+          "requested_by" => "kind-e2e-requester",
+          "requested_retention_days" => "not-an-integer",
+          "tier" => "pro"
+        }
+      }
+    }
+
+    resp =
+      Req.post!(@base_url <> "/api/approval_backup_retention_change",
+        headers: [
+          {"authorization", "Bearer #{token}"},
+          {"content-type", "application/vnd.api+json"},
+          {"accept", "application/vnd.api+json"}
+        ],
+        json: malformed_body
+      )
+
+    assert resp.status in [400, 422]
+  end
+
   # -- real kubectl helpers, no mocking of the cluster --
+
+  defp live_internal_api_token! do
+    {output, 0} =
+      System.cmd("kubectl", [
+        "--context",
+        @kind_context,
+        "get",
+        "secret",
+        "xaas-secrets",
+        "-n",
+        @namespace,
+        "-o",
+        "jsonpath={.data.INTERNAL_API_TOKEN}"
+      ])
+
+    output |> String.trim() |> Base.decode64!()
+  end
 
   defp live_pod_name! do
     {output, 0} =

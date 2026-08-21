@@ -142,6 +142,58 @@ defmodule Xaas.E2E.KindDeploymentTest do
     assert balance_cents == -600
   end
 
+  test "real /api request without a Bearer token is really rejected by the live deployment" do
+    resp = Req.get!(@base_url <> "/api/approval_backup_retention_change")
+    assert resp.status in [401, 403, 503]
+  end
+
+  test "real /api request with a real, intentionally-wrong Bearer token is really rejected",
+       %{token: token} do
+    wrong_token = token <> "-definitely-wrong"
+
+    resp =
+      Req.get!(@base_url <> "/api/approval_backup_retention_change",
+        headers: [{"authorization", "Bearer #{wrong_token}"}]
+      )
+
+    assert resp.status in [401, 403, 503]
+  end
+
+  test "real /api create with a real malformed JSON:API body (missing required org_id attribute) is really rejected",
+       %{token: token} do
+    # A first attempt at this test sent `data.attributes` without a
+    # `data.type` key -- the real live AshJsonApi.Router turned out to
+    # infer/accept the type from the route in that case and really
+    # created the resource (real 201), so that shape wasn't actually
+    # malformed against this live deployment. `org_id` is a real
+    # `allow_nil? false` attribute
+    # (lib/xaas/governance/approval_backup_retention_change.ex:136-138),
+    # so omitting it entirely is a real, reliably-rejected malformed
+    # body.
+    malformed_body = %{
+      "data" => %{
+        "type" => "approval_backup_retention_change",
+        "attributes" => %{
+          "requested_by" => "kind-e2e-requester",
+          "requested_retention_days" => 90,
+          "tier" => "pro"
+        }
+      }
+    }
+
+    resp =
+      Req.post!(@base_url <> "/api/approval_backup_retention_change",
+        headers: [
+          {"authorization", "Bearer #{token}"},
+          {"content-type", "application/vnd.api+json"},
+          {"accept", "application/vnd.api+json"}
+        ],
+        json: malformed_body
+      )
+
+    assert resp.status in [400, 422]
+  end
+
   # -- real kubectl/psql helpers, no mocking of the cluster or the DB --
 
   defp port_forward_reachable? do
