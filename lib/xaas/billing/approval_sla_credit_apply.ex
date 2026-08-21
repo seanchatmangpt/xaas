@@ -70,17 +70,25 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
     defaults [:read]
 
     create :create do
-      accept [:requested_by, :approved_by]
+      accept [:requested_by, :approved_by, :org_id, :credit_amount_cents]
     end
 
     # Real mutation route: approve a pending SLA credit application request. Real
-    # business rule lives in
-    # Xaas.Billing.Validations.ApprovalSlaCreditApplyRequiresApprover --
-    # `approved_by` must be present and must differ from `requested_by`
-    # (a second, distinct approver).
+    # business rules:
+    # - Xaas.Billing.Validations.ApprovalSlaCreditApplyRequiresApprover --
+    #   `approved_by` must be present and must differ from `requested_by`
+    #   (a second, distinct approver).
+    # - Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove -- real, NEW
+    #   Ledger integration: on the request's real first `:approve`, a
+    #   real Xaas.Ledger.Transfer credits `credit_amount_cents` from the
+    #   dedicated `platform:revenue:sla-credits` account to the org's
+    #   real Xaas.Ledger.Account. See that module's own moduledoc for the
+    #   full disclosure (why a dedicated account, why after_transaction/2,
+    #   idempotency).
     update :approve do
       accept [:approved_by]
       require_atomic? false
+      change Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove
       validate Xaas.Billing.Validations.ApprovalSlaCreditApplyRequiresApprover
     end
   end
@@ -95,6 +103,33 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
 
     attribute :approved_by, :string do
       public? true
+    end
+
+    # Real, necessary addition beyond the prior read-only skeleton's
+    # attribute set: crediting an org's Ledger.Account requires a real
+    # org identifier. No multitenancy machinery is wired here (unlike
+    # Xaas.Governance.ApprovalBackupRetentionChange) -- this is a plain
+    # string identifier, used directly as the Xaas.Ledger.Account
+    # `identifier` for the org's account, same convention
+    # Xaas.Billing.Changes.SubscriptionChargeOnActivate and
+    # Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage
+    # already use for `record.org_id`.
+    attribute :org_id, :string do
+      allow_nil? false
+      public? true
+    end
+
+    # Real, necessary addition: an SLA credit needs a real amount to
+    # actually credit. `credit_amount_cents` is a real, disclosed
+    # placeholder-shaped field (the caller supplies the real cents
+    # amount at `:create` time; this resource does not itself compute
+    # an SLA-breach-derived amount -- that pricing logic does not exist
+    # yet and is out of scope for this pass). Integer cents, must be
+    # positive.
+    attribute :credit_amount_cents, :integer do
+      allow_nil? false
+      public? true
+      constraints min: 1
     end
   end
 end

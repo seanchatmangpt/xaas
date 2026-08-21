@@ -22,7 +22,11 @@ defmodule KanbanWeb.ApprovalSlaCreditApplyControllerTest do
 
   defp create_pending!(requested_by) do
     ApprovalSlaCreditApply
-    |> Ash.Changeset.for_create(:create, %{requested_by: requested_by})
+    |> Ash.Changeset.for_create(:create, %{
+      requested_by: requested_by,
+      org_id: "org-controller-#{System.unique_integer([:positive])}",
+      credit_amount_cents: 1000
+    })
     |> Ash.create!(authorize?: false)
   end
 
@@ -32,7 +36,11 @@ defmodule KanbanWeb.ApprovalSlaCreditApplyControllerTest do
     body = %{
       "data" => %{
         "type" => "approval_sla_credit_apply",
-        "attributes" => %{"requested_by" => requester}
+        "attributes" => %{
+          "requested_by" => requester,
+          "org_id" => "org-controller-#{System.unique_integer([:positive])}",
+          "credit_amount_cents" => 1000
+        }
       }
     }
 
