@@ -64,14 +64,59 @@ defmodule Xaas.Marketplace.ProviderTest do
     assert updated.status == :active
   end
 
-  test "with no actor and the real deny-by-default policy, :read returns nothing" do
+  test "an actor with a real Allow statement can read via the real AshIam.Check policy" do
+    provider =
+      create!(%{
+        name: "Readable Co",
+        slug: "readable-co-#{System.unique_integer([:positive])}",
+        org_id: "org-readable"
+      })
+
+    actor = %{
+      iam_policy: %{
+        "Statement" => [
+          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:marketplace_provider:*"]}
+        ]
+      }
+    }
+
+    results = Provider |> Ash.read!(actor: actor)
+    assert Enum.any?(results, &(&1.id == provider.id))
+  end
+
+  test "an actor with no real iam_policy is really denied read -- not silently allowed" do
     _provider =
       create!(%{name: "Hidden Co", slug: "hidden-co-#{System.unique_integer([:positive])}", org_id: "org-d"})
 
-    # Real policy check (authorize?: true is the default) -- no bypass
-    # exists on :read for this resource (see moduledoc), so a real actor
-    # (or no actor) is really denied, not silently allowed.
-    results = Provider |> Ash.read!(actor: nil)
+    results = Provider |> Ash.read!(actor: %{})
     assert results == []
+  end
+
+  test "an actor whose Allow statement names a different provider's id cannot read this one" do
+    visible =
+      create!(%{
+        name: "Visible Co",
+        slug: "visible-co-#{System.unique_integer([:positive])}",
+        org_id: "org-visible"
+      })
+
+    other =
+      create!(%{
+        name: "Other Co",
+        slug: "other-co-#{System.unique_integer([:positive])}",
+        org_id: "org-other"
+      })
+
+    scoped_actor = %{
+      iam_policy: %{
+        "Statement" => [
+          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:marketplace_provider:#{visible.id}"]}
+        ]
+      }
+    }
+
+    results = Provider |> Ash.read!(actor: scoped_actor)
+    assert Enum.any?(results, &(&1.id == visible.id))
+    refute Enum.any?(results, &(&1.id == other.id))
   end
 end

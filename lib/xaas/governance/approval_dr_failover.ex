@@ -81,6 +81,9 @@ defmodule Xaas.Governance.ApprovalDrFailover do
       require_atomic? false
       validate Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover
       validate Xaas.Governance.Validations.ApprovalDrFailoverRequiresOpenIncident
+
+      change {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
+              event_type: "governance.approval_dr_failover.approved"}
     end
   end
 

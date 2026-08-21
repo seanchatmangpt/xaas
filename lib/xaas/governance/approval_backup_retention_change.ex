@@ -102,6 +102,10 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChange do
       require_atomic? false
       change Xaas.Governance.Changes.ApprovalBackupRetentionChangeApprove
       change Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage
+
+      change {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
+              event_type: "governance.approval_backup_retention_change.approved"}
+
       validate Xaas.Governance.Validations.ApprovalBackupRetentionChangeRequiresApprover
     end
   end

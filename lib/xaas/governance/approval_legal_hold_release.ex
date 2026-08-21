@@ -84,6 +84,9 @@ defmodule Xaas.Governance.ApprovalLegalHoldRelease do
       accept [:approved_by]
       require_atomic? false
       validate Xaas.Governance.Validations.ApprovalLegalHoldReleaseRequiresApprover
+
+      change {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
+              event_type: "governance.approval_legal_hold_release.approved"}
     end
   end
 

@@ -29,33 +29,43 @@ defmodule Xaas.Marketplace.Provider do
   multitenancy wiring is a separate, already-scoped pilot, not attempted
   here.
 
-  ## Deny-by-default floor (per CLAUDE.md) -- MORE conservative than Subscription
+  ## AshIam read bypass -- same real pilot as Org/Subscription
 
-  This resource has no real access-control design yet at all, not even a
-  read carve-out. Unlike `Xaas.Billing.Subscription` (which bypasses
-  `:read` via `AshIam.Check`, the real pilot pattern proven on
-  `Xaas.Accounts.Org`), this resource has no actor-scoping rule designed
-  -- there is no real notion yet of "which org/actor may list which
-  providers." Per the task's own explicit instruction, `:read` stays
-  behind the plain `policy always() do forbid_if always() end` catch-all
-  too, matching `Xaas.Billing.Subscription`'s own conservative treatment
-  of its `:create`/`:sync_from_stripe` actions (real actions that exist,
-  real JSON:API routes that route to them, but zero policy bypass, so
-  every real call -- through the JSON:API or direct `Ash.read!` with a
-  real actor -- is denied until a real authorization rule is designed).
-  `authorize?: false` (used in this resource's own Chicago-style tests,
-  matching every other resource's test convention in this repo) is the
-  only way to exercise these actions today; that is the disclosed,
-  intentional state of this resource as shipped in this pass.
+  Extended into the real AshIam pilot begun on `Xaas.Accounts.Org` and
+  `Xaas.Billing.Subscription`: `:read` now bypasses the catch-all via
+  `bypass action_type(:read) do authorize_if AshIam.Check end`, the same
+  construct proven working on Org/Subscription (a plain `policy` here
+  would AND against the trailing `policy always() do forbid_if always()
+  end` catch-all and silently deny every read regardless of
+  `AshIam.Check`'s result -- see Org's moduledoc for the real
+  `{:ok, []}` bug this was found from).
+
+  `:create`/`:update` are deliberately NOT wired to `AshIam.Check` --
+  the same real, disclosed limitation as Org/Subscription: this
+  repo's `ash_iam` version real-tests as broken on non-read/filter-type
+  checks against create/update actions. They stay behind the existing
+  `policy always() do forbid_if always() end` catch-all exactly as
+  before this change; `authorize?: false` (used in this resource's own
+  Chicago-style tests, matching every other resource's test convention
+  in this repo) remains the only way to exercise them today.
   """
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam]
+
+  iam do
+    permission_base "xaas:marketplace_provider"
+    action_to_iam_mapping create: :create, read: :read, update: :update
+  end
 
   policies do
+    bypass action_type(:read) do
+      authorize_if AshIam.Check
+    end
+
     policy always() do
       forbid_if always()
     end
