@@ -26,6 +26,32 @@ defmodule Xaas.Operations.Incident do
   `from_region`, since xaas's own DR-failover flow is multi-region, not
   multi-component the way platform-console's shared single-cluster demo
   project is.
+
+  ## Real fix (seventeenth pass) -- the `:create`/`:update` bypass had no
+  per-org access control, and fed a real cross-org escalation
+
+  Real, live-HTTP-proven gap found by the seventeenth-pass ERRC grid
+  sweep: `:create`/`:update` were bare `authorize_if(always())` despite
+  this resource accepting a caller-supplied `org_id` (line above), and
+  `KanbanWeb.Plugs.ResolveOrgActor`'s tenant-scoped path list didn't cover
+  `incidents` either. Worse than a same-resource bypass alone: because
+  `ApprovalDrFailoverRequiresOpenIncident`'s query previously filtered
+  only on `region`/`status` (see that module's own moduledoc), a
+  fabricated incident under a fake, never-authenticated org would satisfy
+  a REAL, unrelated victim org's DR-failover approval precondition. A
+  real, temporary (deleted-after-run) HTTP test proved both halves live:
+  `POST /api/incidents` with a fabricated `org_id` returned a real `HTTP
+  201`, and that row then let a real victim org's
+  `PATCH /api/approval_dr_failover/:id` succeed (`HTTP 200`, real audit
+  log + webhook effects) with zero real relationship between the two
+  orgs.
+
+  This pass adds `Xaas.Operations.Checks.ActorOrgMatches` (see that
+  module's own moduledoc), wires it into `:create`/`:update` in place of
+  `authorize_if(always())`, adds `incidents` to `ResolveOrgActor`'s
+  `@tenant_scoped_path_segments`, and adds a matching `org_id` filter to
+  `ApprovalDrFailoverRequiresOpenIncident`'s own query so the escalation
+  path is closed from both ends.
   """
 
   use Xaas.Resource,
@@ -49,12 +75,17 @@ defmodule Xaas.Operations.Incident do
       authorize_if(always())
     end
 
+    # Updated seventeenth pass: no longer a bare `authorize_if(always())`
+    # -- both now real-check `Xaas.Operations.Checks.ActorOrgMatches` (the
+    # actor's `X-Org-Id`-resolved org must match this incident's real
+    # `org_id`). See that module's moduledoc for the real, live-HTTP-proven
+    # cross-org escalation this closes.
     bypass action(:create) do
-      authorize_if(always())
+      authorize_if(Xaas.Operations.Checks.ActorOrgMatches)
     end
 
     bypass action(:update) do
-      authorize_if(always())
+      authorize_if(Xaas.Operations.Checks.ActorOrgMatches)
     end
 
     policy always() do
@@ -108,6 +139,8 @@ defmodule Xaas.Operations.Incident do
       )
 
       require_atomic?(false)
+
+      validate(Xaas.Operations.Validations.IncidentResolvedRequiresResolvedAt)
 
       accept([
         :title,

@@ -6,8 +6,220 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (sixteenth pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (seventeenth pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Seventeenth-pass update
+
+**Real HEAD confirmed: `0260997`.** `git rev-parse HEAD` →
+`0260997edf50df3412ca80e9b07ae9de4af377d0`. One real commit landed since the sixteenth-pass
+grid's own `b536a75`: `0260997` ("round 15" in its own commit message — implements the
+sixteenth-pass grid's own selected CREATE item). Real-verified via `git show 0260997 --stat`:
+7 files, 678 insertions — `errc-innovation-grid.md` (the sixteenth-pass section itself),
+`lib/kanban_web/plugs/resolve_org_actor.ex`, `lib/xaas/billing/approval_sla_credit_apply.ex`,
+`approval_patch_sla_credit_apply.ex`, a new
+`lib/xaas/billing/checks/sla_credit_actor_org_matches.ex`, and both resources' controller
+tests. **The sixteenth-pass CREATE item (the live-HTTP-proven self-service Ledger-credit
+exploit on `ApprovalSlaCreditApply`/`ApprovalPatchSlaCreditApply`) is now RESOLVED,
+independently re-verified this pass, not just cited from the commit message**: both
+resources' `policies do` blocks (real-read this pass,
+`lib/xaas/billing/approval_sla_credit_apply.ex:65-71`) now wire
+`bypass action(:create)/action(:approve) do authorize_if
+Xaas.Billing.Checks.SlaCreditActorOrgMatches end` in place of the old bare `authorize_if
+always()`; `Xaas.Billing.Checks.SlaCreditActorOrgMatches` (real-read in full this pass, a
+genuine `Ash.Policy.SimpleCheck`, not a stub — direct-attribute-read `match?/3`, fail-closed
+on a missing/blank actor `org_id`) is real and wired; `resolve_org_actor.ex`'s
+`@tenant_scoped_path_segments` (real-read this pass, now a 9-entry list) includes both
+`approval_sla_credit_apply` and `approval_patch_sla_credit_apply`. **Not re-proposed, per
+this pass's own task instruction — it's fixed.**
+
+**This pass's real, task-directed, systematic sweep of `Xaas.Marketplace`, `Xaas.Operations`,
+`Xaas.Platform`, and `Xaas.Accounts` for the identical missing-org-scoping bypass pattern
+rounds 14-15 fixed on Billing/Governance — the literal `:create`/`:approve` maker-checker
+shape is confirmed NOT to exist unprotected anywhere in 3 of the 4 domains, a real, valuable
+negative result. But the sweep surfaced a genuinely NEW, real, live-HTTP-proven instance of
+the identical underlying vulnerability CLASS in the one remaining domain, manifesting through
+a cross-resource precondition dependency rather than a same-resource `:approve` bypass — a
+shape rounds 14-15's narrower "same resource's own `:create`/`:approve`" framing would not
+have caught. This is this pass's selected CREATE item.**
+
+- **Marketplace: real, confirmed negative — already protected, not previously disclosed as
+  such in this grid.** `Xaas.Marketplace` has exactly 2 real resources
+  (`ls lib/xaas/marketplace/*.ex`, excluding `changes/`/`checks/`/`validations/` — `provider.
+  ex`, `approval_provider_status_change.ex`). Both real-read in full this pass:
+  `provider.ex:86-100`'s `policies do` block wires `bypass action(:create) do authorize_if
+  Xaas.Marketplace.Checks.ActorOrgMatches end` and `bypass action(:update) do authorize_if
+  Xaas.Marketplace.Checks.ActorOrgFilter end`; `approval_provider_status_change.ex:53-64`
+  wires the identical `ActorOrgMatches`/`ActorOrgFilter` pair on its own `:create`/`:approve`.
+  Zero bare `authorize_if always()` bypass on any mutation action in the domain
+  (`grep -rln "authorize_if always()" lib/xaas/marketplace --include="*.ex"` → zero matches).
+  This domain was already fully covered before this pass, by work outside this ERRC cron's
+  own history (no round/pass in this grid's prior sections claims credit for it) — a real,
+  clean domain, confirmed not asserted.
+- **Accounts: real, confirmed negative.** `Xaas.Accounts` has 5 real resources
+  (`lib/xaas/accounts.ex:17-23`: `Org`, `OrgMembership`, `Token`, `Token.RevokeNonce`,
+  `User`). `org.ex:85-98` (real-read) wires `bypass action(:create) do authorize_if
+  actor_present() end` and `bypass action(:update) do authorize_if
+  Xaas.Accounts.Checks.ActorBelongsToOrg end` — its own comment discloses this replaced a
+  prior blanket `authorize_if always()` in an earlier, pre-this-grid "Bypass-audit fix
+  (prompt #10)". `org_membership.ex:72-85` (real-read) has **no bypass at all** for
+  create/update/destroy — stricter than deny-by-default-with-carve-outs, genuinely
+  unreachable by design (its own moduledoc: "no bypass exists yet for
+  create/update/destroy... every mutation is currently denied"). `token.ex`/`user.ex`
+  (real-checked via `grep -n "json_api do\|routes do\|post :\|patch :"` on both) declare
+  **zero** `json_api` routes at all — matches CLAUDE.md's own disclosed deliberate exclusion
+  ("real auth/PII data... deliberately unwired"), not a gap. `token/revoke_nonce.ex`
+  (real-read) is a plain internal `AshOnetime.Resource` with no `AshJsonApi.Resource`
+  extension, no policies block, no routes — not HTTP-reachable at all. Zero live-exploitable
+  instances anywhere in this domain.
+- **Platform: real, mixed result — 1 fully-protected resource, 1 deliberately fully-denied
+  resource, and 2 real, same-class, same-severity-tier-as-round-14's-earlier-finding gaps
+  (named, not selected as this pass's primary item — see below for why).** 7 real resources
+  (`lib/xaas/platform.ex:12-18`). `webhook.ex:53-64` (real-read) is deny-by-default with
+  **zero bypass of any kind** — `policy always() do forbid_if always() end` is the entire
+  block; its own comment explicitly discloses why ("a webhook subscription URL is a real
+  exfiltration vector... No allow-all carve-out here"), so its declared `json_api routes do
+  post :create` is real but permanently unreachable. `route_projects.ex` (real-read) has only
+  a `bypass action_type(:read)` — no create/update bypass exists at all. `route_secrets.ex`,
+  `route_feature_flags.ex`, `webhook_delivery.ex` (real-read all 3) do carry a bare
+  `authorize_if always()` bypass on real mutation actions, but **none has an `org_id` or any
+  other tenant-identifying attribute at all** (real-confirmed via `grep -rl "attribute
+  :tenant_id\|attribute :customer_id\|attribute :account_id\|attribute :owner_org" lib/xaas
+  --include="*.ex"` across all 4 swept domains → zero matches anywhere, confirming `org_id`
+  is this codebase's only tenant-identifying field name) — missing the task's own
+  named "caller-accepted org_id/tenant-identifying field" ingredient entirely, so these 3 are
+  a real but different-shaped gap (no tenant concept to scope by), correctly out of this
+  pass's pattern-match scope. `route_orgs_custom_domain.ex:23-53` and
+  `route_projects_backups.ex:50-74` (both real-read in full) DO match the full pattern: bare
+  `bypass action(:create)/(:update) do authorize_if always() end`
+  (`route_orgs_custom_domain.ex:42-48`) plus a real caller-accepted `org_id` attribute
+  (`:create`'s own `accept [:org_id, :hostname]` at line 89) with a real persisted effect
+  (binds a hostname to any org, writes `certificate_secret_name`/`status` a disclosed,
+  not-yet-built external cert-sync job would trust). `route_projects_backups.ex` is the same
+  shape minus an `:update` action (`:create`-only bypass, `accept [:org_id, ...]` at line
+  100) with an explicitly self-disclosed inert downstream (`@moduledoc`: "nothing here ever
+  transitions it to `:running`/`:completed`/`:failed`... no real k8s integration yet").
+  **Real, genuine gaps, same class as round 14's `ApprovalTierDowngrade` shape** (caller
+  invents an `org_id`, persists a real row under it, no check the actor may act for that
+  org) **but correctly not this pass's primary selected item**: neither has an `:approve`
+  step or any cross-resource consumer reading their data back into a separate safety
+  decision the way this pass's Operations finding does (see below) — their worst real,
+  live-provable consequence today is metadata forgery/hostname-squatting under a fabricated
+  org, not a proven cross-org escalation into another resource's authorization decision.
+  Named as a real, disclosed, same-batch-eligible follow-up in the structured output below,
+  not silently dropped.
+- **Operations — the real positive finding, live-HTTP-proven this pass, in a domain the
+  round 14-15 sweep never touched.** `Xaas.Operations` has 2 real `Approval*`-named
+  resources with the byte-identical bare-bypass shape round 14/15 fixed elsewhere
+  (`approval_castle_verb_schedule.ex:35-41`, `approval_k8s_fault_remediate_suggest.ex:35-41`,
+  both real-read in full, both exactly 100 lines) — **but real-confirmed this pass, neither
+  has an `org_id`/tenant attribute at all** (`grep -n "org_id\|tenant"` on both files → zero
+  matches) **and neither's `:approve` action wires any real `change` at all** (`update
+  :approve do accept [:approved_by]; require_atomic? false; validate ...RequiresApprover
+  end` — no `change` line, only flips `approved_by`) — matching this session's own
+  already-disclosed "same-gap-but-functionally-inert" category (round 15's
+  `ApprovalQuotaOverride`/`ApprovalInvoiceReconciliationApprove` pattern) exactly: a real gap,
+  correctly out of scope, not this pass's selected item.
+  - **The real, live-exploitable instance this pass found is `Xaas.Operations.Incident` —
+    not an `Approval*`-named resource, but the same underlying vulnerability class, escalating
+    cross-domain into a REAL `Approval*` resource's `:approve` precondition rather than
+    living on its own `:approve` action.** `incident.ex:38-63` (real-read in full): `bypass
+    action(:create) do authorize_if(always()) end` and `bypass action(:update) do
+    authorize_if(always()) end` — bare, no check at all. `:create`'s own `accept` list
+    (line 92-100) includes a real, caller-supplied `org_id` attribute (line 133-136,
+    `allow_nil? false`, no `multitenancy` block anywhere in the file). `Xaas.Operations` is a
+    real, registered domain member (`lib/xaas/operations.ex:23`, `resource(Xaas.Operations.
+    Incident)`) and `KanbanWeb.ApiRouter` mounts that whole domain generically
+    (`lib/kanban_web/api_router.ex:29-39`, `domains: [..., Xaas.Operations, ...]`).
+  - **Real, live HTTP-level proof obtained this pass, not just static reasoning — and it
+    independently disproves a stale claim already sitting in this codebase's own test
+    suite.** `test/xaas/operations/incident_test.exs:6-8`'s own moduledoc claims: "this
+    resource's json_api routes block exists but is not actually wired into
+    `KanbanWeb.InternalApiRouter`/`ApiRouter`, so there is no real controller to test
+    against." **Real-checked this pass and found FALSE.** Wrote and ran a temporary
+    `ConnCase` test (`test/kanban_web/controllers/scratch_incident_route_liveness_test.exs`,
+    matching this session's own established evidence discipline — written, run, then `rm`'d;
+    `git status --short test/kanban_web/controllers/` confirmed clean before and after,
+    never committed). Real `POST /api/incidents` with only the shared internal API token, a
+    fabricated `org_id` (`"org-fabricated-scratch-3404"`, never created, never
+    authenticated): **real `HTTP 201`, real persisted row** (`"org_id":
+    "org-fabricated-scratch-3404"` echoed back in the real JSON:API response body). The
+    route is live, reachable, and exercises the real create pipeline end-to-end
+    (`KanbanWeb.ApiRouter.dispatch/2` → `AshJsonApi.Controllers.Post.call/2` →
+    `Ash.Actions.Create.run/4` → a real Postgres insert, confirmed by a first accidental run
+    without `Sandbox.checkout/1` that surfaced a real `DBConnection.OwnershipError` stack
+    trace naming exactly that call chain, before the checkout was added and the test
+    re-run cleanly).
+  - **Real, live, cross-org escalation proven end-to-end via a second scratch test on the
+    same temporary file: a fabricated Incident under a fake, unrelated org_id defeats the
+    real safety precondition gating a REAL, different victim org's `ApprovalDrFailover`
+    approval — a resource already correctly org-scoped on its OWN policy layer.**
+    `Xaas.Governance.Validations.ApprovalDrFailoverRequiresOpenIncident`
+    (real-read in full, `lib/xaas/governance/validations/
+    approval_dr_failover_requires_open_incident.ex:24-44`) queries `Xaas.Operations.Incident`
+    filtered **only** by `region == ^from_region and status == "open"` (line 29) — **zero
+    `org_id` filter of any kind** — before allowing `ApprovalDrFailover`'s own `:approve`
+    action (itself real-confirmed already protected by `Xaas.Governance.Checks.
+    ActorOrgMatches` plus a real `multitenancy do` block,
+    `lib/xaas/governance/approval_dr_failover.ex:38-44,89-93`) to proceed. Real scratch-test
+    sequence, real output: (1) created a real `Xaas.Accounts.Org` victim
+    (`"org-victim-bypass-74"`); (2) `POST /api/incidents` with a **completely different,
+    fabricated** `org_id` (`"org-attacker-fabricated-12931"`, unrelated to the victim in
+    every way) for region `"us-east-1-bypass-10"` — real `HTTP 201`; (3) `POST
+    /api/approval_dr_failover` + `PATCH .../:id` for the REAL victim org, correctly asserting
+    `X-Org-Id: org-victim-bypass-74` (legitimately passing `ActorOrgMatches`, exactly as a
+    genuine victim-org actor would) — **real result: `HTTP 200`,
+    `approved_by == "owner-victim-2"` persisted on the real victim `ApprovalDrFailover`
+    record**, gated through on the strength of an incident that has zero relationship to the
+    victim org. `ApprovalDrFailover:approve`'s own real live effects then fire for real on
+    this fabricated precondition: `Xaas.Governance.Changes.EnqueueWebhookDeliveries` and
+    `Xaas.Governance.Changes.WriteAuditLogEntry` (both wired at
+    `approval_dr_failover.ex:120-125`) — a real, false "DR failover approved because a
+    real incident required it" audit trail and webhook notification, when no genuine
+    operational incident occurred. **This is a materially different and, in one respect,
+    more severe exploit shape than rounds 14-15's Ledger-credit findings**: those required
+    the attacker to hold (or fabricate) the *target* org's own asserted identity at the
+    point of exploitation; this one requires **zero relationship whatsoever** between the
+    fabricated `Incident` and the real org whose safety-critical failover it unlocks — a
+    single unauthenticated `Incident` row, filed under any string at all, degrades the "must
+    have a real open incident" precondition for *every org, in that region, indefinitely*
+    (the query has no `LIMIT`/expiry check either — the fabricated incident remains `open`
+    and matching forever unless something else resolves it).
+  - **Zero existing test coverage of this exact cross-resource escalation, confirmed by
+    direct grep, not inference**: `grep -n "org_id" lib/xaas/governance/validations/
+    approval_dr_failover_requires_open_incident.ex` → zero matches (the validation's own
+    source never references org at all); `grep -rn "cross.org\|cross_org\|fabricat"
+    test/xaas/operations/incident_test.exs test/kanban_web/controllers/
+    approval_dr_failover_controller_test.exs` → zero matches in either file. The existing
+    `approval_dr_failover_controller_test.exs`'s own `open_incident!/2` helper
+    (real-read, lines 40-49) creates its incident via a direct `Ash.create!(authorize?:
+    false)` call using the *same* `org_id` as the failover under test in every existing
+    test — real, but never exercises the mismatched-org case this pass proved exploitable.
+  - **Real, disclosed reason this — not the 2 inert Operations `Approval*` siblings, not
+    the 2 real Platform gaps — is this pass's selected CREATE item.** It is the only
+    finding this pass that (a) matches the task's own named pattern (caller-accepted
+    org_id/tenant field, zero org-scoping, a real live effect reachable from it) and (b) has
+    a real, live-proven, cross-org security consequence today, not a design-blocked no-op or
+    a self-contained metadata-forgery risk. The Platform gaps
+    (`route_orgs_custom_domain.ex`/`route_projects_backups.ex`) are real and share the
+    identical root shape — named as an explicit, real, same-batch-eligible follow-up in the
+    structured output below, not deferred by omission.
+
+**Doc-drift item re-confirmed unchanged, real, still not selected** —
+`lib/xaas/billing/subscription.ex:158-163`'s `json_api do routes do` block still declares
+only `get :read`/`index :read` despite 3 real mutation actions in its own `actions do` block
+(unchanged since the sixteenth-pass grid's own re-check; nothing landed against
+`subscription.ex` in `0260997`). Carried forward, same real, low-severity, one-line-scoped
+gap, still correctly outranked by this pass's own live-exploitable cross-org finding.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass shows the same real artifacts recent passes have already logged as other standing
+activities' own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and
+untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl` (this last one
+newly appeared since the sixteenth-pass check — real churn from that same concurrent
+activity, not this ERRC cron's own output). None read beyond filenames, none touched.
 
 ## Sixteenth-pass update
 

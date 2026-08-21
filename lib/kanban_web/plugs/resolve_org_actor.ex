@@ -25,6 +25,15 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   finding (a real, live exploit that fabricated a victim org and credited
   itself, live-tested and closed this pass).
 
+  Extended seventeenth pass: `incidents` (`Xaas.Operations.Incident`)
+  closes a real, live-HTTP-proven gap that was worse than a same-resource
+  bypass -- a fabricated, cross-org `Incident` could satisfy the approval
+  precondition (`Xaas.Governance.Validations.
+  ApprovalDrFailoverRequiresOpenIncident`) gating a REAL, unrelated victim
+  org's `ApprovalDrFailover:approve`. See `Xaas.Operations.Incident`'s own
+  moduledoc and `Xaas.Operations.Checks.ActorOrgMatches` for the full
+  disclosed finding.
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -95,6 +104,7 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     approval_tier_downgrade
     approval_sla_credit_apply
     approval_patch_sla_credit_apply
+    incidents
   )
 
   def init(opts), do: opts

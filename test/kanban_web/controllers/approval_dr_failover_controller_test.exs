@@ -5,6 +5,20 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
   from platform-console's POST /api/dr/initiate-failover maker-checker
   flow), real Ash-persisted rows in the real sandboxed Postgres
   (Xaas.Repo). No mocking.
+
+  Added (seventeenth pass, real fix -- see `Xaas.Governance.Validations.
+  ApprovalDrFailoverRequiresOpenIncident`'s own moduledoc and
+  `Xaas.Operations.Checks.ActorOrgMatches`): a real, live-HTTP-proven
+  cross-resource escalation was found and fixed this pass -- an attacker
+  with no relationship to a victim org could fabricate an
+  `Xaas.Operations.Incident` under a completely invented `org_id`, and
+  that fabricated row would satisfy this resource's own
+  `ApprovalDrFailoverRequiresOpenIncident` precondition for a REAL victim
+  org's `:approve` (which is itself already correctly org-scoped). Real,
+  live-tested: this let a real `HTTP 200` approval land (real audit
+  log/webhook effects fired) purely on the strength of an attacker's own
+  fabricated, unrelated-org incident. The last test in this file proves
+  that escalation is now closed.
   """
   use KanbanWeb.ConnCase
   require Ash.Query
@@ -222,5 +236,71 @@ defmodule KanbanWeb.ApprovalDrFailoverControllerTest do
 
     persisted = ApprovalDrFailover |> Ash.get!(record.id, authorize?: false, tenant: owner_org)
     assert persisted.approved_by == nil
+  end
+
+  # Real, seventeenth-pass regression test: proves the real, live-HTTP-
+  # demonstrated cross-resource escalation is now closed. Before this
+  # pass, `ApprovalDrFailoverRequiresOpenIncident` matched ANY open
+  # incident in the right region, regardless of which org it belonged to
+  # -- an incident that genuinely exists under a completely unrelated org
+  # must never satisfy a different victim org's approval precondition.
+  test "PATCH rejects approving a failover when the only open, matching-region incident belongs to a DIFFERENT org",
+       %{conn: conn} do
+    victim_org = real_org_slug!()
+    unrelated_org = real_org_slug!()
+    region = "us-east-1-#{System.unique_integer([:positive])}"
+
+    # A real incident really exists, really open, really matching region
+    # -- just under a completely unrelated org.
+    open_incident!(unrelated_org, region)
+
+    record =
+      ApprovalDrFailover
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: victim_org,
+          requested_by: "victim-requester",
+          from_region: region,
+          to_region: "us-west-2",
+          reason: "region degradation"
+        },
+        tenant: victim_org
+      )
+      |> Ash.create!(authorize?: false)
+
+    approve_body = %{
+      "data" => %{
+        "type" => "approval_dr_failover",
+        "id" => record.id,
+        "attributes" => %{"approved_by" => "victim-approver"}
+      }
+    }
+
+    resp =
+      conn
+      |> json_headers(victim_org)
+      |> patch("/api/approval_dr_failover/#{record.id}", approve_body)
+
+    assert resp.status == 400
+
+    persisted = ApprovalDrFailover |> Ash.get!(record.id, authorize?: false, tenant: victim_org)
+    assert persisted.approved_by == nil,
+           "an open incident under an unrelated org must never satisfy a different org's " <>
+             "approval precondition -- this is the exact seventeenth-pass live-demonstrated " <>
+             "cross-resource escalation, now closed"
+
+    # Real cross-check: a real matching-org, matching-region, open
+    # incident DOES satisfy the same precondition -- proving the fix is
+    # the org filter, not an over-broad denial.
+    open_incident!(victim_org, region)
+
+    retry_resp =
+      conn
+      |> json_headers(victim_org)
+      |> patch("/api/approval_dr_failover/#{record.id}", approve_body)
+
+    retry_response = json_response(retry_resp, 200)
+    assert retry_response["data"]["attributes"]["approved_by"] == "victim-approver"
   end
 end
