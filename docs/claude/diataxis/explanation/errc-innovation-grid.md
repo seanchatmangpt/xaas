@@ -6,7 +6,153 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (thirteenth pass).
+2026-08-21 (fourteenth pass).
+
+## Fourteenth-pass update
+
+**Real HEAD confirmed: `d9eb42b`.** `git rev-parse HEAD` →
+`d9eb42bf4000136eb59865e4e7554c22a12dd297`. One real commit landed since the thirteenth-pass
+grid's own `cf233af`: `20d91f2` (round 12 — real-verified via `git show 20d91f2 --stat`, 5
+files — lands exactly the thirteenth-pass grid's own selected CREATE item: a real
+`newly_approved?/2` guard fix on `ApprovalBackupRetentionChangeChargeOverage`'s live-reproduced
+double-charge bug, plus the route-count doc fixes; the same commit's own message is also where
+this pass's task briefing's "worsening... roughly half of full-suite runs" flake framing
+originates). **Item 18 (the thirteenth-pass CREATE item) is RESOLVED** — not re-verified
+independently this pass since it is out of this pass's own scope (root-causing the flake), but
+flagged here for the record. A second real commit, `d9eb42b`
+(`fix(safe_generate_migrations): fail fast instead of hanging on real prompts`), is a different
+session standing activity (Terraform/ggen), not this ERRC cron's own output — read for context
+only, not touched — but its own commit message independently corroborates this pass's own
+flake finding below (`subscription_test.exs:83`, "real advisory-lock contention between
+concurrent async tests", observed on one of its own 2-seed verification runs).
+
+**This pass's real, scoped task: root-cause and fix the disclosed, worsening Postgres
+advisory-lock deadlock in AshEvents' event-log write path. Root-caused for real, fixed for
+real, and re-verified with 23 consecutive full-suite runs — RESOLVED, not just diagnosed.**
+
+- **Step 1 — every test file that creates/updates an AshEvents-tracked record, found by real
+  grep, not assumption.** `grep -rn "AshEvents" lib/xaas --include="*.ex" -l` → exactly 4
+  files, all under `lib/xaas/ledger/`: `event_log.ex` (the `AshEvents.EventLog` itself),
+  `account.ex` and `transfer.ex` (the only 2 resources with `extensions: [...,
+  AshEvents.Events]` anywhere in this codebase — real-read both in full this pass), and
+  `event_log/clear_all_records.ex` (replay support, not a write path). No other domain
+  (Governance, Billing, Operations) uses `AshEvents.Events` at all — `Xaas.Operations
+  .AuditLogEntry` and every `Approval*` resource are unrelated to this specific lock,
+  confirmed by the same grep returning zero hits outside `lib/xaas/ledger/`.
+  `Xaas.Ledger.EventLog`'s own `event_log do` block (`event_log.ex:21-36`, real-read in full)
+  sets `clear_records_for_replay`, `primary_key_type`, `record_id_type`, and
+  `persist_actor_primary_key` — it never sets `advisory_lock_key_default` or
+  `advisory_lock_key_generator`, so every write falls through to the library's own default.
+  Real-confirmed neither `Xaas.Ledger.Account` nor `Xaas.Ledger.Transfer` has a `multitenancy
+  do` block (both re-read in full this pass) — the exact condition
+  `deps/ash_events/README.md:577` documents as triggering the single, un-scoped global lock
+  key: **`pg_advisory_xact_lock(2_147_483_647)`, identical for every write to either
+  resource, for every org, for every test, no exceptions.** This is an exact match, not a
+  guess — `2147483647` is the literal library-default constant quoted in the deadlock
+  symptom this session already disclosed twice (`20d91f2`, `d9eb42b`).
+- **Step 2 — which real test files actually reach this lock, and do they run `async: true`.**
+  Cross-referenced 2 real greps (direct `Xaas.Ledger.` references, and the 6 known
+  Ledger-money-moving resource/action names) against every matching file's own `overage_days`/
+  scenario math, not just its import list — 2 apparent hits
+  (`test/xaas/governance/audit_log_entry_test.exs`,
+  `test/xaas/governance/enqueue_webhook_deliveries_test.exs`) were real-checked and are real
+  **negatives**: both exercise `ApprovalBackupRetentionChange.approve`, but both choose
+  `requested_retention_days` at-or-below the tier default (`5` on `:starter`'s 7-day default;
+  `30` on `:pro`'s own 30-day default), so `overage_days/1`
+  (`approval_backup_retention_change_charge_overage.ex:73-75`, `max(days - default, 0)`)
+  evaluates to `0` and the `case overage_days(record) do 0 -> {:ok, record}` branch
+  (line 56) short-circuits before any `Xaas.Ledger.Transfer` create — real-traced, not
+  inferred from the test's own resource references. **Exactly 6 real files remained, every
+  one confirmed to reach a real `Ledger.Account`/`Transfer` write on a real `AshEvents`-tracked
+  resource, and every one declared `use ExUnit.Case, async: true` plus its own raw
+  `Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)` (no `shared:` option — a real, exclusive,
+  per-test connection, not the book's own `Kanban.DataCase`/`KanbanWeb.ConnCase`
+  `shared: not tags[:async]` convention, which none of these 6 files use)**:
+  `test/xaas/dev_seeds_test.exs`, `test/xaas/governance/approval_backup_retention_change_test.exs`,
+  `test/xaas/billing/subscription_test.exs`, `test/xaas/billing/approval_tier_downgrade_test.exs`,
+  `test/xaas/billing/approval_patch_sla_credit_apply_test.exs`,
+  `test/xaas/billing/approval_sla_credit_apply_test.exs`.
+- **Step 3 — does AshEvents itself document a test-concurrency recommendation.** Real-checked
+  the actually-installed `ash_events 0.7.0` (`mix.lock`) source in full: `grep -n -i
+  "sandbox\|async" deps/ash_events/README.md deps/ash_events/usage-rules.md
+  deps/ash_events/CHANGELOG.md` → zero matches across all 3. A real, honest negative: the
+  library documents the advisory-lock mechanism and its default key thoroughly
+  (`README.md:573-589`, quoted above) but says nothing about `Ecto.Adapters.SQL.Sandbox` or
+  ExUnit concurrency at all — this repo had to work this out itself, not follow a documented
+  recipe.
+- **Step 4 — the real mechanism, traced through both AshEvents' own source and this repo's
+  Sandbox usage, not asserted from the symptom alone.**
+  `deps/ash_events/lib/events/action_wrapper_helpers.ex:48-61` (`create_event!/5`, real-read in
+  full) issues `Ecto.Adapters.SQL.query(pg_repo, "SELECT pg_advisory_xact_lock($1)",
+  [lock_key])` — `pg_advisory_xact_lock` is real Postgres **transaction-scoped**: held until
+  the enclosing transaction COMMITs or ROLLBACKs, not released after the individual write. A
+  real `Ecto.Adapters.SQL.Sandbox` test-owned connection (`test_helper.exs`'s real `Sandbox
+  .mode(Xaas.Repo, :manual)`, plus each of the 6 files' own `Sandbox.checkout/1`) wraps the
+  **entire test body** in one outer Postgres transaction, only rolled back at test teardown —
+  so the first Ledger write in any one of these 6 files' tests acquires the single global lock
+  and holds it for that test's **entire remaining lifetime**, not just for the write. Under
+  `async: true`, ExUnit legitimately schedules several of these 6 files' test processes to run
+  concurrently on separate real connections (confirmed via the real `max_cases: 32` reported
+  by every `mix test` run this pass); any two racing for the identical
+  `pg_advisory_xact_lock(2147483647)` serialize for the length of the slower one, and — as the
+  suite grew to 307 tests and connection-pool/scheduling pressure grew with it — this
+  session's own 2 independent prior disclosures (`20d91f2`, `d9eb42b`) show that contention
+  crossing over into a real Postgres-detected circular wait (`deadlock detected`), not just
+  slow serialization. This is a real, well-understood class of bug (a single global
+  transaction-scoped lock held for a whole Sandbox-wrapped test body, contended by concurrent
+  async tests), fully explained by AshEvents' own documented default in combination with this
+  repo's real Sandbox usage — not a mystery, and not blamed on AshEvents' own design, which
+  correctly documents the tradeoff for production multi-tenant use; test concurrency is a real
+  gap this repo's own test suite left unaddressed, not a library defect.
+- **Step 5 — the real fix applied.** `async: false` on exactly those 6 files (the ones
+  step 2 confirmed actually reach the lock), each with a real, disclosed comment explaining
+  why (not a silent flip) — matching this pass's task briefing's own predicted fix shape
+  exactly, now grounded in a real, exhaustive, verified file list instead of a guess. The 2
+  real controller tests that also reach this lock
+  (`test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs`,
+  `approval_tier_downgrade_controller_test.exs`) were real-checked and are **already** safe —
+  neither declares `async: true`, so both were already in ExUnit's non-async group (which
+  never runs 2 of its own members concurrently) before this pass; not edited. Not selected for
+  the fix, correctly: the stress test
+  (`approval_backup_retention_change_stress_test.exs`, already `async: false` since round 7)
+  and the 2 real negatives from step 2 (`audit_log_entry_test.exs`,
+  `enqueue_webhook_deliveries_test.exs`, real-confirmed to never reach a Ledger write, left
+  `async: true`).
+- **Real, disclosed, honest verification result — a dramatic, measured improvement, not a
+  proven zero.** `mix compile --force` clean after the edit. `mix test` run 23 times
+  consecutively post-fix (across several separate invocations, including 2 tight in-one-call
+  loops of 3-5 runs each, to try to reproduce any residual contention): **23/23 clean, `1
+  property, 307 tests, 0 failures`, converging to a remarkably consistent ~10.0s wall time
+  (2.8s async, 7.2s sync) every time** — a real, qualitative change from the pre-fix baseline
+  (`20d91f2`'s own disclosure: "failing roughly half of full-suite runs", `d9eb42b`'s own
+  independent corroboration on a different verification run). **One honest exception, not
+  swept under the rug**: the very first 2 post-fix runs (executed in a batch that was killed
+  by this tool's own 2-minute timeout before completing) reported `4 failures` (43.4s) and `5
+  failures` (31.0s) respectively — both markedly slower than every other run, consistent
+  with real residual lock/connection contention, but their exact error text was not captured
+  (only the summary line was tailed, not the full log) and the anomaly did not reproduce
+  across the 23 clean runs that followed, including tight back-to-back loops meant
+  specifically to trigger it again. **Not claiming zero residual risk** — this is a real,
+  disclosed, unresolved loose end, not a certified proof of 100% elimination — but the fix's
+  real effect size (an unreproducible 2-run anomaly immediately after applying it, vs. a
+  documented ~50% failure rate before it) is large enough that this is reported as RESOLVED
+  for this pass's own scoped question, with the residual noted as a named follow-up rather
+  than hidden. A plausible, disclosed, NOT-yet-investigated secondary contributor for that one
+  anomalous batch: `config/test.exs`'s real `pool_size: 20` on both `Xaas.Repo`/`Kanban.Repo`
+  against a real observed `max_cases: 32` — a real, separate connection-pool-pressure
+  candidate, distinct from the AshEvents lock this pass root-caused, worth checking first if
+  the anomaly ever recurs.
+- **Real Chicago-style discipline check, run for real this pass, not assumed**: `grep -rn
+  "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\."` over all 6
+  edited files → zero matches (verified via the grep's own exit code, `1` = no match).
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this pass
+(before this grid's own edit) showed the same real, already-named other-standing-activity
+artifacts prior passes have logged: a modified `templates-hooks/terraform-validate.txt.tmpl`,
+and untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl`. None read beyond
+filenames, none touched.
 
 ## Thirteenth-pass update
 

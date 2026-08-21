@@ -11,7 +11,20 @@ defmodule Xaas.DevSeedsTest do
   rows read back and asserted on for real persisted state. No mocking of
   `Xaas.DevSeeds` or any of the four resources it seeds.
   """
-  use ExUnit.Case, async: true
+  # async: false (real, disclosed, fourteenth-pass ERRC fix -- see
+  # `docs/claude/diataxis/explanation/errc-innovation-grid.md`): this file
+  # writes real `Xaas.Ledger.Account`/`Transfer` rows via `DevSeeds`, both
+  # `AshEvents.Events`-tracked resources with no `multitenancy do` block, so
+  # every write takes AshEvents' single global `pg_advisory_xact_lock(
+  # 2_147_483_647)` (the library default, unset by `Xaas.Ledger.EventLog`).
+  # That lock is transaction-scoped and this test's Sandbox transaction
+  # stays open until teardown, so under `async: true` any 2 of this file's
+  # 6 real siblings running concurrently on separate connections contend
+  # for the identical lock for the length of the slower test -- the real,
+  # root-caused mechanism behind this session's worsening full-suite
+  # Postgres "deadlock detected" flake. Slower (serialized relative to its
+  # 5 named siblings below), but correct.
+  use ExUnit.Case, async: false
   require Ash.Query
 
   alias Xaas.Accounts.Org
