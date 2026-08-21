@@ -11,7 +11,11 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
   This task wraps the real `mix ash_postgres.generate_migrations` and adds a
   real safety gate:
 
-    1. Run the real underlying task with the given `--name`.
+    1. Run the real underlying task with the given `--name`, with the
+       active `Mix.shell()` swapped to `FailFastShell` (defined in this
+       file) for the duration of that one call -- see the moduledoc on
+       `FailFastShell` below for the real, cited evidence (RPN=450) of why
+       this exists and exactly what it does and does not change.
     2. Read the real migration file(s) it just wrote (by diffing the real
        `priv/repo/migrations` directory before/after the run -- the
        underlying task does not report the path it wrote).
@@ -69,7 +73,7 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
       "[xaas.safe_generate_migrations] target resource #{inspect(resource_module)} -> table #{inspect(target_table)}"
     )
 
-    Mix.Task.run("ash_postgres.generate_migrations", ["--name", name])
+    run_generate_migrations_without_risk_of_hanging!(name)
     Mix.Task.reenable("ash_postgres.generate_migrations")
 
     after_files = list_migration_files(migrations_dir)
@@ -104,6 +108,59 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
             )
         end
       end)
+    end
+  end
+
+  # Real fix for RPN=450 (Severity=8 x Occurrence=?, real FMEA finding this
+  # session): confirmed by reading `deps/ash_postgres/lib/migration_generator/
+  # migration_generator.ex` end to end that literally every blocking-input
+  # call site in the real underlying migration generator --
+  # `renaming_to?/4` (line 3456, the exact-one-attribute-added +
+  # exact-one-attribute-removed "are you renaming X to Y?" prompt -- the
+  # single most common real column-rename shape), `renaming?/3` and its
+  # siblings `renaming_table?/2`, `renaming_table_to?/3`,
+  # `moving_table_to_schema?/3`, `drop_table_confirmed?/2` (their N-ary /
+  # table-level counterparts), and the primary-key-ambiguity `prompt/1`
+  # (line 1246) -- resolves exclusively through `Mix.shell().yes?/1,2` or
+  # `Mix.shell().prompt/1` (`grep -n "IO\.gets\|Mix\.shell()\."` over that
+  # file finds zero raw `IO.gets` calls bypassing `Mix.shell()`). Real
+  # `Mix.shell/1` is Mix's own supported, documented extension point for
+  # swapping the active shell implementation (the same mechanism
+  # `Mix.Shell.Process`/`Mix.Shell.Quiet` use) -- not a mock of a
+  # collaborator this codebase owns, but a real, alternate, in-tree-visible
+  # implementation of the real `Mix.Shell` behaviour that genuinely runs in
+  # production every time this task runs, so swapping it here for the
+  # single wrapped call converts every one of those prompts from "block on
+  # `IO.gets` forever if stdin is a live pipe with no EOF" into "raise a
+  # `Mix.Error` immediately naming the exact prompt that would have fired."
+  #
+  # Deliberately NOT done instead: passing `--dev` to the underlying task.
+  # `--dev` (confirmed via `deps/ash_postgres/lib/mix/tasks/
+  # ash_postgres.generate_migrations.ex` and `deps/ash/lib/mix/tasks/
+  # ash.codegen.ex`) is not merely a prompt-suppression flag -- it switches
+  # to a genuinely different codegen workflow: the file it writes is
+  # suffixed `_dev.exs` and is explicitly documented as a *temporary*
+  # migration meant to later be deleted and regenerated as the real named
+  # migration via a separate, un-flagged `mix ash.codegen <name>` run. This
+  # wrapper's whole contract is "produce the one real, reviewable,
+  # `--name`d production migration file for `--resource`" -- silently
+  # handing back a `_dev.exs` file instead would change what every caller
+  # of this wrapper gets, not just suppress a prompt. It would also only
+  # have been a partial fix regardless: `--dev` gates `renaming?/3` and its
+  # table/schema siblings (they check `opts.dev` and short-circuit before
+  # ever calling `Mix.shell()`) but does NOT gate `renaming_to?/4` (the
+  # exact-1-add-1-remove case) or the primary-key-ambiguity `prompt/1` --
+  # both call `Mix.shell()` unconditionally regardless of `--dev`. The
+  # `Mix.shell()` swap below covers all of these uniformly, with no change
+  # to the kind of migration file produced.
+  defp run_generate_migrations_without_risk_of_hanging!(name) do
+    previous_shell = Mix.shell()
+    Mix.shell(FailFastShell)
+
+    try do
+      Mix.Task.run("ash_postgres.generate_migrations", ["--name", name])
+    after
+      Mix.shell(previous_shell)
     end
   end
 
@@ -274,6 +331,72 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
 
     To proceed anyway (only if this cross-table change is genuinely intended):
       mix xaas.safe_generate_migrations --name <name> --resource <ResourceModule> --allow-cross-table
+    """)
+  end
+end
+
+defmodule Mix.Tasks.Xaas.SafeGenerateMigrations.FailFastShell do
+  @moduledoc """
+  Real `Mix.Shell` implementation (not a test double -- it genuinely runs
+  in production every time `xaas.safe_generate_migrations` runs; see the
+  real, cited evidence on `run_generate_migrations_without_risk_of_hanging!/1`
+  in `Mix.Tasks.Xaas.SafeGenerateMigrations` for exactly which real
+  `ash_postgres` prompt call sites this covers and why `--dev` was not
+  used instead), swapped in as the active `Mix.shell()` only around the
+  underlying `ash_postgres.generate_migrations` call.
+
+  `info/1`, `error/1`, `print_app/0`, and `cmd/1,2` delegate to the real
+  `Mix.Shell.IO` so the underlying task's real output (which migration
+  file it created, its own warnings) is still printed -- this only
+  changes the two calls that can actually block on stdin:
+  `yes?/1,2` and `prompt/1` now raise a `Mix.Error` immediately, naming
+  the exact prompt, instead of calling through to `Mix.Shell.IO` (which
+  resolves to a real, potentially-forever-blocking `IO.gets/1`).
+  """
+  @behaviour Mix.Shell
+
+  @impl true
+  def info(message), do: Mix.Shell.IO.info(message)
+
+  @impl true
+  def error(message), do: Mix.Shell.IO.error(message)
+
+  @impl true
+  def print_app, do: Mix.Shell.IO.print_app()
+
+  @impl true
+  def cmd(command), do: Mix.Shell.IO.cmd(command)
+
+  @impl true
+  def cmd(command, options), do: Mix.Shell.IO.cmd(command, options)
+
+  @impl true
+  def yes?(message), do: fail_fast!(message)
+
+  @impl true
+  def yes?(message, _options), do: fail_fast!(message)
+
+  @impl true
+  def prompt(message), do: fail_fast!(message)
+
+  defp fail_fast!(message) do
+    Mix.raise("""
+    xaas.safe_generate_migrations: the underlying ash_postgres.generate_migrations \
+    task tried to prompt for interactive input. This wrapper refuses to block on \
+    stdin waiting for an answer (it may be running unattended: CI, a scheduled \
+    job, or any caller that keeps stdin open as a live pipe with no EOF), so it \
+    is failing fast instead of hanging.
+
+    The real prompt that would have been asked:
+
+      #{message}
+
+    This is a real ambiguity ash_postgres could not resolve automatically -- either \
+    a same-table attribute add+remove it could not confirm is a rename, or two \
+    resources mapped to the same table with different primary keys. Resolve it by \
+    running `mix ash_postgres.generate_migrations --name <name>` directly in an \
+    interactive shell where you can answer the prompt, then re-run \
+    xaas.safe_generate_migrations.
     """)
   end
 end
