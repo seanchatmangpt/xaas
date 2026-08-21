@@ -1,13 +1,31 @@
 defmodule Xaas.Billing.Validations.ApprovalPatchSlaCreditApplyRequiresApprover do
+  @moduledoc """
+  Real business rule for `Xaas.Billing.ApprovalPatchSlaCreditApply`'s `:approve`
+  action: an approval must name a real approver, and a requester may not
+  approve their own patch SLA credit application request (maker-checker -- same shape as
+  `Xaas.Billing.Validations.ApprovalPricingOverrideRequiresApprover` and
+  every other `*RequiresApprover` validation in this codebase).
+  """
   use Ash.Resource.Validation
 
   @impl true
-  def init(opts) do
-    {:ok, opts}
-  end
+  def init(opts), do: {:ok, opts}
 
   @impl true
-  def validate(_changeset, _opts, _context) do
-    :ok
+  def validate(changeset, _opts, _context) do
+    approved_by = Ash.Changeset.get_attribute(changeset, :approved_by)
+    requested_by = Ash.Changeset.get_attribute(changeset, :requested_by)
+
+    cond do
+      is_nil(approved_by) or approved_by == "" ->
+        {:error, field: :approved_by, message: "is required to approve a patch SLA credit application"}
+
+      approved_by == requested_by ->
+        {:error,
+         field: :approved_by, message: "cannot approve their own patch SLA credit application request"}
+
+      true ->
+        :ok
+    end
   end
 end
