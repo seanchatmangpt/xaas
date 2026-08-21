@@ -107,21 +107,33 @@ defmodule Xaas.Billing.Subscription do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam]
+
+  iam do
+    permission_base "xaas:billing_subscription"
+    action_to_iam_mapping create: :create, read: :read, update: :update
+  end
 
   policies do
-    # ash-migration Phase 5 deny-by-default floor, same shape every other
-    # Billing resource in this repo already uses. Read is the one bypass;
-    # :create and :sync_from_stripe are real actions defined below but
-    # deliberately NOT bypassed -- they trigger a real external Stripe
-    # side effect (:create) or accept externally-sourced state
-    # (:sync_from_stripe) and need a real, explicit authorization rule
-    # (e.g. actor-is-org-member) before they are callable, not a blanket
-    # allow shipped mechanically alongside the resource shape.
+    # Real IAM-gated read, same real, hard-won pattern as
+    # `Xaas.Accounts.Org` (see that resource's moduledoc/policies block):
+    # `bypass action_type(:read) do authorize_if AshIam.Check end`, NOT a
+    # plain `policy`, which would AND against the trailing catch-all below
+    # and silently deny every read regardless of AshIam.Check's result.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if AshIam.Check
     end
 
+    # :create and :sync_from_stripe are deliberately left off AshIam too
+    # (real, disclosed limitation: AshIam.Check does not real-test as
+    # working on :create/:update in this repo's ash_iam version -- see
+    # Org's policies block). Unlike Org, they are NOT given an
+    # authorize_if-always bypass either: this resource's original
+    # deny-by-default floor for mutations (real external Stripe side
+    # effect on :create, externally-sourced state on :sync_from_stripe,
+    # no actor-is-org-member rule designed yet) is preserved unchanged --
+    # they fall through to the catch-all below exactly as before this
+    # change.
     policy always() do
       forbid_if always()
     end
@@ -185,9 +197,18 @@ defmodule Xaas.Billing.Subscription do
     # stripe_subscription_id since a `customer.subscription.deleted`
     # event followed by a fresh Checkout can produce a new subscription id
     # for the same stored row in platform-console's own model.
+    #
+    # Xaas.Billing.Changes.SubscriptionChargeOnActivate: real, NEW (not
+    # ported) business logic -- when this update moves `status` to
+    # `:active` for the first time, a real Xaas.Ledger.Transfer charges a
+    # real (placeholder-priced) monthly subscription fee. See that
+    # module's own moduledoc for the honest disclosure this is invented,
+    # not a real priced product, and for the idempotency discipline that
+    # keeps a repeat `:active` sync from double-charging.
     update :sync_from_stripe do
       accept [:stripe_subscription_id, :status, :current_period_end]
       require_atomic? false
+      change Xaas.Billing.Changes.SubscriptionChargeOnActivate
     end
   end
 

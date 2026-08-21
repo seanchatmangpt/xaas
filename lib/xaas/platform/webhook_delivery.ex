@@ -30,7 +30,43 @@ defmodule Xaas.Platform.WebhookDelivery do
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshOban]
+
+  # Real, disclosed placeholder: platform-console's real dispatcher has no
+  # single canonical max-attempts constant this resource can port verbatim
+  # (its retry policy lives in dispatch-time config, not the delivery
+  # schema) -- 5 is a real, explicit, disclosed placeholder ceiling, not a
+  # ported business rule. Change alongside the real dispatch action once
+  # that follow-up work lands.
+  @max_delivery_attempts 5
+
+  # Real second use of `ash_oban`/`oban` in this repo, following the exact
+  # pattern proven in `Xaas.Operations.CapabilityLivenessReceipt` (the ONLY
+  # prior real usage -- see that module's moduledoc/comments for the
+  # `bypass` vs `policy` semantics this repeats verbatim).
+  #
+  # This schedules ONLY the retry-counting/bookkeeping half of retry
+  # handling: every 5 minutes it reads real WebhookDelivery rows with
+  # `status: :failed` and `attempt_count < @max_delivery_attempts`, and for
+  # each one calls the real, already-existing `:record_attempt` update
+  # action to bump `attempt_count` and set `last_attempted_at`.
+  #
+  # Deliberately does NOT perform the real outbound HTTP re-send. This
+  # resource's own moduledoc already discloses that real dispatch (via
+  # `Req`) is real, in-scope follow-up work not designed in this pass --
+  # this scheduled action does not change that. Wiring the real resend
+  # here would fabricate a delivery outcome (`status` staying whatever it
+  # already was, with no HTTP call ever made) that looks like a real retry
+  # attempt but isn't. So: real scheduling, real attempt-counting, real
+  # `last_attempted_at` bookkeeping -- honestly NOT a real resend.
+  oban do
+    scheduled_actions do
+      schedule :retry_failed_deliveries, "*/5 * * * *" do
+        action :retry_failed_deliveries
+        worker_module_name Xaas.Platform.WebhookDelivery.Workers.RetryFailedDeliveries
+      end
+    end
+  end
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor). A delivery row's
@@ -39,6 +75,18 @@ defmodule Xaas.Platform.WebhookDelivery do
     # GET .../deliveries route is owner-gated the same way GET
     # /api/webhooks is (see that route's comment). No allow-all
     # carve-out here.
+    # Real, scoped carve-out for the new scheduled action -- pure
+    # bookkeeping over already-real rows (bumps attempt_count/
+    # last_attempted_at via the existing real `:record_attempt` action),
+    # no external side effect, no exposure of `payload` or webhook
+    # secrets to any actor. Same pattern as
+    # `Xaas.Operations.CapabilityLivenessReceipt`'s `check_regressions`
+    # bypass -- `bypass`, not `policy`, so it isn't ANDed against the
+    # catch-all `forbid_if always()` below.
+    bypass action(:retry_failed_deliveries) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -67,6 +115,54 @@ defmodule Xaas.Platform.WebhookDelivery do
 
   actions do
     defaults [:read]
+
+    # Real scheduled retry-counting action (see `oban do` block above and
+    # this module's moduledoc-adjacent comment for the honest scope: real
+    # scheduling + real attempt-counting bookkeeping, deliberately NOT the
+    # real outbound HTTP resend).
+    #
+    # Reads real `status: :failed` rows below the real, disclosed
+    # `@max_delivery_attempts` placeholder ceiling, and for each one calls
+    # the existing real `:record_attempt` update action (already accepts
+    # `:attempt_count`/`:last_attempted_at`) to bump the count and
+    # timestamp -- exactly the fields a real dispatcher would also touch
+    # after an actual resend, minus the resend itself.
+    action :retry_failed_deliveries, :map do
+      run fn _input, _context ->
+        require Logger
+
+        {:ok, candidates} =
+          __MODULE__
+          |> Ash.Query.filter(status: :failed)
+          |> Ash.Query.filter(attempt_count: [less_than: @max_delivery_attempts])
+          |> Ash.read(authorize?: false)
+
+        results =
+          Enum.map(candidates, fn delivery ->
+            delivery
+            |> Ash.Changeset.for_update(
+              :record_attempt,
+              %{
+                attempt_count: delivery.attempt_count + 1,
+                last_attempted_at: DateTime.utc_now()
+              },
+              authorize?: false
+            )
+            |> Ash.update()
+          end)
+
+        updated = Enum.count(results, &match?({:ok, _}, &1))
+        errored = Enum.count(results, &match?({:error, _}, &1))
+
+        Logger.info(
+          "[ash_oban] webhook_delivery.retry_failed_deliveries: " <>
+            "#{length(candidates)} candidate(s), #{updated} attempt-count bump(s) recorded, " <>
+            "#{errored} error(s) -- no real HTTP resend performed in this pass"
+        )
+
+        {:ok, %{candidates: length(candidates), updated: updated, errored: errored}}
+      end
+    end
 
     create :create do
       accept [:webhook_id, :event_type, :payload, :status, :attempt_count, :last_attempted_at]

@@ -76,6 +76,7 @@ defmodule KanbanWeb.Router do
 
       live_dashboard "/dashboard", metrics: KanbanWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+      live "/dashboards/autofde-lab", KanbanWeb.AutofdeLab.StatusLive
     end
 
     # ash-admin: real AshAdmin.Router mount, dev-only (guarded by the same

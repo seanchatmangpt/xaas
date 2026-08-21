@@ -32,7 +32,21 @@ defmodule Xaas.Platform.Webhook do
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshCloak]
+
+  # Same real AshCloak pattern as `Xaas.Accounts.Token`'s `cloak` block
+  # (the only other real usage in this repo): encrypts `secret` at rest
+  # via `Xaas.Vault`, transparently at the Ash level -- the underlying
+  # `secret` column stays `:string` (same real, deliberate non-rename
+  # this repo already applied to `tokens.extra_data`: see the repeated
+  # "codegen proposed tokens.extra_data -> tokens.encrypted_extra_data,
+  # excluded" migration comments across priv/repo/migrations -- AshCloak
+  # encrypts/decrypts in place without changing the Ash attribute's
+  # storage type, so no destructive rename is needed here either).
+  cloak do
+    vault Xaas.Vault
+    attributes [:secret]
+  end
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor). A webhook's `url` is a
