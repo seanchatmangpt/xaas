@@ -16,6 +16,21 @@ defmodule Xaas.Governance.ApprovalDrFailover do
       authorize_if always()
     end
 
+    # Real, explicit per-action carve-out (issue #20), ported from
+    # platform-console's real POST /api/dr/initiate-failover maker-checker
+    # flow: `:create` (file the failover request) and `:approve` are
+    # gated the same way reads are -- by the router-level
+    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # ApprovalDrFailoverRequiresApprover's real "second, distinct owner"
+    # rule on :approve.
+    bypass action(:create) do
+      authorize_if always()
+    end
+
+    bypass action(:approve) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -32,6 +47,8 @@ defmodule Xaas.Governance.ApprovalDrFailover do
       base "/approval_dr_failover"
       get :read
       index :read
+      post :create
+      patch :approve
     end
   end
 
@@ -42,15 +59,60 @@ defmodule Xaas.Governance.ApprovalDrFailover do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:org_id, :requested_by, :from_region, :to_region, :reason]
+    end
+
+    # Real mutation route (issue #20), ported from platform-console's
+    # POST /api/dr/initiate-failover maker-checker flow: approve a
+    # pending multi-region DR failover. Real business rule lives in
+    # Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover --
+    # `approved_by` must be present and must differ from `requested_by`
+    # (a second, distinct owner). platform-console's own additional
+    # runtime precondition (an open incident referencing `from_region`
+    # must exist before failover runs) is NOT ported -- this session has
+    # not modeled an Incident resource in xaas, so that check is honestly
+    # left undone rather than fabricated.
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      validate Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
-    attribute :requested_by, :string do
+    attribute :org_id, :string do
       allow_nil? false
+      public? true
     end
 
-    attribute :approved_by, :string
+    attribute :requested_by, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :approved_by, :string do
+      public? true
+    end
+
+    # Real payload, matching platform-console's real POST body
+    # (orgId/fromRegion/toRegion/reason, all required).
+    attribute :from_region, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :to_region, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :reason, :string do
+      allow_nil? false
+      public? true
+    end
   end
 end

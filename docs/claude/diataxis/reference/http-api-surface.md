@@ -299,6 +299,31 @@ real ledger-balance-change assertion on overage approval, real no-charge asserti
 overage occurs. Plus `test/e2e/kind_deployment_test.exs` against the live deployment (see
 above).
 
+### Third-fifth real mutation routes (issue #20): DR failover, CMEK key binding, DSAR erasure
+
+Continuing the governance-cluster pattern, three more resources gained real `POST`/`PATCH`
+routes, each with real payload attributes ported verbatim from their platform-console
+counterparts:
+
+- **`Xaas.Governance.ApprovalDrFailover`** ↔ `POST /api/dr/initiate-failover`: real
+  `org_id`/`from_region`/`to_region`/`reason`. Not ported: platform-console's runtime
+  precondition that an open incident referencing `from_region` must exist — xaas has no
+  Incident resource yet, honestly left undone.
+- **`Xaas.Governance.ApprovalCmekKeyBinding`** ↔ `PUT /api/orgs/[id]/cmek`: real
+  `org_id`/`provider` (`Xaas.Governance.Types.CmekProvider`, ported verbatim:
+  `aws_kms`/`gcp_kms`/`azure_keyvault`/`vault`)/`key_ref`/`reason`. Not ported: the real
+  Secrets/PVC re-annotation platform-console performs on a live key rotation — xaas has no
+  live k8s-write path for this yet.
+- **`Xaas.Governance.ApprovalDsarErasure`** ↔ `POST /api/privacy/request-erasure`: real
+  `org_id`/`subject_email`, validated against platform-console's real `EMAIL_RE`
+  (`ApprovalDsarErasureValidSubjectEmail`, ported verbatim). Not ported: `runDsarErasure`'s
+  actual data deletion — xaas has no real subject-data store to erase from yet.
+
+Each follows the same real shape as `ApprovalBackupRetentionChange`/`ApprovalPricingOverride`:
+`bypass action(:create)`/`bypass action(:approve)`, a `*RequiresApprover` validation (present +
+distinct-from-requester), real Chicago-style HTTP tests
+(`test/kanban_web/controllers/approval_{dr_failover,cmek_key_binding,dsar_erasure}_controller_test.exs`).
+
 ### Deliberately unwired (5 resources, no `json_api` block at all)
 
 Per `lib/kanban_web/api_router.ex`'s own moduledoc, these 5 have **no** `routes do` block —

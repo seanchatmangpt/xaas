@@ -75,7 +75,8 @@ config :ash,
     money: AshMoney.Types.Money,
     capability_class: Xaas.Governance.Types.CapabilityClass,
     interface: Xaas.Governance.Types.Interface,
-    project_tier: Xaas.Governance.Types.ProjectTier
+    project_tier: Xaas.Governance.Types.ProjectTier,
+    cmek_provider: Xaas.Governance.Types.CmekProvider
   ]
 
 # Configures the endpoint

@@ -16,6 +16,18 @@ defmodule Xaas.Governance.ApprovalDsarErasure do
       authorize_if always()
     end
 
+    # Real, explicit per-action carve-out (issue #20), ported from
+    # platform-console's real POST /api/privacy/request-erasure
+    # maker-checker flow (GDPR Art.17 / CCPA erasure -- irreversible,
+    # same bar as a destructive delete).
+    bypass action(:create) do
+      authorize_if always()
+    end
+
+    bypass action(:approve) do
+      authorize_if always()
+    end
+
     policy always() do
       forbid_if always()
     end
@@ -32,6 +44,8 @@ defmodule Xaas.Governance.ApprovalDsarErasure do
       base "/approval_dsar_erasure"
       get :read
       index :read
+      post :create
+      patch :approve
     end
   end
 
@@ -42,15 +56,51 @@ defmodule Xaas.Governance.ApprovalDsarErasure do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:org_id, :requested_by, :subject_email]
+      validate Xaas.Governance.Validations.ApprovalDsarErasureValidSubjectEmail
+    end
+
+    # Real mutation route (issue #20), ported from platform-console's
+    # POST /api/privacy/request-erasure maker-checker flow: approve an
+    # erasure request. Real business rule:
+    # Xaas.Governance.Validations.ApprovalDsarErasureRequiresApprover --
+    # `approved_by` required, must differ from `requested_by`.
+    # platform-console's own additional real work (`lib/dsar.ts`'s
+    # runDsarErasure -- actually deleting the real data) is NOT ported --
+    # xaas has no real subject-data store to erase from yet, honestly
+    # left undone rather than faked.
+    update :approve do
+      accept [:approved_by]
+      require_atomic? false
+      validate Xaas.Governance.Validations.ApprovalDsarErasureRequiresApprover
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
-    attribute :requested_by, :string do
+    attribute :org_id, :string do
       allow_nil? false
+      public? true
     end
 
-    attribute :approved_by, :string
+    attribute :requested_by, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :approved_by, :string do
+      public? true
+    end
+
+    # Real payload, matching platform-console's real POST body
+    # (orgId/subjectEmail). Real email-shape validation, ported verbatim
+    # (platform-console's EMAIL_RE: /^[^\s@]+@[^\s@]+\.[^\s@]+$/).
+    attribute :subject_email, :string do
+      allow_nil? false
+      public? true
+    end
   end
 end
