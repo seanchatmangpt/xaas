@@ -1,0 +1,49 @@
+# Real, standalone Docker Compose file for an Ontop SPARQL endpoint prototype
+# over the existing xaas Postgres database. Kept separate from compose.yaml
+# (which is Swarm-mode, `docker stack deploy` style with `deploy:` keys) since
+# this prototype was run with plain `docker compose up` against the same
+# already-running `xaas-db-1` container, joined onto its real network
+# (confirmed via `docker network ls` / `docker inspect xaas-db-1`:
+# network `xaas_default`, DB reachable at hostname `db` on port 5432 inside
+# that network).
+#
+# Real image: ontop/ontop:latest (confirmed on Docker Hub 2026-08-20 --
+# only tag documented, ~107MB, updated ~6 months ago as of that check).
+#
+# Usage:
+#   docker compose -f docker-compose.ontop.yaml up -d
+#   curl -s http://localhost:8888/sparql --data-urlencode query=... -G
+
+services:
+  ontop:
+    image: ontop/ontop:latest
+    container_name: xaas-ontop-prototype
+    networks:
+      - xaas_default
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./priv/ontop:/opt/ontop/input
+      # Real fix (confirmed via docker logs this session): the base image
+      # ships no JDBC driver at all -- `Cannot load the driver:
+      # org.postgresql.Driver` at startup. Mounting a real driver jar
+      # (downloaded from Maven Central) into /opt/ontop/lib, which is
+      # already on the image's classpath alongside ontop's own jars, fixes
+      # it.
+      - ./priv/ontop/jdbc/postgresql-42.7.4.jar:/opt/ontop/lib/postgresql-42.7.4.jar
+    environment:
+      ONTOP_MAPPING_FILE: /opt/ontop/input/xaas-mapping.ttl
+      ONTOP_DB_URL: jdbc:postgresql://db:5432/kanban_dev
+      ONTOP_DB_USER: postgres
+      ONTOP_DB_PASSWORD_FILE: /run/secrets/postgrespassword
+      ONTOP_DB_DRIVER: org.postgresql.Driver
+    secrets:
+      - postgrespassword
+
+networks:
+  xaas_default:
+    external: true
+
+secrets:
+  postgrespassword:
+    file: ./secrets/.postgrespassword

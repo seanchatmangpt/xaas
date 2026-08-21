@@ -1,0 +1,169 @@
+@prefix rr:   <http://www.w3.org/ns/r2rml#> .
+@prefix rml:  <http://semweb.mmlab.be/ns/rml#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix xv:   <http://xaas.local/vocab#> .
+@prefix xres: <http://xaas.local/resource/> .
+
+# ---------------------------------------------------------------------------
+# Real R2RML mapping for 4 real, already-existing xaas tables (confirmed via
+# psql against the real kanban_dev database, docker-compose service `db`,
+# 2026-08-20):
+#
+#   orgs                          (1 real row: slug "read-12")
+#   billing_subscriptions.org_id  -> orgs.slug   (real, app-enforced FK; no
+#                                                  DB-level FK constraint
+#                                                  exists on this column --
+#                                                  disclosed below)
+#   marketplace_providers.org_id  -> orgs.slug   (same, app-enforced)
+#   platform_webhooks.org_id      -> orgs.slug   (same, app-enforced)
+#   platform_webhook_deliveries.webhook_id -> platform_webhooks.id
+#                                                  (real DB-level FK,
+#                                                   platform_webhook_deliveries_webhook_id_fkey)
+#
+# Disclosed gap: billing_subscriptions.org_id, marketplace_providers.org_id,
+# and platform_webhooks.org_id are `text` columns holding the org *slug*,
+# with no Postgres-level FOREIGN KEY constraint to orgs.slug (confirmed via
+# `\d billing_subscriptions` / `\d platform_webhooks` -- only
+# platform_webhook_deliveries has a real FK). The join below is a real,
+# valid R2RML join condition regardless -- R2RML joins are expressed at the
+# mapping level, not read off DB constraints -- but the *referential
+# integrity* of that join is app-enforced only, not DB-enforced. Worth
+# fixing with a real FK constraint if this prototype is promoted.
+# ---------------------------------------------------------------------------
+
+<#OrgsTriplesMap>
+  a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "orgs" ] ;
+  rr:subjectMap [
+    rr:template "http://xaas.local/resource/org/{slug}" ;
+    rr:class xv:Org ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:orgId ;
+    rr:objectMap [ rr:column "id" ; rr:datatype xsd:string ; rr:termType rr:Literal ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:name ;
+    rr:objectMap [ rr:column "name" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:slug ;
+    rr:objectMap [ rr:column "slug" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:status ;
+    rr:objectMap [ rr:column "status" ] ;
+  ] .
+
+<#BillingSubscriptionsTriplesMap>
+  a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "billing_subscriptions" ] ;
+  rr:subjectMap [
+    rr:template "http://xaas.local/resource/subscription/{id}" ;
+    rr:class xv:Subscription ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:tier ;
+    rr:objectMap [ rr:column "tier" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:status ;
+    rr:objectMap [ rr:column "status" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:stripeCustomerId ;
+    rr:objectMap [ rr:column "stripe_customer_id" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:currentPeriodEnd ;
+    rr:objectMap [ rr:column "current_period_end" ; rr:datatype xsd:dateTime ] ;
+  ] ;
+  # Graph edge: subscription -> org, via app-enforced org_id (= orgs.slug).
+  rr:predicateObjectMap [
+    rr:predicate xv:belongsToOrg ;
+    rr:objectMap [
+      rr:template "http://xaas.local/resource/org/{org_id}" ;
+      rr:termType rr:IRI ;
+    ] ;
+  ] .
+
+<#MarketplaceProvidersTriplesMap>
+  a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "marketplace_providers" ] ;
+  rr:subjectMap [
+    rr:template "http://xaas.local/resource/provider/{id}" ;
+    rr:class xv:MarketplaceProvider ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:name ;
+    rr:objectMap [ rr:column "name" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:slug ;
+    rr:objectMap [ rr:column "slug" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:status ;
+    rr:objectMap [ rr:column "status" ] ;
+  ] ;
+  # Graph edge: provider -> org, via app-enforced org_id (= orgs.slug).
+  rr:predicateObjectMap [
+    rr:predicate xv:belongsToOrg ;
+    rr:objectMap [
+      rr:template "http://xaas.local/resource/org/{org_id}" ;
+      rr:termType rr:IRI ;
+    ] ;
+  ] .
+
+<#PlatformWebhooksTriplesMap>
+  a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "platform_webhooks" ] ;
+  rr:subjectMap [
+    rr:template "http://xaas.local/resource/webhook/{id}" ;
+    rr:class xv:Webhook ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:url ;
+    rr:objectMap [ rr:column "url" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:enabled ;
+    rr:objectMap [ rr:column "enabled" ; rr:datatype xsd:boolean ] ;
+  ] ;
+  # Graph edge: webhook -> org, via app-enforced org_id (= orgs.slug).
+  rr:predicateObjectMap [
+    rr:predicate xv:belongsToOrg ;
+    rr:objectMap [
+      rr:template "http://xaas.local/resource/org/{org_id}" ;
+      rr:termType rr:IRI ;
+    ] ;
+  ] .
+
+<#PlatformWebhookDeliveriesTriplesMap>
+  a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "platform_webhook_deliveries" ] ;
+  rr:subjectMap [
+    rr:template "http://xaas.local/resource/delivery/{id}" ;
+    rr:class xv:WebhookDelivery ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:eventType ;
+    rr:objectMap [ rr:column "event_type" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:deliveryStatus ;
+    rr:objectMap [ rr:column "status" ] ;
+  ] ;
+  rr:predicateObjectMap [
+    rr:predicate xv:attemptCount ;
+    rr:objectMap [ rr:column "attempt_count" ; rr:datatype xsd:integer ] ;
+  ] ;
+  # Graph edge: delivery -> webhook, via a real DB-level FK
+  # (platform_webhook_deliveries_webhook_id_fkey -> platform_webhooks.id).
+  rr:predicateObjectMap [
+    rr:predicate xv:forWebhook ;
+    rr:objectMap [
+      rr:template "http://xaas.local/resource/webhook/{webhook_id}" ;
+      rr:termType rr:IRI ;
+    ] ;
+  ] .

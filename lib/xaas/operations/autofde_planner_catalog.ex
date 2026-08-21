@@ -1,7 +1,7 @@
-defmodule Xaas.Operations.AutofdePlannerCandidate do
+defmodule Xaas.Operations.AutofdePlannerCatalog do
   @moduledoc """
   Real Ash-side connector to clap-noun-verb-deploy's real /invoke HTTP surface
-  (~/clap-noun-verb/clap-noun-verb-deploy/src/http.rs), calling the fabric__solve tool --
+  (~/clap-noun-verb/clap-noun-verb-deploy/src/http.rs), calling the fabric__catalog tool --
   autofde-lab's real, already-wrapped planner federation (46+ registered solvers over 25+
   domains, ~/clap-noun-verb/clap-noun-verb-any/examples/autofde_lab_planners/cnv-any.json).
   This is the Ash half of autofde-lab's real Broker/Actuator/PostconditionVerifier split
@@ -16,7 +16,7 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "autofde_planner_candidates"
+    table "autofde_planner_catalog_requests"
     repo Xaas.Repo
   end
 
@@ -32,7 +32,7 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
   actions do
     defaults [:read]
 
-    create :request_candidate do
+    create :request_catalog do
       accept [:query]
       change fn changeset, _context ->
         query = Ash.Changeset.get_attribute(changeset, :query)
@@ -40,14 +40,10 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
           Application.get_env(:xaas, :cnv_deploy_base_url, "http://127.0.0.1:8080")
 
         body = %{
-          tool: "fabric__solve",
+          tool: "fabric__catalog",
           arguments:
 
-            %{
-              domain: "PDDLDomain",
-              solver: "Astar",
-              "domain-arguments": query
-            }
+            %{}
 
         }
 
@@ -81,16 +77,17 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
   defp apply_record(changeset, %{"execution" => %{"stdout" => stdout, "exit_code" => 0}}) do
     case last_json_object(stdout) do
 
-      {:ok, %{"trajectory_sha256" => sha}} when is_binary(sha) ->
+      {:ok, decoded} ->
+        # fabric__catalog does not emit a trajectory_sha256 (it is not a solve call), so
+        # trajectory_sha256 stays nil here -- no digest is invented for a non-solve tool.
         changeset
-        |> Ash.Changeset.force_change_attribute(:cnv_response, %{"stdout" => stdout})
-        |> Ash.Changeset.force_change_attribute(:trajectory_sha256, sha)
+        |> Ash.Changeset.force_change_attribute(:cnv_response, decoded)
         |> Ash.Changeset.force_change_attribute(:requested_at, DateTime.utc_now())
 
-      _ ->
+      :error ->
         Ash.Changeset.add_error(changeset,
           field: :query,
-          message: "cnv-deploy /invoke succeeded but stdout had no trajectory_sha256 JSON payload"
+          message: "cnv-deploy /invoke succeeded but stdout had no parseable JSON payload"
         )
 
     end
@@ -99,7 +96,7 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
   defp apply_record(changeset, %{"execution" => %{"exit_code" => exit_code, "stderr" => stderr}}) do
     Ash.Changeset.add_error(changeset,
       field: :query,
-      message: "fabric__solve exited #{exit_code}: #{stderr}"
+      message: "fabric__catalog exited #{exit_code}: #{stderr}"
     )
   end
 
@@ -123,7 +120,7 @@ defmodule Xaas.Operations.AutofdePlannerCandidate do
       authorize_if(always())
     end
 
-    bypass action(:request_candidate) do
+    bypass action(:request_catalog) do
       authorize_if(always())
     end
 
