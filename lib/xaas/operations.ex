@@ -10,6 +10,8 @@ defmodule Xaas.Operations do
   resources do
     resource(Xaas.Operations.ApprovalCastleVerbSchedule)
     resource(Xaas.Operations.ApprovalK8sFaultRemediateSuggest)
+    resource(Xaas.Operations.AutofdePlannerCacheHotset)
+    resource(Xaas.Operations.AutofdePlannerCacheStats)
     resource(Xaas.Operations.AutofdePlannerCandidate)
     resource(Xaas.Operations.AutofdePlannerCatalog)
     resource(Xaas.Operations.AutofdePlannerMatch)
