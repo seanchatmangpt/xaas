@@ -19,5 +19,6 @@ defmodule Xaas.Marketplace do
 
   resources do
     resource Xaas.Marketplace.Provider
+    resource Xaas.Marketplace.ApprovalProviderStatusChange
   end
 end

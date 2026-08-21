@@ -73,6 +73,7 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     approval_deployment_quarantine
     approval_backup_retention_change
     marketplace_providers
+    approval_provider_status_change
   )
 
   def init(opts), do: opts
