@@ -69,6 +69,15 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   moduledoc). `GET`/`index` on `orgs` are deliberately left untouched --
   see the disclosure above.
 
+  Extended twentieth pass: `audit_export_tokens`
+  (`Xaas.Governance.AuditExportToken`) closes a real, live-HTTP-proven gap
+  found by this pass's own systematic sweep of every `routes do` block
+  with zero matching controller test -- see that resource's own moduledoc
+  and `Xaas.Governance.Checks.AuditExportTokenActorOrgMatches` for the
+  full disclosed finding (real, persisted, hashed bearer-credential
+  minting under a fabricated org_id, real and live-tested, closed this
+  pass).
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -142,6 +151,7 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     incidents
     route_orgs_custom_domain
     route_projects_backups
+    audit_export_tokens
   )
 
   def init(opts), do: opts

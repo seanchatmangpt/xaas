@@ -13,21 +13,24 @@ defmodule Xaas.Governance.AuditExportToken do
     # read-mostly operational resource. Read is still bypassed open
     # (internal-api-token-gated at the router, same as every other
     # Xaas.Governance resource) so operators/UI can list a token's
-    # metadata (never its hash) for an org; :issue and :revoke are the
-    # real mutation surface and are bypassed the same way pending a real
-    # per-org-owner authorization design (mirrors platform-console's
-    # requireRoleIn(..., "owner") gate, not yet modeled as an xaas
-    # actor/role concept).
+    # metadata (never its hash) for an org.
     bypass action_type(:read) do
       authorize_if always()
     end
 
+    # Real fix (twentieth-pass ERRC grid sweep, item 27): :issue and
+    # :revoke previously bypassed with a bare `authorize_if always()` --
+    # any actor holding only the shared INTERNAL_API_TOKEN could mint a
+    # real, persisted, hashed bearer credential for any caller-supplied
+    # org_id, never created, never authenticated. See
+    # `Xaas.Governance.Checks.AuditExportTokenActorOrgMatches`'s own
+    # moduledoc for the full disclosed finding and the live-HTTP proof.
     bypass action(:issue) do
-      authorize_if always()
+      authorize_if Xaas.Governance.Checks.AuditExportTokenActorOrgMatches
     end
 
     bypass action(:revoke) do
-      authorize_if always()
+      authorize_if Xaas.Governance.Checks.AuditExportTokenActorOrgMatches
     end
 
     policy always() do

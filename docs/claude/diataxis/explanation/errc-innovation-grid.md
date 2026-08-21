@@ -6,8 +6,193 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (nineteenth pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (twentieth pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Twentieth-pass update
+
+**Real HEAD confirmed: `868ddd6`.** `git rev-parse HEAD` →
+`868ddd6ab9fc82f1ae517810d8e152f9b63d67e0`. One real commit landed since the nineteenth-pass
+grid's own `f1f1343`: `868ddd6` ("round 18" in its own commit message — implements the
+nineteenth-pass grid's own selected CREATE item, item 26 below). Real-verified via `git show
+868ddd6 --stat`: 9 files, 998 insertions — `errc-innovation-grid.md` (the nineteenth-pass
+section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`,
+`lib/xaas/accounts/checks/actor_belongs_to_org.ex`, a new
+`lib/xaas/accounts/checks/actor_org_self_filter.ex`, `lib/xaas/accounts/org.ex`, a new
+`lib/xaas/accounts/validations/org_suspended_requires_suspension_reason.ex`, a new migration,
+a new seed fixture, and `test/kanban_web/controllers/org_controller_test.exs` (269 lines,
+new). **The nineteenth-pass CREATE item (the live-HTTP-proven total availability break on
+`Org`'s own `POST`/`PATCH /api/orgs` routes) is now RESOLVED, independently re-verified this
+pass, not just cited from the commit message**: `resolve_org_actor.ex` (real-read this pass)
+now carries a method-aware `Org`-only special case (`orgs_create?/1`/`orgs_update?/1`) instead
+of a generic path-segment entry; `Xaas.Accounts.Checks.ActorOrgSelfFilter` (real-read in full,
+a genuine `Ash.Policy.FilterCheck`, not a stub) is wired alongside `ActorBelongsToOrg` on both
+`:update` and `:read`; `org.ex`'s new `:update` carries the disqualifying
+`OrgSuspendedRequiresSuspensionReason` validation, closing the same bare atomic-eligible shape
+`Incident`/`RouteOrgsCustomDomain` each had pre-fix. Per this pass's own task instruction —
+**do not re-propose this fix, it's fixed** — not re-derived below.
+
+**This pass's task: a real, systematic check for OTHER resources sharing the exact
+class of gap round 18 found on `Org` — a real `json_api routes do` block with zero
+corresponding `test/kanban_web/controllers/*_test.exs` file, meaning the resource has never
+once been exercised through the real HTTP/`AshJsonApi`/plug pipeline (only, if at all,
+through a direct `Ash.create!`/`Ash.update!(actor: ...)` call that sidesteps real actor
+resolution entirely). Real, systematic, not sampled — every one of the 56 resources with a
+real `routes do` block was checked, not a subset.**
+
+- **Real inventory: every resource with a real `routes do` block, cross-referenced against
+  every real `test/kanban_web/controllers/*_test.exs` file, not sampled.**
+  `grep -rl "routes do" lib/xaas --include="*.ex" | sort` → 56 files;
+  `ls test/kanban_web/controllers/*.exs | sort` → 47 files. Manual 1:1 resource-name-to-
+  test-file cross-reference (not a naive count diff, since several test files legitimately
+  cover a resource whose file/module name differs from its route base, e.g.
+  `marketplace_provider_controller_test.exs` for `provider.ex`) found **17 resources with a
+  real `routes do` block and zero matching controller test file.**
+- **11 of the 17 are real, correctly-lower-priority negatives: read-only (`get`/`index`
+  only, no `post`/`patch`/`delete` at all) resources with zero HTTP-level test coverage of
+  even their reads.** `lib/xaas/billing/subscription.ex` (routes block declares only
+  `get :read`/`index :read` despite 3 real mutation actions in its own `actions do` block —
+  the same drift `http-api-surface.md`'s own doc-drift item, carried forward unfixed since
+  the fifteenth-pass grid, already names), `lib/xaas/operations/audit_log_entry.ex`,
+  `capability_liveness_receipt.ex` (self-disclosed infra-observability exception, own
+  moduledoc), `castle_verb_fortune5_requirements.ex`, `castle_verb_inventory_components.ex`,
+  `castle_verb_inventory_goals.ex`, `route_castle_deploy.ex`, `route_castle_run.ex`,
+  `route_castle_schedule.ex`, `route_castle_sunset.ex`, and
+  `lib/xaas/platform/route_projects.ex` — all real-read, all `routes do` blocks confirmed
+  `get`/`index` only. A missing-read-test gap is real but structurally cannot reproduce
+  round 18's "actor never resolved for a real mutation" failure mode (there is no mutation
+  route to misroute); named for completeness, not selected.
+- **2 of the 17 are real, confirmed negatives on closer read: the resource's own real
+  mutation actions carry NO policy bypass at all, so the declared route is permanently
+  unreachable by design — the same shape the seventeenth-pass grid already found and
+  disclosed for `Xaas.Platform.Webhook`.** `lib/xaas/platform/webhook.ex` (`policies do`
+  block, real-read: `policy always() do forbid_if always() end`, zero bypass of any kind —
+  re-confirmed unchanged, not a new finding) and, **newly checked this pass**,
+  `lib/xaas/platform/webhook_delivery.ex`: its `policies do` block (real-read in full,
+  lines 53-84) carries a real `bypass action(:retry_failed_deliveries)` and `bypass
+  action(:deliver)` — but **no bypass at all for `:create` or `:record_attempt`**, the two
+  actions its own `routes do` block actually exposes as `post :create`/`patch
+  :record_attempt`. Both fall under the trailing `policy always() do forbid_if always() end`
+  catch-all, making the declared `POST /api/webhook_deliveries`/`PATCH
+  /api/webhook_deliveries/:id` routes permanently, correctly unreachable — a real, deny-by-
+  default resource with no live mutation surface to test, not a coverage gap.
+- **4 of the 17 are the real, live positive finding: real `post`/`patch` mutation routes,
+  a bare `authorize_if always()` bypass with ZERO org-scoping check of any kind, a real
+  caller-accepted `org_id` attribute, and literally zero test coverage — not even an
+  Ash-level unit test, let alone an HTTP one.** All 4 are Governance resources, all 4
+  real-read in full this pass: `lib/xaas/governance/approval_freeze_override.ex`,
+  `lib/xaas/governance/approval_org_delete.ex`,
+  `lib/xaas/governance/audit_export_token.ex`, `lib/xaas/governance/pentest_finding.ex`.
+  `find test -iname "*audit_export_token*" -o -iname "*approval_org_delete*"
+  -o -iname "*approval_freeze_override*" -o -iname "*pentest_finding*"` →
+  matches only `approval_pentest_finding_resolve_*` files (a *different*, already-tested
+  sibling resource) and zero matches for the other 3 — confirmed via direct `find`, not
+  inferred from the controller-test list alone. None of the 4 carries a `multitenancy do`
+  block (`grep -n multitenancy` on all 4 → zero matches each), matching the
+  `SlaCreditActorOrgMatches`/`Xaas.Platform.Checks.ActorOrgMatches` family's shape (bare
+  `org_id` attribute, no relation hop, no tenant normalization) rather than the 4
+  already-protected Governance resources' `multitenancy`-backed shape.
+  - **`Xaas.Governance.AuditExportToken` is the real, selected finding — the most severe of
+    the 4, and the only one this pass live-HTTP-verified, not just statically reasoned
+    about.** `:issue` (`audit_export_token.ex:66-70`) mints a REAL bearer credential — raw
+    token generated via `:crypto.strong_rand_bytes(32)`, SHA-256-hashed and persisted
+    (`lib/xaas/governance/changes/generate_audit_export_token.ex`, real-read in full, not a
+    stub) — for a caller-supplied `org_id` (`accept [:org_id, :created_by]`,
+    `audit_export_token.ex:67`) with a real, fixed `"audit:read"` scope, gated only by
+    `bypass action(:issue) do authorize_if always() end` (`audit_export_token.ex:25-27`) —
+    the router-level `INTERNAL_API_TOKEN` Bearer check is the ONLY real barrier. Real, live
+    HTTP-level proof obtained this pass, matching this grid's own established evidence
+    discipline (a temporary `ConnCase` test, written, run once, then deleted, never
+    committed — `git status --short test/kanban_web/controllers/` confirmed clean before and
+    after): `POST /api/audit_export_tokens` with only the shared Bearer token and body
+    `org_id: "org-scratch-fabricated-99001"` (never created, never authenticated) →
+    **real `HTTP 201`**, real response body `"org_id":"org-scratch-fabricated-99001"`,
+    `"token_prefix":"aet_live_XGk"`, `"scope":"audit:read"`, and a real persisted
+    `Xaas.Governance.AuditExportToken` row confirmed via a direct `Ash.read_one!
+    (authorize?: false)` query. Any actor holding only the single shared internal API token
+    can mint a real, usable-looking security bearer credential under any `org_id` string it
+    invents, with zero relationship check to that org. `audit_export_tokens` is not in
+    `ResolveOrgActor`'s `@tenant_scoped_path_segments` list either (`resolve_org_actor.ex:
+    132-143`, real-read, the current 12-entry list — confirmed absent), so no actor/tenant
+    is ever resolved for this route regardless of any header sent, matching the double-gap
+    shape every prior fix in this grid closed. **Real, disclosed, honest limitation on
+    today's live severity**: `grep -rn "AuditExportToken\|audit_export_token\|audit:read"
+    lib/ --include="*.ex"` → zero real consumer anywhere in the codebase yet validates a
+    `token_hash` to actually authorize reading audit data (the resource's own moduledoc
+    discloses "an unattended external system — a SIEM forwarder" as the intended, not-yet-
+    built consumer). So today's real, live, provable harm is "mint and persist an
+    arbitrary-org credential with zero authorization," not yet "use that credential to read
+    a real victim org's real audit data" — a real, load-bearing distinction from round 16's
+    `Incident`→`ApprovalDrFailover` finding (which had a real, live, already-built
+    downstream consumer), correctly named rather than glossed over. It is nonetheless the
+    single most severe of the 4 because it is the only one whose live effect today is
+    minting real, persisted, hashed key material (not just a compliance/business record),
+    and because every credential forged today remains live, unrevoked, and
+    retroactively exploitable the moment the disclosed, real SIEM-forwarder consumer is
+    eventually built.
+  - **The other 3 are real, same-class, correctly-lower-priority siblings — same bare
+    `authorize_if always()` gap, same zero-test-coverage gap, weaker live-provable
+    consequence today.** `ApprovalOrgDelete:approve` (`approval_org_delete.ex:84-88`) is the
+    most inert of the 3: its own moduledoc discloses "no cascading destroy is triggered" on
+    approval — the real live effect today is limited to persisting a false
+    "approved"/`approved_by` record for a fabricated org-deletion request, with no `change`
+    module wired at all (matching the already-disclosed `ApprovalQuotaOverride`-class inert
+    tier from earlier passes). `ApprovalFreezeOverride:create`
+    (`approval_freeze_override.ex:72-74`) accepts a caller-supplied `freeze_window_id` but
+    real-checked this pass: neither `:create` nor its `RequiresApprover` validation
+    (`approval_freeze_override_requires_approver.ex`) queries the referenced
+    `Xaas.Governance.FreezeWindow` row at all — no check that it exists, is currently active,
+    or has `allow_emergency_override: true` (a real attribute `freeze_window.ex`'s own
+    moduledoc says exists specifically to gate whether an override may be filed against it) —
+    a real, separate, disclosed business-rule gap, not itself an Incident-style cross-
+    resource authorization escalation (real-checked: no other resource anywhere reads
+    `ApprovalFreezeOverride`'s own data back into a safety decision —
+    `grep -rln "ApprovalFreezeOverride\b" lib/` matches only its own files plus 6 unrelated
+    resources' shared moduledoc boilerplate citing it as a naming-convention example, not a
+    functional dependency). `PentestFinding:create`/`:remediate`
+    (`pentest_finding.ex:88-106`) is real metadata forgery (arbitrary `org_id`, `severity`,
+    `title` under any invented org) — same severity tier as the already-known, already-
+    deprioritized `RouteOrgsCustomDomain`/`RouteProjectsBackups`-class "self-contained
+    forgery, no proven cross-resource escalation" gaps; real-checked that its sibling
+    `ApprovalPentestFindingResolve:approve` validation
+    (`approval_pentest_finding_resolve_requires_approver.ex`) never queries `PentestFinding`'s
+    own `org_id`, so no compounding cross-resource path exists either.
+  - **Real, disclosed reason a naive reuse of the existing `Xaas.Governance.Checks
+    .ActorOrgMatches` (already wired to 4 other Governance resources) would be
+    subtly wrong for all 4 of these, not just a copy-paste fix.** That check's own moduledoc
+    (real-read in full this pass) explicitly discloses its `:create` half is "live-verified
+    vacuous" specifically BECAUSE its 4 existing consumers all carry a real `multitenancy do`
+    block that force-normalizes the `:create` payload's `org_id` before the check ever runs.
+    None of these 4 new resources has a `multitenancy` block (real-confirmed, see above) — so
+    on these 4, the `:create` half would NOT be vacuous, it would be the real, load-bearing
+    rejection (the same shape `Xaas.Billing.Checks.SlaCreditActorOrgMatches` and
+    `Xaas.Platform.Checks.ActorOrgMatches` were each purpose-built or reasoned through for,
+    rather than reusing the multitenancy-assuming Governance module as-is). The right fix
+    reuses the same `match?/3` logic (direct actor/changeset `org_id` equality) but needs its
+    own moduledoc framing corrected for the no-multitenancy case, matching the
+    `SlaCreditActorOrgMatches`/Platform-`ActorOrgMatches` precedent rather than the
+    4-resource Governance one.
+  - **Real, disclosed reason this — not the 11 read-only gaps, not the 2 already-denied
+    resources, not the 3 lower-severity Governance siblings — is this pass's selected CREATE
+    item.** It is the only one of the 17 that (a) is live-HTTP-reachable today (not
+    permanently denied), (b) has zero test coverage of any kind, Ash-level or HTTP-level,
+    and (c) mints a real, persisted, hashed security credential under zero-authorization
+    conditions — the highest-severity real, live, provable consequence found this pass. The
+    other 3 Governance siblings are real, same-batch-eligible, disclosed below as follow-ups,
+    not dropped by omission (matching how round 17 disclosed-but-deferred the lower-severity
+    sibling of its own selected item).
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass shows the same real artifacts recent passes have already logged as other standing
+activities' own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and
+untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`e2e/ash-admin-destroy.spec.js`, `.terraform-validate-receipts/`,
+`docs/claude/diataxis/explanation/wasm4pm-process-intelligence-research.md`. None touch
+`lib/xaas/governance/` or any file this pass's finding depends on. None read beyond
+filenames, none touched. The temporary scratch test this pass wrote to obtain live HTTP
+proof (`test/kanban_web/controllers/scratch_audit_export_token_reachability_test.exs`) was
+run once, then deleted before this doc update — confirmed via `git status --short
+test/kanban_web/controllers/` returning no output, both before and after.
 
 ## Nineteenth-pass update
 
@@ -2226,28 +2411,45 @@ sequence cover these):
     validation (the same atomic-upgrade fix pattern as item 24) — **landed for real as
     `f1f1343`** (round 17), confirmed live this pass: all 3 new/changed files real-read in
     full. This closes the rounds-14-17 org-scoping sweep across every domain.
-26. **Selected as this pass's (nineteenth) CREATE item.** A real, systematic sweep of every
-    other check module reading `changeset.data` for the identical atomic-upgrade pathology
-    (items 24/25's pattern) found the other 5 instances already safe (real business-logic
-    `validate`/`change` modules already disqualify atomic mode) or already using a third,
-    independently-correct avoidance mechanism (`Provider`'s `FilterCheck`) — except
-    `Xaas.Accounts.Org`, this codebase's own tenant-root resource. Real, live-HTTP-verified
-    finding, not inferred: `POST /api/orgs` and `PATCH /api/orgs/:id` — both real,
-    `json_api`-declared, HTTP-reachable mutation routes — return `HTTP 403` for every real
-    caller today, through every header combination the API understands (plain Bearer token;
-    Bearer token + a real admin `OrgMembership` row for the target org; Bearer token +
-    `X-Org-Id`), because no plug in the real `/api` pipeline
-    (`RequireInternalApiToken`/`ResolveOrgActor`) ever supplies the `%{id: ...}`-shaped
-    (User) actor `Xaas.Accounts.Checks.ActorBelongsToOrg`'s `match?/3` requires, nor even a
-    non-nil actor for `Org:create`'s `actor_present()`. Fails closed (no security hole), but
-    a total, real availability break on the tenant-root resource's own mutation surface — and
-    a second, latent problem underneath it: `Org:update` (`accept [:name, :status]`,
-    `require_atomic? false`, zero custom `validate`/`change` modules) is structurally the
-    exact bare, atomic-upgrade-ELIGIBLE shape items 24/25 each had before their fix, so
-    closing the actor-resolution gap alone would very likely just convert today's "always
-    403, wrong reason" into "still-403-on-legitimate-PATCH, `changeset.data`-unavailable
-    reason" — the identical failure mode items 24/25 fixed, recurring a third time. Full spec
-    in the structured output below.
+26. **RESOLVED** (was this grid's own item 26, nineteenth pass): a real, method-aware `Org`-
+    only actor-resolution special case in `ResolveOrgActor`, a new
+    `Xaas.Accounts.Checks.ActorOrgSelfFilter` (`Ash.Policy.FilterCheck`) wired alongside
+    `ActorBelongsToOrg` on `:update`/`:read`, and a real, disqualifying
+    `Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason` validation on `:update`
+    — **landed for real as `868ddd6`** (round 18), confirmed live this (twentieth) pass: all
+    changed files real-read in full, `test/kanban_web/controllers/org_controller_test.exs`
+    (269 lines, new) provides `Org`'s first-ever real HTTP-level coverage. Closed the total
+    availability break on `POST`/`PATCH /api/orgs` and the latent atomic-upgrade pathology
+    underneath it, in one pass, across 3 distinct root causes (actor-resolution gap,
+    actor-shape mismatch, AshIam/FilterCheck read-visibility interaction found
+    mid-implementation). See "Twentieth-pass update" above.
+27. **Selected as this pass's (twentieth) CREATE item.** A real, systematic sweep of all 56
+    resources with a real `routes do` block against real `test/kanban_web/controllers/*_test.exs`
+    coverage — the generalized form of round 18's own finding, per this pass's own task —
+    found 17 with zero matching controller test file: 11 real but lower-priority read-only
+    gaps, 2 already-denied-by-design non-gaps (`Webhook`, and newly `WebhookDelivery`'s
+    `:create`/`:record_attempt`), and 4 live, real, same-class Governance gaps (bare
+    `authorize_if always()`, zero org-scoping, zero test coverage of any kind). The most
+    severe and this pass's selected target: `Xaas.Governance.AuditExportToken`, real-live-
+    HTTP-verified this pass to mint a real, hashed, persisted bearer credential
+    (`aet_live_...`, `"audit:read"` scope) for any caller-supplied `org_id` — including a
+    completely fabricated, never-authenticated one — with zero authorization beyond the
+    shared `INTERNAL_API_TOKEN`. Scope: (a) a new check module (same `match?/3` shape as
+    `Xaas.Billing.Checks.SlaCreditActorOrgMatches`/`Xaas.Platform.Checks.ActorOrgMatches` —
+    the no-`multitenancy`, bare-`org_id`-attribute family, NOT a reuse of the existing
+    `Xaas.Governance.Checks.ActorOrgMatches`, whose own moduledoc discloses its `:create`
+    half depends on `multitenancy` normalization none of these 4 resources have) wired onto
+    `AuditExportToken`'s `:issue`/`:revoke` bypasses in place of `authorize_if always()`; (b)
+    `audit_export_tokens` added to `ResolveOrgActor`'s `@tenant_scoped_path_segments`; (c) a
+    real, live HTTP-level regression test suite (`test/kanban_web/controllers/
+    audit_export_token_controller_test.exs`, currently zero-existing, matching this pass's
+    own finding) proving both the legitimate same-org `:issue`/`:revoke` path and the
+    cross-org/fabricated-org rejection. The other 3 same-batch-eligible Governance siblings
+    (`ApprovalFreezeOverride`, `ApprovalOrgDelete`, `PentestFinding` — real, same root shape,
+    correctly lower live-severity today: an inert approval record, an unenforced-but-separate
+    `freeze_window` precondition gap, and self-contained metadata forgery respectively) are
+    named, not silently dropped, as real follow-up scope for the same batch or a subsequent
+    pass. Full spec in the structured output below.
 
 ## See Also
 
@@ -2405,3 +2607,28 @@ sequence cover these):
   `/internal-api` route surface this revision's selected Create item extends),
   `priv/repo/seeds.exs` — the real resources/checks/plugs/gaps this revision's "What
   changed" and Create sections verify against
+- `lib/xaas/accounts/org.ex`, `lib/xaas/accounts/checks/actor_belongs_to_org.ex`,
+  `lib/xaas/accounts/checks/actor_org_self_filter.ex`,
+  `lib/xaas/accounts/validations/org_suspended_requires_suspension_reason.ex`,
+  `lib/kanban_web/plugs/resolve_org_actor.ex`,
+  `test/kanban_web/controllers/org_controller_test.exs` — the real files item 26 (round 18,
+  `868ddd6`) landed, re-verified this (twentieth) pass
+- `lib/xaas/governance/audit_export_token.ex`,
+  `lib/xaas/governance/changes/generate_audit_export_token.ex`,
+  `lib/xaas/governance/checks/actor_org_matches.ex` (the existing, multitenancy-assuming
+  module this pass found unsafe to reuse as-is),
+  `lib/xaas/billing/checks/sla_credit_actor_org_matches.ex`,
+  `lib/xaas/platform/checks/actor_org_matches.ex` (the correct shape to model item 27's new
+  check module on instead), `lib/kanban_web/plugs/resolve_org_actor.ex:132-143` — the real
+  files this pass's own selected CREATE item (item 27) is grounded in and would touch
+- `lib/xaas/governance/approval_freeze_override.ex`,
+  `lib/xaas/governance/approval_org_delete.ex`, `lib/xaas/governance/pentest_finding.ex`,
+  `lib/xaas/governance/freeze_window.ex`,
+  `lib/xaas/governance/approval_pentest_finding_resolve.ex` — the 3 real, same-batch-eligible
+  Governance siblings item 27 names but does not select, plus the 2 real cross-resource
+  relationships (`freeze_window_id`, `finding_id`) this pass checked and confirmed do NOT
+  compound into a further escalation the way `Incident`→`ApprovalDrFailover` did
+- `lib/xaas/platform/webhook.ex`, `lib/xaas/platform/webhook_delivery.ex`,
+  `lib/xaas/billing/subscription.ex` — the real, confirmed-correct-as-is negatives (2
+  permanently-denied-by-design resources, 1 already-known read-only route-declaration drift)
+  this pass's systematic 56-resource sweep re-confirmed rather than flagged
