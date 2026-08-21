@@ -119,6 +119,10 @@ defmodule Xaas.Governance.ApprovalDrFailover do
 
       change {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
               event_type: "governance.approval_dr_failover.approved"}
+
+      change {Xaas.Governance.Changes.WriteAuditLogEntry,
+              action: "governance.approval_dr_failover.approve",
+              resource_type: "approval_dr_failover"}
     end
   end
 

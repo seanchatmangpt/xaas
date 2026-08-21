@@ -122,6 +122,10 @@ defmodule Xaas.Governance.ApprovalLegalHoldRelease do
 
       change {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
               event_type: "governance.approval_legal_hold_release.approved"}
+
+      change {Xaas.Governance.Changes.WriteAuditLogEntry,
+              action: "governance.approval_legal_hold_release.approve",
+              resource_type: "approval_legal_hold_release"}
     end
   end
 

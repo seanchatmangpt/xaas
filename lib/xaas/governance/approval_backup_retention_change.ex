@@ -122,6 +122,10 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChange do
       change {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
               event_type: "governance.approval_backup_retention_change.approved"}
 
+      change {Xaas.Governance.Changes.WriteAuditLogEntry,
+              action: "governance.approval_backup_retention_change.approve",
+              resource_type: "approval_backup_retention_change"}
+
       validate Xaas.Governance.Validations.ApprovalBackupRetentionChangeRequiresApprover
     end
   end
