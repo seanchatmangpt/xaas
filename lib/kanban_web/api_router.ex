@@ -32,6 +32,7 @@ defmodule KanbanWeb.ApiRouter do
       Xaas.Billing,
       Xaas.Governance,
       Xaas.Ledger,
+      Xaas.Marketplace,
       Xaas.Operations,
       Xaas.Platform
     ],
