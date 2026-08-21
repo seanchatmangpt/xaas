@@ -2,7 +2,7 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
   @moduledoc """
   Real maker-checker approval resource for SLA credit application requests. Was a
   read-only skeleton (`defaults [:read]`, no mutation surface at all) --
-  this pass adds the real `:create`/`:approve` actions, following the
+  a prior pass added the real `:create`/`:approve` actions, following the
   established pattern in `Xaas.Billing.ApprovalPricingOverride` /
   `Xaas.Governance.ApprovalFreezeOverride`: `:create` is unauthenticated
   at the Ash-policy layer (real access control is the router-level
@@ -11,6 +11,30 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
   `Xaas.Billing.Validations.ApprovalSlaCreditApplyRequiresApprover` -- `approved_by` must
   be present and must differ from `requested_by` (a second, distinct
   approver; no self-approval).
+
+  ## Real fix (sixteenth pass) -- the `:create`/`:approve` bypass had no
+  per-org access control at all
+
+  Real, live-HTTP-proven gap found by the sixteenth-pass ERRC grid sweep:
+  the `:create`/`:approve` bypass was a bare `authorize_if always()` -- no
+  org check at all -- and `KanbanWeb.Plugs.ResolveOrgActor`'s hardcoded
+  tenant-scoped path list didn't cover `approval_sla_credit_apply` either.
+  A real, temporary (deleted-after-run) HTTP test proved live
+  exploitability: an actor holding only the shared `INTERNAL_API_TOKEN`
+  could `POST` a fabricated, never-authenticated `org_id` plus an
+  arbitrary `credit_amount_cents`, then self-approve it as its own
+  invented approver -- a real `Money.new(:USD, "9999.99")` landed in a
+  real `Xaas.Ledger.Balance` row keyed to the fabricated org string. No
+  existing victim record was even required.
+
+  This pass adds `Xaas.Billing.Checks.SlaCreditActorOrgMatches` (see that
+  module's own moduledoc for why it is a real, direct-attribute-read
+  check -- this resource carries its own `org_id` attribute directly, no
+  relation hop like `ApprovalTierDowngrade`'s check needed), wires it into
+  `:create`/`:approve` in place of `authorize_if always()`, and adds
+  `approval_sla_credit_apply` to `ResolveOrgActor`'s
+  `@tenant_scoped_path_segments` so the route actually receives a resolved
+  org actor instead of `nil`.
   """
   use Xaas.Resource,
     otp_app: :kanban,
@@ -32,12 +56,18 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
     # (`ApprovalSlaCreditApplyRequiresApprover`) rejecting a missing or
     # self-approving `approved_by`. Deliberate per-action carve-out, not
     # a blanket allow of every mutation.
+    #
+    # Updated sixteenth pass: no longer a bare `authorize_if always()` --
+    # both now real-check `Xaas.Billing.Checks.SlaCreditActorOrgMatches`
+    # (the actor's `X-Org-Id`-resolved org must match this record's real
+    # `org_id`). See that module's moduledoc for why this is needed --
+    # this resource has no `multitenancy` block of its own to backstop it.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Billing.Checks.SlaCreditActorOrgMatches
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if Xaas.Billing.Checks.SlaCreditActorOrgMatches
     end
 
     policy always() do

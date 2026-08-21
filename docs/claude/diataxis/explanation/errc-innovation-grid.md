@@ -6,8 +6,161 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (fifteenth pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (sixteenth pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Sixteenth-pass update
+
+**Real HEAD confirmed: `b536a75`.** `git rev-parse HEAD` →
+`b536a75c4281f2b656428d291af02bfd266b2d64`. One real commit landed since the fifteenth-pass
+grid's own `391d110`: `b536a75` ("round 14" in its own commit message, though it is the
+commit that actually implements the fifteenth-pass grid's own selected CREATE item — the
+"pass" counter in this doc and the "round" counter in commit messages are offset by one and
+always have been; both count the same real work). Real-verified via `git show b536a75
+--stat`: 5 files, 552 insertions — `errc-innovation-grid.md` (the fifteenth-pass section
+itself), `lib/kanban_web/plugs/resolve_org_actor.ex`, `lib/xaas/billing/approval_tier_
+downgrade.ex`, a new `lib/xaas/billing/checks/actor_org_matches.ex`, and the controller test.
+**The fifteenth-pass CREATE item (the live-HTTP-proven `ApprovalTierDowngrade` cross-org
+exploit) is now RESOLVED, independently re-verified this pass, not just cited from the
+commit message**: `approval_tier_downgrade.ex`'s `:create`/`:approve` bypasses now call
+`authorize_if Xaas.Billing.Checks.ActorOrgMatches` (real-read this pass, in full — a genuine
+`Ash.Policy.SimpleCheck`, not a stub); `resolve_org_actor.ex`'s `@tenant_scoped_path_segments`
+now includes `approval_tier_downgrade` (real-read this pass, 7-entry list). **Not
+re-proposed, per this pass's own task instruction — it's fixed.**
+
+**This pass's real, task-directed, systematic sweep of `ApprovalTierDowngrade`'s 6 other
+Billing `Approval*` siblings for the identical missing-org-scoping gap round 14 just fixed —
+real instances found, live-HTTP-proven, and this is the pass's selected CREATE item, matching
+how rounds 7-9 closed their own bug class in one comprehensive pass.**
+
+- **Real-read every one of the 6 siblings' `policies do` blocks in full, not sampled.**
+  `lib/xaas/billing/approval_invoice_reconciliation_approve.ex:35-40`,
+  `approval_patch_sla_credit_apply.ex:35-41`, `approval_pricing_override.ex:39-41`,
+  `approval_quota_override.ex:35-40`, `approval_sla_credit_apply.ex:35-41` all still carry the
+  same bare `bypass action(:create) do authorize_if always() end` / `bypass action(:approve)
+  do authorize_if always() end` shape round 14 found and fixed on their now-patched sibling —
+  none of the 6 was touched by `b536a75` (confirmed by that commit's own 5-file `--stat`
+  above, none of these 6 paths appear in it). `KanbanWeb.Plugs.ResolveOrgActor`'s
+  `@tenant_scoped_path_segments` (real-read this pass) contains none of their 5 real route
+  base paths (`approval_invoice_reconciliation_approve`, `approval_patch_sla_credit_apply`,
+  `approval_pricing_override`, `approval_quota_override`, `approval_sla_credit_apply`) either
+  — same double-gap shape (`bypass ... authorize_if always()` plus zero org resolution ahead
+  of it) as `ApprovalTierDowngrade` had before this session's fix.
+- **Real-checked which of the 6 have a live downstream effect worth exploiting, not assumed
+  from the policy gap alone — the 6 split cleanly into 2 real, live, money-moving instances of
+  the exact vulnerability class, and 3 already-disclosed, functionally-inert instances (plus
+  the now-fixed 7th).**
+  - **`Xaas.Billing.ApprovalSlaCreditApply` and `Xaas.Billing.ApprovalPatchSlaCreditApply` —
+    real, live, exploitable, NOT previously selected for a fix.** Both resources' own
+    `attributes do` blocks (real-read this pass) carry a plain `org_id, :string` attribute
+    directly on the record (no `multitenancy` block, no FK hop — structurally simpler than
+    `ApprovalTierDowngrade`'s one-hop-through-`Subscription` shape), and both `:create`
+    actions' own `accept` list (`approval_sla_credit_apply.ex`, `approval_patch_sla_credit_
+    apply.ex`, real-read in full) includes `org_id` and `credit_amount_cents` as
+    caller-supplied attributes. Both `:approve` actions wire a real, live
+    `Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove` /
+    `ApprovalPatchSlaCreditApplyApprove` (real-read both in full this pass, byte-identical
+    shape) — a real `Ash.Changeset.after_action/2` that, on the record's first `:approve`,
+    opens/credits a real `Xaas.Ledger.Account` for the record's own `org_id` via a real
+    `Xaas.Ledger.Transfer` from the dedicated `platform:revenue:sla-credits` account, for the
+    record's own caller-supplied `credit_amount_cents`. **Because `org_id` is a plain,
+    caller-accepted `:create` attribute with zero org-membership check and the route is absent
+    from `ResolveOrgActor`'s scoped-path list (so no actor/tenant is ever resolved for it
+    regardless of any `X-Org-Id` header sent), this is not "approve someone else's request"
+    (round 14's shape) but a strictly worse "invent a victim, invent an amount, credit
+    yourself" shape** — no real relationship to an existing org or subscription is even
+    required.
+  - **Real, live HTTP-level proof obtained this pass, not just static reasoning.** Wrote and
+    ran a temporary `ConnCase` test (`test/kanban_web/controllers/
+    scratch_sla_credit_selfservice_test.exs`, matching this session's own established
+    evidence discipline — written, run once, then `rm`'d; `git status --short
+    test/kanban_web/controllers/` confirmed clean before and after). Real `POST
+    /api/approval_sla_credit_apply` with the real internal API Bearer token, body
+    `requested_by: "attacker-6603"`, `org_id: "org-victim-6603"` (an identifier for an org
+    that was never created, never authenticated, does not exist anywhere else in the system),
+    `credit_amount_cents: 999_999`. Real `PATCH /api/approval_sla_credit_apply/:id`,
+    `approved_by: "attacker-6603-approver"` — same actor, self-approving its own fabricated
+    request. **Real result: HTTP 201 on create, HTTP 200 on approve,
+    `approved_by == "attacker-6603-approver"`, and a real `Xaas.Ledger.Balance` row for the
+    fabricated `org-victim-6603` identifier really shows `Money.new(:USD, "9999.99")`** —
+    printed and asserted in the real test run (`SCRATCH RESULT: victim org (never
+    authenticated, arbitrary string) real balance = Money.new(:USD, "9999.99")`, `1 test, 0
+    failures`). An actor that knows only the single shared `INTERNAL_API_TOKEN` can mint a
+    real, arbitrary-amount Ledger credit to a real Ledger account under any identifier string
+    it invents on the spot, with zero authorization check of any kind — not a theoretical
+    reading of the policy gap, a live-demonstrated one. `ApprovalPatchSlaCreditApply` was
+    real-read (not separately live-tested, to bound this pass's scope) and confirmed
+    byte-identical in every load-bearing respect (`grep -n "def change\|Ledger.Transfer\|
+    after_action\|newly_approved" lib/xaas/billing/changes/
+    approval_patch_sla_credit_apply_approve.ex` matches the same shape line-for-line as the
+    live-tested sibling) — same real vulnerability, same real fix needed.
+  - **The other 3 siblings share the identical policy-layer gap but are real, disclosed,
+    functionally-inert today — re-confirmed, not newly discovered, with one real refinement.**
+    `ApprovalQuotaOverride` and `ApprovalInvoiceReconciliationApprove` remain the fully-unwired
+    dead no-ops the eleventh/twelfth-pass sections already named (`grep -n "change \|
+    require_atomic" lib/xaas/billing/approval_quota_override.ex
+    lib/xaas/billing/approval_invoice_reconciliation_approve.ex` → each shows only
+    `require_atomic? false`, no `change Xaas.Billing.Changes...` line at all — `:approve`
+    does nothing but flip `approved_by`). **`ApprovalPricingOverride` is a real, one-notch
+    finer distinction than prior passes drew**: unlike those two, its `:approve` action DOES
+    wire a real `change Xaas.Billing.Changes.ApprovalPricingOverrideApprove`
+    (`approval_pricing_override.ex:81-82`) — but that module's own `change/3`
+    (`lib/xaas/billing/changes/approval_pricing_override_approve.ex`, real-read in full) is
+    `def change(changeset, _opts, _context) do changeset end`, a pure no-op — wired but inert,
+    not unwired. Net effect identical to the other two (approving does nothing beyond setting
+    `approved_by`), so it carries the same policy gap with the same zero real consequence
+    today. All 3 are correctly left out of this pass's CREATE scope for the same reason the
+    twelfth-pass grid already gave for 2 of them: fixing org-scoping on an action with no real
+    effect protects nothing yet, and forcing a design onto the no-op `change/3` bodies here
+    would be fabricating scope creep beyond this pass's own security-sweep task, not
+    implementing a known design.
+  - **Zero existing test coverage of either live-exploitable sibling's cross-org exposure,
+    confirmed by direct grep, not inference**: `grep -n "X-Org-Id\|x-org-id\|cross.org\|
+    cross_org" test/kanban_web/controllers/approval_sla_credit_apply_controller_test.exs
+    test/kanban_web/controllers/approval_patch_sla_credit_apply_controller_test.exs` → zero
+    matches in either file.
+- **Real, disclosed reason the fix for these 2 is a genuinely different, and in this case
+  simpler, shape than `Xaas.Billing.Checks.ActorOrgMatches`** (the module `b536a75` added for
+  `ApprovalTierDowngrade`) — that check's own moduledoc (real-read in full this pass) exists
+  specifically because `ApprovalTierDowngrade` has no `org_id` of its own and must load a
+  related `Subscription` to find one. `ApprovalSlaCreditApply`/`ApprovalPatchSlaCreditApply`
+  both carry their own plain `org_id` attribute directly — structurally the same shape as the
+  4 Governance resources `Xaas.Governance.Checks.ActorOrgMatches` already protects (real-read
+  that module in full this pass too), not the Billing one. That Governance check's own
+  moduledoc also discloses a real, relevant nuance worth carrying into the fix: its `:create`
+  half is "live-verified vacuous" there only because those 4 resources have a real
+  `multitenancy do` block that force-normalizes the `:create` payload's `org_id` to the
+  resolved tenant before the check runs. **Neither `ApprovalSlaCreditApply` nor
+  `ApprovalPatchSlaCreditApply` has a `multitenancy` block at all** (confirmed by each
+  resource's own attribute comment, real-read this pass: "No multitenancy machinery is wired
+  here... a plain string identifier") — so for these 2, unlike the Governance 4, the
+  `:create`-side check would be real, live, load-bearing rejection, not defense-in-depth over
+  an already-normalized value. The right fix shape is therefore a direct adaptation of
+  `Xaas.Governance.Checks.ActorOrgMatches`'s `match?/3` (read `org_id` straight off the
+  changeset/record, no relation hop) into a new `Xaas.Billing.Checks.ActorOrgMatches` sibling
+  check reused across both resources, plus adding both resources' route base paths to
+  `ResolveOrgActor`'s `@tenant_scoped_path_segments` — not a copy of the subscription-hop
+  check `b536a75` just wrote for the different-shaped `ApprovalTierDowngrade`. Selected as
+  this pass's CREATE item; full spec in the structured output below.
+
+**Doc-drift item re-confirmed unchanged, real, still not selected — correctly deprioritized
+per this pass's own task instruction ("prioritize (1) if it finds real instances").**
+`lib/xaas/billing/subscription.ex:158-163`'s `json_api do routes do` block still declares only
+`get :read` / `index :read` despite the resource's own `actions do` block (real-checked again
+this pass) still carrying 3 real mutation actions (`create :create`, `update
+:sync_from_stripe`, `update :change_tier`) — the fifteenth-pass grid's own found off-by-one
+(`http-api-surface.md`'s "43 mutation, 13 read-only" should be "44 mutation, 12 read-only" once
+this is fixed) is unchanged, since nothing landed against `subscription.ex` or that doc since.
+A real, one-line-scoped, low-severity doc/routing gap — correctly outranked this pass by 2
+live-exploitable money-movement vulnerabilities in the same domain; carried forward.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this pass
+shows the same real artifacts recent passes have already logged as other standing activities'
+own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and untracked
+`GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl`. None read beyond
+filenames, none touched.
 
 ## Fifteenth-pass update
 
@@ -1510,7 +1663,34 @@ sequence cover these):
     is 43 mutation / 13 read-only, real cause `lib/xaas/billing/subscription.ex` (3 real
     mutation actions, zero exposed via its own `routes do` block). A 1-line fix
     (`git grep` command + edit), deliberately not applied this pass per its own
-    analysis-only scope. See "Fifteenth-pass update" above.
+    analysis-only scope. Re-confirmed unchanged this (sixteenth) pass, real-outranked by item
+    22 below. See "Fifteenth-pass update" above.
+22. **RESOLVED** (was this grid's own item 19, fifteenth pass): a real
+    `Xaas.Billing.Checks.ActorOrgMatches` wired onto `Xaas.Billing.ApprovalTierDowngrade`'s
+    `:create`/`:approve` bypasses, plus `approval_tier_downgrade` added to `ResolveOrgActor`'s
+    `@tenant_scoped_path_segments` — **landed for real as `b536a75`** (round 14), confirmed
+    live as this pass's own `HEAD`: both files real-read in full this pass. See
+    "Sixteenth-pass update" above.
+23. **Selected as this pass's (sixteenth) CREATE item.** A real, systematic sweep of
+    `ApprovalTierDowngrade`'s 6 Billing `Approval*` siblings for the identical gap item 22 just
+    closed found 2 real, live, HTTP-proven instances of the same vulnerability class, structurally
+    simpler and arguably worse than the one just fixed (no victim relationship required at
+    all — an attacker invents both the target `org_id` and the credited amount on `:create`,
+    then self-approves): `Xaas.Billing.ApprovalSlaCreditApply` and `Xaas.Billing
+    .ApprovalPatchSlaCreditApply`. Scope: (a) a new `Xaas.Billing.Checks.ActorOrgMatches`-shaped
+    check (a direct-attribute-read variant, modeled on `Xaas.Governance.Checks.ActorOrgMatches`,
+    not the subscription-hop variant `b536a75` wrote for `ApprovalTierDowngrade` — these 2
+    resources carry their own plain `org_id` attribute, no relation hop needed) wired onto both
+    resources' `:create`/`:approve` bypasses in place of `authorize_if always()`; (b) both
+    resources' route base paths (`approval_sla_credit_apply`, `approval_patch_sla_credit_apply`)
+    added to `ResolveOrgActor`'s `@tenant_scoped_path_segments`; (c) a real, live regression test
+    proving the fix (cross-org/fabricated-org rejection) on at least the live-tested resource.
+    The other 3 siblings with the same policy-layer gap (`ApprovalQuotaOverride`,
+    `ApprovalInvoiceReconciliationApprove`, `ApprovalPricingOverride` — the last wired to a
+    no-op `change/3`, the first two fully unwired) are real but functionally inert today
+    (`:approve` has no live effect beyond setting `approved_by`) — correctly out of this item's
+    scope; fixing their org-scoping protects nothing until a real design gives their `:approve`
+    a live effect (see item 17). Full spec in the structured output below.
 
 ## See Also
 
@@ -1531,6 +1711,15 @@ sequence cover these):
 - `docs/claude/diataxis/reference/http-api-surface.md:78-80`, `lib/xaas/billing/subscription.ex`
   — the real, small, pre-existing 44/12 vs. 43/13 mutation-route recount drift this pass found
   and disclosed but, per its own analysis-only scope, did not fix in place (item 21)
+- `lib/xaas/billing/approval_sla_credit_apply.ex:22-46`,
+  `lib/xaas/billing/approval_patch_sla_credit_apply.ex:22-46` (the real, byte-identical,
+  unprotected `bypass action(:create/:approve) do authorize_if always() end` policies blocks),
+  `lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex`,
+  `approval_patch_sla_credit_apply_approve.ex` (the real, live `Ledger.Transfer`-crediting
+  `after_action/2` each `:approve` drives), `lib/xaas/governance/checks/actor_org_matches.ex`
+  (the real, direct-attribute-read pattern this pass's selected CREATE item — item 23 — adapts)
+  — the sixteenth pass's own live-HTTP-proven "fabricate an org, fabricate an amount,
+  self-approve" Ledger money-movement finding and its selected fix target
 
 - `lib/xaas/governance/changes/approval_backup_retention_change_charge_overage.ex:29-45`
   (the real, unguarded `change/3`), `lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex:75-90`

@@ -16,6 +16,15 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   always see a `nil` actor and always deny. See that resource's own
   moduledoc and check module for the full disclosed finding.
 
+  Extended sixteenth pass: `approval_sla_credit_apply` and
+  `approval_patch_sla_credit_apply` (`Xaas.Billing.ApprovalSlaCreditApply`
+  / `ApprovalPatchSlaCreditApply`) close the identical real,
+  live-HTTP-proven gap on 2 more Billing `Approval*` siblings -- see
+  those resources' own moduledocs and
+  `Xaas.Billing.Checks.SlaCreditActorOrgMatches` for the full disclosed
+  finding (a real, live exploit that fabricated a victim org and credited
+  itself, live-tested and closed this pass).
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -84,6 +93,8 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
     marketplace_providers
     approval_provider_status_change
     approval_tier_downgrade
+    approval_sla_credit_apply
+    approval_patch_sla_credit_apply
   )
 
   def init(opts), do: opts

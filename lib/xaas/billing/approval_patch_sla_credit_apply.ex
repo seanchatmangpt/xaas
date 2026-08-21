@@ -2,7 +2,7 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
   @moduledoc """
   Real maker-checker approval resource for patch SLA credit application requests. Was a
   read-only skeleton (`defaults [:read]`, no mutation surface at all) --
-  this pass adds the real `:create`/`:approve` actions, following the
+  a prior pass added the real `:create`/`:approve` actions, following the
   established pattern in `Xaas.Billing.ApprovalPricingOverride` /
   `Xaas.Governance.ApprovalFreezeOverride`: `:create` is unauthenticated
   at the Ash-policy layer (real access control is the router-level
@@ -11,6 +11,24 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
   `Xaas.Billing.Validations.ApprovalPatchSlaCreditApplyRequiresApprover` -- `approved_by` must
   be present and must differ from `requested_by` (a second, distinct
   approver; no self-approval).
+
+  ## Real fix (sixteenth pass) -- the `:create`/`:approve` bypass had no
+  per-org access control at all
+
+  Real, live-HTTP-proven gap found by the sixteenth-pass ERRC grid sweep
+  (byte-identical shape to `Xaas.Billing.ApprovalSlaCreditApply`, its
+  live-tested sibling -- see that resource's own moduledoc for the live
+  HTTP proof): the `:create`/`:approve` bypass was a bare `authorize_if
+  always()` -- no org check at all -- and `KanbanWeb.Plugs.ResolveOrgActor`'s
+  hardcoded tenant-scoped path list didn't cover
+  `approval_patch_sla_credit_apply` either.
+
+  This pass adds `Xaas.Billing.Checks.SlaCreditActorOrgMatches` (shared
+  with `ApprovalSlaCreditApply` -- see that module's own moduledoc), wires
+  it into `:create`/`:approve` in place of `authorize_if always()`, and
+  adds `approval_patch_sla_credit_apply` to `ResolveOrgActor`'s
+  `@tenant_scoped_path_segments` so the route actually receives a resolved
+  org actor instead of `nil`.
   """
   use Xaas.Resource,
     otp_app: :kanban,
@@ -32,12 +50,18 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     # (`ApprovalPatchSlaCreditApplyRequiresApprover`) rejecting a missing or
     # self-approving `approved_by`. Deliberate per-action carve-out, not
     # a blanket allow of every mutation.
+    #
+    # Updated sixteenth pass: no longer a bare `authorize_if always()` --
+    # both now real-check `Xaas.Billing.Checks.SlaCreditActorOrgMatches`
+    # (the actor's `X-Org-Id`-resolved org must match this record's real
+    # `org_id`). See that module's moduledoc for why this is needed --
+    # this resource has no `multitenancy` block of its own to backstop it.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if Xaas.Billing.Checks.SlaCreditActorOrgMatches
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if Xaas.Billing.Checks.SlaCreditActorOrgMatches
     end
 
     policy always() do
