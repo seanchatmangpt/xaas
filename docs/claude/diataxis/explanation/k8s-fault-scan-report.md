@@ -119,9 +119,10 @@ returning empty. Combined with finding 2, the `xaas` pod does have a live, mount
 for an SA that (today) grants nothing extra — not an active exposure, but worth noting for
 completeness since token automount is itself a commonly-flagged CIS/kube-bench item.
 
-### 3. etcd encryption at rest — NOT enabled, CONFIRMED (HIGH)
+### 3. etcd encryption at rest — FIXED, CONFIRMED (2026-08-20 update)
 
-Ran `scripts/verify-etcd-encryption.sh default xaas-secrets` (pre-existing repo script)
+**Original finding (as first written, now superseded below):** Ran
+`scripts/verify-etcd-encryption.sh default xaas-secrets` (pre-existing repo script)
 against the live cluster's etcd via a real `etcdctl get --print-value-only` of
 `/registry/secrets/default/xaas-secrets`, followed by a byte-level scan of the raw output
 for plaintext leakage of the real secret key names/values:
@@ -141,8 +142,50 @@ etcd-stored object has **no** `k8s:enc:...` envelope prefix a real
 `EncryptionConfiguration` would add — i.e. the data is plaintext protobuf, not encrypted.
 The listed "plaintext leaks" are the real secret **key names** (`DATABASE_URL`,
 `INTERNAL_API_TOKEN`, etc.) appearing verbatim in the raw etcd bytes, which is exactly
-what plaintext-at-rest looks like. `scripts/enable-etcd-encryption.sh` exists in this repo
-to close this gap but was not run (out of scope — scan only).
+what plaintext-at-rest looks like.
+
+**2026-08-20 re-verification (this session, `kind-xaas`):** `scripts/enable-etcd-encryption.sh`
+was actually run against the live `xaas-control-plane` container. It generated a real
+AES-256 key via `openssl rand -base64 32`, wrote a real `EncryptionConfiguration`
+(`apiserver.config.k8s.io/v1`, `aescbc` provider) to
+`/etc/kubernetes/pki/encryption/encryption-config.yaml` inside the control-plane container
+(mode 600), patched the live `/etc/kubernetes/manifests/kube-apiserver.yaml` static pod
+manifest to add `--encryption-provider-config=...`, waited for kubelet's static-pod
+controller to restart `kube-apiserver` (confirmed `Running` again), then re-wrote every
+existing Secret through the API (`kubectl get secrets --all-namespaces -o json | kubectl
+replace -f -`) so the two pre-existing, previously-plaintext Secrets
+(`default/xaas-secrets`, `kube-system/bootstrap-token-abcdef`) were re-saved as real
+`aescbc` ciphertext rather than left in their original plaintext form.
+
+Re-ran `scripts/verify-etcd-encryption.sh default xaas-secrets` afterward — real output:
+
+```
+==> raw etcd bytes for /registry/secrets/default/xaas-secrets
+00000000: 2f72 6567 6973 7472 792f 7365 6372 6574  /registry/secret
+00000010: 732f 6465 6661 756c 742f 7861 6173 2d73  s/default/xaas-s
+00000020: 6563 7265 7473 0a6b 3873 3a65 6e63 3a61  ecrets.k8s:enc:a
+00000030: 6573 6362 633a 7631 3a6b 6579 313a 903d  escbc:v1:key1:.=
+00000040: dda6 4e3e c90e adf1 8503 e370 c514 8a3f  ..N>.......p...?
+
+envelope prefix present: True
+plaintext leaks found:   none
+RESULT: CIPHERTEXT CONFIRMED
+```
+
+Envelope prefix (`k8s:enc:aescbc:v1:key1:`) is now present and none of the decoded secret
+key names/values from the live API (`DATABASE_URL`, `INTERNAL_API_TOKEN`,
+`ONETIME_REVOKE_KEY`, `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`) appear anywhere in the raw
+etcd bytes. This is real, static-key `aescbc` envelope encryption (no third-party KMS
+plugin), disclosed as such by the script's own header comment — not a rotating remote KMS.
+
+Post-change cluster health check: `kubectl get pods -A` showed all pods `Running`/`Ready`
+after the apiserver restart settled, except `kube-scheduler-xaas-control-plane` which was
+already intermittently failing its readiness probe (`connection refused` / HTTP 500 on
+`/readyz`) for 150+ minutes *before* this change per its own event history (`x98 over
+150m`) — pre-existing flakiness on this cluster, not caused by the encryption-config
+change or the apiserver restart it triggered. The `xaas` app itself was confirmed
+real-reachable afterward: `kubectl port-forward svc/xaas 4000:4000` + `curl` returned
+`http_status=200`.
 
 ### 4. NetworkPolicy — APPLIED and CONFIRMED ENFORCED on kind-xaas (2026-08-20 update)
 
@@ -197,7 +240,7 @@ container-level ceiling and no namespace-level ceiling either.
 | `k8s/rbac.yaml` | Finding 2 — gives `xaas` pods their own `xaas` ServiceAccount scoped to `get` on exactly `xaas-config`/`xaas-secrets`, off the shared `default` SA. Does not touch `postgres`/`prometheus`, which would still run as `default`. |
 | `k8s/network-policy.yaml` | Finding 4 — default-deny + scoped allows for `app: xaas`. **Applied and confirmed enforced on kind-xaas as of 2026-08-20** (kindnet on `kind v0.30.0` does enforce NetworkPolicy — see finding 4's updated real before/after test; supersedes the file's original disclosed caveat that kindnet doesn't enforce it). |
 | `k8s/resource-quotas.yaml` | Finding 5 (namespace-level) — does not add missing per-container limits to `postgres.yaml`/`prometheus.yaml` themselves (finding 1's resource half), only bounds the namespace total. |
-| `scripts/enable-etcd-encryption.sh` | Finding 3 — not a manifest, a cluster-config script; would add a real `EncryptionConfiguration` to the kind control-plane's apiserver. |
+| `scripts/enable-etcd-encryption.sh` | Finding 3 — not a manifest, a cluster-config script; adds a real `EncryptionConfiguration` to the kind control-plane's apiserver. **Run and confirmed on kind-xaas as of 2026-08-20** — see finding 3's updated real before/after verification. |
 | *(none exists yet)* | Finding 1's securityContext half (runAsNonRoot, allowPrivilegeEscalation, readOnlyRootFilesystem, seccompProfile) — no manifest in `k8s/` currently adds `securityContext` blocks to `deployment.yaml`, `postgres.yaml`, or `prometheus.yaml`. This is a real, undocumented gap: none of the existing hardening files address it. |
 
 ## Summary of severities (trivy misconfig scan)
@@ -219,5 +262,8 @@ scan here was workload-config-only, not etcd-at-rest).
 ## Explicitly not done in this task
 
 - No manifest in `k8s/` was applied to the live cluster (`kubectl apply` was not run).
-- `scripts/enable-etcd-encryption.sh` was not run.
 - No securityContext patch was applied live to any Deployment.
+
+`scripts/enable-etcd-encryption.sh` **was** run in a later session (2026-08-20) — see
+finding 3's updated real before/after verification above; this line is left as the
+original scan's scope note, superseded by that update.
