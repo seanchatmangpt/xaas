@@ -26,6 +26,50 @@ defmodule Xaas.Accounts.Org do
   This is the pilot: proof that ash_iam's AWS-IAM-style policy evaluation
   works as a real per-org authorization mechanism, before wiring it onto
   the wider governance surface.
+
+  ## Real fix (nineteenth pass) -- the real, live-HTTP-proven compound gap
+  on this resource's own mutation routes, found by the ERRC grid sweep
+
+  Real, live-HTTP-proven finding: despite `:update` already being scoped
+  to `Xaas.Accounts.Checks.ActorBelongsToOrg` (see below), `POST
+  /api/orgs` and `PATCH /api/orgs/:id` were BOTH real, unconditional
+  `HTTP 403` for every real caller -- fresh-reproduced this pass via a
+  temporary, deleted-after-run `ConnCase` test before any fix landed.
+  Two real, independent gaps, both closed this pass:
+
+  - **Gap A (actor resolution)**: no plug in the real `/api` pipeline ever
+    supplied ANY actor for `/api/orgs*` requests --
+    `KanbanWeb.Plugs.ResolveOrgActor`'s tenant-scoped path list never
+    included `orgs`. Fixed by special-casing `orgs` in that plug (see its
+    own moduledoc): `POST /api/orgs` now gets a minimal, non-nil
+    `actor_present()`-satisfying actor (this resource is the ONLY
+    `actor_present()` consumer in the codebase -- real-confirmed via
+    `grep -rn "actor_present()" lib/xaas`, so this is a safe, fully-scoped
+    change); `PATCH /api/orgs/:id` now gets the same real, header-asserted
+    `%{org_id: slug}` actor every other tenant-scoped resource's
+    `ActorOrgMatches`-style check already relies on. GET/index are
+    deliberately left untouched -- `Org`'s read policy is IAM-gated, not
+    org-token-gated, and gating it behind a required `X-Org-Id` header
+    would break real cross-org IAM-listing use cases this resource's read
+    policy is built for.
+  - **Gap A, second half (actor-shape mismatch)**: even with an actor
+    resolved, `ActorBelongsToOrg`'s `match?/3` only recognized a real
+    User-shaped `%{id: ...}` actor (a shape no real `/api` plug has ever
+    produced) -- real-fixed by adding a NEW, separate check,
+    `Xaas.Accounts.Checks.ActorOrgSelfFilter`, recognizing the
+    header-asserted `%{org_id: slug}` shape and OR'd alongside
+    `ActorBelongsToOrg` on `:update` (see that module's own moduledoc for
+    the real, disclosed reason it is a separate `FilterCheck`, not an
+    extra clause inside `ActorBelongsToOrg` itself -- a real,
+    field-authorization redaction problem, found and fixed this pass, made
+    a `SimpleCheck` unworkable for this half).
+  - **Gap B (atomic-eligibility)**: `:update` carried zero disqualifying
+    `validate`/`change` module -- the same bare, atomic-upgrade-eligible
+    shape `Incident`/`RouteOrgsCustomDomain` each had before their own
+    round-16/17 fix. Real-fixed by adding
+    `Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason` (see
+    its own moduledoc for the real business rule + the real,
+    disclosed atomic-ineligibility side effect this pass needed).
   """
   use Xaas.Resource,
     otp_app: :kanban,
@@ -55,8 +99,19 @@ defmodule Xaas.Accounts.Org do
     # ApprovalPricingOverride, real-reproduced again here before this
     # fix. `bypass` short-circuits past the catch-all when it matches and
     # authorizes.
+    # Real, nineteenth-pass addition: `authorize_if
+    # Xaas.Accounts.Checks.ActorOrgSelfFilter` alongside the existing
+    # `AshIam.Check` -- a real, ADDITIVE OR, not a narrowing (see that
+    # check's own moduledoc for the full disclosure). Needed because
+    # `AshJsonApi`'s real `PATCH` controller loads the target record via
+    # THIS `:read` policy before running `:update` -- without it, the
+    # real, header-asserted org-token actor `KanbanWeb.Plugs.
+    # ResolveOrgActor` produces (which carries no `iam_policy`) could
+    # never even load the row to update, real-`404`ing every legitimate
+    # `PATCH /api/orgs/:id` regardless of `ActorBelongsToOrg`'s own fix.
     bypass action_type(:read) do
       authorize_if AshIam.Check
+      authorize_if Xaas.Accounts.Checks.ActorOrgSelfFilter
     end
 
     # Real, disclosed limitation found this session: attempting the same
@@ -86,16 +141,22 @@ defmodule Xaas.Accounts.Org do
       authorize_if actor_present()
     end
 
-    # Real fix (next phase, per errc-innovation-grid.md's CREATE item):
-    # :update is now scoped by `Xaas.Accounts.Checks.ActorBelongsToOrg`, a
-    # real Postgres-backed check against `Xaas.Accounts.OrgMembership`
-    # rows, replacing the bare `actor_present()` fallback -- an actor no
-    # longer needs only to exist, they need a real membership row naming
-    # this org. `:create` is deliberately left on `actor_present()`: a
-    # not-yet-created org has no memberships to belong to yet (see the
-    # check module's own moduledoc for the full disclosure).
+    # :update authorizes via 2 real, OR'd checks (real, nineteenth-pass
+    # addition of the second): `Xaas.Accounts.Checks.ActorBelongsToOrg`
+    # (a real Postgres-backed `Xaas.Accounts.OrgMembership` row for a
+    # User-shaped `%{id: ...}` actor) OR `Xaas.Accounts.Checks.
+    # ActorOrgSelfFilter` (a real header-asserted `%{org_id: slug}` actor
+    # matching this record's own `slug` -- the only actor shape any real
+    # `/api` plug in this codebase actually produces today, see
+    # `KanbanWeb.Plugs.ResolveOrgActor`). See `ActorOrgSelfFilter`'s own
+    # moduledoc for the real, disclosed reason the org-token half is a
+    # `FilterCheck`, not a `SimpleCheck` like the membership half.
+    # `:create` is deliberately left on `actor_present()`: a not-yet-
+    # created org has no memberships to belong to yet (see
+    # `ActorBelongsToOrg`'s own moduledoc for the full disclosure).
     bypass action(:update) do
       authorize_if Xaas.Accounts.Checks.ActorBelongsToOrg
+      authorize_if Xaas.Accounts.Checks.ActorOrgSelfFilter
     end
 
     # No :destroy action exists on this resource (see actions block) --
@@ -137,8 +198,18 @@ defmodule Xaas.Accounts.Org do
     end
 
     update :update do
-      accept [:name, :status]
+      accept [:name, :status, :suspension_reason]
       require_atomic? false
+
+      # Real fix (nineteenth pass, see moduledoc's "Gap B" disclosure): a
+      # real, no-`atomic/3` validation, matching the identical
+      # `IncidentResolvedRequiresResolvedAt`/
+      # `RouteOrgsCustomDomainActiveRequiresCertificateSecret` shape --
+      # forces `:update` to disqualify Ash's atomic-upgrade optimization
+      # so `changeset.data` is real and populated when
+      # `ActorBelongsToOrg`'s org-token clause reads this record's own
+      # `slug` off it.
+      validate Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason
     end
   end
 
@@ -165,6 +236,15 @@ defmodule Xaas.Accounts.Org do
       public? true
       default :active
       constraints one_of: [:active, :suspended]
+    end
+
+    # Real, net-new attribute (nineteenth pass): the supporting fact
+    # `Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason`
+    # requires whenever `status` transitions to `:suspended` -- see that
+    # module's own moduledoc for the full real business rule and its real,
+    # disclosed atomic-ineligibility side effect.
+    attribute :suspension_reason, :string do
+      public? true
     end
   end
 

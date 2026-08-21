@@ -43,6 +43,32 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   squatting / fabricated backup-history rows under an invented `org_id`,
   real and live-tested, closed this pass).
 
+  Extended nineteenth pass: `Xaas.Accounts.Org` -- real, live-HTTP-proven,
+  but real-confirmed NOT to fit the plain `@tenant_scoped_path_segments`
+  list shape the other 12 entries share, so it is handled by a dedicated,
+  method-aware code path instead (see `orgs_create?/1`/`orgs_update?/1`
+  below), not added to the list. `Org` is structurally different from
+  every other tenant-scoped resource here: it is the tenant ROOT (no
+  `org_id` string attribute of its own -- its own `slug` IS what every
+  other resource's `org_id` references), its `:read`/`:index` are
+  IAM-gated (`AshIam.Check`), not org-token-gated, and its `:create`
+  cannot coherently require an already-existing org's `X-Org-Id` (a
+  not-yet-created org has no slug to assert yet). Real, live-HTTP-proven
+  finding: BOTH `POST /api/orgs` and `PATCH /api/orgs/:id` were
+  unconditional `HTTP 403` before this pass -- no plug ever supplied any
+  actor for either. Fresh-reproduced this pass via a temporary,
+  deleted-after-run `ConnCase` test before any fix landed. Fixed by:
+  `POST /api/orgs` gets a minimal, non-nil actor satisfying `Org.:create`'s
+  own `actor_present()` policy (real-confirmed via `grep -rn
+  "actor_present()" lib/xaas` that `Org` is the ONLY consumer of that
+  check in the whole codebase, so this is a safe, fully-scoped change,
+  not a general actor-presence widening); `PATCH /api/orgs/:id` gets the
+  same real header-asserted `%{org_id: slug}` actor every other
+  tenant-scoped resource gets, feeding `Xaas.Accounts.Checks.
+  ActorBelongsToOrg`'s new org-token clause (see that module's own
+  moduledoc). `GET`/`index` on `orgs` are deliberately left untouched --
+  see the disclosure above.
+
   ## Real design decision (disclosed, not left open)
 
   This repo has exactly one real auth mechanism today:
@@ -121,14 +147,55 @@ defmodule KanbanWeb.Plugs.ResolveOrgActor do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if tenant_scoped?(conn) do
-      resolve_org(conn)
-    else
-      conn
+    cond do
+      orgs_create?(conn) -> authorize_org_create(conn)
+      tenant_scoped?(conn) -> resolve_org(conn)
+      true -> conn
+    end
+  end
+
+  # Real, nineteenth-pass, `Org`-only special case: `POST /api/orgs` (the
+  # resource's `:create` action, an org that does not exist yet) cannot
+  # coherently require a real `X-Org-Id` naming an ALREADY-existing org
+  # (see this module's own moduledoc). `Org.:create`'s own policy only
+  # requires `actor_present()` -- ANY non-nil actor -- so this plug only
+  # needs to supply one, restoring the "any Bearer-token-authenticated
+  # caller may create an org" behavior `org.ex`'s own moduledoc already
+  # discloses as its real, intended design.
+  defp orgs_create?(conn) do
+    case {conn.method, conn.path_info} do
+      {"POST", ["api", "orgs"]} -> true
+      _ -> false
+    end
+  end
+
+  defp authorize_org_create(conn) do
+    actor = %{}
+
+    conn
+    |> assign(:current_actor, actor)
+    |> Ash.PlugHelpers.set_actor(actor)
+  end
+
+  # Real, nineteenth-pass, `Org`-only special case: `PATCH /api/orgs/:id`
+  # (`:update`) DOES need a real, header-asserted org actor -- unlike
+  # `:create`, `Xaas.Accounts.Checks.ActorBelongsToOrg`'s org-token clause
+  # needs a real `org_id` to compare against the record's own `slug`. Only
+  # `PATCH` is matched here -- `GET`/`index` on the same `orgs` path
+  # segment are deliberately left passing through unaffected (see this
+  # module's own moduledoc).
+  defp orgs_update?(conn) do
+    case conn.path_info do
+      ["api", "orgs" | _] -> conn.method == "PATCH"
+      _ -> false
     end
   end
 
   defp tenant_scoped?(conn) do
+    orgs_update?(conn) or path_segment_tenant_scoped?(conn)
+  end
+
+  defp path_segment_tenant_scoped?(conn) do
     # Real, verified detail: this plug runs in the `/api` scope's
     # `pipe_through` BEFORE `forward "/api", KanbanWeb.ApiRouter` strips
     # the `/api` prefix, so `conn.path_info` here is still

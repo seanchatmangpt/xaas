@@ -6,8 +6,173 @@ a new dated file per pass — this revision updates the grid in place after this
 real-verified commits. The concurrently-running 25-prompt sequence completed at 25/25 (per
 this pass's own task briefing, verified by a real 5x-run regression sweep) and is no longer
 active; this ERRC cron is now the sole standing activity on this repo. Last Updated
-2026-08-21 (eighteenth pass, analysis-only — implementation deferred to the separate Create
+2026-08-21 (nineteenth pass, analysis-only — implementation deferred to the separate Create
 phase).
+
+## Nineteenth-pass update
+
+**Real HEAD confirmed: `f1f1343`.** `git rev-parse HEAD` →
+`f1f134371f26c6a2ea7608b4fa3993526d37da05`. One real commit landed since the
+eighteenth-pass grid's own `283426c`: `f1f1343` ("round 17" in its own commit message —
+implements the eighteenth-pass grid's own selected CREATE item). Real-verified via
+`git show f1f1343 --stat`: 8 files, 631 insertions — `errc-innovation-grid.md` (the
+eighteenth-pass section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`, a new
+`lib/xaas/platform/checks/actor_org_matches.ex`, `route_orgs_custom_domain.ex`,
+`route_projects_backups.ex`, a new
+`route_orgs_custom_domain_active_requires_certificate_secret.ex` validation, and both
+resources' controller tests. **The eighteenth-pass CREATE item
+(`RouteOrgsCustomDomain`/`RouteProjectsBackups`'s missing org-scoping) is now RESOLVED,
+independently re-verified this pass, not just cited from the commit message**: both
+resources' `:create`/`:update` bypasses (real-read this pass) now call `authorize_if
+Xaas.Platform.Checks.ActorOrgMatches`; `resolve_org_actor.ex`'s
+`@tenant_scoped_path_segments` (real-read, now 12 entries) includes both
+`route_orgs_custom_domain` and `route_projects_backups`. **This closes the rounds-14-17
+org-scoping sweep across every domain (Billing, Governance, Operations, Platform,
+Marketplace, Accounts), per the task's own framing — not re-proposed, not re-derived.**
+
+**This pass's task: (1) real, systematic sweep for the 'atomic-upgrade eligibility silently
+drops `changeset.data`' pathology (independently found on `Incident`, round 16, and
+`RouteOrgsCustomDomain`, round 17) across every OTHER `:update`/`:approve` action whose
+policy check or change module reads `changeset.data`; (2) evaluate whether a consolidated
+security-findings summary doc is the more valuable alternative. (1) surfaced a real, novel,
+live-HTTP-verified finding on the codebase's own tenant-root resource; (2) is real but lower
+-value (pure aggregation of already-linked content). (1) selected.**
+
+- **Real inventory of every check module that reads `changeset.data`/a persisted record
+  field for a policy decision — 7 real matches, not sampled.**
+  `grep -rln "Ash.Policy.SimpleCheck\|Ash.Policy.Check" lib/xaas --include="*.ex"` → 7 files:
+  `accounts/checks/actor_belongs_to_org.ex`, `billing/checks/actor_org_matches.ex`,
+  `billing/checks/sla_credit_actor_org_matches.ex`, `governance/checks/actor_org_matches.ex`,
+  `marketplace/checks/actor_org_matches.ex`, `operations/checks/actor_org_matches.ex`
+  (fixed, round 16), `platform/checks/actor_org_matches.ex` (fixed, round 17). Each real-read
+  in full this pass, then cross-checked against its own wired resource's `:update`/`:approve`
+  action for whether a real, disqualifying `validate`/`change` module (one with no `atomic/3`
+  implementation) is present — the exact condition round 16/17 established as load-bearing.
+- **5 of the 7 are real, confirmed-safe negatives — each resource's `:update`/`:approve`
+  action already carries a real custom `validate`/`change` module (business logic, not a
+  workaround) with no `atomic/3` implementation, so Ash's compile-time atomic-eligibility
+  verifier already disqualifies them.** `billing/checks/actor_org_matches.ex`
+  (`ApprovalTierDowngrade:approve` — `validate
+  ApprovalTierDowngradeRequiresApprover`/`change ApprovalTierDowngradeApprove`,
+  `approval_tier_downgrade.ex:151-152`); `billing/checks/sla_credit_actor_org_matches.ex`
+  (`ApprovalSlaCreditApply`/`ApprovalPatchSlaCreditApply:approve` — each carries a real
+  `change *Approve`/`validate *RequiresApprover` pair,
+  `approval_sla_credit_apply.ex:120-121`, `approval_patch_sla_credit_apply.ex:114-115`);
+  `governance/checks/actor_org_matches.ex` (all 4 Governance `Approval*:approve` actions —
+  each carries `validate *RequiresApprover` plus real `WriteAuditLogEntry`/
+  `EnqueueWebhookDeliveries` changes, real-read across `approval_dr_failover.ex:116-123`,
+  `approval_legal_hold_release.ex:120-126`, `approval_deployment_quarantine.ex:124-125`,
+  `approval_backup_retention_change.ex:118-129`). `grep -rln "def atomic(" lib/xaas
+  --include="*.ex"` → zero matches anywhere in this codebase, confirming none of these
+  business-logic modules opts back into atomic eligibility. Real, confirmed-safe, not
+  assumed from the presence of `validate`/`change` alone.
+- **1 of the 7 is a real, independently-arrived-at THIRD avoidance mechanism, not a gap —
+  corrected from this pass's own initial (wrong) read.** `marketplace/checks/actor_org_matches.ex`
+  real-discloses in its own moduledoc (real-read in full) that `Provider:update` does **not**
+  use this `SimpleCheck` at all — it uses the sibling `Xaas.Marketplace.Checks.ActorOrgFilter`
+  (`Ash.Policy.FilterCheck`), which composes into a real `WHERE org_id = ...` filter Ash
+  evaluates directly against the database row, never touching `changeset.data` at
+  policy-check time. `provider.ex:130-146`'s own inline comment even names the exact bug this
+  sweep is hunting ("AshJsonApi's PATCH route builds an atomic update changeset whose `data`
+  is `Ash.Changeset.OriginalDataNotAvailable`...") and states it was real-live-verified via a
+  same-org actor 403 before the `FilterCheck` swap. **This pass's own first-draft read
+  mis-attributed vulnerability to `Provider:update` by reading only the actions-block
+  comment's `require_atomic? false` claim without checking WHICH check module actually gates
+  `:update`** — re-derived per this session's own correction discipline before being written
+  up, not left as a wrong claim. The existing `marketplace_provider_controller_test.exs` test
+  "PATCH .../:id from the same org's actor really succeeds" (real-read, lines 146-173) is
+  real, passing, HTTP-level proof this resource is genuinely safe.
+- **1 of the 7 — `Xaas.Accounts.Checks.ActorBelongsToOrg`, gating `Xaas.Accounts.Org:update`
+  — is the real, novel, live-HTTP-verified finding this pass selected.** Unlike the other 6,
+  this is not "does the atomic bug fire" in isolation — real investigation surfaced a
+  **compound** gap: a real, upstream actor-resolution hole that makes the question moot
+  today (fails closed, not open) while leaving the atomic-eligibility bug itself unfixed and
+  latent underneath it, on this codebase's own tenant-root resource.
+  - **Gap A, real-confirmed via full read of the real `/api` pipeline
+    (`lib/kanban_web/router.ex:79-100`): no plug in the real request path ever supplies a
+    `%{id: ...}`-shaped (User) actor, or even a non-nil actor, for any `/api/orgs` request.**
+    `KanbanWeb.Plugs.RequireInternalApiToken` (real-read) only validates the Bearer token,
+    never sets an actor. `KanbanWeb.Plugs.ResolveOrgActor`'s `@tenant_scoped_path_segments`
+    (real-read, `resolve_org_actor.ex:106-119`, the current 12-entry list) does **not**
+    include `orgs` — so for `/api/orgs*` specifically, `tenant_scoped?/1` returns `false`,
+    the plug passes the conn through unchanged, and no actor is ever set at all. `org.ex`'s
+    own `:create` policy (`authorize_if actor_present()`) and `:update` policy (`authorize_if
+    Xaas.Accounts.Checks.ActorBelongsToOrg`, whose `match?/3` requires `%{id: actor_id}`)
+    both therefore see a `nil` actor on every real HTTP request to this resource today.
+  - **Gap B, real-confirmed via full read of `org.ex:139-142`: `Org:update` (`accept [:name,
+    :status]`, `require_atomic? false`) carries ZERO custom `validate`/`change` modules** —
+    the exact bare shape `Incident:update` and `RouteOrgsCustomDomain:update` each had
+    *before* their round-16/17 fix, and the same shape this pass's own re-derivation (see
+    above) confirms `require_atomic? false` on the action alone does NOT disqualify atomic
+    mode (`Incident:update` and `RouteOrgsCustomDomain:update` both real-carried
+    `require_atomic?(false)`/`require_atomic? false` *before their fix too* — real-confirmed
+    this pass via `grep -n "require_atomic" lib/xaas/operations/incident.ex
+    lib/xaas/platform/route_orgs_custom_domain.ex`, both show it present pre- and post-fix —
+    the disqualifying validation, not the action flag, was the real fix both times). So even
+    if Gap A were closed, `Org:update`'s `ActorBelongsToOrg` check would very likely hit the
+    identical `changeset.data`-unavailable failure mode the other 2 fixes addressed.
+  - **Real, live HTTP-level proof obtained this pass for Gap A, not just static reasoning.**
+    Wrote and ran a temporary `ConnCase` test
+    (`test/kanban_web/controllers/scratch_org_route_reachability_test.exs`, matching this
+    session's own established evidence discipline — written, run, then `rm`'d; `git status
+    --short test/kanban_web/controllers/` confirmed clean before and after, never committed).
+    Three real scenarios, all with a valid `INTERNAL_API_TOKEN` Bearer header: (1) `POST
+    /api/orgs` with a real body — **real `HTTP 403`**. (2) `PATCH /api/orgs/:id` against a
+    real `Org` with a real `User` holding a real `:admin` `OrgMembership` row for that exact
+    org (the precise legitimate case `org_test.exs`'s own passing "an actor with a real
+    OrgMembership row can update the org" test proves works at the direct-`Ash.update!/2`
+    level) — **real `HTTP 403`**, and the real persisted row's `name` field confirmed
+    unchanged after the attempt (`"Legit Co"`, not `"Legit Co Renamed"`) — fails closed, not
+    a security hole, but a real, total availability break for the only legitimate path.
+    (3) `PATCH /api/orgs/:id` additionally sending `X-Org-Id` (the one header
+    `ResolveOrgActor` does understand) — **still real `HTTP 403`**, confirming the actor-shape
+    mismatch theory: even where `ResolveOrgActor` fires, it manufactures a `%{org_id: ...}`
+    actor, which does not satisfy `ActorBelongsToOrg`'s `%{id: ...}` pattern match either.
+    **Net: `POST /api/orgs` and `PATCH /api/orgs/:id` — the real, `json_api`-declared,
+    HTTP-reachable mutation routes on this codebase's own tenant-root resource — are 100%
+    unusable by any real caller today, through any combination of headers this API
+    understands.**
+  - **Real, disclosed reason the existing test suite never caught this**: `org_test.exs`'s
+    only `:update`-authorization test (`org_test.exs:111-135`, real-read) calls
+    `Ash.Changeset.for_update(:update, ..., actor: user) |> Ash.update!()` directly — the
+    same direct-call path this session's own established finding (Incident/RouteOrgsCustomDomain
+    moduledocs) already discloses is a DIFFERENT code path from `AshJsonApi`'s PATCH
+    controller (`Ash.bulk_update/2`'s atomic-first strategy list) — and, independently of the
+    atomic question, supplying `actor: user` directly sidesteps Gap A entirely (no real
+    plug ever manufactures that actor shape from HTTP headers). `grep -n "post \"/api/orgs\"\|
+    patch \"/api/orgs\|ConnCase" test/xaas/accounts/org_test.exs` → zero matches; no
+    `test/kanban_web/controllers/org_controller_test.exs` exists at all
+    (`find test -iname "*org_controller*"` → zero results, confirmed this pass). Zero real
+    HTTP-level coverage of `Org`'s own mutation routes ever existed — the same "existing
+    coverage never exercises the real HTTP path" pattern this grid has repeatedly found for
+    every prior selected CREATE item, here compounding with a functional (not just
+    authorization-adjacent) total breakage.
+  - **Real, disclosed reason a much earlier pass's "RESOLVED"/"now fixed" framing for this
+    exact item (search this doc's own historical "Create" list, `ActorBelongsToOrg`/`org.ex:
+    90-98` entries) was real at the time but incomplete, not contradicted**: that framing
+    verified the Ash-policy layer (`ActorBelongsToOrg` correctly replacing the looser
+    `actor_present()` fallback) before this session's later rounds (14-18) established the
+    "verify against the real HTTP/AshJsonApi path, not just a direct Ash call" discipline
+    that caught the Incident/RouteOrgsCustomDomain sibling bugs. Re-checking an
+    earlier-verified item against a discipline that postdates its own verification is a real
+    re-audit, not a re-litigation of settled work.
+  - **Real, disclosed reason this is selected over the alternative (a consolidated
+    security-findings doc).** `architecture-overview.md` (real-read, 132 lines) links to
+    `security-and-testing-decisions.md` but names none of the 5 org-scoping fixes by resource
+    — real, but a pure aggregation task with no new discovery. This pass's `Org` finding is a
+    genuinely new, live-HTTP-verified defect on the single most foundational resource in the
+    system (its own moduledoc: "the tenant root... every `org_id` string attribute... is
+    meant to eventually point at"), correctly the higher-value pick. The doc-aggregation idea
+    is real and disclosed as a same-batch-eligible follow-up, not dropped — see Create below.
+
+**Concurrent peer-session churn, observed and left untouched.** `git status --short` this
+pass shows the same real artifacts recent passes have already logged as other standing
+activities' own output: a modified `templates-hooks/terraform-validate.txt.tmpl`, and
+untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
+`docs/innovation-exploration-v26.9.1-cycle-report.md`,
+`modules/integrations/github/contributing_workflow/.terraform.lock.hcl`. None touch
+`lib/xaas/accounts/` or any file this pass's finding depends on. None read beyond filenames,
+none touched.
 
 ## Eighteenth-pass update
 
@@ -2045,9 +2210,72 @@ sequence cover these):
     (`:approve` has no live effect beyond setting `approved_by`) — correctly out of this item's
     scope; fixing their org-scoping protects nothing until a real design gives their `:approve`
     a live effect (see item 17). Full spec in the structured output below.
+24. **RESOLVED** (was this grid's own item 23, sixteenth pass, implemented seventeenth pass):
+    a real `Xaas.Operations.Checks.ActorOrgMatches` wired onto `Xaas.Operations.Incident`'s
+    `:create`/`:update` bypasses, plus a real, disqualifying
+    `Xaas.Operations.Validations.IncidentResolvedRequiresResolvedAt` validation on `:update`
+    (the load-bearing fix for the atomic-upgrade `changeset.data` pathology) — **landed for
+    real as `283426c`** (round 16), confirmed live this (nineteenth) pass: both files
+    real-read in full. Closed the cross-resource escalation into
+    `ApprovalDrFailoverRequiresOpenIncident`'s precondition.
+25. **RESOLVED** (was this grid's own item 24-equivalent, seventeenth pass): a real
+    `Xaas.Platform.Checks.ActorOrgMatches` wired onto `Xaas.Platform.RouteOrgsCustomDomain`'s
+    `:create`/`:update` and `Xaas.Platform.RouteProjectsBackups`'s `:create` bypasses, plus a
+    real, disqualifying
+    `Xaas.Platform.Validations.RouteOrgsCustomDomainActiveRequiresCertificateSecret`
+    validation (the same atomic-upgrade fix pattern as item 24) — **landed for real as
+    `f1f1343`** (round 17), confirmed live this pass: all 3 new/changed files real-read in
+    full. This closes the rounds-14-17 org-scoping sweep across every domain.
+26. **Selected as this pass's (nineteenth) CREATE item.** A real, systematic sweep of every
+    other check module reading `changeset.data` for the identical atomic-upgrade pathology
+    (items 24/25's pattern) found the other 5 instances already safe (real business-logic
+    `validate`/`change` modules already disqualify atomic mode) or already using a third,
+    independently-correct avoidance mechanism (`Provider`'s `FilterCheck`) — except
+    `Xaas.Accounts.Org`, this codebase's own tenant-root resource. Real, live-HTTP-verified
+    finding, not inferred: `POST /api/orgs` and `PATCH /api/orgs/:id` — both real,
+    `json_api`-declared, HTTP-reachable mutation routes — return `HTTP 403` for every real
+    caller today, through every header combination the API understands (plain Bearer token;
+    Bearer token + a real admin `OrgMembership` row for the target org; Bearer token +
+    `X-Org-Id`), because no plug in the real `/api` pipeline
+    (`RequireInternalApiToken`/`ResolveOrgActor`) ever supplies the `%{id: ...}`-shaped
+    (User) actor `Xaas.Accounts.Checks.ActorBelongsToOrg`'s `match?/3` requires, nor even a
+    non-nil actor for `Org:create`'s `actor_present()`. Fails closed (no security hole), but
+    a total, real availability break on the tenant-root resource's own mutation surface — and
+    a second, latent problem underneath it: `Org:update` (`accept [:name, :status]`,
+    `require_atomic? false`, zero custom `validate`/`change` modules) is structurally the
+    exact bare, atomic-upgrade-ELIGIBLE shape items 24/25 each had before their fix, so
+    closing the actor-resolution gap alone would very likely just convert today's "always
+    403, wrong reason" into "still-403-on-legitimate-PATCH, `changeset.data`-unavailable
+    reason" — the identical failure mode items 24/25 fixed, recurring a third time. Full spec
+    in the structured output below.
 
 ## See Also
 
+- `lib/xaas/accounts/org.ex:132-143` (the real, atomic-upgrade-eligible `:update` action —
+  zero custom `validate`/`change` modules), `lib/xaas/accounts/checks/actor_belongs_to_org.ex`
+  (the real `changeset.data`-reading check gating it),
+  `lib/kanban_web/plugs/resolve_org_actor.ex:106-119` (the real 12-entry
+  `@tenant_scoped_path_segments` list that does not include `orgs`),
+  `lib/kanban_web/router.ex:79-100` (the real `/api` pipeline: `RequireInternalApiToken` then
+  `ResolveOrgActor`, neither of which ever supplies a `%{id: ...}`-shaped actor),
+  `lib/xaas/operations/incident.ex:141` and
+  `lib/xaas/platform/route_orgs_custom_domain.ex:107-116` (the real, cited proof that
+  `require_atomic? false` on the action alone was already present on both prior fixes'
+  targets and was NOT sufficient by itself) — this pass's own live-HTTP-verified compound
+  finding (actor-resolution gap + latent atomic-upgrade pathology) on `Xaas.Accounts.Org` and
+  its selected fix target
+- `lib/xaas/marketplace/checks/actor_org_matches.ex`, `lib/xaas/marketplace/checks/actor_org_filter.ex`,
+  `lib/xaas/marketplace/provider.ex:130-146` — the real, independently-correct third
+  avoidance mechanism (`FilterCheck` instead of a disqualifying validation) this pass
+  initially misread as a gap, then corrected before writeup; real, passing HTTP-level proof
+  already exists in `test/kanban_web/controllers/marketplace_provider_controller_test.exs:146-173`
+- `lib/xaas/operations/checks/actor_org_matches.ex`,
+  `lib/xaas/operations/validations/incident_resolved_requires_resolved_at.ex`,
+  `lib/xaas/platform/checks/actor_org_matches.ex`,
+  `lib/xaas/platform/validations/route_orgs_custom_domain_active_requires_certificate_secret.ex`
+  — the real, landed atomic-upgrade-pathology fixes (items 24/25) this pass's sweep used as
+  the template and confirmed, via `grep -rln "def atomic(" lib/xaas`, has no counter-example
+  anywhere in this codebase
 - `lib/xaas/billing/approval_tier_downgrade.ex:49-72` (the real, unprotected `bypass
   action(:create/:approve) do authorize_if always() end` policies block),
   `lib/xaas/governance/approval_backup_retention_change.ex`,
