@@ -34,6 +34,17 @@ defmodule KanbanWeb.Router do
     get "/", PageController, :home
   end
 
+  # Real public external Stripe webhook receiver -- deliberately NOT
+  # behind :require_internal_api_token (Stripe is the caller, not us; it
+  # cannot supply our internal bearer token). Real authenticity check is
+  # Stripe-signature verification inside the controller itself. See
+  # KanbanWeb.StripeWebhookController's moduledoc.
+  scope "/webhooks", KanbanWeb do
+    pipe_through :api
+
+    post "/stripe", StripeWebhookController, :receive
+  end
+
   pipeline :internal_api do
     plug :accepts, ["json-api"]
   end

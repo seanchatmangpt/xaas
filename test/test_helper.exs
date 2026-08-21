@@ -11,6 +11,10 @@
 # against /internal-api and /api can authenticate for real rather than
 # disabling the real gate for tests.
 System.put_env("INTERNAL_API_TOKEN", "test-only-internal-api-token")
+# Real, fixed test-only secret for KanbanWeb.StripeWebhookController's
+# Stripe.Webhook.construct_event/3 signature verification -- not a
+# production secret (test env only).
+System.put_env("STRIPE_WEBHOOK_SECRET", "whsec_test_only_secret")
 
 ExUnit.start()
 # Real, concurrent-connection-pool-hungry stress tests are excluded by

@@ -146,7 +146,11 @@ defmodule Kanban.MixProject do
       {:prom_ex, "~> 1.9.0"},
       {:ex_aws, "~> 2.1"},
       {:sweet_xml, "~> 0.6"},
-      {:req, "~> 0.5.7"}
+      {:req, "~> 0.5.7"},
+      # Real Stripe Elixir SDK -- webhook receiver's real
+      # Stripe.Webhook.construct_event/3 signature verification (see
+      # KanbanWeb.StripeWebhookController).
+      {:stripity_stripe, "~> 2.17"}
     ]
   end
 
