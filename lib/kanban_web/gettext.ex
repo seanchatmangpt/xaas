@@ -8,25 +8,12 @@
 # ---
 defmodule KanbanWeb.Gettext do
   @moduledoc """
-  A module providing Internationalization with a gettext-based API.
+  Gettext backend for the Kanban/XaaS web surface.
 
-  By using [Gettext](https://hexdocs.pm/gettext),
-  your module gains a set of macros for translations, for example:
-
-      import KanbanWeb.Gettext
-
-      # Simple translation
-      gettext("Here is the string to translate")
-
-      # Plural translation
-      ngettext("Here is the string to translate",
-               "Here are the strings to translate",
-               3)
-
-      # Domain-based translation
-      dgettext("errors", "Here is the error message to translate")
-
-  See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
+  Callers use `use Gettext, backend: KanbanWeb.Gettext` so the application is
+  compatible with Gettext 1.x and does not depend on the deprecated backend
+  definition/import API.
   """
-  use Gettext, otp_app: :kanban
+
+  use Gettext.Backend, otp_app: :kanban
 end

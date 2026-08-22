@@ -1,117 +1,63 @@
-# START:install-curl
-# in Dockerfile
-
-# END:install-curl
-
-# Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian
-# instead of Alpine to avoid DNS resolution issues in production.
-#
-# https://hub.docker.com/r/hexpm/elixir/tags?page=1&name=ubuntu
-# https://hub.docker.com/_/ubuntu?tab=tags
-#
-# This file is based on these images:
-#
-#   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20231009-slim - for the release image
-#   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.16.0-erlang-26.2.1-debian-bullseye-20231009-slim
-#
-# ash-migration Phase 7 real fixes: the book's original 1.16.0/OTP 26.2.1
-# fails a real Docker build once ash is a dep, in 2 real, sequential ways
-# (each confirmed via a real docker build error, not guessed):
-# 1. Ash.Type.Duration references Elixir's core Duration struct, added in
-#    Elixir 1.17 ("Duration.__struct__/0 is undefined").
-# 2. ex_money's optional json_polyfill dep is conditional on
-#    Code.ensure_loaded?(:json) -- OTP's built-in :json module, added in
-#    OTP 27. mix.lock was resolved on the host (OTP 28, has :json, so
-#    json_polyfill was correctly NOT added as a dep), but the original
-#    OTP 26.2.1 builder lacks :json, so `mix release` fails looking for an
-#    app that was never fetched ("Could not find application
-#    :json_polyfill"). Bumping OTP to 27.x (which also has :json) keeps the
-#    builder and the resolved lock file consistent.
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=27.2.4
-ARG DEBIAN_VERSION=bullseye-20260803-slim
+# XaaS v26.8.21 release image.
+# Runtime identity is kept in lockstep with .tool-versions and VERSION.
+ARG ELIXIR_VERSION=1.20.2
+ARG OTP_VERSION=28.5.0.2
+ARG DEBIAN_VERSION=bookworm-20260623-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 ENV ERL_FLAGS="+JPperf true"
-
-# install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git \
-  && apt-get clean && rm -f /var/lib/apt/lists/*_*
-
-# prepare build dir
 WORKDIR /app
 
-# install hex + rebar
-RUN mix local.hex --force && \
-  mix local.rebar --force
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends build-essential git \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# set build ENV
+RUN mix local.hex --force && mix local.rebar --force
+
 ENV MIX_ENV="prod"
 
-# install mix dependencies
-COPY mix.exs mix.lock ./
-RUN mix deps.get --only $MIX_ENV
-RUN mkdir config
+COPY VERSION mix.exs mix.lock ./
+RUN mix deps.get --only ${MIX_ENV}
 
-# copy compile-time config files before we compile dependencies
-# to ensure any relevant config change will trigger the dependencies
-# to be re-compiled.
+RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
 COPY priv priv
-
 COPY lib lib
-
 COPY assets assets
 
-# compile assets
 RUN mix assets.deploy
+RUN mix compile --warnings-as-errors
 
-# Compile the release
-RUN mix compile
-
-# Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
-
 COPY rel rel
 RUN mix release
 
-# start a new build stage so that the final image will only contain
-# the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates curl && \
-  apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+       ca-certificates curl libncurses5 libstdc++6 locales openssl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    MIX_ENV=prod
 
-WORKDIR "/app"
+WORKDIR /app
 RUN chown nobody /app
 
-# set runner ENV
-ENV MIX_ENV="prod"
-
-# Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/kanban ./
 
 USER nobody
-
-# If using an environment that doesn't automatically reap zombie processes, it is
-# advised to add an init process such as tini via `apt-get install`
-# above and adding an entrypoint. See https://github.com/krallin/tini for details
-# ENTRYPOINT ["/tini", "--"]
-
 CMD ["/app/bin/server"]

@@ -6,15 +6,6 @@
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
-# in config/config.exs
-
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
-# General application configuration
 import Config
 
 config :kanban,
@@ -31,18 +22,7 @@ config :kanban,
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   base_resources: [Xaas.Resource]
 
-# ash-migration Phase 3: real Ash-ecosystem config ported verbatim from
-# ~/dev-fresh/xaas/config/config.exs (the source the 89 resource files were
-# actually written against) -- the resource files use short type codes
-# (:money) and custom types (:capability_class, :interface) that only
-# resolve via this real custom_types/known_types registration, confirmed by
-# a real compile error (":money is not a valid type") before this was added.
-# Real fix: opentelemetry_ash was added as a dep but never actually
-# configured as Ash's tracer (confirmed via grep -- no `config :ash,
-# :tracer` existed anywhere in this repo before this line). Without this,
-# OpentelemetryAsh.start_span/2 is dead code -- Ash never calls it.
 config :ash, :tracer, [OpentelemetryAsh]
-
 config :ash_oban, pro?: false
 
 config :kanban, Oban,
@@ -58,9 +38,15 @@ config :ash_json_api,
   show_public_calculations_when_loaded?: false,
   authorize_update_destroy_with_error?: true
 
+# v26.8.21: generated TypeScript and the Phoenix router share the same
+# authenticated endpoint identity. The RPC controller is mounted behind
+# RequireInternalApiToken; generated clients may not silently target an
+# unmounted public path.
 config :ash_typescript,
   otp_app: :kanban,
   output_file: "assets/js/ash_rpc.ts",
+  run_endpoint: "/internal-api/rpc/run",
+  validate_endpoint: "/internal-api/rpc/validate",
   output_field_formatter: :camel_case,
   input_field_formatter: :camel_case
 
@@ -104,7 +90,6 @@ config :ash,
     pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus
   ]
 
-# Configures the endpoint
 config :kanban, KanbanWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
@@ -129,16 +114,8 @@ config :ex_aws,
   jason_codec: Jason,
   debug_requests: true
 
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
 config :kanban, Kanban.Mailer, adapter: Swoosh.Adapters.Local
 
-# Configure esbuild (the version is required)
 config :esbuild,
   version: "0.14.41",
   default: [
@@ -148,7 +125,6 @@ config :esbuild,
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
 
-# Configure tailwind (the version is required)
 config :tailwind,
   version: "3.2.4",
   default: [
@@ -160,14 +136,10 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
-# Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-# Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
