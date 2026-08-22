@@ -50,8 +50,6 @@ defmodule Xaas.Operations.ProjectMeasure.Measurement do
   end
 
   graphql do
-    type(:project_measurement)
-
     queries do
       action(:project_measure_json, :measure_json)
     end
