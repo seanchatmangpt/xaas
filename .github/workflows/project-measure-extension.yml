@@ -12,6 +12,10 @@ on:
       - '.github/workflows/project-measure-extension.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ash-project-measure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
