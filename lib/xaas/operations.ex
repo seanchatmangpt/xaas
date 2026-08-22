@@ -5,6 +5,7 @@ defmodule Xaas.Operations do
       AshJsonApi.Domain,
       AshGraphql.Domain,
       AshAdmin.Domain,
+      AshTypescript.Rpc,
       Xaas.Operations.ProjectMeasure.Extension
     ]
 
@@ -15,6 +16,12 @@ defmodule Xaas.Operations do
       token_env("GITHUB_TOKEN")
       subject_sha_env("GITHUB_SHA")
       api_url("https://api.github.com")
+    end
+  end
+
+  typescript_rpc do
+    resource Xaas.Operations.ProjectMeasure.Measurement do
+      rpc_action(:measure_project, :measure)
     end
   end
 
@@ -36,6 +43,7 @@ defmodule Xaas.Operations do
     resource(Xaas.Operations.CastleVerbInventoryGoals)
     resource(Xaas.Operations.CapabilityLivenessReceipt)
     resource(Xaas.Operations.Incident)
+    resource(Xaas.Operations.ProjectMeasure.Measurement)
     resource(Xaas.Operations.RouteCastleDeploy)
     resource(Xaas.Operations.RouteCastleRun)
     resource(Xaas.Operations.RouteCastleSchedule)
