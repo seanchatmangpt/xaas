@@ -3,7 +3,9 @@ defmodule Xaas.Operations.ProjectMeasure.Extension do
   Ash/Spark extension for read-only project measurement.
 
   The extension configures observation only. It grants no mutation, release,
-  deployment, billing, or infrastructure authority.
+  deployment, billing, or infrastructure authority. Its verifier rejects
+  malformed identity, artifact, environment, and sensor configuration before a
+  host Ash domain can acquire standing.
   """
 
   @github_actions %Spark.Dsl.Section{
@@ -22,5 +24,7 @@ defmodule Xaas.Operations.ProjectMeasure.Extension do
     sections: [@github_actions]
   }
 
-  use Spark.Dsl.Extension, sections: [@project_measure]
+  use Spark.Dsl.Extension,
+    sections: [@project_measure],
+    verifiers: [Xaas.Operations.ProjectMeasure.Verifiers.ValidateConfiguration]
 end
