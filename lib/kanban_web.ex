@@ -8,21 +8,11 @@
 # ---
 defmodule KanbanWeb do
   @moduledoc """
-  The entrypoint for defining your web interface, such
-  as controllers, components, channels, and so on.
+  Entrypoint for the Phoenix web interface.
 
-  This can be used in your application as:
-
-      use KanbanWeb, :controller
-      use KanbanWeb, :html
-
-  The definitions below will be executed for every controller,
-  component, etc, so keep them short and clean, focused
-  on imports, uses and aliases.
-
-  Do NOT define functions inside the quoted expressions
-  below. Instead, define additional modules and import
-  those modules here.
+  Shared controller/component helpers stay intentionally small so transport,
+  authorization, and Ash domain behavior remain explicit at their owning
+  boundaries.
   """
 
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
@@ -31,7 +21,6 @@ defmodule KanbanWeb do
     quote do
       use Phoenix.Router, helpers: false
 
-      # Import common connection and controller functions to use in pipelines
       import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
@@ -51,7 +40,7 @@ defmodule KanbanWeb do
         layouts: [html: KanbanWeb.Layouts]
 
       import Plug.Conn
-      import KanbanWeb.Gettext
+      use Gettext, backend: KanbanWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -78,27 +67,21 @@ defmodule KanbanWeb do
     quote do
       use Phoenix.Component
 
-      # Import convenience functions from controllers
       import Phoenix.Controller,
         only: [get_csrf_token: 0, view_module: 1, view_template: 1]
 
-      # Include general helpers for rendering HTML
       unquote(html_helpers())
     end
   end
 
   defp html_helpers do
     quote do
-      # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components and translation
       import KanbanWeb.CoreComponents
-      import KanbanWeb.Gettext
+      use Gettext, backend: KanbanWeb.Gettext
 
-      # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
-      # Routes generation with the ~p sigil
       unquote(verified_routes())
     end
   end
@@ -112,9 +95,7 @@ defmodule KanbanWeb do
     end
   end
 
-  @doc """
-  When used, dispatch to the appropriate controller/view/etc.
-  """
+  @doc "Dispatch to the requested web definition."
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end

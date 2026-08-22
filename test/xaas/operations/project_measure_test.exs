@@ -98,7 +98,8 @@ defmodule Xaas.Operations.ProjectMeasureTest do
   end
 
   test "measurement resource has no CRUD actuation actions" do
-    action_names = Measurement |> Ash.Resource.Info.actions() |> Enum.map(& &1.name) |> Enum.sort()
+    action_names =
+      Measurement |> Ash.Resource.Info.actions() |> Enum.map(& &1.name) |> Enum.sort()
 
     assert action_names == [:measure, :measure_json]
     refute Enum.any?(action_names, &(&1 in [:create, :update, :destroy]))
