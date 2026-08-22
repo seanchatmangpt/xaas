@@ -33,7 +33,7 @@ defmodule Xaas.Operations.ProjectMeasure.Verifiers.ValidateConfiguration do
     Spark.Dsl.Verifier.get_option(dsl_state, @path, name)
   end
 
-  defp validate_repository(repository, _dsl_state)
+  defp validate_repository(repository, dsl_state)
        when is_binary(repository) and repository != "" do
     case String.split(repository, "/") do
       [owner, name] ->
@@ -48,7 +48,7 @@ defmodule Xaas.Operations.ProjectMeasure.Verifiers.ValidateConfiguration do
     end
     |> case do
       :ok -> :ok
-      :invalid -> error(:repository, "repository must be exactly owner/name", _dsl_state)
+      :invalid -> error(:repository, "repository must be exactly owner/name", dsl_state)
     end
   end
 
