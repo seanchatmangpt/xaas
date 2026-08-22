@@ -94,12 +94,12 @@ defmodule Xaas.Operations.ProjectMeasure.Measurement do
         allow_nil?(false)
       end
 
-      run fn input, _context ->
+      run(fn input, _context ->
         case Reactor.run(Xaas.Operations.ProjectMeasure.Reactor, input.arguments) do
           {:ok, payload} -> {:ok, Xaas.Operations.ProjectMeasure.Receipt.canonical_json(payload)}
           {:error, error} -> {:error, error}
         end
-      end
+      end)
     end
   end
 end
