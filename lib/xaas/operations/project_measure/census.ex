@@ -120,8 +120,7 @@ defmodule Xaas.Operations.ProjectMeasure.Census do
 
   defp admit_rows(rows, since, until, subject_sha) do
     Enum.reduce_while(rows, {:ok, [], 0, 0}, fn row,
-                                               {:ok, admitted, off_subject,
-                                                outside_window} ->
+                                                {:ok, admitted, off_subject, outside_window} ->
       with {:ok, created_at} <- row_time(row),
            {:ok, head_sha} <- row_head_sha(row) do
         cond do
@@ -171,8 +170,7 @@ defmodule Xaas.Operations.ProjectMeasure.Census do
             {:cont, {:ok, by_identity}}
 
           {:ok, _different} ->
-            {:halt,
-             refusal("CI_RUN_IDENTITY_CONFLICT", "identity=#{identity}")}
+            {:halt, refusal("CI_RUN_IDENTITY_CONFLICT", "identity=#{identity}")}
         end
       else
         {:error, reason} -> {:halt, {:error, reason}}
