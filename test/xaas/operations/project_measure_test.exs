@@ -4,13 +4,18 @@ defmodule Xaas.Operations.ProjectMeasureTest do
 
   These tests do not mock an owned collaborator. They feed literal GitHub-shaped
   observations into the production admission/census path so subject identity,
-  windowing, deduplication, classification, and receipt replay are exercised
-  without granting network or mutation authority to the test process.
+  windowing, deduplication, classification, Reactor orchestration, Ash action
+  typing, API projection, and receipt replay are exercised without granting
+  network or mutation authority to the test process.
   """
 
   use ExUnit.Case, async: true
 
-  alias Xaas.Operations.ProjectMeasure.{Census, Info, Receipt}
+  require Spark.Test
+
+  alias Xaas.Operations.ProjectMeasure.{AdmissionReactor, Census, Info, Receipt}
+  alias Xaas.Operations.ProjectMeasure.Measurement
+  alias Xaas.Operations.ProjectMeasure.Types.SubjectSha
 
   @sha String.duplicate("a", 40)
   @other_sha String.duplicate("b", 40)
@@ -25,6 +30,75 @@ defmodule Xaas.Operations.ProjectMeasureTest do
              subject_sha_env: "GITHUB_SHA",
              api_url: "https://api.github.com"
            }
+  end
+
+  test "Spark verifier refuses malformed repository identity" do
+    errors =
+      Spark.Test.dsl_errors do
+        defmodule Elixir.Xaas.ProjectMeasureInvalidDomain do
+          use Ash.Domain,
+            otp_app: :kanban,
+            extensions: [Xaas.Operations.ProjectMeasure.Extension]
+
+          project_measure do
+            github_actions do
+              repository("not-an-owner-repository-pair")
+              output_path(".artifacts/project-measure/test.json")
+            end
+          end
+        end
+      end
+
+    assert [{Xaas.ProjectMeasureInvalidDomain, verifier_errors}] = errors
+    assert Enum.any?(verifier_errors, &(Exception.message(&1) =~ "owner/name"))
+  end
+
+  test "exact subject SHA is an Ash type, not an unbounded string" do
+    assert {:ok, @sha} = Ash.Type.cast_input(SubjectSha, @sha, [])
+    assert {:error, _} = Ash.Type.cast_input(SubjectSha, "main", [])
+    assert {:error, _} = Ash.Type.cast_input(SubjectSha, String.duplicate("a", 39), [])
+  end
+
+  test "Ash action input performs exact-subject type admission without executing transport" do
+    valid =
+      Ash.ActionInput.for_action(
+        Measurement,
+        :measure,
+        %{subject_sha: @sha, since: @since, until: @until},
+        authorize?: false
+      )
+
+    invalid =
+      Ash.ActionInput.for_action(
+        Measurement,
+        :measure,
+        %{subject_sha: "main", since: @since, until: @until},
+        authorize?: false
+      )
+
+    assert valid.valid?
+    assert valid.arguments.subject_sha == @sha
+    refute invalid.valid?
+  end
+
+  test "measurement resource has no CRUD actuation actions" do
+    action_names = Measurement |> Ash.Resource.Info.actions() |> Enum.map(& &1.name) |> Enum.sort()
+
+    assert action_names == [:measure, :measure_json]
+    refute Enum.any?(action_names, &(&1 in [:create, :update, :destroy]))
+  end
+
+  test "JSON API projection is GET-only and GraphQL projection is a query" do
+    routes = AshJsonApi.Resource.Info.routes(Measurement, Xaas.Operations)
+    queries = AshGraphql.Resource.Info.queries(Measurement, Xaas.Operations)
+
+    assert Enum.any?(routes, &(&1.method == :get and &1.action == :measure))
+    refute Enum.any?(routes, &(&1.method in [:post, :put, :patch, :delete]))
+
+    assert Enum.any?(
+             queries,
+             &(&1.name == :project_measure_json and &1.action == :measure_json)
+           )
   end
 
   test "exact-subject half-open census excludes foreign heads and until boundary" do
@@ -53,6 +127,23 @@ defmodule Xaas.Operations.ProjectMeasureTest do
     assert payload["summary"]["evidence_state"] == "PENDING"
     assert payload["standing"] == "PARTIAL_ALIVE"
     assert Enum.map(payload["runs"], & &1["identity"]) == ["id:1", "id:2"]
+    assert Receipt.verify(payload)
+  end
+
+  test "AdmissionReactor executes the production admission and receipt path" do
+    rows = [run(7, @sha, "2026-08-21T01:30:00Z", "completed", "success")]
+
+    assert {:ok, payload} =
+             Reactor.run(AdmissionReactor, %{
+               config: config(),
+               subject_sha: @sha,
+               since: @since,
+               until: @until,
+               rows: rows
+             })
+
+    assert payload["standing"] == "PARTIAL_ALIVE"
+    assert payload["summary"]["subject_run_count"] == 1
     assert Receipt.verify(payload)
   end
 
@@ -104,7 +195,7 @@ defmodule Xaas.Operations.ProjectMeasureTest do
     assert reason =~ "REFUSED[CI_RUN_IDENTITY_CONFLICT]"
   end
 
-  test "subject SHA is mandatory and exact" do
+  test "subject SHA is mandatory and exact at the census boundary too" do
     assert {:error, "REFUSED[SUBJECT_SHA_MISSING]"} =
              Census.build(config(), @since, @until, [], subject_sha: nil)
 
