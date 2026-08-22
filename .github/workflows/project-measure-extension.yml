@@ -1,0 +1,79 @@
+name: Ash project measure extension
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/xaas/operations.ex'
+      - 'lib/xaas/operations/project_measure/**'
+      - 'test/xaas/operations/project_measure_test.exs'
+      - '.github/workflows/project-measure-extension.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  project-measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:15.2
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout admitted exact subject
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify exact subject identity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_SUBJECT repo=%s sha=%s\n' "$GITHUB_REPOSITORY" "$actual_sha"
+
+      - name: Setup exact BEAM toolchain
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Resolve dependencies
+        run: mix deps.get
+
+      - name: Compile real XaaS application
+        run: mix compile --force
+
+      - name: Run project measurement falsifier court
+        run: mix test test/xaas/operations/project_measure_test.exs
+
+      - name: Verify changed Elixir surfaces are formatted
+        run: >-
+          mix format --check-formatted
+          lib/xaas/operations.ex
+          lib/xaas/operations/project_measure/*.ex
+          test/xaas/operations/project_measure_test.exs
+
+      - name: Verify observation boundary is GET-only
+        run: |
+          if grep -REn 'Req\.(post|put|patch|delete)\b' lib/xaas/operations/project_measure; then
+            echo 'REFUSED[PROJECT_MEASURE_MUTATION_BOUNDARY]'
+            exit 1
+          fi
+          grep -REn 'Req\.get\b' lib/xaas/operations/project_measure/github_actions.ex
