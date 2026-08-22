@@ -7,6 +7,8 @@ on:
       - 'lib/xaas/operations.ex'
       - 'lib/xaas/operations/project_measure/**'
       - 'test/xaas/operations/project_measure_test.exs'
+      - 'assets/js/ash_rpc.ts'
+      - 'assets/js/ash_types.ts'
       - '.github/workflows/project-measure-extension.yml'
   workflow_dispatch:
 
@@ -19,6 +21,18 @@ jobs:
     timeout-minutes: 20
     env:
       MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:15.2
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout admitted exact subject
@@ -49,24 +63,55 @@ jobs:
         run: mix compile --force
 
       - name: Run project measurement falsifier court without global migration alias
-        run: >-
-          mix run --no-start -e
-          'ExUnit.start(autorun: false);
-          Code.require_file("test/xaas/operations/project_measure_test.exs");
-          stats = ExUnit.run();
-          System.halt(if(stats.failures == 0, do: 0, else: 1))'
+        run: |
+          mix run --no-start -e '
+            ExUnit.start(autorun: false)
+            Code.require_file("test/xaas/operations/project_measure_test.exs")
+            result = ExUnit.run()
+            if result.failures > 0, do: System.halt(1)
+          '
 
       - name: Verify changed Elixir surfaces are formatted
-        run: >-
-          mix format --check-formatted
-          lib/xaas/operations.ex
-          lib/xaas/operations/project_measure/*.ex
-          test/xaas/operations/project_measure_test.exs
+        run: |
+          mapfile -t project_measure_files < <(find lib/xaas/operations/project_measure -type f -name '*.ex' -print | sort)
+          mix format --check-formatted \
+            lib/xaas/operations.ex \
+            "${project_measure_files[@]}" \
+            test/xaas/operations/project_measure_test.exs
 
-      - name: Verify observation boundary is GET-only
+      - name: Verify no owned-collaborator mocks were introduced
+        run: |
+          if grep -REn 'unittest\.mock|Mock\(|MagicMock|patch\(|monkeypatch|Mox\b|:meck|meck\.' \
+            lib/xaas/operations/project_measure test/xaas/operations/project_measure_test.exs; then
+            echo 'REFUSED[PROJECT_MEASURE_MOCK_BOUNDARY]'
+            exit 1
+          fi
+
+      - name: Verify observation and API boundaries are read-only
         run: |
           if grep -REn 'Req\.(post|put|patch|delete)\b' lib/xaas/operations/project_measure; then
-            echo 'REFUSED[PROJECT_MEASURE_MUTATION_BOUNDARY]'
+            echo 'REFUSED[PROJECT_MEASURE_TRANSPORT_MUTATION_BOUNDARY]'
+            exit 1
+          fi
+          if grep -REn 'route\(:(post|put|patch|delete)' lib/xaas/operations/project_measure/measurement.ex; then
+            echo 'REFUSED[PROJECT_MEASURE_HTTP_MUTATION_BOUNDARY]'
             exit 1
           fi
           grep -REn 'Req\.get\b' lib/xaas/operations/project_measure/github_actions.ex
+          grep -En 'route\(:get, "/measure", :measure\)' lib/xaas/operations/project_measure/measurement.ex
+
+      - name: Generate AshTypescript projection from exact Ash DSL
+        run: mix ash_typescript.codegen
+
+      - name: Upload generated AshTypescript projection
+        uses: actions/upload-artifact@v4
+        with:
+          name: ash-project-measure-typescript-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            assets/js/ash_rpc.ts
+            assets/js/ash_types.ts
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Verify generated AshTypescript projection is committed
+        run: git diff --exit-code -- assets/js/ash_rpc.ts assets/js/ash_types.ts
