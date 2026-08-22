@@ -12,20 +12,20 @@ defmodule Xaas.Operations.ProjectMeasure.AdmissionReactor do
 
   alias Xaas.Operations.ProjectMeasure.Census
 
-  input :config
-  input :subject_sha
-  input :since
-  input :until
-  input :rows
+  input(:config)
+  input(:subject_sha)
+  input(:since)
+  input(:until)
+  input(:rows)
 
   step :admit do
-    argument :config, input(:config)
-    argument :subject_sha, input(:subject_sha)
-    argument :since, input(:since)
-    argument :until, input(:until)
-    argument :rows, input(:rows)
+    argument(:config, input(:config))
+    argument(:subject_sha, input(:subject_sha))
+    argument(:since, input(:since))
+    argument(:until, input(:until))
+    argument(:rows, input(:rows))
 
-    run fn arguments, _context ->
+    run(fn arguments, _context ->
       Census.build(
         arguments.config,
         arguments.since,
@@ -33,10 +33,10 @@ defmodule Xaas.Operations.ProjectMeasure.AdmissionReactor do
         arguments.rows,
         subject_sha: arguments.subject_sha
       )
-    end
+    end)
   end
 
-  return :admit
+  return(:admit)
 end
 
 defmodule Xaas.Operations.ProjectMeasure.Reactor do
@@ -54,22 +54,22 @@ defmodule Xaas.Operations.ProjectMeasure.Reactor do
 
   alias Xaas.Operations.ProjectMeasure.{Census, GitHubActions, Info}
 
-  input :subject_sha
-  input :since
-  input :until
+  input(:subject_sha)
+  input(:since)
+  input(:until)
 
   step :configuration do
-    run fn _arguments, _context ->
+    run(fn _arguments, _context ->
       {:ok, Info.config(Xaas.Operations)}
-    end
+    end)
   end
 
   step :observe_runs do
-    argument :config, result(:configuration)
-    argument :since, input(:since)
-    argument :until, input(:until)
+    argument(:config, result(:configuration))
+    argument(:since, input(:since))
+    argument(:until, input(:until))
 
-    run fn arguments, _context ->
+    run(fn arguments, _context ->
       GitHubActions.list_workflow_runs(
         arguments.config.repository,
         arguments.since,
@@ -77,17 +77,17 @@ defmodule Xaas.Operations.ProjectMeasure.Reactor do
         api_url: arguments.config.api_url,
         token: System.get_env(arguments.config.token_env)
       )
-    end
+    end)
   end
 
   step :admit do
-    argument :config, result(:configuration)
-    argument :rows, result(:observe_runs)
-    argument :subject_sha, input(:subject_sha)
-    argument :since, input(:since)
-    argument :until, input(:until)
+    argument(:config, result(:configuration))
+    argument(:rows, result(:observe_runs))
+    argument(:subject_sha, input(:subject_sha))
+    argument(:since, input(:since))
+    argument(:until, input(:until))
 
-    run fn arguments, _context ->
+    run(fn arguments, _context ->
       Census.build(
         arguments.config,
         arguments.since,
@@ -95,13 +95,13 @@ defmodule Xaas.Operations.ProjectMeasure.Reactor do
         arguments.rows,
         subject_sha: arguments.subject_sha
       )
-    end
+    end)
   end
 
   step :emit_telemetry do
-    argument :payload, result(:admit)
+    argument(:payload, result(:admit))
 
-    run fn %{payload: payload}, _context ->
+    run(fn %{payload: payload}, _context ->
       summary = payload["summary"]
 
       :telemetry.execute(
@@ -119,8 +119,8 @@ defmodule Xaas.Operations.ProjectMeasure.Reactor do
       )
 
       {:ok, payload}
-    end
+    end)
   end
 
-  return :emit_telemetry
+  return(:emit_telemetry)
 end
