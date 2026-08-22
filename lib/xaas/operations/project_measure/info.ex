@@ -8,6 +8,7 @@ defmodule Xaas.Operations.ProjectMeasure.Info do
       repository: opt(domain, :repository),
       output_path: opt(domain, :output_path),
       token_env: opt(domain, :token_env, "GITHUB_TOKEN"),
+      subject_sha_env: opt(domain, :subject_sha_env, "GITHUB_SHA"),
       api_url: opt(domain, :api_url, "https://api.github.com")
     }
   end
