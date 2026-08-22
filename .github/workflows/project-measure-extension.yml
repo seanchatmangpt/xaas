@@ -19,18 +19,6 @@ jobs:
     timeout-minutes: 20
     env:
       MIX_ENV: test
-    services:
-      postgres:
-        image: postgres:15.2
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout admitted exact subject
@@ -60,8 +48,13 @@ jobs:
       - name: Compile real XaaS application
         run: mix compile --force
 
-      - name: Run project measurement falsifier court
-        run: mix test test/xaas/operations/project_measure_test.exs
+      - name: Run project measurement falsifier court without global migration alias
+        run: >-
+          mix run --no-start -e
+          'ExUnit.start(autorun: false);
+          Code.require_file("test/xaas/operations/project_measure_test.exs");
+          stats = ExUnit.run();
+          System.halt(if(stats.failures == 0, do: 0, else: 1))'
 
       - name: Verify changed Elixir surfaces are formatted
         run: >-
