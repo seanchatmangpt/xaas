@@ -12,6 +12,7 @@ defmodule Xaas.Operations.ProjectMeasure.Extension do
       repository: [type: :string, required: true],
       output_path: [type: :string, required: true],
       token_env: [type: :string, default: "GITHUB_TOKEN"],
+      subject_sha_env: [type: :string, default: "GITHUB_SHA"],
       api_url: [type: :string, default: "https://api.github.com"]
     ]
   }
