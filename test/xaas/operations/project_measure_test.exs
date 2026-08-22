@@ -9,7 +9,7 @@ defmodule Xaas.Operations.ProjectMeasureTest do
   network or mutation authority to the test process.
   """
 
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   require Spark.Test
 
@@ -21,6 +21,15 @@ defmodule Xaas.Operations.ProjectMeasureTest do
   @other_sha String.duplicate("b", 40)
   @since ~U[2026-08-21 00:00:00Z]
   @until ~U[2026-08-22 00:00:00Z]
+
+  setup_all do
+    # The owning court intentionally runs under `mix run --no-start` to avoid
+    # the repository-global migration alias. Reactor itself is a real runtime
+    # dependency, so start its application rather than faking its ETS-backed
+    # concurrency tracker.
+    {:ok, _started} = Application.ensure_all_started(:reactor)
+    :ok
+  end
 
   test "Xaas.Operations mounts the Ash project measurement extension" do
     assert Info.config(Xaas.Operations) == %{
@@ -53,10 +62,8 @@ defmodule Xaas.Operations.ProjectMeasureTest do
     assert Enum.any?(verifier_errors, &(Exception.message(&1) =~ "owner/name"))
   end
 
-  test "exact subject SHA is an Ash type, not an unbounded string" do
-    assert {:ok, @sha} = Ash.Type.cast_input(SubjectSha, @sha, [])
-    assert {:error, _} = Ash.Type.cast_input(SubjectSha, "main", [])
-    assert {:error, _} = Ash.Type.cast_input(SubjectSha, String.duplicate("a", 39), [])
+  test "exact subject SHA is a first-class Ash type" do
+    assert Ash.Type.ash_type?(SubjectSha)
   end
 
   test "Ash action input performs exact-subject type admission without executing transport" do
@@ -68,7 +75,7 @@ defmodule Xaas.Operations.ProjectMeasureTest do
         authorize?: false
       )
 
-    invalid =
+    invalid_ref =
       Ash.ActionInput.for_action(
         Measurement,
         :measure,
@@ -76,9 +83,18 @@ defmodule Xaas.Operations.ProjectMeasureTest do
         authorize?: false
       )
 
+    invalid_prefix =
+      Ash.ActionInput.for_action(
+        Measurement,
+        :measure,
+        %{subject_sha: String.duplicate("a", 39), since: @since, until: @until},
+        authorize?: false
+      )
+
     assert valid.valid?
     assert valid.arguments.subject_sha == @sha
-    refute invalid.valid?
+    refute invalid_ref.valid?
+    refute invalid_prefix.valid?
   end
 
   test "measurement resource has no CRUD actuation actions" do
