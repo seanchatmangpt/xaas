@@ -1,7 +1,22 @@
 defmodule Xaas.Operations do
   use Ash.Domain,
     otp_app: :kanban,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    extensions: [
+      AshJsonApi.Domain,
+      AshGraphql.Domain,
+      AshAdmin.Domain,
+      Xaas.Operations.ProjectMeasure.Extension
+    ]
+
+  project_measure do
+    github_actions do
+      repository("seanchatmangpt/xaas")
+      output_path(".artifacts/project-measure/ci-outcomes.json")
+      token_env("GITHUB_TOKEN")
+      subject_sha_env("GITHUB_SHA")
+      api_url("https://api.github.com")
+    end
+  end
 
   admin do
     show?(true)
