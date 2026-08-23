@@ -19,7 +19,9 @@ defmodule Xaas.Billing.Revenue do
   @doc "Recognizes an admitted economic source through the Ash.Reactor actuation boundary."
   @spec recognize(String.t() | atom() | map(), map(), keyword()) ::
           {:ok, map()} | {:error, term()}
-  def recognize(source, attrs, opts \\ []) when is_map(attrs) do
+  def recognize(source, attrs, opts \\ [])
+
+  def recognize(source, attrs, opts) when is_map(attrs) do
     with {:ok, source_meta} <- FiboRevenueProfile.admit_source(source),
          {:ok, idempotency_key} <- required_string(opts, :idempotency_key),
          {:ok, authority} <- required_authority(opts),
