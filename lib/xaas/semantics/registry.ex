@@ -82,6 +82,7 @@ defmodule Xaas.Semantics.Registry do
     source_key: @skos <> "notation",
     source_label: @schema <> "name",
     source_iri: @dct <> "source",
+    source_revision: @dct <> "hasVersion",
     economic_family: @dct <> "type",
     accounting_classification: @dct <> "type",
     recognition_basis: @dct <> "type",
