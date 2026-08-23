@@ -27,22 +27,59 @@ defmodule Xaas.Actuation do
         idempotency_key: idempotency_key
       }
 
-      case Ash.transact([resource, ActuationIntent, ActuationReceipt], fn ->
-             Reactor.run(Xaas.Actuation.Reactor, inputs, %{}, async?: false)
-           end,
-           timeout: :infinity
-         ) do
-        {:ok, {:ok, %{status: :succeeded} = envelope}} -> {:ok, envelope}
-        {:ok, {:ok, %{status: :replayed} = envelope}} -> {:ok, envelope}
-        {:ok, {:ok, %{status: :failed, error: error}}} -> {:error, error}
-        {:ok, {:error, reason}} -> {:error, reason}
-        {:error, reason} -> {:error, reason}
-        other -> {:error, {:unexpected_actuation_result, other}}
-      end
+      resources = [resource, ActuationIntent, ActuationReceipt]
+
+      transaction_result =
+        Ash.DataLayer.transaction(
+          resources,
+          fn -> run_reactor_or_rollback(resources, inputs) end,
+          nil,
+          %{
+            type: :custom,
+            metadata: %{
+              operation: :xaas_reactor_actuation,
+              resource: resource,
+              action: action,
+              idempotency_key: idempotency_key
+            }
+          }
+        )
+
+      normalize_transaction_result(transaction_result)
     else
       _ -> {:error, :idempotency_key_required}
     end
   end
+
+  defp run_reactor_or_rollback(resources, inputs) do
+    case Reactor.run(Xaas.Actuation.Reactor, inputs, %{}, async?: false) do
+      {:ok, envelope} ->
+        envelope
+
+      {:ok, envelope, _completed_reactor} ->
+        envelope
+
+      {:error, reason} ->
+        Ash.DataLayer.rollback(resources, {:reactor_failed, reason})
+
+      {:halted, reactor} ->
+        Ash.DataLayer.rollback(resources, {:reactor_halted, reactor.state})
+
+      other ->
+        Ash.DataLayer.rollback(resources, {:unexpected_reactor_result, other})
+    end
+  end
+
+  defp normalize_transaction_result({:ok, result}), do: normalize_transaction_result(result)
+  defp normalize_transaction_result({:error, reason}), do: {:error, reason}
+
+  defp normalize_transaction_result(%{status: :succeeded} = envelope), do: {:ok, envelope}
+  defp normalize_transaction_result(%{status: :replayed} = envelope), do: {:ok, envelope}
+
+  defp normalize_transaction_result(%{status: :failed, error: error}), do: {:error, error}
+
+  defp normalize_transaction_result(other),
+    do: {:error, {:unexpected_actuation_result, other}}
 end
 
 defmodule Xaas.Actuation.Reactor do
@@ -111,7 +148,8 @@ defmodule Xaas.Actuation.Kernel do
     with :ok <- admit_authority(args.authorize?, args.authority),
          {:ok, projection} <- Registry.admit(args.resource),
          projection_hash <- Registry.hash(projection),
-         input_hash <- fingerprint({args.resource, args.action, args.subject_id, args.input, projection_hash}),
+         input_hash <-
+           fingerprint({args.resource, args.action, args.subject_id, args.input, projection_hash}),
          {:ok, replay_or_new} <-
            find_or_create(args, projection, projection_hash, input_hash) do
       {:ok, replay_or_new}
@@ -227,8 +265,12 @@ defmodule Xaas.Actuation.Kernel do
     end
   end
 
-  defp admit_authority(false, authority) when is_map(authority) and map_size(authority) > 0, do: :ok
-  defp admit_authority(false, _authority), do: {:error, :delegated_actuation_requires_authority_evidence}
+  defp admit_authority(false, authority) when is_map(authority) and map_size(authority) > 0,
+    do: :ok
+
+  defp admit_authority(false, _authority),
+    do: {:error, :delegated_actuation_requires_authority_evidence}
+
   defp admit_authority(true, _authority), do: :ok
 
   defp find_or_create(args, projection, projection_hash, input_hash) do
@@ -297,7 +339,8 @@ defmodule Xaas.Actuation.Kernel do
 
   defp replay_or_refuse(intent, args, projection_hash, input_hash) do
     cond do
-      intent.resource_module != inspect(args.resource) or intent.action != Atom.to_string(args.action) or
+      intent.resource_module != inspect(args.resource) or
+          intent.action != Atom.to_string(args.action) or
           intent.subject_id != stringify(args.subject_id) or intent.input_hash != input_hash or
           intent.ontology_projection_hash != projection_hash ->
         {:error, {:idempotency_conflict, args.idempotency_key}}
@@ -386,7 +429,8 @@ defmodule Xaas.Actuation.Kernel do
     end
   end
 
-  defp get_subject(_resource, nil, _actor, _tenant, _authorize?), do: {:error, :subject_id_required}
+  defp get_subject(_resource, nil, _actor, _tenant, _authorize?),
+    do: {:error, :subject_id_required}
 
   defp get_subject(resource, subject_id, actor, tenant, authorize?) do
     Ash.get(resource, subject_id,
@@ -413,7 +457,10 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   defp canonical_term(list) when is_list(list), do: Enum.map(list, &canonical_term/1)
-  defp canonical_term(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&canonical_term/1)
+
+  defp canonical_term(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&canonical_term/1)
+
   defp canonical_term(atom) when is_atom(atom), do: Atom.to_string(atom)
   defp canonical_term(other), do: other
 
@@ -435,7 +482,11 @@ defmodule Xaas.Actuation.Kernel do
   defp json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
   defp json_safe(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
   defp json_safe(atom) when is_atom(atom), do: Atom.to_string(atom)
-  defp json_safe(value) when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value), do: value
+
+  defp json_safe(value)
+       when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
+       do: value
+
   defp json_safe(value), do: inspect(value)
 
   defp actor_ref(nil), do: nil
