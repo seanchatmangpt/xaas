@@ -16,7 +16,7 @@ Every resource that uses `Xaas.Resource` exposes a reversible projection through
 `ontology_projection/0` and a deterministic semantic identity through
 `ontology_projection_hash/0`. `Xaas.Semantics.Registry` admits only classes and
 predicates in public namespaces such as PROV-O, DCTERMS, DCAT, SKOS, ODRL,
-W3C ORG, SOSA, FOAF, RDF/RDFS/OWL/XSD, and Schema.org.
+W3C ORG, SOSA, FOAF, RDF/RDFS/OWL/XSD, Schema.org, and FIBO.
 
 A resource without a defensible narrower class is conservatively projected as a
 `prov:Entity`. That is deliberate. The system preserves the exact Ash resource,
@@ -34,6 +34,46 @@ The Ontop R2RML projection follows the same boundary: subject templates use XAAS
 instance URNs while `rr:class` and `rr:predicate` values come from public
 vocabularies. Ontop is read interoperability only. It has no Ash actor, policy,
 authority, or Reactor receipt and therefore has no DO authority.
+
+## ash_r2rml is the correspondence compiler
+
+XAAS pins `ash_r2rml` v26.8.22 as the canonical compiler for the relational/RDF
+correspondence. `Xaas.Semantics.Registry` remains the semantic admission layer:
+it decides which public classes and predicates have standing. The package then
+owns deterministic relational introspection, RDF datatype admission, normalized
+mapping IR, R2RML validation, serialization, and dependency closure.
+
+`Xaas.Semantics.R2RML` is the adapter between those layers. For an existing
+`Xaas.Resource` it:
+
+1. admits the resource's public-ontology projection;
+2. asks `AshR2RML.Introspection` for the actual PostgreSQL logical table, columns,
+   identities, and relationship joins;
+3. asks `AshR2RML.Datatype.Registry` to admit every scalar RDF datatype rather
+   than silently stringifying an unknown Ash type;
+4. constructs `AshR2RML.Mapping.Resource` and dependency-closed
+   `AshR2RML.Mapping.Bundle` values;
+5. normalizes and validates the package's canonical IR;
+6. renders R2RML through `AshR2RML.R2RML`; and
+7. exposes a deterministic mapping hash for qualification and replay evidence.
+
+Every `Xaas.Resource` therefore exposes `r2rml_mapping/0`, `r2rml_mapping!/0`, and
+`r2rml_mapping_hash/0` without forcing the `AshR2RML.Resource` Spark extension
+onto legacy resources that do not yet declare an explicit package subject map.
+New or migrated resources may adopt that DSL directly when their mapping is
+explicit enough to satisfy its compile-time verifiers.
+
+This is a one-way authority relationship:
+
+    public ontology admission
+      -> ash_r2rml canonical mapping IR
+      -> validated R2RML / OBDA projection
+      -> read interoperability
+
+R2RML generation is CONSTRUCT, not DO. Neither a rendered triples map nor an
+Ontop/SPARQL view gains mutation authority, and XAAS does not introduce an RDF
+dual-write path. PostgreSQL remains the operational data store; the graph is a
+reversible semantic projection of admitted Ash state.
 
 ## SELECT, CONSTRUCT, DO
 
@@ -137,6 +177,12 @@ domain configured under `:kanban, :ash_domains`. It fails if any configured
 resource lacks the `Xaas.Resource` projection contract, emits a non-public
 semantic IRI, or produces a non-deterministic projection hash.
 
+`test/xaas/semantics/ash_r2rml_test.exs` qualifies the package integration. It
+proves that an admitted Ash/Postgres resource compiles into the package's
+canonical mapping IR, produces a deterministic mapping hash and standards-valid
+R2RML, and that an unsupported Ash datatype is returned as an explicit
+`AshR2RML.Refusal` instead of being silently coerced.
+
 `test/xaas/actuation_test.exs` exercises the real Ash resources, real Reactor,
 and real sandboxed Postgres data layer. It proves that a fenced target action
 refuses direct invocation, Reactor performs the consequence, the receipt binds
@@ -154,12 +200,14 @@ following is true:
 1. a configured Ash resource has no admitted public-ontology projection;
 2. a class or predicate emitted as semantic vocabulary belongs only to an XAAS
    private namespace;
-3. a fenced consequential Ash action succeeds without a Reactor-manufactured
+3. an unsupported Ash/RDF datatype is silently coerced rather than refused;
+4. an R2RML or OBDA projection can obtain consequential mutation authority;
+5. a fenced consequential Ash action succeeds without a Reactor-manufactured
    intent/receipt context;
-4. a successful consequential mutation commits without a sealed receipt;
-5. the same idempotency key can manufacture two different consequences;
-6. replay repeats a previously successful mutation rather than returning its
+6. a successful consequential mutation commits without a sealed receipt;
+7. the same idempotency key can manufacture two different consequences;
+8. replay repeats a previously successful mutation rather than returning its
    existing receipt;
-7. a read projection such as Ontop can directly actuate the system.
+9. a read projection such as Ontop can directly actuate the system.
 
 Any such observation is a failed invariant, not a documentation discrepancy.
