@@ -15,9 +15,13 @@ defmodule Xaas.Billing.FiboRevenueProfile do
   FND `CashFlow` class; more specific source IRIs may be supplied by callers when their
   evidence names a narrower FIBO concept. Accounting classification remains explicit:
   cash movement alone never establishes revenue standing.
+
+  The exact FIBO repository revision is pinned into every admission so historical
+  receipts remain semantically replayable even if a stable ontology IRI is refined later.
   """
 
   @fibo "https://spec.edmcouncil.org/fibo/ontology/"
+  @fibo_revision "119fa8c091aa4beece7d22aefa6fe138021a4355"
   @cash_flow @fibo <> "FND/Accounting/CashFlows/CashFlow"
 
   @revenue_sources %{
@@ -160,6 +164,9 @@ defmodule Xaas.Billing.FiboRevenueProfile do
   @doc "Canonical FIBO ontology namespace admitted by the revenue compiler."
   def fibo_namespace, do: @fibo
 
+  @doc "Exact official FIBO repository revision used for semantic admission."
+  def fibo_revision, do: @fibo_revision
+
   @doc "FIBO FND cash-flow class used as the conservative economic anchor."
   def cash_flow_iri, do: @cash_flow
 
@@ -167,7 +174,13 @@ defmodule Xaas.Billing.FiboRevenueProfile do
   def named_sources do
     @revenue_sources
     |> Enum.map(fn {key, {family, label}} ->
-      %{key: key, family: family, label: label, ontology_iri: @cash_flow}
+      %{
+        key: key,
+        family: family,
+        label: label,
+        ontology_iri: @cash_flow,
+        ontology_revision: @fibo_revision
+      }
     end)
     |> Enum.sort_by(& &1.key)
   end
@@ -193,6 +206,7 @@ defmodule Xaas.Billing.FiboRevenueProfile do
            family: family,
            label: label,
            ontology_iri: @cash_flow,
+           ontology_revision: @fibo_revision,
            generic?: false
          }}
 
@@ -203,6 +217,7 @@ defmodule Xaas.Billing.FiboRevenueProfile do
            family: "fibo_cash_flow",
            label: source,
            ontology_iri: source,
+           ontology_revision: @fibo_revision,
            generic?: true
          }}
 
@@ -216,6 +231,11 @@ defmodule Xaas.Billing.FiboRevenueProfile do
     label = Map.get(source, :label) || Map.get(source, "label")
     family = Map.get(source, :family) || Map.get(source, "family") || "fibo_cash_flow"
     iri = Map.get(source, :ontology_iri) || Map.get(source, "ontology_iri")
+    revision =
+      Map.get(source, :ontology_revision) ||
+        Map.get(source, "ontology_revision") ||
+        @fibo_revision
+
     key = to_string(key)
 
     cond do
@@ -224,6 +244,9 @@ defmodule Xaas.Billing.FiboRevenueProfile do
 
       not fibo_iri?(iri) ->
         {:error, {:non_fibo_revenue_source, iri}}
+
+      revision != @fibo_revision ->
+        {:error, {:unadmitted_fibo_revision, revision, @fibo_revision}}
 
       not is_binary(label) or label == "" ->
         {:error, :source_label_required}
@@ -238,6 +261,7 @@ defmodule Xaas.Billing.FiboRevenueProfile do
            family: family,
            label: label,
            ontology_iri: iri,
+           ontology_revision: revision,
            generic?: true
          }}
     end
