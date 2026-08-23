@@ -36,6 +36,7 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
       source_key: "service_fee",
       source_label: "Service fee",
       source_iri: FiboRevenueProfile.cash_flow_iri(),
+      source_revision: FiboRevenueProfile.fibo_revision(),
       economic_family: "service",
       accounting_classification: "revenue",
       recognition_basis: "earned",
@@ -45,11 +46,13 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
     }
   end
 
-  test "the named revenue profile is broad, FIBO-grounded and excludes non-revenue inflows" do
+  test "the named revenue profile is broad, FIBO-grounded and revision-pinned" do
     sources = FiboRevenueProfile.named_sources()
 
-    assert length(sources) >= 40
+    assert length(sources) >= 90
     assert Enum.all?(sources, &FiboRevenueProfile.fibo_iri?(&1.ontology_iri))
+    assert Enum.all?(sources, &(&1.ontology_revision == FiboRevenueProfile.fibo_revision()))
+    assert Enum.any?(sources, &(&1.key == "product_sale"))
     assert Enum.any?(sources, &(&1.key == "subscription_fee"))
     assert Enum.any?(sources, &(&1.key == "interest_income"))
     assert Enum.any?(sources, &(&1.key == "dividend_income"))
@@ -57,6 +60,8 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
     assert Enum.any?(sources, &(&1.key == "option_premium"))
     assert Enum.any?(sources, &(&1.key == "fx_spread"))
     assert Enum.any?(sources, &(&1.key == "carried_interest"))
+    assert Enum.any?(sources, &(&1.key == "licensing_fee"))
+    assert Enum.any?(sources, &(&1.key == "rental_income"))
 
     for source <- FiboRevenueProfile.non_revenue_sources() do
       assert {:error, {:non_revenue_cash_flow, ^source}} =
@@ -64,7 +69,7 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
     end
   end
 
-  test "a future exact FIBO concept can be admitted without widening the namespace" do
+  test "a future exact FIBO concept can be admitted without widening namespace or revision" do
     iri =
       "https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/InterestPayment"
 
@@ -77,7 +82,17 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
              })
 
     assert source.ontology_iri == iri
+    assert source.ontology_revision == FiboRevenueProfile.fibo_revision()
     assert source.generic?
+
+    assert {:error, {:unadmitted_fibo_revision, "other", _}} =
+             FiboRevenueProfile.admit_source(%{
+               key: "contract_interest",
+               label: "Contractual interest payment",
+               family: "financing_return",
+               ontology_iri: iri,
+               ontology_revision: "other"
+             })
 
     assert {:error, {:non_fibo_revenue_source, _}} =
              FiboRevenueProfile.admit_source(%{
@@ -87,16 +102,19 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
              })
   end
 
-  test "revenue recognition has a public ontology projection with a FIBO monetary predicate" do
+  test "revenue recognition has a public ontology projection with FIBO amount and version semantics" do
     projection = RevenueRecognition.ontology_projection!()
     amount = Enum.find(projection.attributes, &(&1.ash_name == :amount))
+    source_revision = Enum.find(projection.attributes, &(&1.ash_name == :source_revision))
 
     assert "http://www.w3.org/ns/prov#Activity" in projection.classes
 
     assert amount.predicate ==
              "https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasMonetaryAmount"
 
+    assert source_revision.predicate == "http://purl.org/dc/terms/hasVersion"
     assert Registry.public_iri?(amount.predicate)
+    assert Registry.public_iri?(source_revision.predicate)
     assert Registry.namespaces().fibo == FiboRevenueProfile.fibo_namespace()
   end
 
@@ -125,6 +143,7 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
     recognition = first.result
     assert recognition.source_key == "service_fee"
     assert recognition.source_iri == FiboRevenueProfile.cash_flow_iri()
+    assert recognition.source_revision == FiboRevenueProfile.fibo_revision()
     assert recognition.accounting_classification == "revenue"
     assert recognition.currency == "USD"
     assert Decimal.equal?(recognition.amount, Decimal.new("125.50"))
