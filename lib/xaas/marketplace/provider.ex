@@ -68,7 +68,9 @@ defmodule Xaas.Marketplace.Provider do
     defaults [:read]
 
     create :create do
-      accept [:name, :slug, :description, :status, :org_id]
+      # New providers always enter the lifecycle at the attribute default
+      # (:pending). Construction cannot smuggle an already-actuated status.
+      accept [:name, :slug, :description, :org_id]
     end
 
     update :update do
@@ -79,6 +81,7 @@ defmodule Xaas.Marketplace.Provider do
     end
 
     update :actuate_status do
+      public? false
       accept [:status]
       require_atomic? false
       validate Xaas.Actuation.Validations.ReactorContext
