@@ -77,9 +77,17 @@ defmodule Xaas.Semantics.AshR2RMLTest do
     assert subject_template ==
              "urn:xaas:resource:Xaas.Semantics.AshR2RMLTest.GoodResource/{id}"
 
-    assert Enum.map(mapping.predicate_object_maps, & &1.attribute) ==
-             projection.attributes |> Enum.map(& &1.ash_name) |> Enum.sort_by(&to_string/1)
+    mapped_attributes =
+      mapping.predicate_object_maps
+      |> Enum.map(& &1.attribute)
+      |> Enum.sort_by(&to_string/1)
 
+    projected_attributes =
+      projection.attributes
+      |> Enum.map(& &1.ash_name)
+      |> Enum.sort_by(&to_string/1)
+
+    assert mapped_attributes == projected_attributes
     assert :ok = Mapping.validate(mapping)
   end
 
@@ -125,7 +133,11 @@ defmodule Xaas.Semantics.AshR2RMLTest do
     assert byte_size(hash) == 64
     assert String.starts_with?(identity, "urn:ash-r2ml:triples-map:")
 
-    assert [%{resource: UnsupportedResource, reason: %AshR2RML.Refusal{code: :UNSUPPORTED_ASH_TYPE}}] =
-             audit.refused
+    assert [
+             %{
+               resource: UnsupportedResource,
+               reason: %AshR2RML.Refusal{code: :UNSUPPORTED_ASH_TYPE}
+             }
+           ] = audit.refused
   end
 end
