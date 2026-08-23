@@ -5,8 +5,8 @@ defmodule Xaas.Operations.ActuationIntent do
   This is the SELECT/ADMIT boundary before Reactor is allowed to execute a DO.
   The row binds the exact resource/action/subject, semantic projection identity,
   input fingerprint, caller authority, and idempotency key. It has no public
-  mutation route; Reactor is the only writer and uses `authorize?: false` only
-  after its authority admission step has succeeded.
+  action surface; Reactor is the only reader/writer and does so only after the
+  authority admission step has succeeded.
   """
 
   use Xaas.Resource,
@@ -16,10 +16,6 @@ defmodule Xaas.Operations.ActuationIntent do
     authorizers: [Ash.Policy.Authorizer]
 
   policies do
-    bypass action_type(:read) do
-      authorize_if always()
-    end
-
     policy always() do
       forbid_if always()
     end
@@ -31,9 +27,14 @@ defmodule Xaas.Operations.ActuationIntent do
   end
 
   actions do
-    defaults [:read]
+    read :read do
+      primary? true
+      public? false
+    end
 
     create :admit do
+      public? false
+
       accept [
         :idempotency_key,
         :resource_module,
@@ -51,6 +52,7 @@ defmodule Xaas.Operations.ActuationIntent do
     end
 
     update :transition do
+      public? false
       accept [:status]
       require_atomic? false
     end
