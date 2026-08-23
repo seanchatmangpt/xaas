@@ -9,6 +9,9 @@ defmodule Xaas.Billing.RevenueRecognition do
   `Xaas.Billing.Revenue.recognize/3`), which gives the event an intent, prepared receipt,
   authority evidence, idempotency key, and deterministic replay behavior.
 
+  The source ontology revision is persisted alongside the source IRI so a historical
+  receipt retains semantic standing if the upstream ontology later changes.
+
   A row records an accounting assertion; it does not itself move money or call an
   external payment rail.
   """
@@ -45,6 +48,7 @@ defmodule Xaas.Billing.RevenueRecognition do
         :source_key,
         :source_label,
         :source_iri,
+        :source_revision,
         :economic_family,
         :accounting_classification,
         :recognition_basis,
@@ -82,6 +86,11 @@ defmodule Xaas.Billing.RevenueRecognition do
     end
 
     attribute :source_iri, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :source_revision, :string do
       allow_nil? false
       public? true
     end
