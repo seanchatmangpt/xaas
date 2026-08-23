@@ -8,8 +8,9 @@ defmodule Xaas.Semantics.Registry do
   mapped to a public predicate while retaining its exact Ash name for lossless replay.
 
   The registry intentionally admits only namespaces owned by public standards bodies or
-  widely published vocabularies. In particular, an application-local `xaas.local`
-  namespace is never considered sufficient semantic standing.
+  widely published vocabularies. FIBO is admitted as the canonical public financial
+  ontology namespace. In particular, an application-local `xaas.local` namespace is
+  never considered sufficient semantic standing.
 
   The default class selection is conservative: when a narrower public class is not
   justified from the resource's name, the resource is a `prov:Entity`. That preserves a
@@ -31,6 +32,7 @@ defmodule Xaas.Semantics.Registry do
   @sosa "http://www.w3.org/ns/sosa/"
   @schema "https://schema.org/"
   @foaf "http://xmlns.com/foaf/0.1/"
+  @fibo "https://spec.edmcouncil.org/fibo/ontology/"
 
   @namespaces %{
     rdf: @rdf,
@@ -45,7 +47,8 @@ defmodule Xaas.Semantics.Registry do
     org: @org,
     sosa: @sosa,
     schema: @schema,
-    foaf: @foaf
+    foaf: @foaf,
+    fibo: @fibo
   }
 
   @public_namespace_values Map.values(@namespaces)
@@ -76,6 +79,19 @@ defmodule Xaas.Semantics.Registry do
     metadata: @prov <> "value",
     detail: @dct <> "description",
     subject: @dct <> "subject",
+    source_key: @skos <> "notation",
+    source_label: @schema <> "name",
+    source_iri: @dct <> "source",
+    economic_family: @dct <> "type",
+    accounting_classification: @dct <> "type",
+    recognition_basis: @dct <> "type",
+    contract_ref: @dct <> "relation",
+    counterparty_ref: @dct <> "relation",
+    external_ref: @dct <> "identifier",
+    evidence: @prov <> "value",
+    period_start: @schema <> "startDate",
+    period_end: @schema <> "endDate",
+    recognized_at: @prov <> "generatedAtTime",
     inserted_at: @dct <> "created",
     created_at: @dct <> "created",
     updated_at: @dct <> "modified",
@@ -100,7 +116,7 @@ defmodule Xaas.Semantics.Registry do
         %{
           ash_name: attribute.name,
           ash_type: inspect(attribute.type),
-          predicate: predicate_for(attribute.name)
+          predicate: predicate_for(resource, attribute.name)
         }
       end)
       |> Enum.sort_by(&to_string(&1.ash_name))
@@ -196,7 +212,11 @@ defmodule Xaas.Semantics.Registry do
     end) || raise ArgumentError, "IRI is not in a public namespace: #{inspect(iri)}"
   end
 
-  defp predicate_for(name), do: Map.get(@attribute_predicates, name, fallback_predicate(name))
+  defp predicate_for(Xaas.Billing.RevenueRecognition, :amount),
+    do: @fibo <> "FND/Accounting/CurrencyAmount/hasMonetaryAmount"
+
+  defp predicate_for(_resource, name),
+    do: Map.get(@attribute_predicates, name, fallback_predicate(name))
 
   defp fallback_predicate(name) do
     name = to_string(name)
@@ -231,6 +251,7 @@ defmodule Xaas.Semantics.Registry do
       String.contains?(name, "OrgMembership") -> [@org <> "Membership"]
       String.contains?(name, "Approval") -> [@prov <> "Activity", @odrl <> "Agreement"]
       String.ends_with?(name, ".Provider") -> [@schema <> "Organization", @prov <> "Agent"]
+      String.ends_with?(name, ".RevenueRecognition") -> [@prov <> "Activity"]
       String.contains?(name, "Subscription") -> [@schema <> "Service"]
       String.ends_with?(name, ".Account") -> [@schema <> "BankAccount"]
       String.ends_with?(name, ".Balance") -> [@schema <> "MonetaryAmount"]
