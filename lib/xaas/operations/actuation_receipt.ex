@@ -4,8 +4,8 @@ defmodule Xaas.Operations.ActuationReceipt do
 
   A receipt is prepared before DO and sealed after the target Ash action returns.
   The record binds identity, semantic projection, input, consequence, and replay.
-  It deliberately has no public mutation route; only the Reactor actuation kernel
-  may prepare or seal it.
+  It deliberately has no public action surface; only the Reactor actuation kernel
+  may prepare, read, or seal it.
   """
 
   use Xaas.Resource,
@@ -15,10 +15,6 @@ defmodule Xaas.Operations.ActuationReceipt do
     authorizers: [Ash.Policy.Authorizer]
 
   policies do
-    bypass action_type(:read) do
-      authorize_if always()
-    end
-
     policy always() do
       forbid_if always()
     end
@@ -30,9 +26,14 @@ defmodule Xaas.Operations.ActuationReceipt do
   end
 
   actions do
-    defaults [:read]
+    read :read do
+      primary? true
+      public? false
+    end
 
     create :prepare do
+      public? false
+
       accept [
         :intent_id,
         :attempt,
@@ -49,6 +50,7 @@ defmodule Xaas.Operations.ActuationReceipt do
     end
 
     update :seal do
+      public? false
       accept [:status, :result_hash, :result, :error, :completed_at]
       require_atomic? false
     end
