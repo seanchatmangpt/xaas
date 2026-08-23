@@ -6,10 +6,12 @@ defmodule Xaas.Semantics.R2RML do
   XAAS keeps `Xaas.Semantics.Registry` as the admission boundary for public
   classes and predicates. `ash_r2rml` owns the relational/RDF correspondence:
   table and column introspection, datatype admission, normalized mapping IR,
-  R2RML validation, serialization, and dependency closure.
+  R2RML validation, serialization, dependency closure, and read-only SPARQL
+  observation planning.
 
-  This module is CONSTRUCT-only. Rendering R2RML never grants actuation
-  authority and never mutates PostgreSQL or an external RDF/OBDA system.
+  This module is CONSTRUCT/OBSERVE-only. Rendering R2RML or querying a semantic
+  projection never grants actuation authority and never mutates PostgreSQL or an
+  external RDF/OBDA system.
   """
 
   alias AshR2RML.Datatype.Registry, as: DatatypeRegistry
@@ -93,6 +95,22 @@ defmodule Xaas.Semantics.R2RML do
          :ok <- Mapping.validate(bundle),
          {:ok, turtle} <- AshR2RML.R2RML.render(bundle) do
       {:ok, turtle}
+    end
+  end
+
+  @doc "Explore all lawful read-only SPARQL observation strategies without selecting among them implicitly."
+  @spec explore_sparql(String.t() | AshR2RML.SPARQL.Query.t(), keyword()) ::
+          {:ok, AshR2RML.SPARQL.Plan.t()} | {:error, Refusal.t()}
+  def explore_sparql(query, opts \\ []) do
+    AshR2RML.SPARQL.explore(query, opts)
+  end
+
+  @doc "Execute a selected or uniquely lawful read-only SPARQL observation plan."
+  @spec observe_sparql(String.t() | AshR2RML.SPARQL.Query.t(), keyword()) ::
+          {:ok, AshR2RML.SPARQL.Observation.t()} | {:error, term()}
+  def observe_sparql(query, opts \\ []) do
+    with {:ok, plan} <- explore_sparql(query, opts) do
+      AshR2RML.SPARQL.execute(plan)
     end
   end
 
