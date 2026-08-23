@@ -52,16 +52,16 @@ defmodule Xaas.Marketplace.ProviderTest do
              |> Ash.create(authorize?: false)
   end
 
-  test "update transitions real status from :pending to :active" do
+  test "provider lifecycle status cannot bypass the Reactor actuation boundary" do
     provider =
       create!(%{name: "Beta Co", slug: "beta-co-#{System.unique_integer([:positive])}", org_id: "org-c"})
 
-    updated =
-      provider
-      |> Ash.Changeset.for_update(:update, %{status: :active})
-      |> Ash.update!(authorize?: false)
+    assert {:error, %Ash.Error.Invalid{}} =
+             provider
+             |> Ash.Changeset.for_update(:actuate_status, %{status: :active})
+             |> Ash.update(authorize?: false)
 
-    assert updated.status == :active
+    assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :pending
   end
 
   # Real, disclosed change this session: the `AshIam` pilot on this

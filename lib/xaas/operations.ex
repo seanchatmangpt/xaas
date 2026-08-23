@@ -8,6 +8,8 @@ defmodule Xaas.Operations do
   end
 
   resources do
+    resource(Xaas.Operations.ActuationIntent)
+    resource(Xaas.Operations.ActuationReceipt)
     resource(Xaas.Operations.ApprovalCastleVerbSchedule)
     resource(Xaas.Operations.AuditLogEntry)
     resource(Xaas.Operations.ApprovalK8sFaultRemediateSuggest)
