@@ -38,6 +38,7 @@ defmodule Xaas.Billing.Revenue do
           source_key: source_meta.key,
           source_label: source_meta.label,
           source_iri: source_meta.ontology_iri,
+          source_revision: source_meta.ontology_revision,
           economic_family: source_meta.family,
           accounting_classification: classification,
           recognition_basis: recognition_basis,
@@ -49,6 +50,7 @@ defmodule Xaas.Billing.Revenue do
         Map.merge(authority, %{
           revenue_control: "fibo_revenue_profile",
           revenue_source_iri: source_meta.ontology_iri,
+          revenue_source_revision: source_meta.ontology_revision,
           revenue_source_key: source_meta.key
         })
 
