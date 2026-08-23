@@ -140,4 +140,37 @@ defmodule Xaas.Semantics.AshR2RMLTest do
              }
            ] = audit.refused
   end
+
+  test "SPARQL observation preserves multiple lawful read strategies until explicit selection" do
+    query = "SELECT * WHERE { ?s ?p ?o } LIMIT 1"
+
+    assert {:ok, %AshR2RML.SPARQL.Plan{} = plan} =
+             R2RML.explore_sparql(query,
+               data: RDF.Graph.new(),
+               endpoint: "https://example.invalid/sparql"
+             )
+
+    assert plan.selected == nil
+    assert MapSet.new(plan.candidates) == MapSet.new([:local_rdf, :protocol])
+
+    assert {:error, %AshR2RML.Refusal{code: :REFUSED_UNPROVEN_EQUIVALENCE}} =
+             AshR2RML.SPARQL.execute(plan)
+  end
+
+  test "SPARQL facade executes local observation without acquiring mutation authority" do
+    graph =
+      RDF.Graph.new({RDF.iri("urn:xaas:test:subject"), RDF.iri("urn:xaas:test:predicate"), "value"})
+
+    query = "SELECT ?s WHERE { ?s <urn:xaas:test:predicate> ?o }"
+
+    assert {:ok, %AshR2RML.SPARQL.Observation{} = observation} =
+             R2RML.observe_sparql(query, data: graph)
+
+    assert observation.strategy == :local_rdf
+    assert observation.status == :PARTIAL_ALIVE
+    assert observation.standing == :observed_local_rdf_execution
+    assert observation.evidence_kind == :in_memory_execution
+    assert byte_size(observation.query_sha256) == 64
+    assert byte_size(observation.result_sha256) == 64
+  end
 end
