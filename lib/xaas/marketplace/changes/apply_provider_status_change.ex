@@ -1,24 +1,16 @@
 defmodule Xaas.Marketplace.Changes.ApplyProviderStatusChange do
   @moduledoc """
-  Real `Ash.Resource.Change` for
-  `Xaas.Marketplace.ApprovalProviderStatusChange`'s `:approve` action --
-  after the approval row itself is really persisted (distinct-approver
-  validation already passed), this loads the real target
-  `Xaas.Marketplace.Provider` row by `provider_id` and really updates its
-  `status` attribute to this request's `requested_status`, inside the
-  same real after-action hook (both writes commit or neither does,
-  since `Ash.Changeset.after_action/2` runs inside the same real
-  database transaction as the approval row's own update).
+  Maker-checker bridge from an approved status-change request into the canonical
+  Reactor actuation path.
 
-  Uses `authorize?: false` for the real, disclosed reason
-  `Xaas.Governance.Changes.EnqueueWebhookDeliveries`-style internal
-  writes in this repo already use it: the actor has already been really
-  authorized to approve THIS request (`ActorOrgFilter` bypass on
-  `:approve` already ran); applying the resulting status change to the
-  target row is a real system-internal side effect of that already-
-  authorized action, not a second independent request needing its own
-  actor-authorization pass.
+  The approval action remains an Ash transaction hook, but it no longer mutates
+  `Provider` directly. Instead it manufactures delegated authority evidence and
+  invokes `Xaas.Actuation.run/4`. That call admits the provider's public-ontology
+  projection, prepares durable intent/receipt rows, runs the consequential Ash
+  action through Ash.Reactor, and seals the receipt before the transaction can
+  commit.
   """
+
   use Ash.Resource.Change
 
   alias Xaas.Marketplace.Provider
@@ -29,19 +21,31 @@ defmodule Xaas.Marketplace.Changes.ApplyProviderStatusChange do
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      case Ash.get(Provider, record.provider_id, authorize?: false) do
-        {:ok, provider} ->
-          case Ash.update(provider, %{status: record.requested_status},
-                 action: :update,
-                 authorize?: false
-               ) do
-            {:ok, _updated_provider} -> {:ok, record}
-            {:error, error} -> {:error, error}
-          end
+      authority = %{
+        kind: "maker_checker_approval",
+        approval_resource: inspect(record.__struct__),
+        approval_id: to_string(record.id),
+        approved_by: stringify(record.approved_by),
+        org_id: stringify(record.org_id),
+        requested_status: to_string(record.requested_status)
+      }
 
-        {:error, error} ->
-          {:error, error}
+      case Xaas.Actuation.run(
+             Provider,
+             :actuate_status,
+             %{status: record.requested_status},
+             subject_id: record.provider_id,
+             idempotency_key: "approval-provider-status-change:#{record.id}",
+             authorize?: false,
+             authority: authority
+           ) do
+        {:ok, _receipt_envelope} -> {:ok, record}
+        {:error, reason} -> {:error, reason}
       end
     end)
   end
+
+  defp stringify(nil), do: nil
+  defp stringify(value) when is_binary(value), do: value
+  defp stringify(value), do: to_string(value)
 end
