@@ -1,98 +1,79 @@
 # xaas — Project Instructions
 
-Real BEAMOps-book-derived Elixir/Phoenix + Ash 3.x platform, AWS chapters honestly
-substituted with `colima`+`kind` (see `docs/AWS-CHAPTERS-SUBSTITUTION.md`). This file is the
-entry point; full docs live in `docs/claude/diataxis/` (Diataxis: tutorials, how-to,
-reference, explanation).
+Real BEAMOps-book-derived Elixir/Phoenix + Ash 3.x platform, with AWS chapters honestly substituted by `colima`+`kind` where documented. Current documentation is organized under `docs/claude/diataxis/`.
 
 ## Read first
 
-- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map: the 7 Ash
-  domains, the 3-tier `/internal-api` routing split, and how the cross-cutting mechanisms
-  (AshIam, multitenancy, AshPaperTrail, audit log, webhooks, Reactor, Ontop) compose. Start
-  here if you're new to the codebase.
-- `docs/ASH-MIGRATION-PLAN.md` — the real 7-phase migration history + the standing,
-  explicitly-deferred decisions (Phase 5: customer-facing mutation API surface,
-  per-resource authorization policies). Deferred means genuinely undecided, not done —
-  check there before assuming a capability exists.
-- `docs/claude/diataxis/reference/ash-configuration.md` — real, current `config/*.exs`
-  facts (domains, extensions, env vars this app reads).
-- `docs/claude/diataxis/reference/http-api-surface.md` — real, current HTTP routes: which
-  of the 49 Ash resources have a real `json_api routes do` block, which 5 are deliberately
-  unwired (financial ledger + auth/PII data), and the real auth requirement.
+- `docs/claude/diataxis/README.md` — canonical documentation map and authority rules.
+- `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system architecture.
+- `docs/claude/diataxis/explanation/ontology-reactor-control-plane.md` — current public-ontology/Reactor actuation design.
+- `docs/claude/diataxis/reference/actuation-and-semantics.md` — exact actuation, replay, receipt, and semantic-projection contracts.
+- `docs/claude/diataxis/reference/ash-configuration.md` — current Ash configuration.
+- `docs/claude/diataxis/reference/http-api-surface.md` — current HTTP exposure/auth surface.
 
-## Non-negotiable discipline for this project
+Historical migration material lives in `docs/archive/` and is non-authoritative for current capability.
 
-### Chicago-style testing, no exceptions
-Real Postgres via `Ecto.Adapters.SQL.Sandbox`, real Ash actions, real HTTP requests via
-`ConnCase`. **Zero mocking libraries** — no `Mox`, no hand-rolled interaction-verifying
-fakes of collaborators this codebase owns. Before claiming tests are clean, run for real:
+## Non-negotiable discipline
+
+### Chicago-style testing
+
+Use real Postgres via `Ecto.Adapters.SQL.Sandbox`, real Ash actions, and real HTTP requests via `ConnCase`. Do not add mocking libraries or owned-collaborator interaction fakes.
+
+Before claiming the test tree is clean, run:
 
 ```bash
 grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." test/ lib/
 ```
 
-Zero matches is the bar. A prior clean run does not certify code changed since — re-run it.
-The one pre-existing exception is `Kanban.AwsRepo.FixtureAdapter` (the book's own original
-code, real AWS-substitution, disclosed in `docs/AWS-CHAPTERS-SUBSTITUTION.md`) — do not add
-a second one without the same disclosure discipline.
+The disclosed pre-existing `Kanban.AwsRepo.FixtureAdapter` remains the one historical AWS-substitution exception.
 
-### Every claim needs a real run, not a description
-"Compiles" means a real `mix compile --force` you just ran, pasted output attached to the
-commit message. "Works" means a real `curl`/`mix test`/booted `mix phx.server` you just
-exercised. This project has a real history of adversarial review catching overclaimed work
-(see `docs/claude/diataxis/explanation/security-and-testing-decisions.md`) — assume the next
-reviewer will re-run everything you claimed, because they will.
+### Claims require execution
 
-### Ash policy floor: deny-by-default
-New/touched resources get:
+"Compiles" requires a real compile run. "Works" requires a real product/test path. Source inspection, workflow presence, documentation, or a test name are not execution proof.
 
-```elixir
-policies do
-  policy always() do
-    forbid_if always()
-  end
-end
-```
+### Ash policy floor
 
-Never relax to allow-all. A real, scoped read carve-out uses `bypass`, not `policy` — a
-plain `policy action_type(:read) do authorize_if always() end` still ANDs against the
-catch-all `forbid_if always()` (Ash's multi-policy semantics: every *matching* policy must
-authorize) and silently filters everything out. This was a real bug found by adversarial
-review this session — see the how-to guide for the correct pattern.
+New/touched resources keep deny-by-default policy behavior. A scoped read carve-out uses `bypass`; do not replace the floor with ambient allow-all behavior.
 
-### Every internal-api / api route needs real auth
-`KanbanWeb.Plugs.RequireInternalApiToken` gates `/internal-api` and `/api` — real Bearer
-token against `INTERNAL_API_TOKEN`, fails closed (503) if unset. A route with zero auth
-plug was a real, adversarial-review-caught gap once already; don't reintroduce it.
+### API auth
 
-### Never blindly wire routes on sensitive resources
-`Xaas.Ledger.Balance`/`Account`/`Transfer` (real financial data) and
-`Xaas.Accounts.User`/`Token` (real auth/PII) are deliberately unwired. Adding a route to any
-of them needs a real, explicit access-control design first — not mechanical generation.
+`KanbanWeb.Plugs.RequireInternalApiToken` gates `/internal-api` and `/api` using `INTERNAL_API_TOKEN` and fails closed when configuration is absent. Do not introduce an unauthenticated sibling route.
 
-## Real commands that work
+### Sensitive resources
+
+`Xaas.Ledger.Balance`, `Xaas.Ledger.Account`, `Xaas.Ledger.Transfer`, `Xaas.Accounts.User`, and `Xaas.Accounts.Token` remain deliberate exposure decisions. Do not mechanically add routes for them.
+
+### Consequential DO
+
+Public semantic projection does not grant authority. Consequential mutations must remain behind the admitted Ash.Reactor control-plane path. For provider lifecycle state, do not expose or bypass `:actuate_status`; use `Xaas.Actuation.run/4` with a stable idempotency key and explicit authority context.
+
+## Real commands
 
 ```bash
-# Env vars every mix/curl session against the real docker-compose Postgres needs:
 export DEV_DB_USERNAME=postgres DEV_DB_PASSWORD="$(cat secrets/.postgrespassword)" \
        DEV_DB_HOSTNAME=localhost DEV_DB_PORT=$(docker compose port db 5432 | cut -d: -f2)
 
-mix compile --force        # real, clean compile check
-mix test                   # real Chicago-style suite (stress tests excluded by default)
-mix test --include stress  # include the real 50-concurrent-task stress test
+mix compile --force
+mix test
+mix test --include stress
 
-# Boot the real dev server (needs INTERNAL_API_TOKEN for /api and /internal-api to work):
 MIX_ENV=dev INTERNAL_API_TOKEN=<real-token> mix phx.server
 
-# ggen -> real Igniter-backed Ash resource codegen (see the how-to guide):
 ggen sync
 ```
 
-## See Also
+For the current Reactor/semantic actuation boundary, the narrow falsifier is:
 
-- `docs/claude/diataxis/` — full Tutorial/How-to/Reference/Explanation docs
-- `docs/ASH-MIGRATION-PLAN.md` — migration history + standing deferred decisions
-- `docs/AWS-CHAPTERS-SUBSTITUTION.md` — the real, disclosed AWS-chapter gap
-- `~/.claude/rules/testing-chicago-style.md` — the global testing discipline this project
-  follows exactly (no project-specific relaxation)
+```bash
+mix test test/xaas/actuation_test.exs
+```
+
+## Generated vs authoritative surfaces
+
+Executable Ash resources/actions and repository-native generators are authoritative. Generated client/read projections must be regenerated through their lawful generator; do not hand-edit generated outputs unless repository doctrine explicitly makes them source surfaces.
+
+## See also
+
+- `docs/claude/diataxis/` — current Tutorial / How-to / Reference / Explanation docs.
+- `docs/AWS-CHAPTERS-SUBSTITUTION.md` — current disclosed AWS substitution.
+- `docs/archive/` — historical/non-authoritative plans and migration evidence.
