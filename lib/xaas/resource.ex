@@ -5,8 +5,8 @@ defmodule Xaas.Resource do
   In addition to delegating to `Ash.Resource`, every resource receives a
   reversible public-ontology projection contract. Application modules remain
   the executable Ash surface; semantic identity is manufactured by
-  `Xaas.Semantics.Registry` and is therefore available uniformly to Reactor,
-  receipts, generators, R2RML exporters, and future ggen projections.
+  `Xaas.Semantics.Registry` and the relational/RDF correspondence is compiled by
+  `Xaas.Semantics.R2RML` through ash_r2rml.
   """
 
   defmacro __using__(opts) do
@@ -32,7 +32,31 @@ defmodule Xaas.Resource do
         |> Xaas.Semantics.Registry.hash()
       end
 
-      defoverridable ontology_projection: 0, ontology_projection!: 0, ontology_projection_hash: 0
+      @doc "Compiles this resource into ash_r2rml's canonical mapping IR."
+      def r2rml_mapping do
+        Xaas.Semantics.R2RML.mapping(__MODULE__)
+      end
+
+      @doc "Returns this resource's admitted ash_r2rml mapping or raises on refusal."
+      def r2rml_mapping! do
+        case r2rml_mapping() do
+          {:ok, mapping} -> mapping
+          {:error, reason} -> raise ArgumentError, "R2RML mapping refused: #{inspect(reason)}"
+        end
+      end
+
+      @doc "Returns the deterministic SHA-256 identity of the normalized ash_r2rml mapping."
+      def r2rml_mapping_hash do
+        r2rml_mapping!()
+        |> Xaas.Semantics.R2RML.hash()
+      end
+
+      defoverridable ontology_projection: 0,
+                     ontology_projection!: 0,
+                     ontology_projection_hash: 0,
+                     r2rml_mapping: 0,
+                     r2rml_mapping!: 0,
+                     r2rml_mapping_hash: 0
     end
   end
 end
