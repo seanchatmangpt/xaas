@@ -18,9 +18,9 @@ defmodule KanbanWeb.CoreComponents do
   [heroicons_elixir](https://github.com/mveytsman/heroicons_elixir) project.
   """
   use Phoenix.Component
+  use Gettext, backend: KanbanWeb.Gettext
 
   alias Phoenix.LiveView.JS
-  import KanbanWeb.Gettext
 
   @doc """
   Renders a modal.
