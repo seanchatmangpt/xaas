@@ -1,0 +1,11 @@
+[project]
+name = "xaas-r84-reactor-domain-error-consumer"
+
+[ontology]
+source = "ontology.ttl"
+
+[templates]
+dir = "templates"
+
+[packs]
+ash-reactor-domain-error-contract-pack = { git = "https://github.com/seanchatmangpt/ggen-marketplace.git", version = "6092fe3631d08a8a138b3377cf969e56d0358975", subdir = "packs/ash-reactor-domain-error-contract-pack" }
