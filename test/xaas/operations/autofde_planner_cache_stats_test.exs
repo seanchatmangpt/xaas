@@ -7,8 +7,13 @@ defmodule Xaas.Operations.AutofdePlannerCacheStatsTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
 
     case Req.get("http://127.0.0.1:8080/healthz") do
-      {:ok, %Req.Response{status: 200}} -> :ok
-      _ -> {:skip, "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback."}
+      {:ok, %Req.Response{status: 200}} ->
+        :ok
+
+      _ ->
+        {:ok,
+         skip:
+           "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback."}
     end
   end
 
