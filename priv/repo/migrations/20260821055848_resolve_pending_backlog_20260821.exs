@@ -9,16 +9,22 @@ defmodule Xaas.Repo.Migrations.ResolvePendingBacklog20260821 do
   `20260821032800_create_autofde_planner_match_requests.exs`,
   `20260821035000_create_autofde_planner_cache_stats_requests.exs`, and
   `20260821035100_create_autofde_planner_cache_hotset_requests.exs`.
+
+  Webhook secret storage is likewise intentionally not reconverged here.
+  `20260821031500_fix_webhook_secret_encryption_column.exs` already owns the
+  `platform_webhooks.secret -> encrypted_secret` transition and admits both
+  predecessor shapes with `IF EXISTS`/`IF NOT EXISTS`. Repeating the same
+  generated rename later in the migration chain fails on a clean database
+  because the plaintext column has already been removed.
+
+  The remaining token transition is independent and is retained here because
+  `Xaas.Accounts.Token` cloaks `:extra_data` and no earlier migration in this
+  history owns its `encrypted_extra_data` storage transition.
   """
 
   use Ecto.Migration
 
   def up do
-    alter table(:platform_webhooks) do
-      add :encrypted_secret, :binary, null: false
-      remove :secret
-    end
-
     alter table(:tokens) do
       add :encrypted_extra_data, :binary
       remove :extra_data
@@ -29,11 +35,6 @@ defmodule Xaas.Repo.Migrations.ResolvePendingBacklog20260821 do
     alter table(:tokens) do
       add :extra_data, :map
       remove :encrypted_extra_data
-    end
-
-    alter table(:platform_webhooks) do
-      add :secret, :text, null: false
-      remove :encrypted_secret
     end
   end
 end
