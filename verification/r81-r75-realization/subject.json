@@ -3,7 +3,7 @@
   "consumer_repo": "seanchatmangpt/xaas",
   "consumer_base": "9a7dda3044311e2fbdec5a8d8171e31642dfe2d7",
   "producer_repo": "seanchatmangpt/ggen-marketplace",
-  "producer_head": "94f3ac11ed9b34761293f32142bb7e0226a39628",
+  "producer_head": "c54e25f884e6b56ae8bf62f058cf7d6851b8d7c3",
   "consumer_factory": "forced-top25-standard-consumer-factory-pack",
   "realization_factory": "epistemic-sensor-factory-pack:r75",
   "composition_pack": "forced-top25-r75-realization-composition-pack",
