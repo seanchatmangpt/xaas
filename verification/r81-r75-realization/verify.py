@@ -5,7 +5,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 HERE = pathlib.Path(__file__).resolve().parent
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 EXPECTED_BASE = "9a7dda3044311e2fbdec5a8d8171e31642dfe2d7"
-EXPECTED_PRODUCER = "94f3ac11ed9b34761293f32142bb7e0226a39628"
+EXPECTED_PRODUCER = "c54e25f884e6b56ae8bf62f058cf7d6851b8d7c3"
 
 
 def refuse(reason):
