@@ -38,7 +38,7 @@ jobs:
           import json
           d=json.load(open('fanout/r80/generated/forced-top25/5.json'))
           assert d['consumer_repo']=='seanchatmangpt/xaas'
-          assert d['producer_head']=='9bba137bf2ceb43c4694ac8c580c459782e09643'
+          assert d['producer_head']=='a658cda7066bba344e481173b5b52a0dc18c5c75'
           assert d['compatibility_state']=='COMPATIBLE_READY'
           assert d['authority']=='VERIFY|CONSTRUCT'
           assert d['consequential_do'] is False
