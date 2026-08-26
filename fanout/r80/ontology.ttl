@@ -4,7 +4,7 @@
   fta:rank 5 ;
   fta:repo "seanchatmangpt/xaas" ;
   fta:exactHead "62c8f83a15db69e003960a5cf4eacb74070e835a" ;
-  fta:producerHead "9bba137bf2ceb43c4694ac8c580c459782e09643" ;
+  fta:producerHead "a658cda7066bba344e481173b5b52a0dc18c5c75" ;
   fta:compatibilityState "COMPATIBLE_READY" ;
   fta:qualificationState "REQUALIFYING" ;
   fta:consumerShape "ggen-root-manifest" ;
