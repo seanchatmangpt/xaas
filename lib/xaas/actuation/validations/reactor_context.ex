@@ -17,7 +17,7 @@ defmodule Xaas.Actuation.Validations.ReactorContext do
 
   @impl true
   def validate(changeset, _opts, _context) do
-    reactor_context = Ash.Changeset.get_context(changeset, :xaas_actuation)
+    reactor_context = Map.get(changeset.context || %{}, :xaas_actuation)
 
     with %{} = reactor_context <- reactor_context,
          receipt_id when is_binary(receipt_id) <- Map.get(reactor_context, :receipt_id),

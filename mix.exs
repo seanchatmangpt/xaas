@@ -58,6 +58,7 @@ defmodule Kanban.MixProject do
       # narrower guess) would not compile against the real resource files.
       {:ash, "~> 3.0"},
       {:ash_postgres, "~> 2.0"},
+      {:ash_r2rml, "26.8.22"},
       {:opentelemetry_ash, "~> 0.1"},
       # ash_ai's transitive dep req_llm fails to compile against the resolved
       # finch version (real: %Finch.Pool{}/pool_tag mismatch, confirmed via
