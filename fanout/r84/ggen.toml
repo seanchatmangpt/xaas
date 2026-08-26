@@ -8,4 +8,4 @@ source = "ontology.ttl"
 dir = "templates"
 
 [packs]
-ash-reactor-domain-error-contract-pack = { git = "https://github.com/seanchatmangpt/ggen-marketplace.git", version = "6092fe3631d08a8a138b3377cf969e56d0358975", subdir = "packs/ash-reactor-domain-error-contract-pack" }
+ash-reactor-domain-error-contract-pack = { git = "https://github.com/seanchatmangpt/ggen-marketplace.git", version = "6b7fb4af7b4ef3a6330ad61ca833b98902300332", subdir = "packs/ash-reactor-domain-error-contract-pack" }
