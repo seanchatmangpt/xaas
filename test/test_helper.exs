@@ -22,7 +22,11 @@ ExUnit.start()
 # Real tests against a live-deployed kind pod (test/e2e/) are excluded by
 # default too -- they need a real `kubectl port-forward` to kind-xaas
 # already running; run explicitly with `mix test --include kind`.
-ExUnit.configure(exclude: [:stress, :kind])
+# The CASTLE cross-repo court is also excluded from the ordinary suite: it
+# requires a binary built from the exact admitted CASTLE source subject.
+# `.github/workflows/castle-paas-bridge.yml` supplies that subject and runs
+# `mix test --include castle_kernel test/xaas/castle_bridge_test.exs`.
+ExUnit.configure(exclude: [:stress, :kind, :castle_kernel])
 Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the
