@@ -4,12 +4,20 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "ggen.toml"
+      - "ggen.lock"
       - "lib/xaas/castle.ex"
+      - "lib/xaas/generated/castle_bridge_*.ex"
+      - "lib/xaas/actuation.ex"
+      - "lib/xaas/operations/actuation_receipt.ex"
       - "lib/xaas/operations/route_castle_run.ex"
+      - "generated/castle_bridge/**"
+      - "priv/semantic/generated/castle_bridge_shacl.ttl"
       - "test/xaas/castle_bridge_test.exs"
+      - "test/xaas/generated/castle_bridge_contract_test.exs"
       - "test/test_helper.exs"
       - ".github/workflows/castle-paas-bridge.yml"
-      - "docs/claude/diataxis/**/castle-paas-xaas-bridge.md"
+      - "docs/claude/diataxis/reference/generated-castle-bridge-errc.md"
   workflow_dispatch:
 
 permissions:
@@ -17,9 +25,13 @@ permissions:
 
 jobs:
   exact-bridge:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
     env:
       MIX_ENV: test
+      GGEN_SHA: 1e9fcb9679a61460fbd641415cb72511c7e50b33
+      GGEN_MARKETPLACE_SHA: 518572b6b53103922ae8a27636a00e982a0907c4
+      CASTLE_SHA: a71801dcc0c0783eb8a4544cbee8b40bb0b30296
     services:
       postgres:
         image: postgres:15.2
@@ -35,30 +47,90 @@ jobs:
 
     steps:
       - name: Checkout exact XaaS PR subject
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
-      - name: Checkout admitted CASTLE PaaS source subject
-        uses: actions/checkout@v4
+      - name: Admit exact XaaS subject
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Checkout exact ggen manufacturer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: seanchatmangpt/ggen
+          ref: ${{ env.GGEN_SHA }}
+          path: _ggen
+          persist-credentials: false
+
+      - name: Checkout exact CASTLE PaaS consequence kernel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: seanchatmangpt/castle
-          ref: 13fe9728251e4a309eeb9e48315dc8d693d3da3b
+          ref: ${{ env.CASTLE_SHA }}
           path: _castle
+          persist-credentials: false
 
-      - name: Setup XaaS BEAM toolchain
-        uses: erlef/setup-beam@v1.24.1
+      - name: Setup exact XaaS BEAM toolchain
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
         with:
           version-file: .tool-versions
           version-type: strict
 
-      - name: Admit CASTLE Rust toolchain
+      - name: Get XaaS dependencies before ggen hooks
+        run: mix deps.get
+
+      - name: Build exact ggen manufacturer
         run: |
-          rustup toolchain install 1.85.0 --profile minimal
-          rustup default 1.85.0
-          rustc --version
-          cargo --version
+          rustup toolchain install nightly-2026-06-22 --profile minimal
+          cargo +nightly-2026-06-22 build --release -p ggen-cli-lib --bin ggen --manifest-path _ggen/Cargo.toml
+          test -x _ggen/target/release/ggen
+
+      - name: Manufacture XaaS from locked marketplace graph
+        run: |
+          _ggen/target/release/ggen sync run
+          test -f ggen.lock
+          test -f .ggen-v2/receipt.json
+          test -f lib/xaas/generated/castle_bridge_contract.ex
+          test -f lib/xaas/generated/castle_bridge_edges.ex
+          test -f generated/castle_bridge/innovation.json
+          test -f priv/semantic/generated/castle_bridge_shacl.ttl
+          test -f docs/claude/diataxis/reference/generated-castle-bridge-errc.md
+          test -f test/xaas/generated/castle_bridge_contract_test.exs
+
+      - name: Verify marketplace source, lock, receipt, and single DO consequence
+        run: |
+          grep -F "${GGEN_MARKETPLACE_SHA}" ggen.toml
+          grep -F "${GGEN_MARKETPLACE_SHA}" ggen.lock
+          jq -e '.payload.packs.xaas_castle_bridge | type == "string" and startswith("blake3:")' .ggen-v2/receipt.json
+          jq -e '.payload.outputs["lib/xaas/generated/castle_bridge_contract.ex"] | type == "string"' .ggen-v2/receipt.json
+          jq -e '.payload.outputs["lib/xaas/generated/castle_bridge_edges.ex"] | type == "string"' .ggen-v2/receipt.json
+          jq -e '.standing == "PARTIAL_ALIVE" and .authority == "SELECT|CONSTRUCT|VERIFY" and .actuation_performed == false' generated/castle_bridge/innovation.json
+          grep -F 'CASTLE_PAAS_XAAS_BRIDGE_V2' lib/xaas/generated/castle_bridge_contract.ex
+          test "$(grep -c 'do_boundary?: true' lib/xaas/generated/castle_bridge_edges.ex)" -eq 1
+          grep -F 'authority: "BRCE_ONLY"' lib/xaas/generated/castle_bridge_edges.ex
+          grep -F 'GGEN:XAAS_CASTLE_CONTRACT:BEGIN' lib/xaas/castle.ex
+
+      - name: Prove deterministic marketplace projections on replay
+        run: |
+          paths=(
+            lib/xaas/castle.ex
+            lib/xaas/generated/castle_bridge_contract.ex
+            lib/xaas/generated/castle_bridge_edges.ex
+            generated/castle_bridge/innovation.json
+            priv/semantic/generated/castle_bridge_shacl.ttl
+            docs/claude/diataxis/reference/generated-castle-bridge-errc.md
+            test/xaas/generated/castle_bridge_contract_test.exs
+          )
+          sha256sum "${paths[@]}" > /tmp/castle-bridge-first.sha256
+          _ggen/target/release/ggen sync run
+          sha256sum "${paths[@]}" > /tmp/castle-bridge-second.sha256
+          diff -u /tmp/castle-bridge-first.sha256 /tmp/castle-bridge-second.sha256
 
       - name: Build exact CASTLE kernel
-        run: cargo build --locked --bin castle --manifest-path _castle/Cargo.toml
+        run: |
+          rustup toolchain install 1.85.0 --profile minimal
+          cargo +1.85.0 build --locked --bin castle --manifest-path _castle/Cargo.toml
 
       - name: Bind exact CASTLE binary identity
         run: |
@@ -69,14 +141,24 @@ jobs:
           "$CASTLE_BIN" release info --format json
           echo "CASTLE_BIN_SHA256=$CASTLE_BIN_SHA256"
 
-      - name: Get XaaS dependencies
-        run: mix deps.get
-
-      - name: Compile XaaS bridge with warnings as errors
+      - name: Compile generated XaaS consequence with warnings as errors
         run: mix compile --force --warnings-as-errors
 
-      - name: Check bridge formatting
-        run: mix format --check-formatted lib/xaas/castle.ex lib/xaas/operations/route_castle_run.ex test/xaas/castle_bridge_test.exs test/test_helper.exs
+      - name: Check bridge and generated Elixir formatting
+        run: |
+          mix format --check-formatted \
+            lib/xaas/castle.ex \
+            lib/xaas/actuation.ex \
+            lib/xaas/operations/actuation_receipt.ex \
+            lib/xaas/operations/route_castle_run.ex \
+            lib/xaas/generated/castle_bridge_contract.ex \
+            lib/xaas/generated/castle_bridge_edges.ex \
+            test/xaas/castle_bridge_test.exs \
+            test/xaas/generated/castle_bridge_contract_test.exs \
+            test/test_helper.exs
+
+      - name: Execute generated marketplace contract court
+        run: mix test test/xaas/generated/castle_bridge_contract_test.exs --trace
 
       - name: Execute Chicago XaaS to CASTLE BRCE court
         run: mix test --include castle_kernel test/xaas/castle_bridge_test.exs --trace
@@ -84,7 +166,8 @@ jobs:
       - name: Refuse owned-collaborator mock substitution
         run: |
           if grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\\b\|:meck\|meck\." \
-            test/xaas/castle_bridge_test.exs lib/xaas/castle.ex lib/xaas/operations/route_castle_run.ex; then
+            test/xaas/castle_bridge_test.exs test/xaas/generated/castle_bridge_contract_test.exs \
+            lib/xaas/castle.ex lib/xaas/operations/route_castle_run.ex; then
             echo "REFUSED: CASTLE bridge must execute real owned collaborators"
             exit 1
           fi
