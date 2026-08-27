@@ -4,7 +4,10 @@ defmodule Xaas.CastleBridgeTest do
 
   The default test proves the private action cannot be reached with `authorize?: false`
   alone. The `:castle_kernel` court uses real Postgres, real XaaS Ash/Reactor, and the
-  exact compiled CASTLE binary supplied by the dedicated cross-repo workflow.
+  exact compiled CASTLE binary supplied by the dedicated cross-repo workflow. The
+  immutable bridge identity is injected by the pinned ggen-marketplace pack before
+  that court runs; this test consumes the runtime contract instead of duplicating SHA
+  or protocol literals.
   """
 
   use ExUnit.Case, async: false
@@ -55,7 +58,12 @@ defmodule Xaas.CastleBridgeTest do
   test "real XaaS actuation nests exact CASTLE BRCE receipts and replays without a second DO" do
     bin = System.fetch_env!("CASTLE_BIN")
     expected_sha = System.fetch_env!("CASTLE_BIN_SHA256")
-    actual_sha = bin |> File.read!() |> then(&:crypto.hash(:sha256, &1)) |> Base.encode16(case: :lower)
+
+    actual_sha =
+      bin
+      |> File.read!()
+      |> then(&:crypto.hash(:sha256, &1))
+      |> Base.encode16(case: :lower)
 
     assert actual_sha == String.downcase(expected_sha)
 
@@ -68,6 +76,16 @@ defmodule Xaas.CastleBridgeTest do
     File.write!(signing_key_path, String.duplicate("09", 32), [:exclusive])
     System.put_env("CASTLE_SIGNING_KEY_PATH", signing_key_path)
     System.put_env("CASTLE_KEY_ID", "xaas-castle-test-key")
+
+    evidence_root =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-castle-evidence-#{System.unique_integer([:positive, :monotonic])}"
+      )
+      |> Path.expand()
+
+    File.mkdir_p!(evidence_root)
+    System.put_env("CASTLE_EVIDENCE_ROOT", evidence_root)
 
     profile = %{
       allowed_authorities: ["bounded-do"],
@@ -93,8 +111,10 @@ defmodule Xaas.CastleBridgeTest do
 
     on_exit(fn ->
       File.rm(signing_key_path)
+      File.rm_rf(evidence_root)
       System.delete_env("CASTLE_SIGNING_KEY_PATH")
       System.delete_env("CASTLE_KEY_ID")
+      System.delete_env("CASTLE_EVIDENCE_ROOT")
 
       if is_nil(previous_profiles),
         do: Application.delete_env(:kanban, :castle_adapter_profiles),
@@ -122,9 +142,13 @@ defmodule Xaas.CastleBridgeTest do
     assert length(first.result["brce_outcome_receipt_digests"]) == 1
     assert first.result["evidence_commit"]["standing"] == "ALIVE"
     assert byte_size(first.result["xaas_outer_admission"]["witness_digest"]) == 64
-    assert first.result["contract"]["protocol"] == "CASTLE_PAAS_XAAS_BRIDGE_V1"
-    assert first.result["contract"]["castle_paas_source_sha"] ==
-             "13fe9728251e4a309eeb9e48315dc8d693d3da3b"
+
+    contract = Xaas.Castle.Contract.identity()
+    assert is_atom(contract.protocol)
+    assert first.result["contract"]["protocol"] == Atom.to_string(contract.protocol)
+    assert first.result["contract"]["castle_paas_source_sha"] == contract.castle_paas_source_sha
+    assert first.result["contract"]["castle_paas_pack_sha"] == contract.castle_paas_pack_sha
+    assert first.result["contract"]["ash_r2rml_sha"] == contract.ash_r2rml_sha
 
     receipt_count = length(Ash.read!(ActuationReceipt, authorize?: false))
 
