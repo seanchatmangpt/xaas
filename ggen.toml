@@ -1,5 +1,7 @@
 # Project-local ggen.toml -- the XaaS consumer root.
 #
+# Historical qualified lineage is deliberately preserved:
+# ggen-marketplace/packs/xaas-ash-core-pack/ontology.ttl
 # The original xaas-ash-core ontology remains vendored because that path predates
 # current remote-pack support and its generated Ash surfaces are already qualified.
 # New reusable capabilities MUST prefer locked marketplace packs over new vendored
