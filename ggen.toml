@@ -16,7 +16,7 @@ source = "ontology.ttl"
 
 [packs.xaas_castle_bridge]
 git = "https://github.com/seanchatmangpt/ggen-marketplace.git"
-version = "fac74053ec2beaca44d35e43d95f62f9bfae512b"
+version = "518572b6b53103922ae8a27636a00e982a0907c4"
 subdir = "packs/xaas-castle-bridge-pack"
 
 [templates]
