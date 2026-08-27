@@ -1,0 +1,90 @@
+name: CASTLE PaaS XaaS Bridge
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/xaas/castle.ex"
+      - "lib/xaas/operations/route_castle_run.ex"
+      - "test/xaas/castle_bridge_test.exs"
+      - "test/test_helper.exs"
+      - ".github/workflows/castle-paas-bridge.yml"
+      - "docs/claude/diataxis/**/castle-paas-xaas-bridge.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-bridge:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:15.2
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout exact XaaS PR subject
+        uses: actions/checkout@v4
+
+      - name: Checkout admitted CASTLE PaaS source subject
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/castle
+          ref: 13fe9728251e4a309eeb9e48315dc8d693d3da3b
+          path: _castle
+
+      - name: Setup XaaS BEAM toolchain
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Admit CASTLE Rust toolchain
+        run: |
+          rustup toolchain install 1.85.0 --profile minimal
+          rustup default 1.85.0
+          rustc --version
+          cargo --version
+
+      - name: Build exact CASTLE kernel
+        run: cargo build --locked --bin castle --manifest-path _castle/Cargo.toml
+
+      - name: Bind exact CASTLE binary identity
+        run: |
+          CASTLE_BIN="$GITHUB_WORKSPACE/_castle/target/debug/castle"
+          CASTLE_BIN_SHA256="$(sha256sum "$CASTLE_BIN" | awk '{print $1}')"
+          echo "CASTLE_BIN=$CASTLE_BIN" >> "$GITHUB_ENV"
+          echo "CASTLE_BIN_SHA256=$CASTLE_BIN_SHA256" >> "$GITHUB_ENV"
+          "$CASTLE_BIN" release info --format json
+          echo "CASTLE_BIN_SHA256=$CASTLE_BIN_SHA256"
+
+      - name: Get XaaS dependencies
+        run: mix deps.get
+
+      - name: Compile XaaS bridge with warnings as errors
+        run: mix compile --force --warnings-as-errors
+
+      - name: Check bridge formatting
+        run: mix format --check-formatted lib/xaas/castle.ex lib/xaas/operations/route_castle_run.ex test/xaas/castle_bridge_test.exs test/test_helper.exs
+
+      - name: Execute Chicago XaaS to CASTLE BRCE court
+        run: mix test --include castle_kernel test/xaas/castle_bridge_test.exs --trace
+
+      - name: Refuse owned-collaborator mock substitution
+        run: |
+          if grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\\b\|:meck\|meck\." \
+            test/xaas/castle_bridge_test.exs lib/xaas/castle.ex lib/xaas/operations/route_castle_run.ex; then
+            echo "REFUSED: CASTLE bridge must execute real owned collaborators"
+            exit 1
+          fi
