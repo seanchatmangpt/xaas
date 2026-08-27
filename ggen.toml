@@ -1,17 +1,14 @@
-# Project-local ggen.toml -- lives at the root of the Ash project itself
-# (the "project that has the renderer in it"), not inside ggen-marketplace.
-# This is deliberate: sh_after hooks run with THIS directory as cwd, so
-# real `mix` commands run in the correct place -- the marketplace pack's own
-# directory is not, and should not be, relevant to sh_after execution.
+# Project-local ggen.toml -- the XaaS consumer root.
 #
-# Ontology is a VENDORED COPY of ggen-marketplace/packs/xaas-ash-core-pack/ontology.ttl,
-# not a live reference -- confirmed via real ggen sync run errors that both
-# path traversal (`../..`) and absolute paths outside the project root are
-# refused (FM-CONFIG-003 invalid_path, both tested directly). Real ggen
-# design requires the ontology to live inside the consuming project. Keep
-# this in sync manually (or via a real symlink if that path is later proven
-# to work) -- do not silently let it drift; re-copy after any real change
-# to the marketplace pack's own ontology.ttl.
+# Historical qualified lineage is deliberately preserved:
+# ggen-marketplace/packs/xaas-ash-core-pack/ontology.ttl
+# The original xaas-ash-core ontology remains vendored because that path predates
+# current remote-pack support and its generated Ash surfaces are already qualified.
+# New reusable capabilities MUST prefer locked marketplace packs over new vendored
+# copies. The CASTLE bridge below uses ggen-engine's native git+subdir resolver:
+# it checks out the exact producer SHA, unions the pack ontology into this graph,
+# discovers the pack templates, includes every pack byte in the content hash, and
+# binds the pack into the sync receipt/lock closure.
 
 [project]
 name = "xaas"
@@ -19,5 +16,16 @@ name = "xaas"
 [ontology]
 source = "ontology.ttl"
 
+[packs.xaas_castle_bridge]
+git = "https://github.com/seanchatmangpt/ggen-marketplace.git"
+version = "518572b6b53103922ae8a27636a00e982a0907c4"
+subdir = "packs/xaas-castle-bridge-pack"
+
 [templates]
 dir = "templates-hooks"
+
+[law]
+# Make the generator's own prior receipt DAG queryable by future innovation packs.
+# Current CASTLE bridge templates remain byte-deterministic because they do not
+# depend on ggenr:Sync facts; opting in preserves the observation surface now.
+reflexive = true

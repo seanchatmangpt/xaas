@@ -1,4 +1,14 @@
 defmodule Xaas.Operations.RouteCastleRun do
+  @moduledoc """
+  XaaS capability surface for CASTLE execution.
+
+  Reads remain the existing generated/public projection. The private `:execute`
+  generic action is intentionally not routed through JSON:API or GraphQL. It can
+  succeed only when called from `Xaas.Actuation`, because `Xaas.Castle.Admission`
+  verifies the exact persisted outer intent and prepared receipt before CASTLE
+  receives an O* witness.
+  """
+
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Operations,
@@ -10,8 +20,9 @@ defmodule Xaas.Operations.RouteCastleRun do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
     # this resource had zero policy blocks before this commit, meaning
     # implicit allow-all authorization on a repo with real deployed infra.
-    # Replace with real per-action rules as domain owners define them; never
-    # relax this to allow-all without an explicit rule.
+    # The private execute action is NOT carved out here: Xaas.Actuation calls
+    # it with authorize?: false only after manufacturing durable authority
+    # context, and the action independently verifies that context against DB.
     bypass action_type(:read) do
       authorize_if always()
     end
@@ -42,6 +53,17 @@ defmodule Xaas.Operations.RouteCastleRun do
 
   actions do
     defaults [:read]
+
+    action :execute, :map do
+      public? false
+      transaction? true
+
+      argument :intent, :map do
+        allow_nil? false
+      end
+
+      run Xaas.Castle.Actions.Execute
+    end
   end
 
   attributes do

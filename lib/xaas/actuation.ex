@@ -2,10 +2,22 @@ defmodule Xaas.Actuation do
   @moduledoc """
   Exclusive control-plane API for consequential Ash actions.
 
-  The path is: ontology projection -> admission -> intent -> prepared receipt ->
-  Ash.Reactor DO -> sealed receipt -> deterministic replay. The whole sequence is
-  wrapped in the participating Ash data-layer transaction and Reactor is forced
-  synchronous, so a committed database mutation cannot outrun its receipt.
+  Local Ash consequences use the original single-transaction path:
+
+      ontology projection -> admission -> intent/prepared receipt
+        -> synchronous Ash.Reactor DO -> sealed receipt -> replay
+
+  External consequences cannot lawfully pretend a Postgres rollback can undo a remote
+  side effect. `prepare_external/4`, `checkpoint_external/2`, and `seal_external/2`
+  therefore expose the same admission/receipt kernel as a three-commit protocol:
+
+      durable admission/prepared receipt
+        -> durable inert external CONSTRUCT checkpoint
+        -> external receipted DO
+        -> durable outer seal
+
+  If the outer seal is interrupted, the prepared receipt and construct checkpoint remain
+  durable and can be recovered without manufacturing a new consequence identity.
   """
 
   alias Xaas.Operations.{ActuationIntent, ActuationReceipt}
@@ -13,20 +25,7 @@ defmodule Xaas.Actuation do
   @spec run(module(), atom(), map(), keyword()) :: {:ok, map()} | {:error, term()}
   def run(resource, action, input, opts \\ [])
       when is_atom(resource) and is_atom(action) and is_map(input) do
-    with idempotency_key when is_binary(idempotency_key) and idempotency_key != "" <-
-           Keyword.get(opts, :idempotency_key) do
-      inputs = %{
-        resource: resource,
-        action: action,
-        input: input,
-        subject_id: Keyword.get(opts, :subject_id),
-        actor: Keyword.get(opts, :actor),
-        tenant: Keyword.get(opts, :tenant),
-        authorize?: Keyword.get(opts, :authorize?, true),
-        authority: Keyword.get(opts, :authority, %{}),
-        idempotency_key: idempotency_key
-      }
-
+    with {:ok, inputs} <- inputs(resource, action, input, opts) do
       resources = [resource, ActuationIntent, ActuationReceipt]
 
       transaction_result =
@@ -34,21 +33,158 @@ defmodule Xaas.Actuation do
           resources,
           fn -> run_reactor_or_rollback(resources, inputs) end,
           nil,
-          %{
-            type: :custom,
-            metadata: %{
-              operation: :xaas_reactor_actuation,
-              resource: resource,
-              action: action,
-              idempotency_key: idempotency_key
-            }
-          }
+          transaction_metadata(:xaas_reactor_actuation, inputs)
         )
 
       normalize_transaction_result(transaction_result)
+    end
+  end
+
+  @doc "Durably admit an external consequence before any remote DO can occur."
+  @spec prepare_external(module(), atom(), map(), keyword()) :: {:ok, map()} | {:error, term()}
+  def prepare_external(resource, action, input, opts \\ [])
+      when is_atom(resource) and is_atom(action) and is_map(input) do
+    with {:ok, inputs} <- inputs(resource, action, input, opts) do
+      resources = [resource, ActuationIntent, ActuationReceipt]
+
+      transaction_result =
+        Ash.DataLayer.transaction(
+          resources,
+          fn ->
+            case Xaas.Actuation.Kernel.admit_external(inputs, %{}) do
+              {:ok, %{replay?: true} = admission} ->
+                %{
+                  status: :replayed,
+                  replay?: true,
+                  result: admission.receipt.result,
+                  intent: admission.intent,
+                  receipt: admission.receipt,
+                  admission: admission
+                }
+
+              {:ok, admission} ->
+                %{
+                  status: :prepared,
+                  replay?: false,
+                  admission: admission,
+                  intent: admission.intent,
+                  receipt: admission.receipt
+                }
+
+              {:error, reason} ->
+                Ash.DataLayer.rollback(resources, {:external_admission_failed, reason})
+            end
+          end,
+          nil,
+          transaction_metadata(:xaas_external_prepare, inputs)
+        )
+
+      normalize_external_prepare(transaction_result)
+    end
+  end
+
+  @doc "Durably bind an inert external construct to the already-prepared outer receipt."
+  @spec checkpoint_external(map(), map()) :: {:ok, map()} | {:error, term()}
+  def checkpoint_external(%{replay?: false} = admission, checkpoint) when is_map(checkpoint) do
+    resources = [admission.resource, ActuationIntent, ActuationReceipt]
+
+    result =
+      Ash.DataLayer.transaction(
+        resources,
+        fn ->
+          case Xaas.Actuation.Kernel.checkpoint_external(admission, checkpoint) do
+            {:ok, updated} -> updated
+            {:error, reason} -> Ash.DataLayer.rollback(resources, {:external_checkpoint_failed, reason})
+          end
+        end,
+        nil,
+        %{
+          type: :custom,
+          metadata: %{
+            operation: :xaas_external_checkpoint,
+            resource: admission.resource,
+            action: admission.action,
+            idempotency_key: admission.intent.idempotency_key
+          }
+        }
+      )
+
+    unwrap_transaction(result)
+  end
+
+  @doc "Seal a previously prepared external admission after its independent receipted DO."
+  @spec seal_external(map(), {:ok, term()} | {:error, term()}) :: {:ok, map()} | {:error, term()}
+  def seal_external(%{replay?: false} = admission, execution)
+      when is_tuple(execution) do
+    resources = [admission.resource, ActuationIntent, ActuationReceipt]
+
+    result =
+      Ash.DataLayer.transaction(
+        resources,
+        fn ->
+          case Xaas.Actuation.Kernel.seal(%{admission: admission, execution: execution}, %{}) do
+            {:ok, envelope} -> envelope
+            {:error, reason} -> Ash.DataLayer.rollback(resources, {:external_seal_failed, reason})
+          end
+        end,
+        nil,
+        %{
+          type: :custom,
+          metadata: %{
+            operation: :xaas_external_seal,
+            resource: admission.resource,
+            action: admission.action,
+            idempotency_key: admission.intent.idempotency_key
+          }
+        }
+      )
+
+    normalize_transaction_result(result)
+  end
+
+  @doc "Return the immutable XaaS Reactor authority context for a persisted admission."
+  @spec context(map()) :: map()
+  def context(admission) do
+    %{
+      xaas_actuation: %{
+        intent_id: to_string(admission.intent.id),
+        receipt_id: to_string(admission.receipt.id),
+        ontology_projection_hash: admission.projection_hash,
+        idempotency_key: admission.intent.idempotency_key
+      }
+    }
+  end
+
+  defp inputs(resource, action, input, opts) do
+    with idempotency_key when is_binary(idempotency_key) and idempotency_key != "" <-
+           Keyword.get(opts, :idempotency_key) do
+      {:ok,
+       %{
+         resource: resource,
+         action: action,
+         input: input,
+         subject_id: Keyword.get(opts, :subject_id),
+         actor: Keyword.get(opts, :actor),
+         tenant: Keyword.get(opts, :tenant),
+         authorize?: Keyword.get(opts, :authorize?, true),
+         authority: Keyword.get(opts, :authority, %{}),
+         idempotency_key: idempotency_key
+       }}
     else
       _ -> {:error, :idempotency_key_required}
     end
+  end
+
+  defp transaction_metadata(operation, inputs) do
+    %{
+      type: :custom,
+      metadata: %{
+        operation: operation,
+        resource: inputs.resource,
+        action: inputs.action,
+        idempotency_key: inputs.idempotency_key
+      }
+    }
   end
 
   defp run_reactor_or_rollback(resources, inputs) do
@@ -70,6 +206,17 @@ defmodule Xaas.Actuation do
     end
   end
 
+  defp normalize_external_prepare({:ok, %{status: status} = result})
+       when status in [:prepared, :replayed],
+       do: {:ok, result}
+
+  defp normalize_external_prepare({:error, reason}), do: {:error, reason}
+  defp normalize_external_prepare(other), do: {:error, {:unexpected_external_prepare, other}}
+
+  defp unwrap_transaction({:ok, result}), do: {:ok, result}
+  defp unwrap_transaction({:error, reason}), do: {:error, reason}
+  defp unwrap_transaction(other), do: {:error, {:unexpected_external_transaction, other}}
+
   defp normalize_transaction_result({:ok, result}), do: normalize_transaction_result(result)
   defp normalize_transaction_result({:error, reason}), do: {:error, reason}
 
@@ -84,11 +231,10 @@ end
 
 defmodule Xaas.Actuation.Reactor do
   @moduledoc """
-  Ash.Reactor implementing the only admitted consequential DO pipeline.
+  Ash.Reactor implementing the transaction-coupled local consequential DO pipeline.
 
-  `ash_step` is used rather than a plain Reactor step so Ash notification and
-  execution semantics remain inside the Ash ecosystem. Every step is synchronous
-  because this Reactor is deliberately transaction-coupled to its caller.
+  External, non-rollbackable consequences use `Xaas.Actuation.prepare_external/4` and
+  a domain-specific Reactor that persists its inert checkpoint before crossing DO.
   """
 
   use Reactor, extensions: [Ash.Reactor]
@@ -144,14 +290,17 @@ defmodule Xaas.Actuation.Kernel do
   alias Xaas.Operations.{ActuationIntent, ActuationReceipt}
   alias Xaas.Semantics.Registry
 
-  def admit(args, _context) do
+  def admit(args, _context), do: do_admit(args, :transactional)
+  def admit_external(args, _context), do: do_admit(args, :external)
+
+  defp do_admit(args, mode) do
     with :ok <- admit_authority(args.authorize?, args.authority),
          {:ok, projection} <- Registry.admit(args.resource),
          projection_hash <- Registry.hash(projection),
          input_hash <-
            fingerprint({args.resource, args.action, args.subject_id, args.input, projection_hash}),
          {:ok, replay_or_new} <-
-           find_or_create(args, projection, projection_hash, input_hash) do
+           find_or_create(args, projection, projection_hash, input_hash, mode) do
       {:ok, replay_or_new}
     end
   end
@@ -166,15 +315,6 @@ defmodule Xaas.Actuation.Kernel do
         tenant: tenant,
         authorize?: authorize?
       }, _context) do
-    context = %{
-      xaas_actuation: %{
-        intent_id: to_string(admission.intent.id),
-        receipt_id: to_string(admission.receipt.id),
-        ontology_projection_hash: admission.projection_hash,
-        idempotency_key: admission.intent.idempotency_key
-      }
-    }
-
     result =
       execute_action(
         admission.resource,
@@ -184,7 +324,7 @@ defmodule Xaas.Actuation.Kernel do
         actor,
         tenant,
         authorize?,
-        context
+        Xaas.Actuation.context(admission)
       )
 
     {:ok, result}
@@ -192,6 +332,33 @@ defmodule Xaas.Actuation.Kernel do
     error -> {:ok, {:error, {:exception, error.__struct__, Exception.message(error)}}}
   catch
     kind, reason -> {:ok, {:error, {kind, reason}}}
+  end
+
+  def checkpoint_external(%{replay?: false} = admission, checkpoint) when is_map(checkpoint) do
+    with {:ok, receipt} <- Ash.get(ActuationReceipt, admission.receipt.id, authorize?: false),
+         {:ok, intent} <- Ash.get(ActuationIntent, admission.intent.id, authorize?: false),
+         :ok <- verify_external_prepared(intent, receipt, admission),
+         checkpoint_snapshot <- json_safe(checkpoint),
+         checkpoint_hash <- fingerprint(checkpoint) do
+      cond do
+        receipt.result == %{} and is_nil(receipt.result_hash) ->
+          with {:ok, receipt} <-
+                 Ash.update(
+                   receipt,
+                   %{result: checkpoint_snapshot, result_hash: checkpoint_hash},
+                   action: :checkpoint,
+                   authorize?: false
+                 ) do
+            {:ok, %{admission | receipt: receipt, intent: intent, resumed?: false}}
+          end
+
+        receipt.result_hash == checkpoint_hash and receipt.result == checkpoint_snapshot ->
+          {:ok, %{admission | receipt: receipt, intent: intent, resumed?: true}}
+
+        true ->
+          {:error, {:external_checkpoint_conflict, intent.idempotency_key}}
+      end
+    end
   end
 
   def seal(%{admission: %{replay?: true} = admission, execution: {:replayed, result}}, _context) do
@@ -265,6 +432,32 @@ defmodule Xaas.Actuation.Kernel do
     end
   end
 
+  defp verify_external_prepared(intent, receipt, admission) do
+    cond do
+      intent.status != :executing ->
+        {:error, {:external_intent_not_executing, intent.status}}
+
+      receipt.status != :prepared ->
+        {:error, {:external_receipt_not_prepared, receipt.status}}
+
+      to_string(receipt.intent_id) != to_string(intent.id) ->
+        {:error, :external_receipt_intent_mismatch}
+
+      intent.id != admission.intent.id or receipt.id != admission.receipt.id ->
+        {:error, :external_admission_identity_mismatch}
+
+      intent.ontology_projection_hash != admission.projection_hash or
+          receipt.ontology_projection_hash != admission.projection_hash ->
+        {:error, :external_projection_mismatch}
+
+      intent.input_hash != receipt.input_hash ->
+        {:error, :external_input_mismatch}
+
+      true ->
+        :ok
+    end
+  end
+
   defp admit_authority(false, authority) when is_map(authority) and map_size(authority) > 0,
     do: :ok
 
@@ -273,10 +466,10 @@ defmodule Xaas.Actuation.Kernel do
 
   defp admit_authority(true, _authority), do: :ok
 
-  defp find_or_create(args, projection, projection_hash, input_hash) do
+  defp find_or_create(args, projection, projection_hash, input_hash, mode) do
     case find_intent(args.idempotency_key) do
       {:ok, nil} -> create_admission(args, projection, projection_hash, input_hash)
-      {:ok, intent} -> replay_or_refuse(intent, args, projection_hash, input_hash)
+      {:ok, intent} -> replay_or_refuse(intent, args, projection, projection_hash, input_hash, mode)
       {:error, reason} -> {:error, reason}
     end
   end
@@ -325,6 +518,7 @@ defmodule Xaas.Actuation.Kernel do
       {:ok,
        %{
          replay?: false,
+         resumed?: false,
          resource: args.resource,
          action: args.action,
          subject_id: args.subject_id,
@@ -337,7 +531,7 @@ defmodule Xaas.Actuation.Kernel do
     end
   end
 
-  defp replay_or_refuse(intent, args, projection_hash, input_hash) do
+  defp replay_or_refuse(intent, args, projection, projection_hash, input_hash, mode) do
     cond do
       intent.resource_module != inspect(args.resource) or
           intent.action != Atom.to_string(args.action) or
@@ -346,26 +540,56 @@ defmodule Xaas.Actuation.Kernel do
         {:error, {:idempotency_conflict, args.idempotency_key}}
 
       intent.status == :succeeded ->
-        with {:ok, receipt} <- find_succeeded_receipt(intent.id),
-             %ActuationReceipt{} = receipt <- receipt do
-          {:ok,
-           %{
-             replay?: true,
-             resource: args.resource,
-             action: args.action,
-             subject_id: args.subject_id,
-             raw_input: args.input,
-             projection_hash: projection_hash,
-             intent: intent,
-             receipt: receipt
-           }}
-        else
-          nil -> {:error, {:receipt_missing_for_succeeded_intent, intent.id}}
-          {:error, reason} -> {:error, reason}
-        end
+        replay_succeeded(intent, args, projection_hash)
+
+      mode == :external and intent.status == :executing ->
+        resume_external(intent, args, projection, projection_hash)
 
       true ->
         {:error, {:idempotency_not_replayable, args.idempotency_key, intent.status}}
+    end
+  end
+
+  defp replay_succeeded(intent, args, projection_hash) do
+    with {:ok, receipt} <- find_succeeded_receipt(intent.id),
+         %ActuationReceipt{} = receipt <- receipt do
+      {:ok,
+       %{
+         replay?: true,
+         resumed?: false,
+         resource: args.resource,
+         action: args.action,
+         subject_id: args.subject_id,
+         raw_input: args.input,
+         projection_hash: projection_hash,
+         intent: intent,
+         receipt: receipt
+       }}
+    else
+      nil -> {:error, {:receipt_missing_for_succeeded_intent, intent.id}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp resume_external(intent, args, projection, projection_hash) do
+    with {:ok, receipt} <- find_prepared_receipt(intent.id),
+         %ActuationReceipt{} = receipt <- receipt do
+      {:ok,
+       %{
+         replay?: false,
+         resumed?: true,
+         resource: args.resource,
+         action: args.action,
+         subject_id: args.subject_id,
+         raw_input: args.input,
+         projection: projection,
+         projection_hash: projection_hash,
+         intent: intent,
+         receipt: receipt
+       }}
+    else
+      nil -> {:error, {:prepared_receipt_missing_for_external_intent, intent.id}}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -383,6 +607,15 @@ defmodule Xaas.Actuation.Kernel do
       ActuationReceipt
       |> Ash.Query.for_read(:read)
       |> Ash.Query.filter(intent_id == ^intent_id and status == :succeeded)
+
+    Ash.read_one(query, authorize?: false)
+  end
+
+  defp find_prepared_receipt(intent_id) do
+    query =
+      ActuationReceipt
+      |> Ash.Query.for_read(:read)
+      |> Ash.Query.filter(intent_id == ^intent_id and status == :prepared)
 
     Ash.read_one(query, authorize?: false)
   end
