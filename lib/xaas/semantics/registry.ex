@@ -16,7 +16,17 @@ defmodule Xaas.Semantics.Registry do
   lawful public-ontology projection without inventing domain semantics. Resources can
   later refine this projection without changing the actuation protocol because receipts
   bind the complete projection hash, not a hand-written type string.
+
+  Class and predicate inference remain xaas domain logic (this registry, not the
+  library, decides that `Provider` is a `schema:Organization`). Structural mapping
+  manufacture -- logical table resolution, subject-map construction, and R2RML-shaped
+  validation of the resulting triples map -- is delegated to the published `ash_r2rml`
+  library (`AshR2RML.Introspection`, `AshR2RML.Mapping`), never hand-rolled here.
   """
+
+  alias AshR2RML.Introspection, as: R2RMLIntrospection
+  alias AshR2RML.Mapping, as: R2RMLMapping
+  alias AshR2RML.Mapping.{PredicateObjectMap, ObjectMap, Resource, SubjectMap}
 
   @rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   @rdfs "http://www.w3.org/2000/01/rdf-schema#"
@@ -129,7 +139,45 @@ defmodule Xaas.Semantics.Registry do
     }
   end
 
-  @doc "Admits a projection only when every semantic IRI belongs to a public namespace."
+  @doc "Builds the published ash_r2rml canonical triples-map IR for an Ash resource."
+  @spec r2rml_mapping(module()) :: {:ok, Resource.t()} | {:error, term()}
+  def r2rml_mapping(resource) when is_atom(resource) do
+    projection = projection(resource)
+
+    with {:ok, logical_table} <- R2RMLIntrospection.logical_table(resource) do
+      predicate_object_maps =
+        Enum.map(projection.attributes, fn attribute ->
+          %PredicateObjectMap{
+            attribute: attribute.ash_name,
+            predicate_iri: attribute.predicate,
+            object_map: %ObjectMap{strategy: :column, value: to_string(attribute.ash_name)}
+          }
+        end)
+
+      mapping = %Resource{
+        ash_resource: resource,
+        logical_table: logical_table,
+        subject_map: subject_map(resource),
+        class_iris: projection.classes,
+        predicate_object_maps: predicate_object_maps,
+        identities: R2RMLIntrospection.identities(resource)
+      }
+
+      {:ok, R2RMLMapping.normalize(mapping)}
+    end
+  end
+
+  defp subject_map(resource) do
+    case Ash.Resource.Info.primary_key(resource) do
+      [single] -> %SubjectMap{strategy: :template, value: "{#{single}}", term_type: :iri}
+      keys -> %SubjectMap{strategy: :template, value: Enum.map_join(keys, "-", &"{#{&1}}"), term_type: :iri}
+    end
+  end
+
+  @doc """
+  Admits a projection only when every semantic IRI belongs to a public namespace and the
+  published `ash_r2rml` library accepts the resulting triples map as structurally sound.
+  """
   @spec admit(module()) :: {:ok, map()} | {:error, term()}
   def admit(resource) when is_atom(resource) do
     projection = projection(resource)
@@ -139,15 +187,26 @@ defmodule Xaas.Semantics.Registry do
         Enum.map(projection.attributes, & &1.predicate) ++
         Enum.map(projection.relationships, & &1.predicate)
 
-    case Enum.find(iris, &(not public_iri?(&1))) do
-      nil -> {:ok, projection}
-      iri -> {:error, {:non_public_ontology_iri, iri}}
+    with nil <- Enum.find(iris, &(not public_iri?(&1))),
+         {:ok, mapping} <- r2rml_mapping(resource),
+         :ok <- R2RMLMapping.validate(mapping) do
+      {:ok, projection}
+    else
+      iri when is_binary(iri) -> {:error, {:non_public_ontology_iri, iri}}
+      {:error, reason} -> {:error, {:r2rml_mapping_refused, resource, reason}}
     end
   rescue
     error -> {:error, {:projection_failed, resource, Exception.message(error)}}
   end
 
-  @doc "Returns a deterministic SHA-256 identity for a complete semantic projection."
+  @doc """
+  Returns a deterministic SHA-256 identity for a complete semantic projection.
+
+  Order-independent by construction: `canonical_projection/1` sorts classes,
+  attributes, and relationships before hashing, so two projections describing the
+  same resource facts in a different enumeration order hash identically. Verified
+  by `test/xaas/semantics/deterministic_projection_hash_test.exs`.
+  """
   @spec hash(map()) :: String.t()
   def hash(projection) when is_map(projection) do
     projection
@@ -170,16 +229,20 @@ defmodule Xaas.Semantics.Registry do
       resource: projection.resource_name,
       classes: Enum.sort(projection.classes),
       attributes:
-        Enum.map(projection.attributes, fn attribute ->
+        projection.attributes
+        |> Enum.map(fn attribute ->
           {to_string(attribute.ash_name), attribute.ash_type, attribute.predicate}
-        end),
+        end)
+        |> Enum.sort(),
       relationships:
-        Enum.map(projection.relationships, fn relationship ->
+        projection.relationships
+        |> Enum.map(fn relationship ->
           {to_string(relationship.ash_name), relationship.destination,
            relationship.source_attribute && to_string(relationship.source_attribute),
            relationship.destination_attribute && to_string(relationship.destination_attribute),
            relationship.predicate}
         end)
+        |> Enum.sort()
     }
   end
 
