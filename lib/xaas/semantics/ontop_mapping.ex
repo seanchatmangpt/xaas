@@ -82,13 +82,17 @@ defmodule Xaas.Semantics.OntopMapping do
   def generated_path, do: Path.join(:code.priv_dir(:kanban), "ontop/xaas-mapping.generated.ttl")
 
   @doc """
-  Renders the real bundle and writes it to `#{@generated_path}`.
+  Renders the real bundle and writes it to `#{@generated_path}` via
+  `GgenIgniter.Actuate.write_file!/3` -- the real, hash-based write-safety guard from
+  `~/ggen_igniter` (path dep, see `mix.exs`): a byte-identical rewrite is a genuine
+  `:unchanged` no-op (no mtime churn, no spurious `ggen sync`/git diff on an unchanged
+  ontology), rather than this module hand-rolling that idempotency check itself.
 
   Fails closed: any resource that could not be mapped (see `bundle/0`) causes this to
   return `{:error, {:unmapped_resources, failures}}` rather than writing a silently
   incomplete file.
   """
-  @spec write!() :: {:ok, String.t()} | {:error, term()}
+  @spec write!() :: {:ok, String.t(), GgenIgniter.Actuate.outcome()} | {:error, term()}
   def write! do
     case render() do
       {:ok, _turtle, [_ | _] = failures} ->
@@ -96,9 +100,8 @@ defmodule Xaas.Semantics.OntopMapping do
 
       {:ok, turtle, []} ->
         path = generated_path()
-        File.mkdir_p!(Path.dirname(path))
-        File.write!(path, turtle)
-        {:ok, path}
+        {:ok, outcome} = GgenIgniter.Actuate.write_file!(path, turtle)
+        {:ok, path, outcome}
 
       {:error, reason} ->
         {:error, reason}

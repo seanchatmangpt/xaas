@@ -24,8 +24,11 @@ defmodule Mix.Tasks.Xaas.RenderR2rmlMapping do
     Mix.Task.run("app.start")
 
     case Xaas.Semantics.OntopMapping.write!() do
-      {:ok, path} ->
-        Mix.shell().info("Wrote real R2RML mapping to #{path}")
+      {:ok, path, :unchanged} ->
+        Mix.shell().info("R2RML mapping at #{path} already byte-identical (no write)")
+
+      {:ok, path, outcome} ->
+        Mix.shell().info("Wrote real R2RML mapping to #{path} (#{outcome})")
 
       {:error, {:unmapped_resources, failures}} ->
         Mix.shell().error("Refused to write an incomplete R2RML mapping. Unmapped resources:")

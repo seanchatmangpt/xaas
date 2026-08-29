@@ -58,12 +58,15 @@ defmodule Kanban.MixProject do
       # narrower guess) would not compile against the real resource files.
       {:ash, "~> 3.0"},
       {:ash_postgres, "~> 2.0"},
+      # Published hex.pm release only -- never a local path dependency.
+      {:ash_r2rml, "~> 26.8"},
       {:opentelemetry_ash, "~> 0.1"},
-      # ash_ai's transitive dep req_llm fails to compile against the resolved
-      # finch version (real: %Finch.Pool{}/pool_tag mismatch, confirmed via
-      # a real mix compile error) -- dropped; zero real resource files
-      # under lib/xaas/{operations,governance,billing,platform,accounts,
-      # ledger} reference AshAi (confirmed via grep).
+      # Re-added 2026-08-26 to retest whether the ash_ai/req_llm/Finch conflict
+      # is stale: mix.lock already resolved ash_ai 0.8.2 / finch 0.23.0 /
+      # req_llm 1.20.0 with no active :ash_ai dependency line, and
+      # chatgpt-cloud-elixir's control-plane compiles cleanly with the nearly
+      # identical finch 0.23.0 / req_llm 1.21.0 / ash_ai 0.8.2 combination.
+      {:ash_ai, "~> 0.8"},
       {:ash_onetime, "~> 1.0"},
       {:ash_iam, "~> 2.0"},
       {:hammer, "~> 7.0"},
@@ -102,8 +105,26 @@ defmodule Kanban.MixProject do
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
       # assertions in KanbanWeb.AutofdeLab.StatusLiveTest need it).
       {:lazy_html, ">= 0.1.0", only: :test},
-      {:sourceror, "~> 1.8", only: [:dev, :test]},
-      {:igniter, "~> 0.6", only: [:dev, :test]},
+      # Real fix, same pattern as the igniter bump above: ex_ast (transitive
+      # via ggen_igniter -> igniter 0.8) requires sourceror unrestricted by
+      # env (~> 1.7, no :only) -- confirmed via real `mix deps.get` resolver
+      # error. Dropped :only to match.
+      {:sourceror, "~> 1.8"},
+      # Real fix: ggen_igniter (added below) requires igniter unrestricted by
+      # env (~> 0.8, no :only) -- confirmed via real `mix deps.get` resolver
+      # error ("does not match the :only option calculated for... Remove the
+      # :only restriction"). Bumped 0.6 -> 0.8 and dropped :only to match.
+      {:igniter, "~> 0.8"},
+      # Real local path dep -- ~/ggen_igniter (v26.8.28), the Elixir-native
+      # ontology-to-code pipeline port (Ontology.load! -> Engine.run ->
+      # Render.render -> Actuate.write_file!) sibling project to xaas and
+      # ash_r2rml. Not yet published to hex.pm (confirmed: no hex.pm fetch
+      # possible at pin time), so pinned by path, not version, same
+      # disclosed-exception pattern as other local-sibling deps in this repo.
+      # Used for its real write-safety/idempotency actuation guards
+      # (Actuate.write_file!/3's hash-based no-op detection) on the R2RML
+      # mapping render output -- see Xaas.Semantics.OntopMapping.write!/0.
+      {:ggen_igniter, path: "../ggen_igniter"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},

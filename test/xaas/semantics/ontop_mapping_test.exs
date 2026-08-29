@@ -41,10 +41,22 @@ defmodule Xaas.Semantics.OntopMappingTest do
   end
 
   test "write!/0 writes a real file whose content matches render/0's real output" do
-    assert {:ok, path} = Xaas.Semantics.OntopMapping.write!()
+    assert {:ok, path, outcome} = Xaas.Semantics.OntopMapping.write!()
+    assert outcome in [:written, :unchanged]
     assert {:ok, expected_turtle, []} = Xaas.Semantics.OntopMapping.render()
 
     assert File.read!(path) == expected_turtle
+  end
+
+  test "write!/0 is a real idempotent no-op on a byte-identical rewrite, via GgenIgniter.Actuate's hash guard" do
+    assert {:ok, path, first_outcome} = Xaas.Semantics.OntopMapping.write!()
+    assert first_outcome in [:written, :unchanged]
+    {:ok, mtime_before} = File.stat(path, time: :posix) |> then(fn {:ok, s} -> {:ok, s.mtime} end)
+
+    assert {:ok, ^path, :unchanged} = Xaas.Semantics.OntopMapping.write!()
+    {:ok, mtime_after} = File.stat(path, time: :posix) |> then(fn {:ok, s} -> {:ok, s.mtime} end)
+
+    assert mtime_before == mtime_after
   end
 
   test "the generated mapping's Provider triples map matches Xaas.Semantics.Registry.r2rml_mapping/1's own admitted mapping" do
