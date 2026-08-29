@@ -4,10 +4,13 @@ defmodule Xaas.Marketplace.Provider do
 
   The resource remains ordinary Ash CRUD for descriptive metadata, but provider
   lifecycle status is consequential state. Status transitions therefore have a
-  separate internal `:actuate_status` action guarded by
-  `Xaas.Actuation.Validations.ReactorContext`. There is no JSON:API route for that
-  action and `authorize?: false` alone cannot bypass the validation: the action
-  requires a live intent/receipt context manufactured by `Xaas.Actuation.Reactor`.
+  separate internal `:actuate_status` action guarded by two independent checks:
+  `Xaas.Actuation.Validations.ReactorContext` (authority -- was this actuated by an
+  admitted `Ash.Reactor` intent/receipt) and `Xaas.Marketplace.Validations.ProviderStatusTransition`
+  (structural validity -- is `pending -> active -> suspended -> active` the real,
+  declared `AshStateMachine` graph below, not an arbitrary status jump). There is no
+  JSON:API route for that action and `authorize?: false` alone cannot bypass either
+  check.
 
   Like every `Xaas.Resource`, this resource is also projected onto public
   ontologies by `Xaas.Semantics.Registry`; the semantic projection hash is bound
@@ -19,10 +22,28 @@ defmodule Xaas.Marketplace.Provider do
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshTypescript.Resource, AshStateMachine]
 
   typescript do
     type_name "MarketplaceProvider"
+  end
+
+  # Declares the real, only-valid provider lifecycle graph. AshStateMachine's own
+  # built-in `transition_state/1` change can't validate `:actuate_status`'s
+  # freely-accepted `:status` attribute (it requires a compile-time-fixed target), so
+  # this graph is enforced instead by
+  # Xaas.Marketplace.Validations.ProviderStatusTransition, which reads it back via
+  # AshStateMachine.Info.state_machine_transitions/2 rather than duplicating it.
+  state_machine do
+    initial_states([:pending])
+    default_initial_state(:pending)
+    state_attribute(:status)
+
+    transitions do
+      transition(:actuate_status, from: :pending, to: :active)
+      transition(:actuate_status, from: :active, to: :suspended)
+      transition(:actuate_status, from: :suspended, to: :active)
+    end
   end
 
   policies do
@@ -85,6 +106,7 @@ defmodule Xaas.Marketplace.Provider do
       accept [:status]
       require_atomic? false
       validate Xaas.Actuation.Validations.ReactorContext
+      validate Xaas.Marketplace.Validations.ProviderStatusTransition
     end
   end
 

@@ -64,6 +64,70 @@ defmodule Xaas.Marketplace.ProviderTest do
     assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :pending
   end
 
+  # Real, disclosed change this session: Xaas.Marketplace.Provider gained a real
+  # AshStateMachine `state_machine do transitions do ... end end` declaration
+  # (pending -> active -> suspended -> active) enforced by the new
+  # Xaas.Marketplace.Validations.ProviderStatusTransition validation (see that
+  # module's moduledoc for why AshStateMachine's own built-in `transition_state/1`
+  # change can't be used directly here). These two tests exercise it through the
+  # real Reactor actuation boundary -- Xaas.Actuation.run/4, same as
+  # test/xaas/actuation_test.exs -- rather than a bare `authorize?: false` update,
+  # so a real admitted intent/receipt context is present and the failure being
+  # asserted is genuinely the transition-graph validation, not ReactorContext.
+  test "an undeclared status transition (pending -> suspended, skipping active) is really refused" do
+    provider =
+      create!(%{
+        name: "Skip Co",
+        slug: "skip-co-#{System.unique_integer([:positive])}",
+        org_id: "org-skip"
+      })
+
+    assert {:error, %Ash.Error.Invalid{} = error} =
+             Xaas.Actuation.run(
+               Provider,
+               :actuate_status,
+               %{status: :suspended},
+               subject_id: provider.id,
+               idempotency_key: "provider-status-transition-test-#{System.unique_integer([:positive])}",
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "provider_test"}
+             )
+
+    assert Exception.message(error) =~ "invalid provider status transition"
+    assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :pending
+  end
+
+  test "the real declared transition graph (pending -> active -> suspended -> active) is admitted" do
+    provider =
+      create!(%{
+        name: "Graph Co",
+        slug: "graph-co-#{System.unique_integer([:positive])}",
+        org_id: "org-graph"
+      })
+
+    key_prefix = "provider-status-transition-graph-test-#{System.unique_integer([:positive])}"
+
+    assert {:ok, %{status: :succeeded}} =
+             Xaas.Actuation.run(Provider, :actuate_status, %{status: :active},
+               subject_id: provider.id,
+               idempotency_key: "#{key_prefix}-1",
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "provider_test"}
+             )
+
+    assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :active
+
+    assert {:ok, %{status: :succeeded}} =
+             Xaas.Actuation.run(Provider, :actuate_status, %{status: :suspended},
+               subject_id: provider.id,
+               idempotency_key: "#{key_prefix}-2",
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "provider_test"}
+             )
+
+    assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :suspended
+  end
+
   # Real, disclosed change this session: the `AshIam` pilot on this
   # resource was removed (see `Xaas.Marketplace.Provider`'s own moduledoc
   # "AshIam read pilot -- removed this session" section for the real,
