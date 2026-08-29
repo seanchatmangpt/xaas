@@ -270,11 +270,18 @@ defmodule Xaas.SparqlBridge do
   @doc """
   Write the real Turtle serialization (all three classes) to a file on disk.
   Returns the path.
+
+  Writes via `GgenIgniter.Actuate.write_file!/3` (same real hash-guarded write-safety
+  used by `Xaas.Semantics.OntopMapping.write!/0`) so a snapshot taken when nothing has
+  actually changed since the last write is a genuine `:unchanged` no-op rather than an
+  unconditional overwrite -- creates the parent directory first since, unlike
+  `ontop_mapping.ex`'s fixed `priv/ontop/` target, this path is caller-supplied.
   """
   @spec write_turtle(String.t()) :: {:ok, String.t()}
   def write_turtle(path \\ "priv/autofde_monitor.ttl") do
     turtle = to_turtle()
-    File.write!(path, turtle)
+    File.mkdir_p!(Path.dirname(path))
+    {:ok, _outcome} = GgenIgniter.Actuate.write_file!(path, turtle)
     {:ok, path}
   end
 end
