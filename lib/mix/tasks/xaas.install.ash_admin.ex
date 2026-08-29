@@ -15,8 +15,13 @@ if Code.ensure_loaded?(Igniter) do
 
     Modeled directly on `~/ash_r2rml`'s `ash_r2rml.install.ex` installer: same
     `Spark.Igniter.add_extension/6` call shape (swapping `Ash.Resource`/`AshR2RML.Resource` for
-    `Ash.Domain`/`AshAdmin.Domain`), same idempotent `Igniter.Code.Pattern.move_to/2` check before
-    inserting the starter DSL block.
+    `Ash.Domain`/`AshAdmin.Domain`). The `admin do show? true end` block itself is set via
+    `Spark.Igniter.set_option/5` -- a real, structured DSL-section-option setter Spark itself
+    provides (`Spark.Igniter.set_option(igniter, module, [:admin, :show?], true)` creates the
+    `admin do ... end` section if absent and sets `show?` inside it, both idempotently) -- rather
+    than templating the block as raw source text via `Igniter.Code.Common.add_code/3`. An
+    adversarial review flagged the raw-text approach as fragile against formatting/indentation
+    drift that the zipper-based DSL setter is specifically built to avoid.
 
     ## Usage
 
@@ -59,37 +64,8 @@ if Code.ensure_loaded?(Igniter) do
 
           igniter
           |> Spark.Igniter.add_extension(target_module, Ash.Domain, :extensions, AshAdmin.Domain)
-          |> add_starter_admin_block(target_module)
+          |> Spark.Igniter.set_option(target_module, [:admin, :show?], true)
       end
-    end
-
-    # Idempotent: uses Igniter.Code.Pattern.move_to/2 (ExAST) to search the module body for an
-    # existing `admin do ... end` block first, so re-running against an already-patched domain
-    # does not insert a second, duplicate block -- same pattern as ash_r2rml.install.ex's
-    # add_starter_dsl_block/2.
-    defp add_starter_admin_block(igniter, target_module) do
-      Igniter.Project.Module.find_and_update_module!(igniter, target_module, fn zipper ->
-        if match?({:ok, _}, Igniter.Code.Pattern.move_to(zipper, "admin do ... end")) do
-          {:ok, zipper}
-        else
-          case Igniter.Code.Module.move_to_use(zipper, Ash.Domain) do
-            {:ok, use_zipper} ->
-              {:ok,
-               Igniter.Code.Common.add_code(
-                 use_zipper,
-                 """
-                 admin do
-                   show? true
-                 end
-                 """,
-                 placement: :after
-               )}
-
-            :error ->
-              {:ok, zipper}
-          end
-        end
-      end)
     end
   end
 else

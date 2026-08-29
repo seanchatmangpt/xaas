@@ -3,14 +3,20 @@ defmodule Xaas.Marketplace.Provider do
   Marketplace provider projection and customer-visible listing.
 
   The resource remains ordinary Ash CRUD for descriptive metadata, but provider
-  lifecycle status is consequential state. Status transitions therefore have a
-  separate internal `:actuate_status` action guarded by two independent checks:
-  `Xaas.Actuation.Validations.ReactorContext` (authority -- was this actuated by an
-  admitted `Ash.Reactor` intent/receipt) and `Xaas.Marketplace.Validations.ProviderStatusTransition`
-  (structural validity -- is `pending -> active -> suspended -> active` the real,
-  declared `AshStateMachine` graph below, not an arbitrary status jump). There is no
-  JSON:API route for that action and `authorize?: false` alone cannot bypass either
-  check.
+  lifecycle status is consequential state. Status transitions therefore have three
+  separate internal per-transition actions (`:activate`, `:suspend`, `:reactivate`),
+  each guarded by `Xaas.Actuation.Validations.ReactorContext` (authority -- was this
+  actuated by an admitted `Ash.Reactor` intent/receipt) and each using
+  `AshStateMachine`'s own built-in `transition_state/1` change, which refuses any
+  transition not declared in the `state_machine` block below for free -- no custom
+  structural-validity validation needed (an earlier version of this resource had one,
+  `Xaas.Marketplace.Validations.ProviderStatusTransition`; an adversarial review found
+  it existed only because status mutation had been modeled as one polymorphic action
+  instead of one action per real target state, the idiomatic `AshStateMachine` shape
+  already used elsewhere in this repo by
+  `Xaas.Governance.ApprovalEnvironmentPromote`'s `:approve`/`:reject`). There is no
+  JSON:API route for any of these three actions and `authorize?: false` alone cannot
+  bypass either check.
 
   Like every `Xaas.Resource`, this resource is also projected onto public
   ontologies by `Xaas.Semantics.Registry`; the semantic projection hash is bound
@@ -28,21 +34,22 @@ defmodule Xaas.Marketplace.Provider do
     type_name "MarketplaceProvider"
   end
 
-  # Declares the real, only-valid provider lifecycle graph. AshStateMachine's own
-  # built-in `transition_state/1` change can't validate `:actuate_status`'s
-  # freely-accepted `:status` attribute (it requires a compile-time-fixed target), so
-  # this graph is enforced instead by
-  # Xaas.Marketplace.Validations.ProviderStatusTransition, which reads it back via
-  # AshStateMachine.Info.state_machine_transitions/2 rather than duplicating it.
+  # Declares the real, only-valid provider lifecycle graph, one action per real target
+  # state -- the idiomatic AshStateMachine shape (see
+  # Xaas.Governance.ApprovalEnvironmentPromote's :approve/:reject for the same pattern
+  # in this repo). Each action's `change transition_state(:target)` below enforces
+  # this graph for free via AshStateMachine.BuiltinChanges.TransitionState, which
+  # internally calls AshStateMachine.Info.state_machine_transitions/2 -- no hand-written
+  # validation needed.
   state_machine do
     initial_states([:pending])
     default_initial_state(:pending)
     state_attribute(:status)
 
     transitions do
-      transition(:actuate_status, from: :pending, to: :active)
-      transition(:actuate_status, from: :active, to: :suspended)
-      transition(:actuate_status, from: :suspended, to: :active)
+      transition(:activate, from: :pending, to: :active)
+      transition(:suspend, from: :active, to: :suspended)
+      transition(:reactivate, from: :suspended, to: :active)
     end
   end
 
@@ -101,12 +108,25 @@ defmodule Xaas.Marketplace.Provider do
       require_atomic? false
     end
 
-    update :actuate_status do
+    update :activate do
       public? false
-      accept [:status]
       require_atomic? false
       validate Xaas.Actuation.Validations.ReactorContext
-      validate Xaas.Marketplace.Validations.ProviderStatusTransition
+      change transition_state(:active)
+    end
+
+    update :suspend do
+      public? false
+      require_atomic? false
+      validate Xaas.Actuation.Validations.ReactorContext
+      change transition_state(:suspended)
+    end
+
+    update :reactivate do
+      public? false
+      require_atomic? false
+      validate Xaas.Actuation.Validations.ReactorContext
+      change transition_state(:active)
     end
   end
 

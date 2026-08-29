@@ -30,20 +30,40 @@ defmodule Xaas.Marketplace.Changes.ApplyProviderStatusChange do
         requested_status: to_string(record.requested_status)
       }
 
-      case Xaas.Actuation.run(
-             Provider,
-             :actuate_status,
-             %{status: record.requested_status},
-             subject_id: record.provider_id,
-             idempotency_key: "approval-provider-status-change:#{record.id}",
-             authorize?: false,
-             authority: authority
-           ) do
-        {:ok, _receipt_envelope} -> {:ok, record}
+      current = Ash.get!(Provider, record.provider_id, authorize?: false)
+
+      with {:ok, action} <- target_action(current.status, record.requested_status),
+           {:ok, _receipt_envelope} <-
+             Xaas.Actuation.run(
+               Provider,
+               action,
+               %{},
+               subject_id: record.provider_id,
+               idempotency_key: "approval-provider-status-change:#{record.id}",
+               authorize?: false,
+               authority: authority
+             ) do
+        {:ok, record}
+      else
         {:error, reason} -> {:error, reason}
       end
     end)
   end
+
+  # Provider's :status lifecycle is one AshStateMachine action per real target state
+  # (see Xaas.Marketplace.Provider's state_machine block); a real, live current status
+  # read is required to pick the right one, since `:active` is reachable from both
+  # `:pending` (via `:activate`) and `:suspended` (via `:reactivate`), and
+  # ApprovalProviderStatusChange itself carries no "previous status" field. An
+  # unmapped (current, requested) pair refuses explicitly here rather than crashing or
+  # guessing -- AshStateMachine's own transition_state/1 change is a second,
+  # redundant safety net underneath this for any pair this mapping did admit.
+  defp target_action(:pending, :active), do: {:ok, :activate}
+  defp target_action(:suspended, :active), do: {:ok, :reactivate}
+  defp target_action(:active, :suspended), do: {:ok, :suspend}
+
+  defp target_action(current, requested),
+    do: {:error, {:no_such_provider_status_transition, current, requested}}
 
   defp stringify(nil), do: nil
   defp stringify(value) when is_binary(value), do: value

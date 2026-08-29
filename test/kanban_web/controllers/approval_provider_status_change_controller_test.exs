@@ -27,14 +27,21 @@ defmodule KanbanWeb.ApprovalProviderStatusChangeControllerTest do
   end
 
   defp create_provider!(org_id, status) do
+    # `status` is intentionally absent from Provider's public :create accept
+    # list -- lifecycle status is consequential state that must flow through
+    # the real Reactor-actuated per-transition actions (:activate/:suspend/
+    # :reactivate). For fixture setup
+    # here we only need the *precondition* row state, not to exercise that
+    # actuation path, so seed the status directly the same way this repo's
+    # other Chicago-style tests seed precondition state (Ash.Seed.seed!).
     Provider
     |> Ash.Changeset.for_create(:create, %{
       name: "Test Provider",
       slug: "provider-#{System.unique_integer([:positive])}",
-      org_id: org_id,
-      status: status
+      org_id: org_id
     })
     |> Ash.create!(authorize?: false)
+    |> Ash.Seed.update!(%{status: status}, authorize?: false)
   end
 
   defp json_headers(conn, org_id) do

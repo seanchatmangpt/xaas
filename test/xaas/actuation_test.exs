@@ -50,14 +50,14 @@ defmodule Xaas.ActuationTest do
 
     assert {:error, %Ash.Error.Invalid{}} =
              provider
-             |> Ash.Changeset.for_update(:actuate_status, %{status: :active})
+             |> Ash.Changeset.for_update(:activate, %{})
              |> Ash.update(authorize?: false)
 
     assert {:ok, first} =
              Xaas.Actuation.run(
                Provider,
-               :actuate_status,
-               %{status: :active},
+               :activate,
+               %{},
                subject_id: provider.id,
                idempotency_key: key,
                authorize?: false,
@@ -79,8 +79,8 @@ defmodule Xaas.ActuationTest do
     assert {:ok, replay} =
              Xaas.Actuation.run(
                Provider,
-               :actuate_status,
-               %{status: :active},
+               :activate,
+               %{},
                subject_id: provider.id,
                idempotency_key: key,
                authorize?: false,
@@ -100,8 +100,8 @@ defmodule Xaas.ActuationTest do
     assert {:ok, %{status: :succeeded}} =
              Xaas.Actuation.run(
                Provider,
-               :actuate_status,
-               %{status: :active},
+               :activate,
+               %{},
                subject_id: provider.id,
                idempotency_key: key,
                authorize?: false,
@@ -111,8 +111,8 @@ defmodule Xaas.ActuationTest do
     assert {:error, {:idempotency_conflict, ^key}} =
              Xaas.Actuation.run(
                Provider,
-               :actuate_status,
-               %{status: :suspended},
+               :suspend,
+               %{},
                subject_id: provider.id,
                idempotency_key: key,
                authorize?: false,

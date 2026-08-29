@@ -54,8 +54,8 @@ defmodule Xaas.ActuationReceiptTamperTest do
     assert {:ok, first} =
              Xaas.Actuation.run(
                Provider,
-               :actuate_status,
-               %{status: :active},
+               :activate,
+               %{},
                subject_id: provider.id,
                idempotency_key: key,
                authorize?: false,
@@ -77,8 +77,8 @@ defmodule Xaas.ActuationReceiptTamperTest do
     assert {:ok, replay} =
              Xaas.Actuation.run(
                Provider,
-               :actuate_status,
-               %{status: :active},
+               :activate,
+               %{},
                subject_id: provider.id,
                idempotency_key: key,
                authorize?: false,
