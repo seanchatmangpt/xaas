@@ -115,16 +115,16 @@ defmodule Kanban.MixProject do
       # error ("does not match the :only option calculated for... Remove the
       # :only restriction"). Bumped 0.6 -> 0.8 and dropped :only to match.
       {:igniter, "~> 0.8"},
-      # Real local path dep -- ~/ggen_igniter (v26.8.28), the Elixir-native
-      # ontology-to-code pipeline port (Ontology.load! -> Engine.run ->
-      # Render.render -> Actuate.write_file!) sibling project to xaas and
-      # ash_r2rml. Not yet published to hex.pm (confirmed: no hex.pm fetch
-      # possible at pin time), so pinned by path, not version, same
-      # disclosed-exception pattern as other local-sibling deps in this repo.
-      # Used for its real write-safety/idempotency actuation guards
+      # Published hex.pm release (first-ever publish was v26.8.30, confirmed
+      # live via https://hex.pm/packages/ggen_igniter/26.8.30) -- switched off
+      # the earlier local `path: "../ggen_igniter"` pin now that a real,
+      # reproducible registry version exists, same "published release only,
+      # never a local path dependency" convention as ash_r2rml above. Used
+      # for its real write-safety/idempotency actuation guards
       # (Actuate.write_file!/3's hash-based no-op detection) on the R2RML
-      # mapping render output -- see Xaas.Semantics.OntopMapping.write!/0.
-      {:ggen_igniter, path: "../ggen_igniter"},
+      # mapping render output -- see Xaas.Semantics.OntopMapping.write!/0 and
+      # Xaas.SparqlBridge.write_turtle/1.
+      {:ggen_igniter, "~> 26.8"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},
