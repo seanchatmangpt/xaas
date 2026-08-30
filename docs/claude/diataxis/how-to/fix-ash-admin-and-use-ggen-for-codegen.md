@@ -240,6 +240,36 @@ project -- migrating that specific template stays blocked on a real, external, c
 unreleased upstream dependency, not on template-body Tera-vs-EEx syntax (which this proof
 confirms is not the actual blocker it was previously assumed to be).
 
+### Real N-way fan-out from one invocation (`--for-each`)
+
+`templates-hooks/queries/render_targets.rq` (the same real query, extracted to a reusable
+file) + `templates-hooks/render-target-audit.eex` prove the actual lever behind
+"experimentation/generation throughput" for this pipeline: **one command, N independent
+output files, one per ontology row** -- not N hand-run commands.
+
+```bash
+mix ggen_igniter.sync \
+  --ontology ontology.ttl \
+  --query results=templates-hooks/queries/render_targets.rq \
+  --for-each results \
+  --template templates-hooks/render-target-audit.eex \
+  --out ".ggen-igniter-audit/<%= moduleName %>.md"
+```
+
+Real, executed result: **44 real files written in one invocation** (this project's real,
+current `xar:RenderTarget` count -- confirmed identical to the `44` the single-shot proof
+above also reports for the same query), each with correct real per-row content (module name,
+domain, the real `mix ash.gen.resource` command it would run). Re-running is a real,
+confirmed no-op across all 44 (`summary: unchanged`) -- the same hash-guard from
+`GgenIgniter.Actuate` applies per-row under `--for-each`, not just to a single static
+`--out` path.
+
+This is the concrete shape a real "many candidate implementations from one ontology-driven
+spec" workflow takes today: add a new `xar:RenderTarget` (or any other admitted ontology
+class) row, re-run the same one command, get one new real file back -- no template or CLI
+invocation changes per new row. The fan-out mechanism itself, not any specific execution
+speed, is the real leverage this section demonstrates.
+
 ## See Also
 
 - `docs/ASH-MIGRATION-PLAN.md` — the full real migration history: Phases 0-7 execution log,

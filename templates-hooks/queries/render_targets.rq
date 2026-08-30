@@ -1,0 +1,6 @@
+PREFIX xar: <https://ggen.io/ontology/xaas-ash-render#>
+SELECT ?moduleName ?domainModule WHERE {
+  ?t a xar:RenderTarget ;
+     xar:moduleName ?moduleName ;
+     xar:domainModule ?domainModule .
+}
