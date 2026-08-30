@@ -1,0 +1,20 @@
+---
+to: GGEN-SH-AFTER-PROOF-EEX.txt
+skip_empty: false
+sparql:
+  results: |
+    PREFIX xar: <https://ggen.io/ontology/xaas-ash-render#>
+    SELECT ?moduleName WHERE { ?t a xar:RenderTarget ; xar:moduleName ?moduleName . }
+---
+real capability count from ontology: <%= length(results) %>
+generated via: mix ggen_igniter.sync (pure Elixir, GgenIgniter.Query.Oxigraph -- no Rust `ggen` CLI binary)
+
+Real, disclosed limit found while porting this template: the pinned
+ggen_igniter dependency in this project (26.8.30, see mix.lock) predates
+`sh_after`/`--allow-sh` support entirely (confirmed by grep against the
+real checked-out deps/ggen_igniter source -- zero matches; that feature
+only exists in the newer, unpublished ~/ggen_igniter source tree, not yet
+released to a hex version this project has pulled in). This EEx port
+therefore proves parity for the SPARQL -> render -> write leg only;
+compile-proof.txt.tmpl's real sh_after (`mix compile`) step has no
+ggen_igniter equivalent runnable from this project today.

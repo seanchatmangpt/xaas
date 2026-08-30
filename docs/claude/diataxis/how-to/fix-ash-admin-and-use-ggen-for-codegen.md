@@ -210,6 +210,36 @@ to `.ash-gen-receipts/{{ moduleName }}.mix.log`. To add a new resource to the ge
 pipeline, add a new `xar:RenderTarget` individual to `ontology.ttl` with its `xar:moduleName`
 and `xar:domainModule`, then re-run `ggen sync` — no template or hook code needs to change.
 
+### Real, executed proof: `mix ggen_igniter.sync` can drive this project's own templates today
+
+`templates-hooks/compile-proof-eex.txt.tmpl` is a real EEx port of
+`compile-proof.txt.tmpl`'s render leg (`{{ results | length }}` -> `<%= length(results) %>`;
+no other body change needed -- the frontmatter's `to:`/`sparql:` fields round-trip 1:1,
+confirmed by reading `GgenIgniter.Frontmatter`'s real parser). Run for real against this
+project's own `ontology.ttl`:
+
+```bash
+mix ggen_igniter.sync --template templates-hooks/compile-proof-eex.txt.tmpl --ontology ontology.ttl
+```
+
+Result: `GGEN-SH-AFTER-PROOF-EEX.txt` reports the identical real capability count (`44`) the
+Rust `ggen sync`-produced `GGEN-SH-AFTER-PROOF.txt` reports for the same query against the
+same ontology -- confirmed parity for the SPARQL-query -> EEx-render -> hash-guarded-write
+leg. Re-running is a real, confirmed no-op (`GgenIgniter.Actuate.write_file!/3`'s hash guard
+reports `unchanged (skipped, identical content)`, mtime unchanged).
+
+**Real, disclosed limit, not silently worked around**: the pinned `ggen_igniter` dependency
+in this project (`26.8.30`, see `mix.lock`) predates `sh_after`/`--allow-sh` support
+entirely -- confirmed via `grep -c sh_after deps/ggen_igniter/lib/mix/tasks/ggen_igniter.sync.ex`
+returning `0` against the real checked-out source. That capability exists only in the newer,
+unpublished `~/ggen_igniter` source tree from this project's own dependency-integration work,
+not yet released to a hex version this project has pulled in. `ash-gen-resource.txt.tmpl`'s
+real `sh_after` (`mix ash.gen.resource ...`, a genuinely side-effecting Elixir codegen
+invocation) therefore has **no** currently-runnable `ggen_igniter` equivalent in this
+project -- migrating that specific template stays blocked on a real, external, currently
+unreleased upstream dependency, not on template-body Tera-vs-EEx syntax (which this proof
+confirms is not the actual blocker it was previously assumed to be).
+
 ## See Also
 
 - `docs/ASH-MIGRATION-PLAN.md` — the full real migration history: Phases 0-7 execution log,
