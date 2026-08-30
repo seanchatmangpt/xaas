@@ -35,8 +35,23 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
      real OCEL 2.0 JSON event schema, not a bespoke shape) whose `vmap`
      is enriched with real facts pulled via `Ash.Resource.Info` off the
      real `resource` module in the event metadata: `short_name/1`,
-     `description/1`, and the real count of `public_attributes/1` --
+     `description/1`, the real count of `public_attributes/1`, and the
+     real list of declared relationship types (`relationships/1`) --
      genuine introspection, not copied/duplicated telemetry fields.
+
+     Real, disclosed limit (found while investigating
+     `docs/claude/diataxis/explanation/ocel-beam4pm-compatibility.md`'s
+     `ocel:omap` compatibility gap): the `declared_relationship_types`
+     vmap field names the resource's *possible* relationship shapes from
+     its compiled DSL, never confirmed *instance* data -- Ash's own
+     `:stop` telemetry metadata does not carry the changeset or result
+     (confirmed by reading `deps/ash/lib/ash/actions/create/create.ex`:
+     the metadata closure is built before `do_run/4` executes), so this
+     module genuinely cannot tell which declared relationship, if any,
+     a specific action instance actually touched. Emitting these as real
+     `ocel:omap` object references would misrepresent unconfirmed schema
+     shape as confirmed instance participation, so they stay in `vmap`
+     only, under a name that says what they are.
   2. Appends it as one line to a real, durable OCEL v2 log file
      (`priv/ocel/ash-actions.ndjson`, newline-delimited JSON, one real
      record per real Ash action execution).
@@ -122,15 +137,16 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
 
     # Real Ash introspection -- genuinely queries the resource module's
     # own compiled DSL state, not a copy of what telemetry already gave us.
-    {resource_short_name, description, public_attribute_count} =
+    {resource_short_name, description, public_attribute_count, declared_relationship_types} =
       if resource && Ash.Resource.Info.resource?(resource) do
         {
           Ash.Resource.Info.short_name(resource),
           Ash.Resource.Info.description(resource),
-          resource |> Ash.Resource.Info.public_attributes() |> length()
+          resource |> Ash.Resource.Info.public_attributes() |> length(),
+          declared_relationship_types(resource)
         }
       else
-        {metadata[:resource_short_name], nil, nil}
+        {metadata[:resource_short_name], nil, nil, []}
       end
 
     duration_ms =
@@ -153,9 +169,34 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
         "outcome" => to_string(outcome),
         "authorize?" => metadata[:authorize?],
         "actor_present?" => not is_nil(metadata[:actor]),
-        "duration_ms" => duration_ms
+        "duration_ms" => duration_ms,
+        "declared_relationship_types" => declared_relationship_types
       }
     }
+  end
+
+  # Real, but deliberately schema-level: enumerates the resource's declared
+  # DSL relationships (Ash.Resource.Info.relationships/1, a real compiled-DSL
+  # read, not a guess). This is NOT evidence any particular relationship was
+  # actually touched by this action instance -- that would require the real
+  # changeset/result, which Ash's own telemetry `:stop` metadata does not
+  # carry (confirmed by reading deps/ash/lib/ash/actions/create/create.ex:
+  # the metadata closure is built before `do_run/4` executes, so the
+  # changeset/result are never merged into it -- an upstream constraint of
+  # Ash's telemetry span, not an unbuilt feature here). Emitting these
+  # declared types as real ocel:omap object-instance references would be
+  # dishonest (they name possible relationship shapes, not confirmed
+  # instances), so they are surfaced here as vmap enrichment only, clearly
+  # labeled by field name. See
+  # docs/claude/diataxis/explanation/ocel-beam4pm-compatibility.md for the
+  # real, disclosed gap this leaves for a beam4pm-style consumer wanting
+  # real OcelObject/OcelRelationship instance data.
+  defp declared_relationship_types(resource) do
+    resource
+    |> Ash.Resource.Info.relationships()
+    |> Enum.map(fn relationship ->
+      "#{relationship.name}:#{relationship.type}->#{Ash.Resource.Info.short_name(relationship.destination)}"
+    end)
   end
 
   defp append_ocel_event!(event) do
@@ -176,13 +217,21 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
       attrs =
         vmap
         |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-        |> Map.new(fn {k, v} -> {"ocel.#{k}", to_string(v)} end)
+        |> Map.new(fn {k, v} -> {"ocel.#{k}", otel_attribute_value(v)} end)
         |> Map.put("ocel.eid", event["ocel:eid"])
         |> Map.put("ocel.activity", event["ocel:activity"])
 
       OpenTelemetry.Tracer.set_attributes(attrs)
     end
   end
+
+  # `to_string/1` raises on a non-empty list of binaries (not a charlist),
+  # which `declared_relationship_types` now puts into vmap -- a real bug
+  # this introduces if left unhandled. Real OTel span attributes accept
+  # list-of-string values directly, so a list is passed through as-is
+  # rather than joined/stringified.
+  defp otel_attribute_value(v) when is_list(v), do: v
+  defp otel_attribute_value(v), do: to_string(v)
 
   @doc "Real path of the OCEL v2 log this module writes -- exposed for tests."
   def log_path, do: @log_path
