@@ -60,7 +60,7 @@ defmodule Xaas.Actuation do
         envelope
 
       {:error, reason} ->
-        Ash.DataLayer.rollback(resources, {:reactor_failed, reason})
+        Ash.DataLayer.rollback(resources, unwrap_reactor_error(reason))
 
       {:halted, reactor} ->
         Ash.DataLayer.rollback(resources, {:reactor_halted, reactor.state})
@@ -69,6 +69,14 @@ defmodule Xaas.Actuation do
         Ash.DataLayer.rollback(resources, {:unexpected_reactor_result, other})
     end
   end
+
+  # Reactor wraps a step's own `{:error, reason}` return in
+  # `%Reactor.Error.Invalid{errors: [%Reactor.Error.Invalid.RunStepError{error: reason}]}`.
+  # Surface the step's original domain error (e.g. `{:idempotency_conflict, key}`)
+  # directly rather than doubly-wrapping it in an opaque `{:reactor_failed, _}`
+  # tag callers cannot pattern-match on.
+  defp unwrap_reactor_error(%Reactor.Error.Invalid{errors: [%{error: inner} | _]}), do: inner
+  defp unwrap_reactor_error(reason), do: {:reactor_failed, reason}
 
   defp normalize_transaction_result({:ok, result}), do: normalize_transaction_result(result)
   defp normalize_transaction_result({:error, reason}), do: {:error, reason}

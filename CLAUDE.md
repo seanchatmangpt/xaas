@@ -4,6 +4,12 @@ Real BEAMOps-book-derived Elixir/Phoenix + Ash 3.x platform, with AWS chapters h
 
 ## Read first
 
+- `AGENTS.md` — Ash-ecosystem core-team usage rules (Zach Daniel et al.),
+  hand-curated and compressed from the vendored `deps/*/usage-rules.md` /
+  `deps/*/usage-rules/*.md` files (the raw `mix usage_rules.sync --all` output is a
+  2500+ line dump — too dense to be a practical read-first doc). Update it by hand
+  when a real gap surfaces; see the maintenance note at the top of the file for how
+  to pull a full re-sync for comparison if needed.
 - `docs/claude/diataxis/README.md` — canonical documentation map and authority rules.
 - `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system architecture.
 - `docs/claude/diataxis/explanation/ontology-reactor-control-plane.md` — current public-ontology/Reactor actuation design.

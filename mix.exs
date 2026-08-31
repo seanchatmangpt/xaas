@@ -126,6 +126,12 @@ defmodule Kanban.MixProject do
       # Xaas.SparqlBridge.write_turtle/1.
       {:ggen_igniter, "~> 26.8"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      # Real Ash-ecosystem tooling (Zach Daniel / core-team convention): compiles
+      # every vendored dependency's own usage-rules.md (deps/ash, deps/ash_postgres,
+      # deps/ash_phoenix, deps/ash_authentication, deps/ash_events, deps/spark,
+      # deps/reactor, etc.) into a single maintained AGENTS.md via
+      # `mix usage_rules.sync` -- see AGENTS.md and CLAUDE.md's "Read first" list.
+      {:usage_rules, "~> 0.1", only: [:dev]},
       {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},
       {:ecto_sql, "~> 3.6"},
