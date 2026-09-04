@@ -71,7 +71,9 @@ defmodule Xaas.Actuation do
   end
 
   defp normalize_transaction_result({:ok, result}), do: normalize_transaction_result(result)
-  defp normalize_transaction_result({:error, reason}), do: {:error, reason}
+
+  defp normalize_transaction_result({:error, reason}),
+    do: {:error, unwrap_reactor_error(reason)}
 
   defp normalize_transaction_result(%{status: :succeeded} = envelope), do: {:ok, envelope}
   defp normalize_transaction_result(%{status: :replayed} = envelope), do: {:ok, envelope}
@@ -80,6 +82,26 @@ defmodule Xaas.Actuation do
 
   defp normalize_transaction_result(other),
     do: {:error, {:unexpected_actuation_result, other}}
+
+  # Reactor wraps a step's raw `{:error, reason}` return in
+  # `{:reactor_failed, %Reactor.Error.Invalid{errors: [%Reactor.Error.Invalid.RunStepError{error: reason}, ...]}}`.
+  # Callers of `Xaas.Actuation.run/4` depend on the original, unwrapped contract
+  # tuple (e.g. `{:idempotency_conflict, key}`) surfacing directly — unwrap it
+  # here instead of leaking Reactor's internal error envelope. Any reactor
+  # failure that isn't a single recognizable step error falls back to the
+  # original `{:reactor_failed, reason}` shape.
+  defp unwrap_reactor_error(
+         {:reactor_failed,
+          %Reactor.Error.Invalid{errors: [%Reactor.Error.Invalid.RunStepError{error: step_error}]}} =
+           reason
+       ) do
+    case step_error do
+      {:idempotency_conflict, _key} -> step_error
+      _ -> reason
+    end
+  end
+
+  defp unwrap_reactor_error(reason), do: reason
 end
 
 defmodule Xaas.Actuation.Reactor do
