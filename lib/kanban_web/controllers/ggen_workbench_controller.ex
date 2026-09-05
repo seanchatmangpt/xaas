@@ -19,7 +19,10 @@ defmodule KanbanWeb.GgenWorkbenchController do
         json(conn, body)
 
       {:error, {:refused, code, detail}} ->
-        status = if code in ["WORKBENCH_NOT_CONFIGURED", "WORKBENCH_TOKEN_MISSING"], do: 503, else: 422
+        status =
+          if code in ["WORKBENCH_NOT_CONFIGURED", "WORKBENCH_TOKEN_MISSING"],
+            do: 503,
+            else: 422
 
         conn
         |> put_status(status)
