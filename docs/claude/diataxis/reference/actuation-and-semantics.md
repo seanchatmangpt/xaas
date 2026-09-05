@@ -60,6 +60,16 @@ Reusing the key for a different consequence returns:
 {:error, {:idempotency_conflict, key}}
 ```
 
+This exact tuple is guaranteed regardless of whether the underlying mutation runs
+through the direct Ash transaction path or through Ash.Reactor: `Xaas.Actuation`'s
+`normalize_transaction_result/1` unwraps a single-step `Reactor.Error.Invalid` /
+`Reactor.Error.Invalid.RunStepError` envelope wrapping `{:idempotency_conflict, key}`
+back to the raw tuple above before returning it to the caller. Any other Reactor
+failure shape is returned unchanged as `{:error, {:reactor_failed, reason}}`. Fixed
+2026-09-04 (`d08699e`, PR #38) after the Reactor transaction path introduced in
+commit `771cb4f` started wrapping this error and broke the contract above; see
+`test/xaas/actuation_test.exs:96`.
+
 ## Executable falsifiers
 
 `test/xaas/actuation_test.exs` exercises real Ash resources, real Reactor, and sandboxed Postgres. It asserts:
