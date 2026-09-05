@@ -177,21 +177,8 @@ jobs:
                       | awk '{print $1}')
           echo "sha_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  # if: false # requires real AWS credentials, see docs/AWS-CHAPTERS-SUBSTITUTION.md
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: build-push
-    name: Deploy application
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/deploy
-        with:
-          github_user: ${{ github.repository_owner }}
-          gh_pat: ${{ secrets.GH_PAT }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          age_key: ${{ secrets.AGE_KEY }}
-          ssh_private_key: ${{ secrets.PRIVATE_KEY }}
-          image_tag: ${{ needs.build-push.outputs.unique_docker_tag }}
+# Production DO is intentionally not coupled to a push or merge. The former
+# inherited AWS deploy job was removed: `.github/workflows/fly_deploy.yaml`
+# is now the sole production deployment path and requires an exact admitted
+# main SHA, an operator reason, scoped Fly deploy tokens, post-deploy execution,
+# and a deployment receipt.
