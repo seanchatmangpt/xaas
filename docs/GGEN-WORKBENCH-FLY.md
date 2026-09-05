@@ -8,9 +8,16 @@ The workbench turns xaas into a zero-install HTTP consumer of the composed
 The worker image is pinned to:
 
 - repository: `ghcr.io/seanchatmangpt/ggen-ecosystem`
-- digest: `sha256:b9e170233fe15d91003fbfc322786534d208fe8ac1b5c58cc0702d88d9ceeb3c`
-- ggen-ecosystem lock standing at admission time: `ALIVE`
-- observed multi-arch publication: linux/amd64 + linux/arm64 + merged manifest
+- signed multi-arch index digest: `sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0`
+- observed publication run: `33926356178`
+- observed platforms: linux/amd64 + linux/arm64, plus provenance attestations
+
+The published index identity above is taken from the successful container
+publication itself. During xaas verification, the older digest recorded in
+`ggen-ecosystem/ecosystem.lock.toml` (`sha256:b9e170...`) was falsified as a
+runnable multi-arch base: Docker returned `no match for platform in manifest`.
+The workbench therefore binds receipts to the observed published index rather
+than silently inheriting that stale/inconsistent lock field.
 
 The HTTP call is **CONSTRUCT**, not ambient **DO**. A caller may provide only a
 bounded file bundle and an argv vector for the `ggen` executable. The worker
@@ -36,9 +43,9 @@ Fly App: xaas control plane
 Fly App: private workbench worker
   Dockerfile.workbench
         |
-        | exact OCI digest
+        | exact signed OCI index
         v
-ghcr.io/seanchatmangpt/ggen-ecosystem@sha256:b9e170...
+ghcr.io/seanchatmangpt/ggen-ecosystem@sha256:917eb72...
         |
         +--> ggen
         +--> ggen-marketplace packs
@@ -138,7 +145,7 @@ The deployment sequence is:
 6. call public xaas `GET /api/workbench/ggen/health`;
 7. call public xaas `POST /api/workbench/ggen` with real `ggen --version`;
 8. require `ALIVE`, `admitted=true`, `executed=true`, `verified=true`, exit 0,
-   and the exact admitted ggen-ecosystem digest;
+   and the exact admitted ggen-ecosystem index digest;
 9. manufacture `xaas.fly-deploy.v1` with the exact repository SHA, app
    identities, operator reason, flyctl version, hashes of both Fly status
    observations, hashes of both end-to-end responses, and a receipt SHA-256;
@@ -151,10 +158,10 @@ the sole production actuation topology introduced by this change.
 
 Normal xaas CI remains responsible for compile, tests, formatting, Dialyzer, and
 unused-dependency checks. A separate `Verify pinned GGen workbench image` job
-also proves the new subject directly:
+proves the new subject directly:
 
 1. Python-compiles `fly/workbench_server.py`;
-2. builds `Dockerfile.workbench`, forcing resolution of the exact OCI digest;
+2. builds `Dockerfile.workbench`, forcing resolution of the exact OCI index;
 3. executes the real `ggen --version` inside that image;
 4. calls the worker's `execute` path against the real GGen binary;
 5. requires an `ALIVE` construction result and a receipt bound to the exact
@@ -162,6 +169,14 @@ also proves the new subject directly:
 
 The normal xaas image build/push cannot begin unless both the Elixir gate and
 the workbench-image gate succeed.
+
+### Falsifier already exercised
+
+The first exact-head workbench-image gate used the old lock-recorded digest and
+failed at Docker metadata resolution with `no match for platform in manifest`.
+No GGen execution was claimed from that run. The repair pins the actual signed
+OCI index emitted by publication run `33926356178`; the gate must rerun and
+observe execution before the workbench subject can become `ALIVE`.
 
 ## Agent API
 
@@ -221,7 +236,7 @@ Successful execution returns:
   return limit;
 - a deterministic receipt binding:
   - protocol version;
-  - exact ggen-ecosystem digest;
+  - exact ggen-ecosystem index digest;
   - canonical request hash;
   - exact argv;
   - exit code;
@@ -260,7 +275,7 @@ Promotion requires observed execution against the deployed subject:
 1. worker `GET /healthz` executes the exact `ggen --version` and returns exit 0;
 2. xaas `GET /api/workbench/ggen/health` reaches that private worker;
 3. a real `POST /api/workbench/ggen` executes GGen through the hosted path;
-4. the returned receipt binds the configured digest and exit code;
+4. the returned receipt binds the configured index digest and exit code;
 5. a path-traversal request is refused;
 6. the worker is not publicly routable;
 7. the production deployment receipt binds the exact xaas head and both Fly
