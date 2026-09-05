@@ -405,7 +405,7 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "standing": f"REFUSED[{error.code}]" if status != 408 else "BLOCKED",
                     "observed": True,
-                    "admitted": False,
+                    "admitted": error.code == "EXECUTION_TIMEOUT",
                     "executed": error.code == "EXECUTION_TIMEOUT",
                     "refused": status != 408,
                     "blocked": status == 408,
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         json.dumps(
             {
                 "component": "xaas-ggen-workbench",
-                "standing": "PARTIAL_ALIVE",
+                "standing": "UNKNOWN",
                 "listen": f"[::]:{PORT}",
                 "ggen_ecosystem_digest": GGEN_DIGEST,
             },
