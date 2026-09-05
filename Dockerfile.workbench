@@ -1,0 +1,21 @@
+# Private GGen execution worker for Fly.io.
+#
+# The runtime identity is the exact ALIVE ggen-ecosystem capsule recorded in
+# seanchatmangpt/ggen-ecosystem/ecosystem.lock.toml on 2026-09-05. Do not move
+# this to :latest: the digest is part of every workbench construction receipt.
+ARG GGEN_ECOSYSTEM_IMAGE=ghcr.io/seanchatmangpt/ggen-ecosystem@sha256:b9e170233fe15d91003fbfc322786534d208fe8ac1b5c58cc0702d88d9ceeb3c
+FROM ${GGEN_ECOSYSTEM_IMAGE}
+
+ENV PORT=8080
+ENV GGEN_ECOSYSTEM_DIGEST=sha256:b9e170233fe15d91003fbfc322786534d208fe8ac1b5c58cc0702d88d9ceeb3c
+ENV HOME=/tmp/xaas-workbench-home
+
+COPY fly/workbench_server.py /opt/xaas/workbench_server.py
+
+RUN mkdir -p "${HOME}" \
+    && chown -R nobody:nogroup "${HOME}" /opt/xaas
+
+USER nobody
+
+EXPOSE 8080
+CMD ["python3", "/opt/xaas/workbench_server.py"]

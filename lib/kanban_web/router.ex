@@ -93,6 +93,18 @@ defmodule KanbanWeb.Router do
     plug KanbanWeb.Plugs.ResolveOrgActor
   end
 
+  # GGen workbench is ordinary authenticated JSON, not JSON:API. Register it
+  # before the /api AshJsonApi catch-all so the latter cannot shadow it.
+  # The surface is CONSTRUCT-only: it forwards a bounded file bundle and
+  # argv vector to the private Fly worker; it does not grant shell or cloud
+  # actuation authority.
+  scope "/api/workbench", KanbanWeb do
+    pipe_through [:api, :require_internal_api_token]
+
+    get "/ggen/health", GgenWorkbenchController, :health
+    post "/ggen", GgenWorkbenchController, :run
+  end
+
   scope "/" do
     pipe_through [:internal_api, :require_internal_api_token, :resolve_org_actor]
 
@@ -108,8 +120,8 @@ defmodule KanbanWeb.Router do
   if Application.compile_env(:kanban, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
     # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
+    # If the application does not have an admins-only section yet, you
+    # can use Plug.BasicAuth to set up some basic authentication
     # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
