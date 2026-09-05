@@ -28,7 +28,7 @@ jobs:
     env:
       FLY_XAAS_APP: ${{ vars.FLY_XAAS_APP }}
       FLY_WORKBENCH_APP: ${{ vars.FLY_WORKBENCH_APP }}
-      EXPECTED_GGEN_DIGEST: sha256:b9e170233fe15d91003fbfc322786534d208fe8ac1b5c58cc0702d88d9ceeb3c
+      EXPECTED_GGEN_DIGEST: sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0
     steps:
       - name: Checkout exact subject
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
