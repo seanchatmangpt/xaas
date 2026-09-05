@@ -46,16 +46,33 @@ ghcr.io/seanchatmangpt/ggen-ecosystem@sha256:b9e170...
         `--> beam4pm
 ```
 
+The two Fly Apps must belong to the same Fly organization so their default 6PN
+private network and `<worker-app>.internal` DNS relationship exist. The worker
+has no public `http_service` or `services` stanza and listens on IPv6 for direct
+6PN access from the xaas control plane.
+
 The worker is a separate image because the current xaas BEAM release runner and
 the ggen capsule are independently built Linux runtimes. Keeping them separate
 preserves both runtime contracts rather than mixing libc/OpenSSL assumptions in
 one final image.
 
+## Runtime host identity
+
+Fly injects `FLY_APP_NAME` into every Machine. Production Phoenix configuration
+still gives explicit `PHX_HOST` precedence, but when it is absent xaas derives:
+
+```text
+<FLY_APP_NAME>.fly.dev
+```
+
+This keeps the externally allocated Fly app name out of committed configuration
+without leaving the endpoint at the old `example.com` fallback on Fly.
+
 ## One-time Fly bootstrap
 
-Two Fly Apps are used: a public xaas control-plane app and a private workbench
-app. App names are not committed because they are externally allocated global
-identities.
+Two existing Fly Apps are required: a public xaas control-plane app and a
+private workbench app. App names are not committed because they are externally
+allocated global identities. Create both in the same Fly organization.
 
 ```sh
 fly apps create <worker-app>
@@ -73,17 +90,78 @@ fly secrets set -a <xaas-app> \
   DATABASE_URL="<postgres-url>" \
   SECRET_KEY_BASE="<phoenix-secret>" \
   ONETIME_REVOKE_KEY="<onetime-hmac-key>"
-
-fly deploy -a <worker-app> -c fly.workbench.toml
-fly deploy -a <xaas-app> -c fly.toml
 ```
 
 `DATABASE_URL`, `SECRET_KEY_BASE`, and `ONETIME_REVOKE_KEY` are not new
 workbench requirements; the existing xaas production release already refuses
 to boot without them.
 
-The private worker config has no public `http_service` or `services` stanza.
-The control plane reaches it through `<worker-app>.internal`.
+After this one-time identity/secret bootstrap, neither an AGI client nor a
+production deploy operator needs to install GGen, run the ggen-ecosystem
+container, or install flyctl locally. The AGI uses HTTPS and production deploys
+run through GitHub Actions.
+
+## Receipted production deployment
+
+`.github/workflows/fly_deploy.yaml` is the sole production deployment path. It
+is deliberately `workflow_dispatch` only; merging or pushing does not acquire
+production actuation authority by itself.
+
+Configure these GitHub repository variables:
+
+- `FLY_XAAS_APP` — the public xaas Fly App name;
+- `FLY_WORKBENCH_APP` — the private worker Fly App name.
+
+Configure these GitHub secrets:
+
+- `FLY_XAAS_DEPLOY_TOKEN` — app-scoped Fly deploy token for xaas;
+- `FLY_WORKBENCH_DEPLOY_TOKEN` — app-scoped Fly deploy token for the worker;
+- `XAAS_INTERNAL_API_TOKEN` — the same value installed in the xaas Fly App as
+  `INTERNAL_API_TOKEN`, used only for post-deploy end-to-end verification.
+
+The workflow pins the Fly setup action to commit
+`fc53c09e1bc3be6f54706524e3b82c4f462f77be` (release 1.5) and flyctl to
+`0.4.99`.
+
+A deployment requires two explicit inputs:
+
+- `expected_head_sha` — must equal the exact selected `main` SHA;
+- `reason` — operator-provided actuation reason included in the receipt.
+
+The deployment sequence is:
+
+1. admit `main`, exact expected SHA, app identities, and required credentials;
+2. deploy the private worker with its app-scoped token;
+3. observe worker Fly status;
+4. deploy the xaas control plane with its app-scoped token;
+5. observe xaas Fly status;
+6. call public xaas `GET /api/workbench/ggen/health`;
+7. call public xaas `POST /api/workbench/ggen` with real `ggen --version`;
+8. require `ALIVE`, `admitted=true`, `executed=true`, `verified=true`, exit 0,
+   and the exact admitted ggen-ecosystem digest;
+9. manufacture `xaas.fly-deploy.v1` with the exact repository SHA, app
+   identities, operator reason, flyctl version, hashes of both Fly status
+   observations, hashes of both end-to-end responses, and a receipt SHA-256;
+10. publish that receipt in the GitHub Actions job summary.
+
+The inherited automatic AWS deployment job has been removed. Fly is therefore
+the sole production actuation topology introduced by this change.
+
+## Pull-request verification
+
+Normal xaas CI remains responsible for compile, tests, formatting, Dialyzer, and
+unused-dependency checks. A separate `Verify pinned GGen workbench image` job
+also proves the new subject directly:
+
+1. Python-compiles `fly/workbench_server.py`;
+2. builds `Dockerfile.workbench`, forcing resolution of the exact OCI digest;
+3. executes the real `ggen --version` inside that image;
+4. calls the worker's `execute` path against the real GGen binary;
+5. requires an `ALIVE` construction result and a receipt bound to the exact
+   configured digest and exit code 0.
+
+The normal xaas image build/push cannot begin unless both the Elixir gate and
+the workbench-image gate succeed.
 
 ## Agent API
 
@@ -181,11 +259,13 @@ Promotion requires observed execution against the deployed subject:
 
 1. worker `GET /healthz` executes the exact `ggen --version` and returns exit 0;
 2. xaas `GET /api/workbench/ggen/health` reaches that private worker;
-3. a real `POST /api/workbench/ggen` with admitted `ggen.toml` and
-   `ontology.ttl` executes `ggen sync run --dry-run`;
+3. a real `POST /api/workbench/ggen` executes GGen through the hosted path;
 4. the returned receipt binds the configured digest and exit code;
 5. a path-traversal request is refused;
-6. the worker is not publicly routable.
+6. the worker is not publicly routable;
+7. the production deployment receipt binds the exact xaas head and both Fly
+   app identities.
 
-Until those deployed checks are observed, repository implementation standing is
-`PARTIAL_ALIVE`, not a deployment crown.
+Until those deployed checks are observed against real Fly app identities,
+repository implementation standing can be `PARTIAL_ALIVE`, but the Fly
+deployment crown remains `BLOCKED`/`UNKNOWN` rather than inferred.
