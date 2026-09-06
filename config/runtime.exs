@@ -80,7 +80,16 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  # Fly injects FLY_APP_NAME into every Machine. Prefer an explicit PHX_HOST
+  # for portability, otherwise derive the canonical Fly hostname without
+  # requiring the externally allocated app name to be committed to fly.toml.
+  host =
+    System.get_env("PHX_HOST") ||
+      case System.get_env("FLY_APP_NAME") do
+        nil -> "example.com"
+        app_name -> app_name <> ".fly.dev"
+      end
+
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :kanban, KanbanWeb.Endpoint,

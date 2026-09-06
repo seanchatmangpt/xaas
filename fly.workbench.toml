@@ -1,0 +1,22 @@
+# Fly Launch configuration for the private, ggen-ecosystem-backed workbench.
+#
+# This app intentionally declares no public service. The xaas control plane
+# reaches it over Fly's private network at:
+#   http://<worker-app>.internal:8080
+#
+# The only required secret is GGEN_WORKBENCH_TOKEN, shared with the control
+# plane. Deploy with:
+#   fly deploy -a <worker-app> -c fly.workbench.toml
+
+primary_region = "lax"
+
+[build]
+  dockerfile = "Dockerfile.workbench"
+
+[env]
+  PORT = "8080"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "1gb"

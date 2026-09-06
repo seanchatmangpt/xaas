@@ -61,7 +61,7 @@ jobs:
 
       - name: Cache plt files
         uses: actions/cache@v4
-        env: 
+        env:
           EX_OTP_VERSIONS: ${{ steps.setup-beam.outputs.elixir-version }}
           KEY_BASE: plt-${{ runner.os }}-${{ env.EX_OTP_VERSIONS }}
         with:
@@ -90,9 +90,48 @@ jobs:
       - name: Check unused dependencies
         run: mix deps.unlock --check-unused
 
+  asyncapi:
+    runs-on: ubuntu-latest
+    name: Validate AsyncAPI 3.1 contract
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Validate canonical workbench protocol
+        run: npx --yes @asyncapi/cli@6.0.2 validate priv/static/asyncapi.yaml --diagnostics-format github-actions --fail-severity error
+
+      - name: Assert runtime digest and HTTP surface stay bound to the contract
+        run: |
+          set -euo pipefail
+          digest="sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0"
+          grep -F "$digest" Dockerfile.workbench
+          grep -F "$digest" priv/static/asyncapi.yaml
+          grep -F '/api/workbench/ggen' priv/static/asyncapi.yaml
+          grep -F '/api/workbench/ggen/health' priv/static/asyncapi.yaml
+
+  workbench:
+    runs-on: ubuntu-latest
+    name: Verify pinned GGen workbench image
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Compile worker adapter
+        run: python3 -m py_compile fly/workbench_server.py
+
+      - name: Build exact workbench image
+        run: docker build --file Dockerfile.workbench --tag xaas-ggen-workbench:test .
+
+      - name: Observe GGen in the exact worker image
+        run: docker run --rm --entrypoint ggen xaas-ggen-workbench:test --version
+
+      - name: Execute receipted workbench manufacture against real GGen
+        run: >-
+          docker run --rm -e PYTHONPATH=/opt/xaas --entrypoint python3
+          xaas-ggen-workbench:test -c
+          'import workbench_server as w; r=w.execute({"args":["--version"],"files":{},"timeout_ms":30000}); assert r["standing"] == "ALIVE", r; assert r["admitted"] is True, r; assert r["executed"] is True, r; assert r["verified"] is True, r; assert r["receipt"]["ggen_ecosystem_digest"] == w.GGEN_DIGEST, r; assert r["receipt"]["exit_code"] == 0, r; print(r["receipt"]["receipt_sha256"])'
+
   build-push:
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [ci, asyncapi, workbench]
     name: Build Docker image & push to ghcr.io
     outputs:
       unique_docker_tag: ${{ steps.get-unique-docker-tag.outputs.sha_tag }}
@@ -156,21 +195,8 @@ jobs:
                       | awk '{print $1}')
           echo "sha_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  # if: false # requires real AWS credentials, see docs/AWS-CHAPTERS-SUBSTITUTION.md
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: build-push
-    name: Deploy application
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/deploy
-        with:
-          github_user: ${{ github.repository_owner }}
-          gh_pat: ${{ secrets.GH_PAT }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          age_key: ${{ secrets.AGE_KEY }}
-          ssh_private_key: ${{ secrets.PRIVATE_KEY }}
-          image_tag: ${{ needs.build-push.outputs.unique_docker_tag }}
+# Production DO is intentionally not coupled to a push or merge. The former
+# inherited AWS deploy job was removed: `.github/workflows/fly_deploy.yaml`
+# is now the sole production deployment path and requires an exact admitted
+# main SHA, an operator reason, scoped Fly deploy tokens, post-deploy execution,
+# and a deployment receipt.
