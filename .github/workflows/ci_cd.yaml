@@ -90,6 +90,24 @@ jobs:
       - name: Check unused dependencies
         run: mix deps.unlock --check-unused
 
+  asyncapi:
+    runs-on: ubuntu-latest
+    name: Validate AsyncAPI 3.1 contract
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Validate canonical workbench protocol
+        run: npx --yes @asyncapi/cli@6.0.2 validate priv/static/asyncapi.yaml --diagnostics-format github-actions --fail-severity error
+
+      - name: Assert runtime digest and HTTP surface stay bound to the contract
+        run: |
+          set -euo pipefail
+          digest="sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0"
+          grep -F "$digest" Dockerfile.workbench
+          grep -F "$digest" priv/static/asyncapi.yaml
+          grep -F '/api/workbench/ggen' priv/static/asyncapi.yaml
+          grep -F '/api/workbench/ggen/health' priv/static/asyncapi.yaml
+
   workbench:
     runs-on: ubuntu-latest
     name: Verify pinned GGen workbench image
@@ -113,7 +131,7 @@ jobs:
 
   build-push:
     runs-on: ubuntu-latest
-    needs: [ci, workbench]
+    needs: [ci, asyncapi, workbench]
     name: Build Docker image & push to ghcr.io
     outputs:
       unique_docker_tag: ${{ steps.get-unique-docker-tag.outputs.sha_tag }}
