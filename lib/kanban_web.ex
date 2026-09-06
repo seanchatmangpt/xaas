@@ -26,8 +26,8 @@ defmodule KanbanWeb do
   """
 
   # `asyncapi.yaml` is the canonical machine-facing workbench contract.
-  # Serving it from the deployed xaas subject keeps protocol discovery coupled
-  # to the implementation that is actually receiving requests.
+  # Serving it from the deployed xaas subject couples protocol discovery to
+  # the implementation that is actually receiving workbench requests.
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt asyncapi.yaml)
 
   def router do
@@ -85,7 +85,6 @@ defmodule KanbanWeb do
       import Phoenix.Controller,
         only: [get_csrf_token: 0, view_module: 1, view_template: 1]
 
-      # Include general helpers for rendering HTML
       unquote(html_helpers())
     end
   end
@@ -94,10 +93,14 @@ defmodule KanbanWeb do
     quote do
       # HTML escaping functionality
       import Phoenix.HTML
+      # Core UI components and translation
+      import KanbanWeb.CoreComponents
       import KanbanWeb.Gettext
 
+      # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
+      # Routes generation with the ~p sigil
       unquote(verified_routes())
     end
   end
