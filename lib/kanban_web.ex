@@ -25,7 +25,10 @@ defmodule KanbanWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  # `asyncapi.yaml` is the canonical machine-facing workbench contract.
+  # Serving it from the deployed xaas subject keeps protocol discovery coupled
+  # to the implementation that is actually receiving requests.
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt asyncapi.yaml)
 
   def router do
     quote do
@@ -91,14 +94,10 @@ defmodule KanbanWeb do
     quote do
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components and translation
-      import KanbanWeb.CoreComponents
       import KanbanWeb.Gettext
 
-      # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
-      # Routes generation with the ~p sigil
       unquote(verified_routes())
     end
   end
