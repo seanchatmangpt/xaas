@@ -31,13 +31,12 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
     :ok
   end
 
-  defp create_provider!(org_id, status) do
+  defp create_provider!(org_id) do
     Provider
     |> Ash.Changeset.for_create(:create, %{
       name: "Test Provider",
       slug: "provider-#{System.unique_integer([:positive])}",
-      org_id: org_id,
-      status: status
+      org_id: org_id
     })
     |> Ash.create!(authorize?: false)
   end
@@ -60,7 +59,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
 
   test "a real request referencing a real, same-org provider succeeds" do
     org_id = "org-legit-#{System.unique_integer([:positive])}"
-    provider = create_provider!(org_id, :pending)
+    provider = create_provider!(org_id)
 
     change =
       ApprovalProviderStatusChange
@@ -93,7 +92,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
   test "a real provider belonging to a DIFFERENT org is rejected -- the real, live exploit this fix closes" do
     victim_org = "org-victim-#{System.unique_integer([:positive])}"
     attacker_org = "org-attacker-#{System.unique_integer([:positive])}"
-    victim_provider = create_provider!(victim_org, :pending)
+    victim_provider = create_provider!(victim_org)
 
     assert {:error, error} =
              ApprovalProviderStatusChange
@@ -117,7 +116,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
 
   test ":approve is unaffected by this fix -- provider_id is not in its accept list" do
     org_id = "org-approve-#{System.unique_integer([:positive])}"
-    provider = create_provider!(org_id, :pending)
+    provider = create_provider!(org_id)
 
     change =
       ApprovalProviderStatusChange
