@@ -27,14 +27,38 @@ defmodule KanbanWeb.ApprovalProviderStatusChangeControllerTest do
   end
 
   defp create_provider!(org_id, status) do
-    Provider
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Provider",
-      slug: "provider-#{System.unique_integer([:positive])}",
-      org_id: org_id,
-      status: status
-    })
-    |> Ash.create!(authorize?: false)
+    provider =
+      Provider
+      |> Ash.Changeset.for_create(:create, %{
+        name: "Test Provider",
+        slug: "provider-#{System.unique_integer([:positive])}",
+        org_id: org_id
+      })
+      |> Ash.create!(authorize?: false)
+
+    case status do
+      :pending ->
+        provider
+
+      requested_status when requested_status in [:active, :suspended] ->
+        request =
+          ApprovalProviderStatusChange
+          |> Ash.Changeset.for_create(:create, %{
+            org_id: org_id,
+            provider_id: provider.id,
+            requested_by: "fixture-maker-#{System.unique_integer([:positive])}",
+            requested_status: requested_status
+          })
+          |> Ash.create!(authorize?: false)
+
+        request
+        |> Ash.Changeset.for_update(:approve, %{
+          approved_by: "fixture-checker-#{System.unique_integer([:positive])}"
+        })
+        |> Ash.update!(authorize?: false)
+
+        Provider |> Ash.get!(provider.id, authorize?: false)
+    end
   end
 
   defp json_headers(conn, org_id) do
