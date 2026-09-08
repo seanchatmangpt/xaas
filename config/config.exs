@@ -20,6 +20,7 @@ import Config
 config :kanban,
   ecto_repos: [Kanban.Repo, Xaas.Repo],
   ash_domains: [
+    Xaas.Library,
     Xaas.Accounts,
     Xaas.Billing,
     Xaas.Governance,

@@ -32,6 +32,7 @@ defmodule KanbanWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/next-read", NextRead.ReaderLive
   end
 
   # Real public external Stripe webhook receiver -- deliberately NOT

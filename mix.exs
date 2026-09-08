@@ -140,6 +140,16 @@ defmodule Kanban.MixProject do
       # 1.2.x is the current stable release (confirmed via mix hex.info),
       # past the rc this repo's original conflict note predates.
       {:phoenix_live_view, "~> 1.2"},
+      # Next Read case study (docs/case-studies/next-read/): real local
+      # Hugging Face sentence-embedding inference for the ranker's semantic
+      # term (lib/xaas/library/embeddings.ex). Not ash_ai/pgvector -- ash_ai
+      # stays dropped (see the ash_ai comment above); Nx/Bumblebee/EXLA have
+      # no dependency conflict with the resolved Finch version and run fully
+      # local/offline once weights are cached, so no student data leaves the
+      # process boundary for ranking.
+      {:nx, "~> 0.9"},
+      {:bumblebee, "~> 0.6"},
+      {:exla, "~> 0.9"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.3"},
@@ -153,7 +163,9 @@ defmodule Kanban.MixProject do
       # Real Stripe Elixir SDK -- webhook receiver's real
       # Stripe.Webhook.construct_event/3 signature verification (see
       # KanbanWeb.StripeWebhookController).
-      {:stripity_stripe, "~> 2.17"}
+      {:stripity_stripe, "~> 2.17"},
+      {:ggen_igniter, path: "/Users/sac/ggen_igniter", only: [:dev, :test]},
+      {:faker, "~> 0.18", only: [:dev, :test]}
     ]
   end
 

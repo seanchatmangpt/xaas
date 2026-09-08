@@ -1,0 +1,153 @@
+@prefix bibo:   <http://purl.org/ontology/bibo/> .
+@prefix schema: <https://schema.org/> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix org:    <http://www.w3.org/ns/org#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix xar:    <https://ggen.io/ontology/xaas-ash-render#> .
+@prefix agp:    <https://ggen.io/ontology/ash-igniter-gen-pipeline#> .
+@prefix xl:     <https://ggen.io/ontology/xaas-library#> .
+
+<https://ggen.io/ontology/xaas-library#> a owl:Ontology ;
+  rdfs:label "XaaS Library Domain Ontology" ;
+  rdfs:comment "Ontological grounding of Xaas.Library domain, Book, Checkout, and Curation resources in Schema.org and BIBO vocabularies with manufacturing pipeline declarations." .
+
+# --- Classes grounded in Schema.org / BIBO / PROV ---
+
+xl:LibraryDomain a owl:Class ;
+  rdfs:label "XaaS Library Domain" ;
+  rdfs:subClassOf schema:LibrarySystem ;
+  skos:closeMatch schema:Library .
+
+xl:Book a owl:Class ;
+  rdfs:label "Library Book Item" ;
+  rdfs:subClassOf bibo:Book, schema:Book ;
+  rdfs:comment "A cataloged library title with bibliographic, grade-band, and semantic attributes." .
+
+xl:Checkout a owl:Class ;
+  rdfs:label "Book Checkout Circulation Event" ;
+  rdfs:subClassOf schema:BorrowAction, prov:Activity ;
+  rdfs:comment "A borrowing transaction associating a student/user with a checked-out book." .
+
+xl:Curation a owl:Class ;
+  rdfs:label "Librarian Curation Spotlight" ;
+  rdfs:subClassOf schema:Collection, prov:Entity ;
+  rdfs:comment "A staff-pinned or curated recommendation entry boosting recommendation visibility." .
+
+# --- Domain Resource Individuals & Properties ---
+
+xl:Domain_Library a xl:LibraryDomain ;
+  xl:domainModule "Xaas.Library" ;
+  xl:otpApp "kanban" ;
+  xl:adminShow true ;
+  dct:title "XaaS Library Management Domain" .
+
+xl:Resource_Book a xl:Book ;
+  xl:resourceModule "Xaas.Library.Book" ;
+  xl:domainModule "Xaas.Library" ;
+  xl:tableName "library_books" ;
+  xl:singular "book" ;
+  xl:plural "books" ;
+  schema:name "Book" ;
+  dct:description "Library book catalog item with reading level, genres, and availability" ;
+  bibo:isbn "isbn" ;
+  schema:author "author" ;
+  schema:genre "genres" ;
+  schema:typicalAgeRange "grade_level" ;
+  schema:itemAvailability "available_copies" .
+
+xl:Resource_Checkout a xl:Checkout ;
+  xl:resourceModule "Xaas.Library.Checkout" ;
+  xl:domainModule "Xaas.Library" ;
+  xl:tableName "library_checkouts" ;
+  xl:singular "checkout" ;
+  xl:plural "checkouts" ;
+  schema:name "Checkout" ;
+  dct:description "Circulation record tracking book borrowings by students" ;
+  prov:wasAssociatedWith "user_id" ;
+  schema:itemBorrowed "book_id" ;
+  schema:startTime "borrowed_at" ;
+  schema:endTime "returned_at" ;
+  schema:actionStatus "status" .
+
+xl:Resource_Curation a xl:Curation ;
+  xl:resourceModule "Xaas.Library.Curation" ;
+  xl:domainModule "Xaas.Library" ;
+  xl:tableName "library_curations" ;
+  xl:singular "curation" ;
+  xl:plural "curations" ;
+  schema:name "Curation" ;
+  dct:description "Staff-pinned reading spotlight for district or grade-band promotion" ;
+  schema:item "book_id" ;
+  schema:curator "curated_by" ;
+  schema:typicalAgeRange "grade_band" ;
+  schema:headline "reason" ;
+  schema:activeThrough "active" .
+
+# --- Codegen Pipeline Individuals (agp:CodegenTarget) ---
+
+agp:LibraryDomainGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 1 ;
+  agp:mixTask "ash.gen.domain" ;
+  agp:targetModule "Xaas.Library" ;
+  agp:domainModule "Xaas" ;
+  agp:resourceModule "" ;
+  agp:mixArgs "" .
+
+agp:LibraryBookGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 2 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Library.Book" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "Book" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:LibraryCheckoutGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 3 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Library.Checkout" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "Checkout" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:LibraryCurationGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 4 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Library.Curation" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "Curation" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:LibraryBookCore a agp:CodegenTarget ;
+  agp:phase "core" ;
+  agp:order 1 ;
+  agp:mixTask "xaas.library.core" ;
+  agp:targetModule "Xaas.Library.Book" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "Book" ;
+  agp:mixArgs "" .
+
+agp:LibraryCheckoutCore a agp:CodegenTarget ;
+  agp:phase "core" ;
+  agp:order 2 ;
+  agp:mixTask "xaas.library.core" ;
+  agp:targetModule "Xaas.Library.Checkout" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "Checkout" ;
+  agp:mixArgs "" .
+
+agp:LibraryCurationCore a agp:CodegenTarget ;
+  agp:phase "core" ;
+  agp:order 3 ;
+  agp:mixTask "xaas.library.core" ;
+  agp:targetModule "Xaas.Library.Curation" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "Curation" ;
+  agp:mixArgs "" .

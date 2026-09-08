@@ -37,6 +37,10 @@ config :kanban, Xaas.Repo,
 config :kanban, Xaas.Accounts.Token,
   onetime_revoke_key: "test-only-onetime-revoke-key-do-not-use-in-prod"
 
+config :kanban,
+  token_signing_secret: "test-token-signing-secret-at-least-32-bytes-long-for-jwt-signing!!"
+
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :kanban, KanbanWeb.Endpoint,
