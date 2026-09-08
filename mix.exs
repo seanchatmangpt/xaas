@@ -164,7 +164,14 @@ defmodule Kanban.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # KanbanWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, path: "/Users/sac/ggen_igniter", only: [:dev, :test]},
+      # CI-reproducible manufacturing instrument identity. The prior absolute
+      # /Users/sac/ggen_igniter path made exact-head GitHub qualification
+      # impossible. Pin the public repository to the exact v26.9.3 commit
+      # observed in the local manufacture receipt rather than a moving branch.
+      {:ggen_igniter,
+       git: "https://github.com/seanchatmangpt/ggen_igniter.git",
+       ref: "39ba9e128653d5f56d44e9c68a0339d62e3e1beb",
+       only: [:dev, :test]},
       {:faker, "~> 0.18", only: [:dev, :test]}
     ]
   end
