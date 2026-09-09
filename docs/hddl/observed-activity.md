@@ -30,3 +30,5 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
   ("post-pgvector-migration-vector-type-fix") once/if a 4th occurrence
   confirms it's a durable pattern rather than a one-time migration's fallout
   finishing.
+- 2026-09-09 10:11 — no matching known task class this cycle (heartbeat: no
+  new commit since last tick; vision-2030-cycle-2026-09-09-0238 still running).
