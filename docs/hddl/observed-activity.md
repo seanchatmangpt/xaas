@@ -44,3 +44,5 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
   OcelEnvelope builder, already reported/pushed).
 - 2026-09-09 11:31 — no matching known task class this cycle (heartbeat: repo
   idle, no new commit since last tick).
+- 2026-09-09 11:51 — VISION-2030-CYCLE instance, docs/vision/vision-2030-2026-09-09-0438.md
+  (charter written, workflow launched, no commit yet as of this tick).
