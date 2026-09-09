@@ -30,10 +30,13 @@ concurrently with other agents against this repo should:
    'Code.string_to_quoted!(File.read!(path))'` per touched file) rather than each
    independently racing a full recompile.
 
-This is documentation + convention, not enforced tooling — a future pass could turn
-step 1-3 into a real `File.exists?`/`flock`-backed helper if this keeps recurring, but
-a hand-checked convention is the right first real fix, not a speculative new
-supervision service.
+Steps 1-3 are now backed by a real helper: `.claude/workflow-compile-lock.sh`
+(acquire/release/check functions, atomic `noclobber` file creation, PID-liveness-based
+stale-lock reclaim, and an EXIT/INT/TERM trap for automatic release). Source it and
+call `workflow_lock_acquire "<label>"` before a compile-heavy stage, run the stage,
+then either let the trap release it on exit or call `workflow_lock_release`
+explicitly. It also runs standalone: `.claude/workflow-compile-lock.sh
+{acquire <label> [timeout_s]|release|check}`.
 
 ## See also
 

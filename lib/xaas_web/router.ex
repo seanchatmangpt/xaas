@@ -28,6 +28,16 @@ defmodule XaasWeb.Router do
     plug(XaasWeb.Plugs.RequireInternalApiToken)
   end
 
+  # Real, minimal fix for the closed ERRC item auditing `/mcp` caller
+  # identity on every tool invocation -- see `XaasWeb.Plugs.
+  # AuditMcpToolCall`'s moduledoc and the `/mcp` scope below for the
+  # full rationale. Deliberately not applied to `/api` or
+  # `/internal-api` -- this item's real scope is the `/mcp` gap
+  # specifically.
+  pipeline :audit_mcp_tool_call do
+    plug(XaasWeb.Plugs.AuditMcpToolCall)
+  end
+
   scope "/", XaasWeb do
     pipe_through(:browser)
 
@@ -84,8 +94,21 @@ defmodule XaasWeb.Router do
   # future tenant-scoped Library resource would want it; do not read its
   # presence here as proof tenant scoping is active for these two
   # resources -- it is not.
+  # Real, smallest-scope fix (this session, per cycle 0138's explicit
+  # rejection of a full tenant-filter redesign as scope creep): the read
+  # policy itself stays `authorize_if always()` -- untouched. Instead,
+  # `:audit_mcp_tool_call` (`XaasWeb.Plugs.AuditMcpToolCall`) writes one
+  # real `Xaas.Operations.AuditLogEntry` row per `/mcp` HTTP request
+  # before it is forwarded to `AshAi.Mcp.Router`, so unscoped reads are
+  # at least observable (which bearer token, which path, when) rather
+  # than invisible. See that plug's moduledoc for the full rationale.
   scope "/mcp" do
-    pipe_through([:api, :require_internal_api_token, :resolve_org_actor])
+    pipe_through([
+      :api,
+      :require_internal_api_token,
+      :resolve_org_actor,
+      :audit_mcp_tool_call
+    ])
 
     forward("/", AshAi.Mcp.Router,
       tools: [
