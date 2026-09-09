@@ -82,8 +82,12 @@ defmodule Xaas.Library.NextReadTest do
       assert Decimal.to_integer(book.grade_level) == 6
       assert book.genres == ["Mystery", "Cipher"]
 
-      assert is_list(book.embedding)
-      assert length(book.embedding) == 384
+      # Real fix: Book.embedding is a pgvector-backed Ash.Vector (via the
+      # `vectorize` DSL), not a plain list -- Ecto/AshPostgres loads it back
+      # as a real %Ash.Vector{} struct. Same pattern already fixed in
+      # ranker.ex/compute_semantic_score and score_book.ex/compute_semantic.
+      assert %Ash.Vector{} = book.embedding
+      assert length(Ash.Vector.to_list(book.embedding)) == 384
 
       # Verify query by grade band
       books_for_grade =
