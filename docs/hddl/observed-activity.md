@@ -39,3 +39,6 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
   (real completion, commit 029f105: ggen_igniter-generated Xaas.Telemetry.OcelEnvelope
   builder, OcelForwarder hand-wired to call it, retiring the hand-copied envelope
   contract per this repo's generated-vs-handwritten doctrine).
+- 2026-09-09 11:10 — VISION-2030-CYCLE instance, docs/vision/vision-2030-2026-09-09-0238.md
+  (final commit 6da83cf: 5 real avatar/regression tests for the ggen-generated
+  OcelEnvelope builder, already reported/pushed).
