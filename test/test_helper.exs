@@ -37,11 +37,27 @@ ExUnit.start()
 # real external API call) on every default `mix test` regardless, defeating
 # its own tag's intent. Excluded here too; run explicitly with
 # `mix test --include external_llm`.
+# Real OS-process tests (test/xaas/autofde/demo_planner_reactor_test.exs --
+# real Ports, real `ps`-based liveness checks) are the same :subprocess
+# class as the mix-task tests above -- excluded here too.
+# Real property-based (StreamData) tests
+# (test/xaas/operations/capability_liveness_regressions_property_test.exs)
+# generate hundreds of real-DB cases per run -- genuinely slower than a
+# fixed-case unit test by design, excluded from the fast default loop;
+# run explicitly with `mix test --include property`.
 # Explicit, machine-scaled max_cases (was implicit ExUnit default of
 # System.schedulers_online() * 2 -- asserted here rather than left implicit).
 ExUnit.configure(
   max_cases: System.schedulers_online() * 2,
-  exclude: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess]
+  exclude: [
+    :stress,
+    :kind,
+    :requires_cnv_deploy,
+    :external,
+    :external_llm,
+    :subprocess,
+    :property
+  ]
 )
 
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :manual)

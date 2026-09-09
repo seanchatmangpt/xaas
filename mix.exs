@@ -231,27 +231,30 @@ defmodule Xaas.MixProject do
       # test` excludes (see test/test_helper.exs's `exclude:` list) --
       # real network retries against unreachable services (:external),
       # a real Groq API call requiring GROQ_API_KEY (:external_llm), real
-      # nested `mix`/`git` OS-process pipelines (:subprocess, e.g.
-      # xaas.verify_and_commit, xaas.ingest_capability_receipts), real
+      # nested `mix`/`git`/OS-port subprocesses (:subprocess, e.g.
+      # xaas.verify_and_commit, xaas.ingest_capability_receipts,
+      # demo_planner_reactor_test's real Ports+`ps` checks), real
+      # property-based generative tests (:property), real
       # concurrent-connection-pool stress (:stress), real live-kind-pod
       # (:kind), and real cnv-deploy-dependent (:requires_cnv_deploy)
       # tests. Run this before merge/CI, not on every fast inner-loop run.
       "test.full": [
         "ecto.create --quiet",
         "ecto.migrate --quiet",
-        "test --include stress --include kind --include requires_cnv_deploy --include external --include external_llm --include subprocess"
+        "test --include stress --include kind --include requires_cnv_deploy --include external --include external_llm --include subprocess --include property"
       ],
-      # Chicago/integration run: the real-network (:external, :external_llm)
-      # and real-subprocess (:subprocess) tests that only need what's
-      # already available in a real local dev environment (Postgres,
-      # network, `mix`/`git` on PATH) -- unlike `test.full`, this
-      # deliberately excludes :stress (connection-pool-hungry concurrency
-      # races), :kind, and :requires_cnv_deploy, which need a live k8s
-      # cluster this environment does not have.
+      # Chicago/integration run: the real-network (:external, :external_llm),
+      # real-subprocess (:subprocess), and real property-based (:property)
+      # tests that only need what's already available in a real local dev
+      # environment (Postgres, network, `mix`/`git` on PATH) -- unlike
+      # `test.full`, this deliberately excludes :stress
+      # (connection-pool-hungry concurrency races), :kind, and
+      # :requires_cnv_deploy, which need a live k8s cluster this
+      # environment does not have.
       "test.integration": [
         "ecto.create --quiet",
         "ecto.migrate --quiet",
-        "test --include external --include external_llm --include subprocess"
+        "test --include external --include external_llm --include subprocess --include property"
       ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind default", "esbuild default"],
