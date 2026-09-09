@@ -1,7 +1,9 @@
 defmodule Xaas.Library.Reactors.RecommendationPipelineReactor do
   @moduledoc """
   Master Ash.Reactor pipeline orchestrating 6-factor recommendation scoring, candidate pool admission,
-  and recommendation log generation with parallel execution, sub-reactor composition, map steps, and collect steps.
+  and recommendation log generation with sub-reactor composition and a real `map` step
+  (`:score_candidates`) that dispatches `Xaas.Library.Reactors.Steps.ScoreBook` per-candidate
+  through Reactor's own step machinery for per-item concurrency and per-item error isolation.
   """
   use Ash.Reactor
 
@@ -90,30 +92,16 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactor do
     end)
   end
 
-  # 6. Score and rank candidate books
-  step :score_and_rank_candidates do
+  # 6a. Compute the candidate pool (plain step -- excludes already-checked-out
+  # books when requested). Kept separate from the map below because `map`'s
+  # `source` must be a real reactor result, not a value computed inline
+  # inside the map's own run function.
+  step :compute_candidates do
     argument(:all_books, result(:get_all_books))
     argument(:checkouts, result(:get_user_checkouts))
-    argument(:curated_ids, result(:extract_curated_ids))
-    argument(:accepted_book_ids, result(:extract_accepted_book_ids))
-    argument(:profile, result(:student_profile))
-    argument(:weights, input(:weights))
-    argument(:student_grade, input(:student_grade))
-    argument(:limit, input(:limit))
     argument(:exclude_read, input(:exclude_read))
 
-    run(fn %{
-             all_books: books,
-             checkouts: checkouts,
-             curated_ids: curated_ids,
-             accepted_book_ids: accepted_book_ids,
-             profile: profile,
-             weights: weights,
-             student_grade: student_grade,
-             limit: limit,
-             exclude_read: exclude_read
-           },
-           _context ->
+    run(fn %{all_books: books, checkouts: checkouts, exclude_read: exclude_read}, _context ->
       checked_out_ids = checkouts |> Enum.map(& &1.book_id) |> MapSet.new()
 
       candidates =
@@ -123,29 +111,44 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactor do
           books
         end
 
-      scored =
-        candidates
-        |> Enum.map(fn book ->
-          {:ok, scored_item} =
-            Xaas.Library.Reactors.Steps.ScoreBook.run(
-              %{
-                book: book,
-                profile: profile,
-                curated_book_ids: curated_ids,
-                accepted_book_ids: accepted_book_ids,
-                weights: weights,
-                student_grade: student_grade
-              },
-              %{},
-              []
-            )
+      {:ok, candidates}
+    end)
+  end
 
-          scored_item
-        end)
+  # 6b. Score each candidate book through a real Reactor `map` block --
+  # dispatches Xaas.Library.Reactors.Steps.ScoreBook through Reactor's own
+  # step machinery (per-candidate concurrency, per-item error isolation) in
+  # place of the previous plain `Enum.map/2` + hard `{:ok, _} = ScoreBook.run/3`
+  # match, which crashed the entire batch on any single bad book.
+  map :score_candidates do
+    source(result(:compute_candidates))
+
+    step :score, Xaas.Library.Reactors.Steps.ScoreBook do
+      argument(:book, element(:score_candidates))
+      argument(:profile, result(:student_profile))
+      argument(:curated_book_ids, result(:extract_curated_ids))
+      argument(:accepted_book_ids, result(:extract_accepted_book_ids))
+      argument(:weights, input(:weights))
+      argument(:student_grade, input(:student_grade))
+    end
+
+    return(:score)
+  end
+
+  # 6c. Rank the map's collected per-item results. Sorting stays out of the
+  # map -- the map's job is per-item scoring only.
+  step :rank_candidates do
+    argument(:scored, result(:score_candidates))
+    argument(:candidates, result(:compute_candidates))
+    argument(:limit, input(:limit))
+
+    run(fn %{scored: scored, candidates: candidates, limit: limit}, _context ->
+      ranked =
+        scored
         |> Enum.sort_by(& &1.score, :desc)
         |> Enum.take(limit)
 
-      {:ok, %{scored: scored, candidate_pool_size: length(candidates)}}
+      {:ok, %{scored: ranked, candidate_pool_size: length(candidates)}}
     end)
   end
 
@@ -157,7 +160,7 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactor do
   step :log_recommendation do
     argument(:user_id, input(:user_id))
     argument(:weights, input(:weights))
-    argument(:scoring, result(:score_and_rank_candidates))
+    argument(:scoring, result(:rank_candidates))
 
     run(fn %{
              user_id: user_id,

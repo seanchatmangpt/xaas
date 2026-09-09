@@ -1,7 +1,7 @@
 defmodule Xaas.Library.Reactors.StudentProfileSubReactor do
   @moduledoc """
   Sub-reactor for computing student reading preferences and semantic profile embeddings.
-  Demonstrates Reactor step, argument transformations, guard caching, and async execution.
+  Demonstrates Reactor step, argument transformations, and async execution.
   """
   use Reactor
 
@@ -40,9 +40,18 @@ defmodule Xaas.Library.Reactors.StudentProfileSubReactor do
     async? true
 
     run fn %{profile_data: %{profile_text: text, past_genres: genres, past_books: books}}, _context ->
-      {:ok, embedding} = Embeddings.embed(text)
-      {:ok, %{embedding: embedding, past_genres: genres, past_books: books}}
+      case Embeddings.embed(text) do
+        {:ok, embedding} ->
+          {:ok, %{embedding: embedding, past_genres: genres, past_books: books}}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
+
+    # No compensate: this step has no side effect (no write, no external
+    # resource acquired) to undo on failure — it only computes a value from
+    # its input argument, so a no-op compensate would be gratuitous.
   end
 
   return :compute_profile_embedding

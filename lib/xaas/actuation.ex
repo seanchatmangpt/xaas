@@ -151,6 +151,19 @@ defmodule Xaas.Actuation.Reactor do
     argument(:tenant, input(:tenant))
     argument(:authorize?, input(:authorize?))
     run(&Xaas.Actuation.Kernel.actuate/2)
+    # `actuate/2` reports the wrapped Ash action's own errors *inside* an
+    # `{:ok, result}` envelope (see the `rescue`/`catch` clauses below and the
+    # `{:ok, result}` return from the success path) so this step itself never
+    # returns `{:error, _}` -- Reactor's `compensate/4` callback therefore
+    # could never fire here (it only runs when this step's own `run/3`
+    # returns an error) and would be a fake, non-functional no-op. The real
+    # failure mode this batch closes is a *downstream* step (`:receipt`
+    # sealing) failing after this step has already succeeded and after
+    # `Xaas.Telemetry.OcelAshEmitter`'s global `:stop` telemetry handler has
+    # already synchronously POSTed the OCEL event for the wrapped action to
+    # ex4pm_web -- that is exactly what Reactor's `undo/4` callback is for:
+    # rolling back an already-successful step when a later step fails.
+    undo(&Xaas.Actuation.Kernel.undo_actuate/3)
   end
 
   ash_step :receipt do
@@ -249,6 +262,31 @@ defmodule Xaas.Actuation.Kernel do
     error -> {:ok, {:error, {:exception, error.__struct__, Exception.message(error)}}}
   catch
     kind, reason -> {:ok, {:error, {kind, reason}}}
+  end
+
+  # Undo callback for the `:do` ash_step (see `actuation.ex`). Fired by
+  # Reactor when this step has already succeeded but a later step (real
+  # scenario: `:receipt` sealing) fails and the whole reactor run must roll
+  # back. The participating Ash data-layer transaction already undoes the DB
+  # mutation the wrapped action made; this callback closes the remaining
+  # gap -- the OCEL event `Xaas.Telemetry.OcelAshEmitter` already forwarded
+  # to ex4pm_web, synchronously and out-of-band of that transaction, for the
+  # very same action -- by forwarding a real correction/cancellation OCEL
+  # event for the same idempotency key.
+  #
+  # A replayed admission (`admission.replay? == true`) performed no new
+  # action and forwarded no new OCEL event in this run, so there is nothing
+  # real to cancel.
+  def undo_actuate(_value, %{admission: %{replay?: true}}, _context), do: :ok
+
+  def undo_actuate(_value, %{admission: admission}, _context) do
+    Xaas.Telemetry.OcelForwarder.forward_cancellation(%{
+      resource: admission.resource,
+      action: admission.action,
+      idempotency_key: admission.intent.idempotency_key
+    })
+
+    :ok
   end
 
   def seal(%{admission: %{replay?: true} = admission, execution: {:replayed, result}}, _context) do

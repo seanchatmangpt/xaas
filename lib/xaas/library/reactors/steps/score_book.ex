@@ -20,30 +20,32 @@ defmodule Xaas.Library.Reactors.Steps.ScoreBook do
       ) do
     accepted_book_ids = Map.get(args, :accepted_book_ids, MapSet.new())
     collab = compute_collab(book, profile.past_genres, accepted_book_ids)
-    semantic = compute_semantic(book, profile.embedding)
-    grade_fit = compute_grade_fit(book.grade_level, student_grade)
-    available = if book.available_copies > 0, do: 1.0, else: 0.0
-    diversity = compute_diversity(book.genres, profile.past_genres)
-    curation = if MapSet.member?(curated_ids, book.id), do: 1.0, else: 0.0
 
-    score =
-      weights.collab * collab +
-        weights.semantic * semantic +
-        weights.grade_fit * grade_fit +
-        weights.available * available +
-        weights.diversity * diversity +
-        weights.curation * curation
+    with {:ok, semantic} <- compute_semantic(book, profile.embedding) do
+      grade_fit = compute_grade_fit(book.grade_level, student_grade)
+      available = if book.available_copies > 0, do: 1.0, else: 0.0
+      diversity = compute_diversity(book.genres, profile.past_genres)
+      curation = if MapSet.member?(curated_ids, book.id), do: 1.0, else: 0.0
 
-    factors = %{
-      collab: collab,
-      semantic: semantic,
-      grade_fit: grade_fit,
-      available: available,
-      diversity: diversity,
-      curation: curation
-    }
+      score =
+        weights.collab * collab +
+          weights.semantic * semantic +
+          weights.grade_fit * grade_fit +
+          weights.available * available +
+          weights.diversity * diversity +
+          weights.curation * curation
 
-    {:ok, %{book: book, score: score, factors: factors}}
+      factors = %{
+        collab: collab,
+        semantic: semantic,
+        grade_fit: grade_fit,
+        available: available,
+        diversity: diversity,
+        curation: curation
+      }
+
+      {:ok, %{book: book, score: score, factors: factors}}
+    end
   end
 
   # Mirrors Xaas.Library.Ranker's (private, procedural-path) compute_collab_score/3:
@@ -76,11 +78,23 @@ defmodule Xaas.Library.Reactors.Steps.ScoreBook do
     case book.embedding do
       nil ->
         text = "#{book.title} #{book.synopsis} #{Enum.join(book.genres || [], " ")}"
-        {:ok, emb} = Embeddings.embed(text)
-        Embeddings.cosine_similarity(student_embedding, emb)
+
+        case Embeddings.embed(text) do
+          {:ok, emb} -> {:ok, Embeddings.cosine_similarity(student_embedding, emb)}
+          {:error, reason} -> {:error, reason}
+        end
 
       emb when is_list(emb) ->
-        Embeddings.cosine_similarity(student_embedding, emb)
+        {:ok, Embeddings.cosine_similarity(student_embedding, emb)}
+
+      %Ash.Vector{} = vec ->
+        # Real fix: Book.embedding is now a real pgvector-backed Ash.Vector
+        # (via the `vectorize` DSL, lib/xaas/library/book.ex) instead of a
+        # plain list -- Ecto/AshPostgres loads it back as an %Ash.Vector{}
+        # struct, not the list this function originally assumed. Mirrors
+        # the same real fix already applied in
+        # Xaas.Library.Ranker.compute_semantic_score/2.
+        {:ok, Embeddings.cosine_similarity(student_embedding, Ash.Vector.to_list(vec))}
     end
   end
 

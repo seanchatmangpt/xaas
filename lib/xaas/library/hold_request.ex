@@ -147,6 +147,16 @@ defmodule Xaas.Library.HoldRequest do
       accept []
       require_atomic? false
 
+      # Unused by this action's own logic, but required so this action can
+      # serve as an Ash.Reactor `undo_action` for `create :create_hold` in
+      # Xaas.Library.Reactors.CirculationBorrowReactor -- Ash.Reactor's
+      # CreateStep.undo/4 always calls the undo action with a single
+      # `%{changeset: ...}` argument (deps/ash/lib/ash/reactor/steps/
+      # create_step.ex), and its DSL verifier
+      # (Ash.Reactor.Dsl.Create.verify_action_takes_changeset/3) rejects any
+      # undo_action whose `arguments` list isn't exactly `[%{name: :changeset}]`.
+      argument :changeset, :term, allow_nil?: true
+
       validate compare(:status, is_equal: {:value, :active}),
         message: "Only active holds can be cancelled"
 

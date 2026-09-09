@@ -79,6 +79,54 @@ defmodule Xaas.Telemetry.OcelForwarder do
     end
   end
 
+  @doc """
+  Forward a real OCEL v2 correction/cancellation event for an action whose
+  original event was already forwarded by `forward/1` (fired synchronously
+  off `Xaas.Telemetry.OcelAshEmitter`'s `:stop` telemetry handler, mid-`:do`,
+  before `Xaas.Actuation.Reactor`'s `:receipt` step seals) but whose real
+  database effect was then rolled back by a later reactor failure.
+
+  Ash's own data-layer transaction already undoes the DB mutation; this
+  function is the compensating action for the one side effect that
+  transaction cannot touch -- the OCEL event that already left this process
+  over HTTP. It is called from `Xaas.Actuation.Kernel.undo_actuate/3`, the
+  real `undo/4` callback (see `lib/xaas/actuation.ex`) on the reactor's
+  `:do` ash_step.
+
+  Builds a distinct event (same envelope-validation + POST path as
+  `forward/1`) with `"outcome" => "cancelled"` and an `"ocel:activity"`
+  suffixed `.cancelled`, keyed by the same `idempotency_key` threaded
+  through `Xaas.Actuation.run/4`, so ex4pm_web and its downstream
+  projector/oracles can tell the original event's effect did not survive.
+
+  Returns `:ok` unconditionally, same as `forward/1` -- this runs inside
+  Reactor's undo path and must never raise or halt rollback.
+  """
+  def forward_cancellation(%{resource: resource, action: action, idempotency_key: idempotency_key}) do
+    short_name =
+      if Ash.Resource.Info.resource?(resource) do
+        Ash.Resource.Info.short_name(resource)
+      else
+        resource
+      end
+
+    event = %{
+      "ocel:eid" => Ash.UUIDv7.generate(),
+      "ocel:activity" => "#{short_name}.#{action}.cancelled",
+      "ocel:timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+      "ocel:omap" => [to_string(short_name)],
+      "ocel:vmap" => %{
+        "resource" => inspect(resource),
+        "action" => to_string(action),
+        "outcome" => "cancelled",
+        "idempotency_key" => idempotency_key,
+        "reason" => "downstream_reactor_step_failed_after_action_execution"
+      }
+    }
+
+    forward(event)
+  end
+
   defp do_forward(url, event) do
     envelope = %{
       "schema" => "xaas.ocel.v2",

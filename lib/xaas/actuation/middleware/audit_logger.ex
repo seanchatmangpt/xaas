@@ -24,6 +24,26 @@ defmodule Xaas.Actuation.Middleware.AuditLogger do
   end
 
   @impl true
+  def halt(context) do
+    duration_us =
+      case Map.get(context, :reactor_start_time) do
+        nil -> 0
+        start -> System.monotonic_time(:microsecond) - start
+      end
+
+    # Reactor.Middleware.halt/1 only receives the reactor's context map (see
+    # deps/reactor/lib/reactor/executor/hooks.ex:38-44) -- it is not handed the
+    # Reactor struct itself, so no reactor name/id is available here. The
+    # concrete halt reason is likewise not merged into context; it is only
+    # ever delivered via the {:run_halt, value} event/3 clause below, which
+    # fires (per deps/reactor/lib/reactor/executor/step_runner.ex:223-226)
+    # from the step that actually issued the halt.
+    Logger.warning("[Reactor.Audit] Reactor halted after #{duration_us}µs")
+
+    {:ok, context}
+  end
+
+  @impl true
   def error(errors, _context) do
     Logger.error("[Reactor.Audit] Failed with errors: #{inspect(errors)}")
     :ok
@@ -37,6 +57,14 @@ defmodule Xaas.Actuation.Middleware.AuditLogger do
 
   def event({:run_complete, _result}, step, _context) do
     Logger.debug("[Reactor.Audit] Step completed: #{inspect(step.name)}")
+    :ok
+  end
+
+  def event({:run_halt, reason}, step, _context) do
+    Logger.warning(
+      "[Reactor.Audit] Step #{inspect(step.name)} requested halt, reason: #{inspect(reason)}"
+    )
+
     :ok
   end
 
