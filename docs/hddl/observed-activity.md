@@ -35,3 +35,7 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
 - 2026-09-09 10:31 — no matching known task class this cycle (heartbeat: no
   new commit since last tick; vision-2030-cycle-2026-09-09-0238 still running,
   ~53min elapsed).
+- 2026-09-09 10:50 — VISION-2030-CYCLE instance, docs/vision/vision-2030-2026-09-09-0238.md
+  (real completion, commit 029f105: ggen_igniter-generated Xaas.Telemetry.OcelEnvelope
+  builder, OcelForwarder hand-wired to call it, retiring the hand-copied envelope
+  contract per this repo's generated-vs-handwritten doctrine).
