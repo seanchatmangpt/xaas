@@ -25,7 +25,7 @@ defmodule Xaas.Library.CurationTest do
     %User{id: Ash.UUID.generate(), email: email || Faker.Internet.email()}
   end
 
-  defp create_book!(attrs \\ %{}), do: Xaas.Factory.create_book!(attrs)
+  defp create_book!(attrs \\ %{}), do: Xaas.Generator.create_book!(attrs)
 
   describe "create" do
     test "creates a curation with accepted attributes and defaults, given a real actor" do

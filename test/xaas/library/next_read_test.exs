@@ -18,10 +18,12 @@ defmodule Xaas.Library.NextReadTest do
   end
 
   defp create_user!(email \\ nil) do
-    if email, do: Xaas.Factory.create_user!(%{email: email}), else: Xaas.Factory.create_user!()
+    if email,
+      do: Xaas.Generator.create_user!(%{email: email}),
+      else: Xaas.Generator.create_user!()
   end
 
-  defp create_book!(attrs), do: Xaas.Factory.create_book!(attrs)
+  defp create_book!(attrs), do: Xaas.Generator.create_book!(attrs)
 
   defp create_checkout!(user, book) do
     Checkout

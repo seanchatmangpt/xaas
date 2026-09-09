@@ -19,22 +19,25 @@ defmodule Xaas.Library.HoldRequestTest do
   # declared `grade_level` with no matching `users` column. That drift is
   # fixed (priv/repo/migrations/20260909064913_add_user_grade_level_school_id.exs
   # added the column; confirmed via a real `Ash.Seed.seed!/2` call
-  # succeeding) -- delegates to the shared Xaas.Factory (real Ash path)
-  # like every other test's `create_user!`, so a future Ash-level `User`
+  # succeeding) -- delegates to the shared Xaas.Generator (real Ash path,
+  # per Ash's own built-in Ash.Generator tool) like every other test's
+  # `create_user!`, so a future Ash-level `User`
   # change (a default, a validation, a change hook) is no longer silently
   # skipped by this one file.
   defp create_user!(email \\ nil) do
-    if email, do: Xaas.Factory.create_user!(%{email: email}), else: Xaas.Factory.create_user!()
+    if email,
+      do: Xaas.Generator.create_user!(%{email: email}),
+      else: Xaas.Generator.create_user!()
   end
 
   # This file's own default (0 available copies) differs deliberately
-  # from Xaas.Factory.create_book!/1's general default (2) -- most hold
+  # from Xaas.Generator.create_book!/1's general default (2) -- most hold
   # tests specifically want "no copies," the precondition for a hold
   # queue existing at all.
   defp create_book!(attrs) do
     available_copies = Map.get(attrs, :available_copies, 0)
 
-    Xaas.Factory.create_book!(
+    Xaas.Generator.create_book!(
       Map.merge(attrs, %{
         available_copies: available_copies,
         total_copies: Map.get(attrs, :total_copies, max(available_copies, 1))
