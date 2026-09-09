@@ -47,7 +47,6 @@ config :xaas, Xaas.Accounts.Token,
 config :xaas,
   token_signing_secret: "test-token-signing-secret-at-least-32-bytes-long-for-jwt-signing!!"
 
-
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :xaas, XaasWeb.Endpoint,
@@ -72,3 +71,10 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Real Req retry behavior (same attempt count, same real
+# Req.TransportError{reason: :econnrefused} path) but with zero backoff
+# delay -- collapses prometheus_query_controller_test.exs's two real
+# retry-exhaustion tests from ~6.6s each to a few ms without faking the
+# retry count or the transport error itself.
+config :req, default_options: [retry_delay: fn _n -> 0 end]

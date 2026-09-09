@@ -26,7 +26,24 @@ ExUnit.start()
 # machine (test/xaas/ontology/ex4pm_staleness_test.exs) are excluded by
 # default too, so the default `mix test` never depends on that sibling
 # repo; run explicitly with `mix test --include external`.
-ExUnit.configure(exclude: [:stress, :kind, :requires_cnv_deploy, :external])
+# Real tests that spawn a full separate OS-process `mix`/`git` subprocess
+# (e.g. test/mix/tasks/xaas_verify_and_commit_test.exs,
+# test/mix/tasks/xaas_ingest_capability_receipts_test.exs) pay 2+ nested
+# BEAM-VM boots each and are excluded from the default fast loop; run
+# explicitly with `mix test --include subprocess` or `mix test.full`.
+# Real, disclosed bug found and fixed here: test/xaas/library/explainer_test.exs
+# already tags its real Groq network call `@describetag :external_llm`, but
+# that tag was never added to this exclude list -- the test ran (and made a
+# real external API call) on every default `mix test` regardless, defeating
+# its own tag's intent. Excluded here too; run explicitly with
+# `mix test --include external_llm`.
+# Explicit, machine-scaled max_cases (was implicit ExUnit default of
+# System.schedulers_online() * 2 -- asserted here rather than left implicit).
+ExUnit.configure(
+  max_cases: System.schedulers_online() * 2,
+  exclude: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess]
+)
+
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the
@@ -37,4 +54,3 @@ Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, :manual)
 unless Process.whereis(Xaas.PubSub) do
   {:ok, _} = Phoenix.PubSub.Supervisor.start_link(name: Xaas.PubSub)
 end
-

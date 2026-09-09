@@ -18,6 +18,18 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
+
+    # Real fixture-scoping fix, not a mock: `priv/ocel/ash-actions.ndjson`
+    # is the real, shared, never-rotated OCEL log every Ash action across
+    # every test run appends to (ocel_ash_emitter.ex:237-239). Truncating
+    # it here means read_ocel_lines/0 below reads only this test's own
+    # real writes instead of the whole repo's accumulated test history
+    # (352MB / 844,698 lines observed), which is the actual 13.3s cost --
+    # not network retry or sleep.
+    log_path = Xaas.Telemetry.OcelAshEmitter.log_path()
+    File.mkdir_p!(Path.dirname(log_path))
+    File.write!(log_path, "")
+
     :ok
   end
 
@@ -30,7 +42,9 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
 
   test "a real successful Ash create and a real failing Ash update produce OCEL lines with distinguishable outcomes" do
     actor =
-      Ash.Seed.seed!(User, %{email: "ocel-emitter-#{System.unique_integer([:positive])}@example.com"})
+      Ash.Seed.seed!(User, %{
+        email: "ocel-emitter-#{System.unique_integer([:positive])}@example.com"
+      })
 
     lines_before = read_ocel_lines()
     count_before = length(lines_before)
@@ -103,8 +117,11 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
     ok_line = Enum.find(create_lines, &(&1["ocel:vmap"]["outcome"] == "ok"))
     error_line = Enum.find(create_lines, &(&1["ocel:vmap"]["outcome"] == "error"))
 
-    refute is_nil(ok_line), "expected a real OCEL line with outcome \"ok\" for the successful create"
-    refute is_nil(error_line), "expected a real OCEL line with outcome \"error\" for the forbidden create"
+    refute is_nil(ok_line),
+           "expected a real OCEL line with outcome \"ok\" for the successful create"
+
+    refute is_nil(error_line),
+           "expected a real OCEL line with outcome \"error\" for the forbidden create"
 
     assert ok_line["ocel:vmap"]["outcome"] == "ok"
     assert error_line["ocel:vmap"]["outcome"] == "error"

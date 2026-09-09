@@ -28,6 +28,16 @@ defmodule Xaas.MixProject do
     ]
   end
 
+  # `mix test` is a built-in task Mix already runs under :test env by
+  # convention -- a custom alias like `test.full` is not, and without
+  # this it runs under :dev (real failure: `mix test.full` raised
+  # "MIX_ENV=dev but the task you are running needs to be run in the
+  # :test env"). Declaring it here is the real fix, not
+  # MIX_ENV=test mix test.full at every call site.
+  def cli do
+    [preferred_envs: ["test.full": :test, "test.integration": :test]]
+  end
+
   # Configuration for the OTP application.
   #
   # Type `mix help compile.app` for more information.
@@ -217,6 +227,32 @@ defmodule Xaas.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      # Full/Chicago-integration suite: everything the fast default `mix
+      # test` excludes (see test/test_helper.exs's `exclude:` list) --
+      # real network retries against unreachable services (:external),
+      # a real Groq API call requiring GROQ_API_KEY (:external_llm), real
+      # nested `mix`/`git` OS-process pipelines (:subprocess, e.g.
+      # xaas.verify_and_commit, xaas.ingest_capability_receipts), real
+      # concurrent-connection-pool stress (:stress), real live-kind-pod
+      # (:kind), and real cnv-deploy-dependent (:requires_cnv_deploy)
+      # tests. Run this before merge/CI, not on every fast inner-loop run.
+      "test.full": [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "test --include stress --include kind --include requires_cnv_deploy --include external --include external_llm --include subprocess"
+      ],
+      # Chicago/integration run: the real-network (:external, :external_llm)
+      # and real-subprocess (:subprocess) tests that only need what's
+      # already available in a real local dev environment (Postgres,
+      # network, `mix`/`git` on PATH) -- unlike `test.full`, this
+      # deliberately excludes :stress (connection-pool-hungry concurrency
+      # races), :kind, and :requires_cnv_deploy, which need a live k8s
+      # cluster this environment does not have.
+      "test.integration": [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "test --include external --include external_llm --include subprocess"
+      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind default", "esbuild default"],
       "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]

@@ -75,6 +75,11 @@ defmodule Xaas.Library.ExplainerTest do
   end
 
   describe "Explainer.explain/3 real end-to-end degradation" do
+    # Same real-network-dependency class as the GroqAdapter describe block
+    # below: when GROQ_API_KEY is set in this environment, this makes a
+    # real Groq call (by design -- see the comment inside), so its
+    # duration is exactly as environment-dependent as that block's.
+    @tag :external_llm
     test "falls back to the template adapter's why/parts shape when Groq is unavailable" do
       # No GROQ_API_KEY manipulation/mocking here -- this simply verifies
       # the *shape and source tag* of the real degrade path using whatever
@@ -105,7 +110,8 @@ defmodule Xaas.Library.ExplainerTest do
           book_grade_level: "4.0",
           book_genres: ["adventure", "science fiction"],
           past_titles: ["Hatchet"],
-          factor_summary: "collab=0.42 semantic=0.77 grade_fit=0.9 availability=1.0 diversity=0.55 curation=0.0"
+          factor_summary:
+            "collab=0.42 semantic=0.77 grade_fit=0.9 availability=1.0 diversity=0.55 curation=0.0"
         }
 
         case GroqAdapter.explain(args) do
