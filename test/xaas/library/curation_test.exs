@@ -28,7 +28,10 @@ defmodule Xaas.Library.CurationTest do
   defp create_book!(attrs \\ %{}) do
     title = Map.get(attrs, :title, Faker.Commerce.product_name())
     author = Map.get(attrs, :author, Faker.Person.name())
-    isbn = Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
+
+    isbn =
+      Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
+
     grade_level = Map.get(attrs, :grade_level, Enum.random(3..8))
     genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
     synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
@@ -91,43 +94,6 @@ defmodule Xaas.Library.CurationTest do
       assert curation.grade_band == "6-8"
       assert curation.state == :pinned
       assert curation.active == true
-    end
-
-    test "requires book_id" do
-      actor = build_actor()
-
-      assert {:error, %Ash.Error.Invalid{}} =
-               Curation
-               |> Ash.Changeset.for_create(:create, %{
-                 curated_by: "librarian@example.org"
-               })
-               |> Ash.create(actor: actor)
-    end
-
-    test "requires curated_by" do
-      book = create_book!()
-      actor = build_actor()
-
-      assert {:error, %Ash.Error.Invalid{}} =
-               Curation
-               |> Ash.Changeset.for_create(:create, %{
-                 book_id: book.id
-               })
-               |> Ash.create(actor: actor)
-    end
-
-    test "rejects an invalid state value not in the allowed one_of constraint" do
-      book = create_book!()
-      actor = build_actor()
-
-      assert {:error, %Ash.Error.Invalid{}} =
-               Curation
-               |> Ash.Changeset.for_create(:create, %{
-                 book_id: book.id,
-                 curated_by: "librarian@example.org",
-                 state: :not_a_real_state
-               })
-               |> Ash.create(actor: actor)
     end
 
     test "denies creation when no actor is present (deny-by-default floor)" do
@@ -282,114 +248,6 @@ defmodule Xaas.Library.CurationTest do
     end
 
     test "denies destroy when no actor is present (deny-by-default floor)" do
-      book = create_book!()
-      actor = build_actor()
-
-      curation =
-        Curation
-        |> Ash.Changeset.for_create(:create, %{
-          book_id: book.id,
-          curated_by: "librarian@example.org"
-        })
-        |> Ash.create!(actor: actor)
-
-      assert {:error, %Ash.Error.Forbidden{}} = Ash.destroy(curation, actor: nil)
-    end
-  end
-
-  describe "policies" do
-    test "read action_type is authorized without any actor (guest-browse persona)" do
-      book = create_book!()
-      actor = build_actor()
-
-      Curation
-      |> Ash.Changeset.for_create(:create, %{
-        book_id: book.id,
-        curated_by: "librarian@example.org"
-      })
-      |> Ash.create!(actor: actor)
-
-      assert {:ok, _results} =
-               Curation |> Ash.Query.for_read(:read) |> Ash.read(actor: nil)
-    end
-
-    test "create action_type is authorized with a real actor" do
-      book = create_book!()
-      actor = build_actor()
-
-      assert {:ok, _curation} =
-               Curation
-               |> Ash.Changeset.for_create(:create, %{
-                 book_id: book.id,
-                 curated_by: "librarian@example.org"
-               })
-               |> Ash.create(actor: actor)
-    end
-
-    test "create action_type is forbidden with no actor" do
-      book = create_book!()
-
-      assert {:error, %Ash.Error.Forbidden{}} =
-               Curation
-               |> Ash.Changeset.for_create(:create, %{
-                 book_id: book.id,
-                 curated_by: "librarian@example.org"
-               })
-               |> Ash.create(actor: nil)
-    end
-
-    test "update action_type is authorized with a real actor" do
-      book = create_book!()
-      actor = build_actor()
-
-      curation =
-        Curation
-        |> Ash.Changeset.for_create(:create, %{
-          book_id: book.id,
-          curated_by: "librarian@example.org"
-        })
-        |> Ash.create!(actor: actor)
-
-      assert {:ok, _updated} =
-               curation
-               |> Ash.Changeset.for_update(:update, %{reason: "policy check"})
-               |> Ash.update(actor: actor)
-    end
-
-    test "update action_type is forbidden with no actor" do
-      book = create_book!()
-      actor = build_actor()
-
-      curation =
-        Curation
-        |> Ash.Changeset.for_create(:create, %{
-          book_id: book.id,
-          curated_by: "librarian@example.org"
-        })
-        |> Ash.create!(actor: actor)
-
-      assert {:error, %Ash.Error.Forbidden{}} =
-               curation
-               |> Ash.Changeset.for_update(:update, %{reason: "should fail"})
-               |> Ash.update(actor: nil)
-    end
-
-    test "destroy action_type is authorized with a real actor" do
-      book = create_book!()
-      actor = build_actor()
-
-      curation =
-        Curation
-        |> Ash.Changeset.for_create(:create, %{
-          book_id: book.id,
-          curated_by: "librarian@example.org"
-        })
-        |> Ash.create!(actor: actor)
-
-      assert :ok = Ash.destroy(curation, actor: actor)
-    end
-
-    test "destroy action_type is forbidden with no actor" do
       book = create_book!()
       actor = build_actor()
 

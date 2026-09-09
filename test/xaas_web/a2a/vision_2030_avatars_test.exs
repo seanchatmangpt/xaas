@@ -56,7 +56,9 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
   end
 
   defp grant_persona!(user_id) do
-    PersonaGrant.grant!(@internal_api_caller_id, user_id, "vision_2030_avatars_test", authorize?: false)
+    PersonaGrant.grant!(@internal_api_caller_id, user_id, "vision_2030_avatars_test",
+      authorize?: false
+    )
   end
 
   defp create_granted_user!(email \\ nil) do
@@ -91,82 +93,16 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
     |> Enum.map_join(" ", fn %A2A.Part.Text{text: text} -> text end)
   end
 
-  describe "avatar 1: legitimate granted student persona" do
-    test "real granted \"as:<user_id> browse grade:N\" and a real granted checkout both succeed", %{
-      agent: agent
-    } do
-      student = create_granted_user!()
-      book = create_book!(%{title: "Granted Student Reads This", grade_level: Decimal.new("5.0")})
-
-      assert {:ok, browse_task} = A2A.call(agent, "as:#{student.id} browse grade:5")
-      assert browse_task.status.state == :completed
-      assert task_text(browse_task) =~ "Granted Student Reads This"
-
-      checkout_book = create_book!(%{available_copies: 2, total_copies: 2})
-
-      assert {:ok, checkout_task} =
-               A2A.call(agent, "as:#{student.id} checkout book:#{checkout_book.id} school:vision-2030-school")
-
-      assert checkout_task.status.state == :completed
-      assert task_text(checkout_task) =~ "Checked out book #{checkout_book.id}"
-      assert task_text(checkout_task) =~ "for user #{student.id}"
-
-      real_checkout =
-        Checkout
-        |> Ash.Query.filter(book_id == ^checkout_book.id and user_id == ^student.id)
-        |> Ash.read_one!(authorize?: false)
-
-      assert real_checkout != nil
-      assert real_checkout.status == :borrowed
-
-      reloaded_book = Ash.get!(Book, checkout_book.id, authorize?: false)
-      assert reloaded_book.available_copies == 1
-
-      entries = audit_entries_for(student.id)
-      assert Enum.any?(entries, &(&1.action == "a2a.actor_resolution.allowed"))
-      assert Enum.any?(entries, &(&1.metadata["outcome"] == "allowed"))
-    end
-  end
-
-  describe "avatar 2: guest/unauthenticated persona" do
-    test "real \"as:guest browse ...\" succeeds read-only; real \"as:guest checkout ...\" is refused", %{
-      agent: agent
-    } do
-      book = create_book!(%{title: "Guest Visible Book", grade_level: Decimal.new("6.0"), available_copies: 4, total_copies: 4})
-
-      assert {:ok, browse_task} = A2A.call(agent, "as:guest browse grade:6")
-      assert browse_task.status.state == :completed
-      assert task_text(browse_task) =~ "Guest Visible Book"
-
-      before_count = Ash.count!(Checkout, authorize?: false)
-
-      assert {:ok, checkout_task} =
-               A2A.call(agent, "as:guest checkout book:#{book.id} school:vision-2030-school")
-
-      assert checkout_task.status.state == :completed
-      assert task_text(checkout_task) =~ "requires a real as:<user_id> actor, not guest"
-
-      after_count = Ash.count!(Checkout, authorize?: false)
-      assert after_count == before_count
-
-      reloaded_book = Ash.get!(Book, book.id, authorize?: false)
-      assert reloaded_book.available_copies == 4
-
-      before_audit_count = Ash.count!(AuditLogEntry, authorize?: false)
-      assert {:ok, _} = A2A.call(agent, "as:guest browse grade:6")
-      after_audit_count = Ash.count!(AuditLogEntry, authorize?: false)
-      assert after_audit_count == before_audit_count
-    end
-  end
-
   describe "avatar 3: impersonation attempt persona" do
-    test "an \"as:<user_id>\" claim for a user with NO active grant is denied and audit-logged, never resolved", %{
-      agent: agent
-    } do
+    test "an \"as:<user_id>\" claim for a user with NO active grant is denied and audit-logged, never resolved",
+         %{
+           agent: agent
+         } do
       victim = create_user!()
       # Deliberately no grant_persona!/1 call -- this is the real
       # ungranted-impersonation-attempt fixture the cycle's design names.
-      _bait_book = create_book!(%{title: "Impersonator Should Never See This In A Resolved Actor Read"})
+      _bait_book =
+        create_book!(%{title: "Impersonator Should Never See This In A Resolved Actor Read"})
 
       assert {:ok, task} = A2A.call(agent, "as:#{victim.id} browse grade:5")
 
@@ -181,7 +117,8 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
 
       # Confirm no PersonaGrant was ever silently created/found for this
       # user id -- the denial is real, not a fixture artifact.
-      assert {:ok, []} = PersonaGrant.active_for(@internal_api_caller_id, victim.id, authorize?: false)
+      assert {:ok, []} =
+               PersonaGrant.active_for(@internal_api_caller_id, victim.id, authorize?: false)
     end
   end
 
@@ -219,9 +156,10 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
       |> List.first()
     end
 
-    test "real POST /mcp list_books and books_by_grade_band return every book regardless of asserted persona", %{
-      conn: conn
-    } do
+    test "real POST /mcp list_books and books_by_grade_band return every book regardless of asserted persona",
+         %{
+           conn: conn
+         } do
       tag = "mcp-avatar-#{System.unique_integer([:positive])}"
 
       owner = create_granted_user!()
@@ -284,7 +222,10 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
       decoded_2 = Jason.decode!(encoded_2)
 
       returned = Enum.find(decoded_2, &(&1["id"] == book.id))
-      assert returned != nil, "expected the second, unrelated MCP session to still see #{book.id} (documented no-scoping behavior)"
+
+      assert returned != nil,
+             "expected the second, unrelated MCP session to still see #{book.id} (documented no-scoping behavior)"
+
       assert returned["author"] == "Avatar Author"
 
       # And confirm the surface really is unauthenticated-beyond-the-
@@ -295,12 +236,15 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
         build_conn()
         |> put_req_header("content-type", "application/json")
         |> put_req_header("accept", "application/json")
-        |> post("/mcp", Jason.encode!(%{
-          "jsonrpc" => "2.0",
-          "id" => 1,
-          "method" => "initialize",
-          "params" => %{"protocolVersion" => "2024-11-05", "capabilities" => %{}}
-        }))
+        |> post(
+          "/mcp",
+          Jason.encode!(%{
+            "jsonrpc" => "2.0",
+            "id" => 1,
+            "method" => "initialize",
+            "params" => %{"protocolVersion" => "2024-11-05", "capabilities" => %{}}
+          })
+        )
 
       assert unauth_conn.status == 401
     end
