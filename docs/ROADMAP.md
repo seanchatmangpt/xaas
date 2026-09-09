@@ -100,14 +100,11 @@ re-researching from zero.
 
 ## What xaas needs from ex4pm (unblocked — real, actionable now)
 
-1. **Real path dependency, not read-and-copy.** `Xaas.Telemetry.OcelForwarder`
-   (`lib/xaas/telemetry/ocel_forwarder.ex`, built this session) currently hand-builds
-   and hand-documents the envelope shape by reading `ex4pm_core`'s source — a
-   duplicated, driftable understanding of a real dependency. Fix: add
-   `{:ex4pm_core, path: "../ex4pm/apps/ex4pm_core"}` to `mix.exs`, call
-   `Ex4pm.OCEL.validate_envelope/1` (or its real builder function) directly before
-   POSTing, so a future ex4pm contract change fails xaas's own compile/test instead of
-   silently drifting apart.
+1. **Real path dependency: done.** `{:ex4pm, path: "../ex4pm"}` (`mix.exs:198-204`)
+   — ex4pm is a flat app (`app: :ex4pm`), not an umbrella with an `apps/ex4pm_core`
+   child; the previous `{:ex4pm_core, path: "../ex4pm/apps/ex4pm_core"}` path never
+   resolved and predates the flat-app layout. Already working; no
+   `apps/ex4pm_core` path exists.
 2. **ggen_igniter against `ex4pm_contracts`'s real ontology, not LLM handwriting.**
    `ex4pm_contracts` holds a real, hashed, versioned RDF ontology
    (`priv/ontology/ex4pm.ttl`) and SHACL shapes (`priv/shacl/ex4pm-shapes.ttl`) —
@@ -117,12 +114,22 @@ re-researching from zero.
    builder/validator; keep the hand-written version only until the generated one is
    proven to pass the same real test (`test/xaas/telemetry/ocel_forwarder_test.exs`),
    then retire the hand-written one.
-3. **`ex4pm_web`'s real ingest endpoint stays the network seam**, unchanged by 1-2:
-   `POST /api/v1/ocel/events` → `Ex4pmWeb.OcelController.ingest/2` (confirmed by direct
-   read of `ex4pm_web/lib/ex4pm_web/{router,controllers/ocel_controller}.ex`). Adding
-   `ex4pm_core` as a compile-time dependency does not change this — xaas still reaches
-   ex4pm over HTTP at runtime, per the role split above; the dependency is for shared
-   *types and validation*, not for calling ex4pm's runtime functions in-process.
+3. **No real production HTTP ingest endpoint currently exists in ex4pm.** Verified
+   directly (`find /Users/sac/ex4pm/lib -iname '*web*' -o -iname 'router.ex'`
+   returns nothing): the flat-app refactor removed the web layer from `lib/` entirely
+   — no `Ex4pmWeb.OcelController`, no `router.ex`, no `ex4pm_web` dir under `lib/`.
+   A `POST /api/v1/ocel/events` → `Ex4pmWeb.OcelController.ingest/2` route does still
+   exist, but only as a test/demo harness at `test/demo_web/lib/ex4pm_web/router.ex`
+   and `test/demo_web/lib/ex4pm_web/controllers/ocel_controller.ex` (confirmed by
+   direct read), which calls the real production `Ex4pm.Stream.Ingest.ingest_envelope`
+   — corroborated independently by ex4pm's own
+   `docs/ROADMAP-xaas-integration.md:153-159`. `Xaas.Telemetry.OcelForwarder`
+   currently POSTs to `:xaas, :ex4pm_ocel_ingest_url` (config-driven, no compile-time
+   coupling to a specific ex4pm module) and treats an unreachable target as non-fatal
+   (`ocel_forwarder_test.exs`). Before xaas can rely on HTTP ingest in production,
+   either a real `ex4pm_web`-equivalent app needs to ship in ex4pm, or xaas needs to
+   target the in-process path (`Ex4pm.Stream.Ingest` / the `ex4pm_domain` notifier)
+   instead — this is an open gap, not a confirmed seam.
 
 ## Sequencing (HDDL-shaped — see `docs/hddl/`)
 
