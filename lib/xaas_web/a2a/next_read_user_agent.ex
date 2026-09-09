@@ -8,33 +8,17 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   real Ash reads/creates with verified preconditions, not a stub.
   """
 
+  # Skills list is generated (priv/ggen_igniter/mcp_a2a/xaas-surface.ttl's
+  # ema:Capability rows, exposedVia "a2a") -- see
+  # XaasWeb.A2A.NextReadUserAgentSkills's own moduledoc to regenerate.
+  # This eliminates the duplicated-with-nothing-else literal skills list
+  # that used to live only here; real dispatch below is unaffected -- the
+  # generator never touches this module.
   use A2A.Agent,
     name: "next-read-user",
     description:
       "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing with HDDL task calculus",
-    skills: [
-      %{
-        id: "browse",
-        name: "Browse books",
-        description:
-          "List books for a grade band as a given user actor (HDDL task: MCP-INSPECT-CATALOG)",
-        tags: ["next-read", "library", "hddl"]
-      },
-      %{
-        id: "checkout",
-        name: "Checkout a book",
-        description:
-          "Borrow a book as a given user actor (HDDL task: A2A-SIMULATE-USER-CIRCULATION / checkout-book)",
-        tags: ["next-read", "library", "hddl"]
-      },
-      %{
-        id: "hddl-plan",
-        name: "HDDL Plan Inspection",
-        description:
-          "Inspect the formal HDDL compound tasks, methods, and epistemic receipts for Next Read",
-        tags: ["next-read", "hddl", "calculus"]
-      }
-    ]
+    skills: XaasWeb.A2A.NextReadUserAgentSkills.skills()
 
   alias Xaas.Library.{Book, Checkout, HoldRequest}
   alias Xaas.Library.Changes.WriteActorResolutionAudit
