@@ -58,9 +58,9 @@ config :ash_oban, pro?: false
 # `pinned_sha` safely.
 config :xaas, :ex4pm_ontology_check,
   repo_path: System.get_env("EX4PM_REPO_PATH", Path.expand("~/ex4pm")),
-  pinned_sha: "18c6d531c3ac42aee51ba4ddf1daf280f4864717",
+  pinned_sha: "ade25ed12e93f89e7a2e1490698f99ae4947d702",
   upstream_path: "lib/ex4pm/ocel.ex",
-  vendored_path: "priv/packs/xaas_library_pack/ontology.ttl"
+  vendored_path: "priv/vendor/ex4pm/ocel.ex"
 
 config :xaas, Oban,
   engine: Oban.Engines.Basic,
