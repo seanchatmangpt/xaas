@@ -5,6 +5,8 @@ defmodule Xaas.Library.Embeddings do
   to embed book synopses, titles, and reading preferences offline without external network or LLM dependencies.
   """
 
+  @model_name "BAAI/bge-small-en-v1.5"
+
   @doc """
   Generates an embedding vector (Nx tensor or list of floats) for the given text.
   If Bumblebee model is loaded in memory/process, uses serving; otherwise computes
