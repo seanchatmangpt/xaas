@@ -79,10 +79,10 @@ defmodule Xaas.Library.Reactors.Steps.ScoreBook do
       nil ->
         text = "#{book.title} #{book.synopsis} #{Enum.join(book.genres || [], " ")}"
 
-        case Embeddings.embed(text) do
-          {:ok, emb} -> {:ok, Embeddings.cosine_similarity(student_embedding, emb)}
-          {:error, reason} -> {:error, reason}
-        end
+        # Embeddings.embed/1 is total (pure Nx hashing, no failure path) -- see
+        # Xaas.Library.Embeddings @spec. {:error, _} arm removed as dead code.
+        {:ok, emb} = Embeddings.embed(text)
+        {:ok, Embeddings.cosine_similarity(student_embedding, emb)}
 
       emb when is_list(emb) ->
         {:ok, Embeddings.cosine_similarity(student_embedding, emb)}

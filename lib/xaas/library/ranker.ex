@@ -228,7 +228,13 @@ defmodule Xaas.Library.Ranker do
     end
   end
 
-  defp compute_semantic_score(book, student_embedding) do
+  @doc """
+  Computes the cosine-similarity semantic factor between a Book's stored (or
+  on-demand computed) embedding and a reader/student profile embedding.
+  Public so it can be exercised directly against real Book records/embeddings.
+  """
+  @spec compute_semantic_score(Book.t(), list(float())) :: float()
+  def compute_semantic_score(book, student_embedding) do
     book_embedding =
       case book.embedding do
         nil ->

@@ -9,7 +9,7 @@ defmodule Xaas.Library.RankerTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Config, Curation, Ranker}
+  alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, Ranker}
   require Ash.Query
 
   setup do
@@ -177,6 +177,32 @@ defmodule Xaas.Library.RankerTest do
 
       assert is_float(factors.semantic)
       assert factors.semantic >= 0.0 and factors.semantic <= 1.0
+    end
+  end
+
+  describe "semantic score computation against a real stored embedding" do
+    test "compute_semantic_score/2 returns a real float in [0.0, 1.0] for a real Book with a real embedding" do
+      book =
+        create_book!(%{
+          title: "Semantic Score Direct Book",
+          synopsis: "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
+          genres: ["Science", "Oceanography"],
+          grade_level: 6
+        })
+
+      # Reload to get the real, Ash-vectorize-derived embedding persisted on the row
+      # (vectorize runs as an :after_action strategy from :synopsis -- see
+      # lib/xaas/library/book.ex), not a value we construct by hand.
+      book = Ash.get!(Book, book.id, authorize?: false)
+      assert %Ash.Vector{} = book.embedding
+
+      {:ok, reader_embedding} =
+        Embeddings.embed("Ocean exploration, marine biology, and submarine expeditions in deep trenches.")
+
+      score = Ranker.compute_semantic_score(book, reader_embedding)
+
+      assert is_float(score)
+      assert score >= 0.0 and score <= 1.0
     end
   end
 

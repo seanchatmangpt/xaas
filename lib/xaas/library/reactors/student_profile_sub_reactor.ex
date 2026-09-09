@@ -40,13 +40,10 @@ defmodule Xaas.Library.Reactors.StudentProfileSubReactor do
     async? true
 
     run fn %{profile_data: %{profile_text: text, past_genres: genres, past_books: books}}, _context ->
-      case Embeddings.embed(text) do
-        {:ok, embedding} ->
-          {:ok, %{embedding: embedding, past_genres: genres, past_books: books}}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+      # Embeddings.embed/1 is total (pure Nx hashing, no failure path) -- see
+      # Xaas.Library.Embeddings @spec. {:error, _} arm removed as dead code.
+      {:ok, embedding} = Embeddings.embed(text)
+      {:ok, %{embedding: embedding, past_genres: genres, past_books: books}}
     end
 
     # No compensate: this step has no side effect (no write, no external

@@ -35,16 +35,15 @@ defmodule Xaas.Library.EmbeddingModels.LocalNx do
 
   @impl true
   def generate(texts, _opts) when is_list(texts) do
+    # Embeddings.embed/1 is total (pure Nx hashing, no failure path) -- see
+    # Xaas.Library.Embeddings @spec. {:error, _} arm removed as dead code.
     texts
     |> Enum.reduce_while({:ok, []}, fn text, {:ok, acc} ->
-      case Embeddings.embed(text || "") do
-        {:ok, vector} -> {:cont, {:ok, [vector | acc]}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
+      {:ok, vector} = Embeddings.embed(text || "")
+      {:cont, {:ok, [vector | acc]}}
     end)
     |> case do
       {:ok, vectors} -> {:ok, Enum.reverse(vectors)}
-      {:error, reason} -> {:error, reason}
     end
   end
 end
