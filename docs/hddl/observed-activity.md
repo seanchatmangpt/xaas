@@ -53,3 +53,5 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
   idle, no new commit since last tick).
 - 2026-09-09 12:50 — VISION-2030-CYCLE instance, docs/vision/vision-2030-2026-09-09-0538.md
   (charter written, workflow launched, no commit yet as of this tick).
+- 2026-09-09 13:11 — no matching known task class this cycle (heartbeat: no
+  new commit since last tick; vision-2030-cycle-2026-09-09-0538 still running).
