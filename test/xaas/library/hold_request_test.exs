@@ -137,6 +137,16 @@ defmodule Xaas.Library.HoldRequestTest do
       user = create_user!()
       hold = place_hold!(user, book)
 
+      # :fulfill's own after_action calls Book.borrow_copy (an atomic
+      # decrement guarded by available_copies > 0, see book.ex) -- so a
+      # copy must actually become available first, same as the sibling
+      # "fulfills an active hold" test above, or even this first (valid)
+      # fulfill call raises before the test reaches its real target: the
+      # second, already-fulfilled call refused below.
+      book
+      |> Ash.Changeset.for_update(:return_copy, %{})
+      |> Ash.update!(authorize?: false)
+
       fulfilled =
         hold
         |> Ash.Changeset.for_update(:fulfill, %{})
@@ -250,6 +260,12 @@ defmodule Xaas.Library.HoldRequestTest do
       book = create_book!(%{available_copies: 0})
       user = create_user!()
       hold = place_hold!(user, book)
+
+      # See the "already fulfilled" test above -- :fulfill needs a real
+      # available copy for its own Book.borrow_copy decrement to succeed.
+      book
+      |> Ash.Changeset.for_update(:return_copy, %{})
+      |> Ash.update!(authorize?: false)
 
       fulfilled =
         hold

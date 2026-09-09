@@ -2,106 +2,39 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   @moduledoc """
   Real A2A (Agent-to-Agent, https://google.github.io/A2A/) server agent that
   simulates a Next Read end user (a student persona borrowing/browsing
-  books). Built so an MCP-speaking LLM (or any A2A client) can drive
-  `Xaas.Library` the same way a human reader would through
-  `XaasWeb.NextRead.ReaderLive` -- real Ash reads/creates, not a stub.
-
-  ## Why this exists (per explicit user direction)
-
-  MCP tools (`Xaas.Library`'s `tools do` block, wired at `/mcp`) expose a
-  fixed, pre-declared set of read-only actions to a single calling agent.
-  A2A is complementary: it lets multiple *simulated user personas* converse
-  with the app turn-by-turn (multi-turn `A2A.Agent` tasks), each resolving
-  to its own actor, so "ultracode" driving several personas at once can
-  exercise Next Read's real flows (browse -> recommend -> checkout) the
-  way concurrent real students would, not just one fixed tool call.
-
-  ## Real actor resolution -- and a disclosed, unresolved authorization gap
-
-  Every message must open with `as:<user_id>` naming a real
-  `Xaas.Accounts.User` id (or the literal `as:guest` for an unauthenticated
-  browse-only persona). `resolve_actor/1` loads that user via
-  `Ash.get(..., authorize?: false)` and threads it through every Ash call
-  as `actor:` -- Ash's own policies on `Book`/`Checkout`/`Curation`
-  (currently `authorize_if always()` for every action type, see those
-  resources' own `policies do` blocks) are what actually decide what the
-  resolved actor can do; this agent adds no privilege of its own beyond
-  what those policies already grant to every actor.
-
-  CLOSED (real fix, `full_grant_enforcement` cycle): `as:<user_id>` used to
-  be a bare, self-asserted claim with no verification that the A2A caller
-  was actually authorized to act as that user -- any holder of the shared
-  `INTERNAL_API_TOKEN` bearer token could impersonate any
-  `Xaas.Accounts.User` id it could guess or enumerate. `resolve_actor/2`
-  now requires a real, active `Xaas.Library.PersonaGrant` row binding the
-  caller identity (`"internal_api_token"`, the only caller identity this
-  path authenticates today) to the claimed `user_id` before loading that
-  user; an ungranted claim is denied (`{:error, :unauthorized_actor}`,
-  surfaced to the A2A caller as an `{:error, _}` reply, never silently
-  downgraded to `actor: nil`) and both outcomes write a real
-  `Xaas.Operations.AuditLogEntry` row via
-  `Xaas.Library.Changes.WriteActorResolutionAudit`. See
-  `Xaas.Library.PersonaGrant`'s own moduledoc for the grant model.
-
-  Still out of scope (named, not silently expanded into): the MCP `/mcp`
-  Book/Curation read-only surface has the same conceptual root cause
-  (`ResolveOrgActor`'s caller-asserted-not-authenticated `X-Org-Id`) and
-  needs the identical fix shape, but binding it is router-level tenant
-  plumbing left for a separate cycle.
-
-  `Checkout.borrow` (used by the `checkout` command below) is routed
-  through `Xaas.Actuation.run/4`, the same receipted, idempotency-keyed
-  admission path used by `Xaas.Marketplace.Provider.actuate_status`. The
-  idempotency key is deterministic (`checkout:<book_id>:<user_id>:
-  <school_id>`), so a retried or duplicated A2A checkout message replays
-  the sealed receipt instead of double-decrementing `Book.available_copies`.
-
-  ## Supported commands (plain-text, one per message)
-
-  - `as:<user_id> browse grade:<n>` -- list books via `Book.by_grade_band`
-    (n-1..n+1) as that actor.
-  - `as:<user_id> recommend grade:<n>` -- same as browse, phrased as a
-    recommendation ask (routes through the same real `by_grade_band` read;
-    Next Read's own ranker at `lib/xaas/library/ranker.ex` is the richer
-    scoring path used by the LiveView itself).
-  - `as:<user_id> checkout book:<book_id> school:<school_id>` -- real
-    `Checkout.borrow` create action, admitted through `Xaas.Actuation.run/4`
-    (decrements shelf inventory via `Xaas.Library.Changes
-    .DecrementBookInventory`, same as the LiveView's checkout button).
-  - `as:guest ...` -- any command with an unresolvable/guest actor still
-    runs with `actor: nil`, exercising the same `authorize_if always()`
-    read policies unauthenticated browsing already gets.
-
-  Malformed commands return `{:input_required, ...}` asking for the
-  correct shape rather than guessing -- multi-turn, per `A2A.Agent`'s own
-  task lifecycle.
+  books) grounded in the formal HDDL Task Calculus (docs/hddl/next-read.hddl).
+  Built so an MCP-speaking LLM (or any A2A client) can drive `Xaas.Library`
+  the same way a human reader would through `XaasWeb.NextRead.ReaderLive` --
+  real Ash reads/creates with verified preconditions, not a stub.
   """
 
   use A2A.Agent,
     name: "next-read-user",
-    description: "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing",
+    description: "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing with HDDL task calculus",
     skills: [
       %{
         id: "browse",
         name: "Browse books",
-        description: "List books for a grade band as a given user actor",
-        tags: ["next-read", "library"]
+        description: "List books for a grade band as a given user actor (HDDL task: MCP-INSPECT-CATALOG)",
+        tags: ["next-read", "library", "hddl"]
       },
       %{
         id: "checkout",
         name: "Checkout a book",
-        description: "Borrow a book as a given user actor (real Ash create action)",
-        tags: ["next-read", "library"]
+        description: "Borrow a book as a given user actor (HDDL task: A2A-SIMULATE-USER-CIRCULATION / checkout-book)",
+        tags: ["next-read", "library", "hddl"]
+      },
+      %{
+        id: "hddl-plan",
+        name: "HDDL Plan Inspection",
+        description: "Inspect the formal HDDL compound tasks, methods, and epistemic receipts for Next Read",
+        tags: ["next-read", "hddl", "calculus"]
       }
     ]
 
   alias Xaas.Library.{Book, Checkout}
   alias Xaas.Library.Changes.WriteActorResolutionAudit
 
-  # The only caller identity this repo's A2A/MCP surface authenticates on
-  # this path today -- a single shared `INTERNAL_API_TOKEN` bearer token
-  # validated upstream by `XaasWeb.Plugs.RequireInternalApiToken`, not a
-  # per-caller credential. See `Xaas.Library.PersonaGrant`'s moduledoc.
   @internal_api_caller_id "internal_api_token"
 
   @impl A2A.Agent
@@ -109,11 +42,14 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
     text = A2A.Message.text(message) || ""
 
     case parse(text) do
+      {:ok, :hddl_plan} ->
+        {:reply, [A2A.Part.Text.new(hddl_plan_summary())]}
+
       {:ok, {:ok, actor}, command} ->
         run(actor, command)
 
       {:ok, {:error, :unauthorized_actor}, _command} ->
-        {:error, "as:<user_id> denied: no active persona grant for this caller"}
+        {:error, "as:<user_id> denied: no active persona grant for this caller (HDDL precondition failed: persona-granted)"}
 
       :error ->
         {:input_required, [A2A.Part.Text.new(usage())]}
@@ -123,8 +59,24 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   defp usage do
     "Expected: \"as:<user_id|guest> browse grade:<n>\" | " <>
       "\"as:<user_id|guest> recommend grade:<n>\" | " <>
-      "\"as:<user_id> checkout book:<book_id> school:<school_id>\""
+      "\"as:<user_id> checkout book:<book_id> school:<school_id>\" | " <>
+      "\"hddl:plan\""
   end
+
+  defp hddl_plan_summary do
+    """
+    [HDDL Domain: next-read]
+    Compound Tasks:
+      - NEXT-READ-DUAL-PERSONA-EXPERIENCE (Method: m-dual-persona-split-experience)
+      - STUDENT-DISCOVER-AND-CHECKOUT (Methods: m-student-discover-and-checkout-available, m-student-discover-and-place-hold)
+      - LIBRARIAN-ADVISORY-AND-CURATE (Method: m-librarian-advisory-and-curate)
+      - A2A-SIMULATE-USER-CIRCULATION (Method: m-a2a-simulate-user-circulation)
+    Preconditions Enforced: (persona-granted ?token ?student), (book-available ?book)
+    Receipt Model: Sealed idempotency keys + Epistemic Standing (DO vs CLAIM)
+    """
+  end
+
+  defp parse("hddl:plan"), do: {:ok, :hddl_plan}
 
   defp parse(text) do
     with [_, actor_ref, rest] <- Regex.run(~r/^as:(\S+)\s+(.+)$/, text) do
@@ -139,8 +91,6 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   defp resolve_actor(user_id, caller_id) do
     case Xaas.Library.PersonaGrant.active_for(caller_id, user_id, authorize?: false) do
       {:ok, [_grant | _]} ->
-        # The grant itself is the authorization decision -- the User is
-        # loaded with authorize?: false the same way the grant lookup was.
         case Ash.get(Xaas.Accounts.User, user_id, authorize?: false) do
           {:ok, user} ->
             WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "allowed"})
@@ -158,13 +108,6 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
       {:error, _} ->
         WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
         {:error, :unauthorized_actor}
-    end
-  end
-
-  defp resolve_actor(user_id) do
-    case Ash.get(Xaas.Accounts.User, user_id, authorize?: false) do
-      {:ok, user} -> user
-      {:error, _} -> nil
     end
   end
 
@@ -204,7 +147,7 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
 
   defp checkout(actor, book_id, school_id) do
     if actor == nil do
-      {:reply, [A2A.Part.Text.new("checkout requires a real as:<user_id> actor, not guest")]}
+      {:reply, [A2A.Part.Text.new("checkout requires a real as:<user_id> actor, not guest (HDDL actor-resolved failed)")]}
     else
       params = %{book_id: book_id, user_id: actor.id, school_id: school_id}
       idempotency_key = "checkout:#{book_id}:#{actor.id}:#{school_id}"
@@ -216,7 +159,7 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
              authority: %{kind: "a2a_next_read_user_agent", source: "checkout"}
            ) do
         {:ok, %{result: checkout}} ->
-          {:reply, [A2A.Part.Text.new("Checked out book #{checkout.book_id} for user #{checkout.user_id} (checkout #{checkout.id})")]}
+          {:reply, [A2A.Part.Text.new("Checked out book #{checkout.book_id} for user #{checkout.user_id} (checkout #{checkout.id}) [HDDL: receipt-sealed]")]}
 
         {:error, error} ->
           {:error, "checkout failed: #{inspect(error)}"}

@@ -1,7 +1,7 @@
 defmodule Xaas.Library do
   @moduledoc """
-  Domain module for Library management (Books, Checkouts, Holds, Curations, RecommendationLogs)
-  grounded in Schema.org, BIBO, and PROV ontologies.
+  Domain module for Library management (Books, Checkouts, Holds, Curations, RecommendationLogs, PersonaGrants)
+  grounded in Schema.org, BIBO, PROV ontologies and formal HDDL Task Calculus (docs/hddl/next-read.hddl).
   """
   use Ash.Domain,
     otp_app: :xaas,
@@ -12,11 +12,9 @@ defmodule Xaas.Library do
   end
 
   # Exposed to the Ash AI MCP server (router.ex `/mcp` scope). Read-only
-  # query actions only -- no create/update/destroy tools -- so an MCP
-  # client can look up books/curations but cannot mutate library state.
-  # Actual authorization is still enforced by each resource's own Ash
-  # policies for whatever actor the MCP caller is resolved to (deny-by-
-  # default floor per CLAUDE.md's "Ash policy floor").
+  # query actions only -- no create/update/destroy tools -- mapping directly to
+  # the HDDL `MCP-INSPECT-CATALOG` compound task.
+  # Preconditions and access rules are enforced by each resource's Ash policies.
   tools do
     tool :list_books, Xaas.Library.Book, :read
     tool :books_by_grade_band, Xaas.Library.Book, :by_grade_band

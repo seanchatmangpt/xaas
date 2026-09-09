@@ -115,6 +115,11 @@ defmodule Xaas.Actuation.Reactor do
 
   use Reactor, extensions: [Ash.Reactor]
 
+  middlewares do
+    middleware Xaas.Actuation.Middleware.AuditLogger
+    middleware Reactor.Middleware.Telemetry
+  end
+
   input :resource
   input :action
   input :input

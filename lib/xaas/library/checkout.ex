@@ -79,6 +79,11 @@ defmodule Xaas.Library.Checkout do
       change set_attribute(:status, :returned)
       change set_attribute(:returned_at, &DateTime.utc_now/0)
       change Xaas.Library.Changes.IncrementBookInventory
+      # Charter gap close: after a return bumps inventory, hand the copy
+      # straight to the oldest active hold on this book, if one exists.
+      # Same after_action/transaction pattern as IncrementBookInventory --
+      # deliberately not a Reactor/cascade (see Xaas.Library.Changes.FulfillNextHold).
+      change Xaas.Library.Changes.FulfillNextHold
     end
 
     read :for_user do

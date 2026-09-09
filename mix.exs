@@ -176,11 +176,13 @@ defmodule Xaas.MixProject do
       {:stripity_stripe, "~> 2.17"},
       {:ggen_igniter, "~> 26.9.8", only: [:dev, :test]},
       {:faker, "~> 0.18", only: [:dev, :test]},
-      # Real path dep on ex4pm_core's Ex4pm.OCEL, so OcelForwarder validates
+      # Real path dep on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a
       # hand-documented understanding of its shape (see
-      # lib/xaas/telemetry/ocel_forwarder.ex).
-      {:ex4pm_core, path: "../ex4pm/apps/ex4pm_core"}
+      # lib/xaas/telemetry/ocel_forwarder.ex). ex4pm is a flat app (app:
+      # :ex4pm), not an umbrella with an apps/ex4pm_core child -- the
+      # previous path predates that layout and never resolved.
+      {:ex4pm, path: "../ex4pm"}
     ]
   end
 

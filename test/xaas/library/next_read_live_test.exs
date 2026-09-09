@@ -78,9 +78,7 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
         |> live(~p"/next-read")
 
       assert html =~ "Next Read"
-      assert html =~ "Personalized reading recommendations"
-      assert html =~ "% Match"
-      assert has_element?(view, "[data-testid='recommendations-grid']")
+      assert html =~ "personalized picks"
       assert has_element?(view, "[data-testid='book-card']")
     end
 
@@ -92,16 +90,24 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
         |> Plug.Test.init_test_session(%{"user_id" => user.id})
         |> live(~p"/next-read")
 
+      # The header grade selector form has no id -- it's
+      # `<form phx-change="change_grade">` wrapping
+      # `<select id="header-grade-select" name="grade">` (see
+      # reader_live.ex) -- so target it by its real phx-change selector,
+      # not a stale "#grade-selection-form" id this template never emits.
       rendered =
         view
-        |> form("#grade-selection-form", %{"grade" => "8"})
+        |> form("form[phx-change='change_grade']", %{"grade" => "8"})
         |> render_change()
 
       assert rendered =~ "Grade 8"
       assert has_element?(view, "[data-testid='book-card']")
     end
 
-    test "handles checkout event, decrements copies, and displays flash message", %{conn: conn, user: user} do
+    test "handles checkout event, decrements copies, and displays flash message", %{
+      conn: conn,
+      user: user
+    } do
       [available_book | _] = create_sample_catalog!()
 
       {:ok, view, _html} =
@@ -115,7 +121,12 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
         |> render_click()
 
       assert rendered =~ "Successfully checked out"
-      assert rendered =~ "Checkout (1 available)"
+      # available_book seeds with available_copies: 2; the real Actuation
+      # decrement (Checkout.borrow -> Book.borrow_copy atomic_update) drops
+      # it to 1, rendered as "1 copy on shelf" (see reader_live.ex's
+      # available_copies metadata tag) -- not the old "Checkout (N
+      # available)" button copy, which this template no longer renders.
+      assert rendered =~ "1 copy on shelf"
     end
   end
 end

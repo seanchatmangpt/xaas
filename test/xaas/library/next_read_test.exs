@@ -410,6 +410,23 @@ defmodule Xaas.Library.NextReadTest do
       assert loaded_none.has_multiple_copies == false
     end
 
+    test "ask_catalog/2 performs semantic search over catalog books and formats admitted answers" do
+      _book1 = create_book!(%{title: "The Quiet Satellite", grade_level: 5.2, synopsis: "An orbiting telescope detects mysterious space communications.", formats: ["Audiobook", "Large Print"], available_copies: 4})
+      _book2 = create_book!(%{title: "Bloom of the Deep", grade_level: 6.1, synopsis: "Deep ocean underwater science fiction exploration.", formats: ["Large Print"], available_copies: 2})
+      _book3 = create_book!(%{title: "Signal from the Ninth Floor", grade_level: 5.6, synopsis: "Students receive signals from an abandoned laboratory.", formats: ["Audiobook"], available_copies: 1})
+
+      result = Ranker.ask_catalog("science fiction signal space", limit: 3)
+
+      assert is_binary(result.summary)
+      assert length(result.answers) <= 3
+      assert result.candidates_admitted >= 1
+      assert Enum.member?(result.telemetry, "Catalog.search_semantic")
+
+      first_answer = hd(result.answers)
+      assert is_binary(first_answer.title)
+      assert is_binary(first_answer.meta)
+    end
+
     test "broadcasts PubSub notifications on student-scoped circulation channel" do
       user = create_user!()
       book = create_book!(%{title: "PubSub Book", available_copies: 2})

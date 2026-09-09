@@ -125,14 +125,18 @@ defmodule Xaas.Library.HoldRequest do
         Ash.Changeset.after_action(changeset, fn _changeset, hold ->
           case Xaas.Library.Book |> Ash.get(hold.book_id, authorize?: false) do
             {:ok, book} ->
-              book
-              |> Ash.Changeset.for_update(:borrow_copy, %{})
-              |> Ash.update(authorize?: false)
+              case book
+                   |> Ash.Changeset.for_update(:borrow_copy, %{})
+                   |> Ash.update(authorize?: false) do
+                {:ok, _book} ->
+                  {:ok, hold}
 
-              {:ok, hold}
+                {:error, error} ->
+                  {:error, error}
+              end
 
-            _ ->
-              {:ok, hold}
+            {:error, error} ->
+              {:error, error}
           end
         end)
       end
@@ -169,6 +173,14 @@ defmodule Xaas.Library.HoldRequest do
     read :for_book do
       argument :book_id, :uuid, allow_nil?: false
       filter expr(book_id == ^arg(:book_id))
+    end
+
+    read :oldest_active_for_book do
+      description "Oldest active hold for a book, for queue-position lookups"
+      argument :book_id, :uuid, allow_nil?: false
+      get? true
+      filter expr(book_id == ^arg(:book_id) and status == :active)
+      prepare build(sort: [inserted_at: :asc])
     end
 
     read :active do

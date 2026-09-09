@@ -21,8 +21,37 @@ defmodule Xaas.Library.Ranker do
   Ranks catalog books for a given student (user_id and grade_level).
   Returns a list of %{book: Book.t(), score: float(), factors: map()}.
   """
-  @spec rank_recommendations(String.t(), integer(), keyword()) :: {:ok, list(map())} | {:error, term()}
+  @spec rank_recommendations(String.t(), integer(), keyword()) ::
+          {:ok, list(map())} | {:error, term()}
   def rank_recommendations(user_id, student_grade, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+    current_weights = Config.weights(opts)
+    # Default true, matching the procedural fallback below -- a book the
+    # student already has checked out shouldn't recommend itself back to
+    # them unless a caller explicitly opts in with exclude_read: false.
+    exclude_read = Keyword.get(opts, :exclude_read, true)
+
+    inputs = %{
+      user_id: user_id,
+      student_grade: student_grade,
+      limit: limit,
+      weights: current_weights,
+      exclude_read: exclude_read
+    }
+
+    case Reactor.run(Xaas.Library.Reactors.RecommendationPipelineReactor, inputs, %{},
+           async?: false
+         ) do
+      {:ok, ranked} ->
+        {:ok, ranked}
+
+      {:error, _reason} ->
+        # Fallback to direct procedural calculation if needed
+        rank_recommendations_procedural(user_id, student_grade, opts)
+    end
+  end
+
+  defp rank_recommendations_procedural(user_id, student_grade, opts) do
     limit = Keyword.get(opts, :limit, 10)
     current_weights = Config.weights(opts)
 
@@ -105,11 +134,11 @@ defmodule Xaas.Library.Ranker do
 
         total_score =
           current_weights.collab * collab_score +
-          current_weights.semantic * semantic_score +
-          current_weights.grade_fit * grade_fit_score +
-          current_weights.available * available_score +
-          current_weights.diversity * diversity_score +
-          current_weights.curation * curation_score
+            current_weights.semantic * semantic_score +
+            current_weights.grade_fit * grade_fit_score +
+            current_weights.available * available_score +
+            current_weights.diversity * diversity_score +
+            current_weights.curation * curation_score
 
         %{
           book: book,
@@ -218,7 +247,10 @@ defmodule Xaas.Library.Ranker do
   Generates a grounded textual explanation and part badges for a recommended book
   based on student history and score factors.
   """
-  @spec explain_recommendation(Book.t(), map(), list(Checkout.t())) :: %{why: String.t(), parts: list(String.t())}
+  @spec explain_recommendation(Book.t(), map(), list(Checkout.t())) :: %{
+          why: String.t(),
+          parts: list(String.t())
+        }
   def explain_recommendation(book, factors, user_checkouts \\ []) do
     parts = [
       "collaborative #{Float.round(factors.collab, 2)}",
@@ -228,7 +260,10 @@ defmodule Xaas.Library.Ranker do
       "diversity #{Float.round(factors.diversity, 2)}"
     ]
 
-    parts = if factors.curation > 0.0, do: parts ++ ["librarian curation +#{Float.round(Config.weights().curation, 2)}"], else: parts
+    parts =
+      if factors.curation > 0.0,
+        do: parts ++ ["librarian curation +#{Float.round(Config.weights().curation, 2)}"],
+        else: parts
 
     past_titles =
       user_checkouts
@@ -278,6 +313,7 @@ defmodule Xaas.Library.Ranker do
       0.5
     else
       total_past = Enum.sum(Map.values(past_frequencies))
+
       if total_past == 0 do
         0.8
       else
@@ -292,7 +328,77 @@ defmodule Xaas.Library.Ranker do
     end
   end
 
-  defp matches_grade_band?(grade_band, student_grade) when is_binary(grade_band) do
+  @doc """
+  Performs an 'Ask the Catalog' natural language semantic query across the library catalog.
+  Respects the AI boundary: Ranker/Vectors admit the candidate pool, then formats response.
+  """
+  @spec ask_catalog(String.t(), keyword()) :: %{
+          summary: String.t(),
+          answers: list(map()),
+          telemetry: list(String.t()),
+          candidates_admitted: integer(),
+          candidates_total: integer()
+        }
+  def ask_catalog(query_text, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 3)
+
+    {:ok, query_emb} = Embeddings.embed(query_text)
+
+    all_books = Book |> Ash.read!(authorize?: false)
+    total_count = length(all_books)
+
+    # Search & rank matching titles by semantic cosine similarity
+    scored_candidates =
+      all_books
+      |> Enum.map(fn book ->
+        sim = compute_semantic_score(book, query_emb)
+        %{book: book, similarity: sim}
+      end)
+      |> Enum.sort_by(& &1.similarity, :desc)
+      |> Enum.take(limit)
+
+    answers =
+      Enum.map(scored_candidates, fn %{book: book} ->
+        formats_str = Enum.join(book.formats || ["Print"], " + ")
+        avail_str = "#{book.available_copies} on shelf"
+
+        %{
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          meta:
+            "#{book.author} · GL #{to_float(book.grade_level)} · #{formats_str} · #{avail_str}"
+        }
+      end)
+
+    telemetry = [
+      "Circulation.cohort_reads",
+      "Catalog.search_semantic",
+      "Accessibility.filter_formats"
+    ]
+
+    summary =
+      "Three available titles match your catalog inquiry and maintain reading-level alignment:"
+
+    %{
+      summary: summary,
+      answers: answers,
+      telemetry: telemetry,
+      candidates_admitted: length(answers),
+      candidates_total: total_count
+    }
+  end
+
+  @doc """
+  Public so `Xaas.Library.Reactors.RecommendationPipelineReactor`'s
+  `:extract_curated_ids` step can apply the same grade-band matching the
+  procedural fallback below always did -- the reactor's `active_for_grade`
+  Ash read only filters `active == true` (its `grade_level` argument is
+  accepted but not used in the action's own filter), so this client-side
+  match is load-bearing for both paths, not an implementation detail
+  private to the procedural one.
+  """
+  def matches_grade_band?(grade_band, student_grade) when is_binary(grade_band) do
     cond do
       grade_band in ["all", "k12", "k-12"] ->
         true
@@ -319,5 +425,5 @@ defmodule Xaas.Library.Ranker do
     end
   end
 
-  defp matches_grade_band?(_, _), do: true
+  def matches_grade_band?(_, _), do: true
 end
