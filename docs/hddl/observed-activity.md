@@ -64,3 +64,7 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
 - 2026-09-09 14:11 — no matching known task class this cycle (heartbeat: no
   new commit since last tick; cycle-0538 ~93min elapsed, cycle-0638 ~21min
   elapsed, both still running).
+- 2026-09-09 14:31 — VISION-2030-CYCLE instance, docs/vision/vision-2030-2026-09-09-0638.md
+  (final commit d1676c2, already reported/pushed: full live OCEL chain proven).
+  Separately noting: cycle-0538 remains uncommitted at ~113min elapsed, real
+  observation, not yet flagged as stuck vs. genuinely deep.
