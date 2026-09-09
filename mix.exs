@@ -66,6 +66,14 @@ defmodule Xaas.MixProject do
       # historically here no longer reproduces against the resolved
       # finch 0.23.0 / req_llm 1.20.0.
       {:ash_ai, "~> 1.0"},
+      # ash_ai's `prompt/2` generic-action impl (AshAi.Actions.Prompt) is
+      # gated behind `Code.ensure_loaded?(ReqLLM)` -- it is an optional dep
+      # of ash_ai (see deps/ash_ai/mix.exs) and stays unfetched/uncompiled
+      # unless declared directly here. Pinned to the same "~> 1.18" range
+      # ash_ai itself declares. ReqLLM resolves the Groq API key via its
+      # own default env-key lookup (GROQ_API_KEY) -- no manual key wiring
+      # in this app. See lib/xaas/library/explainer/groq_adapter.ex.
+      {:req_llm, "~> 1.18"},
       # Real A2A (Agent-to-Agent, google.github.io/A2A) server, for MCP
       # agents to simulate different Next Read users (student/librarian
       # personas) as real A2A clients hitting the same actor/tenant-

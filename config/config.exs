@@ -128,6 +128,12 @@ config :xaas, Xaas.PromEx,
 
 config :xaas, Xaas.AwsRepo, adapter: Xaas.AwsRepo.FixtureAdapter
 
+# Next Read ILS integration: FixtureAdapter remains the configured default
+# since no real ILS vendor account/endpoint exists in this environment.
+# Xaas.Library.ILSRepo.SIP2Adapter is available but not defaulted -- see
+# docs/case-studies/next-read/ILS-AND-EXPLANATION-SUBSTITUTION.md.
+config :xaas, Xaas.Library.ILSRepo, adapter: Xaas.Library.ILSRepo.FixtureAdapter
+
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],

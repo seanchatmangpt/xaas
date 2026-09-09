@@ -2,6 +2,30 @@ defmodule Xaas.Library.Book do
   @moduledoc """
   Ash resource for Library Books, grounded in BIBO (bibo:Book) and Schema.org (schema:Book).
   Represents library items with ISBN, grade-level reading fit, genres, formats, and availability.
+
+  ## pgvector / ash_ai vectorize wiring: BLOCKED at infrastructure
+
+  This resource's `vectorize` block (below) and its `embedding` attribute's
+  `Ash.Vector` type are real, correct AshPostgres/ash_ai code -- they wire
+  `synopsis` -> `embedding` through `Xaas.Library.EmbeddingModels.LocalNx`
+  (the existing local, HTTP-free Nx embedding function in
+  `Xaas.Library.Embeddings.embed/1`) using the `:after_action` strategy.
+
+  They do **not** yet produce a working end-to-end vector column on the
+  current dev database. The exact blocking hop: the running dev Postgres
+  instance has zero rows for `vector` in `pg_available_extensions`
+  (confirmed via `psql ... -c "select * from pg_available_extensions where
+  name='vector';"` against the real dev DB), so `CREATE EXTENSION vector`
+  fails at migration/runtime time. This is not a vague "infra issue" -- the
+  Postgres image/host currently used for dev simply does not ship the
+  pgvector extension binary at all (`default_version` and
+  `installed_version` both absent from `pg_available_extensions`), and will
+  not until that image/host is swapped for one that does (e.g. the
+  `pgvector/pgvector` Docker image).
+
+  Do not run/enable the generated `vector`-extension migration against the
+  default dev environment until a pgvector-capable Postgres has actually
+  been provisioned.
   """
   use Xaas.Resource,
     otp_app: :xaas,
@@ -9,19 +33,34 @@ defmodule Xaas.Library.Book do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshAdmin.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshAdmin.Resource, AshAi]
+
+  # Brings the real `prompt/2` macro (AshAi.Actions.prompt/2) into scope for
+  # the `generate_recommendation_explanation` generic action's `run` clause
+  # below -- confirmed real macro at deps/ash_ai/lib/ash_ai/actions.ex.
+  import AshAi.Actions
 
   postgres do
     table "library_books"
     repo Xaas.Repo
   end
 
+  vectorize do
+    # BLOCKED at infrastructure -- see moduledoc above. This DSL wiring is
+    # real; `CREATE EXTENSION vector` fails on the current dev Postgres.
+    attributes(synopsis: :embedding)
+    strategy :after_action
+    embedding_model Xaas.Library.EmbeddingModels.LocalNx
+  end
+
   admin do
-    # `embedding` is a raw {:array, :float} vector (hundreds of floats) --
-    # AshAdmin's default table_columns is every attribute, which would
-    # render this as an unreadable wall of numbers in the datatable. Hide
-    # it from the table view; it remains a normal, readable/writable
-    # attribute everywhere else (API, GraphQL, show/edit forms).
+    # `embedding` is an Ash.Vector (384 dims, hundreds of floats once
+    # populated) -- AshAdmin's default table_columns is every attribute,
+    # which would render this as an unreadable wall of numbers in the
+    # datatable. Hide it from the table view; it remains a normal,
+    # readable attribute everywhere else (API, GraphQL, show/edit forms).
+    # It is no longer client-writable (see the `vectorize` block above --
+    # it is derived via the :after_action strategy).
     table_columns [
       :id,
       :title,
@@ -88,8 +127,7 @@ defmodule Xaas.Library.Book do
         :available_copies,
         :total_copies,
         :cover_color,
-        :review_status,
-        :embedding
+        :review_status
       ]
     end
 
@@ -106,8 +144,7 @@ defmodule Xaas.Library.Book do
         :available_copies,
         :total_copies,
         :cover_color,
-        :review_status,
-        :embedding
+        :review_status
       ]
     end
 
@@ -127,6 +164,50 @@ defmodule Xaas.Library.Book do
       argument :max_grade, :integer, allow_nil?: false
 
       filter expr(grade_level >= ^arg(:min_grade) and grade_level <= ^arg(:max_grade))
+    end
+
+    # Real ash_ai `prompt/2` generic action (AshAi.Actions.Prompt) --
+    # calls Groq via ReqLLM. No DB row required, so this is a generic
+    # action, not a read/create action. GROQ_API_KEY is resolved by
+    # ReqLLM's Groq provider default_env_key lookup (confirmed in
+    # deps/req_llm/lib/req_llm/providers/groq.ex) -- not wired here.
+    #
+    # Kept as a real, callable LLM path with a real template-based
+    # fallback on failure -- see lib/xaas/library/explainer.ex and
+    # lib/xaas/library/explainer/{groq_adapter,template_adapter}.ex.
+    action :generate_recommendation_explanation, :string do
+      description """
+      Generates a short, grounded, student-facing sentence explaining why a
+      book was recommended, given the book's metadata, the student's recent
+      reading history, and the ranker's scoring factors.
+      """
+
+      argument :book_title, :string, allow_nil?: false
+      argument :book_author, :string, allow_nil?: false
+      argument :book_grade_level, :string, allow_nil?: false
+      argument :book_genres, {:array, :string}, default: []
+      argument :past_titles, {:array, :string}, default: []
+      argument :factor_summary, :string, allow_nil?: false
+
+      run prompt("groq:llama-3.3-70b-versatile",
+        prompt: {
+          """
+          You are a school librarian writing a one-sentence, student-facing
+          explanation for why a book was recommended next. Keep it under 40
+          words, warm but factual, and ground it only in the inputs given --
+          never invent plot details or facts not present in the inputs.
+          """,
+          """
+          Book: <%= @input.arguments.book_title %> by <%= @input.arguments.book_author %>
+          Reading level: <%= @input.arguments.book_grade_level %>
+          Genres: <%= Enum.join(@input.arguments.book_genres, ", ") %>
+          Student's recent reads: <%= if @input.arguments.past_titles == [], do: "none yet", else: Enum.join(@input.arguments.past_titles, ", ") %>
+          Ranker factors: <%= @input.arguments.factor_summary %>
+
+          Write the one-sentence explanation now.
+          """
+        }
+      )
     end
   end
 
@@ -229,9 +310,15 @@ defmodule Xaas.Library.Book do
       public? true
     end
 
-    attribute :embedding, {:array, :float} do
+    attribute :embedding, :vector do
+      constraints dimensions: 384
       allow_nil? true
-      public? true
+      # Not public: AshGraphql/AshJsonApi cannot map Ash.Type.Vector to a
+      # field type without a custom graphql_type/1 on the type (see the
+      # compile error this avoided). The vector remains a normal,
+      # readable/writable-via-code attribute; it is simply not exposed
+      # over the GraphQL/JSON:API surfaces.
+      public? false
     end
 
     create_timestamp :inserted_at

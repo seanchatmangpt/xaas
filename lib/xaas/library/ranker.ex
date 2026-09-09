@@ -246,48 +246,20 @@ defmodule Xaas.Library.Ranker do
   @doc """
   Generates a grounded textual explanation and part badges for a recommended book
   based on student history and score factors.
+
+  Delegates to `Xaas.Library.Explainer.TemplateAdapter`, the real,
+  deterministic fallback module this logic was ported into verbatim as
+  part of the Next Read real-integrations charter's Groq/template
+  graceful-degradation design (see `Xaas.Library.Explainer.explain/3` for
+  the Groq-first, template-fallback entry point). Kept here unchanged so
+  existing callers/tests of `Ranker.explain_recommendation/3` keep working.
   """
   @spec explain_recommendation(Book.t(), map(), list(Checkout.t())) :: %{
           why: String.t(),
           parts: list(String.t())
         }
   def explain_recommendation(book, factors, user_checkouts \\ []) do
-    parts = [
-      "collaborative #{Float.round(factors.collab, 2)}",
-      "semantic #{Float.round(factors.semantic, 2)}",
-      "grade fit #{Float.round(factors.grade_fit, 2)}",
-      "availability #{Float.round(factors.available, 2)}",
-      "diversity #{Float.round(factors.diversity, 2)}"
-    ]
-
-    parts =
-      if factors.curation > 0.0,
-        do: parts ++ ["librarian curation +#{Float.round(Config.weights().curation, 2)}"],
-        else: parts
-
-    past_titles =
-      user_checkouts
-      |> Enum.map(fn
-        %Checkout{book: %Book{title: title}} -> title
-        _ -> "recent readings"
-      end)
-      |> Enum.take(2)
-
-    bg_float = to_float(book.grade_level)
-
-    why =
-      case past_titles do
-        [t1, t2] ->
-          "Because you finished #{t1} and #{t2} — both aligned in subject and reading level. This title matches their structure and sits within reading level #{bg_float}."
-
-        [t1] ->
-          "Because you finished #{t1}. This title continues the theme and matches your reading level band."
-
-        [] ->
-          "Because students in your grade band who explored similar subjects read this next, matching reading level #{bg_float}."
-      end
-
-    %{why: why, parts: parts}
+    Xaas.Library.Explainer.TemplateAdapter.explain(book, factors, user_checkouts)
   end
 
   defp compute_grade_fit(book_grade, student_grade) do
