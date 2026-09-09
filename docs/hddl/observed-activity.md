@@ -42,3 +42,5 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
 - 2026-09-09 11:10 — VISION-2030-CYCLE instance, docs/vision/vision-2030-2026-09-09-0238.md
   (final commit 6da83cf: 5 real avatar/regression tests for the ggen-generated
   OcelEnvelope builder, already reported/pushed).
+- 2026-09-09 11:31 — no matching known task class this cycle (heartbeat: repo
+  idle, no new commit since last tick).
