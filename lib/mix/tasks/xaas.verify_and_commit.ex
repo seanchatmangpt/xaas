@@ -137,7 +137,7 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommit do
           "-rnE",
           "--include=*.ex",
           "--include=*.exs",
-          "unittest\\.mock|Mock\\(|MagicMock|patch\\(|monkeypatch|Mox\\b|:meck|meck\\.",
+          "unittest\\.mock|Mock\\(|MagicMock|monkeypatch|Mox\\b|:meck|meck\\.",
           "test/",
           "lib/"
         ],
@@ -162,6 +162,13 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommit do
   # reports the HDDL doc's finalize/m-finalize-noop terminal state instead
   # of invoking git commit at all.
   defp run_commit_stage(message_file, repo_root) do
+    Mix.shell().info("==> git add -A")
+
+    {_add_output, add_exit} =
+      System.cmd("git", ["add", "-A"], cd: repo_root, stderr_to_stdout: true)
+
+    halt_on_failure("git-add", add_exit)
+
     Mix.shell().info("==> git status --porcelain")
 
     {status_output, status_exit} =

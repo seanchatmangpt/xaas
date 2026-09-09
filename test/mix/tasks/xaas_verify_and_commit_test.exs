@@ -221,6 +221,59 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommitTest do
   end
 
   @tag :subprocess
+  test "mock-grep stage does not flag legitimate Phoenix patch/3 and Ash patch(:update) usage" do
+    tmp = unique_tmp("verify_and_commit_legit_patch_usage")
+    build_fixture!(tmp)
+
+    # Real Phoenix ConnTest-style `patch/3` HTTP call and a real Ash
+    # `patch(:update)` DSL usage -- both previously false-positived on the
+    # old `patch\(` regex alternative, which this fixes.
+    File.write!(
+      Path.join(tmp, "test/legit_patch_usage_test.exs"),
+      """
+      defmodule LegitPatchUsageTest do
+        use ExUnit.Case
+
+        test "conn patch call" do
+          conn = %{}
+          _result = patch(conn, "/api/widgets/1", %{name: "updated"})
+          assert true
+        end
+
+        defp patch(conn, _path, _params), do: conn
+      end
+      """
+    )
+
+    File.write!(
+      Path.join(tmp, "lib/legit_ash_patch.ex"),
+      """
+      defmodule LegitAshPatch do
+        # Ash DSL-style usage: patch(:update)
+        def actions do
+          [patch(:update)]
+        end
+
+        defp patch(action), do: action
+      end
+      """
+    )
+
+    message_file = write_message_file!(tmp, "should be committed\n")
+    before_head = git!(tmp, ["rev-parse", "HEAD"])
+
+    {output, exit_status} = run_task(tmp, message_file)
+
+    assert exit_status == 0, "expected exit 0, got #{exit_status}: #{output}"
+    refute output =~ "stage `mock-grep` failed"
+
+    after_head = git!(tmp, ["rev-parse", "HEAD"])
+    assert after_head != before_head, "expected a new commit to be created"
+
+    File.rm_rf!(tmp)
+  end
+
+  @tag :subprocess
   test "happy path: exit 0, and the real commit message matches the message-file content exactly (-F round-trip)" do
     tmp = unique_tmp("verify_and_commit_happy_path")
     build_fixture!(tmp)
