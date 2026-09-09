@@ -22,9 +22,13 @@ defmodule Xaas.Library.Book do
     broadcast_type :notification
 
     publish :create, ["created"]
+    publish :create, ["events"]
     publish :update, ["updated", :id]
+    publish :update, ["events"]
     publish :borrow_copy, ["inventory", :id]
+    publish :borrow_copy, ["events"]
     publish :return_copy, ["inventory", :id]
+    publish :return_copy, ["events"]
   end
 
   json_api do
@@ -121,6 +125,7 @@ defmodule Xaas.Library.Book do
 
   calculations do
     calculate :is_available, :boolean, expr(available_copies > 0)
+    calculate :has_multiple_copies, :boolean, expr(available_copies > 1)
   end
 
   attributes do

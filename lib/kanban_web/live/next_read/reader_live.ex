@@ -11,15 +11,17 @@ defmodule KanbanWeb.NextRead.ReaderLive do
 
   @impl true
   def mount(_params, session, socket) do
+    user = resolve_current_user(session)
+    student_grade = session["grade"] || session[:grade] || Config.default_grade()
+
     if connected?(socket) do
-      # Subscribe to Ash resource notification topics
+      # Subscribe to Ash resource notification topics (global and student-specific)
       KanbanWeb.Endpoint.subscribe("circulation:events")
+      KanbanWeb.Endpoint.subscribe("circulation:student:#{user.id}")
+      KanbanWeb.Endpoint.subscribe("library:books:events")
       KanbanWeb.Endpoint.subscribe("library:books:created")
       KanbanWeb.Endpoint.subscribe("recommendations:curation_events")
     end
-
-    user = resolve_current_user(session)
-    student_grade = session["grade"] || session[:grade] || Config.default_grade()
 
     socket =
       socket

@@ -307,5 +307,49 @@ defmodule Xaas.Library.NextReadTest do
       assert log.candidate_pool_size == 41
       assert log.weights["collab"] == 0.34
     end
+
+    test "loads Ash calculations :is_available and :has_multiple_copies on Book" do
+      book_single = create_book!(%{title: "Single Copy", available_copies: 1})
+      book_multiple = create_book!(%{title: "Multi Copy", available_copies: 3})
+      book_none = create_book!(%{title: "Zero Copy", available_copies: 0})
+
+      loaded_single = Book |> Ash.Query.load([:is_available, :has_multiple_copies]) |> Ash.get!(book_single.id, authorize?: false)
+      loaded_multi = Book |> Ash.Query.load([:is_available, :has_multiple_copies]) |> Ash.get!(book_multiple.id, authorize?: false)
+      loaded_none = Book |> Ash.Query.load([:is_available, :has_multiple_copies]) |> Ash.get!(book_none.id, authorize?: false)
+
+      assert loaded_single.is_available == true
+      assert loaded_single.has_multiple_copies == false
+
+      assert loaded_multi.is_available == true
+      assert loaded_multi.has_multiple_copies == true
+
+      assert loaded_none.is_available == false
+      assert loaded_none.has_multiple_copies == false
+    end
+
+    test "broadcasts PubSub notifications on student-scoped circulation channel" do
+      user = create_user!()
+      book = create_book!(%{title: "PubSub Book", available_copies: 2})
+
+      KanbanWeb.Endpoint.subscribe("circulation:student:#{user.id}")
+
+      {:ok, checkout} =
+        Checkout
+        |> Ash.Changeset.for_create(:borrow, %{
+          book_id: book.id,
+          user_id: user.id,
+          school_id: "willow-creek"
+        })
+        |> Ash.create(authorize?: false)
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: topic,
+        event: "borrow",
+        payload: %Ash.Notifier.Notification{data: received_checkout}
+      }
+
+      assert topic == "circulation:student:#{user.id}"
+      assert received_checkout.id == checkout.id
+    end
   end
 end

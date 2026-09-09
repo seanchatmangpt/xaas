@@ -23,9 +23,12 @@ defmodule Xaas.Library.Checkout do
 
     publish :create, ["school", :school_id]
     publish :create, ["events"]
+    publish :create, ["student", :user_id]
     publish :borrow, ["events"]
+    publish :borrow, ["student", :user_id]
     publish :update, ["school", :school_id]
     publish :update, ["events"]
+    publish :update, ["student", :user_id]
   end
 
   json_api do

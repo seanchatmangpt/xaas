@@ -23,8 +23,10 @@ defmodule Xaas.Library.Curation do
 
     publish :create, ["student", :student_id]
     publish :create, ["curation_events"]
+    publish :create, ["grade", :grade_band]
     publish :update, ["student", :student_id]
     publish :update, ["curation_events"]
+    publish :update, ["grade", :grade_band]
   end
 
   json_api do
