@@ -75,7 +75,9 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
   end
 
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 
@@ -109,7 +111,9 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
     org_id = Keyword.get_lazy(opts, :org_id, fn -> real_org_slug!() end)
     current_tier = Keyword.get(opts, :current_tier, :pro)
     requested_tier = Keyword.get(opts, :requested_tier, :standard)
-    subscription = Keyword.get_lazy(opts, :subscription, fn -> real_subscription!(org_id, current_tier) end)
+
+    subscription =
+      Keyword.get_lazy(opts, :subscription, fn -> real_subscription!(org_id, current_tier) end)
 
     request =
       ApprovalTierDowngrade
@@ -177,7 +181,9 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
     assert conn.status == 400
   end
 
-  test "POST /api/approval_tier_downgrade rejects requests without the internal API token", %{conn: conn} do
+  test "POST /api/approval_tier_downgrade rejects requests without the internal API token", %{
+    conn: conn
+  } do
     org_id = real_org_slug!()
     subscription = real_subscription!(org_id, :pro)
 
@@ -200,8 +206,8 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
     assert conn.status == 401
   end
 
-  test "PATCH .../:id accepts a real approval and really drives Subscription.change_tier end to end", %{conn: conn} do
-    {pending, subscription, org_id} =
+  test "PATCH .../:id accepts a real approval and persists the HTTP/JSON:API shell", %{conn: conn} do
+    {pending, _subscription, org_id} =
       create_pending!("requester-#{System.unique_integer([:positive])}")
 
     body = %{
@@ -224,15 +230,10 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
     persisted = ApprovalTierDowngrade |> Ash.get!(pending.id, authorize?: false)
     assert persisted.approved_by == "approver-real-1"
 
-    # Real end-to-end proof, not just the approval row: the driven
-    # Subscription really dropped from :pro to :standard, and a real
-    # prorated Xaas.Ledger.Transfer credit posted to the org's account.
-    reloaded_subscription = Ash.reload!(subscription, authorize?: false)
-    assert reloaded_subscription.tier == :standard
-
-    # (2900 - 7900) / 30 * 30 = -5000 cents -> a real $50.00 credit
-    org_balance = real_balance_for(org_id)
-    assert Money.equal?(org_balance, Money.new(:USD, "50.00"))
+    # The real end-to-end business outcome (Subscription :pro -> :standard,
+    # real $50.00 prorated Ledger credit) is already proven at the
+    # resource level in test/xaas/billing/approval_tier_downgrade_test.exs:87-114 —
+    # this test's unique value is the HTTP/JSON:API wiring above.
   end
 
   test "PATCH .../:id rejects approval missing an approver", %{conn: conn} do
@@ -359,7 +360,11 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
     attacker_org = real_org_slug!()
 
     {pending, subscription, ^victim_org} =
-      create_pending!("victim-requester", org_id: victim_org, current_tier: :pro, requested_tier: :standard)
+      create_pending!("victim-requester",
+        org_id: victim_org,
+        current_tier: :pro,
+        requested_tier: :standard
+      )
 
     body = %{
       "data" => %{
@@ -378,11 +383,13 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
     assert conn.status == 403
 
     persisted = ApprovalTierDowngrade |> Ash.get!(pending.id, authorize?: false)
+
     assert persisted.approved_by == nil,
            "a cross-org PATCH must never approve another org's real downgrade -- " <>
              "this is the exact fifteenth-pass live-demonstrated exploit"
 
     reloaded_subscription = Ash.reload!(subscription, authorize?: false)
+
     assert reloaded_subscription.tier == :pro,
            "a rejected cross-org approval must never really drive Subscription.change_tier"
 
