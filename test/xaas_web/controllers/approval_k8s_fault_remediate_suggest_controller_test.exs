@@ -21,12 +21,14 @@ defmodule XaasWeb.ApprovalK8sFaultRemediateSuggestControllerTest do
   end
 
   defp create_pending!(requested_by) do
-    ApprovalK8sFaultRemediateSuggest
-    |> Ash.Changeset.for_create(:create, %{requested_by: requested_by})
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.pending_approval!(ApprovalK8sFaultRemediateSuggest, :create, %{
+      requested_by: requested_by
+    })
   end
 
-  test "POST /api/approval_k8s_fault_remediate_suggest creates a real pending request", %{conn: conn} do
+  test "POST /api/approval_k8s_fault_remediate_suggest creates a real pending request", %{
+    conn: conn
+  } do
     requester = "requester-#{System.unique_integer([:positive])}"
 
     body = %{
@@ -47,7 +49,8 @@ defmodule XaasWeb.ApprovalK8sFaultRemediateSuggestControllerTest do
     assert response["data"]["attributes"]["approved_by"] == nil
   end
 
-  test "POST /api/approval_k8s_fault_remediate_suggest rejects requests without the internal API token", %{conn: conn} do
+  test "POST /api/approval_k8s_fault_remediate_suggest rejects requests without the internal API token",
+       %{conn: conn} do
     body = %{
       "data" => %{
         "type" => "approval_k8s_fault_remediate_suggest",

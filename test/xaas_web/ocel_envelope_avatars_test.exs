@@ -56,7 +56,7 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
 
   use XaasWeb.ConnCase, async: false
 
-  alias Xaas.Library.{Book, Checkout, PersonaGrant}
+  alias Xaas.Library.{Checkout, PersonaGrant}
   alias Xaas.Telemetry.OcelEnvelope
 
   require Ash.Query
@@ -77,7 +77,12 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
     Process.unlink(server_pid)
 
     previous_url = Application.get_env(:xaas, :ex4pm_ocel_ingest_url)
-    Application.put_env(:xaas, :ex4pm_ocel_ingest_url, "http://127.0.0.1:#{port}/api/v1/ocel/events")
+
+    Application.put_env(
+      :xaas,
+      :ex4pm_ocel_ingest_url,
+      "http://127.0.0.1:#{port}/api/v1/ocel/events"
+    )
 
     on_exit(fn ->
       if previous_url do
@@ -126,19 +131,17 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
   end
 
   defp create_book!(tag, available_copies \\ 3) do
-    Book
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.create_book!(%{
       title: "#{tag}-book",
       author: "Avatar Author",
       grade_level: Decimal.new("5.0"),
       available_copies: available_copies,
       total_copies: available_copies
     })
-    |> Ash.create!(authorize?: false)
   end
 
   defp create_granted_user!(tag) do
-    user = Ash.Seed.seed!(Xaas.Accounts.User, %{email: "#{tag}@example.com"})
+    user = Xaas.Generator.create_user!(%{email: "#{tag}@example.com"})
     PersonaGrant.grant!(@internal_api_caller_id, user.id, tag, authorize?: false)
     user
   end
@@ -175,15 +178,18 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
         end
     after
       timeout ->
-        flunk("no captured OCEL envelope with an event activity containing #{inspect(substring)} arrived within #{timeout}ms")
+        flunk(
+          "no captured OCEL envelope with an event activity containing #{inspect(substring)} arrived within #{timeout}ms"
+        )
     end
   end
 
   # -- Avatar 1 --------------------------------------------------------------
 
-  test "avatar 1: real MCP list_books call forwards a real OCEL envelope matching Ex4pm.OCEL.validate_envelope/1", %{
-    conn: conn
-  } do
+  test "avatar 1: real MCP list_books call forwards a real OCEL envelope matching Ex4pm.OCEL.validate_envelope/1",
+       %{
+         conn: conn
+       } do
     tag = "mcp-envelope-avatar-#{System.unique_integer([:positive])}"
     book = create_book!(tag)
 
@@ -280,7 +286,9 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
 
     # Byte-identical, not just structurally-equal: compare both the raw
     # term encoding and the JSON encoding actually POSTed over the wire.
-    assert :erlang.term_to_binary(generated_envelope) == :erlang.term_to_binary(hand_written_envelope)
+    assert :erlang.term_to_binary(generated_envelope) ==
+             :erlang.term_to_binary(hand_written_envelope)
+
     assert Jason.encode!(generated_envelope) == Jason.encode!(hand_written_envelope)
   end
 

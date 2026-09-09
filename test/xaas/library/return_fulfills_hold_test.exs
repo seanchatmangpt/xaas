@@ -17,7 +17,6 @@ defmodule Xaas.Library.ReturnFulfillsHoldTest do
 
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, HoldRequest}
 
   setup do
@@ -27,35 +26,38 @@ defmodule Xaas.Library.ReturnFulfillsHoldTest do
   end
 
   defp create_user! do
-    Ash.Seed.seed!(User, %{email: Faker.Internet.email()})
+    Xaas.Generator.create_user!()
   end
 
+  # This file's own default (available_copies/total_copies both set to the
+  # caller-supplied count) differs deliberately from
+  # Xaas.Generator.create_book!/1's own default (2/2) -- these tests
+  # specifically need a book that starts fully checked out (0 copies) as
+  # the precondition for a hold ever being placed/fulfilled.
   defp create_book!(available_copies) do
-    title = Faker.Commerce.product_name()
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: Faker.Person.name(),
-      isbn: "isbn-#{System.unique_integer([:positive])}",
-      grade_level: 4,
-      genres: ["Fiction"],
-      synopsis: "test synopsis",
+    Xaas.Generator.create_book!(%{
       available_copies: available_copies,
       total_copies: available_copies
     })
-    |> Ash.create!(authorize?: false)
   end
 
   defp borrow!(book, user) do
     Checkout
-    |> Ash.Changeset.for_create(:borrow, %{book_id: book.id, user_id: user.id, school_id: "willow-creek"})
+    |> Ash.Changeset.for_create(:borrow, %{
+      book_id: book.id,
+      user_id: user.id,
+      school_id: "willow-creek"
+    })
     |> Ash.create!(authorize?: false)
   end
 
   defp place_hold!(book, user) do
     HoldRequest
-    |> Ash.Changeset.for_create(:place, %{book_id: book.id, user_id: user.id, school_id: "willow-creek"})
+    |> Ash.Changeset.for_create(:place, %{
+      book_id: book.id,
+      user_id: user.id,
+      school_id: "willow-creek"
+    })
     |> Ash.create!(authorize?: false)
   end
 

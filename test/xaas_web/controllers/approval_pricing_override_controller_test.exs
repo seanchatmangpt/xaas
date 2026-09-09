@@ -21,9 +21,9 @@ defmodule XaasWeb.ApprovalPricingOverrideControllerTest do
   end
 
   defp create_pending!(requested_by) do
-    ApprovalPricingOverride
-    |> Ash.Changeset.for_create(:create, %{requested_by: requested_by})
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.pending_approval!(ApprovalPricingOverride, :create, %{
+      requested_by: requested_by
+    })
   end
 
   test "PATCH .../:id accepts a real approval from a different approver", %{conn: conn} do

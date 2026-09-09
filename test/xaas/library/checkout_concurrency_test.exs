@@ -35,7 +35,6 @@ defmodule Xaas.Library.CheckoutConcurrencyTest do
 
   require Ash.Query
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout}
 
   setup do
@@ -45,24 +44,18 @@ defmodule Xaas.Library.CheckoutConcurrencyTest do
   end
 
   defp create_user! do
-    Ash.Seed.seed!(User, %{email: Faker.Internet.email()})
+    Xaas.Generator.create_user!()
   end
 
+  # This file's own default (available_copies/total_copies both set to the
+  # caller-supplied count, so the race is against a real known-scarce
+  # inventory) differs deliberately from Xaas.Generator.create_book!/1's
+  # own default (2/2).
   defp create_book!(available_copies) do
-    title = Faker.Commerce.product_name()
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: Faker.Person.name(),
-      isbn: "isbn-#{System.unique_integer([:positive])}",
-      grade_level: 4,
-      genres: ["Fiction"],
-      synopsis: "test synopsis",
+    Xaas.Generator.create_book!(%{
       available_copies: available_copies,
       total_copies: available_copies
     })
-    |> Ash.create!(authorize?: false)
   end
 
   test "two real concurrent Checkout.borrow creates for the last copy: exactly one succeeds" do

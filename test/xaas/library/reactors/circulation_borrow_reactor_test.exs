@@ -11,7 +11,6 @@ defmodule Xaas.Library.Reactors.CirculationBorrowReactorTest do
   """
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, HoldRequest}
   alias Xaas.Library.Reactors.CirculationBorrowReactor
 
@@ -24,22 +23,18 @@ defmodule Xaas.Library.Reactors.CirculationBorrowReactorTest do
   end
 
   defp create_user! do
-    Ash.Seed.seed!(User, %{email: Faker.Internet.email()})
+    Xaas.Generator.create_user!()
   end
 
+  # This file's own default (total_copies: max(available_copies, 1), so a
+  # zero-copy fixture still gets one real total copy) differs deliberately
+  # from Xaas.Generator.create_book!/1's general default (total_copies: 2
+  # fixed).
   defp create_book!(available_copies) do
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: "Circulation Reactor Fixture",
-      author: Faker.Person.name(),
-      isbn: "isbn-circ-#{System.unique_integer([:positive])}",
-      grade_level: 6,
-      genres: ["Fiction"],
-      synopsis: "test synopsis",
+    Xaas.Generator.create_book!(%{
       available_copies: available_copies,
       total_copies: max(available_copies, 1)
     })
-    |> Ash.create!(authorize?: false)
   end
 
   test "available copies -> :matches? branch: creates a real Checkout and decrements inventory" do

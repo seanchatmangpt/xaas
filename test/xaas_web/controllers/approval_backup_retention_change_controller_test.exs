@@ -11,7 +11,6 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
   use XaasWeb.ConnCase
   require Ash.Query
 
-  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalBackupRetentionChange
   alias Xaas.Ledger.{Account, Balance}
 
@@ -32,12 +31,7 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
   # wiring: org_id is now a real FK to orgs.slug, so every test needs a
   # real Org row to reference, not just a made-up string.
   defp real_org_slug! do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Org",
-      slug: "org-#{System.unique_integer([:positive])}"
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_org!(%{slug: "org-#{System.unique_integer([:positive])}"})
     |> Map.fetch!(:slug)
   end
 
@@ -46,8 +40,8 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     tier = Keyword.get(opts, :tier, :pro)
     days = Keyword.get(opts, :days, 90)
 
-    ApprovalBackupRetentionChange
-    |> Ash.Changeset.for_create(
+    Xaas.Generator.pending_approval!(
+      ApprovalBackupRetentionChange,
       :create,
       %{
         org_id: org_id,
@@ -57,11 +51,12 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
       },
       tenant: org_id
     )
-    |> Ash.create!(authorize?: false)
   end
 
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 
@@ -95,7 +90,8 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     assert response["data"]["attributes"]["approved_by"] == "owner-real-1"
 
     persisted =
-      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+      ApprovalBackupRetentionChange
+      |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
 
     assert persisted.approved_by == "owner-real-1"
     assert persisted.requested_retention_days == 90
@@ -132,7 +128,8 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     assert conn.status == 400
 
     persisted =
-      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+      ApprovalBackupRetentionChange
+      |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
 
     assert persisted.approved_by == nil
   end
@@ -159,7 +156,8 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     assert conn.status == 400
 
     persisted =
-      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+      ApprovalBackupRetentionChange
+      |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
 
     assert persisted.approved_by == nil
   end
@@ -184,7 +182,8 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     assert conn.status == 401
 
     persisted =
-      ApprovalBackupRetentionChange |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
+      ApprovalBackupRetentionChange
+      |> Ash.get!(change.id, authorize?: false, tenant: change.org_id)
 
     assert persisted.approved_by == nil
   end
@@ -217,7 +216,13 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     # pro tier's real default is 30 days; requesting 90 is 60 days of real
     # overage at the invented $0.10/day placeholder rate = $6.00.
     org_id = real_org_slug!()
-    change = create_pending!("requester-#{System.unique_integer([:positive])}", org_id: org_id, tier: :pro, days: 90)
+
+    change =
+      create_pending!("requester-#{System.unique_integer([:positive])}",
+        org_id: org_id,
+        tier: :pro,
+        days: 90
+      )
 
     body = %{
       "data" => %{
@@ -237,7 +242,9 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     org_balance = real_balance_for(org_id)
     revenue_balance = real_balance_for("platform:revenue:backup-retention-overage")
 
-    assert org_balance != nil, "expected a real Xaas.Ledger.Account/Balance to exist for #{org_id}"
+    assert org_balance != nil,
+           "expected a real Xaas.Ledger.Account/Balance to exist for #{org_id}"
+
     assert Money.equal?(org_balance, Money.new(:USD, "-6.00"))
     assert Money.compare!(revenue_balance, Money.new(:USD, "0")) == :gt
   end
@@ -246,7 +253,13 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     # starter tier's real default is 7 days; requesting 5 (within range,
     # under default) -- no overage, no ledger transfer should be created.
     org_id = real_org_slug!()
-    change = create_pending!("requester-#{System.unique_integer([:positive])}", org_id: org_id, tier: :starter, days: 5)
+
+    change =
+      create_pending!("requester-#{System.unique_integer([:positive])}",
+        org_id: org_id,
+        tier: :starter,
+        days: 5
+      )
 
     body = %{
       "data" => %{
@@ -302,7 +315,9 @@ defmodule XaasWeb.ApprovalBackupRetentionChangeControllerTest do
     created = json_response(resp, 201)
     id = created["data"]["id"]
 
-    persisted = ApprovalBackupRetentionChange |> Ash.get!(id, authorize?: false, tenant: caller_org)
+    persisted =
+      ApprovalBackupRetentionChange |> Ash.get!(id, authorize?: false, tenant: caller_org)
+
     assert persisted.org_id == caller_org
 
     assert ApprovalBackupRetentionChange

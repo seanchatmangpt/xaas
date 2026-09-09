@@ -36,7 +36,6 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
   use XaasWeb.ConnCase
   require Ash.Query
 
-  alias Xaas.Accounts.Org
   alias Xaas.Billing.{ApprovalTierDowngrade, Subscription}
   alias Xaas.Ledger.{Account, Balance}
 
@@ -65,13 +64,7 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
   # an arbitrary unregistered string now real-404s before ever reaching
   # ApprovalTierDowngrade's own policy check.
   defp real_org_slug! do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Org",
-      slug: "org-#{System.unique_integer([:positive])}"
-    })
-    |> Ash.create!(authorize?: false)
-    |> Map.fetch!(:slug)
+    Xaas.Generator.create_org!().slug
   end
 
   defp real_balance_for(identifier) do

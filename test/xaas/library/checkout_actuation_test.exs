@@ -10,7 +10,6 @@ defmodule Xaas.Library.CheckoutActuationTest do
 
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout}
   alias Xaas.Operations.ActuationReceipt
 
@@ -21,24 +20,19 @@ defmodule Xaas.Library.CheckoutActuationTest do
   end
 
   defp create_user! do
-    Ash.Seed.seed!(User, %{email: Faker.Internet.email()})
+    Xaas.Generator.create_user!()
   end
 
+  # This file's own default (total_copies == available_copies, i.e. no
+  # extra unavailable copies) differs deliberately from
+  # Xaas.Generator.create_book!/1's general default (total_copies: 2
+  # fixed) -- these tests need the book's total inventory to track
+  # whatever available_copies they pass in.
   defp create_book!(available_copies) do
-    title = Faker.Commerce.product_name()
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: Faker.Person.name(),
-      isbn: "isbn-#{System.unique_integer([:positive])}",
-      grade_level: 4,
-      genres: ["Fiction"],
-      synopsis: "test synopsis",
+    Xaas.Generator.create_book!(%{
       available_copies: available_copies,
       total_copies: available_copies
     })
-    |> Ash.create!(authorize?: false)
   end
 
   defp idempotency_key(book_id, user_id, school_id),

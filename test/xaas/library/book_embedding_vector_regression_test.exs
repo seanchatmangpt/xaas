@@ -34,11 +34,16 @@ defmodule Xaas.Library.BookEmbeddingVectorRegressionTest do
     :ok
   end
 
+  # This file's own defaults (grade_level as a Decimal, a longer
+  # synopsis template deliberately crafted for the embedding/vector path
+  # this file regression-guards) differ from Xaas.Generator.create_book!/1's
+  # own generic defaults (grade_level as a plain StreamData integer,
+  # Faker-generated synopsis) -- kept local since every call site below
+  # depends on the real synopsis text feeding the real embedding.
   defp create_book!(attrs) do
     tag = "vector-regression-#{System.unique_integer([:positive])}"
 
-    Book
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.create_book!(%{
       title: Map.get(attrs, :title, "#{tag}-title"),
       author: Map.get(attrs, :author, "Regression Author"),
       isbn: Map.get(attrs, :isbn, "#{tag}-isbn"),
@@ -48,7 +53,6 @@ defmodule Xaas.Library.BookEmbeddingVectorRegressionTest do
       available_copies: Map.get(attrs, :available_copies, 2),
       total_copies: Map.get(attrs, :total_copies, 2)
     })
-    |> Ash.create!(authorize?: false)
   end
 
   defp with_internal_api_token(conn) do

@@ -8,7 +8,6 @@ defmodule XaasWeb.ApprovalProviderStatusChangeControllerTest do
   """
   use XaasWeb.ConnCase
 
-  alias Xaas.Accounts.Org
   alias Xaas.Marketplace.{ApprovalProviderStatusChange, Provider}
 
   setup do
@@ -17,24 +16,11 @@ defmodule XaasWeb.ApprovalProviderStatusChangeControllerTest do
   end
 
   defp real_org_slug! do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Org",
-      slug: "org-#{System.unique_integer([:positive])}"
-    })
-    |> Ash.create!(authorize?: false)
-    |> Map.fetch!(:slug)
+    Xaas.Generator.create_org!().slug
   end
 
   defp create_provider!(org_id, status) do
-    provider =
-      Provider
-      |> Ash.Changeset.for_create(:create, %{
-        name: "Test Provider",
-        slug: "provider-#{System.unique_integer([:positive])}",
-        org_id: org_id
-      })
-      |> Ash.create!(authorize?: false)
+    provider = Xaas.Generator.create_provider!(%{org_id: org_id})
 
     if status == :pending do
       provider
@@ -52,8 +38,6 @@ defmodule XaasWeb.ApprovalProviderStatusChangeControllerTest do
       |> Ash.update!(authorize?: false)
     end
   end
-
-
 
   defp json_headers(conn, org_id) do
     conn

@@ -8,7 +8,6 @@ defmodule XaasWeb.MarketplaceProviderControllerTest do
   """
   use XaasWeb.ConnCase
 
-  alias Xaas.Accounts.Org
   alias Xaas.Marketplace.Provider
 
   setup do
@@ -27,13 +26,7 @@ defmodule XaasWeb.MarketplaceProviderControllerTest do
   # against a real Xaas.Accounts.Org row (by slug) -- a made-up string
   # 404s at the plug, before Provider's own policy is ever reached.
   defp real_org_slug! do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Org",
-      slug: "org-#{System.unique_integer([:positive])}"
-    })
-    |> Ash.create!(authorize?: false)
-    |> Map.fetch!(:slug)
+    Xaas.Generator.create_org!().slug
   end
 
   defp mutation_headers(conn, org_id) do
@@ -44,15 +37,17 @@ defmodule XaasWeb.MarketplaceProviderControllerTest do
   end
 
   defp create_provider!(attrs) do
-    Provider
-    |> Ash.Changeset.for_create(:create, attrs)
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_provider!(attrs)
   end
 
   test "GET /api/marketplace_providers without the internal API token is really rejected", %{
     conn: conn
   } do
-    resp = conn |> put_req_header("accept", "application/vnd.api+json") |> get("/api/marketplace_providers")
+    resp =
+      conn
+      |> put_req_header("accept", "application/vnd.api+json")
+      |> get("/api/marketplace_providers")
+
     assert resp.status in [401, 403, 503]
   end
 
@@ -68,7 +63,10 @@ defmodule XaasWeb.MarketplaceProviderControllerTest do
     caller_org = real_org_slug!()
 
     body =
-      conn |> mutation_headers(caller_org) |> get("/api/marketplace_providers") |> json_response(200)
+      conn
+      |> mutation_headers(caller_org)
+      |> get("/api/marketplace_providers")
+      |> json_response(200)
 
     # Real deny-by-default floor: neither AshIam (no Allow statement on
     # this anonymous actor) nor ActorOrgMatches (caller's real org does
@@ -91,7 +89,8 @@ defmodule XaasWeb.MarketplaceProviderControllerTest do
 
     caller_org = real_org_slug!()
 
-    resp = conn |> mutation_headers(caller_org) |> get("/api/marketplace_providers/#{provider.id}")
+    resp =
+      conn |> mutation_headers(caller_org) |> get("/api/marketplace_providers/#{provider.id}")
 
     # Same real deny-by-default floor via the get-by-id route: the row is
     # really excluded by the policy filter before the id lookup can match
@@ -215,7 +214,12 @@ defmodule XaasWeb.MarketplaceProviderControllerTest do
       }
     }
 
-    resp = conn |> json_headers() |> put_req_header("content-type", "application/vnd.api+json") |> post("/api/marketplace_providers", body)
+    resp =
+      conn
+      |> json_headers()
+      |> put_req_header("content-type", "application/vnd.api+json")
+      |> post("/api/marketplace_providers", body)
+
     assert resp.status == 400
   end
 end

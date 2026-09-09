@@ -38,7 +38,6 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
 
   use XaasWeb.ConnCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, HoldRequest, PersonaGrant}
 
   require Ash.Query
@@ -57,11 +56,15 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
   end
 
   defp create_user!(email \\ nil) do
-    Ash.Seed.seed!(User, %{email: email || Faker.Internet.email()})
+    if email,
+      do: Xaas.Generator.create_user!(%{email: email}),
+      else: Xaas.Generator.create_user!()
   end
 
   defp grant_persona!(user_id) do
-    PersonaGrant.grant!(@internal_api_caller_id, user_id, "return_hold_cascade_avatars_test", authorize?: false)
+    PersonaGrant.grant!(@internal_api_caller_id, user_id, "return_hold_cascade_avatars_test",
+      authorize?: false
+    )
   end
 
   defp create_granted_user!(email \\ nil) do
@@ -73,26 +76,32 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
   defp create_book!(available_copies) do
     tag = "cascade-avatar-#{System.unique_integer([:positive])}"
 
-    Book
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.create_book!(%{
       title: "#{tag} book",
       author: "Avatar Author",
       grade_level: Decimal.new("5.0"),
       available_copies: available_copies,
       total_copies: available_copies
     })
-    |> Ash.create!(authorize?: false)
   end
 
   defp borrow!(book, user) do
     Checkout
-    |> Ash.Changeset.for_create(:borrow, %{book_id: book.id, user_id: user.id, school_id: "willow-creek"})
+    |> Ash.Changeset.for_create(:borrow, %{
+      book_id: book.id,
+      user_id: user.id,
+      school_id: "willow-creek"
+    })
     |> Ash.create!(authorize?: false)
   end
 
   defp place_hold!(book, user) do
     HoldRequest
-    |> Ash.Changeset.for_create(:place, %{book_id: book.id, user_id: user.id, school_id: "willow-creek"})
+    |> Ash.Changeset.for_create(:place, %{
+      book_id: book.id,
+      user_id: user.id,
+      school_id: "willow-creek"
+    })
     |> Ash.create!(authorize?: false)
   end
 
@@ -223,14 +232,18 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
   end
 
   describe "avatar 4: regression -- real A2A PersonaGrant-gated checkout still works" do
-    test "a real granted \"as:<user_id> checkout book:<id> school:<id>\" A2A call still succeeds end-to-end", %{
-      agent: agent
-    } do
+    test "a real granted \"as:<user_id> checkout book:<id> school:<id>\" A2A call still succeeds end-to-end",
+         %{
+           agent: agent
+         } do
       student = create_granted_user!()
       book = create_book!(2)
 
       assert {:ok, checkout_task} =
-               A2A.call(agent, "as:#{student.id} checkout book:#{book.id} school:vision-2030-school")
+               A2A.call(
+                 agent,
+                 "as:#{student.id} checkout book:#{book.id} school:vision-2030-school"
+               )
 
       assert checkout_task.status.state == :completed
       assert task_text(checkout_task) =~ "Checked out book #{book.id}"
@@ -283,9 +296,10 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
       |> List.first()
     end
 
-    test "real POST /mcp list_books remains unscoped -- no actor-binding was added to /mcp by this cycle", %{
-      conn: conn
-    } do
+    test "real POST /mcp list_books remains unscoped -- no actor-binding was added to /mcp by this cycle",
+         %{
+           conn: conn
+         } do
       tag = "mcp-cascade-avatar-#{System.unique_integer([:positive])}"
 
       _owner = create_granted_user!()

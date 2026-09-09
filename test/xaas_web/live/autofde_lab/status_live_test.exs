@@ -16,7 +16,6 @@ defmodule XaasWeb.AutofdeLab.StatusLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Xaas.Platform.Webhook
   alias Xaas.Platform.WebhookDelivery
 
   setup do
@@ -31,20 +30,16 @@ defmodule XaasWeb.AutofdeLab.StatusLiveTest do
     :ok
   end
 
+  # This file's own defaults (a deterministic org_id/url derived from
+  # `run`, event_types ["backup.completed"]) differ deliberately from
+  # Xaas.Generator.webhook/1's own defaults -- secret/enabled match and
+  # are left to the shared generator's defaults.
   defp create_webhook!(run) do
-    Webhook
-    |> Ash.Changeset.for_create(
-      :create,
-      %{
-        org_id: "status-live-test-org-#{run}",
-        url: "https://example.invalid/webhooks/#{run}",
-        event_types: ["backup.completed"],
-        secret: "real-hmac-secret",
-        enabled: true
-      },
-      authorize?: false
-    )
-    |> Ash.create!()
+    Xaas.Generator.create_webhook!(%{
+      org_id: "status-live-test-org-#{run}",
+      url: "https://example.invalid/webhooks/#{run}",
+      event_types: ["backup.completed"]
+    })
   end
 
   defp create_delivery!(webhook, event_type, status, attempt_count) do

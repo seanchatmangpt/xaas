@@ -24,8 +24,10 @@ defmodule Xaas.Generator do
 
   use Ash.Generator
 
-  alias Xaas.Accounts.User
+  alias Xaas.Accounts.{Org, User}
   alias Xaas.Library.Book
+  alias Xaas.Marketplace.Provider
+  alias Xaas.Platform.Webhook
 
   @doc """
   Real Ash.Seed-backed User generator (`Ash.Seed.seed!` under the hood,
@@ -79,5 +81,99 @@ defmodule Xaas.Generator do
   @doc "Convenience: generate/1 a single real Book row via the real :create action."
   def create_book!(attrs \\ %{}) when is_map(attrs) do
     generate(book(Map.to_list(attrs)))
+  end
+
+  @doc """
+  Real Ash-action-backed Org generator (`changeset_generator/3`, real
+  `:create` action, `authorize?: false` since Org is the tenant root and
+  these fixtures are meant to bypass policy). `sequence/3` gives each
+  generated org a real, unique slug.
+  """
+  def org(opts \\ []) do
+    changeset_generator(
+      Org,
+      :create,
+      authorize?: false,
+      defaults: [
+        name: StreamData.constant("Test Org"),
+        slug: sequence(:org_slug, &"org-#{&1}-#{System.unique_integer([:positive])}")
+      ],
+      overrides: opts
+    )
+  end
+
+  @doc "Convenience: generate/1 a single real Org row via the real :create action."
+  def create_org!(attrs \\ %{}) when is_map(attrs) do
+    generate(org(Map.to_list(attrs)))
+  end
+
+  @doc """
+  Real Ash-action-backed Provider generator (`changeset_generator/3`,
+  real `:create` action, `authorize?: false` for fixture purposes).
+  `sequence/3` gives each generated provider a real, unique slug.
+  """
+  def provider(opts \\ []) do
+    changeset_generator(
+      Provider,
+      :create,
+      authorize?: false,
+      defaults: [
+        name: StreamData.constant("Test Provider"),
+        slug: sequence(:provider_slug, &"provider-#{&1}-#{System.unique_integer([:positive])}"),
+        org_id: StreamData.constant("org-generated")
+      ],
+      overrides: opts
+    )
+  end
+
+  @doc "Convenience: generate/1 a single real Provider row via the real :create action."
+  def create_provider!(attrs \\ %{}) when is_map(attrs) do
+    generate(provider(Map.to_list(attrs)))
+  end
+
+  @doc """
+  Real Ash-action-backed Webhook generator (`changeset_generator/3`,
+  real `:create` action, `authorize?: false` for fixture purposes).
+  `sequence/3` gives each generated webhook a real, unique listener
+  URL/org_id.
+  """
+  def webhook(opts \\ []) do
+    changeset_generator(
+      Webhook,
+      :create,
+      authorize?: false,
+      defaults: [
+        org_id: sequence(:webhook_org_id, &"webhook-test-org-#{&1}"),
+        url:
+          sequence(:webhook_url, &"http://127.0.0.1:9#{rem(&1, 999)}#{System.unique_integer([:positive])}/"),
+        event_types: StreamData.constant(["test.event"]),
+        secret: StreamData.constant("real-hmac-secret"),
+        enabled: StreamData.constant(true)
+      ],
+      overrides: opts
+    )
+  end
+
+  @doc "Convenience: generate/1 a single real Webhook row via the real :create action."
+  def create_webhook!(attrs \\ %{}) when is_map(attrs) do
+    generate(webhook(Map.to_list(attrs)))
+  end
+
+  @doc """
+  Generic pending-approval builder for the `Approval*` resource family
+  (`ApprovalPricingOverride`, `ApprovalBackupRetentionChange`,
+  `ApprovalTierDowngrade`, etc.) -- one function instead of ~8, since the
+  target resource module varies per caller but the real shape (a real
+  `:create`-action-backed row, `authorize?: false` for fixture purposes)
+  is identical across all of them. `resource` is the target `Approval*`
+  module; `action` defaults to `:create`; `attrs` is passed straight
+  through to `Ash.Changeset.for_create/3` (callers supply the specific
+  required attrs for their resource, e.g. `requested_by`, `org_id`,
+  `tenant:` opts as needed via `opts`).
+  """
+  def pending_approval!(resource, action \\ :create, attrs \\ %{}, opts \\ []) do
+    resource
+    |> Ash.Changeset.for_create(action, attrs, opts)
+    |> Ash.create!(authorize?: false)
   end
 end

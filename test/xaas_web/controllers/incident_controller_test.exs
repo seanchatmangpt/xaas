@@ -28,7 +28,6 @@ defmodule XaasWeb.IncidentControllerTest do
   use XaasWeb.ConnCase
   require Ash.Query
 
-  alias Xaas.Accounts.Org
   alias Xaas.Operations.Incident
 
   setup do
@@ -47,24 +46,17 @@ defmodule XaasWeb.IncidentControllerTest do
   end
 
   defp real_org_slug! do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Org",
-      slug: "org-#{System.unique_integer([:positive])}"
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_org!(%{slug: "org-#{System.unique_integer([:positive])}"})
     |> Map.fetch!(:slug)
   end
 
   defp create_pending!(org_id, region) do
-    Incident
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.pending_approval!(Incident, :create, %{
       org_id: org_id,
       title: "seed incident",
       region: region,
       opened_at: DateTime.utc_now() |> DateTime.truncate(:second)
     })
-    |> Ash.create!(authorize?: false)
   end
 
   test "POST /api/incidents creates a real incident when the actor's org matches the payload org",
@@ -212,7 +204,9 @@ defmodule XaasWeb.IncidentControllerTest do
     assert persisted.status == :resolved
   end
 
-  test "PATCH rejects updating a DIFFERENT org's real incident, not silently allowed", %{conn: conn} do
+  test "PATCH rejects updating a DIFFERENT org's real incident, not silently allowed", %{
+    conn: conn
+  } do
     owner_org = real_org_slug!()
     other_org = real_org_slug!()
     incident = create_pending!(owner_org, "eu-west-1")

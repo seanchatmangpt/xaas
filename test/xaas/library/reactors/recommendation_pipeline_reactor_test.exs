@@ -2,7 +2,7 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactorTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout}
+  alias Xaas.Library.Checkout
   alias Xaas.Library.Reactors.RecommendationPipelineReactor
 
   setup do
@@ -15,20 +15,18 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactorTest do
     Ash.Seed.seed!(User, %{email: Faker.Internet.email(), grade_level: grade})
   end
 
+  # This file's own positional-args call shape, and its total_copies ==
+  # available_copies default, differ deliberately from
+  # Xaas.Generator.create_book!/1's general map-attrs signature and fixed
+  # total_copies: 2 default.
   defp create_book!(title, grade, genres, available) do
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.create_book!(%{
       title: title,
-      author: Faker.Person.name(),
-      isbn: "isbn-#{System.unique_integer([:positive])}",
       grade_level: grade,
       genres: genres,
-      synopsis: "test synopsis",
       available_copies: available,
       total_copies: available
     })
-    |> Ash.create!(authorize?: false)
   end
 
   test "RecommendationPipelineReactor ranks candidates concurrently with 6-factor scoring" do

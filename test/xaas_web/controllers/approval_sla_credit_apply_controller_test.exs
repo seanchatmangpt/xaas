@@ -29,7 +29,6 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
   use XaasWeb.ConnCase
   require Ash.Query
 
-  alias Xaas.Accounts.Org
   alias Xaas.Billing.ApprovalSlaCreditApply
   alias Xaas.Ledger.{Account, Balance}
 
@@ -58,17 +57,13 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
   # an arbitrary unregistered string now real-404s before ever reaching
   # ApprovalSlaCreditApply's own policy check.
   defp real_org_slug! do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Org",
-      slug: "org-#{System.unique_integer([:positive])}"
-    })
-    |> Ash.create!(authorize?: false)
-    |> Map.fetch!(:slug)
+    Xaas.Generator.create_org!().slug
   end
 
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 
@@ -85,13 +80,11 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
   end
 
   defp create_pending!(requested_by, org_id) do
-    ApprovalSlaCreditApply
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.pending_approval!(ApprovalSlaCreditApply, :create, %{
       requested_by: requested_by,
       org_id: org_id,
       credit_amount_cents: 1000
     })
-    |> Ash.create!(authorize?: false)
   end
 
   test "POST /api/approval_sla_credit_apply creates a real pending request", %{conn: conn} do
@@ -120,7 +113,9 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
     assert response["data"]["attributes"]["approved_by"] == nil
   end
 
-  test "POST /api/approval_sla_credit_apply rejects requests without the internal API token", %{conn: conn} do
+  test "POST /api/approval_sla_credit_apply rejects requests without the internal API token", %{
+    conn: conn
+  } do
     body = %{
       "data" => %{
         "type" => "approval_sla_credit_apply",
@@ -305,6 +300,7 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
     assert conn.status == 403
 
     persisted = ApprovalSlaCreditApply |> Ash.get!(pending.id, authorize?: false)
+
     assert persisted.approved_by == nil,
            "a cross-org PATCH must never approve another org's real SLA credit request -- " <>
              "this is the exact sixteenth-pass live-demonstrated exploit"

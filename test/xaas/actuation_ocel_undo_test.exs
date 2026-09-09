@@ -82,14 +82,13 @@ defmodule Xaas.ActuationOcelUndoTest do
     :ok
   end
 
+  # This file's own defaults (name/org_id) differ deliberately from
+  # Xaas.Generator.create_provider!/1's own generic defaults ("Test
+  # Provider"/"org-generated") -- kept for readability of the captured OCEL
+  # envelopes this test asserts on. Slug is left to Xaas.Generator's own
+  # unique sequence.
   defp create_provider! do
-    Provider
-    |> Ash.Changeset.for_create(:create, %{
-      name: "OCEL Undo Provider",
-      slug: "ocel-undo-provider-#{System.unique_integer([:positive])}",
-      org_id: "org-ocel-undo"
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_provider!(%{name: "OCEL Undo Provider", org_id: "org-ocel-undo"})
   end
 
   # `Xaas.Telemetry.OcelAshEmitter` is a real, already-attached global

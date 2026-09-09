@@ -9,7 +9,6 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
   """
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, PersonaGrant}
   alias Xaas.Operations.AuditLogEntry
   require Ash.Query
@@ -31,7 +30,9 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
   end
 
   defp create_user!(email \\ nil) do
-    Ash.Seed.seed!(User, %{email: email || Faker.Internet.email()})
+    if email,
+      do: Xaas.Generator.create_user!(%{email: email}),
+      else: Xaas.Generator.create_user!()
   end
 
   # Real Xaas.Library.PersonaGrant :grant create action, called the same
@@ -54,28 +55,14 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
     |> Ash.read!(authorize?: false)
   end
 
+  # This file's own defaults (fixed grade_level 5, 3 available/total
+  # copies) differ deliberately from Xaas.Generator.create_book!/1's own
+  # defaults (random grade_level, 2 copies) -- several tests below rely
+  # on 3 available copies specifically.
   defp create_book!(attrs) do
-    title = Map.get(attrs, :title, Faker.Commerce.product_name())
-    author = Map.get(attrs, :author, Faker.Person.name())
-    isbn = Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
-    grade_level = Map.get(attrs, :grade_level, 5)
-    genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
-    synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
-    available_copies = Map.get(attrs, :available_copies, 3)
-    total_copies = Map.get(attrs, :total_copies, 3)
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: author,
-      isbn: isbn,
-      grade_level: grade_level,
-      genres: genres,
-      synopsis: synopsis,
-      available_copies: available_copies,
-      total_copies: total_copies
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_book!(
+      Map.merge(%{grade_level: 5, available_copies: 3, total_copies: 3}, attrs)
+    )
   end
 
   defp task_text(task) do
@@ -85,7 +72,9 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
   end
 
   describe "browse" do
-    test "real \"as:<user_id> browse grade:N\" message lists real seeded books via A2A.call", %{agent: agent} do
+    test "real \"as:<user_id> browse grade:N\" message lists real seeded books via A2A.call", %{
+      agent: agent
+    } do
       user = create_granted_user!()
       book = create_book!(%{title: "The Real Grade Five Adventure", grade_level: 5})
       # A book outside the requested grade band should not show up.
@@ -101,7 +90,9 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
   end
 
   describe "checkout refusal for guest" do
-    test "real \"as:guest checkout ...\" message refuses without creating a Checkout row", %{agent: agent} do
+    test "real \"as:guest checkout ...\" message refuses without creating a Checkout row", %{
+      agent: agent
+    } do
       book = create_book!(%{available_copies: 3, total_copies: 3})
       before_count = Ash.count!(Checkout, authorize?: false)
 
@@ -120,7 +111,9 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
   end
 
   describe "checkout success" do
-    test "real successful \"as:<user_id> checkout ...\" message creates a real Checkout row", %{agent: agent} do
+    test "real successful \"as:<user_id> checkout ...\" message creates a real Checkout row", %{
+      agent: agent
+    } do
       user = create_granted_user!()
       book = create_book!(%{available_copies: 2, total_copies: 2})
       school_id = "test-school"
@@ -163,9 +156,10 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
       assert Enum.any?(entries, &(&1.metadata["caller_id"] == @internal_api_caller_id))
     end
 
-    test "ungranted user_id is denied, writes a denied AuditLogEntry, and never returns the User struct", %{
-      agent: agent
-    } do
+    test "ungranted user_id is denied, writes a denied AuditLogEntry, and never returns the User struct",
+         %{
+           agent: agent
+         } do
       user = create_user!()
       # Deliberately NOT calling grant_persona!/1 -- this is the real
       # "ungranted impersonation attempt" fixture the task requires.

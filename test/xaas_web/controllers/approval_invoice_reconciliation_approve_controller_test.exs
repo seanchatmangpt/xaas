@@ -21,12 +21,14 @@ defmodule XaasWeb.ApprovalInvoiceReconciliationApproveControllerTest do
   end
 
   defp create_pending!(requested_by) do
-    ApprovalInvoiceReconciliationApprove
-    |> Ash.Changeset.for_create(:create, %{requested_by: requested_by})
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.pending_approval!(ApprovalInvoiceReconciliationApprove, :create, %{
+      requested_by: requested_by
+    })
   end
 
-  test "POST /api/approval_invoice_reconciliation_approve creates a real pending request", %{conn: conn} do
+  test "POST /api/approval_invoice_reconciliation_approve creates a real pending request", %{
+    conn: conn
+  } do
     requester = "requester-#{System.unique_integer([:positive])}"
 
     body = %{
@@ -47,7 +49,8 @@ defmodule XaasWeb.ApprovalInvoiceReconciliationApproveControllerTest do
     assert response["data"]["attributes"]["approved_by"] == nil
   end
 
-  test "POST /api/approval_invoice_reconciliation_approve rejects requests without the internal API token", %{conn: conn} do
+  test "POST /api/approval_invoice_reconciliation_approve rejects requests without the internal API token",
+       %{conn: conn} do
     body = %{
       "data" => %{
         "type" => "approval_invoice_reconciliation_approve",

@@ -33,7 +33,6 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
 
   use XaasWeb.ConnCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, PersonaGrant}
   alias Xaas.Operations.AuditLogEntry
   require Ash.Query
@@ -52,7 +51,9 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
   end
 
   defp create_user!(email \\ nil) do
-    Ash.Seed.seed!(User, %{email: email || Faker.Internet.email()})
+    if email,
+      do: Xaas.Generator.create_user!(%{email: email}),
+      else: Xaas.Generator.create_user!()
   end
 
   defp grant_persona!(user_id) do
@@ -67,18 +68,25 @@ defmodule XaasWeb.A2A.Vision2030AvatarsTest do
     user
   end
 
+  # This file's own defaults (fixed Decimal grade_level, 3
+  # available/total copies) differ deliberately from
+  # Xaas.Generator.create_book!/1's own defaults (random integer
+  # grade_level, 2 copies).
   defp create_book!(attrs) do
     tag = "vision2030-#{System.unique_integer([:positive])}"
 
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: Map.get(attrs, :title, "#{tag} book"),
-      author: Map.get(attrs, :author, "Avatar Author"),
-      grade_level: Map.get(attrs, :grade_level, Decimal.new("5.0")),
-      available_copies: Map.get(attrs, :available_copies, 3),
-      total_copies: Map.get(attrs, :total_copies, 3)
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_book!(
+      Map.merge(
+        %{
+          title: "#{tag} book",
+          author: "Avatar Author",
+          grade_level: Decimal.new("5.0"),
+          available_copies: 3,
+          total_copies: 3
+        },
+        attrs
+      )
+    )
   end
 
   defp audit_entries_for(user_id) do

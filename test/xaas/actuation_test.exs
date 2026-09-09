@@ -20,14 +20,13 @@ defmodule Xaas.ActuationTest do
     :ok
   end
 
+  # This file's own defaults (name "Reactor Provider", org_id
+  # "org-reactor") differ deliberately from Xaas.Generator.create_provider!/1's
+  # general defaults ("Test Provider" / "org-generated") -- kept for
+  # readability of the actuation-kernel assertions below; slug remains
+  # Xaas.Generator's own unique sequence.
   defp create_provider! do
-    Provider
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Reactor Provider",
-      slug: "reactor-provider-#{System.unique_integer([:positive])}",
-      org_id: "org-reactor"
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_provider!(%{name: "Reactor Provider", org_id: "org-reactor"})
   end
 
   test "every provider semantic IRI is admitted from public ontologies" do

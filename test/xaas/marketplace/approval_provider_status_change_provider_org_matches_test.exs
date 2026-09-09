@@ -32,14 +32,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
   end
 
   defp create_provider!(org_id, status) do
-    provider =
-      Provider
-      |> Ash.Changeset.for_create(:create, %{
-        name: "Test Provider",
-        slug: "provider-#{System.unique_integer([:positive])}",
-        org_id: org_id
-      })
-      |> Ash.create!(authorize?: false)
+    provider = Xaas.Generator.create_provider!(%{org_id: org_id})
 
     if status == :pending do
       provider
@@ -57,7 +50,6 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
       |> Ash.update!(authorize?: false)
     end
   end
-
 
   defp change_attrs(org_id, provider_id) do
     %{
