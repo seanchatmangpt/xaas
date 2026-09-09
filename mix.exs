@@ -164,7 +164,7 @@ defmodule Kanban.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # KanbanWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, path: "/Users/sac/ggen_igniter", only: [:dev, :test]},
+      {:ggen_igniter, "~> 26.9.8", only: [:dev, :test]},
       {:faker, "~> 0.18", only: [:dev, :test]}
     ]
   end
