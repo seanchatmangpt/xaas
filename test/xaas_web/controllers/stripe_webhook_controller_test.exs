@@ -20,6 +20,8 @@ defmodule XaasWeb.StripeWebhookControllerTest do
 
   use XaasWeb.ConnCase
 
+  require Ash.Query
+
   alias Xaas.Billing.Subscription
 
   @webhook_secret "whsec_test_only_secret"
@@ -167,7 +169,10 @@ defmodule XaasWeb.StripeWebhookControllerTest do
   test "a real event for an unmatched subscription id still real-200s with no row created",
        %{conn: conn} do
     stripe_subscription_id = "sub_unmatched_#{System.unique_integer([:positive])}"
-    payload = subscription_updated_payload(stripe_subscription_id, "active", System.system_time(:second))
+
+    payload =
+      subscription_updated_payload(stripe_subscription_id, "active", System.system_time(:second))
+
     signature = signature_header(payload, @webhook_secret)
 
     conn = post_webhook(conn, payload, signature)
@@ -181,7 +186,12 @@ defmodule XaasWeb.StripeWebhookControllerTest do
     stripe_subscription_id = "sub_#{System.unique_integer([:positive])}"
     subscription = create_subscription!(org_id, stripe_subscription_id)
 
-    payload = subscription_updated_payload(stripe_subscription_id, "past_due", System.system_time(:second))
+    payload =
+      subscription_updated_payload(
+        stripe_subscription_id,
+        "past_due",
+        System.system_time(:second)
+      )
 
     conn =
       conn
@@ -198,12 +208,70 @@ defmodule XaasWeb.StripeWebhookControllerTest do
     stripe_subscription_id = "sub_#{System.unique_integer([:positive])}"
     subscription = create_subscription!(org_id, stripe_subscription_id)
 
-    payload = subscription_updated_payload(stripe_subscription_id, "past_due", System.system_time(:second))
+    payload =
+      subscription_updated_payload(
+        stripe_subscription_id,
+        "past_due",
+        System.system_time(:second)
+      )
+
     bad_signature = signature_header(payload, "wrong_secret_entirely")
 
     conn = post_webhook(conn, payload, bad_signature)
 
     assert json_response(conn, 400)
     assert reload!(subscription).status == :active
+  end
+
+  test "the same Stripe event id redelivered twice replays through Xaas.Actuation.run/4 instead of re-applying",
+       %{conn: conn} do
+    # Real regression coverage for routing sync! through
+    # Xaas.Actuation.run/4 keyed on Stripe's own event id: before that
+    # change, this controller called Ash.update/2 directly with no
+    # idempotency key at all, so Stripe's documented at-least-once
+    # redelivery of the *same* event id would apply the status change
+    # twice with nothing to detect it. Posting the identical payload
+    # (same event id, same body) twice must produce exactly one
+    # ActuationReceipt for that idempotency key -- the real signal a
+    # replay happened instead of a second real actuation.
+    org_id = "org-#{System.unique_integer([:positive])}"
+    stripe_subscription_id = "sub_#{System.unique_integer([:positive])}"
+    subscription = create_subscription!(org_id, stripe_subscription_id)
+
+    period_end_unix = System.system_time(:second) + 30 * 24 * 60 * 60
+    payload = subscription_updated_payload(stripe_subscription_id, "past_due", period_end_unix)
+    %{"id" => event_id} = Jason.decode!(payload)
+
+    conn1 = post_webhook(conn, payload, signature_header(payload, @webhook_secret))
+    assert json_response(conn1, 200) == %{"received" => true}
+    assert reload!(subscription).status == :past_due
+
+    receipts_after_first =
+      Xaas.Operations.ActuationReceipt
+      |> Ash.Query.filter(intent_id == ^find_intent_id!("stripe_event:#{event_id}"))
+      |> Ash.read!(authorize?: false)
+
+    assert length(receipts_after_first) == 1
+
+    # Same event id, same body, a fresh (but still validly-signed) conn --
+    # a real redelivery, not a hand-rolled duplicate call.
+    conn2 = build_conn()
+    conn2 = post_webhook(conn2, payload, signature_header(payload, @webhook_secret))
+    assert json_response(conn2, 200) == %{"received" => true}
+    assert reload!(subscription).status == :past_due
+
+    receipts_after_second =
+      Xaas.Operations.ActuationReceipt
+      |> Ash.Query.filter(intent_id == ^find_intent_id!("stripe_event:#{event_id}"))
+      |> Ash.read!(authorize?: false)
+
+    assert length(receipts_after_second) == 1
+  end
+
+  defp find_intent_id!(idempotency_key) do
+    Xaas.Operations.ActuationIntent
+    |> Ash.Query.filter(idempotency_key == ^idempotency_key)
+    |> Ash.read_one!(authorize?: false)
+    |> Map.fetch!(:id)
   end
 end

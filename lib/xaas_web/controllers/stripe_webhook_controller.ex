@@ -111,7 +111,7 @@ defmodule XaasWeb.StripeWebhookController do
   end
 
   defp apply_event(subscription, %{type: "customer.subscription.deleted"} = event) do
-    sync!(subscription, %{
+    sync!(subscription, event, %{
       stripe_subscription_id: subscription_id_for(event),
       status: :canceled,
       current_period_end: period_end(event)
@@ -119,7 +119,7 @@ defmodule XaasWeb.StripeWebhookController do
   end
 
   defp apply_event(subscription, %{type: "customer.subscription.updated"} = event) do
-    sync!(subscription, %{
+    sync!(subscription, event, %{
       stripe_subscription_id: subscription_id_for(event),
       status: status_for(event, subscription.status),
       current_period_end: period_end(event)
@@ -127,17 +127,31 @@ defmodule XaasWeb.StripeWebhookController do
   end
 
   defp apply_event(subscription, %{type: "invoice.payment_failed"} = event) do
-    sync!(subscription, %{
+    sync!(subscription, event, %{
       stripe_subscription_id: subscription_id_for(event),
       status: :past_due,
       current_period_end: subscription.current_period_end
     })
   end
 
-  defp sync!(subscription, params) do
-    subscription
-    |> Ash.Changeset.for_update(:sync_from_stripe, params)
-    |> Ash.update(authorize?: false)
+  # Routed through Xaas.Actuation.run/4 keyed on Stripe's own event id --
+  # Stripe's docs guarantee at-least-once delivery (a webhook can be
+  # redelivered for the same event), and this was previously the one real
+  # mutation in this app with zero dedup against that: a direct
+  # `Ash.update(authorize?: false)` call applied the same status change
+  # twice on redelivery. `event.id` is real data already on every `event`
+  # struct this controller receives, not a fabricated key. `authorize?:
+  # false` + a non-empty `authority` map (Stripe is not an Ash actor, same
+  # documented exception as the direct call this replaces) satisfies
+  # `Xaas.Actuation.Kernel.admit_authority/2`.
+  defp sync!(subscription, event, params) do
+    Xaas.Actuation.run(Xaas.Billing.Subscription, :sync_from_stripe, params,
+      subject_id: subscription.id,
+      idempotency_key: "stripe_event:#{event.id}",
+      actor: nil,
+      authorize?: false,
+      authority: %{kind: "stripe_webhook", source: event.type}
+    )
   end
 
   # Real, explicit mapping -- never `String.to_existing_atom/1` on

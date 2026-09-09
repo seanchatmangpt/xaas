@@ -15,7 +15,9 @@ defmodule XaasWeb.NextRead.ReaderLive do
   @impl true
   def mount(_params, session, socket) do
     user = resolve_current_user(session)
-    student_grade = session["grade"] || session[:grade] || user.grade_level || Config.default_grade()
+
+    student_grade =
+      session["grade"] || session[:grade] || user.grade_level || Config.default_grade()
 
     if connected?(socket) do
       # Subscribe to Ash resource notification topics (global and student-specific)
@@ -33,12 +35,18 @@ defmodule XaasWeb.NextRead.ReaderLive do
       |> assign(:user_id, user.id)
       |> assign(:student_grade, student_grade)
       |> assign(:grade_range, Config.grade_range())
-      |> assign(:view_mode, "split") # "split", "student", "librarian"
-      |> assign(:expanded_why, %{}) # Map of book_id => boolean
+      # "split", "student", "librarian"
+      |> assign(:view_mode, "split")
+      # Map of book_id => boolean
+      |> assign(:expanded_why, %{})
       |> assign(:flashed_cards, MapSet.new())
       |> assign(:show_hddl_drawer, false)
-      |> assign(:ask_query, "Show accessible science-fiction alternatives for students who liked The Wildwater Signal.")
-      |> assign(:ask_state, :idle) # :idle, :searching, :answered
+      |> assign(
+        :ask_query,
+        "Show accessible science-fiction alternatives for students who liked The Wildwater Signal."
+      )
+      # :idle, :searching, :answered
+      |> assign(:ask_state, :idle)
       |> assign(:ask_results, nil)
       |> assign(:patch_count_student, 0)
       |> assign(:patch_count_librarian, 0)
@@ -46,7 +54,12 @@ defmodule XaasWeb.NextRead.ReaderLive do
       |> assign(:active_pulses, [])
       |> assign(:completed_proofs, MapSet.new(["01"]))
       |> assign(:hddl_receipts, [
-        %{task: "RANK-RECOMMENDATIONS", status: :claimed, receipt: "w.collab*0.25 + w.sem*0.25 + w.grd*0.20", time: "live"}
+        %{
+          task: "RANK-RECOMMENDATIONS",
+          status: :claimed,
+          receipt: "w.collab*0.25 + w.sem*0.25 + w.grd*0.20",
+          time: "live"
+        }
       ])
       |> assign(:hddl_mermaid_diagram, nil)
       |> load_desk_stats()
@@ -59,13 +72,17 @@ defmodule XaasWeb.NextRead.ReaderLive do
   def handle_params(params, _uri, socket) do
     grade =
       case params["grade"] do
-        nil -> socket.assigns.student_grade
+        nil ->
+          socket.assigns.student_grade
+
         g when is_binary(g) ->
           case Integer.parse(g) do
             {val, ""} -> val
             _ -> socket.assigns.student_grade
           end
-        g when is_integer(g) -> g
+
+        g when is_integer(g) ->
+          g
       end
 
     socket =
@@ -127,80 +144,23 @@ defmodule XaasWeb.NextRead.ReaderLive do
       socket
       |> assign(:expanded_why, expanded)
       |> mark_proof_step("02")
-      |> add_hddl_receipt("EXPAND-WHY-DRAWER", :claimed, "Grounding: historical read matches + 6-factor weights")
+      |> add_hddl_receipt(
+        "EXPAND-WHY-DRAWER",
+        :claimed,
+        "Grounding: historical read matches + 6-factor weights"
+      )
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("checkout_book", %{"book-id" => book_id}, socket) do
-    user = socket.assigns.user
-    school_id = user.school_id || Config.default_school_id()
-    idempotency_key = "checkout:#{book_id}:#{user.id}:#{school_id}"
-    params = %{book_id: book_id, user_id: user.id, school_id: school_id}
-
-    case Xaas.Actuation.run(Checkout, :borrow, params,
-           idempotency_key: idempotency_key,
-           actor: user,
-           authorize?: false,
-           authority: %{kind: "liveview_reader", source: "checkout_book"}
-         ) do
-      {:ok, %{result: checkout, receipt: receipt} = envelope} ->
-        book = Book |> Ash.get!(checkout.book_id, authorize?: false)
-        status_label = if envelope.status == :replayed, do: "replayed", else: "sealed"
-
-        # Trigger telemetry pulse & proof step
-        socket =
-          socket
-          |> add_pulse(:down, "circulation:willow-creek")
-          |> mark_proof_step("05")
-          |> mark_proof_step("06")
-          |> add_hddl_receipt("CHECKOUT-BOOK", :sealed, "Receipt #{receipt.id} (#{status_label}) [key: #{idempotency_key}]")
-          |> put_flash(:info, gettext("Successfully checked out \"%{title}\"!", title: book.title))
-          |> load_desk_stats()
-          |> load_recommendations()
-
-        {:noreply, socket}
-
-      {:error, error} ->
-        Logger.error("Failed to check out book #{book_id} via Reactor: #{inspect(error)}")
-
-        {:noreply,
-         put_flash(socket, :error, gettext("Could not check out book. Shelf inventory may be depleted or hold requested."))}
-    end
+    {:noreply, circulate_book(socket, book_id)}
   end
 
   @impl true
   def handle_event("place_hold", %{"book-id" => book_id}, socket) do
-    user = socket.assigns.user
-    school_id = user.school_id || Config.default_school_id()
-    idempotency_key = "hold:#{book_id}:#{user.id}:#{school_id}"
-    params = %{book_id: book_id, user_id: user.id, school_id: school_id}
-
-    case Xaas.Actuation.run(HoldRequest, :create, params,
-           idempotency_key: idempotency_key,
-           actor: user,
-           authorize?: false,
-           authority: %{kind: "liveview_reader", source: "place_hold"}
-         ) do
-      {:ok, %{result: hold, receipt: receipt} = envelope} ->
-        book = Book |> Ash.get!(hold.book_id, authorize?: false)
-        status_label = if envelope.status == :replayed, do: "replayed", else: "sealed"
-
-        socket =
-          socket
-          |> add_pulse(:down, "holds:created")
-          |> mark_proof_step("05")
-          |> add_hddl_receipt("PLACE-HOLD", :sealed, "Receipt #{receipt.id} (#{status_label}) [key: #{idempotency_key}]")
-          |> put_flash(:info, gettext("Hold placed for \"%{title}\". We will notify you when available!", title: book.title))
-          |> load_recommendations()
-
-        {:noreply, socket}
-
-      {:error, error} ->
-        Logger.error("Failed to place hold on book #{book_id} via Reactor: #{inspect(error)}")
-        {:noreply, put_flash(socket, :error, gettext("Could not place hold."))}
-    end
+    {:noreply, circulate_book(socket, book_id)}
   end
 
   @impl true
@@ -217,8 +177,9 @@ defmodule XaasWeb.NextRead.ReaderLive do
     case existing_curation do
       {:ok, %Curation{} = curation} ->
         # Deactivate via Reactor
-        idempotency_key = "curate-deactivate:#{book_id}:#{socket.assigns.student_grade}:#{System.system_time(:millisecond)}"
-        
+        idempotency_key =
+          "curate-deactivate:#{book_id}:#{socket.assigns.student_grade}:#{System.system_time(:millisecond)}"
+
         case Xaas.Actuation.run(Curation, :update, %{active: false},
                idempotency_key: idempotency_key,
                subject_id: curation.id,
@@ -245,7 +206,9 @@ defmodule XaasWeb.NextRead.ReaderLive do
 
       _ ->
         # Create active curation via Reactor
-        idempotency_key = "curate-activate:#{book_id}:#{socket.assigns.student_grade}:#{System.system_time(:millisecond)}"
+        idempotency_key =
+          "curate-activate:#{book_id}:#{socket.assigns.student_grade}:#{System.system_time(:millisecond)}"
+
         params = %{
           book_id: book_id,
           curated_by: user.email || "a.okafor@willowcreek.edu",
@@ -304,7 +267,11 @@ defmodule XaasWeb.NextRead.ReaderLive do
       |> assign(:ask_state, :answered)
       |> assign(:ask_results, results)
       |> mark_proof_step("07")
-      |> add_hddl_receipt("ASK-CATALOG-SEMANTIC", :claimed, "Vector ranker admitted #{results.candidates_admitted} candidates")
+      |> add_hddl_receipt(
+        "ASK-CATALOG-SEMANTIC",
+        :claimed,
+        "Vector ranker admitted #{results.candidates_admitted} candidates"
+      )
 
     {:noreply, socket}
   end
@@ -386,7 +353,8 @@ defmodule XaasWeb.NextRead.ReaderLive do
   end
 
   defp load_desk_stats(socket) do
-    today_start = DateTime.utc_now() |> DateTime.to_date() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+    today_start =
+      DateTime.utc_now() |> DateTime.to_date() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
 
     out_today_count =
       Checkout
@@ -414,7 +382,7 @@ defmodule XaasWeb.NextRead.ReaderLive do
 
     acceptance_rate =
       if total_logs > 0 do
-        round((accepted_logs / total_logs) * 100)
+        round(accepted_logs / total_logs * 100)
       else
         0
       end
@@ -437,6 +405,76 @@ defmodule XaasWeb.NextRead.ReaderLive do
     assign(socket, :active_pulses, pulses)
   end
 
+  # Both `checkout_book` and `place_hold` dispatch here. Ash.Reactor is
+  # reserved for genuine multi-resource compensation, not every mutation
+  # (see CirculationBorrowReactor's own moduledoc) -- this is exactly that
+  # case: a single caller intent ("get me this book") with a real
+  # cross-resource saga underneath (create a Checkout + decrement Book
+  # inventory, or create a HoldRequest, with `undo_action` compensation on
+  # the hold branch), decided by a FRESH read inside the reactor rather
+  # than by which button the client happened to render -- closing the
+  # race the previous two-separate-actions design left open (a book that
+  # became available between page render and click, or was taken by
+  # someone else in that window, is handled correctly either way).
+  defp circulate_book(socket, book_id) do
+    user = socket.assigns.user
+    school_id = user.school_id || Config.default_school_id()
+
+    result =
+      Reactor.run(
+        Xaas.Library.Reactors.CirculationBorrowReactor,
+        %{book_id: book_id, user_id: user.id, school_id: school_id, actor: user},
+        %{},
+        async?: false
+      )
+
+    case result do
+      {:ok, %Checkout{} = checkout} ->
+        book = Book |> Ash.get!(checkout.book_id, authorize?: false)
+
+        socket
+        |> add_pulse(:down, "circulation:willow-creek")
+        |> mark_proof_step("05")
+        |> mark_proof_step("06")
+        |> add_hddl_receipt(
+          "CIRCULATE-BOOK",
+          :sealed,
+          "CirculationBorrowReactor: matches? branch -> Checkout #{checkout.id} (borrowed)"
+        )
+        |> put_flash(:info, gettext("Successfully checked out \"%{title}\"!", title: book.title))
+        |> load_desk_stats()
+        |> load_recommendations()
+
+      {:ok, %HoldRequest{} = hold} ->
+        book = Book |> Ash.get!(hold.book_id, authorize?: false)
+
+        socket
+        |> add_pulse(:down, "holds:created")
+        |> mark_proof_step("05")
+        |> add_hddl_receipt(
+          "CIRCULATE-BOOK",
+          :sealed,
+          "CirculationBorrowReactor: default branch -> HoldRequest #{hold.id} (active)"
+        )
+        |> put_flash(
+          :info,
+          gettext("Hold placed for \"%{title}\". We will notify you when available!",
+            title: book.title
+          )
+        )
+        |> load_recommendations()
+
+      {:error, error} ->
+        Logger.error("CirculationBorrowReactor failed for book #{book_id}: #{inspect(error)}")
+
+        put_flash(
+          socket,
+          :error,
+          gettext("Could not process this request. Please try again.")
+        )
+    end
+  end
+
   defp add_hddl_receipt(socket, action_name, standing, detail) do
     new_receipt = %{
       task: action_name,
@@ -444,13 +482,17 @@ defmodule XaasWeb.NextRead.ReaderLive do
       receipt: detail,
       time: Calendar.strftime(DateTime.utc_now(), "%H:%M:%S")
     }
+
     receipts = [new_receipt | Enum.take(socket.assigns.hddl_receipts, 5)]
     assign(socket, :hddl_receipts, receipts)
   end
 
   defp mark_proof_step(socket, step) do
     new_proofs = MapSet.put(socket.assigns.completed_proofs, step)
-    new_proofs = if MapSet.size(new_proofs) >= 7, do: MapSet.put(new_proofs, "08"), else: new_proofs
+
+    new_proofs =
+      if MapSet.size(new_proofs) >= 7, do: MapSet.put(new_proofs, "08"), else: new_proofs
+
     assign(socket, :completed_proofs, new_proofs)
   end
 
@@ -477,8 +519,12 @@ defmodule XaasWeb.NextRead.ReaderLive do
   defp fallback_user do
     email = "#{@guest_local_part}@willowcreek.edu"
 
-    case Xaas.Accounts.User |> Ash.Query.filter(email: email) |> Ash.read_one(authorize?: false) do
-      {:ok, %Xaas.Accounts.User{} = user} -> user
+    case Xaas.Accounts.User
+         |> Ash.Query.filter(email: email)
+         |> Ash.read_one(authorize?: false) do
+      {:ok, %Xaas.Accounts.User{} = user} ->
+        user
+
       _ ->
         case Xaas.Accounts.User |> Ash.Query.limit(1) |> Ash.read(authorize?: false) do
           {:ok, [user | _]} -> user
@@ -506,7 +552,7 @@ defmodule XaasWeb.NextRead.ReaderLive do
             class="px-2.5 py-1 rounded border border-[#5A6B45]/50 bg-[#5A6B45]/20 text-[#A2B889] hover:bg-[#5A6B45]/30 cursor-pointer font-semibold"
             data-testid="hddl-calculus-toggle"
           >
-            HDDL Task Calculus <%= if @show_hddl_drawer, do: "▲", else: "▼" %>
+            HDDL Task Calculus {if @show_hddl_drawer, do: "▲", else: "▼"}
           </button>
           <span class="px-2.5 py-1 rounded border border-[#B5352A]/50 bg-[#B5352A]/20 text-[#E9A79F]">notifier → pubsub → liveview</span>
         </div>
@@ -544,7 +590,7 @@ defmodule XaasWeb.NextRead.ReaderLive do
               class="bg-[#17150F] text-[#F4EFE6] border border-[#F4EFE6]/30 text-xs font-mono rounded px-2.5 py-1 focus:ring-1 focus:ring-[#B5352A]"
             >
               <%= for g <- @grade_range do %>
-                <option value={g} selected={g == @student_grade}>Grade <%= g %></option>
+                <option value={g} selected={g == @student_grade}>Grade {g}</option>
               <% end %>
             </select>
           </form>
@@ -553,7 +599,10 @@ defmodule XaasWeb.NextRead.ReaderLive do
 
       <%!-- HDDL Task Calculus & Epistemic Receipt Drawer --%>
       <%= if @show_hddl_drawer do %>
-        <div class="bg-[#1E1C15] text-[#F4EFE6] border-b border-black/40 px-6 py-4 font-mono text-xs shadow-inner" data-testid="hddl-drawer">
+        <div
+          class="bg-[#1E1C15] text-[#F4EFE6] border-b border-black/40 px-6 py-4 font-mono text-xs shadow-inner"
+          data-testid="hddl-drawer"
+        >
           <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 justify-between items-start">
             <div class="space-y-1.5 flex-1">
               <div class="flex items-center gap-2">
@@ -581,7 +630,10 @@ defmodule XaasWeb.NextRead.ReaderLive do
                 <span class="text-[10px] text-[#E9A79F]">HDDL(:method) ↔ Reactor(step DAG)</span>
               </div>
               <%= if @hddl_mermaid_diagram do %>
-                <pre class="text-[9px] text-[#A2B889] bg-black/40 rounded p-2 overflow-x-auto max-h-28 leading-tight border border-white/5 whitespace-pre" data-testid="hddl-mermaid-dag"><%= @hddl_mermaid_diagram %></pre>
+                <pre
+                  class="text-[9px] text-[#A2B889] bg-black/40 rounded p-2 overflow-x-auto max-h-28 leading-tight border border-white/5 whitespace-pre"
+                  data-testid="hddl-mermaid-dag"
+                ><%= @hddl_mermaid_diagram %></pre>
               <% else %>
                 <div class="text-[10px] text-[#F4EFE6]/30 italic">Loading DAG…</div>
               <% end %>
@@ -597,12 +649,12 @@ defmodule XaasWeb.NextRead.ReaderLive do
                   <div class="flex items-center justify-between text-[10px] bg-black/30 px-2 py-1 rounded border border-white/5">
                     <div class="flex items-center gap-2">
                       <span class={"font-bold " <> if(r.status == :sealed, do: "text-[#5A6B45]", else: "text-[#D9822B]")}>
-                        [<%= Atom.to_string(r.status) |> String.upcase() %>]
+                        [{Atom.to_string(r.status) |> String.upcase()}]
                       </span>
-                      <span class="text-white"><%= r.task %></span>
+                      <span class="text-white">{r.task}</span>
                     </div>
-                    <span class="text-[#F4EFE6]/60 truncate max-w-[200px]"><%= r.receipt %></span>
-                    <span class="text-[#F4EFE6]/40 text-[9px]"><%= r.time %></span>
+                    <span class="text-[#F4EFE6]/60 truncate max-w-[200px]">{r.receipt}</span>
+                    <span class="text-[#F4EFE6]/40 text-[9px]">{r.time}</span>
                   </div>
                 <% end %>
               </div>
@@ -613,19 +665,24 @@ defmodule XaasWeb.NextRead.ReaderLive do
 
       <%!-- Flash Banners --%>
       <%= if flash = Phoenix.Flash.get(@flash, :info) do %>
-        <div class="bg-[#5A6B45]/15 border-b border-[#5A6B45]/30 text-[#40522E] px-6 py-2.5 flex items-center justify-between text-sm font-medium" data-testid="flash-info">
-          <span><%= flash %></span>
+        <div
+          class="bg-[#5A6B45]/15 border-b border-[#5A6B45]/30 text-[#40522E] px-6 py-2.5 flex items-center justify-between text-sm font-medium"
+          data-testid="flash-info"
+        >
+          <span>{flash}</span>
         </div>
       <% end %>
       <%= if flash = Phoenix.Flash.get(@flash, :error) do %>
-        <div class="bg-[#B5352A]/15 border-b border-[#B5352A]/30 text-[#B5352A] px-6 py-2.5 flex items-center justify-between text-sm font-medium" data-testid="flash-error">
-          <span><%= flash %></span>
+        <div
+          class="bg-[#B5352A]/15 border-b border-[#B5352A]/30 text-[#B5352A] px-6 py-2.5 flex items-center justify-between text-sm font-medium"
+          data-testid="flash-error"
+        >
+          <span>{flash}</span>
         </div>
       <% end %>
 
       <%!-- Main Content Area with Split or Single Columns --%>
       <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
         <%!-- LEFT COLUMN: Student Reading UI --%>
         <%= if @view_mode in ["split", "student"] do %>
           <section
@@ -636,12 +693,12 @@ defmodule XaasWeb.NextRead.ReaderLive do
             <div class="bg-[#EDE7DB] border-b border-[#17150F]/15 px-5 py-3.5 flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-3">
                 <span class="font-serif text-lg font-medium text-[#17150F]">Maya's Next Read</span>
-                <span class="font-mono text-xs px-2 py-0.5 rounded bg-[#17150F]/10 text-[#17150F]/80">Grade <%= @student_grade %></span>
+                <span class="font-mono text-xs px-2 py-0.5 rounded bg-[#17150F]/10 text-[#17150F]/80">Grade {@student_grade}</span>
               </div>
               <div class="flex items-center gap-3 font-mono text-[11px] text-[#17150F]/70">
-                <span><%= length(@recommendations) %> personalized picks</span>
+                <span>{length(@recommendations)} personalized picks</span>
                 <%= if @patch_count_student > 0 do %>
-                  <span class="text-[#5A6B45] font-semibold animate-pulse">● patched live (<%= @patch_count_student %>)</span>
+                  <span class="text-[#5A6B45] font-semibold animate-pulse">● patched live ({@patch_count_student})</span>
                 <% end %>
               </div>
             </div>
@@ -666,10 +723,10 @@ defmodule XaasWeb.NextRead.ReaderLive do
                     <%!-- Top Badge Row --%>
                     <div class="flex items-center justify-between gap-2 mb-2">
                       <span class="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[#17150F]/10 text-[#17150F]/80">
-                        <%= List.first(rec.book.formats || []) || "Novel" %>
+                        {List.first(rec.book.formats || []) || "Novel"}
                       </span>
                       <div class="flex items-center gap-1.5 font-mono text-xs font-semibold">
-                        <span class="text-[#B5352A]">match <%= round(rec.score * 100) %>%</span>
+                        <span class="text-[#B5352A]">match {round(rec.score * 100)}%</span>
                       </div>
                     </div>
 
@@ -681,24 +738,35 @@ defmodule XaasWeb.NextRead.ReaderLive do
                         </div>
                       <% end %>
                       <h3 class="font-serif text-lg leading-snug font-medium text-[#17150F]">
-                        <%= rec.book.title %>
+                        {rec.book.title}
                       </h3>
-                      <p class="font-sans text-xs text-[#17150F]/70 mt-0.5">by <%= rec.book.author %></p>
+                      <p class="font-sans text-xs text-[#17150F]/70 mt-0.5">by {rec.book.author}</p>
                     </div>
 
                     <%!-- Match Score Progress Bar --%>
                     <div class="w-full bg-[#17150F]/10 h-1.5 rounded-full overflow-hidden mb-3">
-                      <div class="bg-[#B5352A] h-full rounded-full" style={"width: #{round(rec.score * 100)}%"}></div>
+                      <div
+                        class="bg-[#B5352A] h-full rounded-full"
+                        style={"width: #{round(rec.score * 100)}%"}
+                      >
+                      </div>
                     </div>
 
                     <%!-- Metadata Tags --%>
                     <div class="flex items-center gap-2 flex-wrap font-mono text-[10.5px] text-[#17150F]/60 mb-3">
-                      <span>Gr. <%= rec.book.grade_level %></span>
+                      <span>Gr. {rec.book.grade_level}</span>
                       <span>·</span>
-                      <span><%= List.first(rec.book.genres || []) || "Fiction" %></span>
+                      <span>{List.first(rec.book.genres || []) || "Fiction"}</span>
                       <span>·</span>
-                      <span class={if(rec.book.available_copies > 0, do: "text-[#5A6B45] font-semibold", else: "text-[#B5352A]")}>
-                        <%= if rec.book.available_copies > 0, do: "#{rec.book.available_copies} copy on shelf", else: "all copies checked out" %>
+                      <span class={
+                        if(rec.book.available_copies > 0,
+                          do: "text-[#5A6B45] font-semibold",
+                          else: "text-[#B5352A]"
+                        )
+                      }>
+                        {if rec.book.available_copies > 0,
+                          do: "#{rec.book.available_copies} copy on shelf",
+                          else: "all copies checked out"}
                       </span>
                     </div>
 
@@ -711,17 +779,25 @@ defmodule XaasWeb.NextRead.ReaderLive do
                         data-testid="why-button"
                       >
                         <span class="font-semibold">Why this one?</span>
-                        <span class="text-[10px]"><%= if Map.get(@expanded_why, to_string(rec.book.id), false), do: "▲ Hide", else: "▼ Explain" %></span>
+                        <span class="text-[10px]">{if Map.get(
+                                                        @expanded_why,
+                                                        to_string(rec.book.id),
+                                                        false
+                                                      ), do: "▲ Hide", else: "▼ Explain"}</span>
                       </button>
 
                       <%!-- Grounded Explainability Drawer --%>
                       <%= if Map.get(@expanded_why, to_string(rec.book.id), false) do %>
-                        <div class="mt-2.5 p-3 rounded bg-[#FCFAF6] border border-[#23405F]/20 text-xs font-sans space-y-2" data-testid="explanation-drawer">
+                        <div
+                          class="mt-2.5 p-3 rounded bg-[#FCFAF6] border border-[#23405F]/20 text-xs font-sans space-y-2"
+                          data-testid="explanation-drawer"
+                        >
                           <div class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#23405F]">
                             Grounded Explanation
                           </div>
                           <p class="text-[#17150F]/90 leading-relaxed text-[11.5px]">
-                            <%= rec.explanation[:why] || rec.explanation[:summary] || "Traced to real student circulation records" %>
+                            {rec.explanation[:why] || rec.explanation[:summary] ||
+                              "Traced to real student circulation records"}
                           </p>
 
                           <%!-- Factor Breakdown Pills --%>
@@ -733,7 +809,8 @@ defmodule XaasWeb.NextRead.ReaderLive do
                               {"popularity", Map.get(rec.factors, :popularity, 0.0)}
                             ] do %>
                               <span class="px-2 py-0.5 rounded bg-[#17150F]/5 border border-[#17150F]/10 text-[#17150F]/80">
-                                <%= factor_name %>: <strong class="text-[#17150F]"><%= Float.round(weight * 1.0, 2) %></strong>
+                                {factor_name}:
+                                <strong class="text-[#17150F]">{Float.round(weight * 1.0, 2)}</strong>
                               </span>
                             <% end %>
                           </div>
@@ -794,19 +871,34 @@ defmodule XaasWeb.NextRead.ReaderLive do
             <div class="p-5 space-y-6">
               <%!-- Live Circulation Metrics --%>
               <div>
-                <h3 class="font-mono text-xs uppercase tracking-wider text-[#17150F]/60 mb-3">Live Circulation Telemetry</h3>
+                <h3 class="font-mono text-xs uppercase tracking-wider text-[#17150F]/60 mb-3">
+                  Live Circulation Telemetry
+                </h3>
                 <div class="grid grid-cols-3 gap-3">
                   <div class="bg-[#F4EFE6] border border-[#17150F]/15 rounded p-3 text-center">
-                    <div class="font-serif text-2xl font-bold text-[#17150F]" data-testid="stat-out-today"><%= @stats_out_today %></div>
-                    <div class="font-mono text-[10px] text-[#17150F]/60 mt-0.5">Checked Out Today</div>
+                    <div
+                      class="font-serif text-2xl font-bold text-[#17150F]"
+                      data-testid="stat-out-today"
+                    >
+                      {@stats_out_today}
+                    </div>
+                    <div class="font-mono text-[10px] text-[#17150F]/60 mt-0.5">
+                      Checked Out Today
+                    </div>
                   </div>
                   <div class="bg-[#F4EFE6] border border-[#17150F]/15 rounded p-3 text-center">
-                    <div class="font-serif text-2xl font-bold text-[#17150F]"><%= @stats_active_readers %></div>
+                    <div class="font-serif text-2xl font-bold text-[#17150F]">
+                      {@stats_active_readers}
+                    </div>
                     <div class="font-mono text-[10px] text-[#17150F]/60 mt-0.5">Active Readers</div>
                   </div>
                   <div class="bg-[#F4EFE6] border border-[#17150F]/15 rounded p-3 text-center">
-                    <div class="font-serif text-2xl font-bold text-[#5A6B45]"><%= @stats_acceptance_rate %>%</div>
-                    <div class="font-mono text-[10px] text-[#17150F]/60 mt-0.5">Advisory Accepted</div>
+                    <div class="font-serif text-2xl font-bold text-[#5A6B45]">
+                      {@stats_acceptance_rate}%
+                    </div>
+                    <div class="font-mono text-[10px] text-[#17150F]/60 mt-0.5">
+                      Advisory Accepted
+                    </div>
                   </div>
                 </div>
               </div>
@@ -814,7 +906,9 @@ defmodule XaasWeb.NextRead.ReaderLive do
               <%!-- Curation Controls --%>
               <div class="space-y-3">
                 <div class="flex items-baseline justify-between border-b border-[#17150F]/10 pb-2">
-                  <h3 class="font-serif text-lg text-[#17150F]">Curate Grade <%= @student_grade %> Shelf</h3>
+                  <h3 class="font-serif text-lg text-[#17150F]">
+                    Curate Grade {@student_grade} Shelf
+                  </h3>
                   <span class="font-mono text-[10.5px] text-[#17150F]/50">Instant PubSub Broadcast</span>
                 </div>
 
@@ -822,8 +916,12 @@ defmodule XaasWeb.NextRead.ReaderLive do
                   <%= for rec <- @recommendations do %>
                     <div class="bg-[#F4EFE6] border border-[#17150F]/15 rounded px-3.5 py-2.5 flex items-center justify-between gap-3">
                       <div class="min-w-0">
-                        <div class="font-medium text-xs text-[#17150F] truncate"><%= rec.book.title %></div>
-                        <div class="font-mono text-[10px] text-[#17150F]/60"><%= rec.book.author %> · <%= rec.book.available_copies %> available</div>
+                        <div class="font-medium text-xs text-[#17150F] truncate">
+                          {rec.book.title}
+                        </div>
+                        <div class="font-mono text-[10px] text-[#17150F]/60">
+                          {rec.book.author} · {rec.book.available_copies} available
+                        </div>
                       </div>
                       <button
                         phx-click="toggle_pin"
@@ -833,7 +931,7 @@ defmodule XaasWeb.NextRead.ReaderLive do
                         data-testid="pin-button"
                         data-book-id={rec.book.id}
                       >
-                        <%= if rec.pinned, do: "★ Pinned", else: "☆ Pin" %>
+                        {if rec.pinned, do: "★ Pinned", else: "☆ Pin"}
                       </button>
                     </div>
                   <% end %>
@@ -876,21 +974,24 @@ defmodule XaasWeb.NextRead.ReaderLive do
                   <% end %>
 
                   <%= if @ask_state == :answered and @ask_results do %>
-                    <div class="mt-3.5 pt-3 border-t border-[#23405F]/15 space-y-2.5" data-testid="ask-results">
+                    <div
+                      class="mt-3.5 pt-3 border-t border-[#23405F]/15 space-y-2.5"
+                      data-testid="ask-results"
+                    >
                       <p class="text-xs text-[#17150F]/90 leading-relaxed font-sans font-medium">
-                        <%= @ask_results.summary %>
+                        {@ask_results.summary}
                       </p>
                       <div class="space-y-1 pl-3 border-l-2 border-[#23405F]/30">
                         <%= for ans <- @ask_results.answers do %>
                           <div class="text-xs">
-                            <span class="font-semibold text-[#17150F]"><%= ans.title %></span>
-                            <span class="font-mono text-[10px] text-[#17150F]/60 ml-2"><%= ans.meta %></span>
+                            <span class="font-semibold text-[#17150F]">{ans.title}</span>
+                            <span class="font-mono text-[10px] text-[#17150F]/60 ml-2">{ans.meta}</span>
                           </div>
                         <% end %>
                       </div>
                       <div class="font-mono text-[9.5px] text-[#17150F]/50 pt-2 border-t border-[#17150F]/10 flex justify-between items-center">
-                        <span><%= Enum.join(@ask_results.telemetry, " → ") %></span>
-                        <span class="text-[#B5352A] font-semibold">Ranker admitted <%= @ask_results.candidates_admitted %></span>
+                        <span>{Enum.join(@ask_results.telemetry, " → ")}</span>
+                        <span class="text-[#B5352A] font-semibold">Ranker admitted {@ask_results.candidates_admitted}</span>
                       </div>
                     </div>
                   <% end %>
@@ -917,7 +1018,7 @@ defmodule XaasWeb.NextRead.ReaderLive do
           ] do %>
             <% is_done = MapSet.member?(@completed_proofs, step_id) %>
             <span class={"px-2.5 py-1 rounded text-[11px] border transition-colors " <> if(is_done, do: "bg-[#5A6B45]/15 border-[#5A6B45]/40 text-[#40522E] font-medium", else: "bg-transparent border-[#17150F]/15 text-[#17150F]/40")}>
-              <%= label %> <%= if is_done, do: "✓" %>
+              {label} {if is_done, do: "✓"}
             </span>
           <% end %>
         </div>

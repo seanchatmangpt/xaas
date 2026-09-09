@@ -33,14 +33,30 @@ defmodule Xaas.Library.Changes.FulfillNextHold do
              |> Ash.Query.limit(1)
              |> Ash.read_one(authorize?: false) do
           {:ok, %HoldRequest{} = hold} ->
-            hold
-            |> Ash.Changeset.for_update(:fulfill, %{})
-            |> Ash.update(authorize?: false)
+            # Real result match, not a discarded call -- returning
+            # `{:error, _}` from an `after_action` hook aborts the action
+            # and rolls back the surrounding transaction. Previously this
+            # branch always returned `{:ok, checkout}` regardless of
+            # whether `:fulfill` (which itself re-decrements Book
+            # inventory) actually succeeded, so a real failure here --
+            # e.g. a concurrent fulfillment of the same hold -- was
+            # invisible to the caller and left the return "succeeded"
+            # with no copy actually handed out.
+            case hold
+                 |> Ash.Changeset.for_update(:fulfill, %{})
+                 |> Ash.update(authorize?: false) do
+              {:ok, _hold} -> {:ok, checkout}
+              {:error, error} -> {:error, error}
+            end
 
+          # `{:ok, nil}` -- no active hold on this book -- is the
+          # expected, non-error case (an empty queue), distinct from a
+          # real query failure below.
+          {:ok, nil} ->
             {:ok, checkout}
 
-          _ ->
-            {:ok, checkout}
+          {:error, error} ->
+            {:error, error}
         end
       end)
     else

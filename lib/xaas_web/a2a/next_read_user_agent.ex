@@ -10,29 +10,33 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
 
   use A2A.Agent,
     name: "next-read-user",
-    description: "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing with HDDL task calculus",
+    description:
+      "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing with HDDL task calculus",
     skills: [
       %{
         id: "browse",
         name: "Browse books",
-        description: "List books for a grade band as a given user actor (HDDL task: MCP-INSPECT-CATALOG)",
+        description:
+          "List books for a grade band as a given user actor (HDDL task: MCP-INSPECT-CATALOG)",
         tags: ["next-read", "library", "hddl"]
       },
       %{
         id: "checkout",
         name: "Checkout a book",
-        description: "Borrow a book as a given user actor (HDDL task: A2A-SIMULATE-USER-CIRCULATION / checkout-book)",
+        description:
+          "Borrow a book as a given user actor (HDDL task: A2A-SIMULATE-USER-CIRCULATION / checkout-book)",
         tags: ["next-read", "library", "hddl"]
       },
       %{
         id: "hddl-plan",
         name: "HDDL Plan Inspection",
-        description: "Inspect the formal HDDL compound tasks, methods, and epistemic receipts for Next Read",
+        description:
+          "Inspect the formal HDDL compound tasks, methods, and epistemic receipts for Next Read",
         tags: ["next-read", "hddl", "calculus"]
       }
     ]
 
-  alias Xaas.Library.{Book, Checkout}
+  alias Xaas.Library.{Book, Checkout, HoldRequest}
   alias Xaas.Library.Changes.WriteActorResolutionAudit
 
   @internal_api_caller_id "internal_api_token"
@@ -49,7 +53,8 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
         run(actor, command)
 
       {:ok, {:error, :unauthorized_actor}, _command} ->
-        {:error, "as:<user_id> denied: no active persona grant for this caller (HDDL precondition failed: persona-granted)"}
+        {:error,
+         "as:<user_id> denied: no active persona grant for this caller (HDDL precondition failed: persona-granted)"}
 
       :error ->
         {:input_required, [A2A.Part.Text.new(usage())]}
@@ -93,20 +98,40 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
       {:ok, [_grant | _]} ->
         case Ash.get(Xaas.Accounts.User, user_id, authorize?: false) do
           {:ok, user} ->
-            WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "allowed"})
+            WriteActorResolutionAudit.write(%{
+              caller_id: caller_id,
+              user_id: user_id,
+              outcome: "allowed"
+            })
+
             {:ok, user}
 
           {:error, _} ->
-            WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
+            WriteActorResolutionAudit.write(%{
+              caller_id: caller_id,
+              user_id: user_id,
+              outcome: "denied"
+            })
+
             {:error, :unauthorized_actor}
         end
 
       {:ok, []} ->
-        WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
+        WriteActorResolutionAudit.write(%{
+          caller_id: caller_id,
+          user_id: user_id,
+          outcome: "denied"
+        })
+
         {:error, :unauthorized_actor}
 
       {:error, _} ->
-        WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
+        WriteActorResolutionAudit.write(%{
+          caller_id: caller_id,
+          user_id: user_id,
+          outcome: "denied"
+        })
+
         {:error, :unauthorized_actor}
     end
   end
@@ -134,10 +159,16 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
       {:ok, books} ->
         summary =
           books
-          |> Enum.map(&"#{&1.title} by #{&1.author} (grade #{&1.grade_level}, #{&1.available_copies} available)")
+          |> Enum.map(
+            &"#{&1.title} by #{&1.author} (grade #{&1.grade_level}, #{&1.available_copies} available)"
+          )
           |> Enum.join("; ")
 
-        text = if books == [], do: "No books found for grade #{grade}.", else: "Found #{length(books)}: #{summary}"
+        text =
+          if books == [],
+            do: "No books found for grade #{grade}.",
+            else: "Found #{length(books)}: #{summary}"
+
         {:reply, [A2A.Part.Text.new(text)]}
 
       {:error, error} ->
@@ -147,19 +178,44 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
 
   defp checkout(actor, book_id, school_id) do
     if actor == nil do
-      {:reply, [A2A.Part.Text.new("checkout requires a real as:<user_id> actor, not guest (HDDL actor-resolved failed)")]}
+      {:reply,
+       [
+         A2A.Part.Text.new(
+           "checkout requires a real as:<user_id> actor, not guest (HDDL actor-resolved failed)"
+         )
+       ]}
     else
-      params = %{book_id: book_id, user_id: actor.id, school_id: school_id}
-      idempotency_key = "checkout:#{book_id}:#{actor.id}:#{school_id}"
+      # Same CirculationBorrowReactor saga as XaasWeb.NextRead.ReaderLive's
+      # circulate_book/2 -- one entrypoint whose real `switch` (a fresh
+      # read at execution time, not this caller's stale availability
+      # assumption) decides borrow vs. hold, with real `undo_action`
+      # compensation on the hold branch. Ash.Reactor is reserved for that
+      # genuine multi-resource compensation need; it is not a blanket
+      # wrapper every mutation must go through.
+      result =
+        Reactor.run(
+          Xaas.Library.Reactors.CirculationBorrowReactor,
+          %{book_id: book_id, user_id: actor.id, school_id: school_id, actor: actor},
+          %{},
+          async?: false
+        )
 
-      case Xaas.Actuation.run(Checkout, :borrow, params,
-             idempotency_key: idempotency_key,
-             actor: actor,
-             authorize?: true,
-             authority: %{kind: "a2a_next_read_user_agent", source: "checkout"}
-           ) do
-        {:ok, %{result: checkout}} ->
-          {:reply, [A2A.Part.Text.new("Checked out book #{checkout.book_id} for user #{checkout.user_id} (checkout #{checkout.id}) [HDDL: receipt-sealed]")]}
+      case result do
+        {:ok, %Checkout{} = checkout} ->
+          {:reply,
+           [
+             A2A.Part.Text.new(
+               "Checked out book #{checkout.book_id} for user #{checkout.user_id} (checkout #{checkout.id}) [CirculationBorrowReactor: matches? branch]"
+             )
+           ]}
+
+        {:ok, %HoldRequest{} = hold} ->
+          {:reply,
+           [
+             A2A.Part.Text.new(
+               "No copies available -- placed hold #{hold.id} on book #{hold.book_id} for user #{hold.user_id} [CirculationBorrowReactor: default branch]"
+             )
+           ]}
 
         {:error, error} ->
           {:error, "checkout failed: #{inspect(error)}"}

@@ -5,13 +5,28 @@
 > now resolved; see §12 for the real, verified current state. Left the
 > original sections below intact (struck through where superseded) rather
 > than rewritten, so this stays an honest record of what changed and why.
+> Updated again 2026-09-09 — §1's Mission Statement below is superseded by
+> an explicit user decision: see §13 (the blanket "every mutation through
+> Actuation.run" rule was real doctrine drift, not load-bearing everywhere
+> it was applied — an audit found ~150 cross-resource mutation cascades in
+> Governance/Billing/Platform with zero production callers going through
+> it at all, and a real `Ash.Reactor` saga (`CirculationBorrowReactor`)
+> with genuine compensation that had no caller anywhere).
 > Conversation: `a2d14a08-faff-4fd5-bc3d-0f1e7f556755`
 
 ---
 
-## 1. Mission Statement
+## 1. Mission Statement — superseded, see §13
 
-This repository (`xaas`) enforces a strict architectural doctrine: **all consequential state mutations must pass through an admitted, transactional, and deterministic control plane** — `Xaas.Actuation.run/4` — rather than ad-hoc, uncoordinated side effects.
+~~This repository (`xaas`) enforces a strict architectural doctrine: **all consequential state mutations must pass through an admitted, transactional, and deterministic control plane** — `Xaas.Actuation.run/4` — rather than ad-hoc, uncoordinated side effects.~~
+
+**Real, current doctrine (§13):** `Ash.Reactor` sagas (`switch`/
+`transaction`/`undo_action`) are reserved for genuine multi-resource
+compensation needs. `Xaas.Actuation.run/4` stays available, and is the
+right tool, specifically where idempotency-key dedup or a receipt trail is
+the actual need (a user-double-click, a webhook an external provider may
+redeliver) — it is not a mandatory wrapper for every mutation regardless
+of whether either property is needed.
 
 The current sprint implements the **tri-partite isomorphism**:
 
@@ -304,3 +319,63 @@ Full receipt (repo, commands, exact commits) for the work summarized in this
 table is in the session transcript at the conversation id in this file's
 header; the three commits above (`11319f7`, `9505ec6`, `dc98567`) are on
 `main`, pushed.
+
+---
+
+## 13. Real audit: how data is actually mutated, and the doctrine correction
+
+Prompted by a direct request to audit every Ash resource action and reserve
+`Ash.Reactor` for genuine compensation rather than treating it (via
+`Xaas.Actuation.run/4`) as a mandatory wrapper for every mutation. Full
+inventory (Explore agent, file:line-cited) found the blanket rule in §1 was
+**already violated** in real places, and a real compensation-capable
+`Ash.Reactor` saga had **zero callers**:
+
+- **Currently Reactor/Actuation-gated** (before this section's fixes): only
+  `Checkout.borrow`, `HoldRequest.create`, `Curation.update`/`.create` --
+  all from `lib/xaas_web`.
+- **Bypassed the doctrine already:** `stripe_webhook_controller.ex` mutated
+  `Subscription`/`Ledger` directly with zero idempotency protection, despite
+  Stripe's own docs guaranteeing at-least-once redelivery of the same event.
+- **`CirculationBorrowReactor`** — a real saga (`switch`/`transaction`/
+  `undo_action` compensation, already fixed for correctness in §12) — had
+  **no caller anywhere in `lib/`**. The two production checkout entrypoints
+  called `Checkout.borrow`/`HoldRequest.create` directly instead.
+- **`Checkout.return`'s cascade** (`IncrementBookInventory`,
+  `FulfillNextHold`) discarded the inner `Ash.update` result and
+  unconditionally returned `{:ok, checkout}` -- a real failure inside the
+  cascade was invisible to the caller and never rolled back.
+- ~150 `Approval*`/webhook-delivery/ledger-charge cascades in Governance/
+  Billing/Platform, sampled (not individually re-walked), all follow one
+  mechanical pattern and have zero production callers -- test-only
+  currently. **Left out of scope for this pass**, named here rather than
+  silently dropped.
+
+**User's resolution, applied:**
+1. Relax the blanket rule (§1's real replacement, above).
+2. Wire `CirculationBorrowReactor` up as the real path for both checkout
+   entrypoints (`reader_live.ex`'s `checkout_book`/`place_hold` -- now one
+   shared `circulate_book/2` calling the reactor once, branching on the
+   real returned struct type rather than which button was clicked; and
+   `next_read_user_agent.ex`'s A2A `checkout` skill).
+3. Fix the `Checkout.return` cascade's discarded results (both change
+   modules now propagate `{:error, _}` for real, rolling back the
+   transaction) and route the Stripe webhook path through
+   `Xaas.Actuation.run/4` keyed on Stripe's own `event.id`.
+
+**Disclosed tradeoff:** wiring `checkout_book`/`place_hold` directly to
+`Reactor.run/4` (not wrapped by `Xaas.Actuation.run`) drops the
+double-click idempotency guard those two UI actions previously had. The
+HDDL-drawer receipt display for them now shows the real saga outcome
+(which switch branch ran, the created record's id) instead of an
+admit/actuate/seal receipt -- not silently dropped, replaced with a
+different real signal. If double-click protection turns out to matter in
+practice, that's a real follow-up (a lightweight guard inside the
+reactor's own transaction), not a reason to have skipped this change.
+
+**Verification:** `mix compile --warnings-as-errors` clean; `mix format
+--check-formatted` clean on every touched file; `mix test`: 536/536 (535
+baseline + 1 new Stripe-redelivery-idempotency regression test asserting
+exactly one `ActuationReceipt` exists after the same Stripe event id is
+posted twice). Full plan (context, alternatives considered, exact files)
+is at `~/.claude/plans/no-what-i-am-cuddly-key.md`.
