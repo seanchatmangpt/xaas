@@ -228,26 +228,30 @@ defmodule Xaas.Library.Book do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
-    table "library_books"
+    table \"library_books\"
     repo Xaas.Repo
   end
 
   pub_sub do
     module XaasWeb.Endpoint
-    prefix "library:books"
+    prefix \"library:books\"
     broadcast_type :notification
 
-    publish :create, ["created"]
-    publish :update, ["updated", :id]
-    publish :borrow_copy, ["inventory", :id]
-    publish :return_copy, ["inventory", :id]
+    publish :create, [\"created\"]
+    publish :create, [\"events\"]
+    publish :update, [\"updated\", :id]
+    publish :update, [\"events\"]
+    publish :borrow_copy, [\"inventory\", :id]
+    publish :borrow_copy, [\"events\"]
+    publish :return_copy, [\"inventory\", :id]
+    publish :return_copy, [\"events\"]
   end
 
   json_api do
-    type "library_book"
+    type \"library_book\"
 
     routes do
-      base "/library/books"
+      base \"/library/books\"
       get :read
       index :read
     end
@@ -297,13 +301,13 @@ defmodule Xaas.Library.Book do
     end
 
     update :borrow_copy do
-      description "Atomically decrements available shelf copies when checked out"
-      validate compare(:available_copies, greater_than: 0), message: "No shelf copies currently available"
+      description \"Atomically decrements available shelf copies when checked out\"
+      validate compare(:available_copies, greater_than: 0), message: \"No shelf copies currently available\"
       change atomic_update(:available_copies, expr(available_copies - 1))
     end
 
     update :return_copy do
-      description "Atomically increments available shelf copies when returned"
+      description \"Atomically increments available shelf copies when returned\"
       change atomic_update(:available_copies, expr(available_copies + 1))
     end
 
@@ -317,11 +321,19 @@ defmodule Xaas.Library.Book do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 
@@ -337,6 +349,7 @@ defmodule Xaas.Library.Book do
 
   calculations do
     calculate :is_available, :boolean, expr(available_copies > 0)
+    calculate :has_multiple_copies, :boolean, expr(available_copies > 1)
   end
 
   attributes do
@@ -359,7 +372,7 @@ defmodule Xaas.Library.Book do
 
     attribute :grade_level, :decimal do
       allow_nil? false
-      default Decimal.new("5.0")
+      default Decimal.new(\"5.0\")
       public? true
     end
 
@@ -371,7 +384,7 @@ defmodule Xaas.Library.Book do
 
     attribute :formats, {:array, :string} do
       allow_nil? false
-      default ["Print"]
+      default [\"Print\"]
       public? true
     end
 
@@ -394,7 +407,7 @@ defmodule Xaas.Library.Book do
 
     attribute :cover_color, :string do
       allow_nil? false
-      default "#23405F"
+      default \"#23405F\"
       public? true
     end
 
@@ -441,27 +454,30 @@ defmodule Xaas.Library.Checkout do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
-    table "library_checkouts"
+    table \"library_checkouts\"
     repo Xaas.Repo
   end
 
   pub_sub do
     module XaasWeb.Endpoint
-    prefix "circulation"
+    prefix \"circulation\"
     broadcast_type :notification
 
-    publish :create, ["school", :school_id]
-    publish :create, ["events"]
-    publish :borrow, ["events"]
-    publish :update, ["school", :school_id]
-    publish :update, ["events"]
+    publish :create, [\"school\", :school_id]
+    publish :create, [\"events\"]
+    publish :create, [\"student\", :user_id]
+    publish :borrow, [\"events\"]
+    publish :borrow, [\"student\", :user_id]
+    publish :update, [\"school\", :school_id]
+    publish :update, [\"events\"]
+    publish :update, [\"student\", :user_id]
   end
 
   json_api do
-    type "library_checkout"
+    type \"library_checkout\"
 
     routes do
-      base "/library/checkouts"
+      base \"/library/checkouts\"
       get :read
       index :read
     end
@@ -480,8 +496,10 @@ defmodule Xaas.Library.Checkout do
     end
 
     create :borrow do
-      description "Borrows a book for a student, automatically decrementing available copies"
+      description \"Borrows a book for a student, automatically decrementing available copies\"
       accept [:book_id, :user_id, :school_id]
+      require_atomic? false
+      validate Xaas.Actuation.Validations.ReactorContext
       change Xaas.Library.Changes.DecrementBookInventory
     end
 
@@ -498,15 +516,19 @@ defmodule Xaas.Library.Checkout do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
-    policy action_type(:create) do
-      authorize_if always()
-    end
-
-    policy action_type([:update, :destroy]) do
-      authorize_if always()
+    policy action_type([:create, :update, :destroy]) do
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 
@@ -515,7 +537,7 @@ defmodule Xaas.Library.Checkout do
 
     attribute :school_id, :string do
       allow_nil? false
-      default "willow-creek"
+      default \"willow-creek\"
       public? true
     end
 
@@ -571,6 +593,12 @@ end
 defmodule Xaas.Library.HoldRequest do
   @moduledoc \"\"\"
   Ash resource for Hold Requests on library books, grounded in Schema.org (schema:ReserveAction) and PROV (prov:Activity).
+
+  Lifecycle: a hold is placed when a book has zero available copies (queueing the reader
+  behind any other active holds), fulfilled when a copy becomes available and is handed to
+  the reader (decrementing the book's available copies the same way a checkout does), cancelled
+  by the reader/librarian before fulfillment, or expired automatically after `hold_expires_after_days`
+  (see `Xaas.Library.Config`) days of remaining active/unfulfilled.
   \"\"\"
   use Xaas.Resource,
     otp_app: :xaas,
@@ -580,25 +608,34 @@ defmodule Xaas.Library.HoldRequest do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
+  @hold_expires_after_days 7
+
   postgres do
-    table "library_holds"
+    table \"library_holds\"
     repo Xaas.Repo
   end
 
   pub_sub do
     module XaasWeb.Endpoint
-    prefix "holds"
+    prefix \"holds\"
     broadcast_type :notification
 
-    publish :create, ["created"]
-    publish :update, ["updated", :id]
+    publish :create, [\"created\"]
+    publish :place, [\"created\"]
+    publish :update, [\"updated\", :id]
+    publish :fulfill, [\"updated\", :id]
+    publish :fulfill, [\"fulfilled\", :id]
+    publish :cancel, [\"updated\", :id]
+    publish :cancel, [\"cancelled\", :id]
+    publish :expire, [\"updated\", :id]
+    publish :expire, [\"expired\", :id]
   end
 
   json_api do
-    type "library_hold"
+    type \"library_hold\"
 
     routes do
-      base "/library/holds"
+      base \"/library/holds\"
       get :read
       index :read
     end
@@ -613,7 +650,7 @@ defmodule Xaas.Library.HoldRequest do
 
     create :create do
       primary? true
-      accept [:book_id, :user_id, :school_id, :position, :status]
+      accept [:book_id, :user_id, :school_id, :position, :status, :expires_at]
     end
 
     update :update do
@@ -621,9 +658,97 @@ defmodule Xaas.Library.HoldRequest do
       accept [:position, :status]
     end
 
+    create :place do
+      description \"Places a hold for a reader on a book, queueing behind any other active holds\"
+      accept [:book_id, :user_id, :school_id]
+
+      change fn changeset, _context ->
+        book_id = Ash.Changeset.get_attribute(changeset, :book_id)
+
+        next_position =
+          __MODULE__
+          |> Ash.Query.for_read(:read)
+          |> Ash.Query.filter(book_id == ^book_id and status == :active)
+          |> Ash.count!(authorize?: false)
+          |> Kernel.+(1)
+
+        expires_at = DateTime.add(DateTime.utc_now(), @hold_expires_after_days * 86_400, :second)
+
+        changeset
+        |> Ash.Changeset.force_change_attribute(:position, next_position)
+        |> Ash.Changeset.force_change_attribute(:status, :active)
+        |> Ash.Changeset.force_change_attribute(:expires_at, expires_at)
+      end
+    end
+
+    update :fulfill do
+      description \"Fulfills an active hold when a copy becomes available, decrementing book inventory\"
+      accept []
+      require_atomic? false
+
+      validate compare(:status, equals: :active),
+        message: \"Only active holds can be fulfilled\"
+
+      change set_attribute(:status, :fulfilled)
+      change set_attribute(:fulfilled_at, expr(now()))
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, hold ->
+          case Xaas.Library.Book |> Ash.get(hold.book_id, authorize?: false) do
+            {:ok, book} ->
+              book
+              |> Ash.Changeset.for_update(:borrow_copy, %{})
+              |> Ash.update(authorize?: false)
+
+              {:ok, hold}
+
+            _ ->
+              {:ok, hold}
+          end
+        end)
+      end
+    end
+
+    update :cancel do
+      description \"Cancels an active hold before it is fulfilled\"
+      accept []
+      require_atomic? false
+
+      validate compare(:status, equals: :active),
+        message: \"Only active holds can be cancelled\"
+
+      change set_attribute(:status, :cancelled)
+      change set_attribute(:cancelled_at, expr(now()))
+    end
+
+    update :expire do
+      description \"Expires an active hold whose expires_at has passed\"
+      accept []
+      require_atomic? false
+
+      validate compare(:status, equals: :active),
+        message: \"Only active holds can be expired\"
+
+      change set_attribute(:status, :expired)
+    end
+
     read :for_user do
       argument :user_id, :uuid, allow_nil?: false
       filter expr(user_id == ^arg(:user_id))
+    end
+
+    read :for_book do
+      argument :book_id, :uuid, allow_nil?: false
+      filter expr(book_id == ^arg(:book_id))
+    end
+
+    read :active do
+      filter expr(status == :active)
+    end
+
+    read :expirable do
+      description \"Active holds whose expiration time has passed\"
+      filter expr(status == :active and not is_nil(expires_at) and expires_at <= now())
     end
   end
 
@@ -642,7 +767,7 @@ defmodule Xaas.Library.HoldRequest do
 
     attribute :school_id, :string do
       allow_nil? false
-      default "willow-creek"
+      default \"willow-creek\"
       public? true
     end
 
@@ -653,9 +778,24 @@ defmodule Xaas.Library.HoldRequest do
     end
 
     attribute :status, :atom do
-      constraints [one_of: [:active, :fulfilled, :cancelled]]
+      constraints [one_of: [:active, :fulfilled, :cancelled, :expired]]
       default :active
       allow_nil? false
+      public? true
+    end
+
+    attribute :expires_at, :utc_datetime_usec do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :fulfilled_at, :utc_datetime_usec do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :cancelled_at, :utc_datetime_usec do
+      allow_nil? true
       public? true
     end
 
@@ -698,26 +838,28 @@ defmodule Xaas.Library.Curation do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
-    table "library_curations"
+    table \"library_curations\"
     repo Xaas.Repo
   end
 
   pub_sub do
     module XaasWeb.Endpoint
-    prefix "recommendations"
+    prefix \"recommendations\"
     broadcast_type :notification
 
-    publish :create, ["student", :student_id]
-    publish :create, ["curation_events"]
-    publish :update, ["student", :student_id]
-    publish :update, ["curation_events"]
+    publish :create, [\"student\", :student_id]
+    publish :create, [\"curation_events\"]
+    publish :create, [\"grade\", :grade_band]
+    publish :update, [\"student\", :student_id]
+    publish :update, [\"curation_events\"]
+    publish :update, [\"grade\", :grade_band]
   end
 
   json_api do
-    type "library_curation"
+    type \"library_curation\"
 
     routes do
-      base "/library/curations"
+      base \"/library/curations\"
       get :read
       index :read
     end
@@ -748,11 +890,19 @@ defmodule Xaas.Library.Curation do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 
@@ -766,7 +916,7 @@ defmodule Xaas.Library.Curation do
 
     attribute :grade_band, :string do
       allow_nil? false
-      default "6-8"
+      default \"6-8\"
       public? true
     end
 
@@ -824,15 +974,15 @@ defmodule Xaas.Library.RecommendationLog do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
-    table "library_recommendation_logs"
+    table \"library_recommendation_logs\"
     repo Xaas.Repo
   end
 
   json_api do
-    type "library_recommendation_log"
+    type \"library_recommendation_log\"
 
     routes do
-      base "/library/recommendation_logs"
+      base \"/library/recommendation_logs\"
       get :read
       index :read
     end
@@ -858,11 +1008,19 @@ defmodule Xaas.Library.RecommendationLog do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 

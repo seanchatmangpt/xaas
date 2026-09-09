@@ -42,7 +42,11 @@ config :xaas,
 # configured as Ash's tracer (confirmed via grep -- no `config :ash,
 # :tracer` existed anywhere in this repo before this line). Without this,
 # OpentelemetryAsh.start_span/2 is dead code -- Ash never calls it.
-config :ash, :tracer, [OpentelemetryAsh]
+# Xaas.Telemetry.OcelAshEmitter is registered here too (not just attached
+# to :telemetry): it needs the real Ash.Tracer.set_handled_error/set_error
+# callbacks (fired synchronously, in-process, on real action errors) to
+# distinguish OCEL outcome "ok" from "error" -- see that module's moduledoc.
+config :ash, :tracer, [OpentelemetryAsh, Xaas.Telemetry.OcelAshEmitter]
 
 config :ash_oban, pro?: false
 

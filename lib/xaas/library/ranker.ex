@@ -14,7 +14,7 @@ defmodule Xaas.Library.Ranker do
   6. `curation`: Boost if active librarian curation exists for this book in student's grade band.
   """
 
-  alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings}
+  alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, RecommendationLog}
   require Ash.Query
 
   @doc """
@@ -51,9 +51,16 @@ defmodule Xaas.Library.Ranker do
       end
 
     # 3. Fetch active curations for grade
+    # No-risk field-limiting: only `book_id`/`grade_band` are ever read off these
+    # rows below (see `curated_book_ids` immediately after) -- unlike `all_books`,
+    # these Curation structs never leave this function, so trimming the selected
+    # columns cannot break a downstream consumer. Reduces bytes fetched/decoded
+    # per call; not a fix for full-table-scan cost (see rank_recommendations/3 doc
+    # note on table growth).
     curations =
       Curation
       |> Ash.Query.filter(active == true)
+      |> Ash.Query.select([:book_id, :grade_band])
       |> Ash.read!(authorize?: false)
 
     curated_book_ids =
@@ -75,9 +82,12 @@ defmodule Xaas.Library.Ranker do
         all_books
       end
 
+    # 5a. Real-query prior recommendation acceptance signal for this user, to feed collab_score.
+    accepted_book_ids = accepted_recommendation_book_ids(user_id)
+
     scored =
       Enum.map(candidate_books, fn book ->
-        collab_score = compute_collab_score(book, user_checkouts)
+        collab_score = compute_collab_score(book, user_checkouts, accepted_book_ids)
         semantic_score = compute_semantic_score(book, student_embedding)
         grade_fit_score = compute_grade_fit(book.grade_level, student_grade)
         available_score = if book.available_copies > 0, do: 1.0, else: 0.0
@@ -110,7 +120,47 @@ defmodule Xaas.Library.Ranker do
       |> Enum.sort_by(& &1.score, :desc)
       |> Enum.take(limit)
 
+    # 6. Log what was recommended for later feedback/analytics and collab-score improvement.
+    log_recommendations!(user_id, length(candidate_books), current_weights, scored)
+
     {:ok, scored}
+  end
+
+  # Persists a RecommendationLog row capturing the candidate pool size, weights used, and the
+  # ranked book ids/scores produced, so future calls can real-query acceptance signal via
+  # `accepted_recommendation_book_ids/1` and so downstream feedback flows have something to
+  # mark `accepted: true` against.
+  defp log_recommendations!(user_id, candidate_pool_size, weights, scored) do
+    ranked_items =
+      Enum.map(scored, fn %{book: book, score: score} ->
+        %{book_id: book.id, title: book.title, score: score}
+      end)
+
+    RecommendationLog
+    |> Ash.Changeset.for_create(:create, %{
+      user_id: user_id,
+      candidate_pool_size: candidate_pool_size,
+      weights: weights,
+      ranked_items: ranked_items,
+      accepted: false
+    })
+    |> Ash.create!(authorize?: false)
+  end
+
+  # Real-queries RecommendationLog for prior recommendations of this user that were marked
+  # `accepted: true`, and returns the set of book ids drawn from their `ranked_items`. Used as
+  # a collaborative-filtering acceptance signal boost in `compute_collab_score/3`.
+  defp accepted_recommendation_book_ids(user_id) do
+    RecommendationLog
+    |> Ash.Query.filter(user_id == ^user_id and accepted == true)
+    |> Ash.read!(authorize?: false)
+    |> Enum.flat_map(fn log ->
+      Enum.map(log.ranked_items || [], fn item ->
+        Map.get(item, "book_id") || Map.get(item, :book_id)
+      end)
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
   end
 
   @doc """
@@ -118,24 +168,34 @@ defmodule Xaas.Library.Ranker do
   """
   def weights(opts \\ []), do: Config.weights(opts)
 
-  defp compute_collab_score(book, user_checkouts) do
+  defp compute_collab_score(book, user_checkouts, accepted_book_ids) do
     # Collaborative filtering signal: overlap in genres and checkouts
-    if user_checkouts == [] do
-      0.5
-    else
-      past_genres =
-        user_checkouts
-        |> Enum.flat_map(fn c -> (c.book && c.book.genres) || [] end)
-        |> MapSet.new()
-
-      book_genres = MapSet.new(book.genres || [])
-      overlap = MapSet.intersection(past_genres, book_genres) |> MapSet.size()
-
-      if MapSet.size(book_genres) > 0 do
-        min(1.0, overlap / MapSet.size(book_genres))
-      else
+    base_score =
+      if user_checkouts == [] do
         0.5
+      else
+        past_genres =
+          user_checkouts
+          |> Enum.flat_map(fn c -> (c.book && c.book.genres) || [] end)
+          |> MapSet.new()
+
+        book_genres = MapSet.new(book.genres || [])
+        overlap = MapSet.intersection(past_genres, book_genres) |> MapSet.size()
+
+        if MapSet.size(book_genres) > 0 do
+          min(1.0, overlap / MapSet.size(book_genres))
+        else
+          0.5
+        end
       end
+
+    # Boost with real prior-acceptance signal: if this exact book was recommended to this
+    # user before and that recommendation log was marked accepted, treat it as a strong
+    # collaborative-filtering signal.
+    if MapSet.member?(accepted_book_ids, book.id) do
+      min(1.0, base_score + 0.25)
+    else
+      base_score
     end
   end
 

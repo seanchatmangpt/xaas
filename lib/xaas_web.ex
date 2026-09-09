@@ -51,7 +51,7 @@ defmodule XaasWeb do
         layouts: [html: XaasWeb.Layouts]
 
       import Plug.Conn
-      import XaasWeb.Gettext
+      use Gettext, backend: XaasWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -91,9 +91,11 @@ defmodule XaasWeb do
     quote do
       # HTML escaping functionality
       import Phoenix.HTML
+      # Petal Components UI library
+      use PetalComponents
       # Core UI components and translation
       import XaasWeb.CoreComponents
-      import XaasWeb.Gettext
+      use Gettext, backend: XaasWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

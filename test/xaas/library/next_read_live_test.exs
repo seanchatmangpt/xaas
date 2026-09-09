@@ -22,25 +22,50 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
   end
 
   defp create_sample_catalog! do
-    Enum.map(1..4, fn i ->
-      title = "Catalog Discovery #{i}"
-      genres = ["Science", "Adventure"]
-      {:ok, emb} = Embeddings.embed("#{title} #{Enum.join(genres, " ")}")
+    # Config.grade_range/0 now derives from the real min/max Book.grade_level
+    # in the catalog (Ash aggregate) rather than a hardcoded 1..12 -- so this
+    # fixture must actually span the grade levels the tests below exercise
+    # (grade 8, via the "handles grade level changes dynamically" test)
+    # instead of seeding everything at a single grade_level.
+    books =
+      Enum.map(1..4, fn i ->
+        title = "Catalog Discovery #{i}"
+        genres = ["Science", "Adventure"]
+        {:ok, emb} = Embeddings.embed("#{title} #{Enum.join(genres, " ")}")
 
+        Book
+        |> Ash.Changeset.for_create(:create, %{
+          title: title,
+          author: "Author #{i}",
+          isbn: "ISBN-#{i}-#{System.unique_integer([:positive])}",
+          grade_level: 6,
+          genres: genres,
+          synopsis: "Engaging exploration of science and discovery volume #{i}.",
+          available_copies: if(i == 1, do: 2, else: 0),
+          total_copies: 2,
+          embedding: emb
+        })
+        |> Ash.create!(authorize?: false)
+      end)
+
+    {:ok, grade_8_emb} = Embeddings.embed("Grade Eight Explorer Science Adventure")
+
+    grade_8_book =
       Book
       |> Ash.Changeset.for_create(:create, %{
-        title: title,
-        author: "Author #{i}",
-        isbn: "ISBN-#{i}-#{System.unique_integer([:positive])}",
-        grade_level: 6,
-        genres: genres,
-        synopsis: "Engaging exploration of science and discovery volume #{i}.",
-        available_copies: if(i == 1, do: 2, else: 0),
+        title: "Grade Eight Explorer",
+        author: "Author 5",
+        isbn: "ISBN-5-#{System.unique_integer([:positive])}",
+        grade_level: 8,
+        genres: ["Science", "Adventure"],
+        synopsis: "A grade-8-level catalog entry so grade_range covers grade 8.",
+        available_copies: 2,
         total_copies: 2,
-        embedding: emb
+        embedding: grade_8_emb
       })
       |> Ash.create!(authorize?: false)
-    end)
+
+    books ++ [grade_8_book]
   end
 
   describe "Next Read LiveView" do

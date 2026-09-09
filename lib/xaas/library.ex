@@ -29,5 +29,7 @@ defmodule Xaas.Library do
     resource Xaas.Library.HoldRequest
     resource Xaas.Library.Curation
     resource Xaas.Library.RecommendationLog
+    resource Xaas.Library.School
+    resource Xaas.Library.PersonaGrant
   end
 end

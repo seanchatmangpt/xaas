@@ -145,3 +145,12 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
+
+# OCEL v2 egress to ex4pm_web's real ingest endpoint
+# (POST /api/v1/ocel/events -> Ex4pmWeb.OcelController.ingest/2), forwarded
+# by Xaas.Telemetry.OcelForwarder. Unset (nil) disables forwarding entirely --
+# OcelForwarder.forward/1 is then a no-op.
+config :xaas,
+  ex4pm_ocel_ingest_url: System.get_env("EX4PM_OCEL_INGEST_URL"),
+  ex4pm_ocel_ingest_timeout_ms:
+    String.to_integer(System.get_env("EX4PM_OCEL_INGEST_TIMEOUT_MS") || "2000")

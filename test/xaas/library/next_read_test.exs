@@ -271,6 +271,89 @@ defmodule Xaas.Library.NextReadTest do
       assert Enum.any?(explanation.parts, &String.starts_with?(&1, "grade fit"))
     end
 
+    test "rank_recommendations/3 writes a RecommendationLog row for later feedback/analytics" do
+      user = create_user!()
+      _book_a = create_book!(%{title: "Logged Pick A", grade_level: 6, available_copies: 1})
+      _book_b = create_book!(%{title: "Logged Pick B", grade_level: 6, available_copies: 1})
+
+      before_count =
+        Xaas.Library.RecommendationLog
+        |> Ash.Query.filter(user_id == ^user.id)
+        |> Ash.read!(authorize?: false)
+        |> length()
+
+      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 2)
+
+      logs =
+        Xaas.Library.RecommendationLog
+        |> Ash.Query.filter(user_id == ^user.id)
+        |> Ash.read!(authorize?: false)
+
+      assert length(logs) == before_count + 1
+
+      log = Enum.max_by(logs, & &1.inserted_at)
+
+      assert log.candidate_pool_size >= length(recs)
+      assert log.weights["collab"] == Config.weights().collab
+      assert log.accepted == false
+
+      logged_ids =
+        log.ranked_items
+        |> Enum.map(&(Map.get(&1, "book_id") || Map.get(&1, :book_id)))
+        |> MapSet.new()
+
+      recommended_ids = recs |> Enum.map(& &1.book.id) |> MapSet.new()
+      assert MapSet.equal?(logged_ids, recommended_ids)
+    end
+
+    test "collab_score is boosted by a real prior accepted RecommendationLog for the same book" do
+      user = create_user!()
+
+      candidate =
+        create_book!(%{
+          title: "Previously Accepted Recommendation",
+          grade_level: 6,
+          genres: ["Fantasy"],
+          available_copies: 1
+        })
+
+      other =
+        create_book!(%{
+          title: "Never Recommended Before",
+          grade_level: 6,
+          genres: ["Fantasy"],
+          available_copies: 1
+        })
+
+      # Real prior recommendation log, marked accepted, referencing `candidate`'s book_id --
+      # exercises the actual data model (RecommendationLog.ranked_items + accepted) rather
+      # than a fabricated/mocked signal.
+      Xaas.Library.RecommendationLog
+      |> Ash.Changeset.for_create(:create, %{
+        user_id: user.id,
+        candidate_pool_size: 5,
+        weights: Config.weights(),
+        ranked_items: [%{book_id: candidate.id, title: candidate.title, score: 0.9}],
+        accepted: true
+      })
+      |> Ash.create!(authorize?: false)
+
+      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
+
+      rec_candidate = Enum.find(recs, &(&1.book.id == candidate.id))
+      rec_other = Enum.find(recs, &(&1.book.id == other.id))
+
+      assert rec_candidate != nil
+      assert rec_other != nil
+
+      # Both books start from the same no-checkout-history base collab score (0.5); the
+      # previously-accepted book must score strictly higher via the real acceptance-signal
+      # query against RecommendationLog.
+      assert rec_candidate.factors.collab > rec_other.factors.collab
+      assert_in_delta rec_candidate.factors.collab, 0.75, 1.0e-6
+      assert_in_delta rec_other.factors.collab, 0.5, 1.0e-6
+    end
+
     test "manages hold requests and queue positions on unavailable titles" do
       user = create_user!()
       book = create_book!(%{title: "Nine Doors to Nowhere", available_copies: 0})
@@ -313,9 +396,9 @@ defmodule Xaas.Library.NextReadTest do
       book_multiple = create_book!(%{title: "Multi Copy", available_copies: 3})
       book_none = create_book!(%{title: "Zero Copy", available_copies: 0})
 
-      loaded_single = Book |> Ash.Query.load([:is_available, :has_multiple_copies]) |> Ash.get!(book_single.id, authorize?: false)
-      loaded_multi = Book |> Ash.Query.load([:is_available, :has_multiple_copies]) |> Ash.get!(book_multiple.id, authorize?: false)
-      loaded_none = Book |> Ash.Query.load([:is_available, :has_multiple_copies]) |> Ash.get!(book_none.id, authorize?: false)
+      loaded_single = Ash.get!(Book, book_single.id, load: [:is_available, :has_multiple_copies], authorize?: false)
+      loaded_multi = Ash.get!(Book, book_multiple.id, load: [:is_available, :has_multiple_copies], authorize?: false)
+      loaded_none = Ash.get!(Book, book_none.id, load: [:is_available, :has_multiple_copies], authorize?: false)
 
       assert loaded_single.is_available == true
       assert loaded_single.has_multiple_copies == false
@@ -331,7 +414,7 @@ defmodule Xaas.Library.NextReadTest do
       user = create_user!()
       book = create_book!(%{title: "PubSub Book", available_copies: 2})
 
-      KanbanWeb.Endpoint.subscribe("circulation:student:#{user.id}")
+      XaasWeb.Endpoint.subscribe("circulation:student:#{user.id}")
 
       {:ok, checkout} =
         Checkout

@@ -26,6 +26,8 @@ defmodule Xaas.Library.Checkout do
     publish :create, ["student", :user_id]
     publish :borrow, ["events"]
     publish :borrow, ["student", :user_id]
+    publish :return, ["events"]
+    publish :return, ["student", :user_id]
     publish :update, ["school", :school_id]
     publish :update, ["events"]
     publish :update, ["student", :user_id]
@@ -64,6 +66,21 @@ defmodule Xaas.Library.Checkout do
       accept [:returned_at, :status, :renewed_count]
     end
 
+    update :return do
+      description "Marks a checkout as returned, automatically incrementing available copies"
+      accept []
+      # Xaas.Library.Changes.IncrementBookInventory does a non-atomic cross-
+      # resource update (bumps the related Book's available_copies), which
+      # Ash cannot express as a single atomic SQL statement -- same real
+      # constraint as DecrementBookInventory on :borrow. Confirmed via a
+      # real compile/test failure ("must be performed atomically") before
+      # this was added.
+      require_atomic? false
+      change set_attribute(:status, :returned)
+      change set_attribute(:returned_at, &DateTime.utc_now/0)
+      change Xaas.Library.Changes.IncrementBookInventory
+    end
+
     read :for_user do
       argument :user_id, :uuid, allow_nil?: false
       filter expr(user_id == ^arg(:user_id))
@@ -72,15 +89,19 @@ defmodule Xaas.Library.Checkout do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
-    policy action_type(:create) do
-      authorize_if always()
-    end
-
-    policy action_type([:update, :destroy]) do
-      authorize_if always()
+    policy action_type([:create, :update, :destroy]) do
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 

@@ -9,11 +9,33 @@ defmodule Xaas.Library.Book do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshAdmin.Resource]
 
   postgres do
     table "library_books"
     repo Xaas.Repo
+  end
+
+  admin do
+    # `embedding` is a raw {:array, :float} vector (hundreds of floats) --
+    # AshAdmin's default table_columns is every attribute, which would
+    # render this as an unreadable wall of numbers in the datatable. Hide
+    # it from the table view; it remains a normal, readable/writable
+    # attribute everywhere else (API, GraphQL, show/edit forms).
+    table_columns [
+      :id,
+      :title,
+      :author,
+      :isbn,
+      :grade_level,
+      :genres,
+      :formats,
+      :available_copies,
+      :total_copies,
+      :review_status,
+      :inserted_at,
+      :updated_at
+    ]
   end
 
   pub_sub do
@@ -43,6 +65,11 @@ defmodule Xaas.Library.Book do
 
   graphql do
     type :library_book
+
+    queries do
+      get :library_book, :read
+      list :library_books, :read
+    end
   end
 
   actions do
@@ -105,11 +132,19 @@ defmodule Xaas.Library.Book do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 

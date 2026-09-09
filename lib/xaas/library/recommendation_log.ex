@@ -44,11 +44,19 @@ defmodule Xaas.Library.RecommendationLog do
 
   policies do
     policy action_type(:read) do
+      # Reads are open to any actor, including an unauthenticated guest
+      # browsing persona (actor: nil) -- see
+      # lib/xaas_web/a2a/next_read_user_agent.ex's documented guest-browse
+      # design. No write/mutation surface is exposed to reads.
       authorize_if always()
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      # Deny-by-default floor (CLAUDE.md): mutations require a real,
+      # resolved actor. Callers with no actor (e.g. a guest persona) are
+      # denied -- see next_read_user_agent.ex's checkout/2, which already
+      # refuses to call Ash.create without a resolved actor.
+      authorize_if actor_present()
     end
   end
 

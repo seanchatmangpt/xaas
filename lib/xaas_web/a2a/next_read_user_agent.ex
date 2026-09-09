@@ -44,14 +44,12 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   limitation -- see that plug's own moduledoc). Not fixed in this pass;
   named here so it is not silently relied upon as safe.
 
-  `Checkout.borrow` (used by the `checkout` command below) also has no
-  idempotency/replay protection -- unlike `Xaas.Marketplace.Provider
-  .actuate_status`, which is fenced by `Xaas.Actuation.run/4`'s
-  receipted, idempotency-keyed admission path, this agent calls
-  `Ash.create/2` on `Checkout` directly. A retried or duplicated A2A
-  checkout message can double-decrement `Book.available_copies`. Routing
-  this call through `Xaas.Actuation.run/4` instead is real follow-up work,
-  not done in this pass.
+  `Checkout.borrow` (used by the `checkout` command below) is routed
+  through `Xaas.Actuation.run/4`, the same receipted, idempotency-keyed
+  admission path used by `Xaas.Marketplace.Provider.actuate_status`. The
+  idempotency key is deterministic (`checkout:<book_id>:<user_id>:
+  <school_id>`), so a retried or duplicated A2A checkout message replays
+  the sealed receipt instead of double-decrementing `Book.available_copies`.
 
   ## Supported commands (plain-text, one per message)
 
@@ -62,9 +60,9 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
     Next Read's own ranker at `lib/xaas/library/ranker.ex` is the richer
     scoring path used by the LiveView itself).
   - `as:<user_id> checkout book:<book_id> school:<school_id>` -- real
-    `Checkout.borrow` create action (decrements shelf inventory via
-    `Xaas.Library.Changes.DecrementBookInventory`, same as the LiveView's
-    checkout button).
+    `Checkout.borrow` create action, admitted through `Xaas.Actuation.run/4`
+    (decrements shelf inventory via `Xaas.Library.Changes
+    .DecrementBookInventory`, same as the LiveView's checkout button).
   - `as:guest ...` -- any command with an unresolvable/guest actor still
     runs with `actor: nil`, exercising the same `authorize_if always()`
     read policies unauthenticated browsing already gets.
@@ -144,7 +142,9 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   end
 
   defp browse(actor, grade) do
-    case Ash.read(Book, action: :by_grade_band, args: %{min_grade: grade - 1, max_grade: grade + 1}, actor: actor) do
+    case Book
+         |> Ash.Query.for_read(:by_grade_band, %{min_grade: grade - 1, max_grade: grade + 1})
+         |> Ash.read(actor: actor) do
       {:ok, books} ->
         summary =
           books
@@ -164,13 +164,19 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
       {:reply, [A2A.Part.Text.new("checkout requires a real as:<user_id> actor, not guest")]}
     else
       params = %{book_id: book_id, user_id: actor.id, school_id: school_id}
+      idempotency_key = "checkout:#{book_id}:#{actor.id}:#{school_id}"
 
-      case Ash.create(Checkout, params, action: :borrow, actor: actor) do
-        {:ok, checkout} ->
+      case Xaas.Actuation.run(Checkout, :borrow, params,
+             idempotency_key: idempotency_key,
+             actor: actor,
+             authorize?: true,
+             authority: %{kind: "a2a_next_read_user_agent", source: "checkout"}
+           ) do
+        {:ok, %{result: checkout}} ->
           {:reply, [A2A.Part.Text.new("Checked out book #{checkout.book_id} for user #{checkout.user_id} (checkout #{checkout.id})")]}
 
         {:error, error} ->
-          {:error, "checkout failed: #{Exception.message(error)}"}
+          {:error, "checkout failed: #{inspect(error)}"}
       end
     end
   end

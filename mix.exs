@@ -104,6 +104,7 @@ defmodule Xaas.MixProject do
       # per explicit user direction (prefer real Ash-ecosystem libraries
       # over hand-rolled/non-Ash equivalents, e.g. Petal's plain
       # Ecto-based auth-adjacent components).
+      {:petal_components, "~> 2.0"},
       {:ash_authentication_phoenix, "~> 2.17"},
       {:bcrypt_elixir, "~> 3.0"},
       {:ash_authentication, "~> 4.0"},

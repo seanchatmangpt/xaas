@@ -11,16 +11,14 @@ defmodule Xaas.Library.Changes.DecrementBookInventory do
 
     if book_id do
       Ash.Changeset.after_action(changeset, fn _changeset, checkout ->
-        case Book |> Ash.get(book_id, authorize?: false) do
-          {:ok, book} ->
-            book
-            |> Ash.Changeset.for_update(:borrow_copy, %{})
-            |> Ash.update(authorize?: false)
-
-            {:ok, checkout}
-
-          _ ->
-            {:ok, checkout}
+        with {:ok, book} <- Book |> Ash.get(book_id, authorize?: false),
+             {:ok, _book} <-
+               book
+               |> Ash.Changeset.for_update(:borrow_copy, %{})
+               |> Ash.update(authorize?: false) do
+          {:ok, checkout}
+        else
+          {:error, error} -> {:error, error}
         end
       end)
     else
