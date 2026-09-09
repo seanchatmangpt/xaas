@@ -238,6 +238,13 @@ defmodule Xaas.Library.Ranker do
 
         emb when is_list(emb) ->
           emb
+
+        %Ash.Vector{} = vec ->
+          # Real fix: Book.embedding is now a real pgvector-backed Ash.Vector
+          # (via the `vectorize` DSL, lib/xaas/library/book.ex) instead of a
+          # plain list -- Ecto/AshPostgres loads it back as an %Ash.Vector{}
+          # struct, not the list this function originally assumed.
+          Ash.Vector.to_list(vec)
       end
 
     Embeddings.cosine_similarity(student_embedding, book_embedding)

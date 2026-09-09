@@ -15,11 +15,15 @@ defmodule Xaas.Repo do
     # Add extensions here, and the migration generator will install them.
     #
     # "vector" (AshPostgres.Extensions.Vector, confirmed supported) is
-    # required by Xaas.Library.Book's `vectorize` block -- BLOCKED at
-    # runtime: the running dev Postgres has zero rows for 'vector' in
-    # pg_available_extensions, so CREATE EXTENSION vector fails until the
-    # Postgres image/host ships the pgvector extension binary (e.g.
-    # pgvector/pgvector). See Xaas.Library.Book's moduledoc for detail.
+    # required by Xaas.Library.Book's `vectorize` block. Real fix landed:
+    # compose.yaml's db service now runs pgvector/pgvector:pg15 (was plain
+    # postgres:15.2, which had no vector extension binary at all -- CREATE
+    # EXTENSION vector failed with "extension \"vector\" is not available").
+    # Also required: lib/xaas/postgrex_types.ex (a real Postgrex.Types.define/3
+    # module) + `types: Xaas.PostgrexTypes` in config/{dev,test}.exs's
+    # `config :xaas, Xaas.Repo` -- without that, Postgrex.DefaultTypes still
+    # can't encode/decode the `vector` wire type even once the Postgres
+    # extension itself is installed.
     ["ash-functions", "citext", "vector", AshMoney.AshPostgresExtension]
   end
 end

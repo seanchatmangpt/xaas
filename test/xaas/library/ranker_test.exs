@@ -9,7 +9,7 @@ defmodule Xaas.Library.RankerTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, Ranker}
+  alias Xaas.Library.{Book, Checkout, Config, Curation, Ranker}
   require Ash.Query
 
   setup do
@@ -36,8 +36,6 @@ defmodule Xaas.Library.RankerTest do
     available_copies = Map.get(attrs, :available_copies, 2)
     total_copies = Map.get(attrs, :total_copies, 2)
 
-    {:ok, embedding} = Embeddings.embed("#{title} #{synopsis} #{Enum.join(genres, " ")}")
-
     Book
     |> Ash.Changeset.for_create(:create, %{
       title: title,
@@ -47,8 +45,7 @@ defmodule Xaas.Library.RankerTest do
       genres: genres,
       synopsis: synopsis,
       available_copies: available_copies,
-      total_copies: total_copies,
-      embedding: embedding
+      total_copies: total_copies
     })
     |> Ash.create!(authorize?: false)
   end
@@ -161,10 +158,16 @@ defmodule Xaas.Library.RankerTest do
 
       # Force a nil stored embedding directly via Ash update, bypassing the
       # test helper's precomputed embedding, to exercise the on-demand
-      # embed/1 branch in compute_semantic_score/2.
+      # embed/1 branch in compute_semantic_score/2. `:embedding` is not in
+      # the `:update` action's accept list (it is derived automatically via
+      # the vectorize `:after_action` strategy from `:synopsis` -- see
+      # lib/xaas/library/book.ex), so this uses force_change_attribute/3 to
+      # write it directly, bypassing the accept-list check, rather than
+      # passing it as an action param (which Ash now rejects).
       book =
         book
-        |> Ash.Changeset.for_update(:update, %{embedding: nil})
+        |> Ash.Changeset.for_update(:update, %{})
+        |> Ash.Changeset.force_change_attribute(:embedding, nil)
         |> Ash.update!(authorize?: false)
 
       assert book.embedding == nil

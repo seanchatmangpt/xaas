@@ -7,7 +7,7 @@ defmodule Xaas.Library.CurationTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Curation, Embeddings}
+  alias Xaas.Library.{Book, Curation}
   require Ash.Query
 
   setup do
@@ -33,8 +33,6 @@ defmodule Xaas.Library.CurationTest do
     genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
     synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
 
-    {:ok, embedding} = Embeddings.embed("#{title} #{synopsis} #{Enum.join(genres, " ")}")
-
     Book
     |> Ash.Changeset.for_create(:create, %{
       title: title,
@@ -44,8 +42,7 @@ defmodule Xaas.Library.CurationTest do
       genres: genres,
       synopsis: synopsis,
       available_copies: 2,
-      total_copies: 2,
-      embedding: embedding
+      total_copies: 2
     })
     |> Ash.create!(authorize?: false)
   end

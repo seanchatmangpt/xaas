@@ -36,8 +36,6 @@ defmodule Xaas.Library.NextReadTest do
     available_copies = Map.get(attrs, :available_copies, 2)
     total_copies = Map.get(attrs, :total_copies, 2)
 
-    {:ok, embedding} = Embeddings.embed("#{title} #{synopsis} #{Enum.join(genres, " ")}")
-
     Book
     |> Ash.Changeset.for_create(:create, %{
       title: title,
@@ -47,8 +45,7 @@ defmodule Xaas.Library.NextReadTest do
       genres: genres,
       synopsis: synopsis,
       available_copies: available_copies,
-      total_copies: total_copies,
-      embedding: embedding
+      total_copies: total_copies
     })
     |> Ash.create!(authorize?: false)
   end

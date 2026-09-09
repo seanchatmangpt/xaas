@@ -10,7 +10,7 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Embeddings, PersonaGrant}
+  alias Xaas.Library.{Book, Checkout, PersonaGrant}
   alias Xaas.Operations.AuditLogEntry
   require Ash.Query
 
@@ -64,8 +64,6 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
     available_copies = Map.get(attrs, :available_copies, 3)
     total_copies = Map.get(attrs, :total_copies, 3)
 
-    {:ok, embedding} = Embeddings.embed("#{title} #{synopsis} #{Enum.join(genres, " ")}")
-
     Book
     |> Ash.Changeset.for_create(:create, %{
       title: title,
@@ -75,8 +73,7 @@ defmodule XaasWeb.A2A.NextReadUserAgentTest do
       genres: genres,
       synopsis: synopsis,
       available_copies: available_copies,
-      total_copies: total_copies,
-      embedding: embedding
+      total_copies: total_copies
     })
     |> Ash.create!(authorize?: false)
   end

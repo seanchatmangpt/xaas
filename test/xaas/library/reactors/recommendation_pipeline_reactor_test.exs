@@ -2,7 +2,7 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactorTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Embeddings}
+  alias Xaas.Library.{Book, Checkout}
   alias Xaas.Library.Reactors.RecommendationPipelineReactor
 
   setup do
@@ -16,7 +16,6 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactorTest do
   end
 
   defp create_book!(title, grade, genres, available) do
-    {:ok, emb} = Embeddings.embed("#{title} synopsis #{Enum.join(genres, " ")}")
 
     Book
     |> Ash.Changeset.for_create(:create, %{
@@ -27,8 +26,7 @@ defmodule Xaas.Library.Reactors.RecommendationPipelineReactorTest do
       genres: genres,
       synopsis: "test synopsis",
       available_copies: available,
-      total_copies: available,
-      embedding: emb
+      total_copies: available
     })
     |> Ash.create!(authorize?: false)
   end

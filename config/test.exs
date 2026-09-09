@@ -29,7 +29,14 @@ config :xaas, Xaas.Repo,
   port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
   database: "xaas_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 20
+  pool_size: 20,
+  # Real fix: without this, Postgrex.DefaultTypes doesn't know how to
+  # encode/decode the pgvector `vector` wire type -- every query touching
+  # Book.embedding raises "type `vector` can not be handled by the types
+  # module Postgrex.DefaultTypes". Xaas.PostgrexTypes (lib/xaas/postgrex_types.ex)
+  # is a real Postgrex.Types.define/3 module registering
+  # AshPostgres.Extensions.Vector alongside the standard Postgres extensions.
+  types: Xaas.PostgrexTypes
 
 # Same-service HMAC key for Xaas.Accounts.Token.RevokeVerifier's ash_onetime nonce
 # protection on :revoke_token. Fixed test value; production reads it from env at

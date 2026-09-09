@@ -7,7 +7,7 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
   import Phoenix.LiveViewTest
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Embeddings}
+  alias Xaas.Library.Book
 
   setup tags do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Xaas.Repo, shared: not tags[:async])
@@ -31,7 +31,6 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
       Enum.map(1..4, fn i ->
         title = "Catalog Discovery #{i}"
         genres = ["Science", "Adventure"]
-        {:ok, emb} = Embeddings.embed("#{title} #{Enum.join(genres, " ")}")
 
         Book
         |> Ash.Changeset.for_create(:create, %{
@@ -42,13 +41,10 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
           genres: genres,
           synopsis: "Engaging exploration of science and discovery volume #{i}.",
           available_copies: if(i == 1, do: 2, else: 0),
-          total_copies: 2,
-          embedding: emb
+          total_copies: 2
         })
         |> Ash.create!(authorize?: false)
       end)
-
-    {:ok, grade_8_emb} = Embeddings.embed("Grade Eight Explorer Science Adventure")
 
     grade_8_book =
       Book
@@ -60,8 +56,7 @@ defmodule XaasWeb.NextRead.ReaderLiveTest do
         genres: ["Science", "Adventure"],
         synopsis: "A grade-8-level catalog entry so grade_range covers grade 8.",
         available_copies: 2,
-        total_copies: 2,
-        embedding: grade_8_emb
+        total_copies: 2
       })
       |> Ash.create!(authorize?: false)
 

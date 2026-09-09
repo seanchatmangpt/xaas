@@ -10,7 +10,7 @@ defmodule Xaas.Library.CheckoutReturnTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Embeddings}
+  alias Xaas.Library.{Book, Checkout}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -25,8 +25,6 @@ defmodule Xaas.Library.CheckoutReturnTest do
   defp create_book!(available_copies) do
     title = Faker.Commerce.product_name()
 
-    {:ok, embedding} = Embeddings.embed("#{title} test synopsis Fiction")
-
     Book
     |> Ash.Changeset.for_create(:create, %{
       title: title,
@@ -36,8 +34,7 @@ defmodule Xaas.Library.CheckoutReturnTest do
       genres: ["Fiction"],
       synopsis: "test synopsis",
       available_copies: available_copies,
-      total_copies: available_copies,
-      embedding: embedding
+      total_copies: available_copies
     })
     |> Ash.create!(authorize?: false)
   end

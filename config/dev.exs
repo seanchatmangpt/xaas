@@ -45,7 +45,11 @@ config :xaas, Xaas.Repo,
   database: "xaas_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  # Real fix: registers AshPostgres.Extensions.Vector's Postgrex type
+  # encoding for the pgvector `vector` column type -- see the identical
+  # comment in config/test.exs for why this is required.
+  types: Xaas.PostgrexTypes
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
