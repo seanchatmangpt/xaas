@@ -28,21 +28,26 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
   resolved actor can do; this agent adds no privilege of its own beyond
   what those policies already grant to every actor.
 
-  DISCLOSED GAP (real finding, this session's adversarial ERRC review):
-  `as:<user_id>` is a bare, self-asserted claim with **no verification
-  that the A2A caller is actually authorized to act as that user** -- any
-  holder of the shared `INTERNAL_API_TOKEN` bearer token can impersonate
-  any `Xaas.Accounts.User` id it can guess or enumerate. This is a real
-  security gap for a production-facing surface, not a documentation nit.
-  It is tolerable ONLY under this agent's actual intended use --
-  ultracode-driven simulated personas in a dev/test context, exercising
-  Next Read's flows the way concurrent real students would -- and is NOT
-  safe to expose as-is to an untrusted caller population. A real fix would
-  bind the A2A caller's own authenticated identity to the actor it may
-  assert (analogous to closing `ResolveOrgActor`'s caller-asserted-not-
-  authenticated `X-Org-Id` gap, which carries the identical disclosed
-  limitation -- see that plug's own moduledoc). Not fixed in this pass;
-  named here so it is not silently relied upon as safe.
+  CLOSED (real fix, `full_grant_enforcement` cycle): `as:<user_id>` used to
+  be a bare, self-asserted claim with no verification that the A2A caller
+  was actually authorized to act as that user -- any holder of the shared
+  `INTERNAL_API_TOKEN` bearer token could impersonate any
+  `Xaas.Accounts.User` id it could guess or enumerate. `resolve_actor/2`
+  now requires a real, active `Xaas.Library.PersonaGrant` row binding the
+  caller identity (`"internal_api_token"`, the only caller identity this
+  path authenticates today) to the claimed `user_id` before loading that
+  user; an ungranted claim is denied (`{:error, :unauthorized_actor}`,
+  surfaced to the A2A caller as an `{:error, _}` reply, never silently
+  downgraded to `actor: nil`) and both outcomes write a real
+  `Xaas.Operations.AuditLogEntry` row via
+  `Xaas.Library.Changes.WriteActorResolutionAudit`. See
+  `Xaas.Library.PersonaGrant`'s own moduledoc for the grant model.
+
+  Still out of scope (named, not silently expanded into): the MCP `/mcp`
+  Book/Curation read-only surface has the same conceptual root cause
+  (`ResolveOrgActor`'s caller-asserted-not-authenticated `X-Org-Id`) and
+  needs the identical fix shape, but binding it is router-level tenant
+  plumbing left for a separate cycle.
 
   `Checkout.borrow` (used by the `checkout` command below) is routed
   through `Xaas.Actuation.run/4`, the same receipted, idempotency-keyed
@@ -91,14 +96,27 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
     ]
 
   alias Xaas.Library.{Book, Checkout}
+  alias Xaas.Library.Changes.WriteActorResolutionAudit
+
+  # The only caller identity this repo's A2A/MCP surface authenticates on
+  # this path today -- a single shared `INTERNAL_API_TOKEN` bearer token
+  # validated upstream by `XaasWeb.Plugs.RequireInternalApiToken`, not a
+  # per-caller credential. See `Xaas.Library.PersonaGrant`'s moduledoc.
+  @internal_api_caller_id "internal_api_token"
 
   @impl A2A.Agent
   def handle_message(message, _context) do
     text = A2A.Message.text(message) || ""
 
     case parse(text) do
-      {:ok, actor, command} -> run(actor, command)
-      :error -> {:input_required, [A2A.Part.Text.new(usage())]}
+      {:ok, {:ok, actor}, command} ->
+        run(actor, command)
+
+      {:ok, {:error, :unauthorized_actor}, _command} ->
+        {:error, "as:<user_id> denied: no active persona grant for this caller"}
+
+      :error ->
+        {:input_required, [A2A.Part.Text.new(usage())]}
     end
   end
 
@@ -110,13 +128,38 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
 
   defp parse(text) do
     with [_, actor_ref, rest] <- Regex.run(~r/^as:(\S+)\s+(.+)$/, text) do
-      {:ok, resolve_actor(actor_ref), rest}
+      {:ok, resolve_actor(actor_ref, @internal_api_caller_id), rest}
     else
       _ -> :error
     end
   end
 
-  defp resolve_actor("guest"), do: nil
+  defp resolve_actor("guest", _caller_id), do: {:ok, nil}
+
+  defp resolve_actor(user_id, caller_id) do
+    case Xaas.Library.PersonaGrant.active_for(caller_id, user_id, authorize?: false) do
+      {:ok, [_grant | _]} ->
+        # The grant itself is the authorization decision -- the User is
+        # loaded with authorize?: false the same way the grant lookup was.
+        case Ash.get(Xaas.Accounts.User, user_id, authorize?: false) do
+          {:ok, user} ->
+            WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "allowed"})
+            {:ok, user}
+
+          {:error, _} ->
+            WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
+            {:error, :unauthorized_actor}
+        end
+
+      {:ok, []} ->
+        WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
+        {:error, :unauthorized_actor}
+
+      {:error, _} ->
+        WriteActorResolutionAudit.write(%{caller_id: caller_id, user_id: user_id, outcome: "denied"})
+        {:error, :unauthorized_actor}
+    end
+  end
 
   defp resolve_actor(user_id) do
     case Ash.get(Xaas.Accounts.User, user_id, authorize?: false) do

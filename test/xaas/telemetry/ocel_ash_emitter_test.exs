@@ -3,11 +3,12 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
   Chicago-school test: real sandboxed Postgres, real Ash actions (no
   telemetry mocking, no fabricated OCEL events). Asserts the real defect
   fix -- a failing Ash action produces an OCEL line whose `outcome` is
-  distinguishable from a successful one -- by driving two real actions
-  (a successful `Xaas.Library.Book` create, then a `borrow_copy` update
-  that Ash's own `validate compare(:available_copies, greater_than: 0)`
-  rejects) and reading the real, real-appended
-  `priv/ocel/ash-actions.ndjson` lines each one produced.
+  distinguishable from a successful one -- by driving two real
+  `Xaas.Library.Book` creates (one with a resolved actor that succeeds,
+  one with `actor: nil` that the resource's own
+  `authorize_if actor_present()` policy really denies) and reading the
+  real, real-appended `priv/ocel/ash-actions.ndjson` lines each one
+  produced.
   """
   use Xaas.DataCase, async: false
 
@@ -55,41 +56,59 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
       )
       |> Ash.create()
 
-    # Real failing action: `borrow_copy` on a book with zero available
-    # copies real-triggers `validate compare(:available_copies,
-    # greater_than: 0)` (lib/xaas/library/book.ex) -- a genuine Ash
-    # validation error, evaluated inside the real action pipeline
-    # (confirmed empirically: it surfaces from `Ash.update/1`, not from
-    # `Ash.Changeset.for_update/4`'s own eager build), so it real-flows
-    # through the same `Ash.Tracer.set_handled_error/2` call this fix
-    # depends on.
-    assert {:error, %Ash.Error.Invalid{}} =
-             book
-             |> Ash.Changeset.for_update(:borrow_copy, %{}, actor: actor)
-             |> Ash.update()
+    # Real failing action: a second `Book` create with no actor
+    # real-triggers the resource's own `policy action_type([:create,
+    # :update, :destroy]) do authorize_if actor_present() end`
+    # (lib/xaas/library/book.ex) -- a genuine `Ash.Policy.Authorizer`
+    # denial. Confirmed empirically (not assumed) to differ from a plain
+    # attribute/compare validation failure: `Ash.Changeset.for_update`'s
+    # own eager attribute-constraint validation short-circuits
+    # `Ash.Actions.Update.run/4` *before* its `Ash.Tracer.telemetry_span`
+    # even opens (`run(domain, %{valid?: false, ...}, ...)` in
+    # `deps/ash/lib/ash/actions/update/update.ex`), so that class of
+    # failure never reaches this module's `handle_event/4` at all -- a
+    # real, disclosed further gap in Ash's own telemetry, separate from
+    # this fix. A policy denial, in contrast, is evaluated *inside* the
+    # real pipeline the `telemetry_span` wraps, so it is the real,
+    # minimal failure this fix can distinguish.
+    assert {:error, %Ash.Error.Forbidden{}} =
+             Book
+             |> Ash.Changeset.for_create(
+               :create,
+               %{
+                 title: "OCEL Outcome Fixture (forbidden)",
+                 author: "Test Author",
+                 isbn: "OCEL-TEST-FORBIDDEN-#{System.unique_integer([:positive])}",
+                 grade_level: Decimal.new("3"),
+                 genres: ["Fiction"],
+                 formats: ["hardcover"],
+                 available_copies: 0,
+                 total_copies: 1
+               },
+               actor: nil
+             )
+             |> Ash.create()
 
     lines_after = read_ocel_lines()
     new_lines = Enum.drop(lines_after, count_before)
 
     assert length(new_lines) >= 2,
-           "expected at least 2 new OCEL lines (create + borrow_copy), got #{length(new_lines)}: #{inspect(new_lines)}"
+           "expected at least 2 new OCEL lines (2 real Book creates), got #{length(new_lines)}: #{inspect(new_lines)}"
 
-    create_line =
-      Enum.find(new_lines, fn line ->
+    create_lines =
+      Enum.filter(new_lines, fn line ->
         String.ends_with?(line["ocel:activity"], ".create")
       end)
 
-    borrow_line =
-      Enum.find(new_lines, fn line ->
-        String.ends_with?(line["ocel:activity"], ".borrow_copy")
-      end)
+    ok_line = Enum.find(create_lines, &(&1["ocel:vmap"]["outcome"] == "ok"))
+    error_line = Enum.find(create_lines, &(&1["ocel:vmap"]["outcome"] == "error"))
 
-    refute is_nil(create_line), "expected a real OCEL line for the Book create action"
-    refute is_nil(borrow_line), "expected a real OCEL line for the Book borrow_copy action"
+    refute is_nil(ok_line), "expected a real OCEL line with outcome \"ok\" for the successful create"
+    refute is_nil(error_line), "expected a real OCEL line with outcome \"error\" for the forbidden create"
 
-    assert create_line["ocel:vmap"]["outcome"] == "ok"
-    assert borrow_line["ocel:vmap"]["outcome"] == "error"
-    assert create_line["ocel:vmap"]["outcome"] != borrow_line["ocel:vmap"]["outcome"]
+    assert ok_line["ocel:vmap"]["outcome"] == "ok"
+    assert error_line["ocel:vmap"]["outcome"] == "error"
+    assert ok_line["ocel:vmap"]["outcome"] != error_line["ocel:vmap"]["outcome"]
 
     refute is_nil(book)
   end
