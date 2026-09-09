@@ -128,12 +128,12 @@ defmodule Xaas.Telemetry.OcelForwarder do
   end
 
   defp do_forward(url, event) do
-    envelope = %{
-      "schema" => "xaas.ocel.v2",
-      "producer" => %{"agent_id" => "xaas", "run_id" => run_id()},
-      "sequence" => System.unique_integer([:positive, :monotonic]),
-      "events" => [event]
-    }
+    envelope =
+      Xaas.Telemetry.OcelEnvelope.build(
+        event,
+        %{"agent_id" => "xaas", "run_id" => run_id()},
+        System.unique_integer([:positive, :monotonic])
+      )
 
     # Real validation, not just hand-documentation: call ex4pm_core's actual
     # Ex4pm.OCEL.validate_envelope/1 (path dep, see mix.exs) before POSTing,
