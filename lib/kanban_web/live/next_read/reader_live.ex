@@ -6,7 +6,7 @@ defmodule KanbanWeb.NextRead.ReaderLive do
   """
   use KanbanWeb, :live_view
 
-  alias Xaas.Library.{Book, Checkout, Ranker}
+  alias Xaas.Library.{Book, Checkout, Curation, Ranker}
   require Ash.Query
 
   @pubsub_topic "library:recommendations"
