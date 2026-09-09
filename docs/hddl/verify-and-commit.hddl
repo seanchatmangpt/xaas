@@ -24,16 +24,26 @@
     (compiled ?r - repo)
     (compile-clean ?r - repo)
     (migrated ?r - repo)
+    (migrations-applied ?r - repo)   ;; real migrations ran this pass
+    (migrations-noop ?r - repo)      ;; "Migrations already up" -- valid terminal state
     (tested ?r - repo)
     (tests-green ?r - repo)
     (mock-checked ?r - repo)
     (mock-clean ?r - repo)
+    (status-checked ?r - repo)
+    (has-changes ?r - repo ?c - change-set)     ;; git status --porcelain non-empty
+    (nothing-to-commit ?r - repo)               ;; git status --porcelain empty -- valid no-op
     (committed ?r - repo ?c - change-set)
+    (verify-only-complete ?r - repo)            ;; no-op run reached a valid terminal state
     (pushed ?r - repo ?c - change-set)
   )
 
-  ;; ---- compound task ----
+  ;; ---- compound tasks ----
   (:task VERIFY-AND-COMMIT
+    :parameters (?r - repo ?c - change-set)
+  )
+
+  (:task finalize
     :parameters (?r - repo ?c - change-set)
   )
 
@@ -50,8 +60,26 @@
       (t2 (migrate ?r))
       (t3 (test ?r))
       (t4 (mock-grep ?r))
-      (t5 (commit-with-real-status ?r ?c))
+      (t5 (check-git-status ?r ?c))
+      (t6 (finalize ?r ?c))
     )
+  )
+
+  ;; `finalize` branches on the real status-check outcome rather than always
+  ;; calling `git commit`. Both branches are admissible terminal states of
+  ;; VERIFY-AND-COMMIT -- neither is an error.
+  (:method m-finalize-with-changes
+    :parameters (?r - repo ?c - change-set)
+    :task (finalize ?r ?c)
+    :precondition (has-changes ?r ?c)
+    :ordered-subtasks (and (t1 (commit-with-real-status ?r ?c)))
+  )
+
+  (:method m-finalize-noop
+    :parameters (?r - repo ?c - change-set)
+    :task (finalize ?r ?c)
+    :precondition (nothing-to-commit ?r)
+    :ordered-subtasks (and (t1 (report-verify-only ?r)))
   )
 
   ;; ---- primitive actions ----
@@ -71,9 +99,15 @@
   (:action migrate
     :parameters (?r - repo)
     :precondition (compiled ?r)
-    :effect (migrated ?r)
-    ;; real: `mix ecto.migrate` idempotent -- "Migrations already up" is a
-    ;; valid terminal state, not a failure.
+    :effect (and (migrated ?r) (oneof (migrations-applied ?r) (migrations-noop ?r)))
+    ;; real: `mix ecto.migrate` exit code 0 is success in BOTH observed cases:
+    ;;   - stdout contains "N migrations up" / migration file names running
+    ;;     -> assert (migrations-applied ?r)
+    ;;   - stdout is exactly "Migrations already up" (or equivalent no-op
+    ;;     message) -> assert (migrations-noop ?r)
+    ;; Both satisfy (migrated ?r) and both allow the pipeline to proceed to
+    ;; `test`. Only a non-zero exit code or a printed "** (Mix)" / stacktrace
+    ;; error is a real failure that should halt the pipeline.
   )
 
   (:action test
@@ -93,13 +127,38 @@
     ;; ~/.claude/rules/testing-chicago-style.md's "one legitimate use."
   )
 
-  (:action commit-with-real-status
+  (:action check-git-status
     :parameters (?r - repo ?c - change-set)
     :precondition (mock-checked ?r)
+    :effect (and (status-checked ?r) (oneof (has-changes ?r ?c) (nothing-to-commit ?r)))
+    ;; real: `git status --porcelain`.
+    ;;   - non-empty output -> assert (has-changes ?r ?c); proceed to commit.
+    ;;   - empty output -> assert (nothing-to-commit ?r). This is a genuine
+    ;;     no-op verify-only run (e.g. re-running verify after a prior commit,
+    ;;     or a pure investigation pass with no edits) -- it is NOT a failure
+    ;;     and must NOT attempt `git add -A && git commit`, which would error
+    ;;     ("nothing to commit, working tree clean") or, worse, be papered
+    ;;     over with an empty/fabricated commit.
+  )
+
+  (:action commit-with-real-status
+    :parameters (?r - repo ?c - change-set)
+    :precondition (has-changes ?r ?c)
     :effect (and (committed ?r ?c))
     ;; real: commit message states compile/test/mock-grep results as OBSERVED,
     ;; distinguishing e.g. "339 tests, 0 failures" (verified) from "not yet
     ;; re-run" (disclosed, not claimed). git commit -F <file>, never -m.
+  )
+
+  (:action report-verify-only
+    :parameters (?r - repo)
+    :precondition (nothing-to-commit ?r)
+    :effect (verify-only-complete ?r)
+    ;; real: report the pipeline's real observed results (compile/migrate/
+    ;; test/mock-grep outcomes) and state explicitly "nothing to commit --
+    ;; working tree clean" as the terminal state. This is success, not an
+    ;; unfinished VERIFY-AND-COMMIT: there is no change-set to attach a
+    ;; commit to, so (committed ?r ?c) is correctly never asserted.
   )
 
   (:action push
