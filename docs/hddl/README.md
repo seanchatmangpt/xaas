@@ -39,6 +39,7 @@ these logs, which — per the paragraph above — is not yet done.
 | `mechanical-rename.hddl` | `RENAME-NAMESPACE` | The `kanban`→`xaas` rename: discover references, move files, text-sweep, recompile, fix stragglers, verify, commit. |
 | `hourly-vision-cycle.hddl` | `VISION-2030-CYCLE` | The standing cron job's own shape (ERRC/FMEA/RCA pick → charter doc → swarm → results). Composes the four domains above as subtasks. |
 | `next-read.hddl` | `NEXT-READ-DUAL-PERSONA-EXPERIENCE` | The Next Read library recommendation platform: dual-persona split LiveView UI, A2A student simulation with persona grants, and Ash AI read-only MCP catalog tools. |
+| `ash-vector-migration-fallout.hddl` | `FIX-VECTOR-MIGRATION-FALLOUT` | `Book.embedding`'s migration from plain list to pgvector-backed `Ash.Vector`: `lib/xaas/library/ranker.ex:231-249` had to add an `%Ash.Vector{}` clause and convert via `Ash.Vector.to_list/1`. One verified instance so far. |
 
 ## Why these domains
 

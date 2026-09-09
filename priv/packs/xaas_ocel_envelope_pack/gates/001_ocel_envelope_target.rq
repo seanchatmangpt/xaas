@@ -1,0 +1,14 @@
+PREFIX agp: <https://ggen.io/ontology/ash-igniter-gen-pipeline#>
+
+# Extracts the CodegenTarget row(s) for xaas_ocel_envelope_pack's single
+# "core" phase target, following the same query-column-name-to-template-
+# binding convention established by xaas_library_pack's queries/008-009:
+# a template reads these via row["order"], row["mixTask"], row["targetModule"].
+SELECT ?target ?order ?mixTask ?targetModule WHERE {
+  ?target a agp:CodegenTarget ;
+          agp:phase "core" ;
+          agp:order ?order ;
+          agp:mixTask ?mixTask ;
+          agp:targetModule ?targetModule .
+}
+ORDER BY ?order

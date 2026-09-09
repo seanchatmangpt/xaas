@@ -73,18 +73,21 @@ grep against this repo, not carried over from a prior description):
 is a real, currently-compiling repo dependency again as of this session, re-added
 specifically to back `mix ash_ai.gen.mcp` and this MCP tool surface.
 
-This does **not** contradict this case study's "no LLM in the recommendation/explanation
-path" claim: `ash_ai`'s tools here are read-only catalog *lookups* exposed to an external
-MCP-speaking client (Claude, Zed, Cursor) — they let an outside agent *query* the catalog,
-they are not called *by* the ranker or explainer, and no LLM inference happens inside
-`Xaas.Library.Ranker` or the explanation path because of `ash_ai`'s presence. The ranker's
-`semantic` scoring term (`lib/xaas/library/embeddings.ex`) uses a real local Nx/Bumblebee
-model, not `ash_ai`/`req_llm`, and the explanation path (see
-[`ILS-AND-EXPLANATION-SUBSTITUTION.md`](./ILS-AND-EXPLANATION-SUBSTITUTION.md)) remains the
-disclosed deterministic template adapter with zero LLM calls of any kind, `ash_ai` included.
-`ash_ai` merely being present in `mix.exs`/`mix.lock` (e.g. its optional `req_llm` dependency)
-is not evidence any Next Read code path invokes it — grep `lib/xaas/library/ranker.ex` and
-`lib/xaas/library/explainer/` for confirmation; neither references `AshAi` or `ReqLLM`.
+`ash_ai`'s MCP tools here are read-only catalog *lookups* exposed to an external
+MCP-speaking client (Claude, Zed, Cursor) — they let an outside agent *query* the catalog;
+they are not called *by* the ranker, and no LLM inference happens inside
+`Xaas.Library.Ranker` because of `ash_ai`'s presence. The ranker's `semantic` scoring term
+(`lib/xaas/library/embeddings.ex`) uses a real local Nx/Bumblebee model, not `ash_ai`/`req_llm` —
+grep `lib/xaas/library/ranker.ex` for confirmation; it references neither `AshAi` nor `ReqLLM`.
+
+This is no longer true of the explanation path specifically: `ash_ai` is also the
+mechanism behind `Xaas.Library.Explainer.GroqAdapter`
+(`lib/xaas/library/explainer/groq_adapter.ex`), which does reference `AshAi`'s `prompt/2`
+and does make a real (currently-failing) call to Groq via ReqLLM — see the per-adapter
+status above and [`ILS-AND-EXPLANATION-SUBSTITUTION.md`](./ILS-AND-EXPLANATION-SUBSTITUTION.md)
+for the exact defect. `Xaas.Library.Explainer.TemplateAdapter` remains the zero-LLM-call
+deterministic path and is what `explain/3` actually returns today, since `GroqAdapter`'s
+real call currently fails and degrades to it.
 
 ## Implementation plan status (real file tree, grepped this session)
 
@@ -99,8 +102,8 @@ is not evidence any Next Read code path invokes it — grep `lib/xaas/library/ra
 | A2A user-simulation agent | Real | `lib/xaas_web/a2a/next_read_user_agent.ex`, `/a2a` route |
 | Real seed data | Real | `priv/repo/seeds.exs` |
 | LiveView UI | Real | `lib/xaas_web/live/next_read/reader_live.ex` |
-| ILS integration | Disclosed fixture substitution | `ILS-AND-EXPLANATION-SUBSTITUTION.md` |
-| LLM explanation generation | Disclosed template substitution, zero LLM calls | `ILS-AND-EXPLANATION-SUBSTITUTION.md` |
+| ILS integration | ALIVE (fixture) / PARTIAL_ALIVE (SIP2, protocol-verified only) / UNSUPPORTED:missing-vendor-credentials (live vendor ILS) | `ILS-AND-EXPLANATION-SUBSTITUTION.md` |
+| LLM explanation generation | ALIVE (template) / PARTIAL_ALIVE (real Groq call attempted, failed with a real code defect — see below) | `ILS-AND-EXPLANATION-SUBSTITUTION.md` |
 | Playwright e2e coverage | Real | `e2e/next-read-ml.spec.js` |
 
 ## Slide claims: real vs. scenario placeholder
@@ -143,17 +146,49 @@ score = w.collab*collab + w.semantic*semantic + w.gradeFit*gradeFit + w.availabl
 3. **Agent-to-Agent Protocol** (`/a2a`): Multi-persona simulation server for conversational workflows.
 4. **JSON:API** (`/api/library/books`, `/api/library/checkouts`): Standard REST endpoints.
 
-## Disclosed substitutions
+## Current real state (per-adapter, verified this session — not aspirational)
 
-Two integration points are DISCLOSED substitutions, not real external integrations:
+Status vocabulary: **ALIVE** (real, verified end-to-end), **PARTIAL_ALIVE** (a real
+code path exists and was exercised against a real collaborator, but full
+end-to-end verification against the actual external system is not possible
+in this environment), **UNSUPPORTED:missing-vendor-credentials** (the
+remaining, precisely-named gap).
 
-- **ILS (library catalog system) integration** — a fixture/template adapter
-  standing in for a real ILS connection (e.g. SIP2/NCIP or a vendor API).
-- **LLM-based explanation** — a fixture/template adapter standing in for a
-  real hosted LLM call; there is no real LLM API call in this path.
+- **ILS (library catalog system) integration**:
+  - `Xaas.Library.ILSRepo.FixtureAdapter` — **ALIVE**. Real deterministic
+    in-memory adapter, default, exercised by tests.
+  - `Xaas.Library.ILSRepo.SIP2Adapter` — **PARTIAL_ALIVE**. A real `:gen_tcp`
+    SIP2 client, protocol-round-tripped against a real local `:gen_tcp` SIP2
+    test server — not a mock of the socket. This proves the SIP2 wire
+    protocol implementation is correct.
+  - Live vendor ILS (Follett, Destiny, Alexandria, or similar) —
+    **UNSUPPORTED:missing-vendor-credentials**. No real vendor account, host,
+    port, institution ID, or terminal password exists in this environment, so
+    a live connection has not been attempted and cannot be.
+- **LLM-based explanation**:
+  - `Xaas.Library.Explainer.TemplateAdapter` — **ALIVE**. Deterministic
+    string templates, no network dependency, the permanent degradation floor.
+  - `Xaas.Library.Explainer.GroqAdapter` — **PARTIAL_ALIVE**. A real `ash_ai`
+    `prompt/2` action wired to call Groq via ReqLLM; `ash_ai` (`{:ash_ai, "~>
+    1.0"}`) is a real, currently-compiling dependency in `mix.exs`, not a
+    stub. A real call against the live Groq API with `GROQ_API_KEY` set was
+    made in this session's verification pass and **failed for real** with a
+    `Registry.lookup/2` arity/argument error inside the `ash_ai` `prompt/2`
+    call path — a real code defect surfaced by a real network call, not a
+    credentials or connectivity problem (the key was present; the call
+    reached Groq's error-handling path). `explain/3` degrades to
+    `TemplateAdapter` on any failure, so the degrade path is real and was
+    exercised, but `GroqAdapter` itself is not marked ALIVE pending a
+    follow-up fix to that defect.
+- **Vector embeddings** (unaffected by the above, real from the original
+  substitution pass): `Xaas.Library.Embeddings`/`Xaas.Library.Ranker`'s
+  `semantic` term — **ALIVE**, a real local Nx/Bumblebee model and real
+  cosine similarity, backed by real pgvector migrations applied against the
+  local dev Postgres.
 
-Full detail, scope, and the exact adapter boundary live in
-[`ILS-AND-EXPLANATION-SUBSTITUTION.md`](./ILS-AND-EXPLANATION-SUBSTITUTION.md).
+Full detail, scope, exact adapter boundaries, and the real (non-passing)
+`mix test test/xaas/library/` run this status is drawn from live in
+[`ILS-AND-EXPLANATION-SUBSTITUTION.md`](./ILS-AND-EXPLANATION-SUBSTITUTION.md#final-verification-pass-2026-09-09--real-state-per-resource).
 
 ## See Also
 

@@ -166,15 +166,16 @@ against the actual external system is not possible here), UNSUPPORTED:missing-ve
 
 ### Test suite — real run, real numbers, not a description
 
-`mix test test/xaas/library/` in this verification pass: **115 tests, 82
-failures**. The dominant, mechanical failure cause across the 82 (verified by
-inspection of the failure output, not assumed): `Xaas.Library.Book.create`
-rejects the `embedding` input because the `embedding` attribute is
-`public?: false` and not in the create action's accept list — a real,
-pre-existing-relative-to-this-pass schema/action mismatch in the test
-helpers' `create_book!/1`, not a flake and not related to the Groq/SIP2 work
-above. This is a real, named, currently-failing gap — not silently skipped or
-described as passing.
+`mix test test/xaas/library/` in this verification pass (2026-09-09, later
+same day, after the embedding accept-list fix below): **122 tests, 0
+failures**. The prior state recorded immediately above this update (115
+tests, 82 failures, all from `Xaas.Library.Book.create` rejecting the
+`embedding` input because the attribute was `public?: false` and absent from
+the create action's accept list) has been fixed by a subsequent edit to
+`lib/xaas/library/book.ex` adding `embedding` to the action's accept list.
+Combined with `test/xaas_web/`, the full run is **371 tests, 0 failures (1
+excluded)**. This is a real, re-run number, not the prior failing count left
+stale.
 
 `grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." test/xaas/library/`
 returns exactly one line, a doc-comment in
