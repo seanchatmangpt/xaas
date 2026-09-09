@@ -16,3 +16,6 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
   (new vision doc since last tick; real in-progress edit observed on
   lib/xaas/library/checkout.ex adding FulfillNextHold to :return — not yet
   committed as of this observation).
+- 2026-09-09 09:12 — VERIFY-AND-COMMIT instance, commit 0602348 (real infra fix:
+  pgvector extension missing from dev Postgres image, found while verifying a
+  concurrent ERRC pass's mix ecto.migrate, fixed and re-verified before commit).
