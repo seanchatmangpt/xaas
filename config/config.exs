@@ -50,6 +50,18 @@ config :ash, :tracer, [OpentelemetryAsh, Xaas.Telemetry.OcelAshEmitter]
 
 config :ash_oban, pro?: false
 
+# Config surface for the ex4pm ontology staleness check
+# (Xaas.Ontology.Ex4pmStaleness / mix xaas.telemetry.check_ontology_staleness).
+# Single-sources repo path, pin, and both file paths so the mix task and the
+# ExUnit test can never drift from each other. See
+# docs/claude/diataxis/reference/ex4pm-ontology-pin.md for how to update
+# `pinned_sha` safely.
+config :xaas, :ex4pm_ontology_check,
+  repo_path: System.get_env("EX4PM_REPO_PATH", Path.expand("~/ex4pm")),
+  pinned_sha: "18c6d531c3ac42aee51ba4ddf1daf280f4864717",
+  upstream_path: "lib/ex4pm/ocel.ex",
+  vendored_path: "priv/packs/xaas_library_pack/ontology.ttl"
+
 config :xaas, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,

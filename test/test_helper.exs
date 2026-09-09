@@ -22,7 +22,11 @@ ExUnit.start()
 # Real tests against a live-deployed kind pod (test/e2e/) are excluded by
 # default too -- they need a real `kubectl port-forward` to kind-xaas
 # already running; run explicitly with `mix test --include kind`.
-ExUnit.configure(exclude: [:stress, :kind, :requires_cnv_deploy])
+# Real tests that depend on a sibling ex4pm checkout being present on this
+# machine (test/xaas/ontology/ex4pm_staleness_test.exs) are excluded by
+# default too, so the default `mix test` never depends on that sibling
+# repo; run explicitly with `mix test --include external`.
+ExUnit.configure(exclude: [:stress, :kind, :requires_cnv_deploy, :external])
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the

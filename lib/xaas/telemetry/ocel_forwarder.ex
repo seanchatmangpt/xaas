@@ -25,8 +25,10 @@ defmodule Xaas.Telemetry.OcelForwarder do
   ## Real envelope shape required by `Ex4pm.OCEL.validate_envelope/1`
 
   Read field-for-field from
-  `/Users/sac/ex4pm/apps/ex4pm_core/lib/ex4pm/ocel.ex` (`validate_envelope/1`,
-  around line 366) -- NOT xaas's bare `ocel:eid`/`ocel:activity`/`ocel:omap`/
+  `ex4pm:lib/ex4pm/ocel.ex@725f495eb90d32a1582e6f44c08151d07743b784`
+  (`validate_envelope/1`, around line 366; repo-root-relative path inside the
+  `ex4pm` sibling checkout, not umbrella-app-relative -- ex4pm has no `apps/`
+  directory) -- NOT xaas's bare `ocel:eid`/`ocel:activity`/`ocel:omap`/
   `ocel:vmap` shape verbatim. The envelope (top-level map POSTed as JSON) must
   have:
 
