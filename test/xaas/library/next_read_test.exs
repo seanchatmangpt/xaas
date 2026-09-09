@@ -8,7 +8,6 @@ defmodule Xaas.Library.NextReadTest do
   """
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, Ranker}
   require Ash.Query
 
@@ -19,36 +18,10 @@ defmodule Xaas.Library.NextReadTest do
   end
 
   defp create_user!(email \\ nil) do
-    user_email = email || Faker.Internet.email()
-
-    Ash.Seed.seed!(User, %{
-      email: user_email
-    })
+    if email, do: Xaas.Factory.create_user!(%{email: email}), else: Xaas.Factory.create_user!()
   end
 
-  defp create_book!(attrs) do
-    title = Map.get(attrs, :title, Faker.Commerce.product_name())
-    author = Map.get(attrs, :author, Faker.Person.name())
-    isbn = Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
-    grade_level = Map.get(attrs, :grade_level, Enum.random(3..8))
-    genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
-    synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
-    available_copies = Map.get(attrs, :available_copies, 2)
-    total_copies = Map.get(attrs, :total_copies, 2)
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: author,
-      isbn: isbn,
-      grade_level: grade_level,
-      genres: genres,
-      synopsis: synopsis,
-      available_copies: available_copies,
-      total_copies: total_copies
-    })
-    |> Ash.create!(authorize?: false)
-  end
+  defp create_book!(attrs), do: Xaas.Factory.create_book!(attrs)
 
   defp create_checkout!(user, book) do
     Checkout
@@ -75,7 +48,12 @@ defmodule Xaas.Library.NextReadTest do
 
   describe "Xaas.Library Resources (Book, Checkout, Curation)" do
     test "creates, reads, and updates library books with real Postgres persistence" do
-      book = create_book!(%{title: "The Salt Road Cipher", grade_level: 6, genres: ["Mystery", "Cipher"]})
+      book =
+        create_book!(%{
+          title: "The Salt Road Cipher",
+          grade_level: 6,
+          genres: ["Mystery", "Cipher"]
+        })
 
       assert book.id != nil
       assert book.title == "The Salt Road Cipher"
@@ -164,45 +142,53 @@ defmodule Xaas.Library.NextReadTest do
     test "correctly scores and ranks candidate books based on dynamic 6 composite factors" do
       user = create_user!("maya.r@school.district.edu")
 
-      prior_book1 = create_book!(%{
-        title: "The Codebreaker's Secret",
-        grade_level: 6,
-        genres: ["Mystery", "Cryptography"],
-        synopsis: "Solving complex cryptographic puzzles and historical codes."
-      })
-      prior_book2 = create_book!(%{
-        title: "Ocean Exploration Handbook",
-        grade_level: 6,
-        genres: ["Science", "Oceanography"],
-        synopsis: "Deep sea exploration, marine biology, and submarine expeditions."
-      })
+      prior_book1 =
+        create_book!(%{
+          title: "The Codebreaker's Secret",
+          grade_level: 6,
+          genres: ["Mystery", "Cryptography"],
+          synopsis: "Solving complex cryptographic puzzles and historical codes."
+        })
+
+      prior_book2 =
+        create_book!(%{
+          title: "Ocean Exploration Handbook",
+          grade_level: 6,
+          genres: ["Science", "Oceanography"],
+          synopsis: "Deep sea exploration, marine biology, and submarine expeditions."
+        })
+
       create_checkout!(user, prior_book1)
       create_checkout!(user, prior_book2)
 
-      top_book = create_book!(%{
-        title: "The Salt Road Cipher",
-        grade_level: 6,
-        genres: ["Mystery", "Cryptography"],
-        synopsis: "Ancient cipher codes hidden along old desert trade routes.",
-        available_copies: 2
-      })
+      top_book =
+        create_book!(%{
+          title: "The Salt Road Cipher",
+          grade_level: 6,
+          genres: ["Mystery", "Cryptography"],
+          synopsis: "Ancient cipher codes hidden along old desert trade routes.",
+          available_copies: 2
+        })
+
       create_curation!(top_book, "6-8", "Librarian recommended for mystery lovers.")
 
-      mid_book = create_book!(%{
-        title: "Bloom of the Deep",
-        grade_level: 6,
-        genres: ["Science", "Nature"],
-        synopsis: "Bioluminescence and glowing organisms in the ocean trenches.",
-        available_copies: 1
-      })
+      mid_book =
+        create_book!(%{
+          title: "Bloom of the Deep",
+          grade_level: 6,
+          genres: ["Science", "Nature"],
+          synopsis: "Bioluminescence and glowing organisms in the ocean trenches.",
+          available_copies: 1
+        })
 
-      low_book = create_book!(%{
-        title: "Advanced Quantum Mechanics XI",
-        grade_level: 11,
-        genres: ["Physics", "Mathematics"],
-        synopsis: "Rigorous quantum mechanics formalism for advanced students.",
-        available_copies: 0
-      })
+      low_book =
+        create_book!(%{
+          title: "Advanced Quantum Mechanics XI",
+          grade_level: 11,
+          genres: ["Physics", "Mathematics"],
+          synopsis: "Rigorous quantum mechanics formalism for advanced students.",
+          available_copies: 0
+        })
 
       {:ok, recommendations} = Ranker.rank_recommendations(user.id, 6, limit: 10)
 
@@ -260,11 +246,17 @@ defmodule Xaas.Library.NextReadTest do
       book = create_book!(%{title: "The Wildwater Signal", grade_level: 6})
       create_checkout!(user, book)
 
-      candidate = create_book!(%{title: "The Salt Road Cipher", grade_level: 5.4, available_copies: 3})
+      candidate =
+        create_book!(%{title: "The Salt Road Cipher", grade_level: 5.4, available_copies: 3})
+
       _curation = create_curation!(candidate, "6-8", "Librarian pin")
 
       {:ok, [rec | _]} = Ranker.rank_recommendations(user.id, 6, limit: 1)
-      explanation = Ranker.explain_recommendation(rec.book, rec.factors, [hd(Checkout |> Ash.read!(authorize?: false))])
+
+      explanation =
+        Ranker.explain_recommendation(rec.book, rec.factors, [
+          hd(Checkout |> Ash.read!(authorize?: false))
+        ])
 
       assert String.contains?(explanation.why, "Because you finished")
       assert Enum.any?(explanation.parts, &String.starts_with?(&1, "collaborative"))
@@ -376,6 +368,7 @@ defmodule Xaas.Library.NextReadTest do
 
     test "persists recommendation audit logs with 6-factor weight snapshot" do
       user = create_user!()
+
       log =
         Xaas.Library.RecommendationLog
         |> Ash.Changeset.for_create(:create, %{
@@ -397,9 +390,23 @@ defmodule Xaas.Library.NextReadTest do
       book_multiple = create_book!(%{title: "Multi Copy", available_copies: 3})
       book_none = create_book!(%{title: "Zero Copy", available_copies: 0})
 
-      loaded_single = Ash.get!(Book, book_single.id, load: [:is_available, :has_multiple_copies], authorize?: false)
-      loaded_multi = Ash.get!(Book, book_multiple.id, load: [:is_available, :has_multiple_copies], authorize?: false)
-      loaded_none = Ash.get!(Book, book_none.id, load: [:is_available, :has_multiple_copies], authorize?: false)
+      loaded_single =
+        Ash.get!(Book, book_single.id,
+          load: [:is_available, :has_multiple_copies],
+          authorize?: false
+        )
+
+      loaded_multi =
+        Ash.get!(Book, book_multiple.id,
+          load: [:is_available, :has_multiple_copies],
+          authorize?: false
+        )
+
+      loaded_none =
+        Ash.get!(Book, book_none.id,
+          load: [:is_available, :has_multiple_copies],
+          authorize?: false
+        )
 
       assert loaded_single.is_available == true
       assert loaded_single.has_multiple_copies == false
@@ -412,9 +419,32 @@ defmodule Xaas.Library.NextReadTest do
     end
 
     test "ask_catalog/2 performs semantic search over catalog books and formats admitted answers" do
-      _book1 = create_book!(%{title: "The Quiet Satellite", grade_level: 5.2, synopsis: "An orbiting telescope detects mysterious space communications.", formats: ["Audiobook", "Large Print"], available_copies: 4})
-      _book2 = create_book!(%{title: "Bloom of the Deep", grade_level: 6.1, synopsis: "Deep ocean underwater science fiction exploration.", formats: ["Large Print"], available_copies: 2})
-      _book3 = create_book!(%{title: "Signal from the Ninth Floor", grade_level: 5.6, synopsis: "Students receive signals from an abandoned laboratory.", formats: ["Audiobook"], available_copies: 1})
+      _book1 =
+        create_book!(%{
+          title: "The Quiet Satellite",
+          grade_level: 5.2,
+          synopsis: "An orbiting telescope detects mysterious space communications.",
+          formats: ["Audiobook", "Large Print"],
+          available_copies: 4
+        })
+
+      _book2 =
+        create_book!(%{
+          title: "Bloom of the Deep",
+          grade_level: 6.1,
+          synopsis: "Deep ocean underwater science fiction exploration.",
+          formats: ["Large Print"],
+          available_copies: 2
+        })
+
+      _book3 =
+        create_book!(%{
+          title: "Signal from the Ninth Floor",
+          grade_level: 5.6,
+          synopsis: "Students receive signals from an abandoned laboratory.",
+          formats: ["Audiobook"],
+          available_copies: 1
+        })
 
       result = Ranker.ask_catalog("science fiction signal space", limit: 3)
 

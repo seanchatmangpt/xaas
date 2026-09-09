@@ -7,7 +7,7 @@ defmodule Xaas.Library.CurationTest do
   use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Curation}
+  alias Xaas.Library.Curation
   require Ash.Query
 
   setup do
@@ -25,30 +25,7 @@ defmodule Xaas.Library.CurationTest do
     %User{id: Ash.UUID.generate(), email: email || Faker.Internet.email()}
   end
 
-  defp create_book!(attrs \\ %{}) do
-    title = Map.get(attrs, :title, Faker.Commerce.product_name())
-    author = Map.get(attrs, :author, Faker.Person.name())
-
-    isbn =
-      Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
-
-    grade_level = Map.get(attrs, :grade_level, Enum.random(3..8))
-    genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
-    synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: author,
-      isbn: isbn,
-      grade_level: grade_level,
-      genres: genres,
-      synopsis: synopsis,
-      available_copies: 2,
-      total_copies: 2
-    })
-    |> Ash.create!(authorize?: false)
-  end
+  defp create_book!(attrs \\ %{}), do: Xaas.Factory.create_book!(attrs)
 
   describe "create" do
     test "creates a curation with accepted attributes and defaults, given a real actor" do

@@ -14,46 +14,32 @@ defmodule Xaas.Library.HoldRequestTest do
     :ok
   end
 
-  # Xaas.Accounts.User currently declares a `grade_level` attribute
-  # (lib/xaas/accounts/user.ex) with no matching `users` table column yet --
-  # a pre-existing, out-of-scope schema drift from concurrent work on that
-  # resource this session (unrelated to hold lifecycle logic; confirmed by
-  # the same failure in test/xaas/library/next_read_test.exs). Ash.Seed/Ash.create
-  # against Xaas.Accounts.User selects that column and fails with
-  # `column "grade_level" does not exist`. HoldRequest only needs a real
-  # user_id foreign key, so this test suite creates the row directly against
-  # the actual `users` table columns via a raw SQL insert, bypassing the
-  # drifted Ash resource entirely -- this is a real Postgres row, not a mock.
+  # Was previously a raw `Ecto.Adapters.SQL.query!` INSERT bypassing Ash
+  # entirely, worked around a real schema drift: `Xaas.Accounts.User`
+  # declared `grade_level` with no matching `users` column. That drift is
+  # fixed (priv/repo/migrations/20260909064913_add_user_grade_level_school_id.exs
+  # added the column; confirmed via a real `Ash.Seed.seed!/2` call
+  # succeeding) -- delegates to the shared Xaas.Factory (real Ash path)
+  # like every other test's `create_user!`, so a future Ash-level `User`
+  # change (a default, a validation, a change hook) is no longer silently
+  # skipped by this one file.
   defp create_user!(email \\ nil) do
-    id = Ecto.UUID.generate()
-    email = email || Faker.Internet.email()
-
-    %Postgrex.Result{rows: [[id, email]]} =
-      Ecto.Adapters.SQL.query!(
-        Xaas.Repo,
-        "INSERT INTO users (id, email) VALUES ($1, $2) RETURNING id, email",
-        [Ecto.UUID.dump!(id), email]
-      )
-
-    %{id: Ecto.UUID.load!(id), email: email}
+    if email, do: Xaas.Factory.create_user!(%{email: email}), else: Xaas.Factory.create_user!()
   end
 
+  # This file's own default (0 available copies) differs deliberately
+  # from Xaas.Factory.create_book!/1's general default (2) -- most hold
+  # tests specifically want "no copies," the precondition for a hold
+  # queue existing at all.
   defp create_book!(attrs) do
     available_copies = Map.get(attrs, :available_copies, 0)
-    total_copies = Map.get(attrs, :total_copies, max(available_copies, 1))
 
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: Map.get(attrs, :title, Faker.Commerce.product_name()),
-      author: Map.get(attrs, :author, Faker.Person.name()),
-      isbn: Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}",
-      grade_level: 5,
-      genres: ["Fiction"],
-      synopsis: "A book.",
-      available_copies: available_copies,
-      total_copies: total_copies
-    })
-    |> Ash.create!(authorize?: false)
+    Xaas.Factory.create_book!(
+      Map.merge(attrs, %{
+        available_copies: available_copies,
+        total_copies: Map.get(attrs, :total_copies, max(available_copies, 1))
+      })
+    )
   end
 
   defp place_hold!(user, book) do

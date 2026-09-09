@@ -105,15 +105,32 @@ defmodule Xaas.Autofde.DemoPlannerReactorTest do
     assert {^os_pid, outcome} = PortRegistry.get_audit(request_id)
     assert outcome in [:closed, :already_dead]
 
-    # Give the real SIGTERM a moment to actually take effect before checking.
-    Process.sleep(200)
-
-    {ps_after, ps_after_status} =
-      System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
+    # Real SIGTERM-to-death latency is variable, not a fixed clock-
+    # resolution floor -- a single blind sleep either flakes under load
+    # (process not dead yet) or wastes time when it dies faster. Poll
+    # `ps` on a short interval up to a bounded deadline instead.
+    {ps_after, ps_after_status} = wait_for_process_death!(os_pid)
 
     refute ps_after_status == 0,
            "expected `ps -p #{os_pid}` to fail (real process killed by real compensate/4), got: #{ps_after}"
 
     refute ps_after =~ to_string(os_pid)
+  end
+
+  defp wait_for_process_death!(os_pid, deadline \\ System.monotonic_time(:millisecond) + 2_000) do
+    result = System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
+
+    case result do
+      {_output, exit_status} when exit_status != 0 ->
+        result
+
+      _still_alive ->
+        if System.monotonic_time(:millisecond) >= deadline do
+          result
+        else
+          Process.sleep(10)
+          wait_for_process_death!(os_pid, deadline)
+        end
+    end
   end
 end

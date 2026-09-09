@@ -8,7 +8,6 @@ defmodule Xaas.Library.RankerTest do
   """
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, Ranker}
   require Ash.Query
 
@@ -19,36 +18,10 @@ defmodule Xaas.Library.RankerTest do
   end
 
   defp create_user!(email \\ nil) do
-    user_email = email || Faker.Internet.email()
-
-    Ash.Seed.seed!(User, %{
-      email: user_email
-    })
+    if email, do: Xaas.Factory.create_user!(%{email: email}), else: Xaas.Factory.create_user!()
   end
 
-  defp create_book!(attrs) do
-    title = Map.get(attrs, :title, Faker.Commerce.product_name())
-    author = Map.get(attrs, :author, Faker.Person.name())
-    isbn = Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
-    grade_level = Map.get(attrs, :grade_level, Enum.random(3..8))
-    genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
-    synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
-    available_copies = Map.get(attrs, :available_copies, 2)
-    total_copies = Map.get(attrs, :total_copies, 2)
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: author,
-      isbn: isbn,
-      grade_level: grade_level,
-      genres: genres,
-      synopsis: synopsis,
-      available_copies: available_copies,
-      total_copies: total_copies
-    })
-    |> Ash.create!(authorize?: false)
-  end
+  defp create_book!(attrs), do: Xaas.Factory.create_book!(attrs)
 
   defp create_checkout!(user, book) do
     Checkout
@@ -84,12 +57,20 @@ defmodule Xaas.Library.RankerTest do
       user = create_user!()
 
       history_book =
-        create_book!(%{title: "History Mystery One", genres: ["Mystery", "Cryptography"], grade_level: 6})
+        create_book!(%{
+          title: "History Mystery One",
+          genres: ["Mystery", "Cryptography"],
+          grade_level: 6
+        })
 
       create_checkout!(user, history_book)
 
       overlapping_book =
-        create_book!(%{title: "Overlapping Genres", genres: ["Mystery", "Cryptography"], grade_level: 6})
+        create_book!(%{
+          title: "Overlapping Genres",
+          genres: ["Mystery", "Cryptography"],
+          grade_level: 6
+        })
 
       disjoint_book =
         create_book!(%{title: "Disjoint Genres", genres: ["Cooking", "Travel"], grade_level: 6})
@@ -121,7 +102,8 @@ defmodule Xaas.Library.RankerTest do
       history_book =
         create_book!(%{
           title: "Deep Sea Marine Biology",
-          synopsis: "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
+          synopsis:
+            "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
           genres: ["Science", "Oceanography"],
           grade_level: 6
         })
@@ -131,7 +113,8 @@ defmodule Xaas.Library.RankerTest do
       similar_book =
         create_book!(%{
           title: "Ocean Trench Expedition",
-          synopsis: "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
+          synopsis:
+            "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
           genres: ["Science", "Oceanography"],
           grade_level: 6
         })
@@ -185,7 +168,8 @@ defmodule Xaas.Library.RankerTest do
       book =
         create_book!(%{
           title: "Semantic Score Direct Book",
-          synopsis: "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
+          synopsis:
+            "Ocean exploration, marine biology, and submarine expeditions in deep trenches.",
           genres: ["Science", "Oceanography"],
           grade_level: 6
         })
@@ -197,7 +181,9 @@ defmodule Xaas.Library.RankerTest do
       assert %Ash.Vector{} = book.embedding
 
       {:ok, reader_embedding} =
-        Embeddings.embed("Ocean exploration, marine biology, and submarine expeditions in deep trenches.")
+        Embeddings.embed(
+          "Ocean exploration, marine biology, and submarine expeditions in deep trenches."
+        )
 
       score = Ranker.compute_semantic_score(book, reader_embedding)
 
@@ -210,9 +196,13 @@ defmodule Xaas.Library.RankerTest do
     test "decays as the book's grade level moves further from the student's grade" do
       user = create_user!()
 
-      exact_match = create_book!(%{title: "Exact Grade Match", grade_level: 6, genres: ["Fiction"]})
+      exact_match =
+        create_book!(%{title: "Exact Grade Match", grade_level: 6, genres: ["Fiction"]})
+
       near_match = create_book!(%{title: "Near Grade Match", grade_level: 7, genres: ["Fiction"]})
-      far_mismatch = create_book!(%{title: "Far Grade Mismatch", grade_level: 11, genres: ["Fiction"]})
+
+      far_mismatch =
+        create_book!(%{title: "Far Grade Mismatch", grade_level: 11, genres: ["Fiction"]})
 
       {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
 
@@ -232,10 +222,20 @@ defmodule Xaas.Library.RankerTest do
       user = create_user!()
 
       available_book =
-        create_book!(%{title: "On The Shelf", grade_level: 6, genres: ["Fiction"], available_copies: 3})
+        create_book!(%{
+          title: "On The Shelf",
+          grade_level: 6,
+          genres: ["Fiction"],
+          available_copies: 3
+        })
 
       unavailable_book =
-        create_book!(%{title: "All Checked Out", grade_level: 6, genres: ["Fiction"], available_copies: 0})
+        create_book!(%{
+          title: "All Checked Out",
+          grade_level: 6,
+          genres: ["Fiction"],
+          available_copies: 0
+        })
 
       {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
 
@@ -290,10 +290,13 @@ defmodule Xaas.Library.RankerTest do
       curated_book = create_book!(%{title: "Librarian Pick", grade_level: 6, genres: ["Fiction"]})
       create_curation!(curated_book, "6-8", "Great for this grade band")
 
-      out_of_band_book = create_book!(%{title: "Curated Out Of Band", grade_level: 6, genres: ["Fiction"]})
+      out_of_band_book =
+        create_book!(%{title: "Curated Out Of Band", grade_level: 6, genres: ["Fiction"]})
+
       create_curation!(out_of_band_book, "9-12", "Not this student's band")
 
-      uncurated_book = create_book!(%{title: "No Curation At All", grade_level: 6, genres: ["Fiction"]})
+      uncurated_book =
+        create_book!(%{title: "No Curation At All", grade_level: 6, genres: ["Fiction"]})
 
       {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
 
@@ -337,7 +340,10 @@ defmodule Xaas.Library.RankerTest do
 
     test "includes already-checked-out books when exclude_read: false" do
       user = create_user!()
-      read_book = create_book!(%{title: "Already Read Included", grade_level: 6, genres: ["Fiction"]})
+
+      read_book =
+        create_book!(%{title: "Already Read Included", grade_level: 6, genres: ["Fiction"]})
+
       create_checkout!(user, read_book)
 
       {:ok, recs} = Ranker.rank_recommendations(user.id, 6, exclude_read: false, limit: 10)
@@ -365,7 +371,11 @@ defmodule Xaas.Library.RankerTest do
       user = create_user!()
 
       for i <- 1..12 do
-        create_book!(%{title: "Default Limit Candidate #{i}", grade_level: 6, genres: ["Fiction"]})
+        create_book!(%{
+          title: "Default Limit Candidate #{i}",
+          grade_level: 6,
+          genres: ["Fiction"]
+        })
       end
 
       {:ok, recs} = Ranker.rank_recommendations(user.id, 6)
@@ -385,7 +395,10 @@ defmodule Xaas.Library.RankerTest do
 
     test "returns an empty list when every catalog book has already been checked out and exclude_read is true" do
       user = create_user!()
-      only_book = create_book!(%{title: "Only Book In Catalog", grade_level: 6, genres: ["Fiction"]})
+
+      only_book =
+        create_book!(%{title: "Only Book In Catalog", grade_level: 6, genres: ["Fiction"]})
+
       create_checkout!(user, only_book)
 
       {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)

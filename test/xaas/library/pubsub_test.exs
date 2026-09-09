@@ -9,8 +9,7 @@ defmodule Xaas.Library.PubSubTest do
   """
   use Xaas.DataCase, async: false
 
-  alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Curation}
+  alias Xaas.Library.{Checkout, Curation}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -19,33 +18,10 @@ defmodule Xaas.Library.PubSubTest do
   end
 
   defp create_user!(email \\ nil) do
-    user_email = email || Faker.Internet.email()
-    Ash.Seed.seed!(User, %{email: user_email})
+    if email, do: Xaas.Factory.create_user!(%{email: email}), else: Xaas.Factory.create_user!()
   end
 
-  defp create_book!(attrs \\ %{}) do
-    title = Map.get(attrs, :title, Faker.Commerce.product_name())
-    author = Map.get(attrs, :author, Faker.Person.name())
-    isbn = Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
-    grade_level = Map.get(attrs, :grade_level, Enum.random(3..8))
-    genres = Map.get(attrs, :genres, ["Fiction", "Adventure"])
-    synopsis = Map.get(attrs, :synopsis, Faker.Lorem.paragraph(2))
-    available_copies = Map.get(attrs, :available_copies, 2)
-    total_copies = Map.get(attrs, :total_copies, 2)
-
-    Book
-    |> Ash.Changeset.for_create(:create, %{
-      title: title,
-      author: author,
-      isbn: isbn,
-      grade_level: grade_level,
-      genres: genres,
-      synopsis: synopsis,
-      available_copies: available_copies,
-      total_copies: total_copies
-    })
-    |> Ash.create!(authorize?: false)
-  end
+  defp create_book!(attrs \\ %{}), do: Xaas.Factory.create_book!(attrs)
 
   describe "Book pub_sub (prefix \"library:books\")" do
     test "create broadcasts on the created and events topics" do
@@ -54,7 +30,9 @@ defmodule Xaas.Library.PubSubTest do
 
       book = create_book!()
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: "library:books:created", payload: payload}, 1_000
+      assert_receive %Phoenix.Socket.Broadcast{topic: "library:books:created", payload: payload},
+                     1_000
+
       assert payload.data.id == book.id
 
       assert_receive %Phoenix.Socket.Broadcast{topic: "library:books:events"}, 1_000
@@ -212,7 +190,12 @@ defmodule Xaas.Library.PubSubTest do
         })
         |> Ash.create!(authorize?: false)
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: "recommendations:student:" <> sid, payload: payload}, 1_000
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: "recommendations:student:" <> sid,
+                       payload: payload
+                     },
+                     1_000
+
       assert sid == student_id
       assert payload.data.id == curation.id
 
