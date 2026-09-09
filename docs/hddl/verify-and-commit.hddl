@@ -1,15 +1,29 @@
 ;; verify-and-commit.hddl
 ;; Observed this session: every workflow's final "Verify" stage ran this exact
 ;; sequence (mix compile --force -> mix ecto.migrate -> mix test -> mock-grep ->
-;; git commit -F). Written down as HDDL instead of re-derived in prose per cycle.
+;; git commit). Written down as HDDL instead of re-derived in prose per cycle.
 ;;
-;; Real commands each action maps to, so this stays checkable against actual repo
-;; behavior rather than becoming aspirational:
-;;   compile     -> mix compile --force
-;;   migrate     -> mix ecto.migrate (DEV_DB_PORT from docker compose port db 5432)
-;;   test        -> mix test <scoped-paths>
-;;   mock-grep   -> grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." <paths>
-;;   commit      -> git add -A && git commit -F <msg-file>  (never -m, per tools.md)
+;; Reconciled 2026-09-09 against the real executor built this cycle:
+;; lib/mix/tasks/xaas.verify_and_commit.ex (`mix xaas.verify_and_commit`). That
+;; task is a FLAT, unconditional pipeline -- it does not branch on git status,
+;; does not implement push, and commits with `git commit -am`, not `-F`. This
+;; file is edited to match that real implementation exactly; predicates/actions
+;; not backed by real code are explicitly marked UNIMPLEMENTED below rather than
+;; silently left as if-built.
+;;
+;; Real commands each action maps to, so this stays checkable against actual
+;; repo behavior rather than becoming aspirational:
+;;   compile     -> mix compile --force --warnings-as-errors
+;;   migrate     -> mix ecto.migrate
+;;   test        -> mix test
+;;   mock-grep   -> grep -rn --include=*.ex --include=*.exs
+;;                  "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\."
+;;                  test/ lib/   (grep exit 1 == clean == pass; exit 0 == matches == fail)
+;;   commit      -> git commit -am <msg>   (see lib/mix/tasks/xaas.verify_and_commit.ex:88)
+;;
+;; Each stage halts the whole pipeline on first real non-zero exit
+;; (lib/mix/tasks/xaas.verify_and_commit.ex:112-119, `System.halt/1` -- see that
+;; file's moduledoc for why `System.halt/1` and not `Mix.raise/1`).
 
 (define (domain verify-and-commit)
   (:requirements :hierarchy :typing :negative-preconditions)
@@ -30,12 +44,18 @@
     (tests-green ?r - repo)
     (mock-checked ?r - repo)
     (mock-clean ?r - repo)
-    (status-checked ?r - repo)
-    (has-changes ?r - repo ?c - change-set)     ;; git status --porcelain non-empty
-    (nothing-to-commit ?r - repo)               ;; git status --porcelain empty -- valid no-op
     (committed ?r - repo ?c - change-set)
-    (verify-only-complete ?r - repo)            ;; no-op run reached a valid terminal state
-    (pushed ?r - repo ?c - change-set)
+
+    ;; -- UNIMPLEMENTED as of this cycle's real executor. Kept as named,
+    ;; disclosed future work (not deleted) so a later cycle building the
+    ;; branching/push behavior has a target to implement against, rather than
+    ;; re-deriving from prose. None of these predicates/actions are asserted
+    ;; or reachable by the real `mix xaas.verify_and_commit` code path today.
+    (status-checked ?r - repo)                  ;; UNIMPLEMENTED
+    (has-changes ?r - repo ?c - change-set)      ;; UNIMPLEMENTED
+    (nothing-to-commit ?r - repo)                ;; UNIMPLEMENTED
+    (verify-only-complete ?r - repo)             ;; UNIMPLEMENTED
+    (pushed ?r - repo ?c - change-set)           ;; UNIMPLEMENTED
   )
 
   ;; ---- compound tasks ----
@@ -43,15 +63,14 @@
     :parameters (?r - repo ?c - change-set)
   )
 
-  (:task finalize
-    :parameters (?r - repo ?c - change-set)
-  )
-
-  ;; Per this repo's Operating Mode (CLAUDE.md): a red/incomplete result does
-  ;; NOT block the commit -- it blocks the CLAIM of "done," not the DO. Both
-  ;; methods below are admissible; the honest-disclosure method is the default
-  ;; because this repo is exploration-mode, not production-gated.
-  (:method m-verify-then-commit-honest
+  ;; ---- methods ----
+  ;; The ONLY method backed by real code this cycle. It is a flat pipeline:
+  ;; compile -> migrate -> test -> mock-grep -> commit, with no git-status
+  ;; branch. `git commit -am <msg>` is attempted unconditionally; if there is
+  ;; nothing to commit, `git commit` itself exits non-zero ("nothing to
+  ;; commit, working tree clean") and the pipeline halts on that real exit
+  ;; code like any other stage -- there is no separate no-op/report-only path.
+  (:method m-verify-then-commit
     :parameters (?r - repo ?c - change-set)
     :task (VERIFY-AND-COMMIT ?r ?c)
     :precondition (edited ?r ?c)
@@ -60,27 +79,18 @@
       (t2 (migrate ?r))
       (t3 (test ?r))
       (t4 (mock-grep ?r))
-      (t5 (check-git-status ?r ?c))
-      (t6 (finalize ?r ?c))
+      (t5 (commit ?r ?c))
     )
   )
 
-  ;; `finalize` branches on the real status-check outcome rather than always
-  ;; calling `git commit`. Both branches are admissible terminal states of
-  ;; VERIFY-AND-COMMIT -- neither is an error.
-  (:method m-finalize-with-changes
-    :parameters (?r - repo ?c - change-set)
-    :task (finalize ?r ?c)
-    :precondition (has-changes ?r ?c)
-    :ordered-subtasks (and (t1 (commit-with-real-status ?r ?c)))
-  )
-
-  (:method m-finalize-noop
-    :parameters (?r - repo ?c - change-set)
-    :task (finalize ?r ?c)
-    :precondition (nothing-to-commit ?r)
-    :ordered-subtasks (and (t1 (report-verify-only ?r)))
-  )
+  ;; UNIMPLEMENTED (future work, not built this cycle): the previously-drafted
+  ;; git-status-branching finalize methods (m-finalize-with-changes /
+  ;; m-finalize-noop) and their `check-git-status` / `report-verify-only`
+  ;; actions. The real executor does not check git status before commit and
+  ;; has no distinct no-op terminal state -- see m-verify-then-commit above.
+  ;; A future cycle that wants "verify without committing" real behavior
+  ;; should build check-git-status as a real pre-commit stage and re-promote
+  ;; these methods to implemented status, not just re-add them here.
 
   ;; ---- primitive actions ----
   ;; Each :effect only asserts what the real command's exit status actually
@@ -91,83 +101,55 @@
     :parameters (?r - repo)
     :precondition ()
     :effect (compiled ?r)
-    ;; real: (compile-clean ?r) asserted only if `mix compile --force` exits 0
-    ;; with no "== Compilation error ==" block in output -- a caller must
-    ;; observe this, not assume it from (compiled ?r) alone.
+    ;; real: `mix compile --force --warnings-as-errors`
+    ;; (lib/mix/tasks/xaas.verify_and_commit.ex:57). (compile-clean ?r) is
+    ;; asserted only if this exits 0 -- a caller must observe this, not
+    ;; assume it from (compiled ?r) alone.
   )
 
   (:action migrate
     :parameters (?r - repo)
     :precondition (compiled ?r)
     :effect (and (migrated ?r) (oneof (migrations-applied ?r) (migrations-noop ?r)))
-    ;; real: `mix ecto.migrate` exit code 0 is success in BOTH observed cases:
-    ;;   - stdout contains "N migrations up" / migration file names running
-    ;;     -> assert (migrations-applied ?r)
-    ;;   - stdout is exactly "Migrations already up" (or equivalent no-op
-    ;;     message) -> assert (migrations-noop ?r)
-    ;; Both satisfy (migrated ?r) and both allow the pipeline to proceed to
-    ;; `test`. Only a non-zero exit code or a printed "** (Mix)" / stacktrace
-    ;; error is a real failure that should halt the pipeline.
+    ;; real: `mix ecto.migrate` (lib/mix/tasks/xaas.verify_and_commit.ex:58).
+    ;; Exit code 0 is success in both observed cases (migrations ran, or
+    ;; "Migrations already up"); only a non-zero exit halts the pipeline.
   )
 
   (:action test
     :parameters (?r - repo)
     :precondition (migrated ?r)
     :effect (tested ?r)
-    ;; real: (tests-green ?r) asserted only if the real "N tests, 0 failures"
-    ;; line is observed -- never inferred from (tested ?r) alone.
+    ;; real: `mix test` (lib/mix/tasks/xaas.verify_and_commit.ex:59).
+    ;; (tests-green ?r) asserted only if the real "N tests, 0 failures" line
+    ;; is observed -- never inferred from (tested ?r) alone.
   )
 
   (:action mock-grep
     :parameters (?r - repo)
     :precondition (tested ?r)
     :effect (mock-checked ?r)
-    ;; real: (mock-clean ?r) asserted only if the grep returns zero matches,
-    ;; or every match is a named, justified exception per
-    ;; ~/.claude/rules/testing-chicago-style.md's "one legitimate use."
+    ;; real: lib/mix/tasks/xaas.verify_and_commit.ex:64-83. grep exit 0 (match
+    ;; found) is inverted to a failing exit 1 for this stage; grep exit 1 (no
+    ;; match) is inverted to a passing exit 0. (mock-clean ?r) asserted only
+    ;; if the grep returns zero matches, or every match is a named, justified
+    ;; exception per ~/.claude/rules/testing-chicago-style.md's "one
+    ;; legitimate use."
   )
 
-  (:action check-git-status
+  (:action commit
     :parameters (?r - repo ?c - change-set)
     :precondition (mock-checked ?r)
-    :effect (and (status-checked ?r) (oneof (has-changes ?r ?c) (nothing-to-commit ?r)))
-    ;; real: `git status --porcelain`.
-    ;;   - non-empty output -> assert (has-changes ?r ?c); proceed to commit.
-    ;;   - empty output -> assert (nothing-to-commit ?r). This is a genuine
-    ;;     no-op verify-only run (e.g. re-running verify after a prior commit,
-    ;;     or a pure investigation pass with no edits) -- it is NOT a failure
-    ;;     and must NOT attempt `git add -A && git commit`, which would error
-    ;;     ("nothing to commit, working tree clean") or, worse, be papered
-    ;;     over with an empty/fabricated commit.
-  )
-
-  (:action commit-with-real-status
-    :parameters (?r - repo ?c - change-set)
-    :precondition (has-changes ?r ?c)
-    :effect (and (committed ?r ?c))
-    ;; real: commit message states compile/test/mock-grep results as OBSERVED,
-    ;; distinguishing e.g. "339 tests, 0 failures" (verified) from "not yet
-    ;; re-run" (disclosed, not claimed). git commit -F <file>, never -m.
-  )
-
-  (:action report-verify-only
-    :parameters (?r - repo)
-    :precondition (nothing-to-commit ?r)
-    :effect (verify-only-complete ?r)
-    ;; real: report the pipeline's real observed results (compile/migrate/
-    ;; test/mock-grep outcomes) and state explicitly "nothing to commit --
-    ;; working tree clean" as the terminal state. This is success, not an
-    ;; unfinished VERIFY-AND-COMMIT: there is no change-set to attach a
-    ;; commit to, so (committed ?r ?c) is correctly never asserted.
-  )
-
-  (:action push
-    :parameters (?r - repo ?c - change-set)
-    :precondition (committed ?r ?c)
-    :effect (pushed ?r ?c)
-    ;; real: `git push` -- only after explicit user request or an active
-    ;; standing directive (e.g. the "storm/power outage" checkpoint request
-    ;; this session), per the harness's send-message-class confirmation rule
-    ;; extended to "publish this commit externally."
+    :effect (committed ?r ?c)
+    ;; real: `git commit -am <msg>` (lib/mix/tasks/xaas.verify_and_commit.ex:88),
+    ;; NOT `git commit -F <file>`. This is real drift from
+    ;; ~/.claude/rules/tools.md's "always use -F, never inline -m for
+    ;; multi-line text" -- the commit message is passed as a single CLI arg
+    ;; (args from `mix xaas.verify_and_commit "<commit message>"`), so a
+    ;; multi-line or metacharacter-bearing message risks the exact shell
+    ;; -m failure modes that rule documents. Disclosed here, not silently
+    ;; hidden by an aspirational `-F` in the spec: a future cycle should
+    ;; change the task to write the message to a temp file and use
+    ;; `git commit -F <path>` instead, then update this action's comment.
   )
 )

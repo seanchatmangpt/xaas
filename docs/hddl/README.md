@@ -49,3 +49,74 @@ isn't a "known class" yet — it's still exploration, and writing an HDDL method
 one-off would be premature formalization, not Operationalize. `docs/vision/` cycles
 that invent a genuinely new task shape should get a new `.hddl` file added here only
 after that shape repeats.
+
+## Loop-Until-Dry Safety Pattern
+
+A `loop-until-dry` (run rounds until N consecutive rounds find nothing new) is a real,
+useful termination pattern for one class of search and a real hang risk for another.
+This section names the rule that separates them, extracted from the RCA in
+`docs/vision/vision-2030-2026-09-09-0738.md` after cycle 0538's `LoopUntilDry` phase
+ran to round 937+ before being killed via `TaskStop` with zero live process and no
+commit.
+
+### The rule
+
+`loop-until-dry` is safe only when both of the following hold:
+
+1. **Fixed pre-existing enumeration domain.** The set being searched must already
+   exist and be finite before the loop starts (every function in a file, every real
+   occurrence of a grep pattern in a codebase, every row in a table) — not a set that
+   is invented or extended by the act of searching it.
+2. **Independent negative-membership test.** There must be a way to check "is this
+   item actually in the domain?" that does not depend on the same process being asked
+   to produce more items — e.g. a second, independent grep/query that can return zero
+   results, not just the same generator claiming it has nothing left.
+
+### The distinction that actually causes the hang
+
+**Monotonic exhaustion vs. diminishing plausibility.** A finite real-search domain
+exhausts monotonically: once every real occurrence is found, the independent test
+proves zero remain, permanently. An open-ended generative task (invent a new edge
+case, brainstorm a new design concern) never exhausts — it only becomes less likely
+per round that the generator produces something *it considers* novel, and an LLM
+asked "is there anything new?" will nearly always produce *a* plausible-sounding
+answer rather than truthfully report the domain is empty. Two consecutive empty
+rounds looks identical from inside the loop in both cases; only the domain's real
+structure tells them apart.
+
+### Classification test
+
+Before wiring a `loop-until-dry` exit condition, ask: **does "nothing left" correspond
+to an empty set the tool can observe, or to the model saying it can't think of more?**
+
+- Empty set an independent tool call can observe (a grep, a query, a fixed
+  enumeration) → safe to loop until dry.
+- The model's own claim that it has exhausted its ideas, with no independent set to
+  check against → unsafe; the loop must carry a hard round cap regardless of the
+  dry-streak condition.
+
+### Corollary example
+
+- **Safe**: "find every real occurrence of grep pattern `X` in this codebase" — the
+  codebase is a fixed, finite domain; a second `grep -c` run is an independent
+  negative-membership test; the search monotonically exhausts.
+- **Unsafe**: "invent a new edge case for a mix task that doesn't exist yet" — there
+  is no fixed domain to exhaust and no independent test for "no edge cases remain";
+  this is exactly the pattern that produced the real 937+-round kill-switch incident
+  in `docs/vision/vision-2030-2026-09-09-0738.md` (`LoopUntilDry` phase of cycle
+  `vision-2030-cycle-2026-09-09-0538`, killed via `TaskStop` after ~2 hours with zero
+  live `beam.smp`/`mix` process and no commit).
+
+**Applied fix**: any `loop-until-dry` over an open-ended design question must carry a
+hard round cap (e.g. 15) in addition to its dry-streak exit condition, so a runaway
+design-brainstorm loop cannot hang indefinitely the way cycle 0538's did.
+
+### See Also
+
+- `docs/vision/vision-2030-2026-09-09-0738.md` — the RCA case study this section is
+  extracted from, including the real failing loop code and the retry cycle's fix.
+- `docs/hddl/verify-and-commit.hddl` — reconciled this same cycle against
+  `lib/mix/tasks/xaas.verify_and_commit.ex`'s real flat pipeline (no git-status
+  branching, no push, `git commit -am` not `-F`); an example of a fixed, finite,
+  independently-checkable domain (the real diff between spec and code) used as a
+  one-shot reconciliation, not a `loop-until-dry`.
