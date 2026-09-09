@@ -472,6 +472,15 @@ defmodule XaasWeb.NextRead.ReaderLive do
           :error,
           gettext("Could not process this request. Please try again.")
         )
+
+      {:halted, reactor} ->
+        Logger.error("CirculationBorrowReactor halted for book #{book_id}: #{inspect(reactor)}")
+
+        put_flash(
+          socket,
+          :error,
+          gettext("Could not process this request. Please try again.")
+        )
     end
   end
 

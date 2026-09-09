@@ -93,7 +93,7 @@ defmodule Xaas.Library.Reactors.CirculationBorrowReactor do
       # a no-op. `undo :outside_transaction` means the undo is skipped when
       # this step happens to run inside a transaction (same-transaction
       # rollback already covers that case) and is invoked otherwise.
-      create :create_hold, HoldRequest, :create do
+      create :create_hold, HoldRequest, :place do
         inputs(%{
           book_id: input(:book_id),
           user_id: input(:user_id),

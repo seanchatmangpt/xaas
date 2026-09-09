@@ -219,6 +219,9 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
 
         {:error, error} ->
           {:error, "checkout failed: #{inspect(error)}"}
+
+        {:halted, reactor} ->
+          {:error, "checkout halted: #{inspect(reactor)}"}
       end
     end
   end

@@ -234,8 +234,12 @@ defmodule Xaas.Library.HoldRequest do
       authorize_if always()
     end
 
+    # Deny-by-default floor (CLAUDE.md): matches Checkout/Book's sibling
+    # policy blocks -- writes require a real actor, not the prior ambient
+    # `authorize_if always()`, which permitted `actor: nil` on
+    # :place/:update/:cancel/:fulfill/:destroy alike.
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      authorize_if actor_present()
     end
   end
 
