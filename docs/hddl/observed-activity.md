@@ -22,3 +22,11 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
 - 2026-09-09 09:30 — VERIFY-AND-COMMIT instance, commit 063c8dd (real pgvector
   Postgrex-driver fix + ranker.ex Ash.Vector case-clause fix + 12 test-file
   fallout repairs; test failure count 82 -> 25, real, measured, not claimed).
+- 2026-09-09 09:50 — no exact matching known task class this cycle, but real
+  signal worth naming: the Ash.Vector-vs-plain-list case-clause bug has now
+  recurred 3 times (ranker.ex, score_book.ex, next_read_test.exs) with the
+  identical fix shape each time. Per this repo's known-class-routing doctrine,
+  this is a real candidate for a 6th HDDL domain
+  ("post-pgvector-migration-vector-type-fix") once/if a 4th occurrence
+  confirms it's a durable pattern rather than a one-time migration's fallout
+  finishing.
