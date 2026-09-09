@@ -2,10 +2,11 @@ defmodule Xaas.Operations.ActuationReceipt do
   @moduledoc """
   Durable Ash receipt for a Reactor-governed consequential operation.
 
-  A receipt is prepared before DO and sealed after the target Ash action returns.
+  A receipt is prepared before DO and sealed after the target action returns. For an
+  external consequence whose side effect cannot participate in the Postgres transaction,
+  `:checkpoint` durably binds the inert external CONSTRUCT before the external DO starts.
   The record binds identity, semantic projection, input, consequence, and replay.
-  It deliberately has no public action surface; only the Reactor actuation kernel
-  may prepare, read, or seal it.
+  It deliberately has no public action surface; only the actuation kernels use it.
   """
 
   use Xaas.Resource,
@@ -47,6 +48,12 @@ defmodule Xaas.Operations.ActuationReceipt do
         :replay_token,
         :started_at
       ]
+    end
+
+    update :checkpoint do
+      public? false
+      accept [:result_hash, :result]
+      require_atomic? false
     end
 
     update :seal do
