@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalChangeOfControlNotify do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Governance.ApprovalChangeOfControlNotify do
     # real POST/PUT /api/owner/change-of-control maker-checker flow:
     # `:create` (file the change-of-control trigger/notification) and
     # `:approve` are gated the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # ApprovalChangeOfControlNotifyRequiresApprover's real "second,
     # distinct owner" rule on :approve.
     bypass action(:create) do

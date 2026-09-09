@@ -4,7 +4,7 @@ defmodule Xaas.Marketplace do
   `Xaas.Marketplace.Provider`, the first resource in this namespace.
   """
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do

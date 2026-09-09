@@ -1,5 +1,5 @@
 defmodule Xaas.Repo do
-  use AshPostgres.Repo, otp_app: :kanban
+  use AshPostgres.Repo, otp_app: :xaas
 
   def min_pg_version do
     %Version{major: 14, minor: 19, patch: 0}

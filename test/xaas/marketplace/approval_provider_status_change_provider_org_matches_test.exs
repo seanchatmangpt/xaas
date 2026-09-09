@@ -18,7 +18,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
   own org flipped a different, victim org's real `Provider.status`. The
   full end-to-end HTTP-level regression test for that exact attack shape
   lives in
-  `test/kanban_web/controllers/approval_provider_status_change_controller_test.exs`
+  `test/xaas_web/controllers/approval_provider_status_change_controller_test.exs`
   (added alongside this file); this file covers the validation's own unit
   behavior directly.
   """

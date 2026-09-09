@@ -6,15 +6,15 @@ independently-designed migration strategies, synthesized into one ranked recomme
 
 ## Real current state (audited directly, not assumed)
 
-- **`~/xaas`** (this repo): plain Phoenix/Ecto, `Kanban.*`/`KanbanWeb.*` namespace, `ash`
-  not a dependency. No domain/context layer at all — `Kanban.Application` supervises only
+- **`~/xaas`** (this repo): plain Phoenix/Ecto, `Xaas.*`/`XaasWeb.*` namespace, `ash`
+  not a dependency. No domain/context layer at all — `Xaas.Application` supervises only
   infra children (Endpoint, PromEx, Repo, PubSub, Finch). Zero business schema/migrations
   (confirmed earlier this session). Real, deployed infra: Dockerfile, k8s manifests (live
   in `kind`), Terraform (GitHub + Grafana modules, both applied), docker-compose (7 healthy
-  services), CI. The only hardcoded coupling to the `kanban` name that would break on
-  rename: `Dockerfile:95`'s `rel/kanban` copy, and 4 `rel/overlays/bin/*` scripts calling
-  `./kanban start`/`./kanban eval` — derived from `mix.exs:14`'s `app: :kanban`, not from
-  anything else. Postgres user/db/image-tag "kanban" strings in `compose.yaml`/`k8s/*.yaml`
+  services), CI. The only hardcoded coupling to the `xaas` name that would break on
+  rename: `Dockerfile:95`'s `rel/xaas` copy, and 4 `rel/overlays/bin/*` scripts calling
+  `./xaas start`/`./xaas eval` — derived from `mix.exs:14`'s `app: :xaas`, not from
+  anything else. Postgres user/db/image-tag "xaas" strings in `compose.yaml`/`k8s/*.yaml`
   are independent naming choices, not code-coupled.
 - **`~/ggen-marketplace/packs/xaas-ash-core-pack`**: real, ggen-rendered pipeline. 44 real
   `xar:RenderTarget` individuals in `ontology.ttl`, 131 real INCLUDE packages in
@@ -28,14 +28,14 @@ independently-designed migration strategies, synthesized into one ranked recomme
   `authorize_if`/`forbid_if` policy; only 1/89 has a real HTTP-verb route body. This project
   is a **real, reusable asset** — not throwaway — and should be the migration source.
 - **Namespace collision check**: `~/xaas` has zero `Xaas.*` modules; `~/dev-fresh/xaas` has
-  zero `Kanban.*` modules. The two are namespace-disjoint — merging them is additive, not a
+  zero `Xaas.*` modules. The two are namespace-disjoint — merging them is additive, not a
   rename.
 
-## Recommendation: incremental in-place merge (no Kanban→Xaas rename)
+## Recommendation: incremental in-place merge (no Xaas→Xaas rename)
 
 Port `~/dev-fresh/xaas`'s real `Xaas.*` resources/domains into `~/xaas` **alongside** the
-existing `Kanban.*`/`KanbanWeb.*` code, leaving the real, already-working Dockerfile/k8s/CI/
-Terraform infra byte-identical. Reject a full Kanban→Xaas rename for this migration — it
+existing `Xaas.*`/`XaasWeb.*` code, leaving the real, already-working Dockerfile/k8s/CI/
+Terraform infra byte-identical. Reject a full Xaas→Xaas rename for this migration — it
 would touch the release binary name across `Dockerfile`/`rel/overlays/bin/*`/CI image tags
 purely for namespace aesthetics, against a currently-deployed release, for zero functional
 gain. Two-namespace apps are legal Elixir and require no new pattern (this is already how
@@ -50,10 +50,10 @@ SHAs as a rollback anchor.
 `mix deps.get && mix compile` must exit 0 before any resource code lands (confirms no
 version conflict with `phoenix ~> 1.7.0`/`ecto_sql ~> 3.6`).
 
-**Phase 2 — Config wiring**: keep `config :kanban, ecto_repos: [Kanban.Repo]` as-is; add
-`config :kanban, ash_domains: [Xaas.Operations, Xaas.Governance, Xaas.Billing,
-Xaas.Platform]`. `Kanban.Repo` stays a plain `Ecto.Repo` — `AshPostgres.DataLayer` is set
-per-resource, no need to touch `lib/kanban/repo.ex` or the supervision tree.
+**Phase 2 — Config wiring**: keep `config :xaas, ecto_repos: [Xaas.LegacyRepo]` as-is; add
+`config :xaas, ash_domains: [Xaas.Operations, Xaas.Governance, Xaas.Billing,
+Xaas.Platform]`. `Xaas.LegacyRepo` stays a plain `Ecto.Repo` — `AshPostgres.DataLayer` is set
+per-resource, no need to touch `lib/xaas/repo.ex` or the supervision tree.
 
 **Phase 3 — Port the 89 resources** (copy, not regenerate): `cp -r
 ~/dev-fresh/xaas/lib/xaas/{operations,governance,billing,platform,accounts,ledger}
@@ -64,7 +64,7 @@ diagnosed (`ash_onetime` routing, unsupported flags), not new unknowns.
 **Phase 4 — Migrations**: `mix ash_postgres.generate_migrations --domains
 Xaas.Operations,Xaas.Governance,Xaas.Billing,Xaas.Platform` (regenerate fresh against
 xaas's actual DB state — do not hand-copy dev-fresh's migrations, schema/timestamp drift
-risk). `mix ecto.migrate`. Verify: all 89 resource tables exist, existing Kanban tables/rows
+risk). `mix ecto.migrate`. Verify: all 89 resource tables exist, existing Xaas tables/rows
 untouched (row-count check before/after).
 
 **Phase 5 — Gap closure, not deferred debt**: 87/89 resources currently have implicit
@@ -73,7 +73,7 @@ allow-all authorization and no real API surface. Before this ships to the live d
    end` floor (deny-by-default), replaced per-resource with real rules as owners define
    them — never ship allow-all on a repo with real deployed infra.
 2. Decide the API surface per domain: wire `AshJsonApi`/`AshGraphql` into
-   `KanbanWeb.Router` additively, or explicitly mark domains "no HTTP exposure yet" and
+   `XaasWeb.Router` additively, or explicitly mark domains "no HTTP exposure yet" and
    don't route them.
 3. Gate: never point k8s ingress at a new Ash-backed route before its resource has a real
    (non-default-allow) policy.
@@ -85,8 +85,8 @@ one real regeneration event has happened so far; add that stage on the *second* 
 ontology-driven regen, not preemptively.
 
 **Phase 7 — Infra verification, protects the live deployment**: local-only `docker build`
-+ `bin/kanban eval "1+1"` sanity check (confirms release name/boot unaffected). `mix test`
-(existing 3 web tests, zero regression expected — `Kanban.Repo` untouched). Deploy to a
++ `bin/xaas eval "1+1"` sanity check (confirms release name/boot unaffected). `mix test`
+(existing 3 web tests, zero regression expected — `Xaas.LegacyRepo` untouched). Deploy to a
 **separate namespace or image tag** in `kind`, never overwrite the live deployment directly
 — curl existing routes (expect unchanged 200s) and any new Ash routes (expect 403 if
 unauthenticated, confirming Phase 5's policy gate actually holds) before merging to `main`
@@ -109,7 +109,7 @@ verified per the plan above, not assumed:
 - **Phase 0**: branch created, both repos' HEAD SHAs recorded.
 - **Phase 1**: `ash`/`ash_postgres` added; real transitive lock conflicts (ecto/decimal/
   jason chain) found and resolved. `mix compile`/`mix test`: 0 errors, 5/5 pass.
-- **Phase 2**: `ash_domains` config wired, `Kanban.Repo` untouched.
+- **Phase 2**: `ash_domains` config wired, `Xaas.LegacyRepo` untouched.
 - **Phase 3a**: re-derived from the real source (not the plan's original 2-dep guess) --
   ported the full real 16-package Ash ecosystem dep set. 3 real conflicts found and
   resolved: `ash_admin` (phoenix_live_view 1.1-rc), `ash_authentication_phoenix`
@@ -120,7 +120,7 @@ verified per the plan above, not assumed:
 - **Phase 3b**: ported all real resources -- **49 top-level `Xaas.*` resources, not 89**
   (re-derived from real evidence: 89 conflated `changes`/`validations` support modules
   with real resources; 49 matches the real migration table count in Phase 4). Mechanical
-  fixes: `otp_app: :xaas` -> `:kanban` (53 files), removed `AshAdmin.Domain`/`admin do`
+  fixes: `otp_app: :xaas` -> `:xaas` (53 files), removed `AshAdmin.Domain`/`admin do`
   blocks, added `Xaas.Repo` as a real separate `AshPostgres.Repo` (config + supervision
   tree), ported the real `config :ash` custom_types/known_types block. `mix compile
   --force`: 173 files, 0 errors. `mix test`: 5/5 pass.
@@ -138,9 +138,9 @@ verified per the plan above, not assumed:
 - **Phase 7**: real Docker build hit and fixed 2 real version-compat bugs (Elixir 1.16 ->
   1.18.4 for `Ash.Type.Duration`'s core `Duration` struct; OTP 26.2.1 -> 27.2.4 for
   `ex_money`'s `Code.ensure_loaded?(:json)` check). Real release boot confirmed
-  (`bin/kanban eval`, exit 0, real DB/secret env vars against the live compose network).
+  (`bin/xaas eval`, exit 0, real DB/secret env vars against the live compose network).
   Deployed to a real, separate `ash-migration-test` k8s namespace (never touched
-  `default`, the live namespace) -- confirmed via curl: existing Kanban route unchanged
+  `default`, the live namespace) -- confirmed via curl: existing Xaas route unchanged
   `HTTP 200`; new Ash JSON:API routes `HTTP 404` (not wired to the router yet, correctly
   not exposed -- Phase 5's routing-surface decision is real, disclosed remaining work).
   Test namespace and test image deleted after verification.
@@ -149,7 +149,7 @@ verified per the plan above, not assumed:
 
 - **Phase 5, item 2 (API surface decision)**: not yet made. 44/49 resources declare
   `AshJsonApi.Resource`/`AshGraphql.Resource` but nothing is wired into
-  `KanbanWeb.Router` -- confirmed safe (404, not exposed) but genuinely undecided.
+  `XaasWeb.Router` -- confirmed safe (404, not exposed) but genuinely undecided.
 - **Per-resource real policies**: the Phase 5 floor is deny-by-default, not real business
   rules -- every resource still needs its actual authorization logic defined by a real
   domain owner, not by this session.
@@ -170,7 +170,7 @@ Re-attempted `ash_admin` (originally dropped in Phase 3 for a real `phoenix_live
 - `mix compile` clean across the whole tree (183 files) with `ash_admin` added.
 - Wired `AshAdmin.Domain` onto all 6 real domains (Accounts, Billing, Governance, Ledger,
   Operations, Platform) and mounted `AshAdmin.Router`'s `ash_admin("/")` under `/admin` in
-  `KanbanWeb.Router`, dev-only (same `dev_routes` guard as LiveDashboard).
+  `XaasWeb.Router`, dev-only (same `dev_routes` guard as LiveDashboard).
 - `mix phx.routes` confirms the real route: `GET /admin/*route AshAdmin.PageLive :page`.
 
 **Real, reproducible blocker**: `GET /admin/` 500s with `** (KeyError) key :action_type not

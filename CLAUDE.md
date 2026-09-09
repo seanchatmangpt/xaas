@@ -25,7 +25,7 @@ Before claiming the test tree is clean, run:
 grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." test/ lib/
 ```
 
-The disclosed pre-existing `Kanban.AwsRepo.FixtureAdapter` remains the one historical AWS-substitution exception.
+The disclosed pre-existing `Xaas.AwsRepo.FixtureAdapter` remains the one historical AWS-substitution exception.
 
 ### Claims require execution
 
@@ -37,7 +37,7 @@ New/touched resources keep deny-by-default policy behavior. A scoped read carve-
 
 ### API auth
 
-`KanbanWeb.Plugs.RequireInternalApiToken` gates `/internal-api` and `/api` using `INTERNAL_API_TOKEN` and fails closed when configuration is absent. Do not introduce an unauthenticated sibling route.
+`XaasWeb.Plugs.RequireInternalApiToken` gates `/internal-api` and `/api` using `INTERNAL_API_TOKEN` and fails closed when configuration is absent. Do not introduce an unauthenticated sibling route.
 
 ### Sensitive resources
 

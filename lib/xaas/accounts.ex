@@ -1,6 +1,6 @@
 defmodule Xaas.Accounts do
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do

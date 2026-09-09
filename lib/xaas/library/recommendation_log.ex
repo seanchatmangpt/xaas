@@ -3,7 +3,7 @@ defmodule Xaas.Library.RecommendationLog do
   Ash resource for Recommendation Logs, storing candidate pool, factor weights, and produced recommendations.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

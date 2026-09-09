@@ -5,7 +5,7 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
   (`Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`)
   that had zero unit-test coverage of its own atomicity before this file
   existed -- only a controller test (happy-path + no-overage cases,
-  `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs`)
+  `test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs`)
   and a stress test (deliberately tuned to avoid any overage at all, see
   `approval_backup_retention_change_stress_test.exs`'s own moduledoc)
   touch this resource. Real `Ecto.Adapters.SQL.Sandbox`-backed Postgres

@@ -1,6 +1,6 @@
 defmodule Xaas.Platform.RouteOrgsCustomDomain do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -36,7 +36,7 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     # ConfigMap), never a second-approver maker-checker flow -- unlike
     # the Governance cluster, platform-console's own auth model treats
     # this as a single-owner action. Gated the same way reads are here --
-    # by the router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer
+    # by the router-level XaasWeb.Plugs.RequireInternalApiToken Bearer
     # check -- plus RouteOrgsCustomDomainValidHostname's real hostname
     # shape rule on :create.
     #

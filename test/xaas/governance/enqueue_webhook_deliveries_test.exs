@@ -51,7 +51,7 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
     # `Xaas.Vault` (AshCloak's backing Cloak.Vault, used by
     # `Xaas.Platform.Webhook`'s `cloak do attributes [:secret] end`) is now
     # a real, permanent child of the app's supervision tree
-    # (`lib/kanban/application.ex`), so it's already running for real by
+    # (`lib/xaas/application.ex`), so it's already running for real by
     # the time this test boots -- no per-test workaround needed.
     :ok
   end

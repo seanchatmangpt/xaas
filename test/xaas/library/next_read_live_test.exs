@@ -1,9 +1,9 @@
-defmodule KanbanWeb.NextRead.ReaderLiveTest do
+defmodule XaasWeb.NextRead.ReaderLiveTest do
   @moduledoc """
   Phoenix LiveView integration tests for Next Read recommendation interface.
   Validates 6-factor ML rendering, grade change events, checkout actions, and PubSub broadcasts.
   """
-  use KanbanWeb.ConnCase, async: false
+  use XaasWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
 
   alias Xaas.Accounts.User

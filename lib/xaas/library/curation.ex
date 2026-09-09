@@ -4,7 +4,7 @@ defmodule Xaas.Library.Curation do
   Staff spotlight that boosts recommendation scores for specific grade bands or individual students.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -17,7 +17,7 @@ defmodule Xaas.Library.Curation do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "recommendations"
     broadcast_type :notification
 

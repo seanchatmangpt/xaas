@@ -7,18 +7,18 @@ the How-to guide.
 
 ## Compile-time config (`config/config.exs`)
 
-### `:kanban` app config
+### `:xaas` app config
 
 | Key | Value |
 |---|---|
-| `ecto_repos` | `[Kanban.Repo, Xaas.Repo]` |
+| `ecto_repos` | `[Xaas.LegacyRepo, Xaas.Repo]` |
 | `ash_domains` | `[Xaas.Accounts, Xaas.Billing, Xaas.Governance, Xaas.Ledger, Xaas.Operations, Xaas.Platform]` |
 | `ash_authentication` | `[return_error_on_invalid_magic_link_token?: true]` |
 | `base_resources` | `[Xaas.Resource]` |
 
 `Xaas.Resource` (`lib/xaas/resource.ex`) is a thin `defmacro __using__` wrapper around
 `use Ash.Resource, unquote(opts)` — every real `Xaas.*` resource module does
-`use Xaas.Resource, otp_app: :kanban, domain: ..., data_layer: AshPostgres.DataLayer, ...`.
+`use Xaas.Resource, otp_app: :xaas, domain: ..., data_layer: AshPostgres.DataLayer, ...`.
 
 ### `:ash` global config
 
@@ -84,7 +84,7 @@ real compile error (`":money is not a valid type"`).
 |---|---|
 | `pro?` | `false` |
 
-### `:kanban, Oban` config
+### `:xaas, Oban` config
 
 | Key | Value |
 |---|---|
@@ -97,7 +97,7 @@ real compile error (`":money is not a valid type"`).
 ## The 6 real Ash domains and their extensions
 
 All 6 domains live directly under `lib/xaas/*.ex` (one file per domain), each
-`use Ash.Domain, otp_app: :kanban, extensions: [...]`, each with `admin do show? true end`.
+`use Ash.Domain, otp_app: :xaas, extensions: [...]`, each with `admin do show? true end`.
 
 | Domain module | File | Extensions | Resource count |
 |---|---|---|---|
@@ -171,41 +171,41 @@ Both are registered in `config :ash, :custom_types` (see above) as `:capability_
 
 | Router module | File | Mounts | Prefix |
 |---|---|---|---|
-| `KanbanWeb.ApiRouter` | `lib/kanban_web/api_router.ex` | `AshJsonApi.Router` over all 6 domains | `/api` |
-| `KanbanWeb.InternalApiRouter` | `lib/kanban_web/internal_api_router.ex` | `AshJsonApi.Router` over `[Xaas.Operations]` only | `/internal-api` |
+| `XaasWeb.ApiRouter` | `lib/xaas_web/api_router.ex` | `AshJsonApi.Router` over all 6 domains | `/api` |
+| `XaasWeb.InternalApiRouter` | `lib/xaas_web/internal_api_router.ex` | `AshJsonApi.Router` over `[Xaas.Operations]` only | `/internal-api` |
 
 Both routers only ever serve routes a resource has explicitly declared via its own
 `json_api do routes do ... end end` block — mounting a domain does not itself expose anything.
-`KanbanWeb.ApiRouter`'s moduledoc records that 44 of 49 resources have mechanically-added
+`XaasWeb.ApiRouter`'s moduledoc records that 44 of 49 resources have mechanically-added
 read-only (`get`/`index` on `:read`) routes; `Xaas.Ledger.Balance`/`Account`/`Transfer` and
 `Xaas.Accounts.User`/`Token` are deliberately excluded (no routes declared).
 
-Both `/api` and `/internal-api` scopes in `lib/kanban_web/router.ex` are gated by the
-`:require_internal_api_token` pipeline (`plug KanbanWeb.Plugs.RequireInternalApiToken`,
-`lib/kanban_web/plugs/require_internal_api_token.ex`) before reaching either router. This same
+Both `/api` and `/internal-api` scopes in `lib/xaas_web/router.ex` are gated by the
+`:require_internal_api_token` pipeline (`plug XaasWeb.Plugs.RequireInternalApiToken`,
+`lib/xaas_web/plugs/require_internal_api_token.ex`) before reaching either router. This same
 gate also protects the plain-JSON `/internal-api/capability_liveness_regressions` and
 `/internal-api/ocel_summary` routes (which must be registered before the catch-all
 `forward "/internal-api"`, since Phoenix `forward` matches every sub-path under its prefix).
 
 `AshAdmin.Router`'s `ash_admin("/")` is mounted at `/admin`, guarded by the same
-`Application.compile_env(:kanban, :dev_routes)` flag as `live_dashboard "/dashboard"` — dev-only,
-no auth added (see `lib/kanban_web/router.ex` lines ~81-90).
+`Application.compile_env(:xaas, :dev_routes)` flag as `live_dashboard "/dashboard"` — dev-only,
+no auth added (see `lib/xaas_web/router.ex` lines ~81-90).
 
 ## Environment variables read by this app
 
 | Env var | Read in | Default (dev/test) | Purpose |
 |---|---|---|---|
-| `DEV_DB_USERNAME` | `config/dev.exs`, `config/test.exs` | `"postgres"` | Postgres username for `Kanban.Repo` and `Xaas.Repo` |
+| `DEV_DB_USERNAME` | `config/dev.exs`, `config/test.exs` | `"postgres"` | Postgres username for `Xaas.LegacyRepo` and `Xaas.Repo` |
 | `DEV_DB_PASSWORD` | `config/dev.exs`, `config/test.exs` | `"postgres"` | Postgres password for both repos |
 | `DEV_DB_HOSTNAME` | `config/dev.exs`, `config/test.exs` | `"localhost"` | Postgres host for both repos |
 | `DEV_DB_PORT` | `config/dev.exs`, `config/test.exs` | `"5432"` | Postgres port for both repos |
 | `DEV_ONETIME_REVOKE_KEY` | `config/dev.exs` | `"dev-only-onetime-revoke-key"` | HMAC key for `Xaas.Accounts.Token.RevokeVerifier`'s `ash_onetime` nonce protection on `:revoke_token`, dev env |
 | `MIX_TEST_PARTITION` | `config/test.exs` | (unset) | Suffix on `kanban_test<N>` database name for CI test partitioning |
-| `INTERNAL_API_TOKEN` | `lib/kanban_web/plugs/require_internal_api_token.ex` | none — unset means fail-closed 503 | Bearer token required on `Authorization: Bearer <token>` for `/api` and `/internal-api`; compared with `Plug.Crypto.secure_compare/2` |
+| `INTERNAL_API_TOKEN` | `lib/xaas_web/plugs/require_internal_api_token.ex` | none — unset means fail-closed 503 | Bearer token required on `Authorization: Bearer <token>` for `/api` and `/internal-api`; compared with `Plug.Crypto.secure_compare/2` |
 | `CLOAK_KEY` | `lib/xaas/vault.ex` | `"4T4/f5PYK0d489Do8sNU8VNJHKD/1XVOLXyzHUlIkQY="` (dev-only placeholder, publicly committed) | Base64-encoded 32-byte AES-GCM key for `Xaas.Vault` (`Cloak.Vault`), used by `AshCloak` to encrypt `Xaas.Accounts.Token`'s `:extra_data` attribute |
-| `PHX_SERVER` | `config/runtime.exs` | (unset) | If set, forces `KanbanWeb.Endpoint` `server: true` under a release |
-| `USE_AWS_FIXTURE_ADAPTER` | `config/runtime.exs` | `"false"` | If `"true"`, configures `Kanban.AwsRepo` to use `Kanban.AwsRepo.FixtureAdapter` |
-| `DATABASE_URL` | `config/runtime.exs` (`:prod` only) | none — raises if unset | Ecto connection URL for `Kanban.Repo` and `Xaas.Repo` in production |
+| `PHX_SERVER` | `config/runtime.exs` | (unset) | If set, forces `XaasWeb.Endpoint` `server: true` under a release |
+| `USE_AWS_FIXTURE_ADAPTER` | `config/runtime.exs` | `"false"` | If `"true"`, configures `Xaas.AwsRepo` to use `Xaas.AwsRepo.FixtureAdapter` |
+| `DATABASE_URL` | `config/runtime.exs` (`:prod` only) | none — raises if unset | Ecto connection URL for `Xaas.LegacyRepo` and `Xaas.Repo` in production |
 | `ECTO_IPV6` | `config/runtime.exs` (`:prod` only) | (unset) | If `"true"`/`"1"`, adds `:inet6` to repo `socket_options` |
 | `ONETIME_REVOKE_KEY` | `config/runtime.exs` (`:prod` only) | none — raises if unset | Production value of the same HMAC key as `DEV_ONETIME_REVOKE_KEY` |
 | `POOL_SIZE` | `config/runtime.exs` (`:prod` only) | `"10"` | Ecto pool size for both repos in production |
@@ -217,7 +217,7 @@ no auth added (see `lib/kanban_web/router.ex` lines ~81-90).
 
 | Repo module | Config location | Database (dev/test) | Notes |
 |---|---|---|---|
-| `Kanban.Repo` | `config/dev.exs`, `config/test.exs`, `config/runtime.exs` | `kanban_dev` / `kanban_test<partition>` | Original Phoenix/Kanban repo |
+| `Xaas.LegacyRepo` | `config/dev.exs`, `config/test.exs`, `config/runtime.exs` | `kanban_dev` / `kanban_test<partition>` | Original Phoenix/Xaas repo |
 | `Xaas.Repo` | `config/dev.exs`, `config/test.exs`, `config/runtime.exs` | `kanban_dev` / `kanban_test<partition>` (same database, separate `Ecto.Repo`/OTP child) | All 89 ported `Xaas.Resource` modules declare `postgres do repo Xaas.Repo end` directly |
 
 In test, both repos use `pool: Ecto.Adapters.SQL.Sandbox` with `pool_size: 20`.
@@ -230,7 +230,7 @@ In test, both repos use `pool: Ecto.Adapters.SQL.Sandbox` with `pool_size: 20`.
 - `lib/xaas/vault.ex`, `lib/xaas/accounts/token.ex` — real `AshCloak`/`Cloak.Vault` wiring
 - `lib/xaas/governance/types/capability_class.ex`, `lib/xaas/governance/types/interface.ex` —
   the two custom Ash enum types
-- `lib/kanban_web/router.ex`, `lib/kanban_web/api_router.ex`,
-  `lib/kanban_web/internal_api_router.ex`, `lib/kanban_web/plugs/require_internal_api_token.ex` —
+- `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
+  `lib/xaas_web/internal_api_router.ex`, `lib/xaas_web/plugs/require_internal_api_token.ex` —
   real router/auth wiring
 - `docs/ASH-MIGRATION-PLAN.md` — the real migration plan this config surface was ported under

@@ -1,6 +1,6 @@
 defmodule Xaas.Platform.RouteFeatureFlags do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -23,7 +23,7 @@ defmodule Xaas.Platform.RouteFeatureFlags do
     # platform-console's own auth model (lib/authz.ts requireRole) --
     # neither route uses a second-approver/maker-checker flow, unlike the
     # Xaas.Governance cluster. Gated at the router level the same way as
-    # the other Platform resources -- KanbanWeb.Plugs.RequireInternalApiToken.
+    # the other Platform resources -- XaasWeb.Plugs.RequireInternalApiToken.
     bypass action(:create) do
       authorize_if always()
     end

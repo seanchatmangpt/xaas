@@ -4,10 +4,10 @@ The "Next Read" case study (`Xaas.Library` domain) depends on two external
 capabilities neither of which exist as real integrations in this environment: a
 school library's Integrated Library System (ILS), and a language model for
 natural-language explanation generation. Both are honestly substituted below,
-following the same pattern as `Kanban.AwsRepo`/`FixtureAdapter`
+following the same pattern as `Xaas.AwsRepo`/`FixtureAdapter`
 (`docs/AWS-CHAPTERS-SUBSTITUTION.md`) — a real `behaviour`, a real runtime
 config-driven adapter switch
-(`Application.fetch_env!(:kanban, __MODULE__) |> Keyword.fetch!(:adapter)`), and
+(`Application.fetch_env!(:xaas, __MODULE__) |> Keyword.fetch!(:adapter)`), and
 exactly one adapter implemented in this pass, disclosed as such rather than
 silently standing in for the real thing.
 

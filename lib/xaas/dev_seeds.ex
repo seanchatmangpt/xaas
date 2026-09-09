@@ -34,7 +34,7 @@ defmodule Xaas.DevSeeds do
        same transaction as the approval itself.
     5. A small set of real `Xaas.Library.Book` rows (looked up by their
        real natural key, `isbn`, before creating) so the Next Read case
-       study's `/next-read` route (`KanbanWeb.NextRead.ReaderLive`) has
+       study's `/next-read` route (`XaasWeb.NextRead.ReaderLive`) has
        non-empty `library_books` to recommend from in dev, instead of the
        empty recommendations grid caused by zero rows in that table.
 
@@ -244,7 +244,7 @@ defmodule Xaas.DevSeeds do
   end
   @doc """
   Real hand-curated `Xaas.Library.Book` fixture rows for the Next Read
-  case study (`/next-read`, `KanbanWeb.NextRead.ReaderLive`) -- looked up
+  case study (`/next-read`, `XaasWeb.NextRead.ReaderLive`) -- looked up
   by `isbn` (this resource's real natural key) before creating, so
   re-running `run/0` on a dev database that already has these rows is a
   real no-op read rather than a duplicate-row error.

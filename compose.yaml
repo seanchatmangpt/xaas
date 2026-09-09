@@ -25,7 +25,7 @@ services:
       - postgrespassword
 
   web:
-    image: ${WEB_IMAGE:-ghcr.io/beamops/kanban:latest}
+    image: ${WEB_IMAGE:-ghcr.io/beamops/xaas:latest}
     deploy:
       mode: global
       restart_policy:
