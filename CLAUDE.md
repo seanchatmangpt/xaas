@@ -2,6 +2,30 @@
 
 Real BEAMOps-book-derived Elixir/Phoenix + Ash 3.x platform, with AWS chapters honestly substituted by `colima`+`kind` where documented. Current documentation is organized under `docs/claude/diataxis/`.
 
+## Operating mode (explicit user direction, 2026-09-09)
+
+**This is an exploration/implementation project, not a production system.** The point
+of a work cycle (including the standing hourly Vision 2030 ERRC/FMEA/RCA swarm cycles
+under `docs/vision/`) is throughput through real implementation — generating and
+landing real code across many iterations — not gating every cycle behind a full green
+`mix test` run. Concretely, this changes default behavior from the general Claude Code
+verification discipline as follows, for this repo specifically:
+
+- Don't block launching the next swarm/cycle on the previous one's tests passing.
+  Report status honestly (compiled clean? tests ran? what failed?) but let work keep
+  moving rather than treating a red suite as a hard stop.
+- A cycle that lands real, disclosed, partially-verified work is a legitimate outcome —
+  say plainly what's verified vs. still open (per the no-overclaiming discipline
+  below), don't hold the commit hostage to full verification.
+- Still apply real engineering judgment: don't skip verification because it's
+  inconvenient, skip *gating on* verification because this repo's purpose is
+  iteration speed. Real compile/test commands should still be run and their real
+  output reported — the difference is whether a red/incomplete result blocks the next
+  step (it doesn't, here) vs. whether it's honestly disclosed (it always is).
+- This does not relax the Ash policy floor, API auth, or Chicago-style-testing
+  sections below — those are about what the code *is*, not about whether every cycle
+  waits for a clean test run before moving on.
+
 ## Read first
 
 - `docs/claude/diataxis/README.md` — canonical documentation map and authority rules.
