@@ -189,7 +189,7 @@ defmodule Xaas.Library.Book do
       argument :past_titles, {:array, :string}, default: []
       argument :factor_summary, :string, allow_nil?: false
 
-      run prompt("groq:llama-3.3-70b-versatile",
+      run prompt("groq:openai/gpt-oss-120b",
         prompt: {
           """
           You are a school librarian writing a one-sentence, student-facing

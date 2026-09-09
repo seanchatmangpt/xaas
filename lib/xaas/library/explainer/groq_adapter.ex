@@ -21,7 +21,7 @@ defmodule Xaas.Library.Explainer.GroqAdapter do
 
   alias Xaas.Library.Book
 
-  @model "groq:llama-3.3-70b-versatile"
+  @model "groq:openai/gpt-oss-120b"
 
   @doc """
   Calls the real Groq-backed generic action. Returns `{:ok, why :: String.t()}`

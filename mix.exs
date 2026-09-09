@@ -177,7 +177,18 @@ defmodule Xaas.MixProject do
       {:prom_ex, "~> 1.9.0"},
       {:ex_aws, "~> 2.1"},
       {:sweet_xml, "~> 0.6"},
-      {:req, "~> 0.5.7"},
+      # Was pinned to "~> 0.5.7" -- req_llm 1.20.0's default_attach/finch_option
+      # (deps/req_llm/lib/req_llm/provider/defaults.ex) always merges `finch:
+      # [name: ...]` (a keyword list) into the Req request. Req 0.5.x's
+      # Req.Finch.finch_name/1 (deps/req/lib/req/finch.ex) only ever accepted
+      # `:finch` as a bare atom pool name, so it fed the raw keyword list
+      # straight into Registry.lookup/2 as the registry name, crashing every
+      # real ash_ai `prompt/2` call with `FunctionClauseError` in
+      # `Registry.lookup/2`. Req 0.7.x added first-class support for `finch:
+      # [name: ..., ...]` (see `finch_name_options/1`), which is the contract
+      # req_llm 1.20.0+ actually relies on -- widen the constraint so
+      # `mix deps.get` can resolve the fixed Req instead of staying on 0.5.17.
+      {:req, "~> 0.5"},
       # Real Stripe Elixir SDK -- webhook receiver's real
       # Stripe.Webhook.construct_event/3 signature verification (see
       # XaasWeb.StripeWebhookController).
