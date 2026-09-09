@@ -116,51 +116,51 @@ defmodule Xaas.Actuation.Reactor do
   use Reactor, extensions: [Ash.Reactor]
 
   middlewares do
-    middleware Xaas.Actuation.Middleware.AuditLogger
-    middleware Reactor.Middleware.Telemetry
+    middleware(Xaas.Actuation.Middleware.AuditLogger)
+    middleware(Reactor.Middleware.Telemetry)
   end
 
-  input :resource
-  input :action
-  input :input
-  input :subject_id
-  input :actor
-  input :tenant
-  input :authorize?
-  input :authority
-  input :idempotency_key
+  input(:resource)
+  input(:action)
+  input(:input)
+  input(:subject_id)
+  input(:actor)
+  input(:tenant)
+  input(:authorize?)
+  input(:authority)
+  input(:idempotency_key)
 
   ash_step :admit do
-    async? false
-    argument :resource, input(:resource)
-    argument :action, input(:action)
-    argument :input, input(:input)
-    argument :subject_id, input(:subject_id)
-    argument :actor, input(:actor)
-    argument :tenant, input(:tenant)
-    argument :authorize?, input(:authorize?)
-    argument :authority, input(:authority)
-    argument :idempotency_key, input(:idempotency_key)
-    run &Xaas.Actuation.Kernel.admit/2
+    async?(false)
+    argument(:resource, input(:resource))
+    argument(:action, input(:action))
+    argument(:input, input(:input))
+    argument(:subject_id, input(:subject_id))
+    argument(:actor, input(:actor))
+    argument(:tenant, input(:tenant))
+    argument(:authorize?, input(:authorize?))
+    argument(:authority, input(:authority))
+    argument(:idempotency_key, input(:idempotency_key))
+    run(&Xaas.Actuation.Kernel.admit/2)
   end
 
   ash_step :do do
-    async? false
-    argument :admission, result(:admit)
-    argument :actor, input(:actor)
-    argument :tenant, input(:tenant)
-    argument :authorize?, input(:authorize?)
-    run &Xaas.Actuation.Kernel.actuate/2
+    async?(false)
+    argument(:admission, result(:admit))
+    argument(:actor, input(:actor))
+    argument(:tenant, input(:tenant))
+    argument(:authorize?, input(:authorize?))
+    run(&Xaas.Actuation.Kernel.actuate/2)
   end
 
   ash_step :receipt do
-    async? false
-    argument :admission, result(:admit)
-    argument :execution, result(:do)
-    run &Xaas.Actuation.Kernel.seal/2
+    async?(false)
+    argument(:admission, result(:admit))
+    argument(:execution, result(:do))
+    run(&Xaas.Actuation.Kernel.seal/2)
   end
 
-  return :receipt
+  return(:receipt)
 end
 
 defmodule Xaas.Actuation.Kernel do
@@ -184,15 +184,45 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   def actuate(%{admission: %{replay?: true} = admission}, _context) do
-    {:ok, {:replayed, admission.receipt.result}}
+    # `admission.receipt.result` is `json_safe/1`'s frozen serialization of
+    # the original struct (string keys, `:value` inspected to a string via
+    # `json_safe/1` below) -- a snapshot for the receipt/audit trail, not a
+    # rehydratable Ash struct. A caller doing `result.some_field` on it (as
+    # reader_live.ex's checkout_book handler does with `checkout.book_id`)
+    # gets a real KeyError on replay. Re-fetch the live resource by the
+    # admission's own resource module + subject_id instead -- the same
+    # record the original actuation produced, current as of this replay.
+    # For a :create action (e.g. Checkout.borrow), `admission.subject_id`
+    # is nil -- there was no existing subject to key on -- but the frozen
+    # snapshot's own `"id"` key (set by `json_safe/1` below, from the
+    # originally-created record's real id) still identifies the record
+    # that create produced, so it's the fallback subject id here.
+    resolved_subject_id = admission.subject_id || Map.get(admission.receipt.result, "id")
+
+    result =
+      case resolved_subject_id do
+        nil ->
+          admission.receipt.result
+
+        subject_id ->
+          case admission.resource |> Ash.get(subject_id, authorize?: false) do
+            {:ok, record} -> record
+            {:error, _} -> admission.receipt.result
+          end
+      end
+
+    {:ok, {:replayed, result}}
   end
 
-  def actuate(%{
-        admission: admission,
-        actor: actor,
-        tenant: tenant,
-        authorize?: authorize?
-      }, _context) do
+  def actuate(
+        %{
+          admission: admission,
+          actor: actor,
+          tenant: tenant,
+          authorize?: authorize?
+        },
+        _context
+      ) do
     context = %{
       xaas_actuation: %{
         intent_id: to_string(admission.intent.id),
@@ -367,8 +397,8 @@ defmodule Xaas.Actuation.Kernel do
   defp replay_or_refuse(intent, args, projection_hash, input_hash) do
     cond do
       intent.resource_module != inspect(args.resource) or
-          intent.action != Atom.to_string(args.action) or
-          intent.subject_id != stringify(args.subject_id) or intent.input_hash != input_hash or
+        intent.action != Atom.to_string(args.action) or
+        intent.subject_id != stringify(args.subject_id) or intent.input_hash != input_hash or
           intent.ontology_projection_hash != projection_hash ->
         {:error, {:idempotency_conflict, args.idempotency_key}}
 
@@ -415,7 +445,13 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   defp execute_action(resource, action, subject_id, input, actor, tenant, authorize?, context) do
-    common = [action: action, authorize?: authorize?, actor: actor, tenant: tenant, context: context]
+    common = [
+      action: action,
+      authorize?: authorize?,
+      actor: actor,
+      tenant: tenant,
+      context: context
+    ]
 
     case Ash.Resource.Info.action(resource, action) do
       %Ash.Resource.Actions.Create{} ->
@@ -507,7 +543,10 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   defp json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
-  defp json_safe(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
+  defp json_safe(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
   defp json_safe(atom) when is_atom(atom), do: Atom.to_string(atom)
 
   defp json_safe(value)

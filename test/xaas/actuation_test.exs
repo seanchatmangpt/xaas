@@ -9,6 +9,8 @@ defmodule Xaas.ActuationTest do
 
   use ExUnit.Case, async: true
 
+  alias Xaas.Accounts.User
+  alias Xaas.Library.{Book, Checkout}
   alias Xaas.Marketplace.Provider
   alias Xaas.Operations.ActuationReceipt
   alias Xaas.Semantics.Registry
@@ -91,6 +93,64 @@ defmodule Xaas.ActuationTest do
     assert replay.replay?
     assert replay.receipt.id == first.receipt.id
     assert length(Ash.read!(ActuationReceipt, authorize?: false)) == length(receipts_before)
+  end
+
+  test "replaying a :create action returns a real, dot-accessible resource, not a frozen JSON snapshot" do
+    # Regression coverage for a real bug: `admission.subject_id` is nil for
+    # a :create action (Checkout.borrow -- there's no existing subject to
+    # key on), so the replay path previously handed back
+    # `admission.receipt.result` verbatim -- `json_safe/1`'s frozen,
+    # string-keyed serialization snapshot, not the live Checkout struct.
+    # A caller doing `checkout.book_id` (as
+    # XaasWeb.NextRead.ReaderLive.handle_event("checkout_book", ...) does)
+    # got a real KeyError on the second (replayed) request -- caught via a
+    # real dev-server Playwright run, not by inspection.
+    book =
+      Book
+      |> Ash.Changeset.for_create(:create, %{
+        title: "Replay Regression Fixture",
+        author: "Test Author",
+        isbn: "ISBN-REPLAY-#{System.unique_integer([:positive])}",
+        grade_level: 6,
+        genres: ["Fiction"],
+        synopsis: "Fixture book for actuation replay regression coverage.",
+        available_copies: 2,
+        total_copies: 2
+      })
+      |> Ash.create!(authorize?: false)
+
+    user = Ash.Seed.seed!(User, %{email: "replay-fixture@school.district.edu"})
+    key = "test-checkout-replay-#{System.unique_integer([:positive])}"
+    params = %{book_id: book.id, user_id: user.id, school_id: "willow-creek"}
+
+    assert {:ok, first} =
+             Xaas.Actuation.run(Checkout, :borrow, params,
+               idempotency_key: key,
+               actor: user,
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "actuation_test"}
+             )
+
+    refute first.replay?
+    assert %Checkout{} = first.result
+    assert first.result.book_id == book.id
+
+    assert {:ok, replay} =
+             Xaas.Actuation.run(Checkout, :borrow, params,
+               idempotency_key: key,
+               actor: user,
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "actuation_test"}
+             )
+
+    assert replay.replay?
+    # The real assertion: a live struct with a real, dot-accessible
+    # :book_id, not the frozen %{"id" => ..., "value" => "#Checkout<...>"}
+    # snapshot -- exactly what reader_live.ex's checkout_book handler
+    # reads to look up the checked-out book.
+    assert %Checkout{} = replay.result
+    assert replay.result.book_id == book.id
+    assert replay.result.id == first.result.id
   end
 
   test "idempotency key reuse with a different consequence is refused" do
