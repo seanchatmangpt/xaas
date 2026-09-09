@@ -11,7 +11,12 @@ defmodule Xaas.Telemetry.OcelForwarder do
   `Ex4pm.OCEL.validate_envelope/1`.
 
   This module does not reimplement OCEL validation, DFG discovery, or
-  conformance checking -- ex4pm_engine's `Ex4pm.Domain.Projector` (invoked
+  conformance checking -- it calls ex4pm_core's real
+  `Ex4pm.OCEL.validate_envelope/1` directly (a real path dep, see mix.exs)
+  on the envelope it builds, before POSTing, so a drift between this
+  envelope shape and what ex4pm_web's real ingest endpoint requires is
+  refused here rather than discovered later as a silent non-2xx response.
+  ex4pm_engine's `Ex4pm.Domain.Projector` (invoked
   by the controller's broadcaster) and beam4pm's rf1/rf2 oracles are the
   real downstream consumers of forwarded events, once ex4pm_web has
   ingested them. xaas's only job here is to produce a correctly-shaped
@@ -82,6 +87,34 @@ defmodule Xaas.Telemetry.OcelForwarder do
       "events" => [event]
     }
 
+    # Real validation, not just hand-documentation: call ex4pm_core's actual
+    # Ex4pm.OCEL.validate_envelope/1 (path dep, see mix.exs) before POSTing,
+    # so a drift between this envelope shape and what ex4pm_web's real
+    # ingest endpoint requires is caught here instead of discovered as a
+    # silent non-2xx response.
+    case Ex4pm.OCEL.validate_envelope(envelope) do
+      {:ok, _validated} ->
+        post_envelope(url, envelope)
+
+      {:error, reason} ->
+        Logger.warning(
+          "Xaas.Telemetry.OcelForwarder: refusing to forward OCEL event to #{url}, " <>
+            "envelope failed Ex4pm.OCEL.validate_envelope/1: #{inspect(reason)}"
+        )
+
+        {:error, reason}
+    end
+  rescue
+    error ->
+      Logger.warning(
+        "Xaas.Telemetry.OcelForwarder: unexpected error forwarding OCEL event to #{url}: " <>
+          inspect(error)
+      )
+
+      :ok
+  end
+
+  defp post_envelope(url, envelope) do
     case Req.post(url, json: envelope, receive_timeout: receive_timeout_ms()) do
       {:ok, %Req.Response{status: status}} when status in 200..299 ->
         :ok
@@ -102,14 +135,6 @@ defmodule Xaas.Telemetry.OcelForwarder do
 
         :ok
     end
-  rescue
-    error ->
-      Logger.warning(
-        "Xaas.Telemetry.OcelForwarder: unexpected error forwarding OCEL event to #{url}: " <>
-          inspect(error)
-      )
-
-      :ok
   end
 
   # Real, distinct-per-boot run id -- ex4pm's Ingest only uses this for
