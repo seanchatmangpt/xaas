@@ -1,0 +1,93 @@
+;; workflow-cycle.hddl
+;; Observed this session: every `Workflow` script actually written (13+ launches)
+;; took the same real shape regardless of subject matter -- research (parallel
+;; fan-out) -> design/plan (single synthesis agent, schema-constrained) ->
+;; implement (pipeline of independent batches) -> verify (single agent, real
+;; commands, honest disclosure). Naming it once here so future workflow scripts
+;; instantiate this method instead of an LLM re-deriving the same shape in
+;; prose each time.
+
+(define (domain workflow-cycle)
+  (:requirements :hierarchy :typing)
+
+  (:types
+    subject - object      ;; the thing being worked on (a gap, a feature, an integration)
+    finding - object
+    batch - object
+  )
+
+  (:predicates
+    (researched ?s - subject)
+    (finding-of ?f - finding ?s - subject)
+    (planned ?s - subject)
+    (batch-of ?b - batch ?s - subject)
+    (implemented ?b - batch)
+    (all-batches-implemented ?s - subject)
+    (verified ?s - subject)
+  )
+
+  (:task RUN-CYCLE
+    :parameters (?s - subject)
+  )
+
+  (:method m-run-cycle
+    :parameters (?s - subject)
+    :task (RUN-CYCLE ?s)
+    :ordered-subtasks (and
+      (t1 (research-parallel ?s))
+      (t2 (synthesize-plan ?s))
+      (t3 (implement-batches ?s))
+      (t4 (verify-cycle ?s))
+    )
+  )
+
+  ;; ---- research: N independent lenses, run concurrently (parallel(), not
+  ;; pipeline() -- this is the one legitimate barrier per workflow-authoring's
+  ;; own rule: the design stage genuinely needs ALL findings at once) ----
+  (:action research-parallel
+    :parameters (?s - subject)
+    :precondition ()
+    :effect (researched ?s)
+    ;; real: N agent() calls inside parallel(), each a distinct, orthogonal
+    ;; question about ?s -- not N restatements of the same question.
+  )
+
+  (:action synthesize-plan
+    :parameters (?s - subject)
+    :precondition (researched ?s)
+    :effect (planned ?s)
+    ;; real: ONE agent() call with a JSON Schema forcing a typed plan
+    ;; (batches, each with files/steps) -- not free text a later stage has to
+    ;; re-parse.
+  )
+
+  ;; ---- implement: independent batches, pipeline() by default (not
+  ;; parallel()) so a real per-file syntax check can happen per-batch without
+  ;; every batch racing a full mix compile --force on the same _build tree
+  ;; (see mechanical-rename.hddl's t5/t6 and the real build-lock contention
+  ;; this session actually hit) ----
+  (:method m-implement-one-batch
+    :parameters (?b - batch ?s - subject)
+    :task (implement-batches ?s)
+    :precondition (and (planned ?s) (batch-of ?b ?s) (not (implemented ?b)))
+    :subtasks (and (t1 (implement-single-batch ?b)))
+  )
+
+  (:action implement-single-batch
+    :parameters (?b - batch)
+    :precondition ()
+    :effect (implemented ?b)
+    ;; real: real edits + a per-file syntax check (Code.string_to_quoted!),
+    ;; NOT a full `mix compile --force` per batch -- reserved for the single
+    ;; Verify stage per verify-and-commit.hddl.
+  )
+
+  (:action verify-cycle
+    :parameters (?s - subject)
+    :precondition (all-batches-implemented ?s)
+    :effect (verified ?s)
+    ;; real: delegates to (VERIFY-AND-COMMIT repo changeset) from
+    ;; verify-and-commit.hddl -- this domain does not redefine that method,
+    ;; it composes it.
+  )
+)
