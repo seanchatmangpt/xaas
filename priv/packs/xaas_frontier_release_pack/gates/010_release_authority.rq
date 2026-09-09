@@ -1,0 +1,22 @@
+PREFIX xfr: <https://ggen.io/ontology/xaas-frontier-release#>
+
+SELECT ?subject ?reason
+WHERE {
+  {
+    ?subject a xfr:SourceRelease ; xfr:sourceStanding "ALIVE" .
+    BIND("SOURCE_RELEASE_IS_OBSERVATION_NOT_ALIVE_AUTHORITY" AS ?reason)
+  }
+  UNION
+  {
+    ?subject a xfr:LaunchPacket ;
+             xfr:packetKind "earned" ;
+             xfr:packetStanding "ALIVE" .
+    FILTER (
+      NOT EXISTS { ?subject xfr:subjectIdentity ?sid } ||
+      NOT EXISTS { ?subject xfr:verifierIdentity ?vid } ||
+      NOT EXISTS { ?subject xfr:evidenceRef ?eid } ||
+      NOT EXISTS { ?subject xfr:replayRef ?rid }
+    )
+    BIND("EARNED_RELEASE_WITHOUT_EXACT_EVIDENCE" AS ?reason)
+  }
+}
