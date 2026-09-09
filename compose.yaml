@@ -1,7 +1,13 @@
 version: "3.9"
 services:
   db:
-    image: postgres:15.2
+    # Real fix (this session's ERRC pass): plain postgres:15.2 has no pgvector
+    # extension compiled in -- `CREATE EXTENSION vector` fails with
+    # "extension \"vector\" is not available", blocking every migration/test
+    # run tree-wide once a pgvector migration exists. pgvector/pgvector ships
+    # the real extension pre-built on top of the same upstream Postgres 15
+    # base image (same real Postgres server, same version, extension added).
+    image: pgvector/pgvector:pg15
     deploy:
       restart_policy:
         condition: on-failure
