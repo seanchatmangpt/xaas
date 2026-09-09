@@ -4,7 +4,7 @@ defmodule Xaas.Library.Book do
   Represents library items with ISBN, grade-level reading fit, genres, formats, and availability.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -17,7 +17,7 @@ defmodule Xaas.Library.Book do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "library:books"
     broadcast_type :notification
 

@@ -17,8 +17,8 @@
 # General application configuration
 import Config
 
-config :kanban,
-  ecto_repos: [Kanban.Repo, Xaas.Repo],
+config :xaas,
+  ecto_repos: [Xaas.LegacyRepo, Xaas.Repo],
   ash_domains: [
     Xaas.Library,
     Xaas.Accounts,
@@ -46,7 +46,7 @@ config :ash, :tracer, [OpentelemetryAsh]
 
 config :ash_oban, pro?: false
 
-config :kanban, Oban,
+config :xaas, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
   queues: [default: 10],
@@ -60,7 +60,7 @@ config :ash_json_api,
   authorize_update_destroy_with_error?: true
 
 config :ash_typescript,
-  otp_app: :kanban,
+  otp_app: :xaas,
   output_file: "assets/js/ash_rpc.ts",
   output_field_formatter: :camel_case,
   input_field_formatter: :camel_case
@@ -107,22 +107,22 @@ config :ash,
   ]
 
 # Configures the endpoint
-config :kanban, KanbanWeb.Endpoint,
+config :xaas, XaasWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
-    formats: [html: KanbanWeb.ErrorHTML, json: KanbanWeb.ErrorJSON],
+    formats: [html: XaasWeb.ErrorHTML, json: XaasWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Kanban.PubSub,
+  pubsub_server: Xaas.PubSub,
   live_view: [signing_salt: "27Dz+bCC"]
 
-config :kanban, Kanban.PromEx,
+config :xaas, Xaas.PromEx,
   grafana: [
     host: "http://grafana:3000",
     upload_dashboards_on_start: true
   ]
 
-config :kanban, Kanban.AwsRepo, adapter: Kanban.AwsRepo.FixtureAdapter
+config :xaas, Xaas.AwsRepo, adapter: Xaas.AwsRepo.FixtureAdapter
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
@@ -138,7 +138,7 @@ config :ex_aws,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :kanban, Kanban.Mailer, adapter: Swoosh.Adapters.Local
+config :xaas, Xaas.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,

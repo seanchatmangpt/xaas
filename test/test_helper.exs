@@ -6,12 +6,12 @@
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
-# Real, fixed test-only token for KanbanWeb.Plugs.RequireInternalApiToken --
+# Real, fixed test-only token for XaasWeb.Plugs.RequireInternalApiToken --
 # not a production secret (test env only), needed so real ConnCase tests
 # against /internal-api and /api can authenticate for real rather than
 # disabling the real gate for tests.
 System.put_env("INTERNAL_API_TOKEN", "test-only-internal-api-token")
-# Real, fixed test-only secret for KanbanWeb.StripeWebhookController's
+# Real, fixed test-only secret for XaasWeb.StripeWebhookController's
 # Stripe.Webhook.construct_event/3 signature verification -- not a
 # production secret (test env only).
 System.put_env("STRIPE_WEBHOOK_SECRET", "whsec_test_only_secret")
@@ -23,14 +23,14 @@ ExUnit.start()
 # default too -- they need a real `kubectl port-forward` to kind-xaas
 # already running; run explicitly with `mix test --include kind`.
 ExUnit.configure(exclude: [:stress, :kind, :requires_cnv_deploy])
-Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the
 # sandbox (Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo) in test setup).
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, :manual)
 
 # Ensure Phoenix.PubSub is running for Ash PubSub notifiers
-unless Process.whereis(Kanban.PubSub) do
-  {:ok, _} = Phoenix.PubSub.Supervisor.start_link(name: Kanban.PubSub)
+unless Process.whereis(Xaas.PubSub) do
+  {:ok, _} = Phoenix.PubSub.Supervisor.start_link(name: Xaas.PubSub)
 end
 

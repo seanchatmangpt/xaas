@@ -48,15 +48,15 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
      the real "OCEL v2 + OpenTelemetry, enriched via Ash introspection"
      integration point.
 
-  Attached once from `Xaas.Application`/`Kanban.Application` via
+  Attached once from `Xaas.Application`/`Xaas.Application` via
   `attach!/0`, for every real domain configured in
-  `config :kanban, :ash_domains`.
+  `config :xaas, :ash_domains`.
   """
 
   require Logger
   require OpenTelemetry.Tracer
 
-  @log_path Path.join([:code.priv_dir(:kanban), "ocel", "ash-actions.ndjson"])
+  @log_path Path.join([:code.priv_dir(:xaas), "ocel", "ash-actions.ndjson"])
   @action_types [:create, :read, :update, :destroy, :action]
 
   @doc """
@@ -81,7 +81,7 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
   def attach! do
     File.mkdir_p!(Path.dirname(@log_path))
 
-    domains = Application.get_env(:kanban, :ash_domains, [])
+    domains = Application.get_env(:xaas, :ash_domains, [])
 
     handler_ids =
       for domain <- domains,

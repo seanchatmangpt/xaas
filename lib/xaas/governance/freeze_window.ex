@@ -39,7 +39,7 @@ defmodule Xaas.Governance.FreezeWindow do
   type checks against create/update-shaped actions).
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

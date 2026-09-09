@@ -9,7 +9,7 @@ defmodule Xaas.Accounts.Checks.ActorOrgSelfFilter do
   pattern) rather than a `SimpleCheck` comparing `changeset.data`
 
   Real-found this pass: `PATCH /api/orgs/:id` real-`404`'d even after
-  fixing `KanbanWeb.Plugs.ResolveOrgActor` to resolve a real, header-
+  fixing `XaasWeb.Plugs.ResolveOrgActor` to resolve a real, header-
   asserted `%{org_id: slug}` actor for this route. Root cause: `AshJsonApi`'s
   `PATCH` controller loads the target record via `Org`'s own `:read`
   policy before running `:update` -- that policy was, before this pass,

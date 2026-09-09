@@ -6,7 +6,7 @@ defmodule Xaas.Library.NextReadTest do
   Executes against real Postgres database via Sandbox, uses Faker for realistic inputs,
   tests state transitions, ranking scores, and PubSub broadcasts. Zero test doubles/mocks.
   """
-  use Kanban.DataCase, async: false
+  use Xaas.DataCase, async: false
 
   alias Xaas.Accounts.User
   alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, Ranker}

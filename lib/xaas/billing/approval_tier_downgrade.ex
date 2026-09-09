@@ -6,7 +6,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   established pattern in `Xaas.Billing.ApprovalPricingOverride` /
   `Xaas.Governance.ApprovalFreezeOverride`: `:create` is unauthenticated
   at the Ash-policy layer (real access control is the router-level
-  `KanbanWeb.Plugs.RequireInternalApiToken` Bearer check ahead of every
+  `XaasWeb.Plugs.RequireInternalApiToken` Bearer check ahead of every
   `/api` route), and `:approve` additionally runs
   `Xaas.Billing.Validations.ApprovalTierDowngradeRequiresApprover` -- `approved_by` must
   be present and must differ from `requested_by` (a second, distinct
@@ -46,7 +46,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   unlike its 4 Governance cousins (`ApprovalDrFailover` et al.), this
   resource's `:create`/`:approve` bypass was a bare `authorize_if
   always()` -- no `ActorOrgMatches`-style check -- and
-  `KanbanWeb.Plugs.ResolveOrgActor`'s hardcoded tenant-scoped path list
+  `XaasWeb.Plugs.ResolveOrgActor`'s hardcoded tenant-scoped path list
   didn't even cover `approval_tier_downgrade`. A real, temporary
   (deleted-after-run) HTTP test proved live exploitability: an actor
   asserting `X-Org-Id: org-attacker-*` could `PATCH .../:id` approve
@@ -68,7 +68,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   `X-Org-Id` header) instead of `nil`.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -82,7 +82,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
 
     # Real, explicit per-action carve-out: `:create`/`:approve` are gated
     # the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # `:approve`'s own real validation
     # (`ApprovalTierDowngradeRequiresApprover`) rejecting a missing or
     # self-approving `approved_by`. Deliberate per-action carve-out, not

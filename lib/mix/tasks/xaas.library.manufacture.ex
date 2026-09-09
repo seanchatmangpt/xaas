@@ -165,7 +165,7 @@ defmodule Xaas.Library do
   grounded in Schema.org, BIBO, and PROV ontologies.
   \"\"\"
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
 
   admin do
@@ -196,7 +196,7 @@ end
           stub_content = """
 defmodule #{target.target_module} do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
@@ -297,7 +297,7 @@ defmodule Xaas.Library.Book do
   Represents library items with ISBN, grade-level reading fit, genres, formats, and availability.
   \"\"\"
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -310,7 +310,7 @@ defmodule Xaas.Library.Book do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "library:books"
     broadcast_type :notification
 
@@ -510,7 +510,7 @@ defmodule Xaas.Library.Checkout do
   Tracks circulation transactions of books borrowed by readers.
   \"\"\"
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -523,7 +523,7 @@ defmodule Xaas.Library.Checkout do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "circulation"
     broadcast_type :notification
 
@@ -650,7 +650,7 @@ defmodule Xaas.Library.HoldRequest do
   Ash resource for Hold Requests on library books, grounded in Schema.org (schema:ReserveAction) and PROV (prov:Activity).
   \"\"\"
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -663,7 +663,7 @@ defmodule Xaas.Library.HoldRequest do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "holds"
     broadcast_type :notification
 
@@ -767,7 +767,7 @@ defmodule Xaas.Library.Curation do
   Staff spotlight that boosts recommendation scores for specific grade bands or individual students.
   \"\"\"
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -780,7 +780,7 @@ defmodule Xaas.Library.Curation do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "recommendations"
     broadcast_type :notification
 
@@ -894,7 +894,7 @@ defmodule Xaas.Library.RecommendationLog do
   Ash resource for Recommendation Logs, storing candidate pool, factor weights, and produced recommendations.
   \"\"\"
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

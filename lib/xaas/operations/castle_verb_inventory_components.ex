@@ -1,6 +1,6 @@
 defmodule Xaas.Operations.CastleVerbInventoryComponents do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

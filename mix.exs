@@ -8,12 +8,12 @@
 # ---
 # in mix.exs
 
-defmodule Kanban.MixProject do
+defmodule Xaas.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :kanban,
+      app: :xaas,
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -33,7 +33,7 @@ defmodule Kanban.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Kanban.Application, []},
+      mod: {Xaas.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -61,7 +61,7 @@ defmodule Kanban.MixProject do
       {:opentelemetry_ash, "~> 0.1"},
       # Re-added 2026-09-08: ash_ai 1.0.3 for the Ash MCP server
       # (mix ash_ai.gen.mcp). Verified via a real `mix deps.get` +
-      # `mix compile --force` -- full kanban app + all deps compiled clean
+      # `mix compile --force` -- full xaas app + all deps compiled clean
       # (302 files, exit 0). The 0.8.2-era finch/req_llm conflict noted
       # historically here no longer reproduces against the resolved
       # finch 0.23.0 / req_llm 1.20.0.
@@ -69,7 +69,7 @@ defmodule Kanban.MixProject do
       # Real A2A (Agent-to-Agent, google.github.io/A2A) server, for MCP
       # agents to simulate different Next Read users (student/librarian
       # personas) as real A2A clients hitting the same actor/tenant-
-      # resolved path as any other caller -- see lib/kanban_web/a2a/
+      # resolved path as any other caller -- see lib/xaas_web/a2a/
       # and the /a2a router scope.
       {:a2a, "~> 0.2"},
       {:bandit, "~> 1.5"},
@@ -109,7 +109,7 @@ defmodule Kanban.MixProject do
       {:ash_authentication, "~> 4.0"},
       {:picosat_elixir, "~> 0.2"},
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
-      # assertions in KanbanWeb.AutofdeLab.StatusLiveTest need it).
+      # assertions in XaasWeb.AutofdeLab.StatusLiveTest need it).
       {:lazy_html, ">= 0.1.0", only: :test},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:igniter, "~> 0.6", only: [:dev, :test]},
@@ -171,7 +171,7 @@ defmodule Kanban.MixProject do
       {:req, "~> 0.5.7"},
       # Real Stripe Elixir SDK -- webhook receiver's real
       # Stripe.Webhook.construct_event/3 signature verification (see
-      # KanbanWeb.StripeWebhookController).
+      # XaasWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
       {:ggen_igniter, "~> 26.9.8", only: [:dev, :test]},
       {:faker, "~> 0.18", only: [:dev, :test]}

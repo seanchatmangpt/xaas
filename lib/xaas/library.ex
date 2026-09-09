@@ -4,7 +4,7 @@ defmodule Xaas.Library do
   grounded in Schema.org, BIBO, and PROV ontologies.
   """
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshAi]
 
   admin do

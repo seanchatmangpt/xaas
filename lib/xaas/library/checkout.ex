@@ -4,7 +4,7 @@ defmodule Xaas.Library.Checkout do
   Tracks circulation transactions of books borrowed by readers.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -17,7 +17,7 @@ defmodule Xaas.Library.Checkout do
   end
 
   pub_sub do
-    module KanbanWeb.Endpoint
+    module XaasWeb.Endpoint
     prefix "circulation"
     broadcast_type :notification
 

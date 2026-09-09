@@ -39,7 +39,7 @@ defmodule Xaas.Library.Config do
   @spec weights(keyword() | map()) :: map()
   def weights(opts \\ []) do
     configured =
-      Application.get_env(:kanban, :library_ranker_weights, @default_weights)
+      Application.get_env(:xaas, :library_ranker_weights, @default_weights)
 
     case opts do
       %{} = override_map -> Map.merge(configured, override_map)
@@ -57,7 +57,7 @@ defmodule Xaas.Library.Config do
   """
   @spec grade_fit_thresholds() :: list({float(), float()})
   def grade_fit_thresholds do
-    Application.get_env(:kanban, :library_grade_fit_thresholds, @default_grade_fit_thresholds)
+    Application.get_env(:xaas, :library_grade_fit_thresholds, @default_grade_fit_thresholds)
   end
 
   @doc """
@@ -65,7 +65,7 @@ defmodule Xaas.Library.Config do
   """
   @spec grade_fit_fallback() :: float()
   def grade_fit_fallback do
-    Application.get_env(:kanban, :library_grade_fit_fallback, @default_grade_fit_fallback)
+    Application.get_env(:xaas, :library_grade_fit_fallback, @default_grade_fit_fallback)
   end
 
   @doc """
@@ -73,7 +73,7 @@ defmodule Xaas.Library.Config do
   """
   @spec pubsub_topic(atom()) :: String.t()
   def pubsub_topic(key) when is_atom(key) do
-    topics = Application.get_env(:kanban, :library_pubsub_topics, @default_pubsub_topics)
+    topics = Application.get_env(:xaas, :library_pubsub_topics, @default_pubsub_topics)
     Map.get(topics, key, "library:#{key}")
   end
 
@@ -82,7 +82,7 @@ defmodule Xaas.Library.Config do
   """
   @spec default_school_id() :: String.t()
   def default_school_id do
-    Application.get_env(:kanban, :library_default_school_id, "willow-creek")
+    Application.get_env(:xaas, :library_default_school_id, "willow-creek")
   end
 
   @doc """
@@ -90,7 +90,7 @@ defmodule Xaas.Library.Config do
   """
   @spec default_grade() :: integer()
   def default_grade do
-    Application.get_env(:kanban, :library_default_grade, 6)
+    Application.get_env(:xaas, :library_default_grade, 6)
   end
 
   @doc """
@@ -98,6 +98,6 @@ defmodule Xaas.Library.Config do
   """
   @spec grade_range() :: Range.t()
   def grade_range do
-    Application.get_env(:kanban, :library_grade_range, 1..12)
+    Application.get_env(:xaas, :library_grade_range, 1..12)
   end
 end

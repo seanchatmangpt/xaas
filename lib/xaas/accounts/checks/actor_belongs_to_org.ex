@@ -38,7 +38,7 @@ defmodule Xaas.Accounts.Checks.ActorBelongsToOrg do
   no intermediate `:read`-policy-gated re-fetch, so no `ForbiddenField`
   taint) -- NOT yet via a real `/api` HTTP request, since this repo has
   no real per-user (`%{id: ...}`-shaped) actor-producing plug for any
-  route today (see `KanbanWeb.Plugs.ResolveOrgActor`'s own moduledoc).
+  route today (see `XaasWeb.Plugs.ResolveOrgActor`'s own moduledoc).
   Real, disclosed, unchanged limitation, not newly introduced this pass.
 
   ## Real, disclosed scope limit

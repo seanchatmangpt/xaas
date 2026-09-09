@@ -73,7 +73,7 @@ crash.*.log
 crash.log
 deps/
 erl_crash.dump
-kanban-*.tar
+xaas-*.tar
 npm-debug.log
 override.tf
 override.tf.json

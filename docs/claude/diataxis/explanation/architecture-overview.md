@@ -38,37 +38,37 @@ process-intelligence pipeline in `wasm4pm-process-intelligence-research.md`).
 
 ## Routing: 3-tier `/internal-api`, plus `/api` and `/webhooks`
 
-All real, from `lib/kanban_web/router.ex:31-99`. Every non-public route is gated by
-`KanbanWeb.Plugs.RequireInternalApiToken` — a real Bearer token check against
+All real, from `lib/xaas_web/router.ex:31-99`. Every non-public route is gated by
+`XaasWeb.Plugs.RequireInternalApiToken` — a real Bearer token check against
 `INTERNAL_API_TOKEN`, fails closed (503) if the env var is unset (`router.ex:26-28`).
 
 1. **Public** (`router.ex:31-46`): `GET /` (browser pipeline) and `POST /webhooks/stripe`
    (inbound Stripe receiver, deliberately *not* behind the internal-api token — Stripe is the
    caller and cannot supply it; authenticity is Stripe-signature verification inside
-   `KanbanWeb.StripeWebhookController` itself).
+   `XaasWeb.StripeWebhookController` itself).
 2. **Capability-liveness / health routes** (`router.ex:57-64`): four hand-written GET routes
    under `/internal-api` — `capability_liveness_regressions`, `ocel_summary`,
    `prometheus/query`, `health` — registered *before* the catch-all forward below them because
    Phoenix `forward` matches every sub-path under its prefix and would otherwise shadow them
    (a real 404 confirmed this ordering requirement).
 3. **Ontop SPARQL proxy** (`router.ex:73-77`): `forward "/internal-api/sparql"` to
-   `KanbanWeb.OntopProxyPlug`, a real reverse proxy to the Ontop R2RML SPARQL endpoint — see
+   `XaasWeb.OntopProxyPlug`, a real reverse proxy to the Ontop R2RML SPARQL endpoint — see
    `r2rml-ontop-prototype.md`. Also registered before the catch-all for the same shadowing
    reason.
 4. **General internal API** (`router.ex:79-83`): `forward "/internal-api"` to
-   `KanbanWeb.InternalApiRouter` (the generated `AshJsonApi.Router` for internal-facing
+   `XaasWeb.InternalApiRouter` (the generated `AshJsonApi.Router` for internal-facing
    resources), behind `:require_internal_api_token`.
 5. **Customer-facing `/api`** (`router.ex:96-100`): `forward "/api"` to
-   `KanbanWeb.ApiRouter`, behind `:require_internal_api_token` *and*
+   `XaasWeb.ApiRouter`, behind `:require_internal_api_token` *and*
    `:resolve_org_actor` — see below.
 
 Dev-only routes (`LiveDashboard`, `AshAdmin` at `/admin`, the autofde-lab LiveView) are gated
-behind `Application.compile_env(:kanban, :dev_routes)` and never mounted outside dev.
+behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside dev.
 
 ## Cross-cutting mechanisms
 
-- **Actor/tenant resolution** — `KanbanWeb.Plugs.ResolveOrgActor`
-  (`lib/kanban_web/plugs/resolve_org_actor.ex`), mounted only on `/api`. It resolves an
+- **Actor/tenant resolution** — `XaasWeb.Plugs.ResolveOrgActor`
+  (`lib/xaas_web/plugs/resolve_org_actor.ex`), mounted only on `/api`. It resolves an
   `X-Org-Id` header into the Ash actor/tenant, but is real path-aware: it only *enforces*
   resolution for the 4 non-global-multitenancy governance resources
   (`ApprovalDrFailover`/`ApprovalLegalHoldRelease`/`ApprovalDeploymentQuarantine`/
@@ -94,7 +94,7 @@ behind `Application.compile_env(:kanban, :dev_routes)` and never mounted outside
   from AshPaperTrail — this is an explicit application-level audit event log, not a
   resource-attribute version history.
 - **Webhooks, both directions**:
-  - *Inbound*: `POST /webhooks/stripe` → `KanbanWeb.StripeWebhookController` (public, see
+  - *Inbound*: `POST /webhooks/stripe` → `XaasWeb.StripeWebhookController` (public, see
     routing tier 1 above).
   - *Outbound*: `Xaas.Platform.Webhook` + `Xaas.Platform.WebhookDelivery`
     (`lib/xaas/platform/{webhook,webhook_delivery}.ex`), dispatched via
