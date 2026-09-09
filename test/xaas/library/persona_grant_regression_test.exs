@@ -15,9 +15,7 @@ defmodule Xaas.Library.PersonaGrantRegressionTest do
   """
   use Xaas.DataCase, async: true
 
-  alias Xaas.Accounts.User
   alias Xaas.Library.PersonaGrant
-  require Ash.Query
 
   @internal_api_caller_id "internal_api_token"
 
@@ -26,7 +24,7 @@ defmodule Xaas.Library.PersonaGrantRegressionTest do
   end
 
   defp create_user! do
-    Ash.Seed.seed!(User, %{email: Faker.Internet.email()})
+    Xaas.Generator.create_user!()
   end
 
   test "grant!/4 creates a real, readable PersonaGrant row for a real user" do
@@ -38,27 +36,22 @@ defmodule Xaas.Library.PersonaGrantRegressionTest do
     assert grant.user_id == user.id
     assert grant.caller_id == @internal_api_caller_id
 
-    caller_id = @internal_api_caller_id
+    # Real Ash idiom: PersonaGrant.active_for/2 is the resource's own
+    # code_interface (lib/xaas/library/persona_grant.ex:84, action:
+    # :list_active) for exactly this query -- use it instead of hand-
+    # rolling the same Ash.Query.filter/Ash.read_one! it already
+    # encodes, so this test exercises the same public surface a real
+    # caller (e.g. next_read_user_agent.ex's resolve_actor/2) uses.
+    assert {:ok, [reloaded]} =
+             PersonaGrant.active_for(@internal_api_caller_id, user.id, authorize?: false)
 
-    reloaded =
-      PersonaGrant
-      |> Ash.Query.filter(user_id == ^user.id and caller_id == ^caller_id)
-      |> Ash.read_one!(authorize?: false)
-
-    assert reloaded != nil
     assert reloaded.id == grant.id
   end
 
   test "an ungranted user has no matching PersonaGrant row" do
     user = create_user!()
 
-    caller_id = @internal_api_caller_id
-
-    result =
-      PersonaGrant
-      |> Ash.Query.filter(user_id == ^user.id and caller_id == ^caller_id)
-      |> Ash.read_one!(authorize?: false)
-
-    assert result == nil
+    assert {:ok, []} =
+             PersonaGrant.active_for(@internal_api_caller_id, user.id, authorize?: false)
   end
 end
