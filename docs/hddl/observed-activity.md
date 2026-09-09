@@ -19,3 +19,6 @@ correctness — see docs/hddl/README.md for what this loop does and doesn't cont
 - 2026-09-09 09:12 — VERIFY-AND-COMMIT instance, commit 0602348 (real infra fix:
   pgvector extension missing from dev Postgres image, found while verifying a
   concurrent ERRC pass's mix ecto.migrate, fixed and re-verified before commit).
+- 2026-09-09 09:30 — VERIFY-AND-COMMIT instance, commit 063c8dd (real pgvector
+  Postgrex-driver fix + ranker.ex Ash.Vector case-clause fix + 12 test-file
+  fallout repairs; test failure count 82 -> 25, real, measured, not claimed).
