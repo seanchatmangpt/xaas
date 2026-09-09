@@ -5,17 +5,9 @@ defmodule Xaas.Operations.AutofdePlannerCacheStatsTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
-
-    case Req.get("http://127.0.0.1:8080/healthz") do
-      {:ok, %Req.Response{status: 200}} ->
-        :ok
-
-      _ ->
-        {:ok,
-         skip:
-           "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback."}
-    end
+    :ok
   end
+
 
   test "request_cache_stats calls the real cnv-deploy /invoke surface (fabric__cache-stats) and persists the real cache stats response" do
     {:ok, record} =

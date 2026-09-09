@@ -10,29 +10,29 @@ defmodule KanbanWeb.Router do
   use KanbanWeb, :router
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, {KanbanWeb.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, {KanbanWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug(:accepts, ["json"])
   end
 
   # Real fix (adversarial review finding): neither /internal-api nor /api
   # had any auth plug at all -- both real 200'd for any anonymous client.
   pipeline :require_internal_api_token do
-    plug KanbanWeb.Plugs.RequireInternalApiToken
+    plug(KanbanWeb.Plugs.RequireInternalApiToken)
   end
 
   scope "/", KanbanWeb do
-    pipe_through :browser
+    pipe_through(:browser)
 
-    get "/", PageController, :home
-    live "/next-read", NextRead.ReaderLive
+    get("/", PageController, :home)
+    live("/next-read", NextRead.ReaderLive)
   end
 
   # Real public external Stripe webhook receiver -- deliberately NOT
@@ -41,13 +41,13 @@ defmodule KanbanWeb.Router do
   # Stripe-signature verification inside the controller itself. See
   # KanbanWeb.StripeWebhookController's moduledoc.
   scope "/webhooks", KanbanWeb do
-    pipe_through :api
+    pipe_through(:api)
 
-    post "/stripe", StripeWebhookController, :receive
+    post("/stripe", StripeWebhookController, :receive)
   end
 
   pipeline :internal_api do
-    plug :accepts, ["json-api"]
+    plug(:accepts, ["json-api"])
   end
 
   # Real fix: this specific route must be registered BEFORE the catch-all
@@ -56,12 +56,64 @@ defmodule KanbanWeb.Router do
   # it (confirmed via a real 404 from AshJsonApi.Router's own
   # "no_route_found" before this reorder).
   scope "/internal-api", KanbanWeb do
-    pipe_through [:api, :require_internal_api_token]
+    pipe_through([:api, :require_internal_api_token])
 
-    get "/capability_liveness_regressions", CapabilityRegressionsController, :index
-    get "/ocel_summary", OcelSummaryController, :index
-    get "/prometheus/query", PrometheusQueryController, :query
-    get "/health", HealthController, :index
+    get("/capability_liveness_regressions", CapabilityRegressionsController, :index)
+    get("/ocel_summary", OcelSummaryController, :index)
+    get("/prometheus/query", PrometheusQueryController, :query)
+    get("/health", HealthController, :index)
+  end
+
+  # Production MCP server: read-only Library tools (see Xaas.Library's
+  # `tools do` block). Gated behind the same `:require_internal_api_token`
+  # Bearer check as `/api` -- an MCP caller is not a separate trust tier.
+  #
+  # CORRECTED (real finding from this session's adversarial ERRC review,
+  # confirmed by reading `resolve_org_actor.ex` itself): `:resolve_org_actor`
+  # is listed in this pipeline but does NOT actually resolve anything for
+  # `/mcp` traffic. Its `tenant_scoped?/1` only matches when
+  # `conn.path_info` is `["api", <segment in the 14-entry allowlist> | _]`
+  # (`resolve_org_actor.ex:150-232`) -- for `/mcp` requests `path_info` is
+  # `["mcp", ...]`, which matches neither branch, so the plug's `cond`
+  # falls through to `true -> conn` (unchanged, no actor/tenant set). The
+  # real gate on what an MCP caller can read is `Book`/`Curation`'s own
+  # `policy action_type(:read) do authorize_if always() end`
+  # (`book.ex:103-104`, `curation.ex:63-65`) -- i.e. any bearer-token
+  # holder can read all books/curations regardless of org, full stop. Left
+  # in the pipeline (harmless no-op today) rather than removed, since a
+  # future tenant-scoped Library resource would want it; do not read its
+  # presence here as proof tenant scoping is active for these two
+  # resources -- it is not.
+  scope "/mcp" do
+    pipe_through([:api, :require_internal_api_token, :resolve_org_actor])
+
+    forward("/", AshAi.Mcp.Router,
+      tools: [
+        :list_books,
+        :books_by_grade_band,
+        :active_curations_for_grade
+      ],
+      protocol_version_statement: "2024-11-05",
+      otp_app: :kanban
+    )
+  end
+
+  # Real A2A (Agent-to-Agent) server: lets an MCP-speaking LLM drive
+  # multiple simulated Next Read user personas concurrently (see
+  # KanbanWeb.A2A.NextReadUserAgent's moduledoc). Same auth philosophy as
+  # `/mcp` above -- gated behind the real `/api` pipeline, not a separate
+  # silo, though see that agent's moduledoc for the actor-resolution
+  # mechanism actually used inside message handling (an explicit
+  # `as:<user_id>` command prefix, not `X-Org-Id`/`ResolveOrgActor`, since
+  # A2A messages are plain text, not JSON:API requests `ResolveOrgActor`
+  # inspects by path).
+  scope "/a2a" do
+    pipe_through([:api, :require_internal_api_token])
+
+    forward("/", A2A.Plug,
+      agent: KanbanWeb.A2A.NextReadUserAgent,
+      base_url: System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a"
+    )
   end
 
   # Real reverse-proxy for the real Ontop SPARQL endpoint (see
@@ -72,15 +124,15 @@ defmodule KanbanWeb.Router do
   # matches every sub-path under its prefix and would otherwise shadow
   # this route.
   scope "/internal-api" do
-    pipe_through [:api, :require_internal_api_token]
+    pipe_through([:api, :require_internal_api_token])
 
-    forward "/sparql", KanbanWeb.OntopProxyPlug
+    forward("/sparql", KanbanWeb.OntopProxyPlug)
   end
 
   scope "/" do
-    pipe_through [:internal_api, :require_internal_api_token]
+    pipe_through([:internal_api, :require_internal_api_token])
 
-    forward "/internal-api", KanbanWeb.InternalApiRouter
+    forward("/internal-api", KanbanWeb.InternalApiRouter)
   end
 
   # Real per-org actor/tenant resolution (KanbanWeb.Plugs.ResolveOrgActor),
@@ -91,13 +143,13 @@ defmodule KanbanWeb.Router do
   # other /api route passes through unaffected. See that plug's moduledoc
   # for the full, disclosed design decision.
   pipeline :resolve_org_actor do
-    plug KanbanWeb.Plugs.ResolveOrgActor
+    plug(KanbanWeb.Plugs.ResolveOrgActor)
   end
 
   scope "/" do
-    pipe_through [:internal_api, :require_internal_api_token, :resolve_org_actor]
+    pipe_through([:internal_api, :require_internal_api_token, :resolve_org_actor])
 
-    forward "/api", KanbanWeb.ApiRouter
+    forward("/api", KanbanWeb.ApiRouter)
   end
 
   # Other scopes may use custom stacks.
@@ -115,11 +167,11 @@ defmodule KanbanWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      live_dashboard "/dashboard", metrics: KanbanWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-      live "/dashboards/autofde-lab", KanbanWeb.AutofdeLab.StatusLive
+      live_dashboard("/dashboard", metrics: KanbanWeb.Telemetry)
+      forward("/mailbox", Plug.Swoosh.MailboxPreview)
+      live("/dashboards/autofde-lab", KanbanWeb.AutofdeLab.StatusLive)
     end
 
     # ash-admin: real AshAdmin.Router mount, dev-only (guarded by the same
@@ -129,7 +181,7 @@ defmodule KanbanWeb.Router do
     import AshAdmin.Router
 
     scope "/admin" do
-      pipe_through :browser
+      pipe_through(:browser)
 
       ash_admin("/")
     end

@@ -13,7 +13,7 @@
 
 <https://ggen.io/ontology/xaas-library#> a owl:Ontology ;
   rdfs:label "XaaS Library Domain Ontology" ;
-  rdfs:comment "Ontological grounding of Xaas.Library domain, Book, Checkout, and Curation resources in Schema.org and BIBO vocabularies with manufacturing pipeline declarations." .
+  rdfs:comment "Ontological grounding of Xaas.Library domain, Book, Checkout, HoldRequest, Curation, and RecommendationLog resources in Schema.org, BIBO, and PROV vocabularies with manufacturing pipeline declarations." .
 
 # --- Classes grounded in Schema.org / BIBO / PROV ---
 
@@ -25,17 +25,27 @@ xl:LibraryDomain a owl:Class ;
 xl:Book a owl:Class ;
   rdfs:label "Library Book Item" ;
   rdfs:subClassOf bibo:Book, schema:Book ;
-  rdfs:comment "A cataloged library title with bibliographic, grade-band, and semantic attributes." .
+  rdfs:comment "A cataloged library title with bibliographic, reading-level, formats, and semantic attributes." .
 
 xl:Checkout a owl:Class ;
   rdfs:label "Book Checkout Circulation Event" ;
   rdfs:subClassOf schema:BorrowAction, prov:Activity ;
   rdfs:comment "A borrowing transaction associating a student/user with a checked-out book." .
 
+xl:HoldRequest a owl:Class ;
+  rdfs:label "Book Hold Request" ;
+  rdfs:subClassOf schema:ReserveAction, prov:Activity ;
+  rdfs:comment "A queue-based hold reservation on unavailable titles." .
+
 xl:Curation a owl:Class ;
   rdfs:label "Librarian Curation Spotlight" ;
   rdfs:subClassOf schema:Collection, prov:Entity ;
   rdfs:comment "A staff-pinned or curated recommendation entry boosting recommendation visibility." .
+
+xl:RecommendationLog a owl:Class ;
+  rdfs:label "Recommendation Audit Log" ;
+  rdfs:subClassOf schema:Review, prov:Activity ;
+  rdfs:comment "Audit trail storing candidate pool, factor weights, and generated rankings." .
 
 # --- Domain Resource Individuals & Properties ---
 
@@ -52,12 +62,16 @@ xl:Resource_Book a xl:Book ;
   xl:singular "book" ;
   xl:plural "books" ;
   schema:name "Book" ;
-  dct:description "Library book catalog item with reading level, genres, and availability" ;
+  dct:description "Library book catalog item with reading level, formats, and availability" ;
   bibo:isbn "isbn" ;
   schema:author "author" ;
   schema:genre "genres" ;
+  schema:bookFormat "formats" ;
   schema:typicalAgeRange "grade_level" ;
-  schema:itemAvailability "available_copies" .
+  schema:itemAvailability "available_copies" ;
+  xl:totalCopies "total_copies" ;
+  xl:coverColor "cover_color" ;
+  xl:reviewStatus "review_status" .
 
 xl:Resource_Checkout a xl:Checkout ;
   xl:resourceModule "Xaas.Library.Checkout" ;
@@ -71,6 +85,20 @@ xl:Resource_Checkout a xl:Checkout ;
   schema:itemBorrowed "book_id" ;
   schema:startTime "borrowed_at" ;
   schema:endTime "returned_at" ;
+  schema:actionStatus "status" ;
+  xl:renewedCount "renewed_count" .
+
+xl:Resource_HoldRequest a xl:HoldRequest ;
+  xl:resourceModule "Xaas.Library.HoldRequest" ;
+  xl:domainModule "Xaas.Library" ;
+  xl:tableName "library_holds" ;
+  xl:singular "hold_request" ;
+  xl:plural "hold_requests" ;
+  schema:name "HoldRequest" ;
+  dct:description "Circulation reservation queue for checked-out books" ;
+  prov:wasAssociatedWith "user_id" ;
+  schema:itemReserved "book_id" ;
+  xl:queuePosition "position" ;
   schema:actionStatus "status" .
 
 xl:Resource_Curation a xl:Curation ;
@@ -84,8 +112,24 @@ xl:Resource_Curation a xl:Curation ;
   schema:item "book_id" ;
   schema:curator "curated_by" ;
   schema:typicalAgeRange "grade_band" ;
+  xl:studentId "student_id" ;
+  schema:actionStatus "state" ;
   schema:headline "reason" ;
   schema:activeThrough "active" .
+
+xl:Resource_RecommendationLog a xl:RecommendationLog ;
+  xl:resourceModule "Xaas.Library.RecommendationLog" ;
+  xl:domainModule "Xaas.Library" ;
+  xl:tableName "library_recommendation_logs" ;
+  xl:singular "recommendation_log" ;
+  xl:plural "recommendation_logs" ;
+  schema:name "RecommendationLog" ;
+  dct:description "Audit log recording 6-factor weights, candidate pool, and produced recommendation scores" ;
+  prov:wasAssociatedWith "user_id" ;
+  xl:candidatePoolSize "candidate_pool_size" ;
+  xl:weights "weights" ;
+  xl:rankedItems "ranked_items" ;
+  xl:accepted "accepted" .
 
 # --- Codegen Pipeline Individuals (agp:CodegenTarget) ---
 
@@ -116,13 +160,31 @@ agp:LibraryCheckoutGen a agp:CodegenTarget ;
   agp:resourceModule "Checkout" ;
   agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
 
-agp:LibraryCurationGen a agp:CodegenTarget ;
+agp:LibraryHoldRequestGen a agp:CodegenTarget ;
   agp:phase "base" ;
   agp:order 4 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Library.HoldRequest" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "HoldRequest" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:LibraryCurationGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 5 ;
   agp:mixTask "ash.gen.resource" ;
   agp:targetModule "Xaas.Library.Curation" ;
   agp:domainModule "Xaas.Library" ;
   agp:resourceModule "Curation" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:LibraryRecommendationLogGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 6 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Library.RecommendationLog" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "RecommendationLog" ;
   agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
 
 agp:LibraryBookCore a agp:CodegenTarget ;
@@ -143,11 +205,72 @@ agp:LibraryCheckoutCore a agp:CodegenTarget ;
   agp:resourceModule "Checkout" ;
   agp:mixArgs "" .
 
-agp:LibraryCurationCore a agp:CodegenTarget ;
+agp:LibraryHoldRequestCore a agp:CodegenTarget ;
   agp:phase "core" ;
   agp:order 3 ;
+  agp:mixTask "xaas.library.core" ;
+  agp:targetModule "Xaas.Library.HoldRequest" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "HoldRequest" ;
+  agp:mixArgs "" .
+
+agp:LibraryCurationCore a agp:CodegenTarget ;
+  agp:phase "core" ;
+  agp:order 4 ;
   agp:mixTask "xaas.library.core" ;
   agp:targetModule "Xaas.Library.Curation" ;
   agp:domainModule "Xaas.Library" ;
   agp:resourceModule "Curation" ;
   agp:mixArgs "" .
+
+agp:LibraryRecommendationLogCore a agp:CodegenTarget ;
+  agp:phase "core" ;
+  agp:order 5 ;
+  agp:mixTask "xaas.library.core" ;
+  agp:targetModule "Xaas.Library.RecommendationLog" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:resourceModule "RecommendationLog" ;
+  agp:mixArgs "" .
+
+
+# --- 6-Factor Recommendation Engine Ontology Grounding ---
+
+xl:RankingFactor a owl:Class ;
+  rdfs:label "Recommendation Ranking Factor" ;
+  rdfs:comment "A scoring factor contributing to composite next-read recommendation ranking." .
+
+xl:Factor_Collab a xl:RankingFactor ;
+  rdfs:label "Collaborative Filtering Factor" ;
+  schema:identifier "collab" ;
+  xl:weight "0.34"^^xsd:decimal ;
+  dct:description "Checkout history co-occurrence across student cohorts" .
+
+xl:Factor_Semantic a xl:RankingFactor ;
+  rdfs:label "Semantic Embedding Factor" ;
+  schema:identifier "semantic" ;
+  xl:weight "0.26"^^xsd:decimal ;
+  dct:description "Cosine similarity between reading profile and candidate synopsis embeddings" .
+
+xl:Factor_GradeFit a xl:RankingFactor ;
+  rdfs:label "Grade Level Fit Factor" ;
+  schema:identifier "grade_fit" ;
+  xl:weight "0.16"^^xsd:decimal ;
+  dct:description "Stepped decay closeness between book reading level and student grade level" .
+
+xl:Factor_Available a xl:RankingFactor ;
+  rdfs:label "Catalog Availability Factor" ;
+  schema:identifier "available" ;
+  xl:weight "0.10"^^xsd:decimal ;
+  dct:description "Immediate shelf copy availability bonus" .
+
+xl:Factor_Diversity a xl:RankingFactor ;
+  rdfs:label "Genre Diversity Factor" ;
+  schema:identifier "diversity" ;
+  xl:weight "0.06"^^xsd:decimal ;
+  dct:description "Exploration bonus for novel genres not frequently checked out" .
+
+xl:Factor_Curation a xl:RankingFactor ;
+  rdfs:label "Librarian Curation Factor" ;
+  schema:identifier "curation" ;
+  xl:weight "0.09"^^xsd:decimal ;
+  dct:description "Staff-pinned and grade-band spotlight curation boost" .

@@ -1,5 +1,6 @@
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX schema: <https://schema.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xl: <https://ggen.io/ontology/xaas-library#>
 
 SELECT ?checkoutClass WHERE {
@@ -7,3 +8,4 @@ SELECT ?checkoutClass WHERE {
               rdfs:subClassOf schema:BorrowAction, prov:Activity .
   BIND(xl:Checkout AS ?checkoutClass)
 }
+

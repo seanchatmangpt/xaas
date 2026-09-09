@@ -22,9 +22,15 @@ ExUnit.start()
 # Real tests against a live-deployed kind pod (test/e2e/) are excluded by
 # default too -- they need a real `kubectl port-forward` to kind-xaas
 # already running; run explicitly with `mix test --include kind`.
-ExUnit.configure(exclude: [:stress, :kind])
+ExUnit.configure(exclude: [:stress, :kind, :requires_cnv_deploy])
 Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the
 # sandbox (Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo) in test setup).
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, :manual)
+
+# Ensure Phoenix.PubSub is running for Ash PubSub notifiers
+unless Process.whereis(Kanban.PubSub) do
+  {:ok, _} = Phoenix.PubSub.Supervisor.start_link(name: Kanban.PubSub)
+end
+

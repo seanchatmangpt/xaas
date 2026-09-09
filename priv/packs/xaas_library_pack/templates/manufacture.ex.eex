@@ -7,8 +7,8 @@ mode: file
 #   mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack
 defmodule Mix.Tasks.Xaas.Library.Manufacture do
   @moduledoc """
-  Manufactures the Xaas.Library domain, resources (Book, Checkout, Curation),
-  and applies core resource definitions grounded in Schema.org and BIBO ontologies.
+  Manufactures the Xaas.Library domain, resources (Book, Checkout, HoldRequest, Curation, RecommendationLog),
+  and applies pure declarative Ash resource definitions grounded in Schema.org, BIBO, and PROV ontologies.
 
   Usage:
       mix xaas.library.manufacture --phase base --yes
@@ -84,8 +84,8 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
     domain_content = """
 defmodule Xaas.Library do
   @moduledoc \"\"\"
-  Domain module for Library management (Books, Checkouts, Curations)
-  grounded in Schema.org and BIBO ontologies.
+  Domain module for Library management (Books, Checkouts, Holds, Curations, RecommendationLogs)
+  grounded in Schema.org, BIBO, and PROV ontologies.
   \"\"\"
   use Ash.Domain,
     otp_app: :kanban,
@@ -98,7 +98,9 @@ defmodule Xaas.Library do
   resources do
     resource Xaas.Library.Book
     resource Xaas.Library.Checkout
+    resource Xaas.Library.HoldRequest
     resource Xaas.Library.Curation
+    resource Xaas.Library.RecommendationLog
   end
 end
 """
@@ -106,10 +108,8 @@ end
     File.write!(domain_path, domain_content)
     Mix.shell().info("  [ok] Wrote #{domain_path}")
 
-    # Ensure registration in config/config.exs ash_domains
     ensure_domain_configured()
 
-    # 2. Scaffolding base resource stubs
     Enum.each(@base_targets, fn target ->
       if target.resource_module != "" do
         file_name = Macro.underscore(target.resource_module) <> ".ex"
@@ -152,18 +152,16 @@ end
   end
 
   defp run_core_phase(_yes?) do
-    Mix.shell().info("==> Executing Phase 2: Core Resource Realization with Public Ontology Grounding")
+    Mix.shell().info("==> Executing Phase 2: Core Resource Realization with Pure Declarative Ash Model")
 
-    # Realize Book
+    write_decrement_change()
     write_book_resource()
-
-    # Realize Checkout
     write_checkout_resource()
-
-    # Realize Curation
+    write_hold_request_resource()
     write_curation_resource()
+    write_recommendation_log_resource()
 
-    Mix.shell().info("==> Realized Xaas.Library.Book, Checkout, and Curation.")
+    Mix.shell().info("==> Realized Xaas.Library Pure Ash Declarative Resources.")
   end
 
   defp ensure_domain_configured do
@@ -176,22 +174,87 @@ end
     end
   end
 
+  defp write_decrement_change do
+    content = """
+defmodule Xaas.Library.Changes.DecrementBookInventory do
+  @moduledoc \"\"\"
+  Ash change that atomically decrements a book's available copies upon checkout.
+  \"\"\"
+  use Ash.Resource.Change
+  alias Xaas.Library.Book
+
+  @impl true
+  def change(changeset, _opts, _context) do
+    book_id = Ash.Changeset.get_attribute(changeset, :book_id)
+
+    if book_id do
+      Ash.Changeset.after_action(changeset, fn _changeset, checkout ->
+        case Book |> Ash.get(book_id, authorize?: false) do
+          {:ok, book} ->
+            book
+            |> Ash.Changeset.for_update(:borrow_copy, %{})
+            |> Ash.update(authorize?: false)
+
+            {:ok, checkout}
+
+          _ ->
+            {:ok, checkout}
+        end
+      end)
+    else
+      changeset
+    end
+  end
+end
+"""
+    File.mkdir_p!("lib/xaas/library/changes")
+    File.write!("lib/xaas/library/changes/decrement_book_inventory.ex", content)
+    Mix.shell().info("  [ok] Materialized lib/xaas/library/changes/decrement_book_inventory.ex")
+  end
+
   defp write_book_resource do
     content = """
 defmodule Xaas.Library.Book do
   @moduledoc \"\"\"
   Ash resource for Library Books, grounded in BIBO (bibo:Book) and Schema.org (schema:Book).
-  Represents library items with ISBN, grade-level reading fit, genres, and availability.
+  Represents library items with ISBN, grade-level reading fit, genres, formats, and availability.
   \"\"\"
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
     table "library_books"
     repo Xaas.Repo
+  end
+
+  pub_sub do
+    module KanbanWeb.Endpoint
+    prefix "library:books"
+    broadcast_type :notification
+
+    publish :create, ["created"]
+    publish :update, ["updated", :id]
+    publish :borrow_copy, ["inventory", :id]
+    publish :return_copy, ["inventory", :id]
+  end
+
+  json_api do
+    type "library_book"
+
+    routes do
+      base "/library/books"
+      get :read
+      index :read
+    end
+  end
+
+  graphql do
+    type :library_book
   end
 
   actions do
@@ -205,9 +268,12 @@ defmodule Xaas.Library.Book do
         :isbn,
         :grade_level,
         :genres,
+        :formats,
         :synopsis,
         :available_copies,
         :total_copies,
+        :cover_color,
+        :review_status,
         :embedding
       ]
     end
@@ -220,11 +286,25 @@ defmodule Xaas.Library.Book do
         :isbn,
         :grade_level,
         :genres,
+        :formats,
         :synopsis,
         :available_copies,
         :total_copies,
+        :cover_color,
+        :review_status,
         :embedding
       ]
+    end
+
+    update :borrow_copy do
+      description "Atomically decrements available shelf copies when checked out"
+      validate compare(:available_copies, greater_than: 0), message: "No shelf copies currently available"
+      change atomic_update(:available_copies, expr(available_copies - 1))
+    end
+
+    update :return_copy do
+      description "Atomically increments available shelf copies when returned"
+      change atomic_update(:available_copies, expr(available_copies + 1))
     end
 
     read :by_grade_band do
@@ -236,15 +316,27 @@ defmodule Xaas.Library.Book do
   end
 
   policies do
-    # Scoped reads bypass for general library search
-    bypass always() do
+    policy action_type(:read) do
       authorize_if always()
     end
 
-    # Default deny floor
-    policy always() do
-      forbid_if always()
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if always()
     end
+  end
+
+  aggregates do
+    count :active_checkouts_count, :checkouts do
+      filter expr(status == :borrowed)
+    end
+
+    count :active_holds_count, :holds do
+      filter expr(status == :active)
+    end
+  end
+
+  calculations do
+    calculate :is_available, :boolean, expr(available_copies > 0)
   end
 
   attributes do
@@ -265,14 +357,21 @@ defmodule Xaas.Library.Book do
       public? true
     end
 
-    attribute :grade_level, :integer do
+    attribute :grade_level, :decimal do
       allow_nil? false
+      default Decimal.new("5.0")
       public? true
     end
 
     attribute :genres, {:array, :string} do
       allow_nil? false
       default []
+      public? true
+    end
+
+    attribute :formats, {:array, :string} do
+      allow_nil? false
+      default ["Print"]
       public? true
     end
 
@@ -293,6 +392,19 @@ defmodule Xaas.Library.Book do
       public? true
     end
 
+    attribute :cover_color, :string do
+      allow_nil? false
+      default "#23405F"
+      public? true
+    end
+
+    attribute :review_status, :atom do
+      constraints [one_of: [:approved, :pending_librarian_review]]
+      default :approved
+      allow_nil? false
+      public? true
+    end
+
     attribute :embedding, {:array, :float} do
       allow_nil? true
       public? true
@@ -304,6 +416,7 @@ defmodule Xaas.Library.Book do
 
   relationships do
     has_many :checkouts, Xaas.Library.Checkout
+    has_many :holds, Xaas.Library.HoldRequest
     has_many :curations, Xaas.Library.Curation
   end
 end
@@ -323,11 +436,39 @@ defmodule Xaas.Library.Checkout do
     otp_app: :kanban,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
     table "library_checkouts"
     repo Xaas.Repo
+  end
+
+  pub_sub do
+    module KanbanWeb.Endpoint
+    prefix "circulation"
+    broadcast_type :notification
+
+    publish :create, ["school", :school_id]
+    publish :create, ["events"]
+    publish :borrow, ["events"]
+    publish :update, ["school", :school_id]
+    publish :update, ["events"]
+  end
+
+  json_api do
+    type "library_checkout"
+
+    routes do
+      base "/library/checkouts"
+      get :read
+      index :read
+    end
+  end
+
+  graphql do
+    type :library_checkout
   end
 
   actions do
@@ -335,12 +476,18 @@ defmodule Xaas.Library.Checkout do
 
     create :create do
       primary? true
-      accept [:book_id, :user_id, :borrowed_at, :returned_at, :status]
+      accept [:book_id, :user_id, :school_id, :borrowed_at, :returned_at, :status, :renewed_count]
+    end
+
+    create :borrow do
+      description "Borrows a book for a student, automatically decrementing available copies"
+      accept [:book_id, :user_id, :school_id]
+      change Xaas.Library.Changes.DecrementBookInventory
     end
 
     update :update do
       primary? true
-      accept [:returned_at, :status]
+      accept [:returned_at, :status, :renewed_count]
     end
 
     read :for_user do
@@ -350,17 +497,27 @@ defmodule Xaas.Library.Checkout do
   end
 
   policies do
-    bypass always() do
+    policy action_type(:read) do
       authorize_if always()
     end
 
-    policy always() do
-      forbid_if always()
+    policy action_type(:create) do
+      authorize_if always()
+    end
+
+    policy action_type([:update, :destroy]) do
+      authorize_if always()
     end
   end
 
   attributes do
     uuid_primary_key :id
+
+    attribute :school_id, :string do
+      allow_nil? false
+      default "willow-creek"
+      public? true
+    end
 
     attribute :borrowed_at, :utc_datetime_usec do
       allow_nil? false
@@ -370,6 +527,12 @@ defmodule Xaas.Library.Checkout do
 
     attribute :returned_at, :utc_datetime_usec do
       allow_nil? true
+      public? true
+    end
+
+    attribute :renewed_count, :integer do
+      allow_nil? false
+      default 0
       public? true
     end
 
@@ -403,22 +566,46 @@ end
     Mix.shell().info("  [ok] Materialized lib/xaas/library/checkout.ex")
   end
 
-  defp write_curation_resource do
+  defp write_hold_request_resource do
     content = """
-defmodule Xaas.Library.Curation do
+defmodule Xaas.Library.HoldRequest do
   @moduledoc \"\"\"
-  Ash resource for Librarian Curation, grounded in Schema.org (schema:Collection) and PROV (prov:Entity).
-  Staff spotlight that boosts recommendation scores for specific grade bands.
+  Ash resource for Hold Requests on library books, grounded in Schema.org (schema:ReserveAction) and PROV (prov:Activity).
   \"\"\"
   use Xaas.Resource,
     otp_app: :kanban,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
-    table "library_curations"
+    table "library_holds"
     repo Xaas.Repo
+  end
+
+  pub_sub do
+    module KanbanWeb.Endpoint
+    prefix "holds"
+    broadcast_type :notification
+
+    publish :create, ["created"]
+    publish :update, ["updated", :id]
+  end
+
+  json_api do
+    type "library_hold"
+
+    routes do
+      base "/library/holds"
+      get :read
+      index :read
+    end
+  end
+
+  graphql do
+    type :library_hold
   end
 
   actions do
@@ -426,12 +613,131 @@ defmodule Xaas.Library.Curation do
 
     create :create do
       primary? true
-      accept [:book_id, :curated_by, :grade_band, :reason, :active]
+      accept [:book_id, :user_id, :school_id, :position, :status]
     end
 
     update :update do
       primary? true
-      accept [:grade_band, :reason, :active]
+      accept [:position, :status]
+    end
+
+    read :for_user do
+      argument :user_id, :uuid, allow_nil?: false
+      filter expr(user_id == ^arg(:user_id))
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if always()
+    end
+  end
+
+  attributes do
+    uuid_primary_key :id
+
+    attribute :school_id, :string do
+      allow_nil? false
+      default "willow-creek"
+      public? true
+    end
+
+    attribute :position, :integer do
+      allow_nil? false
+      default 1
+      public? true
+    end
+
+    attribute :status, :atom do
+      constraints [one_of: [:active, :fulfilled, :cancelled]]
+      default :active
+      allow_nil? false
+      public? true
+    end
+
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :book, Xaas.Library.Book do
+      allow_nil? false
+      attribute_writable? true
+      public? true
+    end
+
+    belongs_to :user, Xaas.Accounts.User do
+      allow_nil? false
+      attribute_writable? true
+      public? true
+    end
+  end
+end
+"""
+    File.write!("lib/xaas/library/hold_request.ex", content)
+    Mix.shell().info("  [ok] Materialized lib/xaas/library/hold_request.ex")
+  end
+
+  defp write_curation_resource do
+    content = """
+defmodule Xaas.Library.Curation do
+  @moduledoc \"\"\"
+  Ash resource for Librarian Curation, grounded in Schema.org (schema:Collection) and PROV (prov:Entity).
+  Staff spotlight that boosts recommendation scores for specific grade bands or individual students.
+  \"\"\"
+  use Xaas.Resource,
+    otp_app: :kanban,
+    domain: Xaas.Library,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+
+  postgres do
+    table "library_curations"
+    repo Xaas.Repo
+  end
+
+  pub_sub do
+    module KanbanWeb.Endpoint
+    prefix "recommendations"
+    broadcast_type :notification
+
+    publish :create, ["student", :student_id]
+    publish :create, ["curation_events"]
+    publish :update, ["student", :student_id]
+    publish :update, ["curation_events"]
+  end
+
+  json_api do
+    type "library_curation"
+
+    routes do
+      base "/library/curations"
+      get :read
+      index :read
+    end
+  end
+
+  graphql do
+    type :library_curation
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    create :create do
+      primary? true
+      accept [:book_id, :curated_by, :grade_band, :student_id, :reason, :state, :active]
+    end
+
+    update :update do
+      primary? true
+      accept [:grade_band, :student_id, :reason, :state, :active]
     end
 
     read :active_for_grade do
@@ -441,12 +747,12 @@ defmodule Xaas.Library.Curation do
   end
 
   policies do
-    bypass always() do
+    policy action_type(:read) do
       authorize_if always()
     end
 
-    policy always() do
-      forbid_if always()
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if always()
     end
   end
 
@@ -460,11 +766,24 @@ defmodule Xaas.Library.Curation do
 
     attribute :grade_band, :string do
       allow_nil? false
+      default "6-8"
+      public? true
+    end
+
+    attribute :student_id, :string do
+      allow_nil? true
       public? true
     end
 
     attribute :reason, :string do
       allow_nil? true
+      public? true
+    end
+
+    attribute :state, :atom do
+      constraints [one_of: [:pinned, :promoted, :suppressed, :neutral]]
+      default :pinned
+      allow_nil? false
       public? true
     end
 
@@ -489,5 +808,105 @@ end
 """
     File.write!("lib/xaas/library/curation.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/curation.ex")
+  end
+
+  defp write_recommendation_log_resource do
+    content = """
+defmodule Xaas.Library.RecommendationLog do
+  @moduledoc \"\"\"
+  Ash resource for Recommendation Logs, storing candidate pool, factor weights, and produced recommendations.
+  \"\"\"
+  use Xaas.Resource,
+    otp_app: :kanban,
+    domain: Xaas.Library,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+
+  postgres do
+    table "library_recommendation_logs"
+    repo Xaas.Repo
+  end
+
+  json_api do
+    type "library_recommendation_log"
+
+    routes do
+      base "/library/recommendation_logs"
+      get :read
+      index :read
+    end
+  end
+
+  graphql do
+    type :library_recommendation_log
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    create :create do
+      primary? true
+      accept [:user_id, :candidate_pool_size, :weights, :ranked_items, :accepted]
+    end
+
+    update :update do
+      primary? true
+      accept [:accepted]
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if always()
+    end
+  end
+
+  attributes do
+    uuid_primary_key :id
+
+    attribute :candidate_pool_size, :integer do
+      allow_nil? false
+      default 0
+      public? true
+    end
+
+    attribute :weights, :map do
+      allow_nil? false
+      default %{collab: 0.34, semantic: 0.26, gradeFit: 0.16, available: 0.10, diversity: 0.06, curation: 0.09}
+      public? true
+    end
+
+    attribute :ranked_items, {:array, :map} do
+      allow_nil? false
+      default []
+      public? true
+    end
+
+    attribute :accepted, :boolean do
+      allow_nil? false
+      default false
+      public? true
+    end
+
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :user, Xaas.Accounts.User do
+      allow_nil? false
+      attribute_writable? true
+      public? true
+    end
+  end
+end
+"""
+    File.write!("lib/xaas/library/recommendation_log.ex", content)
+    Mix.shell().info("  [ok] Materialized lib/xaas/library/recommendation_log.ex")
   end
 end

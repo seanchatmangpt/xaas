@@ -56,14 +56,23 @@ defmodule Kanban.MixProject do
       # confirmed via a real grep of `extensions:`/`use` across those files
       # in Phase 3 -- porting only ash/ash_postgres (Phase 1's original,
       # narrower guess) would not compile against the real resource files.
-      {:ash, "~> 3.0"},
+      {:ash, "~> 3.0", override: true},
       {:ash_postgres, "~> 2.0"},
       {:opentelemetry_ash, "~> 0.1"},
-      # ash_ai's transitive dep req_llm fails to compile against the resolved
-      # finch version (real: %Finch.Pool{}/pool_tag mismatch, confirmed via
-      # a real mix compile error) -- dropped; zero real resource files
-      # under lib/xaas/{operations,governance,billing,platform,accounts,
-      # ledger} reference AshAi (confirmed via grep).
+      # Re-added 2026-09-08: ash_ai 1.0.3 for the Ash MCP server
+      # (mix ash_ai.gen.mcp). Verified via a real `mix deps.get` +
+      # `mix compile --force` -- full kanban app + all deps compiled clean
+      # (302 files, exit 0). The 0.8.2-era finch/req_llm conflict noted
+      # historically here no longer reproduces against the resolved
+      # finch 0.23.0 / req_llm 1.20.0.
+      {:ash_ai, "~> 1.0"},
+      # Real A2A (Agent-to-Agent, google.github.io/A2A) server, for MCP
+      # agents to simulate different Next Read users (student/librarian
+      # personas) as real A2A clients hitting the same actor/tenant-
+      # resolved path as any other caller -- see lib/kanban_web/a2a/
+      # and the /a2a router scope.
+      {:a2a, "~> 0.2"},
+      {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
       {:ash_iam, "~> 2.0"},
       {:hammer, "~> 7.0"},

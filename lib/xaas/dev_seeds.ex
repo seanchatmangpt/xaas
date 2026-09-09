@@ -32,6 +32,11 @@ defmodule Xaas.DevSeeds do
        approving it real-charges a $1.50 overage fee from the org's real
        `Xaas.Ledger.Account` to the platform revenue account, inside the
        same transaction as the approval itself.
+    5. A small set of real `Xaas.Library.Book` rows (looked up by their
+       real natural key, `isbn`, before creating) so the Next Read case
+       study's `/next-read` route (`KanbanWeb.NextRead.ReaderLive`) has
+       non-empty `library_books` to recommend from in dev, instead of the
+       empty recommendations grid caused by zero rows in that table.
 
   Real internal-write convention (`authorize?: false`), matching every
   other Chicago-style test and change module in this repo that creates
@@ -54,11 +59,81 @@ defmodule Xaas.DevSeeds do
   alias Xaas.Billing.Subscription
   alias Xaas.Governance.ApprovalBackupRetentionChange
   alias Xaas.Ledger.Account, as: LedgerAccount
+  alias Xaas.Library.Book
 
   @org_slug "acme-dev"
   @org_name "Acme Dev Org"
   @pending_approval_tier :pro
   @pending_approval_requested_days 45
+
+  @library_books [
+    %{
+      title: "The Hidden Orchard",
+      author: "Maren Iyer",
+      isbn: "978-0-000-00001-1",
+      grade_level: Decimal.new("3.0"),
+      genres: ["Fiction", "Adventure"],
+      formats: ["Print", "Ebook"],
+      synopsis: "A quiet grove hides a passage only the youngest reader in town can find.",
+      available_copies: 3,
+      total_copies: 3
+    },
+    %{
+      title: "Circuits and Constellations",
+      author: "Devon Achebe",
+      isbn: "978-0-000-00002-8",
+      grade_level: Decimal.new("6.0"),
+      genres: ["Science", "Adventure"],
+      formats: ["Print"],
+      synopsis: "Two rival students build a homemade satellite to settle a science-fair bet.",
+      available_copies: 2,
+      total_copies: 2
+    },
+    %{
+      title: "The Last Cartographer",
+      author: "Priya Falconer",
+      isbn: "978-0-000-00003-5",
+      grade_level: Decimal.new("7.0"),
+      genres: ["Fantasy", "Mystery"],
+      formats: ["Print", "Audiobook"],
+      synopsis: "An apprentice mapmaker discovers the kingdom's borders keep moving overnight.",
+      available_copies: 1,
+      total_copies: 2
+    },
+    %{
+      title: "Recess Republic",
+      author: "Tomas Whitfield",
+      isbn: "978-0-000-00004-2",
+      grade_level: Decimal.new("4.0"),
+      genres: ["Humor", "Realistic Fiction"],
+      formats: ["Print"],
+      synopsis: "A fourth-grader wins the class election on a platform of longer recess.",
+      available_copies: 4,
+      total_copies: 4
+    },
+    %{
+      title: "Deep Reef Diaries",
+      author: "Amara Solheim",
+      isbn: "978-0-000-00005-9",
+      grade_level: Decimal.new("5.0"),
+      genres: ["Nonfiction", "Science"],
+      formats: ["Print", "Ebook"],
+      synopsis: "A marine biologist's field notebook from three months tagging reef sharks.",
+      available_copies: 2,
+      total_copies: 2
+    },
+    %{
+      title: "The Understudy's Secret",
+      author: "Ines Karlsson",
+      isbn: "978-0-000-00006-6",
+      grade_level: Decimal.new("8.0"),
+      genres: ["Drama", "Mystery"],
+      formats: ["Print"],
+      synopsis: "The school play's understudy uncovers who has been sabotaging opening night.",
+      available_copies: 0,
+      total_copies: 2
+    }
+  ]
 
   @doc """
   Runs the real fixture chain, returning the four real persisted records
@@ -69,12 +144,14 @@ defmodule Xaas.DevSeeds do
     subscription = get_or_create_subscription(org)
     ledger_account = get_or_open_ledger_account(org)
     pending_approval = get_or_create_pending_approval(org)
+    library_books = get_or_create_library_books()
 
     %{
       org: org,
       subscription: subscription,
       ledger_account: ledger_account,
-      pending_approval: pending_approval
+      pending_approval: pending_approval,
+      library_books: library_books
     }
   end
 
@@ -159,6 +236,28 @@ defmodule Xaas.DevSeeds do
           },
           tenant: org.slug
         )
+        |> Ash.create!(authorize?: false)
+
+      existing ->
+        existing
+    end
+  end
+  @doc """
+  Real hand-curated `Xaas.Library.Book` fixture rows for the Next Read
+  case study (`/next-read`, `KanbanWeb.NextRead.ReaderLive`) -- looked up
+  by `isbn` (this resource's real natural key) before creating, so
+  re-running `run/0` on a dev database that already has these rows is a
+  real no-op read rather than a duplicate-row error.
+  """
+  def get_or_create_library_books do
+    Enum.map(@library_books, &get_or_create_library_book/1)
+  end
+
+  defp get_or_create_library_book(attrs) do
+    case Book |> Ash.Query.filter(isbn: attrs.isbn) |> Ash.read_one!(authorize?: false) do
+      nil ->
+        Book
+        |> Ash.Changeset.for_create(:create, attrs)
         |> Ash.create!(authorize?: false)
 
       existing ->

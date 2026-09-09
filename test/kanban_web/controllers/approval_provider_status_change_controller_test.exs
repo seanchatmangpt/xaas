@@ -27,15 +27,33 @@ defmodule KanbanWeb.ApprovalProviderStatusChangeControllerTest do
   end
 
   defp create_provider!(org_id, status) do
-    Provider
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Provider",
-      slug: "provider-#{System.unique_integer([:positive])}",
-      org_id: org_id,
-      status: status
-    })
-    |> Ash.create!(authorize?: false)
+    provider =
+      Provider
+      |> Ash.Changeset.for_create(:create, %{
+        name: "Test Provider",
+        slug: "provider-#{System.unique_integer([:positive])}",
+        org_id: org_id
+      })
+      |> Ash.create!(authorize?: false)
+
+    if status == :pending do
+      provider
+    else
+      provider
+      |> Ash.Changeset.for_update(:actuate_status, %{status: status},
+        context: %{
+          xaas_actuation: %{
+            receipt_id: "test-receipt-id",
+            intent_id: "test-intent-id",
+            ontology_projection_hash: Provider.ontology_projection_hash()
+          }
+        }
+      )
+      |> Ash.update!(authorize?: false)
+    end
   end
+
+
 
   defp json_headers(conn, org_id) do
     conn

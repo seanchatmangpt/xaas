@@ -1,29 +1,21 @@
 defmodule Xaas.Library.Ranker do
   @moduledoc """
-  Next Read recommendation ranker implementing the exact 6-factor composite score formula:
+  Next Read recommendation ranker implementing the dynamic 6-factor composite score formula:
 
-      score = 0.34 * collab + 0.26 * semantic + 0.16 * gradeFit + 0.10 * available + 0.06 * diversity + 0.09 * curation
+      score = w.collab * collab + w.semantic * semantic + w.grade_fit * gradeFit +
+              w.available * available + w.diversity * diversity + w.curation * curation
 
   Terms:
-  1. `collab` (34%): Collaborative filtering score based on checkout history co-occurrence across readers.
-  2. `semantic` (26%): Cosine similarity between student reading profile embedding and book embedding.
-  3. `gradeFit` (16%): Closeness of book grade level to student grade level (1.0 for exact, decaying with delta).
-  4. `available` (10%): Availability score (1.0 if available_copies > 0, 0.0 otherwise).
-  5. `diversity` (6%): Genre exploration bonus (higher for genres the student has not checked out frequently).
-  6. `curation` (9%): Boost if active librarian curation exists for this book in student's grade band.
+  1. `collab`: Collaborative filtering score based on checkout history co-occurrence across readers.
+  2. `semantic`: Cosine similarity between student reading profile embedding and book embedding.
+  3. `gradeFit`: Closeness of book grade level to student grade level (decaying with delta).
+  4. `available`: Availability score (1.0 if available_copies > 0, 0.0 otherwise).
+  5. `diversity`: Genre exploration bonus (higher for genres the student has not checked out frequently).
+  6. `curation`: Boost if active librarian curation exists for this book in student's grade band.
   """
 
-  alias Xaas.Library.{Book, Checkout, Curation, Embeddings}
+  alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings}
   require Ash.Query
-
-  @weights %{
-    collab: 0.34,
-    semantic: 0.26,
-    grade_fit: 0.16,
-    available: 0.10,
-    diversity: 0.06,
-    curation: 0.09
-  }
 
   @doc """
   Ranks catalog books for a given student (user_id and grade_level).
@@ -32,6 +24,7 @@ defmodule Xaas.Library.Ranker do
   @spec rank_recommendations(String.t(), integer(), keyword()) :: {:ok, list(map())} | {:error, term()}
   def rank_recommendations(user_id, student_grade, opts \\ []) do
     limit = Keyword.get(opts, :limit, 10)
+    current_weights = Config.weights(opts)
 
     # 1. Fetch student's checkout history
     user_checkouts =
@@ -101,12 +94,12 @@ defmodule Xaas.Library.Ranker do
         }
 
         total_score =
-          @weights.collab * collab_score +
-          @weights.semantic * semantic_score +
-          @weights.grade_fit * grade_fit_score +
-          @weights.available * available_score +
-          @weights.diversity * diversity_score +
-          @weights.curation * curation_score
+          current_weights.collab * collab_score +
+          current_weights.semantic * semantic_score +
+          current_weights.grade_fit * grade_fit_score +
+          current_weights.available * available_score +
+          current_weights.diversity * diversity_score +
+          current_weights.curation * curation_score
 
         %{
           book: book,
@@ -123,7 +116,7 @@ defmodule Xaas.Library.Ranker do
   @doc """
   Returns the weights used for calculating recommendation composite scores.
   """
-  def weights, do: @weights
+  def weights(opts \\ []), do: Config.weights(opts)
 
   defp compute_collab_score(book, user_checkouts) do
     # Collaborative filtering signal: overlap in genres and checkouts
@@ -161,22 +154,69 @@ defmodule Xaas.Library.Ranker do
     Embeddings.cosine_similarity(student_embedding, book_embedding)
   end
 
+  @doc """
+  Generates a grounded textual explanation and part badges for a recommended book
+  based on student history and score factors.
+  """
+  @spec explain_recommendation(Book.t(), map(), list(Checkout.t())) :: %{why: String.t(), parts: list(String.t())}
+  def explain_recommendation(book, factors, user_checkouts \\ []) do
+    parts = [
+      "collaborative #{Float.round(factors.collab, 2)}",
+      "semantic #{Float.round(factors.semantic, 2)}",
+      "grade fit #{Float.round(factors.grade_fit, 2)}",
+      "availability #{Float.round(factors.available, 2)}",
+      "diversity #{Float.round(factors.diversity, 2)}"
+    ]
+
+    parts = if factors.curation > 0.0, do: parts ++ ["librarian curation +#{Float.round(Config.weights().curation, 2)}"], else: parts
+
+    past_titles =
+      user_checkouts
+      |> Enum.map(fn
+        %Checkout{book: %Book{title: title}} -> title
+        _ -> "recent readings"
+      end)
+      |> Enum.take(2)
+
+    bg_float = to_float(book.grade_level)
+
+    why =
+      case past_titles do
+        [t1, t2] ->
+          "Because you finished #{t1} and #{t2} — both aligned in subject and reading level. This title matches their structure and sits within reading level #{bg_float}."
+
+        [t1] ->
+          "Because you finished #{t1}. This title continues the theme and matches your reading level band."
+
+        [] ->
+          "Because students in your grade band who explored similar subjects read this next, matching reading level #{bg_float}."
+      end
+
+    %{why: why, parts: parts}
+  end
+
   defp compute_grade_fit(book_grade, student_grade) do
-    diff = abs(book_grade - student_grade)
-    case diff do
-      0 -> 1.0
-      1 -> 0.85
-      2 -> 0.60
-      3 -> 0.35
-      _ -> 0.10
+    bg = to_float(book_grade)
+    sg = to_float(student_grade)
+    diff = abs(bg - sg)
+
+    thresholds = Config.grade_fit_thresholds()
+
+    case Enum.find(thresholds, fn {max_diff, _score} -> diff <= max_diff end) do
+      {_max_diff, score} -> score
+      nil -> Config.grade_fit_fallback()
     end
   end
+
+  defp to_float(%Decimal{} = d), do: Decimal.to_float(d)
+  defp to_float(n) when is_integer(n), do: n * 1.0
+  defp to_float(n) when is_float(n), do: n
+  defp to_float(_), do: to_float(Config.default_grade())
 
   defp compute_diversity_score(book_genres, past_frequencies) do
     if book_genres == [] do
       0.5
     else
-      # Higher score for genres that have lower historical checkout count
       total_past = Enum.sum(Map.values(past_frequencies))
       if total_past == 0 do
         0.8

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0}
+body{background:#F4EFE6}
+a{color:#B5352A}a:hover{color:#8E2519}
+@keyframes pulseDown{0%{top:6%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:88%;opacity:0}}
+@keyframes pulseUp{0%{top:88%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:6%;opacity:0}}
+@keyframes flashCard{0%{background:#FFF3D6;box-shadow:0 0 0 2px #B07A1E}100%{background:#FCFAF5;box-shadow:0 0 0 0 rgba(0,0,0,0)}}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes riseIn{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 22px;background:#17150F;color:#F4EFE6">
+    <div style="display:flex;align-items:baseline;gap:9px">
+      <span style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1">Next Read</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(244,239,230,.55)">demo harness</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10.5px">
+      <span style="padding:4px 8px;border:1px solid rgba(244,239,230,.22);border-radius:3px;color:rgba(244,239,230,.8)">ash 3.32.3</span>
+      <span style="padding:4px 8px;border:1px solid rgba(244,239,230,.22);border-radius:3px;color:rgba(244,239,230,.8)">fly · sjc</span>
+      <span style="padding:4px 8px;border:1px solid rgba(181,53,42,.5);border-radius:3px;background:rgba(181,53,42,.16);color:#E9A79F">notifier → pubsub → liveview</span>
+    </div>
+    <div style="flex:1;min-width:12px"></div>
+    <button onClick="{{ reset }}" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px;background:transparent;color:#F4EFE6;border:1px solid rgba(244,239,230,.32);border-radius:3px;cursor:pointer" style-hover="background:rgba(244,239,230,.1)">reset scenario</button>
+  </div>
+
+  <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr);align-items:stretch">
+
+    <div data-screen-label="Student" style="min-width:0;padding:20px 18px 22px 22px">
+      <div style="border:1px solid rgba(23,21,15,.16);border-radius:7px;overflow:hidden;background:#FCFAF5;box-shadow:0 1px 2px rgba(23,21,15,.05)">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#EFE9DE;border-bottom:1px solid rgba(23,21,15,.12)">
+          <div style="display:flex;gap:5px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#C9C1B2;display:block"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#C9C1B2;display:block"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#C9C1B2;display:block"></span>
+          </div>
+          <span style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(23,21,15,.55);background:#F8F4EC;border:1px solid rgba(23,21,15,.1);border-radius:99px;padding:4px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">next-read.fly.dev/reads</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(23,21,15,.4)">window 1</span>
+        </div>
+
+        <div style="padding:22px 24px 10px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#B5352A;margin-bottom:7px">Student view</div>
+              <div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.05;letter-spacing:-.01em">Your next reads</div>
+            </div>
+            <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(23,21,15,.45);line-height:1.7">
+              <div>Maya R. · grade 6 · Willow Creek Middle</div>
+              <div><span style="color:#5A6B45">socket connected</span> · loaded {{ loadedS }} · live patches {{ patchS }}</div>
+            </div>
+          </div>
+        </div>
+
+        <sc-for list="{{ ranked }}" as="b" hint-placeholder-count="4">
+          <div style="margin:12px 24px;border:1px solid rgba(23,21,15,.12);border-radius:6px;background:#FCFAF5;animation:{{ b.anim }}">
+            <div style="display:flex;gap:16px;padding:16px;align-items:flex-start;flex-wrap:wrap">
+              <div style="flex:none;width:78px;height:108px;border-radius:3px;background:{{ b.cover }};position:relative;overflow:hidden">
+                <span style="position:absolute;left:0;top:0;bottom:0;width:7px;background:rgba(0,0,0,.22);display:block"></span>
+                <span style="position:absolute;inset:9px 8px 8px 15px;border:1px dashed rgba(255,255,255,.4);border-radius:2px;display:block"></span>
+                <span style="position:absolute;left:15px;bottom:9px;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;color:rgba(255,255,255,.7)">COVER</span>
+              </div>
+              <div style="flex:1 1 210px;min-width:190px">
+                <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(23,21,15,.35)">{{ b.rank }}</span>
+                  <span style="font-family:'Instrument Serif',serif;font-size:23px;line-height:1.15">{{ b.title }}</span>
+                  <span style="font-size:12.5px;color:rgba(23,21,15,.55)">{{ b.author }}</span>
+                </div>
+                <div style="margin-top:6px;font-size:12px;color:rgba(23,21,15,.55)">{{ b.tags }} · reading level {{ b.gl }} · {{ b.copies }}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:2px;background:rgba(23,21,15,.06);color:rgba(23,21,15,.6)">{{ b.fmt }}</span>
+                  <sc-if value="{{ b.pinned }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:2px;background:rgba(181,53,42,.12);color:#B5352A;border:1px solid rgba(181,53,42,.3)">picked by your librarian</span>
+                  </sc-if>
+                  <sc-if value="{{ b.held }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:2px;background:rgba(176,122,30,.14);color:#8A5E14">2 holds ahead of you</span>
+                  </sc-if>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:13px">
+                  <div style="flex:1;min-width:60px;height:5px;border-radius:99px;background:rgba(23,21,15,.09);overflow:hidden">
+                    <div style="height:5px;border-radius:99px;background:#B5352A;width:{{ b.pct }}%"></div>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(23,21,15,.5)">match {{ b.pct }}</span>
+                </div>
+              </div>
+              <div style="flex:none;display:flex;flex-direction:column;gap:7px;width:126px">
+                <button onClick="{{ b.onWhy }}" style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px 10px;border-radius:3px;border:1px solid rgba(23,21,15,.22);background:transparent;color:#17150F;cursor:pointer" style-hover="background:rgba(23,21,15,.06)">{{ b.whyLabel }}</button>
+                <button onClick="{{ b.onOut }}" disabled="{{ b.outDisabled }}" style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px 10px;border-radius:3px;border:1px solid #17150F;background:{{ b.outBg }};color:{{ b.outFg }};cursor:pointer" style-hover="opacity:.86">{{ b.outLabel }}</button>
+              </div>
+            </div>
+            <sc-if value="{{ b.open }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:0 16px 16px;padding:15px 17px;border-radius:5px;background:#F4EFE6;border:1px solid rgba(23,21,15,.1);animation:riseIn 240ms ease-out">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.45);margin-bottom:8px">why this one</div>
+                <div style="font-size:14.5px;line-height:1.6;color:rgba(23,21,15,.86);text-wrap:pretty">{{ b.why }}</div>
+                <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid rgba(23,21,15,.1)">
+                  <sc-for list="{{ b.parts }}" as="p" hint-placeholder-count="4">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:3px 7px;border-radius:2px;background:rgba(35,64,95,.08);color:#23405F">{{ p }}</span>
+                  </sc-for>
+                </div>
+                <div style="margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5A6B45">grounded · every claim traced to this student's circulation record and catalog metadata</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="padding:6px 24px 20px;font-size:11.5px;color:rgba(23,21,15,.4);font-family:'IBM Plex Mono',monospace">this page has not reloaded since {{ loadedS }}</div>
+      </div>
+    </div>
+
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;padding:26px 0">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-align:center;color:rgba(23,21,15,.4);line-height:1.5">student<br>:4821</div>
+      <div style="flex:1;width:1px;margin:10px 0;background:repeating-linear-gradient(to bottom,rgba(23,21,15,.28) 0 4px,transparent 4px 9px)"></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-align:center;color:rgba(23,21,15,.4);line-height:1.5">library<br>:willow</div>
+      <sc-for list="{{ pulsesUp }}" as="p" hint-placeholder-count="0">
+        <div style="position:absolute;left:50%;transform:translateX(-50%);animation:pulseUp 1.05s cubic-bezier(.35,0,.6,1) forwards;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="width:11px;height:11px;border-radius:50%;background:#B5352A;box-shadow:0 0 0 5px rgba(181,53,42,.16);display:block"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#B5352A;white-space:nowrap;background:#F4EFE6;padding:1px 3px">{{ p.topic }}</span>
+        </div>
+      </sc-for>
+      <sc-for list="{{ pulsesDown }}" as="p" hint-placeholder-count="0">
+        <div style="position:absolute;left:50%;transform:translateX(-50%);animation:pulseDown 1.05s cubic-bezier(.35,0,.6,1) forwards;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="width:11px;height:11px;border-radius:50%;background:#23405F;box-shadow:0 0 0 5px rgba(35,64,95,.16);display:block"></span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:#23405F;white-space:nowrap;background:#F4EFE6;padding:1px 3px">{{ p.topic }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div data-screen-label="Librarian" style="min-width:0;padding:20px 22px 22px 18px">
+      <div style="border:1px solid rgba(23,21,15,.16);border-radius:7px;overflow:hidden;background:#FCFAF5;box-shadow:0 1px 2px rgba(23,21,15,.05)">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#EFE9DE;border-bottom:1px solid rgba(23,21,15,.12)">
+          <div style="display:flex;gap:5px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#C9C1B2;display:block"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#C9C1B2;display:block"></span>
+            <span style="width:9px;height:9px;border-radius:50%;background:#C9C1B2;display:block"></span>
+          </div>
+          <span style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(23,21,15,.55);background:#F8F4EC;border:1px solid rgba(23,21,15,.1);border-radius:99px;padding:4px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">next-read.fly.dev/librarian</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(23,21,15,.4)">window 2</span>
+        </div>
+
+        <div style="padding:22px 24px 4px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#23405F;margin-bottom:7px">Librarian view</div>
+              <div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.05;letter-spacing:-.01em">Advisory desk</div>
+            </div>
+            <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(23,21,15,.45);line-height:1.7">
+              <div>A. Okafor · teacher-librarian</div>
+              <div><span style="color:#5A6B45">socket connected</span> · loaded {{ loadedL }} · live patches {{ patchL }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:18px 24px 4px">
+          <div style="padding:13px 14px;border:1px solid rgba(23,21,15,.12);border-radius:5px;background:#F8F4EC">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Checked out today</div>
+            <div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:5px">{{ outToday }}</div>
+          </div>
+          <div style="padding:13px 14px;border:1px solid rgba(23,21,15,.12);border-radius:5px;background:#F8F4EC">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Readers active now</div>
+            <div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:5px">312</div>
+          </div>
+          <div style="padding:13px 14px;border:1px solid rgba(23,21,15,.12);border-radius:5px;background:#F8F4EC">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Advisory accepted</div>
+            <div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:5px">68%</div>
+          </div>
+        </div>
+
+        <div style="padding:20px 24px 6px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:9px;border-bottom:1px solid rgba(23,21,15,.14)">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Maya R. · queue · curate</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(23,21,15,.38)">{{ curationNote }}</span>
+          </div>
+          <sc-for list="{{ queue }}" as="q" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid rgba(23,21,15,.08)">
+              <span style="flex:none;width:5px;height:30px;border-radius:2px;background:{{ q.cover }};display:block"></span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ q.title }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(23,21,15,.45);margin-top:3px">rank {{ q.rank }} · match {{ q.pct }} · {{ q.status }}</div>
+              </div>
+              <button onClick="{{ q.onPin }}" style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:7px 10px;border-radius:3px;border:1px solid {{ q.pinBorder }};background:{{ q.pinBg }};color:{{ q.pinFg }};cursor:pointer" style-hover="opacity:.85">{{ q.pinLabel }}</button>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin:18px 24px 22px;padding:16px 17px;border:1px solid rgba(35,64,95,.22);border-radius:6px;background:#F5F3EE">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#23405F;margin-bottom:10px">Ask the catalog</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input value="{{ askQ }}" onChange="{{ onAskChange }}" onKeyDown="{{ onAskKey }}" placeholder="Ask in plain language…" style="flex:1;min-width:180px;font-family:'Libre Franklin',sans-serif;font-size:13px;padding:10px 12px;border:1px solid rgba(23,21,15,.18);border-radius:4px;background:#FCFAF5;color:#17150F"></input>
+            <button onClick="{{ onAsk }}" style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;border-radius:4px;border:1px solid #23405F;background:#23405F;color:#F4EFE6;cursor:pointer" style-hover="opacity:.88">ask</button>
+          </div>
+          <sc-if value="{{ asking }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:13px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(23,21,15,.5);animation:blink 1s ease-in-out infinite">running catalog tools…</div>
+          </sc-if>
+          <sc-if value="{{ answered }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:14px;animation:riseIn 260ms ease-out">
+              <div style="font-size:13.5px;line-height:1.6;color:rgba(23,21,15,.86);text-wrap:pretty">Three available titles keep the science-fiction thread and ship in accessible formats:</div>
+              <sc-for list="{{ answers }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex;gap:10px;align-items:baseline;margin-top:9px;padding-left:11px;border-left:2px solid rgba(35,64,95,.3)">
+                  <span style="font-size:13.5px;font-weight:500">{{ a.title }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(23,21,15,.5)">{{ a.meta }}</span>
+                </div>
+              </sc-for>
+              <div style="margin-top:13px;padding-top:11px;border-top:1px solid rgba(23,21,15,.1);font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.8;color:rgba(23,21,15,.5)">
+                <div>Circulation.cohort_reads → Catalog.search_semantic → Accessibility.filter_formats → 3 of 41 candidates admitted</div>
+                <div style="color:#B5352A">the ranker chose the list · the model wrote the sentence</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 22px;background:#EDE7DB;border-top:1px solid rgba(23,21,15,.14)">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.45)">proof sequence</span>
+    <div style="flex:1;min-width:0;display:flex;gap:7px;flex-wrap:wrap">
+      <sc-for list="{{ proof }}" as="s" hint-placeholder-count="8">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 9px;border-radius:3px;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</span>
+      </sc-for>
+    </div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:rgba(23,21,15,.45)">release v37 · migrations 0041 ok · e2e 24/24</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:900},&quot;latencyMs&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:460,&quot;min&quot;:80,&quot;max&quot;:1200,&quot;step&quot;:20,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Realtime&quot;},&quot;showSpine&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Realtime&quot;}}">
+class Component extends DCLogic {
+  state = { pinned: null, expanded: 'b1', out: [], pulses: [], flash: [], patchS: 0, patchL: 0,
+            askQ: 'Show accessible science-fiction alternatives for students who liked The Wildwater Signal.',
+            ask: 'idle', steps: { s1: true } };
+
+  books = [
+    { id:'b1', title:'The Salt Road Cipher', author:'J. Amadi', gl:'5.4', tags:'Science mystery · Codes', cover:'#23405F',
+      collab:.92, semantic:.88, grade:.95, avail:1, div:.40, copies:'3 of 4 on shelf', fmt:'Print · Audiobook',
+      why:'Because you finished The Wildwater Signal and Cabin of Small Machines — both puzzle-driven science mysteries. This title shares their coded-message structure and sits within 0.4 grade levels of your last five completions.' },
+    { id:'b2', title:'Bloom of the Deep', author:'R. Castellanos', gl:'6.1', tags:'Marine science fiction', cover:'#5A6B45',
+      collab:.71, semantic:.84, grade:.82, avail:1, div:.90, copies:'2 of 2 on shelf', fmt:'Print · Large print',
+      why:'Because fourteen sixth-graders who finished The Wildwater Signal read this next, and it carries the marine-science subject headings from the two titles you renewed in April.' },
+    { id:'b3', title:'Fieldwork for Beginners', author:'T. Okonkwo', gl:'5.8', tags:'Nonfiction · Field science', cover:'#B07A1E',
+      collab:.64, semantic:.69, grade:.90, avail:1, div:.75, copies:'1 of 3 on shelf', fmt:'Print',
+      why:'Because your last three checkouts were all fiction. This keeps the field-science subject you finished fastest and introduces a nonfiction format at the same reading level.' },
+    { id:'b4', title:'Nine Doors to Nowhere', author:'H. Vance', gl:'6.4', tags:'Portal fantasy', cover:'#7A3B52', held:true,
+      collab:.83, semantic:.55, grade:.60, avail:.15, div:.50, copies:'0 of 2 · 2 holds', fmt:'Print · Audiobook',
+      why:'Because it matches the fantasy series you borrowed last spring. Two students are ahead of you in the hold queue, so it ranks below titles you can take home today.' }
+  ];
+
+  W = { c:.34, s:.26, g:.16, a:.10, d:.06, l:.09 };
+
+  get lat() { return this.props.latencyMs ?? 460; }
+
+  score(b) {
+    const w = this.W;
+    let v = w.c*b.collab + w.s*b.semantic + w.g*b.grade + w.a*b.avail + w.d*b.div;
+    if (this.state.pinned === b.id) v += w.l;
+    return Math.round(v * 100);
+  }
+
+  mark(k) { this.setState(s => ({ steps: { ...s.steps, [k]: true } })); }
+
+  pulse(dir, topic) {
+    const id = 'p' + Math.random().toString(36).slice(2, 8);
+    this.setState(s => ({ pulses: [...s.pulses, { id, dir, topic }] }));
+    setTimeout(() => this.setState(s => ({ pulses: s.pulses.filter(p => p.id !== id) })), 1150);
+  }
+
+  flashCards(ids) {
+    this.setState({ flash: ids });
+    setTimeout(() => this.setState({ flash: [] }), 1500);
+  }
+
+  pin = (id) => {
+    const next = this.state.pinned === id ? null : id;
+    this.pulse('up', 'recommendations:4821');
+    this.mark('s3');
+    setTimeout(() => {
+      this.setState(s => ({ pinned: next, patchS: s.patchS + 1 }));
+      if (next) { this.flashCards([next]); this.mark('s4'); }
+    }, this.lat);
+  };
+
+  why = (id) => {
+    this.setState(s => ({ expanded: s.expanded === id ? null : id }));
+    this.mark('s2');
+  };
+
+  checkout = (id) => {
+    this.setState(s => ({ out: [...s.out, id], patchS: s.patchS + 1 }));
+    this.pulse('down', 'circulation:willow-creek');
+    this.mark('s5');
+    setTimeout(() => { this.setState(s => ({ patchL: s.patchL + 1 })); this.mark('s6'); }, this.lat);
+  };
+
+  ask = () => {
+    this.setState({ ask: 'thinking' });
+    setTimeout(() => { this.setState({ ask: 'done' }); this.mark('s7'); }, 1100);
+  };
+
+  reset = () => this.setState({ pinned: null, expanded: 'b1', out: [], pulses: [], flash: [], patchS: 0, patchL: 0, ask: 'idle', steps: { s1: true } });
+
+  renderVals() {
+    const st = this.state;
+    const sorted = this.books.map(b => ({ b, pct: this.score(b) })).sort((x, y) => y.pct - x.pct);
+
+    const ranked = sorted.map(({ b, pct }, i) => {
+      const isOut = st.out.includes(b.id);
+      const parts = [
+        'collaborative ' + b.collab.toFixed(2),
+        'semantic ' + b.semantic.toFixed(2),
+        'grade fit ' + b.grade.toFixed(2),
+        'availability ' + b.avail.toFixed(2),
+        'diversity ' + b.div.toFixed(2)
+      ];
+      if (st.pinned === b.id) parts.push('librarian curation +0.09');
+      return {
+        id: b.id, title: b.title, author: b.author, tags: b.tags, gl: b.gl, copies: b.copies, fmt: b.fmt,
+        cover: b.cover, held: !!b.held, why: b.why, parts,
+        rank: String(i + 1).padStart(2, '0'), pct,
+        pinned: st.pinned === b.id,
+        open: st.expanded === b.id,
+        anim: st.flash.includes(b.id) ? 'flashCard 1.5s ease-out' : 'none',
+        whyLabel: st.expanded === b.id ? 'hide reason' : 'why this?',
+        onWhy: () => this.why(b.id),
+        onOut: () => { if (!isOut) this.checkout(b.id); },
+        outDisabled: isOut || b.held ? true : false,
+        outLabel: isOut ? 'checked out ✓' : (b.held ? 'place hold' : 'check out'),
+        outBg: isOut ? '#5A6B45' : '#17150F',
+        outFg: '#F4EFE6'
+      };
+    });
+
+    const queue = sorted.map(({ b, pct }, i) => ({
+      title: b.title, cover: b.cover, rank: String(i + 1).padStart(2, '0'), pct,
+      status: st.out.includes(b.id) ? 'checked out 11:0' + (9 + st.out.indexOf(b.id)) : (b.held ? '2 holds' : 'on shelf'),
+      pinLabel: st.pinned === b.id ? 'pinned' : 'pin for maya',
+      pinBg: st.pinned === b.id ? '#B5352A' : 'transparent',
+      pinFg: st.pinned === b.id ? '#F4EFE6' : 'rgba(23,21,15,.7)',
+      pinBorder: st.pinned === b.id ? '#B5352A' : 'rgba(23,21,15,.22)',
+      onPin: () => this.pin(b.id)
+    }));
+
+    const labels = { s1:'01 ranked', s2:'02 explained', s3:'03 curated', s4:'04 student patched live',
+                     s5:'05 checked out', s6:'06 desk patched live', s7:'07 advisory answered', s8:'08 deploy receipt' };
+    const proof = Object.keys(labels).map(k => {
+      const done = k === 's8' ? Object.keys(labels).slice(0, 7).every(j => st.steps[j]) : !!st.steps[k];
+      return { label: labels[k], bg: done ? 'rgba(90,107,69,.14)' : 'transparent',
+               fg: done ? '#40522E' : 'rgba(23,21,15,.38)',
+               border: done ? 'rgba(90,107,69,.4)' : 'rgba(23,21,15,.14)' };
+    });
+
+    return {
+      ranked, queue, proof,
+      pulsesUp: st.pulses.filter(p => p.dir === 'up'),
+      pulsesDown: st.pulses.filter(p => p.dir === 'down'),
+      loadedS: '11:07:12', loadedL: '11:07:04',
+      patchS: st.patchS, patchL: st.patchL,
+      outToday: 41 + st.out.length,
+      curationNote: st.pinned ? 'curation broadcast to student' : 'no manual curation applied',
+      askQ: st.askQ,
+      asking: st.ask === 'thinking',
+      answered: st.ask === 'done',
+      answers: [
+        { title:'The Quiet Satellite', meta:'M. Reyes · GL 5.2 · audiobook + large print · 4 on shelf' },
+        { title:'Bloom of the Deep', meta:'R. Castellanos · GL 6.1 · large print · 2 on shelf' },
+        { title:'Signal from the Ninth Floor', meta:'P. Nkemdirim · GL 5.6 · audiobook + dyslexia-friendly · 1 on shelf' }
+      ],
+      onAskChange: (e) => this.setState({ askQ: e.target.value }),
+      onAskKey: (e) => { if (e.key === 'Enter') this.ask(); },
+      onAsk: this.ask,
+      reset: this.reset
+    };
+  }
+}
+</script>
+</body>
+</html>

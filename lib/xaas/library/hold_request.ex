@@ -1,7 +1,6 @@
-defmodule Xaas.Library.Checkout do
+defmodule Xaas.Library.HoldRequest do
   @moduledoc """
-  Ash resource for Book Checkouts, grounded in Schema.org (schema:BorrowAction) and PROV (prov:Activity).
-  Tracks circulation transactions of books borrowed by readers.
+  Ash resource for Hold Requests on library books, grounded in Schema.org (schema:ReserveAction) and PROV (prov:Activity).
   """
   use Xaas.Resource,
     otp_app: :kanban,
@@ -12,34 +11,31 @@ defmodule Xaas.Library.Checkout do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   postgres do
-    table "library_checkouts"
+    table "library_holds"
     repo Xaas.Repo
   end
 
   pub_sub do
     module KanbanWeb.Endpoint
-    prefix "circulation"
+    prefix "holds"
     broadcast_type :notification
 
-    publish :create, ["school", :school_id]
-    publish :create, ["events"]
-    publish :borrow, ["events"]
-    publish :update, ["school", :school_id]
-    publish :update, ["events"]
+    publish :create, ["created"]
+    publish :update, ["updated", :id]
   end
 
   json_api do
-    type "library_checkout"
+    type "library_hold"
 
     routes do
-      base "/library/checkouts"
+      base "/library/holds"
       get :read
       index :read
     end
   end
 
   graphql do
-    type :library_checkout
+    type :library_hold
   end
 
   actions do
@@ -47,18 +43,12 @@ defmodule Xaas.Library.Checkout do
 
     create :create do
       primary? true
-      accept [:book_id, :user_id, :school_id, :borrowed_at, :returned_at, :status, :renewed_count]
-    end
-
-    create :borrow do
-      description "Borrows a book for a student, automatically decrementing available copies"
-      accept [:book_id, :user_id, :school_id]
-      change Xaas.Library.Changes.DecrementBookInventory
+      accept [:book_id, :user_id, :school_id, :position, :status]
     end
 
     update :update do
       primary? true
-      accept [:returned_at, :status, :renewed_count]
+      accept [:position, :status]
     end
 
     read :for_user do
@@ -72,11 +62,7 @@ defmodule Xaas.Library.Checkout do
       authorize_if always()
     end
 
-    policy action_type(:create) do
-      authorize_if always()
-    end
-
-    policy action_type([:update, :destroy]) do
+    policy action_type([:create, :update, :destroy]) do
       authorize_if always()
     end
   end
@@ -90,26 +76,15 @@ defmodule Xaas.Library.Checkout do
       public? true
     end
 
-    attribute :borrowed_at, :utc_datetime_usec do
+    attribute :position, :integer do
       allow_nil? false
-      default &DateTime.utc_now/0
-      public? true
-    end
-
-    attribute :returned_at, :utc_datetime_usec do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :renewed_count, :integer do
-      allow_nil? false
-      default 0
+      default 1
       public? true
     end
 
     attribute :status, :atom do
-      constraints [one_of: [:borrowed, :returned, :overdue]]
-      default :borrowed
+      constraints [one_of: [:active, :fulfilled, :cancelled]]
+      default :active
       allow_nil? false
       public? true
     end

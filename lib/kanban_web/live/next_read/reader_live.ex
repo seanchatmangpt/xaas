@@ -1,29 +1,32 @@
 defmodule KanbanWeb.NextRead.ReaderLive do
   @moduledoc """
   Next Read interactive reading recommendation LiveView.
-  Displays personalized, ranked recommendations scored via the 6-factor formula,
-  and updates in real time on library circulation/curation events via PubSub.
+  Displays personalized, ranked recommendations scored via the dynamic 6-factor formula,
+  and updates in real time on library circulation/curation events via Ash PubSub notifications.
   """
   use KanbanWeb, :live_view
 
-  alias Xaas.Library.{Book, Checkout, Curation, Ranker}
+  alias Xaas.Library.{Book, Checkout, Config, Ranker}
   require Ash.Query
-
-  @pubsub_topic "library:recommendations"
 
   @impl true
   def mount(_params, session, socket) do
     if connected?(socket) do
-      Phoenix.PubSub.subscribe(Kanban.PubSub, @pubsub_topic)
+      # Subscribe to Ash resource notification topics
+      KanbanWeb.Endpoint.subscribe("circulation:events")
+      KanbanWeb.Endpoint.subscribe("library:books:created")
+      KanbanWeb.Endpoint.subscribe("recommendations:curation_events")
     end
 
-    user_id = session["user_id"] || session[:user_id] || default_user_id()
-    student_grade = session["grade"] || session[:grade] || 6
+    user = resolve_current_user(session)
+    student_grade = session["grade"] || session[:grade] || Config.default_grade()
 
     socket =
       socket
-      |> assign(:user_id, user_id)
+      |> assign(:user, user)
+      |> assign(:user_id, user.id)
       |> assign(:student_grade, student_grade)
+      |> assign(:grade_range, Config.grade_range())
       |> assign(:search_query, "")
       |> assign(:selected_genre, "all")
       |> load_recommendations()
@@ -36,7 +39,11 @@ defmodule KanbanWeb.NextRead.ReaderLive do
     grade =
       case params["grade"] do
         nil -> socket.assigns.student_grade
-        g when is_binary(g) -> String.to_integer(g)
+        g when is_binary(g) ->
+          case Integer.parse(g) do
+            {val, ""} -> val
+            _ -> socket.assigns.student_grade
+          end
       end
 
     {:noreply, socket |> assign(:student_grade, grade) |> load_recommendations()}
@@ -44,33 +51,29 @@ defmodule KanbanWeb.NextRead.ReaderLive do
 
   @impl true
   def handle_event("change_grade", %{"grade" => grade_str}, socket) do
-    grade = String.to_integer(grade_str)
+    grade =
+      case Integer.parse(grade_str) do
+        {val, ""} -> val
+        _ -> socket.assigns.student_grade
+      end
+
     {:noreply, socket |> assign(:student_grade, grade) |> load_recommendations()}
   end
 
   @impl true
   def handle_event("checkout_book", %{"book-id" => book_id}, socket) do
-    # Create checkout record
-    case Checkout
-         |> Ash.Changeset.for_create(:create, %{
-           book_id: book_id,
-           user_id: socket.assigns.user_id,
-           status: :borrowed
-         })
-         |> Ash.create(authorize?: false) do
-      {:ok, _checkout} ->
-        # Decrement available copies on Book
-        book = Book |> Ash.get!(book_id, authorize?: false)
-        if book.available_copies > 0 do
-          Book
-          |> Ash.Changeset.for_update(:update, %{
-            available_copies: book.available_copies - 1
-          })
-          |> Ash.update(authorize?: false)
-        end
+    # Ensure current user exists in database for foreign key integrity
+    user_id = socket.assigns.user_id
 
-        # Broadcast update to PubSub
-        Phoenix.PubSub.broadcast(Kanban.PubSub, @pubsub_topic, {:library_updated, :checkout})
+    case Checkout
+         |> Ash.Changeset.for_create(:borrow, %{
+           book_id: book_id,
+           user_id: user_id,
+           school_id: Config.default_school_id()
+         })
+         |> Ash.create() do
+      {:ok, checkout} ->
+        book = Book |> Ash.get!(checkout.book_id)
 
         {:noreply,
          socket
@@ -83,6 +86,17 @@ defmodule KanbanWeb.NextRead.ReaderLive do
   end
 
   @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{payload: %Ash.Notifier.Notification{}}, socket) do
+    {:noreply, load_recommendations(socket)}
+  end
+
+  @impl true
+  def handle_info(%Ash.Notifier.Notification{}, socket) do
+    # React to any Ash notification emitted by Book or Checkout
+    {:noreply, load_recommendations(socket)}
+  end
+
+  @impl true
   def handle_info({:library_updated, _event}, socket) do
     {:noreply, load_recommendations(socket)}
   end
@@ -91,15 +105,30 @@ defmodule KanbanWeb.NextRead.ReaderLive do
     user_id = socket.assigns.user_id
     grade = socket.assigns.student_grade
 
-    {:ok, recommendations} = Ranker.rank_recommendations(user_id, grade, limit: 12)
+    {:ok, recommendations} = Ranker.rank_recommendations(user_id, grade, limit: 12, exclude_read: false)
 
     assign(socket, :recommendations, recommendations)
   end
 
-  defp default_user_id do
-    case Xaas.Accounts.User |> Ash.Query.limit(1) |> Ash.read(authorize?: false) do
-      {:ok, [user | _]} -> user.id
-      _ -> "00000000-0000-0000-0000-000000000001"
+  defp resolve_current_user(session) do
+    user_id = session["user_id"] || session[:user_id]
+
+    if user_id do
+      case Xaas.Accounts.User |> Ash.get(user_id) do
+        {:ok, user} -> user
+        _ -> fallback_user()
+      end
+    else
+      fallback_user()
+    end
+  end
+
+  defp fallback_user do
+    case Xaas.Accounts.User |> Ash.Query.limit(1) |> Ash.read() do
+      {:ok, [user | _]} -> user
+      _ ->
+        unique_email = "reader.student.#{System.unique_integer([:positive])}@school.district.edu"
+        Ash.Seed.seed!(Xaas.Accounts.User, %{email: unique_email})
     end
   end
 
@@ -107,6 +136,17 @@ defmodule KanbanWeb.NextRead.ReaderLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans">
+      <%= if flash = Phoenix.Flash.get(@flash, :info) do %>
+        <div class="mb-6 rounded-md bg-green-50 p-4 border border-green-200" role="alert" data-testid="flash-info">
+          <p class="text-sm font-medium text-green-800"><%= flash %></p>
+        </div>
+      <% end %>
+      <%= if flash = Phoenix.Flash.get(@flash, :error) do %>
+        <div class="mb-6 rounded-md bg-red-50 p-4 border border-red-200" role="alert" data-testid="flash-error">
+          <p class="text-sm font-medium text-red-800"><%= flash %></p>
+        </div>
+      <% end %>
+
       <div class="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 class="text-3xl font-bold tracking-tight text-gray-900">Next Read</h1>
@@ -115,14 +155,14 @@ defmodule KanbanWeb.NextRead.ReaderLive do
           </p>
         </div>
         <div class="mt-3 sm:mt-0 sm:ml-4 flex items-center space-x-3">
-          <form phx-change="change_grade" class="flex items-center space-x-2">
+          <form id="grade-selection-form" phx-change="change_grade" class="flex items-center space-x-2">
             <label for="grade" class="text-sm font-medium text-gray-700">Student Grade:</label>
             <select
               id="grade"
               name="grade"
               class="rounded-md border-gray-300 py-1.5 pl-3 pr-8 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
             >
-              <%= for g <- 1..12 do %>
+              <%= for g <- @grade_range do %>
                 <option value={g} selected={g == @student_grade}>Grade <%= g %></option>
               <% end %>
             </select>
@@ -130,20 +170,20 @@ defmodule KanbanWeb.NextRead.ReaderLive do
         </div>
       </div>
 
-      <div class="mt-8 grid grid-cols-1 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
+      <div class="mt-8 grid grid-cols-1 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 gap-x-6" data-testid="recommendations-grid">
         <%= for rec <- @recommendations do %>
-          <div class="relative bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col justify-between p-6 hover:shadow-md transition duration-150">
+          <div class="relative bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col justify-between p-6 hover:shadow-md transition duration-150" data-testid="book-card" data-book-id={rec.book.id}>
             <div>
               <div class="flex justify-between items-start">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                   Grade <%= rec.book.grade_level %>
                 </span>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800" data-testid="match-percentage">
                   <%= Float.round(rec.score * 100, 1) %>% Match
                 </span>
               </div>
 
-              <h3 class="mt-3 text-lg font-semibold text-gray-900">
+              <h3 class="mt-3 text-lg font-semibold text-gray-900" data-testid="book-title">
                 <%= rec.book.title %>
               </h3>
               <p class="text-sm text-gray-600 font-medium">by <%= rec.book.author %></p>
@@ -183,6 +223,7 @@ defmodule KanbanWeb.NextRead.ReaderLive do
                 <button
                   phx-click="checkout_book"
                   phx-value-book-id={rec.book.id}
+                  data-testid="checkout-button"
                   class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Checkout (<%= rec.book.available_copies %> available)
@@ -190,6 +231,7 @@ defmodule KanbanWeb.NextRead.ReaderLive do
               <% else %>
                 <button
                   disabled
+                  data-testid="checkout-button-disabled"
                   class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed"
                 >
                   Checked Out (0 available)

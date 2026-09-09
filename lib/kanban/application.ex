@@ -60,7 +60,12 @@ defmodule Kanban.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Kanban.PubSub},
       # Start Finch
-      {Finch, name: Kanban.Finch}
+      {Finch, name: Kanban.Finch},
+      # Real A2A (Agent-to-Agent) agent simulating a Next Read reader
+      # persona -- see KanbanWeb.A2A.NextReadUserAgent's moduledoc. Started
+      # as a supervised GenServer per `use A2A.Agent`'s generated
+      # `start_link/1`; served over HTTP via the `/a2a` router scope.
+      KanbanWeb.A2A.NextReadUserAgent
       # Start a worker by calling: Kanban.Worker.start_link(arg)
       # {Kanban.Worker, arg}
     ]

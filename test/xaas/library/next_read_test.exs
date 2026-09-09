@@ -1,7 +1,7 @@
 defmodule Xaas.Library.NextReadTest do
   @moduledoc """
   Chicago-school unit and integration test suite for Xaas.Library domain,
-  resources (Book, Checkout, Curation), Embeddings, and the 6-factor composite Ranker.
+  resources (Book, Checkout, Curation), Embeddings, Config, and the 6-factor composite Ranker.
 
   Executes against real Postgres database via Sandbox, uses Faker for realistic inputs,
   tests state transitions, ranking scores, and PubSub broadcasts. Zero test doubles/mocks.
@@ -9,7 +9,7 @@ defmodule Xaas.Library.NextReadTest do
   use Kanban.DataCase, async: false
 
   alias Xaas.Accounts.User
-  alias Xaas.Library.{Book, Checkout, Curation, Embeddings, Ranker}
+  alias Xaas.Library.{Book, Checkout, Config, Curation, Embeddings, Ranker}
   require Ash.Query
 
   setup do
@@ -26,7 +26,7 @@ defmodule Xaas.Library.NextReadTest do
     })
   end
 
-  defp create_book!(attrs \\ %{}) do
+  defp create_book!(attrs) do
     title = Map.get(attrs, :title, Faker.Commerce.product_name())
     author = Map.get(attrs, :author, Faker.Person.name())
     isbn = Map.get(attrs, :isbn, Faker.Commerce.color() <> "-#{System.unique_integer([:positive])}")
@@ -58,6 +58,7 @@ defmodule Xaas.Library.NextReadTest do
     |> Ash.Changeset.for_create(:create, %{
       user_id: user.id,
       book_id: book.id,
+      school_id: Config.default_school_id(),
       status: :borrowed
     })
     |> Ash.create!(authorize?: false)
@@ -81,8 +82,9 @@ defmodule Xaas.Library.NextReadTest do
 
       assert book.id != nil
       assert book.title == "The Salt Road Cipher"
-      assert book.grade_level == 6
+      assert Decimal.to_integer(book.grade_level) == 6
       assert book.genres == ["Mystery", "Cipher"]
+
       assert is_list(book.embedding)
       assert length(book.embedding) == 384
 
@@ -157,12 +159,10 @@ defmodule Xaas.Library.NextReadTest do
     end
   end
 
-  describe "6-Factor Next Read Composite Ranker" do
-    test "correctly scores and ranks candidate books based on 6 composite factors" do
-      # 1. Setup Student Maya R. (grade 6)
+  describe "Dynamic Configuration & 6-Factor Next Read Composite Ranker" do
+    test "correctly scores and ranks candidate books based on dynamic 6 composite factors" do
       user = create_user!("maya.r@school.district.edu")
 
-      # 2. Student previously checked out science & cipher books
       prior_book1 = create_book!(%{
         title: "The Codebreaker's Secret",
         grade_level: 6,
@@ -178,8 +178,6 @@ defmodule Xaas.Library.NextReadTest do
       create_checkout!(user, prior_book1)
       create_checkout!(user, prior_book2)
 
-      # 3. Setup Candidate Books:
-      # Book 1: Highly matching cipher mystery, grade 6, available, curated (should rank top)
       top_book = create_book!(%{
         title: "The Salt Road Cipher",
         grade_level: 6,
@@ -189,7 +187,6 @@ defmodule Xaas.Library.NextReadTest do
       })
       create_curation!(top_book, "6-8", "Librarian recommended for mystery lovers.")
 
-      # Book 2: Grade 6 marine biology book, available, not curated
       mid_book = create_book!(%{
         title: "Bloom of the Deep",
         grade_level: 6,
@@ -198,7 +195,6 @@ defmodule Xaas.Library.NextReadTest do
         available_copies: 1
       })
 
-      # Book 3: High school grade 11 textbook, no copies available (0 available)
       low_book = create_book!(%{
         title: "Advanced Quantum Mechanics XI",
         grade_level: 11,
@@ -207,7 +203,6 @@ defmodule Xaas.Library.NextReadTest do
         available_copies: 0
       })
 
-      # 4. Execute Ranker
       {:ok, recommendations} = Ranker.rank_recommendations(user.id, 6, limit: 10)
 
       assert length(recommendations) >= 3
@@ -220,7 +215,6 @@ defmodule Xaas.Library.NextReadTest do
       assert rec_mid != nil
       assert rec_low != nil
 
-      # Assert factor integrity
       assert rec_top.factors.grade_fit == 1.0
       assert rec_top.factors.available == 1.0
       assert rec_top.factors.curation == 1.0
@@ -228,13 +222,10 @@ defmodule Xaas.Library.NextReadTest do
       assert rec_low.factors.available == 0.0
       assert rec_low.factors.grade_fit <= 0.20
 
-      # Assert score ordering: top_book > mid_book > low_book
       assert rec_top.score > rec_mid.score
       assert rec_mid.score > rec_low.score
 
-      # Verify weights match the specification:
-      # 0.34*collab + 0.26*semantic + 0.16*gradeFit + 0.10*available + 0.06*diversity + 0.09*curation
-      weights = Ranker.weights()
+      weights = Config.weights()
       assert weights.collab == 0.34
       assert weights.semantic == 0.26
       assert weights.grade_fit == 0.16
@@ -242,6 +233,79 @@ defmodule Xaas.Library.NextReadTest do
       assert weights.diversity == 0.06
       assert weights.curation == 0.09
       assert Float.round(Enum.sum(Map.values(weights)), 2) == 1.01
+    end
+
+    test "allows runtime weight overrides without altering codebase" do
+      user = create_user!()
+      book_a = create_book!(%{title: "Curation Preferred", grade_level: 6, available_copies: 1})
+      _book_b = create_book!(%{title: "Standard Choice", grade_level: 6, available_copies: 1})
+      create_curation!(book_a, "6-8", "Essential Pick")
+
+      custom_weights = %{
+        collab: 0.10,
+        semantic: 0.10,
+        grade_fit: 0.10,
+        available: 0.10,
+        diversity: 0.10,
+        curation: 0.50
+      }
+
+      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, weights: custom_weights, limit: 2)
+      assert hd(recs).book.id == book_a.id
+    end
+
+    test "generates grounded rationale explanations and breakdown parts for recommendations" do
+      user = create_user!()
+      book = create_book!(%{title: "The Wildwater Signal", grade_level: 6})
+      create_checkout!(user, book)
+
+      candidate = create_book!(%{title: "The Salt Road Cipher", grade_level: 5.4, available_copies: 3})
+      _curation = create_curation!(candidate, "6-8", "Librarian pin")
+
+      {:ok, [rec | _]} = Ranker.rank_recommendations(user.id, 6, limit: 1)
+      explanation = Ranker.explain_recommendation(rec.book, rec.factors, [hd(Checkout |> Ash.read!(authorize?: false))])
+
+      assert String.contains?(explanation.why, "Because you finished")
+      assert Enum.any?(explanation.parts, &String.starts_with?(&1, "collaborative"))
+      assert Enum.any?(explanation.parts, &String.starts_with?(&1, "semantic"))
+      assert Enum.any?(explanation.parts, &String.starts_with?(&1, "grade fit"))
+    end
+
+    test "manages hold requests and queue positions on unavailable titles" do
+      user = create_user!()
+      book = create_book!(%{title: "Nine Doors to Nowhere", available_copies: 0})
+
+      hold =
+        Xaas.Library.HoldRequest
+        |> Ash.Changeset.for_create(:create, %{
+          user_id: user.id,
+          book_id: book.id,
+          position: 2,
+          status: :active
+        })
+        |> Ash.create!(authorize?: false)
+
+      assert hold.id != nil
+      assert hold.position == 2
+      assert hold.status == :active
+    end
+
+    test "persists recommendation audit logs with 6-factor weight snapshot" do
+      user = create_user!()
+      log =
+        Xaas.Library.RecommendationLog
+        |> Ash.Changeset.for_create(:create, %{
+          user_id: user.id,
+          candidate_pool_size: 41,
+          weights: Config.weights(),
+          ranked_items: [%{rank: 1, title: "The Salt Road Cipher", score: 0.92}],
+          accepted: false
+        })
+        |> Ash.create!(authorize?: false)
+
+      assert log.id != nil
+      assert log.candidate_pool_size == 41
+      assert log.weights["collab"] == 0.34
     end
   end
 end

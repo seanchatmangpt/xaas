@@ -3,11 +3,11 @@
     "priv/packs/xaas_library_pack/templates/manufacture.ex.eex=>lib/mix/tasks/xaas.library.manufacture.ex": {
       "out_template": "lib/mix/tasks/xaas.library.manufacture.ex",
       "outputs": {
-        "/Users/sac/xaas/lib/mix/tasks/xaas.library.manufacture.ex": "sha256:4b074890efd11e49af0e0dac98e781600ad3bab63332c0f07e55c5ebb8848fa1"
+        "/Users/sac/xaas/lib/mix/tasks/xaas.library.manufacture.ex": "sha256:20d5468708e6d8d529e7696b138443bda5a16cefbcf73f8b1f164888e4591852"
       },
       "pack_dir": "priv/packs/xaas_library_pack",
       "template": "priv/packs/xaas_library_pack/templates/manufacture.ex.eex",
-      "updated_at": "2026-09-08T22:30:27.376793Z"
+      "updated_at": "2026-09-09T04:52:20.486679Z"
     },
     "templates-hooks/compile-proof-eex.txt.tmpl=>GGEN-SH-AFTER-PROOF-EEX.txt": {
       "out_template": "GGEN-SH-AFTER-PROOF-EEX.txt",
