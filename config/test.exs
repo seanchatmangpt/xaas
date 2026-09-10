@@ -78,3 +78,17 @@ config :phoenix, :plug_init_mode, :runtime
 # retry-exhaustion tests from ~6.6s each to a few ms without faking the
 # retry count or the transport error itself.
 config :req, default_options: [retry_delay: fn _n -> 0 end]
+
+
+# Test-only real OTel SDK config for
+# test/xaas/telemetry/ocel_real_otel_span_test.exs: configuring ANY
+# processor here just ensures :opentelemetry's real supervision tree
+# actually starts the :otel_simple_processor_global gen_statem process at
+# app boot -- the exporter target below is a real, valid placeholder
+# (this config-loading process, not any real test process); each test
+# re-points it to its own pid at runtime via the real
+# :otel_simple_processor.set_exporter/2 API before exercising anything.
+config :opentelemetry,
+  processors: [
+    {:otel_simple_processor, %{exporter: {:otel_exporter_pid, self()}}}
+  ]

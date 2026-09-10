@@ -69,6 +69,18 @@ defmodule Xaas.MixProject do
       {:ash, "~> 3.0", override: true},
       {:ash_postgres, "~> 2.0"},
       {:opentelemetry_ash, "~> 0.1"},
+      # Real finding, this session: only opentelemetry_api (the interface)
+      # was a dependency, never opentelemetry (the actual SDK that creates
+      # exportable spans) -- confirmed via `grep opentelemetry mix.lock`
+      # returning only `_api`/`_ash`/`_process_propagator`. Without the
+      # SDK application running, OpentelemetryAsh's real
+      # OpenTelemetry.Tracer.set_attributes/1 calls run against the API
+      # package's no-op default tracer -- nothing is actually exportable
+      # or observable as real OTel data; OCEL v2 events only reliably
+      # reached priv/ocel/ash-actions.ndjson, never a real span. Added
+      # test-only to prove (or disprove) OCEL v2 data reaching a REAL
+      # exported OTel span, not just the log file.
+      {:opentelemetry, "~> 1.5", only: :test},
       # Re-added 2026-09-08: ash_ai 1.0.3 for the Ash MCP server
       # (mix ash_ai.gen.mcp). Verified via a real `mix deps.get` +
       # `mix compile --force` -- full xaas app + all deps compiled clean
@@ -205,13 +217,24 @@ defmodule Xaas.MixProject do
       {:stripity_stripe, "~> 2.17"},
       {:ggen_igniter, "~> 26.9.8", only: [:dev, :test]},
       {:faker, "~> 0.18", only: [:dev, :test]},
-      # Real path dep on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
+      # Real dependency on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a
       # hand-documented understanding of its shape (see
-      # lib/xaas/telemetry/ocel_forwarder.ex). ex4pm is a flat app (app:
-      # :ex4pm), not an umbrella with an apps/ex4pm_core child -- the
-      # previous path predates that layout and never resolved.
-      {:ex4pm, path: "../ex4pm"}
+      # lib/xaas/telemetry/ocel_forwarder.ex).
+      #
+      # k8s-fortune5-hardening pass real fix: was `path: "../ex4pm"`, which
+      # made the Docker image unbuildable -- the build context is `xaas/`
+      # only, so `/ex4pm` never exists inside the builder stage
+      # ("Cannot compile dependency :ex4pm because it isn't available"),
+      # confirmed via a real failed `docker build`, not assumed. ex4pm is a
+      # real, tagged, checksum-verifiable Hex release (hex.pm/packages/
+      # ex4pm/26.9.9) -- switched to that, exact-pinned (mirroring
+      # ash_ex4pm's own mix.exs rationale: ex4pm has no stated versioning
+      # policy for its third CalVer component yet, so `~>` can't actually
+      # guarantee compatibility). This also makes xaas a real downstream
+      # consumer of beam4pm's own façade rather than a live path into
+      # whatever happens to be checked out on the host.
+      {:ex4pm, "== 26.9.9"}
     ]
   end
 

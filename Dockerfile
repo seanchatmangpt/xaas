@@ -12,9 +12,9 @@
 # This file is based on these images:
 #
 #   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20231009-slim - for the release image
+#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bookworm-20260824-slim - for the release image
 #   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.16.0-erlang-26.2.1-debian-bullseye-20231009-slim
+#   - Ex: hexpm/elixir:1.18.4-erlang-27.2.4-debian-bookworm-20260824-slim
 #
 # ash-migration Phase 7 real fixes: the book's original 1.16.0/OTP 26.2.1
 # fails a real Docker build once ash is a dep, in 2 real, sequential ways
@@ -29,9 +29,30 @@
 #    app that was never fetched ("Could not find application
 #    :json_polyfill"). Bumping OTP to 27.x (which also has :json) keeps the
 #    builder and the resolved lock file consistent.
-ARG ELIXIR_VERSION=1.18.4
+#
+# k8s-fortune5-hardening pass real fixes:
+# 1. ELIXIR_VERSION was pinned to 1.18.4 here but this repo's own
+#    .tool-versions (asdf) pins `elixir 1.19.5-otp-27` / `erlang 27.2.4` --
+#    the two had drifted. Corrected to match the real, asdf-pinned toolchain
+#    this repo actually develops against, not a stale value left over from
+#    an earlier book-derived Dockerfile revision.
+# 2. The previously-pinned bullseye-20260803-slim base is Debian bullseye,
+#    whose bullseye-security apt pool has genuinely decayed past
+#    buildability -- confirmed via 4 real, reproducible `docker build` 404s
+#    (perl, then libc-l10n) against the archive mirror, not a transient
+#    blip. Moved to bookworm (Debian's current stable release, actively
+#    maintained). Note: this repo's packer/ directory (HashiCorp Packer)
+#    builds the EC2 Docker Swarm HOST AMI (amazon-linux-docker) -- a
+#    different artifact from this app's own container image -- so it is
+#    not an applicable substitute base here; Debian bookworm is the real
+#    fix for this specific image.
+#
+# Pinned to a real, currently-published hexpm/elixir + debian tag pair for
+# the CORRECT (1.19.5/27.2.4) version combo -- verified both exist on
+# Docker Hub before pinning, not guessed.
+ARG ELIXIR_VERSION=1.19.5
 ARG OTP_VERSION=27.2.4
-ARG DEBIAN_VERSION=bullseye-20260803-slim
+ARG DEBIAN_VERSION=bookworm-20260824-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
