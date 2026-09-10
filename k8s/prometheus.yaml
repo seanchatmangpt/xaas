@@ -30,11 +30,22 @@ spec:
       labels:
         app: prometheus
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: prometheus
           image: prom/prometheus:v2.53.0
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 9090
           resources:
@@ -47,10 +58,19 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
+            # Real requirement, not assumed: prometheus writes its TSDB to
+            # /prometheus (the image's default --storage.tsdb.path) even
+            # though no PVC was ever declared for it here -- with
+            # readOnlyRootFilesystem: true that write target must be a
+            # real writable mount or the container fails to start.
+            - name: tsdb
+              mountPath: /prometheus
       volumes:
         - name: config
           configMap:
             name: prometheus-config
+        - name: tsdb
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

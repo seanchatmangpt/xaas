@@ -16,10 +16,25 @@ spec:
         app: xaas
     spec:
       serviceAccountName: xaas
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: xaas
           image: xaas:local
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            # Dockerfile already `USER nobody` (uid 65534) -- asserted here
+            # too so the pod-level policy is enforced even if the image
+            # ever regresses. readOnlyRootFilesystem is left off pending a
+            # real live check of whether the BEAM release writes to its
+            # own /app tree at runtime -- adding it blind risks a silent
+            # crash-loop; verify empirically before flipping it on.
           ports:
             - containerPort: 4000
           resources:
