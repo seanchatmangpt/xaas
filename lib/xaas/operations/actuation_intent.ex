@@ -49,6 +49,8 @@ defmodule Xaas.Operations.ActuationIntent do
         :input,
         :status
       ]
+
+      validate Xaas.Actuation.Validations.CausalAdmission
     end
 
     update :transition do
