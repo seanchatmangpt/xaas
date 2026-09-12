@@ -6,4 +6,4 @@ REM courses, books, articles, and the like. Contact us if you are in doubt.
 REM We make no guarantees that this code is fit for any purpose.
 REM Visit https://pragprog.com/titles/beamops for more book information.
 
-call "%~dp0\kanban" eval Kanban.Release.migrate
+call "%~dp0\xaas" eval Xaas.Release.migrate

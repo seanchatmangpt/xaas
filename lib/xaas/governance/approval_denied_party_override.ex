@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -21,7 +21,7 @@ defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
     # (the `denied-party.override` requireApproval action): `:create` (file
     # the override request for a "potential_match" screening record) and
     # `:approve` are gated the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # ApprovalDeniedPartyOverrideRequiresApprover's real "second, distinct
     # owner" rule on :approve.
     bypass action(:create) do

@@ -2,9 +2,15 @@
   "name": "xaas-e2e",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "^1.62.1"
+    "@amiceli/vitest-cucumber": "^6.5.0",
+    "@playwright/test": "^1.62.1",
+    "@rolldown/binding-darwin-arm64": "^1.2.7",
+    "@types/node": "^26.5.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   },
   "scripts": {
     "test:e2e": "playwright test"
-  }
+  },
+  "type": "module"
 }

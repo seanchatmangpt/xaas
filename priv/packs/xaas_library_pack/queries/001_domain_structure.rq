@@ -1,0 +1,10 @@
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+
+SELECT ?domain ?domainModule ?otpApp ?adminShow WHERE {
+  ?domain a xl:LibraryDomain ;
+          xl:domainModule ?domainModule ;
+          xl:otpApp ?otpApp ;
+          xl:adminShow ?adminShow .
+}

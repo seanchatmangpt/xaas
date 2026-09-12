@@ -8,12 +8,12 @@
 # ---
 # in mix.exs
 
-defmodule Kanban.MixProject do
+defmodule Xaas.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :kanban,
+      app: :xaas,
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -28,12 +28,22 @@ defmodule Kanban.MixProject do
     ]
   end
 
+  # `mix test` is a built-in task Mix already runs under :test env by
+  # convention -- a custom alias like `test.full` is not, and without
+  # this it runs under :dev (real failure: `mix test.full` raised
+  # "MIX_ENV=dev but the task you are running needs to be run in the
+  # :test env"). Declaring it here is the real fix, not
+  # MIX_ENV=test mix test.full at every call site.
+  def cli do
+    [preferred_envs: ["test.full": :test, "test.integration": :test]]
+  end
+
   # Configuration for the OTP application.
   #
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Kanban.Application, []},
+      mod: {Xaas.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -56,14 +66,31 @@ defmodule Kanban.MixProject do
       # confirmed via a real grep of `extensions:`/`use` across those files
       # in Phase 3 -- porting only ash/ash_postgres (Phase 1's original,
       # narrower guess) would not compile against the real resource files.
-      {:ash, "~> 3.0"},
+      {:ash, "~> 3.0", override: true},
       {:ash_postgres, "~> 2.0"},
       {:opentelemetry_ash, "~> 0.1"},
-      # ash_ai's transitive dep req_llm fails to compile against the resolved
-      # finch version (real: %Finch.Pool{}/pool_tag mismatch, confirmed via
-      # a real mix compile error) -- dropped; zero real resource files
-      # under lib/xaas/{operations,governance,billing,platform,accounts,
-      # ledger} reference AshAi (confirmed via grep).
+      # Re-added 2026-09-08: ash_ai 1.0.3 for the Ash MCP server
+      # (mix ash_ai.gen.mcp). Verified via a real `mix deps.get` +
+      # `mix compile --force` -- full xaas app + all deps compiled clean
+      # (302 files, exit 0). The 0.8.2-era finch/req_llm conflict noted
+      # historically here no longer reproduces against the resolved
+      # finch 0.23.0 / req_llm 1.20.0.
+      {:ash_ai, "~> 1.0"},
+      # ash_ai's `prompt/2` generic-action impl (AshAi.Actions.Prompt) is
+      # gated behind `Code.ensure_loaded?(ReqLLM)` -- it is an optional dep
+      # of ash_ai (see deps/ash_ai/mix.exs) and stays unfetched/uncompiled
+      # unless declared directly here. Pinned to the same "~> 1.18" range
+      # ash_ai itself declares. ReqLLM resolves the Groq API key via its
+      # own default env-key lookup (GROQ_API_KEY) -- no manual key wiring
+      # in this app. See lib/xaas/library/explainer/groq_adapter.ex.
+      {:req_llm, "~> 1.18"},
+      # Real A2A (Agent-to-Agent, google.github.io/A2A) server, for MCP
+      # agents to simulate different Next Read users (student/librarian
+      # personas) as real A2A clients hitting the same actor/tenant-
+      # resolved path as any other caller -- see lib/xaas_web/a2a/
+      # and the /a2a router scope.
+      {:a2a, "~> 0.2"},
+      {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
       {:ash_iam, "~> 2.0"},
       {:hammer, "~> 7.0"},
@@ -95,12 +122,13 @@ defmodule Kanban.MixProject do
       # per explicit user direction (prefer real Ash-ecosystem libraries
       # over hand-rolled/non-Ash equivalents, e.g. Petal's plain
       # Ecto-based auth-adjacent components).
+      {:petal_components, "~> 2.0"},
       {:ash_authentication_phoenix, "~> 2.17"},
       {:bcrypt_elixir, "~> 3.0"},
       {:ash_authentication, "~> 4.0"},
       {:picosat_elixir, "~> 0.2"},
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
-      # assertions in KanbanWeb.AutofdeLab.StatusLiveTest need it).
+      # assertions in XaasWeb.AutofdeLab.StatusLiveTest need it).
       {:lazy_html, ">= 0.1.0", only: :test},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:igniter, "~> 0.6", only: [:dev, :test]},
@@ -140,6 +168,16 @@ defmodule Kanban.MixProject do
       # 1.2.x is the current stable release (confirmed via mix hex.info),
       # past the rc this repo's original conflict note predates.
       {:phoenix_live_view, "~> 1.2"},
+      # Next Read case study (docs/case-studies/next-read/): real local
+      # Hugging Face sentence-embedding inference for the ranker's semantic
+      # term (lib/xaas/library/embeddings.ex). Not ash_ai/pgvector -- ash_ai
+      # stays dropped (see the ash_ai comment above); Nx/Bumblebee/EXLA have
+      # no dependency conflict with the resolved Finch version and run fully
+      # local/offline once weights are cached, so no student data leaves the
+      # process boundary for ranking.
+      {:nx, "~> 0.9"},
+      {:bumblebee, "~> 0.6"},
+      {:exla, "~> 0.9"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.3"},
@@ -149,11 +187,31 @@ defmodule Kanban.MixProject do
       {:prom_ex, "~> 1.9.0"},
       {:ex_aws, "~> 2.1"},
       {:sweet_xml, "~> 0.6"},
-      {:req, "~> 0.5.7"},
+      # Was pinned to "~> 0.5.7" -- req_llm 1.20.0's default_attach/finch_option
+      # (deps/req_llm/lib/req_llm/provider/defaults.ex) always merges `finch:
+      # [name: ...]` (a keyword list) into the Req request. Req 0.5.x's
+      # Req.Finch.finch_name/1 (deps/req/lib/req/finch.ex) only ever accepted
+      # `:finch` as a bare atom pool name, so it fed the raw keyword list
+      # straight into Registry.lookup/2 as the registry name, crashing every
+      # real ash_ai `prompt/2` call with `FunctionClauseError` in
+      # `Registry.lookup/2`. Req 0.7.x added first-class support for `finch:
+      # [name: ..., ...]` (see `finch_name_options/1`), which is the contract
+      # req_llm 1.20.0+ actually relies on -- widen the constraint so
+      # `mix deps.get` can resolve the fixed Req instead of staying on 0.5.17.
+      {:req, "~> 0.5"},
       # Real Stripe Elixir SDK -- webhook receiver's real
       # Stripe.Webhook.construct_event/3 signature verification (see
-      # KanbanWeb.StripeWebhookController).
-      {:stripity_stripe, "~> 2.17"}
+      # XaasWeb.StripeWebhookController).
+      {:stripity_stripe, "~> 2.17"},
+      {:ggen_igniter, "~> 26.9.8", only: [:dev, :test]},
+      {:faker, "~> 0.18", only: [:dev, :test]},
+      # Real path dep on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
+      # the envelope with the actual downstream validator instead of a
+      # hand-documented understanding of its shape (see
+      # lib/xaas/telemetry/ocel_forwarder.ex). ex4pm is a flat app (app:
+      # :ex4pm), not an umbrella with an apps/ex4pm_core child -- the
+      # previous path predates that layout and never resolved.
+      {:ex4pm, path: "../ex4pm"}
     ]
   end
 
@@ -169,6 +227,35 @@ defmodule Kanban.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      # Full/Chicago-integration suite: everything the fast default `mix
+      # test` excludes (see test/test_helper.exs's `exclude:` list) --
+      # real network retries against unreachable services (:external),
+      # a real Groq API call requiring GROQ_API_KEY (:external_llm), real
+      # nested `mix`/`git`/OS-port subprocesses (:subprocess, e.g.
+      # xaas.verify_and_commit, xaas.ingest_capability_receipts,
+      # demo_planner_reactor_test's real Ports+`ps` checks), real
+      # property-based generative tests (:property), real
+      # concurrent-connection-pool stress (:stress), real live-kind-pod
+      # (:kind), and real cnv-deploy-dependent (:requires_cnv_deploy)
+      # tests. Run this before merge/CI, not on every fast inner-loop run.
+      "test.full": [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "test --include stress --include kind --include requires_cnv_deploy --include external --include external_llm --include subprocess --include property"
+      ],
+      # Chicago/integration run: the real-network (:external, :external_llm),
+      # real-subprocess (:subprocess), and real property-based (:property)
+      # tests that only need what's already available in a real local dev
+      # environment (Postgres, network, `mix`/`git` on PATH) -- unlike
+      # `test.full`, this deliberately excludes :stress
+      # (connection-pool-hungry concurrency races), :kind, and
+      # :requires_cnv_deploy, which need a live k8s cluster this
+      # environment does not have.
+      "test.integration": [
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "test --include external --include external_llm --include subprocess --include property"
+      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind default", "esbuild default"],
       "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]

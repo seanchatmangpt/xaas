@@ -32,7 +32,7 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
   for that standing, disclosed deferral.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

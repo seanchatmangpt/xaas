@@ -42,10 +42,10 @@ if [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_USER" ]; then
 fi
 
 # set default variables
-IMAGE=${1:-"ghcr.io/beamops/kanban:latest"}
+IMAGE=${1:-"ghcr.io/beamops/xaas:latest"}
 AWS_REGION="eu-west-1"
 INSTANCE_TAG_NAME="docker-swarm-manager"
-STACK_NAME="kanban"
+STACK_NAME="xaas"
 COMPOSE_FILE_PATH=${COMPOSE_FILE_PATH:-"compose.yaml"}
 
 # get EC2 IP address

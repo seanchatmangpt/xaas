@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalBreakGlassJustificationReview do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -22,7 +22,7 @@ defmodule Xaas.Governance.ApprovalBreakGlassJustificationReview do
     # justification, opening the second-approver review) and `:approve`
     # (the second, distinct platform admin signs off) are gated the same
     # way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # ApprovalBreakGlassJustificationReviewRequiresApprover's real "second,
     # distinct reviewer" rule on :approve.
     bypass action(:create) do
