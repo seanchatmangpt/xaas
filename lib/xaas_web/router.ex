@@ -72,6 +72,8 @@ defmodule XaasWeb.Router do
     get("/ocel_summary", OcelSummaryController, :index)
     get("/prometheus/query", PrometheusQueryController, :query)
     get("/health", HealthController, :index)
+    post("/rpc/run", AshTypescriptRpcController, :run)
+    post("/rpc/validate", AshTypescriptRpcController, :validate)
   end
 
   # Production MCP server: read-only Library tools (see Xaas.Library's
