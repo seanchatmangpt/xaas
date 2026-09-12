@@ -25,7 +25,11 @@ jobs:
       MIX_ENV: test
     services:
       postgres:
-        image: postgres:15.2
+        # The admitted XaaS schema creates the pgvector `vector` extension.
+        # Pin both pgvector and PostgreSQL major plus the multi-arch image
+        # digest so the verifier supplies the same capability deterministically
+        # instead of weakening migrations to fit vanilla postgres.
+        image: pgvector/pgvector:0.8.6-pg15-bookworm@sha256:a947c45cdc5906a1bc951f20a8709e321256343ee0f251e4ae00b5e7def4e6da
         env:
           POSTGRES_PASSWORD: postgres
         ports:
@@ -37,6 +41,22 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+
+      # mix.exs deliberately consumes Ex4pm.OCEL through the sibling path
+      # ../ex4pm. PR CI previously ran without materializing that dependency,
+      # so mix compile stopped before compiling XaaS. Pin the exact producer
+      # identity and assert it before dependency resolution: verification may
+      # not silently follow ex4pm/main.
+      - name: Materialize exact ex4pm path dependency
+        run: |
+          set -euo pipefail
+          EX4PM_SHA=426455b6dfaf3931f85cc05b612ff73759766267
+          rm -rf ../ex4pm
+          git init ../ex4pm
+          git -C ../ex4pm remote add origin https://github.com/seanchatmangpt/ex4pm.git
+          git -C ../ex4pm fetch --depth=1 origin "$EX4PM_SHA"
+          git -C ../ex4pm checkout --detach FETCH_HEAD
+          test "$(git -C ../ex4pm rev-parse HEAD)" = "$EX4PM_SHA"
 
       - name: Setup Elixir
         # Real fix: v1.17.3's OS-mapping table doesn't recognize ubuntu-latest's
