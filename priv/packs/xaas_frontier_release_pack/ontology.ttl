@@ -1,0 +1,95 @@
+@prefix xfr: <https://ggen.io/ontology/xaas-frontier-release#> .
+@prefix frf: <https://ggen.io/ontology/frontier-release-factory#> .
+@prefix agp: <https://ggen.io/ontology/ash-igniter-gen-pipeline#> .
+@prefix schema: <https://schema.org/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://ggen.io/ontology/xaas-frontier-release#> a owl:Ontology ;
+  rdfs:label "XaaS Frontier Release Product Surface" ;
+  rdfs:comment "XaaS consumer projection of the Frontier Release Factory. It persists observations, bounded opportunities, and launch packets; it does not grant publication, repository-creation, deployment, or other DO authority." .
+
+xfr:FrontierReleaseDomain a owl:Class ;
+  rdfs:label "Frontier Release Domain" .
+
+xfr:SourceRelease a owl:Class ;
+  rdfs:subClassOf schema:NewsArticle, prov:Entity ;
+  rdfs:label "Observed external release" .
+
+xfr:Opportunity a owl:Class ;
+  rdfs:subClassOf prov:Entity ;
+  rdfs:label "Bounded frontier opportunity" .
+
+xfr:LaunchPacket a owl:Class ;
+  rdfs:subClassOf schema:DigitalDocument, prov:Entity ;
+  rdfs:label "Working-backwards or earned launch packet" .
+
+xfr:sourceUrl a rdf:Property ; rdfs:domain xfr:SourceRelease ; rdfs:range xsd:anyURI .
+xfr:publisher a rdf:Property ; rdfs:domain xfr:SourceRelease ; rdfs:range xsd:string .
+xfr:publishedAt a rdf:Property ; rdfs:domain xfr:SourceRelease ; rdfs:range xsd:dateTime .
+xfr:contentDigest a rdf:Property ; rdfs:domain xfr:SourceRelease ; rdfs:range xsd:string .
+xfr:observedClaims a rdf:Property ; rdfs:domain xfr:SourceRelease ; rdfs:range xsd:string .
+xfr:sourceStanding a rdf:Property ; rdfs:domain xfr:SourceRelease ; rdfs:range xsd:string .
+
+xfr:sourceReleaseId a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:responseMode a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:targetRepository a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:requiredCapability a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:benchmarkId a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:acceptancePredicate a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:falsifier a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+xfr:opportunityStanding a rdf:Property ; rdfs:domain xfr:Opportunity ; rdfs:range xsd:string .
+
+xfr:opportunityId a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:packetKind a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:claimText a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:subjectIdentity a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:verifierIdentity a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:evidenceRef a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:replayRef a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+xfr:packetStanding a rdf:Property ; rdfs:domain xfr:LaunchPacket ; rdfs:range xsd:string .
+
+xfr:Domain a xfr:FrontierReleaseDomain ;
+  dct:title "XaaS Frontier Release Factory" .
+
+# ggen_igniter owns the Ash skeleton. Any richer action/resource projection must be
+# added to this pack or an admitted upstream marketplace pack, then regenerated.
+agp:FrontierReleaseDomainGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 1 ;
+  agp:mixTask "ash.gen.domain" ;
+  agp:targetModule "Xaas.FrontierRelease" ;
+  agp:domainModule "Xaas" ;
+  agp:resourceModule "" ;
+  agp:mixArgs "" .
+
+agp:FrontierSourceReleaseGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 2 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.FrontierRelease.SourceRelease" ;
+  agp:domainModule "Xaas.FrontierRelease" ;
+  agp:resourceModule "SourceRelease" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:FrontierOpportunityGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 3 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.FrontierRelease.Opportunity" ;
+  agp:domainModule "Xaas.FrontierRelease" ;
+  agp:resourceModule "Opportunity" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:FrontierLaunchPacketGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 4 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.FrontierRelease.LaunchPacket" ;
+  agp:domainModule "Xaas.FrontierRelease" ;
+  agp:resourceModule "LaunchPacket" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
