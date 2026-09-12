@@ -27,7 +27,8 @@ config :xaas,
     Xaas.Ledger,
     Xaas.Marketplace,
     Xaas.Operations,
-    Xaas.Platform
+    Xaas.Platform,
+    Xaas.TemporalMemory
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   base_resources: [Xaas.Resource]
