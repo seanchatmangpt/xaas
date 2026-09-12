@@ -16,6 +16,7 @@ Goal-oriented procedures:
 - [`how-to/actuate-provider-lifecycle.md`](how-to/actuate-provider-lifecycle.md) — perform an admitted provider status transition and handle replay/refusal.
 - [`how-to/add-a-real-json-api-route-to-an-ash-resource.md`](how-to/add-a-real-json-api-route-to-an-ash-resource.md) — safely add an Ash JSON:API route.
 - [`how-to/fix-ash-admin-and-use-ggen-for-codegen.md`](how-to/fix-ash-admin-and-use-ggen-for-codegen.md) — repository-specific Ash Admin/ggen procedure.
+- [`how-to/author-ggen-templates-safely.md`](how-to/author-ggen-templates-safely.md) — two real ggen/ggen_igniter template-authoring defects from the MCP/A2A dogfood run: macro bodies invalid only at a real call site, and multi-surface capability rows needing an explicit discriminator.
 
 ## Reference
 

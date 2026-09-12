@@ -1,5 +1,32 @@
 {
   "entries": {
+    "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/a2a_skills.eex=>/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex": {
+      "out_template": "/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex": "sha256:b52ad13048a65d0d72b166f625ec18bf46d207da7e9a6f88b3c789111071f30d"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/a2a_skills.eex",
+      "updated_at": "2026-09-09T21:25:27.184382Z"
+    },
+    "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_descriptor.eex=>/Users/sac/xaas/lib/xaas_web/mcp_descriptor.ex": {
+      "out_template": "/Users/sac/xaas/lib/xaas_web/mcp_descriptor.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas_web/mcp_descriptor.ex": "sha256:ffde07f4b27518ef473effba3ed637f1407bfeaeab02ae33bd97664ab9a42bc3"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_descriptor.eex",
+      "updated_at": "2026-09-09T21:23:37.508816Z"
+    },
+    "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex=>/Users/sac/xaas/lib/xaas_web/mcp_scope.ex": {
+      "out_template": "/Users/sac/xaas/lib/xaas_web/mcp_scope.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas_web/mcp_scope.ex": "sha256:d3d2a7c24132c741b21e11cf341be9af55f53e315844a1aa94b693638b1e4ea5"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex",
+      "updated_at": "2026-09-09T21:26:38.981015Z"
+    },
     "priv/packs/xaas_library_pack/templates/manufacture.ex.eex=>lib/mix/tasks/xaas.library.manufacture.ex": {
       "out_template": "lib/mix/tasks/xaas.library.manufacture.ex",
       "outputs": {

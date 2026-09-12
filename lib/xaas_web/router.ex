@@ -102,6 +102,17 @@ defmodule XaasWeb.Router do
   # before it is forwarded to `AshAi.Mcp.Router`, so unscoped reads are
   # at least observable (which bearer token, which path, when) rather
   # than invisible. See that plug's moduledoc for the full rationale.
+  # Tool list, protocol version, and otp_app are now generated
+  # (priv/ggen_igniter/mcp_a2a/xaas-surface.ttl -> XaasWeb.McpScope --
+  # see that module's own moduledoc to regenerate). The pipeline itself
+  # stays hand-written here since routers commonly have hand-authored
+  # pipelines this pack deliberately does not overwrite. `mount/0` is a
+  # macro (its body expands `forward/3` at the call site inside `scope`),
+  # so it must be `import`ed and called bare -- `require` +
+  # fully-qualified `XaasWeb.McpScope.mount()` does not work for macros.
+  require XaasWeb.McpScope
+  import XaasWeb.McpScope, only: [mount: 0]
+
   scope "/mcp" do
     pipe_through([
       :api,
@@ -110,15 +121,7 @@ defmodule XaasWeb.Router do
       :audit_mcp_tool_call
     ])
 
-    forward("/", AshAi.Mcp.Router,
-      tools: [
-        :list_books,
-        :books_by_grade_band,
-        :active_curations_for_grade
-      ],
-      protocol_version_statement: "2024-11-05",
-      otp_app: :xaas
-    )
+    mount()
   end
 
   # Real A2A (Agent-to-Agent) server: lets an MCP-speaking LLM drive
