@@ -65,7 +65,6 @@ ExUnit.configure(
   ]
 )
 
-Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the

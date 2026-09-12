@@ -500,8 +500,8 @@ end
 defmodule Xaas.Castle.Actions.Execute do
   @moduledoc false
 
-  @spec run(Ash.ActionInput.t(), map()) :: {:ok, map()} | {:error, term()}
-  def run(%Ash.ActionInput{} = input, _context) do
+  @spec run(Ash.ActionInput.t(), Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
+  def run(%Ash.ActionInput{} = input, _opts, _context) do
     intent = Map.get(input.arguments, :intent)
     now_epoch_ms = System.system_time(:millisecond)
 
