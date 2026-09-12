@@ -47,7 +47,7 @@ defmodule Xaas.Operations.Checks.ActorOrgMatches do
   ## Real fail-closed behavior
 
   A missing/blank actor `org_id` (no `X-Org-Id` header resolved by
-  `KanbanWeb.Plugs.ResolveOrgActor`, i.e. the route was not yet added to
+  `XaasWeb.Plugs.ResolveOrgActor`, i.e. the route was not yet added to
   its `@tenant_scoped_path_segments`) falls through to `match?/3`'s
   catch-all clause and returns `false` -- denied, same fail-closed shape
   as every other check in this codebase. `:update` does not accept

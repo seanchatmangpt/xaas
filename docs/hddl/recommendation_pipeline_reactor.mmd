@@ -1,0 +1,59 @@
+flowchart LR
+    start{"Start"}
+    start==>reactor_Xaas.Library.Reactors.RecommendationPipelineReactor
+    subgraph reactor_Xaas.Library.Reactors.RecommendationPipelineReactor["Xaas.Library.Reactors.RecommendationPipelineReactor"]
+        direction LR
+        input_31945377>"Input user_id"]
+        input_43266837>"Input student_grade"]
+        input_134203560>"Input limit"]
+        input_84002924>"Input weights"]
+        input_27712628>"Input exclude_read"]
+        input_31945377 -->|user_id|step_105960261
+        step_105960261["{:__input__, :get_user_checkouts, [:user_id]}(Reactor.Step.ReturnAllArguments)"]
+        input_43266837 -->|grade_level|step_130432975
+        step_130432975["{:__input__, :get_active_curations, [:grade_level]}(Reactor.Step.ReturnAllArguments)"]
+        step_45104562 -->|top_items|step_121624573
+        value_15936530{{"`&quot;\[Reactor:RecommendationPipeline\] Successfully ranked candidates&quot;`"}}
+        value_15936530 -->|message|step_121624573
+        step_121624573["log_recommendation_telemetry(Reactor.Step.Debug)"]
+        step_51088263 -->|all_books|step_45104562
+        step_130057559 -->|checkouts|step_45104562
+        step_113012762 -->|curations|step_45104562
+        step_112059188 -->|profile|step_45104562
+        input_84002924 -->|weights|step_45104562
+        input_43266837 -->|student_grade|step_45104562
+        input_134203560 -->|limit|step_45104562
+        input_27712628 -->|exclude_read|step_45104562
+        step_45104562["score_and_rank_candidates(Reactor.Step.AnonFn)"]
+        step_113012762 -->|curations|step_87757185
+        step_87757185["extract_curated_ids(Reactor.Step.AnonFn)"]
+        step_130057559 -->|user_checkouts|step_112059188
+        input_43266837 -->|student_grade|step_112059188
+        step_112059188["student_profile(Reactor.Step.Compose)"]
+        subgraph reactor_999448["{Xaas.Library.Reactors.StudentProfileSubReactor, :student_profile}"]
+            direction LR
+            input_73348553>"Input user_checkouts"]
+            input_88633246>"Input student_grade"]
+            step_19083767 -->|profile_data|step_32766965
+            step_32766965["compute_profile_embedding(Reactor.Step.AnonFn)"]
+            input_73348553 -->|checkouts|step_19083767
+            input_88633246 -->|grade|step_19083767
+            step_19083767["extract_genres_and_text(Reactor.Step.AnonFn)"]
+            return_999448{"Return"}
+            step_32766965==>return_999448
+        end
+        step_112059188-->input_88633246
+        step_112059188-->input_73348553
+        return_999448-->step_112059188
+        value_39679005{{"`%\{\}`"}}
+        value_39679005 -->|input|step_51088263
+        step_51088263["get_all_books(Ash.Reactor.ReadStep)"]
+        step_130432975 -->|input|step_113012762
+        step_113012762["get_active_curations(Ash.Reactor.ReadStep)"]
+        step_105960261 -->|input|step_130057559
+        value_43988702{{"`\[:book\]`"}}
+        value_43988702 -->|load|step_130057559
+        step_130057559["get_user_checkouts(Ash.Reactor.ReadStep)"]
+        return_Xaas.Library.Reactors.RecommendationPipelineReactor{"Return"}
+        step_45104562==>return_Xaas.Library.Reactors.RecommendationPipelineReactor
+    end

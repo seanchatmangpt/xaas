@@ -37,8 +37,11 @@ defmodule Mix.Tasks.Xaas.IngestCapabilityReceiptsTest do
     :ok
   end
 
+  @tag :subprocess
   test "mix xaas.ingest_capability_receipts ingests a real receipt.jsonl into real Postgres" do
-    tmp_dir = Path.join(System.tmp_dir!(), "xaas_ingest_e2e_#{System.unique_integer([:positive])}")
+    tmp_dir =
+      Path.join(System.tmp_dir!(), "xaas_ingest_e2e_#{System.unique_integer([:positive])}")
+
     File.mkdir_p!(tmp_dir)
     receipt_path = Path.join(tmp_dir, "receipt.jsonl")
 

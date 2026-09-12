@@ -1,0 +1,67 @@
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix xt:    <https://ggen.io/ontology/xaas-telemetry#> .
+
+<https://ggen.io/ontology/xaas-telemetry#> a owl:Ontology ;
+  rdfs:label "XaaS Telemetry OCEL Envelope Ontology" ;
+  rdfs:comment "Vendored (not a live cross-repo pointer) SHACL-style grounding of the batch envelope shape required by Ex4pm.OCEL.validate_envelope/1, read field-for-field from /Users/sac/ex4pm/lib/ex4pm/ocel.ex around line 366-417, at ex4pm commit 725f495eb90d32a1582e6f44c08151d07743b784 (2026-09-09). This ontology grounds only the envelope field-construction/validation surface -- it does not model or generate any HTTP-calling business logic." .
+
+# --- Envelope class and its required top-level fields ---
+
+xt:OcelEnvelope a owl:Class ;
+  rdfs:label "OCEL v2 Batch Envelope" ;
+  rdfs:comment "Top-level map POSTed as JSON to ex4pm_web's ingest endpoint, validated by Ex4pm.OCEL.validate_envelope/1." .
+
+xt:Builder_OcelEnvelope a xt:OcelEnvelope ;
+  xt:moduleName "Xaas.Telemetry.OcelEnvelope" ;
+  xt:functionName "build" ;
+  xt:functionArity 3 ;
+  dct:title "OCEL Envelope Builder" ;
+  rdfs:comment "Pure function: build(event, producer, sequence) -> envelope map. No HTTP, no validation call -- both remain in Xaas.Telemetry.OcelForwarder per doctrine." .
+
+# --- Required envelope fields, per validate_envelope/1 ---
+
+xt:Field_Schema a xt:EnvelopeField ;
+  xt:fieldOf xt:Builder_OcelEnvelope ;
+  xt:fieldKey "schema" ;
+  xt:fieldOrder 1 ;
+  xt:fieldType xsd:string ;
+  xt:fieldValueLiteral "xaas.ocel.v2" ;
+  rdfs:comment "Any non-nil value, stringified by validate_envelope/1 via to_string/1." .
+
+xt:Field_Producer a xt:EnvelopeField ;
+  xt:fieldOf xt:Builder_OcelEnvelope ;
+  xt:fieldKey "producer" ;
+  xt:fieldOrder 2 ;
+  xt:fieldType xt:MapArgument ;
+  xt:fieldArgName "producer" ;
+  rdfs:comment "Caller-supplied map (validate_envelope/1 requires is_map/1); ex4pm's Ingest.ingest_envelope/2 additionally reads 'agent_id'/'run_id' out of it, defaulting to 'unknown' if absent -- xaas always supplies both." .
+
+xt:Field_Sequence a xt:EnvelopeField ;
+  xt:fieldOf xt:Builder_OcelEnvelope ;
+  xt:fieldKey "sequence" ;
+  xt:fieldOrder 3 ;
+  xt:fieldType xt:IntegerArgument ;
+  xt:fieldArgName "sequence" ;
+  rdfs:comment "Non-negative integer, caller-supplied (xaas passes System.unique_integer([:positive, :monotonic]))." .
+
+xt:Field_Events a xt:EnvelopeField ;
+  xt:fieldOf xt:Builder_OcelEnvelope ;
+  xt:fieldKey "events" ;
+  xt:fieldOrder 4 ;
+  xt:fieldType xt:SingleEventListArgument ;
+  xt:fieldArgName "event" ;
+  rdfs:comment "A list or map of OCEL event records; xaas forwards exactly one event per envelope today, so this wraps the single caller-supplied event map in a one-element list, unchanged (ocel:eid/ocel:activity/ocel:timestamp/ocel:omap/ocel:vmap keys passed through verbatim)." .
+
+# --- Explicit SHACL divergences vendored (not corrected) from ex4pm's own shapes ---
+
+xt:Divergence_TimestampType a xt:VendoredDivergence ;
+  rdfs:label "Timestamp type divergence" ;
+  rdfs:comment "ex4pm's own OCEL SHACL/typespec models 'ocel:timestamp' as a proper DateTime/xsd:dateTime; xaas's OcelAshEmitter (and this envelope) treat it as a plain String.t() (DateTime.to_iso8601/1 output), per Ex4pm.OCEL.value/2's key-alias reader accepting either shape untyped. Not corrected here -- vendored as-is." .
+
+xt:Divergence_OmapShape a xt:VendoredDivergence ;
+  rdfs:label "omap shape divergence" ;
+  rdfs:comment "ex4pm's canonical OCEL-2.0-JSON 'ocel:omap' models a per-instance list of Object identifiers (one entry per related object instance); xaas's existing 'ocel:omap' is a type-name list (e.g. [\"Book\"]), not per-instance object ids. Not corrected here -- vendored as-is, matching Xaas.Telemetry.OcelAshEmitter.build_ocel_event/3's existing pre-image shape exactly." .

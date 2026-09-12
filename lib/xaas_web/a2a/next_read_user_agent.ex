@@ -1,0 +1,212 @@
+defmodule XaasWeb.A2A.NextReadUserAgent do
+  @moduledoc """
+  Real A2A (Agent-to-Agent, https://google.github.io/A2A/) server agent that
+  simulates a Next Read end user (a student persona borrowing/browsing
+  books) grounded in the formal HDDL Task Calculus (docs/hddl/next-read.hddl).
+  Built so an MCP-speaking LLM (or any A2A client) can drive `Xaas.Library`
+  the same way a human reader would through `XaasWeb.NextRead.ReaderLive` --
+  real Ash reads/creates with verified preconditions, not a stub.
+  """
+
+  # Skills list is generated (priv/ggen_igniter/mcp_a2a/xaas-surface.ttl's
+  # ema:Capability rows, exposedVia "a2a") -- see
+  # XaasWeb.A2A.NextReadUserAgentSkills's own moduledoc to regenerate.
+  # This eliminates the duplicated-with-nothing-else literal skills list
+  # that used to live only here; real dispatch below is unaffected -- the
+  # generator never touches this module.
+  use A2A.Agent,
+    name: "next-read-user",
+    description:
+      "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing with HDDL task calculus",
+    skills: XaasWeb.A2A.NextReadUserAgentSkills.skills()
+
+  alias Xaas.Library.{Book, Checkout, HoldRequest}
+  alias Xaas.Library.Changes.WriteActorResolutionAudit
+
+  @internal_api_caller_id "internal_api_token"
+
+  @impl A2A.Agent
+  def handle_message(message, _context) do
+    text = A2A.Message.text(message) || ""
+
+    case parse(text) do
+      {:ok, :hddl_plan} ->
+        {:reply, [A2A.Part.Text.new(hddl_plan_summary())]}
+
+      {:ok, {:ok, actor}, command} ->
+        run(actor, command)
+
+      {:ok, {:error, :unauthorized_actor}, _command} ->
+        {:error,
+         "as:<user_id> denied: no active persona grant for this caller (HDDL precondition failed: persona-granted)"}
+
+      :error ->
+        {:input_required, [A2A.Part.Text.new(usage())]}
+    end
+  end
+
+  defp usage do
+    "Expected: \"as:<user_id|guest> browse grade:<n>\" | " <>
+      "\"as:<user_id|guest> recommend grade:<n>\" | " <>
+      "\"as:<user_id> checkout book:<book_id> school:<school_id>\" | " <>
+      "\"hddl:plan\""
+  end
+
+  defp hddl_plan_summary do
+    """
+    [HDDL Domain: next-read]
+    Compound Tasks:
+      - NEXT-READ-DUAL-PERSONA-EXPERIENCE (Method: m-dual-persona-split-experience)
+      - STUDENT-DISCOVER-AND-CHECKOUT (Methods: m-student-discover-and-checkout-available, m-student-discover-and-place-hold)
+      - LIBRARIAN-ADVISORY-AND-CURATE (Method: m-librarian-advisory-and-curate)
+      - A2A-SIMULATE-USER-CIRCULATION (Method: m-a2a-simulate-user-circulation)
+    Preconditions Enforced: (persona-granted ?token ?student), (book-available ?book)
+    Receipt Model: Sealed idempotency keys + Epistemic Standing (DO vs CLAIM)
+    """
+  end
+
+  defp parse("hddl:plan"), do: {:ok, :hddl_plan}
+
+  defp parse(text) do
+    with [_, actor_ref, rest] <- Regex.run(~r/^as:(\S+)\s+(.+)$/, text) do
+      {:ok, resolve_actor(actor_ref, @internal_api_caller_id), rest}
+    else
+      _ -> :error
+    end
+  end
+
+  defp resolve_actor("guest", _caller_id), do: {:ok, nil}
+
+  defp resolve_actor(user_id, caller_id) do
+    case Xaas.Library.PersonaGrant.active_for(caller_id, user_id, authorize?: false) do
+      {:ok, [_grant | _]} ->
+        case Ash.get(Xaas.Accounts.User, user_id, authorize?: false) do
+          {:ok, user} ->
+            WriteActorResolutionAudit.write(%{
+              caller_id: caller_id,
+              user_id: user_id,
+              outcome: "allowed"
+            })
+
+            {:ok, user}
+
+          {:error, _} ->
+            WriteActorResolutionAudit.write(%{
+              caller_id: caller_id,
+              user_id: user_id,
+              outcome: "denied"
+            })
+
+            {:error, :unauthorized_actor}
+        end
+
+      {:ok, []} ->
+        WriteActorResolutionAudit.write(%{
+          caller_id: caller_id,
+          user_id: user_id,
+          outcome: "denied"
+        })
+
+        {:error, :unauthorized_actor}
+
+      {:error, _} ->
+        WriteActorResolutionAudit.write(%{
+          caller_id: caller_id,
+          user_id: user_id,
+          outcome: "denied"
+        })
+
+        {:error, :unauthorized_actor}
+    end
+  end
+
+  defp run(actor, command) do
+    cond do
+      match = Regex.run(~r/^(?:browse|recommend)\s+grade:(\d+)/, command) ->
+        [_, grade_str] = match
+        grade = String.to_integer(grade_str)
+        browse(actor, grade)
+
+      match = Regex.run(~r/^checkout\s+book:(\S+)\s+school:(\S+)/, command) ->
+        [_, book_id, school_id] = match
+        checkout(actor, book_id, school_id)
+
+      true ->
+        {:input_required, [A2A.Part.Text.new(usage())]}
+    end
+  end
+
+  defp browse(actor, grade) do
+    case Book
+         |> Ash.Query.for_read(:by_grade_band, %{min_grade: grade - 1, max_grade: grade + 1})
+         |> Ash.read(actor: actor) do
+      {:ok, books} ->
+        summary =
+          books
+          |> Enum.map(
+            &"#{&1.title} by #{&1.author} (grade #{&1.grade_level}, #{&1.available_copies} available)"
+          )
+          |> Enum.join("; ")
+
+        text =
+          if books == [],
+            do: "No books found for grade #{grade}.",
+            else: "Found #{length(books)}: #{summary}"
+
+        {:reply, [A2A.Part.Text.new(text)]}
+
+      {:error, error} ->
+        {:error, "browse failed: #{Exception.message(error)}"}
+    end
+  end
+
+  defp checkout(actor, book_id, school_id) do
+    if actor == nil do
+      {:reply,
+       [
+         A2A.Part.Text.new(
+           "checkout requires a real as:<user_id> actor, not guest (HDDL actor-resolved failed)"
+         )
+       ]}
+    else
+      # Same CirculationBorrowReactor saga as XaasWeb.NextRead.ReaderLive's
+      # circulate_book/2 -- one entrypoint whose real `switch` (a fresh
+      # read at execution time, not this caller's stale availability
+      # assumption) decides borrow vs. hold, with real `undo_action`
+      # compensation on the hold branch. Ash.Reactor is reserved for that
+      # genuine multi-resource compensation need; it is not a blanket
+      # wrapper every mutation must go through.
+      result =
+        Reactor.run(
+          Xaas.Library.Reactors.CirculationBorrowReactor,
+          %{book_id: book_id, user_id: actor.id, school_id: school_id, actor: actor},
+          %{},
+          async?: false
+        )
+
+      case result do
+        {:ok, %Checkout{} = checkout} ->
+          {:reply,
+           [
+             A2A.Part.Text.new(
+               "Checked out book #{checkout.book_id} for user #{checkout.user_id} (checkout #{checkout.id}) [CirculationBorrowReactor: matches? branch]"
+             )
+           ]}
+
+        {:ok, %HoldRequest{} = hold} ->
+          {:reply,
+           [
+             A2A.Part.Text.new(
+               "No copies available -- placed hold #{hold.id} on book #{hold.book_id} for user #{hold.user_id} [CirculationBorrowReactor: default branch]"
+             )
+           ]}
+
+        {:error, error} ->
+          {:error, "checkout failed: #{inspect(error)}"}
+
+        {:halted, reactor} ->
+          {:error, "checkout halted: #{inspect(reactor)}"}
+      end
+    end
+  end
+end

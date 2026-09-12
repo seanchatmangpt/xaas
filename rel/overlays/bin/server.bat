@@ -7,4 +7,4 @@ REM We make no guarantees that this code is fit for any purpose.
 REM Visit https://pragprog.com/titles/beamops for more book information.
 
 set PHX_SERVER=true
-call "%~dp0\kanban" start
+call "%~dp0\xaas" start

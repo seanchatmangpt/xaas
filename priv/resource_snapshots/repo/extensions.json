@@ -3,6 +3,7 @@
   "installed": [
     "ash-functions",
     "citext",
+    "vector",
     "ash_money_v5"
   ]
 }

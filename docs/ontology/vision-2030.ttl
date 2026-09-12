@@ -1,0 +1,435 @@
+# ----------------------------------------------------------------------------
+# xaas "Vision 2030" roadmap ontology
+# ----------------------------------------------------------------------------
+#
+# What this is:
+#   A grounding ontology for xaas's Vision 2030 roadmap (see ROADMAP.md and
+#   docs/claude/diataxis/). It models the roadmap's real (already-implemented)
+#   and target (aspirational, not-yet-implemented) concepts side by side, with
+#   an explicit v2030:status annotation on every class/property so the two
+#   are never blurred the way the roadmap prose itself sometimes blurs them.
+#
+#   Every concept is first checked against real, published public standard
+#   ontologies. A new xaas-local term (v2030: prefix) is minted ONLY where no
+#   public standard genuinely covers the concept -- and each such term carries
+#   a rdfs:comment stating why no standard fit and what was checked.
+#
+# Public standards actually reused in this file (real, dereferenceable
+# namespaces, verified against W3C/SPAR/community sources):
+#   - PROV-O            http://www.w3.org/ns/prov#            (W3C Recommendation)
+#   - P-Plan            http://purl.org/net/p-plan#           (PROV-O extension for plans/steps/variables)
+#   - OWL-Time          http://www.w3.org/2006/time#          (W3C, temporal intervals/instants)
+#   - ODRL 2.2          http://www.w3.org/ns/odrl/2/          (W3C Recommendation, permission/prohibition/duty)
+#   - FaBiO             http://purl.org/spar/fabio/           (SPAR suite, FRBR-aligned bibliographic ontology)
+#   - FOAF              http://xmlns.com/foaf/0.1/            (Agent/Person/Group/Organization)
+#   - ORG               http://www.w3.org/ns/org#             (W3C, Role/Membership)
+#   - DCTERMS           http://purl.org/dc/terms/             (Dublin Core Terms)
+#   - SKOS              http://www.w3.org/2004/02/skos/core#  (concept schemes, used for status/lifecycle tagging)
+#
+# Deliberately NOT imported (checked, real gaps -- see closing section):
+#   - No real published OWL namespace found for OCEL 2.0 itself (it is a
+#     JSON/XML/SQLite metamodel spec, arXiv:2403.01975, not an OWL ontology).
+#     OCEDO (https://w3id.org/ocedo/core#) is a community RDF reference
+#     implementation, not a W3C/OMG standard; it is *mentioned* in comments
+#     below for traceability but its classes are not imported as load-bearing
+#     terms in this file, to avoid overclaiming a standard's authority for a
+#     community project.
+#   - No single canonical OWL ontology exists for FIPA-ACL agent messaging
+#     (checked: fipa.org publishes message *structure*, not one adopted OWL
+#     namespace) -- SwarmRole below is grounded in FOAF/ORG/PROV-O instead,
+#     never in a FIPA-ACL "standard" that does not actually exist as one.
+#   - No canonical, single-namespace OWL ontology exists for HTN/PDDL planning
+#     with a stable published URI usable here (the AI4Society Planning
+#     Ontology's exact class hierarchy could not be independently verified
+#     from the research provided). SolverStep below is grounded in p-plan:
+#     (a real W3C-ecosystem plan/step vocabulary) and is explicit that the
+#     HDDL SOLVE(x) grammar itself remains a xaas-local invention.
+#
+# Local namespace: http://xaas.chatmangpt.com/ontology/vision-2030#  (prefix v2030:)
+# Naming convention note: this repo's other local ontologies use short
+# 2-4-letter prefixes tied to their subsystem (xar, aacm, xt, bpm, ce, fp, xv).
+# "v2030" follows that same short-prefix convention, scoped to this roadmap
+# document rather than to a runtime subsystem -- it does not clash with any
+# prefix in the inventory above.
+# ----------------------------------------------------------------------------
+
+@prefix v2030:  <http://xaas.chatmangpt.com/ontology/vision-2030#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pplan:  <http://purl.org/net/p-plan#> .
+@prefix time:   <http://www.w3.org/2006/time#> .
+@prefix odrl:   <http://www.w3.org/ns/odrl/2/> .
+@prefix fabio:  <http://purl.org/spar/fabio/> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix org:    <http://www.w3.org/ns/org#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+
+<http://xaas.chatmangpt.com/ontology/vision-2030>
+    a owl:Ontology ;
+    dcterms:title "xaas Vision 2030 Roadmap Ontology" ;
+    dcterms:description "Grounds xaas's Vision 2030 roadmap concepts (real and target) in PROV-O, P-Plan, OWL-Time, ODRL, FaBiO, FOAF, and ORG; mints local v2030: terms only where no public standard fits." ;
+    dcterms:created "2026-09-09"^^xsd:date ;
+    owl:imports prov: , pplan: , time: , odrl: , fabio: , foaf: , org: .
+
+# ----------------------------------------------------------------------------
+# Status vocabulary (SKOS concept scheme -- not itself REAL/TARGET, it is the
+# meta-property both branches use)
+# ----------------------------------------------------------------------------
+
+v2030:StatusScheme a skos:ConceptScheme ;
+    rdfs:comment "Lifecycle status values distinguishing already-implemented ('current') from aspirational ('target') roadmap concepts. Every v2030: class/property in this file that models a roadmap concept carries exactly one v2030:status value." .
+
+v2030:current a skos:Concept ;
+    skos:inScheme v2030:StatusScheme ;
+    skos:prefLabel "current" ;
+    rdfs:comment "The concept is backed by real, in-use xaas code today. A v2030:evidence comment cites the real file:line." .
+
+v2030:target a skos:Concept ;
+    skos:inScheme v2030:StatusScheme ;
+    skos:prefLabel "target" ;
+    rdfs:comment "The concept is an aspirational Vision 2030 roadmap deliverable with no (or only narrowly partial) backing code today." .
+
+v2030:status a owl:AnnotationProperty ;
+    rdfs:comment "Points a class/property at exactly one of v2030:current or v2030:target." ;
+    rdfs:range skos:Concept .
+
+v2030:evidence a owl:AnnotationProperty ;
+    rdfs:comment "Free-text citation of the real file:line (for status=current) or roadmap section (for status=target) backing this term." ;
+    rdfs:range xsd:string .
+
+# ============================================================================
+# 1. UnitOfWork
+# ============================================================================
+# fabio: (FaBiO, SPAR suite) already models bibliographic units (Work,
+# Expression, Manifestation, Item, Book, JournalArticle, ...) via a real,
+# published OWL 2 DL ontology. xaas's REAL current unit of work (a library
+# Book) is modeled as fabio:Book directly -- no new class needed there.
+#
+# The roadmap's TARGET generalization (book -> claim/contradiction/operator/
+# experiment as first-class "units of work") is NOT covered by FaBiO, which
+# is bibliographic-document-shaped, not epistemic-claim-shaped. v2030:UnitOfWork
+# is therefore minted as a local superclass so fabio:Book (real) and the
+# not-yet-existing epistemic units (target) can share one supertype without
+# forcing FaBiO to cover something it was never designed to cover.
+# ============================================================================
+
+v2030:UnitOfWork a owl:Class ;
+    rdfs:comment "Local superclass unifying the roadmap's 'unit of work' concept across its real (bibliographic) and target (epistemic) instances. Minted because FaBiO models bibliographic Work/Expression/Manifestation/Item units but has no notion of a claim, contradiction, or operator as a unit of work -- no public standard covering the epistemic generalization was found in the research supplied." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 'Current seed: Next Read' section: generalizes unit-of-work from book to claim/contradiction/operator/experiment as the 2027 'Knowledge substrate' deliverable; no code yet for the generalized form." .
+
+v2030:LibraryUnitOfWork a owl:Class ;
+    rdfs:subClassOf v2030:UnitOfWork , fabio:Book ;
+    rdfs:comment "The REAL, currently-instantiated unit of work: a library book, modeled natively as fabio:Book (FaBiO's real bibliographic class) and backed by Xaas.Library.Book." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Library.Book / Xaas.Library.Checkout / Xaas.Library.HoldRequest / Xaas.Library.Curation; docs/hddl/next-read.hddl predicate list; xaas_library_pack/ontology.ttl already reuses bibo:/schema:/prov: for this exact domain." .
+
+v2030:EpistemicUnitOfWork a owl:Class ;
+    rdfs:subClassOf v2030:UnitOfWork ;
+    rdfs:comment "TARGET generalization: a claim, contradiction, or operator treated as a first-class unit of work, per the roadmap's 'Epistemic compiler' section (Source -> Claims -> Assumptions -> ... -> Executable knowledge). No Ash resource, module, or ontology schema exists for this yet." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 'Epistemic compiler' section (prose only); no matching lib/xaas module found." .
+
+v2030:Claim a owl:Class ;
+    rdfs:subClassOf v2030:EpistemicUnitOfWork ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 'Epistemic compiler' pipeline stage 'Claims'; not yet backed by code." .
+
+v2030:Contradiction a owl:Class ;
+    rdfs:subClassOf v2030:EpistemicUnitOfWork ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 2027 'Knowledge substrate' deliverable ('contradiction and falsifier representation'); not yet backed by code." .
+
+v2030:Operator a owl:Class ;
+    rdfs:subClassOf v2030:EpistemicUnitOfWork ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 2027 'Knowledge substrate' deliverable; not yet backed by code." .
+
+# ============================================================================
+# 2. Receipt / Intent  (aligned with PROV-O)
+# ============================================================================
+# This is a REAL, in-use xaas concept, and PROV-O is a genuine, exact fit:
+# an admitted Intent is a prov:Activity that prov:used the request and
+# prov:wasAssociatedWith an authority Agent; the sealed Receipt is the
+# prov:Entity generated by that Activity via prov:wasGeneratedBy. No new
+# class is invented for the provenance shape itself -- only the xaas-specific
+# state-machine values (admitted/executing/succeeded/failed/replayed) are
+# locally named, since PROV-O deliberately has no built-in state-machine
+# vocabulary of its own.
+# ============================================================================
+
+v2030:ActuationIntent a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:comment "A requested actuation, modeled as a prov:Activity. Real state machine: admitted -> executing -> succeeded|failed." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Operations.ActuationIntent (lib/xaas/operations/actuation_intent.ex); Xaas.Actuation.Kernel.admit/create_admission (lib/xaas/actuation.ex:187-361)." .
+
+v2030:ActuationReceipt a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:comment "The sealed outcome of an ActuationIntent, modeled as a prov:Entity generated by that Activity (prov:wasGeneratedBy). Real state machine: prepared -> succeeded|failed, plus replay?/replayed." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Operations.ActuationReceipt (lib/xaas/operations/actuation_receipt.ex); Xaas.Actuation.Kernel.seal (lib/xaas/actuation.ex:187-361); falsified by test/xaas/actuation_test.exs; docs/claude/diataxis/reference/actuation-and-semantics.md:71,75-82." .
+
+v2030:intentState a owl:DatatypeProperty ;
+    rdfs:domain v2030:ActuationIntent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "One of: admitted, executing, succeeded, failed. No PROV-O built-in covers activity-internal state machines, so this is a minted local property carrying an enumerated string." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:187-361." .
+
+v2030:receiptState a owl:DatatypeProperty ;
+    rdfs:domain v2030:ActuationReceipt ;
+    rdfs:range xsd:string ;
+    rdfs:comment "One of: prepared, succeeded, failed, replayed." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:187-361; ActuationReceipt resource." .
+
+v2030:idempotencyKey a owl:DatatypeProperty ;
+    rdfs:domain v2030:ActuationIntent ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Consequence-identity key. PROV-O has no notion of idempotent replay identity, so this is minted locally." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Actuation.run/4 (lib/xaas/actuation.ex:16-27); find_or_create/replay_or_refuse (lib/xaas/actuation.ex:371-465); docs/claude/diataxis/reference/actuation-and-semantics.md:56-71." .
+
+v2030:reactorPipeline a owl:Class ;
+    rdfs:subClassOf pplan:Plan ;
+    rdfs:comment "The admit -> do -> receipt Reactor pipeline, modeled as a p-plan:Plan (a real PROV-O extension for representing the plan behind an execution) whose p-plan:Steps are :admit, :do, :receipt." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Actuation.Reactor ash_step :admit/:do/:receipt (lib/xaas/actuation.ex:107-177); undo_actuate/3 wired to Xaas.Telemetry.OcelForwarder.forward_cancellation (lib/xaas/actuation.ex:280-290); wrapped in Ash.DataLayer.transaction (lib/xaas/actuation.ex:32-46)." .
+
+v2030:AdmitStep a owl:Class ; rdfs:subClassOf pplan:Step ;
+    rdfs:comment "The :admit step of the Reactor pipeline." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:107-177 (ash_step :admit)." .
+
+v2030:DoStep a owl:Class ; rdfs:subClassOf pplan:Step ;
+    rdfs:comment "The :do step of the Reactor pipeline -- the consequential mutation itself." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:107-177 (ash_step :do)." .
+
+v2030:ReceiptStep a owl:Class ; rdfs:subClassOf pplan:Step ;
+    rdfs:comment "The :receipt step of the Reactor pipeline -- sealing the ActuationReceipt." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:107-177 (ash_step :receipt)." .
+
+# ============================================================================
+# 3. AuthorityFence (SELECT / CONSTRUCT / DO)  -- checked against odrl:
+# ============================================================================
+# ODRL 2.2 (real W3C Recommendation) models Permission/Prohibition/Duty over
+# an Asset/Party/Action with Constraints. This is a genuine, close fit for
+# "may this actuation proceed" -- an AuthorityFence decision is modeled as an
+# odrl:Permission (grant) or odrl:Prohibition (refuse) whose odrl:action is
+# one of the three xaas-local Action individuals below (SELECT/CONSTRUCT/DO
+# have no ODRL or other public-standard equivalent naming -- these three verbs
+# are a xaas-specific BRCE-doctrine vocabulary, so they are minted locally as
+# odrl:Action individuals, while the permission/prohibition machinery around
+# them reuses ODRL directly).
+# ============================================================================
+
+v2030:AuthorityFence a owl:Class ;
+    rdfs:subClassOf odrl:Rule ;
+    rdfs:comment "A SELECT/CONSTRUCT/DO authority decision, modeled as an odrl:Rule (Permission or Prohibition) whose odrl:action names one of v2030:SelectAction/ConstructAction/DoAction." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Actuation.Kernel.admit_authority/2 (lib/xaas/actuation.ex:363-369): authorize?=false requires non-empty `authority` map or refuses with :delegated_actuation_requires_authority_evidence." .
+
+v2030:SelectAction a odrl:Action ;
+    rdfs:comment "Read/observe-only capability verb (BRCE 'S'). No ODRL-native action name matches this exactly; minted as a local odrl:Action individual since ODRL's action vocabulary is extensible by design." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Semantics.Registry read-only projection surface (lib/xaas/semantics/registry.ex)." .
+
+v2030:ConstructAction a odrl:Action ;
+    rdfs:comment "Derivation/projection-only capability verb (BRCE 'C') -- produces new facts/graphs without consequential mutation." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Semantics.Registry.projection/1 (lib/xaas/semantics/registry.ex:1-60+)." .
+
+v2030:DoAction a odrl:Action ;
+    rdfs:comment "Consequential-mutation capability verb (BRCE 'D') -- the only verb requiring explicit authority evidence when not self-authorized." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Marketplace.Provider's internal :actuate_status action (public? false, requires Xaas.Actuation.Validations.ReactorContext); docs/claude/diataxis/reference/actuation-and-semantics.md:48-49." .
+
+v2030:DoFencePermission a owl:Class ;
+    rdfs:subClassOf odrl:Permission ;
+    rdfs:comment "A granted DoAction permission -- exists only when the delegated caller supplied non-empty authority evidence." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:363-369." .
+
+v2030:DoFenceProhibition a owl:Class ;
+    rdfs:subClassOf odrl:Prohibition ;
+    rdfs:comment "A refused DoAction -- the real :delegated_actuation_requires_authority_evidence refusal path." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation.ex:363-369." .
+
+# ============================================================================
+# 4. SwarmRole (Observer/Historian/Ontologist/Explorer/Planner/Constructor/
+#    Verifier/Operator/Steward)  -- checked against foaf:/org:
+# ============================================================================
+# foaf:Agent and org:Role are real, published, exact-fitting supertypes for
+# "a named participant with a role" -- no local supertype is needed for that
+# shape. Each of the nine named roles IS minted locally, however, because
+# FOAF/ORG deliberately carry no domain-specific role vocabulary (they are
+# upper ontologies) and no FIPA-ACL-equivalent standard names these nine
+# roles (checked -- see header). This entire branch is TARGET: zero matching
+# code found.
+# ============================================================================
+
+v2030:SwarmRole a owl:Class ;
+    rdfs:subClassOf foaf:Agent , org:Role ;
+    rdfs:comment "Superclass for the nine named Vision-2030 swarm roles. Grounded in foaf:Agent (a participant) and org:Role (a role a participant holds) -- both real, exact fits for the *shape* of 'named agent playing a role'. The nine role NAMES themselves have no public-standard equivalent (checked FIPA-ACL: no single canonical OWL namespace exists, see header) and are minted below." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 'Swarm roles' section (2028 deliverable: 'A2A contracts for Observer, Historian, Ontologist, Explorer, Planner, Constructor, Verifier, Operator, and Steward roles'). No matching modules found under lib/xaas (searched for swarm/observer/historian/ontologist)." .
+
+v2030:ObserverRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:HistorianRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:OntologistRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:ExplorerRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:PlannerRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:ConstructorRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:VerifierRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:OperatorRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+v2030:StewardRole a owl:Class ; rdfs:subClassOf v2030:SwarmRole ; v2030:status v2030:target ; v2030:evidence "ROADMAP.md 'Swarm roles' section; no code." .
+
+v2030:NextReadUserAgent a owl:Class ;
+    rdfs:subClassOf foaf:Agent ;
+    rdfs:comment "The one REAL, narrowly-scoped A2A agent that exists today -- not one of the nine named swarm roles above, but the closest real precedent for what an A2A-fabric participant looks like in this codebase." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas_web/a2a/next_read_user_agent.ex (real, in-use, modified per current git status)." .
+
+# ============================================================================
+# 5. SolverStep (HTN/PDDL)  -- checked against p-plan: (no PDDL-specific
+#    standard OWL namespace could be verified as canonical from supplied
+#    research; p-plan: is the closest real, exact-fitting generic
+#    plan/step/variable vocabulary)
+# ============================================================================
+
+v2030:SolverStep a owl:Class ;
+    rdfs:subClassOf pplan:Step ;
+    rdfs:comment "A step in the roadmap's proposed SOLVE(x) HDDL hierarchy (Preserve/Fence/Calculus/Exclusions/Falsifier/Extension/Operationalize), grounded in p-plan:Step (real, generic plan-step vocabulary). The SOLVE(x) task grammar itself, and its seven named sub-tasks, have no public-standard equivalent -- checked: no canonical single-namespace OWL ontology for HTN/PDDL with a verifiable class hierarchy was found in the research supplied, so those seven sub-task names are minted locally rather than mapped onto an unverified 'standard'." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 2028 deliverable ('canonical SOLVE(x) HDDL hierarchy'). No generic solver module exists; the one real supporting artifact is docs/hddl/next-read.hddl, a single hand-written PDDL/HDDL domain file (not a general SOLVE(x) engine)." .
+
+v2030:PreserveStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+v2030:FenceStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+v2030:CalculusStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+v2030:ExclusionsStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+v2030:FalsifierStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+v2030:ExtensionStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+v2030:OperationalizeStep a owl:Class ; rdfs:subClassOf v2030:SolverStep ; v2030:status v2030:target ; v2030:evidence "SOLVE(x) grammar, ROADMAP.md; no generic solver code." .
+
+v2030:NextReadHddlDomain a owl:Class ;
+    rdfs:subClassOf pplan:Plan ;
+    rdfs:comment "The one REAL, narrow HDDL artifact: a single hand-written PDDL/HDDL domain grounded in real Xaas.Library functions." ;
+    v2030:status v2030:current ;
+    v2030:evidence "docs/hddl/next-read.hddl (header maps rank-recommendations -> Xaas.Library.Ranker.recommend/2, checkout-book -> Xaas.Library.Checkout.borrow/2 via Xaas.Actuation.run/4); lib/xaas/hddl/mermaid.ex (real diagram-rendering helper)." .
+
+# ============================================================================
+# 6. Supporting REAL concepts (semantic projection, temporal, telemetry) --
+#    included because they are load-bearing evidence for the branches above,
+#    grounded in already-reused public standards.
+# ============================================================================
+
+v2030:SemanticProjection a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:comment "A resource's projection onto public-ontology classes/predicates, with a content hash embedded in ActuationIntent/Receipt for replay integrity." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Semantics.Registry.projection/1, admit/1, hash/1 (lib/xaas/semantics/registry.ex:1-60+); hash embedded at lib/xaas/actuation.ex:190,388,409." .
+
+v2030:AuditActivity a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:comment "OCEL-envelope-based audit/telemetry recording of a Reactor run, distinct from (and supporting) the Receipt itself." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/actuation/middleware/audit_logger.ex wired into Xaas.Actuation.Reactor (lib/xaas/actuation.ex:118-121); Xaas.Telemetry.OcelForwarder (lib/xaas/actuation.ex:283); commit 7afa8cd 'feat(telemetry): validate OCEL envelope via real ex4pm_core path dep'." .
+
+v2030:actuationInterval a owl:ObjectProperty ;
+    rdfs:domain v2030:ActuationIntent ;
+    rdfs:range time:ProperInterval ;
+    rdfs:comment "Real-world time interval an actuation's admit->receipt lifecycle spans, modeled with OWL-Time's time:ProperInterval rather than inventing bespoke start/end timestamp properties." ;
+    v2030:status v2030:current ;
+    v2030:evidence "Xaas.Actuation.Reactor's admit/do/receipt steps run within Ash.DataLayer.transaction (lib/xaas/actuation.ex:32-46); interval bounds are the transaction's real begin/commit timestamps." .
+
+v2030:RecommendationPipeline a owl:Class ;
+    rdfs:subClassOf pplan:Plan ;
+    rdfs:comment "The Next-Read ranking pipeline, an Ash.Reactor whose steps score and rank books." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/library/ranker.ex; lib/xaas/library/reactors/recommendation_pipeline_reactor.ex; steps/score_book.ex." .
+
+v2030:CirculationBorrowPipeline a owl:Class ;
+    rdfs:subClassOf pplan:Plan ;
+    rdfs:comment "The checkout/borrow Reactor pipeline for library circulation." ;
+    v2030:status v2030:current ;
+    v2030:evidence "lib/xaas/library/reactors/circulation_borrow_reactor.ex; docs/hddl/next-read.hddl maps checkout-book -> Xaas.Library.Checkout.borrow/2 via Xaas.Actuation.run/4." .
+
+# ============================================================================
+# 7. TARGET: A2A cognition fabric and MCP capability fabric
+# ============================================================================
+# No public standard was found covering typed inter-agent evidence/proposal/
+# boundary/falsifier exchange (A2A fabric) or capability-descriptor metadata
+# (scope/authority/reversibility/cost/receipt-semantics per tool). Both are
+# minted locally; both are TARGET beyond the one narrow real instance each.
+# ============================================================================
+
+v2030:A2ACognitionFabric a owl:Class ;
+    rdfs:comment "Typed inter-agent exchange of evidence/proposals/boundaries/falsifiers/receipts across SwarmRoles. No public standard covers this typed-exchange shape (checked FIPA-ACL: no canonical OWL namespace, see header) -- minted locally." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 2028 deliverable. One narrow real instance exists (v2030:NextReadUserAgent, lib/xaas_web/a2a/next_read_user_agent.ex) but the general typed-exchange fabric across all nine roles does not exist." .
+
+v2030:MCPCapabilityDescriptor a owl:Class ;
+    rdfs:comment "Per-capability metadata: observation scope, mutation scope, authority requirements, reversibility, cost, receipt semantics. No public standard found covering this exact descriptor shape (odrl: covers permission/prohibition but not cost/reversibility/receipt-semantics together) -- minted locally." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 2028 deliverable. One narrow real instance exists (AshAi.Mcp.Router tools :list_books, :books_by_grade_band at /mcp per docs/hddl/next-read.hddl header) but no typed descriptor metadata model exists anywhere in lib/xaas." .
+
+v2030:LearningCompilationPlane a owl:Class ;
+    rdfs:comment "Automatic conversion of successful reasoning into rules/planners/generators/tests/ontology updates, with a recurrence detector for repeated reasoning classes. No public standard covers this; minted locally." ;
+    v2030:status v2030:target ;
+    v2030:evidence "ROADMAP.md 2029 deliverable. No code found; git log shows only manually-narrated observation-log commits (e.g. 'obs: activity log tick 08:30 -- roadmap-item-closed... no known-class match'), not an automated compilation mechanism." .
+
+# ----------------------------------------------------------------------------
+# Deliberately NOT modeled yet (named gaps, not silent omissions)
+# ----------------------------------------------------------------------------
+#
+# 1. OCEL 2.0 as a first-class OWL vocabulary: OCEL 2.0 (arXiv:2403.01975) is
+#    a JSON/XML/SQLite metamodel specification, not itself an OWL/RDF
+#    ontology with a stable published namespace. OCEDO (https://w3id.org/ocedo/core#)
+#    is a community RDF reference implementation of that metamodel, not a
+#    W3C/OMG-ratified standard -- it is named here for traceability only and
+#    is NOT imported as a load-bearing term, to avoid claiming standard-body
+#    authority for a community project. xaas's real OCEL usage (Xaas.Telemetry.OcelForwarder,
+#    the ex4pm/ex4pm_core dependency, xaas_ocel_envelope_pack/ontology.ttl's
+#    agp:/ex4pm: SHACL contract) already has its own local grounding elsewhere
+#    in this ecosystem and is intentionally not re-modeled here.
+#
+# 2. FIPA-ACL agent-communication semantics: no single canonical OWL ontology
+#    exists (checked -- multiple competing academic OWL-DL/SWRL encodings,
+#    no one W3C/FIPA-published namespace). v2030:A2ACognitionFabric is
+#    therefore left as a locally-typed, standard-ungrounded class rather than
+#    being falsely mapped onto a "FIPA-ACL ontology" that does not exist as
+#    one adopted artifact.
+#
+# 3. HTN/PDDL solver semantics beyond p-plan:'s generic Plan/Step/Variable
+#    shape: the AI4Society/planning.domains "Planning Ontology" was
+#    identified as a real, maintained community project, but its full class
+#    hierarchy could not be independently verified from the research
+#    supplied (the source page defers to PyLODE docs / GitHub for the
+#    complete list). Rather than import an unverified class list and risk
+#    misnaming terms, v2030:SolverStep is grounded only in the verified
+#    p-plan:Step, and the SOLVE(x)-specific sub-tasks (Preserve/Fence/
+#    Calculus/Exclusions/Falsifier/Extension/Operationalize) remain
+#    explicitly local and explicitly v2030:status v2030:target.
+#
+# 4. SAT/SMT/CP solver integration: named in the roadmap doctrine
+#    ("constraints -> SAT/SMT/CP") but with zero corresponding code and no
+#    public ontology researched for this session -- left entirely unmodeled
+#    rather than guessed at.
+#
+# 5. Epistemic compiler stage-by-stage schema (Source -> Claims ->
+#    Assumptions -> Boundaries -> Mechanisms -> Variables -> Counterexamples
+#    -> Falsifiers -> Executable knowledge): only the top-level Claim/
+#    Contradiction/Operator classes are stubbed above (as
+#    v2030:EpistemicUnitOfWork subclasses); Assumption/Boundary/Mechanism/
+#    Variable/Counterexample are NOT stubbed, since stubbing partial pipeline
+#    stages with no code and no clear class boundary would manufacture false
+#    specificity about a roadmap section that is currently prose only.
+# ----------------------------------------------------------------------------

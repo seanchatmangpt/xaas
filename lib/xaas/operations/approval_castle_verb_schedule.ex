@@ -6,14 +6,14 @@ defmodule Xaas.Operations.ApprovalCastleVerbSchedule do
   established pattern in `Xaas.Billing.ApprovalPricingOverride` /
   `Xaas.Governance.ApprovalFreezeOverride`: `:create` is unauthenticated
   at the Ash-policy layer (real access control is the router-level
-  `KanbanWeb.Plugs.RequireInternalApiToken` Bearer check ahead of every
+  `XaasWeb.Plugs.RequireInternalApiToken` Bearer check ahead of every
   `/api` route), and `:approve` additionally runs
   `Xaas.Operations.Validations.ApprovalCastleVerbScheduleRequiresApprover` -- `approved_by` must
   be present and must differ from `requested_by` (a second, distinct
   approver; no self-approval).
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -27,7 +27,7 @@ defmodule Xaas.Operations.ApprovalCastleVerbSchedule do
 
     # Real, explicit per-action carve-out: `:create`/`:approve` are gated
     # the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # `:approve`'s own real validation
     # (`ApprovalCastleVerbScheduleRequiresApprover`) rejecting a missing or
     # self-approving `approved_by`. Deliberate per-action carve-out, not

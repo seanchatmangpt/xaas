@@ -2,14 +2,15 @@ defmodule Xaas.Operations.AutofdePlannerCandidateTest do
   use ExUnit.Case, async: true
 
   @moduletag :requires_cnv_deploy
+  @moduletag skip:
+               (case Req.get("http://127.0.0.1:8080/healthz") do
+                  {:ok, %Req.Response{status: 200}} -> false
+                  _ -> "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback. See Task 3 Step 5 to start it."
+                end)
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
-
-    case Req.get("http://127.0.0.1:8080/healthz") do
-      {:ok, %Req.Response{status: 200}} -> :ok
-      _ -> {:skip, "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback. See Task 3 Step 5 to start it."}
-    end
+    :ok
   end
 
   test "request_candidate calls the real cnv-deploy /invoke surface and persists a real trajectory_sha256" do

@@ -1,84 +1,81 @@
-# XaaS architecture overview
+# Architecture Overview
 
-This document is the canonical architectural explanation for XaaS v26.8.21. For release acceptance criteria see `docs/PRD-v26.8.21.md`; for exact transport paths see `docs/claude/diataxis/reference/http-api-surface.md`.
+This is the whole-system map for xaas: what the 8 Ash domains own, how the 3-tier
+`/internal-api` (plus `/api`, `/mcp`, `/a2a`, and `/webhooks`) routing splits requests, and how the
+cross-cutting mechanisms — actor/tenant resolution, audit trail, webhooks, Reactor, and the
+Ontop SPARQL bridge — compose on top of that resource set. It links out to the narrower
+existing explainers rather than re-deriving their content; read this first, then follow the
+links for depth on any one topic.
 
-## System shape
+## The 8 Ash domains
 
-XaaS is an Ash 3.x application hosted by Phoenix. Business semantics live in Ash resources/domains. Spark provides compile-time DSL admission, Reactor owns workflow orchestration, AshPostgres owns persistent resource storage, Ash policies own authorization, and JSON:API / GraphQL / AshTypescript are projections of admitted Ash actions.
+Defined in `lib/xaas/*.ex` (`use Ash.Domain`), resources counted directly from each domain's
+real `resources do ... end` block (74 total):
 
-The layers are intentionally non-equivalent:
+| Domain | Module | Resources | What it owns |
+|---|---|---|---|
+| Accounts | `Xaas.Accounts` (`lib/xaas/accounts.ex`) | 5 | `User`, `Org`, `OrgMembership`, auth/PII data — deliberately unwired from `/api` (see below) |
+| Billing | `Xaas.Billing` (`lib/xaas/billing.ex`) | 7 | Subscriptions and 6 maker-checker `Approval*` resources (pricing override, quota override, tier downgrade, SLA credit apply, patch SLA credit apply, invoice reconciliation approve) |
+| Ledger | `Xaas.Ledger` (`lib/xaas/ledger.ex`) | 4 | Real financial ledger — `Balance`/`Account`/`Transfer` — deliberately unwired from `/api` (see below) |
+| Marketplace | `Xaas.Marketplace` (`lib/xaas/marketplace.ex`) | 2 | `Provider` + its approval resource; multitenant via `actor_org_matches`/`actor_org_filter` checks |
+| Operations | `Xaas.Operations` (`lib/xaas/operations.ex`) | 17 | `AuditLogEntry`, capability-liveness receipts, incident/route-castle lifecycle, and the AutofdePlanner cache/catalog/candidate/match resources |
+| Platform | `Xaas.Platform` (`lib/xaas/platform.ex`) | 7 | `Webhook` + `WebhookDelivery` (outbound HMAC dispatch), plus platform-level approvals |
+| Governance | `Xaas.Governance` (`lib/xaas/governance.ex`) | 27 | The largest domain: `FreezeWindow`, `AuditExportToken`, and the bulk of the `Approval*` maker-checker surface, including the 4 non-global-multitenancy resources (`ApprovalDrFailover`, `ApprovalLegalHoldRelease`, `ApprovalDeploymentQuarantine`, `ApprovalBackupRetentionChange`) |
+| Library | `Xaas.Library` (`lib/xaas/library.ex`) | 5 | Next Read case study: `Book`, `Checkout`, `HoldRequest`, `Curation`, `RecommendationLog` — powers 6-factor ML recommendation ranker, PubSub reactive LiveViews, and Ash AI MCP tools |
 
-`transport -> Ash action/policy -> Reactor when orchestration is needed -> domain/storage/observation boundary -> receipt/evidence`
+Every domain uses `AshJsonApi.Domain` + `AshGraphql.Domain` + `AshAdmin.Domain`; `Billing`
+additionally uses `AshTypescript.Rpc` for its `Subscription` resource, and `Library` exposes
+read actions to `AshAi`'s MCP server. Full resource-by-resource route detail is in
+`docs/claude/diataxis/reference/http-api-surface.md`.
 
-A transport route is not an authority grant. A Reactor is not a policy. A generated client is not a second implementation.
+Two more directories exist under `lib/xaas/` without a domain module of their own:
+`autofde/` (`DemoPlannerReactor`, `StatusParser` — real Reactor-orchestrated planner demo, see
+`reactor-autofde-planners-design.md`) and `telemetry/` (`OcelAshEmitter`, feeding the OCEL
+process-intelligence pipeline in `wasm4pm-process-intelligence-research.md`).
 
-## Canonical Ash domain census
+## Routing: Multi-tier `/internal-api`, `/api`, `/mcp`, `/a2a`, and `/webhooks`
 
-The configured domain graph contains **70** resources:
+All real, from `lib/xaas_web/router.ex`. Every non-public route is gated by
+`XaasWeb.Plugs.RequireInternalApiToken` — a real Bearer token check against
+`INTERNAL_API_TOKEN`, fails closed (503) if the env var is unset.
 
-| Domain | Resources | Notable domain extensions |
-| --- | ---: | --- |
-| `Xaas.Accounts` | 5 | JSON:API, GraphQL, Admin, AshTypescript RPC |
-| `Xaas.Billing` | 7 | JSON:API, GraphQL, Admin, AshTypescript RPC |
-| `Xaas.Governance` | 27 | JSON:API, GraphQL, Admin |
-| `Xaas.Ledger` | 4 | JSON:API, GraphQL, Admin |
-| `Xaas.Marketplace` | 2 | JSON:API, GraphQL, Admin, AshTypescript RPC |
-| `Xaas.Operations` | 18 | JSON:API, GraphQL, Admin, AshTypescript RPC, ProjectMeasure Spark extension |
-| `Xaas.Platform` | 7 | JSON:API, GraphQL, Admin |
-| **Total** | **70** | |
+1. **Public**: `GET /` (browser pipeline), `GET /next-read` (Next Read LiveView), and `POST /webhooks/stripe`
+   (inbound Stripe receiver, deliberately *not* behind the internal-api token — Stripe is the
+   caller and cannot supply it; authenticity is Stripe-signature verification inside
+   `XaasWeb.StripeWebhookController` itself).
+2. **Capability-liveness / health routes**: four hand-written GET routes
+   under `/internal-api` — `capability_liveness_regressions`, `ocel_summary`,
+   `prometheus/query`, `health` — registered *before* the catch-all forward below them because
+   Phoenix `forward` matches every sub-path under its prefix and would otherwise shadow them.
+3. **Production MCP server** (`/mcp`): `forward "/", AshAi.Mcp.Router` exposing read-only Library
+   tools (`:list_books`, `:books_by_grade_band`, `:active_curations_for_grade`) to Claude Desktop,
+   Zed, and Cursor.
+4. **Agent-to-Agent server** (`/a2a`): `forward "/", A2A.Plug` with `XaasWeb.A2A.NextReadUserAgent`
+   for multi-persona multi-turn simulations.
+5. **Ontop SPARQL proxy**: `forward "/internal-api/sparql"` to
+   `XaasWeb.OntopProxyPlug`, a real reverse proxy to the Ontop R2RML SPARQL endpoint.
+6. **General internal API**: `forward "/internal-api"` to
+   `XaasWeb.InternalApiRouter` (the generated `AshJsonApi.Router` for internal-facing
+   resources), behind `:require_internal_api_token`.
+7. **Customer-facing `/api`**: `forward "/api"` to
+   `XaasWeb.ApiRouter`, behind `:require_internal_api_token` *and*
+   `:resolve_org_actor`.
 
-The release audit mechanically verifies this census, unique resource ownership, and registration of source modules using `Xaas.Resource`.
+Dev-only routes (`LiveDashboard`, `AshAdmin` at `/admin`, the autofde-lab LiveView) are gated
+behind `Application.compile_env(:kanban, :dev_routes)` and never mounted outside dev.
 
-## AshTypescript
+## Cross-cutting mechanisms
 
-Four resources/actions are deliberately projected into the generated TypeScript RPC client in v26.8.21:
-
-- `Xaas.Accounts.Org` -> `list_accounts_orgs`
-- `Xaas.Billing.Subscription` -> `list_billing_subscriptions`
-- `Xaas.Marketplace.Provider` -> `list_marketplace_providers`
-- `Xaas.Operations.ProjectMeasure.Measurement` -> `measure_project`
-
-The generated client targets `/internal-api/rpc/run` and `/internal-api/rpc/validate`. Phoenix mounts both routes behind `KanbanWeb.Plugs.RequireInternalApiToken`. The RPC controller delegates to `AshTypescript.Rpc`; it does not own business logic.
-
-## Reactor workflows
-
-The codebase has multiple real Reactor uses; v26.8.21 no longer describes Reactor as a single-demo capability.
-
-`Xaas.Operations.DemoPlannerReactor` exercises the planner/orchestration path already present in Operations. Project measurement adds two related workflows:
-
-- `Xaas.Operations.ProjectMeasure.Reactor` — live OBSERVE-only workflow: load Spark configuration, GET GitHub Actions observations, perform exact-subject admission/census, emit telemetry, return the receipt-bearing observation.
-- `Xaas.Operations.ProjectMeasure.AdmissionReactor` — transport-free replay court over already captured observations.
-
-Both keep orchestration separate from semantic admission and external authority.
-
-## Exact-subject project measurement
-
-`Xaas.Operations.ProjectMeasure.Measurement` is a stateless Ash resource. It has generic `:measure` and `:measure_json` actions and no create/update/destroy actions. Its exact commit SHA is an Ash NewType constrained to 40 hexadecimal characters.
-
-The capability chain is:
-
-`Spark DSL -> Spark verifier -> Ash typed action -> Reactor -> GET-only GitHub Actions sensor -> [since, until)+SHA census -> telemetry -> deterministic receipt/replay`
-
-JSON:API exposes only GET for the measurement resource. GraphQL exposes the canonical JSON result as a query because an unconstrained Elixir map has no honest static GraphQL object shape. AshTypescript exposes the same action through the authenticated RPC adapter.
-
-## HTTP topology
-
-Phoenix owns three relevant transport classes:
-
-1. Public web/webhook routes. Stripe remains public at the routing layer because Stripe is the caller; signature verification is the authenticity boundary.
-2. Internal routes protected by `RequireInternalApiToken`, including health/observability, SPARQL proxying, AshTypescript RPC, and the internal Operations AshJsonApi router.
-3. `/api`, also token-protected, forwarding all seven Ash domains through `KanbanWeb.ApiRouter`; per-org actor/tenant resolution is layered onto the subset that requires it.
-
-At the v26.8.21 baseline, 57 of 70 resources declare JSON:API routes. Five sensitive resources remain deliberately unwired from generic customer-facing routes: `Xaas.Ledger.Balance`, `Xaas.Ledger.Account`, `Xaas.Ledger.Transfer`, `Xaas.Accounts.User`, and `Xaas.Accounts.Token`.
-
-## Persistence and migration doctrine
-
-AshPostgres resource snapshots describe current storage intent; timestamped Ecto migrations describe replayable schema history. A later generated migration may not recreate a table already created by an earlier migration. v26.8.21 repairs the pending-backlog migration accordingly and treats legacy plaintext token metadata as a fail-closed backfill precondition rather than data to discard.
-
-## Release evidence
-
-The repository-wide `mix xaas.release_audit` gate verifies version/runtime identity, domain/resource census, source registration, migration table-create uniqueness, tracked JSON, tracked shell syntax, Markdown links, stale architecture claims, canonical release docs, and RPC endpoint agreement.
-
-CI additionally owns exact-head identity, warnings-as-errors compilation, database migration/tests, formatter standing, ProjectMeasure falsifiers, generated AshTypescript drift, Dialyzer, unused dependencies, and non-actuating container build qualification.
-
-No green transport check or generated artifact by itself establishes whole-product `ALIVE`; standing is always scoped to the exact executed subject and completed verification boundary.
+- **Actor/tenant resolution** — `XaasWeb.Plugs.ResolveOrgActor`
+  (`lib/xaas_web/plugs/resolve_org_actor.ex`), mounted only on `/api`. It resolves an
+  `X-Org-Id` header into the Ash actor/tenant, but is real path-aware: it only *enforces*
+  resolution for the 4 non-global-multitenancy governance resources
+  (`ApprovalDrFailover`/`ApprovalLegalHoldRelease`/`ApprovalDeploymentQuarantine`/
+  `ApprovalBackupRetentionChange`); every other `/api` route passes through unaffected.
+- **Ash-core multitenancy** — most multitenant resources (`Org`, `Provider`,
+  `ApprovalProviderStatusChange`, most `Approval*` resources) use Ash's built-in
+  `multitenancy` DSL directly rather than the `ResolveOrgActor` carve-out.
+- **Atomic Invariant Concurrency** — inventory decrements (`Book.borrow_copy`), quota adjustments,
+  and state changes use `change atomic_update` to prevent race conditions at the Postgres row level.
+- **Reactor Actuation** — Consequential operations flow exclusively through `Xaas.Actuation` and
+  Reactor steps, generating immutable audit receipts and supporting transactional rollback.

@@ -85,9 +85,9 @@ processes, `--name n1@127.0.0.1`/`n2@127.0.0.1`, `--cookie xaastest`):
 Real root cause of the `denied: permission_denied: read_package` push failure that had
 persisted since the initial CI setup: `GITHUB_TOKEN` only auto-inherits ghcr.io
 package-creation rights when the package name matches the repository name. The workflow
-still referenced the book's original `kanban` image name while the repo is `xaas` — a
+still referenced the book's original `xaas` image name while the repo is `xaas` — a
 package that never existed and that `GITHUB_TOKEN` had no implicit right to create.
-Fixed by renaming all `ghcr.io/OWNER/kanban` refs to `ghcr.io/OWNER/xaas`.
+Fixed by renaming all `ghcr.io/OWNER/xaas` refs to `ghcr.io/OWNER/xaas`.
 
 A second, unrelated real bug then surfaced once the permission issue cleared: the
 `linux/arm64` leg of the multi-arch build segfaults under QEMU emulation installing

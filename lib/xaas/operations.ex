@@ -1,6 +1,6 @@
 defmodule Xaas.Operations do
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [
       AshJsonApi.Domain,
       AshGraphql.Domain,
@@ -30,6 +30,8 @@ defmodule Xaas.Operations do
   end
 
   resources do
+    resource(Xaas.Operations.ActuationIntent)
+    resource(Xaas.Operations.ActuationReceipt)
     resource(Xaas.Operations.ApprovalCastleVerbSchedule)
     resource(Xaas.Operations.AuditLogEntry)
     resource(Xaas.Operations.ApprovalK8sFaultRemediateSuggest)

@@ -57,7 +57,11 @@ ENV LANG=en_US.UTF-8 \
 WORKDIR /app
 RUN chown nobody /app
 
-COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/kanban ./
+# set runner ENV
+ENV MIX_ENV="prod"
+
+# Only copy the final release from the build stage
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/xaas ./
 
 USER nobody
 CMD ["/app/bin/server"]

@@ -22,13 +22,22 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
   anywhere in Ash's own action pipeline. An earlier version of this
   module attached handlers for both `:stop` and a nonexistent
   `:exception` suffix -- those `:exception` handlers were real, verified
-  dead code (never once invoked) and have been removed. This means:
-  every real event this module writes has `outcome: "stop"`; a raised
-  exception still produces one (the action's own error surfaces via its
-  normal `{:error, ...}` return or a propagated raise, not via a
-  distinguishable telemetry outcome). This module cannot currently tell
-  a successful action from a failed one -- only "ran to completion of
-  the span."
+  dead code (never once invoked) and have been removed.
+
+  Second real correction (this change): the `:stop` event's own metadata
+  is fixed *before* the action body runs (confirmed by reading
+  `telemetry_span/4`'s expansion), so it can never itself carry
+  success/failure. But `deps/ash/lib/ash/actions/create/create.ex` and
+  `deps/ash/lib/ash/actions/read/read.ex` (and the equivalent
+  update/destroy/generic-action pipelines) call the real
+  `Ash.Tracer.set_handled_error(opts[:tracer], error, ...)` module
+  function synchronously, in the same process, on every real action
+  error -- for every tracer configured in `config :ash, :tracer`. This
+  module now registers itself as a second real `Ash.Tracer` (see the
+  callbacks below) purely to receive that real, already-existing signal:
+  `outcome` in the emitted `vmap` is now `"ok"` or `"error"`, sourced from
+  a real Ash callback firing earlier in the same process for the same
+  action -- not a guess, not a new invented event.
 
   1. Builds one real OCEL v2 JSON-OCEL event record (`ocel:eid`,
      `ocel:activity`, `ocel:timestamp`, `ocel:omap`, `ocel:vmap` -- the
@@ -48,16 +57,75 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
      the real "OCEL v2 + OpenTelemetry, enriched via Ash introspection"
      integration point.
 
-  Attached once from `Xaas.Application`/`Kanban.Application` via
+  Attached once from `Xaas.Application`/`Xaas.Application` via
   `attach!/0`, for every real domain configured in
-  `config :kanban, :ash_domains`.
+  `config :xaas, :ash_domains`.
   """
 
+  use Ash.Tracer
   require Logger
   require OpenTelemetry.Tracer
 
-  @log_path Path.join([:code.priv_dir(:kanban), "ocel", "ash-actions.ndjson"])
+  @log_path Path.join([:code.priv_dir(:xaas), "ocel", "ash-actions.ndjson"])
   @action_types [:create, :read, :update, :destroy, :action]
+  @outcome_key :xaas_ocel_pending_outcome
+
+  # -- Ash.Tracer callbacks -------------------------------------------------
+  #
+  # Real fix for the outcome defect documented above: `Ash.Tracer.
+  # telemetry_span/4` fixes its `:stop` metadata *before* the action body
+  # runs (confirmed by reading `deps/ash/lib/ash/tracer/tracer.ex`), so the
+  # `:stop` event itself never carries success/failure. But every CRUD
+  # action pipeline (confirmed in `deps/ash/lib/ash/actions/create/create.ex`
+  # and `deps/ash/lib/ash/actions/read/read.ex`) calls the real
+  # `Ash.Tracer.set_handled_error(opts[:tracer], error, ...)` module
+  # function -- unconditionally on any real action error, in the *same
+  # process*, *before* the enclosing `telemetry_span`'s `:stop` event fires
+  # -- for every tracer configured in `config :ash, :tracer`. Registering
+  # this module as a second real Ash.Tracer (alongside `OpentelemetryAsh`)
+  # gives it a real, non-fabricated signal: `set_handled_error/2` records
+  # `:error` in the process dictionary, and `handle_event/4`'s `:stop`
+  # handler reads and clears it. No new telemetry event name invented; no
+  # guessed metadata key -- this is the real, existing Ash.Tracer contract.
+  #
+  # `trace_type?/1` returns `false` unconditionally so this tracer is never
+  # selected for the separate `Ash.Tracer.span/3` propagation macro (used
+  # for nested change/validation/query spans) -- this module has no need to
+  # participate in span nesting/propagation, only in the real error signal,
+  # so `start_span/2`, `stop_span/0`, `get_span_context/0`, and
+  # `set_span_context/1` are real no-ops that are never actually invoked
+  # (module function `Ash.Tracer.trace_type?/2` filters this tracer out of
+  # the `span/3` tracer list before those callbacks would be called).
+
+  @impl Ash.Tracer
+  def trace_type?(_type), do: false
+
+  @impl Ash.Tracer
+  def start_span(_type, _name), do: :ok
+
+  @impl Ash.Tracer
+  def stop_span, do: :ok
+
+  @impl Ash.Tracer
+  def get_span_context, do: nil
+
+  @impl Ash.Tracer
+  def set_span_context(_context), do: :ok
+
+  @impl Ash.Tracer
+  def set_metadata(_type, _metadata), do: :ok
+
+  @impl Ash.Tracer
+  def set_error(_error, _opts \\ []) do
+    Process.put(@outcome_key, :error)
+    :ok
+  end
+
+  @impl Ash.Tracer
+  def set_handled_error(_error, _opts) do
+    Process.put(@outcome_key, :error)
+    :ok
+  end
 
   @doc """
   Attach real `:telemetry` handlers for every real configured Ash domain's
@@ -81,7 +149,7 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
   def attach! do
     File.mkdir_p!(Path.dirname(@log_path))
 
-    domains = Application.get_env(:kanban, :ash_domains, [])
+    domains = Application.get_env(:xaas, :ash_domains, [])
 
     handler_ids =
       for domain <- domains,
@@ -94,7 +162,7 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
           handler_id,
           event,
           &__MODULE__.handle_event/4,
-          %{outcome: :stop}
+          nil
         )
 
         handler_id
@@ -109,10 +177,18 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
   end
 
   @doc false
-  def handle_event(_event, measurements, metadata, %{outcome: outcome}) do
+  def handle_event(_event, measurements, metadata, _config) do
+    # Real outcome, sourced from this module's own `Ash.Tracer.
+    # set_handled_error/2` / `set_error/2` callback firing earlier in this
+    # same process for this same action (see the moduledoc for the real
+    # Ash.Tracer call chain) -- not a guess, not always "stop".
+    outcome = Process.get(@outcome_key, :ok)
+    Process.delete(@outcome_key)
+
     event = build_ocel_event(measurements, metadata, outcome)
     append_ocel_event!(event)
     enrich_current_otel_span(event)
+    Xaas.Telemetry.OcelForwarder.forward(event)
     :ok
   end
 

@@ -1,0 +1,16 @@
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+PREFIX schema: <https://schema.org/>
+
+# Gate: every xl:RankingFactor individual backing Xaas.Library.Config.weights/1
+# (via Xaas.Library.Config.ontology_weights/0, which parses this same shape out
+# of ontology.ttl at runtime) must carry both a schema:identifier and an
+# xl:weight literal. An empty result set means every RankingFactor is fully
+# grounded; any row returned here identifies an ungrounded factor that would
+# silently fall out of the runtime weight map and fall back to defaults.
+SELECT ?factor WHERE {
+  ?factor a xl:RankingFactor .
+  FILTER (
+    NOT EXISTS { ?factor schema:identifier ?name } ||
+    NOT EXISTS { ?factor xl:weight ?weight }
+  )
+}

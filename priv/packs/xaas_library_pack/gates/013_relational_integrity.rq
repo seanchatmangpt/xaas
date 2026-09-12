@@ -1,0 +1,13 @@
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?checkout ?curation ?bookModule WHERE {
+  ?checkoutRes a xl:Checkout ;
+               xl:resourceModule ?checkout ;
+               schema:itemBorrowed "book_id" .
+  ?curationRes a xl:Curation ;
+               xl:resourceModule ?curation ;
+               schema:item "book_id" .
+  ?bookRes a xl:Book ;
+           xl:resourceModule ?bookModule .
+}

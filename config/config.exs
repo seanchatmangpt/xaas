@@ -8,11 +8,14 @@
 # ---
 import Config
 
-config :kanban,
-  ecto_repos: [Kanban.Repo, Xaas.Repo],
+config :xaas,
+  ecto_repos: [Xaas.LegacyRepo, Xaas.Repo],
   ash_domains: [
+    Xaas.Library,
     Xaas.Accounts,
     Xaas.Billing,
+    Xaas.Coupling,
+    Xaas.Generation,
     Xaas.Governance,
     Xaas.Ledger,
     Xaas.Marketplace,
@@ -22,10 +25,37 @@ config :kanban,
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   base_resources: [Xaas.Resource]
 
-config :ash, :tracer, [OpentelemetryAsh]
+# ash-migration Phase 3: real Ash-ecosystem config ported verbatim from
+# ~/dev-fresh/xaas/config/config.exs (the source the 89 resource files were
+# actually written against) -- the resource files use short type codes
+# (:money) and custom types (:capability_class, :interface) that only
+# resolve via this real custom_types/known_types registration, confirmed by
+# a real compile error (":money is not a valid type") before this was added.
+# Real fix: opentelemetry_ash was added as a dep but never actually
+# configured as Ash's tracer (confirmed via grep -- no `config :ash,
+# :tracer` existed anywhere in this repo before this line). Without this,
+# OpentelemetryAsh.start_span/2 is dead code -- Ash never calls it.
+# Xaas.Telemetry.OcelAshEmitter is registered here too (not just attached
+# to :telemetry): it needs the real Ash.Tracer.set_handled_error/set_error
+# callbacks (fired synchronously, in-process, on real action errors) to
+# distinguish OCEL outcome "ok" from "error" -- see that module's moduledoc.
+config :ash, :tracer, [OpentelemetryAsh, Xaas.Telemetry.OcelAshEmitter]
+
 config :ash_oban, pro?: false
 
-config :kanban, Oban,
+# Config surface for the ex4pm ontology staleness check
+# (Xaas.Ontology.Ex4pmStaleness / mix xaas.telemetry.check_ontology_staleness).
+# Single-sources repo path, pin, and both file paths so the mix task and the
+# ExUnit test can never drift from each other. See
+# docs/claude/diataxis/reference/ex4pm-ontology-pin.md for how to update
+# `pinned_sha` safely.
+config :xaas, :ex4pm_ontology_check,
+  repo_path: System.get_env("EX4PM_REPO_PATH", Path.expand("~/ex4pm")),
+  pinned_sha: "ade25ed12e93f89e7a2e1490698f99ae4947d702",
+  upstream_path: "lib/ex4pm/ocel.ex",
+  vendored_path: "priv/vendor/ex4pm/ocel.ex"
+
+config :xaas, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
   queues: [default: 10],
@@ -43,7 +73,7 @@ config :ash_json_api,
 # RequireInternalApiToken; generated clients may not silently target an
 # unmounted public path.
 config :ash_typescript,
-  otp_app: :kanban,
+  otp_app: :xaas,
   output_file: "assets/js/ash_rpc.ts",
   run_endpoint: "/internal-api/rpc/run",
   validate_endpoint: "/internal-api/rpc/validate",
@@ -51,6 +81,7 @@ config :ash_typescript,
   input_field_formatter: :camel_case
 
 config :ash,
+  default_string_length_count: :codepoints,
   allow_forbidden_field_for_relationships_by_default: true,
   include_embedded_source_by_default?: false,
   show_keysets_for_all_actions?: false,
@@ -90,22 +121,29 @@ config :ash,
     pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus
   ]
 
-config :kanban, KanbanWeb.Endpoint,
+# Configures the endpoint
+config :xaas, XaasWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
-    formats: [html: KanbanWeb.ErrorHTML, json: KanbanWeb.ErrorJSON],
+    formats: [html: XaasWeb.ErrorHTML, json: XaasWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Kanban.PubSub,
+  pubsub_server: Xaas.PubSub,
   live_view: [signing_salt: "27Dz+bCC"]
 
-config :kanban, Kanban.PromEx,
+config :xaas, Xaas.PromEx,
   grafana: [
     host: "http://grafana:3000",
     upload_dashboards_on_start: true
   ]
 
-config :kanban, Kanban.AwsRepo, adapter: Kanban.AwsRepo.FixtureAdapter
+config :xaas, Xaas.AwsRepo, adapter: Xaas.AwsRepo.FixtureAdapter
+
+# Next Read ILS integration: FixtureAdapter remains the configured default
+# since no real ILS vendor account/endpoint exists in this environment.
+# Xaas.Library.ILSRepo.SIP2Adapter is available but not defaulted -- see
+# docs/case-studies/next-read/ILS-AND-EXPLANATION-SUBSTITUTION.md.
+config :xaas, Xaas.Library.ILSRepo, adapter: Xaas.Library.ILSRepo.FixtureAdapter
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
@@ -114,7 +152,14 @@ config :ex_aws,
   jason_codec: Jason,
   debug_requests: true
 
-config :kanban, Kanban.Mailer, adapter: Swoosh.Adapters.Local
+# Configures the mailer
+#
+# By default it uses the "Local" adapter which stores the emails
+# locally. You can see the emails in your browser, at "/dev/mailbox".
+#
+# For production it's recommended to configure a different adapter
+# at the `config/runtime.exs`.
+config :xaas, Xaas.Mailer, adapter: Swoosh.Adapters.Local
 
 config :esbuild,
   version: "0.14.41",

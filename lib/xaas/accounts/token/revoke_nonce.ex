@@ -14,7 +14,7 @@ defmodule Xaas.Accounts.Token.RevokeNonce do
   """
 
   use Ash.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshOnetime.Resource]

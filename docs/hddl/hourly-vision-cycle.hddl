@@ -1,0 +1,99 @@
+;; hourly-vision-cycle.hddl
+;; The standing cron job's (id: session-scoped, hourly at :13, 7-day cap)
+;; own real charter, formalized as a top-level compound task that COMPOSES
+;; the other four domains rather than redefining their steps. This is the
+;; SOLVE(x)-shaped top task from the operating doctrine, instantiated for
+;; the specific recurring "vision 2030 cycle" subject.
+
+(define (domain hourly-vision-cycle)
+  (:requirements :hierarchy :typing)
+
+  (:types
+    repo - object
+    theme - object      ;; an ERRC/FMEA/RCA-grounded pick for this hour
+    doc - object
+  )
+
+  (:predicates
+    (theme-grounded ?t - theme ?r - repo)   ;; derived from real repo state, not invented
+    (charter-written ?d - doc ?t - theme)
+    (swarm-launched ?t - theme)
+    (swarm-implemented ?t - theme)
+    (avatars-used ?t - theme)
+    (results-recorded ?d - doc)
+    (cycle-complete ?t - theme)
+  )
+
+  (:task VISION-2030-CYCLE
+    :parameters (?r - repo)
+  )
+
+  (:method m-vision-cycle
+    :parameters (?r - repo ?t - theme ?d - doc)
+    :task (VISION-2030-CYCLE ?r)
+    :ordered-subtasks (and
+      (t1 (ground-theme ?t ?r))
+      (t2 (write-charter ?d ?t))
+      (t3 (launch-swarm ?t))
+      (t4 (use-avatars ?t))
+      (t5 (record-results ?d))
+    )
+  )
+
+  (:action ground-theme
+    :parameters (?t - theme ?r - repo)
+    :precondition ()
+    :effect (theme-grounded ?t ?r)
+    ;; real: an ERRC pass (Eliminate/Reduce/Raise/Create over a real, named
+    ;; backlog -- e.g. this session's own ERRC review output), an FMEA pass
+    ;; (a named failure mode with real severity/detection/mitigation, not a
+    ;; hypothetical one), or an RCA pass (a real observed incident this
+    ;; session, e.g. the build-lock contention) -- never a theme invented
+    ;; with no citation to real repo state.
+  )
+
+  (:action write-charter
+    :parameters (?d - doc ?t - theme)
+    :precondition (theme-grounded theme repo)
+    :effect (charter-written ?d ?t)
+    ;; real: docs/vision/vision-2030-<YYYY-MM-DD-HHmm>.md, explicit
+    ;; "out of scope" section (per the doctrine's exclusion-non-reentry rule),
+    ;; a "Results" section left as IN PROGRESS until t5.
+  )
+
+  (:action launch-swarm
+    :parameters (?t - theme)
+    :precondition (charter-written doc ?t)
+    :effect (swarm-launched ?t)
+    ;; real: composes (RUN-CYCLE ?t) from workflow-cycle.hddl -- research/
+    ;; design/implement/verify. Per this repo's Operating Mode, does NOT wait
+    ;; on the PRIOR hour's cycle finishing verification before this one
+    ;; launches; DOES check .claude/workflow-lock-guard.md's convention to
+    ;; avoid two cycles' compile stages colliding.
+  )
+
+  (:action use-avatars
+    :parameters (?t - theme)
+    :precondition (swarm-launched ?t)
+    :effect (avatars-used ?t)
+    ;; real: composes (CLOSE-FMEA-GAP surface)'s t7 (prove-avatars) pattern --
+    ;; real MCP (/mcp) and A2A (/a2a) calls simulating distinct personas,
+    ;; Chicago-style, whenever the cycle's theme touches an actor-facing
+    ;; surface. Not every theme has an actor surface to simulate -- this
+    ;; action is a no-op (trivially satisfied) for themes that don't, and
+    ;; that must be stated explicitly in the results doc, not silently
+    ;; skipped.
+  )
+
+  (:action record-results
+    :parameters (?d - doc)
+    :precondition (avatars-used theme)
+    :effect (and (results-recorded ?d) (cycle-complete theme))
+    ;; real: composes (VERIFY-AND-COMMIT repo changeset) from
+    ;; verify-and-commit.hddl, then writes its real, observed output into
+    ;; ?d's Results section -- distinguishing DONE/verified from
+    ;; carried-forward/not-done, per the no-overclaiming discipline. This
+    ;; repo's Operating Mode means an incomplete result is a valid, landed
+    ;; outcome here, not a blocker to the NEXT hour's t1.
+  )
+)

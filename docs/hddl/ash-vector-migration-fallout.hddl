@@ -1,0 +1,156 @@
+;; ash-vector-migration-fallout.hddl
+;; Observed this session: lib/xaas/library/book.ex's `embedding` attribute was
+;; migrated from a plain list-of-floats field to a real pgvector-backed
+;; `Ash.Vector` (via the `vectorize` DSL). Every consumer written before that
+;; migration assumed `book.embedding` was always a bare list, so each one broke
+;; the same way -- AshPostgres now loads the field back as an %Ash.Vector{}
+;; struct, not a list -- and each one was fixed the same way:
+;; lib/xaas/library/ranker.ex:231-249 (`compute_semantic_score/2`) is the one
+;; real, verified instance:
+;;   defp compute_semantic_score(book, student_embedding) do
+;;     book_embedding =
+;;       case book.embedding do
+;;         nil -> ...
+;;         emb when is_list(emb) -> emb
+;;         %Ash.Vector{} = vec -> Ash.Vector.to_list(vec)
+;;       end
+;;     ...
+;;   end
+;; Written down as HDDL because this is the exact shape any future
+;; Ash-vectorize migration's fallout will take, not because more than this one
+;; site has been found broken yet -- see caveat below.
+;;
+;; Real commands each action maps to:
+;;   find-usage    -> mcp__plugin_lumen_lumen__semantic_search "book.embedding" /
+;;                     grep -rn "\.embedding\b" lib/ (exact-literal fallback)
+;;   classify       -> read the call site; a `case`/`is_list` guard with no
+;;                     `%Ash.Vector{}` clause, or a bare list op (Enum.*, ++,
+;;                     Nx.tensor/1 assuming list) on the field, is a positive
+;;                     classification
+;;   add-clause     -> add `%Ash.Vector{} = vec -> Ash.Vector.to_list(vec)` (or
+;;                     equivalent) alongside the existing list clause
+;;   convert        -> Ash.Vector.to_list/1 at the point of use, never earlier
+;;                     (keeps the Ash.Vector struct intact for any AshPostgres
+;;                     query path that still expects it)
+;;   verify         -> per-file syntax check (`elixir -e "Code.string_to_quoted!(File.read!(path))"`)
+;;                     plus the real, already-existing test exercising that
+;;                     call path (e.g. `mix test test/xaas/library/next_read_test.exs`)
+;;
+;; CAVEAT (no overclaiming): only one call site (ranker.ex) has been found and
+;; fixed as of this writing. This domain formalizes the *shape* of that fix so
+;; the next occurrence (if `book.embedding`, or any other vectorize-migrated
+;; field, is read elsewhere) is handled the same way -- it does NOT assert that
+;; a repo-wide sweep for further occurrences has been run.
+
+(define (domain ash-vector-migration-fallout)
+  (:requirements :hierarchy :typing :negative-preconditions)
+
+  (:types
+    repo - object
+    field - object
+    call-site - object
+  )
+
+  (:predicates
+    (vectorized ?r - repo ?f - field)
+    (usage-found ?r - repo ?f - field ?cs - call-site)
+    (classified-list-assumption ?cs - call-site)
+    (classified-vector-safe ?cs - call-site)
+    (clause-added ?cs - call-site)
+    (converted-to-list ?cs - call-site)
+    (syntax-checked ?cs - call-site)
+    (test-verified ?cs - call-site)
+    (fixed ?cs - call-site)
+  )
+
+  ;; ---- compound task ----
+  (:task FIX-VECTOR-MIGRATION-FALLOUT
+    :parameters (?r - repo ?f - field ?cs - call-site)
+  )
+
+  ;; A call site that already handles %Ash.Vector{} needs no fix -- this
+  ;; method is the honest no-op branch, not skipped in prose.
+  (:method m-already-safe
+    :parameters (?r - repo ?f - field ?cs - call-site)
+    :task (FIX-VECTOR-MIGRATION-FALLOUT ?r ?f ?cs)
+    :precondition (and (usage-found ?r ?f ?cs) (classified-vector-safe ?cs))
+    :ordered-subtasks (and
+      (t1 (no-op ?cs))
+    )
+  )
+
+  (:method m-list-assumption-found
+    :parameters (?r - repo ?f - field ?cs - call-site)
+    :task (FIX-VECTOR-MIGRATION-FALLOUT ?r ?f ?cs)
+    :precondition (and (usage-found ?r ?f ?cs) (classified-list-assumption ?cs))
+    :ordered-subtasks (and
+      (t1 (add-ash-vector-clause ?cs))
+      (t2 (convert-via-to-list ?cs))
+      (t3 (verify-via-real-test ?cs))
+    )
+  )
+
+  ;; ---- primitive actions ----
+
+  (:action find-embedding-usage
+    :parameters (?r - repo ?f - field ?cs - call-site)
+    :precondition (vectorized ?r ?f)
+    :effect (usage-found ?r ?f ?cs)
+    ;; real: semantic_search or grep for every read of the vectorized field
+    ;; (e.g. `book.embedding`) across `lib/`, not just the sites already known
+    ;; broken. Does NOT itself decide safe vs. unsafe -- that's classify.
+  )
+
+  (:action classify-as-list-assumption
+    :parameters (?cs - call-site)
+    :precondition ()
+    :effect (or (classified-list-assumption ?cs) (classified-vector-safe ?cs))
+    ;; real: read the call site. Positive (list-assumption) iff it does a bare
+    ;; list op on the field, or a `case`/guard that matches `is_list` without
+    ;; also matching `%Ash.Vector{}`. Negative (vector-safe) iff it already
+    ;; has an %Ash.Vector{} clause (e.g. via Ash.Vector.to_list/1) or never
+    ;; touches list-shaped operations on the field directly.
+  )
+
+  (:action add-ash-vector-clause
+    :parameters (?cs - call-site)
+    :precondition (classified-list-assumption ?cs)
+    :effect (clause-added ?cs)
+    ;; real: add a `%Ash.Vector{} = vec -> ...` clause to the existing
+    ;; case/cond, alongside (not replacing) the `is_list` clause -- both
+    ;; representations can legitimately reach the call site depending on
+    ;; whether the value came fresh from Embeddings.embed/1 (list) or was
+    ;; loaded back from AshPostgres (%Ash.Vector{}).
+  )
+
+  (:action convert-via-to-list
+    :parameters (?cs - call-site)
+    :precondition (clause-added ?cs)
+    :effect (converted-to-list ?cs)
+    ;; real: `Ash.Vector.to_list(vec)` inside the new clause, at the point of
+    ;; use -- not earlier in the pipeline, so any code path that still needs
+    ;; the %Ash.Vector{} struct (e.g. an AshPostgres query filter) is
+    ;; unaffected by this call site's fix.
+  )
+
+  (:action verify-via-real-test
+    :parameters (?cs - call-site)
+    :precondition (converted-to-list ?cs)
+    :effect (and (syntax-checked ?cs) (test-verified ?cs) (fixed ?cs))
+    ;; real: per-file syntax check
+    ;; (`elixir -e "Code.string_to_quoted!(File.read!(path))"`), NOT a full
+    ;; `mix compile --force`, per this batch's own scoping rule -- plus the
+    ;; real, already-existing test exercising this call path (e.g.
+    ;; `mix test test/xaas/library/next_read_test.exs`). (test-verified ?cs)
+    ;; is asserted only if that test's real "N tests, 0 failures" line is
+    ;; observed, never inferred from (syntax-checked ?cs) alone.
+  )
+
+  (:action no-op
+    :parameters (?cs - call-site)
+    :precondition (classified-vector-safe ?cs)
+    :effect (fixed ?cs)
+    ;; real: no code change -- (fixed ?cs) here means "confirmed already
+    ;; correct," not "modified."
+  )
+)

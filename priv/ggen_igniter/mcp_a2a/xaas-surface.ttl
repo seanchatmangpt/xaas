@@ -1,0 +1,97 @@
+@prefix ema: <http://seanchatmangpt.github.io/packs/elixir-mcp-a2a#> .
+
+#################################################################
+# Worked fixture: xaas's REAL, already-running /mcp + /a2a surface,
+# encoded as an ema:CapabilitySurface -- not a hypothetical. Every field
+# below is transcribed from real, currently-committed xaas source:
+# lib/xaas_web/router.ex:105-120, lib/xaas_web/plugs/audit_mcp_tool_call.ex,
+# lib/xaas_web/a2a/next_read_user_agent.ex.
+#
+# CORRECTED (2026-09-09, during the real ggen_igniter dogfood run this
+# fixture was written for): an earlier draft assumed one ema:Capability
+# row's id always serves both the MCP tool list and the A2A skill list.
+# Checked against the real code before generating anything and found
+# that's false -- router.ex's real /mcp tools: [:list_books,
+# :books_by_grade_band, :active_curations_for_grade] and
+# next_read_user_agent.ex's real A2A skills: ["browse", "checkout",
+# "hddl-plan"] are DISJOINT id sets (checkout is a real consequential
+# mutation, never an MCP tool). Every row below now carries
+# ema:exposedVia to say which surface(s) it actually belongs to.
+#################################################################
+
+<urn:ema:xaas-next-read> a ema:CapabilitySurface ;
+    ema:appModule "Xaas" ;
+    ema:otpApp ":xaas" ;
+    ema:mcpMountPath "/mcp" ;
+    ema:mcpProtocolVersion "2024-11-05" ;
+    ema:mcpAuditPlugModule "XaasWeb.Plugs.AuditMcpToolCall" ;
+    ema:agentModule "NextReadUserAgent" ;
+    ema:skillsModule "XaasWeb.A2A.NextReadUserAgentSkills" ;
+    ema:agentName "next-read-user" ;
+    ema:agentDescription "Simulates a Next Read reader (student) persona for end-to-end multi-agent testing with HDDL task calculus" ;
+    ema:agentMountPath "/a2a" .
+
+# --- MCP-only capabilities (router.ex's real tools: array, 3 entries) ---
+
+<urn:ema:xaas-next-read/cap/list_books> a ema:Capability ;
+    ema:capabilityOf <urn:ema:xaas-next-read> ; ema:capabilityOrder 1 ;
+    ema:capabilityId "list_books" ; ema:capabilityName "List books" ;
+    ema:capabilityDescription "List books for a grade band (HDDL task: MCP-INSPECT-CATALOG)" ;
+    ema:capabilityAshAction "Xaas.Library.list_books/1" ; ema:exposedVia "mcp" ;
+    ema:observationScope "read_only" ; ema:mutationScope "none" ;
+    ema:requiresAuthority "false" ; ema:isReversible "true" ;
+    ema:receiptSemantics "none" .
+
+<urn:ema:xaas-next-read/cap/books_by_grade_band> a ema:Capability ;
+    ema:capabilityOf <urn:ema:xaas-next-read> ; ema:capabilityOrder 2 ;
+    ema:capabilityId "books_by_grade_band" ; ema:capabilityName "Books by grade band" ;
+    ema:capabilityDescription "Filter books by grade band" ;
+    ema:capabilityAshAction "Xaas.Library.books_by_grade_band/1" ; ema:exposedVia "mcp" ;
+    ema:observationScope "read_only" ; ema:mutationScope "none" ;
+    ema:requiresAuthority "false" ; ema:isReversible "true" ;
+    ema:receiptSemantics "none" .
+
+<urn:ema:xaas-next-read/cap/active_curations_for_grade> a ema:Capability ;
+    ema:capabilityOf <urn:ema:xaas-next-read> ; ema:capabilityOrder 3 ;
+    ema:capabilityId "active_curations_for_grade" ; ema:capabilityName "Active curations for grade" ;
+    ema:capabilityDescription "List active curated collections for a grade band" ;
+    ema:capabilityAshAction "Xaas.Library.active_curations_for_grade/1" ; ema:exposedVia "mcp" ;
+    ema:observationScope "read_only" ; ema:mutationScope "none" ;
+    ema:requiresAuthority "false" ; ema:isReversible "true" ;
+    ema:receiptSemantics "none" .
+
+# --- A2A-only capabilities (next_read_user_agent.ex's real skills: array, 3 entries) ---
+
+<urn:ema:xaas-next-read/cap/browse> a ema:Capability ;
+    ema:capabilityOf <urn:ema:xaas-next-read> ; ema:capabilityOrder 4 ;
+    ema:capabilityId "browse" ; ema:capabilityName "Browse books" ;
+    ema:capabilityDescription "List books for a grade band as a given user actor (HDDL task: MCP-INSPECT-CATALOG)" ;
+    ema:exposedVia "a2a" ;
+    ema:capabilityTag "next-read" ; ema:capabilityTag "library" ; ema:capabilityTag "hddl" ;
+    ema:observationScope "read_only" ; ema:mutationScope "none" ;
+    ema:requiresAuthority "false" ; ema:isReversible "true" ;
+    ema:receiptSemantics "none" .
+
+<urn:ema:xaas-next-read/cap/checkout> a ema:Capability ;
+    ema:capabilityOf <urn:ema:xaas-next-read> ; ema:capabilityOrder 5 ;
+    ema:capabilityId "checkout" ; ema:capabilityName "Checkout a book" ;
+    ema:capabilityDescription "Borrow a book as a given user actor (HDDL task: A2A-SIMULATE-USER-CIRCULATION / checkout-book)" ;
+    ema:exposedVia "a2a" ;
+    ema:capabilityTag "next-read" ; ema:capabilityTag "library" ; ema:capabilityTag "hddl" ;
+    ema:observationScope "read_write" ; ema:mutationScope "consequential" ;
+    ema:requiresAuthority "true" ; ema:isReversible "true" ;
+    ema:receiptSemantics "sealed_receipt" .
+# requires_authority=true + mutation_scope=consequential together, on
+# purpose: this is the real Actuation.run/4-gated CirculationBorrowReactor
+# path this session already fixed. receipt_semantics=sealed_receipt
+# because that reactor produces a real receipt, not just an audit log line.
+
+<urn:ema:xaas-next-read/cap/hddl_plan> a ema:Capability ;
+    ema:capabilityOf <urn:ema:xaas-next-read> ; ema:capabilityOrder 6 ;
+    ema:capabilityId "hddl-plan" ; ema:capabilityName "HDDL Plan Inspection" ;
+    ema:capabilityDescription "Inspect the formal HDDL compound tasks, methods, and epistemic receipts for Next Read" ;
+    ema:exposedVia "a2a" ;
+    ema:capabilityTag "next-read" ; ema:capabilityTag "hddl" ; ema:capabilityTag "calculus" ;
+    ema:observationScope "read_only" ; ema:mutationScope "none" ;
+    ema:requiresAuthority "false" ; ema:isReversible "true" ;
+    ema:receiptSemantics "none" .

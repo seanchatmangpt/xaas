@@ -1,0 +1,181 @@
+defmodule Xaas.ActuationTest do
+  @moduledoc """
+  Chicago-style qualification for the ontology-first Ash.Reactor actuation kernel.
+
+  These tests use the real Ash resources, real Reactor, and the real sandboxed
+  Postgres data layer. They prove semantic admission, bypass refusal, durable
+  receipt binding, consequential mutation, and deterministic idempotent replay.
+  """
+
+  use ExUnit.Case, async: true
+
+  alias Xaas.Accounts.User
+  alias Xaas.Library.{Book, Checkout}
+  alias Xaas.Marketplace.Provider
+  alias Xaas.Operations.ActuationReceipt
+  alias Xaas.Semantics.Registry
+
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+    :ok
+  end
+
+  # This file's own defaults (name "Reactor Provider", org_id
+  # "org-reactor") differ deliberately from Xaas.Generator.create_provider!/1's
+  # general defaults ("Test Provider" / "org-generated") -- kept for
+  # readability of the actuation-kernel assertions below; slug remains
+  # Xaas.Generator's own unique sequence.
+  defp create_provider! do
+    Xaas.Generator.create_provider!(%{name: "Reactor Provider", org_id: "org-reactor"})
+  end
+
+  test "every provider semantic IRI is admitted from public ontologies" do
+    projection = Provider.ontology_projection!()
+
+    assert "https://schema.org/Organization" in projection.classes
+    assert "http://www.w3.org/ns/prov#Agent" in projection.classes
+
+    iris =
+      projection.classes ++
+        Enum.map(projection.attributes, & &1.predicate) ++
+        Enum.map(projection.relationships, & &1.predicate)
+
+    assert Enum.all?(iris, &Registry.public_iri?/1)
+    assert Provider.ontology_projection_hash() == Registry.hash(projection)
+    assert Provider.ontology_projection_hash() == Provider.ontology_projection_hash()
+  end
+
+  test "Reactor is the admitted DO path and replay does not repeat the mutation" do
+    provider = create_provider!()
+    key = "test-provider-actuation-#{System.unique_integer([:positive])}"
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             provider
+             |> Ash.Changeset.for_update(:actuate_status, %{status: :active})
+             |> Ash.update(authorize?: false)
+
+    assert {:ok, first} =
+             Xaas.Actuation.run(
+               Provider,
+               :actuate_status,
+               %{status: :active},
+               subject_id: provider.id,
+               idempotency_key: key,
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "actuation_test"}
+             )
+
+    assert first.status == :succeeded
+    refute first.replay?
+    assert first.receipt.status == :succeeded
+    assert first.receipt.ontology_projection_hash == Provider.ontology_projection_hash()
+    assert first.receipt.input_hash
+    assert first.receipt.result_hash
+    assert first.receipt.completed_at
+
+    assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :active
+
+    receipts_before = Ash.read!(ActuationReceipt, authorize?: false)
+
+    assert {:ok, replay} =
+             Xaas.Actuation.run(
+               Provider,
+               :actuate_status,
+               %{status: :active},
+               subject_id: provider.id,
+               idempotency_key: key,
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "actuation_test"}
+             )
+
+    assert replay.status == :replayed
+    assert replay.replay?
+    assert replay.receipt.id == first.receipt.id
+    assert length(Ash.read!(ActuationReceipt, authorize?: false)) == length(receipts_before)
+  end
+
+  test "replaying a :create action returns a real, dot-accessible resource, not a frozen JSON snapshot" do
+    # Regression coverage for a real bug: `admission.subject_id` is nil for
+    # a :create action (Checkout.borrow -- there's no existing subject to
+    # key on), so the replay path previously handed back
+    # `admission.receipt.result` verbatim -- `json_safe/1`'s frozen,
+    # string-keyed serialization snapshot, not the live Checkout struct.
+    # A caller doing `checkout.book_id` (as
+    # XaasWeb.NextRead.ReaderLive.handle_event("checkout_book", ...) does)
+    # got a real KeyError on the second (replayed) request -- caught via a
+    # real dev-server Playwright run, not by inspection.
+    book =
+      Book
+      |> Ash.Changeset.for_create(:create, %{
+        title: "Replay Regression Fixture",
+        author: "Test Author",
+        isbn: "ISBN-REPLAY-#{System.unique_integer([:positive])}",
+        grade_level: 6,
+        genres: ["Fiction"],
+        synopsis: "Fixture book for actuation replay regression coverage.",
+        available_copies: 2,
+        total_copies: 2
+      })
+      |> Ash.create!(authorize?: false)
+
+    user = Ash.Seed.seed!(User, %{email: "replay-fixture@school.district.edu"})
+    key = "test-checkout-replay-#{System.unique_integer([:positive])}"
+    params = %{book_id: book.id, user_id: user.id, school_id: "willow-creek"}
+
+    assert {:ok, first} =
+             Xaas.Actuation.run(Checkout, :borrow, params,
+               idempotency_key: key,
+               actor: user,
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "actuation_test"}
+             )
+
+    refute first.replay?
+    assert %Checkout{} = first.result
+    assert first.result.book_id == book.id
+
+    assert {:ok, replay} =
+             Xaas.Actuation.run(Checkout, :borrow, params,
+               idempotency_key: key,
+               actor: user,
+               authorize?: false,
+               authority: %{kind: "test_authority", source: "actuation_test"}
+             )
+
+    assert replay.replay?
+    # The real assertion: a live struct with a real, dot-accessible
+    # :book_id, not the frozen %{"id" => ..., "value" => "#Checkout<...>"}
+    # snapshot -- exactly what reader_live.ex's checkout_book handler
+    # reads to look up the checked-out book.
+    assert %Checkout{} = replay.result
+    assert replay.result.book_id == book.id
+    assert replay.result.id == first.result.id
+  end
+
+  test "idempotency key reuse with a different consequence is refused" do
+    provider = create_provider!()
+    key = "test-provider-conflict-#{System.unique_integer([:positive])}"
+
+    assert {:ok, %{status: :succeeded}} =
+             Xaas.Actuation.run(
+               Provider,
+               :actuate_status,
+               %{status: :active},
+               subject_id: provider.id,
+               idempotency_key: key,
+               authorize?: false,
+               authority: %{kind: "test_authority"}
+             )
+
+    assert {:error, {:idempotency_conflict, ^key}} =
+             Xaas.Actuation.run(
+               Provider,
+               :actuate_status,
+               %{status: :suspended},
+               subject_id: provider.id,
+               idempotency_key: key,
+               authorize?: false,
+               authority: %{kind: "test_authority"}
+             )
+  end
+end

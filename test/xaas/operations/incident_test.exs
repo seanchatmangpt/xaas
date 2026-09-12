@@ -6,15 +6,15 @@ defmodule Xaas.Operations.IncidentTest do
 
   Real correction (seventeenth pass): this moduledoc previously claimed
   the resource's json_api routes block "exists but is not actually wired
-  into KanbanWeb.InternalApiRouter/ApiRouter, so there is no real
+  into XaasWeb.InternalApiRouter/ApiRouter, so there is no real
   controller to test against" -- that claim was stale/false. `/api` is a
-  single blanket `forward` to `KanbanWeb.ApiRouter` (an
+  single blanket `forward` to `XaasWeb.ApiRouter` (an
   `AshJsonApi.Router` covering all domains' auto-generated routes, see
-  `lib/kanban_web/router.ex`), which includes `Xaas.Operations.Incident`
+  `lib/xaas_web/router.ex`), which includes `Xaas.Operations.Incident`
   same as every other json_api-extended resource. A real, temporary,
   deleted-after-run HTTP test this pass proved `POST /api/incidents`
   really returns `HTTP 201` through the real router -- see
-  `test/kanban_web/controllers/incident_controller_test.exs` for the
+  `test/xaas_web/controllers/incident_controller_test.exs` for the
   permanent HTTP-level coverage this correction added.
 
   Also proves the real query pattern
