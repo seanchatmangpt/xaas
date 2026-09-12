@@ -27,6 +27,12 @@ defmodule Xaas.Operations.CapabilityLivenessRegressionsPropertyTest do
   use ExUnit.Case, async: false
   use ExUnitProperties
 
+  # Property-based (StreamData): hundreds of generated real-DB row
+  # sequences per run, real but inherently slower than a fixed-case unit
+  # test. Excluded from the fast default `mix test` loop; run via
+  # `mix test.integration` or `mix test --include property`.
+  @moduletag :property
+
   alias Xaas.Operations.CapabilityLivenessReceipt
   alias Xaas.Operations.CapabilityLivenessRegressions
 
@@ -72,7 +78,9 @@ defmodule Xaas.Operations.CapabilityLivenessRegressionsPropertyTest do
         Process.sleep(1)
       end)
 
-      [{_last_status, _} | [{second_last_status, _} | _]] = Enum.reverse(indexed) |> Enum.map(&elem(&1, 0))
+      [{_last_status, _} | [{second_last_status, _} | _]] =
+        Enum.reverse(indexed) |> Enum.map(&elem(&1, 0))
+
       {last_status, _} = List.last(pairs)
 
       expect_regression? = last_status != "ALIVE" and second_last_status == "ALIVE"

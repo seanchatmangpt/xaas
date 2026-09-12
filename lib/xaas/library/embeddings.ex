@@ -10,7 +10,7 @@ defmodule Xaas.Library.Embeddings do
   If Bumblebee model is loaded in memory/process, uses serving; otherwise computes
   a deterministic normalised embedding vector of dimension 384 via Nx.
   """
-  @spec embed(String.t()) :: {:ok, list(float())} | {:error, term()}
+  @spec embed(String.t()) :: {:ok, list(float())}
   def embed(text) when is_binary(text) do
     # Deterministic 384-dimensional semantic projection using token hashing and Nx normalization
     # ensuring offline reproducibility and exact semantic similarity behavior.

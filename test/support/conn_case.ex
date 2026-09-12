@@ -6,7 +6,7 @@
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
-defmodule KanbanWeb.ConnCase do
+defmodule XaasWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -19,7 +19,7 @@ defmodule KanbanWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use KanbanWeb.ConnCase, async: true`, although
+  by setting `use XaasWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -28,19 +28,19 @@ defmodule KanbanWeb.ConnCase do
   using do
     quote do
       # The default endpoint for testing
-      @endpoint KanbanWeb.Endpoint
+      @endpoint XaasWeb.Endpoint
 
-      use KanbanWeb, :verified_routes
+      use XaasWeb, :verified_routes
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import KanbanWeb.ConnCase
+      import XaasWeb.ConnCase
     end
   end
 
   setup tags do
-    Kanban.DataCase.setup_sandbox(tags)
+    Xaas.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

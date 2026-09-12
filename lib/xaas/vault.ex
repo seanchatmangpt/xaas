@@ -15,7 +15,7 @@ defmodule Xaas.Vault do
   `CLOAK_KEY` env var (32 raw bytes, base64-encoded — e.g.
   `:crypto.strong_rand_bytes(32) |> Base.encode64()`) to override it.
   """
-  use Cloak.Vault, otp_app: :kanban
+  use Cloak.Vault, otp_app: :xaas
 
   @impl GenServer
   def init(config) do

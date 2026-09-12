@@ -5,7 +5,7 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
   (`Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage`)
   that had zero unit-test coverage of its own atomicity before this file
   existed -- only a controller test (happy-path + no-overage cases,
-  `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs`)
+  `test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs`)
   and a stress test (deliberately tuned to avoid any overage at all, see
   `approval_backup_retention_change_stress_test.exs`'s own moduledoc)
   touch this resource. Real `Ecto.Adapters.SQL.Sandbox`-backed Postgres
@@ -56,7 +56,6 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
   use ExUnit.Case, async: false
   require Ash.Query
 
-  alias Xaas.Accounts.Org
   alias Xaas.Governance.ApprovalBackupRetentionChange
   alias Xaas.Ledger.{Account, Balance}
 
@@ -71,7 +70,9 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
   # "highest transfer_id wins" reasoning) as
   # `Xaas.Billing.ApprovalSlaCreditApplyTest.real_balance_for/1`.
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 
@@ -87,15 +88,15 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
     end
   end
 
+  # This file's own default name ("Forced-Fail Org") differs deliberately
+  # from Xaas.Generator.create_org!/1's general default ("Test Org").
   defp create_org!(slug) do
-    Org
-    |> Ash.Changeset.for_create(:create, %{name: "Forced-Fail Org", slug: slug})
-    |> Ash.create!(authorize?: false)
+    Xaas.Generator.create_org!(%{name: "Forced-Fail Org", slug: slug})
   end
 
   defp create_pending!(org_id, requested_by) do
-    ApprovalBackupRetentionChange
-    |> Ash.Changeset.for_create(
+    Xaas.Generator.pending_approval!(
+      ApprovalBackupRetentionChange,
       :create,
       %{
         org_id: org_id,
@@ -114,7 +115,6 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
       },
       tenant: org_id
     )
-    |> Ash.create!(authorize?: false)
   end
 
   # Real Chicago-style regression test for this pass's fix: a
@@ -134,7 +134,9 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
 
     approved =
       request
-      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"}, tenant: org_id)
+      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"},
+        tenant: org_id
+      )
       |> Ash.update!(authorize?: false)
 
     # A second real :approve call against an already-approved record
@@ -142,7 +144,9 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
     # overage fee.
     _ =
       approved
-      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"}, tenant: org_id)
+      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"},
+        tenant: org_id
+      )
       |> Ash.update!(authorize?: false)
 
     org_balance = real_balance_for(org_id)

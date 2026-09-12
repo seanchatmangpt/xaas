@@ -17,7 +17,7 @@ fix (Accounts, Billing, Governance, Ledger, Operations, Platform). Example, from
 ```elixir
 defmodule Xaas.Accounts do
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
 
   admin do
@@ -34,7 +34,7 @@ end
 
 To add a new domain to the admin UI, do the same: put `AshAdmin.Domain` in `extensions`, add
 the `admin do show? true end` block, and confirm the domain is registered in
-`config :kanban, ash_domains: [...]` (see `docs/ASH-MIGRATION-PLAN.md` Phase 2/3b for how
+`config :xaas, ash_domains: [...]` (see `docs/ASH-MIGRATION-PLAN.md` Phase 2/3b for how
 this repo's domain list was originally wired).
 
 ### Why this matters — the misconfiguration masked a real upstream bug
@@ -51,7 +51,7 @@ and the upstream branch stops being reachable.
 
 ### The router mount (already wired, dev-only)
 
-`lib/kanban_web/router.ex` mounts `AshAdmin.Router` under `/admin`, guarded by the same
+`lib/xaas_web/router.ex` mounts `AshAdmin.Router` under `/admin`, guarded by the same
 `dev_routes` flag as `Phoenix.LiveDashboard`:
 
 ```elixir
@@ -125,7 +125,7 @@ Other real details from that spec worth carrying into a new one:
   ```
 
 - Assert the real state change through the real API (e.g.
-  `lib/kanban_web/internal_api_router.ex`'s JSON:API route), not by scraping the admin
+  `lib/xaas_web/internal_api_router.ex`'s JSON:API route), not by scraping the admin
   table — this repo's `CapabilityLivenessReceipt` table has 8000+ pre-existing rows with no
   reachable pagination control in a test, so a real HTTP roundtrip against real Postgres
   state is the correct Chicago-style assertion:
@@ -218,6 +218,6 @@ and `xar:domainModule`, then re-run `ggen sync` — no template or hook code nee
 - `e2e/ash-admin-state-change.spec.js` — the real Playwright proof referenced throughout
   Task 1.
 - `templates-hooks/ash-gen-resource.txt.tmpl` — the real template referenced in Task 2.
-- `lib/kanban_web/router.ex` — the real `AshAdmin.Router` mount and `dev_routes` guard.
+- `lib/xaas_web/router.ex` — the real `AshAdmin.Router` mount and `dev_routes` guard.
 - `lib/xaas/accounts.ex` (and the other 5 domain modules under `lib/xaas/`) — the real
   `admin do show? true end` fix, applied identically across all 6 domains.

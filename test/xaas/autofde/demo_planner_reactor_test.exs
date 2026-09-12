@@ -7,6 +7,12 @@ defmodule Xaas.Autofde.DemoPlannerReactorTest do
   """
   use ExUnit.Case, async: true
 
+  # Real OS ports/processes and a real `ps` liveness check -- same
+  # "real subprocess" class as the other :subprocess-tagged tests (see
+  # test/test_helper.exs), excluded from the fast default `mix test`
+  # loop; run via `mix test.integration` or `mix test --include subprocess`.
+  @moduletag :subprocess
+
   alias Xaas.Autofde.DemoPlannerReactor
   alias Xaas.Autofde.DemoPlannerReactor.PortRegistry
   alias Xaas.Autofde.DemoPlannerReactor.RunScript
@@ -60,7 +66,8 @@ defmodule Xaas.Autofde.DemoPlannerReactorTest do
 
     # Real liveness check: after compensate/4 has run, the real OS process it killed
     # must actually be gone -- not merely that the callback was invoked.
-    {ps_output, ps_exit_status} = System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
+    {ps_output, ps_exit_status} =
+      System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
 
     refute ps_exit_status == 0,
            "expected `ps -p #{os_pid}` to fail (process gone) after real compensate/4 kill, got: #{ps_output}"
@@ -82,25 +89,48 @@ defmodule Xaas.Autofde.DemoPlannerReactorTest do
     {port, os_pid} = PortRegistry.get(request_id)
     assert is_integer(os_pid) and os_pid > 0
 
-    {ps_before, ps_before_status} = System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
-    assert ps_before_status == 0, "expected the slow script's real process to still be alive before compensate: #{ps_before}"
+    {ps_before, ps_before_status} =
+      System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
+
+    assert ps_before_status == 0,
+           "expected the slow script's real process to still be alive before compensate: #{ps_before}"
+
     assert ps_before =~ to_string(os_pid)
 
-    assert {:continue, {:failed, :kill_proof}} = RunScript.compensate(:script_timeout, args, %{}, [])
+    assert {:continue, {:failed, :kill_proof}} =
+             RunScript.compensate(:script_timeout, args, %{}, [])
 
     refute Port.info(port), "compensate/4 should have closed the real port"
 
     assert {^os_pid, outcome} = PortRegistry.get_audit(request_id)
     assert outcome in [:closed, :already_dead]
 
-    # Give the real SIGTERM a moment to actually take effect before checking.
-    Process.sleep(200)
-
-    {ps_after, ps_after_status} = System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
+    # Real SIGTERM-to-death latency is variable, not a fixed clock-
+    # resolution floor -- a single blind sleep either flakes under load
+    # (process not dead yet) or wastes time when it dies faster. Poll
+    # `ps` on a short interval up to a bounded deadline instead.
+    {ps_after, ps_after_status} = wait_for_process_death!(os_pid)
 
     refute ps_after_status == 0,
            "expected `ps -p #{os_pid}` to fail (real process killed by real compensate/4), got: #{ps_after}"
 
     refute ps_after =~ to_string(os_pid)
+  end
+
+  defp wait_for_process_death!(os_pid, deadline \\ System.monotonic_time(:millisecond) + 2_000) do
+    result = System.cmd("ps", ["-p", to_string(os_pid)], stderr_to_stdout: true)
+
+    case result do
+      {_output, exit_status} when exit_status != 0 ->
+        result
+
+      _still_alive ->
+        if System.monotonic_time(:millisecond) >= deadline do
+          result
+        else
+          Process.sleep(10)
+          wait_for_process_death!(os_pid, deadline)
+        end
+    end
   end
 end

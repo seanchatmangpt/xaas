@@ -21,7 +21,7 @@ already-JSON-API-wired resources:
 
 ```elixir
 config :ash_typescript,
-  otp_app: :kanban,
+  otp_app: :xaas,
   output_file: "assets/js/ash_rpc.ts",
   output_field_formatter: :camel_case,
   input_field_formatter: :camel_case
@@ -133,7 +133,7 @@ warning; zero errors, zero new warnings from this change).
 ## Real scope not covered by this pass (disclosed, not done)
 
 - No live `/rpc/run`/`/rpc/validate` HTTP endpoint is mounted in
-  `lib/kanban_web/router.ex` -- the generated `.ts` functions would 404 against this repo's
+  `lib/xaas_web/router.ex` -- the generated `.ts` functions would 404 against this repo's
   real running server today. Wiring `AshTypescript.Rpc.Plug`/router forwarding is real,
   disclosed follow-up work, not attempted in this pass (task scope was codegen, not a live
   RPC transport).

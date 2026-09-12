@@ -29,7 +29,7 @@ spec:
               memory: 2Gi
           env:
             - name: POSTGRES_USER
-              value: kanban
+              value: xaas
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -39,7 +39,7 @@ spec:
               value: kanban_prod
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "kanban"]
+              command: ["pg_isready", "-U", "xaas"]
             initialDelaySeconds: 5
             periodSeconds: 5
           volumeMounts:

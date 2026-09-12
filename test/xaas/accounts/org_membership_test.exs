@@ -9,24 +9,26 @@ defmodule Xaas.Accounts.OrgMembershipTest do
   """
   use ExUnit.Case, async: true
 
-  alias Xaas.Accounts.{Org, OrgMembership, User}
+  alias Xaas.Accounts.{Org, OrgMembership}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     :ok
   end
 
+  # This file's own default name ("Acme Inc") differs deliberately from
+  # Xaas.Generator.create_org!/1's general default ("Test Org").
   defp create_org!(slug_prefix) do
-    Org
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.create_org!(%{
       name: "Acme Inc",
       slug: "#{slug_prefix}-#{System.unique_integer([:positive])}"
     })
-    |> Ash.create!(authorize?: false)
   end
 
   defp create_user!(email_prefix) do
-    Ash.Seed.seed!(User, %{email: "#{email_prefix}-#{System.unique_integer([:positive])}@example.com"})
+    Xaas.Generator.create_user!(%{
+      email: "#{email_prefix}-#{System.unique_integer([:positive])}@example.com"
+    })
   end
 
   defp create_membership!(user, org, role \\ :member) do
@@ -85,7 +87,11 @@ defmodule Xaas.Accounts.OrgMembershipTest do
     scoped_actor = %{
       iam_policy: %{
         "Statement" => [
-          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:org_membership:#{visible.id}"]}
+          %{
+            "Effect" => "Allow",
+            "Action" => ["read"],
+            "Resource" => ["xaas:org_membership:#{visible.id}"]
+          }
         ]
       }
     }

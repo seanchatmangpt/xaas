@@ -33,7 +33,7 @@ defmodule Xaas.Accounts.Token.RevokeVerifier do
   def trust_model, do: :same_service
 
   defp verification_key do
-    Application.fetch_env!(:kanban, Xaas.Accounts.Token)[:onetime_revoke_key] ||
+    Application.fetch_env!(:xaas, Xaas.Accounts.Token)[:onetime_revoke_key] ||
       raise "missing :onetime_revoke_key config for Xaas.Accounts.Token"
   end
 end

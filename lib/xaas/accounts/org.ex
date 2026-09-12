@@ -39,7 +39,7 @@ defmodule Xaas.Accounts.Org do
 
   - **Gap A (actor resolution)**: no plug in the real `/api` pipeline ever
     supplied ANY actor for `/api/orgs*` requests --
-    `KanbanWeb.Plugs.ResolveOrgActor`'s tenant-scoped path list never
+    `XaasWeb.Plugs.ResolveOrgActor`'s tenant-scoped path list never
     included `orgs`. Fixed by special-casing `orgs` in that plug (see its
     own moduledoc): `POST /api/orgs` now gets a minimal, non-nil
     `actor_present()`-satisfying actor (this resource is the ONLY
@@ -72,7 +72,7 @@ defmodule Xaas.Accounts.Org do
     disclosed atomic-ineligibility side effect this pass needed).
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -105,7 +105,7 @@ defmodule Xaas.Accounts.Org do
     # check's own moduledoc for the full disclosure). Needed because
     # `AshJsonApi`'s real `PATCH` controller loads the target record via
     # THIS `:read` policy before running `:update` -- without it, the
-    # real, header-asserted org-token actor `KanbanWeb.Plugs.
+    # real, header-asserted org-token actor `XaasWeb.Plugs.
     # ResolveOrgActor` produces (which carries no `iam_policy`) could
     # never even load the row to update, real-`404`ing every legitimate
     # `PATCH /api/orgs/:id` regardless of `ActorBelongsToOrg`'s own fix.
@@ -148,7 +148,7 @@ defmodule Xaas.Accounts.Org do
     # ActorOrgSelfFilter` (a real header-asserted `%{org_id: slug}` actor
     # matching this record's own `slug` -- the only actor shape any real
     # `/api` plug in this codebase actually produces today, see
-    # `KanbanWeb.Plugs.ResolveOrgActor`). See `ActorOrgSelfFilter`'s own
+    # `XaasWeb.Plugs.ResolveOrgActor`). See `ActorOrgSelfFilter`'s own
     # moduledoc for the real, disclosed reason the org-token half is a
     # `FilterCheck`, not a `SimpleCheck` like the membership half.
     # `:create` is deliberately left on `actor_present()`: a not-yet-

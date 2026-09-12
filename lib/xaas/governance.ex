@@ -1,6 +1,6 @@
 defmodule Xaas.Governance do
   use Ash.Domain,
-    otp_app: :kanban,
+    otp_app: :xaas,
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshPaperTrail.Domain, AshAdmin.Domain]
 
   admin do

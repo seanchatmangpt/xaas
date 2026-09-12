@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalLeRequestRespond do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -21,7 +21,7 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
     # request) and PUT /api/owner/le-requests (record the actual response
     # to one, gated behind the "le-request.respond" maker-checker flow):
     # `:create` and `:approve` are gated the same way reads are -- by the
-    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check --
+    # router-level XaasWeb.Plugs.RequireInternalApiToken Bearer check --
     # plus ApprovalLeRequestRespondRequiresApprover's real "second,
     # distinct owner" rule on `:approve`.
     bypass action(:create) do

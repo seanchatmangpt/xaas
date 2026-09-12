@@ -1,0 +1,9 @@
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?factor ?name ?weight WHERE {
+  ?factor a xl:RankingFactor ;
+          schema:identifier ?name ;
+          xl:weight ?weight .
+}
+ORDER BY ?name

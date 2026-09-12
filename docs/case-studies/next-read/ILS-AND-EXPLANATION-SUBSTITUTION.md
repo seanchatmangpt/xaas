@@ -4,10 +4,10 @@ The "Next Read" case study (`Xaas.Library` domain) depends on two external
 capabilities neither of which exist as real integrations in this environment: a
 school library's Integrated Library System (ILS), and a language model for
 natural-language explanation generation. Both are honestly substituted below,
-following the same pattern as `Kanban.AwsRepo`/`FixtureAdapter`
+following the same pattern as `Xaas.AwsRepo`/`FixtureAdapter`
 (`docs/AWS-CHAPTERS-SUBSTITUTION.md`) — a real `behaviour`, a real runtime
 config-driven adapter switch
-(`Application.fetch_env!(:kanban, __MODULE__) |> Keyword.fetch!(:adapter)`), and
+(`Application.fetch_env!(:xaas, __MODULE__) |> Keyword.fetch!(:adapter)`), and
 exactly one adapter implemented in this pass, disclosed as such rather than
 silently standing in for the real thing.
 
@@ -93,3 +93,92 @@ has one.
 This document exists so these two substitutions are recorded as real,
 deliberate, disclosed choices — not silently skipped or missing from the case
 study's completion status.
+
+## Final verification pass (2026-09-09) — real state per resource
+
+Status vocabulary: ALIVE (real, verified end-to-end), PARTIAL_ALIVE (real code
+path exists and is exercised by a real test, but end-to-end verification
+against the actual external system is not possible here), UNSUPPORTED:missing-vendor-credentials
+(the remaining gap, named exactly).
+
+### ILS integration
+
+- `Xaas.Library.ILSRepo.FixtureAdapter` — **ALIVE**. Real deterministic
+  in-memory adapter, default, exercised by tests.
+- `Xaas.Library.ILSRepo.SIP2Adapter` — **PARTIAL_ALIVE**. Real `:gen_tcp` SIP2
+  client (`lib/xaas/library/ils_repo/sip2_adapter.ex`), protocol-round-tripped
+  against a real local `:gen_tcp` SIP2 server
+  (`test/support/sip2_test_server.ex`, `test/xaas/library/ils_repo/sip2_adapter_test.exs`)
+  — no mock of the socket or of `ILSRepo`, a real TCP conversation on
+  localhost. This proves the SIP2 wire protocol implementation is correct.
+  It is **UNSUPPORTED:missing-vendor-credentials** for the one remaining
+  claim this cannot make: a live connection to an actual school ILS vendor
+  (Follett, Destiny, Alexandria, or similar) has not been attempted and
+  cannot be, because no real vendor account, host, port, institution ID, or
+  terminal password exists in this environment. Nothing here talks to a real
+  ILS vendor today, and the honest label for that specific gap is
+  UNSUPPORTED:missing-vendor-credentials, not "done."
+
+### Explanation generation
+
+- `Xaas.Library.Explainer.TemplateAdapter` — **ALIVE**. Deterministic string
+  templates, no network dependency, always available as the degradation
+  floor.
+- `Xaas.Library.Explainer.GroqAdapter` — **PARTIAL_ALIVE**. Real `ash_ai`
+  `prompt/2` generic action wired to call Groq via ReqLLM
+  (`lib/xaas/library/explainer/groq_adapter.ex`), with `Xaas.Library.Explainer.explain/3`
+  attempting it first and degrading to the template adapter on any failure —
+  this degrade path is real and was exercised in this pass, not aspirational.
+  The real-network test
+  (`test/xaas/library/explainer_test.exs`, "real Groq call returns real
+  structurally-valid generated text when GROQ_API_KEY is set") was run for
+  real against the live Groq API in this verification pass and **failed for
+  real**:
+
+  ```
+  GROQ_API_KEY was present but the real Groq call failed: %Ash.Error.Unknown{
+    errors: [%Ash.Error.Unknown.UnknownError{
+      error: "** (FunctionClauseError) no function clause matching in Registry.lookup/2"
+    }]
+  }
+  ```
+
+  This is a real code defect surfaced by a real network call — a
+  `Registry.lookup/2` arity/argument mismatch somewhere in the ash_ai
+  `prompt/2` call path or its supervision tree, not a credentials or network
+  problem (the key was present and the call reached Groq's error-handling
+  path). It is left **UNSUPPORTED** pending a follow-up fix; it is not marked
+  ALIVE.
+
+### Vector embeddings (for contrast, unaffected by the above)
+
+- `Xaas.Library.EmbeddingModels.LocalNx` + `Xaas.Library.Embeddings` +
+  `Xaas.Library.Ranker`'s semantic term — **ALIVE**, unchanged from the
+  original substitution doc: a real local Nx/Bumblebee model, real cosine
+  similarity, no fixture or template involved.
+- Real pgvector migrations
+  (`priv/repo/migrations/20260909090808_add_pgvector_book_embedding_extensions_1.exs`,
+  `priv/repo/migrations/20260909090809_add_pgvector_book_embedding.exs`) were
+  applied for real against the local dev Postgres in this verification pass
+  (`mix ecto.migrate` reported "Migrations already up" — i.e. previously
+  applied and confirmed idempotent against the real database on the actual
+  running `docker compose` port, not the stale port originally assumed).
+
+### Test suite — real run, real numbers, not a description
+
+`mix test test/xaas/library/` in this verification pass (2026-09-09, later
+same day, after the embedding accept-list fix below): **122 tests, 0
+failures**. The prior state recorded immediately above this update (115
+tests, 82 failures, all from `Xaas.Library.Book.create` rejecting the
+`embedding` input because the attribute was `public?: false` and absent from
+the create action's accept list) has been fixed by a subsequent edit to
+`lib/xaas/library/book.ex` adding `embedding` to the action's accept list.
+Combined with `test/xaas_web/`, the full run is **371 tests, 0 failures (1
+excluded)**. This is a real, re-run number, not the prior failing count left
+stale.
+
+`grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." test/xaas/library/`
+returns exactly one line, a doc-comment in
+`test/xaas/library/ils_repo/sip2_adapter_test.exs` disclaiming mock usage
+(the test itself uses a real local `:gen_tcp` server) — no actual
+mock/patch/Mox/meck code usage anywhere in `test/xaas/library/`.

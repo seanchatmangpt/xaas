@@ -6,12 +6,12 @@
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
-# Real, fixed test-only token for KanbanWeb.Plugs.RequireInternalApiToken --
+# Real, fixed test-only token for XaasWeb.Plugs.RequireInternalApiToken --
 # not a production secret (test env only), needed so real ConnCase tests
 # against /internal-api and /api can authenticate for real rather than
 # disabling the real gate for tests.
 System.put_env("INTERNAL_API_TOKEN", "test-only-internal-api-token")
-# Real, fixed test-only secret for KanbanWeb.StripeWebhookController's
+# Real, fixed test-only secret for XaasWeb.StripeWebhookController's
 # Stripe.Webhook.construct_event/3 signature verification -- not a
 # production secret (test env only).
 System.put_env("STRIPE_WEBHOOK_SECRET", "whsec_test_only_secret")
@@ -22,9 +22,51 @@ ExUnit.start()
 # Real tests against a live-deployed kind pod (test/e2e/) are excluded by
 # default too -- they need a real `kubectl port-forward` to kind-xaas
 # already running; run explicitly with `mix test --include kind`.
-ExUnit.configure(exclude: [:stress, :kind])
-Ecto.Adapters.SQL.Sandbox.mode(Kanban.Repo, :manual)
+# Real tests that depend on a sibling ex4pm checkout being present on this
+# machine (test/xaas/ontology/ex4pm_staleness_test.exs) are excluded by
+# default too, so the default `mix test` never depends on that sibling
+# repo; run explicitly with `mix test --include external`.
+# Real tests that spawn a full separate OS-process `mix`/`git` subprocess
+# (e.g. test/mix/tasks/xaas_verify_and_commit_test.exs,
+# test/mix/tasks/xaas_ingest_capability_receipts_test.exs) pay 2+ nested
+# BEAM-VM boots each and are excluded from the default fast loop; run
+# explicitly with `mix test --include subprocess` or `mix test.full`.
+# Real, disclosed bug found and fixed here: test/xaas/library/explainer_test.exs
+# already tags its real Groq network call `@describetag :external_llm`, but
+# that tag was never added to this exclude list -- the test ran (and made a
+# real external API call) on every default `mix test` regardless, defeating
+# its own tag's intent. Excluded here too; run explicitly with
+# `mix test --include external_llm`.
+# Real OS-process tests (test/xaas/autofde/demo_planner_reactor_test.exs --
+# real Ports, real `ps`-based liveness checks) are the same :subprocess
+# class as the mix-task tests above -- excluded here too.
+# Real property-based (StreamData) tests
+# (test/xaas/operations/capability_liveness_regressions_property_test.exs)
+# generate hundreds of real-DB cases per run -- genuinely slower than a
+# fixed-case unit test by design, excluded from the fast default loop;
+# run explicitly with `mix test --include property`.
+# Explicit, machine-scaled max_cases (was implicit ExUnit default of
+# System.schedulers_online() * 2 -- asserted here rather than left implicit).
+ExUnit.configure(
+  max_cases: System.schedulers_online() * 2,
+  exclude: [
+    :stress,
+    :kind,
+    :requires_cnv_deploy,
+    :external,
+    :external_llm,
+    :subprocess,
+    :property
+  ]
+)
+
+Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :manual)
 # ash-migration Phase 3: real, separate AshPostgres.Repo -- needed for any
 # real Chicago-style test that touches Xaas.* Ash resources via the
 # sandbox (Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo) in test setup).
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, :manual)
+
+# Ensure Phoenix.PubSub is running for Ash PubSub notifiers
+unless Process.whereis(Xaas.PubSub) do
+  {:ok, _} = Phoenix.PubSub.Supervisor.start_link(name: Xaas.PubSub)
+end

@@ -16,6 +16,7 @@ Goal-oriented procedures:
 - [`how-to/actuate-provider-lifecycle.md`](how-to/actuate-provider-lifecycle.md) — perform an admitted provider status transition and handle replay/refusal.
 - [`how-to/add-a-real-json-api-route-to-an-ash-resource.md`](how-to/add-a-real-json-api-route-to-an-ash-resource.md) — safely add an Ash JSON:API route.
 - [`how-to/fix-ash-admin-and-use-ggen-for-codegen.md`](how-to/fix-ash-admin-and-use-ggen-for-codegen.md) — repository-specific Ash Admin/ggen procedure.
+- [`how-to/author-ggen-templates-safely.md`](how-to/author-ggen-templates-safely.md) — two real ggen/ggen_igniter template-authoring defects from the MCP/A2A dogfood run: macro bodies invalid only at a real call site, and multi-surface capability rows needing an explicit discriminator.
 
 ## Reference
 
@@ -29,21 +30,16 @@ Exact factual contracts:
 
 Conceptual architecture and rationale:
 
+- [`explanation/ash-is-the-xaas.md`](explanation/ash-is-the-xaas.md) — **Ash Framework as the Declarative Substrate for Everything-as-a-Service**: Why modeling domain logic as data enables multi-interface convergence, atomic concurrency, and governed actuation.
 - [`explanation/ontology-reactor-control-plane.md`](explanation/ontology-reactor-control-plane.md) — why semantic projection is separated from authority and why Reactor is the exclusive consequential DO path.
 - [`explanation/architecture-overview.md`](explanation/architecture-overview.md) — broader system architecture.
 - Existing research/design documents in this quadrant remain explanation/evidence, not operational instruction.
 
-## Documentation census and authority
+## Case Studies
 
-At `main@e856800a7341b617dcac345d769546387ecb2670`, the repository contains:
+Demonstrations of the XaaS architectural model in end-to-end applications:
 
-- no root `README.md` before this documentation transition;
-- project doctrine in `CLAUDE.md`;
-- four Diátaxis quadrants under this directory;
-- top-level dated evidence reports under `docs/`;
-- a legacy `docs/ASH-MIGRATION-PLAN.md` that described the repository before the Ash migration and therefore contradicted the current executable tree.
-
-The legacy migration plan is preserved verbatim as historical evidence at `docs/archive/ASH-MIGRATION-PLAN.md` and is no longer part of current navigation. Dated coverage/benchmark reports remain evidence snapshots; their dates make their temporal scope explicit and they are not canonical current-state reference.
+- [`case-studies/next-read/README.md`](../../case-studies/next-read/README.md) — **Next Read**: Interactive, ML-ranked library recommendation system and circulation lifecycle backed by Ash resources, sentence embeddings, and reactive LiveViews.
 
 ## Capability standing rules
 
@@ -58,4 +54,3 @@ The legacy migration plan is preserved verbatim as historical evidence at `docs/
 - `Xaas.Semantics.Registry` is authoritative for public-ontology projection rules.
 - `Xaas.Actuation` and its real Postgres/Reactor tests are authoritative for consequential actuation semantics.
 - This index is authoritative for documentation navigation; individual pages link to, rather than duplicate, contracts owned by other quadrants.
-- Historical plans are preserved under `docs/archive/` and are non-authoritative for current capability.

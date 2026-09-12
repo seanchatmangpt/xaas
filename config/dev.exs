@@ -20,12 +20,12 @@ port = String.to_integer(System.get_env("PORT") || "4000")
 # secret and randomly-published host port differ from the book's hardcoded
 # "postgres"/5432 defaults), without hardcoding that real secret into a
 # committed file.
-config :kanban, Kanban.Repo,
+config :xaas, Xaas.LegacyRepo,
   username: System.get_env("DEV_DB_USERNAME", "postgres"),
   password: System.get_env("DEV_DB_PASSWORD", "postgres"),
   hostname: System.get_env("DEV_DB_HOSTNAME", "localhost"),
   port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
-  database: "kanban_dev",
+  database: "xaas_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -33,19 +33,23 @@ config :kanban, Kanban.Repo,
 # ash-migration Phase 3: Xaas.Repo is a real, separate AshPostgres.Repo (the
 # 89 real Ash.Resource modules ported from ~/dev-fresh/xaas reference it
 # directly via `postgres do repo Xaas.Repo end`) -- deliberately not merged
-# into Kanban.Repo, same real database, separate Ecto.Repo/OTP child.
-config :kanban, Xaas.Accounts.Token,
+# into Xaas.LegacyRepo, same real database, separate Ecto.Repo/OTP child.
+config :xaas, Xaas.Accounts.Token,
   onetime_revoke_key: System.get_env("DEV_ONETIME_REVOKE_KEY", "dev-only-onetime-revoke-key")
 
-config :kanban, Xaas.Repo,
+config :xaas, Xaas.Repo,
   username: System.get_env("DEV_DB_USERNAME", "postgres"),
   password: System.get_env("DEV_DB_PASSWORD", "postgres"),
   hostname: System.get_env("DEV_DB_HOSTNAME", "localhost"),
   port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
-  database: "kanban_dev",
+  database: "xaas_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  # Real fix: registers AshPostgres.Extensions.Vector's Postgrex type
+  # encoding for the pgvector `vector` column type -- see the identical
+  # comment in config/test.exs for why this is required.
+  types: Xaas.PostgrexTypes
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -54,7 +58,7 @@ config :kanban, Xaas.Repo,
 # watchers to your application. For example, we use it
 # with esbuild to bundle .js and .css sources.
 
-config :kanban, KanbanWeb.Endpoint,
+config :xaas, XaasWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: port],
@@ -91,17 +95,17 @@ config :kanban, KanbanWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :kanban, KanbanWeb.Endpoint,
+config :xaas, XaasWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/kanban_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/xaas_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :kanban, dev_routes: true
+config :xaas, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
