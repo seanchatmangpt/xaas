@@ -1,0 +1,170 @@
+name: Fly Deploy (receipted)
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_head_sha:
+        description: Exact main commit SHA admitted for deployment
+        required: true
+        type: string
+      reason:
+        description: Operator reason for this production actuation
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Admit, deploy, verify, receipt
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      FLY_XAAS_APP: ${{ vars.FLY_XAAS_APP }}
+      FLY_WORKBENCH_APP: ${{ vars.FLY_WORKBENCH_APP }}
+      EXPECTED_GGEN_DIGEST: sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Admit exact head and deployment identities
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          XAAS_INTERNAL_API_TOKEN: ${{ secrets.XAAS_INTERNAL_API_TOKEN }}
+          FLY_XAAS_DEPLOY_TOKEN: ${{ secrets.FLY_XAAS_DEPLOY_TOKEN }}
+          FLY_WORKBENCH_DEPLOY_TOKEN: ${{ secrets.FLY_WORKBENCH_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$EXPECTED_HEAD_SHA" = "$GITHUB_SHA" || {
+            echo "REFUSED[HEAD_MOVED]: expected $EXPECTED_HEAD_SHA, observed $GITHUB_SHA" >&2
+            exit 64
+          }
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -n "$FLY_XAAS_APP" || { echo "REFUSED[XAAS_APP_MISSING]" >&2; exit 64; }
+          test -n "$FLY_WORKBENCH_APP" || { echo "REFUSED[WORKBENCH_APP_MISSING]" >&2; exit 64; }
+          test -n "$XAAS_INTERNAL_API_TOKEN" || { echo "REFUSED[INTERNAL_API_TOKEN_MISSING]" >&2; exit 64; }
+          test -n "$FLY_XAAS_DEPLOY_TOKEN" || { echo "REFUSED[XAAS_DEPLOY_TOKEN_MISSING]" >&2; exit 64; }
+          test -n "$FLY_WORKBENCH_DEPLOY_TOKEN" || { echo "REFUSED[WORKBENCH_DEPLOY_TOKEN_MISSING]" >&2; exit 64; }
+
+      - name: Install pinned flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be
+        with:
+          version: 0.4.99
+
+      - name: Deploy private GGen workbench
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_WORKBENCH_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          flyctl deploy --remote-only --app "$FLY_WORKBENCH_APP" --config fly.workbench.toml
+          flyctl status --app "$FLY_WORKBENCH_APP" --json > worker-status.json
+
+      - name: Deploy xaas control plane
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_XAAS_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          flyctl deploy --remote-only --app "$FLY_XAAS_APP" --config fly.toml
+          flyctl status --app "$FLY_XAAS_APP" --json > xaas-status.json
+
+      - name: Verify hosted GGen path end to end
+        env:
+          XAAS_INTERNAL_API_TOKEN: ${{ secrets.XAAS_INTERNAL_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          base="https://${FLY_XAAS_APP}.fly.dev"
+          curl --fail-with-body --silent --show-error \
+            --retry 8 --retry-all-errors --retry-delay 2 \
+            -H "Authorization: Bearer ${XAAS_INTERNAL_API_TOKEN}" \
+            "${base}/api/workbench/ggen/health" > workbench-health.json
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 2 \
+            -H "Authorization: Bearer ${XAAS_INTERNAL_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"args":["--version"],"timeout_ms":30000,"files":{}}' \
+            "${base}/api/workbench/ggen" > workbench-run.json
+          python3 - <<'PY'
+          import json
+          import os
+
+          expected = os.environ["EXPECTED_GGEN_DIGEST"]
+          health = json.load(open("workbench-health.json", encoding="utf-8"))
+          run = json.load(open("workbench-run.json", encoding="utf-8"))
+
+          assert health["standing"] == "ALIVE", health
+          assert health["verified"] is True, health
+          assert health["ggen_ecosystem_digest"] == expected, health
+
+          assert run["standing"] == "ALIVE", run
+          assert run["admitted"] is True, run
+          assert run["executed"] is True, run
+          assert run["verified"] is True, run
+          assert run["receipt"]["ggen_ecosystem_digest"] == expected, run
+          assert run["receipt"]["exit_code"] == 0, run
+          assert run["receipt"]["receipt_sha256"], run
+          PY
+
+      - name: Manufacture deployment receipt
+        env:
+          DEPLOY_REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          flyctl version > flyctl-version.txt
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          def digest(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          receipt = {
+              "protocol": "xaas.fly-deploy.v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "head_sha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "actor": os.environ["GITHUB_ACTOR"],
+              "reason": os.environ["DEPLOY_REASON"],
+              "xaas_app": os.environ["FLY_XAAS_APP"],
+              "workbench_app": os.environ["FLY_WORKBENCH_APP"],
+              "ggen_ecosystem_digest": os.environ["EXPECTED_GGEN_DIGEST"],
+              "flyctl_version": Path("flyctl-version.txt").read_text(encoding="utf-8").strip(),
+              "worker_status_sha256": digest("worker-status.json"),
+              "xaas_status_sha256": digest("xaas-status.json"),
+              "workbench_health_sha256": digest("workbench-health.json"),
+              "workbench_run_sha256": digest("workbench-run.json"),
+              "observed_at": datetime.now(timezone.utc).isoformat(),
+              "standing": "ALIVE",
+              "observed": True,
+              "admitted": True,
+              "executed": True,
+              "changed": True,
+              "verified": True,
+              "refused": False,
+              "blocked": False,
+              "unsupported": False,
+          }
+          canonical = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_sha256"] = hashlib.sha256(canonical).hexdigest()
+          Path("fly-deploy-receipt.json").write_text(
+              json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+          cat fly-deploy-receipt.json
+          {
+            echo '## Fly deployment receipt'
+            echo '```json'
+            cat fly-deploy-receipt.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

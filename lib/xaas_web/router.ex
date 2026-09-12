@@ -142,6 +142,18 @@ defmodule XaasWeb.Router do
     )
   end
 
+  # GGen workbench is ordinary authenticated JSON, not JSON:API. Registered
+  # before the /api forward catch-all so the latter cannot shadow it. The
+  # surface is CONSTRUCT-only: it forwards a bounded file bundle and argv
+  # vector to the private Fly worker; it does not grant shell or cloud
+  # actuation authority.
+  scope "/api/workbench", XaasWeb do
+    pipe_through([:api, :require_internal_api_token])
+
+    get("/ggen/health", GgenWorkbenchController, :health)
+    post("/ggen", GgenWorkbenchController, :run)
+  end
+
   # Real reverse-proxy for the real Ontop SPARQL endpoint (see
   # XaasWeb.OntopProxyPlug's moduledoc and
   # docs/claude/diataxis/explanation/r2rml-ontop-prototype.md). Registered

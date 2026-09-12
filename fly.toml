@@ -1,0 +1,37 @@
+# Fly Launch configuration for the xaas control plane.
+#
+# The app name is intentionally not committed: Fly app names are external,
+# globally allocated identities. Deploy with:
+#   fly deploy -a <xaas-app> -c fly.toml
+#
+# Runtime secrets required by existing xaas production configuration:
+# DATABASE_URL, SECRET_KEY_BASE, ONETIME_REVOKE_KEY, INTERNAL_API_TOKEN.
+# Workbench-specific settings:
+# GGEN_WORKBENCH_URL=http://<worker-app>.internal:8080
+# GGEN_WORKBENCH_TOKEN=<shared-random-secret>
+
+primary_region = "lax"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PHX_SERVER = "true"
+  PORT = "4000"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 100
+    hard_limit = 200
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "1gb"
