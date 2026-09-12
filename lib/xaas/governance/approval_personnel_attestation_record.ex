@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalPersonnelAttestationRecord do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Governance.ApprovalPersonnelAttestationRecord do
     # real POST /api/compliance/personnel-attestation maker-checker flow
     # (`personnel.attestation.record`): `:create` (file the attestation
     # request) and `:approve` are gated the same way reads are -- by the
-    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check --
+    # router-level XaasWeb.Plugs.RequireInternalApiToken Bearer check --
     # plus ApprovalPersonnelAttestationRecordRequiresApprover's real
     # "second, distinct owner" rule on :approve.
     bypass action(:create) do

@@ -1,0 +1,35 @@
+flowchart LR
+    start{"Start"}
+    start==>reactor_Xaas.Actuation.Reactor
+    subgraph reactor_Xaas.Actuation.Reactor["Xaas.Actuation.Reactor"]
+        direction LR
+        input_122626753>"Input resource"]
+        input_89293482>"Input action"]
+        input_133070703>"Input input"]
+        input_11428331>"Input subject_id"]
+        input_106388417>"Input actor"]
+        input_104020606>"Input tenant"]
+        input_64448930>"Input authorize?"]
+        input_27964223>"Input authority"]
+        input_75577821>"Input idempotency_key"]
+        step_21598323 -->|admission|step_134084058
+        step_68744092 -->|execution|step_134084058
+        step_134084058["receipt(Ash.Reactor.AshStep)"]
+        input_122626753 -->|resource|step_21598323
+        input_89293482 -->|action|step_21598323
+        input_133070703 -->|input|step_21598323
+        input_11428331 -->|subject_id|step_21598323
+        input_106388417 -->|actor|step_21598323
+        input_104020606 -->|tenant|step_21598323
+        input_64448930 -->|authorize?|step_21598323
+        input_27964223 -->|authority|step_21598323
+        input_75577821 -->|idempotency_key|step_21598323
+        step_21598323["admit(Ash.Reactor.AshStep)"]
+        step_21598323 -->|admission|step_68744092
+        input_106388417 -->|actor|step_68744092
+        input_104020606 -->|tenant|step_68744092
+        input_64448930 -->|authorize?|step_68744092
+        step_68744092["do(Ash.Reactor.AshStep)"]
+        return_Xaas.Actuation.Reactor{"Return"}
+        step_134084058==>return_Xaas.Actuation.Reactor
+    end

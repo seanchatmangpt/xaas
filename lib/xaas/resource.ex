@@ -28,8 +28,7 @@ defmodule Xaas.Resource do
 
       @doc "Returns the deterministic semantic identity bound into actuation receipts."
       def ontology_projection_hash do
-        __MODULE__
-        |> ontology_projection!()
+        ontology_projection!()
         |> Xaas.Semantics.Registry.hash()
       end
 

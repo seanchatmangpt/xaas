@@ -9,18 +9,27 @@
 // See the Tailwind configuration guide for advanced usage
 // https://tailwindcss.com/docs/configuration
 
+const colors = require("tailwindcss/colors")
 const plugin = require("tailwindcss/plugin")
 
 module.exports = {
   content: [
     "./js/**/*.js",
     "../lib/*_web.ex",
-    "../lib/*_web/**/*.*ex"
+    "../lib/*_web/**/*.*ex",
+    "../deps/petal_components/**/*.*ex"
   ],
   theme: {
     extend: {
       colors: {
         brand: "#FD4F00",
+        primary: colors.indigo,
+        secondary: colors.slate,
+        success: colors.emerald,
+        danger: colors.red,
+        warning: colors.amber,
+        info: colors.sky,
+        gray: colors.gray
       }
     },
   },

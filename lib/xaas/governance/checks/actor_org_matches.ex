@@ -23,7 +23,7 @@ defmodule Xaas.Governance.Checks.ActorOrgMatches do
 
   All 4 resources already carry real, strictly-enforced Ash
   `multitenancy do attribute :org_id; global? false end` (see each
-  resource's moduledoc), and `KanbanWeb.Plugs.ResolveOrgActor` sets both
+  resource's moduledoc), and `XaasWeb.Plugs.ResolveOrgActor` sets both
   the real Ash actor (`%{org_id: org.slug}`) and the real Ash tenant
   (`org.slug`) from the same caller-asserted `X-Org-Id` header for
   exactly these 4 path segments. Ash's attribute-strategy multitenancy
@@ -68,7 +68,7 @@ defmodule Xaas.Governance.Checks.ActorOrgMatches do
   record's `org_id` rather than a normalized changeset attribute) is
   NOT similarly short-circuited and remains real, load-bearing defense
   alongside `multitenancy`'s own tenant-scoped record lookup. See
-  `test/kanban_web/controllers/approval_dr_failover_controller_test.exs`
+  `test/xaas_web/controllers/approval_dr_failover_controller_test.exs`
   for the real HTTP-level test proving the `:create` normalization
   behavior, and its sibling PATCH cross-org test for the `:approve`
   rejection.

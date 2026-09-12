@@ -47,7 +47,9 @@ defmodule Xaas.Billing.ApprovalTierDowngradeTest do
   # Real running-balance read -- same helper shape (and same real "highest
   # transfer_id wins" reasoning) as `Xaas.Billing.SubscriptionTest.real_balance_for/1`.
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 
@@ -75,13 +77,11 @@ defmodule Xaas.Billing.ApprovalTierDowngradeTest do
   end
 
   defp create_pending!(subscription_id, requested_tier, requested_by) do
-    ApprovalTierDowngrade
-    |> Ash.Changeset.for_create(:create, %{
+    Xaas.Generator.pending_approval!(ApprovalTierDowngrade, :create, %{
       requested_by: requested_by,
       subscription_id: subscription_id,
       requested_tier: requested_tier
     })
-    |> Ash.create!(authorize?: false)
   end
 
   test "approving a real tier downgrade actually drops the subscription's tier and credits the real prorated Ledger amount" do
@@ -89,7 +89,11 @@ defmodule Xaas.Billing.ApprovalTierDowngradeTest do
     subscription = create_subscription!(org_id, :pro)
 
     pending =
-      create_pending!(subscription.id, :standard, "requester-#{System.unique_integer([:positive])}")
+      create_pending!(
+        subscription.id,
+        :standard,
+        "requester-#{System.unique_integer([:positive])}"
+      )
 
     approved =
       pending

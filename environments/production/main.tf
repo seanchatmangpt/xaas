@@ -9,7 +9,7 @@ module "swarm" {
   aws_secret_access_key = var.aws_secret_access_key
   gh_pat                = var.gh_pat
   gh_owner              = "BeamOps"
-  image_to_deploy       = "ghcr.io/beamops/kanban:instrumented"
+  image_to_deploy       = "ghcr.io/beamops/xaas:instrumented"
 }
 
 module "repository_secrets" {
@@ -21,13 +21,13 @@ module "repository_secrets" {
     "AGE_KEY"               = var.age_key,
     "GH_PAT"                = var.gh_pat
   }
-  repository   = "kanban"
+  repository   = "xaas"
   github_owner = "seanchatmangpt"
 }
 
 module "contributing_workflow" {
   source        = "../../modules/integrations/github/contributing_workflow"
-  repository    = "kanban"
+  repository    = "xaas"
   github_owner  = "BeamOps"
   status_checks = ["Compile with mix test, format, dialyzer & unused deps check"]
 }

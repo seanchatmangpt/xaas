@@ -1,0 +1,39 @@
+flowchart LR
+    start{"Start"}
+    start==>reactor_Xaas.Library.Reactors.CirculationBorrowReactor
+    subgraph reactor_Xaas.Library.Reactors.CirculationBorrowReactor["Xaas.Library.Reactors.CirculationBorrowReactor"]
+        direction LR
+        input_14798973>"Input book_id"]
+        input_53345739>"Input user_id"]
+        input_30354580>"Input school_id"]
+        input_14798973 -->|id|step_81490394
+        step_81490394["{:__input__, :get_book, [:id]}(Reactor.Step.ReturnAllArguments)"]
+        step_95585973 -->|value|step_131665525
+        step_131665525["circulation_branch(Reactor.Step.Switch)"]
+        step_131665525_decision@{shape: diamond, label: "Decision for circulation_branch"}
+        step_131665525-->step_131665525_decision
+        step_131665525_decision-->step_85279099
+        step_131665525_decision-->step_113188157
+        subgraph step_85279099["default branch of circulation_branch"]
+            input_53345739 -->|user_id|step_36997753
+            input_14798973 -->|book_id|step_36997753
+            input_30354580 -->|school_id|step_36997753
+            step_36997753["{:__input__, :create_hold, [:user_id, :book_id, :school_id]}(Reactor.Step.ReturnAllArguments)"]
+            step_36997753 -->|input|step_10144170
+            value_Xaas.Library.HoldRequest{{"`Xaas\.Library\.HoldRequest`"}}
+            value_Xaas.Library.HoldRequest -->|initial|step_10144170
+            step_10144170["create_hold(Ash.Reactor.CreateStep)"]
+            direction LR
+        end
+        subgraph step_113188157["match branch of circulation_branch"]
+            input_30354580 -->|school_id|step_118578393
+            input_14798973 -->|book_id|step_118578393
+            input_53345739 -->|user_id|step_118578393
+            step_118578393["borrow_transaction(Ash.Reactor.TransactionStep)"]
+            direction LR
+        end
+        step_81490394 -->|input|step_95585973
+        step_95585973["get_book(Ash.Reactor.ReadOneStep)"]
+        return_Xaas.Library.Reactors.CirculationBorrowReactor{"Return"}
+        step_131665525==>return_Xaas.Library.Reactors.CirculationBorrowReactor
+    end

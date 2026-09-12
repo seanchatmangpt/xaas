@@ -18,7 +18,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
   own org flipped a different, victim org's real `Provider.status`. The
   full end-to-end HTTP-level regression test for that exact attack shape
   lives in
-  `test/kanban_web/controllers/approval_provider_status_change_controller_test.exs`
+  `test/xaas_web/controllers/approval_provider_status_change_controller_test.exs`
   (added alongside this file); this file covers the validation's own unit
   behavior directly.
   """
@@ -32,14 +32,23 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeProviderOrgMatchesTest do
   end
 
   defp create_provider!(org_id, status) do
-    Provider
-    |> Ash.Changeset.for_create(:create, %{
-      name: "Test Provider",
-      slug: "provider-#{System.unique_integer([:positive])}",
-      org_id: org_id,
-      status: status
-    })
-    |> Ash.create!(authorize?: false)
+    provider = Xaas.Generator.create_provider!(%{org_id: org_id})
+
+    if status == :pending do
+      provider
+    else
+      provider
+      |> Ash.Changeset.for_update(:actuate_status, %{status: status},
+        context: %{
+          xaas_actuation: %{
+            receipt_id: "test-receipt-id",
+            intent_id: "test-intent-id",
+            ontology_projection_hash: Provider.ontology_projection_hash()
+          }
+        }
+      )
+      |> Ash.update!(authorize?: false)
+    end
   end
 
   defp change_attrs(org_id, provider_id) do

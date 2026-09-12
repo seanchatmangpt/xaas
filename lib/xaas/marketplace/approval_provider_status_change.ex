@@ -33,13 +33,13 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChange do
   its own `org_id` attribute and real-reuses
   `Xaas.Marketplace.Checks.ActorOrgFilter`/`ActorOrgMatches` verbatim --
   the same real, disclosed "direct policy-expression check against
-  `KanbanWeb.Plugs.ResolveOrgActor`'s caller-asserted `X-Org-Id` actor,
+  `XaasWeb.Plugs.ResolveOrgActor`'s caller-asserted `X-Org-Id` actor,
   not full Ash `multitenancy`" design `Provider` itself uses, kept
   consistent across both Marketplace resources rather than introducing a
   second, competing multitenancy design in this domain.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalOrgDelete do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -19,7 +19,7 @@ defmodule Xaas.Governance.ApprovalOrgDelete do
     # Real, explicit per-action carve-out, ported from platform-console's
     # real DELETE /api/orgs/[id] maker-checker flow: `:create` (file the
     # deletion request) and `:approve` are gated the same way reads are --
-    # by the router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer
+    # by the router-level XaasWeb.Plugs.RequireInternalApiToken Bearer
     # check -- plus ApprovalOrgDeleteRequiresApprover's real "second,
     # distinct owner" rule on :approve.
     bypass action(:create) do

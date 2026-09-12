@@ -1,0 +1,11 @@
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX schema: <https://schema.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+
+SELECT ?curationClass WHERE {
+  xl:Curation a ?type ;
+              rdfs:subClassOf schema:Collection, prov:Entity .
+  BIND(xl:Curation AS ?curationClass)
+}
+

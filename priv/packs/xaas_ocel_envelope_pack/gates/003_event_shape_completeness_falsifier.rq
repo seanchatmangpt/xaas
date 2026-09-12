@@ -1,0 +1,24 @@
+PREFIX ex4pm: <https://ggen.io/ontology/ex4pm#>
+PREFIX sh:    <http://www.w3.org/ns/shacl#>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+
+# Gate (gates/014-style NOT-EXISTS falsifier form): the generated
+# Xaas.Telemetry.OcelEnvelope typespec depends on two vendored ontology
+# facts staying present. An empty result set (pass) means both facts are
+# still present after any future vendored-fragment update; a non-empty
+# result (fail) means the vendor copy has drifted from what the generator
+# assumes and this pack must be re-synced against a fresh vendor pull from
+# /Users/sac/ex4pm, not silently trusted.
+#
+# NOTE: the vendored source (ex4pm.ttl) declares ex4pm:Event as
+# `a rdfs:Class`, not `a owl:Class` — this falsifier checks against the
+# real vendored triple form (rdfs:Class) rather than an owl:Class
+# assumption that does not match the source and would otherwise make this
+# gate permanently non-empty (fail) for a fact that was never wrong.
+SELECT ?missing WHERE {
+  BIND("event_class_or_shape_target_missing" AS ?missing)
+  FILTER(
+    NOT EXISTS { ex4pm:Event a rdfs:Class } ||
+    NOT EXISTS { ex4pm:EventShape sh:targetClass ex4pm:Event }
+  )
+}
