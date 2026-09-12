@@ -8,7 +8,7 @@ defmodule Xaas.Ledger.EventLog do
   """
 
   use Ash.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Ledger,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshEvents.EventLog]

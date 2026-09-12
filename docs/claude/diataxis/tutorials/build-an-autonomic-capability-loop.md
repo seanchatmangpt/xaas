@@ -181,19 +181,19 @@ or, if a capability that was previously `ALIVE` regresses:
 The loop's state and its Analyze step are both reachable over HTTP, not only from
 the Mix task. Three real files wire this:
 
-`lib/kanban_web/plugs/require_internal_api_token.ex` — a real auth gate found
+`lib/xaas_web/plugs/require_internal_api_token.ex` — a real auth gate found
 genuinely missing by an adversarial review (both `/internal-api` and `/api` had
 zero auth plug, reachable by anyone with network access). It requires a
 constant-time-compared bearer token against the `INTERNAL_API_TOKEN` env var, and
 fails closed (503) if that env var is unset, rather than silently allowing
 everyone through.
 
-`lib/kanban_web/router.ex` registers the specific
+`lib/xaas_web/router.ex` registers the specific
 `/internal-api/capability_liveness_regressions` route **before** the catch-all
-`forward "/internal-api", KanbanWeb.InternalApiRouter`:
+`forward "/internal-api", XaasWeb.InternalApiRouter`:
 
 ```elixir
-scope "/internal-api", KanbanWeb do
+scope "/internal-api", XaasWeb do
   pipe_through [:api, :require_internal_api_token]
 
   get "/capability_liveness_regressions", CapabilityRegressionsController, :index
@@ -203,8 +203,8 @@ end
 scope "/" do
   pipe_through [:internal_api, :require_internal_api_token]
 
-  forward "/internal-api", KanbanWeb.InternalApiRouter
-  forward "/api", KanbanWeb.ApiRouter
+  forward "/internal-api", XaasWeb.InternalApiRouter
+  forward "/api", XaasWeb.ApiRouter
 end
 ```
 
@@ -213,7 +213,7 @@ prefix — declared after the specific route, it would shadow it. This was confi
 via a real 404 `no_route_found` from `AshJsonApi.Router` before the reorder (see
 commit `e07b9c8`).
 
-`lib/kanban_web/controllers/capability_regressions_controller.ex` just calls
+`lib/xaas_web/controllers/capability_regressions_controller.ex` just calls
 `Xaas.Operations.CapabilityLivenessRegressions.detect/1` and renders plain JSON
 (not JSON:API, since the response is a computed diagnostic, not a resource
 representation):
@@ -227,10 +227,10 @@ end
 
 `Xaas.Operations.CapabilityLivenessReceipt` itself is also exposed read-only via
 its own `json_api do routes do get :read; index :read end end` block (step 2),
-mounted through `KanbanWeb.InternalApiRouter` at `/internal-api`
-(`lib/kanban_web/internal_api_router.ex`) — deliberately narrower than the
-customer-facing `KanbanWeb.ApiRouter` at `/api`
-(`lib/kanban_web/api_router.ex`), which mounts 6 domains' worth of mechanically
+mounted through `XaasWeb.InternalApiRouter` at `/internal-api`
+(`lib/xaas_web/internal_api_router.ex`) — deliberately narrower than the
+customer-facing `XaasWeb.ApiRouter` at `/api`
+(`lib/xaas_web/api_router.ex`), which mounts 6 domains' worth of mechanically
 added read-only routes but explicitly excludes `Xaas.Ledger` and `Xaas.Accounts`
 resources pending a real access-control design.
 
@@ -313,7 +313,7 @@ code — nothing in the Ash layer invents or upgrades a status.
   attached to every Ash action's `:telemetry` `:stop` event (not `:exception` — Ash
   never emits that suffix, per this module's own corrected moduledoc); its log
   backs the `/internal-api/ocel_summary` endpoint above
-- `~/xaas/lib/kanban_web/router.ex`, `internal_api_router.ex`, `api_router.ex`,
+- `~/xaas/lib/xaas_web/router.ex`, `internal_api_router.ex`, `api_router.ex`,
   `plugs/require_internal_api_token.ex` — the HTTP exposure and auth gate (step 6)
 - `~/xaas/docs/ASH-MIGRATION-PLAN.md` — the broader migration plan this loop is
   part of, including the still-open Phase 5 customer-facing mutation-surface decision

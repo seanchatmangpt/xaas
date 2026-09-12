@@ -59,13 +59,13 @@ test("ash_admin: create a real CapabilityLivenessReceipt row and see it persist"
   await page.waitForTimeout(1500);
 
   // Real proof of state change: query the real internal-api JSON:API
-  // endpoint (lib/kanban_web/internal_api_router.ex, live-verified
+  // endpoint (lib/xaas_web/internal_api_router.ex, live-verified
   // earlier this session) rather than scraping the admin table -- the
   // real table has 8000+ pre-existing rows and no visible pagination
   // control to reach our new one reliably; a real HTTP roundtrip against
   // real persisted Postgres state is the Chicago-style assertion here,
   // not a UI-scraping workaround.
-  // Real fix: KanbanWeb.Plugs.RequireInternalApiToken (added after this
+  // Real fix: XaasWeb.Plugs.RequireInternalApiToken (added after this
   // spec was first written) now genuinely requires a Bearer token on
   // /internal-api -- this spec real-401'd once that plug shipped, caught
   // by the sibling ash-admin-destroy.spec.js while it was being written.

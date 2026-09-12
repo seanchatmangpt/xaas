@@ -139,7 +139,7 @@ This pattern repeats across the other test files added this session:
 tests over real ingested rows), `test/xaas/operations/capability_liveness_receipt_stress_test.exs`
 (stress tests against the real Sandbox-backed repo), `test/mix/tasks/xaas_ingest_capability_receipts_test.exs`
 (the real Mix task exercised against a real receipt file, not a stubbed file reader), and
-`test/kanban_web/internal_api_router_test.exs` / `test/kanban_web/controllers/*_test.exs`
+`test/xaas_web/internal_api_router_test.exs` / `test/xaas_web/controllers/*_test.exs`
 (real Phoenix/AshJsonApi.Router requests through the real router, real JSON:API responses
 asserted on).
 

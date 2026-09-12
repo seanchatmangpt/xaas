@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
     # real POST /api/orgs/[id]/export-subscription maker-checker flow:
     # `:create` (file the export-subscription change request) and
     # `:approve` are gated the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # ApprovalExportSubscriptionUpdateRequiresApprover's real "second,
     # distinct owner" rule on :approve.
     bypass action(:create) do
