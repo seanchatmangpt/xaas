@@ -50,6 +50,7 @@ defmodule Xaas.Operations.ActuationIntent do
         :status
       ]
 
+      validate Xaas.Actuation.Validations.FrontierEvidence
       validate Xaas.Actuation.Validations.CausalAdmission
     end
 
