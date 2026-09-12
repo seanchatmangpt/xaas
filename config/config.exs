@@ -6,15 +6,6 @@
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
-# in config/config.exs
-
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
-# General application configuration
 import Config
 
 config :xaas,
@@ -77,9 +68,15 @@ config :ash_json_api,
   show_public_calculations_when_loaded?: false,
   authorize_update_destroy_with_error?: true
 
+# v26.8.21: generated TypeScript and the Phoenix router share the same
+# authenticated endpoint identity. The RPC controller is mounted behind
+# RequireInternalApiToken; generated clients may not silently target an
+# unmounted public path.
 config :ash_typescript,
   otp_app: :xaas,
   output_file: "assets/js/ash_rpc.ts",
+  run_endpoint: "/internal-api/rpc/run",
+  validate_endpoint: "/internal-api/rpc/validate",
   output_field_formatter: :camel_case,
   input_field_formatter: :camel_case
 
@@ -164,7 +161,6 @@ config :ex_aws,
 # at the `config/runtime.exs`.
 config :xaas, Xaas.Mailer, adapter: Swoosh.Adapters.Local
 
-# Configure esbuild (the version is required)
 config :esbuild,
   version: "0.14.41",
   default: [
@@ -174,7 +170,6 @@ config :esbuild,
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
 
-# Configure tailwind (the version is required)
 config :tailwind,
   version: "3.2.4",
   default: [
@@ -186,14 +181,10 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
-# Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-# Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

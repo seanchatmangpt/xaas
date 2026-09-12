@@ -6,15 +6,16 @@
 # We make no guarantees that this code is fit for any purpose.
 # Visit https://pragprog.com/titles/beamops for more book information.
 # ---
-# in mix.exs
 
 defmodule Xaas.MixProject do
   use Mix.Project
 
+  @version File.read!("VERSION") |> String.trim()
+
   def project do
     [
       app: :xaas,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -48,13 +49,12 @@ defmodule Xaas.MixProject do
     ]
   end
 
-  # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  # Specifies your project dependencies.
-  #
-  # Type `mix help deps` for examples and options.
+  # v26.8.21 keeps one Ash-native dependency graph. The exact resolved
+  # versions remain receipt-bearing in mix.lock; constraints below describe
+  # the supported compatibility envelope rather than duplicating lock state.
   defp deps do
     [
       # Real Ash deps ported verbatim from ~/dev-fresh/xaas/mix.exs -- the 89
@@ -106,10 +106,6 @@ defmodule Xaas.MixProject do
       {:ash_state_machine, "~> 0.2"},
       {:oban, "~> 2.0"},
       {:ash_oban, "~> 0.8"},
-      # Real re-check this session: hex.info now shows ash_admin's latest
-      # release is 1.3.0 (not the 1.0.0-rc.0 this repo's original conflict
-      # note was written against), pinning phoenix_live_view differently --
-      # re-attempting for real per explicit user request.
       {:ash_admin, "~> 1.3"},
       {:ash_graphql, "~> 1.0"},
       {:open_api_spex, "~> 3.0"},
@@ -139,34 +135,15 @@ defmodule Xaas.MixProject do
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
-      # No free/simple mutation-testing tool exists in this codebase's deps
-      # (checked: no muzak/mutation_test dep). Real property-based/fuzz
-      # testing via StreamData/ExUnitProperties is the honest, disclosed
-      # substitute -- named explicitly per docs/AWS-CHAPTERS-SUBSTITUTION.md's
-      # precedent, not silently swapped in. Already a real transitive dep of
-      # `ash` (see mix.lock); pinned here directly so `mix test` for
-      # ExUnitProperties-based tests doesn't depend on ash's own requirement.
-      # `only: :test` was tried first but `ash` itself requires stream_data
-      # unrestricted by env (real resolver conflict, confirmed via a real
-      # `mix deps.get` run), so it is pinned here for all envs instead.
       {:stream_data, "~> 1.0"},
-      # Real fix: exact-pinned "0.24.0" (the book's original) conflicts with
-      # ash_onetime -> ecto_sql ~> 3.14 -> ... -> ex_money_sql's real
-      # transitive requirement on gettext ~> 1.0 (confirmed via real resolver
-      # output). Relaxed to allow the resolver to pick a compatible version.
-      {:gettext, "~> 0.24 or ~> 1.0"},
+      {:gettext, "~> 1.0"},
       {:heroicons, "~> 0.5"},
       {:jason, "~> 1.2"},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.4"},
-      # Real bump for ash_admin ~> 1.3 (needs phoenix_html ~> 4.1).
       {:phoenix_html, "~> 4.1"},
-      # Real bump for ash_admin/phoenix_live_view 1.2 compatibility.
       {:phoenix_live_dashboard, "~> 0.9.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      # Real bump for ash_admin ~> 1.3 (needs phoenix_live_view ~> 1.1-rc);
-      # 1.2.x is the current stable release (confirmed via mix hex.info),
-      # past the rc this repo's original conflict note predates.
       {:phoenix_live_view, "~> 1.2"},
       # Next Read case study (docs/case-studies/next-read/): real local
       # Hugging Face sentence-embedding inference for the ranker's semantic
@@ -215,12 +192,6 @@ defmodule Xaas.MixProject do
     ]
   end
 
-  # Aliases are shortcuts or tasks specific to the current project.
-  # For example, to install project dependencies and perform other setup tasks, run:
-  #
-  #     $ mix setup
-  #
-  # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
