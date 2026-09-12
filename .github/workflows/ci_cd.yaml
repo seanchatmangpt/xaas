@@ -25,7 +25,11 @@ jobs:
       MIX_ENV: test
     services:
       postgres:
-        image: postgres:15.2
+        # The admitted XaaS schema creates the pgvector `vector` extension.
+        # Pin both pgvector and PostgreSQL major plus the multi-arch image
+        # digest so the verifier supplies the same capability deterministically
+        # instead of weakening migrations to fit vanilla postgres.
+        image: pgvector/pgvector:0.8.6-pg15-bookworm@sha256:a947c45cdc5906a1bc951f20a8709e321256343ee0f251e4ae00b5e7def4e6da
         env:
           POSTGRES_PASSWORD: postgres
         ports:
