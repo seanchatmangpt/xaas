@@ -26,6 +26,7 @@ config :xaas,
     Xaas.Governance,
     Xaas.Ledger,
     Xaas.Marketplace,
+    Xaas.Ocel,
     Xaas.Operations,
     Xaas.Platform
   ],
