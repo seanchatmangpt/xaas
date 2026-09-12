@@ -26,7 +26,7 @@ defmodule Xaas.Operations.AuditLogEntry do
   """
 
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -89,7 +89,7 @@ defmodule Xaas.Operations.AuditLogEntry do
 
     # Real, best-effort caller identity. This repo has no per-user
     # identity on the request path today (see
-    # KanbanWeb.Plugs.ResolveOrgActor's moduledoc) -- the closest real
+    # XaasWeb.Plugs.ResolveOrgActor's moduledoc) -- the closest real
     # identifying string available at approval time is the mutation's
     # own `approved_by` field, so callers pass that as `actor_id`.
     # Nullable: some future internal-only writers may have no caller

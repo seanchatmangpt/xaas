@@ -1,4 +1,4 @@
-discovery.dockerswarm "kanban" {
+discovery.dockerswarm "xaas" {
   host = "unix:///var/run/docker.sock"
   role = "tasks"
   refresh_interval = "15s"
@@ -10,12 +10,12 @@ discovery.dockerswarm "kanban" {
 
   filter {
     name = "service"
-    values = ["kanban_web"]
+    values = ["xaas_web"]
   }
 }
 
 discovery.relabel "use_swarm_node_not_internal_ip" {
-  targets = discovery.dockerswarm.kanban.targets
+  targets = discovery.dockerswarm.xaas.targets
 
   rule {
     source_labels = ["__meta_dockerswarm_node_id"]
@@ -23,15 +23,15 @@ discovery.relabel "use_swarm_node_not_internal_ip" {
   }
 }
 
-prometheus.remote_write "kanban" {
+prometheus.remote_write "xaas" {
   endpoint {
     url = "http://prometheus:9090/api/v1/write"
   }
 }
 
-prometheus.scrape "kanban" {
+prometheus.scrape "xaas" {
   targets    = discovery.relabel.use_swarm_node_not_internal_ip.output
-  forward_to = [prometheus.remote_write.kanban.receiver]
+  forward_to = [prometheus.remote_write.xaas.receiver]
   scrape_interval = "5s"
   scrape_timeout = "5s"
 }

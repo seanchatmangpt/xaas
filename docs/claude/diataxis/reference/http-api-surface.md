@@ -2,21 +2,21 @@
 
 Complete, current enumeration of xaas's real HTTP surface: every mounted router, every
 resource with a real `json_api do routes do ... end end` block, the real auth gate, and the
-two plain-JSON controller endpoints. Verified by reading `lib/kanban_web/router.ex`,
-`lib/kanban_web/api_router.ex`, `lib/kanban_web/internal_api_router.ex`, and grepping
+two plain-JSON controller endpoints. Verified by reading `lib/xaas_web/router.ex`,
+`lib/xaas_web/api_router.ex`, `lib/xaas_web/internal_api_router.ex`, and grepping
 `lib/xaas/**/*.ex` for `json_api do` on 2026-08-20.
 
 ## Router topology
 
-`lib/kanban_web/router.ex` defines three real scopes:
+`lib/xaas_web/router.ex` defines three real scopes:
 
 ```elixir
-scope "/", KanbanWeb do
+scope "/", XaasWeb do
   pipe_through :browser
   get "/", PageController, :home
 end
 
-scope "/internal-api", KanbanWeb do
+scope "/internal-api", XaasWeb do
   pipe_through [:api, :require_internal_api_token]
   get "/capability_liveness_regressions", CapabilityRegressionsController, :index
   get "/ocel_summary", OcelSummaryController, :index
@@ -24,8 +24,8 @@ end
 
 scope "/" do
   pipe_through [:internal_api, :require_internal_api_token]
-  forward "/internal-api", KanbanWeb.InternalApiRouter
-  forward "/api", KanbanWeb.ApiRouter
+  forward "/internal-api", XaasWeb.InternalApiRouter
+  forward "/api", XaasWeb.ApiRouter
 end
 ```
 
@@ -40,13 +40,13 @@ Two real facts about this ordering, both load-bearing:
    review found both real-200'd for any anonymous client.
 
 `AshAdmin.Router` is mounted at `/admin` and `Phoenix.LiveDashboard` at `/dev/dashboard`, both
-gated by `Application.compile_env(:kanban, :dev_routes)` (dev-only; no auth plug is added for
+gated by `Application.compile_env(:xaas, :dev_routes)` (dev-only; no auth plug is added for
 either, per the router's own comment, since production exposure was deliberately out of scope
 for this session).
 
-## Auth: `KanbanWeb.Plugs.RequireInternalApiToken`
+## Auth: `XaasWeb.Plugs.RequireInternalApiToken`
 
-Defined in `lib/kanban_web/plugs/require_internal_api_token.ex`. Applies to every route under
+Defined in `lib/xaas_web/plugs/require_internal_api_token.ex`. Applies to every route under
 `/internal-api` and `/api` (both the two controller endpoints and both `AshJsonApi.Router`
 forwards).
 
@@ -66,9 +66,9 @@ curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
   http://localhost:4000/internal-api/capability_liveness_regressions
 ```
 
-## `/api` — `KanbanWeb.ApiRouter`
+## `/api` — `XaasWeb.ApiRouter`
 
-`lib/kanban_web/api_router.ex` mounts `AshJsonApi.Router` for 6 domains:
+`lib/xaas_web/api_router.ex` mounts `AshJsonApi.Router` for 6 domains:
 `Xaas.Accounts`, `Xaas.Billing`, `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Operations`,
 `Xaas.Platform`. Mounting a domain does not itself expose anything — only resources that
 declare their own `json_api do routes do ... end end` block are actually reachable. Per the
@@ -215,7 +215,7 @@ for `AshJsonApi` to serialize them at all — without it, every read route on th
 was already silently returning `"attributes": {}` (found while building this feature, not
 yet checked across the other 43 read-only resources).
 
-Real Chicago-style coverage: `test/kanban_web/controllers/approval_pricing_override_controller_test.exs`
+Real Chicago-style coverage: `test/xaas_web/controllers/approval_pricing_override_controller_test.exs`
 — real Postgres-backed accept case, plus the two real reject cases (missing approver, self-
 approval) and the real no-token-401 case, per this repo's testing discipline of asserting the
 reject path, not just the accept path.
@@ -301,7 +301,7 @@ payment processor, not a Stripe passthrough. What was added:
   direct Postgres query instead.
 
 Real Chicago-style coverage:
-`test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` — accept
+`test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs` — accept
 case, missing-approver reject, self-approval reject, no-token 401 reject, tier-range reject,
 real ledger-balance-change assertion on overage approval, real no-charge assertion when no
 overage occurs. Plus `test/e2e/kind_deployment_test.exs` against the live deployment (see
@@ -330,11 +330,11 @@ counterparts:
 Each follows the same real shape as `ApprovalBackupRetentionChange`/`ApprovalPricingOverride`:
 `bypass action(:create)`/`bypass action(:approve)`, a `*RequiresApprover` validation (present +
 distinct-from-requester), real Chicago-style HTTP tests
-(`test/kanban_web/controllers/approval_{dr_failover,cmek_key_binding,dsar_erasure}_controller_test.exs`).
+(`test/xaas_web/controllers/approval_{dr_failover,cmek_key_binding,dsar_erasure}_controller_test.exs`).
 
 ### Deliberately unwired (5 resources, no `json_api` block at all)
 
-Per `lib/kanban_web/api_router.ex`'s own moduledoc, these 5 have **no** `routes do` block —
+Per `lib/xaas_web/api_router.ex`'s own moduledoc, these 5 have **no** `routes do` block —
 mounting `Xaas.Accounts` and `Xaas.Ledger` in the router above does not expose them:
 
 - `Xaas.Ledger.Balance` (`lib/xaas/ledger/balance.ex`)
@@ -352,9 +352,9 @@ mechanical `get :read` pass.
 also has no `json_api do` block per the grep above — it is unwired the same way, just not called
 out by name in that comment.)
 
-## `/internal-api` — `KanbanWeb.InternalApiRouter`
+## `/internal-api` — `XaasWeb.InternalApiRouter`
 
-`lib/kanban_web/internal_api_router.ex` mounts `AshJsonApi.Router` for a single domain,
+`lib/xaas_web/internal_api_router.ex` mounts `AshJsonApi.Router` for a single domain,
 `Xaas.Operations`, at prefix `/internal-api`. Currently only one resource in that domain
 declares a route:
 
@@ -378,13 +378,13 @@ ingested MAPE-K receipt rows (see `lib/xaas/operations/capability_liveness_recei
 
 ## Plain-JSON controller endpoints (not `AshJsonApi`, not the JSON:API envelope)
 
-Both are registered directly on `KanbanWeb.Router` under `/internal-api`, ahead of the
+Both are registered directly on `XaasWeb.Router` under `/internal-api`, ahead of the
 `AshJsonApi.Router` forward, and both require the same `Authorization: Bearer` header.
 
 ### `GET /internal-api/capability_liveness_regressions`
 
-`KanbanWeb.CapabilityRegressionsController`. Real response shape, taken from the real assertions
-in `test/kanban_web/controllers/capability_regressions_controller_test.exs`:
+`XaasWeb.CapabilityRegressionsController`. Real response shape, taken from the real assertions
+in `test/xaas_web/controllers/capability_regressions_controller_test.exs`:
 
 ```json
 {
@@ -406,8 +406,8 @@ controller surfaces).
 
 ### `GET /internal-api/ocel_summary`
 
-`KanbanWeb.OcelSummaryController`. Real response shape, taken from the real assertions in
-`test/kanban_web/controllers/ocel_summary_controller_test.exs`:
+`XaasWeb.OcelSummaryController`. Real response shape, taken from the real assertions in
+`test/xaas_web/controllers/ocel_summary_controller_test.exs`:
 
 ```json
 {
@@ -432,9 +432,9 @@ Both fields are computed by reading the real file at
 
 ## See Also
 
-- `lib/kanban_web/router.ex`, `lib/kanban_web/api_router.ex`,
-  `lib/kanban_web/internal_api_router.ex` — the three real router files this doc documents
-- `lib/kanban_web/plugs/require_internal_api_token.ex` — the real auth plug
+- `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
+  `lib/xaas_web/internal_api_router.ex` — the three real router files this doc documents
+- `lib/xaas_web/plugs/require_internal_api_token.ex` — the real auth plug
 - `lib/xaas/operations/capability_liveness_receipt.ex`,
   `lib/xaas/operations/capability_liveness_regressions.ex`,
   `lib/mix/tasks/xaas.ingest_capability_receipts.ex` — the real MAPE-K loop backing
@@ -442,6 +442,6 @@ Both fields are computed by reading the real file at
 - `lib/xaas/telemetry/ocel_ash_emitter.ex` — the real OCEL v2 emitter backing `/internal-api/ocel_summary`
 - `docs/ASH-MIGRATION-PLAN.md` — Phase 5 item 2, the still-open decision on a real
   customer-facing mutation surface
-- `test/kanban_web/controllers/capability_regressions_controller_test.exs`,
-  `test/kanban_web/controllers/ocel_summary_controller_test.exs` — real Chicago-style tests this
+- `test/xaas_web/controllers/capability_regressions_controller_test.exs`,
+  `test/xaas_web/controllers/ocel_summary_controller_test.exs` — real Chicago-style tests this
   doc's response shapes are grounded in

@@ -12,7 +12,6 @@ defmodule Xaas.Platform.DeliverWebhookTest do
   """
   use ExUnit.Case, async: true
 
-  alias Xaas.Platform.Webhook
   alias Xaas.Platform.WebhookDelivery
 
   defmodule CapturingPlug do
@@ -54,20 +53,17 @@ defmodule Xaas.Platform.DeliverWebhookTest do
     :ok
   end
 
+  # This file's own defaults (fixed org_id, caller-supplied url/secret)
+  # differ deliberately from Xaas.Generator.create_webhook!/1's own
+  # sequence-generated url/org_id -- this test's whole point is pointing
+  # the webhook's `url` at a real local listener it just started, and
+  # asserting on a caller-known `secret`.
   defp create_webhook!(url, secret \\ "real-hmac-secret") do
-    Webhook
-    |> Ash.Changeset.for_create(
-      :create,
-      %{
-        org_id: "deliver-webhook-test-org",
-        url: url,
-        event_types: ["test.event"],
-        secret: secret,
-        enabled: true
-      },
-      authorize?: false
-    )
-    |> Ash.create!()
+    Xaas.Generator.create_webhook!(%{
+      org_id: "deliver-webhook-test-org",
+      url: url,
+      secret: secret
+    })
   end
 
   defp create_delivery!(webhook, payload \\ %{"hello" => "world"}) do

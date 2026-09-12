@@ -1,0 +1,17 @@
+PREFIX bibo: <http://purl.org/ontology/bibo/>
+PREFIX schema: <https://schema.org/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+
+SELECT ?res ?module ?tableName ?singular ?plural ?isbn ?author ?genre ?gradeLevel ?available WHERE {
+  ?res a xl:Book ;
+       xl:resourceModule ?module ;
+       xl:tableName ?tableName ;
+       xl:singular ?singular ;
+       xl:plural ?plural ;
+       bibo:isbn ?isbn ;
+       schema:author ?author ;
+       schema:genre ?genre ;
+       schema:typicalAgeRange ?gradeLevel ;
+       schema:itemAvailability ?available .
+}

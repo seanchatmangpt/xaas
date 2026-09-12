@@ -1,0 +1,44 @@
+name: R81 x R75 XaaS Realization
+
+on:
+  pull_request:
+    paths:
+      - "verification/r81-r75-realization/**"
+      - "priv/repo/migrations/**"
+      - "ggen.toml"
+      - ".github/workflows/r81-r75-realization.yml"
+  push:
+    branches: ["fanout/**"]
+    paths:
+      - "verification/r81-r75-realization/**"
+      - "priv/repo/migrations/**"
+      - "ggen.toml"
+      - ".github/workflows/r81-r75-realization.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Assert exact subject
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$expected" || { echo "REFUSED[INEXACT_HEAD] expected=$expected actual=$actual" >&2; exit 70; }
+      - name: Qualify GGEN realization contract
+        run: python3 verification/r81-r75-realization/verify.py
+      - name: Refuse consequential actuation
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RInE '"consequential_do"[[:space:]]*:[[:space:]]*true|"authority"[[:space:]]*:[[:space:]]*"[^\"]*DO' verification/r81-r75-realization
+          echo "R81_R75_XAAS_ACTUATION=REFUSED_BY_DESIGN"

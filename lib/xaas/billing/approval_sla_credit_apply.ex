@@ -6,7 +6,7 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
   established pattern in `Xaas.Billing.ApprovalPricingOverride` /
   `Xaas.Governance.ApprovalFreezeOverride`: `:create` is unauthenticated
   at the Ash-policy layer (real access control is the router-level
-  `KanbanWeb.Plugs.RequireInternalApiToken` Bearer check ahead of every
+  `XaasWeb.Plugs.RequireInternalApiToken` Bearer check ahead of every
   `/api` route), and `:approve` additionally runs
   `Xaas.Billing.Validations.ApprovalSlaCreditApplyRequiresApprover` -- `approved_by` must
   be present and must differ from `requested_by` (a second, distinct
@@ -17,7 +17,7 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
 
   Real, live-HTTP-proven gap found by the sixteenth-pass ERRC grid sweep:
   the `:create`/`:approve` bypass was a bare `authorize_if always()` -- no
-  org check at all -- and `KanbanWeb.Plugs.ResolveOrgActor`'s hardcoded
+  org check at all -- and `XaasWeb.Plugs.ResolveOrgActor`'s hardcoded
   tenant-scoped path list didn't cover `approval_sla_credit_apply` either.
   A real, temporary (deleted-after-run) HTTP test proved live
   exploitability: an actor holding only the shared `INTERNAL_API_TOKEN`
@@ -37,7 +37,7 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
   org actor instead of `nil`.
   """
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -51,7 +51,7 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
 
     # Real, explicit per-action carve-out: `:create`/`:approve` are gated
     # the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # `:approve`'s own real validation
     # (`ApprovalSlaCreditApplyRequiresApprover`) rejecting a missing or
     # self-approving `approved_by`. Deliberate per-action carve-out, not

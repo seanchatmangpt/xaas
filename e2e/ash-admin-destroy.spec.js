@@ -35,7 +35,7 @@ const { test, expect } = require("@playwright/test");
  * does not depend on it today.
  *
  * Real, adversarial-review-caught gap fixed while writing this spec:
- * `KanbanWeb.Plugs.RequireInternalApiToken` genuinely rejects
+ * `XaasWeb.Plugs.RequireInternalApiToken` genuinely rejects
  * unauthenticated `/internal-api` requests with a real 401 (confirmed
  * live -- the sibling `ash-admin-state-change.spec.js`, which sends no
  * `Authorization` header, currently fails the same way against a

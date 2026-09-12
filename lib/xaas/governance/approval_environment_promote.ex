@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalEnvironmentPromote do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     # real POST /api/projects/[name]/promote maker-checker flow: `:create`
     # (file the promotion request) and `:approve` are gated the same way
     # reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus
     # ApprovalEnvironmentPromoteRequiresApprover's real "second, distinct
     # owner" rule on :approve.
     bypass action(:create) do

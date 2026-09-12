@@ -20,17 +20,17 @@ import Config
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/kanban start
+#     PHX_SERVER=true bin/xaas start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :kanban, KanbanWeb.Endpoint, server: true
+  config :xaas, XaasWeb.Endpoint, server: true
 end
 
 if System.get_env("USE_AWS_FIXTURE_ADAPTER", "false") == "true" do
-  config :kanban, Kanban.AwsRepo, adapter: Kanban.AwsRepo.FixtureAdapter
-  config :kanban, Kanban.AwsRepo.AwsAdapter, base_url: "http://localhost:1338"
+  config :xaas, Xaas.AwsRepo, adapter: Xaas.AwsRepo.FixtureAdapter
+  config :xaas, Xaas.AwsRepo.AwsAdapter, base_url: "http://localhost:1338"
 end
 
 if config_env() == :prod do
@@ -51,9 +51,9 @@ if config_env() == :prod do
       ash_onetime nonce protection on :revoke_token.
       """
 
-  config :kanban, Xaas.Accounts.Token, onetime_revoke_key: onetime_revoke_key
+  config :xaas, Xaas.Accounts.Token, onetime_revoke_key: onetime_revoke_key
 
-  config :kanban, Kanban.Repo,
+  config :xaas, Xaas.LegacyRepo,
     # ssl: true,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
@@ -62,8 +62,8 @@ if config_env() == :prod do
   # ash-migration Phase 3: Xaas.Repo shares the same real DATABASE_URL --
   # same physical Postgres instance, separate Ecto.Repo child so the 89
   # ported Ash.Resource modules (which reference Xaas.Repo directly) don't
-  # require touching Kanban.Repo or the existing supervision tree wiring.
-  config :kanban, Xaas.Repo,
+  # require touching Xaas.LegacyRepo or the existing supervision tree wiring.
+  config :xaas, Xaas.Repo,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
@@ -83,7 +83,7 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :kanban, KanbanWeb.Endpoint,
+  config :xaas, XaasWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -100,7 +100,7 @@ if config_env() == :prod do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :kanban, KanbanWeb.Endpoint,
+  #     config :xaas, XaasWeb.Endpoint,
   #       https: [
   #         ...,
   #         port: 443,
@@ -122,7 +122,7 @@ if config_env() == :prod do
   # We also recommend setting `force_ssl` in your endpoint, ensuring
   # no data is ever sent via http, always redirecting to https:
   #
-  #     config :kanban, KanbanWeb.Endpoint,
+  #     config :xaas, XaasWeb.Endpoint,
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
@@ -133,7 +133,7 @@ if config_env() == :prod do
   # Also, you may need to configure the Swoosh API client of your choice if you
   # are not using SMTP. Here is an example of the configuration:
   #
-  #     config :kanban, Kanban.Mailer,
+  #     config :xaas, Xaas.Mailer,
   #       adapter: Swoosh.Adapters.Mailgun,
   #       api_key: System.get_env("MAILGUN_API_KEY"),
   #       domain: System.get_env("MAILGUN_DOMAIN")
@@ -145,3 +145,12 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
+
+# OCEL v2 egress to ex4pm_web's real ingest endpoint
+# (POST /api/v1/ocel/events -> Ex4pmWeb.OcelController.ingest/2), forwarded
+# by Xaas.Telemetry.OcelForwarder. Unset (nil) disables forwarding entirely --
+# OcelForwarder.forward/1 is then a no-op.
+config :xaas,
+  ex4pm_ocel_ingest_url: System.get_env("EX4PM_OCEL_INGEST_URL"),
+  ex4pm_ocel_ingest_timeout_ms:
+    String.to_integer(System.get_env("EX4PM_OCEL_INGEST_TIMEOUT_MS") || "2000")

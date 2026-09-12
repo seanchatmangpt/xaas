@@ -1,6 +1,6 @@
 defmodule Xaas.Platform.RouteSecrets do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Platform.RouteSecrets do
     # real POST/DELETE /api/secrets routes -- both are gated by a single
     # session + `requireRole(session, "member")` check, not a
     # maker-checker approval flow (unlike the Governance cluster). Router-
-    # level KanbanWeb.Plugs.RequireInternalApiToken Bearer check plays the
+    # level XaasWeb.Plugs.RequireInternalApiToken Bearer check plays the
     # equivalent gating role here.
     bypass action(:create) do
       authorize_if always()

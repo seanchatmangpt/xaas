@@ -33,7 +33,7 @@ defmodule Xaas.Operations.Incident do
   Real, live-HTTP-proven gap found by the seventeenth-pass ERRC grid
   sweep: `:create`/`:update` were bare `authorize_if(always())` despite
   this resource accepting a caller-supplied `org_id` (line above), and
-  `KanbanWeb.Plugs.ResolveOrgActor`'s tenant-scoped path list didn't cover
+  `XaasWeb.Plugs.ResolveOrgActor`'s tenant-scoped path list didn't cover
   `incidents` either. Worse than a same-resource bypass alone: because
   `ApprovalDrFailoverRequiresOpenIncident`'s query previously filtered
   only on `region`/`status` (see that module's own moduledoc), a
@@ -55,7 +55,7 @@ defmodule Xaas.Operations.Incident do
   """
 
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -69,7 +69,7 @@ defmodule Xaas.Operations.Incident do
     # model of its own yet (see docs/ASH-MIGRATION-PLAN.md Phase 5), so
     # both read and write are gated the same way every other
     # internal-api-surfaced resource in this codebase is: the
-    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check,
+    # router-level XaasWeb.Plugs.RequireInternalApiToken Bearer check,
     # not a resource-level role policy that doesn't exist yet.
     bypass action_type(:read) do
       authorize_if(always())

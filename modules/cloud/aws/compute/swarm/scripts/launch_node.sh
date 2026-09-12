@@ -94,7 +94,7 @@ else
   join_swarm "$SWARM_TOKEN"
 
   INSTANCE_COUNT=$(echo "$SORTED_INSTANCE_IDS_STRING" | wc -l)
-  docker service update --replicas="$INSTANCE_COUNT" kanban_web
+  docker service update --replicas="$INSTANCE_COUNT" xaas_web
 fi
 
 # make sure port 22 of the current instance is open so that SSH is possible

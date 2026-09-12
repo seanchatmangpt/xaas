@@ -119,7 +119,7 @@ resource "aws_cloudwatch_event_target" "stop_instances" {
       "docker node demote $DOWN_NODE_IDS",
       "docker node rm $DOWN_NODE_IDS",
       "NODES=$(docker node ls | awk 'NR > 1' | wc -l)",
-      "docker service update kanban_web --replicas $NODES"
+      "docker service update xaas_web --replicas $NODES"
     ],
   })
 

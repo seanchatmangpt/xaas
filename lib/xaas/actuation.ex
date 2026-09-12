@@ -71,7 +71,9 @@ defmodule Xaas.Actuation do
   end
 
   defp normalize_transaction_result({:ok, result}), do: normalize_transaction_result(result)
-  defp normalize_transaction_result({:error, reason}), do: {:error, reason}
+
+  defp normalize_transaction_result({:error, reason}),
+    do: {:error, unwrap_reactor_error(reason)}
 
   defp normalize_transaction_result(%{status: :succeeded} = envelope), do: {:ok, envelope}
   defp normalize_transaction_result(%{status: :replayed} = envelope), do: {:ok, envelope}
@@ -80,6 +82,26 @@ defmodule Xaas.Actuation do
 
   defp normalize_transaction_result(other),
     do: {:error, {:unexpected_actuation_result, other}}
+
+  # Reactor wraps a step's raw `{:error, reason}` return in
+  # `{:reactor_failed, %Reactor.Error.Invalid{errors: [%Reactor.Error.Invalid.RunStepError{error: reason}, ...]}}`.
+  # Callers of `Xaas.Actuation.run/4` depend on the original, unwrapped contract
+  # tuple (e.g. `{:idempotency_conflict, key}`) surfacing directly — unwrap it
+  # here instead of leaking Reactor's internal error envelope. Any reactor
+  # failure that isn't a single recognizable step error falls back to the
+  # original `{:reactor_failed, reason}` shape.
+  defp unwrap_reactor_error(
+         {:reactor_failed,
+          %Reactor.Error.Invalid{errors: [%Reactor.Error.Invalid.RunStepError{error: step_error}]}} =
+           reason
+       ) do
+    case step_error do
+      {:idempotency_conflict, _key} -> step_error
+      _ -> reason
+    end
+  end
+
+  defp unwrap_reactor_error(reason), do: reason
 end
 
 defmodule Xaas.Actuation.Reactor do
@@ -93,47 +115,65 @@ defmodule Xaas.Actuation.Reactor do
 
   use Reactor, extensions: [Ash.Reactor]
 
-  input :resource
-  input :action
-  input :input
-  input :subject_id
-  input :actor
-  input :tenant
-  input :authorize?
-  input :authority
-  input :idempotency_key
+  middlewares do
+    middleware(Xaas.Actuation.Middleware.AuditLogger)
+    middleware(Reactor.Middleware.Telemetry)
+  end
+
+  input(:resource)
+  input(:action)
+  input(:input)
+  input(:subject_id)
+  input(:actor)
+  input(:tenant)
+  input(:authorize?)
+  input(:authority)
+  input(:idempotency_key)
 
   ash_step :admit do
-    async? false
-    argument :resource, input(:resource)
-    argument :action, input(:action)
-    argument :input, input(:input)
-    argument :subject_id, input(:subject_id)
-    argument :actor, input(:actor)
-    argument :tenant, input(:tenant)
-    argument :authorize?, input(:authorize?)
-    argument :authority, input(:authority)
-    argument :idempotency_key, input(:idempotency_key)
-    run &Xaas.Actuation.Kernel.admit/2
+    async?(false)
+    argument(:resource, input(:resource))
+    argument(:action, input(:action))
+    argument(:input, input(:input))
+    argument(:subject_id, input(:subject_id))
+    argument(:actor, input(:actor))
+    argument(:tenant, input(:tenant))
+    argument(:authorize?, input(:authorize?))
+    argument(:authority, input(:authority))
+    argument(:idempotency_key, input(:idempotency_key))
+    run(&Xaas.Actuation.Kernel.admit/2)
   end
 
   ash_step :do do
-    async? false
-    argument :admission, result(:admit)
-    argument :actor, input(:actor)
-    argument :tenant, input(:tenant)
-    argument :authorize?, input(:authorize?)
-    run &Xaas.Actuation.Kernel.actuate/2
+    async?(false)
+    argument(:admission, result(:admit))
+    argument(:actor, input(:actor))
+    argument(:tenant, input(:tenant))
+    argument(:authorize?, input(:authorize?))
+    run(&Xaas.Actuation.Kernel.actuate/2)
+    # `actuate/2` reports the wrapped Ash action's own errors *inside* an
+    # `{:ok, result}` envelope (see the `rescue`/`catch` clauses below and the
+    # `{:ok, result}` return from the success path) so this step itself never
+    # returns `{:error, _}` -- Reactor's `compensate/4` callback therefore
+    # could never fire here (it only runs when this step's own `run/3`
+    # returns an error) and would be a fake, non-functional no-op. The real
+    # failure mode this batch closes is a *downstream* step (`:receipt`
+    # sealing) failing after this step has already succeeded and after
+    # `Xaas.Telemetry.OcelAshEmitter`'s global `:stop` telemetry handler has
+    # already synchronously POSTed the OCEL event for the wrapped action to
+    # ex4pm_web -- that is exactly what Reactor's `undo/4` callback is for:
+    # rolling back an already-successful step when a later step fails.
+    undo(&Xaas.Actuation.Kernel.undo_actuate/3)
   end
 
   ash_step :receipt do
-    async? false
-    argument :admission, result(:admit)
-    argument :execution, result(:do)
-    run &Xaas.Actuation.Kernel.seal/2
+    async?(false)
+    argument(:admission, result(:admit))
+    argument(:execution, result(:do))
+    run(&Xaas.Actuation.Kernel.seal/2)
   end
 
-  return :receipt
+  return(:receipt)
 end
 
 defmodule Xaas.Actuation.Kernel do
@@ -157,15 +197,45 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   def actuate(%{admission: %{replay?: true} = admission}, _context) do
-    {:ok, {:replayed, admission.receipt.result}}
+    # `admission.receipt.result` is `json_safe/1`'s frozen serialization of
+    # the original struct (string keys, `:value` inspected to a string via
+    # `json_safe/1` below) -- a snapshot for the receipt/audit trail, not a
+    # rehydratable Ash struct. A caller doing `result.some_field` on it (as
+    # reader_live.ex's checkout_book handler does with `checkout.book_id`)
+    # gets a real KeyError on replay. Re-fetch the live resource by the
+    # admission's own resource module + subject_id instead -- the same
+    # record the original actuation produced, current as of this replay.
+    # For a :create action (e.g. Checkout.borrow), `admission.subject_id`
+    # is nil -- there was no existing subject to key on -- but the frozen
+    # snapshot's own `"id"` key (set by `json_safe/1` below, from the
+    # originally-created record's real id) still identifies the record
+    # that create produced, so it's the fallback subject id here.
+    resolved_subject_id = admission.subject_id || Map.get(admission.receipt.result, "id")
+
+    result =
+      case resolved_subject_id do
+        nil ->
+          admission.receipt.result
+
+        subject_id ->
+          case admission.resource |> Ash.get(subject_id, authorize?: false) do
+            {:ok, record} -> record
+            {:error, _} -> admission.receipt.result
+          end
+      end
+
+    {:ok, {:replayed, result}}
   end
 
-  def actuate(%{
-        admission: admission,
-        actor: actor,
-        tenant: tenant,
-        authorize?: authorize?
-      }, _context) do
+  def actuate(
+        %{
+          admission: admission,
+          actor: actor,
+          tenant: tenant,
+          authorize?: authorize?
+        },
+        _context
+      ) do
     context = %{
       xaas_actuation: %{
         intent_id: to_string(admission.intent.id),
@@ -192,6 +262,31 @@ defmodule Xaas.Actuation.Kernel do
     error -> {:ok, {:error, {:exception, error.__struct__, Exception.message(error)}}}
   catch
     kind, reason -> {:ok, {:error, {kind, reason}}}
+  end
+
+  # Undo callback for the `:do` ash_step (see `actuation.ex`). Fired by
+  # Reactor when this step has already succeeded but a later step (real
+  # scenario: `:receipt` sealing) fails and the whole reactor run must roll
+  # back. The participating Ash data-layer transaction already undoes the DB
+  # mutation the wrapped action made; this callback closes the remaining
+  # gap -- the OCEL event `Xaas.Telemetry.OcelAshEmitter` already forwarded
+  # to ex4pm_web, synchronously and out-of-band of that transaction, for the
+  # very same action -- by forwarding a real correction/cancellation OCEL
+  # event for the same idempotency key.
+  #
+  # A replayed admission (`admission.replay? == true`) performed no new
+  # action and forwarded no new OCEL event in this run, so there is nothing
+  # real to cancel.
+  def undo_actuate(_value, %{admission: %{replay?: true}}, _context), do: :ok
+
+  def undo_actuate(_value, %{admission: admission}, _context) do
+    Xaas.Telemetry.OcelForwarder.forward_cancellation(%{
+      resource: admission.resource,
+      action: admission.action,
+      idempotency_key: admission.intent.idempotency_key
+    })
+
+    :ok
   end
 
   def seal(%{admission: %{replay?: true} = admission, execution: {:replayed, result}}, _context) do
@@ -340,8 +435,8 @@ defmodule Xaas.Actuation.Kernel do
   defp replay_or_refuse(intent, args, projection_hash, input_hash) do
     cond do
       intent.resource_module != inspect(args.resource) or
-          intent.action != Atom.to_string(args.action) or
-          intent.subject_id != stringify(args.subject_id) or intent.input_hash != input_hash or
+        intent.action != Atom.to_string(args.action) or
+        intent.subject_id != stringify(args.subject_id) or intent.input_hash != input_hash or
           intent.ontology_projection_hash != projection_hash ->
         {:error, {:idempotency_conflict, args.idempotency_key}}
 
@@ -388,7 +483,13 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   defp execute_action(resource, action, subject_id, input, actor, tenant, authorize?, context) do
-    common = [action: action, authorize?: authorize?, actor: actor, tenant: tenant, context: context]
+    common = [
+      action: action,
+      authorize?: authorize?,
+      actor: actor,
+      tenant: tenant,
+      context: context
+    ]
 
     case Ash.Resource.Info.action(resource, action) do
       %Ash.Resource.Actions.Create{} ->
@@ -480,7 +581,10 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   defp json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
-  defp json_safe(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
+  defp json_safe(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
   defp json_safe(atom) when is_atom(atom), do: Atom.to_string(atom)
 
   defp json_safe(value)

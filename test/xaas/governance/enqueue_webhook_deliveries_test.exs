@@ -27,7 +27,6 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
   alias Xaas.Governance.ApprovalDrFailover
   alias Xaas.Governance.ApprovalLegalHoldRelease
   alias Xaas.Operations.Incident
-  alias Xaas.Platform.Webhook
   alias Xaas.Platform.WebhookDelivery
 
   defmodule Always200Plug do
@@ -51,25 +50,23 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
     # `Xaas.Vault` (AshCloak's backing Cloak.Vault, used by
     # `Xaas.Platform.Webhook`'s `cloak do attributes [:secret] end`) is now
     # a real, permanent child of the app's supervision tree
-    # (`lib/kanban/application.ex`), so it's already running for real by
+    # (`lib/xaas/application.ex`), so it's already running for real by
     # the time this test boots -- no per-test workaround needed.
     :ok
   end
 
+  # This file's own defaults (a fixed "webhook-test-org" org_id, and a
+  # caller-supplied real local listener_url instead of
+  # Xaas.Generator.create_webhook!/1's own sequenced random url) differ
+  # deliberately from Xaas.Generator.create_webhook!/1's general defaults.
   defp create_webhook!(event_types, listener_url, opts \\ []) do
-    Webhook
-    |> Ash.Changeset.for_create(
-      :create,
-      %{
-        org_id: "webhook-test-org",
-        url: listener_url,
-        event_types: event_types,
-        secret: "real-hmac-secret",
-        enabled: Keyword.get(opts, :enabled, true)
-      },
-      authorize?: false
-    )
-    |> Ash.create!()
+    Xaas.Generator.create_webhook!(%{
+      org_id: "webhook-test-org",
+      url: listener_url,
+      event_types: event_types,
+      secret: "real-hmac-secret",
+      enabled: Keyword.get(opts, :enabled, true)
+    })
   end
 
   defp deliveries_for(webhook_id) do

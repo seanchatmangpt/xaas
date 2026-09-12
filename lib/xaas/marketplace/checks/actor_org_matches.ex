@@ -22,7 +22,7 @@ defmodule Xaas.Marketplace.Checks.ActorOrgMatches do
   `ActorBelongsToOrg` real-queries `OrgMembership` because its actor is a
   real `Xaas.Accounts.User` row and the fact being checked is
   "does this user belong to this org." `Provider`'s actor (set by
-  `KanbanWeb.Plugs.ResolveOrgActor`) is not a user -- it is the real,
+  `XaasWeb.Plugs.ResolveOrgActor`) is not a user -- it is the real,
   caller-asserted org itself, `%{org_id: org.slug}` (see that plug's
   moduledoc). There is no membership row to query; the real fact to
   check is a direct equality between the actor's asserted `org_id` and

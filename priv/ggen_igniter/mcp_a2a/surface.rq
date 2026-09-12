@@ -1,0 +1,13 @@
+PREFIX ema: <http://seanchatmangpt.github.io/packs/elixir-mcp-a2a#>
+
+SELECT DISTINCT ?app_module ?otp_app ?mcp_mount_path ?mcp_protocol_version
+                ?mcp_audit_plug_module ?agent_module ?agent_name
+                ?agent_description ?agent_mount_path ?skills_module WHERE {
+  ?s a ema:CapabilitySurface ;
+     ema:appModule ?app_module ; ema:otpApp ?otp_app ;
+     ema:mcpMountPath ?mcp_mount_path ; ema:mcpProtocolVersion ?mcp_protocol_version ;
+     ema:agentModule ?agent_module ; ema:agentName ?agent_name ;
+     ema:agentDescription ?agent_description ; ema:agentMountPath ?agent_mount_path .
+  OPTIONAL { ?s ema:mcpAuditPlugModule ?mcp_audit_plug_module }
+  OPTIONAL { ?s ema:skillsModule ?skills_module }
+}

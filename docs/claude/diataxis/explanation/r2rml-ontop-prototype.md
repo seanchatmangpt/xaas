@@ -70,12 +70,12 @@ TriplesMap compiled and the endpoint came back up:
 05:01:39.107 |-INFO  OntopQueryEngineImpl - Ontop has completed the setup and it is ready for query answering!
 ```
 
-The real auth-gated proxy (`KanbanWeb.OntopProxyPlug` at `/internal-api/sparql`) is configured
+The real auth-gated proxy (`XaasWeb.OntopProxyPlug` at `/internal-api/sparql`) is configured
 to reach Ontop at `http://ontop:8080` over the internal Docker network — correct for the
 already-running `xaas-web-1` container, but that container predates this session's proxy code
 (confirmed: hitting it returned a real `404`, not `401`, meaning the route isn't compiled into
 its image). To query for real this run, a local `mix phx.server` was booted instead (same
-approach the original prototype used), with `config :kanban, :ontop_base_url` pointed at
+approach the original prototype used), with `config :xaas, :ontop_base_url` pointed at
 Ontop's host-published `127.0.0.1:8888` port (temporary `config/dev.exs` edit, reverted via
 `git checkout` before finishing — not committed, not left in the tree).
 
@@ -161,9 +161,9 @@ matches are `Phoenix.ConnTest.patch/2` HTTP PATCH calls in controller tests and 
 - **Network exposure — fixed 2026-08-20.** Ontop's host-published port was real
   `0.0.0.0:8888` (publicly reachable on the host's network interfaces, confirmed via
   `docker ps`). Now `docker-compose.ontop.yaml` publishes `127.0.0.1:8888` only, and the
-  only sanctioned way to reach it is `KanbanWeb.OntopProxyPlug`
-  (`lib/kanban_web/plugs/ontop_proxy_plug.ex`), mounted at `/internal-api/sparql` behind
-  the same `KanbanWeb.Plugs.RequireInternalApiToken` pipeline every other `/internal-api`
+  only sanctioned way to reach it is `XaasWeb.OntopProxyPlug`
+  (`lib/xaas_web/plugs/ontop_proxy_plug.ex`), mounted at `/internal-api/sparql` behind
+  the same `XaasWeb.Plugs.RequireInternalApiToken` pipeline every other `/internal-api`
   route uses. The proxy talks to Ontop over the real internal `xaas_default` Docker
   network (`http://ontop:8080`), not the host-published port. Real-proven this session
   (local `mix phx.server`, real running `xaas-ontop-prototype` container): `GET
@@ -171,7 +171,7 @@ matches are `Phoenix.ConnTest.patch/2` HTTP PATCH calls in controller tests and 
   token → real `401`; with the real correct `INTERNAL_API_TOKEN` → real `200` with the
   same real SPARQL JSON the original prototype query returned. Real unit tests for the
   proxy plug's own auth-and-forwarding behavior:
-  `test/kanban_web/plugs/ontop_proxy_plug_test.exs`.
+  `test/xaas_web/plugs/ontop_proxy_plug_test.exs`.
 - **Still NOT resolved (disclosed, unchanged in kind from before)**: this is host-level
   network binding + a proxy-level bearer-token check, not per-query Ash policy
   enforcement — SPARQL still bypasses Ash's authorization layer entirely once past the

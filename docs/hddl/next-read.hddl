@@ -1,0 +1,249 @@
+;; next-read.hddl
+;; Observed this session: Next Read library recommendation platform exercises
+;; multi-interface workflows (UI/UX LiveView, A2A user-simulation agent, Ash AI MCP tools).
+;; Written down as formal HDDL domain and methods grounded in real Xaas.Library modules.
+;;
+;; Real functions and routes each action maps to:
+;;   rank-recommendations    -> Xaas.Library.Ranker.recommend/2
+;;   expand-why-drawer       -> UI LiveView handle_event("toggle_why", ...)
+;;   checkout-book           -> Xaas.Library.Checkout.borrow/2 via Xaas.Actuation.run/4
+;;   place-hold              -> Xaas.Library.HoldRequest.create/2
+;;   fulfill-hold            -> Xaas.Library.HoldRequest.fulfill/2
+;;   curate-pin-book         -> Xaas.Library.Curation.create/2 + PubSub broadcast
+;;   ask-catalog-semantic    -> Xaas.Library.Ranker.ask_catalog/2 (Nx/Bumblebee vector search)
+;;   a2a-resolve-actor       -> Xaas.Library.PersonaGrant grant lookup at /a2a
+;;   mcp-read-catalog        -> AshAi.Mcp.Router tools (:list_books, :books_by_grade_band) at /mcp
+
+(define (domain next-read)
+  (:requirements :hierarchy :typing :negative-preconditions)
+
+  (:types
+    student - object
+    librarian - object
+    book - object
+    grade-band - object
+    view-mode - object
+    token - object
+    query - object
+  )
+
+  (:predicates
+    (book-available ?b - book)
+    (book-checked-out ?s - student ?b - book)
+    (hold-placed ?s - student ?b - book)
+    (hold-fulfilled ?s - student ?b - book)
+    (curation-pinned ?b - book ?g - grade-band)
+    (recommendations-ranked ?s - student ?g - grade-band)
+    (why-explained ?s - student ?b - book)
+    (active-view ?m - view-mode)
+    (advisory-answered ?q - query)
+    (persona-granted ?t - token ?s - student)
+    (actor-resolved ?s - student)
+    (checkout-receipt-sealed ?s - student ?b - book)
+    (proof-step-complete ?step - object)
+  )
+
+  ;; ---- compound tasks ----
+  (:task NEXT-READ-DUAL-PERSONA-EXPERIENCE
+    :parameters (?s - student ?l - librarian ?b - book ?g - grade-band ?q - query)
+  )
+
+  (:task STUDENT-DISCOVER-AND-CHECKOUT
+    :parameters (?s - student ?b - book ?g - grade-band)
+  )
+
+  (:task LIBRARIAN-ADVISORY-AND-CURATE
+    :parameters (?l - librarian ?b - book ?g - grade-band ?q - query)
+  )
+
+  (:task LIBRARIAN-CIRCULATION-FULFILLMENT
+    :parameters (?l - librarian ?s - student ?b - book)
+  )
+
+  (:task A2A-SIMULATE-USER-CIRCULATION
+    :parameters (?t - token ?s - student ?b - book)
+  )
+
+  (:task MCP-INSPECT-CATALOG
+    :parameters (?g - grade-band)
+  )
+
+  ;; ---- methods (decomposition rules) ----
+
+  ;; Method 1: Dual-Persona Split Live Experience
+  (:method m-dual-persona-split-experience
+    :parameters (?s - student ?l - librarian ?b - book ?g - grade-band ?q - query ?m - view-mode)
+    :task (NEXT-READ-DUAL-PERSONA-EXPERIENCE ?s ?l ?b ?g ?q)
+    :ordered-subtasks (and
+      (t1 (set-view-mode ?m))
+      (t2 (STUDENT-DISCOVER-AND-CHECKOUT ?s ?b ?g))
+      (t3 (LIBRARIAN-ADVISORY-AND-CURATE ?l ?b ?g ?q))
+    )
+  )
+
+  ;; Method 2: Student Flow with available copy checkout
+  (:method m-student-discover-and-checkout-available
+    :parameters (?s - student ?b - book ?g - grade-band)
+    :task (STUDENT-DISCOVER-AND-CHECKOUT ?s ?b ?g)
+    :precondition (book-available ?b)
+    :ordered-subtasks (and
+      (s1 (rank-recommendations ?s ?g))
+      (s2 (expand-why-drawer ?s ?b))
+      (s3 (checkout-book ?s ?b))
+    )
+  )
+
+  ;; Method 3: Student Flow with hold placement on checked out copy
+  (:method m-student-discover-and-place-hold
+    :parameters (?s - student ?b - book ?g - grade-band)
+    :task (STUDENT-DISCOVER-AND-CHECKOUT ?s ?b ?g)
+    :precondition (not (book-available ?b))
+    :ordered-subtasks (and
+      (s1 (rank-recommendations ?s ?g))
+      (s2 (expand-why-drawer ?s ?b))
+      (s3 (place-hold ?s ?b))
+    )
+  )
+
+  ;; Method 4: Librarian Advisory Desk Curation & Semantic Search
+  (:method m-librarian-advisory-and-curate
+    :parameters (?l - librarian ?b - book ?g - grade-band ?q - query)
+    :task (LIBRARIAN-ADVISORY-AND-CURATE ?l ?b ?g ?q)
+    :ordered-subtasks (and
+      (l1 (curate-pin-book ?l ?b ?g))
+      (l2 (ask-catalog-semantic ?l ?q))
+    )
+  )
+
+  ;; Method 5: Librarian Hold Fulfillment
+  (:method m-fulfill-queued-hold
+    :parameters (?l - librarian ?s - student ?b - book)
+    :task (LIBRARIAN-CIRCULATION-FULFILLMENT ?l ?s ?b)
+    :precondition (and (hold-placed ?s ?b) (book-available ?b))
+    :ordered-subtasks (and
+      (f1 (fulfill-hold ?l ?s ?b))
+      (f2 (checkout-book ?s ?b))
+    )
+  )
+
+  ;; Method 6: A2A Simulation with Grant Authorization
+  (:method m-a2a-simulate-user-circulation
+    :parameters (?t - token ?s - student ?b - book)
+    :task (A2A-SIMULATE-USER-CIRCULATION ?t ?s ?b)
+    :precondition (persona-granted ?t ?s)
+    :ordered-subtasks (and
+      (a1 (a2a-resolve-actor ?t ?s))
+      (a2 (a2a-execute-checkout ?s ?b))
+    )
+  )
+
+  ;; Method 7: MCP Read-Only Inspection
+  (:method m-mcp-inspect-catalog
+    :parameters (?g - grade-band)
+    :task (MCP-INSPECT-CATALOG ?g)
+    :ordered-subtasks (and
+      (m1 (mcp-read-books-by-grade-band ?g))
+      (m2 (mcp-read-active-curations ?g))
+    )
+  )
+
+  ;; ---- primitive actions ----
+
+  (:action set-view-mode
+    :parameters (?m - view-mode)
+    :precondition ()
+    :effect (active-view ?m)
+  )
+
+  (:action rank-recommendations
+    :parameters (?s - student ?g - grade-band)
+    :precondition ()
+    :effect (and
+      (recommendations-ranked ?s ?g)
+      (proof-step-complete 01-ranked)
+    )
+  )
+
+  (:action expand-why-drawer
+    :parameters (?s - student ?b - book)
+    :precondition ()
+    :effect (and
+      (why-explained ?s ?b)
+      (proof-step-complete 02-explained)
+    )
+  )
+
+  (:action checkout-book
+    :parameters (?s - student ?b - book)
+    :precondition (book-available ?b)
+    :effect (and
+      (not (book-available ?b))
+      (book-checked-out ?s ?b)
+      (proof-step-complete 05-checked-out)
+    )
+  )
+
+  (:action place-hold
+    :parameters (?s - student ?b - book)
+    :precondition (not (book-available ?b))
+    :effect (and
+      (hold-placed ?s ?b)
+      (proof-step-complete 05-hold-placed)
+    )
+  )
+
+  (:action fulfill-hold
+    :parameters (?l - librarian ?s - student ?b - book)
+    :precondition (and (hold-placed ?s ?b) (book-available ?b))
+    :effect (and
+      (not (hold-placed ?s ?b))
+      (hold-fulfilled ?s ?b)
+    )
+  )
+
+  (:action curate-pin-book
+    :parameters (?l - librarian ?b - book ?g - grade-band)
+    :precondition ()
+    :effect (and
+      (curation-pinned ?b ?g)
+      (proof-step-complete 03-curated)
+      (proof-step-complete 04-student-patched-live)
+    )
+  )
+
+  (:action ask-catalog-semantic
+    :parameters (?l - librarian ?q - query)
+    :precondition ()
+    :effect (and
+      (advisory-answered ?q)
+      (proof-step-complete 07-advisory-answered)
+    )
+  )
+
+  (:action a2a-resolve-actor
+    :parameters (?t - token ?s - student)
+    :precondition (persona-granted ?t ?s)
+    :effect (actor-resolved ?s)
+  )
+
+  (:action a2a-execute-checkout
+    :parameters (?s - student ?b - book)
+    :precondition (actor-resolved ?s)
+    :effect (and
+      (book-checked-out ?s ?b)
+      (checkout-receipt-sealed ?s ?b)
+    )
+  )
+
+  (:action mcp-read-books-by-grade-band
+    :parameters (?g - grade-band)
+    :precondition ()
+    :effect ()
+  )
+
+  (:action mcp-read-active-curations
+    :parameters (?g - grade-band)
+    :precondition ()
+    :effect ()
+  )
+)
