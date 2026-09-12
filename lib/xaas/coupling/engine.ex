@@ -98,11 +98,17 @@ defmodule Xaas.Coupling.Engine do
     * `{:ok, result}` -- `result` has `:z` (the coupled point), `:weights`
       (proposal id -> `w_i`), and `:receipt` (per-coordinate provenance, see
       moduledoc).
-    * `{:infeasible, explanation}` -- box constraints alone are already
-      unsatisfiable (`l_j > u_j` for some coordinate `j`); `explanation`
-      names the minimal unsatisfiable constraint (a single conflicting
-      lower/upper bound pair -- minimal by construction, since one bound
-      pair is already contradictory on its own).
+    * `{:infeasible, explanation}` -- either box constraints alone are
+      already unsatisfiable (`l_j > u_j` for some coordinate `j`; `explanation`
+      names the minimal unsatisfiable constraint -- a single conflicting
+      lower/upper bound pair, minimal by construction since one bound pair
+      is already contradictory on its own), or every proposal's weight
+      `w_i = confidence_i * :math.exp(-staleness_i)` is exactly `0.0` (all
+      confidences `0.0`, and/or staleness large enough that the exponential
+      decay underflows to `0.0`), so `total_weight` is `0.0` and the
+      weighted-mean objective has no well-defined minimizer -- there is no
+      real "coupled point" to compute, so this is refused rather than
+      dividing by zero or fabricating a result.
     * `{:unsupported, reason}` -- the proposal set's constraints include a
       general affine `A`/`E` component this module does not solve (see
       moduledoc "What this module deliberately does NOT implement").
@@ -120,14 +126,16 @@ defmodule Xaas.Coupling.Engine do
       weighted = Enum.map(sorted, fn p -> {p, weight(p)} end)
       total_weight = weighted |> Enum.map(&elem(&1, 1)) |> Enum.sum()
 
-      {z, receipt} = solve_and_receipt(weighted, total_weight, lower, upper, dim)
+      with :ok <- check_total_weight_nonzero(total_weight) do
+        {z, receipt} = solve_and_receipt(weighted, total_weight, lower, upper, dim)
 
-      {:ok,
-       %{
-         z: z,
-         weights: Map.new(weighted, fn {p, w} -> {p.id, w} end),
-         receipt: receipt
-       }}
+        {:ok,
+         %{
+           z: z,
+           weights: Map.new(weighted, fn {p, w} -> {p.id, w} end),
+           receipt: receipt
+         }}
+      end
     end
   end
 
@@ -223,6 +231,21 @@ defmodule Xaas.Coupling.Engine do
   defp lt(:neg_infinity, _), do: false
   defp lt(_, :pos_infinity), do: false
   defp lt(a, b), do: a < b
+
+  defp check_total_weight_nonzero(total_weight) when total_weight == 0.0 do
+    {:infeasible,
+     %{
+       reason: :zero_total_weight,
+       detail:
+         "Every proposal's weight (confidence * exp(-staleness)) was exactly " <>
+           "0.0 (all confidence == 0.0, and/or staleness large enough for the " <>
+           "exponential decay to underflow to 0.0), so total_weight is 0.0 and " <>
+           "the weighted-mean objective has no defined minimizer. Refusing " <>
+           "rather than dividing by zero."
+     }}
+  end
+
+  defp check_total_weight_nonzero(_total_weight), do: :ok
 
   # -- weighting ----------------------------------------------------------
 
