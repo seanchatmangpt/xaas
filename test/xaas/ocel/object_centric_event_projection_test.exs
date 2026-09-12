@@ -9,6 +9,8 @@ defmodule Xaas.Ocel.ObjectCentricEventProjectionTest do
   """
   use ExUnit.Case, async: true
 
+  require Ash.Query
+
   alias Xaas.Ocel.{
     AshIdentity,
     CaseView,
@@ -356,6 +358,35 @@ defmodule Xaas.Ocel.ObjectCentricEventProjectionTest do
 
     test "importing an arbitrary external OCEL export format is explicitly UNSUPPORTED" do
       assert {:error, :unsupported} = Projection.import_external("<ocel/>", :xml)
+    end
+
+    test "importing an event whose relationship references a missing objectId returns a typed error, not a raised exception" do
+      dangling_map = %{
+        "objects" => [%{"id" => "order-dangling-1", "type" => "Order"}],
+        "events" => [
+          %{
+            "id" => "ev-dangling-1",
+            "type" => "ship",
+            "time" => DateTime.to_iso8601(DateTime.utc_now()),
+            "attributes" => %{},
+            "relationships" => [
+              # References an objectId that was never registered (misspelled
+              # relative to the one real object above) -- exercises the real
+              # Ash.read_one/1 "not found" path in object_relation_for/1.
+              %{"objectId" => "order-dangling-1-typo", "qualifier" => "subject"}
+            ]
+          }
+        ]
+      }
+
+      assert {:error, {:unknown_object_id, "order-dangling-1-typo"}} =
+               Projection.import(dangling_map)
+
+      # And no event was actually persisted -- the typed refusal happened
+      # before any Event.record/1 admission was attempted.
+      refute Event
+             |> Ash.Query.filter(ocel_id == "ev-dangling-1")
+             |> Ash.read_one!(authorize?: false)
     end
   end
 

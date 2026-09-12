@@ -22,7 +22,7 @@ defmodule Xaas.Ocel.Projection do
 
   require Ash.Query
 
-  alias Xaas.Ocel.{Event, EventObject, Object}
+  alias Xaas.Ocel.{Event, Object}
 
   @doc """
   Projects a list of real `Xaas.Ocel.Event` ids into an OCEL 2.0-shaped map.
@@ -110,21 +110,21 @@ defmodule Xaas.Ocel.Projection do
     Enum.reduce_while(events, {:ok, []}, fn event, {:ok, acc} ->
       {:ok, occurred_at, _offset} = DateTime.from_iso8601(Map.fetch!(event, "time"))
 
-      object_relations =
-        event
-        |> Map.get("relationships", [])
-        |> Enum.map(fn rel -> object_relation_for(rel) end)
+      with {:ok, object_relations} <-
+             build_object_relations(Map.get(event, "relationships", [])) do
+        params = %{
+          event_type: Map.fetch!(event, "type"),
+          ocel_id: Map.fetch!(event, "id"),
+          occurred_at: occurred_at,
+          attributes: Map.get(event, "attributes", %{}),
+          object_relations: object_relations
+        }
 
-      params = %{
-        event_type: Map.fetch!(event, "type"),
-        ocel_id: Map.fetch!(event, "id"),
-        occurred_at: occurred_at,
-        attributes: Map.get(event, "attributes", %{}),
-        object_relations: object_relations
-      }
-
-      case Event |> Ash.Changeset.for_create(:record, params) |> Ash.create(authorize?: false) do
-        {:ok, created} -> {:cont, {:ok, [created | acc]}}
+        case Event |> Ash.Changeset.for_create(:record, params) |> Ash.create(authorize?: false) do
+          {:ok, created} -> {:cont, {:ok, [created | acc]}}
+          {:error, error} -> {:halt, {:error, error}}
+        end
+      else
         {:error, error} -> {:halt, {:error, error}}
       end
     end)
@@ -134,13 +134,29 @@ defmodule Xaas.Ocel.Projection do
     end
   end
 
-  defp object_relation_for(%{"objectId" => ocel_id} = rel) do
-    object =
-      Object
-      |> Ash.Query.filter(ocel_id == ^ocel_id)
-      |> Ash.read_one!(authorize?: false)
+  defp build_object_relations(relationships) do
+    Enum.reduce_while(relationships, {:ok, []}, fn rel, {:ok, acc} ->
+      case object_relation_for(rel) do
+        {:ok, relation} -> {:cont, {:ok, [relation | acc]}}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+    |> case do
+      {:ok, relations} -> {:ok, Enum.reverse(relations)}
+      {:error, error} -> {:error, error}
+    end
+  end
 
-    %{object_id: object.id, qualifier: Map.get(rel, "qualifier", "related")}
+  @spec object_relation_for(map()) :: {:ok, map()} | {:error, term()}
+  defp object_relation_for(%{"objectId" => ocel_id} = rel) do
+    Object
+    |> Ash.Query.filter(ocel_id == ^ocel_id)
+    |> Ash.read_one(authorize?: false)
+    |> case do
+      {:ok, nil} -> {:error, {:unknown_object_id, ocel_id}}
+      {:ok, object} -> {:ok, %{object_id: object.id, qualifier: Map.get(rel, "qualifier", "related")}}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @doc """
