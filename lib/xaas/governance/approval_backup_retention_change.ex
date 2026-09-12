@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalBackupRetentionChange do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -23,7 +23,7 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChange do
 
     # Real, explicit per-action carve-out (issue #20): `:create` (submit a
     # retention-change request) and `:approve` are gated the same way reads
-    # are -- by the router-level KanbanWeb.Plugs.RequireInternalApiToken
+    # are -- by the router-level XaasWeb.Plugs.RequireInternalApiToken
     # Bearer check -- plus their own real validations (real tier-range
     # check on :create,
     # ApprovalBackupRetentionChangeRequiresApprover on :approve). This is a
@@ -76,7 +76,7 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChange do
 
     # Real Ash-core multitenancy wiring, now strictly enforced
   # (`global? false`). A real per-org actor now exists on the request
-  # path -- see `KanbanWeb.Plugs.ResolveOrgActor` (real, caller-asserted
+  # path -- see `XaasWeb.Plugs.ResolveOrgActor` (real, caller-asserted
   # `X-Org-Id` header resolved against a real `Xaas.Accounts.Org`, then
   # set as both the real Ash actor and the real Ash tenant via
   # `Ash.PlugHelpers.set_actor/2` / `set_tenant/2`). Ash's own

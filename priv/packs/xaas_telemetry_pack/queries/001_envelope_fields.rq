@@ -1,0 +1,13 @@
+PREFIX xt: <https://ggen.io/ontology/xaas-telemetry#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?field_key ?field_order ?field_arg_name ?field_value_literal ?comment
+WHERE {
+  ?field xt:fieldOf xt:Builder_OcelEnvelope ;
+         xt:fieldKey ?field_key ;
+         xt:fieldOrder ?field_order .
+  OPTIONAL { ?field xt:fieldArgName ?field_arg_name }
+  OPTIONAL { ?field xt:fieldValueLiteral ?field_value_literal }
+  OPTIONAL { ?field rdfs:comment ?comment }
+}
+ORDER BY ?field_order

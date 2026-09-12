@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalSubprocessorRegistryUpdate do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Governance.ApprovalSubprocessorRegistryUpdate do
     # real POST/PUT/DELETE /api/subprocessors "subprocessor.registry.update"
     # maker-checker flow: `:create` (file the sub-processor add/update/remove
     # request) and `:approve` are gated the same way reads are -- by the
-    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check --
+    # router-level XaasWeb.Plugs.RequireInternalApiToken Bearer check --
     # plus ApprovalSubprocessorRegistryUpdateRequiresApprover's real "second,
     # distinct owner" rule on :approve.
     bypass action(:create) do

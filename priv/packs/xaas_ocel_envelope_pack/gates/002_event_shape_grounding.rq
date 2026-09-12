@@ -1,0 +1,20 @@
+PREFIX ex4pm: <https://ggen.io/ontology/ex4pm#>
+PREFIX sh:    <http://www.w3.org/ns/shacl#>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
+
+# Plain extraction of the vendored ex4pm:EventShape's sh:property
+# constraints (path, minCount, maxCount, datatype) for activity and
+# timestamp, so the vendored SHACL facts this pack's generated typespec
+# depends on are queryable/inspectable — not merely a hardcoded comment
+# claiming they exist, per the evidence-forcing-architecture rule that
+# every generated fact must carry a query path back to its source.
+SELECT ?path ?minCount ?maxCount ?datatype WHERE {
+  ex4pm:EventShape a sh:NodeShape ;
+                    sh:targetClass ex4pm:Event ;
+                    sh:property ?prop .
+  ?prop sh:path ?path ;
+        sh:minCount ?minCount ;
+        sh:maxCount ?maxCount ;
+        sh:datatype ?datatype .
+}
+ORDER BY ?path

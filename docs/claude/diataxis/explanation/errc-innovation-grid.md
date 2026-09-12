@@ -120,8 +120,8 @@ not sampled, every match checked.**
     - **Real, live HTTP-level exploit proof obtained this pass, not just static reasoning —
       matching this grid's own established evidence discipline (a temporary `ConnCase` test,
       written, run once, then deleted, never committed; `git status --short
-      test/kanban_web/controllers/` confirmed clean both before and after).**
-      `test/kanban_web/controllers/scratch_provider_status_change_cross_org_test.exs` (written,
+      test/xaas_web/controllers/` confirmed clean both before and after).**
+      `test/xaas_web/controllers/scratch_provider_status_change_cross_org_test.exs` (written,
       run, `rm`'d): created two real orgs (`attacker_org`, `victim_org`), a real `Provider` row
       owned by `victim_org` with `status: :pending`. `POST /api/approval_provider_status_change`
       with `X-Org-Id: attacker_org` and body `org_id: attacker_org, provider_id:
@@ -144,7 +144,7 @@ not sampled, every match checked.**
       log/error-message leakage, a shared support ticket, or simple guessing against a
       low-cardinality dev/staging dataset, is sufficient).
     - **Real, confirmed existing test coverage does NOT already catch this** — checked, not
-      assumed: `test/kanban_web/controllers/approval_provider_status_change_controller_test.exs`
+      assumed: `test/xaas_web/controllers/approval_provider_status_change_controller_test.exs`
       (real-read in full, 4 tests) covers the happy path, same-org self-approval rejection, and a
       DIFFERENT-org actor trying to approve a request that ALREADY has matching `org_id`/
       `provider_id` (i.e., the existing "PATCH rejects approving a DIFFERENT org's real
@@ -185,9 +185,9 @@ shows: a modified `templates-hooks/terraform-validate.txt.tmpl`, and untracked
 other-standing-activity output prior passes have logged. None touch `lib/xaas/marketplace/`,
 `lib/xaas/governance/`, or any file this pass's finding depends on. None read beyond filenames,
 none touched. The temporary scratch test this pass wrote to obtain live HTTP proof
-(`test/kanban_web/controllers/scratch_provider_status_change_cross_org_test.exs`) was run once,
+(`test/xaas_web/controllers/scratch_provider_status_change_cross_org_test.exs`) was run once,
 then deleted before this doc update — confirmed via `git status --short
-test/kanban_web/controllers/` returning no output, both before and after.
+test/xaas_web/controllers/` returning no output, both before and after.
 
 ## Twenty-second-pass update
 
@@ -197,11 +197,11 @@ twenty-first-pass grid's own `1a79970`: `f8119db` ("round 20" in its own commit 
 implements the twenty-first-pass grid's own selected CREATE item, item 29/`PentestFinding`
 below). Real-verified via `git show f8119db --stat`: 6 files, 751 insertions —
 `errc-innovation-grid.md` (the twenty-first-pass section itself),
-`lib/kanban_web/plugs/resolve_org_actor.ex`, two new check modules
+`lib/xaas_web/plugs/resolve_org_actor.ex`, two new check modules
 (`lib/xaas/governance/checks/pentest_finding_actor_org_matches.ex`,
 `lib/xaas/governance/checks/pentest_finding_actor_org_filter.ex`),
 `lib/xaas/governance/pentest_finding.ex`, and a new
-`test/kanban_web/controllers/pentest_finding_controller_test.exs` (342 lines). **The
+`test/xaas_web/controllers/pentest_finding_controller_test.exs` (342 lines). **The
 twenty-first-pass CREATE item (the live-HTTP-proven cross-org status-flip on an existing
 victim-org `PentestFinding` row) is now RESOLVED, independently re-verified this pass, not
 just cited from the commit message**: `pentest_finding.ex`'s `:create`/`:remediate` bypasses
@@ -263,7 +263,7 @@ finding.**
   just `region`/`status`) is real-read and unchanged
   (`lib/xaas/governance/validations/approval_dr_failover_requires_open_incident.ex:54`). Real
   test-run evidence, not just static reading: `mix test
-  test/kanban_web/controllers/{incident,approval_tier_downgrade,
+  test/xaas_web/controllers/{incident,approval_tier_downgrade,
   approval_patch_sla_credit_apply,approval_dr_failover,approval_sla_credit_apply}_controller_test.exs`
   → **36 tests, 0 failures**, run once against the current `f8119db` tree. A real, valuable
   confirmation — 20 real rounds of subsequent changes have not silently eroded any of these 5
@@ -323,10 +323,10 @@ finding depends on. None read beyond filenames, none touched.
 twentieth-pass grid's own `868ddd6`: `1a79970` ("round 19" in its own commit message —
 implements the twentieth-pass grid's own selected CREATE item, item 27 below). Real-verified
 via `git show 1a79970 --stat`: 5 files, 678 insertions — `errc-innovation-grid.md` (the
-twentieth-pass section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`,
+twentieth-pass section itself), `lib/xaas_web/plugs/resolve_org_actor.ex`,
 `lib/xaas/governance/audit_export_token.ex`, a new
 `lib/xaas/governance/checks/audit_export_token_actor_org_matches.ex`, and a new
-`test/kanban_web/controllers/audit_export_token_controller_test.exs` (316 lines). **The
+`test/xaas_web/controllers/audit_export_token_controller_test.exs` (316 lines). **The
 twentieth-pass CREATE item (the live-HTTP-proven unauthenticated audit-export-credential-
 minting gap on `AuditExportToken`) is now RESOLVED, independently re-verified this pass, not
 just cited from the commit message**: `audit_export_token.ex`'s `:issue`/`:revoke` bypasses
@@ -508,7 +508,7 @@ shows: a newly staged `docs/SPARQL-BRIDGE-SCALE-BENCHMARK-2026-08-21.md`, a modi
 `GGEN-SH-AFTER-PROOF.txt`, `docs/innovation-exploration-v26.9.1-cycle-report.md`,
 `modules/integrations/github/contributing_workflow/.terraform.lock.hcl` — the same class of
 other-standing-activity output prior passes have logged. None touch `lib/xaas/governance/`,
-`lib/xaas/marketplace/`, `lib/kanban_web/plugs/resolve_org_actor.ex`, or any file this pass's
+`lib/xaas/marketplace/`, `lib/xaas_web/plugs/resolve_org_actor.ex`, or any file this pass's
 finding depends on. None read beyond filenames, none touched.
 
 ## Twentieth-pass update
@@ -518,11 +518,11 @@ finding depends on. None read beyond filenames, none touched.
 grid's own `f1f1343`: `868ddd6` ("round 18" in its own commit message — implements the
 nineteenth-pass grid's own selected CREATE item, item 26 below). Real-verified via `git show
 868ddd6 --stat`: 9 files, 998 insertions — `errc-innovation-grid.md` (the nineteenth-pass
-section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`,
+section itself), `lib/xaas_web/plugs/resolve_org_actor.ex`,
 `lib/xaas/accounts/checks/actor_belongs_to_org.ex`, a new
 `lib/xaas/accounts/checks/actor_org_self_filter.ex`, `lib/xaas/accounts/org.ex`, a new
 `lib/xaas/accounts/validations/org_suspended_requires_suspension_reason.ex`, a new migration,
-a new seed fixture, and `test/kanban_web/controllers/org_controller_test.exs` (269 lines,
+a new seed fixture, and `test/xaas_web/controllers/org_controller_test.exs` (269 lines,
 new). **The nineteenth-pass CREATE item (the live-HTTP-proven total availability break on
 `Org`'s own `POST`/`PATCH /api/orgs` routes) is now RESOLVED, independently re-verified this
 pass, not just cited from the commit message**: `resolve_org_actor.ex` (real-read this pass)
@@ -536,16 +536,16 @@ a genuine `Ash.Policy.FilterCheck`, not a stub) is wired alongside `ActorBelongs
 
 **This pass's task: a real, systematic check for OTHER resources sharing the exact
 class of gap round 18 found on `Org` — a real `json_api routes do` block with zero
-corresponding `test/kanban_web/controllers/*_test.exs` file, meaning the resource has never
+corresponding `test/xaas_web/controllers/*_test.exs` file, meaning the resource has never
 once been exercised through the real HTTP/`AshJsonApi`/plug pipeline (only, if at all,
 through a direct `Ash.create!`/`Ash.update!(actor: ...)` call that sidesteps real actor
 resolution entirely). Real, systematic, not sampled — every one of the 56 resources with a
 real `routes do` block was checked, not a subset.**
 
 - **Real inventory: every resource with a real `routes do` block, cross-referenced against
-  every real `test/kanban_web/controllers/*_test.exs` file, not sampled.**
+  every real `test/xaas_web/controllers/*_test.exs` file, not sampled.**
   `grep -rl "routes do" lib/xaas --include="*.ex" | sort` → 56 files;
-  `ls test/kanban_web/controllers/*.exs | sort` → 47 files. Manual 1:1 resource-name-to-
+  `ls test/xaas_web/controllers/*.exs | sort` → 47 files. Manual 1:1 resource-name-to-
   test-file cross-reference (not a naive count diff, since several test files legitimately
   cover a resource whose file/module name differs from its route base, e.g.
   `marketplace_provider_controller_test.exs` for `provider.ex`) found **17 resources with a
@@ -605,7 +605,7 @@ real `routes do` block was checked, not a subset.**
     the router-level `INTERNAL_API_TOKEN` Bearer check is the ONLY real barrier. Real, live
     HTTP-level proof obtained this pass, matching this grid's own established evidence
     discipline (a temporary `ConnCase` test, written, run once, then deleted, never
-    committed — `git status --short test/kanban_web/controllers/` confirmed clean before and
+    committed — `git status --short test/xaas_web/controllers/` confirmed clean before and
     after): `POST /api/audit_export_tokens` with only the shared Bearer token and body
     `org_id: "org-scratch-fabricated-99001"` (never created, never authenticated) →
     **real `HTTP 201`**, real response body `"org_id":"org-scratch-fabricated-99001"`,
@@ -692,9 +692,9 @@ untracked `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt`,
 `docs/claude/diataxis/explanation/wasm4pm-process-intelligence-research.md`. None touch
 `lib/xaas/governance/` or any file this pass's finding depends on. None read beyond
 filenames, none touched. The temporary scratch test this pass wrote to obtain live HTTP
-proof (`test/kanban_web/controllers/scratch_audit_export_token_reachability_test.exs`) was
+proof (`test/xaas_web/controllers/scratch_audit_export_token_reachability_test.exs`) was
 run once, then deleted before this doc update — confirmed via `git status --short
-test/kanban_web/controllers/` returning no output, both before and after.
+test/xaas_web/controllers/` returning no output, both before and after.
 
 ## Nineteenth-pass update
 
@@ -703,7 +703,7 @@ test/kanban_web/controllers/` returning no output, both before and after.
 eighteenth-pass grid's own `283426c`: `f1f1343` ("round 17" in its own commit message —
 implements the eighteenth-pass grid's own selected CREATE item). Real-verified via
 `git show f1f1343 --stat`: 8 files, 631 insertions — `errc-innovation-grid.md` (the
-eighteenth-pass section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`, a new
+eighteenth-pass section itself), `lib/xaas_web/plugs/resolve_org_actor.ex`, a new
 `lib/xaas/platform/checks/actor_org_matches.ex`, `route_orgs_custom_domain.ex`,
 `route_projects_backups.ex`, a new
 `route_orgs_custom_domain_active_requires_certificate_secret.ex` validation, and both
@@ -776,10 +776,10 @@ live-HTTP-verified finding on the codebase's own tenant-root resource; (2) is re
   today (fails closed, not open) while leaving the atomic-eligibility bug itself unfixed and
   latent underneath it, on this codebase's own tenant-root resource.
   - **Gap A, real-confirmed via full read of the real `/api` pipeline
-    (`lib/kanban_web/router.ex:79-100`): no plug in the real request path ever supplies a
+    (`lib/xaas_web/router.ex:79-100`): no plug in the real request path ever supplies a
     `%{id: ...}`-shaped (User) actor, or even a non-nil actor, for any `/api/orgs` request.**
-    `KanbanWeb.Plugs.RequireInternalApiToken` (real-read) only validates the Bearer token,
-    never sets an actor. `KanbanWeb.Plugs.ResolveOrgActor`'s `@tenant_scoped_path_segments`
+    `XaasWeb.Plugs.RequireInternalApiToken` (real-read) only validates the Bearer token,
+    never sets an actor. `XaasWeb.Plugs.ResolveOrgActor`'s `@tenant_scoped_path_segments`
     (real-read, `resolve_org_actor.ex:106-119`, the current 12-entry list) does **not**
     include `orgs` — so for `/api/orgs*` specifically, `tenant_scoped?/1` returns `false`,
     the plug passes the conn through unchanged, and no actor is ever set at all. `org.ex`'s
@@ -800,9 +800,9 @@ live-HTTP-verified finding on the codebase's own tenant-root resource; (2) is re
     identical `changeset.data`-unavailable failure mode the other 2 fixes addressed.
   - **Real, live HTTP-level proof obtained this pass for Gap A, not just static reasoning.**
     Wrote and ran a temporary `ConnCase` test
-    (`test/kanban_web/controllers/scratch_org_route_reachability_test.exs`, matching this
+    (`test/xaas_web/controllers/scratch_org_route_reachability_test.exs`, matching this
     session's own established evidence discipline — written, run, then `rm`'d; `git status
-    --short test/kanban_web/controllers/` confirmed clean before and after, never committed).
+    --short test/xaas_web/controllers/` confirmed clean before and after, never committed).
     Three real scenarios, all with a valid `INTERNAL_API_TOKEN` Bearer header: (1) `POST
     /api/orgs` with a real body — **real `HTTP 403`**. (2) `PATCH /api/orgs/:id` against a
     real `Org` with a real `User` holding a real `:admin` `OrgMembership` row for that exact
@@ -828,7 +828,7 @@ live-HTTP-verified finding on the codebase's own tenant-root resource; (2) is re
     atomic question, supplying `actor: user` directly sidesteps Gap A entirely (no real
     plug ever manufactures that actor shape from HTTP headers). `grep -n "post \"/api/orgs\"\|
     patch \"/api/orgs\|ConnCase" test/xaas/accounts/org_test.exs` → zero matches; no
-    `test/kanban_web/controllers/org_controller_test.exs` exists at all
+    `test/xaas_web/controllers/org_controller_test.exs` exists at all
     (`find test -iname "*org_controller*"` → zero results, confirmed this pass). Zero real
     HTTP-level coverage of `Org`'s own mutation routes ever existed — the same "existing
     coverage never exercises the real HTTP path" pattern this grid has repeatedly found for
@@ -868,7 +868,7 @@ none touched.
 seventeenth-pass grid's own `0260997`: `283426c` ("round 16" in its own commit message —
 implements the seventeenth-pass grid's own selected CREATE item). Real-verified via
 `git show 283426c --stat`: 9 files, 1015 insertions — `errc-innovation-grid.md` (the
-seventeenth-pass section itself), `lib/kanban_web/plugs/resolve_org_actor.ex`,
+seventeenth-pass section itself), `lib/xaas_web/plugs/resolve_org_actor.ex`,
 `lib/xaas/operations/incident.ex`, a new `lib/xaas/operations/checks/actor_org_matches.ex`,
 `lib/xaas/governance/validations/approval_dr_failover_requires_open_incident.ex`, a new
 `lib/xaas/operations/validations/incident_resolved_requires_resolved_at.ex`, and 3 test
@@ -1010,7 +1010,7 @@ none touched.
 grid's own `b536a75`: `0260997` ("round 15" in its own commit message — implements the
 sixteenth-pass grid's own selected CREATE item). Real-verified via `git show 0260997 --stat`:
 7 files, 678 insertions — `errc-innovation-grid.md` (the sixteenth-pass section itself),
-`lib/kanban_web/plugs/resolve_org_actor.ex`, `lib/xaas/billing/approval_sla_credit_apply.ex`,
+`lib/xaas_web/plugs/resolve_org_actor.ex`, `lib/xaas/billing/approval_sla_credit_apply.ex`,
 `approval_patch_sla_credit_apply.ex`, a new
 `lib/xaas/billing/checks/sla_credit_actor_org_matches.ex`, and both resources' controller
 tests. **The sixteenth-pass CREATE item (the live-HTTP-proven self-service Ledger-credit
@@ -1123,23 +1123,23 @@ have caught. This is this pass's selected CREATE item.**
     (line 92-100) includes a real, caller-supplied `org_id` attribute (line 133-136,
     `allow_nil? false`, no `multitenancy` block anywhere in the file). `Xaas.Operations` is a
     real, registered domain member (`lib/xaas/operations.ex:23`, `resource(Xaas.Operations.
-    Incident)`) and `KanbanWeb.ApiRouter` mounts that whole domain generically
-    (`lib/kanban_web/api_router.ex:29-39`, `domains: [..., Xaas.Operations, ...]`).
+    Incident)`) and `XaasWeb.ApiRouter` mounts that whole domain generically
+    (`lib/xaas_web/api_router.ex:29-39`, `domains: [..., Xaas.Operations, ...]`).
   - **Real, live HTTP-level proof obtained this pass, not just static reasoning — and it
     independently disproves a stale claim already sitting in this codebase's own test
     suite.** `test/xaas/operations/incident_test.exs:6-8`'s own moduledoc claims: "this
     resource's json_api routes block exists but is not actually wired into
-    `KanbanWeb.InternalApiRouter`/`ApiRouter`, so there is no real controller to test
+    `XaasWeb.InternalApiRouter`/`ApiRouter`, so there is no real controller to test
     against." **Real-checked this pass and found FALSE.** Wrote and ran a temporary
-    `ConnCase` test (`test/kanban_web/controllers/scratch_incident_route_liveness_test.exs`,
+    `ConnCase` test (`test/xaas_web/controllers/scratch_incident_route_liveness_test.exs`,
     matching this session's own established evidence discipline — written, run, then `rm`'d;
-    `git status --short test/kanban_web/controllers/` confirmed clean before and after,
+    `git status --short test/xaas_web/controllers/` confirmed clean before and after,
     never committed). Real `POST /api/incidents` with only the shared internal API token, a
     fabricated `org_id` (`"org-fabricated-scratch-3404"`, never created, never
     authenticated): **real `HTTP 201`, real persisted row** (`"org_id":
     "org-fabricated-scratch-3404"` echoed back in the real JSON:API response body). The
     route is live, reachable, and exercises the real create pipeline end-to-end
-    (`KanbanWeb.ApiRouter.dispatch/2` → `AshJsonApi.Controllers.Post.call/2` →
+    (`XaasWeb.ApiRouter.dispatch/2` → `AshJsonApi.Controllers.Post.call/2` →
     `Ash.Actions.Create.run/4` → a real Postgres insert, confirmed by a first accidental run
     without `Sandbox.checkout/1` that surfaced a real `DBConnection.OwnershipError` stack
     trace naming exactly that call chain, before the checkout was added and the test
@@ -1183,7 +1183,7 @@ have caught. This is this pass's selected CREATE item.**
     direct grep, not inference**: `grep -n "org_id" lib/xaas/governance/validations/
     approval_dr_failover_requires_open_incident.ex` → zero matches (the validation's own
     source never references org at all); `grep -rn "cross.org\|cross_org\|fabricat"
-    test/xaas/operations/incident_test.exs test/kanban_web/controllers/
+    test/xaas/operations/incident_test.exs test/xaas_web/controllers/
     approval_dr_failover_controller_test.exs` → zero matches in either file. The existing
     `approval_dr_failover_controller_test.exs`'s own `open_incident!/2` helper
     (real-read, lines 40-49) creates its incident via a direct `Ash.create!(authorize?:
@@ -1224,7 +1224,7 @@ commit that actually implements the fifteenth-pass grid's own selected CREATE it
 "pass" counter in this doc and the "round" counter in commit messages are offset by one and
 always have been; both count the same real work). Real-verified via `git show b536a75
 --stat`: 5 files, 552 insertions — `errc-innovation-grid.md` (the fifteenth-pass section
-itself), `lib/kanban_web/plugs/resolve_org_actor.ex`, `lib/xaas/billing/approval_tier_
+itself), `lib/xaas_web/plugs/resolve_org_actor.ex`, `lib/xaas/billing/approval_tier_
 downgrade.ex`, a new `lib/xaas/billing/checks/actor_org_matches.ex`, and the controller test.
 **The fifteenth-pass CREATE item (the live-HTTP-proven `ApprovalTierDowngrade` cross-org
 exploit) is now RESOLVED, independently re-verified this pass, not just cited from the
@@ -1246,7 +1246,7 @@ how rounds 7-9 closed their own bug class in one comprehensive pass.**
   same bare `bypass action(:create) do authorize_if always() end` / `bypass action(:approve)
   do authorize_if always() end` shape round 14 found and fixed on their now-patched sibling —
   none of the 6 was touched by `b536a75` (confirmed by that commit's own 5-file `--stat`
-  above, none of these 6 paths appear in it). `KanbanWeb.Plugs.ResolveOrgActor`'s
+  above, none of these 6 paths appear in it). `XaasWeb.Plugs.ResolveOrgActor`'s
   `@tenant_scoped_path_segments` (real-read this pass) contains none of their 5 real route
   base paths (`approval_invoice_reconciliation_approve`, `approval_patch_sla_credit_apply`,
   `approval_pricing_override`, `approval_quota_override`, `approval_sla_credit_apply`) either
@@ -1277,10 +1277,10 @@ how rounds 7-9 closed their own bug class in one comprehensive pass.**
     yourself" shape** — no real relationship to an existing org or subscription is even
     required.
   - **Real, live HTTP-level proof obtained this pass, not just static reasoning.** Wrote and
-    ran a temporary `ConnCase` test (`test/kanban_web/controllers/
+    ran a temporary `ConnCase` test (`test/xaas_web/controllers/
     scratch_sla_credit_selfservice_test.exs`, matching this session's own established
     evidence discipline — written, run once, then `rm`'d; `git status --short
-    test/kanban_web/controllers/` confirmed clean before and after). Real `POST
+    test/xaas_web/controllers/` confirmed clean before and after). Real `POST
     /api/approval_sla_credit_apply` with the real internal API Bearer token, body
     `requested_by: "attacker-6603"`, `org_id: "org-victim-6603"` (an identifier for an org
     that was never created, never authenticated, does not exist anywhere else in the system),
@@ -1322,8 +1322,8 @@ how rounds 7-9 closed their own bug class in one comprehensive pass.**
     implementing a known design.
   - **Zero existing test coverage of either live-exploitable sibling's cross-org exposure,
     confirmed by direct grep, not inference**: `grep -n "X-Org-Id\|x-org-id\|cross.org\|
-    cross_org" test/kanban_web/controllers/approval_sla_credit_apply_controller_test.exs
-    test/kanban_web/controllers/approval_patch_sla_credit_apply_controller_test.exs` → zero
+    cross_org" test/xaas_web/controllers/approval_sla_credit_apply_controller_test.exs
+    test/xaas_web/controllers/approval_patch_sla_credit_apply_controller_test.exs` → zero
     matches in either file.
 - **Real, disclosed reason the fix for these 2 is a genuinely different, and in this case
   simpler, shape than `Xaas.Billing.Checks.ActorOrgMatches`** (the module `b536a75` added for
@@ -1380,10 +1380,10 @@ already documents 23 consecutive clean runs), not re-opened.
 **This pass is analysis-only per its own task briefing — no code, test, or doc file other
 than this grid was edited or committed.** One real, temporary, deleted-after-run
 investigation test was written and executed to obtain live proof for the finding below
-(`test/kanban_web/controllers/scratch_cross_org_tier_downgrade_test.exs`), matching this
+(`test/xaas_web/controllers/scratch_cross_org_tier_downgrade_test.exs`), matching this
 session's own established evidence discipline (the thirteenth pass's temporary double-charge
 proof, the eleventh/tenth passes' stash/restore regression-guard proofs) — written, run once,
-then `rm`'d; `git status --short test/kanban_web/controllers/` confirmed clean before and
+then `rm`'d; `git status --short test/xaas_web/controllers/` confirmed clean before and
 after.
 
 **NEW this pass, real, live-HTTP-proven — `Xaas.Billing.ApprovalTierDowngrade`'s real
@@ -1414,7 +1414,7 @@ zero WriteAuditLogEntry" across all 7 Billing resources).
   below for why).
 - **Real-confirmed the gap is not merely "no check exists" but "the plug that would even
   supply an org actor for this route doesn't run on it either."**
-  `KanbanWeb.Plugs.ResolveOrgActor`'s `@tenant_scoped_path_segments` (`lib/kanban_web/plugs/
+  `XaasWeb.Plugs.ResolveOrgActor`'s `@tenant_scoped_path_segments` (`lib/xaas_web/plugs/
   resolve_org_actor.ex:70-76`, real-read this pass) is a hardcoded 6-entry list
   (`approval_dr_failover`, `approval_legal_hold_release`, `approval_deployment_quarantine`,
   `approval_backup_retention_change`, `marketplace_providers`,
@@ -1587,7 +1587,7 @@ real, and re-verified with 23 consecutive full-suite runs — RESOLVED, not just
   one confirmed to reach a real `Ledger.Account`/`Transfer` write on a real `AshEvents`-tracked
   resource, and every one declared `use ExUnit.Case, async: true` plus its own raw
   `Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)` (no `shared:` option — a real, exclusive,
-  per-test connection, not the book's own `Kanban.DataCase`/`KanbanWeb.ConnCase`
+  per-test connection, not the book's own `Xaas.DataCase`/`XaasWeb.ConnCase`
   `shared: not tags[:async]` convention, which none of these 6 files use)**:
   `test/xaas/dev_seeds_test.exs`, `test/xaas/governance/approval_backup_retention_change_test.exs`,
   `test/xaas/billing/subscription_test.exs`, `test/xaas/billing/approval_tier_downgrade_test.exs`,
@@ -1630,7 +1630,7 @@ real, and re-verified with 23 consecutive full-suite runs — RESOLVED, not just
   why (not a silent flip) — matching this pass's task briefing's own predicted fix shape
   exactly, now grounded in a real, exhaustive, verified file list instead of a guess. The 2
   real controller tests that also reach this lock
-  (`test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs`,
+  (`test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs`,
   `approval_tier_downgrade_controller_test.exs`) were real-checked and are **already** safe —
   neither declares `async: true`, so both were already in ExUnit's non-async group (which
   never runs 2 of its own members concurrently) before this pass; not edited. Not selected for
@@ -1659,7 +1659,7 @@ real, and re-verified with 23 consecutive full-suite runs — RESOLVED, not just
   documented ~50% failure rate before it) is large enough that this is reported as RESOLVED
   for this pass's own scoped question, with the residual noted as a named follow-up rather
   than hidden. A plausible, disclosed, NOT-yet-investigated secondary contributor for that one
-  anomalous batch: `config/test.exs`'s real `pool_size: 20` on both `Xaas.Repo`/`Kanban.Repo`
+  anomalous batch: `config/test.exs`'s real `pool_size: 20` on both `Xaas.Repo`/`Xaas.LegacyRepo`
   against a real observed `max_cases: 32` — a real, separate connection-pool-pressure
   candidate, distinct from the AshEvents lock this pass root-caused, worth checking first if
   the anomaly ever recurs.
@@ -1757,7 +1757,7 @@ bug on direct re-approval, unrelated to the helper's own idempotency design.**
 - **Zero existing test coverage of this exact scenario, confirmed by direct grep, not
   inference**: `grep -n "test \""
   test/xaas/governance/approval_backup_retention_change_test.exs
-  test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` shows 1
+  test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs` shows 1
   unit test (the round-9 forced-Ledger-failure atomicity test) and 9 controller tests (auth,
   org-isolation, happy-path overage/no-overage) — none calls `:approve` twice on the same
   record. `test/xaas/dev_seeds_test.exs` (round 11's own new file) similarly has exactly one
@@ -2111,7 +2111,7 @@ line 11) — has **no such test of its own**. Real-verified: `find test/xaas/gov
 test, "30 real concurrent Tasks..."; round 7's own investigation already real-verified
 `Task.async`/`Sandbox.allow/3` does NOT reproduce this TOCTOU race — 0/120 collisions across
 8x15 trials — so this stress test cannot be the atomicity proof); the only other coverage,
-`test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs`, has 9
+`test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs`, has 9
 real tests (`grep -n "test \""`) covering auth, org-isolation, and the happy-path overage
 charge, but none forces a real `Ledger.Transfer` failure mid-approval. No
 `test/xaas/governance/approval_backup_retention_change_test.exs` unit-test file exists at
@@ -2414,7 +2414,7 @@ Since the fifth-pass grid, `cec5025` (round 5, real per-30min ultracode cadence)
   validation module for each (`find lib/xaas -iname "*requires_approver*" | wc -l` → 45, up
   from 2 at the fifth-pass count).
 - **RESOLVED — prior CREATE item 6** (HTTP-level controller tests for those 7, plus the 2
-  already-complete-but-untested resources). Real-verified: `find test/kanban_web/controllers
+  already-complete-but-untested resources). Real-verified: `find test/xaas_web/controllers
   -iname "approval*controller_test*" | wc -l` → 30, and each of the 7 new test files
   (`approval_castle_verb_schedule_controller_test.exs`, etc.) contains a real `401`
   no-token assertion (`grep -n 401 test/.../approval_castle_verb_schedule_controller_test.exs`
@@ -2438,7 +2438,7 @@ sequence cover these):
   `reactor-autofde-planners-design.md`, `security-and-testing-decisions.md`,
   `wasm4pm-process-intelligence-research.md`, this grid, 2 others) — none is a top-level map
   of the real 9-domain/49-resource surface, the real routing tiers
-  (`lib/kanban_web/router.ex:31-99` — `/webhooks`, `/internal-api` (3 separately-piped
+  (`lib/xaas_web/router.ex:31-99` — `/webhooks`, `/internal-api` (3 separately-piped
   sub-scopes for capability-liveness, SPARQL proxy, and the general internal API router),
   `/api`), or how AshIam/multitenancy/AshPaperTrail/AuditLogEntry/webhooks/Reactor/Ontop/
   R2RML fit together. A new reader has to reconstruct that picture by reading this ERRC grid
@@ -2457,8 +2457,8 @@ sequence cover these):
 - **This grid's own prior #3 CREATE item — a real `/internal-api/health` aggregation
   endpoint — is now real and landed, outside this pass's own authorship but verified live**
   (`97768fb`, the concurrent session's own per-30min cadence, round 4): real-verified
-  `ls lib/kanban_web/controllers` now includes a health controller wired into
-  `lib/kanban_web/router.ex`. The prior grid's Raise finding ("no real health-check or
+  `ls lib/xaas_web/controllers` now includes a health controller wired into
+  `lib/xaas_web/router.ex`. The prior grid's Raise finding ("no real health-check or
   readiness aggregation endpoint anywhere in this repo") is resolved.
 - **A real cross-resource audit trail, `Xaas.Operations.AuditLogEntry`, landed** (`c5fe889`,
   prompt 17/25 of the concurrent sequence) — wired via
@@ -2533,12 +2533,12 @@ sequence cover these):
 - **A second, sibling check — `Xaas.Marketplace.Checks.ActorOrgMatches`
   (`lib/xaas/marketplace/checks/actor_org_matches.ex`) — also landed**, wired onto
   `Xaas.Marketplace.Provider`'s `:create`/`:update`. It is the org-asserting-actor shape
-  (`%{org_id: org.slug}`, as set by `KanbanWeb.Plugs.ResolveOrgActor`) rather than the
+  (`%{org_id: org.slug}`, as set by `XaasWeb.Plugs.ResolveOrgActor`) rather than the
   user-membership shape `ActorBelongsToOrg` uses — a real, disclosed, deliberately smaller
   alternative to full `multitenancy` DSL adoption for a resource whose actor is an org, not
   a user.
-- **`KanbanWeb.Plugs.ResolveOrgActor` is real and landed**
-  (`lib/kanban_web/plugs/resolve_org_actor.ex`) — resolves the caller-asserted `X-Org-Id`
+- **`XaasWeb.Plugs.ResolveOrgActor` is real and landed**
+  (`lib/xaas_web/plugs/resolve_org_actor.ex`) — resolves the caller-asserted `X-Org-Id`
   header against a real `Xaas.Accounts.Org` row, sets both `conn.assigns[:current_actor]`
   and the real Ash actor/tenant via `Ash.PlugHelpers`. Scoped (by real path-info inspection,
   not a router rewrite) to exactly the 4 Governance resources this grid's prior Raise item
@@ -2572,9 +2572,9 @@ sequence cover these):
   `Operations` instead, which if anything strengthens the case that this orphaned file
   should be deleted or merged into that real home rather than kept as a second, unwired
   `autofde` surface.
-- **`lib/kanban/aws_repo/fixture_adapter.ex`** — unchanged, still the one disclosed
+- **`lib/xaas/aws_repo/fixture_adapter.ex`** — unchanged, still the one disclosed
   permanent no-mocking exception (`docs/AWS-CHAPTERS-SUBSTITUTION.md`); no new sibling
-  introduced this pass (checked: no new file under `lib/kanban/aws_repo/`).
+  introduced this pass (checked: no new file under `lib/xaas/aws_repo/`).
 
 ## Reduce
 
@@ -2746,7 +2746,7 @@ sequence cover these):
   `AuditLogEntry` — the audit log is real and load-bearing (3 Governance `:approve` actions
   write to it, `c5fe889`) but is not itself audited, an ironic, real, freshly-found gap.
 - **`priv/repo/seeds.exs` is still the unmodified book-original stub — real-verified 19
-  lines, still reads "Script for populating the database... Repo.insert!(%Kanban.SomeSchema
+  lines, still reads "Script for populating the database... Repo.insert!(%Xaas.SomeSchema
   {})" with zero actual `Xaas.*` fixture calls.** For a 49-resource, 9-domain Ash app, there
   is no real local-dev path to a populated database short of manually driving each Ash
   action by hand — a genuine developer-experience gap, fresh this pass, distinct from and not
@@ -2919,14 +2919,14 @@ sequence cover these):
     `ActorBelongsToOrg` on `:update`/`:read`, and a real, disqualifying
     `Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason` validation on `:update`
     — **landed for real as `868ddd6`** (round 18), confirmed live this (twentieth) pass: all
-    changed files real-read in full, `test/kanban_web/controllers/org_controller_test.exs`
+    changed files real-read in full, `test/xaas_web/controllers/org_controller_test.exs`
     (269 lines, new) provides `Org`'s first-ever real HTTP-level coverage. Closed the total
     availability break on `POST`/`PATCH /api/orgs` and the latent atomic-upgrade pathology
     underneath it, in one pass, across 3 distinct root causes (actor-resolution gap,
     actor-shape mismatch, AshIam/FilterCheck read-visibility interaction found
     mid-implementation). See "Twentieth-pass update" above.
 27. **Selected as this pass's (twentieth) CREATE item.** A real, systematic sweep of all 56
-    resources with a real `routes do` block against real `test/kanban_web/controllers/*_test.exs`
+    resources with a real `routes do` block against real `test/xaas_web/controllers/*_test.exs`
     coverage — the generalized form of round 18's own finding, per this pass's own task —
     found 17 with zero matching controller test file: 11 real but lower-priority read-only
     gaps, 2 already-denied-by-design non-gaps (`Webhook`, and newly `WebhookDelivery`'s
@@ -2943,7 +2943,7 @@ sequence cover these):
     half depends on `multitenancy` normalization none of these 4 resources have) wired onto
     `AuditExportToken`'s `:issue`/`:revoke` bypasses in place of `authorize_if always()`; (b)
     `audit_export_tokens` added to `ResolveOrgActor`'s `@tenant_scoped_path_segments`; (c) a
-    real, live HTTP-level regression test suite (`test/kanban_web/controllers/
+    real, live HTTP-level regression test suite (`test/xaas_web/controllers/
     audit_export_token_controller_test.exs`, currently zero-existing, matching this pass's
     own finding) proving both the legitimate same-org `:issue`/`:revoke` path and the
     cross-org/fabricated-org rejection. The other 3 same-batch-eligible Governance siblings
@@ -2957,7 +2957,7 @@ sequence cover these):
     `Xaas.Governance.AuditExportToken`'s `:issue`/`:revoke` bypasses, plus `audit_export_tokens`
     added to `ResolveOrgActor`'s `@tenant_scoped_path_segments` — **landed for real as
     `1a79970`** (round 19), confirmed live this (twenty-first) pass: both files real-read in
-    full, `test/kanban_web/controllers/audit_export_token_controller_test.exs` (316 lines,
+    full, `test/xaas_web/controllers/audit_export_token_controller_test.exs` (316 lines,
     new) provides `AuditExportToken`'s first-ever real HTTP-level coverage. Closed the
     unauthenticated-arbitrary-org bearer-credential-minting gap. See "Twenty-first-pass
     update" above.
@@ -2986,7 +2986,7 @@ sequence cover these):
     `FilterCheck` sidesteps the question entirely, matching `Xaas.Marketplace.Provider`'s own
     proven `:create`/`:update` split; (c) `pentest_findings` added to `ResolveOrgActor`'s
     `@tenant_scoped_path_segments`; (d) a real, live HTTP-level regression test suite
-    (`test/kanban_web/controllers/pentest_finding_controller_test.exs`, currently zero-
+    (`test/xaas_web/controllers/pentest_finding_controller_test.exs`, currently zero-
     existing) proving both the legitimate same-org `:create`/`:remediate` path and the
     cross-org/fabricated-org rejection on each. The 2 same-batch-eligible follow-ups,
     disclosed not dropped: `Xaas.Governance.ApprovalOrgDelete` (self-disclosed fully inert
@@ -3004,7 +3004,7 @@ sequence cover these):
     wired onto `:remediate`, plus `pentest_findings` added to `ResolveOrgActor`'s
     `@tenant_scoped_path_segments` — **landed for real as `f8119db`** (round 20), confirmed
     live this (twenty-second) pass: all 3 changed/new `lib/` files real-read in full,
-    `test/kanban_web/controllers/pentest_finding_controller_test.exs` (342 lines, new)
+    `test/xaas_web/controllers/pentest_finding_controller_test.exs` (342 lines, new)
     provides `PentestFinding`'s first-ever real HTTP-level coverage. Closed the cross-org
     status-flip on an existing victim-org row. The item 29 sub-items for `ApprovalOrgDelete`
     and `ApprovalFreezeOverride` remain real, disclosed, deferred follow-up scope — not
@@ -3101,9 +3101,9 @@ sequence cover these):
 - `lib/xaas/accounts/org.ex:132-143` (the real, atomic-upgrade-eligible `:update` action —
   zero custom `validate`/`change` modules), `lib/xaas/accounts/checks/actor_belongs_to_org.ex`
   (the real `changeset.data`-reading check gating it),
-  `lib/kanban_web/plugs/resolve_org_actor.ex:106-119` (the real 12-entry
+  `lib/xaas_web/plugs/resolve_org_actor.ex:106-119` (the real 12-entry
   `@tenant_scoped_path_segments` list that does not include `orgs`),
-  `lib/kanban_web/router.ex:79-100` (the real `/api` pipeline: `RequireInternalApiToken` then
+  `lib/xaas_web/router.ex:79-100` (the real `/api` pipeline: `RequireInternalApiToken` then
   `ResolveOrgActor`, neither of which ever supplies a `%{id: ...}`-shaped actor),
   `lib/xaas/operations/incident.ex:141` and
   `lib/xaas/platform/route_orgs_custom_domain.ex:107-116` (the real, cited proof that
@@ -3115,7 +3115,7 @@ sequence cover these):
   `lib/xaas/marketplace/provider.ex:130-146` — the real, independently-correct third
   avoidance mechanism (`FilterCheck` instead of a disqualifying validation) this pass
   initially misread as a gap, then corrected before writeup; real, passing HTTP-level proof
-  already exists in `test/kanban_web/controllers/marketplace_provider_controller_test.exs:146-173`
+  already exists in `test/xaas_web/controllers/marketplace_provider_controller_test.exs:146-173`
 - `lib/xaas/operations/checks/actor_org_matches.ex`,
   `lib/xaas/operations/validations/incident_resolved_requires_resolved_at.ex`,
   `lib/xaas/platform/checks/actor_org_matches.ex`,
@@ -3128,7 +3128,7 @@ sequence cover these):
   `lib/xaas/governance/approval_backup_retention_change.ex`,
   `lib/xaas/governance/checks/actor_org_matches.ex` (the real Governance pattern this pass's
   selected CREATE item — item 19 — adapts, not copies verbatim),
-  `lib/kanban_web/plugs/resolve_org_actor.ex:70-76` (the real `@tenant_scoped_path_segments`
+  `lib/xaas_web/plugs/resolve_org_actor.ex:70-76` (the real `@tenant_scoped_path_segments`
   list this pass confirmed does not cover `approval_tier_downgrade`),
   `lib/xaas/billing/subscription.ex:246` (the real `org_id` attribute one hop away from
   `ApprovalTierDowngrade` itself) — this pass's own live-HTTP-proven cross-org Ledger
@@ -3157,7 +3157,7 @@ sequence cover these):
   and `lib/xaas/billing/validations/subscription_change_tier_not_no_op.ex` (the real, different
   mechanism that incidentally protects `ApprovalTierDowngrade`'s equivalent path, checked and
   confirmed this pass), `test/xaas/governance/approval_backup_retention_change_test.exs`,
-  `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` (the real,
+  `test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs` (the real,
   confirmed-empty existing coverage of the re-approval scenario) — this pass's own
   live-run-verified double-charge finding and its selected fix target
 - `lib/xaas/dev_seeds.ex`, `priv/repo/seeds.exs`, `test/xaas/dev_seeds_test.exs` — round 11's
@@ -3204,7 +3204,7 @@ sequence cover these):
   `test/xaas/billing/approval_sla_credit_apply_test.exs:150-183`,
   `test/xaas/governance/approval_backup_retention_change_test.exs`,
   `test/xaas/governance/approval_backup_retention_change_stress_test.exs`,
-  `test/kanban_web/controllers/approval_backup_retention_change_controller_test.exs` — the
+  `test/xaas_web/controllers/approval_backup_retention_change_controller_test.exs` — the
   real atomic exemplar whose test-parity gap round 9 (`77c7c13`) closed, and the
   deterministic same-account forced-failure technique it reuses verbatim
 - `docs/claude/diataxis/explanation/architecture-overview.md` — the sixth-pass Create item
@@ -3248,15 +3248,15 @@ sequence cover these):
   `lib/xaas/marketplace/approval_provider_status_change.ex`,
   `lib/xaas/governance/approval_freeze_override.ex` (the real `AshPaperTrail.Resource`
   precedent 4 more Governance resources adopted in `dc7c3e9`),
-  `lib/kanban_web/plugs/resolve_org_actor.ex`, `lib/kanban_web/router.ex:57-62` (the real
+  `lib/xaas_web/plugs/resolve_org_actor.ex`, `lib/xaas_web/router.ex:57-62` (the real
   `/internal-api` route surface this revision's selected Create item extends),
   `priv/repo/seeds.exs` — the real resources/checks/plugs/gaps this revision's "What
   changed" and Create sections verify against
 - `lib/xaas/accounts/org.ex`, `lib/xaas/accounts/checks/actor_belongs_to_org.ex`,
   `lib/xaas/accounts/checks/actor_org_self_filter.ex`,
   `lib/xaas/accounts/validations/org_suspended_requires_suspension_reason.ex`,
-  `lib/kanban_web/plugs/resolve_org_actor.ex`,
-  `test/kanban_web/controllers/org_controller_test.exs` — the real files item 26 (round 18,
+  `lib/xaas_web/plugs/resolve_org_actor.ex`,
+  `test/xaas_web/controllers/org_controller_test.exs` — the real files item 26 (round 18,
   `868ddd6`) landed, re-verified this (twentieth) pass
 - `lib/xaas/governance/audit_export_token.ex`,
   `lib/xaas/governance/changes/generate_audit_export_token.ex`,
@@ -3264,7 +3264,7 @@ sequence cover these):
   module this pass found unsafe to reuse as-is),
   `lib/xaas/billing/checks/sla_credit_actor_org_matches.ex`,
   `lib/xaas/platform/checks/actor_org_matches.ex` (the correct shape to model item 27's new
-  check module on instead), `lib/kanban_web/plugs/resolve_org_actor.ex:132-143` — the real
+  check module on instead), `lib/xaas_web/plugs/resolve_org_actor.ex:132-143` — the real
   files this pass's own selected CREATE item (item 27) is grounded in and would touch
 - `lib/xaas/governance/approval_freeze_override.ex`,
   `lib/xaas/governance/approval_org_delete.ex`, `lib/xaas/governance/pentest_finding.ex`,
@@ -3280,8 +3280,8 @@ sequence cover these):
 - `lib/xaas/governance/pentest_finding.ex`,
   `lib/xaas/governance/checks/pentest_finding_actor_org_matches.ex`,
   `lib/xaas/governance/checks/pentest_finding_actor_org_filter.ex`,
-  `lib/kanban_web/plugs/resolve_org_actor.ex`,
-  `test/kanban_web/controllers/pentest_finding_controller_test.exs` — the real files item 30
+  `lib/xaas_web/plugs/resolve_org_actor.ex`,
+  `test/xaas_web/controllers/pentest_finding_controller_test.exs` — the real files item 30
   (round 20, `f8119db`) landed, re-verified this (twenty-second) pass
 - `lib/xaas/billing/approval_tier_downgrade.ex:98-103`,
   `lib/xaas/billing/approval_sla_credit_apply.ex:65-70`,

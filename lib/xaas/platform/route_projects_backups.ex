@@ -36,12 +36,12 @@ defmodule Xaas.Platform.RouteProjectsBackups do
   - `GET` role floor in the real route is "viewer" (any org member);
     `POST` is "owner". xaas has no per-org-role model yet, so both are
     gated the same way every other Platform resource in this batch is:
-    the router-level `KanbanWeb.Plugs.RequireInternalApiToken` Bearer
+    the router-level `XaasWeb.Plugs.RequireInternalApiToken` Bearer
     check (via the policy `bypass`s below), not a role check.
   """
 
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -59,7 +59,7 @@ defmodule Xaas.Platform.RouteProjectsBackups do
 
     # Real, explicit per-action carve-out: `:create` (trigger/record an
     # on-demand backup) is gated the same way reads are -- by the
-    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check --
+    # router-level XaasWeb.Plugs.RequireInternalApiToken Bearer check --
     # plus its own real validation
     # (RouteProjectsBackupsValidProjectName). No maker-checker here: the
     # real route.ts POST /api/orgs/[id]/backups has no second-approver

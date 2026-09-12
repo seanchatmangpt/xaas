@@ -1,0 +1,10 @@
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+PREFIX schema: <https://schema.org/>
+PREFIX dct: <http://purl.org/dc/terms/>
+
+SELECT ?res ?module ?name ?desc WHERE {
+  ?res xl:resourceModule ?module ;
+       schema:name ?name ;
+       dct:description ?desc .
+}
+ORDER BY ?module

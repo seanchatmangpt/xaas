@@ -29,3 +29,5 @@ pending row by hand from IEx or a one-off `mix run`:
 
     Xaas.DevSeeds.approve_seeded_pending!()
 """)
+
+IO.puts("Seeded #{length(fixtures.library_books)} Xaas.Library.Book row(s) for /next-read.")

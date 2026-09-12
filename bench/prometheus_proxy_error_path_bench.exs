@@ -3,10 +3,10 @@ Mix.Task.run("app.start")
 # Real manual-timing benchmark (no Benchee dependency needed for a single
 # scenario -- matches the "manual-timing" branch of the established
 # bench/ convention) measuring the real p50/p99 latency of
-# KanbanWeb.PrometheusQueryController's real 502 error path.
+# XaasWeb.PrometheusQueryController's real 502 error path.
 #
 # Real technique, identical to
-# test/kanban_web/controllers/prometheus_query_controller_test.exs: open
+# test/xaas_web/controllers/prometheus_query_controller_test.exs: open
 # a real local TCP listener, grab its real port, close it immediately so
 # the port is guaranteed unused, and point PROMETHEUS_URL at it -- every
 # request in this benchmark hits a real "connection refused" from a real
@@ -21,7 +21,7 @@ Mix.Task.run("app.start")
 # (no mocking of the controller or Req -- a real conn is dispatched
 # through the real router pipeline, same code path a real client hits).
 
-alias KanbanWeb.Endpoint
+alias XaasWeb.Endpoint
 
 n = 200
 

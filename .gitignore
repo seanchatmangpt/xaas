@@ -73,7 +73,7 @@ crash.*.log
 crash.log
 deps/
 erl_crash.dump
-kanban-*.tar
+xaas-*.tar
 npm-debug.log
 override.tf
 override.tf.json
@@ -90,3 +90,5 @@ test-results/
 node_modules/
 .terraform-validate-receipts/
 .agp-receipts/
+_build_agent_configcheck/
+_build_clean/

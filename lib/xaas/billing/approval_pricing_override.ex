@@ -1,6 +1,6 @@
 defmodule Xaas.Billing.ApprovalPricingOverride do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -32,7 +32,7 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
 
     # Real, explicit per-action carve-out (issue #20): the `:approve` action
     # is gated the same way reads are -- by the router-level
-    # KanbanWeb.Plugs.RequireInternalApiToken Bearer check -- plus its own
+    # XaasWeb.Plugs.RequireInternalApiToken Bearer check -- plus its own
     # real validation (ApprovalPricingOverrideRequiresApprover) rejecting a
     # missing or self-approving `approved_by`. This is a deliberate decision
     # for this one action, not a blanket allow of every mutation.

@@ -1,6 +1,6 @@
 defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -20,7 +20,7 @@ defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
     # real PUT /api/owner/insurance-attestation maker-checker flow
     # (`insurance.policy.update`): `:create` (file the policy-update
     # request) and `:approve` are gated the same way reads are -- by the
-    # router-level KanbanWeb.Plugs.RequireInternalApiToken Bearer check --
+    # router-level XaasWeb.Plugs.RequireInternalApiToken Bearer check --
     # plus their own real validations (real date-range/positive-limit
     # check on :create,
     # ApprovalInsurancePolicyUpdateRequiresApprover on :approve).

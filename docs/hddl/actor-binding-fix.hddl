@@ -1,0 +1,130 @@
+;; actor-binding-fix.hddl
+;; Observed this session: vision-2030 cycle 2026-09-09-0020 closed the A2A
+;; impersonation FMEA gap with a specific, repeatable shape -- find an
+;; unbound actor-resolution path, design a grant+audit resource matching an
+;; EXISTING write convention (not inventing a new one), build it, wire the
+;; check into the resolution function with deny-by-default semantics, add
+;; avatar tests proving both the allow and deny paths. The MCP surface has
+;; the identical root cause (per the same cycle's own finding) and was
+;; explicitly left open -- this domain should be re-instantiated for it,
+;; not re-researched from scratch.
+
+(define (domain actor-binding-fix)
+  (:requirements :hierarchy :typing)
+
+  (:types
+    surface - object    ;; e.g. the A2A agent, the /mcp router scope
+    grant-resource - object
+    avatar - object
+  )
+
+  (:predicates
+    (gap-found ?s - surface)
+    (write-convention-identified ?s - surface)
+    (grant-resource-designed ?g - grant-resource ?s - surface)
+    (grant-resource-built ?g - grant-resource)
+    (resolution-bound ?s - surface ?g - grant-resource)
+    (audit-wired ?s - surface)
+    (avatar-defined ?a - avatar ?s - surface)
+    (avatar-tested ?a - avatar)
+    (deny-path-proven ?s - surface)
+    (allow-path-proven ?s - surface)
+    (gap-closed ?s - surface)
+  )
+
+  (:task CLOSE-FMEA-GAP
+    :parameters (?s - surface)
+  )
+
+  (:method m-close-gap
+    :parameters (?s - surface ?g - grant-resource)
+    :task (CLOSE-FMEA-GAP ?s)
+    :ordered-subtasks (and
+      (t1 (find-gap ?s))
+      (t2 (identify-write-convention ?s))
+      (t3 (design-grant-resource ?g ?s))
+      (t4 (build-grant-resource ?g))
+      (t5 (bind-resolution ?s ?g))
+      (t6 (wire-audit ?s))
+      (t7 (prove-avatars ?s))
+    )
+  )
+
+  (:action find-gap
+    :parameters (?s - surface)
+    :precondition ()
+    :effect (gap-found ?s)
+    ;; real: read the actual resolution function (e.g. resolve_actor/1),
+    ;; cite exact file:line of the missing check -- not "there's probably a
+    ;; gap here."
+  )
+
+  (:action identify-write-convention
+    :parameters (?s - surface)
+    :precondition (gap-found ?s)
+    :effect (write-convention-identified ?s)
+    ;; real: find the ONE existing audit-write pattern in this repo
+    ;; (Xaas.Governance.Changes.WriteAuditLogEntry: after_action not
+    ;; after_transaction, non-bang Ash.create, authorize?: false) and match
+    ;; it -- do not invent a second, parallel audit mechanism.
+  )
+
+  (:action design-grant-resource
+    :parameters (?g - grant-resource ?s - surface)
+    :precondition (write-convention-identified ?s)
+    :effect (grant-resource-designed ?g ?s)
+    ;; real: check whether an EXISTING resource (per this cycle: none of
+    ;; Xaas.Accounts.{User,Org,OrgMembership,Token} fit) already has the
+    ;; right shape before designing a new one -- new resource only when a
+    ;; real, cited absence is confirmed.
+  )
+
+  (:action build-grant-resource
+    :parameters (?g - grant-resource)
+    :precondition (grant-resource-designed ?g grant-resource)
+    :effect (grant-resource-built ?g)
+    ;; real: real Ash resource, real migration, deny-by-default policy
+    ;; (policy always() do forbid_if always() end, or the narrowest correct
+    ;; equivalent) -- never authorize_if always() on a grant/permission
+    ;; resource itself.
+  )
+
+  (:action bind-resolution
+    :parameters (?s - surface ?g - grant-resource)
+    :precondition (grant-resource-built ?g)
+    :effect (resolution-bound ?s ?g)
+    ;; real: the resolution function returns a typed {:error, :unauthorized_actor}
+    ;; (or equivalent) on no-grant -- never silently downgrades to a nil/guest
+    ;; actor, which would hide the denial as if it were the guest path.
+  )
+
+  (:action wire-audit
+    :parameters (?s - surface)
+    :precondition (resolution-bound ?s grant-resource)
+    :effect (audit-wired ?s)
+    ;; real: BOTH the allow path and the deny path write an audit row --
+    ;; auditing only failures (or only successes) leaves half the real
+    ;; picture unrecorded.
+  )
+
+  (:action prove-avatars
+    :parameters (?s - surface)
+    :precondition (audit-wired ?s)
+    :effect (and (avatar-tested avatar) (deny-path-proven ?s) (allow-path-proven ?s) (gap-closed ?s))
+    ;; real: at minimum 3 avatars via the REAL protocol (no mocking the
+    ;; surface itself): (1) granted actor succeeds, (2) guest/unauthenticated
+    ;; behaves per existing documented design, (3) ungranted actor claim is
+    ;; denied AND audited. Chicago-style: real GenServer/HTTP calls, real
+    ;; Postgres via Sandbox.
+  )
+)
+
+;; Re-instantiation note (explicit, per the doctrine's "exclusions must not
+;; re-enter" rule): this domain is NOT yet instantiated for ?s = "the /mcp
+;; router scope" -- vision-2030 cycle 0020 found the identical root cause
+;; there (ResolveOrgActor is a no-op on /mcp's path_info, Book/Curation
+;; policies are authorize_if always()) and explicitly left it open. The next
+;; hourly cycle that picks this up should run (CLOSE-FMEA-GAP mcp-surface),
+;; reusing t2 (write-convention-identified) and t3's design lesson (no
+;; existing resource fits) as already-admitted facts, not re-researching
+;; them from zero.

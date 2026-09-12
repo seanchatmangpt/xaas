@@ -571,6 +571,63 @@ agp:CapabilityLivenessReceiptMigrations a agp:CodegenTarget ;
   agp:mixArgs "--name add_capability_liveness_receipt" ;
   agp:rank 3 .
 
+# --- next-read-case-study real render targets (docs/case-studies/next-read/) ---
+# Same real SPARQL -> for_each -> sh_after mechanism as the four rows above,
+# driving the actual Xaas.Library domain + its 3 resources into existence via
+# real `mix ash.gen.domain`/`mix ash.gen.resource`/
+# `mix ash_postgres.generate_migrations` Igniter invocations -- not
+# hand-written resource files. Rank-ordered: domain (0) before any resource
+# (1) before that resource's migration (2), one migration step per resource
+# so each resource's own attributes land in its own reviewable migration.
+
+agp:XaasLibraryGenDomain a agp:CodegenTarget ;
+  agp:moduleName "Library" ;
+  agp:domainModule "Xaas" ;
+  agp:mixTask "ash.gen.domain" ;
+  agp:rank 0 .
+
+agp:LibraryBookGenResource a agp:CodegenTarget ;
+  agp:moduleName "Book" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" ;
+  agp:rank 1 .
+
+agp:LibraryBookMigrations a agp:CodegenTarget ;
+  agp:moduleName "Book" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:mixTask "ash_postgres.generate_migrations" ;
+  agp:mixArgs "--name add_library_book" ;
+  agp:rank 2 .
+
+agp:LibraryCheckoutGenResource a agp:CodegenTarget ;
+  agp:moduleName "Checkout" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" ;
+  agp:rank 1 .
+
+agp:LibraryCheckoutMigrations a agp:CodegenTarget ;
+  agp:moduleName "Checkout" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:mixTask "ash_postgres.generate_migrations" ;
+  agp:mixArgs "--name add_library_checkout" ;
+  agp:rank 2 .
+
+agp:LibraryCurationGenResource a agp:CodegenTarget ;
+  agp:moduleName "Curation" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" ;
+  agp:rank 1 .
+
+agp:LibraryCurationMigrations a agp:CodegenTarget ;
+  agp:moduleName "Curation" ;
+  agp:domainModule "Xaas.Library" ;
+  agp:mixTask "ash_postgres.generate_migrations" ;
+  agp:mixArgs "--name add_library_curation" ;
+  agp:rank 2 .
+
 # ---------------------------------------------------------------------------
 # xaas-terraform-validate: real terraform module paths for fmt/validate-only
 # targets, distinct from xar: (Ash render) and agp: (Ash codegen) semantics.

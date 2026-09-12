@@ -1,6 +1,6 @@
 defmodule Xaas.Accounts.User do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -314,6 +314,18 @@ defmodule Xaas.Accounts.User do
     attribute :confirmed_at, :utc_datetime_usec
 
     attribute :archived_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :grade_level, :integer do
+      description "Real per-student grade level, used as the Next Read UI's default grade instead of a hardcoded literal."
+      allow_nil? true
+      public? true
+    end
+
+    attribute :school_id, :string do
+      description "Real school slug (Xaas.Library.School.slug) this user is enrolled at, used to attribute checkouts instead of a hardcoded default school."
+      allow_nil? true
       public? true
     end
   end

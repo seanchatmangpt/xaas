@@ -12,7 +12,7 @@ locals {
   github_owner    = "seanchatmangpt"
 }
 
-resource "github_repository" "kanban" {
+resource "github_repository" "xaas" {
   name                   = local.repository_name
   description            = "Real xaas Ash-ecosystem platform, built on the BEAMOps deployment foundation. Renamed from engineering_elixir_applications this session."
   visibility             = "public"
@@ -32,7 +32,7 @@ resource "github_repository_milestone" "epics" {
   title       = each.value.title
   description = replace(each.value.description, "\n", " ")
   due_date    = each.value.due_date
-  depends_on  = [github_repository.kanban]
+  depends_on  = [github_repository.xaas]
 }
 
 resource "github_issue_label" "issues_labels" {
@@ -40,12 +40,12 @@ resource "github_issue_label" "issues_labels" {
   repository = local.repository_name
   name       = each.value.name
   color      = each.value.color
-  depends_on = [github_repository.kanban]
+  depends_on = [github_repository.xaas]
 }
 
 resource "github_issue" "tasks" {
   count      = length(var.issues)
-  repository = github_repository.kanban.name
+  repository = github_repository.xaas.name
   title      = var.issues[count.index].title
   body       = var.issues[count.index].body
   milestone_number = github_repository_milestone.epics[

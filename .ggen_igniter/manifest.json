@@ -1,0 +1,103 @@
+{
+  "entries": {
+    "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/a2a_skills.eex=>/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex": {
+      "out_template": "/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex": "sha256:b52ad13048a65d0d72b166f625ec18bf46d207da7e9a6f88b3c789111071f30d"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/a2a_skills.eex",
+      "updated_at": "2026-09-09T21:25:27.184382Z"
+    },
+    "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_descriptor.eex=>/Users/sac/xaas/lib/xaas_web/mcp_descriptor.ex": {
+      "out_template": "/Users/sac/xaas/lib/xaas_web/mcp_descriptor.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas_web/mcp_descriptor.ex": "sha256:ffde07f4b27518ef473effba3ed637f1407bfeaeab02ae33bd97664ab9a42bc3"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_descriptor.eex",
+      "updated_at": "2026-09-09T21:23:37.508816Z"
+    },
+    "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex=>/Users/sac/xaas/lib/xaas_web/mcp_scope.ex": {
+      "out_template": "/Users/sac/xaas/lib/xaas_web/mcp_scope.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas_web/mcp_scope.ex": "sha256:d3d2a7c24132c741b21e11cf341be9af55f53e315844a1aa94b693638b1e4ea5"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex",
+      "updated_at": "2026-09-09T21:26:38.981015Z"
+    },
+    "priv/packs/xaas_library_pack/templates/manufacture.ex.eex=>lib/mix/tasks/xaas.library.manufacture.ex": {
+      "out_template": "lib/mix/tasks/xaas.library.manufacture.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/mix/tasks/xaas.library.manufacture.ex": "sha256:20d5468708e6d8d529e7696b138443bda5a16cefbcf73f8b1f164888e4591852"
+      },
+      "pack_dir": "priv/packs/xaas_library_pack",
+      "template": "priv/packs/xaas_library_pack/templates/manufacture.ex.eex",
+      "updated_at": "2026-09-09T04:52:20.486679Z"
+    },
+    "templates-hooks/compile-proof-eex.txt.tmpl=>GGEN-SH-AFTER-PROOF-EEX.txt": {
+      "out_template": "GGEN-SH-AFTER-PROOF-EEX.txt",
+      "outputs": {
+        "GGEN-SH-AFTER-PROOF-EEX.txt": "sha256:31202530c802cb233ab0c68ac2f2561c1e49843781a22ef5d06c56955ea92be0"
+      },
+      "pack_dir": null,
+      "template": "templates-hooks/compile-proof-eex.txt.tmpl",
+      "updated_at": "2026-08-30T19:16:17.412428Z"
+    },
+    "templates-hooks/render-target-audit.eex=>.ggen-igniter-audit/<%= moduleName %>.md": {
+      "out_template": ".ggen-igniter-audit/<%= moduleName %>.md",
+      "outputs": {
+        ".ggen-igniter-audit/RouteCastleSunset.md": "sha256:8c9e71f21e9fa5818e87cdcd735a60991b685883508723d5ab30ca5ce4b4116f",
+        ".ggen-igniter-audit/ApprovalLeRequestRespond.md": "sha256:a18975d3cc99adb689c4ded94099931f77e174e5c728254af6e0d6a804cba767",
+        ".ggen-igniter-audit/ApprovalPentestFindingResolve.md": "sha256:41aad8266758734fae813af49284d724998cdd18c9922b86d730d71b28ece530",
+        ".ggen-igniter-audit/RouteFeatureFlags.md": "sha256:66f26aaac9622ccaf8803b88ed1e4ee4f8ebb7ea114160166dcd9eb59042723a",
+        ".ggen-igniter-audit/ApprovalDrFailover.md": "sha256:3798caa87fca924f1806e0f92e67d48506f6f4287064dbf989c996a02cf857ba",
+        ".ggen-igniter-audit/ApprovalSsoRoleMappingUpdate.md": "sha256:bde672d506a321e8f98552960fd23dbffc2820ecb398de3fb6556732c6b0ec54",
+        ".ggen-igniter-audit/ApprovalSubprocessorRegistryUpdate.md": "sha256:aa78dea401b68819222c34a6e83e3db19068606dd24841eff207317adf53dfd9",
+        ".ggen-igniter-audit/ApprovalDsarErasure.md": "sha256:0daa20d06f1a247f7c36f55c3e885038a8a9b9659a397f0e834841f0f2b90203",
+        ".ggen-igniter-audit/ApprovalChangeOfControlNotify.md": "sha256:43f937cb740506c3f3aaca708bd70a17689d2c2c8a303c50275d627fbea1d113",
+        ".ggen-igniter-audit/ApprovalLegalHoldRelease.md": "sha256:8da814d1c02b265be9ad7882a053fb114ec917fe5e056f0b0cb65f9d051bdc8b",
+        ".ggen-igniter-audit/ApprovalCastleVerbSchedule.md": "sha256:8eaa1741e7948f183c74273cf248b3a556445f62b4213690c3e7119316ad1e05",
+        ".ggen-igniter-audit/ApprovalComplianceRotationBlock.md": "sha256:1ef471eb8bb06e70efd18a50c484768d1c029186c3925a442f7975875e467e3a",
+        ".ggen-igniter-audit/ApprovalEnvironmentPromote.md": "sha256:2531d59d0713685ea7160f4e9248842e83e32752cbc02ec26edc823dd7393a5e",
+        ".ggen-igniter-audit/ApprovalBackupRetentionChange.md": "sha256:0e3b28b53ea77839e3520ac8d75753693ed19d1feeeb30de9ec37988662503e8",
+        ".ggen-igniter-audit/ApprovalVendorOffboardingAttestationIssue.md": "sha256:9a8cc5068990ea7a4bddca0a66c8e00fbc721b599864c4486692d6bc5910d4e9",
+        ".ggen-igniter-audit/ApprovalInvoiceReconciliationApprove.md": "sha256:9f11325b8448ba985ae0df0ee311ea1fef25ed3d7354c55886ede81969e9b2db",
+        ".ggen-igniter-audit/ApprovalFreezeOverride.md": "sha256:f0d8d7f1c9ab8d02b480c80b14e45edda462726c16e6a54b02b6faabb329edde",
+        ".ggen-igniter-audit/DataDestructionCertificateIssue.md": "sha256:140a1977288f56de74acc49dc4f53dd7fc4299172771e5d3a362048650ca3aae",
+        ".ggen-igniter-audit/ApprovalDeniedPartyOverride.md": "sha256:b71456823f5d99578ae3525023c14da8c981f8cb0ecc056313a9b6b38ba9eafb",
+        ".ggen-igniter-audit/RouteOrgsCustomDomain.md": "sha256:548b60e2d4f744acc276c4d55bc763ed6a4eaf04177a8c886b0c53e46e6e68ef",
+        ".ggen-igniter-audit/RouteProjects.md": "sha256:0636771a9ba05047f835caed3133e0cb54cd72c0e6063041ca3318dc69b06ced",
+        ".ggen-igniter-audit/ApprovalInsurancePolicyUpdate.md": "sha256:c96c73b23a3d8c78776da72f5129d4a0ae0e32cf09dd2b3972532a295c55e166",
+        ".ggen-igniter-audit/RouteCastleRun.md": "sha256:804e6ce20e74e113da37c5e5852e144b4999e11aea618b2180c9410b263cab51",
+        ".ggen-igniter-audit/ApprovalBreakGlassJustificationReview.md": "sha256:92df7a9b6929a40476fd5e6a1f43917f48aec2e667019c1643a5801c6ac4f390",
+        ".ggen-igniter-audit/ApprovalTierDowngrade.md": "sha256:e4f4614bb9c41faeb0a1c5f5191d923102a125ae77095dbbbd1cb1e556b5ec46",
+        ".ggen-igniter-audit/RouteProjectsBackups.md": "sha256:80d7a9da93e21401b12b40427fa6e6af418f76fd611fed0a0bf86a9e3c9a24e0",
+        ".ggen-igniter-audit/ApprovalDeploymentQuarantine.md": "sha256:3c19e1a8d13025c13d451c81d4e809b8f62a21b5ec24616f711e6015038609b0",
+        ".ggen-igniter-audit/ApprovalSlaCreditApply.md": "sha256:820c8b5caa298131eb1b63e555de0c6b38e1d50cc3522478c05e716613969bf9",
+        ".ggen-igniter-audit/ApprovalPersonnelAttestationRecord.md": "sha256:3c9ce5d082b704623e4057fcf00b24b656d03c0262633d539b4208612c53b55c",
+        ".ggen-igniter-audit/ApprovalGeofenceExceptionGrant.md": "sha256:4620826426bc9e53727d4bbdfd4ece156ff57d37c99662f0eadfa0e2ca9b602f",
+        ".ggen-igniter-audit/RouteSecrets.md": "sha256:dd74145b1be3fa635653a5fb6a6d25ca3fe88b69c79fc4c5d0ade0d73f470a6f",
+        ".ggen-igniter-audit/ApprovalQuotaOverride.md": "sha256:c15c3b4c4970a32eb05aba3f4d3c2e0281512fe04a15ca1705b4c65c74695cc8",
+        ".ggen-igniter-audit/ApprovalSourceEscrowSnapshot.md": "sha256:5c1b70eb3604b55e24be7afb10c1e53fec4b8e183cf6c7ec4ad7d988943f6711",
+        ".ggen-igniter-audit/ApprovalExportSubscriptionUpdate.md": "sha256:3ca3646681e860d8f53fbe385491b2afeb90433629468a26f9432ee0a73ddf23",
+        ".ggen-igniter-audit/ApprovalCmekKeyBinding.md": "sha256:f9b08b4131d861ef2db6fde160c8ba18e046348f1ee619251ddc072d6fbe937a",
+        ".ggen-igniter-audit/ApprovalPatchSlaCreditApply.md": "sha256:47c2170df1dc7014b05fe443b894ba9aa6c2881cac99e319c5ddcdc9569afceb",
+        ".ggen-igniter-audit/RouteCastleDeploy.md": "sha256:f4c7efa4639242edebaedcad58d94aaf91d25883946f9bb75d89bc2a27a49346",
+        ".ggen-igniter-audit/CastleVerbInventoryComponents.md": "sha256:db16241af590f6b5098c1cd4d2b41da518cfe90c65b7f0236bdf52e5d1f9eb5d",
+        ".ggen-igniter-audit/ApprovalK8sFaultRemediateSuggest.md": "sha256:fe0b677064b28eefa7247c83a8ae5a755e6fbfc72553b6ee857a2f732653b067",
+        ".ggen-igniter-audit/CastleVerbInventoryGoals.md": "sha256:699d8dc49cf9aef69f59b7e114710d7fcd0eb6dac9e6f75892dcdd5d03af3e29",
+        ".ggen-igniter-audit/ApprovalPricingOverride.md": "sha256:ba6d7443adca4edf86126cef4596431e27cc6689d863ed3cacdddca3fa06df11",
+        ".ggen-igniter-audit/ApprovalOrgDelete.md": "sha256:b3ca03d53a1be92c1cc62b691a06a3c5bf2bfff978f1e0daeb0668cbd072b56e",
+        ".ggen-igniter-audit/CastleVerbFortune5Requirements.md": "sha256:5f3ea9780bfca56ae1e519dfdb7355d8689753849fe3547c53a8a6f6d08b4467",
+        ".ggen-igniter-audit/RouteCastleSchedule.md": "sha256:cce81361d1a732eda57d50a78cdb6ef6514c0be407c1f84c2aca7b3a81aa21a8"
+      },
+      "pack_dir": null,
+      "template": "templates-hooks/render-target-audit.eex",
+      "updated_at": "2026-08-30T21:42:52.324714Z"
+    }
+  },
+  "schema_version": "1",
+  "version": 1
+}

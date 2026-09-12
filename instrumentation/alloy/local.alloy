@@ -1,6 +1,6 @@
 // in instrumentation/alloy/local.alloy
 
-discovery.docker "kanban" {
+discovery.docker "xaas" {
   host = "unix:///var/run/docker.sock"
   refresh_interval = "15s"
 
@@ -16,7 +16,7 @@ discovery.docker "kanban" {
 }
 
 discovery.relabel "use_container_name_not_docker_ip" {
-  targets = discovery.docker.kanban.targets
+  targets = discovery.docker.xaas.targets
 
   rule {
     source_labels = ["__meta_docker_container_name"]
@@ -25,15 +25,15 @@ discovery.relabel "use_container_name_not_docker_ip" {
   }
 }
 
-prometheus.remote_write "kanban" {
+prometheus.remote_write "xaas" {
   endpoint {
     url = "http://prometheus:9090/api/v1/write"
   }
 }
 
-prometheus.scrape "kanban" {
+prometheus.scrape "xaas" {
   targets    = discovery.relabel.use_container_name_not_docker_ip.output
-  forward_to = [prometheus.remote_write.kanban.receiver]
+  forward_to = [prometheus.remote_write.xaas.receiver]
   scrape_interval = "5s"
   scrape_timeout = "5s"
 }
