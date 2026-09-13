@@ -84,11 +84,8 @@ defmodule Xaas.MixProject do
       # own default env-key lookup (GROQ_API_KEY) -- no manual key wiring
       # in this app. See lib/xaas/library/explainer/groq_adapter.ex.
       {:req_llm, "~> 1.18"},
-      # Real A2A (Agent-to-Agent, google.github.io/A2A) server, for MCP
-      # agents to simulate different Next Read users (student/librarian
-      # personas) as real A2A clients hitting the same actor/tenant-
-      # resolved path as any other caller -- see lib/xaas_web/a2a/
-      # and the /a2a router scope.
+      {:ash_a2a, "~> 26.9.12"},
+      {:ash_r2rml, "~> 26.9.12"},
       {:a2a, "~> 0.2"},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
@@ -126,8 +123,8 @@ defmodule Xaas.MixProject do
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
       # assertions in XaasWeb.AutofdeLab.StatusLiveTest need it).
       {:lazy_html, ">= 0.1.0", only: :test},
-      {:sourceror, "~> 1.8", only: [:dev, :test]},
-      {:igniter, "~> 0.6", only: [:dev, :test]},
+      {:sourceror, "~> 1.8"},
+      {:igniter, "~> 0.6"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},
@@ -180,7 +177,7 @@ defmodule Xaas.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # XaasWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, "~> 26.9.8", only: [:dev, :test]},
+      {:ggen_igniter, "~> 26.9.12"},
       {:faker, "~> 0.18", only: [:dev, :test]},
       # Real path dep on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a
