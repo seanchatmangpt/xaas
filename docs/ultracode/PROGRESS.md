@@ -108,10 +108,70 @@ code-shape gaps:
    Oban actually execute the scheduled job unattended over wall-clock
    time.
 
-**Next**: either close the receipt-coverage gap (smaller), or attempt the
-live-orchestration falsifier directly — start a real local node
-(`mix phx.server` or equivalent) with Oban actually supervised, create one
-Run via `:start`, and observe real Oban-fired `:tick` jobs advance it
-across wall-clock minutes with **no Claude-invoked `Reactor.run` calls at
-all** — that is the evidence class the milestone's own Claude-removal
-question actually asks for, and it has not been attempted yet.
+## 2026-09-14 — Cycle: close receipt-coverage gap (item 3 of 3)
+
+**Baseline before this cycle**: `mix compile --force --warnings-as-errors`
+exit 0; `mix test --only ultracode` 4 tests, 0 failures; branch at
+`0893297`.
+
+**Gap closed**: the last of the three items from the original milestone
+swarm's falsifier. `Xaas.Ultracode.MissedEpochs.advance_run/1`'s
+`:expected/:running → :missed` transition now seals a real `Receipt`
+(`outcome: :blocked`, reusing the existing outcome vocabulary — no new
+atom needed) via the same `Receipt.:seal` action `EpochReactor` already
+uses.
+
+**Real verification**:
+- `mix compile --force --warnings-as-errors` → exit 0, 353 files, 0
+  warnings
+- `mix test --only ultracode` → 6 tests, 0 failures, exit 0 (new:
+  `test/xaas/ultracode/missed_epoch_receipt_test.exs` — proves one Receipt
+  per missed epoch, real evidence fields, and correct isolation across
+  concurrent stale runs via `advance_all/0`)
+- `mix test` (full suite) → 492 tests, 0 failures (40 excluded), exit 0 —
+  no regressions from the 490/0 baseline
+
+**Commit**: `45fbbb9` on `feat/ultracode-runtime`, not pushed.
+
+---
+
+## Status: all three originally-named milestone items are closed
+
+As of `45fbbb9`: blocker (1) next-epoch construction, blocker (2) Run
+`:pending → :running` admission + first-Epoch construction, and item (3)
+missed-epoch receipt coverage are all closed, each with a real passing
+Chicago test and real `mix compile`/`mix test` output pasted into this
+log. `ReceiptCoverage` for the full tick-driven path (start, complete,
+missed) is now `1`, not the `2/3` originally measured — re-verify this
+claim with a fresh direct query before trusting it further into the
+future; this log entry is evidence as of `45fbbb9`, not a standing
+guarantee.
+
+**What this status explicitly does NOT claim**, per this repo's own
+no-overclaiming discipline: none of the above has been observed running
+in a live, unattended, supervised BEAM node. Every receipt and every state
+transition in every test this milestone has produced comes from directly
+invoking `Reactor.run/1,2` or `MissedEpochs.advance_run/1` inside
+`Ecto.Adapters.SQL.Sandbox` — real Ash actions, real Postgres, real
+DAG execution, but always Claude-invoked, never observed as the product
+of a real Oban-scheduled job firing on its own cron cadence over real
+wall-clock time with nothing driving it.
+
+**The actual remaining falsifier** (RUNTIME/ORCHESTRATION class, not
+SEMANTIC — the milestone's own taxonomy from the falsifier-audit cycle):
+start a real local node with Oban genuinely supervised (`mix phx.server`,
+or an equivalent minimal boot), create one `Run` via `:start`, then
+**do nothing** for several real minutes and observe via direct DB query
+whether Oban's own `:tick` cron firing advanced it through both epochs to
+`:completed` — with zero `Reactor.run` calls issued by Claude at all
+during that window. That is the literal content of "if Claude vanished,
+would the next scheduled epoch still happen" — every cycle so far has
+answered a necessary but not sufficient precursor question (is the code
+path correct), not that question itself.
+
+**Next cycle should attempt exactly that** rather than looking for a
+fourth code gap to close — there isn't one currently known. If the live
+run confirms unattended firing, `ClaudeRoutine → XaaS.Ultracode.Run` is
+genuinely ALIVE and this hourly local cron loop itself becomes
+`REMOVABLE` per the milestone spec's own vocabulary. If it doesn't, the
+failure mode observed becomes the next real, named gap.
