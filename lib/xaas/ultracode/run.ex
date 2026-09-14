@@ -103,6 +103,29 @@ defmodule Xaas.Ultracode.Run do
       accept [:state, :standing]
     end
 
+    # Real admitted action closing ULTRACODE-50 blocker (2): the ONE path
+    # that transitions a fresh `Run` from `:pending` to `:running` AND
+    # constructs its very first `Epoch` (cycle 0). Refuses (does not
+    # silently no-op) if the Run is not `:pending` -- calling `:start`
+    # twice, or on an already-`:running`/`:completed` Run, is a real
+    # error, not an idempotent skip, matching this repo's typed-refusal
+    # convention rather than papering over a caller mistake.
+    update :start do
+      accept []
+      require_atomic? false
+
+      argument :exact_subject, :string do
+        allow_nil? false
+      end
+
+      validate {Xaas.Ultracode.Validations.RunIsPending, []}
+
+      change set_attribute(:state, :running)
+      change set_attribute(:started_at, &DateTime.utc_now/0)
+      change increment(:cycle)
+      change Xaas.Ultracode.Changes.CreateFirstEpoch
+    end
+
     # Real generic action -- the sole body of the AshOban `:tick`
     # scheduled action above. Deliberately NOT an update/create action on
     # a single Run row: a tick advances every `:running` Run at once, so
