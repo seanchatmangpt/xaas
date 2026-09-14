@@ -648,3 +648,87 @@ merged; moved aside to session scratchpad rather than overwritten or
 discarded — not part of Ultracode work, predate this session.
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-14 — Semantic Manufacture Closure: correction #2 — Reactor-DSL generation IS real, found in ggen_igniter ecosystem
+
+Prior cycle stated Reactor-DSL generation as `UNSUPPORTED(generator-capability)`
+("no template in this repo emits Ash.Reactor DSL"). Per instruction to
+review `~/ggen-marketplace` then "implement the next capabilities using
+the other ecosystem projects," searched `~/ggen_igniter` itself (the real
+dependency, not the marketplace scaffold pack) and found a real, already
+proven, already-tested plain-`Reactor` generation pack:
+`~/ggen_igniter/priv/ggen/reactor-scaffold-pack/` (ontology.ttl + one gate
+query + `templates/reactor.ex.eex`), backed by a real passing test
+(`test/ggen_igniter_expense_approval_reactor_test.exs`). Per its own ADR-0003,
+scoped to plain `Reactor` (`use Reactor`), never `Ash.Reactor` — which
+matches exactly: `Xaas.Ultracode.Reactor` and `Xaas.Ultracode.EpochReactor`
+both use plain `use Reactor`, confirmed by the earlier semantic-extraction
+cycle. Second correction of the same claim this milestone — logged plainly
+rather than smoothed over.
+
+**Falsifier executed for real:** modeled the real `Xaas.Ultracode.EpochReactor`
+6-step DAG (observe/admit/plan/construct/verify/receipt) as
+`rx:ReactorDef`/`rx:Step` individuals in
+`priv/packs/xaas_ultracode_pack/reactor_ontology.ttl` (SCRATCH module name
+`Xaas.Ultracode.Probe.EpochReactor` — does not touch the real, closed
+`Xaas.Ultracode.EpochReactor`), reusing ggen_igniter's own already-proven
+`reactor-scaffold-pack` gate query and template verbatim (zero new
+generator code):
+
+```
+mix ggen_igniter.sync \
+  --ontology priv/packs/xaas_ultracode_pack/reactor_ontology.ttl \
+  --query steps=~/ggen_igniter/priv/ggen/reactor-scaffold-pack/gates/010_steps.rq \
+  --template ~/ggen_igniter/priv/ggen/reactor-scaffold-pack/templates/reactor.ex.eex \
+  --engine sparql \
+  --out tmp_out/ultracode_probe_epoch_reactor.ex
+```
+
+Real result: `wrote tmp_out/ultracode_probe_epoch_reactor.ex (engine:
+sparql, 1 query, 6 total row(s)) (via reactor)` — 6 rows, matching the
+6-step DAG exactly. Generated file structurally reproduces the real
+EpochReactor's step names, argument wiring (`result(:observe)`,
+`result(:admit)`, etc.), and the same `observe -> admit -> plan ->
+construct -> verify -> receipt` dependency chain, including the real
+Ash.get/Ash.update/Ash.Changeset.for_create bodies against the real
+Xaas.Ultracode.Epoch/Receipt resources (referenced by name, not stubbed).
+
+Verified it's a genuine, loadable Reactor definition, not just valid
+syntax: temporarily compiled inside the real xaas app tree
+(`lib/xaas/ultracode/probe_epoch_reactor_TMP.ex`, removed after the
+check) — `mix compile --force --warnings-as-errors` exit 0, 397 files, 0
+warnings. `Xaas.Ultracode.Probe.EpochReactor.reactor().return ==
+:receipt` confirmed via `mix run -e`, proving the `use Reactor` DSL macro
+expansion succeeded for real (not just `Code.string_to_quoted!`-clean —
+actually compiled and introspectable as a Reactor struct in a running
+BEAM node).
+
+```
+Generate(O*) for the Reactor-DSL layer (EpochReactor 6-step DAG) -> ALIVE
+  (scoped: SCRATCH module name, real ggen_igniter reactor-scaffold-pack
+   template reused verbatim, real compile + real Reactor struct
+   introspection, references real Xaas.Ultracode.Epoch/Receipt by name)
+```
+
+Combined with the earlier resource-field falsifier (also ALIVE, scratch-
+scoped), both halves of the manufacture path named in the mission spec's
+Section E exit criterion now have real, falsified-and-passed evidence:
+
+```
+Resource-layer generation (Run/Epoch as Ash resources)     -> ALIVE (scratch)
+Reactor-layer generation (EpochReactor 6-step DAG)          -> ALIVE (scratch)
+Real Xaas.Ultracode.Run/Epoch/Reactor replacement (Bootstrap
+  Equivalence Court, mission spec section 45-47)            -> not attempted
+  this cycle -- both mechanisms proven against scratch subjects first,
+  per DfCM; pointing the pack at the real modules (still generating to a
+  throwaway path, never overwriting) is the correct next falsifier
+L4 (ontology -> ggen manufacture)                           -> still UNKNOWN
+  overall (mechanism proven, but the real subject has not yet been
+  regenerated and diffed against the hand-written original)
+```
+
+No changes to the real `Xaas.Ultracode.Run`/`Epoch`/`Reactor`/
+`EpochReactor`/`Receipt` modules this cycle — the closed milestone
+(PR #45) is untouched.
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
