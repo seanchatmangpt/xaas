@@ -594,3 +594,57 @@ modules this cycle — the closed dev-node unattended-epoch milestone
 (`8ef3210`/PR #45) is untouched.
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-14 — remote evaluation: real CI failures found and fixed, merge conflicts resolved
+
+`gh pr view 45` showed real CI failures: "Exact-head test court" FAILED
+(format check), "Exact-head production compile court" FAILED (matches
+prior local finding), "Bound CI receipt" FAILED, and `mergeable:
+CONFLICTING` — main had diverged (3 real conflicts: Dockerfile,
+config/config.exs, mix.exs).
+
+Real merge of origin/main performed (no rebase, no force). config.exs/
+mix.exs auto-merged cleanly. Dockerfile required manual resolution.
+
+**Self-correction, logged honestly:** first resolution kept this branch's
+stale `.tool-versions` (elixir 1.19.5-otp-27/erlang 27.2.4) and reverted
+main's Dockerfile bump to match it — backwards. User corrected: main's
+Dockerfile bump (elixir 1.20.2/erlang 28.5.0.2) was the real forward
+move; `.tool-versions` was stale. Re-derived from the corrected premise:
+updated `.tool-versions` to `elixir 1.20.2-otp-28`/`erlang 28.5.0.2`,
+kept main's Dockerfile ARGs.
+
+Installed the exact pinned toolchain locally via asdf (not assumed) and
+re-ran the real verification ladder against it. Elixir 1.20's stricter
+type checker surfaced 5 real new --warnings-as-errors failures across the
+merged tree — real regressions, not narration:
+
+- `lib/xaas/ultracode/epoch_reactor.ex` (own file): unused `require
+  Ash.Query`, removed.
+- `lib/xaas/planning/adapter_registry.ex`: `Map.fetch/2` over the
+  genuinely-empty `@adapters` correctly proven to always return `:error`
+  — simplified `adapter_for/1` to match (moduledoc already says "empty on
+  purpose"); this propagated a dead-clause warning into
+  `lib/xaas/planning/regime_router.ex`'s `dispatch/2`, simplified the same
+  way, both with a comment pointing at git history for restoring the real
+  branch when an adapter is registered.
+- `lib/xaas/governance/changes/enqueue_webhook_deliveries.ex`,
+  `lib/xaas/telemetry/ocel_ash_emitter.ex`: unused `require Logger`/
+  `require OpenTelemetry.Tracer`.
+
+Real re-verification after fixes:
+```
+mix compile --force --warnings-as-errors -> exit 0, 396 files, 0 warnings
+mix test test/xaas/planning/ --include stress -> 20 passed
+mix test --only ultracode -> 6 tests, 0 failures
+```
+All run under the actual pinned toolchain (asdf shims first on PATH,
+confirmed: `Elixir 1.20.2 (compiled with Erlang/OTP 28.5.0.2)`), not the
+machine's prior default (1.19.5/OTP 28 stock).
+
+Two unrelated pre-existing untracked local files/dirs (`AGENTS.md`,
+`docs/jira/v26.9.11/*.md`) collided by path with content main had already
+merged; moved aside to session scratchpad rather than overwritten or
+discarded — not part of Ultracode work, predate this session.
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
