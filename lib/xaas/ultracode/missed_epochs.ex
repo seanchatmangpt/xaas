@@ -13,6 +13,16 @@ defmodule Xaas.Ultracode.MissedEpochs do
   exactly as it was, so a caller reading it alongside a `:missed` epoch
   sees real drift (expectation set, not met) instead of a
   quietly-rolled-forward timestamp that would hide the miss.
+
+  Closes the ULTRACODE-50 receipt-coverage gap: `ConsequentialEffect =>
+  Receipt` previously held for `EpochReactor`'s two transitions
+  (`:expected -> :running`, `:running -> :completed`) but not for this
+  module's `:missed` transition, measuring `ReceiptCoverage = 2/3` for a
+  single-epoch run. Every `:mark_missed` transition now also seals a real
+  `Xaas.Ultracode.Receipt` (`outcome: :blocked`, matching this repo's own
+  `ALIVE/PARTIAL_ALIVE/BLOCKED/...` vocabulary -- a missed expectation is
+  exactly what `:blocked` means, not a distinct new outcome atom), via the
+  same `Receipt.:seal` action `EpochReactor`'s `:receipt` step uses.
   """
 
   require Ash.Query
@@ -53,14 +63,35 @@ defmodule Xaas.Ultracode.MissedEpochs do
 
     missed_ids =
       Enum.map(stale_epochs, fn epoch ->
-        epoch
-        |> Ash.Changeset.for_update(:mark_missed, %{}, authorize?: false)
-        |> Ash.update!()
+        missed_epoch =
+          epoch
+          |> Ash.Changeset.for_update(:mark_missed, %{}, authorize?: false)
+          |> Ash.update!()
+
+        {:ok, _receipt} =
+          Xaas.Ultracode.Receipt
+          |> Ash.Changeset.for_create(
+            :seal,
+            %{
+              epoch_id: missed_epoch.id,
+              subject: missed_epoch.exact_subject,
+              outcome: :blocked,
+              evidence: %{
+                "expected_state" => "completed",
+                "observed_state" => "missed",
+                "expected_at" => to_string(epoch.expected_at),
+                "epoch_timeout_seconds" => run.epoch_timeout_seconds
+              },
+              sealed_at: DateTime.utc_now()
+            },
+            authorize?: false
+          )
+          |> Ash.create()
 
         Logger.warning(
           "[ultracode] epoch #{epoch.id} (run #{run.id}, cycle #{epoch.cycle}) " <>
             "expected_at=#{epoch.expected_at} exceeded epoch_timeout_seconds=" <>
-            "#{run.epoch_timeout_seconds} -> marked :missed"
+            "#{run.epoch_timeout_seconds} -> marked :missed (receipt sealed)"
         )
 
         epoch.id
