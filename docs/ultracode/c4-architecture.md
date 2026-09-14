@@ -154,6 +154,116 @@ milestone (real AshOban scheduled action wiring a real `Run`/`Epoch` tick; a rea
 multi-step EpochReactor; the tightened consequence-path classification above) over
 decorative scaffolding.
 
+## 2040 target state — where this trajectory terminates
+
+This section is the long-horizon terminus this repo's near-term work should be
+read against. It does not change any near-term acceptance criteria above; it
+changes what "shortens the distance to the milestone" *means* when a cycle has a
+choice between two otherwise-equal gaps.
+
+$$
+\boxed{XaaS_{2040} = O^* + \mu + \Pi + \mathcal{A} + R + MX}
+$$
+
+where $O^*$ = admitted semantic enterprise state, $\mu$ = lawful manufacture,
+$\Pi$ = planning/constraint machinery, $\mathcal{A}$ = authority calculus, $R$ =
+receipts/provenance/replay, $MX$ = accumulated Machine Experience. Supplier
+identity is explicitly excluded from the core ontology:
+
+$$
+SupplierIdentity \notin CoreOntology
+$$
+
+ZAI is a swappable reasoning provider, not the architecture. GitHub is a
+swappable delivery counterpart, not the architecture. Elixir/BEAM may remain the
+best runtime substrate but the durable thing is the semantic contract, not the
+runtime's name.
+
+**The commercial product is Governance + Evidence, not generated code.** An
+enterprise customer must be answerable from machine evidence (receipt/replay),
+not reconstructed incident prose: why something exists, what obligation created
+it, what admitted it, what planned/selected it, what authorized its
+consequences, what manufactured it, what exact artifact ran, what qualified it,
+what happened, whether it replays, what was learned, what future reasoning was
+retired.
+
+**Ontology is the product; software is one projection of it.** Other lawful
+projections of the same graph: APIs, A2A capabilities, organizational controls,
+workflows, dashboards, contracts, simulations, process models, audit views,
+documentation, training material, regulatory evidence, financial models,
+operational systems. $Graph \rightarrow \{P_1, \dots, P_n\}$.
+
+**Intelligence is an exception handler for unknown semantics, not a structural
+dependency.** Normal path: known state → ontology → constraints → planner →
+solver → generator → verifier → execution, with zero frontier-model calls.
+Abnormal path (and only this path uses a reasoning provider): UNKNOWN → frontier
+reasoner → candidate semantics → admission → formalization → permanent
+machinery. Every successful formalization should reduce that problem class's
+future call probability: $P(LLM \mid c, t{+}1) < P(LLM \mid c, t)$ once class
+$c$ is formalized.
+
+**Constitutional KPIs, customer-visible, not internal-only:**
+
+$$
+HID = \frac{HumanImplementationTransitions}{TotalEngineeringTransitions} \rightarrow 0
+\qquad
+LRD = \frac{LLMCallsOnKnownClasses}{KnownClassExecutions} \rightarrow 0
+\qquad
+IRR = \frac{NewlyMechanizedRecurringClasses}{RecurringClassesDiscovered} \rightarrow 1
+$$
+
+**Manufacture closes recursively but stays governed** — this is what
+distinguishes it from unbounded self-modification:
+
+```text
+observed recurrence → candidate abstraction → semantic pack → verifier →
+adversarial qualification → admission → reusable manufacturer
+```
+
+$\mu_{t+1} = Learn(\mu_t, Receipts_t)$, but a generator never rewrites itself
+outside that pipeline. This is *self-expanding verified manufacturing
+vocabulary*, not self-modifying AI.
+
+**Invariants that must survive unchanged from 2026 to 2040** (their disappearance
+"because the model got smarter" would be architectural regression, not
+progress):
+
+$$
+SELECT \neq CONSTRUCT \neq DO
+\qquad
+Capability \neq Authority
+\qquad
+PlannerOutput \neq Permission
+$$
+
+**Correction to this doc's earlier framing of BRCE:** the invariant is not "no
+DO without a human." It is:
+
+$$
+\boxed{No\ DO\ without\ AdmittedAuthority}
+$$
+
+In the near term almost all irreversible authority is human-held in practice,
+which is why earlier sections of this doc and the standing hourly-cycle
+instructions say things like "workers get CONSTRUCT at most, never
+MERGE/PUBLISH/DEPLOY/DELETE without separately granted authority" — read
+"separately granted authority" as *admitted authority*, which today is
+overwhelmingly human-sourced but is not definitionally human. As policy matures,
+narrow, bounded, reversible DO operations (merge a low-risk generated dependency
+repair, rotate an ephemeral worker, publish a reversible internal package, scale
+within an approved budget, repair a known runtime state) can be admitted without
+a human in the loop for that specific call — while large financial commitment,
+external legal representation, novel disclosure, irreversible deletion, new
+normative policy, and high-impact production migration remain human-authority
+domains indefinitely. The admission boundary is a policy object, not a hardcoded
+"ask Sean" branch — do not hand-code either extreme.
+
+**Terminus, one sentence:** by 2040, XaaS is the enterprise semantic operating
+substrate — recurring work is manufactured deterministically from admitted
+meaning, frontier intelligence is reserved for unresolved novelty, and
+governance plus evidence, not generated code, is the primary customer-facing
+trust product.
+
 ## See Also
 
 - `docs/ultracode/PROGRESS.md` — per-cycle log (created by the first hourly cycle)
