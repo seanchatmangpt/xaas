@@ -419,3 +419,44 @@ remaining candidate that might, left for a future cycle if that specific
 evidence becomes valuable.
 
 **No commit this cycle** — no code changed, only verification.
+
+## 2026-09-14 — freeze milestone, production-qualification attempt, push preparation
+
+Re-verified at head `3335ead` before opening a PR:
+
+```
+mix format --check-formatted              -> exit 0 (2 pre-existing unformatted
+                                              files confirmed not in this branch's diff)
+mix compile --force --warnings-as-errors  -> exit 0, 353 files, 0 warnings
+MIX_ENV=test mix ecto.migrate             -> "Migrations already up"
+mix test --only ultracode                 -> 6 tests, 0 failures (526 excluded)
+```
+
+Attempted the narrowest production/release-like qualification available:
+
+```
+MIX_ENV=prod mix compile --force --warnings-as-errors
+```
+
+Result: a real, pre-existing compile failure unrelated to Ultracode.
+`deps/ex4pm`'s bundled Mix task (`ex4pm.engine.gen.adapter.ex`) does
+`use Igniter.Mix.Task`, and `:igniter` is scoped out of `MIX_ENV=prod`
+compilation — this blocks `MIX_ENV=prod mix compile` for the whole
+application today, not for any Ultracode-specific reason.
+
+```
+PRODUCTION_LIVE = UNKNOWN
+```
+
+Named honestly rather than forced: fixing a repo-wide dependency/env
+scoping issue is out of scope for this milestone and does not weaken
+the dev-node unattended-epoch proof already closed at `9717626`/`2963835`.
+
+Proceeding to push `feat/ultracode-runtime` and open a PR: the exact
+head is green on every check within the milestone's own declared scope
+(dev-mode compile/test/format), and `PRODUCTION_LIVE`/multi-node/scale
+remain explicitly separate, unproven standings stated in the PR body.
+
+No code changed this cycle.
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
