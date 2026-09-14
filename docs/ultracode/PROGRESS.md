@@ -175,3 +175,113 @@ run confirms unattended firing, `ClaudeRoutine → XaaS.Ultracode.Run` is
 genuinely ALIVE and this hourly local cron loop itself becomes
 `REMOVABLE` per the milestone spec's own vocabulary. If it doesn't, the
 failure mode observed becomes the next real, named gap.
+
+---
+
+## 2026-09-14 — Cycle: attempt the live unattended falsifier — MILESTONE CLOSED
+
+**Baseline before this cycle**: `mix compile --force --warnings-as-errors`
+exit 0; `mix test --only ultracode` 6 tests, 0 failures; branch at
+`f2733a6`.
+
+**What was attempted**: exactly what the prior cycle named as the real
+remaining falsifier — start a real local dev node with Oban actually
+supervised, admit one `Run` via `:start`, then do nothing for real
+wall-clock minutes and observe via direct Postgres queries whether it
+advances on its own.
+
+**Three real, previously-undiscovered bugs surfaced and fixed, one at a
+time, each confirmed against a live running node** (not inferred, not
+assumed — see the real `RuntimeError`s and 3-minute zero-jobs observation
+below):
+
+1. **`Oban` was never in `Xaas.Application`'s supervision tree.**
+   `config :xaas, Oban` existed; 4 AshOban resources (including
+   `Xaas.Ultracode.Run`) declare real schedules; but with no supervised
+   Oban process, none of their cron jobs could EVER fire, in any
+   environment — confirmed via a real node run for 3 full wall-clock
+   minutes (9 × 20s polls) with zero `Xaas.Ultracode.*` `oban_jobs` rows
+   ever appearing, node log otherwise healthy.
+2. **Adding the child alone was still insufficient.**
+   `plugins: [{Oban.Plugins.Cron, []}]` passes an EMPTY crontab — Oban's
+   Cron plugin only learns AshOban resources' schedules via
+   `AshOban.config(domains, base)`, confirmed by reading `ash_oban`'s own
+   getting-started doc directly.
+3. **`AshOban.config/2`'s `require?: true` default then refused to boot**
+   (real `RuntimeError`, twice, on two separate live-node attempts) until
+   every trigger/scheduled_action's queue was explicitly listed in
+   `queues:` — 3 pre-existing AshOban resources
+   (`Xaas.Library.HoldRequest`, `Xaas.Operations.
+   CapabilityLivenessReceipt`, `Xaas.Platform.WebhookDelivery`) had no
+   explicit `queue` override and were never listed. Fixed by adding their
+   real default-convention queue names, not by silencing the check.
+4. Oban's own migration (`Oban.Migrations.up/0`) had never been run in
+   this repo's history either — `oban_jobs` table didn't exist. Applied
+   to dev and test.
+
+**Real live evidence, attempt 4 (all fixes applied)** — a real node
+(`MIX_ENV=dev mix run --no-halt`), one real `Run` admitted via `:start`
+(`max_cycles: 2`), watched via 7 real 20-second polls against dev
+Postgres, **zero `Reactor.run` calls issued by Claude at any point after
+admission**:
+
+```
+[t+1×20s] run_state=running epochs=[0:completed,1:expected] jobs=[Tick:completed×2] receipts=2
+[t+4×20s] run_state=running epochs=[0:completed,1:running]  jobs=[Tick:completed×3] receipts=3
+[t+7×20s] run_state=completed epochs=[0:completed,1:completed] jobs=[Tick:completed×4] receipts=4
+RUN_REACHED_COMPLETED_UNATTENDED
+```
+
+Oban's own cron fired `Xaas.Ultracode.Run.Workers.Tick` four times on its
+own schedule; each tick's real `EpochReactor`/`NextEpoch` execution
+advanced the Run correctly; the Run itself reached `:completed` with no
+external driver. This is the literal content of the milestone's
+Claude-removal falsifier — not a precursor question, the actual one.
+
+**Real verification** (post-fix, full ladder):
+- `mix format --check-formatted` → exit 0 for every file this cycle
+  touched (pre-existing unformatted files elsewhere confirmed unmodified
+  via `git status --short` on each, same disclosed baseline as before)
+- `mix compile --force --warnings-as-errors` → exit 0, 353 files, 0
+  warnings
+- `mix test --only ultracode` → 6 tests, 0 failures, exit 0
+- `mix test` (full suite) → 492 tests, 0 failures (40 excluded), exit 0 —
+  no regressions
+
+**Commit**: `9717626` on `feat/ultracode-runtime`, not pushed.
+
+---
+
+## Status: `ClaudeRoutine → XaaS.Ultracode.Run` milestone — ALIVE
+
+$$
+ClaudeRoutine \rightarrow XaaS.Ultracode.Run
+$$
+
+is answered **YES, with the real evidence above** — a real, unattended,
+Oban-driven epoch cycle, observed directly, not inferred. Per
+`docs/ultracode/c4-architecture.md`'s own falsifier
+($Remove(ClaudeCode) \Rightarrow Behavior(Ultracode) = Unchanged$), this
+hourly local Claude cron loop that has been driving this milestone is
+now honestly classifiable as `REMOVABLE`: the code path it was built to
+manufacture now runs on its own, in a real supervised node, without it.
+
+**What this status does NOT claim**: this is one Run, one node, one
+developer's machine, `max_cycles: 2`, over ~2 real wall-clock minutes.
+It does not claim production readiness, load-bearing reliability at
+scale, resilience to node restart mid-epoch, or that every AshOban
+resource in this repo (the 3 pre-existing ones whose queues were also
+just fixed as a side effect) has been similarly re-verified end to end —
+only that the specific SEMANTIC + RUNTIME/ORCHESTRATION gaps this
+milestone was scoped to close are closed, with a real artifact, not an
+assumption.
+
+**Remaining honest open items, for whoever picks this up next** (none of
+these block the milestone's own stated exit condition, all real):
+- Production/release-mode verification (this was `MIX_ENV=dev mix run`,
+  not a compiled release) is unattempted.
+- Multi-node / node-restart-mid-epoch resilience is unattempted (Oban's
+  peer/leader election exists but wasn't exercised under failure).
+- 50-worker concurrency, full HID/LRD/IRR measurement, and ontology→ggen
+  L4 code generation remain explicit non-goals of THIS milestone per the
+  original mission spec — not gaps in it.
