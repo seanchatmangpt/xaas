@@ -79,6 +79,17 @@ config :phoenix, :plug_init_mode, :runtime
 # retry count or the transport error itself.
 config :req, default_options: [retry_delay: fn _n -> 0 end]
 
+# ULTRACODE-50 milestone (2026-09-14): Oban is now actually supervised
+# (lib/xaas/application.ex) -- previously it wasn't, so this override was
+# never needed. `testing: :manual` disables the real Cron/queue
+# supervisors during tests (they'd otherwise try to check out an
+# Ecto.Adapters.SQL.Sandbox connection outside any test process's
+# ownership and hang/error) while keeping every existing test's own
+# direct calls into the underlying action/Reactor code paths real and
+# unaffected -- those tests never depended on Oban's own scheduler firing,
+# only on the admitted actions the scheduler would eventually call.
+config :xaas, Oban, testing: :manual
+
 
 # Test-only real OTel SDK config for
 # test/xaas/telemetry/ocel_real_otel_span_test.exs: configuring ANY

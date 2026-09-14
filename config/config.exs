@@ -28,7 +28,8 @@ config :xaas,
     Xaas.Marketplace,
     Xaas.Ocel,
     Xaas.Operations,
-    Xaas.Platform
+    Xaas.Platform,
+    Xaas.Ultracode
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   base_resources: [Xaas.Resource]
@@ -63,10 +64,28 @@ config :xaas, :ex4pm_ontology_check,
   upstream_path: "lib/ex4pm/ocel.ex",
   vendored_path: "priv/vendor/ex4pm/ocel.ex"
 
+# ULTRACODE-50 milestone (2026-09-14): real finding — `AshOban.config/2`
+# (wired into lib/xaas/application.ex's `{Oban, ...}` child, replacing a
+# plain `Application.fetch_env!/2` that silently left the Cron plugin's
+# crontab empty for every AshOban resource in this repo) refuses to boot
+# unless every real trigger/scheduled_action's queue is explicitly listed
+# here -- `queues: [default: 10]` alone only covered
+# `Xaas.Ultracode.Run`'s `:tick` (explicitly pinned to `:default`, see
+# that module's moduledoc). The other 3 pre-existing AshOban
+# triggers/schedules never had an explicit `queue ...` override in their
+# own DSL, so they use AshOban's default queue-naming convention
+# (`<resource_short_name>_<schedule/trigger_name>`) -- confirmed via the
+# real `RuntimeError` `AshOban.require_queues!/4` raised on boot, one at a
+# time, until all three were named correctly.
 config :xaas, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10],
+  queues: [
+    default: 10,
+    hold_request_expire_stale_holds: 1,
+    capability_liveness_receipt_check_regressions: 1,
+    webhook_delivery_retry_failed_deliveries: 1
+  ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
