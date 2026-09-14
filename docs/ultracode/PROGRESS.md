@@ -285,3 +285,41 @@ these block the milestone's own stated exit condition, all real):
 - 50-worker concurrency, full HID/LRD/IRR measurement, and ontology→ggen
   L4 code generation remain explicit non-goals of THIS milestone per the
   original mission spec — not gaps in it.
+
+---
+
+## 2026-09-14 — Cycle: harden/re-verify (milestone already closed, no new blocker picked)
+
+Per the milestone spec's own instruction and this log's own status
+above, this cycle deliberately did NOT hunt for a new code gap — none is
+currently known. Instead: re-ran the real baseline
+(`mix compile --force --warnings-as-errors` exit 0, `mix test --only
+ultracode` 6 tests 0 failures, both on branch `2963835`, no code
+changes), then **independently repeated the live unattended falsifier**
+end to end as a reproducibility check, since a single successful trial
+is weaker evidence than two.
+
+**Second real trial, independent run/node from the first**: real dev
+node (`MIX_ENV=dev mix run --no-halt`), a second real `Run`
+(`d6d6f657-...`, `max_cycles: 2`) admitted via `:start`, watched over 9
+real 20-second polls (this trial took slightly longer than the first —
+epoch 1 didn't reach `:completed` until just after the monitor's own
+poll budget ended, confirmed by one direct follow-up query rather than a
+new monitor):
+
+```
+final state: run_state=completed, epochs=[0:completed, 1:completed],
+8 real Xaas.Ultracode.* Oban jobs completed cumulative (this DB),
+zero Claude-invoked Reactor.run calls during this trial
+```
+
+Same outcome as the first trial, different Run, different node process,
+real timing variance (first trial completed within ~140s, this one took
+closer to ~185s — both are real cron-driven, not deterministic to the
+second, which is itself expected and correctly disclosed rather than
+papered over). This strengthens, rather than merely repeats, the
+milestone's standing: the fix from the prior cycle is reproducible
+across independent boots, not a one-off.
+
+**No commit this cycle** — no code changed, only re-verification was
+performed. This entry itself is the record.
