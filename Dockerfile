@@ -47,18 +47,16 @@
 #    not an applicable substitute base here; Debian bookworm is the real
 #    fix for this specific image.
 #
-# Pinned to a real, currently-published hexpm/elixir + debian tag pair for
-# the CORRECT (1.19.5/27.2.4) version combo -- verified both exist on
-# Docker Hub before pinning, not guessed.
-# merge/main-2026-09-14 note: origin/main's Dockerfile pinned
-# ELIXIR_VERSION=1.20.2/OTP_VERSION=28.5.0.2 under a comment claiming
-# "kept in lockstep with .tool-versions" -- verified against the real
-# .tool-versions on both sides of this merge (identical on both:
-# `elixir 1.19.5-otp-27` / `erlang 27.2.4`) and found NOT in lockstep.
-# Kept this branch's values, which do match .tool-versions.
-ARG ELIXIR_VERSION=1.19.5
-ARG OTP_VERSION=27.2.4
-ARG DEBIAN_VERSION=bookworm-20260824-slim
+# merge/main-2026-09-14 correction: origin/main had already moved this
+# image to ELIXIR_VERSION=1.20.2/OTP_VERSION=28.5.0.2 under a comment
+# claiming lockstep with .tool-versions. This branch's .tool-versions was
+# actually the stale side (still pinned to 1.19.5-otp-27/27.2.4) -- fixed
+# by updating .tool-versions to 1.20.2-otp-28/28.5.0.2 to match main's
+# already-correct forward move, rather than reverting main's Dockerfile
+# bump. Keeping main's newer Debian tag too.
+ARG ELIXIR_VERSION=1.20.2
+ARG OTP_VERSION=28.5.0.2
+ARG DEBIAN_VERSION=bookworm-20260623-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"

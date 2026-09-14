@@ -59,8 +59,6 @@ defmodule Mix.Tasks.Xaas.Telemetry.CheckOntologyStaleness do
     "git could not be executed: #{inspect(reason)}"
   end
 
-  defp skip_explanation(other), do: inspect(other)
-
   defp remediation({:sha_unreachable, sha}) do
     "pinned_sha #{sha} is not reachable in the ex4pm repo. Remediation: verify the SHA with " <>
       "`git -C <ex4pm repo> rev-parse --verify #{sha}^{commit}`, or re-pin per " <>
@@ -99,5 +97,13 @@ defmodule Mix.Tasks.Xaas.Telemetry.CheckOntologyStaleness do
     "`git show` failed (exit #{exit_code}): #{stderr}"
   end
 
-  defp remediation(other), do: "ontology staleness check failed: #{inspect(other)}"
+  # Elixir 1.20's stricter type checker proved (real --warnings-as-errors
+  # failure, verified against .tool-versions' pinned 1.20.2-otp-28/28.5.0.2)
+  # that skip_explanation/1 and remediation/1's catch-all clauses were
+  # unreachable given Xaas.Ontology.Ex4pmStaleness's real, exhaustive set of
+  # error/skip reason tuples -- every one is matched by a named clause
+  # above. Removed rather than suppressed. If Ex4pmStaleness ever grows a
+  # new tagged reason, this becomes a real, loud FunctionClauseError here
+  # (not a silently-swallowed "unknown reason" string), matching this
+  # repo's typed-REFUSED-over-silent-papering convention.
 end

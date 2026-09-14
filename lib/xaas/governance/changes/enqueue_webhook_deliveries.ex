@@ -61,7 +61,6 @@ defmodule Xaas.Governance.Changes.EnqueueWebhookDeliveries do
   use Ash.Resource.Change
 
   require Ash.Query
-  require Logger
   import Ash.Expr
 
   @impl true

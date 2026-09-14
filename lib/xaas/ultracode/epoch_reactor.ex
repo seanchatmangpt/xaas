@@ -27,8 +27,6 @@ defmodule Xaas.Ultracode.EpochReactor do
 
   use Reactor
 
-  require Ash.Query
-
   input(:epoch_id)
 
   # 守/柵 Observe -- load the real current-state Epoch row. No mutation, no

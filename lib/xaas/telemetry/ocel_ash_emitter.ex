@@ -64,7 +64,6 @@ defmodule Xaas.Telemetry.OcelAshEmitter do
 
   use Ash.Tracer
   require Logger
-  require OpenTelemetry.Tracer
 
   @log_path Path.join([:code.priv_dir(:xaas), "ocel", "ash-actions.ndjson"])
   @action_types [:create, :read, :update, :destroy, :action]

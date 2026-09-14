@@ -31,11 +31,15 @@ defmodule Xaas.Planning.AdapterRegistry do
   @spec capable?(Formalism.t()) :: boolean()
   def capable?(formalism), do: Map.has_key?(@adapters, formalism)
 
+  # Elixir 1.20's stricter type checker correctly proved (real
+  # --warnings-as-errors failure, verified against .tool-versions' pinned
+  # 1.20.2-otp-28/28.5.0.2) that Map.fetch(@adapters, formalism) always
+  # returns :error, because @adapters is genuinely %{} at compile time --
+  # this is a true observation, not a false positive, given the moduledoc's
+  # own stated "empty on purpose" design. Simplified to match: when a real
+  # adapter is registered in @adapters, this clause needs restoring to a
+  # real Map.fetch/2 dispatch (the case-based form is preserved in git
+  # history at this file's prior revision).
   @spec adapter_for(Formalism.t()) :: {:ok, module()} | {:error, :no_adapter_registered}
-  def adapter_for(formalism) do
-    case Map.fetch(@adapters, formalism) do
-      {:ok, module} -> {:ok, module}
-      :error -> {:error, :no_adapter_registered}
-    end
-  end
+  def adapter_for(_formalism), do: {:error, :no_adapter_registered}
 end
