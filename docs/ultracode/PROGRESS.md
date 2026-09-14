@@ -53,8 +53,65 @@ scheduled epoch still happen?") can honestly answer YES:
    unattended outside a test process. Everything proven so far is DAG
    correctness under `Ecto.Adapters.SQL.Sandbox`, not live deployment.
 
-**Next**: pick ONE of (2) admit a fresh Run + its first Epoch, or (3) give
-the missed-epoch transition a real Receipt — whichever is smaller once
-inspected. After both are closed, the milestone's own falsifier prompt
-(§13/§21 of the mission spec) should be re-run for a real YES/NO answer
-with fresh evidence, not assumed from this cycle's partial closure.
+## 2026-09-14 — Cycle: close blocker (2), admit Run + first Epoch
+
+**Baseline before this cycle**: `mix compile --force --warnings-as-errors`
+exit 0; `mix test --only ultracode` 2 tests, 0 failures; branch at
+`014022f`.
+
+**Gap closed**: blocker (2) — nothing previously transitioned a fresh Run
+`:pending → :running` or constructed its first Epoch; every prior test
+bridged this by hand. Added `Run.:start` (real admitted update action,
+refuses via `Validations.RunIsPending` unless the Run is `:pending`) and
+`Changes.CreateFirstEpoch` (after_action hook constructing Epoch cycle 0
+via the real admitted `Epoch.:create` action).
+
+**Real verification**:
+- `mix compile --force --warnings-as-errors` → exit 0, 353 files, 0
+  warnings
+- `mix test --only ultracode` → 4 tests, 0 failures, exit 0 (new:
+  `test/xaas/ultracode/run_start_test.exs` — proves (a) `:start` admits a
+  pending Run and refuses a second call with no second Epoch constructed,
+  and (b) a fully unattended `Run.:create → Run.:start → 4 ticks → Run
+  :completed`, 2 epochs both `:completed`, 4 real receipts, **zero manual
+  Epoch construction anywhere in the flow**)
+- `mix test` (full suite) → 490 tests, 0 failures (40 excluded), exit 0 —
+  no regressions from the 488/0 baseline
+
+**Commit**: `04dd1e4` on `feat/ultracode-runtime`, not pushed.
+
+**Milestone falsifier — both named SEMANTIC blockers are now closed.**
+Per the mission spec: "after 2 real full unattended epochs can be
+demonstrated (Run created once, then epoch cycle 0 and cycle 1 BOTH
+complete via Run.tick with zero manual intervention between them), the
+milestone's core falsifier is answered YES — stop picking new blockers,
+harden/re-verify instead." `run_start_test.exs`'s second test is exactly
+that demonstration, in-process, real Postgres, real Reactor execution.
+
+**Honest scope of that YES**: it is YES for **DAG/admission correctness
+under test** — the actual code path an AshOban `:tick` scheduled action
+would invoke, proven correct by direct invocation
+(`Reactor.run(Xaas.Ultracode.Reactor)`), not by observing a live
+scheduled job fire. Two things remain genuinely unverified, not
+code-shape gaps:
+
+1. **Receipt-coverage gap** (unchanged, real, not blocking progression):
+   `Xaas.Ultracode.MissedEpochs.advance_run/1`'s `:expected → :missed`
+   transition still produces no `Receipt` row. `ReceiptCoverage` was
+   measured 2/3 by the original milestone swarm; still open.
+2. **Live unattended orchestration** (RUNTIME/ORCHESTRATION class per the
+   milestone's own falsifier taxonomy, not SEMANTIC): no supervised
+   BEAM node/Oban has been confirmed actually firing `:tick` on its real
+   cron schedule outside a test process. Every real receipt so far comes
+   from directly invoking `Reactor.run/1,2` inside
+   `Ecto.Adapters.SQL.Sandbox`, not from watching a running release's
+   Oban actually execute the scheduled job unattended over wall-clock
+   time.
+
+**Next**: either close the receipt-coverage gap (smaller), or attempt the
+live-orchestration falsifier directly — start a real local node
+(`mix phx.server` or equivalent) with Oban actually supervised, create one
+Run via `:start`, and observe real Oban-fired `:tick` jobs advance it
+across wall-clock minutes with **no Claude-invoked `Reactor.run` calls at
+all** — that is the evidence class the milestone's own Claude-removal
+question actually asks for, and it has not been attempted yet.
