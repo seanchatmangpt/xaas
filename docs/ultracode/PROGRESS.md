@@ -376,3 +376,46 @@ requires removing real evidence, and dev-DB state doesn't affect test
 isolation.
 
 **No commit this cycle** — no code changed, only verification.
+
+---
+
+## 2026-09-14 — Cycle: harden — WebhookDelivery real dispatch path unaffected
+
+Continuing the prior cycle's line of hardening (confirm the whole-app
+Oban config change didn't regress the other 3 AshOban resources), this
+cycle's target: `Xaas.Platform.WebhookDelivery`, the one sibling resource
+not yet directly re-tested. Deliberately did NOT attempt a live
+wall-clock observation of its own `"*/5 * * * *"` schedule the way
+`Xaas.Ultracode.Run`'s `:tick` was — that action performs real outbound
+HTTP dispatch (`Req.post/2`) and, unlike the Ultracode falsifier, a live
+unattended trial risked issuing real requests against whatever URL a
+test/scratch `Webhook` row pointed at. Chose the safer real equivalent:
+its own existing stress test, which already exercises the real
+`:deliver` dispatch path (real HMAC-SHA256 signing, real local
+`Plug.Cowboy` listener, no external network) under real concurrent load.
+
+**Real baseline** (no code changes this cycle):
+- `mix compile --force --warnings-as-errors` → exit 0, 353 files, 0
+  warnings
+- `mix test --only ultracode` → 6 tests, 0 failures, exit 0
+
+**Real verification**:
+- `mix test test/xaas/platform/webhook_delivery_stress_test.exs
+  --include stress` → **1 test, 0 failures, exit 0** — 50 real
+  concurrent `Task`s, each a real `Webhook`+`WebhookDelivery` row, each
+  driven through the real `:deliver` action against a real local
+  listener; all 50 land `:delivered`, no lost/duplicate delivery.
+
+With this, all 3 pre-existing AshOban resources sharing the fixed
+`config/config.exs`/`lib/xaas/application.ex` Oban wiring have now been
+directly re-verified this milestone (`HoldRequest`/
+`CapabilityLivenessReceipt` last cycle, `WebhookDelivery` this one).
+Still honestly open: none of the 3 has had its OWN schedule observed
+firing unattended via a live node the way `Xaas.Ultracode.Run`'s `:tick`
+was — `HoldRequest` (hourly) and `WebhookDelivery` (real outbound HTTP)
+don't fit a bounded, network-safe cycle window;
+`CapabilityLivenessReceipt`'s `*/15 * * * *` schedule is the one
+remaining candidate that might, left for a future cycle if that specific
+evidence becomes valuable.
+
+**No commit this cycle** — no code changed, only verification.
