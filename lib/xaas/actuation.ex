@@ -151,18 +151,6 @@ defmodule Xaas.Actuation.Reactor do
     argument(:tenant, input(:tenant))
     argument(:authorize?, input(:authorize?))
     run(&Xaas.Actuation.Kernel.actuate/2)
-    # `actuate/2` reports the wrapped Ash action's own errors *inside* an
-    # `{:ok, result}` envelope (see the `rescue`/`catch` clauses below and the
-    # `{:ok, result}` return from the success path) so this step itself never
-    # returns `{:error, _}` -- Reactor's `compensate/4` callback therefore
-    # could never fire here (it only runs when this step's own `run/3`
-    # returns an error) and would be a fake, non-functional no-op. The real
-    # failure mode this batch closes is a *downstream* step (`:receipt`
-    # sealing) failing after this step has already succeeded and after
-    # `Xaas.Telemetry.OcelAshEmitter`'s global `:stop` telemetry handler has
-    # already synchronously POSTed the OCEL event for the wrapped action to
-    # ex4pm_web -- that is exactly what Reactor's `undo/4` callback is for:
-    # rolling back an already-successful step when a later step fails.
     undo(&Xaas.Actuation.Kernel.undo_actuate/3)
   end
 
@@ -197,19 +185,6 @@ defmodule Xaas.Actuation.Kernel do
   end
 
   def actuate(%{admission: %{replay?: true} = admission}, _context) do
-    # `admission.receipt.result` is `json_safe/1`'s frozen serialization of
-    # the original struct (string keys, `:value` inspected to a string via
-    # `json_safe/1` below) -- a snapshot for the receipt/audit trail, not a
-    # rehydratable Ash struct. A caller doing `result.some_field` on it (as
-    # reader_live.ex's checkout_book handler does with `checkout.book_id`)
-    # gets a real KeyError on replay. Re-fetch the live resource by the
-    # admission's own resource module + subject_id instead -- the same
-    # record the original actuation produced, current as of this replay.
-    # For a :create action (e.g. Checkout.borrow), `admission.subject_id`
-    # is nil -- there was no existing subject to key on -- but the frozen
-    # snapshot's own `"id"` key (set by `json_safe/1` below, from the
-    # originally-created record's real id) still identifies the record
-    # that create produced, so it's the fallback subject id here.
     resolved_subject_id = admission.subject_id || Map.get(admission.receipt.result, "id")
 
     result =
@@ -264,19 +239,6 @@ defmodule Xaas.Actuation.Kernel do
     kind, reason -> {:ok, {:error, {kind, reason}}}
   end
 
-  # Undo callback for the `:do` ash_step (see `actuation.ex`). Fired by
-  # Reactor when this step has already succeeded but a later step (real
-  # scenario: `:receipt` sealing) fails and the whole reactor run must roll
-  # back. The participating Ash data-layer transaction already undoes the DB
-  # mutation the wrapped action made; this callback closes the remaining
-  # gap -- the OCEL event `Xaas.Telemetry.OcelAshEmitter` already forwarded
-  # to ex4pm_web, synchronously and out-of-band of that transaction, for the
-  # very same action -- by forwarding a real correction/cancellation OCEL
-  # event for the same idempotency key.
-  #
-  # A replayed admission (`admission.replay? == true`) performed no new
-  # action and forwarded no new OCEL event in this run, so there is nothing
-  # real to cancel.
   def undo_actuate(_value, %{admission: %{replay?: true}}, _context), do: :ok
 
   def undo_actuate(_value, %{admission: admission}, _context) do
@@ -510,6 +472,7 @@ defmodule Xaas.Actuation.Kernel do
             )
 
           Ash.destroy(changeset, authorize?: authorize?, actor: actor, tenant: tenant)
+
         end
 
       %Ash.Resource.Actions.Action{} ->
@@ -585,11 +548,14 @@ defmodule Xaas.Actuation.Kernel do
   defp json_safe(tuple) when is_tuple(tuple),
     do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
 
+  # Booleans and nil are atoms in Elixir. Preserve their JSON scalar identity
+  # before the generic atom clause so causal evidence cannot turn `required:
+  # true` into the string `"true"` while crossing the receipt boundary.
+  defp json_safe(value) when is_boolean(value) or is_nil(value), do: value
+
   defp json_safe(atom) when is_atom(atom), do: Atom.to_string(atom)
 
-  defp json_safe(value)
-       when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
-       do: value
+  defp json_safe(value) when is_binary(value) or is_number(value), do: value
 
   defp json_safe(value), do: inspect(value)
 

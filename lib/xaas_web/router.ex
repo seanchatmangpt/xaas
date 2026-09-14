@@ -72,6 +72,8 @@ defmodule XaasWeb.Router do
     get("/ocel_summary", OcelSummaryController, :index)
     get("/prometheus/query", PrometheusQueryController, :query)
     get("/health", HealthController, :index)
+    post("/rpc/run", AshTypescriptRpcController, :run)
+    post("/rpc/validate", AshTypescriptRpcController, :validate)
   end
 
   # Production MCP server: read-only Library tools (see Xaas.Library's
@@ -140,6 +142,18 @@ defmodule XaasWeb.Router do
       agent: XaasWeb.A2A.NextReadUserAgent,
       base_url: System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a"
     )
+  end
+
+  # GGen workbench is ordinary authenticated JSON, not JSON:API. Registered
+  # before the /api forward catch-all so the latter cannot shadow it. The
+  # surface is CONSTRUCT-only: it forwards a bounded file bundle and argv
+  # vector to the private Fly worker; it does not grant shell or cloud
+  # actuation authority.
+  scope "/api/workbench", XaasWeb do
+    pipe_through([:api, :require_internal_api_token])
+
+    get("/ggen/health", GgenWorkbenchController, :health)
+    post("/ggen", GgenWorkbenchController, :run)
   end
 
   # Real reverse-proxy for the real Ontop SPARQL endpoint (see

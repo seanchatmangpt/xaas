@@ -1,0 +1,11 @@
+# Daily factory policy for xaas
+repository: seanchatmangpt/xaas
+daily_capacity: 1
+acceptance:
+  primary: mix test
+  compile: mix compile --warnings-as-errors
+  doctor: mix format --check-formatted
+wip:
+  labels: [factory:bot-owned, factory:ready, factory:repair, factory:blocked]
+  zero_at_eod: true
+  blocked_disposition: close_branch_and_create_issue
