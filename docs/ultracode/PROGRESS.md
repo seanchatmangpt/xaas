@@ -523,3 +523,74 @@ L4 (ontology -> ggen manufacture) = UNKNOWN, narrowed:
 No code changed this cycle (research + one falsified/corrected claim).
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-14 — Semantic Manufacture Closure: correction — ggen_igniter IS real and working
+
+Prior cycle claimed no local `mix ggen_igniter.sync` task exists ("not the
+live pipeline"). That was wrong, and the error is worth recording plainly:
+the prior grep only searched `lib/mix/tasks/` inside xaas itself, missing
+that `ggen_igniter` (`{:ggen_igniter, "~> 26.9.8", only: [:dev, :test]}`,
+already a real xaas dependency) ships its OWN Mix task as part of its
+`deps/ggen_igniter/lib/mix/tasks/ggen_igniter.sync.ex`. `~/ggen_igniter` is
+a real, substantial, independently developed Elixir library (150+ test
+files, ADR-numbered design docs, a real Rustler NIF oxigraph SPARQL engine)
+— not a scaffold. Reviewed `~/ggen-marketplace/packs/ggen-igniter-bootstrap-pack`
+first per instruction: that marketplace pack is itself only a v1
+module-scaffold generator for a *hypothetical* ggen_igniter (explicit
+non-goals: "gates/SHACL-equivalent verification... general-purpose ggen
+parity") — a real, complete `ggen_igniter` was independently built and
+already vendored as a real xaas dependency, superseding what that
+marketplace pack would have scaffolded.
+
+**Falsifier executed for real** (ULTRACODE-50 section F/48-style, scoped
+to the base resource-field-mapping falsifier from the prior cycle):
+
+New pack `priv/packs/xaas_ultracode_pack/` (SCRATCH module names —
+`Xaas.Ultracode.Probe.Run`/`Epoch` — deliberately not the real hand-written
+`Xaas.Ultracode.Run`/`Epoch`, so this cannot clobber the closed milestone):
+`ontology.ttl` (xu: namespace, PROV-grounded `EngineeringRun`/
+`EngineeringEpoch` classes, `xu:field` triples for every attribute recorded
+in the prior cycle's extracted semantics), one gate query
+(`gates/001_resource_field_completeness.rq`), one EEx template
+(`templates/probe_resource.ex.eex`).
+
+```
+mix ggen_igniter.sync \
+  --ontology priv/packs/xaas_ultracode_pack/ontology.ttl \
+  --query fields=priv/packs/xaas_ultracode_pack/gates/001_resource_field_completeness.rq \
+  --template priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex \
+  --out tmp_out/ultracode_probe_manifest.ex
+```
+
+First real run hit a genuine Turtle syntax bug in the hand-authored
+ontology (multi-line comment inside a plain `"..."` literal — Turtle
+requires `"""..."""` for embedded newlines); fixed, re-ran.
+
+Real result: `ggen_igniter: wrote tmp_out/ultracode_probe_manifest.ex
+(engine: oxigraph, 1 query, 16 total row(s)) (via reactor)`. Generated
+file's `@run_fields`/`@epoch_fields` lists match the ontology's 10 Run +
+6 Epoch `xu:field` triples exactly (16 total, alphabetically sorted by the
+template, zero missing/extra). `Code.string_to_quoted!/1` on the generated
+file: `VALID_ELIXIR_AST`.
+
+```
+Generate(O*_scratch) = field-complete, syntactically valid Elixir  -> ALIVE
+  (scoped: base resource-field mapping only, SCRATCH module names,
+   real oxigraph-backed SPARQL, real EEx render, real file write)
+Reactor-DSL generation (EpochReactor 6-step DAG)  -> still UNKNOWN, not
+  attempted this cycle -- no template in this pack or any existing pack
+  emits Ash.Reactor DSL; genuinely separate, larger falsifier
+Real Xaas.Ultracode.Run/Epoch replacement (not scratch)  -> not attempted
+  this cycle -- deliberately probed against a scratch module name first
+  per DfCM (prove the mechanism before pointing it at the real subject)
+```
+
+Scratch artifacts (`priv/packs/xaas_ultracode_pack/`, `tmp_out/`) left in
+place as real evidence, not cleaned up — this is the falsifier's actual
+output, not throwaway noise.
+
+No changes to the real `Xaas.Ultracode.Run`/`Epoch`/`Reactor`/`Receipt`
+modules this cycle — the closed dev-node unattended-epoch milestone
+(`8ef3210`/PR #45) is untouched.
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
