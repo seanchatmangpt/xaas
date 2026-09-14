@@ -460,3 +460,66 @@ remain explicitly separate, unproven standings stated in the PR body.
 No code changed this cycle.
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-14 — Semantic Manufacture Closure: research cycle, live-pipeline correction
+
+Real workflow (7 agents, 956K tokens) extracted domain semantics from the
+current Run/Epoch/EpochReactor/Receipt/NextEpoch/MissedEpochs code
+(subject-predicate-object facts + prose invariants — see workflow journal
+`wf_2e62ac84-afe`) and audited existing XaaS ontology/ggen capital before
+proposing any new invention, per DfCM reuse-before-invent.
+
+**Finding 1 — no existing ontology models process/state-machine semantics.**
+Root `ontology.ttl` (679 lines, fully read) contains only `xar:`/`agp:`/
+`tv:`/`aac:` codegen-render-target vocabulary — zero Run/Epoch/Receipt/
+Workflow/Schedule classes. `lib/xaas/ontology/` contains one file
+(`ex4pm_staleness.ex`, a single-file SHA-256 vendoring check), no domain
+classes. Genuinely missing, not overlooked.
+
+**Finding 2 — corrected mid-cycle: which ggen pipeline is actually live.**
+The workflow's synthesis initially recommended extending
+`priv/packs/xaas_library_pack`'s `agp:CodegenTarget` pattern as "directly
+reusable, zero pipeline changes." Direct verification after the workflow
+returned found this is wrong: no `mix ggen_igniter.sync` task exists
+anywhere in `lib/mix/tasks/` (`grep` confirms zero matches) — that
+pack's generated `manufacture.ex.eex` output exists as a committed
+artifact but there is no local task that regenerates it from its
+ontology today. The actually-live, locally-runnable pipeline is
+different: root `ontology.ttl` (`xar:RenderTarget` individuals, 44
+present) + `ggen.toml` (`[ontology] source = "ontology.ttl"`,
+`[templates] dir = "templates-hooks"`) + `templates-hooks/
+ash-gen-resource.txt.tmpl` + the real `ggen` CLI (confirmed present at
+`~/.local/bin/ggen`), driven by `ggen sync`, documented in
+`docs/claude/diataxis/how-to/fix-ash-admin-and-use-ggen-for-codegen.md`.
+`.ash-gen-receipts/*.txt` are this pipeline's real idempotency receipts
+— confirmed zero exist for any Ultracode module (correctly: it was
+hand-authored, never generated).
+
+This is exactly the kind of claim this repo's own discipline exists to
+catch — a plausible-sounding manufacture-path recommendation that
+verification correctly falsified before any code was written against
+it. Recording the correction, not just the original claim.
+
+**Corrected next concrete step (not yet executed):** add `xar:RenderTarget`
+individuals to root `ontology.ttl` for `Xaas.Ultracode.Run`/`Epoch`
+against a **scratch resource name** (not the real modules, to avoid
+clobbering hand-written originals), run real `ggen sync`, and check
+whether the generated `mix ash.gen.resource` invocation's field list
+matches the extracted semantics fact-list byte-for-byte. Pass/fail is
+real information either way. Reactor-DSL generation remains a genuine
+gap: no template in this repo (`ash-gen-resource.txt.tmpl` or any
+`priv/packs/*`) emits `Ash.Reactor` DSL — stated as
+`UNSUPPORTED(generator-capability)`, not claimed solved.
+
+```
+L4 (ontology -> ggen manufacture) = UNKNOWN, narrowed:
+  Resource-layer (Run/Epoch as plain Ash resources) = plausible via the
+    confirmed-live xar:RenderTarget + ggen sync pipeline — not yet tried
+  Reactor-layer (EpochReactor/Reactor DAG generation) = UNSUPPORTED
+    (generator-capability) — no template anywhere in this repo emits
+    Ash.Reactor DSL; would require new template authorship, not config
+```
+
+No code changed this cycle (research + one falsified/corrected claim).
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
