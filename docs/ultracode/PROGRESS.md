@@ -323,3 +323,56 @@ across independent boots, not a one-off.
 
 **No commit this cycle** — no code changed, only re-verification was
 performed. This entry itself is the record.
+
+---
+
+## 2026-09-14 — Cycle: harden — verify the 3 pre-existing AshOban resources' fix didn't regress them
+
+Per the milestone spec's own instruction, again deliberately did not
+hunt for a new code gap. This cycle's hardening target: the prior fix
+(`9717626`) changed `config/config.exs`'s `queues:` list and
+`lib/xaas/application.ex`'s `{Oban, ...}` child for the WHOLE app, not
+just `Xaas.Ultracode.Run` — `Xaas.Library.HoldRequest`,
+`Xaas.Operations.CapabilityLivenessReceipt`, and
+`Xaas.Platform.WebhookDelivery` all share that same config. That risk
+had not been directly checked yet.
+
+**Real baseline** (no code changes this cycle either):
+- `mix compile --force --warnings-as-errors` → exit 0, 353 files, 0
+  warnings
+- `mix test --only ultracode` → 6 tests, 0 failures, exit 0
+
+**Real verification of the other 3 AshOban resources**:
+- `mix test test/xaas/library/hold_request_test.exs test/xaas/operations/
+  capability_liveness_receipt_test.exs test/xaas/operations/
+  capability_liveness_receipt_check_regressions_test.exs` → **19 tests,
+  0 failures, exit 0**. Includes a real `[ash_oban] capability_liveness_
+  receipt.check_regressions: 1 real regression(s) detected` log line
+  from that resource's own regression-detection logic firing for real
+  mid-test — not stubbed.
+- **Queue-name correctness for `HoldRequest`/`CapabilityLivenessReceipt`/
+  `WebhookDelivery`'s default-convention queue names
+  (`hold_request_expire_stale_holds`,
+  `capability_liveness_receipt_check_regressions`,
+  `webhook_delivery_retry_failed_deliveries`) was already real evidence
+  from the prior cycle**, not assumed here: `AshOban.config/2`'s
+  `require?: true` raises a real `RuntimeError` naming the EXACT expected
+  queue name for any trigger whose queue isn't listed — that's how the
+  first two names were discovered (real crashes, real error messages,
+  fixed one at a time). A live wall-clock observation of `HoldRequest`'s
+  own schedule (`"0 * * * *"`, hourly) wasn't attempted this cycle — it
+  doesn't fit inside a bounded cycle window the way `Xaas.Ultracode.Run`'s
+  per-minute `:tick` does; the successful `Oban`/`AshOban.config` boot
+  itself is the real evidence for name correctness, the live-firing
+  observation is a separate, not-yet-attempted falsifier for those 3
+  resources specifically (flagged honestly, not silently skipped).
+
+**Dev-DB state note**: 3 real `Xaas.Ultracode.Run` rows remain in the dev
+Postgres database (`xaas_dev`, not the test sandbox — no CI/test-run
+risk) from this milestone's live-trial cycles
+(`goal LIKE 'ULTRACODE-50%'`). Left in place deliberately as real audit
+trail rather than deleted — nothing in this repo's standing discipline
+requires removing real evidence, and dev-DB state doesn't affect test
+isolation.
+
+**No commit this cycle** — no code changed, only verification.
