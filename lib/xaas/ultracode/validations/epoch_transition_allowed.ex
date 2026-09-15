@@ -30,7 +30,8 @@ defmodule Xaas.Ultracode.Validations.EpochTransitionAllowed do
     else
       {:error,
        Ash.Error.Changes.InvalidChanges.exception(
-         message: "epoch must be in #{inspect(allowed)} for this transition, was #{inspect(current)}"
+         message:
+           "epoch must be in #{inspect(allowed)} for this transition, was #{inspect(current)}"
        )}
     end
   end
