@@ -212,5 +212,20 @@ defmodule Xaas.Ultracode.Run do
 
   relationships do
     has_many :epochs, Xaas.Ultracode.Epoch
+
+    # Real, single source of truth for "this Run's current active Epoch" --
+    # previously hand-rolled independently in both
+    # `Xaas.Ultracode.Reactor.active_epoch_id/1` and
+    # `Xaas.Ultracode.NextEpoch.advance_run/1`'s `has_active?` check, two
+    # separate copies of the identical business predicate. `sort` is
+    # required, not optional: no DB-level unique index covers
+    # `[:expected, :running]` jointly (only `state == :running`, via
+    # `Xaas.Ultracode.Validations.AtMostOneActiveEpoch`), so without a
+    # deterministic tiebreak `has_one` would pick an arbitrary row under a
+    # latent data anomaly.
+    has_one :active_epoch, Xaas.Ultracode.Epoch do
+      filter(expr(state in [:expected, :running]))
+      sort(cycle: :desc)
+    end
   end
 end

@@ -37,44 +37,59 @@ defmodule Xaas.Ultracode.NextEpoch do
       |> Ash.Query.filter(state == :running)
       |> Ash.read(authorize?: false)
 
+    advance_all(active_runs)
+  end
+
+  # ERRC reduce: `Xaas.Ultracode.Reactor`'s tick already fetches every
+  # `:running` Run once per tick for its own step; this lets that same
+  # list be passed in here instead of this module re-scanning the Run
+  # table independently. `advance_all/0` above stays as a real, still-
+  # querying standalone entry point for direct/manual invocation.
+  @spec advance_all([Xaas.Ultracode.Run.t()]) :: [map()]
+  def advance_all(active_runs) when is_list(active_runs) do
     Enum.map(active_runs, &advance_run/1)
   end
 
   @spec advance_run(Xaas.Ultracode.Run.t()) :: map()
   def advance_run(%Xaas.Ultracode.Run{} = run) do
-    has_active? =
+    # ERRC reduce: previously a separate `Ash.exists?` (has_active?) plus a
+    # second, independent `Ash.read` for the most recent epoch -- two round
+    # trips computing overlapping information. Collapsed to one query for
+    # the most-recent-by-cycle epoch (no state filter); its state alone
+    # tells us both whether it's active AND what to do next. This relies on
+    # the real, DB-enforced `AtMostOneActiveEpoch` invariant
+    # (`Xaas.Ultracode.Validations.AtMostOneActiveEpoch`) plus this
+    # module's own construction discipline (a next epoch is only ever
+    # created once no active epoch remains, so cycle numbers strictly
+    # increase and the highest-cycle epoch is always the Run's current
+    # one) -- the same assumption `Xaas.Ultracode.Reactor.active_epoch_id/1`
+    # already relies on in this same subsystem.
+    {:ok, recent_epochs} =
       Xaas.Ultracode.Epoch
       |> Ash.Query.filter(run_id == ^run.id)
-      |> Ash.Query.filter(state in [:expected, :running])
-      |> Ash.exists?(authorize?: false)
+      |> Ash.Query.sort(cycle: :desc)
+      |> Ash.Query.limit(1)
+      |> Ash.read(authorize?: false)
 
-    if has_active? do
-      %{run_id: run.id, outcome: :active_epoch_in_progress}
-    else
-      {:ok, prior_epochs} =
-        Xaas.Ultracode.Epoch
-        |> Ash.Query.filter(run_id == ^run.id)
-        |> Ash.Query.sort(cycle: :desc)
-        |> Ash.Query.limit(1)
-        |> Ash.read(authorize?: false)
+    case recent_epochs do
+      [] ->
+        # No epoch has ever existed for this Run -- first-epoch
+        # construction belongs to Run admission (open blocker (2)),
+        # not to this advance-to-next-epoch module.
+        %{run_id: run.id, outcome: :no_prior_epoch}
 
-      case prior_epochs do
-        [] ->
-          # No epoch has ever existed for this Run -- first-epoch
-          # construction belongs to Run admission (open blocker (2)),
-          # not to this advance-to-next-epoch module.
-          %{run_id: run.id, outcome: :no_prior_epoch}
+      [%{state: state}] when state in [:expected, :running] ->
+        %{run_id: run.id, outcome: :active_epoch_in_progress}
 
-        [%{state: :completed} = last_epoch] ->
-          advance_from_completed(run, last_epoch)
+      [%{state: :completed} = last_epoch] ->
+        advance_from_completed(run, last_epoch)
 
-        [%{state: state}] ->
-          # :missed or :failed -- do not silently retry or skip forward.
-          # A real disposition for this case is a separate, not-yet-built
-          # decision (retry the same cycle? abandon the Run?), so leave
-          # it visible rather than guessing.
-          %{run_id: run.id, outcome: :blocked_on_stale_epoch, epoch_state: state}
-      end
+      [%{state: state}] ->
+        # :missed or :failed -- do not silently retry or skip forward.
+        # A real disposition for this case is a separate, not-yet-built
+        # decision (retry the same cycle? abandon the Run?), so leave
+        # it visible rather than guessing.
+        %{run_id: run.id, outcome: :blocked_on_stale_epoch, epoch_state: state}
     end
   end
 
