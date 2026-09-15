@@ -35,7 +35,7 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:epoch_id, input(:epoch_id))
 
     run(fn %{epoch_id: epoch_id}, _context ->
-      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, authorize?: false, load: [:run]) do
+      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, load: [:run]) do
         {:ok, epoch} -> {:ok, epoch}
         {:error, error} -> {:error, {:observe_failed, error}}
       end
@@ -86,7 +86,7 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:plan, result(:plan))
 
     run(fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->
-      changeset = Ash.Changeset.for_update(epoch, next_action, %{}, authorize?: false)
+      changeset = Ash.Changeset.for_update(epoch, next_action, %{})
 
       case Ash.update(changeset) do
         {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: next_action}}
@@ -112,7 +112,7 @@ defmodule Xaas.Ultracode.EpochReactor do
            _context ->
       expected_state = if action_taken == :start, do: :running, else: :completed
 
-      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, authorize?: false) do
+      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id) do
         {:ok, %{state: ^expected_state} = reloaded} ->
           {:ok,
            %{
@@ -167,8 +167,7 @@ defmodule Xaas.Ultracode.EpochReactor do
           outcome: verification.outcome,
           evidence: verification.evidence,
           sealed_at: DateTime.utc_now()
-        },
-        authorize?: false
+        }
       )
       |> Ash.create()
       |> case do

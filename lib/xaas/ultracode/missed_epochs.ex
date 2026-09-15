@@ -39,7 +39,7 @@ defmodule Xaas.Ultracode.MissedEpochs do
     {:ok, active_runs} =
       Xaas.Ultracode.Run
       |> Ash.Query.filter(state == :running)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
 
     advance_all(active_runs)
   end
@@ -75,13 +75,13 @@ defmodule Xaas.Ultracode.MissedEpochs do
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.Query.filter(state in [:expected, :running])
       |> Ash.Query.filter(not is_nil(expected_at) and expected_at < ^deadline)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
 
     missed_ids =
       Enum.map(stale_epochs, fn epoch ->
         missed_epoch =
           epoch
-          |> Ash.Changeset.for_update(:mark_missed, %{}, authorize?: false)
+          |> Ash.Changeset.for_update(:mark_missed, %{})
           |> Ash.update!()
 
         {:ok, _receipt} =
@@ -99,8 +99,7 @@ defmodule Xaas.Ultracode.MissedEpochs do
                 "epoch_timeout_seconds" => run.epoch_timeout_seconds
               },
               sealed_at: DateTime.utc_now()
-            },
-            authorize?: false
+            }
           )
           |> Ash.create()
 

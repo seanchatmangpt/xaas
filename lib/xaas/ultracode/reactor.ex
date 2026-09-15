@@ -62,7 +62,7 @@ defmodule Xaas.Ultracode.Reactor do
     run(fn _arguments, _context ->
       Xaas.Ultracode.Run
       |> Ash.Query.filter(state == :running)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
     end)
   end
 
@@ -81,7 +81,7 @@ defmodule Xaas.Ultracode.Reactor do
     run(fn %{active_runs: active_runs}, _context ->
       results =
         active_runs
-        |> Ash.load!(:active_epoch, authorize?: false)
+        |> Ash.load!(:active_epoch)
         |> Enum.map(& &1.active_epoch)
         |> Enum.reject(&is_nil/1)
         |> Enum.map(fn epoch ->

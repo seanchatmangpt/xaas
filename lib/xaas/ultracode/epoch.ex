@@ -35,6 +35,37 @@ defmodule Xaas.Ultracode.Epoch do
       authorize_if(always())
     end
 
+    # ERRC raise: real, scoped carve-outs for every internal-only
+    # mutation action this repo's Ultracode Reactor pipeline calls --
+    # matching `Xaas.Ultracode.Run`'s own `bypass action(:tick)` shape.
+    # Previously every one of these actions was invoked with
+    # `authorize?: false` at every call site instead (Reactor, EpochReactor,
+    # NextEpoch, MissedEpochs, Changes.CreateFirstEpoch), which routed
+    # around `Ash.Policy.Authorizer` entirely and made the `forbid_if
+    # always()` floor below dead code for every real production mutation
+    # path. Bypassing here instead means the floor is real: any FUTURE
+    # action added to this resource is deny-by-default unless explicitly
+    # bypassed, exactly like this repo's Ash policy convention requires.
+    bypass action(:create) do
+      authorize_if(always())
+    end
+
+    bypass action(:start) do
+      authorize_if(always())
+    end
+
+    bypass action(:complete) do
+      authorize_if(always())
+    end
+
+    bypass action(:mark_missed) do
+      authorize_if(always())
+    end
+
+    bypass action(:mark_failed) do
+      authorize_if(always())
+    end
+
     policy always() do
       forbid_if(always())
     end

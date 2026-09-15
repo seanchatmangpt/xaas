@@ -74,6 +74,21 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
+    # ERRC raise: same shape as `:tick` above, closing a gap the
+    # authorize?: false / dead-policies review surfaced but didn't name
+    # explicitly on this resource -- `:advance_cycle` and `:transition_state`
+    # are both internal-only mutations the Ultracode Reactor pipeline
+    # (`Xaas.Ultracode.NextEpoch.advance_from_completed/2`) invokes, and
+    # were previously called with `authorize?: false` rather than an
+    # explicit bypass, same dead-policy pattern as Epoch/Receipt.
+    bypass action(:advance_cycle) do
+      authorize_if(always())
+    end
+
+    bypass action(:transition_state) do
+      authorize_if(always())
+    end
+
     policy always() do
       forbid_if(always())
     end

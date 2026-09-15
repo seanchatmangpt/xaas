@@ -35,7 +35,7 @@ defmodule Xaas.Ultracode.NextEpoch do
     {:ok, active_runs} =
       Xaas.Ultracode.Run
       |> Ash.Query.filter(state == :running)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
 
     advance_all(active_runs)
   end
@@ -69,7 +69,7 @@ defmodule Xaas.Ultracode.NextEpoch do
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.Query.sort(cycle: :desc)
       |> Ash.Query.limit(1)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
 
     case recent_epochs do
       [] ->
@@ -105,13 +105,12 @@ defmodule Xaas.Ultracode.NextEpoch do
             exact_subject: last_epoch.exact_subject,
             state: :expected,
             expected_at: DateTime.utc_now()
-          },
-          authorize?: false
+          }
         )
         |> Ash.create()
 
       run
-      |> Ash.Changeset.for_update(:advance_cycle, %{}, authorize?: false)
+      |> Ash.Changeset.for_update(:advance_cycle, %{})
       |> Ash.update!()
 
       Logger.info(
@@ -124,8 +123,7 @@ defmodule Xaas.Ultracode.NextEpoch do
       run
       |> Ash.Changeset.for_update(
         :transition_state,
-        %{state: :completed, standing: :admitted},
-        authorize?: false
+        %{state: :completed, standing: :admitted}
       )
       |> Ash.update!()
 
