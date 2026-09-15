@@ -35,6 +35,37 @@ defmodule Xaas.Ultracode.Epoch do
       authorize_if(always())
     end
 
+    # ERRC raise: real, scoped carve-outs for every internal-only
+    # mutation action this repo's Ultracode Reactor pipeline calls --
+    # matching `Xaas.Ultracode.Run`'s own `bypass action(:tick)` shape.
+    # Previously every one of these actions was invoked with
+    # `authorize?: false` at every call site instead (Reactor, EpochReactor,
+    # NextEpoch, MissedEpochs, Changes.CreateFirstEpoch), which routed
+    # around `Ash.Policy.Authorizer` entirely and made the `forbid_if
+    # always()` floor below dead code for every real production mutation
+    # path. Bypassing here instead means the floor is real: any FUTURE
+    # action added to this resource is deny-by-default unless explicitly
+    # bypassed, exactly like this repo's Ash policy convention requires.
+    bypass action(:create) do
+      authorize_if(always())
+    end
+
+    bypass action(:start) do
+      authorize_if(always())
+    end
+
+    bypass action(:complete) do
+      authorize_if(always())
+    end
+
+    bypass action(:mark_missed) do
+      authorize_if(always())
+    end
+
+    bypass action(:mark_failed) do
+      authorize_if(always())
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -58,18 +89,27 @@ defmodule Xaas.Ultracode.Epoch do
 
     update :complete do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :completed))
       change(set_attribute(:completed_at, &DateTime.utc_now/0))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:running]})
     end
 
     update :mark_missed do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :missed))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
     end
 
     update :mark_failed do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :failed))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
     end
   end
 

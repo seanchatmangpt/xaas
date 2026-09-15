@@ -39,8 +39,7 @@ defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
           exact_subject: subject,
           state: :expected,
           expected_at: DateTime.utc_now()
-        },
-        authorize?: false
+        }
       )
       |> Ash.create()
       |> case do

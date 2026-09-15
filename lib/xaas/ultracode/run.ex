@@ -74,6 +74,21 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
+    # ERRC raise: same shape as `:tick` above, closing a gap the
+    # authorize?: false / dead-policies review surfaced but didn't name
+    # explicitly on this resource -- `:advance_cycle` and `:transition_state`
+    # are both internal-only mutations the Ultracode Reactor pipeline
+    # (`Xaas.Ultracode.NextEpoch.advance_from_completed/2`) invokes, and
+    # were previously called with `authorize?: false` rather than an
+    # explicit bypass, same dead-policy pattern as Epoch/Receipt.
+    bypass action(:advance_cycle) do
+      authorize_if(always())
+    end
+
+    bypass action(:transition_state) do
+      authorize_if(always())
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -101,6 +116,9 @@ defmodule Xaas.Ultracode.Run do
 
     update :transition_state do
       accept([:state, :standing])
+      require_atomic?(false)
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
     end
 
     # Real admitted action closing ULTRACODE-50 blocker (2): the ONE path
@@ -212,5 +230,20 @@ defmodule Xaas.Ultracode.Run do
 
   relationships do
     has_many :epochs, Xaas.Ultracode.Epoch
+
+    # Real, single source of truth for "this Run's current active Epoch" --
+    # previously hand-rolled independently in both
+    # `Xaas.Ultracode.Reactor.active_epoch_id/1` and
+    # `Xaas.Ultracode.NextEpoch.advance_run/1`'s `has_active?` check, two
+    # separate copies of the identical business predicate. `sort` is
+    # required, not optional: no DB-level unique index covers
+    # `[:expected, :running]` jointly (only `state == :running`, via
+    # `Xaas.Ultracode.Validations.AtMostOneActiveEpoch`), so without a
+    # deterministic tiebreak `has_one` would pick an arbitrary row under a
+    # latent data anomaly.
+    has_one :active_epoch, Xaas.Ultracode.Epoch do
+      filter(expr(state in [:expected, :running]))
+      sort(cycle: :desc)
+    end
   end
 end

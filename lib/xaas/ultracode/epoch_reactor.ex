@@ -27,6 +27,8 @@ defmodule Xaas.Ultracode.EpochReactor do
 
   use Reactor
 
+  require Logger
+
   input(:epoch_id)
 
   # 守/柵 Observe -- load the real current-state Epoch row. No mutation, no
@@ -35,7 +37,7 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:epoch_id, input(:epoch_id))
 
     run(fn %{epoch_id: epoch_id}, _context ->
-      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, authorize?: false, load: [:run]) do
+      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, load: [:run]) do
         {:ok, epoch} -> {:ok, epoch}
         {:error, error} -> {:error, {:observe_failed, error}}
       end
@@ -43,11 +45,15 @@ defmodule Xaas.Ultracode.EpochReactor do
   end
 
   # 算/除 Admit -- refuse (not silently skip) any Epoch that is not in an
-  # admissible state for this cycle, and refuse if the Epoch's authority
-  # ceiling (a real `:map` value per the ontology formalization -- no
-  # dedicated Authority module exists in this repo, per `c4_audit`/
-  # `ontology`) is missing. This is the fence: only an `:expected` or
-  # `:running` Epoch may proceed past this point.
+  # admissible state for this cycle. This is the fence: only an `:expected`
+  # or `:running` Epoch may proceed past this point. `Epoch` has no
+  # authority-ceiling field and this step performs no authority-ceiling
+  # check -- `Xaas.Ultracode`'s own moduledoc records that `AuthorityCeiling`
+  # is deliberately not modeled for this Run/Epoch/Receipt domain (a
+  # same-named check exists elsewhere, on `Xaas.Actuation.FrontierEvidence`'s
+  # evidence fragments, not here). If an authority-ceiling admission check
+  # is wanted for Epoch, it needs a real field + real check added, not
+  # implied by this comment.
   step :admit do
     argument(:epoch, result(:observe))
 
@@ -78,15 +84,83 @@ defmodule Xaas.Ultracode.EpochReactor do
   # one step in the DAG with a real side effect (a DB-persisted Epoch state
   # change via the resource's own admitted update actions), matching this
   # repo's Reactor-as-DO-kernel convention.
+  #
+  # ERRC raise: real `undo/3` closes a previously-open gap -- if a
+  # downstream step (`:verify` or `:receipt`) errors after this step
+  # already committed a real DB mutation, the Epoch was left permanently
+  # transitioned with no receipt at all, violating this subsystem's own
+  # `CompletedEpoch => Receipt` invariant. Reactor auto-invokes `undo`
+  # for a succeeded step when a later step in the same run fails.
   step :construct do
     argument(:plan, result(:plan))
 
     run(fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->
-      changeset = Ash.Changeset.for_update(epoch, next_action, %{}, authorize?: false)
+      changeset = Ash.Changeset.for_update(epoch, next_action, %{})
 
       case Ash.update(changeset) do
         {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: next_action}}
         {:error, error} -> {:error, {:construct_failed, next_action, error}}
+      end
+    end)
+
+    undo(fn %{epoch: constructed_epoch, action_taken: action_taken}, _arguments, _context ->
+      # A real, evidenced repair, not a force-revert that erases a real
+      # attempt: when this step transitioned the Epoch to `:running`
+      # (action_taken == :start) but a downstream step then failed, drive
+      # it to the existing admitted `:mark_failed` action (an admissible
+      # edge from `:running`) so the failed attempt is visible. When this
+      # step transitioned the Epoch all the way to `:completed`
+      # (action_taken == :complete), the transition genuinely succeeded
+      # -- force-reverting it to `:failed` would misrepresent a real
+      # success as a failure, and `:mark_failed`'s own precondition
+      # validation only admits `[:expected, :running]` anyway (not
+      # `:completed`) -- so state is left as-is; only the missing receipt
+      # is repaired below.
+      landed_epoch =
+        case action_taken do
+          :start -> Ash.Changeset.for_update(constructed_epoch, :mark_failed, %{}) |> Ash.update()
+          :complete -> {:ok, constructed_epoch}
+        end
+
+      case landed_epoch do
+        {:ok, epoch} ->
+          Xaas.Ultracode.Receipt
+          |> Ash.Changeset.for_create(:seal, %{
+            epoch_id: epoch.id,
+            subject: epoch.exact_subject,
+            outcome: :build_broken,
+            evidence: %{
+              "undo_reason" =>
+                "a downstream EpochReactor step failed after :construct already committed",
+              "action_taken" => Atom.to_string(action_taken)
+            },
+            sealed_at: DateTime.utc_now()
+          })
+          |> Ash.create()
+          |> case do
+            {:ok, _receipt} ->
+              :ok
+
+            {:error, error} ->
+              # Reactor's undo contract expects `:ok`/`:retry`/`{:error,
+              # _}` completion, not a raise -- log rather than crash.
+              # The Epoch still landed visibly (either :failed or its
+              # real :completed state), even in this doubly-degraded case.
+              Logger.error(
+                "[ultracode] undo: failed to seal build_broken Receipt for epoch " <>
+                  "#{epoch.id}: #{inspect(error)}"
+              )
+
+              :ok
+          end
+
+        {:error, error} ->
+          Logger.error(
+            "[ultracode] undo: failed to mark_failed epoch #{constructed_epoch.id}: " <>
+              "#{inspect(error)}"
+          )
+
+          :ok
       end
     end)
   end
@@ -108,7 +182,7 @@ defmodule Xaas.Ultracode.EpochReactor do
            _context ->
       expected_state = if action_taken == :start, do: :running, else: :completed
 
-      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, authorize?: false) do
+      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id) do
         {:ok, %{state: ^expected_state} = reloaded} ->
           {:ok,
            %{
@@ -163,8 +237,7 @@ defmodule Xaas.Ultracode.EpochReactor do
           outcome: verification.outcome,
           evidence: verification.evidence,
           sealed_at: DateTime.utc_now()
-        },
-        authorize?: false
+        }
       )
       |> Ash.create()
       |> case do
