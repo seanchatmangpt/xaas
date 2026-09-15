@@ -1,0 +1,43 @@
+// Stop: closure attempt for the lease held by this working directory.
+//
+// Provider stop is never closure by itself. The hook reports the worktree
+// HEAD (computed locally, verified server-side against the contract) and
+// the claimed standing; XaaS downgrades to UNKNOWN on mismatch. Blocking
+// semantics (sending the model around again) are deliberately NOT used
+// here: the provider caps consecutive Stop continuations, so closure
+// repair belongs to the work loop, not this hook.
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { readStdin, post, loadLease, done } from "./xaas_common.mjs";
+
+const execFileAsync = promisify(execFile);
+
+const evt = await readStdin();
+const lease = await loadLease(evt.cwd);
+
+async function head(cwd) {
+  try {
+    const { stdout } = await execFileAsync("git", ["-C", String(cwd), "rev-parse", "HEAD"]);
+    return stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
+try {
+  if (!lease?.lease_token) {
+    done({ status: "not_closeable", reason: "no_lease" });
+  }
+
+  const finalHead = await head(evt.cwd);
+  const res = await post("stop", {
+    lease_token: lease.lease_token,
+    final_head: finalHead ?? "",
+    standing: evt.standing ?? "PARTIAL_ALIVE",
+    evidence: { session_id: evt.session_id, stop_hook: true },
+  });
+
+  done({ status: res.body?.status ?? "close_attempted", standing: res.body?.standing ?? null });
+} catch (err) {
+  done({ status: "close_skipped", reason: String(err?.message ?? err) });
+}

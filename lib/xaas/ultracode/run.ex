@@ -98,7 +98,7 @@ defmodule Xaas.Ultracode.Run do
     defaults([:read])
 
     create :create do
-      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds])
+      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider])
     end
 
     update :advance_cycle do
@@ -167,6 +167,16 @@ defmodule Xaas.Ultracode.Run do
 
     attribute :goal, :string do
       allow_nil?(false)
+      public?(true)
+    end
+
+    # Actuation provider lane: nil (default) keeps legacy reactor-driven
+    # semantics (a `:running` Epoch completes next cycle); a provider id
+    # ("zcode", "opencode", ...) switches this Run to provider-pull
+    # semantics -- Epochs lease out to provider workers and complete only
+    # on verified provider evidence. This is the fact EpochReactor's :plan
+    # branches on.
+    attribute :provider, :string do
       public?(true)
     end
 

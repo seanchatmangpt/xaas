@@ -1,0 +1,112 @@
+// Shared runtime for the XaaS fabric plugin hooks.
+//
+// Fail-closed contract (mirrors Xaas.Execution):
+//   * any transport failure in an ADMISSION path is a deny, never an allow;
+//   * observations (post-tool events) are best-effort and never block;
+//   * the bearer token comes from the environment (<%= @token_env %>),
+//     never from this rendered tree.
+import { createHash } from "node:crypto";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+export const ENDPOINT = "<%= @endpoint %>";
+export const HOOK_BASE = `${ENDPOINT}/internal-api/execution/hooks`;
+const TOKEN_ENV = "<%= @token_env %>";
+
+const STATE_DIR = path.join(tmpdir(), "xaas-fabric");
+
+export function token() {
+  return process.env[TOKEN_ENV] ?? "";
+}
+
+export async function readStdin() {
+  const chunks = [];
+  for await (const chunk of process.stdin) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString("utf8").trim();
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { _unparsed: raw };
+  }
+}
+
+export async function post(event, body, { timeoutMs = 5000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${HOOK_BASE}/${event}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const text = await res.text();
+    let parsed = {};
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = { _raw: text };
+    }
+    return { ok: res.ok, status: res.status, body: parsed };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Lease state is keyed by working directory (one worktree, one lease) and
+// lives outside the leased repository so a claim never dirties the tree it
+// is constructing in.
+function stateFile(cwd) {
+  const key = createHash("sha256").update(String(cwd ?? "default")).digest("hex");
+  return path.join(STATE_DIR, `${key}.json`);
+}
+
+export async function saveLease(cwd, lease) {
+  await mkdir(STATE_DIR, { recursive: true });
+  await writeFile(stateFile(cwd), JSON.stringify(lease, null, 2));
+}
+
+export async function loadLease(cwd) {
+  try {
+    return JSON.parse(await readFile(stateFile(cwd), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// Exit 2 blocks the event and shows stderr to the model. This is the only
+// deny path and every admission failure funnels through it.
+export function deny(reason, detail) {
+  process.stderr.write(
+    JSON.stringify({ decision: "deny", reason, detail: String(detail ?? "") }) + "\n"
+  );
+  process.exit(2);
+}
+
+export function allow() {
+  process.exit(0);
+}
+
+export function done(output) {
+  if (output) process.stderr.write(JSON.stringify(output) + "\n");
+  process.exit(0);
+}
+
+// The provider's hook payload spellings are qualified empirically; accept
+// the documented variants rather than assuming one.
+export function toolName(evt) {
+  return evt.tool_name ?? evt.tool ?? evt.toolName ?? null;
+}
+
+export function toolInput(evt) {
+  return evt.tool_input ?? evt.toolInput ?? evt.input ?? {};
+}
+
+export function leaseToken(evt, lease) {
+  return evt.lease_token ?? lease?.lease_token ?? null;
+}

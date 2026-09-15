@@ -66,6 +66,18 @@ defmodule Xaas.Ultracode.Epoch do
       authorize_if(always())
     end
 
+    bypass action(:lease) do
+      authorize_if(always())
+    end
+
+    bypass action(:renew_lease) do
+      authorize_if(always())
+    end
+
+    bypass action(:record_final_head) do
+      authorize_if(always())
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -75,7 +87,7 @@ defmodule Xaas.Ultracode.Epoch do
     defaults([:read])
 
     create :create do
-      accept([:run_id, :cycle, :exact_subject, :state, :expected_at, :started_at])
+      accept([:run_id, :cycle, :exact_subject, :state, :expected_at, :started_at, :worktree])
     end
 
     update :start do
@@ -110,6 +122,27 @@ defmodule Xaas.Ultracode.Epoch do
       change(set_attribute(:state, :failed))
 
       validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
+    end
+
+    # Bind the ActuationLease. Only admissible on a `:running` epoch with no
+    # live lease (see Xaas.Ultracode.Validations.LeaseAvailable); callers
+    # race-safely bind via Xaas.Ultracode.Lease.claim_next/1's filtered bulk
+    # update, not by calling this directly.
+    update :lease do
+      accept([:lease_token, :lease_expires_at, :leased_to, :worktree])
+      require_atomic?(false)
+
+      validate({Xaas.Ultracode.Validations.LeaseAvailable, []})
+    end
+
+    update :renew_lease do
+      accept([:lease_expires_at])
+      require_atomic?(false)
+    end
+
+    update :record_final_head do
+      accept([:final_head])
+      require_atomic?(false)
     end
   end
 
@@ -146,6 +179,37 @@ defmodule Xaas.Ultracode.Epoch do
     end
 
     attribute :completed_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    # ------------------------------------------------------------------
+    # ActuationLease fields (the provider-pull edge between Plan and
+    # Construct). An Epoch is the bounded work unit, so the lease lives
+    # here: `lease_token` is the only capability mid-work operations key
+    # on, `leased_to` is provider worker identity (free-form string --
+    # worker registries are provider business, not this domain), and
+    # `final_head` is the provider-reported exact repository head at
+    # closure, verified against `worktree` before any Receipt is sealed
+    # with an :alive-family outcome.
+    # ------------------------------------------------------------------
+
+    attribute :lease_token, :string do
+      public?(true)
+    end
+
+    attribute :lease_expires_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    attribute :leased_to, :string do
+      public?(true)
+    end
+
+    attribute :worktree, :string do
+      public?(true)
+    end
+
+    attribute :final_head, :string do
       public?(true)
     end
 

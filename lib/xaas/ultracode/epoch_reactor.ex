@@ -71,11 +71,25 @@ defmodule Xaas.Ultracode.EpochReactor do
   # enforces `AtMostOneActiveEpoch(run)`), or, if already `:running`,
   # proceed straight to completion this cycle. The plan is real data
   # (an atom + the epoch), not a placeholder -- `Construct` branches on it.
+  #
+  # Provider-pull edge: when the Run carries a `provider` (actuation lane),
+  # a `:running` Epoch must NOT auto-complete -- its engineering work is
+  # leased out to a provider worker and completes only through
+  # `Xaas.Ultracode.Lease.close/3` on verified provider evidence. Until
+  # then the cycle is `:await_provider`: a real no-op-with-receipt turn,
+  # not a completion claim. Legacy provider-less Runs keep the original
+  # complete-next-cycle semantics unchanged.
   step :plan do
     argument(:admission, result(:admit))
 
     run(fn %{admission: %{epoch: epoch}}, _context ->
-      next_action = if epoch.state == :expected, do: :start, else: :complete
+      next_action =
+        cond do
+          epoch.state == :expected -> :start
+          is_binary(epoch.run.provider) -> :await_provider
+          true -> :complete
+        end
+
       {:ok, %{epoch: epoch, next_action: next_action}}
     end)
   end
@@ -95,11 +109,20 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:plan, result(:plan))
 
     run(fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->
-      changeset = Ash.Changeset.for_update(epoch, next_action, %{})
+      case next_action do
+        :await_provider ->
+          # The lease clock is the provider's to spend; this turn performs
+          # no mutation and claims no completion -- the epoch stays
+          # `:running` until Lease.close/3 lands verified evidence.
+          {:ok, %{epoch: epoch, action_taken: :await_provider}}
 
-      case Ash.update(changeset) do
-        {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: next_action}}
-        {:error, error} -> {:error, {:construct_failed, next_action, error}}
+        action ->
+          changeset = Ash.Changeset.for_update(epoch, action, %{})
+
+          case Ash.update(changeset) do
+            {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: action}}
+            {:error, error} -> {:error, {:construct_failed, action, error}}
+          end
       end
     end)
 
@@ -118,6 +141,11 @@ defmodule Xaas.Ultracode.EpochReactor do
       # is repaired below.
       landed_epoch =
         case action_taken do
+          # No mutation was committed by this step; there is nothing to
+          # land -- only the compensating receipt below.
+          :await_provider ->
+            {:ok, constructed_epoch}
+
           :start -> Ash.Changeset.for_update(constructed_epoch, :mark_failed, %{}) |> Ash.update()
           :complete -> {:ok, constructed_epoch}
         end
@@ -180,7 +208,8 @@ defmodule Xaas.Ultracode.EpochReactor do
              original: original
            },
            _context ->
-      expected_state = if action_taken == :start, do: :running, else: :completed
+      expected_state =
+        if action_taken in [:start, :await_provider], do: :running, else: :completed
 
       case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id) do
         {:ok, %{state: ^expected_state} = reloaded} ->
