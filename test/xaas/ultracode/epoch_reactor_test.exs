@@ -205,7 +205,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
         )
         |> Ash.create!()
         |> Ash.Changeset.for_update(:transition_state, %{state: :running})
-        |> Ash.update!()
+      |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       construct_step =
         Xaas.Ultracode.EpochReactor.reactor().plan
@@ -228,7 +228,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
           state: :expected,
           expected_at: DateTime.utc_now()
         })
-        |> Ash.create!()
+        |> Ash.create!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       # Real Construct-equivalent mutation: :expected -> :running, the
       # exact transition the real :construct step's run/2 performs for
@@ -236,7 +236,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       constructed_epoch =
         epoch
         |> Ash.Changeset.for_update(:start, %{})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       assert constructed_epoch.state == :running
 
@@ -268,7 +268,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
           state: :running,
           expected_at: DateTime.utc_now()
         })
-        |> Ash.create!()
+        |> Ash.create!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       # Real Construct-equivalent mutation: :running -> :completed, the
       # exact transition the real :construct step's run/2 performs for
@@ -276,7 +276,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       constructed_epoch =
         epoch
         |> Ash.Changeset.for_update(:complete, %{})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       assert constructed_epoch.state == :completed
 

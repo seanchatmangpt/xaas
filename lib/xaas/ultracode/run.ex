@@ -47,6 +47,14 @@ defmodule Xaas.Ultracode.Run do
         action(:tick)
         worker_module_name(Xaas.Ultracode.Run.Workers.Tick)
 
+        # XAAS-2601: the cron worker runs `:tick` THROUGH authorization
+        # (`config :ash_oban, :authorize?` defaults true) with no stored
+        # actor, so the policy below would refuse it unless the schedule
+        # itself supplies the real system authority actor. This is the
+        # AshOban-documented `default_actor` "system-actor flow" -- the
+        # scheduler's own authority, made explicit instead of a bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
         # Explicit `:default` queue -- `config :xaas, Oban` (config.exs)
         # only lists `queues: [default: 10]`. AshOban's own default queue
         # name for a scheduled action is the resource's short name plus
@@ -65,28 +73,17 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
-    # Real, scoped carve-out for the cron-fired `:tick` action -- same
-    # `bypass action(:name)` shape as `Xaas.Platform.WebhookDelivery`'s
-    # `:retry_failed_deliveries` bypass. `:tick` accepts no external
-    # arguments and exposes no Run/Epoch field to a caller; it only
-    # triggers the real `Xaas.Ultracode.Reactor` missed-epoch workflow.
-    bypass action(:tick) do
-      authorize_if(always())
-    end
-
-    # ERRC raise: same shape as `:tick` above, closing a gap the
-    # authorize?: false / dead-policies review surfaced but didn't name
-    # explicitly on this resource -- `:advance_cycle` and `:transition_state`
-    # are both internal-only mutations the Ultracode Reactor pipeline
-    # (`Xaas.Ultracode.NextEpoch.advance_from_completed/2`) invokes, and
-    # were previously called with `authorize?: false` rather than an
-    # explicit bypass, same dead-policy pattern as Epoch/Receipt.
-    bypass action(:advance_cycle) do
-      authorize_if(always())
-    end
-
-    bypass action(:transition_state) do
-      authorize_if(always())
+    # XAAS-2601: `:tick` (cron-fired), `:advance_cycle` and
+    # `:transition_state` (Ultracode Reactor pipeline) are internal-only
+    # mutations, admitted by the REAL system authority predicate instead
+    # of the previous action-wide `authorize_if(always())` bypasses --
+    # which any caller through the normal authorization path satisfied.
+    # `:tick` accepts no external arguments and exposes no Run/Epoch
+    # field to a caller; `:advance_cycle`/`:transition_state` accept no
+    # actor, capability, or execution context a bypass could have checked
+    # -- the system-actor check IS that missing internal predicate.
+    bypass action([:tick, :advance_cycle, :transition_state]) do
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do

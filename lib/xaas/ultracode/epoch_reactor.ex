@@ -97,7 +97,7 @@ defmodule Xaas.Ultracode.EpochReactor do
     run(fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->
       changeset = Ash.Changeset.for_update(epoch, next_action, %{})
 
-      case Ash.update(changeset) do
+      case Ash.update(changeset, actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
         {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: next_action}}
         {:error, error} -> {:error, {:construct_failed, next_action, error}}
       end
@@ -118,7 +118,11 @@ defmodule Xaas.Ultracode.EpochReactor do
       # is repaired below.
       landed_epoch =
         case action_taken do
-          :start -> Ash.Changeset.for_update(constructed_epoch, :mark_failed, %{}) |> Ash.update()
+          :start ->
+            constructed_epoch
+            |> Ash.Changeset.for_update(:mark_failed, %{})
+            |> Ash.update(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
+
           :complete -> {:ok, constructed_epoch}
         end
 
@@ -136,7 +140,7 @@ defmodule Xaas.Ultracode.EpochReactor do
             },
             sealed_at: DateTime.utc_now()
           })
-          |> Ash.create()
+          |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
           |> case do
             {:ok, _receipt} ->
               :ok
@@ -239,7 +243,7 @@ defmodule Xaas.Ultracode.EpochReactor do
           sealed_at: DateTime.utc_now()
         }
       )
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
       |> case do
         {:ok, receipt} ->
           {:ok,

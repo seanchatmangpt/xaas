@@ -28,18 +28,19 @@ defmodule Xaas.Ultracode.Receipt do
   end
 
   policies do
-    # ERRC raise: real, scoped carve-out for the internal-only `:seal`
-    # action the Ultracode Reactor pipeline calls, matching
-    # `Xaas.Ultracode.Epoch`'s bypass shape. Deliberately no read bypass --
+    # XAAS-2601: the internal-only `:seal` action the Ultracode Reactor
+    # pipeline calls is admitted by the REAL system authority predicate
+    # (`Xaas.Checks.SystemActor` over the `Xaas.SystemAuthority` actor
+    # `EpochReactor` now passes) instead of an action-wide
+    # `authorize_if(always())` bypass. Deliberately no read bypass --
     # this resource is modeled on `Xaas.Operations.ActuationReceipt`'s own
-    # policy (byte-identical `forbid_if always()` with no bypass at all),
-    # whose moduledoc states plainly: "only the Reactor actuation kernel
-    # may prepare, read, or seal it." Receipts here are the same kind of
-    # sealed evidentiary record, not operational/queryable state like
-    # Run/Epoch -- intentionally unreadable outside the internal kernel
-    # path, not an oversight.
+    # policy, whose moduledoc states plainly: "only the Reactor actuation
+    # kernel may prepare, read, or seal it." Receipts here are the same
+    # kind of sealed evidentiary record, not operational/queryable state
+    # like Run/Epoch -- intentionally unreadable outside the internal
+    # kernel path, not an oversight.
     bypass action(:seal) do
-      authorize_if(always())
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do
