@@ -50,25 +50,13 @@ defmodule Xaas.Checks.SystemActor do
 
   def match?(_actor, _context, _opts), do: false
 
-  defp required_service(_subject, opts) do
-    case Keyword.fetch(opts, :service) do
-      {:ok, service} when service in Xaas.SystemAuthority.services() -> {:ok, service}
-      {:ok, _unknown} -> :error
-      :error -> :derive_from_subject
-    end
-  end
-
-  defp required_service(subject, opts) when opts == [] do
-    subject
-    |> subject_key()
-    |> then(&Map.fetch(@action_services, &1))
-  end
-
   defp required_service(subject, opts) do
     case Keyword.fetch(opts, :service) do
-      {:ok, service} when service in Xaas.SystemAuthority.services() -> {:ok, service}
-      {:ok, _unknown} -> :error
-      :error -> subject |> subject_key() |> then(&Map.fetch(@action_services, &1))
+      {:ok, service} ->
+        if service in Xaas.SystemAuthority.services(), do: {:ok, service}, else: :error
+
+      :error ->
+        Map.fetch(@action_services, subject_key(subject))
     end
   end
 
