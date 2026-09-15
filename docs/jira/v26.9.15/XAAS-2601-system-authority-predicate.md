@@ -1,15 +1,18 @@
 # XAAS-2601: Replace action-wide `authorize_if(always())` bypasses with a real system/internal authority predicate
 
-- **Status**: Closed — implemented + Chicago-validated (2026-09-15)
+- **Status**: Closed — implementation complete; exact-head execution evidence is attached to PR #48.
 - **Severity**: High
-- **Standing**: ALIVE for this fix (full suite: 632 passed, 40 excluded, 0 failures, `fix/v26.9.15-system-authority` @ 5d66a06, worktree `wt-v26915/xaas`)
-- **Closure evidence**: new `Xaas.SystemAuthority` actor + `Xaas.Checks.SystemActor` (`Ash.Policy.SimpleCheck`); every internal-only mutation bypass (`Run :tick/:advance_cycle/:transition_state`, `Epoch :create/:start/:complete/:mark_missed/:mark_failed`, `Receipt :seal`, `WebhookDelivery :deliver/:retry_failed_deliveries`, `HoldRequest :expire_stale`) now admits ONLY a genuine system authority actor instead of `always()`. Internal callers (NextEpoch, EpochReactor incl. undo, MissedEpochs, CreateFirstEpoch, webhook retry loop, EnqueueWebhookDeliveries) pass the actor explicitly rather than `authorize?: false`; AshOban schedules supply `default_actor` so cron paths still authorize for real. Chicago suite `test/xaas/ultracode/system_authority_chicago_test.exs` proves the falsifier: ordinary actor, nil actor, and fabricated lookalike are all REFUSED through the real calculus; system actor admitted.
-- **Disclosed follow-up scope**: the broader-pattern sites outside the review's named change set (route_secrets/route_feature_flags create/update, autofde_planner `request_match`/`request_catalog`, the library domain's wide-open policies, and `action_type(:read)` read bypasses) retain their previous shape pending an intent classification — they were not part of the flagged internal-mutation set and may be legitimately public API actions.
-- **Found by**: 14-hour cross-repo code review, window 2026-09-14 9:40 PM → 2026-09-15 11:40 AM PDT (inspection, not execution)
+- **Standing**: Do not inherit `ALIVE` across revisions. Historical local evidence exists for predecessor heads; the merged subject must use PR #48's exact-head court as its execution receipt.
+- **Closure evidence**: `Xaas.SystemAuthority` now has a closed internal-service vocabulary and `Xaas.Checks.SystemActor` derives the required service from the exact resource/action. Protected mutations are `Run :tick/:advance_cycle/:transition_state`, `Epoch :create/:start/:complete/:mark_missed/:mark_failed`, `Receipt :seal`, `WebhookDelivery :deliver/:retry_failed_deliveries`, and `HoldRequest :expire_stale/:expire`. Internal callers carry an admitted actor through the normal Ash authorization calculus. AshOban schedules supply `:oban_scheduler`; webhook row delivery requires `:webhook_dispatcher`; Ultracode mutations require `:ultracode_reactor`. Hold expiry propagates the scheduler actor through the consequence-bearing per-row `:expire` update instead of dropping to `authorize?: false`.
+- **Historical local evidence**: the original implementation at `5d66a06` recorded `mix test`: 632 passed, 40 excluded, 0 failures. After the diagnostic probe was removed, `4f637296` recorded a 10-test Chicago rerun. These are predecessor receipts, not proof for later heads.
+- **Exact-head verification surface**: `test/xaas/ultracode/system_authority_chicago_test.exs` proves ordinary, nil, and lookalike actors are refused. `test/xaas/system_authority_capability_chicago_test.exs` adds cross-service refusal, closed-vocabulary refusal, scheduler-only cron entry, and real HoldRequest cron-to-row mutation propagation. The repository CI court asserts literal subject SHA before format/compile/test/static checks.
+- **Residual authority boundary**: `Xaas.SystemAuthority` is an application-level actor/capability inside the trusted BEAM application, not a cryptographic or OS isolation primitive. Trusted in-process code can construct the struct. The claim is therefore fail-closed Ash authorization for the listed actions against external/ordinary actors and wrong service capabilities, not protection from arbitrary malicious code already executing inside the application VM.
+- **Disclosed follow-up scope**: broader-pattern `always()` sites outside this ticket's classified internal-mutation set (`route_secrets`/`route_feature_flags` create/update, `autofde_planner` `request_match`/`request_catalog`, library-wide policy questions, and read bypasses) remain separate intent-classification work. They are not silently reclassified by XAAS-2601.
+- **Found by**: 14-hour cross-repo code review, window 2026-09-14 9:40 PM → 2026-09-15 11:40 AM PDT.
 
-## Evidence
+## Evidence boundary
 
-The PR #47 refactor removes numerous `authorize?: false` call sites — directionally good. But resources now contain action-wide bypasses, e.g. around `Run.transition_state`, with equivalent rules for other internally intended mutations. Live sites include `lib/xaas/ultracode/run.ex` (with `lib/xaas/ultracode/validations/run_transition_allowed.ex`), `lib/xaas/ledger/account.ex:20`, `lib/xaas/ledger/balance.ex:15`, `lib/xaas/ledger/transfer.ex:20`, `lib/xaas/platform/route_projects.ex:16`, `lib/xaas/platform/webhook_delivery.ex:83,92`, and others:
+PR #47 removed numerous localized `authorize?: false` call sites but introduced action-wide bypasses such as:
 
 ```elixir
 bypass action(:transition_state) do
@@ -17,16 +20,21 @@ bypass action(:transition_state) do
 end
 ```
 
-`Run.transition_state` accepts both `state` and `standing`, while the action-wide bypass supplies no actor, capability, execution context, or internal-system predicate.
+That shape made "internal-only" an architectural comment rather than an authorization fact: any caller reaching the action through normal authorization satisfied the bypass.
 
-## Impact
+The first XAAS-2601 implementation replaced `always()` with a typed system actor, which closed the ordinary/nil/lookalike-actor hole but still left two ambiguities discovered during PR #48 review:
 
-"Internal-only" exists in the architectural intent, but not in the authorization calculus. Any caller that reaches that Ash action through the normal authorization path satisfies the bypass — that is **broader** than an explicitly localized internal `authorize?: false` call. Ranked #3 in the cross-repo closure order.
+1. every policy used `{Xaas.Checks.SystemActor, []}`, so a valid system actor for one service could satisfy another service's action; and
+2. `HoldRequest.expire_stale` admitted the scheduler at the outer action but invoked the actual per-row `:expire` mutation with `authorize?: false`.
 
-## Fix
+The final design closes both: the check maps exact protected actions to their required service capability, unknown mappings refuse, and the hold-expiry actor is carried through the real row mutation. `:expire` is excluded from HoldRequest's ordinary actor-present write policy, so failure of the system check cannot fall through to a broader write rule.
 
-Make **system/internal authority a real predicate/object** — an actor plus capability/execution-context predicate that the authorization calculus evaluates — rather than replacing a local bypass with a global action bypass.
+## Falsifiers
 
-## Falsifier (acceptance)
+The boundary is false if any of these observations occurs through normal Ash authorization:
 
-Invoke `transition_state` as an ordinary non-system actor through Ash authorization. It must be refused. Under the current policy, the rule itself says it should authorize.
+- an ordinary, nil, or lookalike actor performs a listed internal mutation;
+- a valid `SystemAuthority` for the wrong service performs a protected action;
+- an unknown system service is accepted;
+- `HoldRequest.expire_stale` succeeds only by disabling authorization on its per-row `:expire` writes; or
+- a future protected subject absent from the capability map acquires ambient system authority instead of being refused.
