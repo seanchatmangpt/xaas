@@ -192,7 +192,7 @@ defmodule Xaas.Library.HoldRequest do
 
     read :for_book do
       argument(:book_id, :uuid, allow_nil?: false)
-      filter(expr(book_id == ^arg(:book_id)))
+      filter(expr(book_id == ^arg(:book_id) and status == :active))
     end
 
     read :oldest_active_for_book do
@@ -216,14 +216,16 @@ defmodule Xaas.Library.HoldRequest do
       description("Scheduled Oban entry point: expires every active hold past its expires_at")
 
       run(fn _input, _context ->
+        system_actor = Xaas.SystemAuthority.new(:oban_scheduler)
+
         expired_count =
           __MODULE__
-          |> Ash.Query.for_read(:expirable, %{}, authorize?: false)
-          |> Ash.read!(authorize?: false)
+          |> Ash.Query.for_read(:expirable, %{})
+          |> Ash.read!(actor: system_actor)
           |> Enum.map(fn hold ->
             hold
-            |> Ash.Changeset.for_update(:expire, %{}, authorize?: false)
-            |> Ash.update!(authorize?: false)
+            |> Ash.Changeset.for_update(:expire, %{})
+            |> Ash.update!(actor: system_actor)
           end)
           |> length()
 
@@ -233,12 +235,10 @@ defmodule Xaas.Library.HoldRequest do
   end
 
   policies do
-    # XAAS-2601: the scheduled expiry entry point is admitted by the REAL
-    # system authority predicate -- the AshOban schedule supplies the
-    # `Xaas.SystemAuthority` default_actor (see the oban block above) --
-    # instead of an action-wide `authorize_if(always())` bypass any caller
-    # through the normal authorization path could satisfy.
-    bypass action(:expire_stale) do
+    # XAAS-2601: both the scheduled entry point and the consequence-bearing
+    # per-row :expire mutation require the scheduler capability. The cron
+    # action carries that same actor through the entire read/update chain.
+    bypass action([:expire_stale, :expire]) do
       authorize_if({Xaas.Checks.SystemActor, []})
     end
 
@@ -246,11 +246,10 @@ defmodule Xaas.Library.HoldRequest do
       authorize_if(always())
     end
 
-    # Deny-by-default floor (CLAUDE.md): matches Checkout/Book's sibling
-    # policy blocks -- writes require a real actor, not the prior ambient
-    # `authorize_if always()`, which permitted `actor: nil` on
-    # :place/:update/:cancel/:fulfill/:destroy alike.
-    policy action_type([:create, :update, :destroy]) do
+    # Ordinary library writes still require a real actor, but :expire is
+    # deliberately excluded: expiration is an internal scheduler mutation
+    # and may only pass through the SystemActor bypass above.
+    policy action([:create, :place, :update, :fulfill, :cancel, :destroy]) do
       authorize_if(actor_present())
     end
   end
