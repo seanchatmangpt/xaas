@@ -60,6 +60,12 @@ defmodule Xaas.Platform.WebhookDelivery do
       schedule :retry_failed_deliveries, "*/5 * * * *" do
         action(:retry_failed_deliveries)
         worker_module_name(Xaas.Platform.WebhookDelivery.Workers.RetryFailedDeliveries)
+
+        # XAAS-2601: the cron worker runs this action THROUGH
+        # authorization with no stored actor, so the schedule supplies the
+        # real system authority actor (AshOban's documented system-actor
+        # `default_actor` flow) instead of an action-wide bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
       end
     end
   end
@@ -71,25 +77,18 @@ defmodule Xaas.Platform.WebhookDelivery do
     # GET .../deliveries route is owner-gated the same way GET
     # /api/webhooks is (see that route's comment). No allow-all
     # carve-out here.
-    # Real, scoped carve-out for the new scheduled action -- pure
-    # bookkeeping over already-real rows (bumps attempt_count/
-    # last_attempted_at via the existing real `:record_attempt` action),
-    # no external side effect, no exposure of `payload` or webhook
-    # secrets to any actor. Same pattern as
-    # `Xaas.Operations.CapabilityLivenessReceipt`'s `check_regressions`
-    # bypass -- `bypass`, not `policy`, so it isn't ANDed against the
-    # catch-all `forbid_if always()` below.
-    bypass action(:retry_failed_deliveries) do
-      authorize_if(always())
-    end
-
-    # Real, scoped carve-out for the real outbound-dispatch action -- same
-    # shape as `:retry_failed_deliveries` above: no external actor input
+    #
+    # XAAS-2601: the scheduled retry entry point and the real
+    # outbound-dispatch action are admitted by the REAL system authority
+    # predicate (`Xaas.Checks.SystemActor`) instead of action-wide
+    # `authorize_if(always())` bypasses: no external actor input is
     # accepted (`accept []`), only real internal callers
-    # (`EnqueueWebhookDeliveries` after `:create`, the cron path) invoke
-    # it, and it never returns webhook secrets to a caller.
-    bypass action(:deliver) do
-      authorize_if(always())
+    # (`EnqueueWebhookDeliveries` after `:create`, the cron path, this
+    # resource's own retry loop) invoke them -- and they now PASS the
+    # `Xaas.SystemAuthority` actor -- and neither returns webhook secrets
+    # to a caller.
+    bypass action([:retry_failed_deliveries, :deliver]) do
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do
@@ -136,6 +135,13 @@ defmodule Xaas.Platform.WebhookDelivery do
       run(fn _input, _context ->
         require Logger
 
+        # XAAS-2601: this scheduled entry point already ran the system
+        # actor gate above; its internal fan-out carries the SAME real
+        # system authority forward instead of `authorize?: false`, so the
+        # per-row `:deliver` mutations flow through the policy calculus
+        # with a real admitted actor.
+        system_actor = Xaas.SystemAuthority.new(:webhook_dispatcher)
+
         {:ok, candidates} =
           __MODULE__
           |> Ash.Query.filter(status: :failed)
@@ -145,8 +151,8 @@ defmodule Xaas.Platform.WebhookDelivery do
         results =
           Enum.map(candidates, fn delivery ->
             delivery
-            |> Ash.Changeset.for_update(:deliver, %{}, authorize?: false)
-            |> Ash.update()
+            |> Ash.Changeset.for_update(:deliver, %{})
+            |> Ash.update(actor: system_actor)
           end)
 
         updated = Enum.count(results, &match?({:ok, _}, &1))

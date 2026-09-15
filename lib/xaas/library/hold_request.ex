@@ -56,6 +56,10 @@ defmodule Xaas.Library.HoldRequest do
       schedule :expire_stale_holds, "0 * * * *" do
         action(:expire_stale)
         worker_module_name(Xaas.Library.HoldRequest.Workers.ExpireStaleHolds)
+
+        # XAAS-2601: the cron worker authorizes this action with the real
+        # system authority actor rather than an action-wide bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
       end
     end
   end
@@ -229,11 +233,13 @@ defmodule Xaas.Library.HoldRequest do
   end
 
   policies do
-    # Real, scoped carve-out for the scheduled expiry entry point -- runs
-    # with authorize?: false internally already; this bypass covers the
-    # action-level policy check AshOban's worker performs before running it.
+    # XAAS-2601: the scheduled expiry entry point is admitted by the REAL
+    # system authority predicate -- the AshOban schedule supplies the
+    # `Xaas.SystemAuthority` default_actor (see the oban block above) --
+    # instead of an action-wide `authorize_if(always())` bypass any caller
+    # through the normal authorization path could satisfy.
     bypass action(:expire_stale) do
-      authorize_if(always())
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy action_type(:read) do
