@@ -20,31 +20,34 @@ defmodule Xaas.Accounts.Token.RevokeNonce do
     extensions: [AshOnetime.Resource]
 
   postgres do
-    table "token_revoke_nonces"
-    repo Xaas.Repo
+    table("token_revoke_nonces")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :claim do
-      description "Claims the one-time revoke nonce for a raw token string. Real effect: " <>
-                     "on second and later calls with the same token string, ash_onetime " <>
-                     "rejects with :nonce_already_used before this changeset ever inserts."
-      argument :token, :string, allow_nil?: false, sensitive?: true
+      description(
+        "Claims the one-time revoke nonce for a raw token string. Real effect: " <>
+          "on second and later calls with the same token string, ash_onetime " <>
+          "rejects with :nonce_already_used before this changeset ever inserts."
+      )
+
+      argument(:token, :string, allow_nil?: false, sensitive?: true)
     end
   end
 
   onetime do
     protect :claim do
-      strategy :one_time_nonce
-      scope [{:static, "revoke_token"}]
-      key {:verified, :token, Xaas.Accounts.Token.RevokeVerifier}
-      window max_age: {5, :minute}, clock_skew: {30, :second}
+      strategy(:one_time_nonce)
+      scope([{:static, "revoke_token"}])
+      key({:verified, :token, Xaas.Accounts.Token.RevokeVerifier})
+      window(max_age: {5, :minute}, clock_skew: {30, :second})
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
   end
 end

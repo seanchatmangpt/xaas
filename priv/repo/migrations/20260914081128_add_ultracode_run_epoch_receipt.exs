@@ -85,7 +85,8 @@ defmodule Xaas.Repo.Migrations.AddUltracodeRunEpochReceipt do
             name: "ultracode_epochs_run_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create unique_index(:ultracode_epochs, [:run_id, :cycle],

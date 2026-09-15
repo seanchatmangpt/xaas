@@ -99,7 +99,9 @@ defmodule Xaas.Ocel.Projection do
     Enum.reduce_while(objects, {:ok, []}, fn object, {:ok, acc} ->
       params = %{object_type: Map.fetch!(object, "type"), ocel_id: Map.fetch!(object, "id")}
 
-      case Object |> Ash.Changeset.for_create(:register, params) |> Ash.create(authorize?: false) do
+      case Object
+           |> Ash.Changeset.for_create(:register, params)
+           |> Ash.create(authorize?: false) do
         {:ok, registered} -> {:cont, {:ok, [registered | acc]}}
         {:error, error} -> {:halt, {:error, error}}
       end
@@ -120,7 +122,9 @@ defmodule Xaas.Ocel.Projection do
           object_relations: object_relations
         }
 
-        case Event |> Ash.Changeset.for_create(:record, params) |> Ash.create(authorize?: false) do
+        case Event
+             |> Ash.Changeset.for_create(:record, params)
+             |> Ash.create(authorize?: false) do
           {:ok, created} -> {:cont, {:ok, [created | acc]}}
           {:error, error} -> {:halt, {:error, error}}
         end
@@ -153,9 +157,14 @@ defmodule Xaas.Ocel.Projection do
     |> Ash.Query.filter(ocel_id == ^ocel_id)
     |> Ash.read_one(authorize?: false)
     |> case do
-      {:ok, nil} -> {:error, {:unknown_object_id, ocel_id}}
-      {:ok, object} -> {:ok, %{object_id: object.id, qualifier: Map.get(rel, "qualifier", "related")}}
-      {:error, error} -> {:error, error}
+      {:ok, nil} ->
+        {:error, {:unknown_object_id, ocel_id}}
+
+      {:ok, object} ->
+        {:ok, %{object_id: object.id, qualifier: Map.get(rel, "qualifier", "related")}}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

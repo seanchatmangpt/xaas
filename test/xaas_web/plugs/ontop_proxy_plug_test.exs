@@ -55,9 +55,10 @@ defmodule XaasWeb.Plugs.OntopProxyPlugTest do
     :ok
   end
 
-  test "GET /internal-api/sparql with no Authorization header is real-rejected 401 before reaching Ontop", %{
-    conn: conn
-  } do
+  test "GET /internal-api/sparql with no Authorization header is real-rejected 401 before reaching Ontop",
+       %{
+         conn: conn
+       } do
     conn = get(conn, "/internal-api/sparql?query=SELECT+*+WHERE+%7B%3Fs+%3Fp+%3Fo%7D")
 
     assert conn.status == 401
@@ -65,9 +66,10 @@ defmodule XaasWeb.Plugs.OntopProxyPlugTest do
     refute_received {:fake_ontop_request, _}
   end
 
-  test "GET /internal-api/sparql with a wrong Bearer token is real-rejected 401 before reaching Ontop", %{
-    conn: conn
-  } do
+  test "GET /internal-api/sparql with a wrong Bearer token is real-rejected 401 before reaching Ontop",
+       %{
+         conn: conn
+       } do
     conn =
       conn
       |> put_req_header("authorization", "Bearer not-the-real-token")

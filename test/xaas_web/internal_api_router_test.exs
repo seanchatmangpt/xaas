@@ -22,7 +22,8 @@ defmodule XaasWeb.InternalApiRouterTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
-  test "GET /internal-api/capability_liveness_receipts rejects a real incompatible Accept header", %{conn: conn} do
+  test "GET /internal-api/capability_liveness_receipts rejects a real incompatible Accept header",
+       %{conn: conn} do
     # Real Phoenix `:accepts` behavior (confirmed via 2 real failed
     # assertions before this fix): with NO Accept header, the pipeline
     # defaults to its first configured type ("json-api") rather than
@@ -37,7 +38,8 @@ defmodule XaasWeb.InternalApiRouterTest do
     end
   end
 
-  test "GET /internal-api/capability_liveness_receipts returns real ingested rows as real JSON:API", %{conn: conn} do
+  test "GET /internal-api/capability_liveness_receipts returns real ingested rows as real JSON:API",
+       %{conn: conn} do
     capability = "internal-api-router-test-#{System.unique_integer([:positive])}"
 
     CapabilityLivenessReceipt

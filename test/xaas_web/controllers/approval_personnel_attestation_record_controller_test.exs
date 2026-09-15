@@ -68,6 +68,7 @@ defmodule XaasWeb.ApprovalPersonnelAttestationRecordControllerTest do
 
     persisted = ApprovalPersonnelAttestationRecord |> Ash.get!(id, authorize?: false)
     assert persisted.approved_by == "owner-2"
+
     assert persisted.attestation_statement ==
              "annual security training and background check attested"
   end

@@ -30,14 +30,16 @@ defmodule Xaas.Library.Explainer.GroqAdapter do
   response, or unexpected exception).
   """
   @spec explain(map()) :: {:ok, String.t()} | {:error, :groq_unavailable, term()}
-  def explain(%{
-        book_title: _,
-        book_author: _,
-        book_grade_level: _,
-        book_genres: _,
-        past_titles: _,
-        factor_summary: _
-      } = args) do
+  def explain(
+        %{
+          book_title: _,
+          book_author: _,
+          book_grade_level: _,
+          book_genres: _,
+          past_titles: _,
+          factor_summary: _
+        } = args
+      ) do
     input =
       Ash.ActionInput.for_action(Book, :generate_recommendation_explanation, args)
 

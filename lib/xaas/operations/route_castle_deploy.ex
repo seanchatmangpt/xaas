@@ -13,44 +13,44 @@ defmodule Xaas.Operations.RouteCastleDeploy do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :route_castle_deploy
+    type(:route_castle_deploy)
   end
 
   json_api do
-    type "route_castle_deploy"
+    type("route_castle_deploy")
 
     routes do
-      base "/route_castle_deploy"
-      get :read
-      index :read
+      base("/route_castle_deploy")
+      get(:read)
+      index(:read)
     end
   end
 
   postgres do
-    table "route_castle_deploys"
-    repo Xaas.Repo
+    table("route_castle_deploys")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :requested_by, :string do
-      allow_nil? false
+      allow_nil?(false)
     end
 
-    attribute :approved_by, :string
+    attribute(:approved_by, :string)
   end
 end

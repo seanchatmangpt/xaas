@@ -13,50 +13,50 @@ defmodule Xaas.Governance.ApprovalCmekKeyBinding do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out (issue #20), ported from
     # platform-console's real PUT /api/orgs/[id]/cmek maker-checker flow.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_cmek_key_binding
+    type(:approval_cmek_key_binding)
   end
 
   json_api do
-    type "approval_cmek_key_binding"
+    type("approval_cmek_key_binding")
 
     routes do
-      base "/approval_cmek_key_binding"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_cmek_key_binding")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_cmek_key_bindings"
-    repo Xaas.Repo
+    table("approval_cmek_key_bindings")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:org_id, :requested_by, :provider, :key_ref, :reason]
+      accept([:org_id, :requested_by, :provider, :key_ref, :reason])
     end
 
     # Real mutation route (issue #20), ported from platform-console's
@@ -69,45 +69,45 @@ defmodule Xaas.Governance.ApprovalCmekKeyBinding do
     # reannotate step) is NOT ported -- xaas has no live k8s-resource
     # write path for this yet, honestly left undone rather than faked.
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalCmekKeyBindingRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalCmekKeyBindingRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real PUT body
     # (provider/keyRef/reason). `provider` values ported verbatim from
     # platform-console's CmekProvider type.
     attribute :provider, :cmek_provider do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :key_ref, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :reason, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end

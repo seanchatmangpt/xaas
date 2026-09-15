@@ -36,7 +36,9 @@ defmodule Xaas.Billing.ApprovalSlaCreditApplyTest do
   # "highest transfer_id wins" reasoning) as
   # `Xaas.Billing.SubscriptionTest.real_balance_for/1`.
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 

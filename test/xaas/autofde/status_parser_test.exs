@@ -72,7 +72,11 @@ defmodule Xaas.Autofde.StatusParserTest do
     end
 
     test "returns {:error, :not_found} for a real nonexistent path" do
-      nonexistent = Path.join(System.tmp_dir!(), "does-not-exist-#{System.unique_integer([:positive])}/STATUS.md")
+      nonexistent =
+        Path.join(
+          System.tmp_dir!(),
+          "does-not-exist-#{System.unique_integer([:positive])}/STATUS.md"
+        )
 
       refute File.exists?(nonexistent)
       assert StatusParser.parse(nonexistent) == {:error, :not_found}

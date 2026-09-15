@@ -100,13 +100,17 @@ defmodule XaasWeb.ApprovalDeploymentQuarantineControllerTest do
 
     change =
       ApprovalDeploymentQuarantine
-      |> Ash.Changeset.for_create(:create, %{
-        org_id: org_id,
-        requested_by: requester,
-        deployment_name: "billing-worker",
-        environment: "staging",
-        reason: "manual_hold"
-      }, tenant: org_id)
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: org_id,
+          requested_by: requester,
+          deployment_name: "billing-worker",
+          environment: "staging",
+          reason: "manual_hold"
+        },
+        tenant: org_id
+      )
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -124,7 +128,9 @@ defmodule XaasWeb.ApprovalDeploymentQuarantineControllerTest do
 
     assert resp.status == 400
 
-    persisted = ApprovalDeploymentQuarantine |> Ash.get!(change.id, authorize?: false, tenant: org_id)
+    persisted =
+      ApprovalDeploymentQuarantine |> Ash.get!(change.id, authorize?: false, tenant: org_id)
+
     assert persisted.approved_by == nil
   end
 
@@ -144,7 +150,9 @@ defmodule XaasWeb.ApprovalDeploymentQuarantineControllerTest do
       }
     }
 
-    resp = conn |> json_headers(org_id) |> post("/api/approval_deployment_quarantine", create_body)
+    resp =
+      conn |> json_headers(org_id) |> post("/api/approval_deployment_quarantine", create_body)
+
     assert resp.status == 400
   end
 
@@ -180,7 +188,9 @@ defmodule XaasWeb.ApprovalDeploymentQuarantineControllerTest do
     created = json_response(resp, 201)
     id = created["data"]["id"]
 
-    persisted = ApprovalDeploymentQuarantine |> Ash.get!(id, authorize?: false, tenant: caller_org)
+    persisted =
+      ApprovalDeploymentQuarantine |> Ash.get!(id, authorize?: false, tenant: caller_org)
+
     assert persisted.org_id == caller_org
 
     assert ApprovalDeploymentQuarantine

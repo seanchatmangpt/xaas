@@ -46,7 +46,10 @@ defmodule XaasWeb.Plugs.RequireInternalApiToken do
   defp unauthorized(conn) do
     conn
     |> put_status(401)
-    |> Phoenix.Controller.json(%{error: "unauthorized", detail: "missing or invalid Bearer token"})
+    |> Phoenix.Controller.json(%{
+      error: "unauthorized",
+      detail: "missing or invalid Bearer token"
+    })
     |> halt()
   end
 end

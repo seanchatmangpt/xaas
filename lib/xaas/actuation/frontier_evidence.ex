@@ -43,7 +43,8 @@ defmodule Xaas.Actuation.FrontierEvidence do
          :ok <- validate_fragments(fragments),
          true <- valid_hash?(supplied_hash) || {:error, :bundle_sha256_required},
          expected <- fingerprint(%{"schema" => @schema, "fragments" => fragments}),
-         true <- supplied_hash == expected || {:error, {:bundle_hash_mismatch, supplied_hash, expected}} do
+         true <-
+           supplied_hash == expected || {:error, {:bundle_hash_mismatch, supplied_hash, expected}} do
       :ok
     else
       {:error, _} = error -> error
@@ -149,7 +150,8 @@ defmodule Xaas.Actuation.FrontierEvidence do
 
       Map.get(normalized, "authority_ceiling") != ceiling ->
         {:error,
-         {:authority_ceiling_mismatch, producer, Map.get(normalized, "authority_ceiling"), ceiling}}
+         {:authority_ceiling_mismatch, producer, Map.get(normalized, "authority_ceiling"),
+          ceiling}}
 
       not valid_hash?(Map.get(normalized, "artifact_hash")) ->
         {:error, {:artifact_hash_required, producer}}
@@ -170,7 +172,10 @@ defmodule Xaas.Actuation.FrontierEvidence do
 
   defp normalize_value(value) when is_map(value), do: normalize_map(value)
   defp normalize_value(value) when is_list(value), do: Enum.map(value, &normalize_value/1)
-  defp normalize_value(value) when is_tuple(value), do: value |> Tuple.to_list() |> Enum.map(&normalize_value/1)
+
+  defp normalize_value(value) when is_tuple(value),
+    do: value |> Tuple.to_list() |> Enum.map(&normalize_value/1)
+
   defp normalize_value(value) when is_boolean(value) or is_nil(value), do: value
   defp normalize_value(value) when is_atom(value), do: Atom.to_string(value)
   defp normalize_value(value), do: value

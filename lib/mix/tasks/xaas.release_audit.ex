@@ -78,8 +78,14 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     mix_version = Mix.Project.config()[:version]
 
     failures
-    |> require_true(version_file == @version, "VERSION=#{inspect(version_file)} expected #{@version}")
-    |> require_true(mix_version == @version, "Mix version=#{inspect(mix_version)} expected #{@version}")
+    |> require_true(
+      version_file == @version,
+      "VERSION=#{inspect(version_file)} expected #{@version}"
+    )
+    |> require_true(
+      mix_version == @version,
+      "Mix version=#{inspect(mix_version)} expected #{@version}"
+    )
   end
 
   defp check_runtime_identity(failures) do
@@ -111,9 +117,18 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     resources = Enum.flat_map(@domains, &Ash.Domain.Info.resources/1)
 
     failures
-    |> require_true(configured == @domains, "configured Ash domains differ from canonical seven-domain order")
-    |> require_true(actual_counts == @resource_counts, "Ash resource counts drifted: #{inspect(actual_counts)}")
-    |> require_true(length(resources) == 70, "expected 70 domain resources, observed #{length(resources)}")
+    |> require_true(
+      configured == @domains,
+      "configured Ash domains differ from canonical seven-domain order"
+    )
+    |> require_true(
+      actual_counts == @resource_counts,
+      "Ash resource counts drifted: #{inspect(actual_counts)}"
+    )
+    |> require_true(
+      length(resources) == 70,
+      "expected 70 domain resources, observed #{length(resources)}"
+    )
     |> require_true(
       length(Enum.uniq(resources)) == length(resources),
       "one or more Ash resources are registered in multiple domains"
@@ -146,8 +161,14 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     absent_source = MapSet.difference(registered, source_modules) |> MapSet.to_list()
 
     failures
-    |> require_true(missing == [], "Xaas.Resource modules missing from domains: #{inspect(missing)}")
-    |> require_true(absent_source == [], "domain resources missing canonical source modules: #{inspect(absent_source)}")
+    |> require_true(
+      missing == [],
+      "Xaas.Resource modules missing from domains: #{inspect(missing)}"
+    )
+    |> require_true(
+      absent_source == [],
+      "domain resources missing canonical source modules: #{inspect(absent_source)}"
+    )
   end
 
   defp check_migration_uniqueness(failures) do
@@ -165,7 +186,11 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
       |> Enum.filter(fn {_table, paths} -> length(Enum.uniq(paths)) > 1 end)
 
-    require_true(failures, duplicates == [], "duplicate migration table creates: #{inspect(duplicates)}")
+    require_true(
+      failures,
+      duplicates == [],
+      "duplicate migration table creates: #{inspect(duplicates)}"
+    )
   end
 
   defp check_text_integrity(failures, files) do
@@ -175,7 +200,10 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
       case File.read(path) do
         {:ok, content} ->
           acc
-          |> require_true(not String.contains?(content, "\0"), "NUL byte in tracked text file #{path}")
+          |> require_true(
+            not String.contains?(content, "\0"),
+            "NUL byte in tracked text file #{path}"
+          )
           |> require_true(
             not Regex.match?(~r/^<<<<<<< |^=======$|^>>>>>>> /m, content),
             "merge-conflict marker in #{path}"
@@ -203,8 +231,11 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     |> Enum.filter(&String.ends_with?(&1, ".sh"))
     |> Enum.reduce(failures, fn path, acc ->
       case System.cmd("bash", ["-n", path], stderr_to_stdout: true) do
-        {_output, 0} -> acc
-        {output, status} -> ["bash -n failed #{path} exit=#{status}: #{String.trim(output)}" | acc]
+        {_output, 0} ->
+          acc
+
+        {output, status} ->
+          ["bash -n failed #{path} exit=#{status}: #{String.trim(output)}" | acc]
       end
     end)
   end

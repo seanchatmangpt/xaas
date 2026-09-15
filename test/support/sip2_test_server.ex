@@ -155,7 +155,11 @@ defmodule Xaas.Test.SIP2TestServer do
     date = now |> DateTime.to_date() |> Date.to_string() |> String.replace("-", "")
 
     time =
-      now |> DateTime.to_time() |> Time.to_string() |> String.replace(":", "") |> String.slice(0, 6)
+      now
+      |> DateTime.to_time()
+      |> Time.to_string()
+      |> String.replace(":", "")
+      |> String.slice(0, 6)
 
     date <> "0000" <> time
   end

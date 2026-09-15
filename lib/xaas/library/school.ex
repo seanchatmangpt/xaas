@@ -25,70 +25,70 @@ defmodule Xaas.Library.School do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "library_schools"
-    repo Xaas.Repo
+    table("library_schools")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     create :create do
-      primary? true
-      accept [:slug, :name, :domain, :default?]
+      primary?(true)
+      accept([:slug, :name, :domain, :default?])
     end
 
     update :update do
-      primary? true
-      accept [:slug, :name, :domain, :default?]
+      primary?(true)
+      accept([:slug, :name, :domain, :default?])
     end
 
     read :get_default do
-      description "Returns the single school currently flagged as the system default."
-      get? true
-      filter expr(default? == true)
+      description("Returns the single school currently flagged as the system default.")
+      get?(true)
+      filter(expr(default? == true))
     end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
+      authorize_if(always())
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :slug, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :domain, :string do
-      description "Real email domain used for guest/fallback accounts attributed to this school."
-      allow_nil? false
-      public? true
+      description("Real email domain used for guest/fallback accounts attributed to this school.")
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :default?, :boolean do
-      allow_nil? false
-      default false
-      public? true
+      allow_nil?(false)
+      default(false)
+      public?(true)
     end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
   end
 
   identities do
-    identity :unique_slug, [:slug]
+    identity(:unique_slug, [:slug])
   end
 end

@@ -200,7 +200,9 @@ defmodule Xaas.Governance.AuditLogEntryTest do
 
     assert {:error, _error} =
              record
-             |> Ash.Changeset.for_update(:approve, %{approved_by: "owner-forced-fail"}, tenant: org_id)
+             |> Ash.Changeset.for_update(:approve, %{approved_by: "owner-forced-fail"},
+               tenant: org_id
+             )
              |> Ash.update(authorize?: false)
 
     reloaded =

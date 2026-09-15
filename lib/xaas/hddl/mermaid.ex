@@ -46,7 +46,10 @@ defmodule Xaas.Hddl.Mermaid do
         {:ok, diagram}
 
       {:error, reason} ->
-        Logger.warning("[Xaas.Hddl.Mermaid] Runtime generation failed for #{reactor_module}: #{inspect(reason)}. Falling back to static .mmd file.")
+        Logger.warning(
+          "[Xaas.Hddl.Mermaid] Runtime generation failed for #{reactor_module}: #{inspect(reason)}. Falling back to static .mmd file."
+        )
+
         read_static_mmd(module_to_filename(reactor_module))
     end
   end

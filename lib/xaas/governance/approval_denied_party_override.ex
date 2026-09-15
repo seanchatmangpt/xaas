@@ -13,7 +13,7 @@ defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -25,50 +25,50 @@ defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
     # ApprovalDeniedPartyOverrideRequiresApprover's real "second, distinct
     # owner" rule on :approve.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_denied_party_override
+    type(:approval_denied_party_override)
   end
 
   json_api do
-    type "approval_denied_party_override"
+    type("approval_denied_party_override")
 
     routes do
-      base "/approval_denied_party_override"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_denied_party_override")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_denied_party_overrides"
-    repo Xaas.Repo
+    table("approval_denied_party_overrides")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [
+      accept([
         :org_id,
         :requested_by,
         :screening_record_id,
         :decision,
         :justification
-      ]
+      ])
     end
 
     # Real mutation route, ported from platform-console's
@@ -91,47 +91,47 @@ defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
     # (mirroring the other maker-checker approval resources in this
     # domain).
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalDeniedPartyOverrideRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalDeniedPartyOverrideRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real PUT body
     # (screeningRecordId, decision, justification, all required) --
     # identifies which screening register entry the override applies to.
     attribute :screening_record_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real decision enum, values ported verbatim from platform-console's
     # OVERRIDE_DECISIONS ("cleared_to_proceed" | "confirmed_blocked").
     attribute :decision, :override_decision do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :justification, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end

@@ -4,8 +4,11 @@ defmodule Xaas.Operations.AutofdePlannerCandidateTest do
   @moduletag :requires_cnv_deploy
   @moduletag skip:
                (case Req.get("http://127.0.0.1:8080/healthz") do
-                  {:ok, %Req.Response{status: 200}} -> false
-                  _ -> "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback. See Task 3 Step 5 to start it."
+                  {:ok, %Req.Response{status: 200}} ->
+                    false
+
+                  _ ->
+                    "cnv-deploy not running locally on :8080 -- real integration test, no mock fallback. See Task 3 Step 5 to start it."
                 end)
 
   setup do

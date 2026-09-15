@@ -48,9 +48,6 @@ defmodule Xaas.DataCase do
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 
-
-
-
   @doc """
   A helper that transforms changeset errors into a map of messages.
 

@@ -18,11 +18,13 @@ defmodule Xaas.Operations.Validations.ApprovalK8sFaultRemediateSuggestRequiresAp
 
     cond do
       is_nil(approved_by) or approved_by == "" ->
-        {:error, field: :approved_by, message: "is required to approve a k8s fault remediation suggestion"}
+        {:error,
+         field: :approved_by, message: "is required to approve a k8s fault remediation suggestion"}
 
       approved_by == requested_by ->
         {:error,
-         field: :approved_by, message: "cannot approve their own k8s fault remediation suggestion request"}
+         field: :approved_by,
+         message: "cannot approve their own k8s fault remediation suggestion request"}
 
       true ->
         :ok

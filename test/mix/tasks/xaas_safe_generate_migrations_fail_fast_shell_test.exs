@@ -91,7 +91,9 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations.FailFastShellTest do
     end
 
     test "error/1 still prints the real message on stderr (delegates to Mix.Shell.IO)" do
-      output = capture_io(:stderr, fn -> FailFastShell.error("real warning from ash_postgres") end)
+      output =
+        capture_io(:stderr, fn -> FailFastShell.error("real warning from ash_postgres") end)
+
       assert output =~ "real warning from ash_postgres"
     end
   end
@@ -130,7 +132,8 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations.FailFastShellTest do
         :timer.tc(fn ->
           with_fail_fast_shell(fn ->
             try do
-              {:answered, Mix.shell().yes?("Are you renaming subscriptions.plan to subscriptions.tier?")}
+              {:answered,
+               Mix.shell().yes?("Are you renaming subscriptions.plan to subscriptions.tier?")}
             rescue
               e in Mix.Error -> {:failed_fast, e.message}
             end

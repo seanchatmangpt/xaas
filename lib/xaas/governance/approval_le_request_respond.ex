@@ -13,7 +13,7 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -25,41 +25,41 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
     # plus ApprovalLeRequestRespondRequiresApprover's real "second,
     # distinct owner" rule on `:approve`.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_le_request_respond
+    type(:approval_le_request_respond)
   end
 
   json_api do
-    type "approval_le_request_respond"
+    type("approval_le_request_respond")
 
     routes do
-      base "/approval_le_request_respond"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_le_request_respond")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_le_request_responds"
-    repo Xaas.Repo
+    table("approval_le_request_responds")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real intake, ported from platform-console's real POST
     # /api/internal/le-requests (shared-secret-authed transparency-log
@@ -68,7 +68,7 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
     # -- kept as `requested_by` for consistency with every other
     # ApprovalX resource's maker-checker naming in this domain.
     create :create do
-      accept [
+      accept([
         :org_id,
         :requested_by,
         :request_type,
@@ -76,7 +76,7 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
         :jurisdiction,
         :summary,
         :reference_number
-      ]
+      ])
     end
 
     # Real mutation route, ported from platform-console's PUT
@@ -95,26 +95,26 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
     # branch -- xaas has no equivalent audit-log sink wired yet, so those
     # writes are honestly left undone rather than fabricated.
     update :approve do
-      accept [:approved_by, :status, :response_summary]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalLeRequestRespondRequiresApprover
+      accept([:approved_by, :status, :response_summary])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalLeRequestRespondRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      public? true
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real POST
@@ -122,37 +122,37 @@ defmodule Xaas.Governance.ApprovalLeRequestRespond do
     # jurisdiction/summary/loggedBy required; referenceNumber/orgId
     # optional).
     attribute :request_type, :le_request_type do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requesting_authority, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :jurisdiction, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :summary, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :reference_number, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real PUT
     # /api/owner/le-requests body (status/responseSummary required).
     attribute :status, :le_response_status do
-      public? true
+      public?(true)
     end
 
     attribute :response_summary, :string do
-      public? true
+      public?(true)
     end
   end
 end

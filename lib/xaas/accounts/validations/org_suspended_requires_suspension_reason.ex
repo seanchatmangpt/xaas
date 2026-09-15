@@ -54,9 +54,7 @@ defmodule Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason do
     suspension_reason = Ash.Changeset.get_attribute(changeset, :suspension_reason)
 
     if status == :suspended and blank?(suspension_reason) do
-      {:error,
-       field: :suspension_reason,
-       message: "is required when suspending an org"}
+      {:error, field: :suspension_reason, message: "is required when suspending an org"}
     else
       :ok
     end

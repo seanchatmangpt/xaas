@@ -74,8 +74,7 @@ defmodule Xaas.Autofde.StatusParser do
     case Regex.run(@update_header, line) do
       [_, pass, date, first_summary_line] ->
         [
-          {String.to_integer(pass), date,
-           gather_summary(first_summary_line, lines, idx + 1)}
+          {String.to_integer(pass), date, gather_summary(first_summary_line, lines, idx + 1)}
         ]
 
       nil ->

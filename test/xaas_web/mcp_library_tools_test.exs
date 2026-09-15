@@ -71,9 +71,10 @@ defmodule XaasWeb.McpLibraryToolsTest do
     session_id
   end
 
-  test "POST /mcp tools/call books_by_grade_band returns real seeded Book rows via real JSON-RPC", %{
-    conn: conn
-  } do
+  test "POST /mcp tools/call books_by_grade_band returns real seeded Book rows via real JSON-RPC",
+       %{
+         conn: conn
+       } do
     tag = "mcp-library-tools-test-#{System.unique_integer([:positive])}"
 
     in_band =

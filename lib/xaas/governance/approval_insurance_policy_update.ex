@@ -13,7 +13,7 @@ defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -25,41 +25,41 @@ defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
     # check on :create,
     # ApprovalInsurancePolicyUpdateRequiresApprover on :approve).
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_insurance_policy_update
+    type(:approval_insurance_policy_update)
   end
 
   json_api do
-    type "approval_insurance_policy_update"
+    type("approval_insurance_policy_update")
 
     routes do
-      base "/approval_insurance_policy_update"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_insurance_policy_update")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_insurance_policy_updates"
-    repo Xaas.Repo
+    table("approval_insurance_policy_updates")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real mutation route, ported from platform-console's
     # PUT /api/owner/insurance-attestation maker-checker flow: file a
@@ -73,7 +73,7 @@ defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
     # side effects have no xaas equivalent yet and are honestly left
     # undone rather than fabricated).
     create :create do
-      accept [
+      accept([
         :org_id,
         :requested_by,
         :coverage_type,
@@ -83,9 +83,9 @@ defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
         :effective_date,
         :expiry_date,
         :am_best_rating
-      ]
+      ])
 
-      validate Xaas.Governance.Validations.ApprovalInsurancePolicyUpdateValidDateRange
+      validate(Xaas.Governance.Validations.ApprovalInsurancePolicyUpdateValidDateRange)
     end
 
     # Real mutation route, ported from platform-console's
@@ -100,64 +100,64 @@ defmodule Xaas.Governance.ApprovalInsurancePolicyUpdate do
     # has not modeled an InsurancePolicyRecord version-history resource in
     # xaas, so that write is honestly left undone rather than fabricated.
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalInsurancePolicyUpdateRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalInsurancePolicyUpdateRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real PUT body
     # (coverageType/carrier/policyNumber/coverageLimitUsd/effectiveDate/
     # expiryDate, all required; amBestRating optional).
     attribute :coverage_type, :insurance_coverage_type do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :carrier, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :policy_number, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :coverage_limit_usd, :decimal do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :effective_date, :date do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :expiry_date, :date do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :am_best_rating, :string do
-      public? true
+      public?(true)
     end
   end
 end

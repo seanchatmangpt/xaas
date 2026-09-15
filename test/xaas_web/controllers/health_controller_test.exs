@@ -66,7 +66,10 @@ defmodule XaasWeb.HealthControllerTest do
 
     for domain <- ~w(accounts billing governance ledger marketplace operations platform) do
       key = "ash_domain:" <> domain
-      assert checks[key]["status"] == "ok", "expected #{key} to be ok, got #{inspect(checks[key])}"
+
+      assert checks[key]["status"] == "ok",
+             "expected #{key} to be ok, got #{inspect(checks[key])}"
+
       assert is_integer(checks[key]["count"])
       assert checks[key]["count"] >= 0
     end

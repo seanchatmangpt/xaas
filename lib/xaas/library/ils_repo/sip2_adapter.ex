@@ -93,7 +93,8 @@ defmodule Xaas.Library.ILSRepo.SIP2Adapter do
     port = Keyword.fetch!(opts, :port)
     timeout = Keyword.get(opts, :timeout, @default_timeout)
 
-    with {:ok, socket} <- :gen_tcp.connect(host, port, [:binary, active: false, packet: :raw], timeout),
+    with {:ok, socket} <-
+           :gen_tcp.connect(host, port, [:binary, active: false, packet: :raw], timeout),
          :ok <- maybe_login(socket, opts, timeout),
          result <- fun.(socket, opts) do
       :gen_tcp.close(socket)
@@ -109,7 +110,8 @@ defmodule Xaas.Library.ILSRepo.SIP2Adapter do
         :ok
 
       login_user_id ->
-        request = encode_login_request(login_user_id, Keyword.get(opts, :login_password, ""), opts)
+        request =
+          encode_login_request(login_user_id, Keyword.get(opts, :login_password, ""), opts)
 
         case send_and_receive(socket, request) do
           {:ok, "94" <> rest} ->
@@ -164,7 +166,13 @@ defmodule Xaas.Library.ILSRepo.SIP2Adapter do
     now = DateTime.utc_now()
 
     date = now |> DateTime.to_date() |> Date.to_string() |> String.replace("-", "")
-    time = now |> DateTime.to_time() |> Time.to_string() |> String.replace(":", "") |> String.slice(0, 6)
+
+    time =
+      now
+      |> DateTime.to_time()
+      |> Time.to_string()
+      |> String.replace(":", "")
+      |> String.slice(0, 6)
 
     date <> "0000" <> time
   end

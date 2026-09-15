@@ -152,7 +152,11 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     # 10) Advance real durable Run state, reflecting the completed cycle.
     advanced_run =
       run
-      |> Ash.Changeset.for_update(:mark_completed_epoch, %{last_completed_epoch_at: DateTime.utc_now()}, authorize?: false)
+      |> Ash.Changeset.for_update(
+        :mark_completed_epoch,
+        %{last_completed_epoch_at: DateTime.utc_now()},
+        authorize?: false
+      )
       |> Ash.update!()
       |> Ash.Changeset.for_update(:advance_cycle, %{}, authorize?: false)
       |> Ash.update!()
@@ -162,7 +166,9 @@ defmodule Xaas.Ultracode.EpochReactorTest do
 
     final_run =
       advanced_run
-      |> Ash.Changeset.for_update(:transition_state, %{state: :completed, standing: :admitted}, authorize?: false)
+      |> Ash.Changeset.for_update(:transition_state, %{state: :completed, standing: :admitted},
+        authorize?: false
+      )
       |> Ash.update!()
 
     assert final_run.state == :completed

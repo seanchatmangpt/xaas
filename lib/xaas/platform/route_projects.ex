@@ -13,44 +13,44 @@ defmodule Xaas.Platform.RouteProjects do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :route_projects
+    type(:route_projects)
   end
 
   json_api do
-    type "route_projects"
+    type("route_projects")
 
     routes do
-      base "/route_projects"
-      get :read
-      index :read
+      base("/route_projects")
+      get(:read)
+      index(:read)
     end
   end
 
   postgres do
-    table "route_projects"
-    repo Xaas.Repo
+    table("route_projects")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :requested_by, :string do
-      allow_nil? false
+      allow_nil?(false)
     end
 
-    attribute :approved_by, :string
+    attribute(:approved_by, :string)
   end
 end

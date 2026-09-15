@@ -96,6 +96,7 @@ defmodule Xaas.Library.Reactors.Steps.ScoreBookMapTest do
     for item <- scored do
       assert is_float(item.score)
       assert item.score >= 0.0
+
       assert %{collab: _, semantic: _, grade_fit: _, available: _, diversity: _, curation: _} =
                item.factors
     end
@@ -121,7 +122,8 @@ defmodule Xaas.Library.Reactors.Steps.ScoreBookMapTest do
   end
 
   test "per-item error isolation: a bad book's step failure does not raise, and is reported as a real Reactor error without corrupting other results" do
-    good_book = book(%{id: 10, title: "Good", genres: ["fantasy"], embedding: List.duplicate(0.1, 384)})
+    good_book =
+      book(%{id: 10, title: "Good", genres: ["fantasy"], embedding: List.duplicate(0.1, 384)})
 
     # Force ScoreBook's semantic branch into its {:error, _} path: passing a
     # non-list embedding for the *student profile* embedding argument means

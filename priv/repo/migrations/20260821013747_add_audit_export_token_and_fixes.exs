@@ -26,7 +26,6 @@ defmodule Xaas.Repo.Migrations.AddAuditExportTokenAndFixes do
         null: false,
         default: fragment("(now() AT TIME ZONE 'utc')")
     end
-
   end
 
   # Real, deliberate exclusion (same real gap as every migration this

@@ -1,5 +1,14 @@
 {
   "entries": {
+    "/Users/sac/ggen_igniter/priv/ggen/reactor-scaffold-pack/templates/reactor.ex.eex=>tmp_out/real_epoch_reactor_generated.ex": {
+      "out_template": "tmp_out/real_epoch_reactor_generated.ex",
+      "outputs": {
+        "/Users/sac/xaas/tmp_out/real_epoch_reactor_generated.ex": "sha256:eadb313bef279c3666cb832ca562e09641dbe2b0630224474a7fce82d5dbe826"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/ggen_igniter/priv/ggen/reactor-scaffold-pack/templates/reactor.ex.eex",
+      "updated_at": "2026-09-15T02:39:34.522049Z"
+    },
     "/Users/sac/ggen_igniter/priv/ggen/reactor-scaffold-pack/templates/reactor.ex.eex=>tmp_out/ultracode_probe_epoch_reactor.ex": {
       "out_template": "tmp_out/ultracode_probe_epoch_reactor.ex",
       "outputs": {
@@ -44,6 +53,15 @@
       "pack_dir": "priv/packs/xaas_library_pack",
       "template": "priv/packs/xaas_library_pack/templates/manufacture.ex.eex",
       "updated_at": "2026-09-09T04:52:20.486679Z"
+    },
+    "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex=>tmp_out/real_resource_manifest.ex": {
+      "out_template": "tmp_out/real_resource_manifest.ex",
+      "outputs": {
+        "/Users/sac/xaas/tmp_out/real_resource_manifest.ex": "sha256:73002496dab0747b47e1c470179471826a9fe95e6fe55cad54db46619890757b"
+      },
+      "pack_dir": null,
+      "template": "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex",
+      "updated_at": "2026-09-15T02:35:03.891204Z"
     },
     "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex=>tmp_out/ultracode_probe_manifest.ex": {
       "out_template": "tmp_out/ultracode_probe_manifest.ex",

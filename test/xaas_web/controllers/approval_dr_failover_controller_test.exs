@@ -101,7 +101,9 @@ defmodule XaasWeb.ApprovalDrFailoverControllerTest do
       }
     }
 
-    approve_resp = conn |> json_headers(org_id) |> patch("/api/approval_dr_failover/#{id}", approve_body)
+    approve_resp =
+      conn |> json_headers(org_id) |> patch("/api/approval_dr_failover/#{id}", approve_body)
+
     approved = json_response(approve_resp, 200)
     assert approved["data"]["attributes"]["approved_by"] == "owner-2"
 
@@ -129,13 +131,17 @@ defmodule XaasWeb.ApprovalDrFailoverControllerTest do
 
     change =
       ApprovalDrFailover
-      |> Ash.Changeset.for_create(:create, %{
-        org_id: org_id,
-        requested_by: requester,
-        from_region: "us-east-1",
-        to_region: "us-west-2",
-        reason: "test"
-      }, tenant: org_id)
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: org_id,
+          requested_by: requester,
+          from_region: "us-east-1",
+          to_region: "us-west-2",
+          reason: "test"
+        },
+        tenant: org_id
+      )
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -146,7 +152,11 @@ defmodule XaasWeb.ApprovalDrFailoverControllerTest do
       }
     }
 
-    resp = conn |> json_headers(org_id) |> patch("/api/approval_dr_failover/#{change.id}", approve_body)
+    resp =
+      conn
+      |> json_headers(org_id)
+      |> patch("/api/approval_dr_failover/#{change.id}", approve_body)
+
     assert resp.status == 400
 
     persisted = ApprovalDrFailover |> Ash.get!(change.id, authorize?: false, tenant: org_id)
@@ -285,6 +295,7 @@ defmodule XaasWeb.ApprovalDrFailoverControllerTest do
     assert resp.status == 400
 
     persisted = ApprovalDrFailover |> Ash.get!(record.id, authorize?: false, tenant: victim_org)
+
     assert persisted.approved_by == nil,
            "an open incident under an unrelated org must never satisfy a different org's " <>
              "approval precondition -- this is the exact seventeenth-pass live-demonstrated " <>

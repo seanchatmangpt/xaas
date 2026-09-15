@@ -13,7 +13,7 @@ defmodule Xaas.Platform.RouteSecrets do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -23,41 +23,41 @@ defmodule Xaas.Platform.RouteSecrets do
     # level XaasWeb.Plugs.RequireInternalApiToken Bearer check plays the
     # equivalent gating role here.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:destroy) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :route_secrets
+    type(:route_secrets)
   end
 
   json_api do
-    type "route_secrets"
+    type("route_secrets")
 
     routes do
-      base "/route_secrets"
-      get :read
-      index :read
-      post :create
-      delete :destroy
+      base("/route_secrets")
+      get(:read)
+      index(:read)
+      post(:create)
+      delete(:destroy)
     end
   end
 
   postgres do
-    table "route_secrets"
-    repo Xaas.Repo
+    table("route_secrets")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real mutation route, ported from platform-console's POST /api/secrets
     # (lib/k8s.ts createSecret). platform-console's real route forwards
@@ -71,7 +71,7 @@ defmodule Xaas.Platform.RouteSecrets do
     # doing so with no real KMS/vault backend behind it would be a
     # fabricated integration, not a real one.
     create :create do
-      accept [:namespace, :name, :requested_by]
+      accept([:namespace, :name, :requested_by])
     end
 
     # Real mutation route, ported from platform-console's
@@ -79,33 +79,33 @@ defmodule Xaas.Platform.RouteSecrets do
     # `namespace`/`name` as query params. Same "no real k8s client"
     # caveat as :create applies here.
     destroy :destroy do
-      primary? true
+      primary?(true)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Real payload, matching platform-console's real POST body
     # (namespace/name, both required; `data` key/value entries are not
     # persisted here -- see :create action comment above).
     attribute :namespace, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
   end
 end

@@ -162,7 +162,8 @@ defmodule Xaas.DevSeeds do
       grade_level: Decimal.new("7.5"),
       genres: ["Fantasy", "Adventure"],
       formats: ["Print"],
-      synopsis: "The apprentice mapmaker returns, this time charting a sky that keeps rewriting itself.",
+      synopsis:
+        "The apprentice mapmaker returns, this time charting a sky that keeps rewriting itself.",
       available_copies: 3,
       total_copies: 3
     },
@@ -173,7 +174,8 @@ defmodule Xaas.DevSeeds do
       grade_level: Decimal.new("12.0"),
       genres: ["Science", "Realistic Fiction"],
       formats: ["Print", "Ebook"],
-      synopsis: "A graduating senior's internship at a satellite lab collides with prom-committee drama.",
+      synopsis:
+        "A graduating senior's internship at a satellite lab collides with prom-committee drama.",
       available_copies: 1,
       total_copies: 2
     }
@@ -300,6 +302,7 @@ defmodule Xaas.DevSeeds do
         existing
     end
   end
+
   @doc """
   Real hand-curated `Xaas.Library.Book` fixture rows for the Next Read
   case study (`/next-read`, `XaasWeb.NextRead.ReaderLive`) -- looked up
@@ -423,7 +426,8 @@ defmodule Xaas.DevSeeds do
             book_id: book_id,
             curated_by: "dev-librarian@example.com",
             grade_band: "6-8",
-            reason: "Librarian spotlight: strong mystery/fantasy pick for the middle-grade shelf.",
+            reason:
+              "Librarian spotlight: strong mystery/fantasy pick for the middle-grade shelf.",
             state: :pinned,
             active: true
           }

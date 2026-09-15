@@ -4,13 +4,13 @@ defmodule Xaas.Ledger do
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
 
   admin do
-    show? true
+    show?(true)
   end
 
   resources do
-    resource Xaas.Ledger.Account
-    resource Xaas.Ledger.Balance
-    resource Xaas.Ledger.Transfer
-    resource Xaas.Ledger.EventLog
+    resource(Xaas.Ledger.Account)
+    resource(Xaas.Ledger.Balance)
+    resource(Xaas.Ledger.Transfer)
+    resource(Xaas.Ledger.EventLog)
   end
 end

@@ -34,8 +34,7 @@ defmodule Xaas.Governance.Validations.ApprovalBackupRetentionChangeWithinTierRan
         else
           {:error,
            field: :requested_retention_days,
-           message:
-             "must be an integer between #{min_days} and #{max_days} for tier '#{tier}'"}
+           message: "must be an integer between #{min_days} and #{max_days} for tier '#{tier}'"}
         end
 
       :error ->

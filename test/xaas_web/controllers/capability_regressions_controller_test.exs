@@ -18,13 +18,17 @@ defmodule XaasWeb.CapabilityRegressionsControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
-  test "GET /internal-api/capability_liveness_regressions returns real, empty regressions when none exist", %{conn: conn} do
-    conn = conn |> with_internal_api_token() |> get("/internal-api/capability_liveness_regressions")
+  test "GET /internal-api/capability_liveness_regressions returns real, empty regressions when none exist",
+       %{conn: conn} do
+    conn =
+      conn |> with_internal_api_token() |> get("/internal-api/capability_liveness_regressions")
 
     assert %{"count" => 0, "regressions" => []} = json_response(conn, 200)
   end
 
-  test "GET /internal-api/capability_liveness_regressions surfaces a real detected regression", %{conn: conn} do
+  test "GET /internal-api/capability_liveness_regressions surfaces a real detected regression", %{
+    conn: conn
+  } do
     capability = "regress-controller-test-#{System.unique_integer([:positive])}"
 
     CapabilityLivenessReceipt
@@ -50,10 +54,13 @@ defmodule XaasWeb.CapabilityRegressionsControllerTest do
     })
     |> Ash.create!(authorize?: false)
 
-    conn = conn |> with_internal_api_token() |> get("/internal-api/capability_liveness_regressions")
+    conn =
+      conn |> with_internal_api_token() |> get("/internal-api/capability_liveness_regressions")
+
     body = json_response(conn, 200)
 
     assert body["count"] >= 1
+
     assert Enum.any?(body["regressions"], fn r ->
              r["capability"] == capability and
                r["was"]["status"] == "ALIVE" and

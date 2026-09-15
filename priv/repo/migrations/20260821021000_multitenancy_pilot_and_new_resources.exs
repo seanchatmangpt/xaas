@@ -151,7 +151,6 @@ defmodule Xaas.Repo.Migrations.MultitenancyPilotAndNewResources do
       add :namespace, :text, null: false
       add :name, :text, null: false
     end
-
   end
 
   # Real, deliberate exclusion (same real gap as every migration this

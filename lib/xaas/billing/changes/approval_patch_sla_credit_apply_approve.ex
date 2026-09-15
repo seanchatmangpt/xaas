@@ -92,7 +92,8 @@ defmodule Xaas.Billing.Changes.ApprovalPatchSlaCreditApplyApprove do
     dollars = Decimal.div(Decimal.new(record.credit_amount_cents), Decimal.new(100))
     amount = Money.new(:USD, dollars)
 
-    with {:ok, sla_credits_account} <- open_or_get_account(@platform_sla_credits_account_identifier),
+    with {:ok, sla_credits_account} <-
+           open_or_get_account(@platform_sla_credits_account_identifier),
          {:ok, org_account} <- open_or_get_account(record.org_id) do
       Xaas.Ledger.Transfer
       |> Ash.Changeset.for_create(:transfer, %{

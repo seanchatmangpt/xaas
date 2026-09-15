@@ -26,7 +26,8 @@ defmodule Xaas.Repo.Migrations.AddSubscriptionIdAndRequestedTierToApprovalTierDo
             name: "approval_tier_downgrades_subscription_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
   end
 

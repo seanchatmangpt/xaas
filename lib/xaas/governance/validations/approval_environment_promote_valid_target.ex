@@ -23,7 +23,8 @@ defmodule Xaas.Governance.Validations.ApprovalEnvironmentPromoteValidTarget do
       :error ->
         {:error,
          field: :from_environment,
-         message: "'#{from}' is already the terminal environment -- there is nothing to promote it to"}
+         message:
+           "'#{from}' is already the terminal environment -- there is nothing to promote it to"}
 
       {:ok, expected} when to == expected ->
         :ok
@@ -31,7 +32,8 @@ defmodule Xaas.Governance.Validations.ApprovalEnvironmentPromoteValidTarget do
       {:ok, expected} ->
         {:error,
          field: :to_environment,
-         message: "invalid promotion from '#{from}' to '#{to}' -- the only valid target is '#{expected}'"}
+         message:
+           "invalid promotion from '#{from}' to '#{to}' -- the only valid target is '#{expected}'"}
     end
   end
 end

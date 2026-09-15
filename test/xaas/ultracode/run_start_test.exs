@@ -33,7 +33,9 @@ defmodule Xaas.Ultracode.RunStartTest do
 
     run =
       Run
-      |> Ash.Changeset.for_create(:create, %{goal: "run_start_test", max_cycles: 1}, authorize?: false)
+      |> Ash.Changeset.for_create(:create, %{goal: "run_start_test", max_cycles: 1},
+        authorize?: false
+      )
       |> Ash.create!()
 
     assert run.state == :pending
@@ -77,7 +79,9 @@ defmodule Xaas.Ultracode.RunStartTest do
 
     run =
       Run
-      |> Ash.Changeset.for_create(:create, %{goal: "run_start_test unattended", max_cycles: 2}, authorize?: false)
+      |> Ash.Changeset.for_create(:create, %{goal: "run_start_test unattended", max_cycles: 2},
+        authorize?: false
+      )
       |> Ash.create!()
       |> Ash.Changeset.for_update(:start, %{exact_subject: subject}, authorize?: false)
       |> Ash.update!()

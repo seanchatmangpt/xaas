@@ -19,12 +19,14 @@ defmodule Xaas.Governance.Validations.ApprovalBreakGlassJustificationReviewRequi
 
     cond do
       is_nil(approved_by) or approved_by == "" ->
-        {:error, field: :approved_by, message: "is required to approve a break-glass justification review"}
+        {:error,
+         field: :approved_by, message: "is required to approve a break-glass justification review"}
 
       approved_by == requested_by ->
         {:error,
          field: :approved_by,
-         message: "must be a second, distinct platform admin -- cannot review their own justification"}
+         message:
+           "must be a second, distinct platform admin -- cannot review their own justification"}
 
       true ->
         :ok

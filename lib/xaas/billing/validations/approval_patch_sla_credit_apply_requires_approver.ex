@@ -18,11 +18,13 @@ defmodule Xaas.Billing.Validations.ApprovalPatchSlaCreditApplyRequiresApprover d
 
     cond do
       is_nil(approved_by) or approved_by == "" ->
-        {:error, field: :approved_by, message: "is required to approve a patch SLA credit application"}
+        {:error,
+         field: :approved_by, message: "is required to approve a patch SLA credit application"}
 
       approved_by == requested_by ->
         {:error,
-         field: :approved_by, message: "cannot approve their own patch SLA credit application request"}
+         field: :approved_by,
+         message: "cannot approve their own patch SLA credit application request"}
 
       true ->
         :ok

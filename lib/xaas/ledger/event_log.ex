@@ -14,13 +14,13 @@ defmodule Xaas.Ledger.EventLog do
     extensions: [AshEvents.EventLog]
 
   postgres do
-    table "ledger_events"
-    repo Xaas.Repo
+    table("ledger_events")
+    repo(Xaas.Repo)
   end
 
   event_log do
-    clear_records_for_replay Xaas.Ledger.EventLog.ClearAllRecords
-    primary_key_type Ash.Type.UUIDv7
+    clear_records_for_replay(Xaas.Ledger.EventLog.ClearAllRecords)
+    primary_key_type(Ash.Type.UUIDv7)
     # Real bug found and fixed this session: `record_id_type` defaults to
     # `:uuid`, but this event log is shared by both Xaas.Ledger.Account
     # (uuid_v7 primary key) and Xaas.Ledger.Transfer (AshDoubleEntry.ULID
@@ -31,7 +31,7 @@ defmodule Xaas.Ledger.EventLog do
     # `:string` is the real fix -- it holds both a uuid_v7 string and a
     # ULID string correctly, since a single shared event log's record_id
     # column can't be two different strict types at once.
-    record_id_type :string
-    persist_actor_primary_key :user_id, Xaas.Accounts.User
+    record_id_type(:string)
+    persist_actor_primary_key(:user_id, Xaas.Accounts.User)
   end
 end

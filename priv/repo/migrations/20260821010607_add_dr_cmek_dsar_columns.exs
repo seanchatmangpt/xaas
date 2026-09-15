@@ -26,7 +26,6 @@ defmodule Xaas.Repo.Migrations.AddDrCmekDsarColumns do
       add :org_id, :text, null: false
       add :subject_email, :text, null: false
     end
-
   end
 
   # Real, deliberate exclusion (same real gap as prior migrations this

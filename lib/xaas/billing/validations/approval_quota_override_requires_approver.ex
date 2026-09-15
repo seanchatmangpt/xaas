@@ -21,8 +21,7 @@ defmodule Xaas.Billing.Validations.ApprovalQuotaOverrideRequiresApprover do
         {:error, field: :approved_by, message: "is required to approve a quota override"}
 
       approved_by == requested_by ->
-        {:error,
-         field: :approved_by, message: "cannot approve their own quota override request"}
+        {:error, field: :approved_by, message: "cannot approve their own quota override request"}
 
       true ->
         :ok

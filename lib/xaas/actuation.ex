@@ -472,7 +472,6 @@ defmodule Xaas.Actuation.Kernel do
             )
 
           Ash.destroy(changeset, authorize?: authorize?, actor: actor, tenant: tenant)
-
         end
 
       %Ash.Resource.Actions.Action{} ->

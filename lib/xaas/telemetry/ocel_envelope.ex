@@ -48,7 +48,8 @@ defmodule Xaas.Telemetry.OcelEnvelope do
   Returns the envelope map. Does not validate or POST it.
   """
   @spec build(map(), map(), integer()) :: map()
-  def build(event, producer, sequence) when is_map(event) and is_map(producer) and is_integer(sequence) do
+  def build(event, producer, sequence)
+      when is_map(event) and is_map(producer) and is_integer(sequence) do
     %{
       "schema" => "xaas.ocel.v2",
       "producer" => producer,

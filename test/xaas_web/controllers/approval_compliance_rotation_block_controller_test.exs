@@ -34,7 +34,12 @@ defmodule XaasWeb.ApprovalComplianceRotationBlockControllerTest do
       }
     }
 
-    created = conn |> json_headers() |> post("/api/approval_compliance_rotation_block", create_body) |> json_response(201)
+    created =
+      conn
+      |> json_headers()
+      |> post("/api/approval_compliance_rotation_block", create_body)
+      |> json_response(201)
+
     id = created["data"]["id"]
 
     approve_body = %{
@@ -61,7 +66,11 @@ defmodule XaasWeb.ApprovalComplianceRotationBlockControllerTest do
 
     change =
       ApprovalComplianceRotationBlock
-      |> Ash.Changeset.for_create(:create, %{org_id: "org-x", requested_by: requester, reason: "test"})
+      |> Ash.Changeset.for_create(:create, %{
+        org_id: "org-x",
+        requested_by: requester,
+        reason: "test"
+      })
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -73,7 +82,9 @@ defmodule XaasWeb.ApprovalComplianceRotationBlockControllerTest do
     }
 
     resp =
-      conn |> json_headers() |> patch("/api/approval_compliance_rotation_block/#{change.id}", approve_body)
+      conn
+      |> json_headers()
+      |> patch("/api/approval_compliance_rotation_block/#{change.id}", approve_body)
 
     assert resp.status == 400
   end

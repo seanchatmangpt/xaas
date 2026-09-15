@@ -80,7 +80,8 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeStressTest do
     assert Enum.all?(results, &match?(%ApprovalBackupRetentionChange{}, &1))
 
     assert Enum.all?(results, fn r ->
-             r.approved_by != nil and String.starts_with?(r.approved_by, "stress-approver-#{run_tag}-")
+             r.approved_by != nil and
+               String.starts_with?(r.approved_by, "stress-approver-#{run_tag}-")
            end)
 
     expected_requesters =

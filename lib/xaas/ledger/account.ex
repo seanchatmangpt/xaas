@@ -6,8 +6,8 @@ defmodule Xaas.Ledger.Account do
     extensions: [AshDoubleEntry.Account, AshEvents.Events]
 
   events do
-    event_log Xaas.Ledger.EventLog
-    current_action_versions open: 1
+    event_log(Xaas.Ledger.EventLog)
+    current_action_versions(open: 1)
   end
 
   policies do
@@ -17,52 +17,52 @@ defmodule Xaas.Ledger.Account do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   account do
     # configure the other resources it will interact with
-    transfer_resource Xaas.Ledger.Transfer
-    balance_resource Xaas.Ledger.Balance
+    transfer_resource(Xaas.Ledger.Transfer)
+    balance_resource(Xaas.Ledger.Balance)
   end
 
   account do
-    transfer_resource Xaas.Ledger.Transfer
-    balance_resource Xaas.Ledger.Balance
+    transfer_resource(Xaas.Ledger.Transfer)
+    balance_resource(Xaas.Ledger.Balance)
   end
 
   postgres do
-    table "ledger_accounts"
-    repo Xaas.Repo
+    table("ledger_accounts")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :open do
-      accept [:identifier, :currency]
+      accept([:identifier, :currency])
     end
 
     read :lock_accounts do
       # Used to lock accounts while doing ledger operations
-      prepare {AshDoubleEntry.Account.Preparations.LockForUpdate, []}
+      prepare({AshDoubleEntry.Account.Preparations.LockForUpdate, []})
     end
   end
 
   attributes do
-    uuid_v7_primary_key :id
+    uuid_v7_primary_key(:id)
 
     attribute :identifier, :string do
-      allow_nil? false
+      allow_nil?(false)
     end
 
     attribute :currency, :string do
-      allow_nil? false
+      allow_nil?(false)
     end
 
     timestamps()
@@ -70,32 +70,32 @@ defmodule Xaas.Ledger.Account do
 
   relationships do
     has_many :balances, Xaas.Ledger.Balance do
-      destination_attribute :account_id
+      destination_attribute(:account_id)
     end
   end
 
   calculations do
     calculate :balance_as_of_ulid, :money do
-      calculation {AshDoubleEntry.Account.Calculations.BalanceAsOfUlid, resource: __MODULE__}
+      calculation({AshDoubleEntry.Account.Calculations.BalanceAsOfUlid, resource: __MODULE__})
 
       argument :ulid, AshDoubleEntry.ULID do
-        allow_nil? false
-        allow_expr? true
+        allow_nil?(false)
+        allow_expr?(true)
       end
     end
 
     calculate :balance_as_of, :money do
-      calculation {AshDoubleEntry.Account.Calculations.BalanceAsOf, resource: __MODULE__}
+      calculation({AshDoubleEntry.Account.Calculations.BalanceAsOf, resource: __MODULE__})
 
       argument :timestamp, :utc_datetime_usec do
-        allow_nil? false
-        allow_expr? true
-        default &DateTime.utc_now/0
+        allow_nil?(false)
+        allow_expr?(true)
+        default(&DateTime.utc_now/0)
       end
     end
   end
 
   identities do
-    identity :unique_identifier, [:identifier]
+    identity(:unique_identifier, [:identifier])
   end
 end

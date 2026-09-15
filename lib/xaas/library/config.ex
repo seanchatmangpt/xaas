@@ -57,7 +57,9 @@ defmodule Xaas.Library.Config do
       end
 
     case opts do
-      %{} = override_map -> Map.merge(base, override_map)
+      %{} = override_map ->
+        Map.merge(base, override_map)
+
       kw when is_list(kw) ->
         case Keyword.get(kw, :weights) do
           nil -> base

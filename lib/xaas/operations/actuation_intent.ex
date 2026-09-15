@@ -17,25 +17,25 @@ defmodule Xaas.Operations.ActuationIntent do
 
   policies do
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   postgres do
-    table "actuation_intents"
-    repo Xaas.Repo
+    table("actuation_intents")
+    repo(Xaas.Repo)
   end
 
   actions do
     read :read do
-      primary? true
-      public? false
+      primary?(true)
+      public?(false)
     end
 
     create :admit do
-      public? false
+      public?(false)
 
-      accept [
+      accept([
         :idempotency_key,
         :resource_module,
         :action,
@@ -48,88 +48,88 @@ defmodule Xaas.Operations.ActuationIntent do
         :authority,
         :input,
         :status
-      ]
+      ])
 
-      validate Xaas.Actuation.Validations.FrontierEvidence
-      validate Xaas.Actuation.Validations.CausalAdmission
+      validate(Xaas.Actuation.Validations.FrontierEvidence)
+      validate(Xaas.Actuation.Validations.CausalAdmission)
     end
 
     update :transition do
-      public? false
-      accept [:status]
-      require_atomic? false
+      public?(false)
+      accept([:status])
+      require_atomic?(false)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :idempotency_key, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :resource_module, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :action, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :subject_id, :string do
-      public? true
+      public?(true)
     end
 
     attribute :ontology_class_iri, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :ontology_projection_hash, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :input_hash, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :actor_ref, :string do
-      public? true
+      public?(true)
     end
 
     attribute :tenant_ref, :string do
-      public? true
+      public?(true)
     end
 
     attribute :authority, :map do
-      allow_nil? false
-      default %{}
-      public? true
+      allow_nil?(false)
+      default(%{})
+      public?(true)
     end
 
     attribute :input, :map do
-      allow_nil? false
-      default %{}
-      public? true
+      allow_nil?(false)
+      default(%{})
+      public?(true)
     end
 
     attribute :status, :atom do
-      allow_nil? false
-      default :admitted
-      constraints one_of: [:admitted, :executing, :succeeded, :failed, :refused]
-      public? true
+      allow_nil?(false)
+      default(:admitted)
+      constraints(one_of: [:admitted, :executing, :succeeded, :failed, :refused])
+      public?(true)
     end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
   end
 
   identities do
-    identity :unique_idempotency_key, [:idempotency_key]
+    identity(:unique_idempotency_key, [:idempotency_key])
   end
 end

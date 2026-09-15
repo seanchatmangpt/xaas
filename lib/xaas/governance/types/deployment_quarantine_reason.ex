@@ -10,5 +10,6 @@ defmodule Xaas.Governance.Types.DeploymentQuarantineReason do
   rotation pending approval, designed to fit this domain's real
   maker-checker pattern -- not a verbatim port.
   """
-  use Ash.Type.Enum, values: [:failed_healthcheck, :security_finding, :manual_hold, :rollback_candidate]
+  use Ash.Type.Enum,
+    values: [:failed_healthcheck, :security_finding, :manual_hold, :rollback_candidate]
 end

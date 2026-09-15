@@ -20,7 +20,8 @@ defmodule Xaas.Governance.Validations.DataDestructionCertificateIssueRequiresApp
     cond do
       is_nil(approved_by) or approved_by == "" ->
         {:error,
-         field: :approved_by, message: "is required to approve a data destruction certificate issuance"}
+         field: :approved_by,
+         message: "is required to approve a data destruction certificate issuance"}
 
       approved_by == requested_by ->
         {:error,

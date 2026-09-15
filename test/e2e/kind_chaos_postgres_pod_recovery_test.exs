@@ -194,7 +194,10 @@ defmodule Xaas.E2E.KindChaosPostgresPodRecoveryTest do
   defp wait_for_new_pod_ready!(original_pod, deadline \\ nil)
 
   defp wait_for_new_pod_ready!(original_pod, nil) do
-    wait_for_new_pod_ready!(original_pod, System.monotonic_time(:millisecond) + @recovery_timeout_ms)
+    wait_for_new_pod_ready!(
+      original_pod,
+      System.monotonic_time(:millisecond) + @recovery_timeout_ms
+    )
   end
 
   defp wait_for_new_pod_ready!(original_pod, deadline) do

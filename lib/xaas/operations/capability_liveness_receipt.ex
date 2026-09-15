@@ -45,8 +45,8 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
   oban do
     scheduled_actions do
       schedule :check_regressions, "*/15 * * * *" do
-        action :check_regressions
-        worker_module_name Xaas.Operations.CapabilityLivenessReceipt.Workers.CheckRegressions
+        action(:check_regressions)
+        worker_module_name(Xaas.Operations.CapabilityLivenessReceipt.Workers.CheckRegressions)
       end
     end
   end
@@ -125,7 +125,7 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     # unattended on a schedule; alerting/paging on a detected regression
     # is real, disclosed follow-up work, not fabricated here.
     action :check_regressions, :map do
-      run fn _input, _context ->
+      run(fn _input, _context ->
         regressions = Xaas.Operations.CapabilityLivenessRegressions.detect()
 
         if regressions == [] do
@@ -140,7 +140,7 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
         end
 
         {:ok, %{count: length(regressions), regressions: regressions}}
-      end
+      end)
     end
 
     create :ingest do

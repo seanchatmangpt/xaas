@@ -85,7 +85,11 @@ defmodule Xaas.Ultracode.MissedEpochReceiptTest do
         Run
         |> Ash.Changeset.for_create(
           :create,
-          %{goal: "missed_epoch_receipt_test advance_all", max_cycles: 1, epoch_timeout_seconds: 1},
+          %{
+            goal: "missed_epoch_receipt_test advance_all",
+            max_cycles: 1,
+            epoch_timeout_seconds: 1
+          },
           authorize?: false
         )
         |> Ash.create!()

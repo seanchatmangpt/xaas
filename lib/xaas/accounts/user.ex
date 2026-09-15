@@ -11,165 +11,170 @@ defmodule Xaas.Accounts.User do
     # row. AshAuthentication's :get_by_email / :get_by_subject reads must
     # keep excluding archived users by default (no exclude_read_actions), so
     # an archived user can no longer sign in or be looked up by identity.
-    attribute :archived_at
-    base_filter? true
+    attribute(:archived_at)
+    base_filter?(true)
   end
 
   authentication do
     add_ons do
       log_out_everywhere do
-        apply_on_password_change? true
+        apply_on_password_change?(true)
       end
 
       confirmation :confirm_new_user do
-        monitor_fields [:email]
-        confirm_on_create? true
-        confirm_on_update? false
-        require_interaction? true
-        confirmed_at_field :confirmed_at
-        auto_confirm_actions [:sign_in_with_magic_link, :reset_password_with_token]
-        sender Xaas.Accounts.User.Senders.SendNewUserConfirmationEmail
+        monitor_fields([:email])
+        confirm_on_create?(true)
+        confirm_on_update?(false)
+        require_interaction?(true)
+        confirmed_at_field(:confirmed_at)
+        auto_confirm_actions([:sign_in_with_magic_link, :reset_password_with_token])
+        sender(Xaas.Accounts.User.Senders.SendNewUserConfirmationEmail)
       end
     end
 
     tokens do
-      enabled? true
-      token_resource Xaas.Accounts.Token
-      signing_secret Xaas.Secrets
-      store_all_tokens? true
-      require_token_presence_for_authentication? true
+      enabled?(true)
+      token_resource(Xaas.Accounts.Token)
+      signing_secret(Xaas.Secrets)
+      store_all_tokens?(true)
+      require_token_presence_for_authentication?(true)
     end
 
     strategies do
       magic_link do
-        identity_field :email
-        registration_enabled? true
-        require_interaction? true
+        identity_field(:email)
+        registration_enabled?(true)
+        require_interaction?(true)
 
-        sender Xaas.Accounts.User.Senders.SendMagicLinkEmail
+        sender(Xaas.Accounts.User.Senders.SendMagicLinkEmail)
       end
 
-      remember_me :remember_me
+      remember_me(:remember_me)
 
       password :password do
-        identity_field :email
-        hash_provider AshAuthentication.BcryptProvider
+        identity_field(:email)
+        hash_provider(AshAuthentication.BcryptProvider)
 
         resettable do
-          sender Xaas.Accounts.User.Senders.SendPasswordResetEmail
+          sender(Xaas.Accounts.User.Senders.SendPasswordResetEmail)
           # these configurations will be the default in a future release
-          password_reset_action_name :reset_password_with_token
-          request_password_reset_action_name :request_password_reset_token
+          password_reset_action_name(:reset_password_with_token)
+          request_password_reset_action_name(:request_password_reset_token)
         end
       end
     end
   end
 
   postgres do
-    table "users"
-    repo Xaas.Repo
+    table("users")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     destroy :destroy do
-      description "Archive (soft-delete) a user instead of removing the row."
-      primary? true
+      description("Archive (soft-delete) a user instead of removing the row.")
+      primary?(true)
     end
 
     read :get_by_subject do
-      description "Get a user by the subject claim in a JWT"
-      argument :subject, :string, allow_nil?: false
-      get? true
-      prepare AshAuthentication.Preparations.FilterBySubject
+      description("Get a user by the subject claim in a JWT")
+      argument(:subject, :string, allow_nil?: false)
+      get?(true)
+      prepare(AshAuthentication.Preparations.FilterBySubject)
     end
 
     read :get_by_email do
-      description "Looks up a user by their email"
-      get_by :email
+      description("Looks up a user by their email")
+      get_by(:email)
     end
 
     create :sign_in_with_magic_link do
-      description "Sign in or register a user with magic link."
+      description("Sign in or register a user with magic link.")
 
       argument :token, :string do
-        description "The token from the magic link that was sent to the user"
-        allow_nil? false
+        description("The token from the magic link that was sent to the user")
+        allow_nil?(false)
       end
 
       argument :remember_me, :boolean do
-        description "Whether to generate a remember me token"
-        allow_nil? true
+        description("Whether to generate a remember me token")
+        allow_nil?(true)
       end
 
-      upsert? true
-      upsert_identity :unique_email
-      upsert_fields [:email]
+      upsert?(true)
+      upsert_identity(:unique_email)
+      upsert_fields([:email])
 
       # Uses the information from the token to create or sign in the user
-      change AshAuthentication.Strategy.MagicLink.SignInChange
+      change(AshAuthentication.Strategy.MagicLink.SignInChange)
 
-      change {AshAuthentication.Strategy.RememberMe.MaybeGenerateTokenChange,
-              strategy_name: :remember_me}
+      change(
+        {AshAuthentication.Strategy.RememberMe.MaybeGenerateTokenChange,
+         strategy_name: :remember_me}
+      )
 
       metadata :token, :string do
-        allow_nil? false
+        allow_nil?(false)
       end
     end
 
     action :request_magic_link do
       argument :email, :ci_string do
-        allow_nil? false
+        allow_nil?(false)
       end
 
-      run AshAuthentication.Strategy.MagicLink.Request
+      run(AshAuthentication.Strategy.MagicLink.Request)
     end
 
     update :change_password do
       # Use this action to allow users to change their password by providing
       # their current password and a new password.
 
-      require_atomic? false
-      accept []
-      argument :current_password, :string, sensitive?: true, allow_nil?: false
+      require_atomic?(false)
+      accept([])
+      argument(:current_password, :string, sensitive?: true, allow_nil?: false)
 
-      argument :password, :string,
+      argument(:password, :string,
         sensitive?: true,
         allow_nil?: false,
         constraints: [min_length: 8]
+      )
 
-      argument :password_confirmation, :string, sensitive?: true, allow_nil?: false
+      argument(:password_confirmation, :string, sensitive?: true, allow_nil?: false)
 
-      validate confirm(:password, :password_confirmation)
+      validate(confirm(:password, :password_confirmation))
 
-      validate {AshAuthentication.Strategy.Password.PasswordValidation,
-                strategy_name: :password, password_argument: :current_password}
+      validate(
+        {AshAuthentication.Strategy.Password.PasswordValidation,
+         strategy_name: :password, password_argument: :current_password}
+      )
 
-      change {AshAuthentication.Strategy.Password.HashPasswordChange, strategy_name: :password}
+      change({AshAuthentication.Strategy.Password.HashPasswordChange, strategy_name: :password})
     end
 
     read :sign_in_with_password do
-      description "Attempt to sign in using a email and password."
-      get? true
+      description("Attempt to sign in using a email and password.")
+      get?(true)
 
       argument :email, :ci_string do
-        description "The email to use for retrieving the user."
-        allow_nil? false
+        description("The email to use for retrieving the user.")
+        allow_nil?(false)
       end
 
       argument :password, :string do
-        description "The password to check for the matching user."
-        allow_nil? false
-        sensitive? true
+        description("The password to check for the matching user.")
+        allow_nil?(false)
+        sensitive?(true)
       end
 
       # validates the provided email and password and generates a token
-      prepare AshAuthentication.Strategy.Password.SignInPreparation
+      prepare(AshAuthentication.Strategy.Password.SignInPreparation)
 
       metadata :token, :string do
-        description "A JWT that can be used to authenticate the user."
-        allow_nil? false
+        description("A JWT that can be used to authenticate the user.")
+        allow_nil?(false)
       end
     end
 
@@ -182,155 +187,161 @@ defmodule Xaas.Accounts.User do
       # liveviews, you may remove this action, and set
       # `sign_in_tokens_enabled? false` in the password strategy.
 
-      description "Attempt to sign in using a short-lived sign in token."
-      get? true
+      description("Attempt to sign in using a short-lived sign in token.")
+      get?(true)
 
       argument :token, :string do
-        description "The short-lived sign in token."
-        allow_nil? false
-        sensitive? true
+        description("The short-lived sign in token.")
+        allow_nil?(false)
+        sensitive?(true)
       end
 
       # validates the provided sign in token and generates a token
-      prepare AshAuthentication.Strategy.Password.SignInWithTokenPreparation
+      prepare(AshAuthentication.Strategy.Password.SignInWithTokenPreparation)
 
       metadata :token, :string do
-        description "A JWT that can be used to authenticate the user."
-        allow_nil? false
+        description("A JWT that can be used to authenticate the user.")
+        allow_nil?(false)
       end
     end
 
     create :register_with_password do
-      description "Register a new user with a email and password."
+      description("Register a new user with a email and password.")
 
       argument :email, :ci_string do
-        allow_nil? false
+        allow_nil?(false)
       end
 
       argument :password, :string do
-        description "The proposed password for the user, in plain text."
-        allow_nil? false
-        constraints min_length: 8
-        sensitive? true
+        description("The proposed password for the user, in plain text.")
+        allow_nil?(false)
+        constraints(min_length: 8)
+        sensitive?(true)
       end
 
       argument :password_confirmation, :string do
-        description "The proposed password for the user (again), in plain text."
-        allow_nil? false
-        sensitive? true
+        description("The proposed password for the user (again), in plain text.")
+        allow_nil?(false)
+        sensitive?(true)
       end
 
       # Sets the email from the argument
-      change set_attribute(:email, arg(:email))
+      change(set_attribute(:email, arg(:email)))
 
       # Hashes the provided password
-      change AshAuthentication.Strategy.Password.HashPasswordChange
+      change(AshAuthentication.Strategy.Password.HashPasswordChange)
 
       # Generates an authentication token for the user
-      change AshAuthentication.GenerateTokenChange
+      change(AshAuthentication.GenerateTokenChange)
 
       # validates that the password matches the confirmation
-      validate AshAuthentication.Strategy.Password.PasswordConfirmationValidation
+      validate(AshAuthentication.Strategy.Password.PasswordConfirmationValidation)
 
       metadata :token, :string do
-        description "A JWT that can be used to authenticate the user."
-        allow_nil? false
+        description("A JWT that can be used to authenticate the user.")
+        allow_nil?(false)
       end
     end
 
     action :request_password_reset_token do
-      description "Send password reset instructions to a user if they exist."
+      description("Send password reset instructions to a user if they exist.")
 
       argument :email, :ci_string do
-        allow_nil? false
+        allow_nil?(false)
       end
 
       # creates a reset token and invokes the relevant senders
-      run {AshAuthentication.Strategy.Password.RequestPasswordReset, action: :get_by_email}
+      run({AshAuthentication.Strategy.Password.RequestPasswordReset, action: :get_by_email})
     end
 
     update :reset_password_with_token do
       argument :reset_token, :string do
-        allow_nil? false
-        sensitive? true
+        allow_nil?(false)
+        sensitive?(true)
       end
 
       argument :password, :string do
-        description "The proposed password for the user, in plain text."
-        allow_nil? false
-        constraints min_length: 8
-        sensitive? true
+        description("The proposed password for the user, in plain text.")
+        allow_nil?(false)
+        constraints(min_length: 8)
+        sensitive?(true)
       end
 
       argument :password_confirmation, :string do
-        description "The proposed password for the user (again), in plain text."
-        allow_nil? false
-        sensitive? true
+        description("The proposed password for the user (again), in plain text.")
+        allow_nil?(false)
+        sensitive?(true)
       end
 
       # validates the provided reset token
-      validate AshAuthentication.Strategy.Password.ResetTokenValidation
+      validate(AshAuthentication.Strategy.Password.ResetTokenValidation)
 
       # validates that the password matches the confirmation
-      validate AshAuthentication.Strategy.Password.PasswordConfirmationValidation
+      validate(AshAuthentication.Strategy.Password.PasswordConfirmationValidation)
 
       # Hashes the provided password
-      change AshAuthentication.Strategy.Password.HashPasswordChange
+      change(AshAuthentication.Strategy.Password.HashPasswordChange)
 
       # Generates an authentication token for the user
-      change AshAuthentication.GenerateTokenChange
+      change(AshAuthentication.GenerateTokenChange)
     end
   end
 
   iam do
-    permission_base "xaas:user"
+    permission_base("xaas:user")
   end
 
   policies do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # IAM-style policy check: an actor's `iam_policy` attribute (AWS
     # IAM-style Allow/Deny statements against "xaas:user:<id>") governs
     # ordinary reads once the AshAuthentication bypass above doesn't apply.
     policy action_type(:read) do
-      authorize_if AshIam.Check
+      authorize_if(AshIam.Check)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :email, :ci_string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :hashed_password, :string do
-      sensitive? true
+      sensitive?(true)
     end
 
-    attribute :confirmed_at, :utc_datetime_usec
+    attribute(:confirmed_at, :utc_datetime_usec)
 
     attribute :archived_at, :utc_datetime_usec do
-      public? true
+      public?(true)
     end
 
     attribute :grade_level, :integer do
-      description "Real per-student grade level, used as the Next Read UI's default grade instead of a hardcoded literal."
-      allow_nil? true
-      public? true
+      description(
+        "Real per-student grade level, used as the Next Read UI's default grade instead of a hardcoded literal."
+      )
+
+      allow_nil?(true)
+      public?(true)
     end
 
     attribute :school_id, :string do
-      description "Real school slug (Xaas.Library.School.slug) this user is enrolled at, used to attribute checkouts instead of a hardcoded default school."
-      allow_nil? true
-      public? true
+      description(
+        "Real school slug (Xaas.Library.School.slug) this user is enrolled at, used to attribute checkouts instead of a hardcoded default school."
+      )
+
+      allow_nil?(true)
+      public?(true)
     end
   end
 
   identities do
-    identity :unique_email, [:email]
+    identity(:unique_email, [:email])
   end
 end

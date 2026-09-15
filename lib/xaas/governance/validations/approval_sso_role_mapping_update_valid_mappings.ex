@@ -23,8 +23,7 @@ defmodule Xaas.Governance.Validations.ApprovalSsoRoleMappingUpdateValidMappings 
         cond do
           length(mappings) > @max_mappings ->
             {:error,
-             field: :requested_mappings,
-             message: "must contain at most #{@max_mappings} entries"}
+             field: :requested_mappings, message: "must contain at most #{@max_mappings} entries"}
 
           true ->
             check_entries(mappings)

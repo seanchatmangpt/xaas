@@ -39,59 +39,59 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource]
 
   paper_trail do
-    change_tracking_mode :full_diff
+    change_tracking_mode(:full_diff)
   end
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor).
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_freeze_override
+    type(:approval_freeze_override)
   end
 
   json_api do
-    type "approval_freeze_override"
+    type("approval_freeze_override")
 
     routes do
-      base "/approval_freeze_override"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_freeze_override")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_freeze_overrides"
-    repo Xaas.Repo
+    table("approval_freeze_overrides")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real business rule lives in
     # Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists --
     # freeze_window_id must reference a real, same-org FreezeWindow row
     # whose own allow_emergency_override flag is true.
     create :create do
-      accept [:org_id, :requested_by, :freeze_window_id, :reason]
-      validate Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists
+      accept([:org_id, :requested_by, :freeze_window_id, :reason])
+      validate(Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists)
     end
 
     # Real mutation route: approve a pending emergency override of an
@@ -100,27 +100,27 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
     # `approved_by` must be present and must differ from `requested_by`
     # (a second, distinct owner).
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalFreezeOverrideRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalFreezeOverrideRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # References the FreezeWindow being overridden. Kept as a plain
@@ -128,13 +128,13 @@ defmodule Xaas.Governance.ApprovalFreezeOverride do
     # Governance resources, none of which cross-reference each other via
     # Ash relationships.
     attribute :freeze_window_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :reason, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end

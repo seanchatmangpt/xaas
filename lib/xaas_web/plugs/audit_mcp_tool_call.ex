@@ -99,7 +99,8 @@ defmodule XaasWeb.Plugs.AuditMcpToolCall do
   defp caller_id(conn) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] when byte_size(token) > 0 ->
-        "token:" <> (:crypto.hash(:sha256, token) |> Base.encode16(case: :lower) |> binary_part(0, 16))
+        "token:" <>
+          (:crypto.hash(:sha256, token) |> Base.encode16(case: :lower) |> binary_part(0, 16))
 
       _ ->
         "unknown"

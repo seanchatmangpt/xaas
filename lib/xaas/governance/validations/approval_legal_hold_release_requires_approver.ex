@@ -24,7 +24,8 @@ defmodule Xaas.Governance.Validations.ApprovalLegalHoldReleaseRequiresApprover d
 
       approved_by == requested_by ->
         {:error,
-         field: :approved_by, message: "must be a second, distinct owner -- cannot approve their own request"}
+         field: :approved_by,
+         message: "must be a second, distinct owner -- cannot approve their own request"}
 
       true ->
         :ok

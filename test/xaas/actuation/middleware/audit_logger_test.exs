@@ -20,10 +20,10 @@ defmodule Xaas.Actuation.Middleware.AuditLoggerTest do
     use Reactor
 
     middlewares do
-      middleware AuditLogger
+      middleware(AuditLogger)
     end
 
-    step :halt_here, HaltingStep
+    step(:halt_here, HaltingStep)
   end
 
   test "halt/1 logs a reactor-level halt warning with duration, and event/3 logs the real halt reason" do

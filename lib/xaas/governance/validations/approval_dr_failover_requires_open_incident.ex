@@ -64,7 +64,8 @@ defmodule Xaas.Governance.Validations.ApprovalDrFailoverRequiresOpenIncident do
            "requires an open Xaas.Operations.Incident referencing this region AND this org before failover can be approved"}
 
       {:error, error} ->
-        {:error, field: :from_region, message: "could not verify open incident: #{inspect(error)}"}
+        {:error,
+         field: :from_region, message: "could not verify open incident: #{inspect(error)}"}
     end
   end
 

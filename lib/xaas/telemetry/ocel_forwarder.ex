@@ -104,7 +104,11 @@ defmodule Xaas.Telemetry.OcelForwarder do
   Returns `:ok` unconditionally, same as `forward/1` -- this runs inside
   Reactor's undo path and must never raise or halt rollback.
   """
-  def forward_cancellation(%{resource: resource, action: action, idempotency_key: idempotency_key}) do
+  def forward_cancellation(%{
+        resource: resource,
+        action: action,
+        idempotency_key: idempotency_key
+      }) do
     short_name =
       if Ash.Resource.Info.resource?(resource) do
         Ash.Resource.Info.short_name(resource)

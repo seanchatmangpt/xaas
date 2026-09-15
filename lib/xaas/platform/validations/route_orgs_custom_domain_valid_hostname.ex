@@ -24,7 +24,8 @@ defmodule Xaas.Platform.Validations.RouteOrgsCustomDomainValidHostname do
         else
           {:error,
            field: :hostname,
-           message: "is not a valid DNS hostname (need at least two dot-separated RFC 1123 labels)"}
+           message:
+             "is not a valid DNS hostname (need at least two dot-separated RFC 1123 labels)"}
         end
 
       _ ->

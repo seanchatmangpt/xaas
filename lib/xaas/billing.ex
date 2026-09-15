@@ -4,23 +4,22 @@ defmodule Xaas.Billing do
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do
-    show? true
+    show?(true)
   end
 
   typescript_rpc do
     resource Xaas.Billing.Subscription do
-      rpc_action :list_billing_subscriptions, :read
+      rpc_action(:list_billing_subscriptions, :read)
     end
   end
 
-
   resources do
-    resource Xaas.Billing.ApprovalInvoiceReconciliationApprove
-    resource Xaas.Billing.ApprovalPatchSlaCreditApply
-    resource Xaas.Billing.ApprovalPricingOverride
-    resource Xaas.Billing.ApprovalQuotaOverride
-    resource Xaas.Billing.ApprovalSlaCreditApply
-    resource Xaas.Billing.ApprovalTierDowngrade
-    resource Xaas.Billing.Subscription
+    resource(Xaas.Billing.ApprovalInvoiceReconciliationApprove)
+    resource(Xaas.Billing.ApprovalPatchSlaCreditApply)
+    resource(Xaas.Billing.ApprovalPricingOverride)
+    resource(Xaas.Billing.ApprovalQuotaOverride)
+    resource(Xaas.Billing.ApprovalSlaCreditApply)
+    resource(Xaas.Billing.ApprovalTierDowngrade)
+    resource(Xaas.Billing.Subscription)
   end
 end

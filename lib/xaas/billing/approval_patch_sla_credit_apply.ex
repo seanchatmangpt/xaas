@@ -40,7 +40,7 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
   policies do
     # ash-migration Phase 5 (deny-by-default floor).
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out: `:create`/`:approve` are gated
@@ -57,44 +57,44 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     # `org_id`). See that module's moduledoc for why this is needed --
     # this resource has no `multitenancy` block of its own to backstop it.
     bypass action(:create) do
-      authorize_if Xaas.Billing.Checks.SlaCreditActorOrgMatches
+      authorize_if(Xaas.Billing.Checks.SlaCreditActorOrgMatches)
     end
 
     bypass action(:approve) do
-      authorize_if Xaas.Billing.Checks.SlaCreditActorOrgMatches
+      authorize_if(Xaas.Billing.Checks.SlaCreditActorOrgMatches)
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_patch_sla_credit_apply
+    type(:approval_patch_sla_credit_apply)
   end
 
   json_api do
-    type "approval_patch_sla_credit_apply"
+    type("approval_patch_sla_credit_apply")
 
     routes do
-      base "/approval_patch_sla_credit_apply"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_patch_sla_credit_apply")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_patch_sla_credit_applies"
-    repo Xaas.Repo
+    table("approval_patch_sla_credit_applies")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:requested_by, :approved_by, :org_id, :credit_amount_cents]
+      accept([:requested_by, :approved_by, :org_id, :credit_amount_cents])
     end
 
     # Real mutation route: approve a pending patch SLA credit application request. Real
@@ -110,23 +110,23 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     #   full disclosure (why a dedicated account, why after_transaction/2,
     #   idempotency).
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      change Xaas.Billing.Changes.ApprovalPatchSlaCreditApplyApprove
-      validate Xaas.Billing.Validations.ApprovalPatchSlaCreditApplyRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      change(Xaas.Billing.Changes.ApprovalPatchSlaCreditApplyApprove)
+      validate(Xaas.Billing.Validations.ApprovalPatchSlaCreditApplyRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real, necessary addition beyond the prior read-only skeleton's
@@ -139,8 +139,8 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     # Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage
     # already use for `record.org_id`.
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real, necessary addition: a patch SLA credit needs a real amount to
@@ -151,9 +151,9 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     # yet and is out of scope for this pass). Integer cents, must be
     # positive.
     attribute :credit_amount_cents, :integer do
-      allow_nil? false
-      public? true
-      constraints min: 1
+      allow_nil?(false)
+      public?(true)
+      constraints(min: 1)
     end
   end
 end

@@ -37,7 +37,12 @@ defmodule Xaas.Ontology.Ex4pmStalenessTest do
   # returns {repo_path, sha, relative_file_path}. Real `git init`/`git add`/
   # `git commit` -- no fixture library, no mock.
   defp build_real_repo(tmp_name, file_relpath, file_content) do
-    repo_path = Path.join(System.tmp_dir!(), "ex4pm_staleness_test_#{tmp_name}_#{:erlang.unique_integer([:positive])}")
+    repo_path =
+      Path.join(
+        System.tmp_dir!(),
+        "ex4pm_staleness_test_#{tmp_name}_#{:erlang.unique_integer([:positive])}"
+      )
+
     File.mkdir_p!(Path.join(repo_path, Path.dirname(file_relpath)))
     File.write!(Path.join(repo_path, file_relpath), file_content)
 
@@ -45,7 +50,10 @@ defmodule Xaas.Ontology.Ex4pmStalenessTest do
     env = [{"GIT_DIR", nil}, {"GIT_WORK_TREE", nil}]
 
     {_out, 0} = System.cmd(git, ["init", "-q"], cd: repo_path, env: env)
-    {_out, 0} = System.cmd(git, ["config", "user.email", "test@example.com"], cd: repo_path, env: env)
+
+    {_out, 0} =
+      System.cmd(git, ["config", "user.email", "test@example.com"], cd: repo_path, env: env)
+
     {_out, 0} = System.cmd(git, ["config", "user.name", "Test"], cd: repo_path, env: env)
     {_out, 0} = System.cmd(git, ["add", "."], cd: repo_path, env: env)
     {_out, 0} = System.cmd(git, ["commit", "-q", "-m", "init"], cd: repo_path, env: env)
@@ -119,7 +127,12 @@ defmodule Xaas.Ontology.Ex4pmStalenessTest do
   end
 
   test "check/0 returns {:ok, :skipped, {:repo_absent, _}} when EX4PM_REPO_PATH points nowhere real" do
-    nonexistent_path = Path.join(System.tmp_dir!(), "definitely_does_not_exist_#{:erlang.unique_integer([:positive])}")
+    nonexistent_path =
+      Path.join(
+        System.tmp_dir!(),
+        "definitely_does_not_exist_#{:erlang.unique_integer([:positive])}"
+      )
+
     refute File.exists?(nonexistent_path)
 
     Application.put_env(:xaas, :ex4pm_ontology_check,
@@ -134,7 +147,10 @@ defmodule Xaas.Ontology.Ex4pmStalenessTest do
 
   test "check/0 returns a real named error for a bad/unreachable SHA against a real repo" do
     content = "defmodule Ex4pm.Fixture do\n  def hello, do: :world\nend\n"
-    {repo_path, _real_sha, upstream_relpath} = build_real_repo("bad_sha", "lib/ex4pm/fixture.ex", content)
+
+    {repo_path, _real_sha, upstream_relpath} =
+      build_real_repo("bad_sha", "lib/ex4pm/fixture.ex", content)
+
     vendored_path = build_real_vendored_file(content)
 
     # A well-formed 40-hex-char SHA that git cannot resolve to any real
@@ -168,7 +184,10 @@ defmodule Xaas.Ontology.Ex4pmStalenessTest do
 
   test "check/0 returns {:ok, :skipped, {:not_a_git_repo, _}} for a real directory that is not a git repo" do
     not_a_repo =
-      Path.join(System.tmp_dir!(), "ex4pm_staleness_not_a_repo_#{:erlang.unique_integer([:positive])}")
+      Path.join(
+        System.tmp_dir!(),
+        "ex4pm_staleness_not_a_repo_#{:erlang.unique_integer([:positive])}"
+      )
 
     File.mkdir_p!(not_a_repo)
     on_exit(fn -> File.rm_rf!(not_a_repo) end)

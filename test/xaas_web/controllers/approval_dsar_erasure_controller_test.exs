@@ -51,7 +51,9 @@ defmodule XaasWeb.ApprovalDsarErasureControllerTest do
       }
     }
 
-    approve_resp = conn |> json_headers() |> patch("/api/approval_dsar_erasure/#{id}", approve_body)
+    approve_resp =
+      conn |> json_headers() |> patch("/api/approval_dsar_erasure/#{id}", approve_body)
+
     approved = json_response(approve_resp, 200)
     assert approved["data"]["attributes"]["approved_by"] == "owner-2"
 

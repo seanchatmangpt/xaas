@@ -46,8 +46,8 @@ defmodule Xaas.Platform.Webhook do
   # real mistaken analogy; the storage column here genuinely is
   # `platform_webhooks.encrypted_secret`, not `secret`.
   cloak do
-    vault Xaas.Vault
-    attributes [:secret]
+    vault(Xaas.Vault)
+    attributes([:secret])
   end
 
   policies do
@@ -60,61 +60,61 @@ defmodule Xaas.Platform.Webhook do
     # exfiltration vector"). No allow-all carve-out here; wire real
     # per-action rules when an authz/session model exists on this side.
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :webhook
+    type(:webhook)
   end
 
   json_api do
-    type "webhooks"
+    type("webhooks")
 
     routes do
-      base "/webhooks"
-      get :read
-      index :read
-      post :create
-      delete :destroy
+      base("/webhooks")
+      get(:read)
+      index(:read)
+      post(:create)
+      delete(:destroy)
     end
   end
 
   postgres do
-    table "platform_webhooks"
-    repo Xaas.Repo
+    table("platform_webhooks")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:org_id, :url, :event_types, :secret, :enabled]
+      accept([:org_id, :url, :event_types, :secret, :enabled])
     end
 
     update :update do
-      accept [:url, :event_types, :secret, :enabled]
+      accept([:url, :event_types, :secret, :enabled])
     end
 
     destroy :destroy do
-      primary? true
+      primary?(true)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Real payload field, matching platform-console's real POST body's
     # `url` (validated there as an absolute http/https URL before
     # `createWebhookSubscription` is called -- see route.ts).
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :url, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real widening of platform-console's singular `eventType` (see
@@ -124,9 +124,9 @@ defmodule Xaas.Platform.Webhook do
     # itself an evolving, app-defined constant, not a fixed domain
     # vocabulary this resource should hardcode and drift from.
     attribute :event_types, {:array, :string} do
-      allow_nil? false
-      default []
-      public? true
+      allow_nil?(false)
+      default([])
+      public?(true)
     end
 
     # Real HMAC signing secret -- see moduledoc for why it is persisted
@@ -134,15 +134,15 @@ defmodule Xaas.Platform.Webhook do
     # RouteSecrets' deliberately-not-persisted k8s Secret values.
     # `sensitive?` keeps it out of default Ash.Resource inspect/logging.
     attribute :secret, :string do
-      allow_nil? false
-      sensitive? true
-      public? true
+      allow_nil?(false)
+      sensitive?(true)
+      public?(true)
     end
 
     attribute :enabled, :boolean do
-      allow_nil? false
-      default true
-      public? true
+      allow_nil?(false)
+      default(true)
+      public?(true)
     end
 
     timestamps()

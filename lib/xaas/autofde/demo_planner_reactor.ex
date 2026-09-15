@@ -167,7 +167,8 @@ defmodule Xaas.Autofde.DemoPlannerReactor.RunScript do
       {port, os_pid} ->
         outcome =
           if Port.info(port) do
-            if os_pid, do: System.cmd("kill", ["-TERM", to_string(os_pid)], stderr_to_stdout: true)
+            if os_pid,
+              do: System.cmd("kill", ["-TERM", to_string(os_pid)], stderr_to_stdout: true)
 
             try do
               Port.close(port)
@@ -223,34 +224,34 @@ defmodule Xaas.Autofde.DemoPlannerReactor do
 
   use Reactor
 
-  input :run_id
-  input :number
-  input :primary_script
-  input :fallback_script
+  input(:run_id)
+  input(:number)
+  input(:primary_script)
+  input(:fallback_script)
 
   step :primary_plan, Xaas.Autofde.DemoPlannerReactor.RunScript do
-    argument :script, input(:primary_script)
-    argument :input, input(:number)
-    argument :request_id, input(:run_id), transform: &(&1 <> "-primary")
-    argument :label, value(:primary)
-    max_retries 0
+    argument(:script, input(:primary_script))
+    argument(:input, input(:number))
+    argument(:request_id, input(:run_id), transform: &(&1 <> "-primary"))
+    argument(:label, value(:primary))
+    max_retries(0)
   end
 
   step :fallback_plan, Xaas.Autofde.DemoPlannerReactor.RunScript do
-    argument :script, input(:fallback_script)
-    argument :input, input(:number)
-    argument :request_id, input(:run_id), transform: &(&1 <> "-fallback")
-    argument :label, value(:fallback)
-    argument :primary_result, result(:primary_plan)
-    where &__MODULE__.fallback_needed?/1
-    max_retries 0
+    argument(:script, input(:fallback_script))
+    argument(:input, input(:number))
+    argument(:request_id, input(:run_id), transform: &(&1 <> "-fallback"))
+    argument(:label, value(:fallback))
+    argument(:primary_result, result(:primary_plan))
+    where(&__MODULE__.fallback_needed?/1)
+    max_retries(0)
   end
 
   step :final do
-    argument :primary_result, result(:primary_plan)
-    argument :fallback_result, result(:fallback_plan)
+    argument(:primary_result, result(:primary_plan))
+    argument(:fallback_result, result(:fallback_plan))
 
-    run fn
+    run(fn
       %{fallback_result: fallback_result}, _ when is_binary(fallback_result) ->
         {:ok, %{source: :fallback, value: fallback_result}}
 
@@ -259,10 +260,10 @@ defmodule Xaas.Autofde.DemoPlannerReactor do
 
       _args, _ ->
         {:ok, %{source: :none, value: nil}}
-    end
+    end)
   end
 
-  return :final
+  return(:final)
 
   @doc false
   def fallback_needed?(%{primary_result: {:failed, _label}}), do: true

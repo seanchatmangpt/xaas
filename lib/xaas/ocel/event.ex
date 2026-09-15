@@ -53,7 +53,7 @@ defmodule Xaas.Ocel.Event do
         allow_nil?(false)
       end
 
-      change {Xaas.Ocel.Changes.RelateEventToObjects, []}
+      change({Xaas.Ocel.Changes.RelateEventToObjects, []})
     end
   end
 
