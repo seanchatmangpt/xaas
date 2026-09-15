@@ -21,7 +21,8 @@ defmodule XaasWeb.OcelSummaryControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
-  test "GET /internal-api/ocel_summary returns real counts reflecting a real Ash action just executed", %{conn: conn} do
+  test "GET /internal-api/ocel_summary returns real counts reflecting a real Ash action just executed",
+       %{conn: conn} do
     # Real action -> real :telemetry event -> real OcelAshEmitter handler
     # -> real append to the real log file (not a mock of any of these).
     capability = "ocel-summary-controller-test-#{System.unique_integer([:positive])}"

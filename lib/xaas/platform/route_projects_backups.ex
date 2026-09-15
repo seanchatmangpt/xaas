@@ -54,7 +54,7 @@ defmodule Xaas.Platform.RouteProjectsBackups do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out: `:create` (trigger/record an
@@ -72,59 +72,69 @@ defmodule Xaas.Platform.RouteProjectsBackups do
     # `Xaas.Platform.Checks.ActorOrgMatches`'s own moduledoc for the full
     # disclosed finding and the live-HTTP proof.
     bypass action(:create) do
-      authorize_if Xaas.Platform.Checks.ActorOrgMatches
+      authorize_if(Xaas.Platform.Checks.ActorOrgMatches)
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :route_projects_backups
+    type(:route_projects_backups)
   end
 
   json_api do
-    type "route_projects_backups"
+    type("route_projects_backups")
 
     routes do
-      base "/route_projects_backups"
-      get :read
-      index :read
-      post :create
+      base("/route_projects_backups")
+      get(:read)
+      index(:read)
+      post(:create)
     end
   end
 
   postgres do
-    table "route_projects_backups"
-    repo Xaas.Repo
+    table("route_projects_backups")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:org_id, :namespace, :project_name, :job_name, :taken_at, :size_bytes, :retain_until, :status]
-      validate Xaas.Platform.Validations.RouteProjectsBackupsValidProjectName
+      accept([
+        :org_id,
+        :namespace,
+        :project_name,
+        :job_name,
+        :taken_at,
+        :size_bytes,
+        :retain_until,
+        :status
+      ])
+
+      validate(Xaas.Platform.Validations.RouteProjectsBackupsValidProjectName)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :namespace, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :project_name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real k8s Job name the dump ran as -- lets a BackupRecord be traced
@@ -134,13 +144,13 @@ defmodule Xaas.Platform.RouteProjectsBackups do
     # no real Job-creation integration exists yet -- accepted as caller
     # input.
     attribute :job_name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :taken_at, :utc_datetime do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Starts at 0 the same way the real route does (`sizeBytes starts at
@@ -148,19 +158,19 @@ defmodule Xaas.Platform.RouteProjectsBackups do
     # completion-time size reporting isn't implemented; accepted as
     # caller input instead.
     attribute :size_bytes, :integer do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :retain_until, :utc_datetime do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :status, Xaas.Platform.Types.BackupStatus do
-      allow_nil? false
-      public? true
-      default :pending
+      allow_nil?(false)
+      public?(true)
+      default(:pending)
     end
   end
 end

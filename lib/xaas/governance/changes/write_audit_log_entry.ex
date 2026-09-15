@@ -50,8 +50,7 @@ defmodule Xaas.Governance.Changes.WriteAuditLogEntry do
       {:ok, opts}
     else
       _ ->
-        {:error,
-         "WriteAuditLogEntry requires string :action and :resource_type options"}
+        {:error, "WriteAuditLogEntry requires string :action and :resource_type options"}
     end
   end
 

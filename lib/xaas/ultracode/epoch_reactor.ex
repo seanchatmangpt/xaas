@@ -34,12 +34,12 @@ defmodule Xaas.Ultracode.EpochReactor do
   step :observe do
     argument(:epoch_id, input(:epoch_id))
 
-    run fn %{epoch_id: epoch_id}, _context ->
+    run(fn %{epoch_id: epoch_id}, _context ->
       case Ash.get(Xaas.Ultracode.Epoch, epoch_id, authorize?: false, load: [:run]) do
         {:ok, epoch} -> {:ok, epoch}
         {:error, error} -> {:error, {:observe_failed, error}}
       end
-    end
+    end)
   end
 
   # 算/除 Admit -- refuse (not silently skip) any Epoch that is not in an
@@ -51,13 +51,13 @@ defmodule Xaas.Ultracode.EpochReactor do
   step :admit do
     argument(:epoch, result(:observe))
 
-    run fn %{epoch: epoch}, _context ->
+    run(fn %{epoch: epoch}, _context ->
       if epoch.state in [:expected, :running] do
         {:ok, %{epoch: epoch, admitted?: true}}
       else
         {:error, {:refused, :epoch_not_admissible, epoch.state}}
       end
-    end
+    end)
   end
 
   # 延 Plan -- decide the real next action for this Epoch: transition an
@@ -68,10 +68,10 @@ defmodule Xaas.Ultracode.EpochReactor do
   step :plan do
     argument(:admission, result(:admit))
 
-    run fn %{admission: %{epoch: epoch}}, _context ->
+    run(fn %{admission: %{epoch: epoch}}, _context ->
       next_action = if epoch.state == :expected, do: :start, else: :complete
       {:ok, %{epoch: epoch, next_action: next_action}}
-    end
+    end)
   end
 
   # 実 Construct -- actually perform the planned Ash transition. This is the
@@ -81,14 +81,14 @@ defmodule Xaas.Ultracode.EpochReactor do
   step :construct do
     argument(:plan, result(:plan))
 
-    run fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->
+    run(fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->
       changeset = Ash.Changeset.for_update(epoch, next_action, %{}, authorize?: false)
 
       case Ash.update(changeset) do
         {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: next_action}}
         {:error, error} -> {:error, {:construct_failed, next_action, error}}
       end
-    end
+    end)
   end
 
   # 偽 Verify -- Chicago-style, state-based check folded in here rather than
@@ -101,7 +101,10 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:constructed, result(:construct))
     argument(:original, result(:observe))
 
-    run fn %{constructed: %{epoch: constructed_epoch, action_taken: action_taken}, original: original},
+    run(fn %{
+             constructed: %{epoch: constructed_epoch, action_taken: action_taken},
+             original: original
+           },
            _context ->
       expected_state = if action_taken == :start, do: :running, else: :completed
 
@@ -135,7 +138,7 @@ defmodule Xaas.Ultracode.EpochReactor do
         {:error, error} ->
           {:error, {:verify_failed, error}}
       end
-    end
+    end)
   end
 
   # 実 Receipt -- seal the real `Xaas.Ultracode.Receipt` row evidencing this
@@ -150,7 +153,7 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:verification, result(:verify))
     argument(:epoch, result(:observe))
 
-    run fn %{verification: verification, epoch: original_epoch}, _context ->
+    run(fn %{verification: verification, epoch: original_epoch}, _context ->
       Xaas.Ultracode.Receipt
       |> Ash.Changeset.for_create(
         :seal,
@@ -177,7 +180,7 @@ defmodule Xaas.Ultracode.EpochReactor do
         {:error, error} ->
           {:error, {:receipt_seal_failed, error}}
       end
-    end
+    end)
   end
 
   return(:receipt)

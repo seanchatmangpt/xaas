@@ -21,8 +21,7 @@ defmodule Xaas.Billing.Validations.ApprovalTierDowngradeRequiresApprover do
         {:error, field: :approved_by, message: "is required to approve a tier downgrade"}
 
       approved_by == requested_by ->
-        {:error,
-         field: :approved_by, message: "cannot approve their own tier downgrade request"}
+        {:error, field: :approved_by, message: "cannot approve their own tier downgrade request"}
 
       true ->
         :ok

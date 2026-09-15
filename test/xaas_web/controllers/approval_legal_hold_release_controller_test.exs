@@ -100,12 +100,16 @@ defmodule XaasWeb.ApprovalLegalHoldReleaseControllerTest do
 
     change =
       ApprovalLegalHoldRelease
-      |> Ash.Changeset.for_create(:create, %{
-        org_id: org_id,
-        requested_by: requester,
-        hold_id: "hold-x",
-        release_reason: "test release"
-      }, tenant: org_id)
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: org_id,
+          requested_by: requester,
+          hold_id: "hold-x",
+          release_reason: "test release"
+        },
+        tenant: org_id
+      )
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -133,12 +137,16 @@ defmodule XaasWeb.ApprovalLegalHoldReleaseControllerTest do
 
     change =
       ApprovalLegalHoldRelease
-      |> Ash.Changeset.for_create(:create, %{
-        org_id: org_id,
-        requested_by: requester,
-        hold_id: "hold-y",
-        release_reason: "test release"
-      }, tenant: org_id)
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          org_id: org_id,
+          requested_by: requester,
+          hold_id: "hold-y",
+          release_reason: "test release"
+        },
+        tenant: org_id
+      )
       |> Ash.create!(authorize?: false)
 
     approve_body = %{
@@ -185,7 +193,9 @@ defmodule XaasWeb.ApprovalLegalHoldReleaseControllerTest do
       }
     }
 
-    resp = conn |> json_headers(caller_org) |> post("/api/approval_legal_hold_release", create_body)
+    resp =
+      conn |> json_headers(caller_org) |> post("/api/approval_legal_hold_release", create_body)
+
     created = json_response(resp, 201)
     id = created["data"]["id"]
 
@@ -231,7 +241,9 @@ defmodule XaasWeb.ApprovalLegalHoldReleaseControllerTest do
 
     assert resp.status in [403, 404]
 
-    persisted = ApprovalLegalHoldRelease |> Ash.get!(change.id, authorize?: false, tenant: owner_org)
+    persisted =
+      ApprovalLegalHoldRelease |> Ash.get!(change.id, authorize?: false, tenant: owner_org)
+
     assert persisted.approved_by == nil
   end
 end

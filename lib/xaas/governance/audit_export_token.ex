@@ -15,7 +15,7 @@ defmodule Xaas.Governance.AuditExportToken do
     # Xaas.Governance resource) so operators/UI can list a token's
     # metadata (never its hash) for an org.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real fix (twentieth-pass ERRC grid sweep, item 27): :issue and
@@ -26,84 +26,84 @@ defmodule Xaas.Governance.AuditExportToken do
     # `Xaas.Governance.Checks.AuditExportTokenActorOrgMatches`'s own
     # moduledoc for the full disclosed finding and the live-HTTP proof.
     bypass action(:issue) do
-      authorize_if Xaas.Governance.Checks.AuditExportTokenActorOrgMatches
+      authorize_if(Xaas.Governance.Checks.AuditExportTokenActorOrgMatches)
     end
 
     bypass action(:revoke) do
-      authorize_if Xaas.Governance.Checks.AuditExportTokenActorOrgMatches
+      authorize_if(Xaas.Governance.Checks.AuditExportTokenActorOrgMatches)
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :audit_export_token
+    type(:audit_export_token)
   end
 
   json_api do
-    type "audit_export_token"
+    type("audit_export_token")
 
     routes do
-      base "/audit_export_tokens"
-      get :read
-      index :read
-      post :issue
-      patch :revoke
+      base("/audit_export_tokens")
+      get(:read)
+      index(:read)
+      post(:issue)
+      patch(:revoke)
     end
   end
 
   postgres do
-    table "audit_export_tokens"
-    repo Xaas.Repo
+    table("audit_export_tokens")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real token minting. The raw token is generated here, hashed before
     # persistence, and returned exactly once via the action's result --
     # never stored, never retrievable again (same discipline as
     # platform-console's audit-export-tokens design doc, "Storage" section).
     create :issue do
-      accept [:org_id, :created_by]
+      accept([:org_id, :created_by])
 
-      change Xaas.Governance.Changes.GenerateAuditExportToken
+      change(Xaas.Governance.Changes.GenerateAuditExportToken)
     end
 
     update :revoke do
-      accept []
-      require_atomic? false
+      accept([])
+      require_atomic?(false)
 
-      change set_attribute(:revoked_at, &DateTime.utc_now/0)
-      validate Xaas.Governance.Validations.AuditExportTokenNotAlreadyRevoked
+      change(set_attribute(:revoked_at, &DateTime.utc_now/0))
+      validate(Xaas.Governance.Validations.AuditExportTokenNotAlreadyRevoked)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Prefix shown in listings/logs ("aet_live_") + first few chars, so an
     # operator can recognize a token without ever seeing or storing the
     # full raw value. Distinct from token_hash.
     attribute :token_prefix, :string do
-      allow_nil? false
-      public? true
-      writable? false
+      allow_nil?(false)
+      public?(true)
+      writable?(false)
     end
 
     # SHA-256 hex digest of the raw token. Never the raw token itself --
     # matches platform-console's "SHA-256 hash only" storage discipline.
     attribute :token_hash, :string do
-      allow_nil? false
-      public? false
-      writable? false
+      allow_nil?(false)
+      public?(false)
+      writable?(false)
     end
 
     # Fixed at mint time to "audit:read" today -- same single-literal-scope
@@ -111,36 +111,38 @@ defmodule Xaas.Governance.AuditExportToken do
     # Modeled as a real attribute (not hardcoded in the resource) so a
     # future second scope literal doesn't require a schema migration.
     attribute :scope, :string do
-      allow_nil? false
-      public? true
-      default "audit:read"
-      writable? false
+      allow_nil?(false)
+      public?(true)
+      default("audit:read")
+      writable?(false)
     end
 
     attribute :created_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :expires_at, :utc_datetime_usec do
-      public? true
+      public?(true)
     end
 
     attribute :revoked_at, :utc_datetime_usec do
-      public? true
-      writable? false
+      public?(true)
+      writable?(false)
     end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
   end
 
   calculations do
     # Real derived state a consumer/UI checks before trusting a token is
     # usable -- not stored, computed from revoked_at/expires_at so it can
     # never drift from the two source-of-truth columns.
-    calculate :active?, :boolean, expr(
-      is_nil(revoked_at) and (is_nil(expires_at) or expires_at > now())
+    calculate(
+      :active?,
+      :boolean,
+      expr(is_nil(revoked_at) and (is_nil(expires_at) or expires_at > now()))
     )
   end
 end

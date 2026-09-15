@@ -226,7 +226,14 @@ defmodule Xaas.Operations.IncidentTest do
 
     test "a real actor whose asserted org_id matches the persisted record's org_id may :update it" do
       org = org_id()
-      incident = create!(%{org_id: org, title: "t", region: "us-east-1", opened_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+
+      incident =
+        create!(%{
+          org_id: org,
+          title: "t",
+          region: "us-east-1",
+          opened_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        })
 
       updated =
         incident

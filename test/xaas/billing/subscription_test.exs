@@ -60,7 +60,9 @@ defmodule Xaas.Billing.SubscriptionTest do
   # which sorts lexicographically like the timestamps it's derived from) is
   # the real current balance.
   defp real_balance_for(identifier) do
-    case Account |> Ash.Query.filter(identifier: identifier) |> Ash.read_one!(authorize?: false) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         nil
 
@@ -132,7 +134,11 @@ defmodule Xaas.Billing.SubscriptionTest do
     actor = %{
       iam_policy: %{
         "Statement" => [
-          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:billing_subscription:*"]}
+          %{
+            "Effect" => "Allow",
+            "Action" => ["read"],
+            "Resource" => ["xaas:billing_subscription:*"]
+          }
         ]
       }
     }
@@ -158,7 +164,11 @@ defmodule Xaas.Billing.SubscriptionTest do
     scoped_actor = %{
       iam_policy: %{
         "Statement" => [
-          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:billing_subscription:#{visible.id}"]}
+          %{
+            "Effect" => "Allow",
+            "Action" => ["read"],
+            "Resource" => ["xaas:billing_subscription:#{visible.id}"]
+          }
         ]
       }
     }

@@ -28,9 +28,7 @@ defmodule Xaas.Ultracode.Validations.AtMostOneActiveEpoch do
 
     if already_active? do
       {:error,
-       Ash.Error.Changes.InvalidChanges.exception(
-         message: "run already has an active epoch"
-       )}
+       Ash.Error.Changes.InvalidChanges.exception(message: "run already has an active epoch")}
     else
       :ok
     end

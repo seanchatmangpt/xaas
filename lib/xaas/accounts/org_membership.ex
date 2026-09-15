@@ -65,8 +65,8 @@ defmodule Xaas.Accounts.OrgMembership do
     extensions: [AshIam]
 
   iam do
-    permission_base "xaas:org_membership"
-    action_to_iam_mapping create: :create, read: :read, update: :update
+    permission_base("xaas:org_membership")
+    action_to_iam_mapping(create: :create, read: :read, update: :update)
   end
 
   policies do
@@ -76,59 +76,59 @@ defmodule Xaas.Accounts.OrgMembership do
     # plain `policy`, which would AND against the trailing catch-all below
     # and silently deny every read regardless of AshIam.Check's result.
     bypass action_type(:read) do
-      authorize_if AshIam.Check
+      authorize_if(AshIam.Check)
     end
 
     # :create/:update deliberately NOT wired to AshIam.Check -- same real,
     # disclosed limitation as the other 3 pilots (see moduledoc).
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   postgres do
-    table "org_memberships"
-    repo Xaas.Repo
+    table("org_memberships")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     create :create do
-      accept [:user_id, :org_id, :role]
+      accept([:user_id, :org_id, :role])
     end
 
     update :update do
-      accept [:role]
-      require_atomic? false
+      accept([:role])
+      require_atomic?(false)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :role, :atom do
-      allow_nil? false
-      public? true
-      default :member
-      constraints one_of: [:member, :admin]
+      allow_nil?(false)
+      public?(true)
+      default(:member)
+      constraints(one_of: [:member, :admin])
     end
   end
 
   relationships do
     belongs_to :user, Xaas.Accounts.User do
-      allow_nil? false
-      attribute_writable? true
+      allow_nil?(false)
+      attribute_writable?(true)
     end
 
     belongs_to :org, Xaas.Accounts.Org do
-      allow_nil? false
-      attribute_writable? true
-      attribute_type :uuid
+      allow_nil?(false)
+      attribute_writable?(true)
+      attribute_type(:uuid)
     end
   end
 
   identities do
-    identity :unique_user_org, [:user_id, :org_id]
+    identity(:unique_user_org, [:user_id, :org_id])
   end
 end

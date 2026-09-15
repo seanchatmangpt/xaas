@@ -13,7 +13,7 @@ defmodule Xaas.Platform.RouteFeatureFlags do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -25,41 +25,41 @@ defmodule Xaas.Platform.RouteFeatureFlags do
     # Xaas.Governance cluster. Gated at the router level the same way as
     # the other Platform resources -- XaasWeb.Plugs.RequireInternalApiToken.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:update) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :route_feature_flags
+    type(:route_feature_flags)
   end
 
   json_api do
-    type "route_feature_flags"
+    type("route_feature_flags")
 
     routes do
-      base "/route_feature_flags"
-      get :read
-      index :read
-      post :create
-      patch :update
+      base("/route_feature_flags")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:update)
     end
   end
 
   postgres do
-    table "route_feature_flags"
-    repo Xaas.Repo
+    table("route_feature_flags")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real mutation, ported from platform-console's POST /api/feature-flags:
     # create/register a flag entry with its initial requested value.
@@ -79,7 +79,7 @@ defmodule Xaas.Platform.RouteFeatureFlags do
     # `required_tier` is stored as a plain string field for future wiring
     # rather than fabricated as an enforced check.
     create :create do
-      accept [:flag_key, :enabled, :requested_by, :required_tier]
+      accept([:flag_key, :enabled, :requested_by, :required_tier])
     end
 
     # Real mutation, ported from platform-console's PUT
@@ -87,44 +87,44 @@ defmodule Xaas.Platform.RouteFeatureFlags do
     # /api/feature-flags (internal toggle) -- both just flip `enabled` for
     # an existing flag; no maker-checker gate.
     update :update do
-      accept [:enabled]
-      require_atomic? false
+      accept([:enabled])
+      require_atomic?(false)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Real payload field, matching platform-console's `key` (POST body) /
     # `flag` (PUT path param).
     attribute :flag_key, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real payload field, matching platform-console's `value: "true"/"false"`
     # (POST) / `enabled: boolean` (PUT) -- stored here as a real boolean.
     attribute :enabled, :boolean do
-      allow_nil? false
-      public? true
-      default false
+      allow_nil?(false)
+      public?(true)
+      default(false)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real metadata mirroring platform-console's TIER_GATED_FLAGS lookup
     # (`requiredTier`, default "starter") -- not enforced here; see the
     # NOT ported note on :create above.
     attribute :required_tier, :string do
-      public? true
-      default "starter"
+      public?(true)
+      default("starter")
     end
   end
 end

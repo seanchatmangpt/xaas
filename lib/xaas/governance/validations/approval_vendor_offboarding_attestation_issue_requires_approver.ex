@@ -20,11 +20,13 @@ defmodule Xaas.Governance.Validations.ApprovalVendorOffboardingAttestationIssueR
     cond do
       is_nil(approved_by) or approved_by == "" ->
         {:error,
-         field: :approved_by, message: "is required to approve a vendor offboarding attestation issuance"}
+         field: :approved_by,
+         message: "is required to approve a vendor offboarding attestation issuance"}
 
       approved_by == requested_by ->
         {:error,
-         field: :approved_by, message: "must be a second, distinct owner -- cannot approve their own request"}
+         field: :approved_by,
+         message: "must be a second, distinct owner -- cannot approve their own request"}
 
       true ->
         :ok

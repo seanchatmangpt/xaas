@@ -13,7 +13,7 @@ defmodule Xaas.Governance.ApprovalBreakGlassJustificationReview do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out (issue #20), ported from
@@ -26,41 +26,41 @@ defmodule Xaas.Governance.ApprovalBreakGlassJustificationReview do
     # ApprovalBreakGlassJustificationReviewRequiresApprover's real "second,
     # distinct reviewer" rule on :approve.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_break_glass_justification_review
+    type(:approval_break_glass_justification_review)
   end
 
   json_api do
-    type "approval_break_glass_justification_review"
+    type("approval_break_glass_justification_review")
 
     routes do
-      base "/approval_break_glass_justification_review"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_break_glass_justification_review")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_break_glass_justification_reviews"
-    repo Xaas.Repo
+    table("approval_break_glass_justification_reviews")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real mutation route (issue #20), ported from platform-console's
     # POST /api/support/break-glass/[grantId]/justify: the on-call engineer
@@ -77,45 +77,45 @@ defmodule Xaas.Governance.ApprovalBreakGlassJustificationReview do
     # xaas has no equivalent audit sink for yet. All honestly left undone
     # rather than fabricated.
     create :create do
-      accept [:org_id, :grant_id, :requested_by, :justification]
+      accept([:org_id, :grant_id, :requested_by, :justification])
     end
 
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalBreakGlassJustificationReviewRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalBreakGlassJustificationReviewRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real route param
     # (`grantId`, the break-glass grant this justification is for).
     attribute :grant_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real payload, matching platform-console's real required POST body
     # field `justification` (trimmed, non-empty string).
     attribute :justification, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end

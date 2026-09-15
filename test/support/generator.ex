@@ -145,7 +145,10 @@ defmodule Xaas.Generator do
       defaults: [
         org_id: sequence(:webhook_org_id, &"webhook-test-org-#{&1}"),
         url:
-          sequence(:webhook_url, &"http://127.0.0.1:9#{rem(&1, 999)}#{System.unique_integer([:positive])}/"),
+          sequence(
+            :webhook_url,
+            &"http://127.0.0.1:9#{rem(&1, 999)}#{System.unique_integer([:positive])}/"
+          ),
         event_types: StreamData.constant(["test.event"]),
         secret: StreamData.constant("real-hmac-secret"),
         enabled: StreamData.constant(true)

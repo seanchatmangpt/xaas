@@ -64,7 +64,9 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
 
   # --- :issue (POST) ---------------------------------------------------
 
-  test "POST /api/audit_export_tokens issues a real, hashed credential for a matching org", %{conn: conn} do
+  test "POST /api/audit_export_tokens issues a real, hashed credential for a matching org", %{
+    conn: conn
+  } do
     org_id = real_org_slug!()
 
     body = %{
@@ -99,7 +101,9 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
     assert byte_size(persisted.token_hash) == 64
   end
 
-  test "POST /api/audit_export_tokens rejects requests without the internal API token", %{conn: conn} do
+  test "POST /api/audit_export_tokens rejects requests without the internal API token", %{
+    conn: conn
+  } do
     org_id = real_org_slug!()
 
     body = %{
@@ -228,6 +232,7 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
     assert conn.status == 403
 
     persisted = AuditExportToken |> Ash.get!(token.id, authorize?: false)
+
     assert is_nil(persisted.revoked_at),
            "a cross-org PATCH must never revoke another org's real audit export token"
   end
@@ -287,7 +292,9 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
   # policy bypasses :read with `authorize_if always()` and needs no actor
   # at all. Real-verified this session via a temporary scratch test
   # before this permanent test was written.
-  test "GET /api/audit_export_tokens/:id succeeds with a real, resolvable X-Org-Id header", %{conn: conn} do
+  test "GET /api/audit_export_tokens/:id succeeds with a real, resolvable X-Org-Id header", %{
+    conn: conn
+  } do
     org_id = real_org_slug!()
     token = issue_token!(org_id)
 
@@ -298,11 +305,14 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
 
     response = json_response(conn, 200)
     assert response["data"]["attributes"]["org_id"] == org_id
+
     refute response["data"]["attributes"]["token_hash"],
            "token_hash is public? false -- must never be serialized in the real API response"
   end
 
-  test "GET /api/audit_export_tokens/:id rejects requests missing the X-Org-Id header", %{conn: conn} do
+  test "GET /api/audit_export_tokens/:id rejects requests missing the X-Org-Id header", %{
+    conn: conn
+  } do
     org_id = real_org_slug!()
     token = issue_token!(org_id)
 

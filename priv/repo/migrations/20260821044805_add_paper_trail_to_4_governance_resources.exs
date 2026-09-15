@@ -27,7 +27,8 @@ defmodule Xaas.Repo.Migrations.AddPaperTrailTo4GovernanceResources do
             name: "approval_backup_retention_changes_versions_version_source_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :changes, :map
 
@@ -51,7 +52,8 @@ defmodule Xaas.Repo.Migrations.AddPaperTrailTo4GovernanceResources do
             name: "approval_deployment_quarantines_versions_version_source_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :changes, :map
 
@@ -75,7 +77,8 @@ defmodule Xaas.Repo.Migrations.AddPaperTrailTo4GovernanceResources do
             name: "approval_legal_hold_releases_versions_version_source_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :changes, :map
 
@@ -99,7 +102,8 @@ defmodule Xaas.Repo.Migrations.AddPaperTrailTo4GovernanceResources do
             name: "approval_dr_failovers_versions_version_source_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :changes, :map
 

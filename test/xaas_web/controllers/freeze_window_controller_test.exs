@@ -76,7 +76,8 @@ defmodule XaasWeb.FreezeWindowControllerTest do
     resp = conn |> json_headers() |> post("/api/freeze_window", create_body)
     assert resp.status == 400
 
-    assert FreezeWindow |> Ash.read!(authorize?: false) |> Enum.filter(&(&1.org_id == org_id)) == []
+    assert FreezeWindow |> Ash.read!(authorize?: false) |> Enum.filter(&(&1.org_id == org_id)) ==
+             []
   end
 
   test "a real ApprovalFreezeOverride can reference a real freeze_window_id" do

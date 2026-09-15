@@ -15,7 +15,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
   @shortdoc "Manufactures Xaas.Library domain and resources from ontology"
 
   @base_targets [
-
     %{
       order: 1,
       mix_task: "ash.gen.domain",
@@ -24,7 +23,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "",
       mix_args: ""
     },
-
     %{
       order: 2,
       mix_task: "ash.gen.resource",
@@ -33,7 +31,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "Book",
       mix_args: "--ignore-if-exists --default-actions read --uuid-primary-key id"
     },
-
     %{
       order: 3,
       mix_task: "ash.gen.resource",
@@ -42,7 +39,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "Checkout",
       mix_args: "--ignore-if-exists --default-actions read --uuid-primary-key id"
     },
-
     %{
       order: 4,
       mix_task: "ash.gen.resource",
@@ -51,7 +47,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "HoldRequest",
       mix_args: "--ignore-if-exists --default-actions read --uuid-primary-key id"
     },
-
     %{
       order: 5,
       mix_task: "ash.gen.resource",
@@ -60,7 +55,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "Curation",
       mix_args: "--ignore-if-exists --default-actions read --uuid-primary-key id"
     },
-
     %{
       order: 6,
       mix_task: "ash.gen.resource",
@@ -68,12 +62,10 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       domain_module: "Xaas.Library",
       resource_module: "RecommendationLog",
       mix_args: "--ignore-if-exists --default-actions read --uuid-primary-key id"
-    },
-
+    }
   ]
 
   @core_targets [
-
     %{
       order: 1,
       mix_task: "xaas.library.core",
@@ -82,7 +74,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "Book",
       mix_args: ""
     },
-
     %{
       order: 2,
       mix_task: "xaas.library.core",
@@ -91,7 +82,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "Checkout",
       mix_args: ""
     },
-
     %{
       order: 3,
       mix_task: "xaas.library.core",
@@ -100,7 +90,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "HoldRequest",
       mix_args: ""
     },
-
     %{
       order: 4,
       mix_task: "xaas.library.core",
@@ -109,7 +98,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       resource_module: "Curation",
       mix_args: ""
     },
-
     %{
       order: 5,
       mix_task: "xaas.library.core",
@@ -117,8 +105,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       domain_module: "Xaas.Library",
       resource_module: "RecommendationLog",
       mix_args: ""
-    },
-
+    }
   ]
 
   @impl Mix.Task
@@ -158,29 +145,31 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
 
     # 1. Ensure Domain file exists
     domain_path = "lib/xaas/library.ex"
+
     domain_content = """
-defmodule Xaas.Library do
-  @moduledoc \"\"\"
-  Domain module for Library management (Books, Checkouts, Holds, Curations, RecommendationLogs)
-  grounded in Schema.org, BIBO, and PROV ontologies.
-  \"\"\"
-  use Ash.Domain,
-    otp_app: :xaas,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    defmodule Xaas.Library do
+      @moduledoc \"\"\"
+      Domain module for Library management (Books, Checkouts, Holds, Curations, RecommendationLogs)
+      grounded in Schema.org, BIBO, and PROV ontologies.
+      \"\"\"
+      use Ash.Domain,
+        otp_app: :xaas,
+        extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
 
-  admin do
-    show? true
-  end
+      admin do
+        show? true
+      end
 
-  resources do
-    resource Xaas.Library.Book
-    resource Xaas.Library.Checkout
-    resource Xaas.Library.HoldRequest
-    resource Xaas.Library.Curation
-    resource Xaas.Library.RecommendationLog
-  end
-end
-"""
+      resources do
+        resource Xaas.Library.Book
+        resource Xaas.Library.Checkout
+        resource Xaas.Library.HoldRequest
+        resource Xaas.Library.Curation
+        resource Xaas.Library.RecommendationLog
+      end
+    end
+    """
+
     File.mkdir_p!("lib/xaas")
     File.write!(domain_path, domain_content)
     Mix.shell().info("  [ok] Wrote #{domain_path}")
@@ -192,35 +181,37 @@ end
         file_name = Macro.underscore(target.resource_module) <> ".ex"
         res_path = Path.join(["lib", "xaas", "library", file_name])
         File.mkdir_p!("lib/xaas/library")
+
         unless File.exists?(res_path) do
           stub_content = """
-defmodule #{target.target_module} do
-  use Xaas.Resource,
-    otp_app: :xaas,
-    domain: Xaas.Library,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+          defmodule #{target.target_module} do
+            use Xaas.Resource,
+              otp_app: :xaas,
+              domain: Xaas.Library,
+              data_layer: AshPostgres.DataLayer,
+              authorizers: [Ash.Policy.Authorizer]
 
-  postgres do
-    table "#{Macro.underscore(target.resource_module)}s"
-    repo Xaas.Repo
-  end
+            postgres do
+              table "#{Macro.underscore(target.resource_module)}s"
+              repo Xaas.Repo
+            end
 
-  actions do
-    defaults [:read]
-  end
+            actions do
+              defaults [:read]
+            end
 
-  policies do
-    policy always() do
-      authorize_if always()
-    end
-  end
+            policies do
+              policy always() do
+                authorize_if always()
+              end
+            end
 
-  attributes do
-    uuid_primary_key :id
-  end
-end
-"""
+            attributes do
+              uuid_primary_key :id
+            end
+          end
+          """
+
           File.write!(res_path, stub_content)
           Mix.shell().info("  [ok] Initialized stub for #{target.target_module} at #{res_path}")
         end
@@ -229,7 +220,9 @@ end
   end
 
   defp run_core_phase(_yes?) do
-    Mix.shell().info("==> Executing Phase 2: Core Resource Realization with Pure Declarative Ash Model")
+    Mix.shell().info(
+      "==> Executing Phase 2: Core Resource Realization with Pure Declarative Ash Model"
+    )
 
     write_decrement_change()
     write_book_resource()
@@ -244,6 +237,7 @@ end
   defp ensure_domain_configured do
     config_path = "config/config.exs"
     content = File.read!(config_path)
+
     unless String.contains?(content, "Xaas.Library") do
       updated = String.replace(content, "ash_domains: [", "ash_domains: [\n    Xaas.Library,")
       File.write!(config_path, updated)
@@ -253,37 +247,38 @@ end
 
   defp write_decrement_change do
     content = """
-defmodule Xaas.Library.Changes.DecrementBookInventory do
-  @moduledoc \"\"\"
-  Ash change that atomically decrements a book's available copies upon checkout.
-  \"\"\"
-  use Ash.Resource.Change
-  alias Xaas.Library.Book
+    defmodule Xaas.Library.Changes.DecrementBookInventory do
+      @moduledoc \"\"\"
+      Ash change that atomically decrements a book's available copies upon checkout.
+      \"\"\"
+      use Ash.Resource.Change
+      alias Xaas.Library.Book
 
-  @impl true
-  def change(changeset, _opts, _context) do
-    book_id = Ash.Changeset.get_attribute(changeset, :book_id)
+      @impl true
+      def change(changeset, _opts, _context) do
+        book_id = Ash.Changeset.get_attribute(changeset, :book_id)
 
-    if book_id do
-      Ash.Changeset.after_action(changeset, fn _changeset, checkout ->
-        case Book |> Ash.get(book_id, authorize?: false) do
-          {:ok, book} ->
-            book
-            |> Ash.Changeset.for_update(:borrow_copy, %{})
-            |> Ash.update(authorize?: false)
+        if book_id do
+          Ash.Changeset.after_action(changeset, fn _changeset, checkout ->
+            case Book |> Ash.get(book_id, authorize?: false) do
+              {:ok, book} ->
+                book
+                |> Ash.Changeset.for_update(:borrow_copy, %{})
+                |> Ash.update(authorize?: false)
 
-            {:ok, checkout}
+                {:ok, checkout}
 
-          _ ->
-            {:ok, checkout}
+              _ ->
+                {:ok, checkout}
+            end
+          end)
+        else
+          changeset
         end
-      end)
-    else
-      changeset
+      end
     end
-  end
-end
-"""
+    """
+
     File.mkdir_p!("lib/xaas/library/changes")
     File.write!("lib/xaas/library/changes/decrement_book_inventory.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/changes/decrement_book_inventory.ex")
@@ -291,698 +286,703 @@ end
 
   defp write_book_resource do
     content = """
-defmodule Xaas.Library.Book do
-  @moduledoc \"\"\"
-  Ash resource for Library Books, grounded in BIBO (bibo:Book) and Schema.org (schema:Book).
-  Represents library items with ISBN, grade-level reading fit, genres, formats, and availability.
-  \"\"\"
-  use Xaas.Resource,
-    otp_app: :xaas,
-    domain: Xaas.Library,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    defmodule Xaas.Library.Book do
+      @moduledoc \"\"\"
+      Ash resource for Library Books, grounded in BIBO (bibo:Book) and Schema.org (schema:Book).
+      Represents library items with ISBN, grade-level reading fit, genres, formats, and availability.
+      \"\"\"
+      use Xaas.Resource,
+        otp_app: :xaas,
+        domain: Xaas.Library,
+        data_layer: AshPostgres.DataLayer,
+        authorizers: [Ash.Policy.Authorizer],
+        notifiers: [Ash.Notifier.PubSub],
+        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
-  postgres do
-    table "library_books"
-    repo Xaas.Repo
-  end
+      postgres do
+        table "library_books"
+        repo Xaas.Repo
+      end
 
-  pub_sub do
-    module XaasWeb.Endpoint
-    prefix "library:books"
-    broadcast_type :notification
+      pub_sub do
+        module XaasWeb.Endpoint
+        prefix "library:books"
+        broadcast_type :notification
 
-    publish :create, ["created"]
-    publish :update, ["updated", :id]
-    publish :borrow_copy, ["inventory", :id]
-    publish :return_copy, ["inventory", :id]
-  end
+        publish :create, ["created"]
+        publish :update, ["updated", :id]
+        publish :borrow_copy, ["inventory", :id]
+        publish :return_copy, ["inventory", :id]
+      end
 
-  json_api do
-    type "library_book"
+      json_api do
+        type "library_book"
 
-    routes do
-      base "/library/books"
-      get :read
-      index :read
+        routes do
+          base "/library/books"
+          get :read
+          index :read
+        end
+      end
+
+      graphql do
+        type :library_book
+      end
+
+      actions do
+        defaults [:read, :destroy]
+
+        create :create do
+          primary? true
+          accept [
+            :title,
+            :author,
+            :isbn,
+            :grade_level,
+            :genres,
+            :formats,
+            :synopsis,
+            :available_copies,
+            :total_copies,
+            :cover_color,
+            :review_status,
+            :embedding
+          ]
+        end
+
+        update :update do
+          primary? true
+          accept [
+            :title,
+            :author,
+            :isbn,
+            :grade_level,
+            :genres,
+            :formats,
+            :synopsis,
+            :available_copies,
+            :total_copies,
+            :cover_color,
+            :review_status,
+            :embedding
+          ]
+        end
+
+        update :borrow_copy do
+          description "Atomically decrements available shelf copies when checked out"
+          validate compare(:available_copies, greater_than: 0), message: "No shelf copies currently available"
+          change atomic_update(:available_copies, expr(available_copies - 1))
+        end
+
+        update :return_copy do
+          description "Atomically increments available shelf copies when returned"
+          change atomic_update(:available_copies, expr(available_copies + 1))
+        end
+
+        read :by_grade_band do
+          argument :min_grade, :integer, allow_nil?: false
+          argument :max_grade, :integer, allow_nil?: false
+
+          filter expr(grade_level >= ^arg(:min_grade) and grade_level <= ^arg(:max_grade))
+        end
+      end
+
+      policies do
+        policy action_type(:read) do
+          authorize_if always()
+        end
+
+        policy action_type([:create, :update, :destroy]) do
+          authorize_if always()
+        end
+      end
+
+      aggregates do
+        count :active_checkouts_count, :checkouts do
+          filter expr(status == :borrowed)
+        end
+
+        count :active_holds_count, :holds do
+          filter expr(status == :active)
+        end
+      end
+
+      calculations do
+        calculate :is_available, :boolean, expr(available_copies > 0)
+      end
+
+      attributes do
+        uuid_primary_key :id
+
+        attribute :title, :string do
+          allow_nil? false
+          public? true
+        end
+
+        attribute :author, :string do
+          allow_nil? false
+          public? true
+        end
+
+        attribute :isbn, :string do
+          allow_nil? true
+          public? true
+        end
+
+        attribute :grade_level, :decimal do
+          allow_nil? false
+          default Decimal.new("5.0")
+          public? true
+        end
+
+        attribute :genres, {:array, :string} do
+          allow_nil? false
+          default []
+          public? true
+        end
+
+        attribute :formats, {:array, :string} do
+          allow_nil? false
+          default ["Print"]
+          public? true
+        end
+
+        attribute :synopsis, :string do
+          allow_nil? true
+          public? true
+        end
+
+        attribute :available_copies, :integer do
+          allow_nil? false
+          default 1
+          public? true
+        end
+
+        attribute :total_copies, :integer do
+          allow_nil? false
+          default 1
+          public? true
+        end
+
+        attribute :cover_color, :string do
+          allow_nil? false
+          default "#23405F"
+          public? true
+        end
+
+        attribute :review_status, :atom do
+          constraints [one_of: [:approved, :pending_librarian_review]]
+          default :approved
+          allow_nil? false
+          public? true
+        end
+
+        attribute :embedding, {:array, :float} do
+          allow_nil? true
+          public? true
+        end
+
+        create_timestamp :inserted_at
+        update_timestamp :updated_at
+      end
+
+      relationships do
+        has_many :checkouts, Xaas.Library.Checkout
+        has_many :holds, Xaas.Library.HoldRequest
+        has_many :curations, Xaas.Library.Curation
+      end
     end
-  end
+    """
 
-  graphql do
-    type :library_book
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    create :create do
-      primary? true
-      accept [
-        :title,
-        :author,
-        :isbn,
-        :grade_level,
-        :genres,
-        :formats,
-        :synopsis,
-        :available_copies,
-        :total_copies,
-        :cover_color,
-        :review_status,
-        :embedding
-      ]
-    end
-
-    update :update do
-      primary? true
-      accept [
-        :title,
-        :author,
-        :isbn,
-        :grade_level,
-        :genres,
-        :formats,
-        :synopsis,
-        :available_copies,
-        :total_copies,
-        :cover_color,
-        :review_status,
-        :embedding
-      ]
-    end
-
-    update :borrow_copy do
-      description "Atomically decrements available shelf copies when checked out"
-      validate compare(:available_copies, greater_than: 0), message: "No shelf copies currently available"
-      change atomic_update(:available_copies, expr(available_copies - 1))
-    end
-
-    update :return_copy do
-      description "Atomically increments available shelf copies when returned"
-      change atomic_update(:available_copies, expr(available_copies + 1))
-    end
-
-    read :by_grade_band do
-      argument :min_grade, :integer, allow_nil?: false
-      argument :max_grade, :integer, allow_nil?: false
-
-      filter expr(grade_level >= ^arg(:min_grade) and grade_level <= ^arg(:max_grade))
-    end
-  end
-
-  policies do
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
-    end
-  end
-
-  aggregates do
-    count :active_checkouts_count, :checkouts do
-      filter expr(status == :borrowed)
-    end
-
-    count :active_holds_count, :holds do
-      filter expr(status == :active)
-    end
-  end
-
-  calculations do
-    calculate :is_available, :boolean, expr(available_copies > 0)
-  end
-
-  attributes do
-    uuid_primary_key :id
-
-    attribute :title, :string do
-      allow_nil? false
-      public? true
-    end
-
-    attribute :author, :string do
-      allow_nil? false
-      public? true
-    end
-
-    attribute :isbn, :string do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :grade_level, :decimal do
-      allow_nil? false
-      default Decimal.new("5.0")
-      public? true
-    end
-
-    attribute :genres, {:array, :string} do
-      allow_nil? false
-      default []
-      public? true
-    end
-
-    attribute :formats, {:array, :string} do
-      allow_nil? false
-      default ["Print"]
-      public? true
-    end
-
-    attribute :synopsis, :string do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :available_copies, :integer do
-      allow_nil? false
-      default 1
-      public? true
-    end
-
-    attribute :total_copies, :integer do
-      allow_nil? false
-      default 1
-      public? true
-    end
-
-    attribute :cover_color, :string do
-      allow_nil? false
-      default "#23405F"
-      public? true
-    end
-
-    attribute :review_status, :atom do
-      constraints [one_of: [:approved, :pending_librarian_review]]
-      default :approved
-      allow_nil? false
-      public? true
-    end
-
-    attribute :embedding, {:array, :float} do
-      allow_nil? true
-      public? true
-    end
-
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
-  end
-
-  relationships do
-    has_many :checkouts, Xaas.Library.Checkout
-    has_many :holds, Xaas.Library.HoldRequest
-    has_many :curations, Xaas.Library.Curation
-  end
-end
-"""
     File.write!("lib/xaas/library/book.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/book.ex")
   end
 
   defp write_checkout_resource do
     content = """
-defmodule Xaas.Library.Checkout do
-  @moduledoc \"\"\"
-  Ash resource for Book Checkouts, grounded in Schema.org (schema:BorrowAction) and PROV (prov:Activity).
-  Tracks circulation transactions of books borrowed by readers.
-  \"\"\"
-  use Xaas.Resource,
-    otp_app: :xaas,
-    domain: Xaas.Library,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    defmodule Xaas.Library.Checkout do
+      @moduledoc \"\"\"
+      Ash resource for Book Checkouts, grounded in Schema.org (schema:BorrowAction) and PROV (prov:Activity).
+      Tracks circulation transactions of books borrowed by readers.
+      \"\"\"
+      use Xaas.Resource,
+        otp_app: :xaas,
+        domain: Xaas.Library,
+        data_layer: AshPostgres.DataLayer,
+        authorizers: [Ash.Policy.Authorizer],
+        notifiers: [Ash.Notifier.PubSub],
+        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
-  postgres do
-    table "library_checkouts"
-    repo Xaas.Repo
-  end
+      postgres do
+        table "library_checkouts"
+        repo Xaas.Repo
+      end
 
-  pub_sub do
-    module XaasWeb.Endpoint
-    prefix "circulation"
-    broadcast_type :notification
+      pub_sub do
+        module XaasWeb.Endpoint
+        prefix "circulation"
+        broadcast_type :notification
 
-    publish :create, ["school", :school_id]
-    publish :create, ["events"]
-    publish :borrow, ["events"]
-    publish :update, ["school", :school_id]
-    publish :update, ["events"]
-  end
+        publish :create, ["school", :school_id]
+        publish :create, ["events"]
+        publish :borrow, ["events"]
+        publish :update, ["school", :school_id]
+        publish :update, ["events"]
+      end
 
-  json_api do
-    type "library_checkout"
+      json_api do
+        type "library_checkout"
 
-    routes do
-      base "/library/checkouts"
-      get :read
-      index :read
+        routes do
+          base "/library/checkouts"
+          get :read
+          index :read
+        end
+      end
+
+      graphql do
+        type :library_checkout
+      end
+
+      actions do
+        defaults [:read, :destroy]
+
+        create :create do
+          primary? true
+          accept [:book_id, :user_id, :school_id, :borrowed_at, :returned_at, :status, :renewed_count]
+        end
+
+        create :borrow do
+          description "Borrows a book for a student, automatically decrementing available copies"
+          accept [:book_id, :user_id, :school_id]
+          change Xaas.Library.Changes.DecrementBookInventory
+        end
+
+        update :update do
+          primary? true
+          accept [:returned_at, :status, :renewed_count]
+        end
+
+        read :for_user do
+          argument :user_id, :uuid, allow_nil?: false
+          filter expr(user_id == ^arg(:user_id))
+        end
+      end
+
+      policies do
+        policy action_type(:read) do
+          authorize_if always()
+        end
+
+        policy action_type(:create) do
+          authorize_if always()
+        end
+
+        policy action_type([:update, :destroy]) do
+          authorize_if always()
+        end
+      end
+
+      attributes do
+        uuid_primary_key :id
+
+        attribute :school_id, :string do
+          allow_nil? false
+          default "willow-creek"
+          public? true
+        end
+
+        attribute :borrowed_at, :utc_datetime_usec do
+          allow_nil? false
+          default &DateTime.utc_now/0
+          public? true
+        end
+
+        attribute :returned_at, :utc_datetime_usec do
+          allow_nil? true
+          public? true
+        end
+
+        attribute :renewed_count, :integer do
+          allow_nil? false
+          default 0
+          public? true
+        end
+
+        attribute :status, :atom do
+          constraints [one_of: [:borrowed, :returned, :overdue]]
+          default :borrowed
+          allow_nil? false
+          public? true
+        end
+
+        create_timestamp :inserted_at
+        update_timestamp :updated_at
+      end
+
+      relationships do
+        belongs_to :book, Xaas.Library.Book do
+          allow_nil? false
+          attribute_writable? true
+          public? true
+        end
+
+        belongs_to :user, Xaas.Accounts.User do
+          allow_nil? false
+          attribute_writable? true
+          public? true
+        end
+      end
     end
-  end
+    """
 
-  graphql do
-    type :library_checkout
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    create :create do
-      primary? true
-      accept [:book_id, :user_id, :school_id, :borrowed_at, :returned_at, :status, :renewed_count]
-    end
-
-    create :borrow do
-      description "Borrows a book for a student, automatically decrementing available copies"
-      accept [:book_id, :user_id, :school_id]
-      change Xaas.Library.Changes.DecrementBookInventory
-    end
-
-    update :update do
-      primary? true
-      accept [:returned_at, :status, :renewed_count]
-    end
-
-    read :for_user do
-      argument :user_id, :uuid, allow_nil?: false
-      filter expr(user_id == ^arg(:user_id))
-    end
-  end
-
-  policies do
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    policy action_type(:create) do
-      authorize_if always()
-    end
-
-    policy action_type([:update, :destroy]) do
-      authorize_if always()
-    end
-  end
-
-  attributes do
-    uuid_primary_key :id
-
-    attribute :school_id, :string do
-      allow_nil? false
-      default "willow-creek"
-      public? true
-    end
-
-    attribute :borrowed_at, :utc_datetime_usec do
-      allow_nil? false
-      default &DateTime.utc_now/0
-      public? true
-    end
-
-    attribute :returned_at, :utc_datetime_usec do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :renewed_count, :integer do
-      allow_nil? false
-      default 0
-      public? true
-    end
-
-    attribute :status, :atom do
-      constraints [one_of: [:borrowed, :returned, :overdue]]
-      default :borrowed
-      allow_nil? false
-      public? true
-    end
-
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
-  end
-
-  relationships do
-    belongs_to :book, Xaas.Library.Book do
-      allow_nil? false
-      attribute_writable? true
-      public? true
-    end
-
-    belongs_to :user, Xaas.Accounts.User do
-      allow_nil? false
-      attribute_writable? true
-      public? true
-    end
-  end
-end
-"""
     File.write!("lib/xaas/library/checkout.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/checkout.ex")
   end
 
   defp write_hold_request_resource do
     content = """
-defmodule Xaas.Library.HoldRequest do
-  @moduledoc \"\"\"
-  Ash resource for Hold Requests on library books, grounded in Schema.org (schema:ReserveAction) and PROV (prov:Activity).
-  \"\"\"
-  use Xaas.Resource,
-    otp_app: :xaas,
-    domain: Xaas.Library,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    defmodule Xaas.Library.HoldRequest do
+      @moduledoc \"\"\"
+      Ash resource for Hold Requests on library books, grounded in Schema.org (schema:ReserveAction) and PROV (prov:Activity).
+      \"\"\"
+      use Xaas.Resource,
+        otp_app: :xaas,
+        domain: Xaas.Library,
+        data_layer: AshPostgres.DataLayer,
+        authorizers: [Ash.Policy.Authorizer],
+        notifiers: [Ash.Notifier.PubSub],
+        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
-  postgres do
-    table "library_holds"
-    repo Xaas.Repo
-  end
+      postgres do
+        table "library_holds"
+        repo Xaas.Repo
+      end
 
-  pub_sub do
-    module XaasWeb.Endpoint
-    prefix "holds"
-    broadcast_type :notification
+      pub_sub do
+        module XaasWeb.Endpoint
+        prefix "holds"
+        broadcast_type :notification
 
-    publish :create, ["created"]
-    publish :update, ["updated", :id]
-  end
+        publish :create, ["created"]
+        publish :update, ["updated", :id]
+      end
 
-  json_api do
-    type "library_hold"
+      json_api do
+        type "library_hold"
 
-    routes do
-      base "/library/holds"
-      get :read
-      index :read
+        routes do
+          base "/library/holds"
+          get :read
+          index :read
+        end
+      end
+
+      graphql do
+        type :library_hold
+      end
+
+      actions do
+        defaults [:read, :destroy]
+
+        create :create do
+          primary? true
+          accept [:book_id, :user_id, :school_id, :position, :status]
+        end
+
+        update :update do
+          primary? true
+          accept [:position, :status]
+        end
+
+        read :for_user do
+          argument :user_id, :uuid, allow_nil?: false
+          filter expr(user_id == ^arg(:user_id))
+        end
+      end
+
+      policies do
+        policy action_type(:read) do
+          authorize_if always()
+        end
+
+        policy action_type([:create, :update, :destroy]) do
+          authorize_if always()
+        end
+      end
+
+      attributes do
+        uuid_primary_key :id
+
+        attribute :school_id, :string do
+          allow_nil? false
+          default "willow-creek"
+          public? true
+        end
+
+        attribute :position, :integer do
+          allow_nil? false
+          default 1
+          public? true
+        end
+
+        attribute :status, :atom do
+          constraints [one_of: [:active, :fulfilled, :cancelled]]
+          default :active
+          allow_nil? false
+          public? true
+        end
+
+        create_timestamp :inserted_at
+        update_timestamp :updated_at
+      end
+
+      relationships do
+        belongs_to :book, Xaas.Library.Book do
+          allow_nil? false
+          attribute_writable? true
+          public? true
+        end
+
+        belongs_to :user, Xaas.Accounts.User do
+          allow_nil? false
+          attribute_writable? true
+          public? true
+        end
+      end
     end
-  end
+    """
 
-  graphql do
-    type :library_hold
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    create :create do
-      primary? true
-      accept [:book_id, :user_id, :school_id, :position, :status]
-    end
-
-    update :update do
-      primary? true
-      accept [:position, :status]
-    end
-
-    read :for_user do
-      argument :user_id, :uuid, allow_nil?: false
-      filter expr(user_id == ^arg(:user_id))
-    end
-  end
-
-  policies do
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
-    end
-  end
-
-  attributes do
-    uuid_primary_key :id
-
-    attribute :school_id, :string do
-      allow_nil? false
-      default "willow-creek"
-      public? true
-    end
-
-    attribute :position, :integer do
-      allow_nil? false
-      default 1
-      public? true
-    end
-
-    attribute :status, :atom do
-      constraints [one_of: [:active, :fulfilled, :cancelled]]
-      default :active
-      allow_nil? false
-      public? true
-    end
-
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
-  end
-
-  relationships do
-    belongs_to :book, Xaas.Library.Book do
-      allow_nil? false
-      attribute_writable? true
-      public? true
-    end
-
-    belongs_to :user, Xaas.Accounts.User do
-      allow_nil? false
-      attribute_writable? true
-      public? true
-    end
-  end
-end
-"""
     File.write!("lib/xaas/library/hold_request.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/hold_request.ex")
   end
 
   defp write_curation_resource do
     content = """
-defmodule Xaas.Library.Curation do
-  @moduledoc \"\"\"
-  Ash resource for Librarian Curation, grounded in Schema.org (schema:Collection) and PROV (prov:Entity).
-  Staff spotlight that boosts recommendation scores for specific grade bands or individual students.
-  \"\"\"
-  use Xaas.Resource,
-    otp_app: :xaas,
-    domain: Xaas.Library,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    defmodule Xaas.Library.Curation do
+      @moduledoc \"\"\"
+      Ash resource for Librarian Curation, grounded in Schema.org (schema:Collection) and PROV (prov:Entity).
+      Staff spotlight that boosts recommendation scores for specific grade bands or individual students.
+      \"\"\"
+      use Xaas.Resource,
+        otp_app: :xaas,
+        domain: Xaas.Library,
+        data_layer: AshPostgres.DataLayer,
+        authorizers: [Ash.Policy.Authorizer],
+        notifiers: [Ash.Notifier.PubSub],
+        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
-  postgres do
-    table "library_curations"
-    repo Xaas.Repo
-  end
+      postgres do
+        table "library_curations"
+        repo Xaas.Repo
+      end
 
-  pub_sub do
-    module XaasWeb.Endpoint
-    prefix "recommendations"
-    broadcast_type :notification
+      pub_sub do
+        module XaasWeb.Endpoint
+        prefix "recommendations"
+        broadcast_type :notification
 
-    publish :create, ["student", :student_id]
-    publish :create, ["curation_events"]
-    publish :update, ["student", :student_id]
-    publish :update, ["curation_events"]
-  end
+        publish :create, ["student", :student_id]
+        publish :create, ["curation_events"]
+        publish :update, ["student", :student_id]
+        publish :update, ["curation_events"]
+      end
 
-  json_api do
-    type "library_curation"
+      json_api do
+        type "library_curation"
 
-    routes do
-      base "/library/curations"
-      get :read
-      index :read
+        routes do
+          base "/library/curations"
+          get :read
+          index :read
+        end
+      end
+
+      graphql do
+        type :library_curation
+      end
+
+      actions do
+        defaults [:read, :destroy]
+
+        create :create do
+          primary? true
+          accept [:book_id, :curated_by, :grade_band, :student_id, :reason, :state, :active]
+        end
+
+        update :update do
+          primary? true
+          accept [:grade_band, :student_id, :reason, :state, :active]
+        end
+
+        read :active_for_grade do
+          argument :grade_level, :integer, allow_nil?: false
+          filter expr(active == true)
+        end
+      end
+
+      policies do
+        policy action_type(:read) do
+          authorize_if always()
+        end
+
+        policy action_type([:create, :update, :destroy]) do
+          authorize_if always()
+        end
+      end
+
+      attributes do
+        uuid_primary_key :id
+
+        attribute :curated_by, :string do
+          allow_nil? false
+          public? true
+        end
+
+        attribute :grade_band, :string do
+          allow_nil? false
+          default "6-8"
+          public? true
+        end
+
+        attribute :student_id, :string do
+          allow_nil? true
+          public? true
+        end
+
+        attribute :reason, :string do
+          allow_nil? true
+          public? true
+        end
+
+        attribute :state, :atom do
+          constraints [one_of: [:pinned, :promoted, :suppressed, :neutral]]
+          default :pinned
+          allow_nil? false
+          public? true
+        end
+
+        attribute :active, :boolean do
+          allow_nil? false
+          default true
+          public? true
+        end
+
+        create_timestamp :inserted_at
+        update_timestamp :updated_at
+      end
+
+      relationships do
+        belongs_to :book, Xaas.Library.Book do
+          allow_nil? false
+          attribute_writable? true
+          public? true
+        end
+      end
     end
-  end
+    """
 
-  graphql do
-    type :library_curation
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    create :create do
-      primary? true
-      accept [:book_id, :curated_by, :grade_band, :student_id, :reason, :state, :active]
-    end
-
-    update :update do
-      primary? true
-      accept [:grade_band, :student_id, :reason, :state, :active]
-    end
-
-    read :active_for_grade do
-      argument :grade_level, :integer, allow_nil?: false
-      filter expr(active == true)
-    end
-  end
-
-  policies do
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
-    end
-  end
-
-  attributes do
-    uuid_primary_key :id
-
-    attribute :curated_by, :string do
-      allow_nil? false
-      public? true
-    end
-
-    attribute :grade_band, :string do
-      allow_nil? false
-      default "6-8"
-      public? true
-    end
-
-    attribute :student_id, :string do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :reason, :string do
-      allow_nil? true
-      public? true
-    end
-
-    attribute :state, :atom do
-      constraints [one_of: [:pinned, :promoted, :suppressed, :neutral]]
-      default :pinned
-      allow_nil? false
-      public? true
-    end
-
-    attribute :active, :boolean do
-      allow_nil? false
-      default true
-      public? true
-    end
-
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
-  end
-
-  relationships do
-    belongs_to :book, Xaas.Library.Book do
-      allow_nil? false
-      attribute_writable? true
-      public? true
-    end
-  end
-end
-"""
     File.write!("lib/xaas/library/curation.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/curation.ex")
   end
 
   defp write_recommendation_log_resource do
     content = """
-defmodule Xaas.Library.RecommendationLog do
-  @moduledoc \"\"\"
-  Ash resource for Recommendation Logs, storing candidate pool, factor weights, and produced recommendations.
-  \"\"\"
-  use Xaas.Resource,
-    otp_app: :xaas,
-    domain: Xaas.Library,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    defmodule Xaas.Library.RecommendationLog do
+      @moduledoc \"\"\"
+      Ash resource for Recommendation Logs, storing candidate pool, factor weights, and produced recommendations.
+      \"\"\"
+      use Xaas.Resource,
+        otp_app: :xaas,
+        domain: Xaas.Library,
+        data_layer: AshPostgres.DataLayer,
+        authorizers: [Ash.Policy.Authorizer],
+        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
-  postgres do
-    table "library_recommendation_logs"
-    repo Xaas.Repo
-  end
+      postgres do
+        table "library_recommendation_logs"
+        repo Xaas.Repo
+      end
 
-  json_api do
-    type "library_recommendation_log"
+      json_api do
+        type "library_recommendation_log"
 
-    routes do
-      base "/library/recommendation_logs"
-      get :read
-      index :read
+        routes do
+          base "/library/recommendation_logs"
+          get :read
+          index :read
+        end
+      end
+
+      graphql do
+        type :library_recommendation_log
+      end
+
+      actions do
+        defaults [:read, :destroy]
+
+        create :create do
+          primary? true
+          accept [:user_id, :candidate_pool_size, :weights, :ranked_items, :accepted]
+        end
+
+        update :update do
+          primary? true
+          accept [:accepted]
+        end
+      end
+
+      policies do
+        policy action_type(:read) do
+          authorize_if always()
+        end
+
+        policy action_type([:create, :update, :destroy]) do
+          authorize_if always()
+        end
+      end
+
+      attributes do
+        uuid_primary_key :id
+
+        attribute :candidate_pool_size, :integer do
+          allow_nil? false
+          default 0
+          public? true
+        end
+
+        attribute :weights, :map do
+          allow_nil? false
+          default %{collab: 0.34, semantic: 0.26, gradeFit: 0.16, available: 0.10, diversity: 0.06, curation: 0.09}
+          public? true
+        end
+
+        attribute :ranked_items, {:array, :map} do
+          allow_nil? false
+          default []
+          public? true
+        end
+
+        attribute :accepted, :boolean do
+          allow_nil? false
+          default false
+          public? true
+        end
+
+        create_timestamp :inserted_at
+        update_timestamp :updated_at
+      end
+
+      relationships do
+        belongs_to :user, Xaas.Accounts.User do
+          allow_nil? false
+          attribute_writable? true
+          public? true
+        end
+      end
     end
-  end
+    """
 
-  graphql do
-    type :library_recommendation_log
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    create :create do
-      primary? true
-      accept [:user_id, :candidate_pool_size, :weights, :ranked_items, :accepted]
-    end
-
-    update :update do
-      primary? true
-      accept [:accepted]
-    end
-  end
-
-  policies do
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if always()
-    end
-  end
-
-  attributes do
-    uuid_primary_key :id
-
-    attribute :candidate_pool_size, :integer do
-      allow_nil? false
-      default 0
-      public? true
-    end
-
-    attribute :weights, :map do
-      allow_nil? false
-      default %{collab: 0.34, semantic: 0.26, gradeFit: 0.16, available: 0.10, diversity: 0.06, curation: 0.09}
-      public? true
-    end
-
-    attribute :ranked_items, {:array, :map} do
-      allow_nil? false
-      default []
-      public? true
-    end
-
-    attribute :accepted, :boolean do
-      allow_nil? false
-      default false
-      public? true
-    end
-
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
-  end
-
-  relationships do
-    belongs_to :user, Xaas.Accounts.User do
-      allow_nil? false
-      attribute_writable? true
-      public? true
-    end
-  end
-end
-"""
     File.write!("lib/xaas/library/recommendation_log.ex", content)
     Mix.shell().info("  [ok] Materialized lib/xaas/library/recommendation_log.ex")
   end

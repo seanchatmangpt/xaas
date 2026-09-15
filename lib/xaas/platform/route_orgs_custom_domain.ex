@@ -27,7 +27,7 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -47,41 +47,41 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     # `Xaas.Platform.Checks.ActorOrgMatches`'s own moduledoc for the full
     # disclosed finding and the live-HTTP proof.
     bypass action(:create) do
-      authorize_if Xaas.Platform.Checks.ActorOrgMatches
+      authorize_if(Xaas.Platform.Checks.ActorOrgMatches)
     end
 
     bypass action(:update) do
-      authorize_if Xaas.Platform.Checks.ActorOrgMatches
+      authorize_if(Xaas.Platform.Checks.ActorOrgMatches)
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :route_orgs_custom_domain
+    type(:route_orgs_custom_domain)
   end
 
   json_api do
-    type "route_orgs_custom_domain"
+    type("route_orgs_custom_domain")
 
     routes do
-      base "/route_orgs_custom_domain"
-      get :read
-      index :read
-      post :create
-      patch :update
+      base("/route_orgs_custom_domain")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:update)
     end
   end
 
   postgres do
-    table "route_orgs_custom_domains"
-    repo Xaas.Repo
+    table("route_orgs_custom_domains")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real mutation route, ported from platform-console's POST
     # /api/orgs/[id]/custom-domain: bind a hostname to an org. Written
@@ -93,9 +93,9 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     # hostname) is left to a real database unique index on `hostname`
     # rather than an app-level check here.
     create :create do
-      accept [:org_id, :hostname]
-      change set_attribute(:status, "pending")
-      validate Xaas.Platform.Validations.RouteOrgsCustomDomainValidHostname
+      accept([:org_id, :hostname])
+      change(set_attribute(:status, "pending"))
+      validate(Xaas.Platform.Validations.RouteOrgsCustomDomainValidHostname)
     end
 
     # Real mutation, matching platform-console's GET-time live resync of
@@ -105,52 +105,52 @@ defmodule Xaas.Platform.RouteOrgsCustomDomain do
     # here rather than a separate action -- xaas has no unbind route of
     # its own yet.
     update :update do
-      accept [:status, :certificate_reason, :certificate_message, :certificate_secret_name]
-      require_atomic? false
+      accept([:status, :certificate_reason, :certificate_message, :certificate_secret_name])
+      require_atomic?(false)
 
       # Real, load-bearing for Xaas.Platform.Checks.ActorOrgMatches's
       # :update half -- see this validation's own moduledoc for the full
       # disclosed atomic-eligibility finding (identical shape to
       # Xaas.Operations.Incident's own IncidentResolvedRequiresResolvedAt
       # fix).
-      validate Xaas.Platform.Validations.RouteOrgsCustomDomainActiveRequiresCertificateSecret
+      validate(Xaas.Platform.Validations.RouteOrgsCustomDomainActiveRequiresCertificateSecret)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Real payload, matching platform-console's real request/response
     # shape (orgId path param, hostname body field).
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :hostname, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :status, :string do
       # pending | active | failed -- mirrors platform-console's
       # customDomainStatus values, written "pending" at create and
       # updated by a real external cert-sync job (not modeled here).
-      allow_nil? false
-      public? true
-      default "pending"
+      allow_nil?(false)
+      public?(true)
+      default("pending")
     end
 
     attribute :certificate_secret_name, :string do
-      public? true
+      public?(true)
     end
 
     attribute :certificate_reason, :string do
-      public? true
+      public?(true)
     end
 
     attribute :certificate_message, :string do
-      public? true
+      public?(true)
     end
   end
 end

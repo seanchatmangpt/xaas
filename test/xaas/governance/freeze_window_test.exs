@@ -68,7 +68,11 @@ defmodule Xaas.Governance.FreezeWindowTest do
     scoped_actor = %{
       iam_policy: %{
         "Statement" => [
-          %{"Effect" => "Allow", "Action" => ["read"], "Resource" => ["xaas:freeze_window:#{visible.id}"]}
+          %{
+            "Effect" => "Allow",
+            "Action" => ["read"],
+            "Resource" => ["xaas:freeze_window:#{visible.id}"]
+          }
         ]
       }
     }

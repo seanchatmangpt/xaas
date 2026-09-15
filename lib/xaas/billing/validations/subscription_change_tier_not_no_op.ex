@@ -20,7 +20,8 @@ defmodule Xaas.Billing.Validations.SubscriptionChangeTierNotNoOp do
     current_tier = changeset.data.tier
 
     if new_tier == current_tier do
-      {:error, field: :tier, message: "is already #{current_tier} -- nothing to change or prorate"}
+      {:error,
+       field: :tier, message: "is already #{current_tier} -- nothing to change or prorate"}
     else
       :ok
     end

@@ -19,7 +19,8 @@ defmodule Xaas.Governance.Validations.ApprovalSsoRoleMappingUpdateRequiresApprov
 
     cond do
       is_nil(approved_by) or approved_by == "" ->
-        {:error, field: :approved_by, message: "is required to approve an SSO role mapping update"}
+        {:error,
+         field: :approved_by, message: "is required to approve an SSO role mapping update"}
 
       approved_by == requested_by ->
         {:error,

@@ -13,7 +13,7 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out, ported from platform-console's
@@ -24,41 +24,41 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
     # ApprovalExportSubscriptionUpdateRequiresApprover's real "second,
     # distinct owner" rule on :approve.
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:approve) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_export_subscription_update
+    type(:approval_export_subscription_update)
   end
 
   json_api do
-    type "approval_export_subscription_update"
+    type("approval_export_subscription_update")
 
     routes do
-      base "/approval_export_subscription_update"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_export_subscription_update")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_export_subscription_updates"
-    repo Xaas.Repo
+    table("approval_export_subscription_updates")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real mutation route, ported from platform-console's
     # POST /api/orgs/[id]/export-subscription maker-checker flow (the
@@ -69,7 +69,7 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
     # accessKeyId/secretAccessKey which platform-console encrypts before
     # storage.
     create :create do
-      accept [
+      accept([
         :org_id,
         :requested_by,
         :bucket_endpoint,
@@ -80,7 +80,7 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
         :cadence,
         :scope,
         :enabled
-      ]
+      ])
     end
 
     # Real mutation route, ported from platform-console's maker-checker
@@ -90,38 +90,38 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
     # -- `approved_by` must be present and must differ from
     # `requested_by` (a second, distinct owner).
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalExportSubscriptionUpdateRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalExportSubscriptionUpdateRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real payload, matching platform-console's real POST body.
     attribute :bucket_endpoint, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :bucket_name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Real fields platform-console encrypts at rest
@@ -133,33 +133,33 @@ defmodule Xaas.Governance.ApprovalExportSubscriptionUpdate do
     # attributes, honestly NOT encrypted. Do not expose these via a real
     # customer-facing read route without adding that layer first.
     attribute :access_key_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :secret_access_key, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :prefix, :string do
-      public? true
+      public?(true)
     end
 
     attribute :cadence, :export_subscription_cadence do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :scope, :export_subscription_scope do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :enabled, :boolean do
-      allow_nil? false
-      default true
-      public? true
+      allow_nil?(false)
+      default(true)
+      public?(true)
     end
   end
 end

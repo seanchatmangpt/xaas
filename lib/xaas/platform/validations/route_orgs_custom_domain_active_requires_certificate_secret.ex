@@ -54,8 +54,7 @@ defmodule Xaas.Platform.Validations.RouteOrgsCustomDomainActiveRequiresCertifica
 
     if status == "active" and (is_nil(certificate_secret_name) or certificate_secret_name == "") do
       {:error,
-       field: :certificate_secret_name,
-       message: "is required when marking a custom domain active"}
+       field: :certificate_secret_name, message: "is required when marking a custom domain active"}
     else
       :ok
     end

@@ -18,11 +18,13 @@ defmodule Xaas.Billing.Validations.ApprovalInvoiceReconciliationApproveRequiresA
 
     cond do
       is_nil(approved_by) or approved_by == "" ->
-        {:error, field: :approved_by, message: "is required to approve a invoice reconciliation approval"}
+        {:error,
+         field: :approved_by, message: "is required to approve a invoice reconciliation approval"}
 
       approved_by == requested_by ->
         {:error,
-         field: :approved_by, message: "cannot approve their own invoice reconciliation approval request"}
+         field: :approved_by,
+         message: "cannot approve their own invoice reconciliation approval request"}
 
       true ->
         :ok

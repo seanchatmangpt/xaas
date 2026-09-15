@@ -62,7 +62,8 @@ defmodule Xaas.E2E.KindChaosPodRecoveryTest do
     assert is_binary(new_pod) and new_pod != original_pod,
            "expected a NEW pod name after real deletion of #{original_pod}, got #{inspect(new_pod)}"
 
-    assert ready?, "new pod #{new_pod} did not reach Running/Ready within #{@recovery_timeout_ms}ms"
+    assert ready?,
+           "new pod #{new_pod} did not reach Running/Ready within #{@recovery_timeout_ms}ms"
 
     # Real HTTP confirmation the recovered pod is actually serving traffic
     # again, not just reporting Ready to the k8s API.
@@ -152,7 +153,10 @@ defmodule Xaas.E2E.KindChaosPodRecoveryTest do
   defp wait_for_new_pod_ready!(original_pod, deadline \\ nil)
 
   defp wait_for_new_pod_ready!(original_pod, nil) do
-    wait_for_new_pod_ready!(original_pod, System.monotonic_time(:millisecond) + @recovery_timeout_ms)
+    wait_for_new_pod_ready!(
+      original_pod,
+      System.monotonic_time(:millisecond) + @recovery_timeout_ms
+    )
   end
 
   defp wait_for_new_pod_ready!(original_pod, deadline) do
@@ -190,6 +194,7 @@ defmodule Xaas.E2E.KindChaosPodRecoveryTest do
       _ ->
         if System.monotonic_time(:millisecond) >= deadline do
           fallback = List.first(candidates)
+
           case fallback do
             {name, _phase, _ready} -> {name, false}
             nil -> {nil, false}

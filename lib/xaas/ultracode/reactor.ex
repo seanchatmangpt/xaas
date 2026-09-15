@@ -36,15 +36,15 @@ defmodule Xaas.Ultracode.Reactor do
   require Ash.Query
 
   step :advance_missed_epochs do
-    run fn _arguments, _context ->
+    run(fn _arguments, _context ->
       {:ok, Xaas.Ultracode.MissedEpochs.advance_all()}
-    end
+    end)
   end
 
   step :run_active_epochs do
     argument(:missed_summary, result(:advance_missed_epochs))
 
-    run fn _arguments, _context ->
+    run(fn _arguments, _context ->
       {:ok, active_runs} =
         Xaas.Ultracode.Run
         |> Ash.Query.filter(state == :running)
@@ -62,15 +62,15 @@ defmodule Xaas.Ultracode.Reactor do
         end)
 
       {:ok, results}
-    end
+    end)
   end
 
   step :advance_next_epochs do
     argument(:epoch_results, result(:run_active_epochs))
 
-    run fn _arguments, _context ->
+    run(fn _arguments, _context ->
       {:ok, Xaas.Ultracode.NextEpoch.advance_all()}
-    end
+    end)
   end
 
   defp active_epoch_id(%Xaas.Ultracode.Run{id: run_id}) do

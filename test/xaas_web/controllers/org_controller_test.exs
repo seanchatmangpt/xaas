@@ -86,7 +86,10 @@ defmodule XaasWeb.OrgControllerTest do
     create_body = %{
       "data" => %{
         "type" => "org",
-        "attributes" => %{"name" => "No Token Co", "slug" => "no-token-#{System.unique_integer([:positive])}"}
+        "attributes" => %{
+          "name" => "No Token Co",
+          "slug" => "no-token-#{System.unique_integer([:positive])}"
+        }
       }
     }
 

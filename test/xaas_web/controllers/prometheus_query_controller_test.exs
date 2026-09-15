@@ -23,11 +23,15 @@ defmodule XaasWeb.PrometheusQueryControllerTest do
   end
 
   @tag :kind
-  test "GET /internal-api/prometheus/query proxies a real query to a real live Prometheus", %{conn: conn} do
+  test "GET /internal-api/prometheus/query proxies a real query to a real live Prometheus", %{
+    conn: conn
+  } do
     conn =
       conn
       |> with_internal_api_token()
-      |> get("/internal-api/prometheus/query", query: "phoenix_endpoint_stop_duration_milliseconds_sum")
+      |> get("/internal-api/prometheus/query",
+        query: "phoenix_endpoint_stop_duration_milliseconds_sum"
+      )
 
     body = json_response(conn, 200)
     assert body["status"] in ["success", "error"]
@@ -49,7 +53,9 @@ defmodule XaasWeb.PrometheusQueryControllerTest do
       conn =
         conn
         |> with_internal_api_token()
-        |> get("/internal-api/prometheus/query", query: "phoenix_endpoint_stop_duration_milliseconds_sum")
+        |> get("/internal-api/prometheus/query",
+          query: "phoenix_endpoint_stop_duration_milliseconds_sum"
+        )
 
       body = json_response(conn, 502)
       assert body["error"] == "prometheus_unreachable"
@@ -93,7 +99,9 @@ defmodule XaasWeb.PrometheusQueryControllerTest do
         conn =
           conn
           |> with_internal_api_token()
-          |> get("/internal-api/prometheus/query", query: "phoenix_endpoint_stop_duration_milliseconds_sum")
+          |> get("/internal-api/prometheus/query",
+            query: "phoenix_endpoint_stop_duration_milliseconds_sum"
+          )
 
         # Reaching the real 502 (rather than a real 400) is the
         # state-based proof that this query passed the allowlist and
@@ -129,7 +137,9 @@ defmodule XaasWeb.PrometheusQueryControllerTest do
         conn =
           conn
           |> with_internal_api_token()
-          |> get("/internal-api/prometheus/query", query: "rate(phoenix_endpoint_stop_duration_milliseconds_sum[365d])")
+          |> get("/internal-api/prometheus/query",
+            query: "rate(phoenix_endpoint_stop_duration_milliseconds_sum[365d])"
+          )
 
         body = json_response(conn, 400)
         assert body["error"] == "query_not_allowed"

@@ -30,7 +30,10 @@ defmodule Xaas.Accounts.OrgTest do
 
   defp create!(slug_prefix) do
     Org
-    |> Ash.Changeset.for_create(:create, %{name: "Acme Inc", slug: "#{slug_prefix}-#{System.unique_integer([:positive])}"})
+    |> Ash.Changeset.for_create(:create, %{
+      name: "Acme Inc",
+      slug: "#{slug_prefix}-#{System.unique_integer([:positive])}"
+    })
     |> Ash.create!(authorize?: false)
   end
 
@@ -102,7 +105,11 @@ defmodule Xaas.Accounts.OrgTest do
 
     org =
       Org
-      |> Ash.Changeset.for_create(:create, %{name: "Beta LLC", slug: "beta-#{System.unique_integer([:positive])}"}, actor: actor)
+      |> Ash.Changeset.for_create(
+        :create,
+        %{name: "Beta LLC", slug: "beta-#{System.unique_integer([:positive])}"},
+        actor: actor
+      )
       |> Ash.create!()
 
     assert org.name == "Beta LLC"
@@ -137,7 +144,11 @@ defmodule Xaas.Accounts.OrgTest do
   test "an anonymous (actor-less) caller is really denied create -- not silently allowed" do
     changeset =
       Org
-      |> Ash.Changeset.for_create(:create, %{name: "Malicious Co", slug: "mal-#{System.unique_integer([:positive])}"}, actor: nil)
+      |> Ash.Changeset.for_create(
+        :create,
+        %{name: "Malicious Co", slug: "mal-#{System.unique_integer([:positive])}"},
+        actor: nil
+      )
 
     assert {:error, %Ash.Error.Forbidden{}} = Ash.create(changeset)
   end

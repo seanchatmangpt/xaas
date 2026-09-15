@@ -59,7 +59,9 @@ defmodule Xaas.Ocel.Changes.RelateEventToObjects do
 
       params = %{event_id: event.id, object_id: object_id, qualifier: qualifier}
 
-      case EventObject |> Ash.Changeset.for_create(:relate, params) |> Ash.create(authorize?: false) do
+      case EventObject
+           |> Ash.Changeset.for_create(:relate, params)
+           |> Ash.create(authorize?: false) do
         {:ok, _event_object} -> {:cont, {:ok, event}}
         {:error, error} -> {:halt, {:error, error}}
       end

@@ -24,8 +24,8 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource]
 
   paper_trail do
-    change_tracking_mode :full_diff
-    attributes_as_attributes [:org_id]
+    change_tracking_mode(:full_diff)
+    attributes_as_attributes([:org_id])
   end
 
   policies do
@@ -35,7 +35,7 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     # Replace with real per-action rules as domain owners define them; never
     # relax this to allow-all without an explicit rule.
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Explicit per-action carve-out, matching the same pattern as
@@ -52,44 +52,44 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     # validations named above. See that module's moduledoc for why this
     # is needed on top of `multitenancy`'s own row-scoping.
     bypass action(:create) do
-      authorize_if Xaas.Governance.Checks.ActorOrgMatches
+      authorize_if(Xaas.Governance.Checks.ActorOrgMatches)
     end
 
     bypass action(:approve) do
-      authorize_if Xaas.Governance.Checks.ActorOrgMatches
+      authorize_if(Xaas.Governance.Checks.ActorOrgMatches)
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_deployment_quarantine
+    type(:approval_deployment_quarantine)
   end
 
   json_api do
-    type "approval_deployment_quarantine"
+    type("approval_deployment_quarantine")
 
     routes do
-      base "/approval_deployment_quarantine"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_deployment_quarantine")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_deployment_quarantines"
-    repo Xaas.Repo
+    table("approval_deployment_quarantines")
+    repo(Xaas.Repo)
 
     references do
-      reference :org, on_delete: :restrict, on_update: :update
+      reference(:org, on_delete: :restrict, on_update: :update)
     end
   end
 
-    # Real Ash-core multitenancy wiring, now strictly enforced
+  # Real Ash-core multitenancy wiring, now strictly enforced
   # (`global? false`). A real per-org actor now exists on the request
   # path -- see `XaasWeb.Plugs.ResolveOrgActor` (real, caller-asserted
   # `X-Org-Id` header resolved against a real `Xaas.Accounts.Org`, then
@@ -103,16 +103,16 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
   # per-org *authentication* remains separate, out-of-scope follow-up
   # work.
   multitenancy do
-    strategy :attribute
-    attribute :org_id
-    global? false
+    strategy(:attribute)
+    attribute(:org_id)
+    global?(false)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:org_id, :requested_by, :deployment_name, :environment, :reason]
+      accept([:org_id, :requested_by, :deployment_name, :environment, :reason])
     end
 
     # Approve a pending deployment quarantine. Business rule lives in
@@ -120,49 +120,49 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     # -- `approved_by` must be present and must differ from `requested_by`
     # (a second, distinct approver).
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Governance.Validations.ApprovalDeploymentQuarantineRequiresApprover
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Governance.Validations.ApprovalDeploymentQuarantineRequiresApprover)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Honestly-designed payload (see moduledoc -- no real route to port
     # this from): identifies which deployment is being pulled from
     # rotation.
     attribute :deployment_name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Reuses the real, already-ported Environment enum
     # (Xaas.Governance.Types.Environment: dev | staging | prod).
     attribute :environment, :environment do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # New, honestly-disclosed enum (Xaas.Governance.Types.DeploymentQuarantineReason)
     # -- not ported from any real platform-console enum.
     attribute :reason, :deployment_quarantine_reason do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 
@@ -172,10 +172,10 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     # (ApprovalBackupRetentionChange). `define_attribute? false` since
     # `org_id` is already explicitly defined above.
     belongs_to :org, Xaas.Accounts.Org do
-      source_attribute :org_id
-      destination_attribute :slug
-      attribute_type :string
-      define_attribute? false
+      source_attribute(:org_id)
+      destination_attribute(:slug)
+      attribute_type(:string)
+      define_attribute?(false)
     end
   end
 end

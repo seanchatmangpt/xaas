@@ -79,12 +79,12 @@ defmodule Xaas.Accounts.Org do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
 
   typescript do
-    type_name "AccountsOrg"
+    type_name("AccountsOrg")
   end
 
   iam do
-    permission_base "xaas:org"
-    action_to_iam_mapping create: :create, read: :read, update: :update
+    permission_base("xaas:org")
+    action_to_iam_mapping(create: :create, read: :read, update: :update)
   end
 
   policies do
@@ -110,8 +110,8 @@ defmodule Xaas.Accounts.Org do
     # never even load the row to update, real-`404`ing every legitimate
     # `PATCH /api/orgs/:id` regardless of `ActorBelongsToOrg`'s own fix.
     bypass action_type(:read) do
-      authorize_if AshIam.Check
-      authorize_if Xaas.Accounts.Checks.ActorOrgSelfFilter
+      authorize_if(AshIam.Check)
+      authorize_if(Xaas.Accounts.Checks.ActorOrgSelfFilter)
     end
 
     # Real, disclosed limitation found this session: attempting the same
@@ -138,7 +138,7 @@ defmodule Xaas.Accounts.Org do
     # silently allowed. Full IAM-gated create/update remains the real
     # follow-up once the ash_iam create/update gap above is root-caused.
     bypass action(:create) do
-      authorize_if actor_present()
+      authorize_if(actor_present())
     end
 
     # :update authorizes via 2 real, OR'd checks (real, nineteenth-pass
@@ -155,8 +155,8 @@ defmodule Xaas.Accounts.Org do
     # created org has no memberships to belong to yet (see
     # `ActorBelongsToOrg`'s own moduledoc for the full disclosure).
     bypass action(:update) do
-      authorize_if Xaas.Accounts.Checks.ActorBelongsToOrg
-      authorize_if Xaas.Accounts.Checks.ActorOrgSelfFilter
+      authorize_if(Xaas.Accounts.Checks.ActorBelongsToOrg)
+      authorize_if(Xaas.Accounts.Checks.ActorOrgSelfFilter)
     end
 
     # No :destroy action exists on this resource (see actions block) --
@@ -165,41 +165,41 @@ defmodule Xaas.Accounts.Org do
     # ApprovalOrgDelete does not yet actually delete the Org row on
     # approval -- honestly disclosed as follow-up work, not fabricated.
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :org
+    type(:org)
   end
 
   json_api do
-    type "org"
+    type("org")
 
     routes do
-      base "/orgs"
-      get :read
-      index :read
-      post :create
-      patch :update
+      base("/orgs")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:update)
     end
   end
 
   postgres do
-    table "orgs"
-    repo Xaas.Repo
+    table("orgs")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:name, :slug]
+      accept([:name, :slug])
     end
 
     update :update do
-      accept [:name, :status, :suspension_reason]
-      require_atomic? false
+      accept([:name, :status, :suspension_reason])
+      require_atomic?(false)
 
       # Real fix (nineteenth pass, see moduledoc's "Gap B" disclosure): a
       # real, no-`atomic/3` validation, matching the identical
@@ -209,16 +209,16 @@ defmodule Xaas.Accounts.Org do
       # so `changeset.data` is real and populated when
       # `ActorBelongsToOrg`'s org-token clause reads this record's own
       # `slug` off it.
-      validate Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason
+      validate(Xaas.Accounts.Validations.OrgSuspendedRequiresSuspensionReason)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # The real identifier every existing `org_id` string attribute across
@@ -227,15 +227,15 @@ defmodule Xaas.Accounts.Org do
     # columns can plausibly migrate to reference `slug` without a
     # surprise type change -- a real, deliberate compatibility choice.
     attribute :slug, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :status, :atom do
-      allow_nil? false
-      public? true
-      default :active
-      constraints one_of: [:active, :suspended]
+      allow_nil?(false)
+      public?(true)
+      default(:active)
+      constraints(one_of: [:active, :suspended])
     end
 
     # Real, net-new attribute (nineteenth pass): the supporting fact
@@ -244,11 +244,11 @@ defmodule Xaas.Accounts.Org do
     # module's own moduledoc for the full real business rule and its real,
     # disclosed atomic-ineligibility side effect.
     attribute :suspension_reason, :string do
-      public? true
+      public?(true)
     end
   end
 
   identities do
-    identity :unique_slug, [:slug]
+    identity(:unique_slug, [:slug])
   end
 end

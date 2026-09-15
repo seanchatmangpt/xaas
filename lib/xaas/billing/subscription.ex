@@ -110,12 +110,12 @@ defmodule Xaas.Billing.Subscription do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
 
   typescript do
-    type_name "BillingSubscription"
+    type_name("BillingSubscription")
   end
 
   iam do
-    permission_base "xaas:billing_subscription"
-    action_to_iam_mapping create: :create, read: :read, update: :update
+    permission_base("xaas:billing_subscription")
+    action_to_iam_mapping(create: :create, read: :read, update: :update)
   end
 
   policies do
@@ -125,7 +125,7 @@ defmodule Xaas.Billing.Subscription do
     # plain `policy`, which would AND against the trailing catch-all below
     # and silently deny every read regardless of AshIam.Check's result.
     bypass action_type(:read) do
-      authorize_if AshIam.Check
+      authorize_if(AshIam.Check)
     end
 
     # :create and :sync_from_stripe are deliberately left off AshIam too
@@ -139,7 +139,7 @@ defmodule Xaas.Billing.Subscription do
     # they fall through to the catch-all below exactly as before this
     # change.
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
@@ -149,26 +149,26 @@ defmodule Xaas.Billing.Subscription do
     # caught by `mix compile --force`
     # (AshGraphql.Resource.Verifiers.VerifyReservedTypeName), not a
     # stylistic choice.
-    type :billing_subscription
+    type(:billing_subscription)
   end
 
   json_api do
-    type "billing_subscription"
+    type("billing_subscription")
 
     routes do
-      base "/billing_subscriptions"
-      get :read
-      index :read
+      base("/billing_subscriptions")
+      get(:read)
+      index(:read)
     end
   end
 
   postgres do
-    table "billing_subscriptions"
-    repo Xaas.Repo
+    table("billing_subscriptions")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     # Real create: the org has no subscription on file yet. Mirrors
     # platform-console's ensureCustomerAndSubscription's "create" branch
@@ -183,14 +183,14 @@ defmodule Xaas.Billing.Subscription do
     # SDK in the test itself, before the real
     # `Xaas.Billing.Changes.SubscriptionEnsureStripe` wiring exists.
     create :create do
-      accept [
+      accept([
         :org_id,
         :stripe_customer_id,
         :stripe_subscription_id,
         :tier,
         :status,
         :current_period_end
-      ]
+      ])
     end
 
     # Real update: the future webhook receiver (explicitly out of scope
@@ -210,9 +210,9 @@ defmodule Xaas.Billing.Subscription do
     # not a real priced product, and for the idempotency discipline that
     # keeps a repeat `:active` sync from double-charging.
     update :sync_from_stripe do
-      accept [:stripe_subscription_id, :status, :current_period_end]
-      require_atomic? false
-      change Xaas.Billing.Changes.SubscriptionChargeOnActivate
+      accept([:stripe_subscription_id, :status, :current_period_end])
+      require_atomic?(false)
+      change(Xaas.Billing.Changes.SubscriptionChargeOnActivate)
     end
 
     # Real, NEW mid-cycle plan-change action -- the exact gap this
@@ -224,33 +224,33 @@ defmodule Xaas.Billing.Subscription do
     # new one, matching `SubscriptionChargeOnActivate`'s own real
     # before/after-state discipline.
     update :change_tier do
-      require_atomic? false
+      require_atomic?(false)
 
       argument :tier, :atom do
-        allow_nil? false
-        constraints one_of: [:standard, :pro, :enterprise]
+        allow_nil?(false)
+        constraints(one_of: [:standard, :pro, :enterprise])
       end
 
-      validate Xaas.Billing.Validations.SubscriptionChangeTierNotNoOp
-      change Xaas.Billing.Changes.SubscriptionProrateTierChange
+      validate(Xaas.Billing.Validations.SubscriptionChangeTierNotNoOp)
+      change(Xaas.Billing.Changes.SubscriptionProrateTierChange)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Loose string, not a belongs_to FK -- same real, disclosed convention
     # `Xaas.Accounts.Org`'s own moduledoc documents for every existing
     # org_id attribute in this repo (real Ash multitenancy wiring is
     # named there as disclosed follow-up work, not done here either).
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :stripe_customer_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Nullable: platform-console's own StoredSubscription types this
@@ -259,7 +259,7 @@ defmodule Xaas.Billing.Subscription do
     # allows for is allowed here rather than forcing a value that isn't
     # always true yet.
     attribute :stripe_subscription_id, :string do
-      public? true
+      public?(true)
     end
 
     # Fixed to one real value on purpose -- the task's own scope ("proven
@@ -270,15 +270,15 @@ defmodule Xaas.Billing.Subscription do
     # is a constraint-list change, not a type migration -- but only
     # `:standard` has a real Stripe Price id wired to it in this pass.
     attribute :tier, :atom do
-      allow_nil? false
-      public? true
-      default :standard
+      allow_nil?(false)
+      public?(true)
+      default(:standard)
       # Widened this session: :pro/:enterprise now have real, disclosed
       # placeholder Ledger prices wired via the new :change_tier action
       # (see Xaas.Billing.Changes.SubscriptionProrateTierChange) -- still
       # not real Stripe Price ids (that remains real, disclosed follow-up
       # work per this resource's own moduledoc).
-      constraints one_of: [:standard, :pro, :enterprise]
+      constraints(one_of: [:standard, :pro, :enterprise])
     end
 
     # Mirrors Stripe's own real Subscription.Status enum
@@ -295,10 +295,10 @@ defmodule Xaas.Billing.Subscription do
     # matching `getStoredSubscription`'s own `data: null` (not a
     # fabricated placeholder row) convention.
     attribute :status, :atom do
-      allow_nil? false
-      public? true
-      default :incomplete
-      constraints one_of: [:incomplete, :active, :past_due, :canceled]
+      allow_nil?(false)
+      public?(true)
+      default(:incomplete)
+      constraints(one_of: [:incomplete, :active, :past_due, :canceled])
     end
 
     # UtcDatetime, not a bare string -- unlike platform-console's
@@ -308,7 +308,7 @@ defmodule Xaas.Billing.Subscription do
     # (`new Date(...).toISOString()`) is a real typed timestamp here
     # instead.
     attribute :current_period_end, :utc_datetime do
-      public? true
+      public?(true)
     end
   end
 
@@ -320,6 +320,6 @@ defmodule Xaas.Billing.Subscription do
     # tenant). A real multi-subscription-per-org model (e.g. a future
     # per-project subscription) is out of scope and would need this
     # identity relaxed, not silently violated.
-    identity :unique_org, [:org_id]
+    identity(:unique_org, [:org_id])
   end
 end

@@ -103,6 +103,7 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
 
           true ->
             report_refusal(file, path, target_table, cross_table, content)
+
             Mix.raise(
               "xaas.safe_generate_migrations: refused #{file} -- it contains operations on tables other than #{inspect(target_table)}. Re-run with --allow-cross-table only if this is genuinely intended, or regenerate after resolving/committing the other resources' pending codegen separately."
             )

@@ -21,8 +21,11 @@ defmodule Xaas.Resource do
       @doc "Returns the admitted public-ontology projection or raises on semantic refusal."
       def ontology_projection! do
         case Xaas.Semantics.Registry.admit(__MODULE__) do
-          {:ok, projection} -> projection
-          {:error, reason} -> raise ArgumentError, "ontology projection refused: #{inspect(reason)}"
+          {:ok, projection} ->
+            projection
+
+          {:error, reason} ->
+            raise ArgumentError, "ontology projection refused: #{inspect(reason)}"
         end
       end
 

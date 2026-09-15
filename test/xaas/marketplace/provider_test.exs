@@ -54,7 +54,11 @@ defmodule Xaas.Marketplace.ProviderTest do
 
   test "provider lifecycle status cannot bypass the Reactor actuation boundary" do
     provider =
-      create!(%{name: "Beta Co", slug: "beta-co-#{System.unique_integer([:positive])}", org_id: "org-c"})
+      create!(%{
+        name: "Beta Co",
+        slug: "beta-co-#{System.unique_integer([:positive])}",
+        org_id: "org-c"
+      })
 
     assert {:error, %Ash.Error.Invalid{}} =
              provider
@@ -90,7 +94,11 @@ defmodule Xaas.Marketplace.ProviderTest do
 
   test "an actor with no real org_id is really denied read -- not silently allowed" do
     _provider =
-      create!(%{name: "Hidden Co", slug: "hidden-co-#{System.unique_integer([:positive])}", org_id: "org-d"})
+      create!(%{
+        name: "Hidden Co",
+        slug: "hidden-co-#{System.unique_integer([:positive])}",
+        org_id: "org-d"
+      })
 
     results = Provider |> Ash.read!(actor: %{})
     assert results == []

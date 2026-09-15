@@ -19,7 +19,8 @@ defmodule Xaas.Governance.Validations.ApprovalGeofenceExceptionGrantRequiresAppr
 
     cond do
       is_nil(approved_by) or approved_by == "" ->
-        {:error, field: :approved_by, message: "is required to approve a geofence exception grant"}
+        {:error,
+         field: :approved_by, message: "is required to approve a geofence exception grant"}
 
       approved_by == requested_by ->
         {:error,

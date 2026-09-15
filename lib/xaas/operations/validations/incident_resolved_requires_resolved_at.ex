@@ -55,9 +55,7 @@ defmodule Xaas.Operations.Validations.IncidentResolvedRequiresResolvedAt do
     resolved_at = Ash.Changeset.get_attribute(changeset, :resolved_at)
 
     if status == :resolved and is_nil(resolved_at) do
-      {:error,
-       field: :resolved_at,
-       message: "is required when marking an incident resolved"}
+      {:error, field: :resolved_at, message: "is required when marking an incident resolved"}
     else
       :ok
     end

@@ -80,8 +80,10 @@ defmodule Xaas.FrontierEvidenceTest do
     assert first["schema"] == "frontier-evidence-bundle/v1"
     assert first["bundle_sha256"] =~ ~r/^sha256:[0-9a-f]{64}$/
     assert first["bundle_sha256"] == second["bundle_sha256"]
+
     assert Map.keys(first["fragments"]) |> Enum.sort() ==
              ~w(ash_pplan ash_r2rml beam4pm gitvan)
+
     assert :ok = FrontierEvidence.validate_bundle(first)
   end
 

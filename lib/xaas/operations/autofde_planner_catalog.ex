@@ -16,35 +16,34 @@ defmodule Xaas.Operations.AutofdePlannerCatalog do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "autofde_planner_catalog_requests"
-    repo Xaas.Repo
+    table("autofde_planner_catalog_requests")
+    repo(Xaas.Repo)
   end
 
   attributes do
-    uuid_primary_key :id
-    attribute :query, :string, allow_nil?: false, public?: true
-    attribute :cnv_response, :map, allow_nil?: true, public?: true
-    attribute :trajectory_sha256, :string, allow_nil?: true, public?: true
-    attribute :requested_at, :utc_datetime_usec, allow_nil?: true, public?: true
+    uuid_primary_key(:id)
+    attribute(:query, :string, allow_nil?: false, public?: true)
+    attribute(:cnv_response, :map, allow_nil?: true, public?: true)
+    attribute(:trajectory_sha256, :string, allow_nil?: true, public?: true)
+    attribute(:requested_at, :utc_datetime_usec, allow_nil?: true, public?: true)
     timestamps()
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :request_catalog do
-      accept [:query]
-      change fn changeset, _context ->
+      accept([:query])
+
+      change(fn changeset, _context ->
         query = Ash.Changeset.get_attribute(changeset, :query)
+
         base_url =
           Application.get_env(:xaas, :cnv_deploy_base_url, "http://127.0.0.1:8080")
 
         body = %{
           tool: "fabric__catalog",
-          arguments:
-
-            %{}
-
+          arguments: %{}
         }
 
         case Req.post(base_url <> "/invoke", json: body) do
@@ -63,7 +62,7 @@ defmodule Xaas.Operations.AutofdePlannerCatalog do
               message: "cnv-deploy /invoke request failed: #{inspect(reason)}"
             )
         end
-      end
+      end)
     end
   end
 
@@ -76,7 +75,6 @@ defmodule Xaas.Operations.AutofdePlannerCatalog do
   # line instead.
   defp apply_record(changeset, %{"execution" => %{"stdout" => stdout, "exit_code" => 0}}) do
     case last_json_object(stdout) do
-
       {:ok, decoded} ->
         # fabric__catalog does not emit a trajectory_sha256 (it is not a solve call), so
         # trajectory_sha256 stays nil here -- no digest is invented for a non-solve tool.
@@ -89,7 +87,6 @@ defmodule Xaas.Operations.AutofdePlannerCatalog do
           field: :query,
           message: "cnv-deploy /invoke succeeded but stdout had no parseable JSON payload"
         )
-
     end
   end
 
@@ -101,7 +98,10 @@ defmodule Xaas.Operations.AutofdePlannerCatalog do
   end
 
   defp apply_record(changeset, _other) do
-    Ash.Changeset.add_error(changeset, field: :query, message: "unexpected cnv-deploy /invoke response shape")
+    Ash.Changeset.add_error(changeset,
+      field: :query,
+      message: "unexpected cnv-deploy /invoke response shape"
+    )
   end
 
   defp last_json_object(stdout) do

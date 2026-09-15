@@ -82,7 +82,10 @@ defmodule XaasWeb.PrometheusQueryController do
   def query(conn, _params) do
     conn
     |> put_status(400)
-    |> json(%{error: "missing_query_param", detail: "GET /internal-api/prometheus/query requires a \"query\" param"})
+    |> json(%{
+      error: "missing_query_param",
+      detail: "GET /internal-api/prometheus/query requires a \"query\" param"
+    })
   end
 
   defp forward_to_prometheus(conn, promql) do

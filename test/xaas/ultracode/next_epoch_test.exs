@@ -61,7 +61,13 @@ defmodule Xaas.Ultracode.NextEpochTest do
       Epoch
       |> Ash.Changeset.for_create(
         :create,
-        %{run_id: run.id, cycle: 0, exact_subject: subject, state: :expected, expected_at: DateTime.utc_now()},
+        %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: subject,
+          state: :expected,
+          expected_at: DateTime.utc_now()
+        },
         authorize?: false
       )
       |> Ash.create!()

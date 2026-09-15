@@ -47,96 +47,102 @@ defmodule Xaas.Library.PersonaGrant do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "library_persona_grants"
-    repo Xaas.Repo
+    table("library_persona_grants")
+    repo(Xaas.Repo)
 
-    identity_wheres_to_sql active_caller_user: "revoked_at IS NULL"
+    identity_wheres_to_sql(active_caller_user: "revoked_at IS NULL")
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :grant do
-      description "Grants a caller credential permission to act as a given user persona"
-      accept [:caller_id, :user_id, :granted_by]
-      change set_attribute(:granted_at, &DateTime.utc_now/0)
+      description("Grants a caller credential permission to act as a given user persona")
+      accept([:caller_id, :user_id, :granted_by])
+      change(set_attribute(:granted_at, &DateTime.utc_now/0))
     end
 
     update :revoke do
-      description "Revokes a previously granted persona binding"
-      accept []
-      require_atomic? false
-      change set_attribute(:revoked_at, &DateTime.utc_now/0)
+      description("Revokes a previously granted persona binding")
+      accept([])
+      require_atomic?(false)
+      change(set_attribute(:revoked_at, &DateTime.utc_now/0))
     end
 
     read :list_active do
-      description "Active (non-revoked) grants for a given caller+user pair -- internal use only, always called with authorize?: false"
-      argument :caller_id, :string, allow_nil?: false
-      argument :user_id, :uuid, allow_nil?: false
-      filter expr(caller_id == ^arg(:caller_id) and user_id == ^arg(:user_id) and is_nil(revoked_at))
+      description(
+        "Active (non-revoked) grants for a given caller+user pair -- internal use only, always called with authorize?: false"
+      )
+
+      argument(:caller_id, :string, allow_nil?: false)
+      argument(:user_id, :uuid, allow_nil?: false)
+
+      filter(
+        expr(caller_id == ^arg(:caller_id) and user_id == ^arg(:user_id) and is_nil(revoked_at))
+      )
     end
   end
 
   code_interface do
-    define :grant, args: [:caller_id, :user_id, :granted_by]
-    define :revoke
-    define :read
-    define :active_for, action: :list_active, args: [:caller_id, :user_id]
+    define(:grant, args: [:caller_id, :user_id, :granted_by])
+    define(:revoke)
+    define(:read)
+    define(:active_for, action: :list_active, args: [:caller_id, :user_id])
   end
 
   policies do
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy action([:grant, :revoke]) do
       # No admin-role concept exists on Xaas.Accounts.User yet (real grep
       # confirmed before writing this) -- actor_present() is the strongest
       # "authenticated admin" check this codebase can express today.
-      authorize_if actor_present()
+      authorize_if(actor_present())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :caller_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :granted_by, :string do
-      allow_nil? true
-      public? true
+      allow_nil?(true)
+      public?(true)
     end
 
     attribute :granted_at, :utc_datetime_usec do
-      allow_nil? false
-      default &DateTime.utc_now/0
-      public? true
+      allow_nil?(false)
+      default(&DateTime.utc_now/0)
+      public?(true)
     end
 
     attribute :revoked_at, :utc_datetime_usec do
-      allow_nil? true
-      public? true
+      allow_nil?(true)
+      public?(true)
     end
   end
 
   relationships do
     belongs_to :user, Xaas.Accounts.User do
-      allow_nil? false
-      attribute_writable? true
-      public? true
+      allow_nil?(false)
+      attribute_writable?(true)
+      public?(true)
     end
   end
 
   identities do
     identity :active_caller_user, [:caller_id, :user_id] do
-      where expr(is_nil(revoked_at))
+      where(expr(is_nil(revoked_at)))
     end
   end
 end

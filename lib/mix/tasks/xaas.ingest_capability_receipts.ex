@@ -27,7 +27,9 @@ defmodule Mix.Tasks.Xaas.IngestCapabilityReceipts do
       end
 
     unless File.exists?(path) do
-      Mix.raise("No receipt file at #{path} -- run weaver-live-matrix.sh first (real, not fabricated).")
+      Mix.raise(
+        "No receipt file at #{path} -- run weaver-live-matrix.sh first (real, not fabricated)."
+      )
     end
 
     rows =

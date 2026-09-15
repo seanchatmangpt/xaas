@@ -279,7 +279,11 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommitTest do
     build_fixture!(tmp)
 
     # A real staged change beyond the initial fixture commit.
-    File.write!(Path.join(tmp, "lib/new_feature.ex"), "defmodule NewFeature do\n  def ok, do: :ok\nend\n")
+    File.write!(
+      Path.join(tmp, "lib/new_feature.ex"),
+      "defmodule NewFeature do\n  def ok, do: :ok\nend\n"
+    )
+
     git!(tmp, ["add", "-A"])
 
     message_content = "feat: add new_feature\n\nExercises the -F round trip, not -am.\n"

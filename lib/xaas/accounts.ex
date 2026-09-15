@@ -4,21 +4,20 @@ defmodule Xaas.Accounts do
     extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do
-    show? true
+    show?(true)
   end
 
   typescript_rpc do
     resource Xaas.Accounts.Org do
-      rpc_action :list_accounts_orgs, :read
+      rpc_action(:list_accounts_orgs, :read)
     end
   end
 
-
   resources do
-    resource Xaas.Accounts.Org
-    resource Xaas.Accounts.OrgMembership
-    resource Xaas.Accounts.Token
-    resource Xaas.Accounts.Token.RevokeNonce
-    resource Xaas.Accounts.User
+    resource(Xaas.Accounts.Org)
+    resource(Xaas.Accounts.OrgMembership)
+    resource(Xaas.Accounts.Token)
+    resource(Xaas.Accounts.Token.RevokeNonce)
+    resource(Xaas.Accounts.User)
   end
 end

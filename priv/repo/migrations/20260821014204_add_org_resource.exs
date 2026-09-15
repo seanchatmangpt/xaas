@@ -16,7 +16,6 @@ defmodule Xaas.Repo.Migrations.AddOrgResource do
     end
 
     create unique_index(:orgs, [:slug], name: "orgs_unique_slug_index")
-
   end
 
   # Real, deliberate exclusion (same real gap as every migration this

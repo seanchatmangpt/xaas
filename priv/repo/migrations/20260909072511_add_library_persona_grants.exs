@@ -25,7 +25,8 @@ defmodule Xaas.Repo.Migrations.AddLibraryPersonaGrants do
             name: "library_persona_grants_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create unique_index(:library_persona_grants, [:caller_id, :user_id],

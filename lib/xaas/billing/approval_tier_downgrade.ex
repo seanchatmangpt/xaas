@@ -77,7 +77,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
   policies do
     # ash-migration Phase 5 (deny-by-default floor).
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, explicit per-action carve-out: `:create`/`:approve` are gated
@@ -96,45 +96,45 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     # `multitenancy` block of its own to backstop it the way the
     # Governance `Approval*` resources have.
     bypass action(:create) do
-      authorize_if Xaas.Billing.Checks.ActorOrgMatches
+      authorize_if(Xaas.Billing.Checks.ActorOrgMatches)
     end
 
     bypass action(:approve) do
-      authorize_if Xaas.Billing.Checks.ActorOrgMatches
+      authorize_if(Xaas.Billing.Checks.ActorOrgMatches)
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :approval_tier_downgrade
+    type(:approval_tier_downgrade)
   end
 
   json_api do
-    type "approval_tier_downgrade"
+    type("approval_tier_downgrade")
 
     routes do
-      base "/approval_tier_downgrade"
-      get :read
-      index :read
-      post :create
-      patch :approve
+      base("/approval_tier_downgrade")
+      get(:read)
+      index(:read)
+      post(:create)
+      patch(:approve)
     end
   end
 
   postgres do
-    table "approval_tier_downgrades"
-    repo Xaas.Repo
+    table("approval_tier_downgrades")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:requested_by, :approved_by, :subscription_id, :requested_tier]
-      validate Xaas.Billing.Validations.ApprovalTierDowngradeTargetsLowerTier
+      accept([:requested_by, :approved_by, :subscription_id, :requested_tier])
+      validate(Xaas.Billing.Validations.ApprovalTierDowngradeTargetsLowerTier)
     end
 
     # Real mutation route: approve a pending tier downgrade request. Real
@@ -146,23 +146,23 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     # no-op stub) then drives the real `Xaas.Billing.Subscription`
     # `:change_tier` action with `requested_tier`, atomically.
     update :approve do
-      accept [:approved_by]
-      require_atomic? false
-      validate Xaas.Billing.Validations.ApprovalTierDowngradeRequiresApprover
-      change Xaas.Billing.Changes.ApprovalTierDowngradeApprove
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Billing.Validations.ApprovalTierDowngradeRequiresApprover)
+      change(Xaas.Billing.Changes.ApprovalTierDowngradeApprove)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :requested_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :approved_by, :string do
-      public? true
+      public?(true)
     end
 
     # Real target tier for the downgrade -- same enum shape (and same
@@ -172,9 +172,9 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     # (`ApprovalTierDowngradeTargetsLowerTier`) to be strictly lower than
     # the subscription's real current tier.
     attribute :requested_tier, :atom do
-      allow_nil? false
-      public? true
-      constraints one_of: [:standard, :pro, :enterprise]
+      allow_nil?(false)
+      public?(true)
+      constraints(one_of: [:standard, :pro, :enterprise])
     end
   end
 
@@ -186,8 +186,8 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     # plain uuid FK, not an attribute-strategy tenant relationship like
     # `Xaas.Governance.ApprovalBackupRetentionChange`'s `belongs_to :org`.
     belongs_to :subscription, Xaas.Billing.Subscription do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end

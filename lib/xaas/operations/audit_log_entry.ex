@@ -34,7 +34,7 @@ defmodule Xaas.Operations.AuditLogEntry do
 
   policies do
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # No bypass for :create -- deliberately unreachable from any public
@@ -44,34 +44,34 @@ defmodule Xaas.Operations.AuditLogEntry do
     # pattern EnqueueWebhookDeliveries already established for
     # WebhookDelivery rows).
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :audit_log_entry
+    type(:audit_log_entry)
   end
 
   json_api do
-    type "audit_log_entries"
+    type("audit_log_entries")
 
     routes do
-      base "/audit_log_entries"
-      get :read
-      index :read
+      base("/audit_log_entries")
+      get(:read)
+      index(:read)
     end
   end
 
   postgres do
-    table "audit_log_entries"
-    repo Xaas.Repo
+    table("audit_log_entries")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [
+      accept([
         :actor_id,
         :actor_description,
         :action,
@@ -80,12 +80,12 @@ defmodule Xaas.Operations.AuditLogEntry do
         :org_id,
         :occurred_at,
         :metadata
-      ]
+      ])
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     # Real, best-effort caller identity. This repo has no per-user
     # identity on the request path today (see
@@ -95,43 +95,43 @@ defmodule Xaas.Operations.AuditLogEntry do
     # Nullable: some future internal-only writers may have no caller
     # identity at all.
     attribute :actor_id, :string do
-      public? true
+      public?(true)
     end
 
     attribute :actor_description, :string do
-      public? true
+      public?(true)
     end
 
     # Real, dotted action name, e.g.
     # "governance.approval_dr_failover.approve".
     attribute :action, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :resource_type, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :resource_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :org_id, :string do
-      public? true
+      public?(true)
     end
 
     attribute :occurred_at, :utc_datetime_usec do
-      allow_nil? false
-      default &DateTime.utc_now/0
-      public? true
+      allow_nil?(false)
+      default(&DateTime.utc_now/0)
+      public?(true)
     end
 
     attribute :metadata, :map do
-      default %{}
-      public? true
+      default(%{})
+      public?(true)
     end
   end
 end

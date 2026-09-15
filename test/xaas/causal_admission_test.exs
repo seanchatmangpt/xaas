@@ -33,7 +33,8 @@ defmodule Xaas.CausalAdmissionTest do
         dag_proof_hash: "sha256:dag-proof-fixture",
         assumptions_hash: "sha256:assumptions-fixture",
         placebo_result_hash: "sha256:placebo-fixture",
-        falsifier: "reject if the admitted adjustment set no longer d-separates treatment and outcome"
+        falsifier:
+          "reject if the admitted adjustment set no longer d-separates treatment and outcome"
       },
       overrides
     )

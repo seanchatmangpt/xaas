@@ -48,7 +48,8 @@ defmodule Xaas.Repo.Migrations.AddOcelTables do
             name: "ocel_event_objects_object_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create unique_index(:ocel_event_objects, [:event_id, :object_id, :qualifier],
@@ -106,7 +107,8 @@ defmodule Xaas.Repo.Migrations.AddOcelTables do
             name: "ocel_object_objects_source_object_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :target_object_id,
           references(:ocel_objects,
@@ -114,7 +116,8 @@ defmodule Xaas.Repo.Migrations.AddOcelTables do
             name: "ocel_object_objects_target_object_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create unique_index(:ocel_object_objects, [:source_object_id, :target_object_id, :qualifier],
@@ -142,7 +145,8 @@ defmodule Xaas.Repo.Migrations.AddOcelTables do
             name: "ocel_object_state_deltas_object_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :event_id,
           references(:ocel_events,

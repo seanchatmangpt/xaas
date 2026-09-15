@@ -100,7 +100,8 @@ defmodule Xaas.Planning.RegimeRouter do
   # the first real adapter in @adapters.
   def dispatch(%ProblemFeatures{} = features, _problem) do
     with {:ok, formalism} <- classify(features) do
-      {:error, {:unsupported, formalism, "no adapter registered - real solver not yet implemented"}}
+      {:error,
+       {:unsupported, formalism, "no adapter registered - real solver not yet implemented"}}
     end
   end
 end

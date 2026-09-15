@@ -82,9 +82,7 @@ defmodule Xaas.Governance.Validations.ApprovalFreezeOverrideFreezeWindowExists d
         end
 
       {:error, _} ->
-        {:error,
-         field: :freeze_window_id,
-         message: "does not reference a real freeze window"}
+        {:error, field: :freeze_window_id, message: "does not reference a real freeze window"}
     end
   end
 end

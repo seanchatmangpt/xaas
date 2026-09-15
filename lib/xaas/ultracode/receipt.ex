@@ -23,62 +23,66 @@ defmodule Xaas.Ultracode.Receipt do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "ultracode_receipts"
-    repo Xaas.Repo
+    table("ultracode_receipts")
+    repo(Xaas.Repo)
   end
 
   policies do
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   actions do
     read :read do
-      primary? true
-      public? false
+      primary?(true)
+      public?(false)
     end
 
     create :seal do
-      public? false
-      accept [:epoch_id, :subject, :outcome, :evidence, :sealed_at]
+      public?(false)
+      accept([:epoch_id, :subject, :outcome, :evidence, :sealed_at])
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :subject, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :outcome, :atom do
-      allow_nil? false
-      constraints one_of: [:alive, :partial_alive, :blocked, :build_broken, :unsupported, :refused]
-      public? true
+      allow_nil?(false)
+
+      constraints(
+        one_of: [:alive, :partial_alive, :blocked, :build_broken, :unsupported, :refused]
+      )
+
+      public?(true)
     end
 
     attribute :evidence, :map do
-      allow_nil? false
-      default %{}
-      public? true
+      allow_nil?(false)
+      default(%{})
+      public?(true)
     end
 
     attribute :sealed_at, :utc_datetime_usec do
-      allow_nil? false
-      default &DateTime.utc_now/0
-      public? true
+      allow_nil?(false)
+      default(&DateTime.utc_now/0)
+      public?(true)
     end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
   end
 
   relationships do
     belongs_to :epoch, Xaas.Ultracode.Epoch do
-      allow_nil? false
-      attribute_writable? true
+      allow_nil?(false)
+      attribute_writable?(true)
     end
   end
 end

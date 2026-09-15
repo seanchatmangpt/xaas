@@ -34,7 +34,8 @@ defmodule Xaas.Repo.Migrations.AddOrgMembership do
             name: "org_memberships_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :org_id,
           references(:orgs,
@@ -42,7 +43,8 @@ defmodule Xaas.Repo.Migrations.AddOrgMembership do
             name: "org_memberships_org_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create unique_index(:org_memberships, [:user_id, :org_id],

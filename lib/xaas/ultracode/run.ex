@@ -37,15 +37,15 @@ defmodule Xaas.Ultracode.Run do
     extensions: [AshOban]
 
   postgres do
-    table "ultracode_runs"
-    repo Xaas.Repo
+    table("ultracode_runs")
+    repo(Xaas.Repo)
   end
 
   oban do
     scheduled_actions do
       schedule :tick, "* * * * *" do
-        action :tick
-        worker_module_name Xaas.Ultracode.Run.Workers.Tick
+        action(:tick)
+        worker_module_name(Xaas.Ultracode.Run.Workers.Tick)
 
         # Explicit `:default` queue -- `config :xaas, Oban` (config.exs)
         # only lists `queues: [default: 10]`. AshOban's own default queue
@@ -55,14 +55,14 @@ defmodule Xaas.Ultracode.Run do
         # jobs are enqueued but never processed. Pinning `:default` here
         # keeps this scheduled action real/running rather than silently
         # dormant.
-        queue :default
+        queue(:default)
       end
     end
   end
 
   policies do
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     # Real, scoped carve-out for the cron-fired `:tick` action -- same
@@ -71,36 +71,36 @@ defmodule Xaas.Ultracode.Run do
     # arguments and exposes no Run/Epoch field to a caller; it only
     # triggers the real `Xaas.Ultracode.Reactor` missed-epoch workflow.
     bypass action(:tick) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :create do
-      accept [:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds]
+      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds])
     end
 
     update :advance_cycle do
-      accept []
-      change increment(:cycle)
+      accept([])
+      change(increment(:cycle))
     end
 
     update :mark_expected_epoch do
-      accept [:last_expected_epoch_at]
+      accept([:last_expected_epoch_at])
     end
 
     update :mark_completed_epoch do
-      accept [:last_completed_epoch_at]
+      accept([:last_completed_epoch_at])
     end
 
     update :transition_state do
-      accept [:state, :standing]
+      accept([:state, :standing])
     end
 
     # Real admitted action closing ULTRACODE-50 blocker (2): the ONE path
@@ -111,19 +111,19 @@ defmodule Xaas.Ultracode.Run do
     # error, not an idempotent skip, matching this repo's typed-refusal
     # convention rather than papering over a caller mistake.
     update :start do
-      accept []
-      require_atomic? false
+      accept([])
+      require_atomic?(false)
 
       argument :exact_subject, :string do
-        allow_nil? false
+        allow_nil?(false)
       end
 
-      validate {Xaas.Ultracode.Validations.RunIsPending, []}
+      validate({Xaas.Ultracode.Validations.RunIsPending, []})
 
-      change set_attribute(:state, :running)
-      change set_attribute(:started_at, &DateTime.utc_now/0)
-      change increment(:cycle)
-      change Xaas.Ultracode.Changes.CreateFirstEpoch
+      change(set_attribute(:state, :running))
+      change(set_attribute(:started_at, &DateTime.utc_now/0))
+      change(increment(:cycle))
+      change(Xaas.Ultracode.Changes.CreateFirstEpoch)
     end
 
     # Real generic action -- the sole body of the AshOban `:tick`
@@ -135,55 +135,55 @@ defmodule Xaas.Ultracode.Run do
     # logic lives in `Xaas.Ultracode.Reactor`/`Xaas.Ultracode.MissedEpochs`
     # -- this action is only the call site.
     action :tick, :map do
-      run fn _input, _context ->
+      run(fn _input, _context ->
         case Reactor.run(Xaas.Ultracode.Reactor) do
           {:ok, result} -> {:ok, %{advanced: result}}
           {:error, error} -> {:error, error}
         end
-      end
+      end)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :goal, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :state, :atom do
-      allow_nil? false
-      default :pending
-      constraints one_of: [:pending, :running, :completed, :failed, :abandoned]
-      public? true
+      allow_nil?(false)
+      default(:pending)
+      constraints(one_of: [:pending, :running, :completed, :failed, :abandoned])
+      public?(true)
     end
 
     attribute :standing, :atom do
-      allow_nil? false
-      default :unknown
-      constraints one_of: [:unknown, :admitted, :refused, :blocked]
-      public? true
+      allow_nil?(false)
+      default(:unknown)
+      constraints(one_of: [:unknown, :admitted, :refused, :blocked])
+      public?(true)
     end
 
     attribute :started_at, :utc_datetime_usec do
-      public? true
+      public?(true)
     end
 
     attribute :deadline_at, :utc_datetime_usec do
-      public? true
+      public?(true)
     end
 
     attribute :cycle, :integer do
-      allow_nil? false
-      default 0
-      public? true
+      allow_nil?(false)
+      default(0)
+      public?(true)
     end
 
     attribute :max_cycles, :integer do
-      allow_nil? false
-      default 1
-      public? true
+      allow_nil?(false)
+      default(1)
+      public?(true)
     end
 
     # Configurable missed-epoch threshold, consumed by
@@ -193,21 +193,21 @@ defmodule Xaas.Ultracode.Run do
     # config, not a hardcoded module attribute -- different Runs can carry
     # different tolerance for a missed cycle.
     attribute :epoch_timeout_seconds, :integer do
-      allow_nil? false
-      default 300
-      public? true
+      allow_nil?(false)
+      default(300)
+      public?(true)
     end
 
     attribute :last_expected_epoch_at, :utc_datetime_usec do
-      public? true
+      public?(true)
     end
 
     attribute :last_completed_epoch_at, :utc_datetime_usec do
-      public? true
+      public?(true)
     end
 
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
   end
 
   relationships do

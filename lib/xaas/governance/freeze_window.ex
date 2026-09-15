@@ -46,12 +46,12 @@ defmodule Xaas.Governance.FreezeWindow do
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource, AshIam]
 
   paper_trail do
-    change_tracking_mode :full_diff
+    change_tracking_mode(:full_diff)
   end
 
   iam do
-    permission_base "xaas:freeze_window"
-    action_to_iam_mapping create: :create, read: :read
+    permission_base("xaas:freeze_window")
+    action_to_iam_mapping(create: :create, read: :read)
   end
 
   policies do
@@ -59,76 +59,76 @@ defmodule Xaas.Governance.FreezeWindow do
     # pilots (see moduledoc). Replaces the previous open
     # `authorize_if always()` read bypass.
     bypass action_type(:read) do
-      authorize_if AshIam.Check
+      authorize_if(AshIam.Check)
     end
 
     bypass action(:create) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     bypass action(:destroy) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   graphql do
-    type :freeze_window
+    type(:freeze_window)
   end
 
   json_api do
-    type "freeze_window"
+    type("freeze_window")
 
     routes do
-      base "/freeze_window"
-      get :read
-      index :read
-      post :create
-      delete :destroy
+      base("/freeze_window")
+      get(:read)
+      index(:read)
+      post(:create)
+      delete(:destroy)
     end
   end
 
   postgres do
-    table "freeze_windows"
-    repo Xaas.Repo
+    table("freeze_windows")
+    repo(Xaas.Repo)
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     # Real payload, matching platform-console's real POST body
     # (orgId/startsAt/endsAt/reason/allowEmergencyOverride, createdBy set
     # from the session actor server-side).
     create :create do
-      accept [:org_id, :starts_at, :ends_at, :reason, :allow_emergency_override, :created_by]
-      validate Xaas.Governance.Validations.FreezeWindowEndsAfterStarts
+      accept([:org_id, :starts_at, :ends_at, :reason, :allow_emergency_override, :created_by])
+      validate(Xaas.Governance.Validations.FreezeWindowEndsAfterStarts)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :starts_at, :utc_datetime do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :ends_at, :utc_datetime do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :reason, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     # Mirrors platform-console's real `allowEmergencyOverride` flag
@@ -136,14 +136,14 @@ defmodule Xaas.Governance.FreezeWindow do
     # maker-checker `Xaas.Governance.ApprovalFreezeOverride` request may
     # be filed against this window at all.
     attribute :allow_emergency_override, :boolean do
-      allow_nil? false
-      default false
-      public? true
+      allow_nil?(false)
+      default(false)
+      public?(true)
     end
 
     attribute :created_by, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end
