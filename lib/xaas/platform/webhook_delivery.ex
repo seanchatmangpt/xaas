@@ -132,39 +132,38 @@ defmodule Xaas.Platform.WebhookDelivery do
     # timestamp -- exactly the fields a real dispatcher would also touch
     # after an actual resend, minus the resend itself.
     action :retry_failed_deliveries, :map do
-      run(fn _input, _context ->
+      run(fn _input, %{actor: scheduler_actor} ->
         require Logger
 
-        # XAAS-2601: this scheduled entry point already ran the system
-        # actor gate above; its internal fan-out carries the SAME real
-        # system authority forward instead of `authorize?: false`, so the
-        # per-row `:deliver` mutations flow through the policy calculus
-        # with a real admitted actor.
-        system_actor = Xaas.SystemAuthority.new(:webhook_dispatcher)
+        # The scheduler is the admitted caller of this generic action.
+        # Outbound delivery is a distinct capability, so the fan-out uses
+        # the one declared scheduler -> dispatcher delegation edge instead
+        # of manufacturing an unrelated SystemAuthority actor.
+        with {:ok, delivery_actor} <-
+               Xaas.SystemAuthority.delegate(scheduler_actor, :webhook_dispatcher),
+             {:ok, candidates} <-
+               __MODULE__
+               |> Ash.Query.filter(status: :failed)
+               |> Ash.Query.filter(attempt_count: [less_than: @max_delivery_attempts])
+               |> Ash.read(authorize?: false) do
+          results =
+            Enum.map(candidates, fn delivery ->
+              delivery
+              |> Ash.Changeset.for_update(:deliver, %{})
+              |> Ash.update(actor: delivery_actor)
+            end)
 
-        {:ok, candidates} =
-          __MODULE__
-          |> Ash.Query.filter(status: :failed)
-          |> Ash.Query.filter(attempt_count: [less_than: @max_delivery_attempts])
-          |> Ash.read(authorize?: false)
+          updated = Enum.count(results, &match?({:ok, _}, &1))
+          errored = Enum.count(results, &match?({:error, _}, &1))
 
-        results =
-          Enum.map(candidates, fn delivery ->
-            delivery
-            |> Ash.Changeset.for_update(:deliver, %{})
-            |> Ash.update(actor: system_actor)
-          end)
+          Logger.info(
+            "[ash_oban] webhook_delivery.retry_failed_deliveries: " <>
+              "#{length(candidates)} candidate(s), #{updated} real :deliver resend(s) attempted, " <>
+              "#{errored} error(s)"
+          )
 
-        updated = Enum.count(results, &match?({:ok, _}, &1))
-        errored = Enum.count(results, &match?({:error, _}, &1))
-
-        Logger.info(
-          "[ash_oban] webhook_delivery.retry_failed_deliveries: " <>
-            "#{length(candidates)} candidate(s), #{updated} real :deliver resend(s) attempted, " <>
-            "#{errored} error(s)"
-        )
-
-        {:ok, %{candidates: length(candidates), updated: updated, errored: errored}}
+          {:ok, %{candidates: length(candidates), updated: updated, errored: errored}}
+        end
       end)
     end
 
