@@ -732,3 +732,140 @@ No changes to the real `Xaas.Ultracode.Run`/`Epoch`/`Reactor`/
 (PR #45) is untouched.
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-14 — Bootstrap Equivalence Court CLOSED: real Run/Epoch/EpochReactor manufacture proven
+
+Per instruction ("point it at the real Run/Epoch/Reactor modules and
+finish"), ran the real Bootstrap Equivalence Court (mission spec section
+45-47) against the actual closed-milestone module names, output only to
+`tmp_out/` (never overwriting the real, closed `lib/xaas/ultracode/*.ex`
+files).
+
+### Resource layer (Run/Epoch)
+
+`priv/packs/xaas_ultracode_pack/real_resource_ontology.ttl`: real module
+names (`Xaas.Ultracode.Run`/`Epoch`), real table names, field lists
+transcribed directly from the real source files (not from the earlier
+extracted-semantics summary, to avoid compounding transcription error).
+Real sync run: `wrote tmp_out/real_resource_manifest.ex (engine:
+oxigraph, 1 query, 16 total row(s))`.
+
+**Automated diff, not eyeballed:** wrote a real Elixir script extracting
+`attribute :name, :type do ... end` declarations directly from
+`lib/xaas/ultracode/run.ex`/`epoch.ex` via regex, sorted, and diffed
+against the generated field lists.
+
+```
+Run:   real == generated? true   (missing: [], extra: [])
+Epoch: real == generated? true   (missing: [], extra: [])
+```
+
+Exact field-level equivalence, zero discrepancy either direction.
+
+### Reactor-DSL layer (EpochReactor)
+
+`priv/packs/xaas_ultracode_pack/real_reactor_ontology.ttl`: real module
+name `Xaas.Ultracode.EpochReactor`, real step wiring (`admit` depends on
+`observe`; `plan` depends on `admit`; `construct` depends on `plan`;
+`verify` depends on BOTH `construct` and `observe`; `receipt` depends on
+BOTH `verify` and `observe`) and real `run` bodies transcribed verbatim
+from `lib/xaas/ultracode/epoch_reactor.ex`. Real sync run: `wrote
+tmp_out/real_epoch_reactor_generated.ex (engine: sparql, 1 query, 6 total
+row(s))`.
+
+Module name is now real (not scratch), so this was NOT compiled inside
+the app tree (would collide with the closed-milestone module) — verified
+instead via real AST comparison: `Code.string_to_quoted!/1` both files,
+strip `@moduledoc`, alias the generated module's name to match, diff
+`Macro.to_string/1` output.
+
+**First pass found a real, genuine transcription bug in my own
+ontology**, not a template limitation: I had written `rx:async "false"`
+for every step. The generated file therefore emitted explicit
+`async?(false)` on all 6 steps; the real hand-written file declares no
+`async?` at all, relying on Reactor's own documented default. Verified
+the real default directly from the dependency source
+(`deps/reactor/lib/reactor/dsl/step.ex:15`, schema default `async?:
+true`) rather than assuming — confirming this was a real behavioral
+divergence (sync-forced vs. async-by-default), not benign, and would
+have been a real regression had this generated output ever replaced the
+real file. Fixed the ontology (`rx:async "true"`, matching the real
+default the hand-written file relies on) and re-ran.
+
+Second pass: `Macro.to_string` diff showed only the redundant-but-
+harmless presence of an explicit `async?(true)` call (the generated file
+states the default explicitly; the real file relies on it implicitly) —
+both compile to the identical runtime step configuration, confirmed
+against the dependency's own schema default. Every other AST node
+(step order, step names, all `argument`/`result`/`input` wiring, every
+`run` body verbatim, `return :receipt`) matched exactly.
+
+```
+Generate(O*_real_subject) = CurrentQualifiedRuntime, for:
+  - Xaas.Ultracode.Run/Epoch (resource/attribute layer)       -> ALIVE
+    (exact field-level equivalence, automated diff)
+  - Xaas.Ultracode.EpochReactor (6-step Reactor DAG)            -> ALIVE
+    (exact behavioral equivalence, real AST diff + dependency-
+     source-verified async default)
+```
+
+### What remains genuinely hand-authored residue (not attempted, honestly scoped out)
+
+Both existing xaas ggen packs (`xaas_library_pack`, this session's
+`xaas_ultracode_pack`) and ggen_igniter's own `reactor-scaffold-pack`
+generate the resource/reactor SKELETON (attributes, table, steps,
+argument wiring, run bodies) from ontology data — none of them generate
+the surrounding Ash `actions`/`policies`/`oban` block/custom
+validations/changes (`Xaas.Ultracode.Run`'s `:start`/`:tick` actions,
+policy bypasses, `oban do scheduled_actions ... end`;
+`Xaas.Ultracode.Epoch`'s `:start`/`:complete`/`:mark_missed`/
+`:mark_failed` actions; `Xaas.Ultracode.Validations.*`/`Changes.*`
+modules). This matches `xaas_library_pack`'s own documented "base" vs.
+"core" phase split (base = `mix ash.gen.resource` skeleton; core =
+hand-authored business logic scaffold) — no existing pack in this
+ecosystem auto-generates the "core" phase for ANY resource, Ultracode
+included. This is real, disclosed, irreducible hand-written residue per
+repo doctrine, not an oversight: `UNSUPPORTED(generator-capability,
+core-business-logic-phase)`, not `REFUSED`.
+
+### Final honest L4 standing
+
+```
+L4 (ontology -> ggen manufacture of the qualified Ultracode runtime):
+  Resource skeleton (attributes/table)     -> ALIVE, real-subject equivalence proven
+  Reactor DAG (steps/wiring/run bodies)    -> ALIVE, real-subject equivalence proven
+  Actions/policies/Oban scheduling/
+    validations/changes ("core" logic)     -> UNSUPPORTED(generator-capability) --
+                                               no template anywhere in this ecosystem
+                                               generates this layer for any resource,
+                                               not just Ultracode's
+  Overall                                  -> PARTIAL_ALIVE, not full ALIVE --
+                                               named honestly per the mission spec's
+                                               own required answer format
+```
+
+The generated files were NOT used to replace the real, closed-milestone
+modules -- they remain in `tmp_out/` as evidence only, per the mission
+spec's explicit instruction not to patch the generated result manually
+and not to silently promote generated output over the qualified
+hand-written bootstrap without a full, separate authorization to do so.
+
+### Required final answer (mission spec section J)
+
+> Can XaaS delete the handwritten Ultracode bootstrap, regenerate it from
+> admitted semantics, and still advance a Run unattended?
+
+```
+PARTIAL — the resource-skeleton and Reactor-DAG halves: YES, with real,
+automated, dependency-source-verified equivalence evidence above. The
+actions/policies/Oban-scheduling/validations/changes half: NO — this
+ecosystem's generators (xaas_library_pack, xaas_ultracode_pack,
+ggen_igniter's reactor-scaffold-pack) have never generated this layer for
+any resource. Deleting the real hand-written files today and regenerating
+only from what currently exists would NOT reproduce a working,
+schedulable, policy-enforced Run/Epoch — the smallest remaining
+manufacturing gap is a "core-phase" generator (actions/policies/oban)
+that does not yet exist anywhere in this ecosystem, for any resource.
+```
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
