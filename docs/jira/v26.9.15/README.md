@@ -23,3 +23,4 @@ with equivalent rules for other internally intended mutations. "Internal-only" e
 | ID                                                        | Title                                                                                             | Severity | Closure order |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | -------- | ------------- |
 | [XAAS-2601](./XAAS-2601-system-authority-predicate.md)    | Replace action-wide `authorize_if(always())` bypasses with a real system/internal authority predicate | High     | #3            |
+| [XAAS-2602](./XAAS-2602-always-bypass-classification.md)  | Classify every remaining action-scoped `authorize_if(always())` site; convert the provably-internal/service-boundary mutations to `Xaas.Checks.SystemActor` | High     | #3 (follow-up) |
