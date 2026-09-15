@@ -1,39 +1,85 @@
 defmodule Xaas.Checks.SystemActor do
   @moduledoc """
-  Real `Ash.Policy.SimpleCheck` backing XAAS-2601 (docs/jira/v26.9.15):
-  admits only a genuine `Xaas.SystemAuthority` actor -- the real
-  system/internal authority object -- optionally narrowed to one `service`
-  via `authorize_if({Xaas.Checks.SystemActor, service: :ultracode_reactor})`.
+  Fail-closed `Ash.Policy.SimpleCheck` for internal-system authority.
 
-  This is the predicate that replaces the action-wide
-  `bypass action(...) do authorize_if(always()) end` shape on every
-  internal-only mutation (Ultracode Run/Epoch/Receipt, WebhookDelivery's
-  `:deliver`/`:retry_failed_deliveries`, HoldRequest's `:expire_stale`):
-  an ordinary non-system actor that reaches one of those actions through
-  the normal authorization path now fails this check and falls to the
-  resource's deny floor, exactly the review's falsifier. Not a mock or
-  interaction double -- a real `Ash.Policy.Check` implementation of
-  `match?/3` against the real actor value, same shape as
-  `Xaas.Platform.Checks.ActorOrgMatches` and its sibling per-domain
-  checks.
+  When a policy supplies `service: ...`, that service is required directly.
+  When the policy uses the repository's generic `{Xaas.Checks.SystemActor, []}`
+  form, this check derives the required service from the exact resource/action
+  subject. Unknown subjects have no ambient authority and are refused.
+
+  This turns `Xaas.SystemAuthority.service` from audit metadata into a
+  load-bearing capability boundary without duplicating the matrix across every
+  resource policy.
   """
 
   use Ash.Policy.SimpleCheck
 
+  @action_services %{
+    {Xaas.Ultracode.Run, :tick} => :oban_scheduler,
+    {Xaas.Ultracode.Run, :advance_cycle} => :ultracode_reactor,
+    {Xaas.Ultracode.Run, :transition_state} => :ultracode_reactor,
+    {Xaas.Ultracode.Epoch, :create} => :ultracode_reactor,
+    {Xaas.Ultracode.Epoch, :start} => :ultracode_reactor,
+    {Xaas.Ultracode.Epoch, :complete} => :ultracode_reactor,
+    {Xaas.Ultracode.Epoch, :mark_missed} => :ultracode_reactor,
+    {Xaas.Ultracode.Epoch, :mark_failed} => :ultracode_reactor,
+    {Xaas.Ultracode.Receipt, :seal} => :ultracode_reactor,
+    {Xaas.Platform.WebhookDelivery, :retry_failed_deliveries} => :oban_scheduler,
+    {Xaas.Platform.WebhookDelivery, :deliver} => :webhook_dispatcher,
+    {Xaas.Library.HoldRequest, :expire_stale} => :oban_scheduler,
+    {Xaas.Library.HoldRequest, :expire} => :oban_scheduler
+  }
+
   @impl true
   def describe(opts) do
     case opts[:service] do
-      nil -> "actor is a genuine Xaas.SystemAuthority (any internal service)"
+      nil -> "actor carries the service capability required by the exact protected action"
       service -> "actor is a Xaas.SystemAuthority for service #{inspect(service)}"
     end
   end
 
   @impl true
-  def match?(actor, _context, opts) do
-    Xaas.SystemAuthority.system?(actor) and service_admitted?(actor.service, opts[:service])
+  def match?(actor, %{subject: subject}, opts) do
+    with true <- Xaas.SystemAuthority.system?(actor),
+         {:ok, required_service} <- required_service(subject, opts) do
+      actor.service == required_service
+    else
+      _ -> false
+    end
   end
 
-  defp service_admitted?(_actual, nil), do: true
-  defp service_admitted?(actual, required) when is_atom(actual), do: actual == required
-  defp service_admitted?(_actual, _required), do: false
+  def match?(_actor, _context, _opts), do: false
+
+  defp required_service(_subject, opts) do
+    case Keyword.fetch(opts, :service) do
+      {:ok, service} when service in Xaas.SystemAuthority.services() -> {:ok, service}
+      {:ok, _unknown} -> :error
+      :error -> :derive_from_subject
+    end
+  end
+
+  defp required_service(subject, opts) when opts == [] do
+    subject
+    |> subject_key()
+    |> then(&Map.fetch(@action_services, &1))
+  end
+
+  defp required_service(subject, opts) do
+    case Keyword.fetch(opts, :service) do
+      {:ok, service} when service in Xaas.SystemAuthority.services() -> {:ok, service}
+      {:ok, _unknown} -> :error
+      :error -> subject |> subject_key() |> then(&Map.fetch(@action_services, &1))
+    end
+  end
+
+  defp subject_key(%Ash.Changeset{resource: resource, action: %{name: action}}),
+    do: {resource, action}
+
+  defp subject_key(%Ash.ActionInput{resource: resource, action: %{name: action}}),
+    do: {resource, action}
+
+  defp subject_key(%Ash.Query{resource: resource, action: %{name: action}}),
+    do: {resource, action}
+
+  defp subject_key(_subject), do: nil
 end
