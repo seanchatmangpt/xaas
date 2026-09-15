@@ -43,11 +43,15 @@ defmodule Xaas.Ultracode.EpochReactor do
   end
 
   # 算/除 Admit -- refuse (not silently skip) any Epoch that is not in an
-  # admissible state for this cycle, and refuse if the Epoch's authority
-  # ceiling (a real `:map` value per the ontology formalization -- no
-  # dedicated Authority module exists in this repo, per `c4_audit`/
-  # `ontology`) is missing. This is the fence: only an `:expected` or
-  # `:running` Epoch may proceed past this point.
+  # admissible state for this cycle. This is the fence: only an `:expected`
+  # or `:running` Epoch may proceed past this point. `Epoch` has no
+  # authority-ceiling field and this step performs no authority-ceiling
+  # check -- `Xaas.Ultracode`'s own moduledoc records that `AuthorityCeiling`
+  # is deliberately not modeled for this Run/Epoch/Receipt domain (a
+  # same-named check exists elsewhere, on `Xaas.Actuation.FrontierEvidence`'s
+  # evidence fragments, not here). If an authority-ceiling admission check
+  # is wanted for Epoch, it needs a real field + real check added, not
+  # implied by this comment.
   step :admit do
     argument(:epoch, result(:observe))
 

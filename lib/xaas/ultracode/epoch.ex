@@ -58,18 +58,27 @@ defmodule Xaas.Ultracode.Epoch do
 
     update :complete do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :completed))
       change(set_attribute(:completed_at, &DateTime.utc_now/0))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:running]})
     end
 
     update :mark_missed do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :missed))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
     end
 
     update :mark_failed do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :failed))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
     end
   end
 

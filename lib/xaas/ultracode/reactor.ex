@@ -42,7 +42,7 @@ defmodule Xaas.Ultracode.Reactor do
   end
 
   step :run_active_epochs do
-    argument(:missed_summary, result(:advance_missed_epochs))
+    wait_for(:advance_missed_epochs)
 
     run(fn _arguments, _context ->
       {:ok, active_runs} =
@@ -66,7 +66,7 @@ defmodule Xaas.Ultracode.Reactor do
   end
 
   step :advance_next_epochs do
-    argument(:epoch_results, result(:run_active_epochs))
+    wait_for(:run_active_epochs)
 
     run(fn _arguments, _context ->
       {:ok, Xaas.Ultracode.NextEpoch.advance_all()}
