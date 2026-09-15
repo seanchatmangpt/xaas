@@ -6,9 +6,17 @@ defmodule Xaas.SystemAuthority do
   `Xaas.Checks.SystemActor` maps each protected action to exactly one admitted
   service, so the `service` field is load-bearing capability data rather than
   audit-only decoration.
+
+  Cross-service handoff is also closed. A caller may not manufacture a second
+  service identity ad hoc; `delegate/2` admits only declared delegation edges.
+  This remains an application-level capability inside the trusted BEAM VM, not
+  a cryptographic or OS isolation primitive.
   """
 
   @services [:ultracode_reactor, :webhook_dispatcher, :oban_scheduler]
+  @delegations %{
+    oban_scheduler: [:webhook_dispatcher]
+  }
 
   @enforce_keys [:service]
   defstruct [:service]
@@ -20,7 +28,7 @@ defmodule Xaas.SystemAuthority do
   @spec services() :: [service()]
   def services, do: @services
 
-  @doc "Builds a system authority actor for a known internal service."
+  @doc "Builds a root system authority actor for a known internal service."
   @spec new(service()) :: t()
   def new(service) when service in @services, do: %__MODULE__{service: service}
 
@@ -33,4 +41,21 @@ defmodule Xaas.SystemAuthority do
   @spec system?(term()) :: boolean()
   def system?(%__MODULE__{service: service}) when service in @services, do: true
   def system?(_other), do: false
+
+  @doc "Delegates an admitted authority only across a declared service edge."
+  @spec delegate(term(), term()) ::
+          {:ok, t()} | {:error, {:authority_delegation_refused, term(), term()}}
+  def delegate(%__MODULE__{service: source} = authority, target) do
+    allowed_targets = Map.get(@delegations, source, [])
+
+    if system?(authority) and target in allowed_targets do
+      {:ok, %__MODULE__{service: target}}
+    else
+      {:error, {:authority_delegation_refused, source, target}}
+    end
+  end
+
+  def delegate(other, target) do
+    {:error, {:authority_delegation_refused, other, target}}
+  end
 end
