@@ -219,6 +219,29 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       assert reloaded.final_head == git_head(worktree)
     end
 
+    test "standing reported in natural casing ('ALIVE') is not silently downgraded", %{
+      conn: conn
+    } do
+      worktree = make_git_worktree()
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago", worktree)
+
+      claim =
+        tool_call(conn, "claim_next", %{provider: "zcode-chicago", provider_worker_id: "worker-3"})
+
+      # Live regression guard: the stop hook and worker command report
+      # "ALIVE" in natural casing; the transport must normalize, never
+      # silently downgrade an honest ALIVE to partial_alive.
+      closed =
+        tool_call(conn, "close_candidate", %{
+          lease_token: claim["lease_token"],
+          final_head: git_head(worktree),
+          outcome: "ALIVE"
+        })
+
+      assert closed["outcome"] == "alive"
+      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :completed
+    end
+
     test "refuse lands a typed refusal receipt", %{conn: conn} do
       {_run, epoch} = provider_run_and_epoch("zcode-chicago")
 

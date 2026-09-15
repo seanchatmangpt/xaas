@@ -354,8 +354,15 @@ defmodule XaasWeb.ExecutionFabricController do
     end
   end
 
-  defp outcome(outcome) when outcome in @valid_outcomes, do: String.to_atom(outcome)
-  defp outcome(_), do: :partial_alive
+  # Case-insensitive on purpose: providers report standing in the documented
+  # vocabulary's natural casing ("ALIVE"); normalize before matching so an
+  # honest ALIVE is never silently downgraded to partial_alive.
+  defp outcome(outcome) when is_binary(outcome) do
+    case String.downcase(outcome) do
+      o when o in @valid_outcomes -> String.to_atom(o)
+      _ -> :partial_alive
+    end
+  end
 
   defp reason_atom(reason) do
     case reason do
