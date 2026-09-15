@@ -30,7 +30,6 @@ defmodule Xaas.Checks.SystemActor do
 
   @impl true
   def match?(actor, _context, opts) do
-    File.write!("/tmp/sysactor_probe.log", "MATCH? actor=#{inspect(actor)} opts=#{inspect(opts)}\n", [:append])
     Xaas.SystemAuthority.system?(actor) and service_admitted?(actor.service, opts[:service])
   end
 
