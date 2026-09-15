@@ -215,9 +215,7 @@ defmodule Xaas.Library.HoldRequest do
     action :expire_stale, :map do
       description("Scheduled Oban entry point: expires every active hold past its expires_at")
 
-      run(fn _input, _context ->
-        system_actor = Xaas.SystemAuthority.new(:oban_scheduler)
-
+      run(fn _input, %{actor: system_actor} ->
         expired_count =
           __MODULE__
           |> Ash.Query.for_read(:expirable, %{})
