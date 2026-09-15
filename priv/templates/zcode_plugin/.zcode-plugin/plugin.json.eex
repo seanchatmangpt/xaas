@@ -1,0 +1,5 @@
+{
+  "name": "<%= @plugin_name %>",
+  "version": "<%= @version %>",
+  "description": "XaaS execution-fabric worker plugin: claims receipted work contracts, enforces the PreToolUse admission court, and closes with head verification against <%= @endpoint %>."
+}

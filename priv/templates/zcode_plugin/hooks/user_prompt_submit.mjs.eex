@@ -1,0 +1,21 @@
+// UserPromptSubmit: observation recording for prompt ingress (e.g. the
+// thin `/xaas <work-id>` submission). Best-effort.
+import { readStdin, post, loadLease, done, leaseToken } from "./xaas_common.mjs";
+
+const evt = await readStdin();
+const lease = await loadLease(evt.cwd);
+
+try {
+  await post("user_prompt_submit", {
+    lease_token: leaseToken(evt, lease),
+    event: {
+      hook: "user_prompt_submit",
+      prompt: evt.prompt ?? null,
+      cwd: evt.cwd,
+      session_id: evt.session_id,
+    },
+  });
+  done({ status: "recorded" });
+} catch {
+  done({ status: "record_skipped" });
+}

@@ -50,5 +50,7 @@ defmodule Xaas.Operations do
     resource(Xaas.Operations.RouteCastleRun)
     resource(Xaas.Operations.RouteCastleSchedule)
     resource(Xaas.Operations.RouteCastleSunset)
+    resource(Xaas.Operations.ExecutionWorker)
+    resource(Xaas.Operations.WorkContract)
   end
 end

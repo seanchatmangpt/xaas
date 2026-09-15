@@ -1,0 +1,23 @@
+// PostToolUseFailure: failure-evidence recording. Same observation
+// semantics as post_tool_use — evidence, never judgment.
+import { readStdin, post, loadLease, done, toolName, leaseToken } from "./xaas_common.mjs";
+
+const evt = await readStdin();
+const lease = await loadLease(evt.cwd);
+
+try {
+  await post("post_tool_use", {
+    lease_token: leaseToken(evt, lease),
+    event: {
+      hook: "post_tool_use_failure",
+      tool: toolName(evt),
+      tool_use_id: evt.tool_use_id,
+      cwd: evt.cwd,
+      session_id: evt.session_id,
+      error: evt.error ?? evt.tool_response ?? null,
+    },
+  });
+  done({ status: "recorded" });
+} catch {
+  done({ status: "record_skipped" });
+}

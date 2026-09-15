@@ -74,6 +74,13 @@ defmodule XaasWeb.Router do
     get("/health", HealthController, :index)
     post("/rpc/run", AshTypescriptRpcController, :run)
     post("/rpc/validate", AshTypescriptRpcController, :validate)
+
+    # Execution fabric (receipted coding-actuation): plain-JSON hook surface
+    # for the generated provider plugin, plus a stateless MCP JSON-RPC
+    # endpoint. Registered before the catch-all forward below for the same
+    # shadowing reason as the routes above.
+    post("/execution/hooks/:event", ExecutionFabricController, :hook)
+    post("/execution/mcp", ExecutionFabricController, :mcp)
   end
 
   # Production MCP server: read-only Library tools (see Xaas.Library's

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "xaas-execution": {
+      "type": "http",
+      "url": "<%= @endpoint %>/internal-api/execution/mcp",
+      "headers": {
+        "Authorization": "Bearer ${<%= @token_env %>}"
+      }
+    }
+  }
+}
