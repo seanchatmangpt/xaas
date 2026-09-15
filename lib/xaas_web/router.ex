@@ -28,6 +28,18 @@ defmodule XaasWeb.Router do
     plug(XaasWeb.Plugs.RequireInternalApiToken)
   end
 
+  # XAAS-2602: supplies the real system authority actor
+  # (Xaas.SystemAuthority.new(:internal_api)) for the 28 SERVICE-BOUNDARY
+  # resources whose bare `authorize_if(always())` mutation bypasses are now
+  # the real Xaas.Checks.SystemActor predicate. Runs AFTER the Bearer-token
+  # check (HTTP gate unchanged) and AFTER :resolve_org_actor (whose real
+  # org actors always win where they apply -- this plug never overrides an
+  # already-resolved actor). See XaasWeb.Plugs.SetInternalApiSystemActor's
+  # moduledoc and docs/jira/v26.9.15/XAAS-2602-always-bypass-classification.md.
+  pipeline :set_internal_api_system_actor do
+    plug(XaasWeb.Plugs.SetInternalApiSystemActor)
+  end
+
   # Real, minimal fix for the closed ERRC item auditing `/mcp` caller
   # identity on every tool invocation -- see `XaasWeb.Plugs.
   # AuditMcpToolCall`'s moduledoc and the `/mcp` scope below for the
@@ -170,7 +182,7 @@ defmodule XaasWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:internal_api, :require_internal_api_token])
+    pipe_through([:internal_api, :require_internal_api_token, :set_internal_api_system_actor])
 
     forward("/internal-api", XaasWeb.InternalApiRouter)
   end
@@ -187,7 +199,12 @@ defmodule XaasWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:internal_api, :require_internal_api_token, :resolve_org_actor])
+    pipe_through([
+      :internal_api,
+      :require_internal_api_token,
+      :resolve_org_actor,
+      :set_internal_api_system_actor
+    ])
 
     forward("/api", XaasWeb.ApiRouter)
   end
