@@ -121,48 +121,67 @@ defmodule XaasWeb.ExecutionFabricController do
   end
 
   defp handle_hook(conn, "pre_tool_use", body) do
-    case Lease.admit_tool(body["lease_token"], body["tool"] || "") do
-      {:ok, %{decision: :allow} = allow} ->
-        json(conn, Map.new(allow, fn {k, v} -> {to_string(k), v} end))
+    case lease_token(body) do
+      nil ->
+        refused(conn, 403, :no_lease)
 
-      {:error, reason} ->
-        refused(conn, 403, reason)
+      token ->
+        case Lease.admit_tool(token, body["tool"] || "") do
+          {:ok, %{decision: :allow} = allow} ->
+            json(conn, Map.new(allow, fn {k, v} -> {to_string(k), v} end))
+
+          {:error, reason} ->
+            refused(conn, 403, reason)
+        end
     end
   end
 
   defp handle_hook(conn, event, body)
        when event in ~w(user_prompt_submit post_tool_use post_tool_use_failure) do
-    case Lease.record_provider_event(body["lease_token"], %{
-           hook: event,
-           tool: body["tool"],
-           tool_use_id: body["tool_use_id"],
-           cwd: body["cwd"],
-           session_id: body["session_id"]
-         }) do
-      :ok -> json(conn, %{status: "recorded"})
-      {:error, reason} -> refused(conn, 422, reason)
+    case lease_token(body) do
+      nil ->
+        refused(conn, 422, :no_lease)
+
+      token ->
+        case Lease.record_provider_event(token, %{
+               hook: event,
+               tool: body["tool"],
+               tool_use_id: body["tool_use_id"],
+               cwd: body["cwd"],
+               session_id: body["session_id"]
+             }) do
+          :ok -> json(conn, %{status: "recorded"})
+          {:error, reason} -> refused(conn, 422, reason)
+        end
     end
   end
 
   defp handle_hook(conn, "stop", body) do
-    case Lease.close(
-           body["lease_token"],
-           body["final_head"] || "",
-           outcome(body["standing"]),
-           body["evidence"] || %{}
-         ) do
-      {:ok, epoch, receipt} ->
-        json(conn, %{
-          status: "closed",
-          epoch_id: epoch.id,
-          outcome: receipt.outcome
-        })
+    case lease_token(body) do
+      nil ->
+        json(conn, %{status: "not_closeable", reason: "no_lease"})
 
-      {:error, reason} ->
-        # Stop without a closeable lease is observed, not fatal: the lease
-        # expires on its own; the provider must not treat this as closure.
-        Logger.warning("XAAS_STOP_WITHOUT_CLOSE reason=#{inspect(reason)}")
-        json(conn, %{status: "not_closeable", reason: inspect(reason)})
+      token ->
+        case Lease.close(
+               token,
+               body["final_head"] || "",
+               outcome(body["standing"]),
+               body["evidence"] || %{}
+             ) do
+          {:ok, epoch, receipt} ->
+            json(conn, %{
+              status: "closed",
+              epoch_id: epoch.id,
+              outcome: receipt.outcome
+            })
+
+          {:error, reason} ->
+            # Stop without a closeable lease is observed, not fatal: the
+            # lease expires on its own; the provider must not treat this
+            # as closure.
+            Logger.warning("XAAS_STOP_WITHOUT_CLOSE reason=#{inspect(reason)}")
+            json(conn, %{status: "not_closeable", reason: inspect(reason)})
+        end
     end
   end
 
@@ -303,7 +322,17 @@ defmodule XaasWeb.ExecutionFabricController do
   # Helpers
   # ------------------------------------------------------------------
 
-  defp read_json(conn) do
+  # Plug.Parsers at the endpoint has already read and decoded JSON bodies
+  # by the time the controller runs — read_body would see an empty stream.
+  # Prefer the parsed body_params; fall back to a raw read only when the
+  # parser did not fetch them.
+  defp read_json(%{body_params: %Plug.Conn.Unfetched{}} = conn), do: read_json_raw(conn)
+
+  defp read_json(%{body_params: params} = conn) when is_map(params), do: {:ok, params, conn}
+
+  defp read_json(conn), do: read_json_raw(conn)
+
+  defp read_json_raw(conn) do
     case Plug.Conn.read_body(conn, length: 1_000_000) do
       {:ok, raw, conn} ->
         case Jason.decode(raw) do
@@ -313,6 +342,15 @@ defmodule XaasWeb.ExecutionFabricController do
 
       {:more, _, _} -> {:error, :body_too_large}
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # The hook payload's lease key varies across provider builds; the
+  # transport normalizes it and NEVER invents a token.
+  defp lease_token(body) do
+    case body["lease_token"] do
+      token when is_binary(token) and token != "" -> token
+      _ -> nil
     end
   end
 
