@@ -41,7 +41,7 @@ defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
           expected_at: DateTime.utc_now()
         }
       )
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
       |> case do
         {:ok, _epoch} -> {:ok, run}
         {:error, error} -> {:error, error}

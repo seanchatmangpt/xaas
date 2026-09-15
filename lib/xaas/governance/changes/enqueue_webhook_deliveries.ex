@@ -119,9 +119,11 @@ defmodule Xaas.Governance.Changes.EnqueueWebhookDeliveries do
       # and real 2xx/non-2xx/transport-error handling. Runs post-commit
       # (see moduledoc), so this no longer holds the parent `:approve`
       # transaction's database connection open for the HTTP round-trip.
+      # XAAS-2601: routes through the `:deliver` policy with the real
+      # system authority actor instead of `authorize?: false`.
       delivery
-      |> Ash.Changeset.for_update(:deliver, %{}, authorize?: false)
-      |> Ash.update!()
+      |> Ash.Changeset.for_update(:deliver, %{})
+      |> Ash.update!(actor: Xaas.SystemAuthority.new(:webhook_dispatcher))
     end)
   end
 end
