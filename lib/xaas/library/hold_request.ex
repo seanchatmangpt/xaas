@@ -192,7 +192,7 @@ defmodule Xaas.Library.HoldRequest do
 
     read :for_book do
       argument(:book_id, :uuid, allow_nil?: false)
-      filter(expr(book_id == ^arg(:book_id) and status == :active))
+      filter(expr(book_id == ^arg(:book_id)))
     end
 
     read :oldest_active_for_book do
