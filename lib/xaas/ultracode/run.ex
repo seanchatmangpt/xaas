@@ -116,6 +116,9 @@ defmodule Xaas.Ultracode.Run do
 
     update :transition_state do
       accept([:state, :standing])
+      require_atomic?(false)
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
     end
 
     # Real admitted action closing ULTRACODE-50 blocker (2): the ONE path
