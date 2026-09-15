@@ -1,5 +1,14 @@
 {
   "entries": {
+    "/Users/sac/ggen_igniter/priv/ggen/reactor-scaffold-pack/templates/reactor.ex.eex=>tmp_out/ultracode_probe_epoch_reactor.ex": {
+      "out_template": "tmp_out/ultracode_probe_epoch_reactor.ex",
+      "outputs": {
+        "/Users/sac/xaas/tmp_out/ultracode_probe_epoch_reactor.ex": "sha256:b3e13d3eec2cc1e49bd6148050d3d801e1a2957967bd88d4dc1bf60e5b352374"
+      },
+      "pack_dir": null,
+      "template": "/Users/sac/ggen_igniter/priv/ggen/reactor-scaffold-pack/templates/reactor.ex.eex",
+      "updated_at": "2026-09-14T22:32:16.922876Z"
+    },
     "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/a2a_skills.eex=>/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex": {
       "out_template": "/Users/sac/xaas/lib/xaas_web/a2a/next_read_user_agent_skills.ex",
       "outputs": {
@@ -35,6 +44,15 @@
       "pack_dir": "priv/packs/xaas_library_pack",
       "template": "priv/packs/xaas_library_pack/templates/manufacture.ex.eex",
       "updated_at": "2026-09-09T04:52:20.486679Z"
+    },
+    "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex=>tmp_out/ultracode_probe_manifest.ex": {
+      "out_template": "tmp_out/ultracode_probe_manifest.ex",
+      "outputs": {
+        "/Users/sac/xaas/tmp_out/ultracode_probe_manifest.ex": "sha256:a440ee4a1c16b81b07d9d5e9e3e461ca608945ffda3609999c4fd2ccdc8ba705"
+      },
+      "pack_dir": null,
+      "template": "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex",
+      "updated_at": "2026-09-14T18:11:37.880651Z"
     },
     "templates-hooks/compile-proof-eex.txt.tmpl=>GGEN-SH-AFTER-PROOF-EEX.txt": {
       "out_template": "GGEN-SH-AFTER-PROOF-EEX.txt",

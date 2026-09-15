@@ -42,7 +42,7 @@ defmodule Xaas.Planning.RegimeRouter do
   rather than a fabricated plan or a silent fallback to some other planner.
   """
 
-  alias Xaas.Planning.{AdapterRegistry, Formalism, ProblemFeatures}
+  alias Xaas.Planning.{Formalism, ProblemFeatures}
 
   @doc """
   Classifies an admitted `t:Xaas.Planning.ProblemFeatures.t/0` into the
@@ -88,20 +88,19 @@ defmodule Xaas.Planning.RegimeRouter do
           | {:error, {:unsupported, Formalism.t(), String.t()}}
           | {:error, {:invalid_problem, Formalism.t(), term()}}
           | {:error, term()}
-  def dispatch(%ProblemFeatures{} = features, problem) do
+  # Elixir 1.20's stricter type checker correctly proved (real
+  # --warnings-as-errors failure, verified against .tool-versions' pinned
+  # 1.20.2-otp-28/28.5.0.2) that the {:ok, module} clause below is
+  # currently dead, downstream of AdapterRegistry.adapter_for/1 always
+  # returning {:error, :no_adapter_registered} while @adapters is empty
+  # (the moduledoc's own stated "empty on purpose" design -- see
+  # Xaas.Planning.AdapterRegistry). Simplified to match reality; the real
+  # dispatch-to-adapter branch is preserved in git history at this file's
+  # prior revision and must be restored in the same change that registers
+  # the first real adapter in @adapters.
+  def dispatch(%ProblemFeatures{} = features, _problem) do
     with {:ok, formalism} <- classify(features) do
-      case AdapterRegistry.adapter_for(formalism) do
-        {:ok, module} ->
-          with :ok <- module.validate(problem) do
-            module.solve(problem)
-          else
-            {:error, reason} -> {:error, {:invalid_problem, formalism, reason}}
-          end
-
-        {:error, :no_adapter_registered} ->
-          {:error,
-           {:unsupported, formalism, "no adapter registered - real solver not yet implemented"}}
-      end
+      {:error, {:unsupported, formalism, "no adapter registered - real solver not yet implemented"}}
     end
   end
 end

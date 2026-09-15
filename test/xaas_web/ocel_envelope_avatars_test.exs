@@ -71,10 +71,15 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
 
     Process.register(self(), :ocel_envelope_avatars_test)
 
-    port = 42_900 + :erlang.phash2(self(), 500)
-
-    {:ok, server_pid} = Bandit.start_link(plug: CapturingPlug, port: port, ip: {127, 0, 0, 1})
+    # OS-assigned ephemeral port (bind to port 0, then read back the real
+    # bound port via ThousandIsland.listener_info/1) instead of a
+    # hash-derived port -- the hash-derived port collided across concurrent
+    # `mix test` runs / re-used `self()` hashes, intermittently raising
+    # :eaddrinuse and aborting the whole suite via --max-failures.
+    {:ok, server_pid} = Bandit.start_link(plug: CapturingPlug, port: 0, ip: {127, 0, 0, 1})
     Process.unlink(server_pid)
+
+    {:ok, {_address, port}} = ThousandIsland.listener_info(server_pid)
 
     previous_url = Application.get_env(:xaas, :ex4pm_ocel_ingest_url)
 

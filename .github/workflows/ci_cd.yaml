@@ -2,34 +2,35 @@ name: CI/CD Elixir
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feat/**
+      - fix/**
+      - epoch/**
   pull_request:
     branches: [main]
   workflow_dispatch:
 
-# Real fix (confirmed via a real failed CI run this session, "Password
-# required" logging into ghcr.io): the workflow referenced secrets.GH_PAT,
-# a repo secret that was never configured. Rather than create and store a
-# new PAT, grant the job's own built-in GITHUB_TOKEN package-write
-# permission -- the standard, lower-friction way to push to ghcr.io from
-# the same repo, no new credential needed.
+concurrency:
+  group: xaas-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
-  packages: write
+
+env:
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   ci:
     runs-on: ubuntu-latest
-    name: Compile with mix test, format, dialyzer & unused deps check
+    timeout-minutes: 20
+    name: Exact-head test court
     env:
       MIX_ENV: test
     services:
       postgres:
-        # The admitted XaaS schema creates the pgvector `vector` extension.
-        # Pin both pgvector and PostgreSQL major plus the multi-arch image
-        # digest so the verifier supplies the same capability deterministically
-        # instead of weakening migrations to fit vanilla postgres.
-        image: pgvector/pgvector:0.8.6-pg15-bookworm@sha256:a947c45cdc5906a1bc951f20a8709e321256343ee0f251e4ae00b5e7def4e6da
+        image: postgres:15.2
         env:
           POSTGRES_PASSWORD: postgres
         ports:
@@ -40,69 +41,48 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
 
-      # mix.exs deliberately consumes Ex4pm.OCEL through the sibling path
-      # ../ex4pm. PR CI previously ran without materializing that dependency,
-      # so mix compile stopped before compiling XaaS. Pin the exact producer
-      # identity and assert it before dependency resolution: verification may
-      # not silently follow ex4pm/main.
-      - name: Materialize exact ex4pm path dependency
+      - name: Assert exact subject identity
+        shell: bash
         run: |
           set -euo pipefail
-          EX4PM_SHA=426455b6dfaf3931f85cc05b612ff73759766267
-          rm -rf ../ex4pm
-          git init ../ex4pm
-          git -C ../ex4pm remote add origin https://github.com/seanchatmangpt/ex4pm.git
-          git -C ../ex4pm fetch --depth=1 origin "$EX4PM_SHA"
-          git -C ../ex4pm checkout --detach FETCH_HEAD
-          test "$(git -C ../ex4pm rev-parse HEAD)" = "$EX4PM_SHA"
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$actual"
+          if [[ "$actual" != "$SUBJECT_SHA" ]]; then
+            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
+            exit 2
+          fi
 
       - name: Setup Elixir
-        # Real fix: v1.17.3's OS-mapping table doesn't recognize ubuntu-latest's
-        # current ImageOS=ubuntu24 -- confirmed via 2 real failed runs this session
-        # (32408751129, 32407995438), root-caused via `gh run view --log-failed`.
-        # Bumped to the real latest release, which supports ubuntu24.
         uses: erlef/setup-beam@v1.24.1
         with:
           version-file: .tool-versions
           version-type: strict
 
-      - name: Cache deps directory
-        uses: actions/cache@v4
-        id: cache-deps
+      - name: Cache exact-toolchain deps and build
+        uses: actions/cache@v6
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
 
-      - name: Cache plt files
-        uses: actions/cache@v4
-        env:
-          EX_OTP_VERSIONS: ${{ steps.setup-beam.outputs.elixir-version }}
-          KEY_BASE: plt-${{ runner.os }}-${{ env.EX_OTP_VERSIONS }}
-        with:
-          path: |
-            priv/plts
-          key: |
-            ${{ env.KEY_BASE }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ env.KEY_BASE }}-
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
 
-      - name: Get dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: mix deps.get
+      - name: Check formatting
+        run: mix format --check-formatted
 
-      - run: mix compile --warnings-as-errors
+      - name: Compile with warnings as errors
+        run: mix compile --force --warnings-as-errors
 
       - name: Run tests
         run: mix test --max-failures 1 --trace
-
-      - name: Check code is formatted
-        run: mix format --check-formatted
 
       - name: Dialyzer static analysis
         run: MIX_ENV=dev mix dialyzer --format github
@@ -149,31 +129,112 @@ jobs:
           xaas-ggen-workbench:test -c
           'import workbench_server as w; r=w.execute({"args":["--version"],"files":{},"timeout_ms":30000}); assert r["standing"] == "ALIVE", r; assert r["admitted"] is True, r; assert r["executed"] is True, r; assert r["verified"] is True, r; assert r["receipt"]["ggen_ecosystem_digest"] == w.GGEN_DIGEST, r; assert r["receipt"]["exit_code"] == 0, r; print(r["receipt"]["receipt_sha256"])'
 
-  build-push:
+  production:
     runs-on: ubuntu-latest
-    needs: [ci, asyncapi, workbench]
-    name: Build Docker image & push to ghcr.io
+    timeout-minutes: 12
+    name: Exact-head production compile court
+    env:
+      MIX_ENV: prod
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$SUBJECT_SHA" || {
+            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
+            exit 2
+          }
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Resolve production dependencies from clean state
+        run: |
+          set -euo pipefail
+          rm -rf deps _build
+          mix deps.get --check-locked
+
+      - name: Compile production candidate with warnings as errors
+        run: mix compile --force --warnings-as-errors
+
+  image-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ci, production, asyncapi, workbench]
+    name: Build container without publication
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Parse versions from .tool-versions
+        id: parse-asdf
+        run: ./scripts/versions.sh
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build candidate image without external DO
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            ELIXIR_VERSION=${{ env.ELIXIR_VERSION }}
+            OTP_VERSION=${{ env.ERLANG_VERSION }}
+
+  publish-image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ci, production, asyncapi, workbench]
+    name: Publish main image
+    permissions:
+      contents: read
+      packages: write
     outputs:
       unique_docker_tag: ${{ steps.get-unique-docker-tag.outputs.sha_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout admitted main SHA
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Assert publish subject identity
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ghcr.io/${{ github.repository_owner }}/xaas
+          images: ghcr.io/${{ github.repository_owner }}/xaas
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=pr
+            type=raw,value=latest
             type=sha,format=short
 
       - name: Parse versions from .tool-versions
@@ -182,17 +243,8 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      # Real fix (confirmed via a real failed CI run this session, run
-      # 32414558650): the linux/arm64 leg of this multi-arch build runs
-      # under QEMU user-mode emulation on GitHub's amd64-only hosted
-      # runners, and the emulated `apt-get install build-essential` step
-      # segfaults inside libc-bin's postinst script (real, known QEMU/
-      # glibc emulation flakiness, not a Dockerfile bug). GitHub-hosted
-      # runners have no native arm64 option for public repos without a
-      # separate paid arm64 runner, so build for the runner's real native
-      # architecture only rather than an emulated target that reliably
-      # crashes.
-      - uses: docker/build-push-action@v5
+      - name: Build and publish admitted main image
+        uses: docker/build-push-action@v5
         with:
           context: .
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/xaas:cache
@@ -205,18 +257,68 @@ jobs:
             ELIXIR_VERSION=${{ env.ELIXIR_VERSION }}
             OTP_VERSION=${{ env.ERLANG_VERSION }}
 
-      - name: Gets unique image tag
+      - name: Record unique image tag
         id: get-unique-docker-tag
-        if: github.ref == 'refs/heads/main'
         run: |-
-          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" \
-                      | grep 'sha' \
-                      | tr '\n' ' ' \
-                      | awk '{print $1}')
-          echo "sha_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep 'sha' | tr '\n' ' ' | awk '{print $1}')
+          echo "sha_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
-# Production DO is intentionally not coupled to a push or merge. The former
-# inherited AWS deploy job was removed: `.github/workflows/fly_deploy.yaml`
-# is now the sole production deployment path and requires an exact admitted
-# main SHA, an operator reason, scoped Fly deploy tokens, post-deploy execution,
-# and a deployment receipt.
+  receipt:
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [ci, production, image-check]
+    name: Bound CI receipt
+    permissions:
+      contents: read
+    steps:
+      - name: Manufacture bounded receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p receipt
+          cat > receipt/ci.json <<JSON
+          {
+            "subject_sha": "${SUBJECT_SHA}",
+            "ci": "${{ needs.ci.result }}",
+            "production": "${{ needs.production.result }}",
+            "image_check": "${{ needs.image-check.result }}",
+            "publication": "not_attempted_by_candidate_court",
+            "standing": "candidate_evidence_only"
+          }
+          JSON
+          python3 -m json.tool receipt/ci.json
+          test "${{ needs.ci.result }}" = success
+          test "${{ needs.production.result }}" = success
+          test "${{ needs.image-check.result }}" = success
+
+      - name: Preserve CI receipt
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xaas-ci-${{ env.SUBJECT_SHA }}
+          path: receipt/ci.json
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: publish-image
+    name: Deploy application
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/deploy
+        with:
+          github_user: ${{ github.repository_owner }}
+          gh_pat: ${{ secrets.GH_PAT }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          age_key: ${{ secrets.AGE_KEY }}
+          ssh_private_key: ${{ secrets.PRIVATE_KEY }}
+          image_tag: ${{ needs.publish-image.outputs.unique_docker_tag }}

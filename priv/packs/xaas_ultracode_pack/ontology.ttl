@@ -1,0 +1,76 @@
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix agp:    <https://ggen.io/ontology/ash-igniter-gen-pipeline#> .
+@prefix xu:     <https://ggen.io/ontology/xaas-ultracode#> .
+
+<https://ggen.io/ontology/xaas-ultracode#> a owl:Ontology ;
+  rdfs:label "XaaS Ultracode Domain Ontology (probe)" ;
+  rdfs:comment """Semantic Manufacture Closure falsifier: Run/Epoch resource-field mapping against a SCRATCH module name (Xaas.Ultracode.Probe.Run), extracted from the real hand-written Xaas.Ultracode.Run/Epoch semantics recorded in docs/ultracode/PROGRESS.md. Not wired to the real Run/Epoch modules -- this is a narrow, deliberately non-clobbering falsifier of the manufacture path, per ULTRACODE-50 section E/F.""" .
+
+# --- Classes grounded in PROV (an execution/run activity, per repo doctrine) ---
+
+xu:EngineeringRun a owl:Class ;
+  rdfs:label "Ultracode Engineering Run" ;
+  rdfs:subClassOf prov:Activity ;
+  rdfs:comment "A bounded, admitted attempt at a goal, advanced epoch by epoch." .
+
+xu:EngineeringEpoch a owl:Class ;
+  rdfs:label "Ultracode Engineering Epoch" ;
+  rdfs:subClassOf prov:Activity ;
+  rdfs:comment "One cycle of a Run's attempt against a real, named exact_subject." .
+
+# --- Resource individuals (SCRATCH module name -- does not touch the real
+#     hand-written Xaas.Ultracode.Run/Epoch) ---
+
+xu:Resource_ProbeRun a xu:EngineeringRun ;
+  xu:resourceModule "Xaas.Ultracode.Probe.Run" ;
+  xu:domainModule "Xaas.Ultracode.Probe" ;
+  xu:tableName "ultracode_probe_runs" ;
+  xu:singular "probe_run" ;
+  xu:plural "probe_runs" ;
+  xu:field "goal:string" ;
+  xu:field "state:atom" ;
+  xu:field "standing:atom" ;
+  xu:field "cycle:integer" ;
+  xu:field "max_cycles:integer" ;
+  xu:field "epoch_timeout_seconds:integer" ;
+  xu:field "started_at:utc_datetime_usec" ;
+  xu:field "deadline_at:utc_datetime_usec" ;
+  xu:field "last_expected_epoch_at:utc_datetime_usec" ;
+  xu:field "last_completed_epoch_at:utc_datetime_usec" .
+
+xu:Resource_ProbeEpoch a xu:EngineeringEpoch ;
+  xu:resourceModule "Xaas.Ultracode.Probe.Epoch" ;
+  xu:domainModule "Xaas.Ultracode.Probe" ;
+  xu:tableName "ultracode_probe_epochs" ;
+  xu:singular "probe_epoch" ;
+  xu:plural "probe_epochs" ;
+  xu:field "cycle:integer" ;
+  xu:field "exact_subject:string" ;
+  xu:field "state:atom" ;
+  xu:field "expected_at:utc_datetime_usec" ;
+  xu:field "started_at:utc_datetime_usec" ;
+  xu:field "completed_at:utc_datetime_usec" .
+
+# --- Codegen pipeline individuals (agp:CodegenTarget), base phase only ---
+
+agp:UltracodeProbeRunGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 1 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Ultracode.Probe.Run" ;
+  agp:domainModule "Xaas.Ultracode.Probe" ;
+  agp:resourceModule "Run" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .
+
+agp:UltracodeProbeEpochGen a agp:CodegenTarget ;
+  agp:phase "base" ;
+  agp:order 2 ;
+  agp:mixTask "ash.gen.resource" ;
+  agp:targetModule "Xaas.Ultracode.Probe.Epoch" ;
+  agp:domainModule "Xaas.Ultracode.Probe" ;
+  agp:resourceModule "Epoch" ;
+  agp:mixArgs "--ignore-if-exists --default-actions read --uuid-primary-key id" .

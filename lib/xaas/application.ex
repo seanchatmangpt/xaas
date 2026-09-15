@@ -46,6 +46,35 @@ defmodule Xaas.Application do
       # ported Xaas.* Ash.Resource modules -- additive, Xaas.LegacyRepo above is
       # untouched.
       Xaas.Repo,
+      # Real finding, ULTRACODE-50 milestone (2026-09-14): Oban itself was
+      # never in this supervision tree -- `config :xaas, Oban` (config.exs)
+      # existed and 4 AshOban resources (Xaas.Library.HoldRequest,
+      # Xaas.Operations.CapabilityLivenessReceipt,
+      # Xaas.Platform.WebhookDelivery, Xaas.Ultracode.Run) all declare
+      # real `scheduled_actions`/`triggers`, but with no supervised Oban
+      # process, NONE of their cron jobs could ever fire in any
+      # environment -- not a missing config value, a missing child.
+      #
+      # SECOND real finding, same milestone, caught by directly observing
+      # a live node for 3 real wall-clock minutes: adding the child alone
+      # was still not enough. `config.exs`'s `plugins: [{Oban.Plugins.
+      # Cron, []}]` passes an EMPTY crontab -- Oban's Cron plugin doesn't
+      # know about ANY AshOban resource's `scheduled_actions`/`triggers`
+      # unless the base config is routed through `AshOban.config/2`
+      # first, which reads every listed domain's AshOban DSL and merges
+      # each resource's schedule into the plugin's actual crontab. Per
+      # ash_oban's own getting-started doc: "even without a static config
+      # change to plugins, use `AshOban.config(domains, base)` -- not raw
+      # `Application.fetch_env!/2` -- as what's passed to `{Oban, ...}`."
+      # Confirmed via a real running node + real Postgres queries: zero
+      # `oban_jobs` rows for ANY Ultracode worker ever appeared across 9
+      # real 20s polls (3 wall-clock minutes) before this fix; this is
+      # the code that was missing to make that happen.
+      {Oban,
+       AshOban.config(
+         Application.fetch_env!(:xaas, :ash_domains),
+         Application.fetch_env!(:xaas, Oban)
+       )},
       # AshCloak's backing Cloak.Vault -- must start before anything that
       # might read/write an encrypted attribute (Xaas.Accounts.Token's
       # encrypted_extra_data, Xaas.Platform.Webhook's encrypted secret), so
