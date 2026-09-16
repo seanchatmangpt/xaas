@@ -21,11 +21,21 @@ defmodule Xaas.Governance.ApprovalDsarErasure do
     # maker-checker flow (GDPR Art.17 / CCPA erasure -- irreversible,
     # same bar as a destructive delete).
     bypass action(:create) do
-      authorize_if(always())
+      # XAAS-2602: real system-authority predicate replaces the bare
+      # always() -- XaasWeb.Plugs.SetInternalApiSystemActor supplies the
+      # Xaas.SystemAuthority.new(:internal_api) actor AFTER the
+      # RequireInternalApiToken Bearer check (HTTP gate unchanged), so the
+      # action no longer authorizes literally any other actor/path.
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     bypass action(:approve) do
-      authorize_if(always())
+      # XAAS-2602: real system-authority predicate replaces the bare
+      # always() -- XaasWeb.Plugs.SetInternalApiSystemActor supplies the
+      # Xaas.SystemAuthority.new(:internal_api) actor AFTER the
+      # RequireInternalApiToken Bearer check (HTTP gate unchanged), so the
+      # action no longer authorizes literally any other actor/path.
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do

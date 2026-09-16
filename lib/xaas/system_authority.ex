@@ -1,6 +1,6 @@
 defmodule Xaas.SystemAuthority do
   @moduledoc """
-  Internal-system actor used by XAAS-2601 authorization checks.
+  Internal-system actor used by XAAS-2601/XAAS-2602 authorization checks.
 
   Authority is intentionally a closed vocabulary, not an arbitrary label.
   `Xaas.Checks.SystemActor` maps each protected action to exactly one admitted
@@ -13,7 +13,13 @@ defmodule Xaas.SystemAuthority do
   a cryptographic or OS isolation primitive.
   """
 
-  @services [:ultracode_reactor, :webhook_dispatcher, :oban_scheduler]
+  @services [
+    :ultracode_reactor,
+    :webhook_dispatcher,
+    :oban_scheduler,
+    :internal_api,
+    :autofde_coverage_monitor
+  ]
   @delegations %{
     oban_scheduler: [:webhook_dispatcher]
   }
@@ -21,7 +27,12 @@ defmodule Xaas.SystemAuthority do
   @enforce_keys [:service]
   defstruct [:service]
 
-  @type service :: :ultracode_reactor | :webhook_dispatcher | :oban_scheduler
+  @type service ::
+          :ultracode_reactor
+          | :webhook_dispatcher
+          | :oban_scheduler
+          | :internal_api
+          | :autofde_coverage_monitor
   @type t :: %__MODULE__{service: service()}
 
   @doc "Returns the closed internal-service vocabulary admitted by this authority type."

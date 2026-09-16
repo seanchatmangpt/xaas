@@ -47,6 +47,13 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
       schedule :check_regressions, "*/15 * * * *" do
         action(:check_regressions)
         worker_module_name(Xaas.Operations.CapabilityLivenessReceipt.Workers.CheckRegressions)
+
+        # XAAS-2602: the cron worker runs this action THROUGH authorization
+        # with no stored actor, so the schedule supplies the real system
+        # authority actor (AshOban's documented system-actor `default_actor`
+        # flow, same shape as Xaas.Platform.WebhookDelivery's retry schedule
+        # from XAAS-2601) instead of an action-wide bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
       end
     end
   end
@@ -75,7 +82,10 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     # computation over already-real data (calls the existing real
     # detect/1), no external side effect beyond a Logger call.
     bypass action(:check_regressions) do
-      authorize_if(always())
+      # XAAS-2602: real system-authority predicate replaces the bare
+      # always() -- the AshOban schedule above supplies the real
+      # default_actor (%Xaas.SystemAuthority{service: :oban_scheduler}).
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
