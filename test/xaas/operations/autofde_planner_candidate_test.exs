@@ -26,7 +26,7 @@ defmodule Xaas.Operations.AutofdePlannerCandidateTest do
     {:ok, record} =
       Xaas.Operations.AutofdePlannerCandidate
       |> Ash.Changeset.for_create(:request_candidate, %{query: query})
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:autofde_coverage_monitor))
 
     assert record.cnv_response != nil
     assert is_binary(record.trajectory_sha256)

@@ -47,6 +47,14 @@ defmodule Xaas.Ultracode.Run do
         action(:tick)
         worker_module_name(Xaas.Ultracode.Run.Workers.Tick)
 
+        # XAAS-2601: the cron worker runs `:tick` THROUGH authorization
+        # (`config :ash_oban, :authorize?` defaults true) with no stored
+        # actor, so the policy below would refuse it unless the schedule
+        # itself supplies the real system authority actor. This is the
+        # AshOban-documented `default_actor` "system-actor flow" -- the
+        # scheduler's own authority, made explicit instead of a bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
         # Explicit `:default` queue -- `config :xaas, Oban` (config.exs)
         # only lists `queues: [default: 10]`. AshOban's own default queue
         # name for a scheduled action is the resource's short name plus
@@ -65,13 +73,17 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
-    # Real, scoped carve-out for the cron-fired `:tick` action -- same
-    # `bypass action(:name)` shape as `Xaas.Platform.WebhookDelivery`'s
-    # `:retry_failed_deliveries` bypass. `:tick` accepts no external
-    # arguments and exposes no Run/Epoch field to a caller; it only
-    # triggers the real `Xaas.Ultracode.Reactor` missed-epoch workflow.
-    bypass action(:tick) do
-      authorize_if(always())
+    # XAAS-2601: `:tick` (cron-fired), `:advance_cycle` and
+    # `:transition_state` (Ultracode Reactor pipeline) are internal-only
+    # mutations, admitted by the REAL system authority predicate instead
+    # of the previous action-wide `authorize_if(always())` bypasses --
+    # which any caller through the normal authorization path satisfied.
+    # `:tick` accepts no external arguments and exposes no Run/Epoch
+    # field to a caller; `:advance_cycle`/`:transition_state` accept no
+    # actor, capability, or execution context a bypass could have checked
+    # -- the system-actor check IS that missing internal predicate.
+    bypass action([:tick, :advance_cycle, :transition_state]) do
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do
@@ -101,6 +113,9 @@ defmodule Xaas.Ultracode.Run do
 
     update :transition_state do
       accept([:state, :standing])
+      require_atomic?(false)
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
     end
 
     # Real admitted action closing ULTRACODE-50 blocker (2): the ONE path
@@ -212,5 +227,20 @@ defmodule Xaas.Ultracode.Run do
 
   relationships do
     has_many :epochs, Xaas.Ultracode.Epoch
+
+    # Real, single source of truth for "this Run's current active Epoch" --
+    # previously hand-rolled independently in both
+    # `Xaas.Ultracode.Reactor.active_epoch_id/1` and
+    # `Xaas.Ultracode.NextEpoch.advance_run/1`'s `has_active?` check, two
+    # separate copies of the identical business predicate. `sort` is
+    # required, not optional: no DB-level unique index covers
+    # `[:expected, :running]` jointly (only `state == :running`, via
+    # `Xaas.Ultracode.Validations.AtMostOneActiveEpoch`), so without a
+    # deterministic tiebreak `has_one` would pick an arbitrary row under a
+    # latent data anomaly.
+    has_one :active_epoch, Xaas.Ultracode.Epoch do
+      filter(expr(state in [:expected, :running]))
+      sort(cycle: :desc)
+    end
   end
 end

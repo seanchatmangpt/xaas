@@ -35,6 +35,19 @@ defmodule Xaas.Ultracode.Epoch do
       authorize_if(always())
     end
 
+    # XAAS-2601: every internal-only mutation action this repo's Ultracode
+    # Reactor pipeline calls (Reactor, EpochReactor, NextEpoch, MissedEpochs,
+    # Changes.CreateFirstEpoch) is admitted by the REAL system authority
+    # predicate -- `Xaas.Checks.SystemActor` over a `Xaas.SystemAuthority`
+    # actor the pipeline now passes explicitly -- instead of the previous
+    # action-wide `authorize_if(always())` bypasses, which any caller
+    # through the normal authorization path satisfied. The deny floor
+    # below stays real for every other actor, and any FUTURE action added
+    # to this resource remains deny-by-default.
+    bypass action([:create, :start, :complete, :mark_missed, :mark_failed]) do
+      authorize_if({Xaas.Checks.SystemActor, []})
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -58,18 +71,27 @@ defmodule Xaas.Ultracode.Epoch do
 
     update :complete do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :completed))
       change(set_attribute(:completed_at, &DateTime.utc_now/0))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:running]})
     end
 
     update :mark_missed do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :missed))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
     end
 
     update :mark_failed do
       accept([])
+      require_atomic?(false)
       change(set_attribute(:state, :failed))
+
+      validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
     end
   end
 

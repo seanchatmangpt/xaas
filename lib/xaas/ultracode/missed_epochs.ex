@@ -39,8 +39,24 @@ defmodule Xaas.Ultracode.MissedEpochs do
     {:ok, active_runs} =
       Xaas.Ultracode.Run
       |> Ash.Query.filter(state == :running)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
 
+    advance_all(active_runs)
+  end
+
+  # ERRC reduce: `Xaas.Ultracode.Reactor`'s tick already fetches every
+  # `:running` Run once per tick for its own step; this lets that same
+  # list be passed in here instead of this module re-scanning the Run
+  # table independently. `advance_all/0` above stays as a real, still-
+  # querying standalone entry point -- kept deliberately (not removed or
+  # renamed) because `test/xaas/ultracode/missed_epoch_receipt_test.exs`
+  # and `test/xaas/ultracode/epoch_reactor_test.exs` call it directly
+  # with no arguments to exercise this module in isolation from the
+  # Reactor.
+  @spec advance_all([Xaas.Ultracode.Run.t()]) :: [
+          %{run_id: Ash.UUID.t(), missed: [Ash.UUID.t()]}
+        ]
+  def advance_all(active_runs) when is_list(active_runs) do
     Enum.map(active_runs, &advance_run/1)
   end
 
@@ -59,14 +75,16 @@ defmodule Xaas.Ultracode.MissedEpochs do
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.Query.filter(state in [:expected, :running])
       |> Ash.Query.filter(not is_nil(expected_at) and expected_at < ^deadline)
-      |> Ash.read(authorize?: false)
+      |> Ash.read()
 
     missed_ids =
       Enum.map(stale_epochs, fn epoch ->
+        system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
+
         missed_epoch =
           epoch
-          |> Ash.Changeset.for_update(:mark_missed, %{}, authorize?: false)
-          |> Ash.update!()
+          |> Ash.Changeset.for_update(:mark_missed, %{})
+          |> Ash.update!(actor: system_actor)
 
         {:ok, _receipt} =
           Xaas.Ultracode.Receipt
@@ -83,10 +101,9 @@ defmodule Xaas.Ultracode.MissedEpochs do
                 "epoch_timeout_seconds" => run.epoch_timeout_seconds
               },
               sealed_at: DateTime.utc_now()
-            },
-            authorize?: false
+            }
           )
-          |> Ash.create()
+          |> Ash.create(actor: system_actor)
 
         Logger.warning(
           "[ultracode] epoch #{epoch.id} (run #{run.id}, cycle #{epoch.cycle}) " <>

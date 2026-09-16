@@ -869,3 +869,90 @@ that does not yet exist anywhere in this ecosystem, for any resource.
 ```
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-15 — Zach Daniel / Chris McCord adversarial review + ERRC refactor, all 8 findings implemented
+
+Per instruction, ran a real 15-agent Workflow: two independent adversarial
+reviews of the entire real `lib/xaas/ultracode/**`+`test/xaas/ultracode/**`
+tree, role-playing ZACH DANIEL's (Ash creator) documented engineering
+philosophy and CHRIS McCORD's (Phoenix/LiveView creator) documented
+engineering philosophy respectively, each reading every real file in full
+and producing specific, grounded findings (not generic advice). Every
+critical/major finding was then cross-examined by the OPPOSITE persona
+before being trusted -- 4 findings were refuted with real evidence,
+including one where the reviewer's own proposed fix (real Reactor.Builder
+async fan-out) would have broken Ecto Sandbox-mode tests, and one where
+reading the real pinned `ash_oban`/`oban` dependency source disproved a
+claimed race condition in the `:tick` scheduling. 8 findings survived and
+were ERRC-categorized (Eliminate/Reduce/Raise/Create) with an explicit
+risk-to-closed-milestone assessment and sequencing plan per finding.
+
+Implemented all 8, in 5 commits on `refactor/ultracode-errc`, following
+the plan's own risk-ordered sequence (lowest risk first, the 3 highest-
+risk RAISE items sequenced last and each in its own separately-verified
+commit, never batched):
+
+1. **ELIMINATE** fake Reactor DAG wiring (`argument`/`result` bindings
+   whose step bodies never read them) -> real `wait_for/1`. Pure honesty
+   fix, zero behavior change.
+2. **ELIMINATE** a false docstring claim (`:admit` step's comment claimed
+   an authority-ceiling check that was never implemented). Comment-only.
+3. **RAISE** real precondition validation
+   (`EpochTransitionAllowed`) on `Epoch.:complete`/`:mark_missed`/
+   `:mark_failed`, previously accepting any state unconditionally.
+4. **CREATE** a real `has_one :active_epoch` relationship on `Run`,
+   replacing two independently hand-rolled copies of the same "current
+   active epoch" query.
+5. **REDUCE** per-tick query count (3 full Run-table scans + N+1 per-run
+   queries -> 1 scan + up to 2N), via a new `:fetch_active_runs` Reactor
+   step threading the list through, while preserving `advance_all/0`'s
+   zero-arity signature for its 2 real direct test callers.
+6. **RAISE (a)** real policy bypasses replacing `authorize?: false` at
+   16 call sites across 5 modules -- the declared `forbid_if always()`
+   floor was previously dead code for all real production traffic. Found
+   and closed a real gap beyond the reviewers' own literal file list:
+   `Run.:advance_cycle`/`:transition_state` also lacked bypasses and
+   would have broken (`Ash.Error.Forbidden`) had `authorize?: false` been
+   stripped from their call sites without adding them.
+7. **RAISE (b)** a real, explicit, checkable edge-list validation
+   (`RunTransitionAllowed`) on `Run.:transition_state`, previously
+   accepting any state transition unconditionally -- closing a real
+   unvalidated backdoor around the state-machine discipline `:start`
+   enforces for its own edge.
+8. **RAISE (c)** a real `undo/3` on `EpochReactor`'s `:construct` step,
+   closing the gap where a downstream step failure after a real DB
+   mutation left an Epoch permanently transitioned with no receipt.
+   Caught and corrected a genuine interaction bug in the plan's own
+   literal proposal before writing code: uniformly calling `:mark_failed`
+   from undo would itself be refused by item 3's own new validation when
+   the downstream failure happens after the epoch reached `:completed`
+   (not an admissible `:mark_failed` source state) -- branched undo
+   correctly instead (`:start` -> `:mark_failed` + receipt;
+   `:complete` -> leave the real `:completed` state, repair only the
+   missing receipt). Added 2 new real falsifier tests exercising the
+   compiled `undo/3` callback directly via Reactor's own step
+   introspection (`Multigraph.vertices/1` + `Reactor.Step.undo/4`) since
+   forcing a genuine downstream Ash failure without mocking anything
+   proved impractical without modifying production code for the test.
+
+Real verification after every single commit (not just at the end):
+`mix compile --force --warnings-as-errors` clean each time;
+`mix test test/xaas/ultracode/` (6/6, then 8/8 after the undo tests)
+passing after every commit with zero regressions. Final whole-repo
+check: `mix format --check-formatted` exit 0; `mix compile --force
+--warnings-as-errors` exit 0, 398 files, 0 warnings;
+`mix test --max-failures 1` -> **622 passed, 0 failures, 40 excluded**
+(up from the pre-refactor baseline of 620, +2 for the new undo tests) --
+zero regressions anywhere in the repo, not just Ultracode.
+
+`grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." lib/xaas/ultracode/ test/xaas/ultracode/`
+-> zero matches, confirming Chicago-style discipline held throughout.
+
+No changes to the milestone's actual behavior or evidentiary chain --
+`Run -> Epoch -> AshOban -> EpochReactor -> Receipt` still advances
+identically; this refactor made the implementation more honest (real
+DAG wiring, real docs), more correct (real state-machine guards, real
+undo closing a real invariant gap), and more efficient (fewer queries per
+tick), without changing what it does.
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
