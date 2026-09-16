@@ -135,6 +135,8 @@ defmodule Xaas.Platform.WebhookDelivery do
       run(fn _input, %{actor: scheduler_actor} ->
         require Logger
 
+        require Ash.Query
+
         # The scheduler is the admitted caller of this generic action.
         # Outbound delivery is a distinct capability, so the fan-out uses
         # the one declared scheduler -> dispatcher delegation edge instead
@@ -143,8 +145,8 @@ defmodule Xaas.Platform.WebhookDelivery do
                Xaas.SystemAuthority.delegate(scheduler_actor, :webhook_dispatcher),
              {:ok, candidates} <-
                __MODULE__
-               |> Ash.Query.filter(status: :failed)
-               |> Ash.Query.filter(attempt_count: [less_than: @max_delivery_attempts])
+               |> Ash.Query.for_read(:read)
+               |> Ash.Query.filter(status == :failed and attempt_count < @max_delivery_attempts)
                |> Ash.read(authorize?: false) do
           results =
             Enum.map(candidates, fn delivery ->
