@@ -1,0 +1,71 @@
+name: Verify system authority exact head
+
+on:
+  push:
+    branches:
+      - verify/v26.9.15-system-authority
+
+permissions:
+  contents: read
+
+env:
+  SUBJECT_SHA: 3de6056f0ad50abe70c08fd64b117ab1ad8d6b15
+
+jobs:
+  authority:
+    name: Exact-head system-authority court
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:15.2
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$actual"
+          test "$actual" = "$SUBJECT_SHA"
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Cache exact-toolchain deps and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
+
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
+
+      - name: Run authority falsifiers only
+        run: >-
+          mix test
+          test/xaas/system_authority_capability_chicago_test.exs
+          test/xaas/system_authority_followup_chicago_test.exs
+          test/xaas/system_authority_service_scope_test.exs
+          --trace
