@@ -2,7 +2,7 @@
 
 - **Status**: Closed — implemented + Chicago-validated (2026-09-15)
 - **Severity**: High
-- **Standing**: ALIVE for this fix (full suite green; see Closure evidence)
+- **Standing**: Revision-scoped verification evidence only; runtime ALIVE standing is not asserted.
 - **Found by**: XAAS-2601's disclosed follow-up scope (the broader-pattern sites outside that ticket's named change set), closed by a full classification sweep this session.
 - **Base**: `fix/v26.9.15-system-authority` @ `57783a5`; branch `fix/v26.9.15-system-authority-followup` (worktree `wt-v26915/xaas-followup`).
 
