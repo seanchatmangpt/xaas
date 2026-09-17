@@ -956,3 +956,64 @@ undo closing a real invariant gap), and more efficient (fewer queries per
 tick), without changing what it does.
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-17 — Cycle: wave-4 drift closure — atom-table DoS fix landed, ledger reconciled
+
+**Baseline before this cycle**: branch `feat/execution-actuation-fabric`
+at `2f49261` (zcode-plugin user_config token fix) on top of `a11bf7a`
+(template contract fixes); working tree carried the boundary court's
+qualified-but-uncommitted atom-table DoS fix plus a concurrent sibling
+author's in-flight Receipt read-path work (`receipt.ex`, router,
+controller, `mix xaas.receipts`, lease/epoch_reactor + tests) and ledger
+drift. Boundary receipt r6 (`/tmp/uzc/boundary-xaas.md`) had already run
+`mix compile --force --warnings-as-errors` exit 0 and `mix test` 648/0
+WITH the atom fix + its test in the tree — this cycle ran no mix gates
+(the r6 court is the evidence); git evidence only.
+
+**Landed**:
+1. `32b5ba1` — `fix(execution-fabric): refuse reason via
+   String.to_existing_atom — bound atom-table DoS` (+ its test). Content
+   is exactly the drift the r6 court qualified (controller atom hunks +
+   atom-safety test, receipts hunks excluded). Committed via a temporary
+   index (`git read-tree` → `git apply --cached` → `write-tree` →
+   `commit-tree` → `update-ref`) so the concurrent author's staged files
+   were untouched. Post-commit check: `git grep --cached safe_existing_atom`
+   present, `for_epoch` absent from the commit tree.
+2. `113a6eb` — `docs(ledger): reconcile HANDWRITTEN.md` — controller row
+   extended (receipt read route + atom-safe refuse), lease row extended
+   (`:for_epoch` carve-out), new `mix xaas.receipts` row; 2026-09-16
+   Shrunk rows now cite their landing commit `a11bf7a`; new Shrunk row
+   for the `2f49261` user_config token fix; wave paydown direction
+   recorded (zcode-plugin rows shrank toward admission; controller/lease
+   rows disclosed growth, owner packs unchanged).
+
+**Deliberately NOT committed**: the sibling author's in-flight Receipt
+read path + lease/epoch_reactor edits (staged `lib/mix/tasks/
+xaas.receipts.ex` is theirs). Racing an active author's index is how
+commits corrupt; their flow lands on top of `32b5ba1` unchanged.
+
+**Coordination incident, disclosed**: this agent twice held
+`/tmp/uzc/xaas-mix.lock` stale (~10 min each) by omitting the release
+`rmdir` — observed side effect: the author's `git reset` (reflog
+`reset: moving to HEAD`) landed after lock release, unstaging earlier
+staging; no work lost, worktree never touched, state normalized.
+
+**Git evidence (commands + exact exits)**:
+- `git status --porcelain` / `git diff --numstat` → exit 0 (drift
+  inventory: 5 modified tracked files + 7 untracked paths at start)
+- `git apply --cached --check <atom patches>` → exit 0 before staging
+- `git write-tree` → `c9529722`; `git commit-tree -p 2f49261` → `32b5ba1`;
+  `git update-ref refs/heads/feat/execution-actuation-fabric` → exit 0
+- `git commit HANDWRITTEN.md` → exit 0, `113a6eb` (1 file, +39/−6)
+- `git log --oneline` verification after each commit → exit 0
+
+**Wave 比 (fail-closed)**: `a11bf7a..HEAD` = 2f49261 + 32b5ba1 + 113a6eb
+= 105 insertions / 13 deletions across generator, 2 plugin templates,
+controller, test, ledger. Manufactured (pack render / generator run
+attribution): **0 lines** — the plugin projection (`generated/`) is
+untracked and no pack render produced any delivered line this wave.
+Ratio = **0%**, honestly. Paydown: promote the now contract-clean
+templates + generator into `zcode-plugin-pack` (blocked only on the
+ZCode-side install bug), admit `ultracode-actuation-lease-pack` and the
+mcp-surface family extension from the proven shapes — after which
+plugin drift renders manufactured and the ratio moves off 0.
