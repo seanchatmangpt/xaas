@@ -1,5 +1,13 @@
 {
   "name": "<%= @plugin_name %>",
   "version": "<%= @version %>",
-  "description": "XaaS execution-fabric worker plugin: claims receipted work contracts, enforces the PreToolUse admission court, and closes with head verification against <%= @endpoint %>."
+  "description": "XaaS execution-fabric worker plugin: claims receipted work contracts, enforces the PreToolUse admission court, and closes with head verification against <%= @endpoint %>.",
+  "userConfig": {
+    "<%= @token_user_config_key %>": {
+      "type": "string",
+      "sensitive": false,
+      "default": "unset",
+      "description": "Bearer token for the XaaS internal API (/internal-api). Set with: zcode plugins configure <%= @plugin_name %>@<marketplace> --options-file"
+    }
+  }
 }

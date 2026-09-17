@@ -56,6 +56,7 @@ defmodule Mix.Tasks.Xaas.GenZcodePlugin do
     assigns = %{
       endpoint: String.trim_trailing(endpoint, "/"),
       token_env: token_env,
+      token_user_config_key: String.downcase(token_env),
       plugin_name: "xaas-fabric",
       version: String.trim(File.read!("VERSION"))
     }
@@ -77,12 +78,16 @@ defmodule Mix.Tasks.Xaas.GenZcodePlugin do
     end)
 
     Mix.shell().info("""
-    Rendered #{length(files)} files to #{output}.
+    Rendered #{length(files)} to #{output}.
 
     Qualification steps (morning test):
-      1. export #{token_env}=<internal api token>
-      2. Point ZCode at the plugin (marketplace.json with a local/plugin path,
-         or the app's plugin installer against this directory).
+      1. Register/update the marketplace pointing at generated/ (directory source),
+         then install and configure the MCP token as a persistent plugin option:
+           zcode plugins install xaas-fabric@<marketplace> --scope user --yes
+           zcode plugins configure xaas-fabric@<marketplace> \\
+             --options-file (with "#{String.downcase(token_env)}": <internal api token>)
+      2. Hooks still read #{token_env} from the session environment:
+         export #{token_env}=<internal api token> before launching zcode.
       3. In a leased worktree, run /xaas and confirm claim -> PreToolUse
          admission -> Stop closure through the XaaS log stream.
     """)
