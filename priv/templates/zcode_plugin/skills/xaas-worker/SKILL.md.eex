@@ -11,15 +11,23 @@ closure. You own only the construction inside your leased worktree.
 
 ## The loop
 
-claim_next → save lease → construct → verify → close_candidate
+claim_next → save lease (`scripts/xaas-lease.mjs save`) → admit_tool before
+any consequential tool call → construct → record_provider_event → verify →
+close_candidate/refuse
+
+There is no PreToolUse/PostToolUse/Stop hook in this plugin. Admission and
+observation are explicit MCP tool calls you make yourself, on the
+`xaas-execution` server — never automatic host-level interception. That means
+the fail-closed discipline below is yours to hold, not something ZCode
+enforces on your behalf.
 
 ## What each artifact proves
 
 | Artifact | Proves | Never proves |
 |---|---|---|
 | claim_next result | you hold a bounded lease | that the work is possible |
-| PreToolUse allow | this exact tool call is admitted | that it will succeed |
-| PostToolUse receipt | the provider executed the tool | semantic subject success |
+| admit_tool allow | this exact tool call is admitted | that it will succeed |
+| record_provider_event call | you reported a tool execution | semantic subject success |
 | close_candidate ACCEPT | head verified + standing recorded | publication/merge |
 
 ## Standing vocabulary
@@ -29,12 +37,31 @@ claim_next → save lease → construct → verify → close_candidate
 Report the standing you can evidence. A truthful `PARTIAL_ALIVE` outranks a
 decorative `ALIVE`.
 
+This is the prose vocabulary for what you report to the lease-holder — it is
+wider than what `close_candidate` actually accepts. `close_candidate`'s
+`outcome` field is normalized case-insensitively against exactly
+`alive | partial_alive | blocked | build_broken | unsupported | refused`; it
+has no `unknown` member. An `outcome` outside that six-value set — including
+the literal word `unknown` — is silently normalized to `partial_alive`, not
+refused and not preserved verbatim; this is real, load-bearing behavior, not
+a fence, so a standing you cannot evidence more strongly than "unknown"
+should be reported to close_candidate as `partial_alive` directly.
+`refuse`'s free-text `reason` (e.g. `BLOCKED`, `BUILD_BROKEN`,
+`REFUSED_NO_AUTHORITY`) is likewise never the receipt's `outcome` — `refuse`
+always seals `outcome: refused`; the reason survives only as a string in
+`evidence.refusal_reason`. If BLOCKED vs BUILD_BROKEN must stay distinct and
+queryable as `outcome`, call `close_candidate` with that outcome instead of
+`refuse`.
+
 ## Fail-closed rules
 
-1. XaaS unreachable → the court denies with `BRCE_UNAVAILABLE`. Stop. Never
-   proceed on the assumption the next call will go through.
+1. Any call to the `xaas-execution` MCP server fails to reach XaaS (timeout,
+   connection error, non-2xx transport failure) → treat it exactly like a
+   denial. Stop. Never proceed on the assumption the call would have
+   succeeded, and never treat "I couldn't reach the arbiter" as "the arbiter
+   said yes."
 2. Lease expired → claim again or stop. An expired lease admits nothing.
-3. Unknown tool class → denied by design. Do not look for synonyms.
+3. Unknown tool class → refused by design. Do not look for synonyms.
 4. Authority ceiling → `git push`/publish-class consequences require the
    contract to carry the ceiling. It does not; do not escalate.
 

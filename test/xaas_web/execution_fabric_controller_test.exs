@@ -23,6 +23,8 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
   use XaasWeb.ConnCase
 
+  alias Xaas.Accounts.Org
+  alias Xaas.Governance.InternalApiTokenAuth
   alias Xaas.Ultracode.{Epoch, Run}
 
   setup do
@@ -32,6 +34,24 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
   defp with_internal_api_token(conn) do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
+  defp create_org!(slug) do
+    {:ok, org} =
+      Org
+      |> Ash.Changeset.for_create(:create, %{name: slug, slug: slug}, authorize?: false)
+      |> Ash.create()
+
+    org
+  end
+
+  defp org_token!(created_by, %Org{} = org) do
+    {:ok, raw_token, _token} = InternalApiTokenAuth.issue(created_by, nil, org)
+    raw_token
+  end
+
+  defp with_org_token(conn, raw_token) do
+    put_req_header(conn, "authorization", "Bearer " <> raw_token)
   end
 
   defp hook_post(conn, event, body) do
@@ -116,6 +136,54 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       |> post("/internal-api/execution/hooks/session_start", "{}")
       |> json_response(401)
     end
+
+    test "an active, rotated InternalApiToken is accepted (real rotation path, not just the env var)",
+         %{conn: conn} do
+      {:ok, raw_token, _token} = Xaas.Governance.InternalApiTokenAuth.issue("rotation-test")
+
+      body =
+        conn
+        |> put_req_header("authorization", "Bearer " <> raw_token)
+        |> put_req_header("content-type", "application/json")
+        |> post("/internal-api/execution/hooks/session_start", "{}")
+        |> json_response(200)
+
+      assert body["status"] == "acknowledged"
+    end
+
+    test "a revoked InternalApiToken is rejected with the same fail-closed 401 as a wrong bearer",
+         %{conn: conn} do
+      {:ok, raw_token, token} = Xaas.Governance.InternalApiTokenAuth.issue("revoke-test")
+      {:ok, _revoked} = Xaas.Governance.InternalApiTokenAuth.revoke(token)
+
+      # Real state check: the row really is revoked, not just assumed.
+      reloaded = Ash.get!(Xaas.Governance.InternalApiToken, token.id, authorize?: false)
+      assert reloaded.revoked_at
+
+      conn
+      |> put_req_header("authorization", "Bearer " <> raw_token)
+      |> put_req_header("content-type", "application/json")
+      |> post("/internal-api/execution/hooks/session_start", "{}")
+      |> json_response(401)
+    end
+
+    test "an expired InternalApiToken is rejected with the same fail-closed 401 as a wrong bearer",
+         %{conn: conn} do
+      already_expired = DateTime.add(DateTime.utc_now(), -60, :second)
+
+      {:ok, raw_token, token} =
+        Xaas.Governance.InternalApiTokenAuth.issue("expiry-test", already_expired)
+
+      # Real state check: the row really is persisted as expired, not just assumed.
+      reloaded = Ash.get!(Xaas.Governance.InternalApiToken, token.id, authorize?: false)
+      assert DateTime.compare(reloaded.expires_at, DateTime.utc_now()) == :lt
+
+      conn
+      |> put_req_header("authorization", "Bearer " <> raw_token)
+      |> put_req_header("content-type", "application/json")
+      |> post("/internal-api/execution/hooks/session_start", "{}")
+      |> json_response(401)
+    end
   end
 
   describe "hook surface" do
@@ -156,7 +224,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
   describe "MCP JSON-RPC surface" do
     test "initialize advertises the lease server", %{conn: conn} do
-      result = conn |> mcp_result(1, "initialize") 
+      result = conn |> mcp_result(1, "initialize")
       assert result["serverInfo"]["name"] == "xaas-ultracode-lease"
       assert result["capabilities"]["tools"]
     end
@@ -165,6 +233,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       tools = conn |> mcp_result(2, "tools/list") |> Map.fetch!("tools")
 
       assert Enum.map(tools, & &1["name"]) |> Enum.sort() == [
+               "actuate",
                "admit_tool",
                "claim_next",
                "close_candidate",
@@ -242,6 +311,68 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :completed
     end
 
+    test "an outcome outside the valid vocabulary (e.g. 'UNKNOWN') is silently normalized to partial_alive, not fenced or rejected",
+         %{conn: conn} do
+      worktree = make_git_worktree()
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago", worktree)
+
+      claim =
+        tool_call(conn, "claim_next", %{provider: "zcode-chicago", provider_worker_id: "worker-4"})
+
+      # Doctrine regression guard: agents/xaas-worker.md.eex and
+      # skills/xaas-worker/SKILL.md.eex's "Standing vocabulary" lists
+      # `UNKNOWN` alongside ALIVE/PARTIAL_ALIVE/BLOCKED/BUILD_BROKEN/
+      # UNSUPPORTED/REFUSED_*, and commands/xaas.md.eex's own invariants say
+      # "Unknown is a fence... stop and report, never guess" -- but
+      # close_candidate's outcome vocabulary (@valid_outcomes) has no
+      # `unknown` member, so this is NOT actually fenced: it degrades
+      # silently to partial_alive, same as any other unrecognized string.
+      # This test locks in that real, documented (post-fix) behavior.
+      closed =
+        tool_call(conn, "close_candidate", %{
+          lease_token: claim["lease_token"],
+          final_head: git_head(worktree),
+          outcome: "UNKNOWN"
+        })
+
+      assert closed["status"] == "closed"
+      assert closed["outcome"] == "partial_alive"
+      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :completed
+    end
+
+    test "refuse always seals the receipt's outcome as the generic 'refused' -- a typed reason (e.g. BLOCKED, BUILD_BROKEN) is preserved only in evidence, never as outcome",
+         %{conn: conn} do
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-refuse-outcome")
+
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-chicago-refuse-outcome",
+          provider_worker_id: "worker-5"
+        })
+
+      # Doctrine regression guard: commands/xaas.md.eex step 6 lists
+      # `refuse` reasons as if they were distinctly-recorded standings
+      # (`BLOCKED`, `BUILD_BROKEN`, `REFUSED_NO_AUTHORITY`, ...), but
+      # Lease.refuse/3 always seals `outcome: :refused` regardless of the
+      # reason passed -- the finer distinction survives only as a string in
+      # evidence.refusal_reason. A worker that needs BLOCKED/BUILD_BROKEN to
+      # stay queryable as `outcome` must call close_candidate directly with
+      # that outcome instead.
+      refused =
+        tool_call(conn, "refuse", %{lease_token: claim["lease_token"], reason: "blocked"})
+
+      assert refused["status"] == "refused"
+      assert refused["outcome"] == "refused"
+
+      receipt =
+        Xaas.Ultracode.Receipt
+        |> Ash.read!(authorize?: false)
+        |> Enum.find(&(&1.epoch_id == epoch.id))
+
+      assert receipt.outcome == :refused
+      assert receipt.evidence["refusal_reason"] == "blocked"
+    end
+
     test "refuse lands a typed refusal receipt", %{conn: conn} do
       {_run, epoch} = provider_run_and_epoch("zcode-chicago")
 
@@ -298,6 +429,449 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       assert_raise ArgumentError, fn ->
         novel_reason |> String.to_charlist() |> :erlang.list_to_existing_atom()
       end
+    end
+  end
+
+  describe "actuate tool (ZCode-UI-as-actuator seam) over real HTTP" do
+    defp with_actuation_registry(registry, fun) do
+      previous = Application.get_env(:xaas, :ultracode_actuation_registry)
+      Application.put_env(:xaas, :ultracode_actuation_registry, registry)
+
+      try do
+        fun.()
+      after
+        if previous do
+          Application.put_env(:xaas, :ultracode_actuation_registry, previous)
+        else
+          Application.delete_env(:xaas, :ultracode_actuation_registry)
+        end
+      end
+    end
+
+    test "a registered pair reaches the real Xaas.Actuation.run/4 DO kernel over the wire", %{
+      conn: conn
+    } do
+      provider = "zcode-chicago-actuate-#{System.unique_integer([:positive])}"
+      marketplace_provider = Xaas.Generator.create_provider!(%{org_id: "org-actuate-http"})
+
+      with_actuation_registry(
+        %{
+          provider => %{
+            {"Xaas.Marketplace.Provider", "actuate_status"} =>
+              {Xaas.Marketplace.Provider, :actuate_status, marketplace_provider.id}
+          }
+        },
+        fn ->
+          {_run, _epoch} = provider_run_and_epoch(provider)
+
+          claim =
+            tool_call(conn, "claim_next", %{provider: provider, provider_worker_id: "worker-1"})
+
+          result =
+            tool_call(conn, "actuate", %{
+              lease_token: claim["lease_token"],
+              resource: "Xaas.Marketplace.Provider",
+              action: "actuate_status",
+              input: %{"status" => "active"},
+              idempotency_key: "http-actuate-#{System.unique_integer([:positive])}"
+            })
+
+          assert result["status"] == "succeeded"
+          assert result["replay"] == false
+          assert result["receipt_id"]
+
+          assert Xaas.Marketplace.Provider
+                 |> Ash.get!(marketplace_provider.id, authorize?: false)
+                 |> Map.fetch!(:status) == :active
+
+          # actuate grants no admit_tool allowance on the same lease.
+          assert tool_call(conn, "admit_tool", %{lease_token: claim["lease_token"], tool: "Bash"}) ==
+                   %{"error" => "refused_no_authority:\"Bash\""}
+        end
+      )
+    end
+
+    test "a wire-supplied subject_id cannot redirect the actuation onto an unrelated row", %{
+      conn: conn
+    } do
+      provider = "zcode-chicago-actuate-idor-#{System.unique_integer([:positive])}"
+      bound_provider = Xaas.Generator.create_provider!(%{org_id: "org-actuate-http-bound"})
+      other_provider = Xaas.Generator.create_provider!(%{org_id: "org-actuate-http-other"})
+
+      with_actuation_registry(
+        %{
+          provider => %{
+            {"Xaas.Marketplace.Provider", "actuate_status"} =>
+              {Xaas.Marketplace.Provider, :actuate_status, bound_provider.id}
+          }
+        },
+        fn ->
+          {_run, _epoch} = provider_run_and_epoch(provider)
+
+          claim =
+            tool_call(conn, "claim_next", %{provider: provider, provider_worker_id: "worker-1"})
+
+          # The wire protocol has no subject_id field on "actuate" -- an
+          # attacker-style client sending one anyway must have it ignored.
+          result =
+            tool_call(conn, "actuate", %{
+              lease_token: claim["lease_token"],
+              resource: "Xaas.Marketplace.Provider",
+              action: "actuate_status",
+              subject_id: other_provider.id,
+              input: %{"status" => "active"},
+              idempotency_key: "http-actuate-idor-#{System.unique_integer([:positive])}"
+            })
+
+          assert result["status"] == "succeeded"
+
+          assert Xaas.Marketplace.Provider
+                 |> Ash.get!(bound_provider.id, authorize?: false)
+                 |> Map.fetch!(:status) == :active
+
+          assert Xaas.Marketplace.Provider
+                 |> Ash.get!(other_provider.id, authorize?: false)
+                 |> Map.fetch!(:status) != :active
+        end
+      )
+    end
+
+    test "an unregistered pair is a typed tool error, never a silent DO", %{conn: conn} do
+      provider = "zcode-chicago-actuate-unregistered-#{System.unique_integer([:positive])}"
+      {_run, _epoch} = provider_run_and_epoch(provider)
+
+      claim =
+        tool_call(conn, "claim_next", %{provider: provider, provider_worker_id: "worker-1"})
+
+      assert tool_call(conn, "actuate", %{
+               lease_token: claim["lease_token"],
+               resource: "Xaas.Marketplace.Provider",
+               action: "actuate_status",
+               idempotency_key: "http-actuate-unregistered"
+             }) == %{
+               "error" =>
+                 "unregistered_actuation:{\"Xaas.Marketplace.Provider\", \"actuate_status\"}"
+             }
+    end
+
+    test "a non-string lease_token is a typed tool error, never a crash", %{conn: conn} do
+      assert tool_call(conn, "actuate", %{
+               lease_token: 123,
+               resource: "Xaas.Marketplace.Provider",
+               action: "actuate_status",
+               idempotency_key: "http-actuate-bad-token-type"
+             }) == %{"error" => ":lease_token_required"}
+    end
+  end
+
+  describe "receipt read surface (real lawful read path)" do
+    test "GET .../receipts returns the real sealed receipt through the lawful HTTP path", %{
+      conn: conn
+    } do
+      worktree = make_git_worktree()
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-receipts", worktree)
+
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-chicago-receipts",
+          provider_worker_id: "worker-1"
+        })
+
+      tool_call(conn, "close_candidate", %{
+        lease_token: claim["lease_token"],
+        final_head: git_head(worktree),
+        outcome: "alive",
+        evidence: %{"verifier" => "mix test"}
+      })
+
+      body =
+        conn
+        |> with_internal_api_token()
+        |> get("/internal-api/execution/epochs/#{epoch.id}/receipts")
+        |> json_response(200)
+
+      assert body["epoch_id"] == epoch.id
+      assert [receipt] = body["receipts"]
+      assert receipt["outcome"] == "alive"
+      assert receipt["epoch_id"] == epoch.id
+      assert receipt["evidence"]["verifier"] == "mix test"
+    end
+
+    test "is scoped: a different epoch's receipts are never returned", %{conn: conn} do
+      {_run_a, epoch_a} = provider_run_and_epoch("zcode-chicago-receipts-a")
+      {_run_b, epoch_b} = provider_run_and_epoch("zcode-chicago-receipts-b")
+
+      claim_a =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-chicago-receipts-a",
+          provider_worker_id: "worker-a"
+        })
+
+      assert claim_a["epoch_id"] == epoch_a.id
+
+      tool_call(conn, "refuse", %{lease_token: claim_a["lease_token"], reason: "blocked"})
+
+      body =
+        conn
+        |> with_internal_api_token()
+        |> get("/internal-api/execution/epochs/#{epoch_b.id}/receipts")
+        |> json_response(200)
+
+      assert body["epoch_id"] == epoch_b.id
+      assert body["receipts"] == []
+    end
+
+    test "fails closed: missing bearer token is 401, never the real receipt", %{conn: conn} do
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-receipts-noauth")
+
+      conn
+      |> get("/internal-api/execution/epochs/#{epoch.id}/receipts")
+      |> json_response(401)
+    end
+
+    test "fails closed: wrong bearer token is 401, never the real receipt", %{conn: conn} do
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-receipts-wrongauth")
+
+      conn
+      |> put_req_header("authorization", "Bearer not-the-token")
+      |> get("/internal-api/execution/epochs/#{epoch.id}/receipts")
+      |> json_response(401)
+    end
+
+    test "fails closed: a syntactically invalid epoch id is a real 400, never all receipts", %{
+      conn: conn
+    } do
+      body =
+        conn
+        |> with_internal_api_token()
+        |> get("/internal-api/execution/epochs/not-a-real-uuid/receipts")
+        |> json_response(400)
+
+      assert body["error"] == "invalid_epoch_id"
+    end
+  end
+
+  describe "org-scoped customer submission surface (real per-org InternalApiToken)" do
+    test "org A's token can POST .../runs and the created Run's real org_id matches org A",
+         %{conn: conn} do
+      org_a = create_org!("acme-test-org-a")
+      token_a = org_token!("acme-token-a", org_a)
+
+      body =
+        conn
+        |> with_org_token(token_a)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{
+            goal: "Chicago org-scoped submission over real HTTP.",
+            worktree: "/tmp/wt-org-a",
+            provider: "zcode-org-a-submit"
+          })
+        )
+        |> json_response(201)
+
+      assert body["run_id"]
+      assert body["epoch_id"]
+
+      # Real state check: read the created rows back from the DB, don't
+      # trust the response body alone.
+      reloaded_run = Ash.get!(Run, body["run_id"], authorize?: false)
+      assert reloaded_run.org_id == org_a.id
+      assert reloaded_run.provider == "zcode-org-a-submit"
+      assert reloaded_run.goal == "Chicago org-scoped submission over real HTTP."
+
+      reloaded_epoch = Ash.get!(Epoch, body["epoch_id"], authorize?: false)
+      assert reloaded_epoch.run_id == reloaded_run.id
+      assert reloaded_epoch.cycle == 0
+      assert reloaded_epoch.state == :running
+      assert reloaded_epoch.worktree == "/tmp/wt-org-a"
+    end
+
+    test "an org-less submission defaults provider to zcode and generates an exact_subject",
+         %{conn: conn} do
+      org_a = create_org!("acme-test-org-defaults")
+      token_a = org_token!("acme-token-defaults", org_a)
+
+      body =
+        conn
+        |> with_org_token(token_a)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{goal: "no provider or exact_subject supplied"})
+        )
+        |> json_response(201)
+
+      reloaded_run = Ash.get!(Run, body["run_id"], authorize?: false)
+      assert reloaded_run.provider == "zcode"
+
+      reloaded_epoch = Ash.get!(Epoch, body["epoch_id"], authorize?: false)
+      assert is_binary(reloaded_epoch.exact_subject)
+      assert reloaded_epoch.exact_subject != ""
+    end
+
+    test "the legacy shared token gets a real typed 403 from POST .../runs -- org-less callers cannot submit",
+         %{conn: conn} do
+      body =
+        conn
+        |> with_internal_api_token()
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{goal: "should be refused: no org on this token"})
+        )
+        |> json_response(403)
+
+      assert body["error"] == "org_scoped_token_required"
+    end
+
+    test "an org-less DB-backed InternalApiToken also gets the real typed 403 from POST .../runs",
+         %{conn: conn} do
+      {:ok, raw_token, _token} = InternalApiTokenAuth.issue("org-less-db-token")
+
+      body =
+        conn
+        |> with_org_token(raw_token)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{goal: "should be refused: org-less DB token"})
+        )
+        |> json_response(403)
+
+      assert body["error"] == "org_scoped_token_required"
+    end
+
+    test "a request with no Authorization header still gets the existing real fail-closed 401",
+         %{conn: conn} do
+      conn
+      |> put_req_header("content-type", "application/json")
+      |> post("/internal-api/execution/runs", Jason.encode!(%{goal: "no auth header"}))
+      |> json_response(401)
+    end
+
+    test "org A's token hitting GET .../receipts for an epoch under org B's own real run gets a real 404, proven with a receipt that genuinely exists",
+         %{conn: conn} do
+      org_a = create_org!("acme-test-org-b-scope-a")
+      org_b = create_org!("acme-test-org-b-scope-b")
+      token_a = org_token!("acme-token-scope-a", org_a)
+      token_b = org_token!("acme-token-scope-b", org_b)
+
+      worktree = make_git_worktree()
+
+      # Org B submits its own real Run/Epoch via the real HTTP submission
+      # surface (not the test's own provider_run_and_epoch/2 shortcut).
+      submit_body =
+        conn
+        |> with_org_token(token_b)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{
+            goal: "org B's real submitted work",
+            worktree: worktree,
+            provider: "zcode-org-b-scope"
+          })
+        )
+        |> json_response(201)
+
+      epoch_id = submit_body["epoch_id"]
+
+      # Real claim/admit/close cycle over the shared worker-pull path (the
+      # worker pool is intentionally NOT org-restricted -- see the
+      # controller/router comments -- so this uses the ordinary shared
+      # internal token, same as every other worker-loop test in this file)
+      # to seal a REAL Receipt for org B's epoch, not an empty list.
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-org-b-scope",
+          provider_worker_id: "worker-scope"
+        })
+
+      assert claim["epoch_id"] == epoch_id
+
+      closed =
+        tool_call(conn, "close_candidate", %{
+          lease_token: claim["lease_token"],
+          final_head: git_head(worktree),
+          outcome: "alive",
+          evidence: %{"verifier" => "mix test (org scope)"}
+        })
+
+      assert closed["status"] == "closed"
+
+      # Prove the receipt genuinely exists via the admin/legacy read path.
+      admin_receipts =
+        conn
+        |> with_internal_api_token()
+        |> get("/internal-api/execution/epochs/#{epoch_id}/receipts")
+        |> json_response(200)
+
+      assert [admin_receipt] = admin_receipts["receipts"]
+      assert admin_receipt["outcome"] == "alive"
+
+      # Org B's own token CAN read its own epoch's receipt (positive path).
+      own_body =
+        conn
+        |> with_org_token(token_b)
+        |> get("/internal-api/execution/epochs/#{epoch_id}/receipts")
+        |> json_response(200)
+
+      assert [own_receipt] = own_body["receipts"]
+      assert own_receipt["outcome"] == "alive"
+
+      # Org A's own token cannot see it: a real 404, never the empty
+      # `receipts: []` false negative the legacy/unscoped path would give.
+      not_found_body =
+        conn
+        |> with_org_token(token_a)
+        |> get("/internal-api/execution/epochs/#{epoch_id}/receipts")
+        |> json_response(404)
+
+      assert not_found_body["error"] == "epoch_not_found"
+    end
+
+    test "an org token reading receipts for an org-less (admin-tier) epoch gets a real 404, not the org-less data",
+         %{conn: conn} do
+      org_a = create_org!("acme-test-org-orgless-epoch")
+      token_a = org_token!("acme-token-orgless-epoch", org_a)
+
+      # An org-less Run/Epoch, created the same way the pre-existing
+      # admin/internal-tier test suite already does (no org_id at all).
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-orgless-epoch")
+
+      conn
+      |> with_org_token(token_a)
+      |> get("/internal-api/execution/epochs/#{epoch.id}/receipts")
+      |> json_response(404)
+    end
+
+    test "the legacy shared token's receipt reads stay exactly as before this change (regression)",
+         %{conn: conn} do
+      worktree = make_git_worktree()
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-legacy-regression", worktree)
+
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-chicago-legacy-regression",
+          provider_worker_id: "worker-legacy"
+        })
+
+      tool_call(conn, "close_candidate", %{
+        lease_token: claim["lease_token"],
+        final_head: git_head(worktree),
+        outcome: "alive"
+      })
+
+      body =
+        conn
+        |> with_internal_api_token()
+        |> get("/internal-api/execution/epochs/#{epoch.id}/receipts")
+        |> json_response(200)
+
+      assert [receipt] = body["receipts"]
+      assert receipt["outcome"] == "alive"
     end
   end
 

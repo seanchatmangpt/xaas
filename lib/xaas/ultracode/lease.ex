@@ -32,6 +32,30 @@ defmodule Xaas.Ultracode.Lease do
       unavailable verifier downgrades the sealed outcome (falsified
       evidence is :build_broken; unverifiable evidence is
       :partial_alive with the reason in evidence).
+
+  ## `actuate/2` -- a lease may also reach Path A, never by widening Path B
+
+  `admit_tool/2` above is Path B's own hardcoded construction/consequence
+  fence (Bash/git_push/publish refused, unchanged by this section). Separately,
+  `actuate/2` lets a live lease invoke `Xaas.Actuation.run/4` -- this repo's
+  ONE admitted consequential-DO kernel (`Xaas.Actuation`'s moduledoc; also the
+  path `Xaas.Marketplace.Changes.ApplyProviderStatusChange` already uses). It
+  is not a configurable authority ceiling bolted onto Path B's fence -- it
+  grants no new tool allowance and does not touch `@refused_consequence_tools`.
+  It is a second, narrower admitted caller of Path A, gated by:
+
+    * an explicit, opt-in, per-provider `{resource, action}` registry
+      (`actuation_registry/1`) -- empty by default (fail-closed), same
+      real-Application-env convention as `admitted_tools/1`; an unregistered
+      pair is `{:error, {:unregistered_actuation, resource, action}}`, never
+      silently admitted because Path A alone would separately accept it;
+    * Path A's own unmodified admission court
+      (`Xaas.Actuation.Kernel.admit/2`'s `FrontierEvidence`/`CausalAdmission`
+      validations) -- registering a pair here does not bypass a single one of
+      those checks;
+    * real, non-empty, lease-provenanced authority evidence built here, never
+      caller-supplied `authorize?: true` or an empty authority map (which
+      `admit_authority/2` already refuses, `actuation.ex:325-329`).
   """
 
   require Ash.Query
@@ -41,7 +65,7 @@ defmodule Xaas.Ultracode.Lease do
 
   @default_lease_ttl_minutes 30
 
-  @construction_tools ~w(Edit Write Read Grep Glob Task TodoWrite WebFetch)
+  @default_construction_tools ~w(Edit Write Read Grep Glob Task TodoWrite WebFetch)
   # Consequence-class tools refused under this domain's no-ceiling fence.
   @refused_consequence_tools ~w(Bash git_push publish)
 
@@ -129,7 +153,9 @@ defmodule Xaas.Ultracode.Lease do
     with {:ok, epoch} <- live_lease(lease_token) do
       expires_at = DateTime.add(DateTime.utc_now(), @default_lease_ttl_minutes * 60, :second)
 
-      case Ash.update(Ash.Changeset.for_update(epoch, :renew_lease, %{lease_expires_at: expires_at})) do
+      case Ash.update(
+             Ash.Changeset.for_update(epoch, :renew_lease, %{lease_expires_at: expires_at})
+           ) do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
       end
@@ -141,7 +167,18 @@ defmodule Xaas.Ultracode.Lease do
   # ------------------------------------------------------------------
 
   @doc """
-  Per-consequence admission for one proposed provider tool invocation.
+  Per-consequence admission for one proposed provider tool invocation,
+  scoped to the LEASE'S OWN provider (`run.provider`).
+
+  `Run.provider` is an unconstrained string field -- the moduledoc already
+  names "opencode" as a real second provider alongside "zcode" -- so a
+  tool legitimately admitted for one provider must never be silently
+  admitted for a request actually coming from a different, unintended
+  provider's lease. `admitted_tools/1` is the small per-provider registry
+  this fences on; a provider with no explicit entry falls back to
+  `@default_construction_tools` unchanged, so this is additive, not a
+  breaking narrowing (no provider-specific narrowing is evidenced
+  anywhere in this codebase today).
 
   `{:ok, %{decision: :allow}}` or a typed refusal the caller MUST treat as
   DENY.
@@ -149,13 +186,36 @@ defmodule Xaas.Ultracode.Lease do
   @spec admit_tool(String.t(), String.t()) ::
           {:ok, %{decision: :allow}} | {:error, term()}
   def admit_tool(lease_token, tool) when is_binary(lease_token) and is_binary(tool) do
-    with {:ok, _epoch} <- live_lease(lease_token) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
       cond do
-        tool in @construction_tools -> {:ok, %{decision: :allow}}
+        # Checked BEFORE the operator-configurable admitted_tools/1 lookup,
+        # on purpose: @refused_consequence_tools is this domain's one
+        # hardcoded, non-configurable floor (moduledoc above). A
+        # misconfigured `:ultracode_provider_tools` entry that happens to
+        # list "Bash"/"git_push"/"publish" must never be able to defeat it
+        # by winning an earlier cond clause -- the refusal always wins.
         tool in @refused_consequence_tools -> {:error, {:refused_no_authority, tool}}
+        tool in admitted_tools(epoch.run.provider) -> {:ok, %{decision: :allow}}
         true -> {:error, {:unknown_tool_class, tool}}
       end
     end
+  end
+
+  # Per-provider construction-tool vocabulary. Empty by default: no
+  # provider-specific narrowing or extension of `@default_construction_tools`
+  # is evidenced anywhere in this codebase today, so every named provider
+  # ("zcode", "opencode", ...) keeps today's exact admitted-tool behavior
+  # unless a real entry is configured. Real per-provider entries are
+  # supplied via ordinary Application env
+  # (`config :xaas, :ultracode_provider_tools, %{"provider" => [...]}`),
+  # the same real per-environment-config mechanism this repo already uses
+  # elsewhere (see `config :xaas, :ex4pm_ontology_check` in
+  # config/config.exs) -- not a hardcoded guess about a provider's real
+  # tool surface, and not a general plugin system.
+  defp admitted_tools(provider) do
+    :xaas
+    |> Application.get_env(:ultracode_provider_tools, %{})
+    |> Map.get(provider, @default_construction_tools)
   end
 
   @doc """
@@ -180,6 +240,124 @@ defmodule Xaas.Ultracode.Lease do
   end
 
   # ------------------------------------------------------------------
+  # Actuation (Path A reachability -- see moduledoc)
+  # ------------------------------------------------------------------
+
+  @doc """
+  Invokes `Xaas.Actuation.run/4` on behalf of a live-leased provider worker,
+  for one REGISTERED `{resource, action}` pair only. See the moduledoc's
+  "actuate/2" section for what this is and is not.
+
+  `request` (string-keyed, as it arrives off the wire):
+
+    * `"resource"`, `"action"` (required) -- looked up in this lease's
+      provider's `actuation_registry/1`; unregistered is a typed refusal.
+    * `"input"` -- the action's own input map; a non-map is coerced to `%{}`
+      rather than crashing the caller (same fail-closed-not-crash posture as
+      `admit_tool/2`'s unknown-class handling).
+    * `"idempotency_key"` (required) -- passed straight through;
+      `Xaas.Actuation.run/4` itself refuses a missing/blank key.
+
+  There is deliberately no `"subject_id"` wire field. A wire-supplied
+  subject would let ANY live lease of a registered provider name an
+  arbitrary row of the registered resource -- the registry would gate WHICH
+  action runs, never WHICH row it runs against, which is a real broken-
+  object-level-authorization gap (a live lease that may flip one Provider's
+  status could flip anyone's). The `{resource, action}` registry entry
+  itself must supply the subject: `:no_subject` for a subject-less
+  (`:create`-shaped) action, or a fixed `subject_id` string decided at
+  config time by the operator -- never by the caller of this function. This
+  matches the one pre-existing Path A caller in this codebase
+  (`Xaas.Marketplace.Changes.ApplyProviderStatusChange`), whose `subject_id`
+  is likewise never attacker/caller-controlled wire input.
+
+  Returns exactly what `Xaas.Actuation.run/4` returns: `{:ok, envelope}` with
+  real `Ash.Resource`/`ActuationIntent`/`ActuationReceipt` structs for a
+  succeeded or replayed attempt, `{:error, reason}` for a refused admission,
+  a failed consequential action, or an idempotency conflict.
+  """
+  @spec actuate(String.t(), map()) :: {:ok, map()} | {:error, term()}
+  def actuate(lease_token, request) when is_binary(lease_token) and is_map(request) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]),
+         {:ok, resource, action, subject_id} <-
+           resolve_registered(epoch.run.provider, request["resource"], request["action"]) do
+      authority = %{
+        "kind" => "ultracode_lease_actuation",
+        "provider" => epoch.run.provider,
+        "leased_to" => epoch.leased_to,
+        "lease_fingerprint" => lease_fingerprint(lease_token),
+        "epoch_id" => epoch.id,
+        "run_id" => epoch.run.id
+      }
+
+      input = if is_map(request["input"]), do: request["input"], else: %{}
+
+      Xaas.Actuation.run(
+        resource,
+        action,
+        input,
+        subject_id: subject_id,
+        idempotency_key: request["idempotency_key"],
+        authorize?: false,
+        authority: authority
+      )
+    end
+  end
+
+  # No atomization of caller input anywhere in this path (unlike a tool
+  # name, a `{resource, action}` pair would otherwise mean creating or
+  # matching arbitrary module/action atoms from attacker-controlled
+  # strings) -- the registry's VALUES already carry the real, operator-
+  # configured atoms; lookup is by the raw string pair only. The subject is
+  # resolved from the SAME registry entry, never from the wire (see
+  # `actuate/2`'s moduledoc section).
+  defp resolve_registered(provider, resource, action)
+       when is_binary(resource) and is_binary(action) do
+    case Map.get(actuation_registry(provider), {resource, action}) do
+      {resource_module, action_atom, :no_subject}
+      when is_atom(resource_module) and is_atom(action_atom) ->
+        {:ok, resource_module, action_atom, nil}
+
+      {resource_module, action_atom, subject_id}
+      when is_atom(resource_module) and is_atom(action_atom) and is_binary(subject_id) ->
+        {:ok, resource_module, action_atom, subject_id}
+
+      _ ->
+        {:error, {:unregistered_actuation, {resource, action}}}
+    end
+  end
+
+  defp resolve_registered(_provider, resource, action),
+    do: {:error, {:unregistered_actuation, {resource, action}}}
+
+  # Per-provider actuation registry -- empty by default (fail-closed): no
+  # provider reaches `Xaas.Actuation.run/4` for any `{resource, action}` pair
+  # unless an operator explicitly registers it, e.g.
+  # `config :xaas, :ultracode_actuation_registry,
+  #    %{"zcode" => %{{"Xaas.Marketplace.Provider", "actuate_status"} =>
+  #                      {Xaas.Marketplace.Provider, :actuate_status,
+  #                       "9c2c0b2e-....-provider-uuid"}}}`
+  # -- the same opt-in-only, real per-environment-config mechanism
+  # `admitted_tools/1` already uses, independent from it: registering a pair
+  # here grants no `admit_tool/2` allowance, and vice versa. The third tuple
+  # element is `:no_subject` (subject-less/`:create`-shaped actions) or a
+  # fixed subject_id string the OPERATOR names at config time -- see
+  # `actuate/2`'s moduledoc for why this can never be wire-supplied.
+  defp actuation_registry(provider) do
+    :xaas
+    |> Application.get_env(:ultracode_actuation_registry, %{})
+    |> Map.get(provider, %{})
+  end
+
+  # The lease token is itself a bearer capability; never persist it verbatim
+  # into actuation evidence (a durable ActuationIntent/Receipt row) -- a
+  # one-way fingerprint is enough provenance to bind the actuation to the
+  # exact lease that requested it without extending the token's blast radius.
+  defp lease_fingerprint(lease_token) do
+    :crypto.hash(:sha256, lease_token) |> Base.encode16(case: :lower)
+  end
+
+  # ------------------------------------------------------------------
   # Closure
   # ------------------------------------------------------------------
 
@@ -195,7 +373,9 @@ defmodule Xaas.Ultracode.Lease do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
 
       with {:ok, epoch} <-
-             Ash.update(Ash.Changeset.for_update(epoch, :record_final_head, %{final_head: final_head})),
+             Ash.update(
+               Ash.Changeset.for_update(epoch, :record_final_head, %{final_head: final_head})
+             ),
            {:ok, epoch} <- Ash.update(Ash.Changeset.for_update(epoch, :complete, %{})),
            {:ok, receipt} <-
              Receipt
@@ -240,8 +420,8 @@ defmodule Xaas.Ultracode.Lease do
   # Lease resolution
   # ------------------------------------------------------------------
 
-  defp live_lease(lease_token) do
-    case find_by_lease(lease_token) do
+  defp live_lease(lease_token, load \\ []) do
+    case find_by_lease(lease_token, load) do
       {:ok, %Epoch{state: :running, lease_expires_at: expires_at} = epoch} ->
         if DateTime.compare(expires_at, DateTime.utc_now()) == :lt do
           {:error, {:lease_expired, lease_token}}
@@ -260,11 +440,11 @@ defmodule Xaas.Ultracode.Lease do
     end
   end
 
-  defp find_by_lease(lease_token) do
+  defp find_by_lease(lease_token, load \\ []) do
     Epoch
     |> Ash.Query.for_read(:read)
     |> Ash.Query.filter(lease_token == ^lease_token)
-    |> Ash.read_one()
+    |> Ash.read_one(load: load)
   end
 
   # ------------------------------------------------------------------
@@ -278,11 +458,16 @@ defmodule Xaas.Ultracode.Lease do
 
       {:ok, other_head} ->
         Logger.warning("XAAS_LEASE_CLOSE head mismatch epoch=#{epoch.id}")
-        {:build_broken, Map.merge(evidence, %{"head_verified" => false, "observed_head" => other_head})}
+
+        {:build_broken,
+         Map.merge(evidence, %{"head_verified" => false, "observed_head" => other_head})}
 
       {:error, reason} ->
         {:partial_alive,
-         Map.merge(evidence, %{"head_verified" => false, "verifier_unavailable" => inspect(reason)})}
+         Map.merge(evidence, %{
+           "head_verified" => false,
+           "verifier_unavailable" => inspect(reason)
+         })}
     end
   end
 

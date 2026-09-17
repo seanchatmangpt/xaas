@@ -81,6 +81,23 @@ defmodule XaasWeb.Router do
     # shadowing reason as the routes above.
     post("/execution/hooks/:event", ExecutionFabricController, :hook)
     post("/execution/mcp", ExecutionFabricController, :mcp)
+
+    # Real customer-facing submission surface (this pass): requires the
+    # request to have authenticated via an org-carrying InternalApiToken
+    # (XaasWeb.Plugs.RequireInternalApiToken attaches conn.assigns[:current_org]
+    # for real -- see that plug's own moduledoc); a legacy shared-token or
+    # org-less DB-token caller is refused with a typed 403, never a
+    # silently org-less Run. Registered before the catch-all forward below
+    # for the same shadowing reason as the sibling routes' own comments.
+    post("/execution/runs", ExecutionFabricController, :create_run)
+
+    # Real lawful read path onto Xaas.Ultracode.Receipt (see that
+    # resource's moduledoc + its `:for_epoch` read action) -- previously
+    # Receipt had no production-reachable read path at all. Real, this
+    # pass: org-scoped when the caller authenticated via an org-carrying
+    # token (see ExecutionFabricController.receipts/2); unchanged/unscoped
+    # for the legacy shared-token or org-less DB-token tiers.
+    get("/execution/epochs/:epoch_id/receipts", ExecutionFabricController, :receipts)
   end
 
   # Production MCP server: read-only Library tools (see Xaas.Library's

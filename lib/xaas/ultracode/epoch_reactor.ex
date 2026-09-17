@@ -139,56 +139,89 @@ defmodule Xaas.Ultracode.EpochReactor do
       # validation only admits `[:expected, :running]` anyway (not
       # `:completed`) -- so state is left as-is; only the missing receipt
       # is repaired below.
-      landed_epoch =
-        case action_taken do
-          # No mutation was committed by this step; there is nothing to
-          # land -- only the compensating receipt below.
-          :await_provider ->
-            {:ok, constructed_epoch}
-
-          :start -> Ash.Changeset.for_update(constructed_epoch, :mark_failed, %{}) |> Ash.update()
-          :complete -> {:ok, constructed_epoch}
-        end
-
-      case landed_epoch do
-        {:ok, epoch} ->
-          Xaas.Ultracode.Receipt
-          |> Ash.Changeset.for_create(:seal, %{
-            epoch_id: epoch.id,
-            subject: epoch.exact_subject,
-            outcome: :build_broken,
-            evidence: %{
-              "undo_reason" =>
-                "a downstream EpochReactor step failed after :construct already committed",
-              "action_taken" => Atom.to_string(action_taken)
-            },
-            sealed_at: DateTime.utc_now()
+      #
+      # ERRC raise (concurrency falsifier): the `:start` compensation used
+      # to apply `:mark_failed` straight to `constructed_epoch`, the
+      # in-memory struct `:construct` returned -- a snapshot that can be
+      # stale by the time Reactor actually invokes `undo` (a concurrent
+      # `Xaas.Ultracode.Lease.close/4`/`refuse/3` on the same epoch, or a
+      # second EpochReactor pass, can have already moved the real row on).
+      # `EpochTransitionAllowed`'s `from:` check reads the CHANGESET's
+      # `data` -- i.e. whatever struct is handed to
+      # `Ash.Changeset.for_update/2` -- not a fresh read, so a stale
+      # struct that still says `:running` would pass validation and
+      # silently overwrite a real `:completed`/`:failed` row, corrupting
+      # the very `CompletedEpoch => Receipt` invariant this undo exists to
+      # protect. Fixed by re-fetching the real current row immediately
+      # before compensating and refusing -- a typed, receipted refusal,
+      # never a silent no-op and never a clobber -- when it has moved out
+      # of the `:running` state `:construct` actually left it in.
+      case action_taken do
+        :await_provider ->
+          undo_seal_receipt(constructed_epoch, :build_broken, %{
+            "undo_reason" =>
+              "a downstream EpochReactor step failed after :construct already committed",
+            "action_taken" => Atom.to_string(action_taken)
           })
-          |> Ash.create()
-          |> case do
-            {:ok, _receipt} ->
-              :ok
+
+        :complete ->
+          undo_seal_receipt(constructed_epoch, :build_broken, %{
+            "undo_reason" =>
+              "a downstream EpochReactor step failed after :construct already committed",
+            "action_taken" => Atom.to_string(action_taken)
+          })
+
+        :start ->
+          case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id) do
+            {:ok, %{state: :running} = fresh_epoch} ->
+              case Ash.Changeset.for_update(fresh_epoch, :mark_failed, %{}) |> Ash.update() do
+                {:ok, failed_epoch} ->
+                  undo_seal_receipt(failed_epoch, :build_broken, %{
+                    "undo_reason" =>
+                      "a downstream EpochReactor step failed after :construct already committed",
+                    "action_taken" => Atom.to_string(action_taken)
+                  })
+
+                {:error, error} ->
+                  # Reactor's undo contract expects `:ok`/`:retry`/
+                  # `{:error, _}` completion, not a raise -- log rather
+                  # than crash.
+                  Logger.error(
+                    "[ultracode] undo: failed to mark_failed epoch " <>
+                      "#{constructed_epoch.id}: #{inspect(error)}"
+                  )
+
+                  :ok
+              end
+
+            {:ok, %{state: real_state}} ->
+              # The real row moved out from under this compensation --
+              # refuse cleanly instead of clobbering it. Still a real,
+              # receipted event (not a silent no-op): the refusal lands
+              # as an :refused Receipt naming exactly what was observed.
+              Logger.warning(
+                "[ultracode] undo: refusing to compensate epoch " <>
+                  "#{constructed_epoch.id} -- real row is #{inspect(real_state)}, " <>
+                  "not the :running state :construct left it in (a concurrent " <>
+                  "close/refuse/re-lease moved it); compensating would clobber a " <>
+                  "settled row"
+              )
+
+              undo_seal_receipt(constructed_epoch, :refused, %{
+                "undo_refused_reason" => "concurrent_state_change",
+                "action_taken" => Atom.to_string(action_taken),
+                "expected_state" => "running",
+                "observed_state" => Atom.to_string(real_state)
+              })
 
             {:error, error} ->
-              # Reactor's undo contract expects `:ok`/`:retry`/`{:error,
-              # _}` completion, not a raise -- log rather than crash.
-              # The Epoch still landed visibly (either :failed or its
-              # real :completed state), even in this doubly-degraded case.
               Logger.error(
-                "[ultracode] undo: failed to seal build_broken Receipt for epoch " <>
-                  "#{epoch.id}: #{inspect(error)}"
+                "[ultracode] undo: failed to re-fetch epoch #{constructed_epoch.id} " <>
+                  "before compensating: #{inspect(error)}"
               )
 
               :ok
           end
-
-        {:error, error} ->
-          Logger.error(
-            "[ultracode] undo: failed to mark_failed epoch #{constructed_epoch.id}: " <>
-              "#{inspect(error)}"
-          )
-
-          :ok
       end
     end)
   end
@@ -286,4 +319,33 @@ defmodule Xaas.Ultracode.EpochReactor do
   end
 
   return(:receipt)
+
+  # Seals the compensating Receipt for a `:construct` undo. Shared by the
+  # successful-compensation, refused-compensation, and no-mutation-needed
+  # paths above so the evidence-sealing logic (and its own
+  # degrade-don't-crash handling of a failed seal, matching Reactor's own
+  # undo contract) exists exactly once.
+  defp undo_seal_receipt(epoch, outcome, evidence) do
+    Xaas.Ultracode.Receipt
+    |> Ash.Changeset.for_create(:seal, %{
+      epoch_id: epoch.id,
+      subject: epoch.exact_subject,
+      outcome: outcome,
+      evidence: evidence,
+      sealed_at: DateTime.utc_now()
+    })
+    |> Ash.create()
+    |> case do
+      {:ok, _receipt} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error(
+          "[ultracode] undo: failed to seal #{outcome} Receipt for epoch " <>
+            "#{epoch.id}: #{inspect(error)}"
+        )
+
+        :ok
+    end
+  end
 end

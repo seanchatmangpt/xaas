@@ -17,6 +17,19 @@ defmodule Xaas.Ultracode.Epoch do
   - `AtMostOneActiveEpoch(run)` -- `Xaas.Ultracode.Validations.
     AtMostOneActiveEpoch`, run on `:create`/`:update` whenever `state` is
     being set to `:running`.
+
+  ## Org scoping (see ADR-0002, `Xaas.Ultracode.Run`'s own moduledoc)
+
+  Deliberately no separate `org_id` column here: `Run.org_id` (real,
+  disclosed, unenforced -- see that module's moduledoc) is this Run's own
+  Epochs' single source of truth for org provenance, reached via the
+  existing `belongs_to :run` below (`epoch.run.org_id`), the same
+  normalized-through-the-parent shape every enforced convention elsewhere
+  in this codebase avoids duplicating across a relationship hop. `Lease`
+  (`Xaas.Ultracode.Lease`) owns no resource of its own -- its
+  `lease_token`/`leased_to`/`worktree`/`final_head` fields live on THIS
+  resource (see `Lease`'s own moduledoc), so there is no separate `Lease`
+  schema to seam either.
   """
 
   use Xaas.Resource,

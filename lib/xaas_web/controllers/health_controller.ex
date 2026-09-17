@@ -5,7 +5,7 @@ defmodule XaasWeb.HealthController do
   (`docs/claude/diataxis/explanation/errc-innovation-grid.md`): this repo
   had zero health/readiness aggregation endpoint anywhere before this.
 
-  Runs three real checks, not stubs:
+  Runs four real checks, not stubs:
 
     1. `Xaas.LegacyRepo` connectivity -- a real `Ecto.Adapters.SQL.query!/3`
        (`SELECT 1`) against the real sandboxed/dev Postgres.
@@ -31,6 +31,15 @@ defmodule XaasWeb.HealthController do
        already establishes for this whole `/internal-api` scope) so a
        real deny-by-default policy on any of the 7 resources can never
        make the health check itself report a false negative.
+    4. `Xaas.Ultracode.TickHealth.check/1` -- real liveness for
+       `Xaas.Ultracode.Run`'s AshOban `:tick` cron (see that module's
+       moduledoc), reusing Oban's own real `oban_jobs` table rather than
+       a bespoke event pipeline. `:stale` reports as this check's
+       `"error"` status (a stale tick is real production evidence
+       something is wrong, matching every other check's semantics here)
+       carrying `last_tick_at`/`elapsed_minutes`/`stale_after_minutes` so
+       an operator does not have to separately run
+       `mix xaas.ultracode.tick_health` to see the same numbers.
 
   Returns real JSON with a per-check `status` (`"ok"` / `"error"`) and
   `latency_ms`, top-level `status` `"ok"` only when every check passed,
@@ -41,6 +50,7 @@ defmodule XaasWeb.HealthController do
   use XaasWeb, :controller
 
   alias Xaas.{Accounts, Billing, Governance, Ledger, Marketplace, Operations, Platform}
+  alias Xaas.Ultracode.TickHealth
 
   @domain_checks [
     {"accounts", Accounts.Org},
@@ -57,6 +67,7 @@ defmodule XaasWeb.HealthController do
       %{}
       |> Map.put("repo", timed(&check_repo/0))
       |> Map.put("ontop", timed(&check_ontop/0))
+      |> Map.put("ultracode_tick", timed(&check_ultracode_tick/0))
       |> Map.merge(domain_checks())
 
     all_ok? = Enum.all?(checks, fn {_name, %{status: status}} -> status == "ok" end)
@@ -113,6 +124,29 @@ defmodule XaasWeb.HealthController do
     count = Ash.count!(resource, authorize?: false)
     {:ok, %{count: count}}
   end
+
+  defp check_ultracode_tick do
+    case TickHealth.check() do
+      %{status: :healthy} = result ->
+        {:ok,
+         %{
+           last_tick_at: format_datetime(result.last_tick_at),
+           elapsed_minutes: result.elapsed_minutes
+         }}
+
+      %{status: :stale} = result ->
+        {:error,
+         %{
+           last_tick_at: format_datetime(result.last_tick_at),
+           elapsed_minutes: result.elapsed_minutes,
+           stale_after_minutes: result.stale_after_minutes,
+           reason: "no #{result.worker} job completed or started executing recently enough"
+         }}
+    end
+  end
+
+  defp format_datetime(nil), do: nil
+  defp format_datetime(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
 
   defp req_module, do: Application.get_env(:xaas, :ontop_proxy_http_client, Req)
 

@@ -14,10 +14,14 @@ defmodule Mix.Tasks.Xaas.GenZcodePlugin do
 
     * `.mcp.json` registers the `xaas-execution` MCP server (claim_next,
       heartbeat, admit_tool, record_provider_event, close_candidate, refuse).
-    * `hooks/hooks.json` + `hooks/*.mjs` implement the provider lifecycle:
-      PreToolUse is the admission court (transport failure denies, never
-      allows), PostToolUse/Failure record observations, Stop attempts
-      head-verified closure.
+      There are no ZCode/Claude-Code-style PreToolUse/PostToolUse/Stop hooks
+      in this plugin — admission and observation are explicit MCP tool calls
+      the worker makes itself, not automatic host-level interception. A
+      transport failure on any of those calls must be treated by the worker
+      as a denial (see the doctrine below), never as an implicit allow.
+    * `scripts/xaas-lease.mjs` persists the current claim_next result to a
+      local state file keyed by cwd, so the worker can recover its lease
+      token across tool calls within the same worktree.
     * `commands/xaas.md` + `skills/xaas-worker/SKILL.md` +
       `agents/xaas-worker.md` give the provider agent its worker contract.
 
@@ -86,10 +90,14 @@ defmodule Mix.Tasks.Xaas.GenZcodePlugin do
            zcode plugins install xaas-fabric@<marketplace> --scope user --yes
            zcode plugins configure xaas-fabric@<marketplace> \\
              --options-file (with "#{String.downcase(token_env)}": <internal api token>)
-      2. Hooks still read #{token_env} from the session environment:
-         export #{token_env}=<internal api token> before launching zcode.
-      3. In a leased worktree, run /xaas and confirm claim -> PreToolUse
-         admission -> Stop closure through the XaaS log stream.
+      2. The worker process still reads #{token_env} from its own session
+         environment for scripts/xaas-lease.mjs: export #{token_env}=<internal
+         api token> before launching zcode.
+      3. In a leased worktree, run /xaas and confirm the full MCP loop through
+         the XaaS log stream: claim_next -> explicit admit_tool calls ->
+         record_provider_event -> close_candidate/refuse. There is no
+         PreToolUse/Stop hook in this plugin; every admission/observation step
+         is a tool call the worker makes on purpose, not an automatic gate.
     """)
   end
 

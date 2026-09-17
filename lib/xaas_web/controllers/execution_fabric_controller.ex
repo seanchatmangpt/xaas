@@ -15,15 +15,42 @@ defmodule XaasWeb.ExecutionFabricController do
 
     * `POST /internal-api/execution/mcp` — a stateless MCP JSON-RPC 2.0
       endpoint exposing claim_next / heartbeat / admit_tool /
-      record_provider_event / close_candidate / refuse to the provider's
-      MCP client.
+      record_provider_event / close_candidate / refuse / actuate to the
+      provider's MCP client. `actuate` is the ZCode-UI-as-actuator seam: it
+      forwards a REGISTERED `{resource, action}` pair straight to
+      `Xaas.Ultracode.Lease.actuate/2` (see that function's docs), the only
+      way a provider worker crosses into the admitted `Xaas.Actuation.run/4`
+      DO kernel — a wholly separate, narrower surface from `admit_tool`'s
+      own construction/consequence fence, which this does not touch.
+
+    * `GET /internal-api/execution/epochs/:epoch_id/receipts` — the real
+      lawful read path onto `Xaas.Ultracode.Receipt` (see that resource's
+      moduledoc): every sealed Receipt for one Epoch, scoped by the
+      required `epoch_id` path param and gated by the same Bearer token
+      as every other route in this controller. Added to close a real gap:
+      Receipt previously had no production-reachable read path at all.
+      Real, this pass: org-scoped to a real 404 (never a leaking 403) when
+      the caller authenticated via an org-carrying token and the epoch's
+      run belongs to a different org (or none) -- see `receipts/2` below.
+      Unchanged for the legacy shared-token / org-less DB-token tiers.
+
+    * `POST /internal-api/execution/runs` — real customer-facing
+      submission surface (this pass): creates a Run + its first, already
+      `:running` Epoch (cycle 0) directly from the AUTHENTICATED org
+      `XaasWeb.Plugs.RequireInternalApiToken` resolved onto
+      `conn.assigns[:current_org]` -- never from any request body/header
+      field a client could set. A caller authenticated only via the legacy
+      shared token, or a DB token with no `org_id`, gets a real, typed 403
+      (`org_scoped_token_required`), never a silently org-less Run. See
+      `create_run/2` below.
   """
 
   use XaasWeb, :controller
 
   require Logger
 
-  alias Xaas.Ultracode.Lease
+  alias Xaas.Accounts.Org
+  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Run}
 
   @mcp_tools [
     %{
@@ -91,6 +118,29 @@ defmodule XaasWeb.ExecutionFabricController do
         type: "object",
         properties: %{lease_token: %{type: "string"}, reason: %{type: "string"}},
         required: ["lease_token", "reason"]
+      }
+    },
+    %{
+      name: "actuate",
+      description:
+        "Invoke the admitted Ash.Reactor DO kernel (Xaas.Actuation.run/4) for one " <>
+          "REGISTERED {resource, action} pair under this lease's own provider registry. " <>
+          "A wholly separate, narrower surface from admit_tool's construction/consequence " <>
+          "fence -- Bash/git_push/publish remain refused there, unchanged. An unregistered " <>
+          "pair is refused; authority evidence is always attached here and bound to this " <>
+          "lease, never an empty/delegated authority map. There is no subject_id argument " <>
+          "on purpose -- the registered pair's own config decides which subject (or none) " <>
+          "it may act on, never the caller.",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          lease_token: %{type: "string"},
+          resource: %{type: "string"},
+          action: %{type: "string"},
+          input: %{type: "object"},
+          idempotency_key: %{type: "string"}
+        },
+        required: ["lease_token", "resource", "action", "idempotency_key"]
       }
     }
   ]
@@ -229,7 +279,11 @@ defmodule XaasWeb.ExecutionFabricController do
     case dispatch_tool(name, Map.get(params, "arguments", %{})) do
       {:ok, result} ->
         {:ok,
-         %{jsonrpc: "2.0", id: id, result: %{content: [%{type: "text", text: Jason.encode!(result)}]}}}
+         %{
+           jsonrpc: "2.0",
+           id: id,
+           result: %{content: [%{type: "text", text: Jason.encode!(result)}]}
+         }}
 
       {:error, reason} ->
         # Tool-level refusal is a JSON-RPC tool error carrying the typed
@@ -316,7 +370,177 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp dispatch_tool("refuse", _), do: {:error, :lease_token_and_reason_required}
 
+  defp dispatch_tool("actuate", %{"lease_token" => token} = args) when is_binary(token) do
+    case Lease.actuate(token, args) do
+      {:ok, envelope} -> {:ok, format_actuation(envelope)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp dispatch_tool("actuate", _), do: {:error, :lease_token_required}
+
   defp dispatch_tool(other, _), do: {:error, {:unknown_tool, other}}
+
+  # ------------------------------------------------------------------
+  # Customer-facing submission surface (real, this pass — see moduledoc)
+  # ------------------------------------------------------------------
+
+  def create_run(%{method: "POST"} = conn, params) do
+    case conn.assigns[:current_org] do
+      %Org{} = org -> do_create_run(conn, org, params)
+      _ -> org_scoped_token_required(conn)
+    end
+  end
+
+  # `org_id` is set from the AUTHENTICATED `org` this function was handed
+  # by `create_run/2` (itself sourced only from `conn.assigns[:current_org]`,
+  # which `XaasWeb.Plugs.RequireInternalApiToken` derives from the verified
+  # bearer token) — never from `params`, which is untrusted client input.
+  defp do_create_run(conn, %Org{} = org, params) do
+    goal = params["goal"]
+    worktree = params["worktree"]
+    provider = params["provider"] || "zcode"
+
+    with {:ok, run} <- create_run_row(goal, provider, org.id),
+         exact_subject = params["exact_subject"] || default_exact_subject(org, run),
+         {:ok, epoch} <- create_running_epoch(run, exact_subject, worktree) do
+      conn
+      |> put_status(201)
+      |> json(%{run_id: run.id, epoch_id: epoch.id})
+    else
+      {:error, reason} ->
+        conn
+        |> put_status(400)
+        |> json(%{error: "invalid_request", detail: format_reason(reason)})
+    end
+  end
+
+  defp create_run_row(goal, provider, org_id) do
+    Run
+    |> Ash.Changeset.for_create(
+      :create,
+      %{goal: goal, provider: provider, org_id: org_id},
+      authorize?: false
+    )
+    |> Ash.create()
+  end
+
+  # Cycle 0, state :running directly (not via Run.:start/CreateFirstEpoch,
+  # which produces a :expected epoch) -- same shape this controller's own
+  # test suite already relies on (provider_run_and_epoch/2 in
+  # execution_fabric_controller_test.exs), so a run submitted here is
+  # immediately claim_next-visible to a provider worker.
+  defp create_running_epoch(run, exact_subject, worktree) do
+    Epoch
+    |> Ash.Changeset.for_create(
+      :create,
+      %{
+        run_id: run.id,
+        cycle: 0,
+        exact_subject: exact_subject,
+        state: :running,
+        started_at: DateTime.utc_now(),
+        worktree: worktree
+      },
+      authorize?: false
+    )
+    |> Ash.create()
+  end
+
+  defp default_exact_subject(%Org{slug: slug}, %Run{id: run_id}),
+    do: "org:#{slug}-run:#{run_id}"
+
+  defp org_scoped_token_required(conn) do
+    conn
+    |> put_status(403)
+    |> json(%{error: "org_scoped_token_required"})
+  end
+
+  # ------------------------------------------------------------------
+  # Receipt read surface (real lawful read path — see
+  # Xaas.Ultracode.Receipt's moduledoc + its `:for_epoch` read action)
+  # ------------------------------------------------------------------
+
+  def receipts(%{method: "GET"} = conn, %{"epoch_id" => epoch_id}) do
+    case conn.assigns[:current_org] do
+      %Org{} = org -> receipts_for_org(conn, epoch_id, org)
+      _ -> receipts_unscoped(conn, epoch_id)
+    end
+  end
+
+  # Unchanged from before this pass -- the legacy shared-token / org-less
+  # DB-token tiers keep exactly this behavior (real regression floor per
+  # this pass's own instructions).
+  defp receipts_unscoped(conn, epoch_id) do
+    case Receipt.for_epoch(epoch_id) do
+      {:ok, receipts} ->
+        json(conn, %{
+          epoch_id: epoch_id,
+          receipts: Enum.map(receipts, &format_receipt/1)
+        })
+
+      {:error, reason} ->
+        conn
+        |> put_status(400)
+        |> json(%{error: "invalid_epoch_id", detail: format_reason(reason)})
+    end
+  end
+
+  # Real org scoping (this pass): only reachable when the caller
+  # authenticated via an org-carrying token. A real 404 (never a 403,
+  # which would leak that the epoch exists) for an epoch whose Run belongs
+  # to a different org, or one with no org_id at all -- org-less epochs
+  # stay admin/internal-tier only, never visible to a customer token.
+  defp receipts_for_org(conn, epoch_id, %Org{id: org_id}) do
+    case Ash.get(Epoch, epoch_id, authorize?: false, load: [:run]) do
+      {:ok, %Epoch{run: %Run{org_id: ^org_id}}} ->
+        receipts_unscoped(conn, epoch_id)
+
+      {:ok, %Epoch{}} ->
+        epoch_not_found(conn, epoch_id)
+
+      {:error, %Ash.Error.Invalid{}} ->
+        # Syntactically invalid epoch id -- preserve the same 400 contract
+        # as the unscoped path (Receipt.for_epoch re-validates and
+        # produces the identical "invalid_epoch_id" response).
+        receipts_unscoped(conn, epoch_id)
+
+      {:error, _not_found} ->
+        epoch_not_found(conn, epoch_id)
+    end
+  end
+
+  defp epoch_not_found(conn, epoch_id) do
+    conn
+    |> put_status(404)
+    |> json(%{error: "epoch_not_found", detail: "no accessible epoch #{inspect(epoch_id)}"})
+  end
+
+  # Shapes an `Xaas.Actuation.run/4` envelope for the wire. `envelope.result`
+  # is the LIVE resource struct on purpose (actuation_test.exs's replay-
+  # regression coverage) -- not JSON-safe, so the transport uses
+  # `receipt.result` instead, the already-`json_safe/1`-processed snapshot
+  # `Xaas.Actuation.Kernel.seal/2` persisted.
+  defp format_actuation(envelope) do
+    %{
+      status: Atom.to_string(envelope.status),
+      replay: envelope.replay?,
+      intent_id: envelope.intent.id,
+      receipt_id: envelope.receipt.id,
+      result: envelope.receipt.result
+    }
+  end
+
+  defp format_receipt(%Receipt{} = receipt) do
+    %{
+      id: receipt.id,
+      epoch_id: receipt.epoch_id,
+      subject: receipt.subject,
+      outcome: receipt.outcome,
+      evidence: receipt.evidence,
+      sealed_at: receipt.sealed_at
+    }
+  end
 
   # ------------------------------------------------------------------
   # Helpers
@@ -340,8 +564,11 @@ defmodule XaasWeb.ExecutionFabricController do
           _ -> {:error, :invalid_json}
         end
 
-      {:more, _, _} -> {:error, :body_too_large}
-      {:error, reason} -> {:error, reason}
+      {:more, _, _} ->
+        {:error, :body_too_large}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

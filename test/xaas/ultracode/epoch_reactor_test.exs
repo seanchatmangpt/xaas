@@ -301,5 +301,77 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       assert receipt.subject == subject
       assert receipt.evidence["action_taken"] == "complete"
     end
+
+    test "action_taken == :start against a CONCURRENTLY-changed row refuses cleanly instead of clobbering it",
+         %{run: run, subject: subject, construct_step: construct_step} do
+      epoch =
+        Epoch
+        |> Ash.Changeset.for_create(:create, %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: subject,
+          state: :expected,
+          expected_at: DateTime.utc_now()
+        })
+        |> Ash.create!()
+
+      # Real Construct-equivalent mutation: :expected -> :running -- the
+      # exact transition the real :construct step's run/2 performs for
+      # action_taken == :start. `stale_constructed_epoch` is the
+      # in-memory struct :construct would have handed undo, captured
+      # BEFORE the concurrent change below -- exactly the falsifier this
+      # fix targets: a snapshot that goes stale by the time undo actually
+      # runs.
+      stale_constructed_epoch =
+        epoch
+        |> Ash.Changeset.for_update(:start, %{})
+        |> Ash.update!()
+
+      assert stale_constructed_epoch.state == :running
+
+      # Real concurrent change: a SECOND, independent Ash update against
+      # the same row -- not a mock, not a stub, a real transition to
+      # :completed via the real admitted :complete action (as if
+      # Lease.close/4 had closed this same epoch out-of-band while the
+      # original EpochReactor invocation was still in flight downstream
+      # of :construct). The in-memory `stale_constructed_epoch` above
+      # still reads :running -- it was captured before this update ran.
+      concurrently_completed_epoch =
+        stale_constructed_epoch
+        |> Ash.Changeset.for_update(:complete, %{})
+        |> Ash.update!()
+
+      assert concurrently_completed_epoch.state == :completed
+
+      value = %{epoch: stale_constructed_epoch, action_taken: :start}
+
+      # undo must not crash and must not silently no-op -- it returns
+      # :ok, exactly like the other undo branches, but the crucial
+      # falsifier is what it did NOT do: see the reload below.
+      assert :ok = Reactor.Step.undo(construct_step, value, %{}, %{})
+
+      # THE FALSIFIER: the real row must still be :completed. Before the
+      # fix, undo applied :mark_failed straight to the stale
+      # `stale_constructed_epoch` struct (state: :running in memory), and
+      # `EpochTransitionAllowed`'s `from: [:expected, :running]` check
+      # reads the CHANGESET's data -- the stale struct, not a fresh read
+      # -- so it would have passed and silently clobbered this real
+      # :completed row to :failed.
+      reloaded = Ash.get!(Epoch, epoch.id)
+      assert reloaded.state == :completed
+
+      # Not a silent no-op either: a real, typed :refused Receipt lands
+      # naming exactly what was observed.
+      [refusal_receipt] =
+        Receipt
+        |> Ash.Query.filter(epoch_id == ^epoch.id and outcome == :refused)
+        |> Ash.read!(authorize?: false)
+
+      assert refusal_receipt.subject == subject
+      assert refusal_receipt.evidence["undo_refused_reason"] == "concurrent_state_change"
+      assert refusal_receipt.evidence["expected_state"] == "running"
+      assert refusal_receipt.evidence["observed_state"] == "completed"
+      assert refusal_receipt.evidence["action_taken"] == "start"
+    end
   end
 end

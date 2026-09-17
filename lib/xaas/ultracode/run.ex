@@ -14,6 +14,44 @@ defmodule Xaas.Ultracode.Run do
   Run's own next-cycle counter, advanced by whatever creates `Epoch` rows
   (not enforced here -- `Epoch.unique_run_cycle` is the hard constraint).
 
+  ## `org_id` -- real, disclosed, NOT ENFORCED (see ADR-0002)
+
+  Real investigation finding (docs/adr/0002-ultracode-org-scoping-seam.md):
+  Ultracode (`Run`/`Epoch`; `Lease` owns no resource of its own -- see its
+  own moduledoc) was the one unscoped seam in an otherwise org-scoped
+  codebase. This repo has a real, established convention for org scoping
+  (a plain `org_id, :string` attribute + a per-domain
+  `Checks.ActorOrgMatches`-style `Ash.Policy.SimpleCheck` + `XaasWeb.Plugs.
+  ResolveOrgActor` resolving a caller-asserted `X-Org-Id` header into an
+  actor for `/api`'s `AshJsonApi.Router` routes -- see
+  `Xaas.Platform.Checks.ActorOrgMatches` and that plug's own moduledoc for
+  ~14 resources already wired this way).
+
+  That convention does not reach this resource's real HTTP surface.
+  `Run`/`Epoch` have no `json_api do routes do ... end end` block at all --
+  their only real HTTP surface is the custom `XaasWeb.ExecutionFabricController`
+  under `/internal-api/execution/*`, gated by ONE shared `INTERNAL_API_TOKEN`
+  Bearer token with no per-caller actor resolution wired to that router scope,
+  and its MCP/hook tool schemas (`claim_next`, `admit_tool`, ...) carry no
+  org-identifying field at all -- callers are keyed by the free-text
+  `provider` string ("zcode", "opencode"), not by org. Every action
+  currently defined on `Run`/`Epoch` is also already unconditionally
+  `bypass action(...) do authorize_if(always()) end`ed (see `policies do`
+  below and `Epoch`'s own moduledoc) -- there are zero org-scoped policy
+  clauses to extend today, and no real fact ("which org does this caller
+  represent") reaches an Ultracode action to check.
+
+  Applying the existing convention here verbatim would be real but
+  functionally inert dead code (a check with nothing real to compare
+  against on the only path that ever calls it) unless a NEW,
+  undisclosed-anywhere mechanism for asserting org identity on the
+  single-shared-token, provider-keyed execution fabric is also invented --
+  out of scope per this task's own rule 6. `org_id` below is therefore the
+  minimal real, disclosed, schema-only seam: a nullable string attribute,
+  no enforcement, no policy change, so a real migration exists to build on
+  without checking against a fact nothing yet supplies. See ADR-0002 for
+  the full design note and what would need to land first.
+
   ## Scheduling (`oban do` block)
 
   Real `AshOban` (`~> 0.8`, pinned `0.8.14` per `mix.lock`) `scheduled_actions`
@@ -98,7 +136,7 @@ defmodule Xaas.Ultracode.Run do
     defaults([:read])
 
     create :create do
-      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider])
+      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider, :org_id])
     end
 
     update :advance_cycle do
@@ -177,6 +215,17 @@ defmodule Xaas.Ultracode.Run do
     # on verified provider evidence. This is the fact EpochReactor's :plan
     # branches on.
     attribute :provider, :string do
+      public?(true)
+    end
+
+    # Real, disclosed, schema-only seam -- see this module's own moduledoc
+    # ("org_id -- real, disclosed, NOT ENFORCED") and ADR-0002. Nullable,
+    # unenforced: no policy or check reads this attribute today. It exists
+    # so a real org-provenance value can start being recorded now, without
+    # fabricating enforcement logic that has nothing real to check against
+    # on Ultracode's actual (single-shared-token, provider-keyed) HTTP
+    # surface.
+    attribute :org_id, :string do
       public?(true)
     end
 

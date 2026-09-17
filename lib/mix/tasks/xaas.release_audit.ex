@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
   @resource_counts %{
     Xaas.Accounts => 5,
     Xaas.Billing => 7,
-    Xaas.Governance => 27,
+    Xaas.Governance => 28,
     Xaas.Ledger => 4,
     Xaas.Marketplace => 2,
     Xaas.Operations => 18,

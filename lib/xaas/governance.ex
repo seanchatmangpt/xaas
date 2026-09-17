@@ -39,5 +39,6 @@ defmodule Xaas.Governance do
     resource(Xaas.Governance.ApprovalVendorOffboardingAttestationIssue)
     resource(Xaas.Governance.AuditExportToken)
     resource(Xaas.Governance.DataDestructionCertificateIssue)
+    resource(Xaas.Governance.InternalApiToken)
   end
 end

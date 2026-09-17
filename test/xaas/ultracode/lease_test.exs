@@ -95,11 +95,262 @@ defmodule Xaas.Ultracode.LeaseTest do
       provider_run_and_epoch()
       {:ok, _epoch, token, _run} = Lease.claim_next("zcode-test", "worker-1")
 
-      assert {:error, {:unknown_tool_class, "TimeMachine"}} = Lease.admit_tool(token, "TimeMachine")
+      assert {:error, {:unknown_tool_class, "TimeMachine"}} =
+               Lease.admit_tool(token, "TimeMachine")
     end
 
     test "no lease, no admission" do
       assert {:error, _} = Lease.admit_tool("no-such-lease", "Edit")
+    end
+
+    # Real falsifier for the provider-scoping fix: before this, admit_tool
+    # applied one single global `@construction_tools` vocabulary to every
+    # provider's lease, regardless of which provider actually issued it.
+    # Proves the fix with a real, differently-scoped provider entry
+    # (ordinary Application env, not a mock of Lease itself) and two real
+    # leases from two real, different provider Runs.
+    test "a tool admitted for one provider's lease is refused for a different provider's lease" do
+      previous = Application.get_env(:xaas, :ultracode_provider_tools)
+
+      strict_provider = "provider-strict-#{System.unique_integer([:positive])}"
+      broad_provider = "provider-broad-#{System.unique_integer([:positive])}"
+
+      Application.put_env(:xaas, :ultracode_provider_tools, %{
+        strict_provider => ~w(Edit Read),
+        broad_provider => ~w(Edit Read WebFetch)
+      })
+
+      on_exit(fn ->
+        if previous do
+          Application.put_env(:xaas, :ultracode_provider_tools, previous)
+        else
+          Application.delete_env(:xaas, :ultracode_provider_tools)
+        end
+      end)
+
+      provider_run_and_epoch(strict_provider)
+      {:ok, _epoch, strict_token, _run} = Lease.claim_next(strict_provider, "worker-strict")
+
+      provider_run_and_epoch(broad_provider)
+      {:ok, _epoch, broad_token, _run} = Lease.claim_next(broad_provider, "worker-broad")
+
+      # "WebFetch" is legitimately admitted for the broad provider's lease...
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(broad_token, "WebFetch")
+
+      # ...but the SAME tool name is refused when the request actually
+      # comes from a different provider's lease -- never silently allowed
+      # just because some other provider's lease would have allowed it.
+      assert {:error, {:unknown_tool_class, "WebFetch"}} =
+               Lease.admit_tool(strict_token, "WebFetch")
+
+      # A tool both providers share is still allowed for both.
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(strict_token, "Edit")
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(broad_token, "Edit")
+    end
+
+    test "a provider with no explicit registry entry keeps the unchanged default vocabulary" do
+      provider = "provider-unlisted-#{System.unique_integer([:positive])}"
+      provider_run_and_epoch(provider)
+      {:ok, _epoch, token, _run} = Lease.claim_next(provider, "worker-1")
+
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(token, "Edit")
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(token, "WebFetch")
+    end
+
+    # Falsifier for the fence-order gap the adversarial review found: the
+    # refused-consequence-tools check must win even when a misconfigured
+    # per-provider list happens to also name a refused tool -- the fence is
+    # this domain's one non-configurable floor, never overridable by config.
+    test "a misconfigured provider entry naming a refused tool still cannot defeat the fence" do
+      previous = Application.get_env(:xaas, :ultracode_provider_tools)
+      provider = "provider-misconfigured-#{System.unique_integer([:positive])}"
+
+      Application.put_env(:xaas, :ultracode_provider_tools, %{
+        provider => ~w(Edit Bash git_push publish)
+      })
+
+      on_exit(fn ->
+        if previous do
+          Application.put_env(:xaas, :ultracode_provider_tools, previous)
+        else
+          Application.delete_env(:xaas, :ultracode_provider_tools)
+        end
+      end)
+
+      provider_run_and_epoch(provider)
+      {:ok, _epoch, token, _run} = Lease.claim_next(provider, "worker-1")
+
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(token, "Edit")
+      assert {:error, {:refused_no_authority, "Bash"}} = Lease.admit_tool(token, "Bash")
+      assert {:error, {:refused_no_authority, "git_push"}} = Lease.admit_tool(token, "git_push")
+      assert {:error, {:refused_no_authority, "publish"}} = Lease.admit_tool(token, "publish")
+    end
+  end
+
+  describe "actuate/2" do
+    defp with_actuation_registry(registry, fun) do
+      previous = Application.get_env(:xaas, :ultracode_actuation_registry)
+      Application.put_env(:xaas, :ultracode_actuation_registry, registry)
+
+      try do
+        fun.()
+      after
+        if previous do
+          Application.put_env(:xaas, :ultracode_actuation_registry, previous)
+        else
+          Application.delete_env(:xaas, :ultracode_actuation_registry)
+        end
+      end
+    end
+
+    test "a registered pair reaches the real Xaas.Actuation.run/4 DO kernel, with lease-provenanced authority" do
+      provider = "zcode-actuate-#{System.unique_integer([:positive])}"
+      marketplace_provider = Xaas.Generator.create_provider!(%{org_id: "org-actuate"})
+
+      with_actuation_registry(
+        %{
+          provider => %{
+            {"Xaas.Marketplace.Provider", "actuate_status"} =>
+              {Xaas.Marketplace.Provider, :actuate_status, marketplace_provider.id}
+          }
+        },
+        fn ->
+          provider_run_and_epoch(provider)
+          {:ok, _epoch, token, _run} = Lease.claim_next(provider, "worker-1")
+
+          key = "lease-actuate-#{System.unique_integer([:positive])}"
+
+          assert {:ok, envelope} =
+                   Lease.actuate(token, %{
+                     "resource" => "Xaas.Marketplace.Provider",
+                     "action" => "actuate_status",
+                     "input" => %{"status" => "active"},
+                     "idempotency_key" => key
+                   })
+
+          assert envelope.status == :succeeded
+          refute envelope.replay?
+
+          # The real mutation actually landed through the real Reactor DO path,
+          # against exactly the registry-bound subject.
+          assert Xaas.Marketplace.Provider
+                 |> Ash.get!(marketplace_provider.id, authorize?: false)
+                 |> Map.fetch!(:status) == :active
+
+          # Authority evidence is real, non-empty, and bound to this exact
+          # lease -- never an empty/delegated authority map.
+          intent =
+            Ash.get!(Xaas.Operations.ActuationIntent, envelope.intent.id, authorize?: false)
+
+          assert intent.authority["kind"] == "ultracode_lease_actuation"
+          assert intent.authority["provider"] == provider
+          assert intent.authority["lease_fingerprint"]
+          # Never the raw bearer token itself.
+          refute intent.authority["lease_fingerprint"] == token
+
+          # actuate/2 grants no admit_tool/2 allowance -- the two surfaces
+          # stay independent on the very same lease.
+          assert {:error, {:refused_no_authority, "Bash"}} = Lease.admit_tool(token, "Bash")
+        end
+      )
+    end
+
+    # Falsifier for the broken-object-level-authorization gap the adversarial
+    # review found: subject_id used to be raw wire input, so ANY live lease
+    # of the registered provider could name an arbitrary row of the
+    # registered resource. The fix removed the wire field entirely -- the
+    # registry binds the exact subject. Proves the fix by attempting exactly
+    # the attack the review demonstrated: a second, unrelated Provider row
+    # that the registry entry never names must be unreachable.
+    test "a caller cannot redirect a registered actuation onto an unrelated row" do
+      provider = "zcode-actuate-idor-#{System.unique_integer([:positive])}"
+      bound_provider = Xaas.Generator.create_provider!(%{org_id: "org-actuate-bound"})
+      other_provider = Xaas.Generator.create_provider!(%{org_id: "org-actuate-other"})
+
+      with_actuation_registry(
+        %{
+          provider => %{
+            {"Xaas.Marketplace.Provider", "actuate_status"} =>
+              {Xaas.Marketplace.Provider, :actuate_status, bound_provider.id}
+          }
+        },
+        fn ->
+          provider_run_and_epoch(provider)
+          {:ok, _epoch, token, _run} = Lease.claim_next(provider, "worker-1")
+
+          # An attacker-style request tries to smuggle a different subject_id
+          # in the wire map -- the contract has no such field, so it is
+          # simply ignored; the registry-bound subject is always used.
+          assert {:ok, envelope} =
+                   Lease.actuate(token, %{
+                     "resource" => "Xaas.Marketplace.Provider",
+                     "action" => "actuate_status",
+                     "subject_id" => other_provider.id,
+                     "input" => %{"status" => "active"},
+                     "idempotency_key" =>
+                       "lease-actuate-idor-#{System.unique_integer([:positive])}"
+                   })
+
+          assert envelope.status == :succeeded
+
+          # The registry-bound provider changed...
+          assert Xaas.Marketplace.Provider
+                 |> Ash.get!(bound_provider.id, authorize?: false)
+                 |> Map.fetch!(:status) == :active
+
+          # ...the unrelated one the wire tried to name never did.
+          assert Xaas.Marketplace.Provider
+                 |> Ash.get!(other_provider.id, authorize?: false)
+                 |> Map.fetch!(:status) != :active
+        end
+      )
+    end
+
+    test "an unregistered {resource, action} pair is refused, never silently reaching Path A" do
+      provider = "zcode-actuate-unregistered-#{System.unique_integer([:positive])}"
+      provider_run_and_epoch(provider)
+      {:ok, _epoch, token, _run} = Lease.claim_next(provider, "worker-1")
+
+      assert {:error, {:unregistered_actuation, {"Xaas.Marketplace.Provider", "actuate_status"}}} =
+               Lease.actuate(token, %{
+                 "resource" => "Xaas.Marketplace.Provider",
+                 "action" => "actuate_status",
+                 "idempotency_key" => "lease-actuate-unregistered"
+               })
+    end
+
+    test "no lease, no actuation" do
+      assert {:error, _} =
+               Lease.actuate("no-such-lease", %{
+                 "resource" => "Xaas.Marketplace.Provider",
+                 "action" => "actuate_status",
+                 "idempotency_key" => "lease-actuate-no-lease"
+               })
+    end
+
+    test "a pair registered for a different provider's lease is still refused" do
+      strict_provider = "zcode-actuate-strict-#{System.unique_integer([:positive])}"
+      other_provider = "zcode-actuate-other-#{System.unique_integer([:positive])}"
+
+      with_actuation_registry(
+        %{
+          other_provider => %{
+            {"Xaas.Marketplace.Provider", "actuate_status"} =>
+              {Xaas.Marketplace.Provider, :actuate_status, "00000000-0000-0000-0000-000000000000"}
+          }
+        },
+        fn ->
+          provider_run_and_epoch(strict_provider)
+          {:ok, _epoch, token, _run} = Lease.claim_next(strict_provider, "worker-1")
+
+          assert {:error, {:unregistered_actuation, {_, _}}} =
+                   Lease.actuate(token, %{
+                     "resource" => "Xaas.Marketplace.Provider",
+                     "action" => "actuate_status",
+                     "idempotency_key" => "lease-actuate-cross-provider"
+                   })
+        end
+      )
     end
   end
 
@@ -109,7 +360,9 @@ defmodule Xaas.Ultracode.LeaseTest do
       provider_run_and_epoch("zcode-test", worktree)
       {:ok, _epoch, token, _run} = Lease.claim_next("zcode-test", "worker-1")
 
-      assert {:ok, epoch, receipt} = Lease.close(token, git_head(worktree), :alive, %{"verifier" => "mix test"})
+      assert {:ok, epoch, receipt} =
+               Lease.close(token, git_head(worktree), :alive, %{"verifier" => "mix test"})
+
       assert epoch.state == :completed
       assert epoch.final_head == git_head(worktree)
       assert receipt.outcome == :alive
