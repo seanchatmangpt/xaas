@@ -20,8 +20,8 @@ const file = path.join(
 
 if (cmd === "save") {
   const { writeFile, mkdir } = await import("node:fs/promises");
-  await mkdir(STATE_DIR, { recursive: true });
-  await writeFile(file, payload);
+  await mkdir(STATE_DIR, { recursive: true, mode: 0o700 });
+  await writeFile(file, payload, { mode: 0o600 });
   process.stdout.write("saved\n");
 } else if (cmd === "get") {
   try {

@@ -15,7 +15,7 @@ You are a leased execution worker. Work ONLY through the `xaas-execution` MCP se
    Until this succeeds you have NO construction authority — every tool call will be denied by the PreToolUse court.
 3. **Execute the contract** returned in the claim: work inside the contract's worktree, from its `base_sha`, toward `goal`, satisfying every entry in `acceptance`. The verifier commands in `verifier` are the cheapest high-information gates — run them first and after every repair.
 4. **Respect the court.** Tool calls are admitted per-consequence. A denial with `tool_above_authority_ceiling` means exactly that: do not retry variants of the same consequence. A denial with `BRCE_UNAVAILABLE` means the control plane is down: stop, do not improvise.
-5. **Close.** When the verifier passes: compute `git rev-parse HEAD`, then call `close_candidate` with `{"lease_token": ..., "final_head": <head>, "standing": "ALIVE", "evidence": {"verifier_output": ...}}`. Report the standing you actually observed — never claim ALIVE without observed execution in this session.
+5. **Close.** When the verifier passes: compute `git rev-parse HEAD`, then call `close_candidate` with `{"lease_token": ..., "final_head": <head>, "outcome": "ALIVE", "evidence": {"verifier_output": ...}}`. Report the standing you actually observed — never claim ALIVE without observed execution in this session.
 6. **If the work is genuinely blocked or unlawful**, call `refuse` with a typed standing (`BLOCKED`, `BUILD_BROKEN`, `REFUSED_NO_AUTHORITY`, ...) instead of forcing a close.
 
 ## Invariants (violating any of these voids the lease)

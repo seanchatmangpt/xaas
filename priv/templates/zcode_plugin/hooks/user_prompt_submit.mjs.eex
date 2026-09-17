@@ -8,12 +8,9 @@ const lease = await loadLease(evt.cwd);
 try {
   await post("user_prompt_submit", {
     lease_token: leaseToken(evt, lease),
-    event: {
-      hook: "user_prompt_submit",
-      prompt: evt.prompt ?? null,
-      cwd: evt.cwd,
-      session_id: evt.session_id,
-    },
+    prompt: evt.prompt ?? null,
+    cwd: evt.cwd,
+    session_id: evt.session_id,
   });
   done({ status: "recorded" });
 } catch {

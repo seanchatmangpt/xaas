@@ -67,8 +67,8 @@ function stateFile(cwd) {
 }
 
 export async function saveLease(cwd, lease) {
-  await mkdir(STATE_DIR, { recursive: true });
-  await writeFile(stateFile(cwd), JSON.stringify(lease, null, 2));
+  await mkdir(STATE_DIR, { recursive: true, mode: 0o700 });
+  await writeFile(stateFile(cwd), JSON.stringify(lease, null, 2), { mode: 0o600 });
 }
 
 export async function loadLease(cwd) {

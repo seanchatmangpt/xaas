@@ -11,13 +11,10 @@ const lease = await loadLease(evt.cwd);
 try {
   await post("post_tool_use", {
     lease_token: leaseToken(evt, lease),
-    event: {
-      hook: "post_tool_use",
-      tool: toolName(evt),
-      tool_use_id: evt.tool_use_id,
-      cwd: evt.cwd,
-      session_id: evt.session_id,
-    },
+    tool: toolName(evt),
+    tool_use_id: evt.tool_use_id,
+    cwd: evt.cwd,
+    session_id: evt.session_id,
   });
   done({ status: "recorded" });
 } catch {
