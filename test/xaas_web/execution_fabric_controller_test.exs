@@ -255,6 +255,50 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       assert refused["outcome"] == "refused"
       assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :failed
     end
+
+    test "refuse with an arbitrary attacker-chosen reason string never crashes or interns a new atom",
+         %{conn: conn} do
+      {_run, epoch} = provider_run_and_epoch("zcode-chicago-atom-safety")
+
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-chicago-atom-safety",
+          provider_worker_id: "worker-3"
+        })
+
+      # A reason string guaranteed to never already exist as a BEAM atom.
+      # String.to_atom/1 on attacker-controlled input is an atom-table
+      # exhaustion DoS (atoms are never garbage collected); the controller
+      # must fall back to a bounded, already-existing atom instead of
+      # interning this one.
+      novel_reason =
+        "attacker_reason_#{System.unique_integer([:positive])}_#{:erlang.monotonic_time()}"
+
+      assert_raise ArgumentError, fn ->
+        novel_reason |> String.to_charlist() |> :erlang.list_to_existing_atom()
+      end
+
+      refused =
+        tool_call(conn, "refuse", %{lease_token: claim["lease_token"], reason: novel_reason})
+
+      assert refused["status"] == "refused"
+      assert refused["outcome"] == "refused"
+      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :failed
+
+      # The unresolvable reason must not have been silently dropped either:
+      # it lands as a real, inspectable string in the sealed receipt's
+      # evidence (the fallback substitutes a bounded atom, not empty data).
+      receipt =
+        Xaas.Ultracode.Receipt
+        |> Ash.read!(authorize?: false)
+        |> Enum.find(&(&1.epoch_id == epoch.id))
+
+      assert receipt.evidence["refusal_reason"] == "unknown"
+
+      assert_raise ArgumentError, fn ->
+        novel_reason |> String.to_charlist() |> :erlang.list_to_existing_atom()
+      end
+    end
   end
 
   # ------------------------------------------------------------------

@@ -364,12 +364,26 @@ defmodule XaasWeb.ExecutionFabricController do
     end
   end
 
+  # `String.to_existing_atom/1`, not `String.to_atom/1`: `reason` is
+  # attacker-controlled MCP input (the `refuse` tool's free-text argument).
+  # BEAM atoms are never garbage-collected, so unconditionally interning an
+  # unbounded caller-supplied string is an atom-table exhaustion DoS against
+  # the whole node. Any legitimate refusal reason already exists as an atom
+  # somewhere in this codebase (compiled module/pattern-match literals), so
+  # restricting to existing atoms costs nothing for real callers and refuses
+  # only fabricated reason strings, which fall back to :unknown.
   defp reason_atom(reason) do
     case reason do
       nil -> :unknown
-      binary when is_binary(binary) -> String.to_atom(binary)
+      binary when is_binary(binary) -> safe_existing_atom(binary)
       other -> other
     end
+  end
+
+  defp safe_existing_atom(binary) do
+    String.to_existing_atom(binary)
+  rescue
+    ArgumentError -> :unknown
   end
 
   defp refused(conn, status, reason) do
