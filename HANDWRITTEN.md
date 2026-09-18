@@ -13,9 +13,15 @@ lib/xaas_web/controllers/execution_fabric_controller.ex | MCP JSON-RPC + hook HT
 
 lib/mix/tasks/xaas.receipts.ex | operator sealed-receipt inspection task over the authorized `:for_epoch` path | no admitted pack renders an operator receipt-read task on the Run/Epoch/Receipt seam | ultracode-actuation-lease-pack | 2026-09-17
 
-priv/templates/zcode_plugin/** | ZCode plugin projection templates | no admitted pack owns ZCode plugin topology (plugin.json/hooks/commands/skills/agents) | zcode-plugin-pack (admit after live qualification against ZCode 3.11.2) | 2026-09-15
+priv/zcode_plugin/templates/script-xaas-gate.mjs.tmpl | PreToolUse host gate: admit_tool call, argv Bash allowlist (GIT_SUBS, READ_HELPERS), worktree write containment, credential-dir read denylist, zcode->server tool map (2026-09-18) | no admitted pack renders a policy-enforcement hook script from admission-ontology facts; the allowlists are constants in the script, not ontology individuals | zcode-plugin-pack (lift the constants into zp:AllowedTool / zp:AllowedBashVerb / zp:DeniedPath individuals and render the script from them) | 2026-09-18
 
-lib/mix/tasks/xaas.gen_zcode_plugin.ex | plugin projection generator | same as above; generator becomes the pack's render step | zcode-plugin-pack | 2026-09-15
+priv/zcode_plugin/templates/script-xaas-lease.mjs.tmpl | client-side lease state file protocol (save/get/clear, conflict refusal) | no admitted pack expresses a lease state-file protocol | ultracode-actuation-lease-pack | 2026-09-15
+
+priv/zcode_plugin/templates/{command-xaas,agent-xaas-worker,skill-xaas-worker}.md.tmpl | worker doctrine prose bodies (frontmatter is projected from ontology.ttl) | irreducible prose: no pack models doctrine text as ontology fragments | zcode-plugin-pack doctrine fragments | 2026-09-15
+
+scripts/xaas-glm-failover-dispatcher.sh, scripts/install-glm-failover-launchd.sh | unattended failover dispatcher (poll, drain, reaper, timeout, stall alert) and its launchd installer (2026-09-18) | no admitted pack renders a provider-failover dispatcher or a launchd unit from the Run/Epoch seam | ultracode-actuation-lease-pack | 2026-09-18
+
+test/xaas/zcode_plugin/*.exs | gate, lease-script, doctrine and projection-drift qualification tests | no admitted gate pack for plugin-projection qualification | zcode-plugin-pack gates/ | 2026-09-18
 
 test/xaas/ultracode/lease_test.exs | lease-edge qualification tests, + `actuate/2` registry-admission/refusal/authority-evidence tests (2026-09-17) | no admitted gate pack for lease semantics | ultracode-actuation-lease-pack gates/ | 2026-09-15
 
@@ -38,9 +44,14 @@ test/xaas/ultracode/lease_test.exs | lease-edge qualification tests, + `actuate/
    the session environment, removing the xaas-side dependency on the
    broken env-var-substitution path; live install-path re-qualification
    still pending.
-2. Promote templates + generator into `ggen-marketplace` as
-   `zcode-plugin-pack` once qualified; delete the repo-local generator in
-   favor of the pack's render step.
+2. Promote `priv/zcode_plugin/` (ontology + templates) into
+   `ggen-marketplace` as `zcode-plugin-pack` once qualified. DONE
+   2026-09-18 (locally): the repo-local `xaas.gen_zcode_plugin` generator is
+   deleted; `cd priv/zcode_plugin && ggen sync run` renders the plugin and
+   marketplace manifests, hook config and frontmatter from `ontology.ttl`
+   into the tracked `marketplace/` projection (drift-checked by
+   `test/xaas/zcode_plugin/projection_test.exs`). Remaining: publish to the
+   marketplace, and lift the gate's allowlist constants into the ontology.
 3. Extract the lease kernel's invariants into `ultracode-actuation-lease-pack`
    (SHACL + Ash render targets), including the bulk_update
    extracted-filter guard as a gate, and (2026-09-17) the `actuate/2`

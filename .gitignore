@@ -92,3 +92,6 @@ node_modules/
 .agp-receipts/
 _build_agent_configcheck/
 _build_clean/
+
+# ggen outputs live in their project dirs (e.g. priv/zcode_plugin/marketplace), never a top-level generated/
+/generated/

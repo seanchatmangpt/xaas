@@ -1,7 +1,11 @@
+---
+to: "marketplace/xaas-fabric/scripts/xaas-lease.mjs"
+force: true
+---
 // Agent-facing lease CLI. The worker uses it to persist the claim result
 // so it can recover its lease token across tool calls within this worktree
-// (this plugin has no host-level hooks; every admit/close call is the
-// worker's own).
+// (host-side admission is the PreToolUse gate, scripts/xaas-gate.mjs, active
+// only under XAAS_WORKER=1; every admit/close call is otherwise the worker's own).
 //
 //   node xaas-lease.mjs save   '<claim JSON>' [--force]  # writes lease for this cwd
 //   node xaas-lease.mjs get                               # prints lease JSON or null

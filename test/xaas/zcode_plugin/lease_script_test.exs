@@ -1,13 +1,13 @@
-defmodule Mix.Tasks.Xaas.GenZcodePlugin.LeaseScriptTest do
+defmodule Xaas.ZcodePlugin.LeaseScriptTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
   Real Chicago-style qualification for `scripts/xaas-lease.mjs`'s `save`
-  command -- the client-side half of the rendered zcode plugin at
-  `priv/templates/zcode_plugin/scripts/xaas-lease.mjs.eex`, exercised as the
-  real production rendering (`EEx.eval_file/2`, the same call
-  `Mix.Tasks.Xaas.GenZcodePlugin` makes) executed by a real `node`
-  subprocess against a real state file on disk -- nothing mocked or stubbed.
+  command -- the client-side half of the zcode plugin projected by ggen from
+  `priv/zcode_plugin/templates/script-xaas-lease.mjs.tmpl`, exercised as the
+  committed projection
+  (`priv/zcode_plugin/marketplace/xaas-fabric/scripts/xaas-lease.mjs`)
+  executed by a real `node` subprocess against a real state file on disk -- nothing mocked or stubbed.
 
   Regression guard for a real client-side bug: `saveLease`/`xaas-lease.mjs
   save` used to unconditionally overwrite the lease state file for a cwd,
@@ -21,10 +21,10 @@ defmodule Mix.Tasks.Xaas.GenZcodePlugin.LeaseScriptTest do
   passed explicitly.
   """
 
-  @template_path "priv/templates/zcode_plugin/scripts/xaas-lease.mjs.eex"
+  @script_source "priv/zcode_plugin/marketplace/xaas-fabric/scripts/xaas-lease.mjs"
 
   setup_all do
-    rendered = EEx.eval_file(@template_path, assigns: %{})
+    rendered = File.read!(@script_source)
 
     script_path =
       Path.join(
