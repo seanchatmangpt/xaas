@@ -153,13 +153,38 @@ defmodule XaasWeb.OcelLiveServerChainTest do
     # execute inside `Ash.Tracer.telemetry_span/4`).
     assert response.status in [200, 400, 403]
 
-    assert_receive {:captured_envelope, envelope}, 5_000
+    # `RequireInternalApiToken` now also runs a real, DB-backed
+    # `InternalApiTokenAuth.verify/1` (`by_hash`) Ash read action ahead of
+    # the actual `/api/orgs` read (see that plug's moduledoc), and each
+    # real Ash action forwards its own envelope in a separate HTTP POST --
+    # so this one real HTTP request now fires (at least) two envelopes,
+    # not one. The auth-path envelope is real, correct activity, not
+    # noise; drain every envelope the receiver captures within the window
+    # instead of assuming the first (or only) message is the org read.
+    envelopes = drain_captured_envelopes([], 5_000)
+    assert envelopes != [], "expected at least one captured OCEL envelope"
 
-    assert is_binary(envelope["schema"])
-    assert is_map(envelope["producer"])
-    assert is_list(envelope["events"])
-    assert [forwarded_event | _] = envelope["events"]
-    assert is_binary(forwarded_event["ocel:activity"])
-    assert String.contains?(forwarded_event["ocel:activity"], "org")
+    for envelope <- envelopes do
+      assert is_binary(envelope["schema"])
+      assert is_map(envelope["producer"])
+      assert is_list(envelope["events"])
+    end
+
+    all_events = Enum.flat_map(envelopes, & &1["events"])
+
+    org_event =
+      Enum.find(all_events, fn event ->
+        is_binary(event["ocel:activity"]) and String.contains?(event["ocel:activity"], "org")
+      end)
+
+    assert org_event, "expected an \"org\"-activity event across #{inspect(all_events)}"
+  end
+
+  defp drain_captured_envelopes(acc, timeout) do
+    receive do
+      {:captured_envelope, envelope} -> drain_captured_envelopes([envelope | acc], 200)
+    after
+      timeout -> Enum.reverse(acc)
+    end
   end
 end

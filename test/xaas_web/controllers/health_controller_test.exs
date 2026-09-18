@@ -13,9 +13,17 @@ defmodule XaasWeb.HealthControllerTest do
   contract `Req` exposes is swapped in via
   `Application.put_env(:xaas, :ontop_proxy_http_client, ...)` -- not a
   mock, no interaction/call-count assertions are made against it.
+
+  The `ultracode_tick` check (`Xaas.Ultracode.TickHealth`, see its
+  moduledoc) is exercised against a real inserted `%Oban.Job{}` row in
+  the real sandboxed `oban_jobs` table, same as
+  `test/xaas/ultracode/tick_health_test.exs` -- no stand-in for Oban
+  itself.
   """
 
   use XaasWeb.ConnCase
+
+  @tick_worker Oban.Worker.to_string(Xaas.Ultracode.Run.Workers.Tick)
 
   defmodule FakeOntopClient do
     @moduledoc "Real, simple stand-in returning a fixed successful response."
@@ -37,17 +45,42 @@ defmodule XaasWeb.HealthControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
+  # Real fresh completed tick job so the happy-path test below reflects a
+  # genuinely live cron, not the absence-of-evidence :stale case
+  # `Xaas.Ultracode.TickHealth` is specifically designed to catch.
+  defp insert_fresh_tick_job! do
+    now = DateTime.utc_now()
+
+    Xaas.Repo.insert!(%Oban.Job{
+      state: "completed",
+      queue: "default",
+      worker: @tick_worker,
+      args: %{},
+      meta: %{},
+      tags: [],
+      errors: [],
+      attempt: 1,
+      max_attempts: 20,
+      priority: 0,
+      inserted_at: now,
+      scheduled_at: now,
+      completed_at: now
+    })
+  end
+
   test "requires the real bearer token, same as every other /internal-api route", %{conn: conn} do
     conn = get(conn, "/internal-api/health")
 
     assert conn.status == 401
   end
 
-  test "GET /internal-api/health returns 200 with every real check ok when Ontop is reachable", %{
-    conn: conn
-  } do
+  test "GET /internal-api/health returns 200 with every real check ok when Ontop is reachable and the tick is fresh",
+       %{
+         conn: conn
+       } do
     Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopClient)
     on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
+    insert_fresh_tick_job!()
 
     conn =
       conn
@@ -63,6 +96,9 @@ defmodule XaasWeb.HealthControllerTest do
     assert checks["repo"]["status"] == "ok"
     assert is_number(checks["repo"]["latency_ms"])
     assert checks["ontop"]["status"] == "ok"
+    assert checks["ultracode_tick"]["status"] == "ok"
+    assert checks["ultracode_tick"]["last_tick_at"] != nil
+    assert is_number(checks["ultracode_tick"]["elapsed_minutes"])
 
     for domain <- ~w(accounts billing governance ledger marketplace operations platform) do
       key = "ash_domain:" <> domain
@@ -73,6 +109,28 @@ defmodule XaasWeb.HealthControllerTest do
       assert is_integer(checks[key]["count"])
       assert checks[key]["count"] >= 0
     end
+  end
+
+  test "GET /internal-api/health real-reports 503 when the ultracode :tick cron has never fired",
+       %{conn: conn} do
+    Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopClient)
+    on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
+
+    # Deliberately no insert_fresh_tick_job!() -- the real, empty
+    # `oban_jobs` table (in this sandboxed transaction) is exactly the
+    # "cron never fired" case `Xaas.Ultracode.TickHealth` exists to catch.
+    conn =
+      conn
+      |> auth()
+      |> get("/internal-api/health")
+
+    assert conn.status == 503
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["status"] == "error"
+    assert body["checks"]["ultracode_tick"]["status"] == "error"
+    assert body["checks"]["ultracode_tick"]["detail"]["last_tick_at"] == nil
+    assert body["checks"]["repo"]["status"] == "ok"
   end
 
   test "GET /internal-api/health real-reports 503 and the real failing check when Ontop is unreachable",

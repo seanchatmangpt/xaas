@@ -22,6 +22,7 @@ defmodule Xaas.Ultracode.Validations.AtMostOneActiveEpoch do
 
     already_active? =
       Xaas.Ultracode.Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run_id and state == :running)
       |> Ash.Query.filter(is_nil(^this_id) or id != ^this_id)
       |> Ash.exists?(authorize?: false)

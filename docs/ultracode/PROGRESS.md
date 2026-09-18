@@ -869,3 +869,151 @@ that does not yet exist anywhere in this ecosystem, for any resource.
 ```
 
 Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-15 — Zach Daniel / Chris McCord adversarial review + ERRC refactor, all 8 findings implemented
+
+Per instruction, ran a real 15-agent Workflow: two independent adversarial
+reviews of the entire real `lib/xaas/ultracode/**`+`test/xaas/ultracode/**`
+tree, role-playing ZACH DANIEL's (Ash creator) documented engineering
+philosophy and CHRIS McCORD's (Phoenix/LiveView creator) documented
+engineering philosophy respectively, each reading every real file in full
+and producing specific, grounded findings (not generic advice). Every
+critical/major finding was then cross-examined by the OPPOSITE persona
+before being trusted -- 4 findings were refuted with real evidence,
+including one where the reviewer's own proposed fix (real Reactor.Builder
+async fan-out) would have broken Ecto Sandbox-mode tests, and one where
+reading the real pinned `ash_oban`/`oban` dependency source disproved a
+claimed race condition in the `:tick` scheduling. 8 findings survived and
+were ERRC-categorized (Eliminate/Reduce/Raise/Create) with an explicit
+risk-to-closed-milestone assessment and sequencing plan per finding.
+
+Implemented all 8, in 5 commits on `refactor/ultracode-errc`, following
+the plan's own risk-ordered sequence (lowest risk first, the 3 highest-
+risk RAISE items sequenced last and each in its own separately-verified
+commit, never batched):
+
+1. **ELIMINATE** fake Reactor DAG wiring (`argument`/`result` bindings
+   whose step bodies never read them) -> real `wait_for/1`. Pure honesty
+   fix, zero behavior change.
+2. **ELIMINATE** a false docstring claim (`:admit` step's comment claimed
+   an authority-ceiling check that was never implemented). Comment-only.
+3. **RAISE** real precondition validation
+   (`EpochTransitionAllowed`) on `Epoch.:complete`/`:mark_missed`/
+   `:mark_failed`, previously accepting any state unconditionally.
+4. **CREATE** a real `has_one :active_epoch` relationship on `Run`,
+   replacing two independently hand-rolled copies of the same "current
+   active epoch" query.
+5. **REDUCE** per-tick query count (3 full Run-table scans + N+1 per-run
+   queries -> 1 scan + up to 2N), via a new `:fetch_active_runs` Reactor
+   step threading the list through, while preserving `advance_all/0`'s
+   zero-arity signature for its 2 real direct test callers.
+6. **RAISE (a)** real policy bypasses replacing `authorize?: false` at
+   16 call sites across 5 modules -- the declared `forbid_if always()`
+   floor was previously dead code for all real production traffic. Found
+   and closed a real gap beyond the reviewers' own literal file list:
+   `Run.:advance_cycle`/`:transition_state` also lacked bypasses and
+   would have broken (`Ash.Error.Forbidden`) had `authorize?: false` been
+   stripped from their call sites without adding them.
+7. **RAISE (b)** a real, explicit, checkable edge-list validation
+   (`RunTransitionAllowed`) on `Run.:transition_state`, previously
+   accepting any state transition unconditionally -- closing a real
+   unvalidated backdoor around the state-machine discipline `:start`
+   enforces for its own edge.
+8. **RAISE (c)** a real `undo/3` on `EpochReactor`'s `:construct` step,
+   closing the gap where a downstream step failure after a real DB
+   mutation left an Epoch permanently transitioned with no receipt.
+   Caught and corrected a genuine interaction bug in the plan's own
+   literal proposal before writing code: uniformly calling `:mark_failed`
+   from undo would itself be refused by item 3's own new validation when
+   the downstream failure happens after the epoch reached `:completed`
+   (not an admissible `:mark_failed` source state) -- branched undo
+   correctly instead (`:start` -> `:mark_failed` + receipt;
+   `:complete` -> leave the real `:completed` state, repair only the
+   missing receipt). Added 2 new real falsifier tests exercising the
+   compiled `undo/3` callback directly via Reactor's own step
+   introspection (`Multigraph.vertices/1` + `Reactor.Step.undo/4`) since
+   forcing a genuine downstream Ash failure without mocking anything
+   proved impractical without modifying production code for the test.
+
+Real verification after every single commit (not just at the end):
+`mix compile --force --warnings-as-errors` clean each time;
+`mix test test/xaas/ultracode/` (6/6, then 8/8 after the undo tests)
+passing after every commit with zero regressions. Final whole-repo
+check: `mix format --check-formatted` exit 0; `mix compile --force
+--warnings-as-errors` exit 0, 398 files, 0 warnings;
+`mix test --max-failures 1` -> **622 passed, 0 failures, 40 excluded**
+(up from the pre-refactor baseline of 620, +2 for the new undo tests) --
+zero regressions anywhere in the repo, not just Ultracode.
+
+`grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." lib/xaas/ultracode/ test/xaas/ultracode/`
+-> zero matches, confirming Chicago-style discipline held throughout.
+
+No changes to the milestone's actual behavior or evidentiary chain --
+`Run -> Epoch -> AshOban -> EpochReactor -> Receipt` still advances
+identically; this refactor made the implementation more honest (real
+DAG wiring, real docs), more correct (real state-machine guards, real
+undo closing a real invariant gap), and more efficient (fewer queries per
+tick), without changing what it does.
+
+Claude-Session: https://claude.ai/code/session_01VQ8ro3uJM5qNYFJn265Yc4
+
+## 2026-09-17 — Cycle: wave-4 drift closure — atom-table DoS fix landed, ledger reconciled
+
+**Baseline before this cycle**: branch `feat/execution-actuation-fabric`
+at `2f49261` (zcode-plugin user_config token fix) on top of `a11bf7a`
+(template contract fixes); working tree carried the boundary court's
+qualified-but-uncommitted atom-table DoS fix plus a concurrent sibling
+author's in-flight Receipt read-path work (`receipt.ex`, router,
+controller, `mix xaas.receipts`, lease/epoch_reactor + tests) and ledger
+drift. Boundary receipt r6 (`/tmp/uzc/boundary-xaas.md`) had already run
+`mix compile --force --warnings-as-errors` exit 0 and `mix test` 648/0
+WITH the atom fix + its test in the tree — this cycle ran no mix gates
+(the r6 court is the evidence); git evidence only.
+
+**Landed**:
+1. `32b5ba1` — `fix(execution-fabric): refuse reason via
+   String.to_existing_atom — bound atom-table DoS` (+ its test). Content
+   is exactly the drift the r6 court qualified (controller atom hunks +
+   atom-safety test, receipts hunks excluded). Committed via a temporary
+   index (`git read-tree` → `git apply --cached` → `write-tree` →
+   `commit-tree` → `update-ref`) so the concurrent author's staged files
+   were untouched. Post-commit check: `git grep --cached safe_existing_atom`
+   present, `for_epoch` absent from the commit tree.
+2. `113a6eb` — `docs(ledger): reconcile HANDWRITTEN.md` — controller row
+   extended (receipt read route + atom-safe refuse), lease row extended
+   (`:for_epoch` carve-out), new `mix xaas.receipts` row; 2026-09-16
+   Shrunk rows now cite their landing commit `a11bf7a`; new Shrunk row
+   for the `2f49261` user_config token fix; wave paydown direction
+   recorded (zcode-plugin rows shrank toward admission; controller/lease
+   rows disclosed growth, owner packs unchanged).
+
+**Deliberately NOT committed**: the sibling author's in-flight Receipt
+read path + lease/epoch_reactor edits (staged `lib/mix/tasks/
+xaas.receipts.ex` is theirs). Racing an active author's index is how
+commits corrupt; their flow lands on top of `32b5ba1` unchanged.
+
+**Coordination incident, disclosed**: this agent twice held
+`/tmp/uzc/xaas-mix.lock` stale (~10 min each) by omitting the release
+`rmdir` — observed side effect: the author's `git reset` (reflog
+`reset: moving to HEAD`) landed after lock release, unstaging earlier
+staging; no work lost, worktree never touched, state normalized.
+
+**Git evidence (commands + exact exits)**:
+- `git status --porcelain` / `git diff --numstat` → exit 0 (drift
+  inventory: 5 modified tracked files + 7 untracked paths at start)
+- `git apply --cached --check <atom patches>` → exit 0 before staging
+- `git write-tree` → `c9529722`; `git commit-tree -p 2f49261` → `32b5ba1`;
+  `git update-ref refs/heads/feat/execution-actuation-fabric` → exit 0
+- `git commit HANDWRITTEN.md` → exit 0, `113a6eb` (1 file, +39/−6)
+- `git log --oneline` verification after each commit → exit 0
+
+**Wave 比 (fail-closed)**: `a11bf7a..HEAD` = 2f49261 + 32b5ba1 + 113a6eb
+= 105 insertions / 13 deletions across generator, 2 plugin templates,
+controller, test, ledger. Manufactured (pack render / generator run
+attribution): **0 lines** — the plugin projection (`generated/`) is
+untracked and no pack render produced any delivered line this wave.
+Ratio = **0%**, honestly. Paydown: promote the now contract-clean
+templates + generator into `zcode-plugin-pack` (blocked only on the
+ZCode-side install bug), admit `ultracode-actuation-lease-pack` and the
+mcp-surface family extension from the proven shapes — after which
+plugin drift renders manufactured and the ratio moves off 0.

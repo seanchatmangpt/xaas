@@ -15,6 +15,8 @@ defmodule Xaas.Ultracode.EpochReactorTest do
   """
   use ExUnit.Case, async: true
 
+  require Ash.Query
+
   @moduletag :ultracode
 
   alias Xaas.Ultracode.{Epoch, MissedEpochs, Receipt, Run}
@@ -85,7 +87,9 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     assert summary.run_id == run.id
     assert stale_epoch.id in summary.missed
 
-    reloaded_stale_epoch = Ash.get!(Epoch, stale_epoch.id, authorize?: false)
+    reloaded_stale_epoch =
+      Ash.get!(Epoch, stale_epoch.id, action: :read_unscoped, authorize?: false)
+
     assert reloaded_stale_epoch.state == :missed
 
     # 4) A second, real durable Epoch (cycle 1) -- the one this test drives
@@ -118,7 +122,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     assert first_result.outcome == :alive
     assert is_binary(first_result.receipt_id)
 
-    after_start = Ash.get!(Epoch, active_epoch.id, authorize?: false)
+    after_start = Ash.get!(Epoch, active_epoch.id, action: :read_unscoped, authorize?: false)
     assert after_start.state == :running
 
     first_receipt = Ash.get!(Receipt, first_result.receipt_id, authorize?: false)
@@ -136,7 +140,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     assert second_result.action_taken == :complete
     assert second_result.outcome == :alive
 
-    completed_epoch = Ash.get!(Epoch, active_epoch.id, authorize?: false)
+    completed_epoch = Ash.get!(Epoch, active_epoch.id, action: :read_unscoped, authorize?: false)
     assert completed_epoch.state == :completed
 
     second_receipt = Ash.get!(Receipt, second_result.receipt_id, authorize?: false)
@@ -173,5 +177,203 @@ defmodule Xaas.Ultracode.EpochReactorTest do
 
     assert final_run.state == :completed
     assert final_run.standing == :admitted
+  end
+
+  describe ":construct step's real undo/3" do
+    # Real falsifier for ULTRACODE-50's ERRC RAISE item: before this,
+    # EpochReactor's :construct step performed a real, irreversible
+    # mutation with no compensate/undo -- if a downstream step failed
+    # after :construct already committed, the Epoch was left permanently
+    # transitioned with no receipt at all, violating this subsystem's own
+    # `CompletedEpoch => Receipt` invariant.
+    #
+    # Forcing a genuine downstream Ash failure (without mocking anything)
+    # to trigger Reactor's OWN undo dispatch proved impractical without
+    # modifying production code just for the test -- so this exercises
+    # the real, compiled `undo/3` callback directly via Reactor's own
+    # step introspection (`Multigraph.vertices/1` + `Reactor.Step.undo/4`,
+    # the exact API Reactor itself uses internally to invoke undo). Every
+    # collaborator inside undo is still real: real Ash.update, real
+    # Ash.create, real Postgres via Ecto.Adapters.SQL.Sandbox -- nothing
+    # mocked, only the *trigger* (a genuinely failed downstream step) is
+    # bypassed in favor of calling the real callback directly.
+    setup do
+      subject = exact_subject!()
+
+      run =
+        Run
+        |> Ash.Changeset.for_create(:create, %{goal: "undo falsifier", max_cycles: 2},
+          authorize?: false
+        )
+        |> Ash.create!()
+        |> Ash.Changeset.for_update(:transition_state, %{state: :running})
+        |> Ash.update!()
+
+      construct_step =
+        Xaas.Ultracode.EpochReactor.reactor().plan
+        |> Multigraph.vertices()
+        |> Enum.find(&(&1.name == :construct))
+
+      assert Reactor.Step.can?(construct_step, :undo)
+
+      %{run: run, subject: subject, construct_step: construct_step}
+    end
+
+    test "action_taken == :start -- undo marks the Epoch :failed and seals a build_broken Receipt",
+         %{run: run, subject: subject, construct_step: construct_step} do
+      epoch =
+        Epoch
+        |> Ash.Changeset.for_create(:create, %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: subject,
+          state: :expected,
+          expected_at: DateTime.utc_now()
+        })
+        |> Ash.create!()
+
+      # Real Construct-equivalent mutation: :expected -> :running, the
+      # exact transition the real :construct step's run/2 performs for
+      # action_taken == :start.
+      constructed_epoch =
+        epoch
+        |> Ash.Changeset.for_update(:start, %{})
+        |> Ash.update!()
+
+      assert constructed_epoch.state == :running
+
+      value = %{epoch: constructed_epoch, action_taken: :start}
+
+      assert :ok = Reactor.Step.undo(construct_step, value, %{}, %{})
+
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
+      assert reloaded.state == :failed
+
+      [receipt] =
+        Receipt
+        |> Ash.Query.filter(epoch_id == ^epoch.id)
+        |> Ash.read!(authorize?: false)
+
+      assert receipt.outcome == :build_broken
+      assert receipt.subject == subject
+      assert receipt.evidence["action_taken"] == "start"
+    end
+
+    test "action_taken == :complete -- undo leaves the real :completed state and seals a build_broken Receipt",
+         %{run: run, subject: subject, construct_step: construct_step} do
+      epoch =
+        Epoch
+        |> Ash.Changeset.for_create(:create, %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: subject,
+          state: :running,
+          expected_at: DateTime.utc_now()
+        })
+        |> Ash.create!()
+
+      # Real Construct-equivalent mutation: :running -> :completed, the
+      # exact transition the real :construct step's run/2 performs for
+      # action_taken == :complete.
+      constructed_epoch =
+        epoch
+        |> Ash.Changeset.for_update(:complete, %{})
+        |> Ash.update!()
+
+      assert constructed_epoch.state == :completed
+
+      value = %{epoch: constructed_epoch, action_taken: :complete}
+
+      assert :ok = Reactor.Step.undo(construct_step, value, %{}, %{})
+
+      # The real transition genuinely succeeded -- undo does NOT
+      # force-revert a real :completed epoch to :failed (that would
+      # misrepresent a real success as a failure, and Epoch's own
+      # EpochTransitionAllowed validation refuses :mark_failed from
+      # :completed anyway).
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
+      assert reloaded.state == :completed
+
+      [receipt] =
+        Receipt
+        |> Ash.Query.filter(epoch_id == ^epoch.id)
+        |> Ash.read!(authorize?: false)
+
+      assert receipt.outcome == :build_broken
+      assert receipt.subject == subject
+      assert receipt.evidence["action_taken"] == "complete"
+    end
+
+    test "action_taken == :start against a CONCURRENTLY-changed row refuses cleanly instead of clobbering it",
+         %{run: run, subject: subject, construct_step: construct_step} do
+      epoch =
+        Epoch
+        |> Ash.Changeset.for_create(:create, %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: subject,
+          state: :expected,
+          expected_at: DateTime.utc_now()
+        })
+        |> Ash.create!()
+
+      # Real Construct-equivalent mutation: :expected -> :running -- the
+      # exact transition the real :construct step's run/2 performs for
+      # action_taken == :start. `stale_constructed_epoch` is the
+      # in-memory struct :construct would have handed undo, captured
+      # BEFORE the concurrent change below -- exactly the falsifier this
+      # fix targets: a snapshot that goes stale by the time undo actually
+      # runs.
+      stale_constructed_epoch =
+        epoch
+        |> Ash.Changeset.for_update(:start, %{})
+        |> Ash.update!()
+
+      assert stale_constructed_epoch.state == :running
+
+      # Real concurrent change: a SECOND, independent Ash update against
+      # the same row -- not a mock, not a stub, a real transition to
+      # :completed via the real admitted :complete action (as if
+      # Lease.close/4 had closed this same epoch out-of-band while the
+      # original EpochReactor invocation was still in flight downstream
+      # of :construct). The in-memory `stale_constructed_epoch` above
+      # still reads :running -- it was captured before this update ran.
+      concurrently_completed_epoch =
+        stale_constructed_epoch
+        |> Ash.Changeset.for_update(:complete, %{})
+        |> Ash.update!()
+
+      assert concurrently_completed_epoch.state == :completed
+
+      value = %{epoch: stale_constructed_epoch, action_taken: :start}
+
+      # undo must not crash and must not silently no-op -- it returns
+      # :ok, exactly like the other undo branches, but the crucial
+      # falsifier is what it did NOT do: see the reload below.
+      assert :ok = Reactor.Step.undo(construct_step, value, %{}, %{})
+
+      # THE FALSIFIER: the real row must still be :completed. Before the
+      # fix, undo applied :mark_failed straight to the stale
+      # `stale_constructed_epoch` struct (state: :running in memory), and
+      # `EpochTransitionAllowed`'s `from: [:expected, :running]` check
+      # reads the CHANGESET's data -- the stale struct, not a fresh read
+      # -- so it would have passed and silently clobbered this real
+      # :completed row to :failed.
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
+      assert reloaded.state == :completed
+
+      # Not a silent no-op either: a real, typed :refused Receipt lands
+      # naming exactly what was observed.
+      [refusal_receipt] =
+        Receipt
+        |> Ash.Query.filter(epoch_id == ^epoch.id and outcome == :refused)
+        |> Ash.read!(authorize?: false)
+
+      assert refusal_receipt.subject == subject
+      assert refusal_receipt.evidence["undo_refused_reason"] == "concurrent_state_change"
+      assert refusal_receipt.evidence["expected_state"] == "running"
+      assert refusal_receipt.evidence["observed_state"] == "completed"
+      assert refusal_receipt.evidence["action_taken"] == "start"
+    end
   end
 end

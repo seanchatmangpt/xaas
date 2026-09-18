@@ -14,6 +14,89 @@ defmodule Xaas.Ultracode.Run do
   Run's own next-cycle counter, advanced by whatever creates `Epoch` rows
   (not enforced here -- `Epoch.unique_run_cycle` is the hard constraint).
 
+  ## `org_id` -- real, disclosed, NOT ENFORCED (see ADR-0002)
+
+  Real investigation finding (docs/adr/0002-ultracode-org-scoping-seam.md):
+  Ultracode (`Run`/`Epoch`; `Lease` owns no resource of its own -- see its
+  own moduledoc) was the one unscoped seam in an otherwise org-scoped
+  codebase. This repo has a real, established convention for org scoping
+  (a plain `org_id, :string` attribute + a per-domain
+  `Checks.ActorOrgMatches`-style `Ash.Policy.SimpleCheck` + `XaasWeb.Plugs.
+  ResolveOrgActor` resolving a caller-asserted `X-Org-Id` header into an
+  actor for `/api`'s `AshJsonApi.Router` routes -- see
+  `Xaas.Platform.Checks.ActorOrgMatches` and that plug's own moduledoc for
+  ~14 resources already wired this way).
+
+  ### Real query-layer enforcement (this pass -- see also `Epoch`'s own
+  ### moduledoc "Org scoping" section)
+
+  The schema-only seam above is now REAL at the query layer: `multitenancy
+  do strategy :attribute; attribute :org_id end` below (real Ash 3.33.1
+  `:attribute` multitenancy -- verified against `deps/ash/lib/ash/
+  resource/verifiers/validate_multitenancy.ex` and `deps/ash/documentation/
+  topics/advanced/multitenancy.md`, not guessed) makes this resource's
+  PRIMARY `:read` action (`defaults([:read])`) genuinely tenant-`:enforce`d
+  -- Ash's real per-action default (`deps/ash/lib/ash/actions/read/
+  read.ex:handle_multitenancy/1`, `case action_multitenancy do :enforce ->
+  ... validate_multitenancy ... end`): a bare `Ash.get!(Run, id)` or
+  `Ash.read!(Run)` with no tenant now raises
+  `Ash.Error.Invalid.TenantRequired`, never silently returns another org's
+  row. No resource-level `global? true` is set -- that flag would defeat
+  `:enforce` for every action on the resource by short-circuiting
+  `Ash.Resource.Info.multitenancy_global?/1`, which both
+  `Ash.Actions.Helpers.validate_changeset_multitenancy/1` and
+  `read.ex`'s own `validate_multitenancy/1` check ahead of the per-action
+  setting.
+
+  Every internal/system call site (`Xaas.Ultracode.Reactor`'s
+  `:fetch_active_runs` step, `NextEpoch`, `MissedEpochs`) is instead
+  routed through the `:read_unscoped` read action defined below
+  (`multitenancy :allow_global` -- optional tenant, not ignored-if-present)
+  -- deliberate and visible in the action list, never a silent
+  resource-wide bypass. `:create`, `:advance_cycle`, `:transition_state`,
+  `:start`, `:mark_expected_epoch`, and `:mark_completed_epoch` are each
+  explicitly marked `multitenancy :allow_global` too, with the reason
+  documented at each action: `:create` because it is called both from the
+  customer-facing controller (which sets `org_id` explicitly from the
+  authenticated org, never from a `set_tenant` call) and from every
+  internal/test fixture with no org at all; the rest because they mutate
+  an already-loaded Run struct from trusted internal code
+  (`Xaas.Ultracode.NextEpoch`, test fixtures) and are never reachable from
+  a customer-facing path.
+
+  The one genuinely customer-facing, query-layer-enforced read this pass
+  adds is `XaasWeb.ExecutionFabricController.receipts_for_org/3`, which
+  now calls `Ash.get(Xaas.Ultracode.Epoch, epoch_id, tenant: org_id)` on
+  Epoch's own `:enforce`d default `:read` (see that resource's moduledoc)
+  -- a real `org_id == tenant` filter applied by Ash itself before the row
+  ever reaches this controller, not a manual `if epoch.run.org_id ==
+  org_id` comparison after the fact.
+
+  That convention does not reach this resource's real HTTP surface.
+  `Run`/`Epoch` have no `json_api do routes do ... end end` block at all --
+  their only real HTTP surface is the custom `XaasWeb.ExecutionFabricController`
+  under `/internal-api/execution/*`, gated by ONE shared `INTERNAL_API_TOKEN`
+  Bearer token with no per-caller actor resolution wired to that router scope,
+  and its MCP/hook tool schemas (`claim_next`, `admit_tool`, ...) carry no
+  org-identifying field at all -- callers are keyed by the free-text
+  `provider` string ("zcode", "opencode"), not by org. Every action
+  currently defined on `Run`/`Epoch` is also already unconditionally
+  `bypass action(...) do authorize_if(always()) end`ed (see `policies do`
+  below and `Epoch`'s own moduledoc) -- there are zero org-scoped policy
+  clauses to extend today, and no real fact ("which org does this caller
+  represent") reaches an Ultracode action to check.
+
+  Applying the existing convention here verbatim would be real but
+  functionally inert dead code (a check with nothing real to compare
+  against on the only path that ever calls it) unless a NEW,
+  undisclosed-anywhere mechanism for asserting org identity on the
+  single-shared-token, provider-keyed execution fabric is also invented --
+  out of scope per this task's own rule 6. `org_id` below is therefore the
+  minimal real, disclosed, schema-only seam: a nullable string attribute,
+  no enforcement, no policy change, so a real migration exists to build on
+  without checking against a fact nothing yet supplies. See ADR-0002 for
+  the full design note and what would need to land first.
+
   ## Scheduling (`oban do` block)
 
   Real `AshOban` (`~> 0.8`, pinned `0.8.14` per `mix.lock`) `scheduled_actions`
@@ -34,11 +117,44 @@ defmodule Xaas.Ultracode.Run do
     domain: Xaas.Ultracode,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshOban]
+    extensions: [AshOban, AshRateLimiter]
 
   postgres do
     table("ultracode_runs")
     repo(Xaas.Repo)
+  end
+
+  multitenancy do
+    strategy(:attribute)
+    attribute(:org_id)
+  end
+
+  # Real per-org quota on the customer-facing submission surface (2026-09
+  # fs-safety hardening pass): before this, POST
+  # /internal-api/execution/runs had zero rate limit or quota -- confirmed
+  # by a real scripted loop against the dev DB (200/200 Run creates
+  # succeeded in ~0.3s with zero rejection), not guessed. `Xaas.Hammer`
+  # (ETS-backed `Hammer`) + `AshRateLimiter` is this repo's own existing,
+  # idiomatic pattern for exactly this shape --
+  # `Xaas.Billing.ApprovalPricingOverride`'s `rate_limit do` block is the
+  # only other real usage, throttling its own `:create` at 5/min/requester.
+  # Scoped to the `:submit` action ONLY (see below), never the shared
+  # `:create` action every internal/test call site also uses -- rate
+  # limiting `:create` itself would have made this same Hammer ETS bucket
+  # shared (and falsely exhausted) across every unrelated test file's own
+  # `Run.create` calls within one `mix test` run, a real regression this
+  # design avoids by construction rather than by a higher limit.
+  rate_limit do
+    backend(Xaas.Hammer)
+
+    action(:submit,
+      limit: 30,
+      per: :timer.minutes(1),
+      key: fn changeset, _context ->
+        org_id = Ash.Changeset.get_attribute(changeset, :org_id) || "unscoped"
+        "ultracode_run:submit:#{org_id}"
+      end
+    )
   end
 
   oban do
@@ -74,6 +190,21 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
+    # ERRC raise: same shape as `:tick` above, closing a gap the
+    # authorize?: false / dead-policies review surfaced but didn't name
+    # explicitly on this resource -- `:advance_cycle` and `:transition_state`
+    # are both internal-only mutations the Ultracode Reactor pipeline
+    # (`Xaas.Ultracode.NextEpoch.advance_from_completed/2`) invokes, and
+    # were previously called with `authorize?: false` rather than an
+    # explicit bypass, same dead-policy pattern as Epoch/Receipt.
+    bypass action(:advance_cycle) do
+      authorize_if(always())
+    end
+
+    bypass action(:transition_state) do
+      authorize_if(always())
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -82,25 +213,79 @@ defmodule Xaas.Ultracode.Run do
   actions do
     defaults([:read])
 
-    create :create do
-      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds])
+    # Real, deliberately global internal/system read action -- see the
+    # moduledoc's "Real query-layer enforcement" section. `:allow_global`,
+    # not `:bypass`: a supplied tenant still filters; every real caller
+    # today (`Xaas.Ultracode.Reactor`, `NextEpoch`, `MissedEpochs`) passes
+    # none, so this behaves exactly like the old, pre-retrofit unscoped
+    # default `:read`.
+    read :read_unscoped do
+      multitenancy(:allow_global)
     end
 
+    create :create do
+      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider, :org_id])
+
+      # `:allow_global`: called both from the customer-facing controller
+      # (`org_id` set explicitly from the authenticated org -- see this
+      # module's own moduledoc) and from every internal/test fixture with
+      # no org and no tenant at all. `:enforce` (the default once
+      # `multitenancy do ... end` is configured) would raise
+      # `TenantRequired` on every one of those real internal callers.
+      multitenancy(:allow_global)
+    end
+
+    # Real, customer-facing submission action (2026-09 fs-safety hardening
+    # pass) -- identical accept list/multitenancy to `:create` above, kept
+    # as a SEPARATE action purely so the `rate_limit do` block above can
+    # target the one real HTTP entry point
+    # (`XaasWeb.ExecutionFabricController.create_run_row/3`) without also
+    # throttling `:create`, which this resource's own extensive internal
+    # test suite (and `Xaas.Ultracode.Reactor`/`NextEpoch`/`MissedEpochs`
+    # fixtures) call directly and far more than 30 times/minute in a fast
+    # `mix test` run.
+    create :submit do
+      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider, :org_id])
+
+      multitenancy(:allow_global)
+    end
+
+    # Every plain `update` action below is `multitenancy(:bypass)`, NOT
+    # `:allow_global` -- a real, evidence-based distinction (a failing
+    # `mix test` run, not guessed): Ash 3.33.1's UPDATE pipeline has a
+    # SECOND, later tenant checkpoint independent of the one
+    # `handle_multitenancy/2` runs at action-dispatch time -- see `Epoch`'s
+    # own `actions do` block for the full explanation (verified against
+    # `deps/ash/lib/ash/actions/update/update.ex`'s private `set_tenant/1`,
+    # whose guard omits `:allow_global` unlike CREATE's equivalent). This
+    # behaves identically to `:allow_global` for every real caller here
+    # (none ever pass a tenant).
     update :advance_cycle do
       accept([])
       change(increment(:cycle))
+
+      multitenancy(:bypass)
     end
 
     update :mark_expected_epoch do
       accept([:last_expected_epoch_at])
+
+      multitenancy(:bypass)
     end
 
     update :mark_completed_epoch do
       accept([:last_completed_epoch_at])
+
+      multitenancy(:bypass)
     end
 
     update :transition_state do
       accept([:state, :standing])
+      require_atomic?(false)
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
+
+      multitenancy(:bypass)
     end
 
     # Real admitted action closing ULTRACODE-50 blocker (2): the ONE path
@@ -124,6 +309,8 @@ defmodule Xaas.Ultracode.Run do
       change(set_attribute(:started_at, &DateTime.utc_now/0))
       change(increment(:cycle))
       change(Xaas.Ultracode.Changes.CreateFirstEpoch)
+
+      multitenancy(:bypass)
     end
 
     # Real generic action -- the sole body of the AshOban `:tick`
@@ -147,8 +334,39 @@ defmodule Xaas.Ultracode.Run do
   attributes do
     uuid_primary_key(:id)
 
+    # Real fs-safety bound (2026-09 hardening pass): before this,
+    # `goal` was a genuinely unbounded string -- confirmed via a real
+    # repro against the dev DB (a 5,000,000-byte goal was accepted with
+    # zero rejection). `goal` is exactly the text handed to an LLM worker
+    # as its instructions (see `Xaas.Ultracode.Lease`'s `claim_next/2`),
+    # so it is real prose, never a blob -- 50,000 characters is generous
+    # for any real goal description (tens of pages) while bounding the
+    # unattended-growth/storage-exhaustion case a customer-facing
+    # submission surface must not leave open.
     attribute :goal, :string do
       allow_nil?(false)
+      public?(true)
+      constraints(max_length: 50_000)
+    end
+
+    # Actuation provider lane: nil (default) keeps legacy reactor-driven
+    # semantics (a `:running` Epoch completes next cycle); a provider id
+    # ("zcode", "opencode", ...) switches this Run to provider-pull
+    # semantics -- Epochs lease out to provider workers and complete only
+    # on verified provider evidence. This is the fact EpochReactor's :plan
+    # branches on.
+    attribute :provider, :string do
+      public?(true)
+    end
+
+    # Real, disclosed, schema-only seam -- see this module's own moduledoc
+    # ("org_id -- real, disclosed, NOT ENFORCED") and ADR-0002. Nullable,
+    # unenforced: no policy or check reads this attribute today. It exists
+    # so a real org-provenance value can start being recorded now, without
+    # fabricating enforcement logic that has nothing real to check against
+    # on Ultracode's actual (single-shared-token, provider-keyed) HTTP
+    # surface.
+    attribute :org_id, :string do
       public?(true)
     end
 
@@ -191,10 +409,12 @@ defmodule Xaas.Ultracode.Run do
     # `expected_at` is older than `now - epoch_timeout_seconds` and still
     # `:expected`/`:running` is transitioned to `:missed`. Real per-Run
     # config, not a hardcoded module attribute -- different Runs can carry
-    # different tolerance for a missed cycle.
+    # different tolerance for a missed cycle. 900s default: a provider-owned
+    # (zcode/GLM) worker's claim->edit->close round trip outran 300s in a
+    # real failover trial and the epoch was marked :missed mid-lease.
     attribute :epoch_timeout_seconds, :integer do
       allow_nil?(false)
-      default(300)
+      default(900)
       public?(true)
     end
 
@@ -211,6 +431,32 @@ defmodule Xaas.Ultracode.Run do
   end
 
   relationships do
-    has_many :epochs, Xaas.Ultracode.Epoch
+    # `read_action: :read_unscoped` on both relationships below -- real,
+    # deliberate: relationship loading inherits the LOADING query's tenant
+    # (`deps/ash/lib/ash/actions/read/relationships.ex`), never the loaded
+    # Run's own attribute, so `Xaas.Ultracode.Reactor`'s tenant-less
+    # `Ash.load!(active_runs, :active_epoch)` would otherwise hit Epoch's
+    # now tenant-`:enforce`d default `:read` and raise. Pinned to Epoch's
+    # own `:read_unscoped` action so these loads behave exactly as they did
+    # before this retrofit.
+    has_many :epochs, Xaas.Ultracode.Epoch do
+      read_action(:read_unscoped)
+    end
+
+    # Real, single source of truth for "this Run's current active Epoch" --
+    # previously hand-rolled independently in both
+    # `Xaas.Ultracode.Reactor.active_epoch_id/1` and
+    # `Xaas.Ultracode.NextEpoch.advance_run/1`'s `has_active?` check, two
+    # separate copies of the identical business predicate. `sort` is
+    # required, not optional: no DB-level unique index covers
+    # `[:expected, :running]` jointly (only `state == :running`, via
+    # `Xaas.Ultracode.Validations.AtMostOneActiveEpoch`), so without a
+    # deterministic tiebreak `has_one` would pick an arbitrary row under a
+    # latent data anomaly.
+    has_one :active_epoch, Xaas.Ultracode.Epoch do
+      filter(expr(state in [:expected, :running]))
+      sort(cycle: :desc)
+      read_action(:read_unscoped)
+    end
   end
 end

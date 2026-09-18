@@ -156,7 +156,11 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
   # to the kind of migration file produced.
   defp run_generate_migrations_without_risk_of_hanging!(name) do
     previous_shell = Mix.shell()
-    Mix.shell(FailFastShell)
+    # Qualified: FailFastShell is a submodule of this task module. A bare
+    # `FailFastShell` here resolves to the undefined top-level module, so the
+    # first `Mix.shell().info/1` from ash_postgres crashed with
+    # UndefinedFunctionError instead of failing fast.
+    Mix.shell(__MODULE__.FailFastShell)
 
     try do
       Mix.Task.run("ash_postgres.generate_migrations", ["--name", name])
