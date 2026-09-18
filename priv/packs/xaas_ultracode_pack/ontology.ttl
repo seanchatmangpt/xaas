@@ -37,6 +37,7 @@ xu:Resource_ProbeRun a xu:EngineeringRun ;
   xu:field "cycle:integer" ;
   xu:field "max_cycles:integer" ;
   xu:field "epoch_timeout_seconds:integer" ;
+  xu:field "verifier_suite:string" ;
   xu:field "started_at:utc_datetime_usec" ;
   xu:field "deadline_at:utc_datetime_usec" ;
   xu:field "last_expected_epoch_at:utc_datetime_usec" ;

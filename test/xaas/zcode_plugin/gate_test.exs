@@ -177,8 +177,15 @@ defmodule Xaas.ZcodePlugin.GateTest do
       assert :allow == gate(ctx, "TodoWrite", %{todos: []})
     end
 
-    test "zcode's Agent tool maps to the server's Task and is admitted", %{ctx: ctx} do
-      assert :allow == gate(ctx, "Agent", %{prompt: "x"})
+    test "subagent spawning is denied by default because a subagent's tool calls bypass the hook",
+         %{ctx: ctx} do
+      assert {:deny, reason} = gate(ctx, "Agent", %{prompt: "x"})
+      assert reason =~ "not routed through PreToolUse"
+    end
+
+    test "with XAAS_ALLOW_SUBAGENTS=1 zcode's Agent tool maps to the server's Task and is admitted",
+         %{ctx: ctx} do
+      assert :allow == gate(ctx, "Agent", %{prompt: "x"}, [{"XAAS_ALLOW_SUBAGENTS", "1"}])
     end
 
     test "a tool the server does not know is refused by the real arbiter", %{ctx: ctx} do

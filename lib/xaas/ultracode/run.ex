@@ -224,7 +224,15 @@ defmodule Xaas.Ultracode.Run do
     end
 
     create :create do
-      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider, :org_id])
+      accept([
+        :goal,
+        :deadline_at,
+        :max_cycles,
+        :epoch_timeout_seconds,
+        :provider,
+        :org_id,
+        :verifier_suite
+      ])
 
       # `:allow_global`: called both from the customer-facing controller
       # (`org_id` set explicitly from the authenticated org -- see this
@@ -232,6 +240,8 @@ defmodule Xaas.Ultracode.Run do
       # no org and no tenant at all. `:enforce` (the default once
       # `multitenancy do ... end` is configured) would raise
       # `TenantRequired` on every one of those real internal callers.
+      validate({Xaas.Ultracode.Validations.VerifierSuiteRegistered, []})
+
       multitenancy(:allow_global)
     end
 
@@ -245,7 +255,17 @@ defmodule Xaas.Ultracode.Run do
     # fixtures) call directly and far more than 30 times/minute in a fast
     # `mix test` run.
     create :submit do
-      accept([:goal, :deadline_at, :max_cycles, :epoch_timeout_seconds, :provider, :org_id])
+      accept([
+        :goal,
+        :deadline_at,
+        :max_cycles,
+        :epoch_timeout_seconds,
+        :provider,
+        :org_id,
+        :verifier_suite
+      ])
+
+      validate({Xaas.Ultracode.Validations.VerifierSuiteRegistered, []})
 
       multitenancy(:allow_global)
     end
@@ -357,6 +377,19 @@ defmodule Xaas.Ultracode.Run do
     # branches on.
     attribute :provider, :string do
       public?(true)
+    end
+
+    # Name of an operator-registered verifier suite
+    # (`config :xaas, :ultracode_verifier_suites`) that the FABRIC runs at
+    # close time against the worker's claimed head -- the independent
+    # definition of done (`Xaas.Ultracode.Verifier`). A NAME only, never a
+    # command: `VerifierSuiteRegistered` refuses anything unregistered, and a
+    # suite only ever executes in a worktree under the operator containment
+    # root. nil = no fabric verifier (today's behavior).
+    attribute :verifier_suite, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 64, match: ~r/^[a-z0-9][a-z0-9_-]*$/)
     end
 
     # Real, disclosed, schema-only seam -- see this module's own moduledoc

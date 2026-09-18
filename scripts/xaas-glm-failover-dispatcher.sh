@@ -10,6 +10,12 @@
 # and publish stay hard-refused server-side by Xaas.Ultracode.Lease.admit_tool.
 #
 # Usage: xaas-glm-failover-dispatcher.sh [--once] [--interval SECONDS]
+#        xaas-glm-failover-dispatcher.sh --epoch EPOCH_UUID
+#
+# --epoch dispatches exactly that (running, unleased) epoch once and exits with
+# the dispatch result: 0 ok, 1 failed/timeout, 75 rate limited (Z.AI 429 / 1302),
+# 3 epoch not ready. It takes no instance lock, so an orchestrator can run many
+# in parallel; the worker claims that epoch by id, never the oldest.
 #
 # Env (defaults in parens):
 #   PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE  (localhost 5432 postgres postgres xaas_dev)
@@ -38,13 +44,16 @@ STALL_ALERT_SECONDS="${STALL_ALERT_SECONDS:-600}"
 STATE_DIR="${STATE_DIR:-$HOME/.zcode/failover}"
 
 ONCE=0
+DIRECT_EPOCH=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --once) ONCE=1; shift ;;
+    --epoch) DIRECT_EPOCH="${2:?--epoch requires an epoch uuid}"; shift 2 ;;
+    --epoch=*) DIRECT_EPOCH="${1#--epoch=}"; shift ;;
     --interval) POLL_INTERVAL="${2:?--interval requires a value}"; shift 2 ;;
     --interval=*) POLL_INTERVAL="${1#--interval=}"; shift ;;
-    -h|--help) echo "Usage: $0 [--once] [--interval SECONDS]"; exit 0 ;;
+    -h|--help) echo "Usage: $0 [--once] [--interval SECONDS] | --epoch EPOCH_UUID"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -137,17 +146,23 @@ dispatch_one_epoch() {
     cd "$ZCODE_CLI_DIR" || exit 127
     export XAAS_WORKER=1 XAAS_LEASE_CWD="$cwd_real"
     run_with_timeout node bin/zcode.js \
-      --prompt "/xaas Call claim_next with provider_worker_id exactly \"${worker_id}\"; do not use any other id." \
+      --prompt "/xaas Call claim_next with provider_worker_id exactly \"${worker_id}\" and epoch_id exactly \"${epoch_id}\"; do not use any other values." \
       --cwd "$cwd_real" --json
   ) > "$logfile" 2>&1
   rc=$?
 
   [ "$mode" = "reap" ] && rmdir "$cwd" 2>/dev/null
 
+  if [ "$rc" -eq 0 ] && grep -qE '"code":"?1302|HTTP 429|status(Code)?[": ]+429|Too Many Requests|High concurrency usage' "$logfile" 2>/dev/null; then
+    DISPATCH_RESULT=75
+    log "DISPATCH-RATE-LIMITED epoch=${epoch_id} (429/1302 in worker output)"
+    return 0
+  fi
+
   case "$rc" in
-    0) log "DISPATCH-OK epoch=${epoch_id} exit=0" ;;
-    142) log "DISPATCH-TIMEOUT epoch=${epoch_id} after=${DISPATCH_TIMEOUT}s" ;;
-    *) log "DISPATCH-FAIL epoch=${epoch_id} exit=${rc}" ;;
+    0) DISPATCH_RESULT=0; log "DISPATCH-OK epoch=${epoch_id} exit=0" ;;
+    142) DISPATCH_RESULT=1; log "DISPATCH-TIMEOUT epoch=${epoch_id} after=${DISPATCH_TIMEOUT}s" ;;
+    *) DISPATCH_RESULT=1; log "DISPATCH-FAIL epoch=${epoch_id} exit=${rc}" ;;
   esac
   return 0
 }
@@ -192,6 +207,26 @@ EOF
   log "pass complete: ${drained} dispatch(es), MAX_DRAIN=${MAX_DRAIN} reached"
   return 0
 }
+
+if [ -n "$DIRECT_EPOCH" ]; then
+  case "$DIRECT_EPOCH" in
+    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*-*-*-*) ;;
+    *) log "bad --epoch value"; exit 2 ;;
+  esac
+  row="$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -t -A -F'|' \
+    -c "SELECT e.id, COALESCE(e.worktree, '') FROM ultracode_epochs e JOIN ultracode_runs r ON r.id = e.run_id
+        WHERE e.id = '${DIRECT_EPOCH}' AND r.provider = 'zcode' AND e.state = 'running' AND e.lease_token IS NULL;" 2>&1)"
+  if [ "$?" -ne 0 ] || [ -z "$row" ]; then
+    log "epoch ${DIRECT_EPOCH} is not a running, unleased zcode epoch (${row:-no row})"
+    exit 3
+  fi
+  IFS='|' read -r direct_id direct_worktree <<EOF
+$row
+EOF
+  DISPATCH_RESULT=1
+  dispatch_one_epoch "$direct_id" "$direct_worktree"
+  exit "$DISPATCH_RESULT"
+fi
 
 acquire_lock || exit 0
 trap release_lock EXIT INT TERM

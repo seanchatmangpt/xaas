@@ -207,4 +207,13 @@ config :logger, :console,
 
 config :phoenix, :json_library, Jason
 
+# Fabric-executed definition of done (`Xaas.Ultracode.Verifier`). Fail closed:
+# no suites are registered by default, and a suite only ever runs in a worktree
+# under `:ultracode_worktree_root`. Environments that use it register named
+# suites (argv lists, never shell strings) in their own config file.
+config :xaas, :ultracode_verifier_suites, %{}
+config :xaas, :ultracode_worktree_root, nil
+config :xaas, :ultracode_ticket_dir, nil
+config :xaas, :ultracode_repos, %{}
+
 import_config "#{config_env()}.exs"

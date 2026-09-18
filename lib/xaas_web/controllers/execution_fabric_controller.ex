@@ -57,12 +57,19 @@ defmodule XaasWeb.ExecutionFabricController do
       name: "claim_next",
       description:
         "Claim the oldest lease-free running epoch of a provider-pull run. " <>
-          "Returns the work payload (run goal + exact subject) and the lease token.",
+          "Returns the work payload (run goal + exact subject + the name of the fabric verifier suite " <>
+          "that will independently judge the closed head, if any) and the lease token.",
       inputSchema: %{
         type: "object",
         properties: %{
           provider: %{type: "string"},
-          provider_worker_id: %{type: "string"}
+          provider_worker_id: %{type: "string"},
+          epoch_id: %{
+            type: "string",
+            description:
+              "Optional: claim exactly this epoch (it must still be a ready epoch of this provider) " <>
+                "instead of the oldest ready one."
+          }
         },
         required: ["provider"]
       }
@@ -309,22 +316,33 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp rpc(_), do: {:error, :invalid_request}
 
-  defp dispatch_tool("claim_next", args) do
-    case Lease.claim_next(args["provider"] || "zcode", args["provider_worker_id"]) do
-      {:ok, epoch, token, run} ->
-        {:ok,
-         %{
-           lease_token: token,
-           lease_expires_at: epoch.lease_expires_at,
-           epoch_id: epoch.id,
-           cycle: epoch.cycle,
-           exact_subject: epoch.exact_subject,
-           goal: run.goal,
-           worktree: epoch.worktree
-         }}
+  # A directed claim needs a well-formed UUID. A malformed one is a typed
+  # refusal -- never a silent fallback to oldest-first, which would bind the
+  # worker to an epoch it did not ask for.
+  defp claim_opts(%{"epoch_id" => id}) do
+    case is_binary(id) && Ecto.UUID.cast(id) do
+      {:ok, uuid} -> {:ok, [epoch_id: uuid]}
+      _ -> {:error, :invalid_epoch_id}
+    end
+  end
 
-      error ->
-        error
+  defp claim_opts(_args), do: {:ok, []}
+
+  defp dispatch_tool("claim_next", args) do
+    with {:ok, opts} <- claim_opts(args),
+         {:ok, epoch, token, run} <-
+           Lease.claim_next(args["provider"] || "zcode", args["provider_worker_id"], opts) do
+      {:ok,
+       %{
+         lease_token: token,
+         lease_expires_at: epoch.lease_expires_at,
+         epoch_id: epoch.id,
+         cycle: epoch.cycle,
+         exact_subject: epoch.exact_subject,
+         goal: run.goal,
+         worktree: epoch.worktree,
+         verifier_suite: run.verifier_suite
+       }}
     end
   end
 
@@ -411,13 +429,14 @@ defmodule XaasWeb.ExecutionFabricController do
     goal = params["goal"]
     worktree = params["worktree"]
     provider = params["provider"] || "zcode"
+    verifier_suite = params["verifier_suite"]
     resources = [Run, Epoch]
 
     transaction_result =
       Ash.DataLayer.transaction(
         resources,
         fn ->
-          with {:ok, run} <- create_run_row(goal, provider, org.id),
+          with {:ok, run} <- create_run_row(goal, provider, org.id, verifier_suite),
                exact_subject = params["exact_subject"] || default_exact_subject(org, run),
                {:ok, epoch} <- create_running_epoch(run, exact_subject, worktree) do
             {run, epoch}
@@ -486,11 +505,15 @@ defmodule XaasWeb.ExecutionFabricController do
   defp rate_limited?(%AshRateLimiter.LimitExceeded{}), do: true
   defp rate_limited?(_), do: false
 
-  defp create_run_row(goal, provider, org_id) do
+  # `verifier_suite` is a NAME the operator registered
+  # (`Xaas.Ultracode.Verifier`); `VerifierSuiteRegistered` turns an unknown
+  # name into a typed 400, and a suite only ever executes in a worktree under
+  # the operator containment root, so naming one grants no execution reach.
+  defp create_run_row(goal, provider, org_id, verifier_suite) do
     Run
     |> Ash.Changeset.for_create(
       :submit,
-      %{goal: goal, provider: provider, org_id: org_id},
+      %{goal: goal, provider: provider, org_id: org_id, verifier_suite: verifier_suite},
       authorize?: false
     )
     |> Ash.create()
