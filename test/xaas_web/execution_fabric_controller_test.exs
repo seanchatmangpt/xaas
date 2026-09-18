@@ -245,6 +245,30 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
              ]
     end
 
+    test "claim_next with an epoch_id binds that epoch; a malformed epoch_id is a typed refusal, not oldest-first",
+         %{conn: conn} do
+      provider = "zcode-directed-http-#{System.unique_integer([:positive])}"
+      {_run_a, older} = provider_run_and_epoch(provider, nil)
+      {_run_b, younger} = provider_run_and_epoch(provider, nil)
+
+      assert %{"error" => error} =
+               tool_call(conn, "claim_next", %{provider: provider, epoch_id: "not-a-uuid"})
+
+      assert error =~ "invalid_epoch_id"
+
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: provider,
+          provider_worker_id: "w-directed",
+          epoch_id: younger.id
+        })
+
+      assert claim["epoch_id"] == younger.id
+
+      free = Ash.get!(Epoch, older.id, action: :read_unscoped, authorize?: false)
+      assert is_nil(free.lease_token)
+    end
+
     test "claim_next with no ready work is a typed tool error, not silence", %{conn: conn} do
       assert tool_call(conn, "claim_next", %{provider: "zcode-chicago"}) ==
                %{"error" => ":no_ready_work"}

@@ -63,7 +63,13 @@ defmodule XaasWeb.ExecutionFabricController do
         type: "object",
         properties: %{
           provider: %{type: "string"},
-          provider_worker_id: %{type: "string"}
+          provider_worker_id: %{type: "string"},
+          epoch_id: %{
+            type: "string",
+            description:
+              "Optional: claim exactly this epoch (it must still be a ready epoch of this provider) " <>
+                "instead of the oldest ready one."
+          }
         },
         required: ["provider"]
       }
@@ -310,23 +316,33 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp rpc(_), do: {:error, :invalid_request}
 
-  defp dispatch_tool("claim_next", args) do
-    case Lease.claim_next(args["provider"] || "zcode", args["provider_worker_id"]) do
-      {:ok, epoch, token, run} ->
-        {:ok,
-         %{
-           lease_token: token,
-           lease_expires_at: epoch.lease_expires_at,
-           epoch_id: epoch.id,
-           cycle: epoch.cycle,
-           exact_subject: epoch.exact_subject,
-           goal: run.goal,
-           worktree: epoch.worktree,
-           verifier_suite: run.verifier_suite
-         }}
+  # A directed claim needs a well-formed UUID. A malformed one is a typed
+  # refusal -- never a silent fallback to oldest-first, which would bind the
+  # worker to an epoch it did not ask for.
+  defp claim_opts(%{"epoch_id" => id}) do
+    case is_binary(id) && Ecto.UUID.cast(id) do
+      {:ok, uuid} -> {:ok, [epoch_id: uuid]}
+      _ -> {:error, :invalid_epoch_id}
+    end
+  end
 
-      error ->
-        error
+  defp claim_opts(_args), do: {:ok, []}
+
+  defp dispatch_tool("claim_next", args) do
+    with {:ok, opts} <- claim_opts(args),
+         {:ok, epoch, token, run} <-
+           Lease.claim_next(args["provider"] || "zcode", args["provider_worker_id"], opts) do
+      {:ok,
+       %{
+         lease_token: token,
+         lease_expires_at: epoch.lease_expires_at,
+         epoch_id: epoch.id,
+         cycle: epoch.cycle,
+         exact_subject: epoch.exact_subject,
+         goal: run.goal,
+         worktree: epoch.worktree,
+         verifier_suite: run.verifier_suite
+       }}
     end
   end
 

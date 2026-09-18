@@ -505,6 +505,50 @@ defmodule Xaas.Ultracode.LeaseTest do
     end
   end
 
+  describe "claim_next/3 directed claims (epoch_id)" do
+    test "a directed claim binds exactly the named epoch, not the oldest ready one" do
+      provider = "zcode-directed-#{System.unique_integer([:positive])}"
+      {_run_old, older} = provider_run_and_epoch(provider)
+      {_run_new, younger} = provider_run_and_epoch(provider)
+
+      assert {:ok, claimed, _token, _run} =
+               Lease.claim_next(provider, "worker-d", epoch_id: younger.id)
+
+      assert claimed.id == younger.id
+      assert claimed.leased_to == "worker-d"
+
+      untouched = Ash.get!(Epoch, older.id, action: :read_unscoped, authorize?: false)
+      assert is_nil(untouched.lease_token)
+
+      assert {:ok, next, _token, _run} = Lease.claim_next(provider, "worker-e")
+      assert next.id == older.id
+    end
+
+    test "a directed claim of an already-leased epoch is no_ready_work, never another epoch" do
+      provider = "zcode-directed-#{System.unique_integer([:positive])}"
+      {_run_a, a} = provider_run_and_epoch(provider)
+      {_run_b, b} = provider_run_and_epoch(provider)
+
+      assert {:ok, %{id: id}, _token, _run} = Lease.claim_next(provider, "w1", epoch_id: a.id)
+      assert id == a.id
+
+      assert {:error, :no_ready_work} = Lease.claim_next(provider, "w2", epoch_id: a.id)
+
+      still_free = Ash.get!(Epoch, b.id, action: :read_unscoped, authorize?: false)
+      assert is_nil(still_free.lease_token)
+    end
+
+    test "a directed claim cannot reach another provider's epoch or a nonexistent id" do
+      {_run, other} = provider_run_and_epoch("zcode-directed-other")
+
+      assert {:error, :no_ready_work} =
+               Lease.claim_next("zcode-directed-mine", "w", epoch_id: other.id)
+
+      assert {:error, :no_ready_work} =
+               Lease.claim_next("zcode-directed-other", "w", epoch_id: Ecto.UUID.generate())
+    end
+  end
+
   describe "EpochReactor provider-pull semantics" do
     test "provider-pull running epoch awaits provider instead of auto-completing" do
       {_run, epoch} = provider_run_and_epoch()

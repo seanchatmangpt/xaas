@@ -111,10 +111,15 @@ defmodule Xaas.Ultracode.Lease do
       when is_binary(provider) and (is_binary(worker_id) or is_nil(worker_id)) do
     ttl = Keyword.get(opts, :lease_ttl_minutes, @default_lease_ttl_minutes)
     max_retries = Keyword.get(opts, :max_retries, @default_claim_retries)
-    do_claim_next(provider, worker_id, ttl, max_retries)
+    do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id))
   end
 
-  defp do_claim_next(provider, worker_id, ttl, retries_left) do
+  # `epoch_id` (directed claim) narrows the candidate set to that one epoch:
+  # it still has to be running, unleased-or-expired, and of this provider, so
+  # it grants nothing an oldest-first claim of the same pool would not -- it
+  # only lets a dispatcher that provisioned a worktree for a specific epoch
+  # bind its worker to exactly that epoch instead of racing for the oldest.
+  defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id) do
     now = DateTime.utc_now()
 
     query =
@@ -123,6 +128,9 @@ defmodule Xaas.Ultracode.Lease do
       |> Ash.Query.filter(state == :running)
       |> Ash.Query.filter(is_nil(lease_token) or lease_expires_at < ^now)
       |> Ash.Query.filter(run.provider == ^provider)
+      |> then(fn q ->
+        if is_binary(epoch_id), do: Ash.Query.filter(q, id == ^epoch_id), else: q
+      end)
       |> Ash.Query.sort(inserted_at: :asc)
       |> Ash.Query.limit(1)
 
@@ -137,7 +145,7 @@ defmodule Xaas.Ultracode.Lease do
         # 0` fails closed rather than spinning forever under pathological,
         # sustained contention.
         {:error, :no_ready_work} when retries_left > 0 ->
-          do_claim_next(provider, worker_id, ttl, retries_left - 1)
+          do_claim_next(provider, worker_id, ttl, retries_left - 1, epoch_id)
 
         other ->
           other

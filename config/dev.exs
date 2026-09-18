@@ -127,7 +127,41 @@ config :xaas, :ultracode_worktree_root, Path.expand("~/xaas-worktrees/runs")
 config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas-worktrees/tickets")
 config :xaas, :ultracode_repos, %{"aps" => Path.expand("~/xaas-worktrees/repos/aps")}
 
+# APS's own five canonical gates, run by the fabric at the integration head.
+aps_env = %{
+  "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+  "LANG" => "en_US.UTF-8",
+  "PYTHONUSERBASE" => Path.expand("~/Library/Python/3.14")
+}
+
 config :xaas, :ultracode_verifier_suites, %{
+  "aps-canonical" => %{
+    env: aps_env,
+    max_output_bytes: 16_384,
+    steps: [
+      %{id: "verify", timeout_ms: 120_000, argv: ["python3", "tools/verify.py", "--no-receipt"]},
+      %{
+        id: "unittest",
+        timeout_ms: 120_000,
+        argv: ["python3", "-m", "unittest", "discover", "-s", "tests"]
+      },
+      %{id: "ggen", timeout_ms: 120_000, argv: ["python3", "tools/verify_ggen_ecosystem.py"]},
+      %{
+        id: "mdbook",
+        timeout_ms: 120_000,
+        argv: ["/bin/sh", "-c", ~S(mdbook build -d "$TMPDIR/book" specification-guide)]
+      },
+      %{
+        id: "simulate",
+        timeout_ms: 120_000,
+        argv: [
+          "python3",
+          "tools/simulate_fortune500.py",
+          "examples/fortune500-fibo/enterprise.json"
+        ]
+      }
+    ]
+  },
   "aps-dod" => %{
     env: %{
       "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
