@@ -57,7 +57,7 @@ defmodule Xaas.Ultracode.MissedEpochReceiptTest do
     assert summary.run_id == run.id
     assert stale_epoch.id in summary.missed
 
-    reloaded_epoch = Ash.get!(Epoch, stale_epoch.id, authorize?: false)
+    reloaded_epoch = Ash.get!(Epoch, stale_epoch.id, action: :read_unscoped, authorize?: false)
     assert reloaded_epoch.state == :missed
 
     # The consequential transition (:expected -> :missed) now has a real

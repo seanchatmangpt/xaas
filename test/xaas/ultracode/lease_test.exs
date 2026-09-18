@@ -404,6 +404,107 @@ defmodule Xaas.Ultracode.LeaseTest do
     end
   end
 
+  describe "worktree safety (Xaas.Ultracode.Validations.WorktreeIsSafe)" do
+    # Real fs-safety hardening pass (2026-09): before this validation,
+    # every shape below passed `Epoch.create` unchanged and was handed
+    # straight back to a claiming worker via `claim_next`'s `worktree`
+    # field -- confirmed via a real repro against the dev DB, not
+    # guessed. These are the same real Ash `Epoch.create` call the
+    # customer-facing controller's `create_running_epoch/3` makes.
+
+    defp epoch_create(worktree) do
+      {:ok, run} =
+        Run
+        |> Ash.Changeset.for_create(
+          :create,
+          %{goal: "worktree safety qualification", provider: "zcode-worktree-safety"},
+          authorize?: false
+        )
+        |> Ash.create()
+
+      Epoch
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: "worktree safety qualification",
+          state: :running,
+          worktree: worktree
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+    end
+
+    test "a real git worktree is admitted" do
+      worktree = make_git_worktree()
+      assert {:ok, epoch} = epoch_create(worktree)
+      assert epoch.worktree == worktree
+    end
+
+    test "nil worktree is unchanged/legal (no destination to validate)" do
+      assert {:ok, epoch} = epoch_create(nil)
+      assert epoch.worktree == nil
+    end
+
+    test "a relative path is refused as worktree_not_absolute" do
+      assert {:error, error} = epoch_create("relative/path")
+
+      assert %Ash.Error.Invalid{errors: [%{field: :worktree, message: "worktree_not_absolute"}]} =
+               error
+    end
+
+    test "root is refused (not a real git repository) as worktree_not_a_git_repo" do
+      assert {:error, error} = epoch_create("/")
+
+      assert %Ash.Error.Invalid{
+               errors: [%{field: :worktree, message: "worktree_not_a_git_repo"}]
+             } = error
+    end
+
+    test "/etc is refused as worktree_not_a_git_repo" do
+      assert {:error, error} = epoch_create("/etc")
+
+      assert %Ash.Error.Invalid{
+               errors: [%{field: :worktree, message: "worktree_not_a_git_repo"}]
+             } = error
+    end
+
+    test "a traversal shape is refused as worktree_traversal even though the raw string starts with /" do
+      worktree = make_git_worktree()
+      traversal = worktree <> "/../../etc"
+
+      assert {:error, error} = epoch_create(traversal)
+
+      assert %Ash.Error.Invalid{errors: [%{field: :worktree, message: "worktree_traversal"}]} =
+               error
+    end
+
+    test "a nonexistent path is refused as worktree_not_found" do
+      missing =
+        Path.join(System.tmp_dir(), "xaas-worktree-safety-missing-#{System.unique_integer()}")
+
+      assert {:error, error} = epoch_create(missing)
+
+      assert %Ash.Error.Invalid{errors: [%{field: :worktree, message: "worktree_not_found"}]} =
+               error
+    end
+
+    test "a real, existing directory that is NOT a git repo is refused as worktree_not_a_git_repo" do
+      plain_dir =
+        Path.join(System.tmp_dir(), "xaas-worktree-safety-plain-#{System.unique_integer()}")
+
+      File.mkdir_p!(plain_dir)
+
+      assert {:error, error} = epoch_create(plain_dir)
+
+      assert %Ash.Error.Invalid{
+               errors: [%{field: :worktree, message: "worktree_not_a_git_repo"}]
+             } = error
+    end
+  end
+
   describe "EpochReactor provider-pull semantics" do
     test "provider-pull running epoch awaits provider instead of auto-completing" do
       {_run, epoch} = provider_run_and_epoch()
@@ -413,8 +514,12 @@ defmodule Xaas.Ultracode.LeaseTest do
       assert result.action_taken == :await_provider
       assert result.outcome == :alive
 
-      reloaded = Ash.get!(Epoch, epoch.id)
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
       assert reloaded.state == :running
+
+      receipt = Ash.get!(Xaas.Ultracode.Receipt, result.receipt_id, authorize?: false)
+      assert receipt.evidence["action_taken"] == "await_provider"
+      refute Map.has_key?(receipt.evidence, "head_verified")
     end
 
     test "legacy provider-less run keeps complete-next-cycle semantics" do
@@ -423,7 +528,7 @@ defmodule Xaas.Ultracode.LeaseTest do
       assert {:ok, result} = Reactor.run(Xaas.Ultracode.EpochReactor, %{epoch_id: epoch.id})
 
       assert result.action_taken == :complete
-      assert Ash.get!(Epoch, epoch.id).state == :completed
+      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped).state == :completed
     end
   end
 

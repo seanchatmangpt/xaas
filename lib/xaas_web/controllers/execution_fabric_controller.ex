@@ -396,29 +396,100 @@ defmodule XaasWeb.ExecutionFabricController do
   # by `create_run/2` (itself sourced only from `conn.assigns[:current_org]`,
   # which `XaasWeb.Plugs.RequireInternalApiToken` derives from the verified
   # bearer token) — never from `params`, which is untrusted client input.
+  #
+  # Real, evidence-found fix (2026-09 fs-safety hardening pass): the Run
+  # and Epoch creates below used to be two independent, unwrapped
+  # `Ash.create/1` calls -- a real `mix test` run against the new
+  # `WorktreeIsSafe` validation caught this live: a rejected worktree
+  # left a real, orphaned `:pending` Run row behind with no Epoch,
+  # because the Run had already committed before the Epoch create
+  # failed. Wrapped in one real data-layer transaction, this repo's own
+  # established pattern for "multiple Ash creates, one all-or-nothing
+  # unit" (`Xaas.Actuation.run/4`'s `Ash.DataLayer.transaction/5` +
+  # `Ash.DataLayer.rollback/2`), not a new mechanism.
   defp do_create_run(conn, %Org{} = org, params) do
     goal = params["goal"]
     worktree = params["worktree"]
     provider = params["provider"] || "zcode"
+    resources = [Run, Epoch]
 
-    with {:ok, run} <- create_run_row(goal, provider, org.id),
-         exact_subject = params["exact_subject"] || default_exact_subject(org, run),
-         {:ok, epoch} <- create_running_epoch(run, exact_subject, worktree) do
-      conn
-      |> put_status(201)
-      |> json(%{run_id: run.id, epoch_id: epoch.id})
-    else
-      {:error, reason} ->
+    transaction_result =
+      Ash.DataLayer.transaction(
+        resources,
+        fn ->
+          with {:ok, run} <- create_run_row(goal, provider, org.id),
+               exact_subject = params["exact_subject"] || default_exact_subject(org, run),
+               {:ok, epoch} <- create_running_epoch(run, exact_subject, worktree) do
+            {run, epoch}
+          else
+            {:error, reason} -> Ash.DataLayer.rollback(resources, reason)
+          end
+        end,
+        nil,
+        %{type: :custom, metadata: %{operation: :xaas_execution_fabric_create_run}}
+      )
+
+    case transaction_result do
+      {:ok, {run, epoch}} ->
         conn
-        |> put_status(400)
-        |> json(%{error: "invalid_request", detail: format_reason(reason)})
+        |> put_status(201)
+        |> json(%{run_id: run.id, epoch_id: epoch.id})
+
+      {:error, reason} ->
+        create_run_error(conn, reason)
     end
   end
+
+  # Real per-org quota (2026-09 fs-safety hardening pass -- see
+  # `Xaas.Ultracode.Run`'s own `rate_limit do` block): a genuine 429, not
+  # a generic 400, distinguishing "your submission was malformed" from
+  # "your submission was fine, submit fewer of them" -- the correct HTTP
+  # semantics for a rate limit, and real evidence a caller-facing client
+  # can branch on (retry-after semantics) rather than treating both cases
+  # identically.
+  defp create_run_error(conn, reason) do
+    if rate_limited?(reason) do
+      conn
+      |> put_status(429)
+      |> json(%{error: "rate_limited", detail: "too many run submissions for this org"})
+    else
+      conn
+      |> put_status(400)
+      |> json(%{error: "invalid_request", detail: format_reason(reason)})
+    end
+  end
+
+  # Real, evidence-corrected match -- twice over, both caught by re-running
+  # the real check after implementing rather than assumed correct:
+  #
+  # 1. `AshRateLimiter.LimitExceeded` is `class: :forbidden`
+  #    (deps/ash_rate_limiter/lib/ash_rate_limiter/limit_exceeded.ex), so a
+  #    rate-limited `:submit` call surfaces wrapped in
+  #    `%Ash.Error.Forbidden{}`, NOT `%Ash.Error.Invalid{}` -- matching only
+  #    `Invalid` (the first draft) silently fell through to a generic 400.
+  # 2. Once `do_create_run/3` below was wrapped in one
+  #    `Ash.DataLayer.transaction/5` (fixing the orphaned-Run bug the
+  #    `WorktreeIsSafe` fix exposed -- see that function's own comment), a
+  #    live `mix test` run showed `Ash.create/1`'s error, called from
+  #    INSIDE an already-open data-layer transaction, comes back as the
+  #    raw `%Ash.Changeset{errors: [...]}` instead of either wrapper above
+  #    -- Ash defers the final `Ash.Error` wrapping to the transaction
+  #    owner in that shape. All three are handled the same way: unwrap to
+  #    the real `errors` list and check each one.
+  defp rate_limited?(%Ash.Error.Invalid{errors: errors}), do: Enum.any?(errors, &rate_limited?/1)
+
+  defp rate_limited?(%Ash.Error.Forbidden{errors: errors}),
+    do: Enum.any?(errors, &rate_limited?/1)
+
+  defp rate_limited?(%Ash.Changeset{errors: errors}), do: Enum.any?(errors, &rate_limited?/1)
+
+  defp rate_limited?(%AshRateLimiter.LimitExceeded{}), do: true
+  defp rate_limited?(_), do: false
 
   defp create_run_row(goal, provider, org_id) do
     Run
     |> Ash.Changeset.for_create(
-      :create,
+      :submit,
       %{goal: goal, provider: provider, org_id: org_id},
       authorize?: false
     )
@@ -436,6 +507,10 @@ defmodule XaasWeb.ExecutionFabricController do
       :create,
       %{
         run_id: run.id,
+        # Denormalized from the just-created Run -- see Epoch's own
+        # moduledoc "Org scoping" section. This is the real value
+        # `receipts_for_org/3` below filters on at the query layer.
+        org_id: run.org_id,
         cycle: 0,
         exact_subject: exact_subject,
         state: :running,
@@ -487,23 +562,30 @@ defmodule XaasWeb.ExecutionFabricController do
   end
 
   # Real org scoping (this pass): only reachable when the caller
-  # authenticated via an org-carrying token. A real 404 (never a 403,
-  # which would leak that the epoch exists) for an epoch whose Run belongs
-  # to a different org, or one with no org_id at all -- org-less epochs
-  # stay admin/internal-tier only, never visible to a customer token.
+  # authenticated via an org-carrying token. QUERY-LAYER enforced (real
+  # multitenancy retrofit, see `Xaas.Ultracode.Run`/`Epoch`'s own
+  # moduledocs) -- `tenant: org_id` on Epoch's own `:enforce`d default
+  # `:read` action applies a real `org_id == ^org_id` filter before the row
+  # ever reaches this function, not a manual comparison after an unscoped
+  # fetch. A real 404 (never a 403, which would leak that the epoch
+  # exists) for an epoch whose own `org_id` doesn't match this token's org
+  # (a different org's epoch, or one with no org_id at all) -- org-less
+  # epochs stay admin/internal-tier only, never visible to a customer
+  # token.
   defp receipts_for_org(conn, epoch_id, %Org{id: org_id}) do
-    case Ash.get(Epoch, epoch_id, authorize?: false, load: [:run]) do
-      {:ok, %Epoch{run: %Run{org_id: ^org_id}}} ->
-        receipts_unscoped(conn, epoch_id)
-
+    case Ash.get(Epoch, epoch_id, tenant: org_id, authorize?: false) do
       {:ok, %Epoch{}} ->
-        epoch_not_found(conn, epoch_id)
-
-      {:error, %Ash.Error.Invalid{}} ->
-        # Syntactically invalid epoch id -- preserve the same 400 contract
-        # as the unscoped path (Receipt.for_epoch re-validates and
-        # produces the identical "invalid_epoch_id" response).
         receipts_unscoped(conn, epoch_id)
+
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        if Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1)) do
+          epoch_not_found(conn, epoch_id)
+        else
+          # Syntactically invalid epoch id -- preserve the same 400
+          # contract as the unscoped path (Receipt.for_epoch re-validates
+          # and produces the identical "invalid_epoch_id" response).
+          receipts_unscoped(conn, epoch_id)
+        end
 
       {:error, _not_found} ->
         epoch_not_found(conn, epoch_id)
@@ -621,5 +703,26 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp format_reason(reason) when is_binary(reason), do: reason
   defp format_reason({tag, detail}) when is_atom(tag), do: "#{tag}:#{inspect(detail)}"
+
+  # Real, typed extraction for the common Ash validation-failure shape
+  # (`Xaas.Ultracode.Validations.WorktreeIsSafe`, `Run.goal`'s
+  # `max_length` constraint, ...): surfaces the actual `field`/`message`
+  # instead of a giant `inspect/1` blob of the whole %Ash.Error.Invalid{}
+  # struct, so a 400 caller sees e.g. `"worktree: worktree_traversal"`
+  # rather than opaque internals.
+  defp format_reason(%Ash.Error.Invalid{errors: [%{field: field, message: message} | _]})
+       when not is_nil(field) do
+    "#{field}: #{message}"
+  end
+
+  # Same real shape, unwrapped from a raw `%Ash.Changeset{}` -- see
+  # `rate_limited?/1`'s own comment on why an action's error surfaces this
+  # way when called from inside an already-open data-layer transaction
+  # (`do_create_run/3`'s `Ash.DataLayer.transaction/5`).
+  defp format_reason(%Ash.Changeset{errors: [%{field: field, message: message} | _]})
+       when not is_nil(field) do
+    "#{field}: #{message}"
+  end
+
   defp format_reason(reason), do: inspect(reason)
 end

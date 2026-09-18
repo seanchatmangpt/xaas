@@ -87,7 +87,9 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     assert summary.run_id == run.id
     assert stale_epoch.id in summary.missed
 
-    reloaded_stale_epoch = Ash.get!(Epoch, stale_epoch.id, authorize?: false)
+    reloaded_stale_epoch =
+      Ash.get!(Epoch, stale_epoch.id, action: :read_unscoped, authorize?: false)
+
     assert reloaded_stale_epoch.state == :missed
 
     # 4) A second, real durable Epoch (cycle 1) -- the one this test drives
@@ -120,7 +122,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     assert first_result.outcome == :alive
     assert is_binary(first_result.receipt_id)
 
-    after_start = Ash.get!(Epoch, active_epoch.id, authorize?: false)
+    after_start = Ash.get!(Epoch, active_epoch.id, action: :read_unscoped, authorize?: false)
     assert after_start.state == :running
 
     first_receipt = Ash.get!(Receipt, first_result.receipt_id, authorize?: false)
@@ -138,7 +140,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     assert second_result.action_taken == :complete
     assert second_result.outcome == :alive
 
-    completed_epoch = Ash.get!(Epoch, active_epoch.id, authorize?: false)
+    completed_epoch = Ash.get!(Epoch, active_epoch.id, action: :read_unscoped, authorize?: false)
     assert completed_epoch.state == :completed
 
     second_receipt = Ash.get!(Receipt, second_result.receipt_id, authorize?: false)
@@ -244,7 +246,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
 
       assert :ok = Reactor.Step.undo(construct_step, value, %{}, %{})
 
-      reloaded = Ash.get!(Epoch, epoch.id)
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
       assert reloaded.state == :failed
 
       [receipt] =
@@ -289,7 +291,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       # misrepresent a real success as a failure, and Epoch's own
       # EpochTransitionAllowed validation refuses :mark_failed from
       # :completed anyway).
-      reloaded = Ash.get!(Epoch, epoch.id)
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
       assert reloaded.state == :completed
 
       [receipt] =
@@ -357,7 +359,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       # reads the CHANGESET's data -- the stale struct, not a fresh read
       # -- so it would have passed and silently clobbered this real
       # :completed row to :failed.
-      reloaded = Ash.get!(Epoch, epoch.id)
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
       assert reloaded.state == :completed
 
       # Not a silent no-op either: a real, typed :refused Receipt lands

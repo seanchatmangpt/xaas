@@ -52,6 +52,7 @@ defmodule Xaas.Ultracode.RunStartTest do
 
     {:ok, [first_epoch]} =
       Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.read(authorize?: false)
 
@@ -68,6 +69,7 @@ defmodule Xaas.Ultracode.RunStartTest do
     # No second Epoch was constructed by the refused call.
     {:ok, epochs_after_refusal} =
       Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.read(authorize?: false)
 
@@ -92,12 +94,13 @@ defmodule Xaas.Ultracode.RunStartTest do
     # same real Reactor the AshOban :tick scheduled action invokes.
     Enum.each(1..4, fn _tick -> {:ok, _} = Reactor.run(Xaas.Ultracode.Reactor) end)
 
-    final_run = Ash.get!(Run, run.id, authorize?: false)
+    final_run = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
     assert final_run.state == :completed
     assert final_run.standing == :admitted
 
     {:ok, all_epochs} =
       Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.read(authorize?: false)
 

@@ -34,6 +34,7 @@ defmodule Xaas.Ultracode.NextEpoch do
   def advance_all do
     {:ok, active_runs} =
       Xaas.Ultracode.Run
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(state == :running)
       |> Ash.read()
 
@@ -66,6 +67,7 @@ defmodule Xaas.Ultracode.NextEpoch do
     # already relies on in this same subsystem.
     {:ok, recent_epochs} =
       Xaas.Ultracode.Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.Query.sort(cycle: :desc)
       |> Ash.Query.limit(1)
@@ -101,6 +103,11 @@ defmodule Xaas.Ultracode.NextEpoch do
           :create,
           %{
             run_id: run.id,
+            # Denormalized from the parent Run -- kept in sync at every
+            # real Epoch-create call site (see Epoch's own moduledoc "Org
+            # scoping" section); an org-less Run's next epoch stays
+            # org-less too.
+            org_id: run.org_id,
             cycle: run.cycle,
             exact_subject: last_epoch.exact_subject,
             state: :expected,

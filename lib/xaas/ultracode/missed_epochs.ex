@@ -38,6 +38,7 @@ defmodule Xaas.Ultracode.MissedEpochs do
   def advance_all do
     {:ok, active_runs} =
       Xaas.Ultracode.Run
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(state == :running)
       |> Ash.read()
 
@@ -72,6 +73,7 @@ defmodule Xaas.Ultracode.MissedEpochs do
 
     {:ok, stale_epochs} =
       Xaas.Ultracode.Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.Query.filter(state in [:expected, :running])
       |> Ash.Query.filter(not is_nil(expected_at) and expected_at < ^deadline)

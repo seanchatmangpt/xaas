@@ -84,7 +84,10 @@ defmodule Xaas.Ultracode.NextEpochTest do
 
     # --- Tick 1: epoch 0 :expected -> :running. No manual intervention. ---
     {:ok, _tick1} = Reactor.run(Xaas.Ultracode.Reactor)
-    epoch0_after_tick1 = Ash.get!(Epoch, first_epoch.id, authorize?: false)
+
+    epoch0_after_tick1 =
+      Ash.get!(Epoch, first_epoch.id, action: :read_unscoped, authorize?: false)
+
     assert epoch0_after_tick1.state == :running
 
     # --- Tick 2: epoch 0 :running -> :completed, AND (same tick's
@@ -92,41 +95,46 @@ defmodule Xaas.Ultracode.NextEpochTest do
     # the real assertion that blocker (1) is closed: nothing but the tick
     # itself produced epoch cycle=1. ---
     {:ok, _tick2} = Reactor.run(Xaas.Ultracode.Reactor)
-    epoch0_after_tick2 = Ash.get!(Epoch, first_epoch.id, authorize?: false)
+
+    epoch0_after_tick2 =
+      Ash.get!(Epoch, first_epoch.id, action: :read_unscoped, authorize?: false)
+
     assert epoch0_after_tick2.state == :completed
 
     {:ok, [epoch1]} =
       Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id and cycle == 1)
       |> Ash.read(authorize?: false)
 
     assert epoch1.state == :expected
     assert epoch1.exact_subject == subject
 
-    run_after_tick2 = Ash.get!(Run, run.id, authorize?: false)
+    run_after_tick2 = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
     assert run_after_tick2.cycle == 2
     assert run_after_tick2.state == :running
 
     # --- Tick 3: epoch 1 :expected -> :running. Still zero manual epoch
     # creation. ---
     {:ok, _tick3} = Reactor.run(Xaas.Ultracode.Reactor)
-    epoch1_after_tick3 = Ash.get!(Epoch, epoch1.id, authorize?: false)
+    epoch1_after_tick3 = Ash.get!(Epoch, epoch1.id, action: :read_unscoped, authorize?: false)
     assert epoch1_after_tick3.state == :running
 
     # --- Tick 4: epoch 1 :running -> :completed, AND (same tick) the Run
     # itself reaches max_cycles=2, so :advance_next_epochs transitions the
     # Run to :completed rather than constructing a third epoch. ---
     {:ok, _tick4} = Reactor.run(Xaas.Ultracode.Reactor)
-    epoch1_after_tick4 = Ash.get!(Epoch, epoch1.id, authorize?: false)
+    epoch1_after_tick4 = Ash.get!(Epoch, epoch1.id, action: :read_unscoped, authorize?: false)
     assert epoch1_after_tick4.state == :completed
 
-    final_run = Ash.get!(Run, run.id, authorize?: false)
+    final_run = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
     assert final_run.state == :completed
     assert final_run.standing == :admitted
 
     # No third epoch was ever constructed.
     {:ok, all_epochs} =
       Epoch
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.read(authorize?: false)
 

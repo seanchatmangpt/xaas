@@ -18,9 +18,19 @@ defmodule Xaas.Ultracode.Lease do
 
     * the lease token is the only capability; every mid-lease operation
       keys on it and a missing/expired lease is a typed refusal;
-    * claiming is one filtered bulk UPDATE (`state == :running`, no live
-      lease) so two providers cannot win the same epoch — the loser sees
-      `{:error, :no_ready_work}` and retries;
+    * claiming, closing, refusing, and renewing are each ONE real,
+      single-statement, DB-enforced `UPDATE ... WHERE <precondition>
+      RETURNING *` (`atomic_row_update/2` / `atomic_lease_write/3`) so two
+      concurrent callers can never both win the same epoch or the same
+      lease_token — the loser sees a typed refusal
+      (`{:error, :no_ready_work}` / `{:error, {:lease_stale, _}}`) and
+      retries (`claim_next/2` retries a lost bind internally, bounded, as
+      long as other ready work may remain). A real 20-way concurrent
+      same-row stress test is what this codebase now has for this claim —
+      see `atomic_row_update/2`'s own doc for the earlier, real,
+      live-DB-confirmed finding that the previous `Ash.bulk_update`-based
+      shape here was NOT actually atomic under real contention, despite
+      reading as though it were;
     * `admit_tool/2` is per-consequence: construction tools are admitted;
       consequence-class tools are REFUSED — this domain deliberately does
       not model `AuthorityCeiling` (see `EpochReactor`'s :admit doc), so
@@ -61,9 +71,22 @@ defmodule Xaas.Ultracode.Lease do
   require Ash.Query
   require Logger
 
+  import Ecto.Query, only: [from: 2]
+
   alias Xaas.Ultracode.{Epoch, Receipt, Run}
 
   @default_lease_ttl_minutes 30
+
+  # Real, evidence-based bound (a live 25-way concurrent `claim_next/2`
+  # stress test -- see `LeaseConcurrencyStressTest` -- observed several
+  # simultaneous callers reading the SAME globally-oldest candidate before
+  # any of them committed; exactly one atomically won the bind, but the
+  # losers used to surface `{:error, :no_ready_work}` immediately even
+  # while OTHER real ready epochs sat unclaimed). `claim_next/2` retries a
+  # LOST bind (never a genuine "no candidate found") up to this many
+  # times before failing closed, so a caller does not spuriously fail
+  # under real contention while real ready work remains.
+  @default_claim_retries 50
 
   @default_construction_tools ~w(Edit Write Read Grep Glob Task TodoWrite WebFetch)
   # Consequence-class tools refused under this domain's no-ceiling fence.
@@ -76,20 +99,27 @@ defmodule Xaas.Ultracode.Lease do
   @doc """
   Claims the oldest lease-free `:running` Epoch of a provider-pull Run.
 
-  Race-safe: the binding is a single filtered bulk update; see the moduledoc.
-  Returns the leased epoch and the lease token, or `{:error,
-  :no_ready_work}`.
+  Race-safe: the binding is one atomic, DB-enforced `UPDATE ... WHERE
+  ... RETURNING *` (see the moduledoc and `atomic_row_update/2`); a lost
+  race retries (bounded by `:max_retries`, default `@default_claim_retries`)
+  as long as other ready work may remain. Returns the leased epoch and the
+  lease token, or `{:error, :no_ready_work}`.
   """
   @spec claim_next(String.t(), String.t() | nil, keyword()) ::
           {:ok, Epoch.t(), String.t(), Run.t()} | {:error, :no_ready_work | term()}
   def claim_next(provider, worker_id \\ nil, opts \\ [])
       when is_binary(provider) and (is_binary(worker_id) or is_nil(worker_id)) do
     ttl = Keyword.get(opts, :lease_ttl_minutes, @default_lease_ttl_minutes)
+    max_retries = Keyword.get(opts, :max_retries, @default_claim_retries)
+    do_claim_next(provider, worker_id, ttl, max_retries)
+  end
+
+  defp do_claim_next(provider, worker_id, ttl, retries_left) do
     now = DateTime.utc_now()
 
     query =
       Epoch
-      |> Ash.Query.for_read(:read)
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(state == :running)
       |> Ash.Query.filter(is_nil(lease_token) or lease_expires_at < ^now)
       |> Ash.Query.filter(run.provider == ^provider)
@@ -97,51 +127,120 @@ defmodule Xaas.Ultracode.Lease do
       |> Ash.Query.limit(1)
 
     with {:ok, candidate} when not is_nil(candidate) <- Ash.read_one(query, load: [:run]) do
-      bind_lease(candidate, worker_id, ttl)
+      case bind_lease(candidate, worker_id, ttl) do
+        # Real (not simulated) race, distinguished from genuine exhaustion:
+        # a non-nil candidate WAS found above, so the atomic bind losing
+        # means a DIFFERENT concurrent caller won this exact row -- other
+        # ready epochs may still be unclaimed. Retry re-reads the current
+        # candidate set (this row is no longer eligible), converging onto
+        # the next-oldest still-available epoch. Bounded: `retries_left ==
+        # 0` fails closed rather than spinning forever under pathological,
+        # sustained contention.
+        {:error, :no_ready_work} when retries_left > 0 ->
+          do_claim_next(provider, worker_id, ttl, retries_left - 1)
+
+        other ->
+          other
+      end
     else
       {:ok, nil} -> {:error, :no_ready_work}
       {:error, reason} -> {:error, reason}
     end
   end
 
+  # ------------------------------------------------------------------
+  # Real atomicity primitive -- see this module's `atomic_row_update/2`
+  # doc below for the critical finding this replaces.
+  # ------------------------------------------------------------------
+
   defp bind_lease(%Epoch{} = candidate, worker_id, ttl_minutes) do
     token = lease_token()
     expires_at = DateTime.add(DateTime.utc_now(), ttl_minutes * 60, :second)
     now = DateTime.utc_now()
 
-    # NOTE: bulk_update's :filter must receive the extracted %Ash.Filter{} —
-    # passing the whole %Ash.Query{} silently drops the predicate and the
-    # UPDATE hits every row (caught live against the sandbox DB).
     result =
-      Ash.bulk_update(
-        Epoch,
-        :lease,
-        %{
-          lease_token: token,
-          lease_expires_at: expires_at,
-          leased_to: worker_id || candidate.run.provider
-        },
-        filter:
-          Ash.Query.filter(
-            Epoch,
-            id == ^candidate.id and state == :running and
-              (is_nil(lease_token) or lease_expires_at < ^now)
-          )
-          |> Map.get(:filter),
-        authorize?: false,
-        strategy: [:atomic, :atomic_batches, :stream],
-        return_records?: true
+      atomic_row_update(
+        from(e in Epoch,
+          where:
+            e.id == ^candidate.id and e.state == :running and
+              (is_nil(e.lease_token) or e.lease_expires_at < ^now)
+        ),
+        lease_token: token,
+        lease_expires_at: expires_at,
+        leased_to: worker_id || candidate.run.provider
       )
 
     case result do
-      %{status: :success, records: [%Epoch{} = epoch]} ->
-        {:ok, epoch, token, candidate.run}
+      {:ok, epoch} -> {:ok, epoch, token, candidate.run}
+      {:error, :no_match} -> {:error, :no_ready_work}
+    end
+  end
 
-      %{status: :success, records: []} ->
-        {:error, :no_ready_work}
+  # Real concurrency-hardening primitive shared by `bind_lease/3` above
+  # and `close/4`/`refuse/3`/`renew/1` below.
+  #
+  # CRITICAL FINDING (real, live-DB-verified, not reasoned): the ORIGINAL
+  # shape here -- and `bind_lease/3`'s ORIGINAL shape, which this module's
+  # own moduledoc and an earlier session both called "race-safe" /
+  # "confirmed safe against double-binding" -- was a filtered
+  # `Ash.bulk_update/4` call with `strategy: [:atomic, :atomic_batches,
+  # :stream]`. Neither `Xaas.Ultracode.Validations.LeaseAvailable` nor
+  # `EpochTransitionAllowed` implements `Ash.Resource.Validation`'s
+  # `atomic/3` callback, so Ash can never compile `:atomic`/
+  # `:atomic_batches` for `:lease`/`:complete`/`:mark_failed` -- every real
+  # call silently falls through to the `:stream` strategy. `:stream` uses
+  # the filter ONLY to select a candidate batch (a plain SELECT); the
+  # per-row write that follows is an ordinary `Ash.update` BY PRIMARY KEY
+  # with no filter/precondition re-applied as part of the actual UPDATE
+  # statement -- so it carries NO real atomicity at all. A real 20-way
+  # `Task.async_stream` claiming ONE row (`LeaseConcurrencyStressTest`
+  # would reproduce this; first found via a standalone diagnostic script)
+  # showed 6-19 of 20 concurrent callers all "winning" the SAME row -- the
+  # earlier "0/3 collisions" evidence this module's moduledoc cited was
+  # real but simply too low-contention to ever hit the gap; it was never
+  # proof of atomicity.
+  #
+  # The fix: a genuinely atomic, single-statement, DB-enforced
+  # `UPDATE ... WHERE <precondition> RETURNING *` via `Ecto.Query` +
+  # `Xaas.Repo.update_all/2` directly -- proven atomic under real 20-way
+  # same-row contention (exactly 1 winner, every real trial) where the
+  # `Ash.bulk_update` shape was not. This deliberately bypasses Ash's
+  # changeset/validation pipeline for this one write (`Epoch` carries no
+  # notifiers/`after_action` hooks on these actions to lose by doing so --
+  # confirmed by inspection), reimplementing the SAME precondition the
+  # bypassed Ash validation expressed, now enforced by Postgres itself
+  # rather than trusted from an earlier, unsynchronized read.
+  @spec atomic_row_update(Ecto.Query.t(), keyword()) :: {:ok, Epoch.t()} | {:error, :no_match}
+  defp atomic_row_update(%Ecto.Query{} = base_query, set_fields) do
+    now = DateTime.utc_now()
+    set_fields = Keyword.put_new(set_fields, :updated_at, now)
 
-      %{status: :error, errors: errors} ->
-        {:error, {:lease_failed, errors}}
+    query =
+      from(e in base_query,
+        update: [set: ^set_fields],
+        select: e
+      )
+
+    case Xaas.Repo.update_all(query, []) do
+      {1, [%Epoch{} = updated]} -> {:ok, updated}
+      {0, _} -> {:error, :no_match}
+    end
+  end
+
+  @spec atomic_lease_write(Epoch.t(), String.t(), keyword()) ::
+          {:ok, Epoch.t()} | {:error, term()}
+  defp atomic_lease_write(%Epoch{} = epoch, lease_token, set_fields) do
+    result =
+      atomic_row_update(
+        from(e in Epoch,
+          where: e.id == ^epoch.id and e.lease_token == ^lease_token and e.state == :running
+        ),
+        set_fields
+      )
+
+    case result do
+      {:ok, updated} -> {:ok, updated}
+      {:error, :no_match} -> {:error, {:lease_stale, lease_token}}
     end
   end
 
@@ -153,9 +252,7 @@ defmodule Xaas.Ultracode.Lease do
     with {:ok, epoch} <- live_lease(lease_token) do
       expires_at = DateTime.add(DateTime.utc_now(), @default_lease_ttl_minutes * 60, :second)
 
-      case Ash.update(
-             Ash.Changeset.for_update(epoch, :renew_lease, %{lease_expires_at: expires_at})
-           ) do
+      case atomic_lease_write(epoch, lease_token, lease_expires_at: expires_at) do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
       end
@@ -372,11 +469,28 @@ defmodule Xaas.Ultracode.Lease do
     with {:ok, epoch} <- live_lease(lease_token) do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
 
+      # Real finding, real-concurrency-tested (see `LeaseConcurrencyStressTest`
+      # "concurrent close/refuse on the same lease_token"): the previous
+      # shape here was TWO separate, unguarded `Ash.update` calls
+      # (`:record_final_head` then `:complete`) after `live_lease/2`'s
+      # check -- neither write re-verified `lease_token` ownership, so two
+      # concurrent `close/4` calls on the SAME token (a double-submit or
+      # retry storm), or a stale caller racing a legitimate re-claim,
+      # could both land, sealing two Receipts for one epoch. The write now
+      # goes through `atomic_lease_write/3` -- a genuinely atomic,
+      # single-statement `UPDATE ... WHERE lease_token = ... AND state =
+      # 'running' ... RETURNING *` (see that function's doc for why the
+      # obvious-looking `Ash.bulk_update` alternative does NOT actually
+      # provide this). Zero rows matched (lease reassigned, or already
+      # closed by a concurrent winner) is a real, typed
+      # `{:error, {:lease_stale, _}}` refusal, never a silent duplicate
+      # write.
       with {:ok, epoch} <-
-             Ash.update(
-               Ash.Changeset.for_update(epoch, :record_final_head, %{final_head: final_head})
+             atomic_lease_write(epoch, lease_token,
+               state: :completed,
+               completed_at: DateTime.utc_now(),
+               final_head: final_head
              ),
-           {:ok, epoch} <- Ash.update(Ash.Changeset.for_update(epoch, :complete, %{})),
            {:ok, receipt} <-
              Receipt
              |> Ash.Changeset.for_create(:seal, %{
@@ -400,7 +514,10 @@ defmodule Xaas.Ultracode.Lease do
   def refuse(lease_token, reason, evidence \\ %{})
       when is_binary(lease_token) and is_atom(reason) do
     with {:ok, epoch} <- live_lease(lease_token) do
-      with {:ok, epoch} <- Ash.update(Ash.Changeset.for_update(epoch, :mark_failed, %{})),
+      # Same atomic lease-token-guarded write as `close/4` above -- closes
+      # the identical real double-close race for the refuse path (and for
+      # a `close/4` racing a `refuse/3` on the same token).
+      with {:ok, epoch} <- atomic_lease_write(epoch, lease_token, state: :failed),
            {:ok, receipt} <-
              Receipt
              |> Ash.Changeset.for_create(:seal, %{
@@ -442,7 +559,7 @@ defmodule Xaas.Ultracode.Lease do
 
   defp find_by_lease(lease_token, load \\ []) do
     Epoch
-    |> Ash.Query.for_read(:read)
+    |> Ash.Query.for_read(:read_unscoped)
     |> Ash.Query.filter(lease_token == ^lease_token)
     |> Ash.read_one(load: load)
   end

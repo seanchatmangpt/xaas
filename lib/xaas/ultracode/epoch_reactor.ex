@@ -37,7 +37,7 @@ defmodule Xaas.Ultracode.EpochReactor do
     argument(:epoch_id, input(:epoch_id))
 
     run(fn %{epoch_id: epoch_id}, _context ->
-      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, load: [:run]) do
+      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, action: :read_unscoped, load: [:run]) do
         {:ok, epoch} -> {:ok, epoch}
         {:error, error} -> {:error, {:observe_failed, error}}
       end
@@ -172,7 +172,7 @@ defmodule Xaas.Ultracode.EpochReactor do
           })
 
         :start ->
-          case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id) do
+          case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, action: :read_unscoped) do
             {:ok, %{state: :running} = fresh_epoch} ->
               case Ash.Changeset.for_update(fresh_epoch, :mark_failed, %{}) |> Ash.update() do
                 {:ok, failed_epoch} ->
@@ -244,7 +244,7 @@ defmodule Xaas.Ultracode.EpochReactor do
       expected_state =
         if action_taken in [:start, :await_provider], do: :running, else: :completed
 
-      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id) do
+      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, action: :read_unscoped) do
         {:ok, %{state: ^expected_state} = reloaded} ->
           {:ok,
            %{
@@ -254,7 +254,8 @@ defmodule Xaas.Ultracode.EpochReactor do
              action_taken: action_taken,
              evidence: %{
                "expected_state" => Atom.to_string(expected_state),
-               "observed_state" => Atom.to_string(reloaded.state)
+               "observed_state" => Atom.to_string(reloaded.state),
+               "action_taken" => Atom.to_string(action_taken)
              }
            }}
 

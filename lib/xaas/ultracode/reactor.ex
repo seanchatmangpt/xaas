@@ -61,6 +61,7 @@ defmodule Xaas.Ultracode.Reactor do
   step :fetch_active_runs do
     run(fn _arguments, _context ->
       Xaas.Ultracode.Run
+      |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(state == :running)
       |> Ash.read()
     end)

@@ -23,6 +23,8 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
   use XaasWeb.ConnCase
 
+  require Ash.Query
+
   alias Xaas.Accounts.Org
   alias Xaas.Governance.InternalApiTokenAuth
   alias Xaas.Ultracode.{Epoch, Run}
@@ -283,7 +285,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       assert closed["outcome"] == "alive"
 
       # The DB row really landed: epoch completed, receipt sealed.
-      reloaded = Ash.get!(Epoch, epoch.id, authorize?: false)
+      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
       assert reloaded.state == :completed
       assert reloaded.final_head == git_head(worktree)
     end
@@ -308,7 +310,9 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
         })
 
       assert closed["outcome"] == "alive"
-      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :completed
+
+      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state ==
+               :completed
     end
 
     test "an outcome outside the valid vocabulary (e.g. 'UNKNOWN') is silently normalized to partial_alive, not fenced or rejected",
@@ -337,7 +341,9 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       assert closed["status"] == "closed"
       assert closed["outcome"] == "partial_alive"
-      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :completed
+
+      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state ==
+               :completed
     end
 
     test "refuse always seals the receipt's outcome as the generic 'refused' -- a typed reason (e.g. BLOCKED, BUILD_BROKEN) is preserved only in evidence, never as outcome",
@@ -384,7 +390,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       assert refused["status"] == "refused"
       assert refused["outcome"] == "refused"
-      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :failed
+      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state == :failed
     end
 
     test "refuse with an arbitrary attacker-chosen reason string never crashes or interns a new atom",
@@ -414,7 +420,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       assert refused["status"] == "refused"
       assert refused["outcome"] == "refused"
-      assert Ash.get!(Epoch, epoch.id, authorize?: false).state == :failed
+      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state == :failed
 
       # The unresolvable reason must not have been silently dropped either:
       # it lands as a real, inspectable string in the sealed receipt's
@@ -656,6 +662,13 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
          %{conn: conn} do
       org_a = create_org!("acme-test-org-a")
       token_a = org_token!("acme-token-a", org_a)
+      # Real git worktree (2026-09 fs-safety hardening pass): the
+      # controller now real-validates `worktree` server-side (see
+      # `Xaas.Ultracode.Validations.WorktreeIsSafe`) -- a bare non-git
+      # tmp path like the old `/tmp/wt-org-a` no longer clears the
+      # create-run path, matching the same real behavior a production
+      # submission now gets.
+      worktree = make_git_worktree()
 
       body =
         conn
@@ -665,7 +678,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
           "/internal-api/execution/runs",
           Jason.encode!(%{
             goal: "Chicago org-scoped submission over real HTTP.",
-            worktree: "/tmp/wt-org-a",
+            worktree: worktree,
             provider: "zcode-org-a-submit"
           })
         )
@@ -676,16 +689,18 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       # Real state check: read the created rows back from the DB, don't
       # trust the response body alone.
-      reloaded_run = Ash.get!(Run, body["run_id"], authorize?: false)
+      reloaded_run = Ash.get!(Run, body["run_id"], action: :read_unscoped, authorize?: false)
       assert reloaded_run.org_id == org_a.id
       assert reloaded_run.provider == "zcode-org-a-submit"
       assert reloaded_run.goal == "Chicago org-scoped submission over real HTTP."
 
-      reloaded_epoch = Ash.get!(Epoch, body["epoch_id"], authorize?: false)
+      reloaded_epoch =
+        Ash.get!(Epoch, body["epoch_id"], action: :read_unscoped, authorize?: false)
+
       assert reloaded_epoch.run_id == reloaded_run.id
       assert reloaded_epoch.cycle == 0
       assert reloaded_epoch.state == :running
-      assert reloaded_epoch.worktree == "/tmp/wt-org-a"
+      assert reloaded_epoch.worktree == worktree
     end
 
     test "an org-less submission defaults provider to zcode and generates an exact_subject",
@@ -703,10 +718,12 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
         )
         |> json_response(201)
 
-      reloaded_run = Ash.get!(Run, body["run_id"], authorize?: false)
+      reloaded_run = Ash.get!(Run, body["run_id"], action: :read_unscoped, authorize?: false)
       assert reloaded_run.provider == "zcode"
 
-      reloaded_epoch = Ash.get!(Epoch, body["epoch_id"], authorize?: false)
+      reloaded_epoch =
+        Ash.get!(Epoch, body["epoch_id"], action: :read_unscoped, authorize?: false)
+
       assert is_binary(reloaded_epoch.exact_subject)
       assert reloaded_epoch.exact_subject != ""
     end
@@ -847,6 +864,58 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       |> json_response(404)
     end
 
+    test "an org token reading receipts for a well-formed but nonexistent epoch_id gets a real 404, not a 200 empty-list existence oracle",
+         %{conn: conn} do
+      # Real, adversarial-review-found regression coverage: Ash.get/3 wraps
+      # BOTH a genuinely malformed primary key AND a well-formed-but-absent
+      # UUID in the same outer `%Ash.Error.Invalid{}` struct. A prior
+      # version of receipts_for_org/3 matched that outer struct alone and
+      # routed a syntactically valid, merely nonexistent epoch_id to the
+      # unscoped read path, which happily returns a real HTTP 200
+      # `{"receipts": []}` (Receipt.for_epoch has nothing to reject) instead
+      # of the intended 404 -- a distinguishable response that would let an
+      # org-scoped caller tell "this id exists nowhere" apart from "exists,
+      # but isn't mine" (a weak cross-org existence oracle). Real-reproduced
+      # live against the dev server before this test/fix existed, then
+      # fixed by only treating a genuine Ash.Error.Query.NotFound inside
+      # that wrapper as "not found"; every other Invalid shape keeps the
+      # original 400 contract (covered by the sibling test below).
+      org_a = create_org!("acme-test-org-nonexistent-epoch")
+      token_a = org_token!("acme-token-nonexistent-epoch", org_a)
+
+      nonexistent_but_well_formed_epoch_id = Ash.UUID.generate()
+
+      body =
+        conn
+        |> with_org_token(token_a)
+        |> get("/internal-api/execution/epochs/#{nonexistent_but_well_formed_epoch_id}/receipts")
+        |> json_response(404)
+
+      assert body["error"] == "epoch_not_found"
+    end
+
+    test "an org token given a malformed/injection-shaped epoch_id still gets a clean 400, never a 500 or the existence-oracle 200",
+         %{conn: conn} do
+      org_a = create_org!("acme-test-org-malformed-epoch")
+      token_a = org_token!("acme-token-malformed-epoch", org_a)
+
+      for malformed <- [
+            "'; DROP TABLE ultracode_epochs;--",
+            "../../../etc/passwd",
+            "not-a-uuid-at-all"
+          ] do
+        body =
+          conn
+          |> with_org_token(token_a)
+          |> get(
+            "/internal-api/execution/epochs/#{URI.encode(malformed, &URI.char_unreserved?/1)}/receipts"
+          )
+          |> json_response(400)
+
+        assert body["error"] == "invalid_epoch_id"
+      end
+    end
+
     test "the legacy shared token's receipt reads stay exactly as before this change (regression)",
          %{conn: conn} do
       worktree = make_git_worktree()
@@ -872,6 +941,182 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       assert [receipt] = body["receipts"]
       assert receipt["outcome"] == "alive"
+    end
+
+    # ------------------------------------------------------------------
+    # fs-safety hardening pass (2026-09) -- real, adversarial worktree
+    # shapes, an unbounded goal, and a per-org submission rate limit, all
+    # over the real HTTP surface, not the controller function in
+    # isolation. See Xaas.Ultracode.Validations.WorktreeIsSafe,
+    # Run.goal's max_length constraint, and Run's `rate_limit do` block.
+    # ------------------------------------------------------------------
+
+    test "a submission with a traversal/suspicious worktree shape gets a real typed 400, never silently accepted",
+         %{conn: conn} do
+      org = create_org!("acme-test-org-worktree-fence")
+      token = org_token!("acme-token-worktree-fence", org)
+
+      for {label, bad_worktree} <- [
+            {"root", "/"},
+            {"etc", "/etc"},
+            {"relative", "relative/path"},
+            {"traversal", "/Users/sac/xaas-harden-fs-safety/../../etc"}
+          ] do
+        body =
+          conn
+          |> with_org_token(token)
+          |> put_req_header("content-type", "application/json")
+          |> post(
+            "/internal-api/execution/runs",
+            Jason.encode!(%{
+              goal: "adversarial worktree probe (#{label})",
+              worktree: bad_worktree,
+              provider: "zcode-worktree-fence-#{label}"
+            })
+          )
+          |> json_response(400)
+
+        assert body["error"] == "invalid_request"
+        assert body["detail"] =~ "worktree"
+
+        # Real, load-bearing negative assertion: no Run/Epoch pair was
+        # actually created for this rejected submission -- the fence
+        # refuses the whole create-run path, not just the HTTP response.
+        rejected_provider = "zcode-worktree-fence-#{label}"
+
+        refute Run
+               |> Ash.Query.for_read(:read_unscoped)
+               |> Ash.Query.filter(provider == ^rejected_provider)
+               |> Ash.exists?(authorize?: false)
+      end
+    end
+
+    test "a submission with no worktree at all is unaffected (worktree stays optional)",
+         %{conn: conn} do
+      org = create_org!("acme-test-org-worktree-optional")
+      token = org_token!("acme-token-worktree-optional", org)
+
+      conn
+      |> with_org_token(token)
+      |> put_req_header("content-type", "application/json")
+      |> post(
+        "/internal-api/execution/runs",
+        Jason.encode!(%{goal: "no worktree supplied", provider: "zcode-worktree-optional"})
+      )
+      |> json_response(201)
+    end
+
+    test "a genuinely oversized goal gets a real typed 400, never silently stored", %{conn: conn} do
+      org = create_org!("acme-test-org-goal-bound")
+      token = org_token!("acme-token-goal-bound", org)
+
+      huge_goal = String.duplicate("x", 100_000)
+
+      body =
+        conn
+        |> with_org_token(token)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{goal: huge_goal, provider: "zcode-goal-bound"})
+        )
+        |> json_response(400)
+
+      assert body["error"] == "invalid_request"
+      assert body["detail"] =~ "goal"
+
+      refute Run
+             |> Ash.Query.for_read(:read_unscoped)
+             |> Ash.Query.filter(provider == "zcode-goal-bound")
+             |> Ash.exists?(authorize?: false)
+    end
+
+    test "a real, bounded goal at the limit is unaffected", %{conn: conn} do
+      org = create_org!("acme-test-org-goal-ok")
+      token = org_token!("acme-token-goal-ok", org)
+
+      at_limit_goal = String.duplicate("x", 50_000)
+
+      conn
+      |> with_org_token(token)
+      |> put_req_header("content-type", "application/json")
+      |> post(
+        "/internal-api/execution/runs",
+        Jason.encode!(%{goal: at_limit_goal, provider: "zcode-goal-ok"})
+      )
+      |> json_response(201)
+    end
+
+    # Real per-org quota, exercised over real HTTP against the real
+    # Xaas.Hammer ETS backend -- the 31st submission inside the same
+    # 1-minute window for this one org gets a real 429, distinct from the
+    # 400s above (malformed vs. too many are different failure classes a
+    # real caller must be able to tell apart).
+    test "a 31st submission within a minute for the same org gets a real 429, not a 5xx or a silent 201",
+         %{conn: conn} do
+      org = create_org!("acme-test-org-rate-limit")
+      token = org_token!("acme-token-rate-limit", org)
+      provider = "zcode-rate-limit-#{System.unique_integer([:positive])}"
+
+      submit = fn n ->
+        conn
+        |> with_org_token(token)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{goal: "rate-limit probe #{n}", provider: provider})
+        )
+      end
+
+      for n <- 1..30 do
+        submit.(n) |> json_response(201)
+      end
+
+      body = submit.(31) |> json_response(429)
+      assert body["error"] == "rate_limited"
+    end
+
+    # Falsifier for key scoping: a DIFFERENT org's 1st submission, made
+    # immediately after the org above exhausted its own quota, must not
+    # be caught in the same bucket -- the rate limit key is real and
+    # per-org, not a single shared/global counter.
+    test "a different org's submission is unaffected by another org's exhausted quota",
+         %{conn: conn} do
+      org_a = create_org!("acme-test-org-rate-limit-a")
+      token_a = org_token!("acme-token-rate-limit-a", org_a)
+      org_b = create_org!("acme-test-org-rate-limit-b")
+      token_b = org_token!("acme-token-rate-limit-b", org_b)
+      provider_a = "zcode-rate-limit-a-#{System.unique_integer([:positive])}"
+
+      for n <- 1..30 do
+        conn
+        |> with_org_token(token_a)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{goal: "org A quota probe #{n}", provider: provider_a})
+        )
+        |> json_response(201)
+      end
+
+      conn
+      |> with_org_token(token_a)
+      |> put_req_header("content-type", "application/json")
+      |> post(
+        "/internal-api/execution/runs",
+        Jason.encode!(%{goal: "org A over quota", provider: provider_a})
+      )
+      |> json_response(429)
+
+      # Org B, a fresh org that has never submitted, still gets a real 201.
+      conn
+      |> with_org_token(token_b)
+      |> put_req_header("content-type", "application/json")
+      |> post(
+        "/internal-api/execution/runs",
+        Jason.encode!(%{goal: "org B first submission", provider: "zcode-rate-limit-b"})
+      )
+      |> json_response(201)
     end
   end
 

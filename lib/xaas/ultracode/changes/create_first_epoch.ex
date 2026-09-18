@@ -35,6 +35,11 @@ defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
         :create,
         %{
           run_id: run.id,
+          # Denormalized from the parent Run -- see Epoch's own moduledoc
+          # "Org scoping" section. `run` here is the just-updated Run
+          # struct (post after_action), so `run.org_id` is the real,
+          # current value.
+          org_id: run.org_id,
           cycle: original_cycle,
           exact_subject: subject,
           state: :expected,
