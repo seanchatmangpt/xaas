@@ -22,6 +22,10 @@
 //     allow, and (for writes) real-path containment inside the leased
 //     worktree and never inside a .git directory.
 //   * Read/Grep/Glob never touch credential directories.
+//   * Agent (subagent spawning) is denied unless XAAS_ALLOW_SUBAGENTS=1: a
+//     subagent's own tool calls were observed NOT to be routed through
+//     PreToolUse (a subagent ran `curl` with no gate decision logged), so
+//     spawning one would let a worker step outside every rule above.
 import { readFileSync, realpathSync, appendFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir, homedir } from "node:os";
@@ -269,6 +273,14 @@ async function main() {
 
   if (!tool) return decide("deny", "hook payload carried no tool name", ctx);
   if (/^mcp__(plugin_xaas-fabric_)?xaas-execution__/.test(tool)) return decide("allow", "lease protocol tool", ctx);
+
+  if (tool === "Agent" && process.env.XAAS_ALLOW_SUBAGENTS !== "1") {
+    return decide(
+      "deny",
+      "subagent spawning is denied under XAAS_WORKER=1: a subagent's own tool calls (Bash, Write, ...) are not routed through PreToolUse, so they would bypass this gate",
+      ctx
+    );
+  }
 
   const lease = readLease(leaseCwd);
 

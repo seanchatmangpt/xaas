@@ -274,15 +274,18 @@ default `hooks.enabled: false`, so no user-config change is needed. Rules:
 
 Live evidence: a gated dispatcher run closed `completed`/`alive` with matching
 `HEAD` and file while the gate allowed 1 `claim_next`, 5 `git` calls, 1
-`Write` and 1 `close_candidate`, and denied a redirect and `xxd`. Not proven:
-that ZCode routes a subagent's (`Agent`) own tool calls through PreToolUse
-(upstream feedback issue zai-org/feedback#32 is open). The probe could not
-settle it: in headless `zcode-app-cli` 3.11.2 with the custom `zai` provider
-config, the `Agent` tool is admitted by the gate but the subagent never starts
-(`Model provider is not configured: builtin:zai-coding-plan`, reproduced with
-the gate off as well). Fan-out is therefore process-level (several
-`zcode --prompt /xaas` workers, as in §7), not ZCode subagents, and a gated
-worker's subagent tool calls remain untested.
+`Write` and 1 `close_candidate`, and denied a redirect and `xxd`.
+
+Subagents (observed 2026-09-18, zcode-app-cli 3.11.2 with the builtin-provider
+alias fix, zcode-cli commit 84b4edc): a subagent launched through the `Agent`
+tool ran `curl --version` and **no Bash decision appeared in the gate log** —
+a subagent's own tool calls are not routed through PreToolUse (upstream
+zai-org/feedback#32). A gated worker could therefore spawn a subagent to step
+outside every rule above. The gate now denies `Agent` under `XAAS_WORKER=1`
+unless `XAAS_ALLOW_SUBAGENTS=1`; re-probed live, the `Agent` call was refused
+with the gate's reason and no subagent started. Fan-out is process-level
+(several `zcode --prompt /xaas` workers, §7), and "done" is decided by the
+fabric, never by a worker or its subagents.
 
 None of this is a bug to route around. The Bash/git_push/publish refusal is
 a deliberate, non-configurable fence per `Xaas.Ultracode.Lease`'s own
@@ -380,14 +383,14 @@ when reporting status:
   (`monitoring-observability-gap` finding) — this dispatcher, once
   running, is the mitigation, not a monitored guarantee that it stays
   running.
-- **The host-side gate is enforced only in dispatcher-launched sessions and
-  is unproven for subagents.** Under `XAAS_WORKER=1` the PreToolUse gate (§4)
-  enforces admission on the host. An interactive session, or a zcode started
-  without the variable, gets no enforcement — the plugin doctrine is then the
-  only fence. ZCode subagent tool calls (`Agent`) may bypass PreToolUse
-  (zai-org/feedback#32); the generated worker subagent's tool grant still
-  lists raw `Bash`. The gate is a parser-based allowlist, not an OS sandbox:
-  an allowed `git commit` still runs the worktree repo's own git hooks.
+- **The host-side gate is enforced only in dispatcher-launched sessions.**
+  Under `XAAS_WORKER=1` the PreToolUse gate (§4) enforces admission on the
+  host. An interactive session, or a zcode started without the variable, gets
+  no enforcement — the plugin doctrine is then the only fence. Subagent tool
+  calls bypass PreToolUse, so the gate denies `Agent` by default. The
+  generated worker subagent's tool grant still lists raw `Bash`. The gate is a
+  parser-based allowlist, not an OS sandbox: an allowed `git commit` still
+  runs the worktree repo's own git hooks.
 - **Cost/vendor identity is a real substitution, not just infrastructure.**
   zcode-cli is configured against `zai/glm-5.3-flash` (Z.AI-hosted), not an
   Anthropic model. A timed trivial call took ~16.5s and ~16.7K input tokens
