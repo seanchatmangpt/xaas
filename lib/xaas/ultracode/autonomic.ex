@@ -104,6 +104,9 @@ defmodule Xaas.Ultracode.Autonomic do
   # Context
   # ------------------------------------------------------------------
 
+  @doc false
+  def new_ctx(opts), do: build_ctx(Keyword.merge(@defaults, opts))
+
   defp build_ctx(opts) do
     repo = Keyword.fetch!(opts, :repo)
     repo_path = :xaas |> Application.get_env(:ultracode_repos, %{}) |> Map.fetch!(repo)
@@ -132,7 +135,8 @@ defmodule Xaas.Ultracode.Autonomic do
   # Sense
   # ------------------------------------------------------------------
 
-  defp sense(ctx) do
+  @doc false
+  def sense(ctx) do
     name = "aps-sense-#{ctx.nonce}"
 
     with {:ok, path} <- Worktrees.provision(ctx.repo, ctx.base_sha, name) do
@@ -248,7 +252,8 @@ defmodule Xaas.Ultracode.Autonomic do
     end
   end
 
-  defp create_run_and_epoch(item, worktree, n, history, ctx) do
+  @doc false
+  def create_run_and_epoch(item, worktree, n, history, ctx) do
     File.mkdir_p!(ctx.ticket_dir)
 
     {:ok, run} =

@@ -447,6 +447,14 @@ JOIN ultracode_receipts rc ON rc.epoch_id = e.id AND rc.evidence ? 'head_verifie
 WHERE e.state = 'completed';
 ```
 
+## 8. Autonomic definition of done (APS)
+
+The fabric can run a full closed loop that decides "done" independently of the worker: see
+`docs/ultracode/wave-v26.9.17-receipts/aps-autonomic-dod-proof.md` (live run, falsifiers,
+independent verification, non-claims). Triggers: `mix xaas.autonomic.controls` (falsifiers)
+and `mix xaas.autonomic.run --repo aps` (the loop). The dispatcher's directed mode
+(`--epoch <uuid>`) is what the loop uses; it is lock-free and safe to run in parallel.
+
 ## See also
 
 - `docs/ultracode/c4-architecture.md` — binding Run/Epoch/Lease/Receipt
