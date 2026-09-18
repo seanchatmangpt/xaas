@@ -1006,6 +1006,70 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       |> json_response(201)
     end
 
+    test "a submission naming an unregistered verifier suite gets a typed 400 and creates nothing",
+         %{conn: conn} do
+      org = create_org!("acme-test-org-suite-unknown")
+      token = org_token!("acme-token-suite-unknown", org)
+
+      body =
+        conn
+        |> with_org_token(token)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{
+            goal: "names a suite nobody registered",
+            provider: "zcode-suite-unknown",
+            verifier_suite: "not-a-registered-suite"
+          })
+        )
+        |> json_response(400)
+
+      assert body["error"] == "invalid_request"
+      assert body["detail"] =~ "verifier_suite"
+
+      refute Run
+             |> Ash.Query.for_read(:read_unscoped)
+             |> Ash.Query.filter(provider == "zcode-suite-unknown")
+             |> Ash.exists?(authorize?: false)
+    end
+
+    test "a registered verifier suite name is stored on the Run and handed to the claiming worker",
+         %{conn: conn} do
+      original = Application.get_env(:xaas, :ultracode_verifier_suites)
+      Application.put_env(:xaas, :ultracode_verifier_suites, %{"ctl-suite" => %{steps: []}})
+      on_exit(fn -> Application.put_env(:xaas, :ultracode_verifier_suites, original) end)
+
+      org = create_org!("acme-test-org-suite-known")
+      token = org_token!("acme-token-suite-known", org)
+
+      body =
+        conn
+        |> with_org_token(token)
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/internal-api/execution/runs",
+          Jason.encode!(%{
+            goal: "names a registered suite",
+            provider: "zcode-suite-known",
+            verifier_suite: "ctl-suite"
+          })
+        )
+        |> json_response(201)
+
+      run = Ash.get!(Run, body["run_id"], action: :read_unscoped, authorize?: false)
+      assert run.verifier_suite == "ctl-suite"
+
+      claim =
+        tool_call(conn, "claim_next", %{
+          provider: "zcode-suite-known",
+          provider_worker_id: "w-suite"
+        })
+
+      assert claim["epoch_id"] == body["epoch_id"]
+      assert claim["verifier_suite"] == "ctl-suite"
+    end
+
     test "a genuinely oversized goal gets a real typed 400, never silently stored", %{conn: conn} do
       org = create_org!("acme-test-org-goal-bound")
       token = org_token!("acme-token-goal-bound", org)

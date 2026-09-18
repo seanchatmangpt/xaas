@@ -73,7 +73,7 @@ defmodule Xaas.Ultracode.Lease do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run}
+  alias Xaas.Ultracode.{Epoch, Receipt, Run, Verifier}
 
   @default_lease_ttl_minutes 30
 
@@ -466,7 +466,7 @@ defmodule Xaas.Ultracode.Lease do
           {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
   def close(lease_token, final_head, claimed_outcome, evidence \\ %{})
       when is_binary(lease_token) and is_binary(final_head) and is_atom(claimed_outcome) do
-    with {:ok, epoch} <- live_lease(lease_token) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
 
       # Real finding, real-concurrency-tested (see `LeaseConcurrencyStressTest`
@@ -569,9 +569,18 @@ defmodule Xaas.Ultracode.Lease do
   # ------------------------------------------------------------------
 
   defp verified_outcome(%Epoch{} = epoch, final_head, claimed_outcome, evidence) do
+    # `fabric_verifier` is fabric-owned evidence: a worker-supplied value under
+    # that key is dropped, never merged, so it cannot spoof a passing court.
+    evidence = Map.delete(evidence, "fabric_verifier")
+
     case worktree_head(epoch.worktree) do
       {:ok, ^final_head} ->
-        {claimed_outcome, Map.put(evidence, "head_verified", true)}
+        fabric_verified(
+          epoch,
+          final_head,
+          claimed_outcome,
+          Map.put(evidence, "head_verified", true)
+        )
 
       {:ok, other_head} ->
         Logger.warning("XAAS_LEASE_CLOSE head mismatch epoch=#{epoch.id}")
@@ -587,6 +596,40 @@ defmodule Xaas.Ultracode.Lease do
          })}
     end
   end
+
+  # Independent definition of done: when the Run names a registered verifier
+  # suite and the worker claims an alive-family outcome, the FABRIC runs that
+  # suite against the confirmed head (see `Xaas.Ultracode.Verifier` for the
+  # threat model). pass keeps the claimed outcome (never upgrades it); fail is
+  # falsified evidence (:build_broken); timeout/error is unverifiable
+  # (:partial_alive). Other claimed outcomes have nothing to verify.
+  defp fabric_verified(
+         %Epoch{run: %Run{verifier_suite: suite}} = epoch,
+         final_head,
+         claimed_outcome,
+         evidence
+       )
+       when is_binary(suite) and claimed_outcome in [:alive, :partial_alive] do
+    {:ok, result} =
+      Verifier.run(suite, %{
+        worktree: epoch.worktree,
+        head: final_head,
+        run_id: epoch.run_id,
+        epoch_id: epoch.id,
+        executor: epoch.leased_to
+      })
+
+    evidence = Map.put(evidence, "fabric_verifier", result)
+
+    case result["status"] do
+      "pass" -> {claimed_outcome, evidence}
+      "fail" -> {:build_broken, evidence}
+      _unverifiable -> {:partial_alive, evidence}
+    end
+  end
+
+  defp fabric_verified(_epoch, _final_head, claimed_outcome, evidence),
+    do: {claimed_outcome, evidence}
 
   # Repo-native, shell-free head verification: explicit argv, no shell
   # interpolation; the worktree comes from the epoch row, not the request.

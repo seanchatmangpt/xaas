@@ -95,3 +95,7 @@ _build_clean/
 
 # ggen outputs live in their project dirs (e.g. priv/zcode_plugin/marketplace), never a top-level generated/
 /generated/
+
+# Python bytecode (priv/verifiers)
+__pycache__/
+*.pyc

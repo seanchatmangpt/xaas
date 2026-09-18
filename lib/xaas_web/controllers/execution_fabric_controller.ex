@@ -57,7 +57,8 @@ defmodule XaasWeb.ExecutionFabricController do
       name: "claim_next",
       description:
         "Claim the oldest lease-free running epoch of a provider-pull run. " <>
-          "Returns the work payload (run goal + exact subject) and the lease token.",
+          "Returns the work payload (run goal + exact subject + the name of the fabric verifier suite " <>
+          "that will independently judge the closed head, if any) and the lease token.",
       inputSchema: %{
         type: "object",
         properties: %{
@@ -320,7 +321,8 @@ defmodule XaasWeb.ExecutionFabricController do
            cycle: epoch.cycle,
            exact_subject: epoch.exact_subject,
            goal: run.goal,
-           worktree: epoch.worktree
+           worktree: epoch.worktree,
+           verifier_suite: run.verifier_suite
          }}
 
       error ->
@@ -411,13 +413,14 @@ defmodule XaasWeb.ExecutionFabricController do
     goal = params["goal"]
     worktree = params["worktree"]
     provider = params["provider"] || "zcode"
+    verifier_suite = params["verifier_suite"]
     resources = [Run, Epoch]
 
     transaction_result =
       Ash.DataLayer.transaction(
         resources,
         fn ->
-          with {:ok, run} <- create_run_row(goal, provider, org.id),
+          with {:ok, run} <- create_run_row(goal, provider, org.id, verifier_suite),
                exact_subject = params["exact_subject"] || default_exact_subject(org, run),
                {:ok, epoch} <- create_running_epoch(run, exact_subject, worktree) do
             {run, epoch}
@@ -486,11 +489,15 @@ defmodule XaasWeb.ExecutionFabricController do
   defp rate_limited?(%AshRateLimiter.LimitExceeded{}), do: true
   defp rate_limited?(_), do: false
 
-  defp create_run_row(goal, provider, org_id) do
+  # `verifier_suite` is a NAME the operator registered
+  # (`Xaas.Ultracode.Verifier`); `VerifierSuiteRegistered` turns an unknown
+  # name into a typed 400, and a suite only ever executes in a worktree under
+  # the operator containment root, so naming one grants no execution reach.
+  defp create_run_row(goal, provider, org_id, verifier_suite) do
     Run
     |> Ash.Changeset.for_create(
       :submit,
-      %{goal: goal, provider: provider, org_id: org_id},
+      %{goal: goal, provider: provider, org_id: org_id, verifier_suite: verifier_suite},
       authorize?: false
     )
     |> Ash.create()

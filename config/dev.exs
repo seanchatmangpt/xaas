@@ -119,3 +119,46 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Fabric verifier: the APS Chicago-TDD definition-of-done court. Operator-owned
+# worktrees and tickets live under ~/xaas-worktrees; the court script is
+# resolved from this app's priv/ (never from a worktree the worker controls).
+config :xaas, :ultracode_worktree_root, Path.expand("~/xaas-worktrees/runs")
+config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas-worktrees/tickets")
+config :xaas, :ultracode_repos, %{"aps" => Path.expand("~/xaas-worktrees/repos/aps")}
+
+config :xaas, :ultracode_verifier_suites, %{
+  "aps-dod" => %{
+    env: %{
+      "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG" => "en_US.UTF-8",
+      # rdflib lives in the user site; the verifier gives children a throwaway
+      # HOME, so point Python at the real user base explicitly.
+      "PYTHONUSERBASE" => Path.expand("~/Library/Python/3.14")
+    },
+    max_output_bytes: 65_536,
+    toolchain: [["python3", "--version"], ["git", "--version"], ["mdbook", "--version"]],
+    steps: [
+      %{
+        id: "court",
+        timeout_ms: 600_000,
+        infra_exit_codes: [2],
+        receipt: true,
+        argv: [
+          "python3",
+          "priv:verifiers/aps_dod_court.py",
+          "--worktree",
+          "{worktree}",
+          "--head",
+          "{head}",
+          "--ticket",
+          "{ticket}",
+          "--executor",
+          "{executor}",
+          "--verifier-identity",
+          "{verifier_id}"
+        ]
+      }
+    ]
+  }
+}

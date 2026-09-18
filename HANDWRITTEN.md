@@ -23,6 +23,14 @@ scripts/xaas-glm-failover-dispatcher.sh, scripts/install-glm-failover-launchd.sh
 
 test/xaas/zcode_plugin/*.exs | gate, lease-script, doctrine and projection-drift qualification tests | no admitted gate pack for plugin-projection qualification | zcode-plugin-pack gates/ | 2026-09-18
 
+lib/xaas/ultracode/verifier.ex | fabric-executed verifier suite runner: name-only registry lookup, worktree containment root, env allowlist through `env -i`, process-group kill, bounded output, clean-tree and head discipline (2026-09-18) | no admitted pack renders a fixed-argv suite runner with these fences from the Run/Epoch seam | ultracode-actuation-lease-pack (verifier gate) | 2026-09-18
+
+lib/xaas/ultracode/worktrees.ex | operator-side worktree provisioning from a registered repo alias + base_sha under a containment root | no admitted pack renders worktree provisioning for the Epoch seam | ultracode-actuation-lease-pack | 2026-09-18
+
+priv/verifiers/aps_dod_court.py, priv/verifiers/aps_backlog.py | APS Chicago-TDD definition-of-done court (exact-head, scope, mock, assertion, canonical gates, mutation kill) and deterministic backlog derivation; receipts conform to APS evidence-receipt.schema.json | no admitted pack renders a Python-repo DoD court or mutant catalogue; nearest prior art is autofde-lab `run_chicago_qualification.py` and gate-vacuity-court-pack | a `chicago-dod-court-pack` lifted from autofde-lab CHI-* gates | 2026-09-18
+
+priv/verifiers/tests/*.py, test/xaas/ultracode/{verifier,lease_verifier,worktrees}_test.exs | qualification of the verifier, close integration, provisioning, court and backlog | no admitted gate pack for verifier qualification | ultracode-actuation-lease-pack gates/ | 2026-09-18
+
 test/xaas/ultracode/lease_test.exs | lease-edge qualification tests, + `actuate/2` registry-admission/refusal/authority-evidence tests (2026-09-17) | no admitted gate pack for lease semantics | ultracode-actuation-lease-pack gates/ | 2026-09-15
 
 ## Paydown plan
