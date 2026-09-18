@@ -1,0 +1,22 @@
+---
+to: "marketplace/.claude-plugin/marketplace.json"
+force: true
+sparql:
+  market: |
+    PREFIX zp: <http://seanchatmangpt.github.io/packs/zcode-plugin#>
+    SELECT ?marketName ?owner ?pluginName ?description ?source WHERE {
+      ?m a zp:Marketplace ; zp:marketplaceName ?marketName ; zp:ownerName ?owner ; zp:includesPlugin ?p .
+      ?p zp:pluginName ?pluginName ; zp:description ?description ; zp:sourcePath ?source .
+    }
+---
+{
+  "name": {{ market[0].marketName | json_encode }},
+  "owner": { "name": {{ market[0].owner | json_encode }} },
+  "plugins": [
+    {
+      "name": {{ market[0].pluginName | json_encode }},
+      "source": {{ market[0].source | json_encode }},
+      "description": {{ market[0].description | json_encode }}
+    }
+  ]
+}

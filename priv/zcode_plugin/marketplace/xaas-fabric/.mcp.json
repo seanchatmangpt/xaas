@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "xaas-execution": {
+      "type": "http",
+      "url": "http://localhost:4000/internal-api/execution/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.zcode_xaas_token}"
+      }
+    }
+  }
+}

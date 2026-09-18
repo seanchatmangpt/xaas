@@ -1,0 +1,13 @@
+{
+  "name": "xaas-fabric",
+  "version": "26.9.17",
+  "description": "XaaS execution-fabric worker plugin: claims receipted work contracts via MCP (claim_next/admit_tool/close_candidate/refuse), closes with head verification, and enforces admission on the host with a PreToolUse gate in dispatcher-launched (XAAS_WORKER=1) sessions.",
+  "userConfig": {
+    "zcode_xaas_token": {
+      "type": "string",
+      "sensitive": false,
+      "default": "unset",
+      "description": "Bearer token for the XaaS internal API (/internal-api). Set with: zcode plugins configure xaas-fabric@<marketplace> --options-file"
+    }
+  }
+}
