@@ -22,7 +22,51 @@ env:
   SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  deps-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Warm exact test dependency graph
+    env:
+      MIX_ENV: test
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$SUBJECT_SHA" || {
+            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
+            exit 2
+          }
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Restore or seed exact-toolchain dependency cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
+
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
+
+      - name: Compile dependency graph once
+        run: mix deps.compile
+
   ci:
+    needs: deps-test
     runs-on: ubuntu-latest
     timeout-minutes: 20
     name: Exact-head test court
