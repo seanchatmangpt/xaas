@@ -110,4 +110,33 @@ defmodule Xaas.Semantics.ComputationTest do
                evidence_class: "INFERRED"
              })
   end
+
+  test "runtime portability requires bounded output drift and identical ranking" do
+    alias Xaas.Semantics.RuntimeEquivalence
+
+    assert {:ok,
+            %{
+              passed: true,
+              ranking_equal: true,
+              reason: :runtime_equivalent
+            }} =
+             RuntimeEquivalence.qualify(
+               %{"rollback" => 0.9, "failover" => 0.7},
+               %{"rollback" => 0.9000001, "failover" => 0.6999999},
+               1.0e-5
+             )
+
+    assert {:ok,
+            %{
+              passed: false,
+              ranking_equal: false,
+              reason: :runtime_output_drift
+            }} =
+             RuntimeEquivalence.qualify(
+               %{"rollback" => 0.51, "failover" => 0.50},
+               %{"rollback" => 0.49, "failover" => 0.52},
+               0.05
+             )
+  end
+
 end
