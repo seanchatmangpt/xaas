@@ -1,7 +1,7 @@
 # Failover trial evidence (plain-text copies)
 
 Markdown receipts written by the GLM workers during the 2026-09-18 failover trials
-(see `../FAILOVER-RUNBOOK.md` in the parent docs directory). The original
+(see `docs/ultracode/FAILOVER-RUNBOOK.md`). The original
 worktrees were nested git repositories under `tmp_out/` (untracked scratch); only their plain
 `*.md` files are preserved here. Each is a worker's own narration of what it did; the
 authoritative evidence for those trials is the Postgres receipts and git history recorded in
