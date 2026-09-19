@@ -231,7 +231,10 @@ defmodule Xaas.Ultracode.Run do
         :epoch_timeout_seconds,
         :provider,
         :org_id,
-        :verifier_suite
+        :verifier_suite,
+        :checkpoint_iri,
+        :graph_digest,
+        :base_sha
       ])
 
       # `:allow_global`: called both from the customer-facing controller
@@ -390,6 +393,26 @@ defmodule Xaas.Ultracode.Run do
       allow_nil?(true)
       public?(true)
       constraints(max_length: 64, match: ~r/^[a-z0-9][a-z0-9_-]*$/)
+    end
+
+    # Canonical semantic-work identity. These fields do not grant authority;
+    # they bind the durable Run to the admitted graph subject that caused it.
+    attribute :checkpoint_iri, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 1024)
+    end
+
+    attribute :graph_digest, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128)
+    end
+
+    attribute :base_sha, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(match: ~r/^[0-9a-f]{40}$/)
     end
 
     # Real, disclosed, schema-only seam -- see this module's own moduledoc
