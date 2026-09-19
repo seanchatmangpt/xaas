@@ -321,3 +321,85 @@ defmodule Xaas.Semantics.PlanningAdvice do
     end
   end
 end
+
+
+defmodule Xaas.Semantics.RuntimeEquivalence do
+  @moduledoc """
+  Narrow portability court for the same computation executed in two runtimes.
+
+  Runtime equivalence is transport evidence only. It does not promote a claim's
+  semantic standing and never manufactures authority.
+  """
+
+  @type result :: %{
+          passed: boolean(),
+          max_abs_error: float(),
+          ranking_equal: boolean(),
+          reason: atom()
+        }
+
+  @spec qualify(%{String.t() => number()}, %{String.t() => number()}, number()) ::
+          {:ok, result()} | {:error, term()}
+  def qualify(reference, candidate, tolerance \\ 1.0e-6)
+      when is_map(reference) and is_map(candidate) and is_number(tolerance) do
+    cond do
+      tolerance < 0 ->
+        {:error, :tolerance_must_be_non_negative}
+
+      MapSet.new(Map.keys(reference)) != MapSet.new(Map.keys(candidate)) ->
+        {:ok,
+         %{
+           passed: false,
+           max_abs_error: :infinity,
+           ranking_equal: false,
+           reason: :output_key_set_mismatch
+         }}
+
+      map_size(reference) == 0 ->
+        {:ok,
+         %{
+           passed: true,
+           max_abs_error: 0.0,
+           ranking_equal: true,
+           reason: :runtime_equivalent
+         }}
+
+      true ->
+        with :ok <- validate_numeric_outputs(reference),
+             :ok <- validate_numeric_outputs(candidate) do
+          max_abs_error =
+            reference
+            |> Enum.map(fn {key, left} -> abs(left - Map.fetch!(candidate, key)) end)
+            |> Enum.max()
+            |> Kernel.*(1.0)
+
+          ranking_equal = ranking(reference) == ranking(candidate)
+          passed = max_abs_error <= tolerance and ranking_equal
+
+          {:ok,
+           %{
+             passed: passed,
+             max_abs_error: max_abs_error,
+             ranking_equal: ranking_equal,
+             reason: if(passed, do: :runtime_equivalent, else: :runtime_output_drift)
+           }}
+        end
+    end
+  end
+
+  def qualify(_, _, _), do: {:error, :invalid_runtime_equivalence_input}
+
+  defp validate_numeric_outputs(outputs) do
+    if Enum.all?(outputs, fn {_key, value} -> is_number(value) end) do
+      :ok
+    else
+      {:error, :runtime_outputs_must_be_numeric}
+    end
+  end
+
+  defp ranking(outputs) do
+    outputs
+    |> Enum.sort_by(fn {key, score} -> {-score, key} end)
+    |> Enum.map(&elem(&1, 0))
+  end
+end
