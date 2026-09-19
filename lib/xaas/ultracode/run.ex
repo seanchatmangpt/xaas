@@ -173,6 +173,20 @@ defmodule Xaas.Ultracode.Run do
         # dormant.
         queue(:default)
       end
+
+      schedule :autonomic_wave, "*/30 * * * *" do
+        action(:autonomic_wave)
+        worker_module_name(Xaas.Ultracode.Run.Workers.AutonomicWave)
+
+        # Dedicated single-slot queue (`ultracode_wave: 1` in
+        # `config :xaas, Oban`, listed for the same require_queues!/4
+        # reason as above). A wave is tens-of-minutes work whose promote
+        # step is the one shared-state operation in the loop, so waves
+        # must serialize rather than overlap: with one queue slot, a wave
+        # that outlives the 30-minute period holds the next cron job in
+        # the queue instead of running concurrently with it.
+        queue(:ultracode_wave)
+      end
     end
   end
 
@@ -345,6 +359,39 @@ defmodule Xaas.Ultracode.Run do
       run(fn _input, _context ->
         case Reactor.run(Xaas.Ultracode.Reactor) do
           {:ok, result} -> {:ok, %{advanced: result}}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+    # Real generic action -- the sole body of the AshOban `:autonomic_wave`
+    # scheduled action above (every 30 minutes), mirroring `:tick` exactly:
+    # a generic action, all engineering-workflow logic in
+    # `Xaas.Ultracode.Autonomic`, this action only the call site. The one
+    # knob the schedule carries is the worker capacity -- 5 concurrent
+    # leased workers (subagents) per wave, the operator-ordered standing
+    # wave size -- every other default is `Autonomic`'s own. The loop is
+    # itself receipt-bearing (ndjson ledger plus the JSON receipt written
+    # beside it) and human_inputs is 0 by construction. `Autonomic.run/1`
+    # is synchronous on purpose: the AshOban worker runs it to completion
+    # inside the single-slot `:ultracode_wave` queue, so the loop's own
+    # repair/promote lifecycle (including its serialized `--no-ff`
+    # integration merges) never overlaps another wave. The runner is read
+    # through an application-env seam purely so the qualification test can
+    # capture the call without reaching the real subprocess dispatcher.
+    action :autonomic_wave, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(:xaas, :ultracode_wave_runner, {Xaas.Ultracode.Autonomic, :run})
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[capacity: 5]])
+            fun when is_function(fun, 1) -> fun.(capacity: 5)
+          end
+
+        case result do
+          {:ok, report} -> {:ok, %{standing: report["standing"], receipt: report["receipt_path"]}}
           {:error, error} -> {:error, error}
         end
       end)

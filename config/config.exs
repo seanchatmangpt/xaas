@@ -77,7 +77,11 @@ config :xaas, Oban,
     default: 10,
     hold_request_expire_stale_holds: 1,
     capability_liveness_receipt_check_regressions: 1,
-    webhook_delivery_retry_failed_deliveries: 1
+    webhook_delivery_retry_failed_deliveries: 1,
+    # `Xaas.Ultracode.Run`'s `:autonomic_wave` schedule (every 30 minutes):
+    # exactly one slot so concurrent waves can never overlap -- a wave's
+    # promote step is the loop's one shared-state operation.
+    ultracode_wave: 1
   ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
