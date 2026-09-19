@@ -18,6 +18,17 @@ defmodule Xaas.Ultracode.SemanticWork do
   @digest ~r/^sha256:[0-9a-f]{64}$/
 
   @required ~w(checkpoint_iri graph_digest repository base_sha goal provider verifier_suite dependencies)a
+  @keys %{
+    "checkpoint_iri" => :checkpoint_iri,
+    "graph_digest" => :graph_digest,
+    "repository" => :repository,
+    "base_sha" => :base_sha,
+    "goal" => :goal,
+    "provider" => :provider,
+    "verifier_suite" => :verifier_suite,
+    "dependencies" => :dependencies,
+    "standing" => :standing
+  }
 
   @type descriptor :: %{
           required(:checkpoint_iri) => String.t(),
@@ -166,9 +177,7 @@ defmodule Xaas.Ultracode.SemanticWork do
       normalized =
         case key do
           key when is_atom(key) -> key
-          key when is_binary(key) -> String.to_existing_atom(key)
-        rescue
-          ArgumentError -> key
+          key when is_binary(key) -> Map.get(@keys, key, key)
         end
 
       Map.put(acc, normalized, value)
