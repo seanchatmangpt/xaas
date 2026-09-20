@@ -169,37 +169,50 @@ defmodule Xaas.Ultracode.SemanticWork do
     run_iri = "urn:xaas:ultracode:run:" <> to_string(run.id)
     outcome = receipt.outcome |> to_string() |> String.upcase()
 
-    dependency_lines =
+    dependencies =
       checkpoint
       |> Map.get(:dependencies, [])
       |> Enum.map(&normalize_dependency/1)
-      |> Enum.map(fn dependency ->
+
+    dependency_edges =
+      Enum.map(dependencies, fn dependency ->
         "  prov:wasDerivedFrom <#{escape_iri(dependency.receipt_iri)}> ;"
       end)
 
-    [
-      "@prefix gall: <https://semantic-a2a.dev/gall#> .",
-      "@prefix prov: <http://www.w3.org/ns/prov#> .",
-      "",
-      "<#{escape_iri(receipt_iri)}> a gall:Receipt, prov:Entity ;",
-      "  gall:workOrder <#{escape_iri(checkpoint.work_order_iri)}> ;",
-      "  gall:checkpoint <#{escape_iri(checkpoint.checkpoint_iri)}> ;",
-      "  gall:graphDigest \"#{escape_literal(checkpoint.graph_digest)}\" ;",
-      "  gall:repositoryIdentity \"#{escape_literal(checkpoint.repository_identity)}\" ;",
-      "  gall:executionRepoAlias \"#{escape_literal(checkpoint.execution_repo_alias)}\" ;",
-      "  gall:executionPolicy \"#{escape_literal(checkpoint.execution_policy)}\" ;",
-      "  gall:baseSha \"#{escape_literal(checkpoint.base_sha)}\" ;",
-      "  gall:candidateSha \"#{escape_literal(epoch.final_head || "")}\" ;",
-      "  gall:run <#{escape_iri(run_iri)}> ;",
-      "  gall:epoch <#{escape_iri(epoch_iri)}> ;",
-      "  gall:standing gall:#{outcome} ;"
-    ] ++
-      dependency_lines ++
+    dependency_receipts =
+      Enum.flat_map(dependencies, fn dependency ->
+        [
+          "<#{escape_iri(dependency.receipt_iri)}> a gall:Receipt, prov:Entity ;",
+          "  gall:receiptDigest \"#{escape_literal(dependency.receipt_digest)}\" .",
+          ""
+        ]
+      end)
+
+    lines =
       [
-        "  prov:wasGeneratedBy <#{escape_iri(epoch_iri)}> .",
-        ""
-      ]
-    |> Enum.join("\n")
+        "@prefix gall: <https://semantic-a2a.dev/gall#> .",
+        "@prefix prov: <http://www.w3.org/ns/prov#> .",
+        "",
+        "<#{escape_iri(receipt_iri)}> a gall:Receipt, prov:Entity ;",
+        "  gall:workOrder <#{escape_iri(checkpoint.work_order_iri)}> ;",
+        "  gall:checkpoint <#{escape_iri(checkpoint.checkpoint_iri)}> ;",
+        "  gall:graphDigest \"#{escape_literal(checkpoint.graph_digest)}\" ;",
+        "  gall:repositoryIdentity \"#{escape_literal(checkpoint.repository_identity)}\" ;",
+        "  gall:executionRepoAlias \"#{escape_literal(checkpoint.execution_repo_alias)}\" ;",
+        "  gall:executionPolicy \"#{escape_literal(checkpoint.execution_policy)}\" ;",
+        "  gall:baseSha \"#{escape_literal(checkpoint.base_sha)}\" ;",
+        "  gall:candidateSha \"#{escape_literal(epoch.final_head || "")}\" ;",
+        "  gall:run <#{escape_iri(run_iri)}> ;",
+        "  gall:epoch <#{escape_iri(epoch_iri)}> ;",
+        "  gall:standing gall:#{outcome} ;"
+      ] ++
+        dependency_edges ++
+        [
+          "  prov:wasGeneratedBy <#{escape_iri(epoch_iri)}> .",
+          ""
+        ] ++ dependency_receipts
+
+    Enum.join(lines, "\n")
   end
 
   defp create_started_run(descriptor, worktree, opts) do
