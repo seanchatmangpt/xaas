@@ -88,13 +88,17 @@ release_lock() {
   rmdir "$LOCK_DIR" 2>/dev/null || true
 }
 
-# One "id|worktree|age_seconds" row per unleased running zcode epoch, oldest first
-# (same order as Lease.claim_next).
+# One "id|worktree|age_seconds|checkpoint_iri|graph_digest|work_order_iri|repository_identity|base_sha" row per unleased
+# running zcode epoch, oldest first (same order as Lease.claim_next). Semantic
+# identity is optional so legacy provider-pull Runs retain their original path.
 find_ready_epochs() {
   psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" \
     -v ON_ERROR_STOP=1 -t -A -F'|' \
     -c "SELECT e.id, COALESCE(e.worktree, ''),
-               GREATEST(0, EXTRACT(EPOCH FROM (now() AT TIME ZONE 'utc' - e.inserted_at)))::bigint
+               GREATEST(0, EXTRACT(EPOCH FROM (now() AT TIME ZONE 'utc' - e.inserted_at)))::bigint,
+               COALESCE(r.checkpoint_iri, ''), COALESCE(r.graph_digest, ''),
+               COALESCE(r.work_order_iri, ''), COALESCE(r.repository_identity, ''),
+               COALESCE(r.base_sha, '')
         FROM ultracode_epochs e
         JOIN ultracode_runs r ON r.id = e.run_id
         WHERE r.provider = 'zcode'
@@ -122,6 +126,11 @@ notify_stall() {
 dispatch_one_epoch() {
   epoch_id="$1"
   worktree="$2"
+  checkpoint_iri="${3:-}"
+  graph_digest="${4:-}"
+  work_order_iri="${5:-}"
+  repository_identity="${6:-}"
+  base_sha="${7:-}"
   cwd="$worktree"
   mode="claim"
 
@@ -145,6 +154,50 @@ dispatch_one_epoch() {
   (
     cd "$ZCODE_CLI_DIR" || exit 127
     export XAAS_WORKER=1 XAAS_LEASE_CWD="$cwd_real"
+
+    semantic_count=0
+    for value in "$checkpoint_iri" "$graph_digest" "$work_order_iri" "$repository_identity" "$base_sha"; do
+      [ -n "$value" ] && semantic_count=$((semantic_count + 1))
+    done
+
+    if [ "$semantic_count" -gt 0 ] && [ "$semantic_count" -lt 5 ]; then
+      echo "REFUSED: incomplete semantic work identity for epoch ${epoch_id}" >&2
+      exit 64
+    fi
+
+    if [ "$semantic_count" -eq 5 ]; then
+      leasefile="$STATE_DIR/gall-work-${epoch_id}.json"
+      GALL_CHECKPOINT_IRI="$checkpoint_iri" \
+      GALL_GRAPH_DIGEST="$graph_digest" \
+      GALL_WORK_ORDER_IRI="$work_order_iri" \
+      GALL_REPOSITORY_IDENTITY="$repository_identity" \
+      GALL_BASE_SHA="$base_sha" \
+      GALL_EPOCH_ID="$epoch_id" \
+      GALL_WORKER_ID="$worker_id" \
+      GALL_WORKTREE="$cwd_real" \
+        node -e '
+          const fs = require("node:fs");
+          fs.writeFileSync(process.argv[1], JSON.stringify({
+            schema: "gall.work-lease/1",
+            work_order_iri: process.env.GALL_WORK_ORDER_IRI,
+            checkpoint_iri: process.env.GALL_CHECKPOINT_IRI,
+            graph_digest: process.env.GALL_GRAPH_DIGEST,
+            repository_identity: process.env.GALL_REPOSITORY_IDENTITY,
+            base_sha: process.env.GALL_BASE_SHA,
+            epoch_id: process.env.GALL_EPOCH_ID,
+            worker_id: process.env.GALL_WORKER_ID,
+            worktree: process.env.GALL_WORKTREE
+          }) + "\\n", { mode: 0o600 });
+        ' "$leasefile" || exit 127
+
+      run_with_timeout node bin/zcode.js gall-work --lease "$leasefile"
+      rc=$?
+      rm -f "$leasefile"
+      exit "$rc"
+    fi
+
+    # Compatibility path for Runs created before semantic checkpoint identity
+    # became canonical. New semantic Runs never use this prompt projection.
     run_with_timeout node bin/zcode.js \
       --prompt "/xaas Call claim_next with provider_worker_id exactly \"${worker_id}\" and epoch_id exactly \"${epoch_id}\"; do not use any other values." \
       --cwd "$cwd_real" --json
@@ -186,7 +239,7 @@ run_once_pass() {
     fi
 
     count="$(printf '%s\n' "$rows" | grep -c .)"
-    IFS='|' read -r head_id head_worktree head_age <<EOF
+    IFS='|' read -r head_id head_worktree head_age head_checkpoint_iri head_graph_digest head_work_order_iri head_repository_identity head_base_sha <<EOF
 $(printf '%s\n' "$rows" | head -n 1)
 EOF
 
@@ -200,7 +253,7 @@ EOF
     fi
     prev_count="$count"
 
-    dispatch_one_epoch "$head_id" "$head_worktree"
+    dispatch_one_epoch "$head_id" "$head_worktree" "$head_checkpoint_iri" "$head_graph_digest" "$head_work_order_iri" "$head_repository_identity" "$head_base_sha"
     drained=$((drained + 1))
   done
 
@@ -214,17 +267,17 @@ if [ -n "$DIRECT_EPOCH" ]; then
     *) log "bad --epoch value"; exit 2 ;;
   esac
   row="$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -t -A -F'|' \
-    -c "SELECT e.id, COALESCE(e.worktree, '') FROM ultracode_epochs e JOIN ultracode_runs r ON r.id = e.run_id
+    -c "SELECT e.id, COALESCE(e.worktree, ''), COALESCE(r.checkpoint_iri, ''), COALESCE(r.graph_digest, ''), COALESCE(r.work_order_iri, ''), COALESCE(r.repository_identity, ''), COALESCE(r.base_sha, '') FROM ultracode_epochs e JOIN ultracode_runs r ON r.id = e.run_id
         WHERE e.id = '${DIRECT_EPOCH}' AND r.provider = 'zcode' AND e.state = 'running' AND e.lease_token IS NULL;" 2>&1)"
   if [ "$?" -ne 0 ] || [ -z "$row" ]; then
     log "epoch ${DIRECT_EPOCH} is not a running, unleased zcode epoch (${row:-no row})"
     exit 3
   fi
-  IFS='|' read -r direct_id direct_worktree <<EOF
+  IFS='|' read -r direct_id direct_worktree direct_checkpoint_iri direct_graph_digest direct_work_order_iri direct_repository_identity direct_base_sha <<EOF
 $row
 EOF
   DISPATCH_RESULT=1
-  dispatch_one_epoch "$direct_id" "$direct_worktree"
+  dispatch_one_epoch "$direct_id" "$direct_worktree" "$direct_checkpoint_iri" "$direct_graph_digest" "$direct_work_order_iri" "$direct_repository_identity" "$direct_base_sha"
   exit "$DISPATCH_RESULT"
 fi
 

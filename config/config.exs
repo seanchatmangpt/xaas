@@ -75,13 +75,15 @@ config :xaas, Oban,
   notifier: Oban.Notifiers.Postgres,
   queues: [
     default: 10,
+    # One shared integration/promote wave at a time; construction concurrency
+    # lives inside Xaas.Ultracode.Autonomic. `Xaas.Ultracode.Run`'s
+    # `:autonomic_wave` and `:semantic_wave` schedules (every 30 minutes)
+    # share this queue: exactly one slot so concurrent waves can never
+    # overlap -- a wave's promote step is the loop's one shared-state operation.
+    ultracode_wave: 1,
     hold_request_expire_stale_holds: 1,
     capability_liveness_receipt_check_regressions: 1,
-    webhook_delivery_retry_failed_deliveries: 1,
-    # `Xaas.Ultracode.Run`'s `:autonomic_wave` schedule (every 30 minutes):
-    # exactly one slot so concurrent waves can never overlap -- a wave's
-    # promote step is the loop's one shared-state operation.
-    ultracode_wave: 1
+    webhook_delivery_retry_failed_deliveries: 1
   ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]

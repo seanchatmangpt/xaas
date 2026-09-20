@@ -1,25 +1,11 @@
 defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
   @moduledoc """
-  Closes ULTRACODE-50 blocker (2): nothing previously transitioned a fresh
-  `Run` from `:pending` to `:running`, nor constructed its very first
-  `Epoch` -- so a Run created via `Xaas.Ultracode.Run.:create` had no real
-  admitted path into the tick-driven epoch machinery at all
-  (`docs/ultracode/PROGRESS.md`'s prior cycles bridged this by hand in
-  test setup, explicitly disclosed as an open gap).
+  Constructs the first Epoch exclusively from the admitted Run.:start action.
 
-  Wired onto `Run.:start` (see that action): after the Run's own `:state`/
-  `:started_at`/`:cycle` attribute changes commit, this creates the Run's
-  first `Epoch` (`cycle: <the Run's pre-increment cycle value>`,
-  `exact_subject:` the action's required `:exact_subject` argument,
-  `state: :expected`) via the real admitted `Epoch.:create` action.
-
-  Uses `changeset.data.cycle` (the Run's cycle value BEFORE this action's
-  own `change increment(:cycle)` commits) for the new Epoch's `cycle` --
-  the same convention `Xaas.Ultracode.NextEpoch.advance_from_completed/2`
-  already uses: a Run's `cycle` attribute holds "the cycle number to
-  assign to the epoch being constructed right now", and is bumped
-  immediately after so it's ready for whichever admitted path constructs
-  the next one.
+  The action owns the lifecycle transition. Callers may optionally supply a
+  pre-provisioned exact-SHA worktree; this change merely carries that bounded
+  execution destination into the first Epoch. It does not provision paths,
+  select work, or grant authority.
   """
 
   use Ash.Resource.Change
@@ -28,6 +14,7 @@ defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
   def change(changeset, _opts, _context) do
     original_cycle = changeset.data.cycle
     subject = Ash.Changeset.get_argument(changeset, :exact_subject)
+    worktree = Ash.Changeset.get_argument(changeset, :worktree)
 
     Ash.Changeset.after_action(changeset, fn _changeset, run ->
       Xaas.Ultracode.Epoch
@@ -35,15 +22,12 @@ defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
         :create,
         %{
           run_id: run.id,
-          # Denormalized from the parent Run -- see Epoch's own moduledoc
-          # "Org scoping" section. `run` here is the just-updated Run
-          # struct (post after_action), so `run.org_id` is the real,
-          # current value.
           org_id: run.org_id,
           cycle: original_cycle,
           exact_subject: subject,
           state: :expected,
-          expected_at: DateTime.utc_now()
+          expected_at: DateTime.utc_now(),
+          worktree: worktree
         }
       )
       |> Ash.create()

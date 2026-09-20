@@ -476,6 +476,7 @@ defmodule Xaas.Ultracode.Lease do
       when is_binary(lease_token) and is_binary(final_head) and is_atom(claimed_outcome) do
     with {:ok, epoch} <- live_lease(lease_token, [:run]) do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
+      evidence = bind_semantic_work_identity(epoch, evidence)
 
       # Real finding, real-concurrency-tested (see `LeaseConcurrencyStressTest`
       # "concurrent close/refuse on the same lease_token"): the previous
@@ -521,7 +522,9 @@ defmodule Xaas.Ultracode.Lease do
   @spec refuse(String.t(), atom(), map()) :: {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
   def refuse(lease_token, reason, evidence \\ %{})
       when is_binary(lease_token) and is_atom(reason) do
-    with {:ok, epoch} <- live_lease(lease_token) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+      evidence = bind_semantic_work_identity(epoch, evidence)
+
       # Same atomic lease-token-guarded write as `close/4` above -- closes
       # the identical real double-close race for the refuse path (and for
       # a `close/4` racing a `refuse/3` on the same token).
@@ -571,6 +574,37 @@ defmodule Xaas.Ultracode.Lease do
     |> Ash.Query.filter(lease_token == ^lease_token)
     |> Ash.read_one(load: load)
   end
+
+  # Preserve the canonical semantic subject and upstream receipt evidence in
+  # every terminal lease receipt. This is evidence binding only; it never
+  # changes verifier outcome or manufactures authority.
+  defp bind_semantic_work_identity(%Epoch{run: %Run{} = run}, evidence) do
+    required = [
+      run.work_order_iri,
+      run.checkpoint_iri,
+      run.graph_digest,
+      run.repository_identity,
+      run.execution_repo_alias,
+      run.base_sha
+    ]
+
+    if Enum.all?(required, &is_binary/1) do
+      Map.put(evidence, "semantic_work", %{
+        "work_order_iri" => run.work_order_iri,
+        "checkpoint_iri" => run.checkpoint_iri,
+        "graph_digest" => run.graph_digest,
+        "repository_identity" => run.repository_identity,
+        "execution_repo_alias" => run.execution_repo_alias,
+        "execution_policy" => if(run.execution_policy, do: Atom.to_string(run.execution_policy)),
+        "dependency_evidence" => run.dependency_evidence || %{},
+        "base_sha" => run.base_sha
+      })
+    else
+      evidence
+    end
+  end
+
+  defp bind_semantic_work_identity(_epoch, evidence), do: evidence
 
   # ------------------------------------------------------------------
   # Closure verification

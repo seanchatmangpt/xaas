@@ -162,29 +162,24 @@ defmodule Xaas.Ultracode.Run do
       schedule :tick, "* * * * *" do
         action(:tick)
         worker_module_name(Xaas.Ultracode.Run.Workers.Tick)
-
-        # Explicit `:default` queue -- `config :xaas, Oban` (config.exs)
-        # only lists `queues: [default: 10]`. AshOban's own default queue
-        # name for a scheduled action is the resource's short name plus
-        # the schedule name (e.g. `run_tick`), which this repo's Oban
-        # config does not list as a runnable queue -- an unlisted queue's
-        # jobs are enqueued but never processed. Pinning `:default` here
-        # keeps this scheduled action real/running rather than silently
-        # dormant.
         queue(:default)
       end
 
+      # DfCM composition: keep item construction parallel while serializing
+      # the shared integration/promote phase. The action itself owns no
+      # additional authority; it only invokes the existing Autonomic loop.
       schedule :autonomic_wave, "*/30 * * * *" do
         action(:autonomic_wave)
         worker_module_name(Xaas.Ultracode.Run.Workers.AutonomicWave)
+        queue(:ultracode_wave)
+      end
 
-        # Dedicated single-slot queue (`ultracode_wave: 1` in
-        # `config :xaas, Oban`, listed for the same require_queues!/4
-        # reason as above). A wave is tens-of-minutes work whose promote
-        # step is the one shared-state operation in the loop, so waves
-        # must serialize rather than overlap: with one queue slot, a wave
-        # that outlives the 30-minute period holds the next cron job in
-        # the queue instead of running concurrently with it.
+      # Semantic work is selected upstream; this clock only dispatches already
+      # materialized :autonomic_wave_attempt Epochs. It shares the one-slot
+      # queue with the legacy APS wave so shared controller waves never overlap.
+      schedule :semantic_wave, "*/30 * * * *" do
+        action(:semantic_wave)
+        worker_module_name(Xaas.Ultracode.Run.Workers.SemanticWave)
         queue(:ultracode_wave)
       end
     end
@@ -201,6 +196,16 @@ defmodule Xaas.Ultracode.Run do
     # arguments and exposes no Run/Epoch field to a caller; it only
     # triggers the real `Xaas.Ultracode.Reactor` missed-epoch workflow.
     bypass action(:tick) do
+      authorize_if(always())
+    end
+
+    # Internal scheduler call site. Like :tick, this action accepts no
+    # caller-supplied subject or authority and is not a public DO surface.
+    bypass action(:autonomic_wave) do
+      authorize_if(always())
+    end
+
+    bypass action(:semantic_wave) do
       authorize_if(always())
     end
 
@@ -245,7 +250,15 @@ defmodule Xaas.Ultracode.Run do
         :epoch_timeout_seconds,
         :provider,
         :org_id,
-        :verifier_suite
+        :verifier_suite,
+        :work_order_iri,
+        :checkpoint_iri,
+        :graph_digest,
+        :repository_identity,
+        :execution_repo_alias,
+        :execution_policy,
+        :dependency_evidence,
+        :base_sha
       ])
 
       # `:allow_global`: called both from the customer-facing controller
@@ -337,6 +350,13 @@ defmodule Xaas.Ultracode.Run do
         allow_nil?(false)
       end
 
+      # Optional exact-SHA worktree already provisioned by the caller's
+      # admitted materialization path. Carrying it here lets every semantic
+      # policy use the single Run.:start -> CreateFirstEpoch lifecycle.
+      argument :worktree, :string do
+        allow_nil?(true)
+      end
+
       validate({Xaas.Ultracode.Validations.RunIsPending, []})
 
       change(set_attribute(:state, :running))
@@ -364,21 +384,10 @@ defmodule Xaas.Ultracode.Run do
       end)
     end
 
-    # Real generic action -- the sole body of the AshOban `:autonomic_wave`
-    # scheduled action above (every 30 minutes), mirroring `:tick` exactly:
-    # a generic action, all engineering-workflow logic in
-    # `Xaas.Ultracode.Autonomic`, this action only the call site. The one
-    # knob the schedule carries is the worker capacity -- 5 concurrent
-    # leased workers (subagents) per wave, the operator-ordered standing
-    # wave size -- every other default is `Autonomic`'s own. The loop is
-    # itself receipt-bearing (ndjson ledger plus the JSON receipt written
-    # beside it) and human_inputs is 0 by construction. `Autonomic.run/1`
-    # is synchronous on purpose: the AshOban worker runs it to completion
-    # inside the single-slot `:ultracode_wave` queue, so the loop's own
-    # repair/promote lifecycle (including its serialized `--no-ff`
-    # integration merges) never overlaps another wave. The runner is read
-    # through an application-env seam purely so the qualification test can
-    # capture the call without reaching the real subprocess dispatcher.
+
+    # Scheduled composition controller. Five construction workers may run in
+    # parallel inside one wave; the dedicated one-slot Oban queue prevents
+    # two waves from racing the shared promotion/integration phase.
     action :autonomic_wave, :map do
       run(fn _input, _context ->
         runner =
@@ -392,6 +401,31 @@ defmodule Xaas.Ultracode.Run do
 
         case result do
           {:ok, report} -> {:ok, %{standing: report["standing"], receipt: report["receipt_path"]}}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+    # Separate scheduler call site for semantic work. This preserves the APS
+    # Autonomic loop unchanged while closing the semantic-work -> scheduled
+    # dispatch edge. SemanticWave itself cannot lease, verify, or crown work.
+    action :semantic_wave, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(
+            :xaas,
+            :ultracode_semantic_wave_runner,
+            {Xaas.Ultracode.SemanticWave, :run}
+          )
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[capacity: 5]])
+            fun when is_function(fun, 1) -> fun.(capacity: 5)
+          end
+
+        case result do
+          {:ok, report} -> {:ok, %{status: report["status"], receipt: report["receipt_path"]}}
           {:error, error} -> {:error, error}
         end
       end)
@@ -437,6 +471,62 @@ defmodule Xaas.Ultracode.Run do
       allow_nil?(true)
       public?(true)
       constraints(max_length: 64, match: ~r/^[a-z0-9][a-z0-9_-]*$/)
+    end
+
+    # Canonical semantic-work identity. These fields are descriptive evidence
+    # only. repository_identity names the semantic repository; execution_repo_alias
+    # is the operator-local Worktrees lookup key. They are intentionally distinct.
+    attribute :work_order_iri, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 1024)
+    end
+
+    attribute :checkpoint_iri, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 1024)
+    end
+
+    attribute :graph_digest, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128)
+    end
+
+    attribute :repository_identity, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 512)
+    end
+
+    attribute :execution_repo_alias, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128)
+    end
+
+    # Explicit policy makes the pre-existing lifecycle variation semantic:
+    # continuous work waits for the tick clock; wave attempts are started
+    # immediately but still use the same Run.:start first-Epoch path.
+    attribute :execution_policy, :atom do
+      allow_nil?(true)
+      public?(true)
+      constraints(one_of: [:continuous_epoch_run, :autonomic_wave_attempt])
+    end
+
+    # Typed upstream receipt identities/digests projected from the canonical
+    # work graph. This is evidence carried by the Run, never authority.
+    attribute :dependency_evidence, :map do
+      allow_nil?(false)
+      default(%{})
+      public?(true)
+    end
+
+    attribute :base_sha, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(match: ~r/^[0-9a-f]{40}$/)
     end
 
     # Real, disclosed, schema-only seam -- see this module's own moduledoc
