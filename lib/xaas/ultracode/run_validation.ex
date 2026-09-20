@@ -1,15 +1,23 @@
 defmodule Xaas.Ultracode.RunValidation do
+  # Module attributes precede the moduledoc: the doc text interpolates
+  # @default_capacity, and attributes are only visible to code that
+  # lexically follows their definition.
+  @default_capacity 5
+
   @moduledoc """
   The results-validation law for Ultracode runs, closed over OCEL 2.0:
   a run's RESULTS are validated if and only if its OCEL 2.0 log
 
     (a) passes structural conformance to the OCEL 2.0 JSON shape, and
     (b) accounts for every epoch of the run with terminal, receipt-backed
-        evidence -- each epoch appears via exactly one `epoch_claimed`
-        event and reaches exactly one `receipt_closed` event whose
-        `verification` attribute is `passed`, `failed`, or `refused`, and
-        the number of workers in flight (claimed-but-not-yet-closed
-        epochs, derivable purely from event times) never exceeds the
+        evidence -- each epoch appears via an appearance event
+        (`epoch_claimed`, or the emitter's `epoch_started` /
+        `epoch_scheduled`), reaches exactly one VERIFIED `receipt_closed`
+        (verified by a `verification` attribute of `passed`/`failed`/
+        `refused`, or by a sibling `verification_passed` /
+        `verification_failed` / `refused` event bound to the same epoch),
+        and the number of workers in flight (appearance-to-close
+        intervals, derivable purely from event times) never exceeds the
         run's capacity law (5 by default -- the operator-ordered standing
         wave size pinned in `Xaas.Ultracode.Run`'s `:autonomic_wave`
         action).
@@ -19,46 +27,71 @@ defmodule Xaas.Ultracode.RunValidation do
   epoch ids, so a red verdict is traceable to named events, never an
   unexplained boolean.
 
-  ## Log shape (the W3-A5 emitter contract)
+  ## Log shape -- the bridge between the two in-repo OCEL dialects
 
-  The OCEL 2.0 JSON shape accepted here is exactly what this repo's own
-  OCEL 2.0 producer emits (`Xaas.Ocel.Projection.to_ocel_map/1`): top-level
-  `"objectTypes"`, `"eventTypes"`, `"objects"`, `"events"`, with events
-  `{"id", "type", "time", "attributes", "relationships"}` and objects
-  `{"id", "type"}`. This is the OCEL 2.0 information model without the
-  serialization's `"ocel:"` key-prefix dialect; the prefixes are notation,
-  the four top-level collections and the five event fields are the law,
-  and binding to the in-repo projection (not to a foreign tool's export)
-  is deliberate -- this validator and the emitter must agree byte-for-byte
-  on shape, and the projection is that agreement's only in-repo source.
+  This module is the results-to-OCEL bridge, so it accepts BOTH in-repo
+  OCEL 2.0 serializations and judges them under one law:
 
-  Ultracode event vocabulary expected by the semantic checks:
+    * `Xaas.Ocel.Projection.to_ocel_map/1` (persisted-OCEL projection):
+      top-level `"objectTypes"` / `"eventTypes"` / `"objects"` /
+      `"events"`, events `{"id", "type", "time", "attributes",
+      "relationships"}`, objects `{"id", "type"}`.
+    * `Xaas.Ultracode.OcelEgress.build_document/3` (Run/Epoch/Receipt
+      egress, landed 2026-09-20): the same four collections under the
+      standards' `"ocel:"`-prefixed key names, capitalized object types
+      (`"Run"`, `"Epoch"`, ...), verification as SIBLING EVENTS
+      (`verification_passed` / `verification_failed` / `refused`) rather
+      than a `receipt_closed` attribute, and appearance facts carried by
+      `epoch_scheduled` / `epoch_started` (`epoch_claimed` is declared
+      but never emitted -- `Lease.claim_next/3` persists no bind
+      timestamp, and the egress refuses to fabricate one).
 
-    * `"epoch_claimed"` -- a worker claimed the epoch. Binds to its epoch
-      via `attributes["epoch_id"]` or a relationship to an object whose
-      `"type"` is `"epoch"`; binds to the run via `attributes["run_id"]`
-      or a relationship to an object whose `"type"` is `"run"`.
-    * `"receipt_closed"` -- the epoch's sealed receipt (`Xaas.Ultracode.
-      Receipt`) was closed. Same epoch binding, plus
-      `attributes["verification"]` in `"passed" | "failed" | "refused"`.
-      A `receipt_closed` without one of those three verification values
-      is not terminal evidence.
+  Concretely: each required top-level collection is resolved as
+  `"ocel:<key>"` first, then the unprefixed key; object-type role
+  matching (run/epoch) is case-insensitive. Everything else -- unique
+  ids, declared types, non-dangling relationships, parseable ISO8601
+  times -- is dialect-independent law.
 
-  ## Wiring: why this accepts a log, not persistence
+  ## Terminal, receipt-backed evidence (what "(b)" means precisely)
 
-  Run/Epoch/Receipt state IS persisted (`Xaas.Ultracode.Run`/`Epoch`/
-  `Receipt`), but the deterministic run-to-OCEL-log projection is the
-  OCEL emitter's owned mutation (W3-A5), and `Xaas.Ocel.Projection`
-  already owns the persisted-OCEL projection. Deriving a log from
-  Ultracode persistence here too would be a second, hand-maintained
-  projection of the same facts -- exactly the duplication the repo's
-  source-hierarchy law forbids. So this module validates a LOG (map or
-  path), and run-id input resolves the log through the configurable
-  emitter module (`config :xaas, :ultracode_ocel_log_emitter`, default
-  `Xaas.Ultracode.OcelLog`, exporting `emit/1` returning `{:ok, log}`).
-  When the emitter lands, `Mix.Tasks.Xaas.RunValidate` accepts a bare
-  run id end-to-end; until then it refuses with a typed message instead
-  of fabricating a log.
+  An epoch is receipt-accounted iff it has EXACTLY ONE `receipt_closed`
+  event that is VERIFIED, where verified means either:
+
+    * the event's `attributes["verification"]` is `"passed"`,
+      `"failed"`, or `"refused"` (the projection-side dialect), or
+    * the log contains at least one sibling event of type
+      `verification_passed`, `verification_failed`, or `refused` bound
+      to the same epoch (the egress-side dialect).
+
+  A `receipt_closed` with a `verification` attribute outside that set is
+  named as `:invalid_verification` and does not close the epoch. The
+  appearance set is, in slot-holding priority order, `epoch_claimed`
+  (best: an actual claim), then `epoch_started` (worker began; a real
+  persisted `started_at`), then `epoch_scheduled` (weakest: planned, no
+  worker proof yet). A duplicate WITHIN one appearance type is a
+  `:duplicate_claim`; one epoch having several appearance TYPES is
+  normal (scheduled AND started) and lawful.
+
+  ## Capacity
+
+  In-flight interval per epoch = [first available appearance event time
+  in the priority order above, earliest `receipt_closed` time); an epoch
+  with no close stays in flight for the rest of the log (a stuck worker
+  never freed its slot). At identical timestamps a closing worker frees
+  its slot before a new appearance takes it. Max overlap is compared
+  against the run's capacity (`:capacity` option, default
+  #{@default_capacity}).
+
+  ## Wiring: where the log comes from
+
+  The deterministic run-to-OCEL-log projection is
+  `Xaas.Ultracode.OcelEgress.derive_run/1` (persisted Run/Epoch/Receipt
+  state, `{:ok, document} | {:error, :run_not_found}`). Run-id input
+  resolves through the configurable emitter module
+  (`config :xaas, :ultracode_ocel_log_emitter`, default
+  `Xaas.Ultracode.OcelEgress`, exporting `derive_run/1`); the mix task
+  therefore accepts a bare run id end-to-end. Path input validates the
+  JSON file directly. The derivation itself is NOT duplicated here.
 
   ## Conformance-court dedup (W3-A6 interface, disclosed)
 
@@ -74,12 +107,16 @@ defmodule Xaas.Ultracode.RunValidation do
   bytes always produce the same verdict.
   """
 
-  @default_capacity 5
-
   @terminal_verifications ~w(passed failed refused)
-  @claim_event "epoch_claimed"
+
+  # Appearance events, in slot-holding priority order (best first).
+  @claim_events ~w(epoch_claimed epoch_started epoch_scheduled)
+
   @terminal_event "receipt_closed"
-  @epoch_lifecycle_events [@claim_event, @terminal_event]
+  @verification_events ~w(verification_passed verification_failed refused)
+
+  # All event types that carry per-epoch semantic weight.
+  @epoch_lifecycle_events ~w(epoch_claimed epoch_started epoch_scheduled receipt_closed verification_passed verification_failed refused)
 
   @type violation :: %{
           required(:code) => atom(),
@@ -129,18 +166,20 @@ defmodule Xaas.Ultracode.RunValidation do
   end
 
   @doc """
-  Resolves the OCEL log emitter module configured for run-id input
-  (`config :xaas, :ultracode_ocel_log_emitter`, default
-  `Xaas.Ultracode.OcelLog`). Returns `{:ok, log}` via the emitter's
-  `emit/1`, or `{:error, :no_emitter}` when the module is not loaded on
-  this branch (typed refusal -- the emitter is W3-A5's owned mutation).
+  Resolves the OCEL log for `run_id` through the configured emitter
+  module (`config :xaas, :ultracode_ocel_log_emitter`, default
+  `Xaas.Ultracode.OcelEgress`, exporting `derive_run/1` returning
+  `{:ok, document}`). Returns the emitter's own result, or
+  `{:error, :no_emitter}` when the module is not loaded on this branch
+  (typed refusal -- the derivation is the emitter's owned mutation and
+  is never re-derived here).
   """
-  @spec emit_log(String.t()) :: {:ok, map()} | {:error, :no_emitter | term()}
+  @spec emit_log(String.t()) :: {:ok, map()} | {:error, :no_emitter | :run_not_found | term()}
   def emit_log(run_id) do
-    emitter = Application.get_env(:xaas, :ultracode_ocel_log_emitter, Xaas.Ultracode.OcelLog)
+    emitter = Application.get_env(:xaas, :ultracode_ocel_log_emitter, Xaas.Ultracode.OcelEgress)
 
-    if Code.ensure_loaded?(emitter) and function_exported?(emitter, :emit, 1) do
-      emitter.emit(run_id)
+    if Code.ensure_loaded?(emitter) and function_exported?(emitter, :derive_run, 1) do
+      emitter.derive_run(run_id)
     else
       {:error, :no_emitter}
     end
@@ -192,12 +231,12 @@ defmodule Xaas.Ultracode.RunValidation do
     }
   end
 
-  # A log that is not a map, or whose "events"/"objects" are not lists,
-  # cannot be semantically judged at all.
+  # A log that is not a map, or whose event/object collections cannot be
+  # read as lists in either key dialect, cannot be semantically judged.
   defp fatal_structure?(log) when not is_map(log), do: true
 
   defp fatal_structure?(log) do
-    not (is_list(Map.get(log, "events")) and is_list(Map.get(log, "objects")))
+    not (is_list(coll(log, "events")) and is_list(coll(log, "objects")))
   end
 
   defp log_unreadable(path, reason) do
@@ -217,6 +256,19 @@ defmodule Xaas.Ultracode.RunValidation do
       capacity: @default_capacity
     }
   end
+
+  # ------------------------------------------------------------------
+  # Key-dialect bridge (ocel:-prefixed egress vs unprefixed projection)
+  # ------------------------------------------------------------------
+
+  defp coll(log, key) do
+    Map.get(log, "ocel:" <> key) || Map.get(log, key)
+  end
+
+  # Object-type ROLE matching: the egress capitalizes ("Run", "Epoch"),
+  # the projection lowercases. Roles, not spellings, are the law.
+  defp role_object?(nil, _role), do: false
+  defp role_object?(type, role) when is_binary(type), do: String.downcase(type) == role
 
   # ------------------------------------------------------------------
   # (a) Structural conformance -- OCEL 2.0 JSON shape
@@ -250,14 +302,14 @@ defmodule Xaas.Ultracode.RunValidation do
 
   defp collection_violations(log) do
     @required_collections
-    |> Enum.reject(&is_list(Map.get(log, &1)))
+    |> Enum.reject(&is_list(coll(log, &1)))
     |> Enum.map(fn key ->
       %{
         code: :missing_collection,
         epoch_id: nil,
         message:
-          "OCEL 2.0 JSON requires top-level #{inspect(key)} to be a list; " <>
-            "got #{inspect(Map.get(log, key))}"
+          "OCEL 2.0 JSON requires top-level #{inspect(key)} to be a list (either the " <>
+            "\"ocel:#{key}\" or \"#{key}\" form); got #{inspect(coll(log, key))}"
       }
     end)
   end
@@ -266,7 +318,7 @@ defmodule Xaas.Ultracode.RunValidation do
   # with a "name" (or "type") field; the in-repo projection emits plain
   # strings. Both accepted; anything else declares nothing.
   defp declared_types(log, key) do
-    case Map.get(log, key) do
+    case coll(log, key) do
       types when is_list(types) ->
         Enum.flat_map(types, fn
           type when is_binary(type) -> [type]
@@ -281,7 +333,7 @@ defmodule Xaas.Ultracode.RunValidation do
   end
 
   defp check_objects(log, declared_object_types) do
-    objects = List.wrap(Map.get(log, "objects"))
+    objects = coll(log, "objects") |> List.wrap()
 
     objects
     |> Enum.reduce({[], [], MapSet.new()}, fn object, {violations, ok_objects, seen_ids} ->
@@ -319,7 +371,7 @@ defmodule Xaas.Ultracode.RunValidation do
   end
 
   defp check_events(log, objects, declared_event_types) do
-    events = List.wrap(Map.get(log, "events"))
+    events = coll(log, "events") |> List.wrap()
     object_types = objects |> Map.new(fn %{"id" => id, "type" => type} -> {id, type} end)
 
     events
@@ -469,13 +521,13 @@ defmodule Xaas.Ultracode.RunValidation do
   defp qualifier_suffix(_), do: ""
 
   # ------------------------------------------------------------------
-  # (b) Completeness -- every epoch claimed, exactly one terminal,
-  #     capacity law honored, run binding correct
+  # (b) Completeness -- every epoch claimed, exactly one verified
+  #     terminal, capacity law honored, run binding correct
   # ------------------------------------------------------------------
 
   defp semantic_checks(events, objects, requested_run_id, capacity) do
     epoch_object_ids =
-      objects |> Enum.filter(&(&1["type"] == "epoch")) |> MapSet.new(& &1["id"])
+      objects |> Enum.filter(&role_object?(&1["type"], "epoch")) |> MapSet.new(& &1["id"])
 
     grouped = group_events_by_epoch(events)
 
@@ -508,13 +560,14 @@ defmodule Xaas.Ultracode.RunValidation do
     }
   end
 
-  # Run binding: run-type object ids + event attributes["run_id"] +
-  # relationships to run-type objects. A requested run_id must be the log's
-  # ONLY run binding.
+  # Run binding: run-role object ids + event attributes["run_id"] +
+  # relationships to run-role objects. A requested run_id must be the
+  # log's ONLY run binding.
   defp run_binding_violations(_events, _objects, nil), do: []
 
   defp run_binding_violations(events, objects, requested_run_id) do
-    run_object_ids = objects |> Enum.filter(&(&1["type"] == "run")) |> Enum.map(& &1["id"])
+    run_object_ids =
+      objects |> Enum.filter(&role_object?(&1["type"], "run")) |> Enum.map(& &1["id"])
 
     attribute_run_ids =
       events
@@ -524,7 +577,7 @@ defmodule Xaas.Ultracode.RunValidation do
     relationship_run_ids =
       events
       |> Enum.flat_map(& &1["relationships"])
-      |> Enum.filter(&(&1["__object_type"] == "run"))
+      |> Enum.filter(&role_object?(&1["__object_type"], "run"))
       |> Enum.map(& &1["objectId"])
 
     bound_runs = Enum.uniq(run_object_ids ++ attribute_run_ids ++ relationship_run_ids)
@@ -550,9 +603,9 @@ defmodule Xaas.Ultracode.RunValidation do
   end
 
   # Groups epoch-bound lifecycle events by epoch id. Binding:
-  # attributes["epoch_id"] if present, else exactly one relationship to an
-  # epoch-type object. Unattributable lifecycle events group under a tuple
-  # key and become violations in their own right.
+  # attributes["epoch_id"] if present, else exactly one relationship to
+  # an epoch-role object. Unattributable lifecycle events group under a
+  # tuple key and become violations in their own right.
   defp group_events_by_epoch(events) do
     Enum.reduce(events, %{}, fn event, acc ->
       if event["type"] in @epoch_lifecycle_events do
@@ -573,7 +626,7 @@ defmodule Xaas.Ultracode.RunValidation do
 
       _absent ->
         case event["relationships"]
-             |> Enum.filter(&(&1["__object_type"] == "epoch"))
+             |> Enum.filter(&role_object?(&1["__object_type"], "epoch"))
              |> Enum.uniq_by(& &1["objectId"]) do
           [%{"objectId" => epoch_id}] -> {:ok, epoch_id}
           [] -> :unbound
@@ -582,41 +635,42 @@ defmodule Xaas.Ultracode.RunValidation do
     end
   end
 
+  # A receipt_closed is VERIFIED (terminal evidence) when its own
+  # attributes carry a lawful verification value, or when the log carries
+  # a sibling verification event for the same epoch.
+  defp verified?(terminal_event, sibling_events) do
+    case terminal_event["attributes"]["verification"] do
+      v when is_binary(v) -> v in @terminal_verifications
+      _absent -> Enum.any?(sibling_events, &(&1["type"] in @verification_events))
+    end
+  end
+
   defp epoch_violations(epoch_id, epoch_events) do
-    claims = Enum.filter(epoch_events, &(&1["type"] == @claim_event))
+    claims = Enum.filter(epoch_events, &(&1["type"] in @claim_events))
     terminals = Enum.filter(epoch_events, &(&1["type"] == @terminal_event))
+    siblings = Enum.filter(epoch_events, &(&1["type"] in @verification_events))
 
-    closed_terminals =
+    verified_terminals = Enum.filter(terminals, &verified?(&1, siblings))
+
+    invalid_terminals =
       Enum.filter(terminals, fn t ->
-        verification = t["attributes"]["verification"]
-        is_binary(verification) and verification in @terminal_verifications
+        case t["attributes"]["verification"] do
+          v when is_binary(v) -> v not in @terminal_verifications
+          _absent -> false
+        end
       end)
-
-    invalid_terminals = terminals -- closed_terminals
 
     claim_violations =
       cond do
-        claims == [] and closed_terminals != [] ->
+        claims == [] and verified_terminals != [] ->
           [
             %{
               code: :unclaimed_receipt_closed,
               epoch_id: epoch_id,
-              event_id: hd(closed_terminals)["id"],
+              event_id: hd(verified_terminals)["id"],
               message:
-                "#{@terminal_event} event #{inspect(hd(closed_terminals)["id"])} references epoch " <>
+                "#{@terminal_event} event #{inspect(hd(verified_terminals)["id"])} references epoch " <>
                   "#{inspect(epoch_id)} which was never claimed"
-            }
-          ]
-
-        length(claims) > 1 ->
-          [
-            %{
-              code: :duplicate_claim,
-              epoch_id: epoch_id,
-              event_id: hd(claims)["id"],
-              message:
-                "epoch #{inspect(epoch_id)} has #{length(claims)} #{@claim_event} events " <>
-                  "#{inspect(Enum.map(claims, & &1["id"]))}; exactly one is lawful"
             }
           ]
 
@@ -625,35 +679,60 @@ defmodule Xaas.Ultracode.RunValidation do
             %{
               code: :missing_claim,
               epoch_id: epoch_id,
-              message: "epoch #{inspect(epoch_id)} never appears via an #{@claim_event} event"
+              message:
+                "epoch #{inspect(epoch_id)} never appears via an appearance event " <>
+                  "(#{Enum.join(@claim_events, " | ")})"
             }
           ]
 
         true ->
-          []
+          # Duplicate WITHIN one appearance type is the lie; several
+          # appearance TYPES on one epoch (scheduled + started + claimed)
+          # is the normal lifecycle.
+          case Enum.find(@claim_events, fn type ->
+                 claims |> Enum.filter(&(&1["type"] == type)) |> length() > 1
+               end) do
+            nil ->
+              []
+
+            type ->
+              dups = Enum.filter(claims, &(&1["type"] == type))
+
+              [
+                %{
+                  code: :duplicate_claim,
+                  epoch_id: epoch_id,
+                  event_id: hd(dups)["id"],
+                  message:
+                    "epoch #{inspect(epoch_id)} has #{length(dups)} #{type} events " <>
+                      "#{inspect(Enum.map(dups, & &1["id"]))}; exactly one per appearance type is lawful"
+                }
+              ]
+          end
       end
 
     terminal_violations =
       cond do
-        claims != [] and closed_terminals == [] ->
+        verified_terminals == [] and claims != [] ->
           [
             %{
               code: :missing_terminal,
               epoch_id: epoch_id,
               message:
-                "epoch #{inspect(epoch_id)} is claimed but has no terminal #{@terminal_event} " <>
-                  "with verification passed/failed/refused -- stuck, not receipt-accounted"
+                "epoch #{inspect(epoch_id)} is claimed but has no VERIFIED terminal " <>
+                  "#{@terminal_event} (verification passed/failed/refused attribute, or a sibling " <>
+                  "#{Enum.join(@verification_events, " / ")} event) -- stuck, not receipt-accounted"
             }
           ]
 
-        length(closed_terminals) > 1 ->
+        length(verified_terminals) > 1 ->
           [
             %{
               code: :duplicate_terminal,
               epoch_id: epoch_id,
               message:
-                "epoch #{inspect(epoch_id)} has #{length(closed_terminals)} terminal " <>
-                  "#{@terminal_event} events #{inspect(Enum.map(closed_terminals, & &1["id"]))}; " <>
+                "epoch #{inspect(epoch_id)} has #{length(verified_terminals)} verified terminal " <>
+                  "#{@terminal_event} events #{inspect(Enum.map(verified_terminals, & &1["id"]))}; " <>
                   "exactly one is lawful"
             }
           ]
@@ -676,19 +755,19 @@ defmodule Xaas.Ultracode.RunValidation do
       end)
 
     ordering_violations =
-      if length(claims) == 1 and length(closed_terminals) == 1 do
-        claim = hd(claims)
-        terminal = hd(closed_terminals)
+      if length(claims) >= 1 and length(verified_terminals) == 1 do
+        first_claim = claims |> Enum.map(& &1["__parsed_time"]) |> Enum.min(DateTime)
+        terminal = hd(verified_terminals)
 
-        if DateTime.compare(terminal["__parsed_time"], claim["__parsed_time"]) == :lt do
+        if DateTime.compare(terminal["__parsed_time"], first_claim) == :lt do
           [
             %{
               code: :terminal_before_claim,
               epoch_id: epoch_id,
               event_id: terminal["id"],
               message:
-                "epoch #{inspect(epoch_id)}'s terminal event #{inspect(terminal["id"])} precedes its " <>
-                  "claim #{inspect(claim["id"])} in time"
+                "epoch #{inspect(epoch_id)}'s terminal event #{inspect(terminal["id"])} precedes " <>
+                  "its earliest appearance event in time"
             }
           ]
         else
@@ -703,10 +782,12 @@ defmodule Xaas.Ultracode.RunValidation do
   end
 
   # Capacity: at every instant, at most `capacity` workers in flight.
-  # In-flight interval = [claim, terminal); a claimed-but-never-terminated
-  # epoch stays in flight for the rest of the log (a stuck worker never
-  # freed its slot). At identical timestamps a closing worker frees its
-  # slot before a new claim takes it (-1 sorts before +1).
+  # In-flight interval = [first available appearance event in priority
+  # order (claimed > started > scheduled), earliest receipt_closed);
+  # an epoch with no close stays in flight for the rest of the log (a
+  # stuck worker never freed its slot). At identical timestamps a closing
+  # worker frees its slot before a new appearance takes it (-1 sorts
+  # before +1).
   defp capacity_violation(events, capacity) when is_integer(capacity) and capacity >= 0 do
     case max_in_flight(events) do
       nil ->
@@ -729,9 +810,7 @@ defmodule Xaas.Ultracode.RunValidation do
   end
 
   defp max_in_flight(events) do
-    claims = Enum.filter(events, &(&1["type"] == @claim_event))
-
-    terminal_times_by_epoch =
+    close_times_by_epoch =
       events
       |> Enum.filter(&(&1["type"] == @terminal_event))
       |> Enum.flat_map(fn event ->
@@ -743,18 +822,34 @@ defmodule Xaas.Ultracode.RunValidation do
       |> Enum.group_by(fn {epoch_id, _} -> epoch_id end, fn {_, time} -> time end)
 
     deltas =
-      Enum.flat_map(claims, fn claim ->
-        with {:ok, epoch_id} <- epoch_of_event(claim) do
-          claim_point = {claim["__parsed_time"], 1}
+      events
+      |> Enum.filter(&(&1["type"] in @claim_events))
+      |> Enum.flat_map(fn event ->
+        case epoch_of_event(event) do
+          {:ok, epoch_id} -> [{epoch_id, event}]
+          :unbound -> []
+        end
+      end)
+      |> Enum.group_by(fn {epoch_id, _} -> epoch_id end, fn {_, event} -> event end)
+      |> Enum.flat_map(fn {epoch_id, epoch_claims} ->
+        with {:ok, hold_start} <- hold_start(epoch_claims) do
+          close =
+            case Map.get(close_times_by_epoch, epoch_id, []) do
+              [] -> nil
+              times -> Enum.min(times, DateTime)
+            end
 
-          case Map.get(terminal_times_by_epoch, epoch_id, []) do
-            [] -> [claim_point]
-            times -> [claim_point, {Enum.min(times, DateTime), -1}]
+          claim_point = {hold_start, 1}
+
+          case close do
+            nil -> [claim_point]
+            %DateTime{} = t -> [claim_point, {t, -1}]
           end
         else
           _unbound -> []
         end
       end)
+      # At equal timestamps, -1 (a worker freeing its slot) sorts before +1.
       |> Enum.sort(fn {t1, d1}, {t2, d2} ->
         case DateTime.compare(t1, t2) do
           :lt -> true
@@ -764,6 +859,27 @@ defmodule Xaas.Ultracode.RunValidation do
       end)
 
     sweep(deltas, 0, nil)
+  end
+
+  # First available appearance event in priority order -- the moment a
+  # slot became held by a worker (or, weakest, was scheduled).
+  defp hold_start(epoch_claims) do
+    priority_type =
+      Enum.find(@claim_events, fn type -> Enum.any?(epoch_claims, &(&1["type"] == type)) end)
+
+    case priority_type do
+      nil ->
+        :unbound
+
+      type ->
+        time =
+          epoch_claims
+          |> Enum.filter(&(&1["type"] == type))
+          |> Enum.map(& &1["__parsed_time"])
+          |> Enum.min(DateTime)
+
+        {:ok, time}
+    end
   end
 
   defp max_in_flight_count(events) do
@@ -786,7 +902,9 @@ defmodule Xaas.Ultracode.RunValidation do
   # ------------------------------------------------------------------
 
   defp epoch_accounting(events, objects) do
-    epoch_object_ids = objects |> Enum.filter(&(&1["type"] == "epoch")) |> Enum.map(& &1["id"])
+    epoch_object_ids =
+      objects |> Enum.filter(&role_object?(&1["type"], "epoch")) |> Enum.map(& &1["id"])
+
     grouped = group_events_by_epoch(events)
 
     epoch_object_ids
@@ -795,26 +913,66 @@ defmodule Xaas.Ultracode.RunValidation do
     |> Map.new(fn epoch_id ->
       epoch_events = Map.get(grouped, epoch_id, [])
 
-      claims =
-        epoch_events
-        |> Enum.filter(&(&1["type"] == @claim_event))
-        |> Enum.sort_by(& &1["__parsed_time"], {:asc, DateTime})
+      claims = Enum.filter(epoch_events, &(&1["type"] in @claim_events))
 
       terminals =
         epoch_events
         |> Enum.filter(&(&1["type"] == @terminal_event))
         |> Enum.sort_by(& &1["__parsed_time"], {:asc, DateTime})
 
+      siblings = Enum.filter(epoch_events, &(&1["type"] in @verification_events))
+
+      # Same priority rule as the capacity interval: the appearance that
+      # first held the slot (claimed > started > scheduled).
+      hold_event = priority_claim(claims)
+
       {epoch_id,
        %{
-         claimed_at: event_time(Enum.at(claims, 0)),
+         claimed_at: event_time(hold_event),
+         appearance_type: appearance_type(hold_event),
          terminal:
            case Enum.at(terminals, 0) do
-             nil -> nil
-             t -> %{event_id: t["id"], verification: t["attributes"]["verification"]}
+             nil ->
+               nil
+
+             t ->
+               verification =
+                 case t["attributes"]["verification"] do
+                   v when is_binary(v) -> v
+                   _absent -> sibling_verification(siblings)
+                 end
+
+               %{event_id: t["id"], verification: verification}
            end
        }}
     end)
+  end
+
+  defp appearance_type(nil), do: nil
+  defp appearance_type(event) when is_map(event), do: event["type"]
+
+  # The appearance event that first held the slot: the highest-priority
+  # type present (claimed > started > scheduled), earliest within it.
+  defp priority_claim(claims) do
+    priority_type =
+      Enum.find(@claim_events, fn type -> Enum.any?(claims, &(&1["type"] == type)) end)
+
+    case priority_type do
+      nil ->
+        nil
+
+      type ->
+        claims
+        |> Enum.filter(&(&1["type"] == type))
+        |> Enum.min_by(& &1["__parsed_time"])
+    end
+  end
+
+  defp sibling_verification(siblings) do
+    case Enum.find(@verification_events, fn type -> Enum.any?(siblings, &(&1["type"] == type)) end) do
+      nil -> nil
+      type -> type
+    end
   end
 
   defp event_time(nil), do: nil

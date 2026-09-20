@@ -5,10 +5,11 @@ defmodule Mix.Tasks.Xaas.RunValidate do
   The operator's results-validation law, on the command line: a run's
   RESULTS are validated iff its OCEL 2.0 log (a) passes structural
   conformance and (b) accounts for every epoch with terminal,
-  receipt-backed evidence (exactly one `epoch_claimed`, exactly one
-  `receipt_closed` with verification passed/failed/refused, and the
-  worker capacity law respected at every instant). See
-  `Xaas.Ultracode.RunValidation` for the full contract.
+  receipt-backed evidence (exactly one appearance event, exactly one
+  VERIFIED `receipt_closed` -- verification attribute or sibling
+  `verification_passed/failed/refused` event -- and the worker capacity
+  law respected at every instant). See `Xaas.Ultracode.RunValidation`
+  for the full contract.
 
   Usage:
 
@@ -18,12 +19,13 @@ defmodule Mix.Tasks.Xaas.RunValidate do
 
   The first form validates a log file (a path). The second resolves the
   log through the configured OCEL emitter module
-  (`config :xaas, :ultracode_ocel_log_emitter`, exporting `emit/1`) --
-  the deterministic run-to-log projection is the emitter's owned
-  mutation and is deliberately NOT re-derived here; with no emitter on
-  the branch this form refuses with a typed message instead of
-  fabricating a log. `--run-id` on the path form enforces that the log
-  is for that exact run (`:wrong_run` otherwise).
+  (`config :xaas, :ultracode_ocel_log_emitter`, default
+  `Xaas.Ultracode.OcelEgress`, exporting `derive_run/1`) -- the
+  deterministic run-to-log derivation is the emitter's owned mutation
+  and is deliberately NOT re-derived here; with no emitter module
+  loaded this form refuses with a typed message instead of fabricating
+  a log. `--run-id` on the path form enforces that the log is for that
+  exact run (`:wrong_run` otherwise).
 
   Exit behavior (typed-refusal convention, matching
   `mix xaas.ultracode.tick_health`):
@@ -85,9 +87,10 @@ defmodule Mix.Tasks.Xaas.RunValidate do
       {:error, :no_emitter} ->
         Mix.raise(
           "REFUSED_NO_EMITTER: no OCEL log emitter is configured for run-id input " <>
-            "(config :xaas, :ultracode_ocel_log_emitter; expected a module exporting emit/1). " <>
-            "The run-to-log projection is the OCEL emitter's owned mutation and is not re-derived " <>
-            "here. Pass the log path instead: mix xaas.run_validate <log_path> --run-id #{run_id}"
+            "(config :xaas, :ultracode_ocel_log_emitter; expected a module exporting derive_run/1, " <>
+            "default Xaas.Ultracode.OcelEgress). The run-to-log derivation is the emitter's owned " <>
+            "mutation and is not re-derived here. Pass the log path instead: " <>
+            "mix xaas.run_validate <log_path> --run-id #{run_id}"
         )
 
       {:error, reason} ->

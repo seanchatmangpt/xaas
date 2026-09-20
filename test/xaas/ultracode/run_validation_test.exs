@@ -105,6 +105,7 @@ defmodule Xaas.Ultracode.RunValidationTest do
 
     assert result.epochs["ep-0"] == %{
              claimed_at: minute(0),
+             appearance_type: "epoch_claimed",
              terminal: %{event_id: "close-ep-0", verification: "passed"}
            }
 
@@ -448,5 +449,108 @@ defmodule Xaas.Ultracode.RunValidationTest do
     result = RunValidation.validate(log, run_id: @run)
     assert result.verdict == :validated
     assert result.epochs["ep-0"].terminal.verification == "failed"
+  end
+
+  # ---- dialect absorption: Xaas.Ultracode.OcelEgress shape -------------
+
+  # The egress (landed 2026-09-20) emits ocel:-prefixed keys, capitalized
+  # object types, epoch_scheduled/epoch_started appearance facts
+  # (epoch_claimed is declared but never emitted), and verification as
+  # SIBLING EVENTS rather than a receipt_closed attribute.
+  defp egress_shape_log do
+    rel = fn id, type -> %{"objectId" => id, "qualifier" => String.downcase(type)} end
+
+    epoch_event = fn id, type, time, epoch_id ->
+      %{
+        "id" => id,
+        "type" => type,
+        "time" => time,
+        "attributes" => %{},
+        "relationships" => [rel.(epoch_id, "Epoch"), rel.("run-1", "Run")]
+      }
+    end
+
+    events =
+      Enum.flat_map(["ep-a", "ep-b"], fn ep ->
+        hour = if(ep == "ep-a", do: 0, else: 1)
+        start_t = "2026-09-19T0#{hour}:00:00Z"
+        close_t = "2026-09-19T0#{hour}:30:00Z"
+
+        [
+          epoch_event.("epoch_scheduled:#{ep}", "epoch_scheduled", start_t, ep),
+          epoch_event.("epoch_started:#{ep}", "epoch_started", start_t, ep),
+          epoch_event.("receipt_closed:#{ep}", "receipt_closed", close_t, ep),
+          epoch_event.("verification_passed:#{ep}", "verification_passed", close_t, ep)
+        ]
+      end)
+
+    %{
+      "ocel:objectTypes" => Enum.map(["Run", "Epoch"], &%{"name" => &1}),
+      "ocel:eventTypes" =>
+        Enum.map(
+          ["epoch_scheduled", "epoch_started", "receipt_closed", "verification_passed"],
+          &%{"name" => &1}
+        ),
+      "ocel:objects" => [
+        %{"id" => "run-1", "type" => "Run"},
+        %{"id" => "ep-a", "type" => "Epoch"},
+        %{"id" => "ep-b", "type" => "Epoch"}
+      ],
+      "ocel:events" => events
+    }
+  end
+
+  test "an egress-shape log (ocel:-prefixed keys, Run/Epoch types, sibling verification) validates" do
+    result = RunValidation.validate(egress_shape_log(), run_id: "run-1")
+
+    assert result.verdict == :validated, "violations: #{inspect(result.violations)}"
+    assert result.conformance == :ok
+    assert result.epochs["ep-a"].claimed_at == "2026-09-19T00:00:00Z"
+    # Priority order: epoch_started (a real worker moment) outranks
+    # epoch_scheduled for slot-holding.
+    assert result.epochs["ep-a"].appearance_type == "epoch_started"
+
+    assert result.epochs["ep-a"].terminal == %{
+             event_id: "receipt_closed:ep-a",
+             verification: "verification_passed"
+           }
+
+    assert result.max_in_flight == 1
+  end
+
+  test "an egress-shape log with a stuck epoch (scheduled, never closed) is not_validated naming it" do
+    log = egress_shape_log()
+
+    log = %{
+      log
+      | "ocel:events" =>
+          Enum.reject(log["ocel:events"], fn e ->
+            e["id"] in ["receipt_closed:ep-b", "verification_passed:ep-b"]
+          end)
+    }
+
+    result = RunValidation.validate(log, run_id: "run-1")
+
+    assert result.verdict == :not_validated
+    assert [%{code: :missing_terminal, epoch_id: "ep-b", message: msg}] = result.violations
+    assert msg =~ "stuck"
+  end
+
+  test "an egress receipt_closed with a sibling verification is terminal; without one it is not" do
+    log = egress_shape_log()
+
+    # Drop ONLY the verification_passed sibling for ep-a: its
+    # receipt_closed now has no verification attribute and no sibling ->
+    # stuck, not receipt-accounted.
+    log = %{
+      log
+      | "ocel:events" =>
+          Enum.reject(log["ocel:events"], &(&1["id"] == "verification_passed:ep-a"))
+    }
+
+    result = RunValidation.validate(log, run_id: "run-1")
+
+    assert result.verdict == :not_validated
+    assert Enum.any?(result.violations, &match?(%{code: :missing_terminal, epoch_id: "ep-a"}, &1))
   end
 end

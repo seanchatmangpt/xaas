@@ -76,7 +76,59 @@ defmodule Mix.Tasks.Xaas.RunValidateTaskTest do
     end
   end
 
-  test "run-id input with no emitter on the branch is a typed refusal, not a fabricated log" do
+  # The emitter seam (`Xaas.Ultracode.OcelEgress.derive_run/1` is the
+  # real default) needs persisted Run rows -- real DB state these pure
+  # task tests do not fabricate. The seam is exercised through the
+  # configured module with an honest stand-in (below): one that returns
+  # a real log (proving run-id input flows derive -> validate ->
+  # VALIDATED without re-deriving anything here), one that returns the
+  # emitter's own typed error, and a missing module (the typed
+  # refusal). The stand-in is a real module with the real derive_run/1
+  # contract; the task and `RunValidation.emit_log/1` under test run
+  # for real.
+  defmodule TestEmitterStub do
+    @moduledoc "Real-module stand-in for the configured OCEL emitter: returns whatever the test stored."
+
+    def derive_run(_run_id), do: Application.fetch_env!(:xaas, :run_validate_test_emitter_result)
+  end
+
+  defp with_emitter(return, fun) do
+    Application.put_env(:xaas, :ultracode_ocel_log_emitter, TestEmitterStub)
+    Application.put_env(:xaas, :run_validate_test_emitter_result, return)
+
+    on_exit(fn ->
+      Application.delete_env(:xaas, :ultracode_ocel_log_emitter)
+      Application.delete_env(:xaas, :run_validate_test_emitter_result)
+    end)
+
+    fun.()
+  end
+
+  test "run-id input flows through the configured emitter: derive -> validate -> VALIDATED" do
+    with_emitter({:ok, three_epoch_log()}, fn ->
+      output =
+        ExUnit.CaptureIO.capture_io(:stdio, fn ->
+          Mix.Task.rerun("xaas.run_validate", [@run])
+        end)
+
+      assert output =~ "VALIDATED"
+      assert output =~ "ep-0"
+      assert output =~ "passed"
+    end)
+  end
+
+  test "the emitter's own typed error surfaces as a raise naming the run" do
+    with_emitter({:error, :run_not_found}, fn ->
+      assert_raise Mix.Error, ~r/emitter failed for run #{@run}.*:run_not_found/s, fn ->
+        Mix.Task.rerun("xaas.run_validate", [@run])
+      end
+    end)
+  end
+
+  test "a missing emitter module is a typed refusal, not a fabricated log" do
+    Application.put_env(:xaas, :ultracode_ocel_log_emitter, Xaas.Ultracode.DoesNotExistEmitter)
+    on_exit(fn -> Application.delete_env(:xaas, :ultracode_ocel_log_emitter) end)
+
     assert_raise Mix.Error, ~r/REFUSED_NO_EMITTER/, fn ->
       Mix.Task.rerun("xaas.run_validate", ["some-run-id"])
     end
