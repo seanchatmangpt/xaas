@@ -54,8 +54,11 @@ defmodule Xaas.Ultracode.SystemAuthorityChicagoTest do
                |> Ash.Changeset.for_update(:transition_state, %{state: :running})
                |> Ash.update(actor: @ordinary_actor)
 
-      # And the real row never moved.
-      assert Ash.get!(Run, run.id, authorize?: false).state == :pending
+      # And the real row never moved. (Run's `:attribute` multitenancy
+      # retrofit requires a tenant on the default `:read`; the tenant-free
+      # verification read is `:read_unscoped`, matching the rest of this
+      # suite's internal call sites.)
+      assert Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false).state == :pending
     end
 
     test "Run.transition_state refuses a nil actor (any anonymous caller)" do
@@ -66,7 +69,7 @@ defmodule Xaas.Ultracode.SystemAuthorityChicagoTest do
                |> Ash.Changeset.for_update(:transition_state, %{state: :running})
                |> Ash.update()
 
-      assert Ash.get!(Run, run.id, authorize?: false).state == :pending
+      assert Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false).state == :pending
     end
 
     test "Run.advance_cycle and Run.tick refuse an ordinary actor" do
