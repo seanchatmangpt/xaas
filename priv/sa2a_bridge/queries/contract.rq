@@ -1,0 +1,7 @@
+PREFIX s2b: <https://ggen.dev/ontology/sa2a-bridge#>
+SELECT ?protocol ?sourceRepo ?sourceSha ?packSha ?consumerBaseSha ?zero ?outerOwns WHERE {
+  s2b:bridge a s2b:BridgeContract ;
+    s2b:protocol ?protocol ; s2b:sourceRepo ?sourceRepo ; s2b:sourceSha ?sourceSha ;
+    s2b:packSha ?packSha ; s2b:consumerBaseSha ?consumerBaseSha ;
+    s2b:zeroUnreceiptedActuation ?zero ; s2b:outerTransactionOwnsExternalDo ?outerOwns .
+}

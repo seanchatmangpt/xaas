@@ -1,0 +1,105 @@
+@prefix s2b: <https://ggen.dev/ontology/sa2a-bridge#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix sosa: <http://www.w3.org/ns/sosa/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix schema: <https://schema.org/> .
+
+# s2b:* is generator/control metadata only, mirroring xaas-castle-bridge-pack's
+# xcb:* discipline. Runtime semantic identity is carried by public ontology
+# IRIs; s2b never grants execution authority. This pack composes
+# xaas-castle-bridge-pack's edge-chain/proof-obligation/SHA-pinning shape,
+# targeting autofde-lab's real stdio JSON-lines BEAM port bridge
+# (src/autofde_lab/beam/beam_port_bridge.py, sa2a_validate/sa2a_admit/
+# sa2a_plan/sa2a_execute/sa2a_replay ops) as the DO boundary instead of a
+# Rust BRCE binary -- see autofde-lab commit b70331aa for the exact port ops
+# this ontology's edges name.
+s2b:BridgeContract a rdfs:Class .
+s2b:EdgeSpec a rdfs:Class .
+s2b:ERRCDecision a rdfs:Class .
+s2b:PublicOntology a rdfs:Class .
+s2b:ProofObligation a rdfs:Class .
+
+s2b:protocol a rdf:Property .
+s2b:sequence a rdf:Property .
+s2b:edgeName a rdf:Property .
+s2b:portOp a rdf:Property .
+s2b:fromPlane a rdf:Property .
+s2b:toPlane a rdf:Property .
+s2b:authority a rdf:Property .
+s2b:doBoundary a rdf:Property .
+s2b:receiptBefore a rdf:Property .
+s2b:receiptAfter a rdf:Property .
+s2b:replayable a rdf:Property .
+s2b:recoveryRequired a rdf:Property .
+s2b:publicClass a rdf:Property .
+s2b:sourceRepo a rdf:Property .
+s2b:sourceSha a rdf:Property .
+s2b:packSha a rdf:Property .
+s2b:consumerBaseSha a rdf:Property .
+s2b:zeroUnreceiptedActuation a rdf:Property .
+s2b:outerTransactionOwnsExternalDo a rdf:Property .
+s2b:ambientCommandPolicy a rdf:Property .
+s2b:category a rdf:Property .
+s2b:priority a rdf:Property .
+s2b:decision a rdf:Property .
+s2b:rationale a rdf:Property .
+s2b:expectedLeverage a rdf:Property .
+s2b:ontologyPrefix a rdf:Property .
+s2b:ontologyIri a rdf:Property .
+s2b:required a rdf:Property .
+s2b:requirement a rdf:Property .
+
+s2b:bridge a s2b:BridgeContract, prov:Plan ;
+  dcterms:title "XaaS outer control plane to autofde-lab SA2A BEAM-port bridge" ;
+  s2b:protocol "SA2A_BEAM_PORT_BRIDGE_V1" ;
+  s2b:sourceRepo "seanchatmangpt/autofde-lab" ;
+  s2b:sourceSha "b70331aa2b6aae839daef34b25d34b428094efec" ;
+  s2b:packSha "0000000000000000000000000000000000000000" ;
+  s2b:consumerBaseSha "9edaa22178bca188550f4bd5e1630b8ca10eda88" ;
+  s2b:zeroUnreceiptedActuation true ;
+  s2b:outerTransactionOwnsExternalDo false ;
+  s2b:ambientCommandPolicy false .
+
+# Public semantic substrate -- SA2A's own Standing vocabulary
+# (autofde_lab.sa2a.algebra.Standing: CANDIDATE/ADMITTED/CONSTRUCTED/
+# AUTHORIZED/EXECUTED/RECEIPTED) is projected onto PROV-O/ODRL here rather
+# than re-declared as a second, parallel vocabulary.
+s2b:prov a s2b:PublicOntology ; s2b:ontologyPrefix "prov" ; s2b:ontologyIri "http://www.w3.org/ns/prov#" ; s2b:required true .
+s2b:odrl a s2b:PublicOntology ; s2b:ontologyPrefix "odrl" ; s2b:ontologyIri "http://www.w3.org/ns/odrl/2/" ; s2b:required true .
+s2b:dcat a s2b:PublicOntology ; s2b:ontologyPrefix "dcat" ; s2b:ontologyIri "http://www.w3.org/ns/dcat#" ; s2b:required true .
+s2b:dcterms a s2b:PublicOntology ; s2b:ontologyPrefix "dcterms" ; s2b:ontologyIri "http://purl.org/dc/terms/" ; s2b:required true .
+s2b:skos a s2b:PublicOntology ; s2b:ontologyPrefix "skos" ; s2b:ontologyIri "http://www.w3.org/2004/02/skos/core#" ; s2b:required true .
+s2b:shacl a s2b:PublicOntology ; s2b:ontologyPrefix "sh" ; s2b:ontologyIri "http://www.w3.org/ns/shacl#" ; s2b:required true .
+
+# The correspondence chain -- one edge per beam_port_bridge.py sa2a_* op.
+# Exactly one edge (sa2a_execute) is consequential DO: it is the sole op
+# that dispatches AuthorityBroker/ConsequenceBoundary-gated actuation
+# (MachineExperienceCompiler.resolve with fallback_llm_inference); the
+# other four are read/admit/plan/verify operations over SA2A's own
+# Observation->Candidate->Admission->Authority->Actuation->Receipt->Replay
+# lawful-transition table (autofde_lab.sa2a.algebra.LAWFUL_TRANSITIONS).
+s2b:edge10 a s2b:EdgeSpec ; s2b:sequence 10 ; s2b:edgeName "profile-negotiation-validate" ; s2b:portOp "sa2a_validate" ; s2b:fromPlane "Xaas.Sa2a.Bridge.validate" ; s2b:toPlane "autofde_lab.sa2a.a2a_bridge.downgrade_guard.DowngradeGuard" ; s2b:authority "VERIFY_ONLY" ; s2b:doBoundary false ; s2b:receiptBefore false ; s2b:receiptAfter false ; s2b:replayable true ; s2b:publicClass "http://www.w3.org/ns/prov#Activity" .
+s2b:edge20 a s2b:EdgeSpec ; s2b:sequence 20 ; s2b:edgeName "candidate-admission" ; s2b:portOp "sa2a_admit" ; s2b:fromPlane "Xaas.Sa2a.Bridge.admit" ; s2b:toPlane "autofde_lab.sa2a.unknown.resolution.UnknownResolutionPipeline" ; s2b:authority "ADMIT_ONLY" ; s2b:doBoundary false ; s2b:receiptBefore false ; s2b:receiptAfter true ; s2b:replayable true ; s2b:publicClass "http://www.w3.org/ns/prov#Entity" .
+s2b:edge30 a s2b:EdgeSpec ; s2b:sequence 30 ; s2b:edgeName "cmca-frontier-plan" ; s2b:portOp "sa2a_plan" ; s2b:fromPlane "Xaas.Sa2a.Bridge.plan" ; s2b:toPlane "autofde_lab.sa2a.unknown.allocator.CMCACandidateAllocator" ; s2b:authority "CONSTRUCT_ONLY" ; s2b:doBoundary false ; s2b:receiptBefore true ; s2b:receiptAfter true ; s2b:replayable true ; s2b:publicClass "http://www.w3.org/ns/prov#Plan" .
+s2b:edge40 a s2b:EdgeSpec ; s2b:sequence 40 ; s2b:edgeName "port-do-execute" ; s2b:portOp "sa2a_execute" ; s2b:fromPlane "Xaas.Sa2a.Bridge.execute" ; s2b:toPlane "autofde_lab.sa2a.unknown.compilation.MachineExperienceCompiler" ; s2b:authority "PORT_DO_ONLY" ; s2b:doBoundary true ; s2b:receiptBefore true ; s2b:receiptAfter true ; s2b:replayable true ; s2b:recoveryRequired true ; s2b:publicClass "http://www.w3.org/ns/odrl/2/Request" .
+s2b:edge50 a s2b:EdgeSpec ; s2b:sequence 50 ; s2b:edgeName "deterministic-replay-verify" ; s2b:portOp "sa2a_replay" ; s2b:fromPlane "Xaas.Sa2a.Bridge.replay" ; s2b:toPlane "autofde_lab.sa2a.cli.replay sha256 recompute" ; s2b:authority "RECEIPT_ONLY" ; s2b:doBoundary false ; s2b:receiptBefore true ; s2b:receiptAfter true ; s2b:replayable true ; s2b:recoveryRequired true ; s2b:publicClass "http://www.w3.org/ns/prov#Entity" .
+
+# ERRC is executable/queryable design data, not a slide artifact.
+s2b:eliminate10 a s2b:ERRCDecision ; s2b:category "ELIMINATE" ; s2b:priority 10 ; s2b:decision "hand-written Elixir reimplementation of SA2A's Observation->Receipt->Replay calculus" ; s2b:rationale "autofde-lab's sa2a/algebra.py already owns Standing and LAWFUL_TRANSITIONS; xaas calls it over the port instead of re-deriving it" ; s2b:expectedLeverage 9.9 .
+s2b:reduce10 a s2b:ERRCDecision ; s2b:category "REDUCE" ; s2b:priority 10 ; s2b:decision "handwritten bridge identity and edge topology" ; s2b:rationale "ggen_igniter manufactures @identity/@edges from this one RDF source, mirroring xaas-castle-bridge-pack" ; s2b:expectedLeverage 9.6 .
+s2b:raise10 a s2b:ERRCDecision ; s2b:category "RAISE" ; s2b:priority 10 ; s2b:decision "exact supplier identity binding" ; s2b:rationale "contract pins autofde-lab source SHA (the commit adding the sa2a_* port ops) and xaas consumer base SHA" ; s2b:expectedLeverage 9.5 .
+s2b:create10 a s2b:ERRCDecision ; s2b:category "CREATE" ; s2b:priority 10 ; s2b:decision "reusable Ash-to-SA2A-calculus bridge composition" ; s2b:rationale "general pattern: xaas GenServer Port wrapper + generated edge catalog + one named DO edge, reusable for any future BEAM-port-fronted Python calculus" ; s2b:expectedLeverage 9.8 .
+
+s2b:proof10 a s2b:ProofObligation ; s2b:sequence 10 ; s2b:requirement "exactly one s2b:EdgeSpec has s2b:doBoundary true" .
+s2b:proof20 a s2b:ProofObligation ; s2b:sequence 20 ; s2b:requirement "the sole DO edge has authority PORT_DO_ONLY and both pre/post receipt evidence" .
+s2b:proof30 a s2b:ProofObligation ; s2b:sequence 30 ; s2b:requirement "all four ERRC categories are present" .
+s2b:proof40 a s2b:ProofObligation ; s2b:sequence 40 ; s2b:requirement "ambient command policy is false" .
+s2b:proof50 a s2b:ProofObligation ; s2b:sequence 50 ; s2b:requirement "recovery verification precedes any repeated port DO attempt" .

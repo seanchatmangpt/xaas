@@ -1,0 +1,6 @@
+PREFIX s2b: <https://ggen.dev/ontology/sa2a-bridge#>
+SELECT ?sequence ?edgeName ?portOp ?fromPlane ?toPlane ?authority ?doBoundary ?receiptBefore ?receiptAfter ?replayable WHERE {
+  ?edge a s2b:EdgeSpec ; s2b:sequence ?sequence ; s2b:edgeName ?edgeName ; s2b:portOp ?portOp ;
+    s2b:fromPlane ?fromPlane ; s2b:toPlane ?toPlane ; s2b:authority ?authority ; s2b:doBoundary ?doBoundary ;
+    s2b:receiptBefore ?receiptBefore ; s2b:receiptAfter ?receiptAfter ; s2b:replayable ?replayable .
+} ORDER BY ?sequence

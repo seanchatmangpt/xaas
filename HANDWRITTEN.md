@@ -7,6 +7,8 @@ Format: `path | semantic element | missing capability | intended owner pack | da
 
 ## Active
 
+lib/xaas/sa2a/bridge.ex | `Xaas.Sa2a.Bridge` GenServer: `Port.open/2` process wrapper (`{:line, ...}` framing to match autofde-lab's newline-delimited JSON-lines stdio protocol) + `validate/1`, `admit/2`, `plan/2`, `execute/2`, `replay/2` public functions calling it (2026-09-20) | no admitted pack renders a Port GenServer wrapper or its JSON-lines encode/decode; `sa2a-bridge-pack`'s ontology names this module by string (`s2b:fromPlane "Xaas.Sa2a.Bridge.execute"` etc.) without generating it, the same construct-only boundary `xaas-castle-bridge-pack` observes for `Xaas.Castle.Reactor` | ggen-marketplace sa2a-bridge-pack (admit from this proven shape) | 2026-09-20
+
 lib/xaas/ultracode/lease.ex | ActuationLease kernel over Run/Epoch/Receipt, incl. the Receipt `:for_epoch` lawful read carve-out (2026-09-17), + `actuate/2`: a live lease's admitted, per-provider-registry-gated reach into `Xaas.Actuation.run/4` (2026-09-17) | no admitted pack expresses a lease/claim/admit/close edge on the Ultracode seam, nor its registry-gated bridge onto the separate Path-A actuation kernel | ggen-marketplace ultracode-actuation-lease-pack (admit from this proven shape) | 2026-09-17
 
 lib/xaas_web/controllers/execution_fabric_controller.ex | MCP JSON-RPC + hook HTTP transport + sealed-receipt read route (GET /internal-api/execution/epochs/:epoch_id/receipts) + atom-safe refuse-reason mapping + `actuate` MCP tool (ZCode-UI-as-actuator seam, forwards to `Lease.actuate/2`) (2026-09-17) | no admitted pack renders a stateless MCP server controller inside Phoenix with internal-token gate | ggen-ecosystem-mcp-surface-pack family extension | 2026-09-17
