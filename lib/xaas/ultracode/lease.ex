@@ -83,7 +83,7 @@ defmodule Xaas.Ultracode.Lease do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run, Verifier}
+  alias Xaas.Ultracode.{DurationBudget, Epoch, Receipt, Run, Verifier}
 
   @default_lease_ttl_minutes 30
 
@@ -211,7 +211,7 @@ defmodule Xaas.Ultracode.Lease do
   # only lets a dispatcher that provisioned a worktree for a specific epoch
   # bind its worker to exactly that epoch instead of racing for the oldest.
   defp select_and_bind(provider, worker_id, ttl, retries_left, epoch_id) do
-    now = DateTime.utc_now()
+    now = DurationBudget.now()
 
     query =
       Epoch
@@ -219,6 +219,14 @@ defmodule Xaas.Ultracode.Lease do
       |> Ash.Query.filter(state == :running)
       |> Ash.Query.filter(is_nil(lease_token) or lease_expires_at < ^now)
       |> Ash.Query.filter(run.provider == ^provider)
+      # Duration-budget gate (the DB-enforced half of the law in
+      # `Xaas.Ultracode.DurationBudget`): a budget-exhausted Run's epochs
+      # are NOT ready work -- `run.budget_deadline_at` is the expression
+      # calculation mirroring `DurationBudget.deadline/1`, so the exclusion
+      # happens in SQL, oldest-candidate-first, with no truncation. A Run
+      # with `started_at: nil` has no budget in force (`is_nil` arm --
+      # e.g. the Autonomic loop's per-item Runs keep today's behavior).
+      |> Ash.Query.filter(is_nil(run.budget_deadline_at) or run.budget_deadline_at > ^now)
       |> then(fn q ->
         if is_binary(epoch_id), do: Ash.Query.filter(q, id == ^epoch_id), else: q
       end)
@@ -298,15 +306,30 @@ defmodule Xaas.Ultracode.Lease do
 
   defp bind_lease(%Epoch{} = candidate, worker_id, ttl_minutes) do
     token = lease_token()
-    expires_at = DateTime.add(DateTime.utc_now(), ttl_minutes * 60, :second)
-    now = DateTime.utc_now()
+    expires_at = DateTime.add(DurationBudget.now(), ttl_minutes * 60, :second)
+    now = DurationBudget.now()
 
     result =
       atomic_row_update(
         from(e in Epoch,
+          join: r in Run,
+          on: r.id == e.run_id,
+          # Duration-budget precondition, re-checked ATOMICALLY at the
+          # bind (the candidate query's filter alone would leave a
+          # check-then-bind window): a Run whose budget expires
+          # between the read and this UPDATE loses the bind -- the
+          # same fail-closed shape as every other precondition here.
+          # Same arithmetic as `DurationBudget.deadline/1` and the
+          # `budget_deadline_at` calculation.
           where:
             e.id == ^candidate.id and e.state == :running and
-              (is_nil(e.lease_token) or e.lease_expires_at < ^now)
+              (is_nil(e.lease_token) or e.lease_expires_at < ^now) and
+              (is_nil(r.started_at) or
+                 fragment(
+                   "? + (? * interval '1 second')",
+                   r.started_at,
+                   r.duration_budget_seconds
+                 ) > ^now)
         ),
         lease_token: token,
         lease_expires_at: expires_at,
@@ -686,7 +709,11 @@ defmodule Xaas.Ultracode.Lease do
   defp live_lease(lease_token, load \\ []) do
     case find_by_lease(lease_token, load) do
       {:ok, %Epoch{state: :running, lease_expires_at: expires_at} = epoch} ->
-        if DateTime.compare(expires_at, DateTime.utc_now()) == :lt do
+        # Through the DurationBudget clock seam (default DateTime.utc_now/0)
+        # so the whole lease-lifetime world -- TTL writes here, expiry
+        # checks, and the budget boundary -- moves on ONE clock; identical
+        # behavior in production, consistently fast-forwardable in tests.
+        if DateTime.compare(expires_at, DurationBudget.now()) == :lt do
           {:error, {:lease_expired, lease_token}}
         else
           {:ok, epoch}

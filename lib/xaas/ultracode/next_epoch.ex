@@ -17,10 +17,25 @@ defmodule Xaas.Ultracode.NextEpoch do
 
   Real `Ash.create!`/`Ash.update!` side effects, no in-memory-only
   bookkeeping -- same evidentiary standard as `Xaas.Ultracode.MissedEpochs`.
+
+  ## Duration-budget dispatch gate
+
+  This module is the epoch DISPATCH site for `:running` Runs, so it is one
+  of the law's enforcement points (`Xaas.Ultracode.DurationBudget` is the
+  single source of truth): an exhausted Run gets NO new epoch -- ever --
+  and, once nothing is in flight anymore, is transitioned to terminal
+  `:completed` with a final receipt instead of silently sitting `:running`
+  past its boundary. A live in-flight epoch is drained, not dispatched
+  over (`:budget_draining` outcome); a terminal-but-stale epoch
+  (`:missed`/`:failed`) at an exhausted Run is the drained state that
+  completes the run. Runs with `started_at: nil` have no budget in force
+  and keep this module's exact prior behavior.
   """
 
   require Ash.Query
   require Logger
+
+  alias Xaas.Ultracode.DurationBudget
 
   @doc """
   Scans every `:running` `Run` and, for any with no currently-active
@@ -81,25 +96,37 @@ defmodule Xaas.Ultracode.NextEpoch do
         %{run_id: run.id, outcome: :no_prior_epoch}
 
       [%{state: state}] when state in [:expected, :running] ->
-        %{run_id: run.id, outcome: :active_epoch_in_progress}
+        # Duration-budget observability: an active epoch on an exhausted
+        # Run is the DRAINING state -- no new dispatch happens here anyway,
+        # but the outcome names the boundary instead of silently parking
+        # (a run cannot silently exceed its budget). Not exhausted ->
+        # exactly the prior outcome.
+        now = DurationBudget.now()
+
+        if DurationBudget.exhausted?(run, now) do
+          %{run_id: run.id, outcome: :budget_draining, epoch_state: state}
+        else
+          %{run_id: run.id, outcome: :active_epoch_in_progress}
+        end
 
       [%{state: :completed} = last_epoch] ->
         advance_from_completed(run, last_epoch)
 
       [%{state: state} = last_epoch] when state in [:missed, :failed] ->
-        # The disposition that used to be left visible-but-unbuilt
-        # (`:blocked_on_stale_epoch` forever stalled the Run): bounded
-        # recovery. A terminal-stale epoch consumes the same cycle budget a
-        # completed one does -- while `run.cycle < run.max_cycles` the next
-        # epoch is constructed (the retry is VISIBLE: the prior epoch keeps
-        # its terminal state and its receipts, the subject is unchanged, and
-        # the new epoch is a fresh `:expected` row a later tick starts), and
-        # at exhaustion the Run itself lands `:failed` with the standing the
-        # last epoch's terminal state implies (`:blocked` for `:missed` --
-        # the work was never delivered; `:refused` for `:failed` -- a worker
-        # or the court refused it). Never a silent skip: every edge here is
-        # a real persisted transition on top of an intact receipt trail.
-        recover_from_terminal_stale(run, last_epoch, state)
+        # Bounded recovery (the engine's disposition for terminal-stale
+        # epochs) -- UNLESS the Run's duration budget is exhausted: past
+        # the boundary no retry can be scheduled anyway, the stale epoch
+        # IS the drained in-flight work, and the run must reach its
+        # terminal state + final receipt rather than keep cycling or sit
+        # `:running` forever (a run cannot silently exceed its budget in
+        # either direction). Budget not in force -> the recovery, exactly.
+        now = DurationBudget.now()
+
+        if DurationBudget.exhausted?(run, now) do
+          complete_budget_exhausted(run, now, drained_epoch_state: state)
+        else
+          recover_from_terminal_stale(run, last_epoch, state)
+        end
     end
   end
 
@@ -108,17 +135,54 @@ defmodule Xaas.Ultracode.NextEpoch do
   # a genuine admitted actor instead of nil.
   defp advance_from_completed(run, last_epoch) do
     system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
+    now = DurationBudget.now()
 
-    if run.cycle < run.max_cycles do
-      {:ok, next_epoch} = construct_next_epoch(run, last_epoch, system_actor)
+    cond do
+      # Duration-budget dispatch gate: an exhausted Run gets NO new epoch
+      # (this is the dispatch site; the gate precedes max_cycles because
+      # "cannot silently exceed budget" outranks cycle headroom). With
+      # the last epoch terminal, the run itself completes now.
+      DurationBudget.exhausted?(run, now) ->
+        complete_budget_exhausted(run, now, last_epoch_state: :completed)
 
-      Logger.info(
-        "[ultracode] run #{run.id} advanced to epoch cycle=#{next_epoch.cycle} " <>
-          "(epoch_id=#{next_epoch.id})"
-      )
+      run.cycle < run.max_cycles ->
+        {:ok, next_epoch} = construct_next_epoch(run, last_epoch, system_actor)
 
-      %{run_id: run.id, outcome: :advanced, epoch_id: next_epoch.id, cycle: next_epoch.cycle}
-    else
+        Logger.info(
+          "[ultracode] run #{run.id} advanced to epoch cycle=#{next_epoch.cycle} " <>
+            "(epoch_id=#{next_epoch.id})"
+        )
+
+        %{run_id: run.id, outcome: :advanced, epoch_id: next_epoch.id, cycle: next_epoch.cycle}
+
+      true ->
+        run
+        |> Ash.Changeset.for_update(
+          :transition_state,
+          %{state: :completed, standing: :admitted}
+        )
+        |> Ash.update!(actor: system_actor)
+
+        Logger.info(
+          "[ultracode] run #{run.id} reached max_cycles=#{run.max_cycles} -> Run :completed"
+        )
+
+        %{run_id: run.id, outcome: :run_completed}
+    end
+  end
+
+  # Terminal transition + final receipt for a Run whose budget is
+  # exhausted and whose in-flight work is fully drained (drained_epoch_
+  # state / last_epoch_state record WHAT was in flight when the boundary
+  # won). Uses the existing `:transition_state` action; the receipt is
+  # `DurationBudget.final_receipt/3` (waves run, epochs
+  # terminal-counted, duration actual vs budget). Carries the same
+  # system authority actor as every other tick-pipeline mutation
+  # (XAAS-2601).
+  defp complete_budget_exhausted(run, now, extra) do
+    system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
+
+    completed =
       run
       |> Ash.Changeset.for_update(
         :transition_state,
@@ -126,12 +190,18 @@ defmodule Xaas.Ultracode.NextEpoch do
       )
       |> Ash.update!(actor: system_actor)
 
-      Logger.info(
-        "[ultracode] run #{run.id} reached max_cycles=#{run.max_cycles} -> Run :completed"
-      )
+    receipt = DurationBudget.final_receipt(completed, now)
 
-      %{run_id: run.id, outcome: :run_completed}
-    end
+    Logger.info(
+      "[ultracode] run #{run.id} duration budget exhausted " <>
+        "(budget=#{completed.duration_budget_seconds}s, waves_run=#{completed.waves_run}) -> " <>
+        "Run :completed, final receipt sealed"
+    )
+
+    Map.merge(
+      %{run_id: run.id, outcome: :run_completed_budget_exhausted, receipt: receipt},
+      Map.new(extra)
+    )
   end
 
   # Bounded recovery after a terminal `:missed`/`:failed` epoch -- the

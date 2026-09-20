@@ -79,25 +79,71 @@ defmodule Xaas.Ultracode.Autonomic do
 
     with {:ok, items} <- sense(ctx) do
       ledger(ctx, :sensed, %{items: Enum.map(items, & &1["id"])})
-      {:ok, sem} = Agent.start_link(fn -> %{limit: ctx.capacity, in_flight: 0} end)
-      ctx = Map.put(ctx, :sem, sem)
 
       results =
         items
-        |> Task.async_stream(&process_item(&1, ctx),
-          max_concurrency: max(length(items), 1),
-          timeout: :infinity,
-          ordered: true
-        )
+        |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
+          process_item(item, Map.merge(ctx, sem_ctx))
+        end)
         |> Enum.zip(items)
         |> Enum.map(fn
           {{:ok, result}, _item} -> result
           {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
         end)
 
-      Agent.stop(sem)
       finish(ctx, items, results)
     end
+  end
+
+  @doc """
+  The capacity governor: dispatches `fun` over `items` with a hard,
+  real-time bound of `capacity` slot-holding workers at any instant.
+
+  This is the ONE in-family enforcement of the standing wave's capacity
+  law -- `run/1` calls it with `ctx.capacity` (5 for the scheduled
+  `:autonomic_wave` standing wave), so every wave's workers are admitted
+  through this exact gate. It is public (test-qualified, not
+  doc-hidden) so the invariant "a capacity-5 loop never has more than 5
+  workers in flight at any instant" is directly property-tested against
+  the production governor rather than a test double
+  (`duration_budget_test.exs`).
+
+  `fun` is 2-arity: `fun.(item, sem_ctx)` where `sem_ctx` carries THIS
+  governor's semaphore (`sem_ctx.sem`). Callers whose workers re-acquire
+  a slot per internal step (run/1's repair loop re-acquires per attempt)
+  merge `sem_ctx` into their own context so EVERY acquisition -- first
+  dispatch and every retry -- flows through the one semaphore; that is
+  what makes the bound real under retries, and it is exactly the shape
+  `run/1` had before this function was extracted (the semaphore used to
+  live on the loop's ctx directly). The semaphore also halves on provider
+  rate refusals (`halve/1`), so the bound only ever TIGHTENS mid-wave.
+
+  Task-level exits surface per-item as `{:exit, reason}`, aligned with
+  `items` by order (async_stream preserves input order).
+  """
+  @spec dispatch_bounded(list(), pos_integer(), (term(), map() -> term())) :: [
+          {:ok, term()} | {:exit, term()}
+        ]
+  def dispatch_bounded(items, capacity, fun)
+      when is_list(items) and is_integer(capacity) and capacity >= 1 and is_function(fun, 2) do
+    {:ok, sem} = Agent.start_link(fn -> %{limit: capacity, in_flight: 0} end)
+
+    # Materialize BEFORE stopping the semaphore: async_stream is lazy, and
+    # workers acquire/release through `sem` during enumeration. Yields
+    # {:ok, result} | {:exit, reason} per item, aligned with `items` by
+    # order -- exactly this function's contract.
+    results =
+      items
+      |> Task.async_stream(
+        fn item -> fun.(item, %{sem: sem}) end,
+        max_concurrency: max(capacity, 1),
+        timeout: :infinity,
+        ordered: true
+      )
+      |> Enum.to_list()
+
+    Agent.stop(sem)
+    results
   end
 
   # ------------------------------------------------------------------
