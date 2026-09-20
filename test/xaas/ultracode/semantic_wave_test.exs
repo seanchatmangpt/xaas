@@ -1,53 +1,28 @@
 defmodule Xaas.Ultracode.SemanticWaveTest do
-  use Xaas.DataCase, async: false
+  # SemanticCase, not bare DataCase: the wave dispatch path (Task
+  # .async_stream workers) and SemanticWork.materialize/2 both touch
+  # Xaas.Repo Ash resources, so the suite needs the scoped shared
+  # Xaas.Repo sandbox owner the template establishes -- the root fix for
+  # the DBConnection.OwnershipError reds, and the mechanism that lets the
+  # spawned dispatch processes join the test's sandboxed connection. The
+  # template also restores the wave runner/state-dir env keys on exit.
+  use Xaas.Ultracode.SemanticCase, async: false
 
   alias Xaas.Ultracode.{SemanticWave, SemanticWork}
 
-  setup do
-    original = %{
-      repos: Application.get_env(:xaas, :ultracode_repos),
-      root: Application.get_env(:xaas, :ultracode_worktree_root),
-      suites: Application.get_env(:xaas, :ultracode_verifier_suites),
-      runner: Application.get_env(:xaas, :ultracode_semantic_wave_runner),
-      state_dir: Application.get_env(:xaas, :ultracode_semantic_wave_state_dir)
-    }
-
-    base = mktmp("semantic-wave")
-    repo = Path.join(base, "repo")
-    root = Path.join(base, "runs")
-    state = Path.join(base, "state")
-    File.mkdir_p!(repo)
-    sha = init_repo(repo)
-
-    Application.put_env(:xaas, :ultracode_repos, %{"demo" => repo})
-    Application.put_env(:xaas, :ultracode_worktree_root, root)
-    Application.put_env(:xaas, :ultracode_verifier_suites, %{"semantic-test" => %{}})
-
-    on_exit(fn ->
-      restore_env(:ultracode_repos, original.repos)
-      restore_env(:ultracode_worktree_root, original.root)
-      restore_env(:ultracode_verifier_suites, original.suites)
-      restore_env(:ultracode_semantic_wave_runner, original.runner)
-      restore_env(:ultracode_semantic_wave_state_dir, original.state_dir)
-    end)
-
-    %{repo: repo, root: root, state: state, sha: sha}
-  end
-
-  test "dispatches only already-materialized autonomic-wave policy epochs", %{sha: sha, state: state} do
+  test "dispatches only already-materialized autonomic-wave policy epochs", %{
+    sha: sha,
+    state: state
+  } do
     assert {:ok, %{epoch: wave_a}} =
-             SemanticWork.materialize(
-               descriptor(sha, "a", "autonomic_wave_attempt")
-             )
+             SemanticWork.materialize(semantic_descriptor(sha, "a", "autonomic_wave_attempt"))
 
     assert {:ok, %{epoch: wave_b}} =
-             SemanticWork.materialize(
-               descriptor(sha, "b", "autonomic_wave_attempt")
-             )
+             SemanticWork.materialize(semantic_descriptor(sha, "b", "autonomic_wave_attempt"))
 
     assert {:ok, %{epoch: continuous}} =
              SemanticWork.materialize(
-               descriptor(sha, "continuous", "continuous_epoch_run")
+               semantic_descriptor(sha, "continuous", "continuous_epoch_run")
              )
 
     parent = self()
@@ -78,7 +53,7 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
   test "an already-leased semantic Epoch is not redispatched", %{sha: sha, state: state} do
     assert {:ok, %{epoch: wave}} =
              SemanticWork.materialize(
-               descriptor(sha, "leased", "autonomic_wave_attempt")
+               semantic_descriptor(sha, "leased", "autonomic_wave_attempt")
              )
 
     assert {:ok, _epoch, _token, _run} =
@@ -132,7 +107,9 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
     assert Application.fetch_env!(:xaas, Oban)[:queues][:ultracode_wave] == 1
   end
 
-  test "scheduled semantic action invokes capacity five without promoting standing", %{state: state} do
+  test "scheduled semantic action invokes capacity five without promoting standing", %{
+    state: state
+  } do
     {:ok, _pid} = Agent.start_link(fn -> nil end, name: __MODULE__.RunnerProbe)
     Application.put_env(:xaas, :ultracode_semantic_wave_runner, {__MODULE__, :capture_runner})
     Application.put_env(:xaas, :ultracode_semantic_wave_state_dir, state)
@@ -151,63 +128,4 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
     Agent.update(__MODULE__.RunnerProbe, fn _ -> opts end)
     {:ok, %{"status" => "IDLE", "receipt_path" => "/tmp/semantic-wave.json"}}
   end
-
-  defp descriptor(sha, suffix, policy) do
-    %{
-      work_order_iri: "urn:gall:work-order:xaas:#{suffix}",
-      checkpoint_iri: "urn:gall:checkpoint:xaas:#{suffix}",
-      graph_digest: "sha256:" <> String.duplicate("a", 64),
-      repository_identity: "seanchatmangpt/xaas",
-      execution_repo_alias: "demo",
-      base_sha: sha,
-      goal: "Dispatch the admitted semantic work.",
-      provider: "zcode",
-      verifier_suite: "semantic-test",
-      execution_policy: policy,
-      dependencies: []
-    }
-  end
-
-  defp mktmp(label) do
-    dir =
-      Path.join(
-        System.tmp_dir!(),
-        "xaas-#{label}-#{System.unique_integer([:positive])}"
-      )
-
-    File.mkdir_p!(dir)
-    on_exit(fn -> File.rm_rf(dir) end)
-    dir
-  end
-
-  defp init_repo(repo) do
-    env = [
-      {"GIT_AUTHOR_NAME", "t"},
-      {"GIT_AUTHOR_EMAIL", "t@t"},
-      {"GIT_COMMITTER_NAME", "t"},
-      {"GIT_COMMITTER_EMAIL", "t@t"}
-    ]
-
-    {_, 0} =
-      System.cmd("git", ["-C", repo, "init", "--quiet", "-b", "main"], stderr_to_stdout: true)
-
-    File.write!(Path.join(repo, "hello.txt"), "hello\n")
-    {_, 0} = System.cmd("git", ["-C", repo, "add", "hello.txt"], stderr_to_stdout: true)
-
-    {_, 0} =
-      System.cmd("git", ["-C", repo, "commit", "-m", "init", "--quiet"],
-        stderr_to_stdout: true,
-        env: env
-      )
-
-    git!(repo, ["rev-parse", "HEAD"])
-  end
-
-  defp git!(dir, args) do
-    {out, 0} = System.cmd("git", ["-C", dir | args], stderr_to_stdout: true)
-    String.trim(out)
-  end
-
-  defp restore_env(key, nil), do: Application.delete_env(:xaas, key)
-  defp restore_env(key, value), do: Application.put_env(:xaas, key, value)
 end
