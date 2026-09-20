@@ -125,7 +125,14 @@ config :swoosh, :api_client, false
 # resolved from this app's priv/ (never from a worktree the worker controls).
 config :xaas, :ultracode_worktree_root, Path.expand("~/xaas-worktrees/runs")
 config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas-worktrees/tickets")
-config :xaas, :ultracode_repos, %{"aps" => Path.expand("~/xaas-worktrees/repos/aps")}
+
+config :xaas, :ultracode_repos, %{
+  "aps" => Path.expand("~/xaas-worktrees/repos/aps"),
+  # Additional operator-owned targets (wave-5): fresh clones with real test
+  # suites, judged at close time by the matching <alias>-dod verifier suite.
+  "nounverb" => Path.expand("~/xaas-worktrees/repos/nounverb"),
+  "eds" => Path.expand("~/xaas-worktrees/repos/eds")
+}
 
 # APS's own five canonical gates, run by the fabric at the integration head.
 aps_env = %{
@@ -196,3 +203,10 @@ config :xaas, :ultracode_verifier_suites, %{
     ]
   }
 }
+
+# Non-APS targets: declared as code in Xaas.Ultracode.TargetSuites (with a
+# registration-time admission gate, TargetSuites.validate/1). The value is the
+# MODULE ITSELF -- only an atom at config-evaluation time -- and the verifier
+# resolves and merges it at runtime, so config never depends on project
+# compilation. Unset (test/prod) = registry unchanged.
+config :xaas, :ultracode_target_suites, Xaas.Ultracode.TargetSuites

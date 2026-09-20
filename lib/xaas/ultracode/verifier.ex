@@ -82,6 +82,10 @@ defmodule Xaas.Ultracode.Verifier do
   def registered?(name) when is_binary(name), do: Map.has_key?(suites(), name)
   def registered?(_), do: false
 
+  @doc "Placeholder argv elements a suite may reference (as WHOLE elements only)."
+  @spec placeholders() :: [String.t()]
+  def placeholders, do: @placeholders
+
   @doc "Registered suite names (for typed error messages and docs)."
   @spec suite_names() :: [String.t()]
   def suite_names, do: suites() |> Map.keys() |> Enum.sort()
@@ -494,5 +498,24 @@ defmodule Xaas.Ultracode.Verifier do
     dir
   end
 
-  defp suites, do: Application.get_env(:xaas, :ultracode_verifier_suites, %{})
+  # The registry is environment config plus, when the environment opts in via
+  # `:ultracode_target_suites`, the code-declared suites for non-APS targets
+  # (see `Xaas.Ultracode.TargetSuites`). The config value is the module itself
+  # -- a bare atom at config-evaluation time -- so it is resolved HERE, at
+  # runtime, never while loading config. Unresolvable module = registry stays
+  # as configured (fail closed, no invented suites).
+  defp suites do
+    base = Application.get_env(:xaas, :ultracode_verifier_suites, %{})
+
+    case Application.get_env(:xaas, :ultracode_target_suites, nil) do
+      module when is_atom(module) and not is_nil(module) ->
+        case Code.ensure_loaded(module) do
+          {:module, _} -> Map.merge(base, module.devs())
+          {:error, _} -> base
+        end
+
+      _ ->
+        base
+    end
+  end
 end

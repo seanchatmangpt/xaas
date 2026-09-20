@@ -225,6 +225,11 @@ config :phoenix, :json_library, Jason
 config :xaas, :ultracode_verifier_suites, %{}
 config :xaas, :ultracode_worktree_root, nil
 config :xaas, :ultracode_ticket_dir, nil
+# Opt-in module value (an atom, e.g. Xaas.Ultracode.TargetSuites) whose devs/0
+# declares extra fabric verifier suites for non-APS targets; Xaas.Ultracode.
+# Verifier resolves it at runtime, never at config-evaluation time. nil = no
+# extra suites.
+config :xaas, :ultracode_target_suites, nil
 config :xaas, :ultracode_repos, %{}
 
 # The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
