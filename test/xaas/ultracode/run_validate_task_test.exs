@@ -70,6 +70,60 @@ defmodule Mix.Tasks.Xaas.RunValidateTaskTest do
     assert output =~ "max workers in flight: 1 (capacity 5)"
   end
 
+  test "--per-repo-capacity parses and prints the per-repo accounting" do
+    # One repo-bound epoch (Repo object + repo-qualified relationship,
+    # the egress multi-repo shape): validates under a per-repo cap of 1
+    # and prints the per-repo table.
+    events = [
+      %{
+        "id" => "claim-ep-0",
+        "type" => "epoch_claimed",
+        "time" => "2026-09-19T00:00:00Z",
+        "attributes" => %{"epoch_id" => "ep-0", "run_id" => @run},
+        "relationships" => [
+          %{"objectId" => "ep-0", "qualifier" => "epoch"},
+          %{"objectId" => @run, "qualifier" => "run"},
+          %{"objectId" => "zoela_phx", "qualifier" => "repo"}
+        ]
+      },
+      %{
+        "id" => "close-ep-0",
+        "type" => "receipt_closed",
+        "time" => "2026-09-19T00:10:00Z",
+        "attributes" => %{"epoch_id" => "ep-0", "run_id" => @run, "verification" => "passed"},
+        "relationships" => [
+          %{"objectId" => "ep-0", "qualifier" => "epoch"},
+          %{"objectId" => @run, "qualifier" => "run"},
+          %{"objectId" => "zoela_phx", "qualifier" => "repo"}
+        ]
+      }
+    ]
+
+    log = %{
+      "objectTypes" => ["run", "epoch", "Repo"],
+      "eventTypes" => ["epoch_claimed", "receipt_closed"],
+      "objects" => [
+        %{"id" => @run, "type" => "run"},
+        %{"id" => "ep-0", "type" => "epoch"},
+        %{"id" => "zoela_phx", "type" => "Repo"}
+      ],
+      "events" => events
+    }
+
+    path = Path.join(System.tmp_dir!(), "run_validate_task_repo_#{System.unique_integer()}.json")
+    File.write!(path, Jason.encode!(log))
+    on_exit(fn -> File.rm(path) end)
+
+    output =
+      ExUnit.CaptureIO.capture_io(:stdio, fn ->
+        Mix.Task.rerun("xaas.run_validate", [path, "--per-repo-capacity", "1"])
+      end)
+
+    assert output =~ "VALIDATED"
+    assert output =~ "max workers in flight per repo:"
+    assert output =~ "repo zoela_phx: 1 (per-repo cap 1)"
+  end
+
   test "no positional argument is a usage refusal" do
     assert_raise Mix.Error, ~r/usage: mix xaas.run_validate/, fn ->
       Mix.Task.rerun("xaas.run_validate", [])

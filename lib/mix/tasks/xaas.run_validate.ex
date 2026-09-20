@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Xaas.RunValidate do
 
   Usage:
 
-      mix xaas.run_validate <path/to/log.ocel.json> [--run-id <id>] [--capacity 5]
+      mix xaas.run_validate <path/to/log.ocel.json> [--run-id <id>] [--capacity 5] [--per-repo-capacity 5]
 
       mix xaas.run_validate <run_id>
 
@@ -26,6 +26,14 @@ defmodule Mix.Tasks.Xaas.RunValidate do
   loaded this form refuses with a typed message instead of fabricating
   a log. `--run-id` on the path form enforces that the log is for that
   exact run (`:wrong_run` otherwise).
+
+  `--per-repo-capacity n` adds PER-REPO capacity accounting (the global
+  `--capacity` law stays enforced on top): every claimed epoch must bind
+  a repo (`Repo` object relationship from the OCEL egress -- otherwise a
+  typed `REFUSED_PER_REPO_CAPACITY_NO_REPO_ALIAS` refusal names the
+  epoch), and each repo's own in-flight maximum must not exceed n
+  (`:per_repo_capacity_breach` names the repo). See
+  `Xaas.Ultracode.RunValidation`'s moduledoc, "Per-repo capacity".
 
   Exit behavior (typed-refusal convention, matching
   `mix xaas.ultracode.tick_health`):
@@ -46,7 +54,9 @@ defmodule Mix.Tasks.Xaas.RunValidate do
     Mix.Task.run("app.start")
 
     {opts, positional, _invalid} =
-      OptionParser.parse(args, strict: [run_id: :string, capacity: :integer])
+      OptionParser.parse(args,
+        strict: [run_id: :string, capacity: :integer, per_repo_capacity: :integer]
+      )
 
     case positional do
       [subject] ->
@@ -58,31 +68,37 @@ defmodule Mix.Tasks.Xaas.RunValidate do
 
       _other ->
         Mix.raise(
-          "usage: mix xaas.run_validate <log_path | run_id> [--run-id <id>] [--capacity <n>]"
+          "usage: mix xaas.run_validate <log_path | run_id> [--run-id <id>] " <>
+            "[--capacity <n>] [--per-repo-capacity <n>]"
         )
     end
   end
 
+  defp capacity_opts(opts) do
+    []
+    |> Kernel.++(if opts[:capacity], do: [capacity: opts[:capacity]], else: [])
+    |> Kernel.++(
+      if opts[:per_repo_capacity], do: [per_repo_capacity: opts[:per_repo_capacity]], else: []
+    )
+  end
+
   defp validate_log_file(path, opts) do
     run_id = opts[:run_id]
-    capacity_opts = if opts[:capacity], do: [capacity: opts[:capacity]], else: []
 
     result =
       if run_id do
-        RunValidation.validate_run(run_id, path, capacity_opts)
+        RunValidation.validate_run(run_id, path, capacity_opts(opts))
       else
-        RunValidation.validate(path, capacity_opts)
+        RunValidation.validate(path, capacity_opts(opts))
       end
 
     report(result)
   end
 
   defp validate_via_emitter(run_id, opts) do
-    capacity_opts = if opts[:capacity], do: [capacity: opts[:capacity]], else: []
-
     case RunValidation.emit_log(run_id) do
       {:ok, log} ->
-        report(RunValidation.validate_run(run_id, log, capacity_opts))
+        report(RunValidation.validate_run(run_id, log, capacity_opts(opts)))
 
       {:error, :no_emitter} ->
         Mix.raise(
@@ -138,6 +154,21 @@ defmodule Mix.Tasks.Xaas.RunValidate do
         "  epoch #{id}: claimed_at=#{acc.claimed_at || "NEVER"} terminal=#{terminal}"
       end)
 
-    "epochs: #{map_size(result.epochs)}\n#{epochs}\nmax workers in flight: #{in_flight}"
+    per_repo = per_repo_accounting(result)
+
+    "epochs: #{map_size(result.epochs)}\n#{epochs}\nmax workers in flight: #{in_flight}#{per_repo}"
+  end
+
+  defp per_repo_accounting(%{max_in_flight_per_repo: nil}), do: ""
+
+  defp per_repo_accounting(%{max_in_flight_per_repo: repos}) when map_size(repos) == 0, do: ""
+
+  defp per_repo_accounting(%{max_in_flight_per_repo: repos, per_repo_capacity: cap}) do
+    rows =
+      repos
+      |> Enum.sort()
+      |> Enum.map_join("\n", fn {repo, n} -> "  repo #{repo}: #{n} (per-repo cap #{cap})" end)
+
+    "\nmax workers in flight per repo:\n#{rows}"
   end
 end

@@ -559,4 +559,188 @@ defmodule Xaas.Ultracode.RunValidationTest do
     assert result.verdict == :not_validated
     assert Enum.any?(result.violations, &match?(%{code: :missing_terminal, epoch_id: "ep-a"}, &1))
   end
+
+  # ------------------------------------------------------------------
+  # Per-repo capacity accounting (--per-repo-capacity)
+  # ------------------------------------------------------------------
+
+  defp repo_rel(repo), do: %{"objectId" => repo, "qualifier" => "repo"}
+  defp repo_object(id), do: %{"id" => id, "type" => "Repo"}
+
+  defp claimed_on_repo(epoch_id, repo, at),
+    do: Map.update(claimed(epoch_id, at), "relationships", [], &(&1 ++ [repo_rel(repo)]))
+
+  defp closed_on_repo(epoch_id, repo, verification, at),
+    do:
+      Map.update(
+        closed(epoch_id, verification, at),
+        "relationships",
+        [],
+        &(&1 ++ [repo_rel(repo)])
+      )
+
+  test "per-repo accounting: two repos each holding 2 slots is validated, and the per-repo maxima are reported" do
+    events = [
+      claimed_on_repo("ep-0", "repo-a", minute(0)),
+      closed_on_repo("ep-0", "repo-a", "passed", minute(10)),
+      claimed_on_repo("ep-1", "repo-a", minute(5)),
+      closed_on_repo("ep-1", "repo-a", "failed", minute(15)),
+      claimed_on_repo("ep-2", "repo-b", minute(0)),
+      closed_on_repo("ep-2", "repo-b", "passed", minute(10)),
+      claimed_on_repo("ep-3", "repo-b", minute(5)),
+      closed_on_repo("ep-3", "repo-b", "refused", minute(15))
+    ]
+
+    log =
+      ocel_log(events, [
+        run_object(@run),
+        epoch_object("ep-0"),
+        epoch_object("ep-1"),
+        epoch_object("ep-2"),
+        epoch_object("ep-3"),
+        repo_object("repo-a"),
+        repo_object("repo-b")
+      ])
+
+    result = RunValidation.validate(log, run_id: @run, per_repo_capacity: 2)
+
+    assert result.verdict == :validated
+    assert result.violations == []
+    # GLOBAL observed max is 4 (2 slots per repo at one instant) -- under
+    # the default global capacity 5 this validates; the per-repo law sees
+    # each repo's own 2.
+    assert result.max_in_flight == 4
+    assert result.per_repo_capacity == 2
+
+    assert result.max_in_flight_per_repo == %{"repo-a" => 2, "repo-b" => 2}
+  end
+
+  test "per-repo breach: one repo exceeding ITS cap is not_validated naming that repo (global cap untouched)" do
+    events = [
+      claimed_on_repo("ep-0", "repo-a", minute(0)),
+      closed_on_repo("ep-0", "repo-a", "passed", minute(20)),
+      claimed_on_repo("ep-1", "repo-a", minute(5)),
+      closed_on_repo("ep-1", "repo-a", "passed", minute(25)),
+      claimed_on_repo("ep-2", "repo-a", minute(10)),
+      closed_on_repo("ep-2", "repo-a", "passed", minute(30)),
+      claimed_on_repo("ep-3", "repo-b", minute(0)),
+      closed_on_repo("ep-3", "repo-b", "passed", minute(10))
+    ]
+
+    log =
+      ocel_log(events, [
+        run_object(@run),
+        epoch_object("ep-0"),
+        epoch_object("ep-1"),
+        epoch_object("ep-2"),
+        epoch_object("ep-3"),
+        repo_object("repo-a"),
+        repo_object("repo-b")
+      ])
+
+    result = RunValidation.validate(log, run_id: @run, per_repo_capacity: 2)
+
+    assert result.verdict == :not_validated
+
+    # 3 concurrent on repo-a breaches the per-repo cap of 2; the breach
+    # NAMES the repo. The global law (5) is nowhere near breached (3 in
+    # flight) -- this violation is the per-repo law's own catch.
+    assert [
+             %{code: :per_repo_capacity_breach, repo: "repo-a", epoch_id: nil, message: msg}
+           ] = result.violations
+
+    assert msg =~ "repo-a"
+    assert msg =~ "3 workers in flight"
+    assert msg =~ "at most 2"
+  end
+
+  test "per-repo mode still enforces the GLOBAL capacity law on top" do
+    # Six epochs in flight at one instant, split 3+3 across two repos:
+    # each repo is deep under its per-repo cap of 10, but the run's own
+    # global capacity (5) is breached -- per-repo is a refinement, never
+    # a relaxation.
+    events =
+      Enum.flat_map(0..5, fn i ->
+        repo = if rem(i, 2) == 0, do: "repo-a", else: "repo-b"
+
+        [
+          claimed_on_repo("ep-#{i}", repo, minute(0)),
+          closed_on_repo("ep-#{i}", repo, "passed", minute(30))
+        ]
+      end)
+
+    log =
+      ocel_log(
+        events,
+        [
+          run_object(@run)
+        ] ++
+          Enum.map(0..5, &epoch_object("ep-#{&1}")) ++
+          [repo_object("repo-a"), repo_object("repo-b")]
+      )
+
+    result = RunValidation.validate(log, run_id: @run, per_repo_capacity: 10)
+
+    assert result.verdict == :not_validated
+    assert [%{code: :capacity_breach, message: msg}] = result.violations
+    assert msg =~ "6 workers in flight"
+    assert msg =~ "at most 5"
+  end
+
+  test "per-repo mode with an alias-less log is a TYPED REFUSAL naming every unattributable epoch" do
+    # The existing single-repo fixture binds no repo anywhere: per-repo
+    # accounting cannot be manufactured for it, so the law refuses.
+    result = RunValidation.validate(three_epoch_log(), run_id: @run, per_repo_capacity: 2)
+
+    assert result.verdict == :not_validated
+
+    refusals = Enum.filter(result.violations, &(&1.code == :repo_unattributable))
+
+    assert Enum.map(refusals, & &1.epoch_id) == ["ep-0", "ep-1", "ep-2"]
+
+    for refusal <- refusals do
+      assert refusal.message =~ "REFUSED_PER_REPO_CAPACITY_NO_REPO_ALIAS"
+      assert refusal.message =~ "binds no repo"
+    end
+
+    # No per-repo maxima are fabricated for unattributable epochs.
+    assert result.max_in_flight_per_repo == %{}
+  end
+
+  test "per-repo mode is opt-in: the same alias-less log validates without the flag and reports nil" do
+    result = RunValidation.validate(three_epoch_log(), run_id: @run)
+
+    assert result.verdict == :validated
+    assert result.max_in_flight_per_repo == nil
+    assert result.per_repo_capacity == nil
+  end
+
+  test "per-repo mode: one bound and one unbound epoch refuses only the unbound one, and still accounts the bound repo" do
+    events = [
+      claimed_on_repo("ep-0", "repo-a", minute(0)),
+      closed_on_repo("ep-0", "repo-a", "passed", minute(10)),
+      claimed("ep-1", minute(0)),
+      closed("ep-1", "passed", minute(10))
+    ]
+
+    log =
+      ocel_log(events, [
+        run_object(@run),
+        epoch_object("ep-0"),
+        epoch_object("ep-1"),
+        repo_object("repo-a")
+      ])
+
+    result = RunValidation.validate(log, run_id: @run, per_repo_capacity: 1)
+
+    assert result.verdict == :not_validated
+
+    refusals = Enum.filter(result.violations, &(&1.code == :repo_unattributable))
+    assert [%{epoch_id: "ep-1"}] = refusals
+
+    # The bound repo's accounting is not suppressed by the refusal.
+    assert result.max_in_flight_per_repo == %{"repo-a" => 1}
+
+    refute Enum.any?(result.violations, &(&1.code == :per_repo_capacity_breach))
+  end
 end

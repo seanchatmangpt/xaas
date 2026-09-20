@@ -58,9 +58,46 @@ defmodule Xaas.Ultracode.OcelEgress do
       No resource exists for worktrees (`Xaas.Ultracode.Worktrees` is a
       module, not a schema), so this object type is derived from the
       path attribute alone.
+    * `Repo` -- the execution repository alias (`Run.execution_repo_alias`
+      today; a per-Epoch alias if sibling waves add one), CONDITIONALLY:
+      a run whose rows carry no alias emits no `Repo` object and does not
+      declare the type at all (see "Multi-repo legibility" below).
 
   `Epoch.lease_token` is deliberately NOT exported anywhere in the log:
   it is a live capability, and an audit log is not a capability store.
+
+  ## Multi-repo legibility (the `Repo` object type)
+
+  A multi-repo campaign must be legible per repository: every epoch and
+  receipt names the repo it executed against, and the results-validation
+  law (`Xaas.Ultracode.RunValidation`'s `:per_repo_capacity` option) can
+  then judge capacity PER REPO. The egress contributes:
+
+    * one `Repo` object per distinct alias (object id = the alias string,
+      the same operator-local `Worktrees` lookup key);
+    * an `execution_repo_alias` attribute on the `Run` object (the row's
+      own fact) and on each `Epoch` object that carries its OWN alias;
+    * a `repo`-qualified relationship (qualifier = type lowercased, the
+      one deterministic rule) on the Run's events, and on every
+      Epoch/Receipt event -- each epoch binds the repo it actually ran
+      against: its own alias when it has one, otherwise the Run's.
+
+  The alias fact is resolved through ONE seam, `own_alias/1` below: a
+  struct that has a non-nil `execution_repo_alias` exposes it; a struct
+  without the key (today's `Epoch`) resolves to nil, so the single-repo
+  path is unchanged. COUPLING: if the sibling waves (registry/planner)
+  land the per-Epoch alias under a different name, THIS function is the
+  one place to extend.
+
+  Declaration is conditional by law: `Repo` is declared in
+  `ocel:objectTypes` exactly when at least one `Repo` object is emitted.
+  Every other type stays ALWAYS-declared (the original rule), but an
+  unconditional sixth declaration would change every legacy single-repo
+  log's byte shape -- breaking the pinned legacy skeleton and every
+  archived single-repo log's stability for a fact those logs do not
+  carry. Declared-iff-emitted for `Repo` keeps both shapes spec-exact
+  (the court only requires emitted types to be declared, never the
+  converse) and byte-stable per shape.
 
   ## Event model (mapping table: law -> code)
 
@@ -137,12 +174,15 @@ defmodule Xaas.Ultracode.OcelEgress do
   require Ash.Query
 
   # Fixed declaration order (deterministic document skeleton). All five
-  # object types and all fifteen event types are ALWAYS declared, even
-  # when a given run's log contains zero instances of one -- declared
+  # base object types and all fifteen event types are ALWAYS declared,
+  # even when a given run's log contains zero instances of one -- declared
   # vocabulary is the code's real event surface, emitted instances are
   # only the facts persistence can prove (see the moduledoc mapping
-  # table).
+  # table). The ONE exception is `Repo`: declared iff emitted (a legacy
+  # single-repo log must keep its exact five-type shape -- see the
+  # moduledoc's "Multi-repo legibility" section).
   @object_types ["Run", "Epoch", "Worker", "Receipt", "Worktree"]
+  @repo_type "Repo"
 
   @event_types [
     "run_started",
@@ -169,7 +209,8 @@ defmodule Xaas.Ultracode.OcelEgress do
     "Epoch" => 1,
     "Worker" => 2,
     "Receipt" => 3,
-    "Worktree" => 4
+    "Worktree" => 4,
+    "Repo" => 5
   }
 
   @default_out_dir "priv/ocel/ultracode"
@@ -226,9 +267,14 @@ defmodule Xaas.Ultracode.OcelEgress do
   def build_document(%Run{} = run, epochs, receipts_by_epoch)
       when is_list(epochs) and is_map(receipts_by_epoch) do
     epochs = Enum.sort_by(epochs, &{&1.cycle, &1.id})
+    run_alias = own_alias(run)
+    repo_alias? = run_alias != nil or Enum.any?(epochs, &(own_alias(&1) != nil))
+
+    declared_object_types =
+      if repo_alias?, do: @object_types ++ [@repo_type], else: @object_types
 
     %{
-      "ocel:objectTypes" => Enum.map(@object_types, fn name -> %{"name" => name} end),
+      "ocel:objectTypes" => Enum.map(declared_object_types, fn name -> %{"name" => name} end),
       "ocel:eventTypes" => Enum.map(@event_types, fn name -> %{"name" => name} end),
       "ocel:events" =>
         (run_events(run) ++
@@ -238,7 +284,8 @@ defmodule Xaas.Ultracode.OcelEgress do
         (run_objects(run) ++
            epoch_objects(run, epochs) ++
            worker_objects(epochs) ++
-           receipt_objects(epochs, receipts_by_epoch) ++ worktree_objects(epochs))
+           receipt_objects(epochs, receipts_by_epoch) ++
+           worktree_objects(epochs) ++ repo_objects(run, run_alias, epochs))
         |> Enum.sort_by(&{@object_type_rank[&1["type"]], &1["id"]})
     }
   end
@@ -293,9 +340,17 @@ defmodule Xaas.Ultracode.OcelEgress do
     end
   end
 
-  @doc "The registered object type names (fixed, deterministic order)."
-  @spec object_types() :: [String.t()]
-  def object_types, do: @object_types
+  @doc """
+  The registered object type names (fixed, deterministic order). With
+  `repo_alias?` true (default false) the conditional `Repo` type is
+  appended -- the exact declaration set `build_document/3` emits for a
+  run whose rows carry an alias.
+  """
+  @spec object_types(repo_alias? :: boolean()) :: [String.t()]
+  def object_types(repo_alias? \\ false)
+
+  def object_types(false), do: @object_types
+  def object_types(true), do: @object_types ++ [@repo_type]
 
   @doc "The registered event type names (fixed, deterministic order)."
   @spec event_types() :: [String.t()]
@@ -311,23 +366,27 @@ defmodule Xaas.Ultracode.OcelEgress do
 
   # Run lifecycle events carry no payload attributes: the state machine
   # facts are on the Run object; the event's existence + time is the fact.
+  # The Run's own alias (when present) rides every run event as a
+  # `repo`-qualified relationship.
   defp run_events(run) do
+    context = [rel(run.id, "run")] ++ rel_opt_ctx(own_alias(run), "repo")
+
     Enum.concat([
-      maybe_event("run_started", run.id, ts(run.started_at), %{}, [rel(run.id, "run")]),
-      terminal_run_event(run, :completed),
-      terminal_run_event(run, :failed),
-      terminal_run_event(run, :abandoned)
+      maybe_event("run_started", run.id, ts(run.started_at), %{}, context),
+      terminal_run_event(run, :completed, context),
+      terminal_run_event(run, :failed, context),
+      terminal_run_event(run, :abandoned, context)
     ])
   end
 
-  defp terminal_run_event(run, state) when state in [:completed, :failed, :abandoned] do
+  defp terminal_run_event(run, state, context) when state in [:completed, :failed, :abandoned] do
     if run.state == state do
       maybe_event(
         "run_#{state}",
         run.id,
         ts(run.terminal_at),
         %{},
-        [rel(run.id, "run")]
+        context
       )
     else
       []
@@ -345,6 +404,7 @@ defmodule Xaas.Ultracode.OcelEgress do
             "provider" => run.provider,
             "verifier_suite" => run.verifier_suite,
             "org_id" => run.org_id,
+            "execution_repo_alias" => own_alias(run),
             "state" => atom(run.state),
             "standing" => atom(run.standing),
             "cycle" => run.cycle,
@@ -364,12 +424,15 @@ defmodule Xaas.Ultracode.OcelEgress do
   # --------------------------------------------------------------------------------
 
   defp epoch_events(run, epochs) do
+    run_alias = own_alias(run)
+
     Enum.flat_map(epochs, fn epoch ->
-      context = [
-        rel(run.id, "run"),
-        rel(epoch.id, "epoch"),
-        rel_opt(epoch.worktree, "worktree")
-      ]
+      context =
+        [
+          rel(run.id, "run"),
+          rel(epoch.id, "epoch"),
+          rel_opt(epoch.worktree, "worktree")
+        ] ++ rel_opt_ctx(effective_alias(epoch, run_alias), "repo")
 
       terminal =
         case atom(epoch.state) do
@@ -435,6 +498,8 @@ defmodule Xaas.Ultracode.OcelEgress do
   defp epoch_attrs(epoch), do: %{"cycle" => epoch.cycle}
 
   defp epoch_objects(run, epochs) do
+    run_alias = own_alias(run)
+
     Enum.map(epochs, fn epoch ->
       %{
         "id" => epoch.id,
@@ -443,6 +508,7 @@ defmodule Xaas.Ultracode.OcelEgress do
           drop_nils(%{
             "cycle" => epoch.cycle,
             "exact_subject" => epoch.exact_subject,
+            "execution_repo_alias" => own_alias(epoch),
             "state" => atom(epoch.state),
             "expected_at" => ts(epoch.expected_at),
             "started_at" => ts(epoch.started_at),
@@ -455,7 +521,9 @@ defmodule Xaas.Ultracode.OcelEgress do
             "worktree" => epoch.worktree,
             "final_head" => epoch.final_head
           }),
-        "relationships" => [rel(run.id, "run")]
+        "relationships" =>
+          ([rel(run.id, "run")] ++ rel_opt_ctx(effective_alias(epoch, run_alias), "repo"))
+          |> Enum.sort_by(& &1["objectId"])
       }
     end)
   end
@@ -495,14 +563,17 @@ defmodule Xaas.Ultracode.OcelEgress do
   # --------------------------------------------------------------------------------
 
   defp receipt_events(run, epochs, receipts_by_epoch) do
+    run_alias = own_alias(run)
+
     epochs
     |> Enum.flat_map(fn epoch ->
-      context = [
-        rel(run.id, "run"),
-        rel(epoch.id, "epoch"),
-        rel_opt(epoch.worktree, "worktree"),
-        rel_opt(epoch.leased_to, "worker")
-      ]
+      context =
+        [
+          rel(run.id, "run"),
+          rel(epoch.id, "epoch"),
+          rel_opt(epoch.worktree, "worktree"),
+          rel_opt(epoch.leased_to, "worker")
+        ] ++ rel_opt_ctx(effective_alias(epoch, run_alias), "repo")
 
       receipts_by_epoch
       |> Map.get(epoch.id, [])
@@ -611,6 +682,49 @@ defmodule Xaas.Ultracode.OcelEgress do
       %{"id" => path, "type" => "Worktree", "attributes" => %{}, "relationships" => []}
     end)
   end
+
+  # One Repo object per distinct alias: the epoch effective aliases plus
+  # the Run's own. Object id = the alias string (the operator-local
+  # Worktrees lookup key -- the domain's own identifier, never generated
+  # at export time). Each Repo relates back to the Run it was derived
+  # from (always resolvable -- the Run object always exists). Emits
+  # NOTHING when no row carries an alias: the legacy single-repo log
+  # gains no Repo object and declares no Repo type.
+  defp repo_objects(run, run_alias, epochs) do
+    epochs
+    |> Enum.map(&effective_alias(&1, run_alias))
+    |> Kernel.++(List.wrap(run_alias))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.map(fn alias ->
+      %{
+        "id" => alias,
+        "type" => "Repo",
+        "attributes" => %{},
+        "relationships" => [rel(run.id, "run")]
+      }
+    end)
+  end
+
+  # The repo an epoch's facts belong to: the epoch's OWN alias when its
+  # row carries one (sibling waves may add a per-Epoch alias field for
+  # multi-repo campaigns), otherwise the Run's. nil only when neither has
+  # one -- the null-safe legacy path.
+  defp effective_alias(epoch, run_alias), do: own_alias(epoch) || run_alias
+
+  # THE alias seam. A struct that has a non-nil `execution_repo_alias`
+  # string exposes it; a struct without the key (today's `Epoch`) fails
+  # the match and resolves to nil -- no KeyError, no speculative field.
+  # COUPLING: if the sibling waves land the per-Epoch alias under a
+  # different attribute name, this is the one function to extend.
+  defp own_alias(%{execution_repo_alias: alias}) when is_binary(alias), do: alias
+  defp own_alias(_row), do: nil
+
+  # Optional relationship as a context list (empty when the fact is
+  # absent) -- keeps the event-context builders append-only.
+  defp rel_opt_ctx(nil, _qualifier), do: []
+  defp rel_opt_ctx(object_id, qualifier), do: [rel(object_id, qualifier)]
 
   # --------------------------------------------------------------------------------
   # Shared constructors

@@ -85,6 +85,30 @@ defmodule Xaas.Ultracode.RunValidation do
   against the run's capacity (`:capacity` option, default
   #{@default_capacity}).
 
+  ### Per-repo capacity (`:per_repo_capacity` option)
+
+  A multi-repo campaign is legible per repository because the egress
+  (`Xaas.Ultracode.OcelEgress`) binds every epoch/receipt event to a
+  `Repo` object (`repo`-qualified relationship). With
+  `:per_repo_capacity: n` set, the sweep-line is judged PER REPO in
+  addition to the global law: a wave running 5 total epochs across two
+  repos may legitimately hold e.g. 3+3 in flight (within each repo's
+  per-repo cap) even where a strictly global reading would flag it.
+  Concretely, per-repo mode ADDS two constraints -- it never relaxes
+  the global one:
+
+    * every CLAIMED epoch must bind a repo (via a relationship to a
+      repo-role object). A claimed epoch with no repo binding is a typed
+      refusal (`:repo_unattributable`, naming the epoch) -- per-repo
+      accounting on an unattributable slot would be invented evidence,
+      so the law refuses instead of guessing;
+    * each repo's own in-flight maximum must not exceed n
+      (`:per_repo_capacity_breach` names the offending repo).
+
+  The global `:capacity` law (default #{@default_capacity}) stays fully
+  enforced on top: `--per-repo-capacity` refines the accounting for
+  multi-repo campaigns, it does not raise the run's own cap.
+
   ## Wiring: where the log comes from
 
   The deterministic run-to-OCEL-log projection is
@@ -140,7 +164,8 @@ defmodule Xaas.Ultracode.RunValidation do
           required(:code) => atom(),
           required(:message) => String.t(),
           optional(:epoch_id) => String.t() | nil,
-          optional(:event_id) => String.t() | nil
+          optional(:event_id) => String.t() | nil,
+          optional(:repo) => String.t()
         }
 
   @type verdict :: :validated | :not_validated
@@ -154,12 +179,20 @@ defmodule Xaas.Ultracode.RunValidation do
     * `:run_id` -- the run whose log this is claimed to be. When given,
       the log must carry this run id as its ONLY run binding
       (`:wrong_run` otherwise). Omit to validate a log standalone.
-    * `:capacity` -- max workers in flight (default #{@default_capacity},
-      the standing wave capacity).
+    * `:capacity` -- max workers in flight GLOBALLY (default
+      #{@default_capacity}, the standing wave capacity).
+    * `:per_repo_capacity` -- when set (integer), capacity is ALSO
+      accounted per repo alias: every claimed epoch must bind a repo
+      (else a typed `:repo_unattributable` refusal naming the epoch),
+      and each repo's own in-flight maximum must not exceed it
+      (`:per_repo_capacity_breach` names the repo). The global
+      `:capacity` law stays enforced on top -- see the "Per-repo
+      capacity" section of the moduledoc.
 
   Returns a map with `:verdict`, `:violations` (empty iff `:validated`),
-  `:conformance` (`:ok | :failed`), the per-epoch accounting, and the
-  observed `:max_in_flight`.
+  `:conformance` (`:ok | :failed`), the per-epoch accounting, the
+  observed `:max_in_flight`, and (when `:per_repo_capacity` is set) the
+  `:max_in_flight_per_repo` map.
   """
   @spec validate(map() | String.t(), keyword()) :: map()
   def validate(log_or_path, opts \\ [])
@@ -210,6 +243,7 @@ defmodule Xaas.Ultracode.RunValidation do
   defp run_validation(log, opts) do
     run_id = Keyword.get(opts, :run_id)
     capacity = Keyword.get(opts, :capacity, @default_capacity)
+    per_repo_capacity = Keyword.get(opts, :per_repo_capacity)
 
     {local_violations, events, objects} = conformance(log)
 
@@ -245,7 +279,7 @@ defmodule Xaas.Ultracode.RunValidation do
         # checks have no subject. The structural list is the whole verdict.
         []
       else
-        semantic_checks(events, objects, run_id, capacity)
+        semantic_checks(events, objects, run_id, capacity, per_repo_capacity)
       end
 
     violations = structural_violations ++ semantic_violations
@@ -257,7 +291,9 @@ defmodule Xaas.Ultracode.RunValidation do
       conformance: if(structural_violations == [], do: :ok, else: :failed),
       epochs: epoch_accounting(events, objects),
       max_in_flight: max_in_flight_count(events),
-      capacity: capacity
+      capacity: capacity,
+      per_repo_capacity: per_repo_capacity,
+      max_in_flight_per_repo: max_in_flight_per_repo(events, objects, per_repo_capacity)
     }
   end
 
@@ -283,7 +319,9 @@ defmodule Xaas.Ultracode.RunValidation do
       conformance: :failed,
       epochs: %{},
       max_in_flight: nil,
-      capacity: @default_capacity
+      capacity: @default_capacity,
+      per_repo_capacity: nil,
+      max_in_flight_per_repo: nil
     }
   end
 
@@ -662,7 +700,7 @@ defmodule Xaas.Ultracode.RunValidation do
   #     terminal, capacity law honored, run binding correct
   # ------------------------------------------------------------------
 
-  defp semantic_checks(events, objects, requested_run_id, capacity) do
+  defp semantic_checks(events, objects, requested_run_id, capacity, per_repo_capacity) do
     epoch_object_ids =
       objects |> Enum.filter(&role_object?(&1["type"], "epoch")) |> MapSet.new(& &1["id"])
 
@@ -683,7 +721,8 @@ defmodule Xaas.Ultracode.RunValidation do
       Enum.map(unattributable_groups, fn {_key, [event | _]} ->
         unattributable_violation(event)
       end) ++
-      capacity_violation(events, capacity)
+      capacity_violation(events, capacity) ++
+      per_repo_capacity_violations(events, objects, per_repo_capacity)
   end
 
   defp unattributable_violation(event) do
@@ -946,7 +985,131 @@ defmodule Xaas.Ultracode.RunValidation do
     end
   end
 
-  defp max_in_flight(events) do
+  # ------------------------------------------------------------------
+  # Per-repo capacity: the sweep-line judged per repo alias, ON TOP of
+  # the global law. A claimed epoch that binds no repo is a typed
+  # refusal (attribution is never guessed); a repo whose own in-flight
+  # maximum exceeds the per-repo cap is a breach naming the repo.
+  # ------------------------------------------------------------------
+  defp per_repo_capacity_violations(_events, _objects, nil), do: []
+
+  defp per_repo_capacity_violations(events, objects, per_repo_capacity)
+       when is_integer(per_repo_capacity) and per_repo_capacity >= 0 do
+    bindings = epoch_repo_bindings(events, objects)
+
+    refusals =
+      claimed_epoch_ids(events)
+      |> Enum.reject(&Map.has_key?(bindings, &1))
+      |> Enum.sort()
+      |> Enum.map(fn epoch_id ->
+        %{
+          code: :repo_unattributable,
+          epoch_id: epoch_id,
+          message:
+            "REFUSED_PER_REPO_CAPACITY_NO_REPO_ALIAS: per-repo capacity accounting was requested " <>
+              "but claimed epoch #{inspect(epoch_id)} binds no repo (no repo-role object " <>
+              "relationship on any of its events) -- its slot cannot be attributed to a " <>
+              "repository, so the per-repo law refuses instead of guessing"
+        }
+      end)
+
+    breaches =
+      bindings
+      |> Enum.group_by(fn {_epoch_id, repo} -> repo end, fn {epoch_id, _repo} -> epoch_id end)
+      |> Enum.sort()
+      |> Enum.flat_map(fn {repo, epoch_ids} ->
+        repo_epochs = MapSet.new(epoch_ids)
+
+        case max_in_flight(events, &MapSet.member?(repo_epochs, &1)) do
+          %{count: count, at: at} when count > per_repo_capacity ->
+            [
+              %{
+                code: :per_repo_capacity_breach,
+                epoch_id: nil,
+                repo: repo,
+                message:
+                  "#{count} workers in flight on repo #{inspect(repo)} at " <>
+                    "#{DateTime.to_iso8601(at)}; the per-repo capacity law allows at most " <>
+                    "#{per_repo_capacity}"
+              }
+            ]
+
+          _within_per_repo_cap ->
+            []
+        end
+      end)
+
+    refusals ++ breaches
+  end
+
+  defp per_repo_capacity_violations(_events, _objects, _not_an_integer), do: []
+
+  # Epoch -> repo alias bindings, from repo-role relationships on
+  # epoch-bound events (the egress binds every epoch/receipt event to a
+  # Repo object when the campaign carries an alias). An epoch binds
+  # exactly one repo in every lawful log; if a lying log carries several,
+  # the first (sorted) is used for accounting -- but an epoch with NO
+  # binding is never assigned one.
+  defp epoch_repo_bindings(events, objects) do
+    repo_object_ids =
+      objects
+      |> Enum.filter(&role_object?(&1["type"], "repo"))
+      |> MapSet.new(& &1["id"])
+
+    events
+    |> Enum.flat_map(fn event ->
+      with {:ok, epoch_id} <- epoch_of_event(event),
+           %{"objectId" => repo} <-
+             Enum.find(event["relationships"], fn rel ->
+               MapSet.member?(repo_object_ids, rel["objectId"])
+             end) do
+        [{epoch_id, repo}]
+      else
+        _ -> []
+      end
+    end)
+    |> Enum.group_by(fn {epoch_id, _repo} -> epoch_id end, fn {_epoch_id, repo} -> repo end)
+    |> Map.new(fn {epoch_id, repos} -> {epoch_id, repos |> Enum.sort() |> hd()} end)
+  end
+
+  defp claimed_epoch_ids(events) do
+    events
+    |> Enum.filter(&(&1["type"] in @claim_events))
+    |> Enum.flat_map(fn event ->
+      case epoch_of_event(event) do
+        {:ok, epoch_id} -> [epoch_id]
+        :unbound -> []
+      end
+    end)
+    |> Enum.uniq()
+  end
+
+  # Per-repo observed maxima for the result map (nil unless per-repo
+  # accounting is on). A repo with no claims never appears; a claimed
+  # but unattributable epoch is already named by its own refusal
+  # violation and is not silently folded into any repo here.
+  defp max_in_flight_per_repo(_events, _objects, nil), do: nil
+
+  defp max_in_flight_per_repo(events, objects, _per_repo_capacity) do
+    bindings = epoch_repo_bindings(events, objects)
+
+    bindings
+    |> Enum.group_by(fn {_epoch_id, repo} -> repo end, fn {epoch_id, _repo} -> epoch_id end)
+    |> Map.new(fn {repo, epoch_ids} ->
+      repo_epochs = MapSet.new(epoch_ids)
+
+      case max_in_flight(events, &MapSet.member?(repo_epochs, &1)) do
+        nil -> {repo, 0}
+        %{count: count} -> {repo, count}
+      end
+    end)
+  end
+
+  defp max_in_flight(events), do: max_in_flight(events, fn _epoch_id -> true end)
+
+  # The sweep-line over the epochs admitted by `epoch_filter` (the global
+  # law admits every epoch; the per-repo law admits one repo's epochs).
+  defp max_in_flight(events, epoch_filter) do
     close_times_by_epoch =
       events
       |> Enum.filter(&(&1["type"] == @terminal_event))
@@ -968,6 +1131,7 @@ defmodule Xaas.Ultracode.RunValidation do
         end
       end)
       |> Enum.group_by(fn {epoch_id, _} -> epoch_id end, fn {_, event} -> event end)
+      |> Enum.filter(fn {epoch_id, _claims} -> epoch_filter.(epoch_id) end)
       |> Enum.flat_map(fn {epoch_id, epoch_claims} ->
         with {:ok, hold_start} <- hold_start(epoch_claims) do
           close =
