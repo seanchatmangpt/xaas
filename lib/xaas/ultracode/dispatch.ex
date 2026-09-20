@@ -42,7 +42,10 @@ defmodule Xaas.Ultracode.Dispatch do
     4. Runs it under a hard double timeout: the process leads its own
        process group with a SIGALRM backstop, and the BEAM-side deadline
        kills the whole group (same mechanics as `Xaas.Ultracode.Verifier`),
-       so no grandchild outlives the deadline.
+       so no grandchild outlives the deadline. The wrapper supervises the
+       turn and records its true exit code, so completion is observed even
+       when a leftover pipe-holding child would otherwise stall the port,
+       and the group is reaped on every exit path -- not only on timeout.
     5. Classifies the outcome: `:ok` (exit 0), `:rate_limited`
        (failover-class provider error in the output -- the exact patterns
        the bash dispatcher greps for), `:timeout`, or `:failed` (any other
@@ -99,14 +102,40 @@ defmodule Xaas.Ultracode.Dispatch do
   @default_max_output_bytes 65_536
   @default_cli_dir "/Users/sac/dev/zcode-cli"
   @grace_ms 2_000
+  @kill_confirm_ms 1_000
   @alarm_grace_s 2
+  @poll_interval_ms 250
 
   # Failover-class provider errors. Verbatim from
   # scripts/xaas-glm-failover-dispatcher.sh's classification grep -- the
-  # 2026-09-18 5-worker trial's observed Z.AI rate/refusal signatures.
-  @failover_regex ~r/"code":"?1302|HTTP 429|status(Code)?[": ]+429|Too Many Requests|High concurrency usage/
+  # 2026-09-18 5-worker trial's observed Z.AI rate/refusal signatures -- with
+  # one hardening: the 1302 branch is whitespace-tolerant, because
+  # `{"code":1302}` and `{"code": 1302}` are the same JSON document and a
+  # classifier must not depend on the provider's serialization (the 429
+  # branch already was, via [": ]+). Caught by the tripwire suite.
+  @failover_regex ~r/"code"\s*:\s*"?1302|HTTP 429|status(Code)?[": ]+429|Too Many Requests|High concurrency usage/
 
-  @wrapper "setpgrp(0,0); alarm(shift @ARGV); exec @ARGV or exit 127;"
+  # The wrapper SUPERVISES the worker turn instead of exec'ing into it: after
+  # the turn ends it records the true exit code to the code file (argv slot
+  # after the alarm seconds) and exits. Why not exec: a worker that exits 0
+  # leaving a background child keeps the port's stdout/stderr write ends
+  # open, and a port whose pipe is still held never delivers
+  # `{:exit_status, _}` -- observed 2026-09-20 as a clean 0-exit turn
+  # misclassified :timeout at full deadline. The record lets `collect/7`
+  # finish the attempt when the turn actually ends, reap the leftover group,
+  # and classify with the real code. The alarm backstop now terminates the
+  # wrapper (not the worker directly); a group the BEAM deadline cannot
+  # reach is still reaped through it, and an unwritten code file degrades to
+  # the historical `exec ... or exit 127` semantics.
+  @wrapper """
+  setpgrp(0,0);
+  alarm(shift @ARGV);
+  my $code_file = shift @ARGV;
+  my $rc = system(@ARGV);
+  my $code = $rc == -1 ? 127 : ($rc & 127) ? 128 + ($rc & 127) : $rc >> 8;
+  if (open my $fh, '>', $code_file) { print {$fh} $code; close $fh; }
+  exit($code > 255 ? 255 : $code);
+  """
 
   @type status :: :ok | :rate_limited | :timeout | :failed
 
@@ -303,6 +332,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
   defp spawn_and_collect(built, resolved) do
     alarm_s = resolved.timeout_seconds + @alarm_grace_s
+    code_file = code_file_path()
 
     # /usr/bin/env takes assignments as plain `K=V` argv strings (a port
     # args list itself must be all strings); the tuple form stays in the
@@ -311,7 +341,14 @@ defmodule Xaas.Ultracode.Dispatch do
 
     args =
       env_args ++
-        ["/usr/bin/perl", "-e", @wrapper, Integer.to_string(alarm_s), resolved.node_path] ++
+        [
+          "/usr/bin/perl",
+          "-e",
+          @wrapper,
+          Integer.to_string(alarm_s),
+          code_file,
+          resolved.node_path
+        ] ++
         built.argv_tail
 
     port =
@@ -328,28 +365,107 @@ defmodule Xaas.Ultracode.Dispatch do
     deadline = System.monotonic_time(:millisecond) + resolved.timeout_seconds * 1000
 
     try do
-      collect(port, os_pid, deadline, "", resolved.max_output_bytes, built.log)
+      collect(port, os_pid, deadline, "", resolved.max_output_bytes, built.log, code_file)
     after
+      # Universal group reap: runs on the clean-exit path too, so a worker
+      # that leaves a background child behind never leaks it. Safe when the
+      # group is already gone.
       kill_group(os_pid)
+      _ = File.rm(code_file)
     end
   end
 
-  defp collect(port, os_pid, deadline, tail, max_out, log) do
-    remaining = max(deadline - System.monotonic_time(:millisecond), 0)
+  # Completion is observed, not assumed: the port's own `{:exit_status, _}`
+  # arrives only when the last holder of the inherited pipe closes it, so a
+  # leftover pipe-holding descendant would otherwise stall the attempt to
+  # the deadline. `collect/7` therefore also polls (a) the wrapper's exit
+  # code record -- the definitive "turn ended" signal -- and (b) the
+  # wrapper pid's liveness (spawn/exec failure without a record). Neither
+  # signal false-fires while the turn is genuinely running.
+  defp collect(port, os_pid, deadline, tail, max_out, log, code_file) do
+    if System.monotonic_time(:millisecond) >= deadline do
+      close_port(port)
+      {:timeout, tail}
+    else
+      receive do
+        {^port, {:data, data}} ->
+          _ = io_log(log, data)
 
+          collect(
+            port,
+            os_pid,
+            deadline,
+            keep_tail(tail <> data, max_out),
+            max_out,
+            log,
+            code_file
+          )
+
+        {^port, {:exit_status, code}} ->
+          {:exit, code, tail}
+      after
+        @poll_interval_ms ->
+          cond do
+            wrapper_recorded?(code_file) ->
+              # The turn ended; a descendant is keeping the port open. Drain
+              # what is already buffered, classify with the true code, and
+              # let the outer after-clause reap the leftover group.
+              tail = drain(port, tail, max_out, log)
+              code = read_recorded_code(code_file)
+              close_port(port)
+              {:exit, code, tail}
+
+            direct_dead?(os_pid) ->
+              # Wrapper gone without a record: spawn/exec failure or a
+              # backstop kill -- the historical exit-127 contract.
+              tail = drain(port, tail, max_out, log)
+              close_port(port)
+              {:exit, 127, tail}
+
+            true ->
+              collect(port, os_pid, deadline, tail, max_out, log, code_file)
+          end
+      end
+    end
+  end
+
+  defp wrapper_recorded?(code_file), do: File.regular?(code_file)
+
+  defp read_recorded_code(code_file) do
+    case File.read(code_file) do
+      {:ok, bin} ->
+        case Integer.parse(String.trim(bin)) do
+          {code, ""} when code in 0..255 -> code
+          _ -> 127
+        end
+
+      _ ->
+        127
+    end
+  end
+
+  defp direct_dead?(os_pid) do
+    {_, code} =
+      System.cmd("/bin/kill", ["-0", Integer.to_string(os_pid)], stderr_to_stdout: true)
+
+    code != 0
+  end
+
+  # A short bounded sweep for port data that raced the completion signal;
+  # the full stream is in the log file regardless.
+  defp drain(port, tail, max_out, log) do
     receive do
       {^port, {:data, data}} ->
         _ = io_log(log, data)
-        collect(port, os_pid, deadline, keep_tail(tail <> data, max_out), max_out, log)
-
-      {^port, {:exit_status, code}} ->
-        {:exit, code, tail}
+        drain(port, keep_tail(tail <> data, max_out), max_out, log)
     after
-      remaining ->
-        kill_group(os_pid)
-        close_port(port)
-        {:timeout, tail}
+      50 ->
+        tail
     end
+  end
+
+  defp code_file_path do
+    Path.join(System.tmp_dir!(), "xaas-dispatch-code-#{System.unique_integer([:positive])}")
   end
 
   # ------------------------------------------------------------------
@@ -589,18 +705,40 @@ defmodule Xaas.Ultracode.Dispatch do
 
   # ------------------------------------------------------------------
   # Process-group helpers (same mechanics as Xaas.Ultracode.Verifier:
-  # group-wide TERM, brief grace, then KILL; safe when already gone)
+  # group-wide TERM, bounded grace, then KILL; safe when already gone)
   # ------------------------------------------------------------------
 
+  # The kill is verified, not assumed: TERM, then poll the group until it is
+  # gone (or the grace budget expires), then KILL, then poll again. The
+  # dispatch must not report completion while a group member might still be
+  # dying -- observed 2026-09-20: under test load a forked child sat
+  # pre-exec for seconds, so a blind grace sleep let a straggler outlive
+  # its own dispatch result.
   defp kill_group(os_pid) do
     _ = System.cmd("/bin/kill", ["-TERM", "--", "-#{os_pid}"], stderr_to_stdout: true)
+    await_group_gone(os_pid, System.monotonic_time(:millisecond) + @grace_ms)
 
-    if group_alive?(os_pid) do
-      Process.sleep(@grace_ms)
+    unless group_alive?(os_pid) do
+      :ok
+    else
       _ = System.cmd("/bin/kill", ["-KILL", "--", "-#{os_pid}"], stderr_to_stdout: true)
-    end
+      await_group_gone(os_pid, System.monotonic_time(:millisecond) + @kill_confirm_ms)
 
-    :ok
+      if group_alive?(os_pid) do
+        # A same-uid KILL cannot be ignored; reaching here means the group
+        # identity itself is misbehaving. Say so loudly, never silently.
+        Logger.warning("[ultracode] dispatch process group -#{os_pid} still alive after KILL")
+      end
+
+      :ok
+    end
+  end
+
+  defp await_group_gone(os_pid, deadline) do
+    if group_alive?(os_pid) and System.monotonic_time(:millisecond) < deadline do
+      Process.sleep(100)
+      await_group_gone(os_pid, deadline)
+    end
   end
 
   defp group_alive?(os_pid) do

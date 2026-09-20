@@ -195,7 +195,7 @@ defmodule Xaas.Ultracode.DispatchTest do
   } do
     {run, epoch} = create_epoch!(worktree)
 
-    fake_log = Path.join([System.tmp_dir!(), "dispatch-fake-#{System.unique_integer()}.log"])
+    fake_log = test_path("dispatch-fake", ".log")
 
     cli_dir =
       fake_cli_dir("""
@@ -241,7 +241,7 @@ defmodule Xaas.Ultracode.DispatchTest do
   test "a failover-class outcome is retried exactly once and then succeeds", %{worktree: worktree} do
     {_run, epoch} = create_epoch!(worktree)
 
-    counter = Path.join(System.tmp_dir!(), "dispatch-count-#{System.unique_integer()}")
+    counter = test_path("dispatch-count")
 
     cli_dir =
       fake_cli_dir("""
@@ -276,7 +276,7 @@ defmodule Xaas.Ultracode.DispatchTest do
   } do
     {_run, epoch} = create_epoch!(worktree)
 
-    counter = Path.join(System.tmp_dir!(), "dispatch-count-#{System.unique_integer()}")
+    counter = test_path("dispatch-count")
 
     cli_dir =
       fake_cli_dir("""
@@ -456,6 +456,315 @@ defmodule Xaas.Ultracode.DispatchTest do
   end
 
   # ------------------------------------------------------------------
+  # Concurrent dispatch at capacity 5 (the campaign's wave capacity)
+  # ------------------------------------------------------------------
+
+  describe "concurrent dispatch at capacity 5" do
+    @tag timeout: 240_000
+    test "five simultaneous dispatches complete with per-slot classification, receipt attribution, no slot interference and no orphans" do
+      blip_counter =
+        test_path("dispatch-conc-blip")
+
+      slot_specs = [
+        %{
+          tag: "s1-clean-ok",
+          script: "exit 0\n",
+          expect: :ok,
+          attempts: 1,
+          head_verified: true
+        },
+        %{
+          tag: "s2-blip-then-ok",
+          script: """
+          n=$(cat "$FAKE_COUNT" 2>/dev/null || echo 0)
+          n=$((n+1))
+          echo "$n" > "$FAKE_COUNT"
+          if [ "$n" -le 1 ]; then
+            echo '{"error":{"code":1302},"message":"High concurrency usage"}'
+          fi
+          exit 0
+          """,
+          expect: :ok,
+          attempts: 2,
+          head_verified: false
+        },
+        %{
+          tag: "s3-persistent-429",
+          script: """
+          echo 'Too Many Requests (HTTP 429)'
+          exit 0
+          """,
+          expect: :rate_limited,
+          attempts: 2,
+          head_verified: true
+        },
+        %{
+          tag: "s4-hang",
+          script: "sleep 30\n",
+          expect: :timeout,
+          attempts: 1,
+          head_verified: false
+        },
+        %{
+          tag: "s5-slow-ok",
+          script: "sleep 0.3\nexit 0\n",
+          expect: :ok,
+          attempts: 1,
+          head_verified: true
+        }
+      ]
+
+      slots =
+        for {spec, idx} <- Enum.with_index(slot_specs) do
+          wt = create_slot_worktree!()
+          {_run, epoch} = create_slot_epoch!(wt)
+
+          cli_dir =
+            fake_cli_dir("""
+            echo "slot=$SLOT_TAG pid=$$ lease=$XAAS_LEASE_CWD" >> "$W_LOG"
+            #{spec.script}
+            """)
+
+          w_log =
+            test_path("dispatch-conc-#{spec.tag}", ".log")
+
+          seal_receipt!(epoch, :partial_alive, %{
+            "head_verified" => spec.head_verified,
+            "slot" => idx
+          })
+
+          %{
+            spec: spec,
+            epoch: epoch,
+            cli_dir: cli_dir,
+            w_log: w_log,
+            lease: realpath(wt),
+            expect_head_verified: spec.head_verified,
+            dispatch_opts: [
+              provider: @provider,
+              cli_dir: cli_dir,
+              node_path: @sh,
+              timeout_seconds: 2,
+              failover_backoff_ms: 10,
+              extra_env: %{
+                "W_LOG" => w_log,
+                "SLOT_TAG" => spec.tag,
+                "FAKE_COUNT" => blip_counter
+              }
+            ]
+          }
+        end
+
+      tasks =
+        Enum.map(slots, fn slot ->
+          Task.async(fn -> Dispatch.dispatch(slot.epoch.id, slot.dispatch_opts) end)
+        end)
+
+      results = Enum.map(tasks, &Task.await(&1, 200_000))
+
+      # 1. Every slot completed -- typed -- with its own classification and
+      #    its own identity (no cross-slot attribution).
+      for {slot, {:ok, result}} <- Enum.zip(slots, results) do
+        tag = slot.spec.tag
+
+        assert result.status == slot.spec.expect, "#{tag}: got #{inspect(result)}"
+        assert result.attempts == slot.spec.attempts, "#{tag}: attempts #{inspect(result)}"
+        assert result.epoch_id == slot.epoch.id, "#{tag}: wrong epoch"
+        assert result.worker_id =~ String.slice(slot.epoch.id, 0, 8), "#{tag}: wrong worker id"
+        assert result.mode == :claim, "#{tag}: wrong mode"
+        assert result.epoch_state == :running, "#{tag}: wrong epoch state"
+
+        # 2. Receipt attribution: exactly this slot's sealed receipt rides on
+        #    its own result, distinguishable by head_verified parity.
+        assert [%{"outcome" => "partial_alive", "head_verified" => hv}] = result.receipts
+        assert hv == slot.expect_head_verified, "#{tag}: wrong receipt attached"
+      end
+
+      # 3. No slot interference: every invocation of a slot's worker saw that
+      #    slot's lease cwd, exactly `attempts` times.
+      for slot <- slots do
+        logged = File.read!(slot.w_log)
+        lines = String.split(String.trim_trailing(logged), "\n")
+        tag = slot.spec.tag
+
+        assert length(lines) == slot.spec.attempts,
+               "#{tag}: unexpected invocations #{inspect(lines)}"
+
+        for line <- lines do
+          assert line =~ "slot=#{slot.spec.tag}", "#{tag}: foreign slot line #{line}"
+          assert line =~ "lease=#{slot.lease}", "#{tag}: foreign lease cwd in #{line}"
+        end
+      end
+
+      # and no foreign slot's lease cwd ever appears in another's log.
+      for slot <- slots, other <- slots, other.cli_dir != slot.cli_dir do
+        refute File.read!(slot.w_log) =~ other.lease
+      end
+
+      # 4. Process-group cleanup: after the awaited results (the timeout
+      #    slot's kill already ran, verified, inside dispatch), no slot's
+      #    worker tree is still alive. Asserted inline AND again at suite
+      #    teardown.
+      for slot <- slots do
+        assert_no_orphans!(slot.cli_dir)
+      end
+
+      slot_dirs = Enum.map(slots, & &1.cli_dir)
+
+      on_exit(fn ->
+        for dir <- slot_dirs do
+          assert_no_orphans!(dir)
+        end
+      end)
+    end
+  end
+
+  # ------------------------------------------------------------------
+  # Process-group hardening: children and grandchildren on every path
+  # ------------------------------------------------------------------
+
+  describe "process-group hardening" do
+    @tag timeout: 120_000
+    test "the deadline kills a worker's spawned child with the whole group", %{
+      worktree: worktree
+    } do
+      {_run, epoch} = create_epoch!(worktree)
+
+      cli_dir =
+        fake_cli_dir("""
+        "$CHILD_SH" &
+        sleep 60
+        """)
+
+      # The child keeps its own path in its cmdline, so a pgrep on the cli
+      # dir observes BOTH the worker and the child (a plain `exec sleep 60`
+      # child would be unobservable by path and the assertion vacuous).
+      child_sh = Path.join(cli_dir, "child-#{System.unique_integer([:positive])}.sh")
+      File.write!(child_sh, "echo spawned >> \"$CHILD_MARKER\"\nsleep 60\n")
+      File.chmod!(child_sh, 0o755)
+
+      marker =
+        test_path("dispatch-child-marker")
+
+      {:ok, result} =
+        Dispatch.dispatch(epoch.id,
+          provider: @provider,
+          cli_dir: cli_dir,
+          node_path: @sh,
+          timeout_seconds: 2,
+          extra_env: %{"CHILD_SH" => child_sh, "CHILD_MARKER" => marker}
+        )
+
+      assert result.status == :timeout
+
+      # Falsifier guard: the child REALLY spawned before the deadline, else
+      # the no-orphan assertion below would pass vacuously.
+      assert File.exists?(marker), "child never spawned; assertion would be vacuous"
+
+      assert_no_orphans!(cli_dir)
+      on_exit(fn -> assert_no_orphans!(cli_dir) end)
+    end
+
+    @tag timeout: 120_000
+    test "a worker that exits 0 leaving a background child does not leak it", %{
+      worktree: worktree
+    } do
+      {_run, epoch} = create_epoch!(worktree)
+
+      cli_dir =
+        fake_cli_dir("""
+        "$CHILD_SH" &
+        # Let the child reach its marker write before the worker exits,
+        # otherwise the post-exit group reap can win the race and the
+        # marker assert below would flake.
+        sleep 0.2
+        exit 0
+        """)
+
+      child_sh = Path.join(cli_dir, "leaver-#{System.unique_integer([:positive])}.sh")
+      File.write!(child_sh, "echo spawned >> \"$CHILD_MARKER\"\nsleep 60\n")
+      File.chmod!(child_sh, 0o755)
+
+      marker =
+        test_path("dispatch-leaver-marker")
+
+      {:ok, result} =
+        Dispatch.dispatch(epoch.id,
+          provider: @provider,
+          cli_dir: cli_dir,
+          node_path: @sh,
+          timeout_seconds: 30,
+          extra_env: %{"CHILD_SH" => child_sh, "CHILD_MARKER" => marker}
+        )
+
+      assert result.status == :ok
+      assert result.attempts == 1
+
+      # The child really ran (and outlives its parent for a moment)...
+      assert File.exists?(marker), "child never spawned; assertion would be vacuous"
+
+      # ...and the boundary's unconditional post-attempt group reap still
+      # collected it -- cleanup is not a timeout-only behavior.
+      assert_no_orphans!(cli_dir)
+      on_exit(fn -> assert_no_orphans!(cli_dir) end)
+    end
+  end
+
+  # ------------------------------------------------------------------
+  # Failover classification tripwires: observed provider signatures
+  # ------------------------------------------------------------------
+
+  describe "failover classification tripwires" do
+    # Every entry is either (a) the exact payload shape observed in real
+    # dispatch output during the 2026-09-18 GLM failover trials and the
+    # 2026-09-20 campaign window, or (b) the SAME JSON document in a
+    # whitespace-legal rendering -- JSON whitespace must not change
+    # classification (the 429 branch already tolerates it via [": ]+).
+    @signatures [
+      {"live 1302 payload", ~s({"error":{"code":1302},"message":"High concurrency usage"})},
+      {"string-quoted 1302", ~s({"error":{"code":"1302"}})},
+      {"whitespace variant of 1302", ~s({"error":{"code": 1302}})},
+      {"bare HTTP 429", "HTTP 429"},
+      {"status field 429", ~s("status":429)},
+      {"statusCode field 429", ~s(statusCode: 429)},
+      {"plain-text 429", "Too Many Requests"}
+    ]
+
+    for {label, sig} <- @signatures do
+      test "classifies as failover-class: #{label}", %{worktree: worktree} do
+        {_run, epoch} = create_epoch!(worktree)
+        sig = unquote(sig)
+
+        sig_file =
+          test_path("dispatch-sig")
+
+        File.write!(sig_file, sig <> "\n")
+
+        cli_dir =
+          fake_cli_dir("""
+          cat "$SIG_FILE"
+          exit 0
+          """)
+
+        {:ok, result} =
+          Dispatch.dispatch(epoch.id,
+            provider: @provider,
+            cli_dir: cli_dir,
+            node_path: @sh,
+            timeout_seconds: 30,
+            failover_retries: 0,
+            extra_env: %{"SIG_FILE" => sig_file}
+          )
+
+        assert result.status == :rate_limited,
+               "#{inspect(sig)} was not classified as failover-class (got #{result.status})"
+
+        assert result.attempts == 1
+      end
+    end
+  end
+
+  # ------------------------------------------------------------------
   # Helpers
   # ------------------------------------------------------------------
 
@@ -530,6 +839,56 @@ defmodule Xaas.Ultracode.DispatchTest do
       |> Ash.create()
   end
 
+  # A distinct git worktree per concurrency slot: the lease cwd is the
+  # slot's identity in the no-interference assertions.
+  defp create_slot_worktree! do
+    wt = mktmp("slot-wt")
+    {_, 0} = System.cmd("git", ["init", "-q"], cd: wt, env: @git_env)
+
+    {_, 0} =
+      System.cmd("git", ["commit", "-q", "--allow-empty", "-m", "init"], cd: wt, env: @git_env)
+
+    wt
+  end
+
+  defp create_slot_epoch!(worktree) do
+    {:ok, run} =
+      Run
+      |> Ash.Changeset.for_create(
+        :create,
+        %{goal: "dispatch concurrency slot", provider: @provider, max_cycles: 1},
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, epoch} = create_epoch_row!(run, worktree, 0, running_subject())
+    {run, epoch}
+  end
+
+  # The boundary's own orphan law, asserted from outside: nothing whose
+  # cmdline still carries the slot's cli-dir path may survive the dispatch.
+  # Polled, not sleep-guessed: the boundary's kill is verified before the
+  # result returns, so the process should already be gone -- but a loaded
+  # scheduler must not turn kernel jitter into a false red. A genuinely
+  # leaked process still fails here once the budget expires.
+  defp assert_no_orphans!(cli_dir, attempts_left \\ 25)
+
+  defp assert_no_orphans!(cli_dir, attempts_left) when attempts_left > 0 do
+    {out, _} = System.cmd("pgrep", ["-f", cli_dir], stderr_to_stdout: true)
+
+    if String.trim(out) == "" do
+      :ok
+    else
+      Process.sleep(200)
+      assert_no_orphans!(cli_dir, attempts_left - 1)
+    end
+  end
+
+  defp assert_no_orphans!(cli_dir, 0) do
+    {out, _} = System.cmd("pgrep", ["-f", cli_dir], stderr_to_stdout: true)
+    assert String.trim(out) == "", "orphan processes survived: #{out}"
+  end
+
   defp fake_cli_dir(script) do
     dir = mktmp("cli")
     File.mkdir_p!(Path.join(dir, "bin"))
@@ -544,13 +903,22 @@ defmodule Xaas.Ultracode.DispatchTest do
     String.trim(out)
   end
 
-  defp mktmp(label) do
-    dir =
-      Path.join(
-        System.tmp_dir!(),
-        "xaas-dispatch-test-#{label}-#{System.unique_integer([:positive])}"
-      )
+  # Temp paths must not collide ACROSS mix test runs: System.unique_integer
+  # restarts per BEAM, so a fresh run's "42" equals a stale run's "42" --
+  # observed 2026-09-20: a straggler worker from an earlier run wrote into
+  # the current run's log file and broke the invocation-count assert.
+  # Wall-clock-qualify every per-run artifact path.
+  defp run_uid, do: System.system_time(:millisecond)
 
+  defp test_path(prefix, suffix \\ "") do
+    Path.join(
+      System.tmp_dir!(),
+      "#{prefix}-#{run_uid()}-#{System.unique_integer([:positive])}#{suffix}"
+    )
+  end
+
+  defp mktmp(label) do
+    dir = test_path("xaas-dispatch-test-#{label}")
     File.mkdir_p!(dir)
     on_exit(fn -> File.rm_rf(dir) end)
     dir
