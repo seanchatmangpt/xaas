@@ -333,7 +333,14 @@ defmodule Xaas.Ultracode.Lease do
         ),
         lease_token: token,
         lease_expires_at: expires_at,
-        leased_to: worker_id || candidate.run.provider
+        leased_to: worker_id || candidate.run.provider,
+        # The bind moment, persisted in the SAME single atomic UPDATE that
+        # binds the lease (atomicity preserved -- one statement, one row
+        # lock). This is the fact the OCEL egress's `epoch_claimed` event
+        # derives from; before this column the bind wrote no timestamp and
+        # the event could only be declared, never emitted. A re-claim of an
+        # expired lease overwrites it with the new claim's moment.
+        claimed_at: now
       )
 
     case result do
@@ -416,9 +423,17 @@ defmodule Xaas.Ultracode.Lease do
   @spec renew(String.t()) :: :ok | {:error, term()}
   def renew(lease_token) when is_binary(lease_token) do
     with {:ok, epoch} <- live_lease(lease_token) do
-      expires_at = DateTime.add(DateTime.utc_now(), @default_lease_ttl_minutes * 60, :second)
+      now = DateTime.utc_now()
+      expires_at = DateTime.add(now, @default_lease_ttl_minutes * 60, :second)
 
-      case atomic_lease_write(epoch, lease_token, lease_expires_at: expires_at) do
+      case atomic_lease_write(epoch, lease_token,
+             lease_expires_at: expires_at,
+             # The heartbeat moment, persisted in the same atomic write that
+             # extends the TTL -- the OCEL egress's `worker_heartbeat` event
+             # time. One column keeps the LATEST renewal's moment (renewal
+             # history deliberately collapses into it; see the attribute doc).
+             last_heartbeat_at: now
+           ) do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
       end
@@ -685,8 +700,15 @@ defmodule Xaas.Ultracode.Lease do
 
       # Same atomic lease-token-guarded write as `close/4` above -- closes
       # the identical real double-close race for the refuse path (and for
-      # a `close/4` racing a `refuse/3` on the same token).
-      with {:ok, epoch} <- atomic_lease_write(epoch, lease_token, state: :failed),
+      # a `close/4` racing a `refuse/3` on the same token). `terminal_at`
+      # is this transition's own persisted moment (the egress's
+      # `epoch_failed` event time -- same dedicated column `:mark_failed`
+      # writes; `updated_at` was only ever an approximation of it).
+      with {:ok, epoch} <-
+             atomic_lease_write(epoch, lease_token,
+               state: :failed,
+               terminal_at: DateTime.utc_now()
+             ),
            {:ok, receipt} <-
              Receipt
              |> Ash.Changeset.for_create(:seal, %{

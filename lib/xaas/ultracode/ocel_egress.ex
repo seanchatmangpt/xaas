@@ -71,39 +71,43 @@ defmodule Xaas.Ultracode.OcelEgress do
     | event type            | emitted when                     | time source                          |
     |-----------------------|----------------------------------|--------------------------------------|
     | `run_started`         | `Run.started_at` present         | `Run.started_at` (`:start` action)   |
-    | `run_completed`       | `Run.state == :completed`        | `Run.updated_at` (a)                 |
-    | `run_failed`          | `Run.state == :failed`           | `Run.updated_at` (a)                 |
-    | `run_abandoned`       | `Run.state == :abandoned`        | `Run.updated_at` (a)                 |
+    | `run_completed`       | `Run.state == :completed`        | `Run.terminal_at` (a)                |
+    | `run_failed`          | `Run.state == :failed`           | `Run.terminal_at` (a)                |
+    | `run_abandoned`       | `Run.state == :abandoned`        | `Run.terminal_at` (a)                |
     | `epoch_scheduled`     | every Epoch                      | `Epoch.expected_at` || `inserted_at` |
     | `epoch_started`       | `Epoch.started_at` present       | `Epoch.started_at` (`:start` action) |
+    | `epoch_claimed`       | `Epoch.claimed_at` present       | `Epoch.claimed_at` (c)               |
+    | `worker_heartbeat`    | `Epoch.last_heartbeat_at` present | `Epoch.last_heartbeat_at` (d)       |
     | `epoch_completed`     | `Epoch.state == :completed`      | `Epoch.completed_at` (`:complete`)   |
-    | `epoch_missed`        | `Epoch.state == :missed`         | `Epoch.updated_at` (a)               |
-    | `epoch_failed`        | `Epoch.state == :failed`         | `Epoch.updated_at` (a)               |
+    | `epoch_missed`        | `Epoch.state == :missed`         | `Epoch.terminal_at` (a)              |
+    | `epoch_failed`        | `Epoch.state == :failed`         | `Epoch.terminal_at` (a)              |
     | `receipt_closed`      | every sealed Receipt             | `Receipt.sealed_at` (`:seal`)        |
     | `verification_passed` | evidence `fabric_verifier.status == "pass"` | `Receipt.sealed_at` (b)   |
     | `verification_failed` | evidence `fabric_verifier.status == "fail"` | `Receipt.sealed_at` (b)   |
     | `refused`             | `Receipt.outcome == :refused`    | `Receipt.sealed_at` (`Lease.refuse/3`)|
 
-    (a) `*_state`-transition moments are not stored in dedicated columns.
-    The derivation uses the row's `updated_at` -- the last real write to
-    that row, which for terminal states (`:completed`/`:failed`/
-    `:abandoned`/`:missed`) is the transition write itself, because no
-    later write targets a terminal row through any action in this
-    domain. Disclosed approximation, not a fabricated timestamp.
+    (a) Terminal-transition moments ARE stored in dedicated columns:
+    `Run.terminal_at` (written by the `:transition_state`/`:stop` actions
+    through `Xaas.Ultracode.Changes.SetTerminalAt`) and `Epoch.terminal_at`
+    (written by `:mark_missed`/`:mark_failed` and `Lease.refuse/3`'s
+    atomic `state: :failed` write). This replaced an earlier disclosed
+    approximation that used the row's `updated_at`. A terminal row whose
+    column is still NULL (rows predating the column, or a hypothetical
+    writer that bypassed the transitions) emits NO event -- the fallback
+    is nothing, never a fabricated or defaulted time.
     (b) The fabric verifier runs inside `Lease.close/4` immediately
     before the receipt is sealed, so the receipt's own `sealed_at` is
     the persisted moment of that verification.
-
-  Declared but NOT emitted by the derivation (real code-level operations
-  whose occurrence moments are not persisted anywhere):
-
-    * `epoch_claimed` -- `Lease.claim_next/3`'s atomic bind persists
-      `lease_token`/`leased_to`/`lease_expires_at` but no bind
-      timestamp. The worker-epoch association is still visible in the
-      log as `Worker` object relationships and `worker` relationships
-      on the events that co-occurred with the lease.
-    * `worker_heartbeat` -- `Lease.renew/1` only moves
-      `lease_expires_at`; renewals leave no occurrence record.
+    (c) `Lease.claim_next/3`'s atomic bind persists `claimed_at` in the
+    SAME single `UPDATE ... WHERE ... RETURNING *` that binds
+    `lease_token`/`leased_to`/`lease_expires_at` (atomicity preserved).
+    A re-claim of an expired lease overwrites the column, so the emitted
+    event carries the LATEST claim's moment.
+    (d) `Lease.renew/1`'s atomic write persists `last_heartbeat_at`
+    alongside the extended TTL. Column-level persistence keeps only the
+    LATEST heartbeat per epoch, so N renewals collapse into ONE emitted
+    event carrying the latest moment -- a disclosed collapse of history,
+    not a loss of the newest fact.
 
   Deliberately NOT in the vocabulary at all: `wave_scheduled` -- the
   `:autonomic_wave` AshOban schedule is a repo-level loop (it is not a
@@ -321,7 +325,7 @@ defmodule Xaas.Ultracode.OcelEgress do
       maybe_event(
         "run_#{state}",
         run.id,
-        ts(run.updated_at),
+        ts(run.terminal_at),
         %{},
         [rel(run.id, "run")]
       )
@@ -347,7 +351,8 @@ defmodule Xaas.Ultracode.OcelEgress do
             "max_cycles" => run.max_cycles,
             "epoch_timeout_seconds" => run.epoch_timeout_seconds,
             "started_at" => ts(run.started_at),
-            "deadline_at" => ts(run.deadline_at)
+            "deadline_at" => ts(run.deadline_at),
+            "terminal_at" => ts(run.terminal_at)
           }),
         "relationships" => []
       }
@@ -381,7 +386,7 @@ defmodule Xaas.Ultracode.OcelEgress do
             maybe_event(
               "epoch_missed",
               epoch.id,
-              ts(epoch.updated_at),
+              ts(epoch.terminal_at),
               epoch_attrs(epoch),
               lease_context(epoch, context)
             )
@@ -390,7 +395,7 @@ defmodule Xaas.Ultracode.OcelEgress do
             maybe_event(
               "epoch_failed",
               epoch.id,
-              ts(epoch.updated_at),
+              ts(epoch.terminal_at),
               epoch_attrs(epoch),
               lease_context(epoch, context)
             )
@@ -408,6 +413,20 @@ defmodule Xaas.Ultracode.OcelEgress do
           context
         ),
         maybe_event("epoch_started", epoch.id, ts(epoch.started_at), epoch_attrs(epoch), context),
+        maybe_event(
+          "epoch_claimed",
+          epoch.id,
+          ts(epoch.claimed_at),
+          epoch_attrs(epoch),
+          lease_context(epoch, context)
+        ),
+        maybe_event(
+          "worker_heartbeat",
+          epoch.id,
+          ts(epoch.last_heartbeat_at),
+          epoch_attrs(epoch),
+          lease_context(epoch, context)
+        ),
         terminal
       ])
     end)
@@ -428,7 +447,10 @@ defmodule Xaas.Ultracode.OcelEgress do
             "expected_at" => ts(epoch.expected_at),
             "started_at" => ts(epoch.started_at),
             "completed_at" => ts(epoch.completed_at),
+            "terminal_at" => ts(epoch.terminal_at),
             "lease_expires_at" => ts(epoch.lease_expires_at),
+            "claimed_at" => ts(epoch.claimed_at),
+            "last_heartbeat_at" => ts(epoch.last_heartbeat_at),
             "leased_to" => epoch.leased_to,
             "worktree" => epoch.worktree,
             "final_head" => epoch.final_head
@@ -441,7 +463,8 @@ defmodule Xaas.Ultracode.OcelEgress do
   # Worker relationships on events: only for events whose fact
   # co-occurred with the lease -- never `epoch_scheduled`/`epoch_started`
   # (both precede any possible claim; the lease requires a `:running`
-  # epoch, i.e. one already past `:start`).
+  # epoch, i.e. one already past `:start`). `epoch_claimed` (the bind
+  # itself) and `worker_heartbeat` (a renewal of it) DO carry the worker.
   defp lease_context(epoch, context) do
     case epoch.leased_to do
       nil -> context

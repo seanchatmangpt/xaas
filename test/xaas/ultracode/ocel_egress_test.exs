@@ -100,6 +100,30 @@ defmodule Xaas.Ultracode.OcelEgressTest do
                  ]
                },
                %{
+                 "id" => "epoch_claimed:#{@epoch_id}",
+                 "type" => "epoch_claimed",
+                 "time" => "2026-09-19T08:10:00.000000Z",
+                 "attributes" => %{"cycle" => 0},
+                 "relationships" => [
+                   %{"objectId" => "/tmp/wt-1", "qualifier" => "worktree"},
+                   %{"objectId" => @run_id, "qualifier" => "run"},
+                   %{"objectId" => @epoch_id, "qualifier" => "epoch"},
+                   %{"objectId" => "zcode/agent-1", "qualifier" => "worker"}
+                 ]
+               },
+               %{
+                 "id" => "worker_heartbeat:#{@epoch_id}",
+                 "type" => "worker_heartbeat",
+                 "time" => "2026-09-19T08:20:00.000000Z",
+                 "attributes" => %{"cycle" => 0},
+                 "relationships" => [
+                   %{"objectId" => "/tmp/wt-1", "qualifier" => "worktree"},
+                   %{"objectId" => @run_id, "qualifier" => "run"},
+                   %{"objectId" => @epoch_id, "qualifier" => "epoch"},
+                   %{"objectId" => "zcode/agent-1", "qualifier" => "worker"}
+                 ]
+               },
+               %{
                  "id" => "epoch_completed:#{@epoch_id}",
                  "type" => "epoch_completed",
                  "time" => "2026-09-19T08:55:00.000000Z",
@@ -165,7 +189,8 @@ defmodule Xaas.Ultracode.OcelEgressTest do
                    "max_cycles" => 1,
                    "epoch_timeout_seconds" => 900,
                    "started_at" => "2026-09-19T08:00:00.000000Z",
-                   "deadline_at" => "2026-09-19T18:00:00.000000Z"
+                   "deadline_at" => "2026-09-19T18:00:00.000000Z",
+                   "terminal_at" => "2026-09-19T09:00:00.000000Z"
                  },
                  "relationships" => []
                },
@@ -180,6 +205,8 @@ defmodule Xaas.Ultracode.OcelEgressTest do
                    "started_at" => "2026-09-19T08:06:00.000000Z",
                    "completed_at" => "2026-09-19T08:55:00.000000Z",
                    "lease_expires_at" => "2026-09-19T08:36:00.000000Z",
+                   "claimed_at" => "2026-09-19T08:10:00.000000Z",
+                   "last_heartbeat_at" => "2026-09-19T08:20:00.000000Z",
                    "leased_to" => "zcode/agent-1",
                    "worktree" => "/tmp/wt-1",
                    "final_head" => "abc123"
@@ -238,21 +265,41 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     assert JSON.encode!(doc_again) == JSON.encode!(doc_a)
   end
 
-  test "no fabricated times: terminal events without a persisted transition moment are not emitted" do
-    missed_epoch = %{golden_epoch() | state: :missed, updated_at: nil, completed_at: nil}
-    run = %{golden_run() | state: :completed, updated_at: nil}
+  test "no fabricated times: events without a persisted moment column are not emitted" do
+    # A :missed epoch whose transition never persisted a `terminal_at`
+    # (and was never claimed or heartbeated), and a :completed Run with no
+    # persisted `terminal_at`: the declared event types stay unemitted --
+    # `updated_at` is deliberately IGNORED here (it carries a real value on
+    # both fixtures) to prove the dedicated columns are the only source.
+    missed_epoch = %{
+      golden_epoch()
+      | state: :missed,
+        terminal_at: nil,
+        completed_at: nil,
+        claimed_at: nil,
+        last_heartbeat_at: nil
+    }
+
+    run = %{golden_run() | state: :completed, terminal_at: nil}
 
     doc = OcelEgress.build_document(run, [missed_epoch], %{@epoch_id => []})
 
     event_ids = Enum.map(doc["ocel:events"], & &1["id"])
 
     refute "epoch_missed:#{@epoch_id}" in event_ids,
-           "a :missed epoch with no persisted transition write must not emit a fabricated time"
+           "a :missed epoch with no persisted transition moment must not emit a fabricated time"
 
     refute "run_completed:#{@run_id}" in event_ids,
-           "a :completed run with no persisted transition write must not emit a fabricated time"
+           "a :completed run with no persisted transition moment must not emit a fabricated time"
+
+    refute "epoch_claimed:#{@epoch_id}" in event_ids,
+           "an unclaimed epoch must not emit a fabricated claim moment"
+
+    refute "worker_heartbeat:#{@epoch_id}" in event_ids,
+           "an epoch with no persisted heartbeat must not emit a fabricated heartbeat"
 
     assert "epoch_scheduled:#{@epoch_id}" in event_ids
+    assert "epoch_started:#{@epoch_id}" in event_ids
     assert "run_started:#{@run_id}" in event_ids
   end
 
@@ -273,6 +320,7 @@ defmodule Xaas.Ultracode.OcelEgressTest do
                "run_started",
                "epoch_scheduled",
                "epoch_started",
+               "epoch_claimed",
                "epoch_completed",
                "receipt_closed",
                "verification_passed"
@@ -314,8 +362,9 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     assert Enum.sort(MapSet.to_list(registered_event_types)) ==
              Enum.sort(OcelEgress.event_types())
 
-    # Declared-but-unemitted vocabulary stays declared (real code-level
-    # operations whose moments are not persisted -- see module docs).
+    # Declared vocabulary stays declared; both formerly-declared-unemitted
+    # types are now really emitted from persisted columns in the dedicated
+    # claim/heartbeat cycle test below.
     assert "epoch_claimed" in OcelEgress.event_types()
     assert "worker_heartbeat" in OcelEgress.event_types()
 
@@ -331,6 +380,52 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     # Byte determinism across two independent real derivations.
     {:ok, doc_again} = OcelEgress.derive_run(run.id)
     assert JSON.encode!(doc) == JSON.encode!(doc_again)
+  end
+
+  test "end-to-end: a real claim/renew cycle emits epoch_claimed and worker_heartbeat from the persisted columns" do
+    {run, epoch, token} = real_claimed_run!()
+
+    # Renew through the REAL production path (`Lease.renew/1`'s atomic
+    # write), then re-read the persisted moments from the row.
+    assert :ok = Xaas.Ultracode.Lease.renew(token)
+
+    {:ok, [leased]} =
+      Epoch
+      |> Ash.Query.for_read(:read_unscoped)
+      |> Ash.Query.filter(id == ^epoch.id)
+      |> Ash.read(authorize?: false)
+
+    assert %DateTime{} = leased.claimed_at, "the claim must persist its bind moment"
+    assert %DateTime{} = leased.last_heartbeat_at, "the renewal must persist its heartbeat moment"
+
+    {:ok, doc} = OcelEgress.derive_run(run.id)
+
+    events = Map.new(doc["ocel:events"], fn e -> {e["id"], e} end)
+
+    claimed = Map.get(events, "epoch_claimed:#{epoch.id}")
+    assert %{"type" => "epoch_claimed"} = claimed
+
+    assert claimed["time"] == DateTime.to_iso8601(leased.claimed_at),
+           "the emitted claim time must be the persisted claimed_at column"
+
+    assert %{"objectId" => "zcode/ocel-e2e-worker", "qualifier" => "worker"} in claimed[
+             "relationships"
+           ],
+           "the claim event must bind the leasing worker"
+
+    heartbeat = Map.get(events, "worker_heartbeat:#{epoch.id}")
+    assert %{"type" => "worker_heartbeat"} = heartbeat
+
+    assert heartbeat["time"] == DateTime.to_iso8601(leased.last_heartbeat_at),
+           "the emitted heartbeat time must be the persisted last_heartbeat_at column"
+
+    assert %{"objectId" => "zcode/ocel-e2e-worker", "qualifier" => "worker"} in heartbeat[
+             "relationships"
+           ]
+
+    # The emitted shape (new event types included) still passes the OCEL
+    # conformance court.
+    assert {:ok, _report} = Xaas.Ultracode.Ocel.Validator.validate(doc)
   end
 
   test "end-to-end: a refused receipt emits the refused event, without inventing a verification verdict" do
@@ -445,6 +540,7 @@ defmodule Xaas.Ultracode.OcelEgressTest do
       standing: :admitted,
       started_at: ~U[2026-09-19 08:00:00.000000Z],
       deadline_at: ~U[2026-09-19 18:00:00.000000Z],
+      terminal_at: ~U[2026-09-19 09:00:00.000000Z],
       cycle: 1,
       max_cycles: 1,
       epoch_timeout_seconds: 900,
@@ -464,6 +560,8 @@ defmodule Xaas.Ultracode.OcelEgressTest do
       completed_at: ~U[2026-09-19 08:55:00.000000Z],
       lease_token: "secret-capability-token",
       lease_expires_at: ~U[2026-09-19 08:36:00.000000Z],
+      claimed_at: ~U[2026-09-19 08:10:00.000000Z],
+      last_heartbeat_at: ~U[2026-09-19 08:20:00.000000Z],
       leased_to: "zcode/agent-1",
       worktree: "/tmp/wt-1",
       final_head: "abc123",
@@ -485,13 +583,11 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     })
   end
 
-  # Real Chicago-style path: pending Run -> :start (real first Epoch) ->
-  # Epoch :start -> :lease -> :complete -> Receipt :seal -- every write
-  # through a real Ash action, exactly the production write surface.
-  defp real_completed_run!(opts \\ []) do
-    outcome = Keyword.get(opts, :receipt_outcome, :alive)
-    verifier_status = Keyword.get(opts, :verifier_status, "pass")
-
+  # Real Chicago-style claim path: pending Run -> :start (real first
+  # Epoch) -> Epoch :start -> `Lease.claim_next/3`'s atomic bind -- every
+  # write through a real production entry point. Returns the leased epoch
+  # (carrying the persisted `claimed_at`) and the live lease token.
+  defp real_claimed_run! do
     {sha, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: File.cwd!())
     subject = String.trim(sha)
 
@@ -528,8 +624,19 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     # second update-pipeline tenant checkpoint and raises, exactly as the
     # resource's own moduledoc records. `claim_next/3`'s directed-claim
     # `:epoch_id` opt binds this worker to exactly this epoch.
-    {:ok, epoch, _token, _run} =
+    {:ok, epoch, token, _run} =
       Xaas.Ultracode.Lease.claim_next(run.provider, "zcode/ocel-e2e-worker", epoch_id: epoch.id)
+
+    {run, epoch, token}
+  end
+
+  # Continues the claimed cycle to closure: Epoch :complete -> Receipt
+  # :seal -- every write through a real Ash action, exactly the production
+  # write surface.
+  defp real_completed_run!(opts \\ []) do
+    outcome = Keyword.get(opts, :receipt_outcome, :alive)
+    verifier_status = Keyword.get(opts, :verifier_status, "pass")
+    {run, epoch, _token} = real_claimed_run!()
 
     epoch =
       epoch

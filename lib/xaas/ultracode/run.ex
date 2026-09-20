@@ -443,6 +443,11 @@ defmodule Xaas.Ultracode.Run do
 
       validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
 
+      # Terminal-only: sets `terminal_at` iff the destination state closes
+      # the Run (`:completed`/`:failed`/`:abandoned`) -- see the change's
+      # own moduledoc and the `terminal_at` attribute doc.
+      change(Xaas.Ultracode.Changes.SetTerminalAt)
+
       multitenancy(:bypass)
     end
 
@@ -751,6 +756,10 @@ defmodule Xaas.Ultracode.Run do
 
       change(set_attribute(:state, :abandoned))
       change(set_attribute(:standing, :blocked))
+      # `:abandoned` is terminal -- persists the closing moment (`terminal_at`,
+      # the egress's `run_abandoned` event time) via the same conditional
+      # change `:transition_state` uses.
+      change(Xaas.Ultracode.Changes.SetTerminalAt)
       change(Xaas.Ultracode.Changes.RevokeLiveLeases)
 
       validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
@@ -904,6 +913,18 @@ defmodule Xaas.Ultracode.Run do
     end
 
     attribute :started_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    # The terminal-transition moment: written when this Run closes into
+    # `:completed`/`:failed`/`:abandoned` (via `:transition_state` or
+    # `:stop`, through `Changes.SetTerminalAt`; `:resume` and the
+    # `{:pending, :running}` edge never write it). The OCEL egress uses
+    # this as the `run_completed`/`run_failed`/`run_abandoned` event time
+    # -- a dedicated persisted fact replacing the former `updated_at`
+    # approximation. Nullable: a Run that never closed (and rows predating
+    # the column) emits no terminal event rather than a fabricated time.
+    attribute :terminal_at, :utc_datetime_usec do
       public?(true)
     end
 

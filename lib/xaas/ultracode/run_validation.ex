@@ -42,9 +42,12 @@ defmodule Xaas.Ultracode.RunValidation do
       (`"Run"`, `"Epoch"`, ...), verification as SIBLING EVENTS
       (`verification_passed` / `verification_failed` / `refused`) rather
       than a `receipt_closed` attribute, and appearance facts carried by
-      `epoch_scheduled` / `epoch_started` (`epoch_claimed` is declared
-      but never emitted -- `Lease.claim_next/3` persists no bind
-      timestamp, and the egress refuses to fabricate one).
+      `epoch_claimed` (emitted from `Epoch.claimed_at`, persisted by
+      `Lease.claim_next/3`'s atomic bind) / `epoch_scheduled` /
+      `epoch_started` (the claim event only exists for epochs claimed
+      since the `claimed_at` column landed; this bridge's priority order
+      below already handled `epoch_claimed` before the egress emitted
+      it).
 
   Concretely: each required top-level collection is resolved as
   `"ocel:<key>"` first, then the unprefixed key; object-type role
