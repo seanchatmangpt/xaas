@@ -575,13 +575,28 @@ defmodule Xaas.Ultracode.Lease do
     |> Ash.read_one(load: load)
   end
 
-  # Preserve canonical semantic-work identity in every terminal lease receipt.
-  # This is evidence binding only; it never changes the verifier outcome.
+  # Preserve the canonical semantic subject and upstream receipt evidence in
+  # every terminal lease receipt. This is evidence binding only; it never
+  # changes verifier outcome or manufactures authority.
   defp bind_semantic_work_identity(%Epoch{run: %Run{} = run}, evidence) do
-    if is_binary(run.checkpoint_iri) and is_binary(run.graph_digest) and is_binary(run.base_sha) do
+    required = [
+      run.work_order_iri,
+      run.checkpoint_iri,
+      run.graph_digest,
+      run.repository_identity,
+      run.execution_repo_alias,
+      run.base_sha
+    ]
+
+    if Enum.all?(required, &is_binary/1) do
       Map.put(evidence, "semantic_work", %{
+        "work_order_iri" => run.work_order_iri,
         "checkpoint_iri" => run.checkpoint_iri,
         "graph_digest" => run.graph_digest,
+        "repository_identity" => run.repository_identity,
+        "execution_repo_alias" => run.execution_repo_alias,
+        "execution_policy" => if(run.execution_policy, do: Atom.to_string(run.execution_policy)),
+        "dependency_evidence" => run.dependency_evidence || %{},
         "base_sha" => run.base_sha
       })
     else
