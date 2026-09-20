@@ -16,7 +16,7 @@ defmodule Xaas.MixProject do
     [
       app: :xaas,
       version: @version,
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),

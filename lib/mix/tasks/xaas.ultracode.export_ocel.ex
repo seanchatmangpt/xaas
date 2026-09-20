@@ -49,25 +49,28 @@ defmodule Mix.Tasks.Xaas.Ultracode.ExportOcel do
             Mix.raise("OCEL export failed: #{inspect(reason)}")
         end
 
-      [run_id] = positional ->
-        case OcelEgress.export_run(run_id, out_dir) do
-          {:ok, path} ->
-            Mix.shell().info(path)
-
-          {:error, :run_not_found} ->
-            Mix.raise(
-              "OCEL export refused: :run_not_found -- no Xaas.Ultracode.Run with id " <>
-                "#{inspect(run_id)} exists (run `mix xaas.ultracode.export_ocel --all` to export every Run)."
-            )
-
-          {:error, reason} ->
-            Mix.raise("OCEL export failed: #{inspect(reason)}")
-        end
-
       true ->
-        Mix.raise(
-          "usage: mix xaas.ultracode.export_ocel <run_id> [--out DIR] | --all [--out DIR]"
-        )
+        case positional do
+          [run_id] ->
+            case OcelEgress.export_run(run_id, out_dir) do
+              {:ok, path} ->
+                Mix.shell().info(path)
+
+              {:error, :run_not_found} ->
+                Mix.raise(
+                  "OCEL export refused: :run_not_found -- no Xaas.Ultracode.Run with id " <>
+                    "#{inspect(run_id)} exists (run `mix xaas.ultracode.export_ocel --all` to export every Run)."
+                )
+
+              {:error, reason} ->
+                Mix.raise("OCEL export failed: #{inspect(reason)}")
+            end
+
+          _ ->
+            Mix.raise(
+              "usage: mix xaas.ultracode.export_ocel <run_id> [--out DIR] | --all [--out DIR]"
+            )
+        end
     end
   end
 end

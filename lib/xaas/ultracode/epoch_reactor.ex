@@ -171,9 +171,9 @@ defmodule Xaas.Ultracode.EpochReactor do
             "action_taken" => Atom.to_string(action_taken)
           })
 
-          :start ->
-            case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, action: :read_unscoped) do
-              {:ok, %{state: :running} = fresh_epoch} ->
+        :start ->
+          case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, action: :read_unscoped) do
+            {:ok, %{state: :running} = fresh_epoch} ->
               fresh_epoch
               |> Ash.Changeset.for_update(:mark_failed, %{})
               |> Ash.update(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
@@ -224,8 +224,8 @@ defmodule Xaas.Ultracode.EpochReactor do
               )
 
               :ok
-            end
-        end
+          end
+      end
     end)
   end
 
