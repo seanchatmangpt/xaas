@@ -111,6 +111,43 @@ defmodule Xaas.Ultracode.TargetSuites do
             ]
           }
         ]
+      },
+      # spr clone (~/xaas-worktrees/repos/spr): the full pytest suite. The
+      # module under test sits at the repo root and tests/test_sprtool.py
+      # inserts the repo root on sys.path itself, so no PYTHONPATH is needed
+      # and pytest resolves from the Homebrew interpreter on PATH. The tree
+      # carries no .gitignore, but the verifier forces PYTHONDONTWRITEBYTECODE
+      # on every child and `-p no:cacheprovider` + `--basetemp {tmpdir}` keep
+      # every write inside the worktree/per-run tmpdir, so the verifier's
+      # after-run tree-clean check holds.
+      "spr-dod" => %{
+        env: %{
+          "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+          "LANG" => "en_US.UTF-8"
+        },
+        max_output_bytes: 16_384,
+        toolchain: [
+          ["python3", "--version"],
+          ["python3", "-m", "pytest", "--version"],
+          ["git", "--version"]
+        ],
+        steps: [
+          %{
+            id: "test",
+            timeout_ms: 300_000,
+            argv: [
+              "python3",
+              "-m",
+              "pytest",
+              "tests",
+              "--basetemp",
+              "{tmpdir}",
+              "-q",
+              "-p",
+              "no:cacheprovider"
+            ]
+          }
+        ]
       }
     }
   end

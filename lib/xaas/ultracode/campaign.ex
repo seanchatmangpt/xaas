@@ -87,6 +87,7 @@ defmodule Xaas.Ultracode.Campaign do
           | {:goal, String.t() | nil}
           | {:repo, String.t()}
           | {:suite, String.t()}
+          | {:canonical_suite, String.t() | nil}
           | {:only, [String.t()] | nil}
           | {:max_attempts, pos_integer()}
           | {:base_sha, String.t() | nil}
@@ -176,6 +177,7 @@ defmodule Xaas.Ultracode.Campaign do
          goal: Map.get(opts, :goal) || default_goal(capacity, duration_s, interval_s),
          repo: Map.get(opts, :repo, @default_repo),
          suite: Map.get(opts, :suite, @default_suite),
+         canonical_suite: Map.get(opts, :canonical_suite),
          only: Map.get(opts, :only),
          max_attempts: Map.get(opts, :max_attempts, 3),
          base_sha: Map.get(opts, :base_sha),
@@ -412,6 +414,16 @@ defmodule Xaas.Ultracode.Campaign do
         capacity: resolved.capacity,
         repo: resolved.repo,
         suite: resolved.suite,
+        # The canonical court must belong to the repo being waved, never fall
+        # through to another repo's gates: the Autonomic default
+        # (`aps-canonical`) is only correct for the default repo, so every
+        # other repo waves its own suite at the integration head (an explicit
+        # operator override always wins). Without this, a non-APS campaign
+        # merged cleanly and still reported BLOCKED -- judged by gates that
+        # were never its definition of done.
+        canonical_suite:
+          resolved.canonical_suite ||
+            if(resolved.repo == @default_repo, do: "aps-canonical", else: resolved.suite),
         only: resolved.only,
         max_attempts: resolved.max_attempts,
         base_sha: resolved.base_sha,

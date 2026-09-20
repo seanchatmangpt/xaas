@@ -24,6 +24,9 @@ defmodule Mix.Tasks.Xaas.Ultracode.Start do
     * `--repo ALIAS` -- registered repo alias for `Autonomic` (default `aps`)
     * `--suite NAME` -- registered verifier suite (default `aps-dod`; the name
       is admission-validated against `config :xaas, :ultracode_verifier_suites`)
+    * `--canonical-suite NAME` -- registered suite for the integration-head
+      court (default: `aps-canonical` for the default repo, the `--suite`
+      itself for every other repo)
     * `--only a,b` -- restrict waves to these backlog item ids (bounded smokes)
     * `--max-attempts N` -- per-item repair attempts per wave (default 3)
     * `--base-sha SHA` -- pin the backlog/worktree base (default: repo HEAD)
@@ -51,6 +54,7 @@ defmodule Mix.Tasks.Xaas.Ultracode.Start do
           goal: :string,
           repo: :string,
           suite: :string,
+          canonical_suite: :string,
           only: :string,
           max_attempts: :integer,
           base_sha: :string,
@@ -73,6 +77,7 @@ defmodule Mix.Tasks.Xaas.Ultracode.Start do
         goal: opts[:goal],
         repo: opts[:repo],
         suite: opts[:suite],
+        canonical_suite: opts[:canonical_suite],
         only: opts[:only] && String.split(opts[:only], ",", trim: true),
         max_attempts: opts[:max_attempts],
         base_sha: opts[:base_sha],

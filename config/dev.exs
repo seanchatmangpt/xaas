@@ -131,8 +131,14 @@ config :xaas, :ultracode_repos, %{
   # Additional operator-owned targets (wave-5): fresh clones with real test
   # suites, judged at close time by the matching <alias>-dod verifier suite.
   "nounverb" => Path.expand("~/xaas-worktrees/repos/nounverb"),
-  "eds" => Path.expand("~/xaas-worktrees/repos/eds")
+  "eds" => Path.expand("~/xaas-worktrees/repos/eds"),
+  "spr" => Path.expand("~/xaas-worktrees/repos/spr")
 }
+
+# Per-repo sense scripts (`Xaas.Ultracode.Autonomic.backlog_script/1`): the
+# SPR family derives Chicago-school negative-test items from the public
+# functions of its root tool module; APS keeps its default script.
+config :xaas, :ultracode_backlog_scripts, %{"spr" => "spr_backlog.py"}
 
 # APS's own five canonical gates, run by the fabric at the integration head.
 aps_env = %{

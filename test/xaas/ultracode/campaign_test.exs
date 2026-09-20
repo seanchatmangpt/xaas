@@ -284,6 +284,75 @@ defmodule Xaas.Ultracode.CampaignTest do
     assert {:error, :no_campaign_found} = Campaign.stop(nil)
   end
 
+  test "the canonical court follows the waved repo, never another repo's gates" do
+    ref = runner_ref()
+
+    Application.put_env(:xaas, :ultracode_verifier_suites, %{
+      @suite => %{steps: []},
+      "spr-dod" => %{steps: []}
+    })
+
+    # A non-default repo waves its OWN suite at the integration head: falling
+    # back to the Autonomic default (`aps-canonical`) would judge an SPR merge
+    # with APS's five gates -- a court that was never its definition of done.
+    {:ok, summary} =
+      Campaign.start(
+        capacity: 1,
+        duration: "1h",
+        wave_interval: "1s",
+        max_waves: 1,
+        repo: "spr",
+        suite: "spr-dod",
+        ledger: ledger(),
+        runner: stub_runner!(ref),
+        sleeper: &no_sleep/1
+      )
+
+    assert summary.status == :completed
+    assert [spr_opts] = Agent.get(ref, & &1)
+    assert spr_opts[:repo] == "spr"
+    assert spr_opts[:suite] == "spr-dod"
+    assert spr_opts[:canonical_suite] == "spr-dod"
+
+    ref2 = runner_ref()
+
+    # The default repo keeps its separate canonical suite (unchanged law).
+    {:ok, _} =
+      Campaign.start(
+        capacity: 1,
+        duration: "1h",
+        wave_interval: "1s",
+        max_waves: 1,
+        ledger: ledger(),
+        runner: stub_runner!(ref2),
+        sleeper: &no_sleep/1
+      )
+
+    assert [aps_opts] = Agent.get(ref2, & &1)
+    assert aps_opts[:repo] == "aps"
+    assert aps_opts[:canonical_suite] == "aps-canonical"
+
+    ref3 = runner_ref()
+
+    # An explicit operator override always wins.
+    {:ok, _} =
+      Campaign.start(
+        capacity: 1,
+        duration: "1h",
+        wave_interval: "1s",
+        max_waves: 1,
+        repo: "spr",
+        suite: "spr-dod",
+        canonical_suite: "aps-canonical",
+        ledger: ledger(),
+        runner: stub_runner!(ref3),
+        sleeper: &no_sleep/1
+      )
+
+    assert [override_opts] = Agent.get(ref3, & &1)
+    assert override_opts[:canonical_suite] == "aps-canonical"
+  end
+
   describe "parse_duration/1" do
     test "accepts strict <n>h|m|s" do
       assert Campaign.parse_duration("8h") == {:ok, 28_800}

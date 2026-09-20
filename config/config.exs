@@ -222,7 +222,13 @@ config :phoenix, :json_library, Jason
 # no suites are registered by default, and a suite only ever runs in a worktree
 # under `:ultracode_worktree_root`. Environments that use it register named
 # suites (argv lists, never shell strings) in their own config file.
+
+# Same fail-closed law for the sense stage (`Xaas.Ultracode.Autonomic.backlog_script/1`):
+# a repo alias may map to its own deterministic backlog script basename resolved
+# from this app's priv/verifiers/; every unregistered alias (and the default)
+# stays `aps_backlog.py`. Names only, never caller-supplied paths.
 config :xaas, :ultracode_verifier_suites, %{}
+config :xaas, :ultracode_backlog_scripts, %{}
 config :xaas, :ultracode_worktree_root, nil
 config :xaas, :ultracode_ticket_dir, nil
 # Opt-in module value (an atom, e.g. Xaas.Ultracode.TargetSuites) whose devs/0

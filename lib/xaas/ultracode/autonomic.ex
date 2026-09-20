@@ -7,7 +7,10 @@ defmodule Xaas.Ultracode.Autonomic do
   receipt. The loop is sense -> plan -> act -> verify -> repair -> promote ->
   learn:
 
-    1. **Sense.** `priv/verifiers/aps_backlog.py` derives work items
+    1. **Sense.** a per-repo deterministic backlog script (default
+       `priv/verifiers/aps_backlog.py`; a repo alias may register its own
+       basename via `config :xaas, :ultracode_backlog_scripts`, resolved by
+       `backlog_script/1`) derives work items
        deterministically from the repository at an exact `base_sha` (a
        throwaway provisioned worktree, never the operator clone's tree).
     2. **Plan.** Per item: a provisioned worktree, a ticket file (mission,
@@ -212,7 +215,7 @@ defmodule Xaas.Ultracode.Autonomic do
 
     with {:ok, path} <- Worktrees.provision(ctx.repo, ctx.base_sha, name) do
       try do
-        script = Application.app_dir(:xaas, "priv/verifiers/aps_backlog.py")
+        script = backlog_script(ctx)
 
         case System.cmd("python3", [script, "--repo", path],
                env: [{"PYTHONDONTWRITEBYTECODE", "1"}],
@@ -230,6 +233,24 @@ defmodule Xaas.Ultracode.Autonomic do
         Worktrees.cleanup(ctx.repo, path)
       end
     end
+  end
+
+  @doc """
+  Resolves the deterministic backlog ("sense") script for `ctx.repo`.
+
+  A repo alias may register its own script basename (looked up inside this
+  app's `priv/verifiers/`, never from the repo or the worker) under
+  `config :xaas, :ultracode_backlog_scripts` (`%{"spr" => "spr_backlog.py"}`);
+  the default, and the fallback for every unregistered alias, stays the
+  original `aps_backlog.py`, so APS behavior is unchanged. This is the same
+  registry shape the verifier suites use
+  (`config :xaas, :ultracode_verifier_suites`): an operator-owned NAME mapping,
+  never a caller-supplied path.
+  """
+  def backlog_script(ctx) do
+    scripts = Application.get_env(:xaas, :ultracode_backlog_scripts, %{})
+    name = Map.get(scripts, ctx.repo, "aps_backlog.py")
+    Application.app_dir(:xaas, Path.join("priv/verifiers", name))
   end
 
   # ------------------------------------------------------------------

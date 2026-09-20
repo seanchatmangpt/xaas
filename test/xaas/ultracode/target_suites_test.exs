@@ -51,7 +51,7 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   test "the code-declared target suites pass the registration admission gate" do
     devs = TargetSuites.devs()
 
-    assert MapSet.new(Map.keys(devs)) == MapSet.new(["eds-dod", "nounverb-dod"])
+    assert MapSet.new(Map.keys(devs)) == MapSet.new(["eds-dod", "nounverb-dod", "spr-dod"])
     assert TargetSuites.validate(devs) == :ok
   end
 
