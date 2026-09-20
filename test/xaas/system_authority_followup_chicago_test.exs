@@ -174,7 +174,8 @@ defmodule Xaas.SystemAuthorityFollowupChicagoTest do
                })
                |> Ash.create(actor: @ordinary_actor)
 
-      pending = seed_pending_approval!(ApprovalOrgDelete, %{org_id: "org-x", requested_by: "req-1"})
+      pending =
+        seed_pending_approval!(ApprovalOrgDelete, %{org_id: "org-x", requested_by: "req-1"})
 
       assert {:error, %Ash.Error.Forbidden{}} =
                pending
@@ -235,7 +236,9 @@ defmodule Xaas.SystemAuthorityFollowupChicagoTest do
                |> Ash.Changeset.for_create(:request_match, %{query: "Maze"})
                |> Ash.create(actor: @ordinary_actor)
 
-      assert AutofdePlannerMatch |> Ash.read!(authorize?: false) |> Enum.filter(&(&1.query == "Maze")) ==
+      assert AutofdePlannerMatch
+             |> Ash.read!(authorize?: false)
+             |> Enum.filter(&(&1.query == "Maze")) ==
                []
     end
 

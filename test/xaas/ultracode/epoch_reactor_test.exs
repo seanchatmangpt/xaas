@@ -207,7 +207,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
         )
         |> Ash.create!()
         |> Ash.Changeset.for_update(:transition_state, %{state: :running})
-      |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       construct_step =
         Xaas.Ultracode.EpochReactor.reactor().plan
