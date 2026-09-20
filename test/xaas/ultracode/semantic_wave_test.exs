@@ -34,21 +34,18 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
     %{repo: repo, root: root, state: state, sha: sha}
   end
 
-  test "dispatches only already-materialized autonomic-wave policy epochs", %{sha: sha, state: state} do
+  test "dispatches only already-materialized autonomic-wave policy epochs", %{
+    sha: sha,
+    state: state
+  } do
     assert {:ok, %{epoch: wave_a}} =
-             SemanticWork.materialize(
-               descriptor(sha, "a", "autonomic_wave_attempt")
-             )
+             SemanticWork.materialize(descriptor(sha, "a", "autonomic_wave_attempt"))
 
     assert {:ok, %{epoch: wave_b}} =
-             SemanticWork.materialize(
-               descriptor(sha, "b", "autonomic_wave_attempt")
-             )
+             SemanticWork.materialize(descriptor(sha, "b", "autonomic_wave_attempt"))
 
     assert {:ok, %{epoch: continuous}} =
-             SemanticWork.materialize(
-               descriptor(sha, "continuous", "continuous_epoch_run")
-             )
+             SemanticWork.materialize(descriptor(sha, "continuous", "continuous_epoch_run"))
 
     parent = self()
 
@@ -77,9 +74,7 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
 
   test "an already-leased semantic Epoch is not redispatched", %{sha: sha, state: state} do
     assert {:ok, %{epoch: wave}} =
-             SemanticWork.materialize(
-               descriptor(sha, "leased", "autonomic_wave_attempt")
-             )
+             SemanticWork.materialize(descriptor(sha, "leased", "autonomic_wave_attempt"))
 
     assert {:ok, _epoch, _token, _run} =
              Xaas.Ultracode.Lease.claim_next("zcode", "existing-worker", epoch_id: wave.id)
@@ -132,7 +127,9 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
     assert Application.fetch_env!(:xaas, Oban)[:queues][:ultracode_wave] == 1
   end
 
-  test "scheduled semantic action invokes capacity five without promoting standing", %{state: state} do
+  test "scheduled semantic action invokes capacity five without promoting standing", %{
+    state: state
+  } do
     {:ok, _pid} = Agent.start_link(fn -> nil end, name: __MODULE__.RunnerProbe)
     Application.put_env(:xaas, :ultracode_semantic_wave_runner, {__MODULE__, :capture_runner})
     Application.put_env(:xaas, :ultracode_semantic_wave_state_dir, state)

@@ -74,7 +74,9 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     refute function_exported?(SemanticWork, :frontier, 1)
   end
 
-  test "continuous policy uses Run.start and leaves the exact-worktree Epoch expected", %{sha: sha} do
+  test "continuous policy uses Run.start and leaves the exact-worktree Epoch expected", %{
+    sha: sha
+  } do
     assert {:ok, %{run: run, epoch: epoch, worktree: worktree}} =
              SemanticWork.materialize(checkpoint(sha))
 
@@ -84,11 +86,13 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     assert run.repository_identity == "seanchatmangpt/xaas"
     assert run.execution_repo_alias == "demo"
     assert run.execution_policy == :continuous_epoch_run
+
     assert run.dependency_evidence["urn:gall:work-order:dep-1"]["receipt_iri"] ==
              "urn:gall:receipt:dep-1"
 
     assert epoch.state == :expected
     assert epoch.worktree == worktree
+
     assert epoch.exact_subject ==
              "urn:gall:work-order:xaas:001@sha256:" <> String.duplicate("a", 64)
 

@@ -384,7 +384,6 @@ defmodule Xaas.Ultracode.Run do
       end)
     end
 
-
     # Scheduled composition controller. Five construction workers may run in
     # parallel inside one wave; the dedicated one-slot Oban queue prevents
     # two waves from racing the shared promotion/integration phase.

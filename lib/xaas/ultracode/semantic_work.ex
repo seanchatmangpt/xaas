@@ -410,7 +410,8 @@ defmodule Xaas.Ultracode.SemanticWork do
       not valid_iri?(dependency.receipt_iri) ->
         {:error, {:refused_dependency, {:invalid, :receipt_iri}}}
 
-      not (is_binary(dependency.receipt_digest) and Regex.match?(@digest, dependency.receipt_digest)) ->
+      not (is_binary(dependency.receipt_digest) and
+               Regex.match?(@digest, dependency.receipt_digest)) ->
         {:error, {:refused_dependency, {:invalid, :receipt_digest}}}
 
       true ->
