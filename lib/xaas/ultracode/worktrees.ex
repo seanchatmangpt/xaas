@@ -68,6 +68,8 @@ defmodule Xaas.Ultracode.Worktrees do
   that is not directly under the repo's root.
   """
 
+  alias Xaas.Ultracode.Repos
+
   @sha ~r/^[0-9a-f]{40}$/
   @name ~r/^[a-z0-9][a-z0-9_-]{0,63}$/
   @default_integration_prefix "ultracode/integration-"
@@ -246,7 +248,10 @@ defmodule Xaas.Ultracode.Worktrees do
   # ------------------------------------------------------------------
 
   defp fetch_raw_entry(repo_alias) do
-    case :xaas |> Application.get_env(:ultracode_repos, %{}) |> Map.fetch(repo_alias) do
+    # Merged registry sources (Xaas.Ultracode.Repos): the config baseline
+    # plus the durable file written by `mix xaas.ultracode.repos --register`
+    # (file wins per alias). Entry NORMALIZATION stays this module's law.
+    case Repos.raw_entry(repo_alias) do
       {:ok, raw} -> {:ok, raw}
       :error -> {:error, :unknown_repo_alias}
     end

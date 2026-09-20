@@ -59,7 +59,7 @@ defmodule Xaas.Ultracode.Autonomic do
   really claims, edits, commits and closes through `Xaas.Ultracode.Lease`.
   """
 
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Run, Verifier, Worktrees}
+  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Repos, Run, Verifier, Worktrees}
 
   @git_env [
     {"GIT_AUTHOR_NAME", "xaas-autonomic"},
@@ -184,6 +184,34 @@ defmodule Xaas.Ultracode.Autonomic do
                 "ultracode repo #{inspect(repo)} is not provisionable: #{inspect(reason)}"
       end
 
+    # Registry facts enrichment (Xaas.Ultracode.Repos: the config baseline
+    # plus the durable file, file wins): the target's suite, canonical suite
+    # and sensing-profile names. Purely ADDITIVE -- a repo provisionable here
+    # but unresolved in the enriched registry keeps the historical defaults,
+    # and explicit options win. An EXPLICIT nil `:canonical_suite` (option or
+    # structured entry) skips the canonical suite.
+    repos_entry =
+      case Repos.resolve(repo) do
+        {:ok, entry} -> entry
+        {:error, _} -> nil
+      end
+
+    suite =
+      Keyword.get(opts, :suite) || (repos_entry && repos_entry.suite) || @defaults[:suite]
+
+    canonical =
+      cond do
+        Keyword.has_key?(opts, :canonical_suite) -> opts[:canonical_suite]
+        repos_entry && is_nil(repos_entry.canonical_suite) -> nil
+        repos_entry -> repos_entry.canonical_suite
+        true -> @defaults[:canonical_suite]
+      end
+
+    opts =
+      opts
+      |> Keyword.put(:suite, suite)
+      |> Keyword.put(:canonical_suite, canonical)
+
     ticket_dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)
     base_sha = Keyword.get(opts, :base_sha) || git!(repo_path, ["rev-parse", "HEAD"])
     nonce = :crypto.strong_rand_bytes(3) |> Base.encode16(case: :lower)
@@ -193,6 +221,7 @@ defmodule Xaas.Ultracode.Autonomic do
     |> Map.new()
     |> Map.merge(%{
       repo_path: repo_path,
+      sensing: repos_entry && repos_entry.sensing,
       ticket_dir: ticket_dir,
       base_sha: base_sha,
       nonce: nonce,

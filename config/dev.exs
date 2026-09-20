@@ -126,10 +126,24 @@ config :swoosh, :api_client, false
 config :xaas, :ultracode_worktree_root, Path.expand("~/xaas-worktrees/runs")
 config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas-worktrees/tickets")
 
+# Multi-repo registry (Xaas.Ultracode.Repos). This env entry is the
+# code-seeded baseline; durable operator registrations -- other campaign
+# targets -- live in the registry file written ONLY by
+# `mix xaas.ultracode.repos --register` and merged over this baseline
+# (file wins per alias).
+config :xaas, :ultracode_repos_file, Path.expand("~/xaas-worktrees/ultracode-repos.json")
+
 config :xaas, :ultracode_repos, %{
-  "aps" => Path.expand("~/xaas-worktrees/repos/aps"),
+  # Structured form: the entry names its own suite/sensing facts.
+  "aps" => %{
+    path: Path.expand("~/xaas-worktrees/repos/aps"),
+    sensing: "aps",
+    suite: "aps-dod",
+    canonical_suite: "aps-canonical"
+  },
   # Additional operator-owned targets (wave-5): fresh clones with real test
   # suites, judged at close time by the matching <alias>-dod verifier suite.
+  # Legacy path-string form: carries the historical aps suite defaults.
   "nounverb" => Path.expand("~/xaas-worktrees/repos/nounverb"),
   "eds" => Path.expand("~/xaas-worktrees/repos/eds"),
   "spr" => Path.expand("~/xaas-worktrees/repos/spr")

@@ -49,6 +49,40 @@ Every flag is real and exercised:
 | `--base-sha SHA` | repo HEAD | pin the backlog/worktree base |
 | `--run ID` | — | resume a `:running` campaign (discharged waves are not repeated) |
 
+### 1.1 The repo registry (what `--repo` may name)
+
+`--repo` names an entry in the validated multi-repo registry
+(`Xaas.Ultracode.Repos`): `config :xaas, :ultracode_repos` (the code-seeded
+baseline) merged with the durable file `~/xaas-worktrees/ultracode-repos.json`
+(written ONLY by the registering task; file wins per alias). Inspect and
+extend it with:
+
+```bash
+mix xaas.ultracode.repos    # list every entry: status, path, suites, gaps
+mix xaas.ultracode.repos --register ALIAS --path /abs/clone \
+  [--sensing PROFILE] [--suite NAME] [--canonical-suite NAME] [--worktree-root PATH]
+```
+
+Registration validates before writing (alias format, `--path` must be an
+existing git work tree, per-entry worktree roots must stay under the global
+root). A target may RESERVE its verifier-suite name before the suite exists:
+the entry lists its gap (`suite_not_registered`) and `Run` admission fails
+closed on it until the suite is registered (`VerifierSuiteRegistered`).
+`--sensing` is RECORDED metadata naming the target's sensing profile —
+profile-driven sensing itself is owned by `Xaas.Ultracode.Sensing`
+(todo_file / jira_dir / failing_tests), and the loop's script-backed aps
+stage is wired in `Autonomic.sense/1`. The task never starts the
+application — no Repo, no Oban beside a live campaign.
+
+Registered targets (2026-09-20, wave-5 registry law; `nounverb` and `eds`
+are sibling wave-5 entries in the config baseline):
+
+| alias | clone | verifier (observed exit 0) | status |
+|---|---|---|---|
+| `aps` | `~/xaas-worktrees/repos/aps` | `aps-dod` + `aps-canonical` suites | ready |
+| `infinite-agentic-cli` | `~/xaas-worktrees/repos/infinite-agentic-cli` | `uv run --frozen pytest tests/test_analysis.py -q` | reserved: suite `infinite-agentic-cli-dod` (sensing `generic-pytest` recorded) |
+| `bitstar` | `~/xaas-worktrees/repos/bitstar` | `uv run --frozen pytest test_cli_fixes.py -q` | reserved: suite `bitstar-dod` (sensing `generic-pytest` recorded) |
+
 ## 2. The budget law (what makes this ONE run, not an infinite cron)
 
 `Xaas.Ultracode.Campaign` admits a **campaign row** — a real
