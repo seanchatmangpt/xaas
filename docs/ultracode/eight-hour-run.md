@@ -5,9 +5,10 @@
 bounded smoke on 2026-09-20: campaign `08f5a211` (mechanics + empty wave),
 campaign `b997ef78` (stop), campaign `9b9efe2c` (**full real GLM worker wave:
 sense → lease → construct → court pass → promote → canonical pass → ALIVE
-receipt, §9**). What is NOT yet proven: a full 8-hour campaign — that is the
-coordinator's run, launched after this lands — and the OCEL v2 run-court
-(§5, W3-A5 seam).
+receipt, §9**), and the §5 OCEL chain executed against that wave's Run
+(`7be6069b`: export exit 0, court `valid (4 events, 5 objects)`). What is NOT
+yet proven: a full 8-hour campaign — that is the coordinator's run, launched
+after this lands.
 
 This is an operator/coordinator runbook. It makes starting the operator-ordered
 8-hour, capacity-5 ultracode standing wave a single command, and it specifies
@@ -170,13 +171,20 @@ never the mere existence of an alive receipt.
 when (a) the campaign row is terminal (`completed`/`abandoned`) with every
 wave's epochs terminal (`completed`/`failed`/`missed` — none `expected`/
 `running`), (b) each alive item's receipt carries `head_verified`, and (c) the
-run's OCEL v2 log passes the conformance court and exports cleanly. (a)+(b)
-are queryable today (above). (c)'s module — the ultracode-run OCEL v2 egress +
-court pass, sibling seam **W3-A5** (`Xaas.Ocel` event/projection machinery
-already exists; `Xaas.Telemetry.OcelAshEmitter` already streams Ash actions) —
-was NOT landed at the time of writing; until it lands, (c) is
-`UNSUPPORTED(ocel-run-court, export)` and the run's validation stands at
-PARTIAL_ALIVE by this rule, not ALIVE.
+run's OCEL v2 log passes the conformance court. (a)+(b) are queryable today
+(above). For (c), the OCEL surface landed at `56a2810` (moments after this
+runbook's smoke snapshot): export each wave's Run and pass the court —
+
+```bash
+mix xaas.ultracode.export_ocel <wave-run-id> --out /tmp/ocel   # Xaas.Ultracode.OcelEgress
+mix xaas.ocel_validate /tmp/ocel/<wave-run-id>.ocel.json       # exit 0 = Xaas.Ultracode.Ocel.Validator pass
+```
+
+Wave Run ids come from the campaign ledger's `attempt_start` events
+(`run_id` field). Validation standing = ALIVE only when (a)+(b)+(c) all hold
+for every wave; otherwise PARTIAL_ALIVE with the failing part named. All
+three executed live against wave Run `7be6069b` (campaign `9b9efe2c`):
+export exit 0, `valid (4 events, 5 objects)`.
 
 ## 6. GLM failover notes (from the 2026-09-18/19 receipts)
 
