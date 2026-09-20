@@ -8,7 +8,8 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
       repos: Application.get_env(:xaas, :ultracode_repos),
       root: Application.get_env(:xaas, :ultracode_worktree_root),
       suites: Application.get_env(:xaas, :ultracode_verifier_suites),
-      runner: Application.get_env(:xaas, :ultracode_semantic_wave_runner)
+      runner: Application.get_env(:xaas, :ultracode_semantic_wave_runner),
+      state_dir: Application.get_env(:xaas, :ultracode_semantic_wave_state_dir)
     }
 
     base = mktmp("semantic-wave")
@@ -27,6 +28,7 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
       restore_env(:ultracode_worktree_root, original.root)
       restore_env(:ultracode_verifier_suites, original.suites)
       restore_env(:ultracode_semantic_wave_runner, original.runner)
+      restore_env(:ultracode_semantic_wave_state_dir, original.state_dir)
     end)
 
     %{repo: repo, root: root, state: state, sha: sha}
