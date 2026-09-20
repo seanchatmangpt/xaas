@@ -9,11 +9,14 @@ defmodule Mix.Tasks.Xaas.Autonomic.Run do
 
       mix xaas.autonomic.run --repo aps
       mix xaas.autonomic.run --repo aps --only contract-standing --capacity 2
+      mix xaas.autonomic.run --repo alpha,beta   # or --repo all (every registered alias)
 
-  Options: `--repo ALIAS` (default `aps`), `--base-sha SHA`, `--only a,b`,
-  `--capacity N`, `--max-attempts N`. Repos come from
+  Options: `--repo SPEC` (one alias, `a,b,c`, or `all`; default `aps`),
+  `--base-sha SHA` (single-repo waves only), `--only a,b`, `--capacity N`,
+  `--max-attempts N`. Repos come from
   `config :xaas, :ultracode_repos`; suites from
-  `config :xaas, :ultracode_verifier_suites`.
+  `config :xaas, :ultracode_verifier_suites`; per-repo wave caps from
+  `config :xaas, :ultracode_wave_repo_caps`.
   """
 
   use Mix.Task

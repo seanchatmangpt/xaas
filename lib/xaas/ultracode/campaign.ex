@@ -17,6 +17,16 @@ defmodule Xaas.Ultracode.Campaign do
       standing wave size), recorded in the ledger's `campaign_start` event
       and handed to every wave's runner.
 
+  The `:repo` opt is a SPEC: one registered alias (`"aps"`, the default),
+  a comma-separated list (`"alpha,beta"`), or `"all"` (every alias in
+  `config :xaas, :ultracode_repos` at wave time). Each wave's runner draws
+  its items across the selected repos with the deterministic
+  `Xaas.Ultracode.WavePlan` rotation (no starvation: while a repo has
+  ready items it gets at least one per wave; optional per-repo caps via
+  `config :xaas, :ultracode_wave_repo_caps`), and every item carries its
+  repo alias through plan -> worktree -> dispatch goal -> receipt ->
+  ledger -> OCEL. A single-alias spec behaves byte-for-byte as before.
+
   The loop discharges the budget by running waves serially: each wave is
   one synchronous `Autonomic.run/1` (sense -> dispatch -> fabric-verify ->
   promote -> receipt, exactly what `mix xaas.autonomic.run` and the
@@ -69,7 +79,7 @@ defmodule Xaas.Ultracode.Campaign do
 
   require Ash.Query
 
-  alias Xaas.Ultracode.{Epoch, Run}
+  alias Xaas.Ultracode.{Epoch, Run, WavePlan}
 
   @goal_marker "ultracode-campaign/1"
   @default_capacity 5
@@ -166,7 +176,9 @@ defmodule Xaas.Ultracode.Campaign do
          {:ok, interval_s} <- parse_duration(Map.get(opts, :wave_interval, "30m")),
          :ok <- ticket_dir_configured(opts),
          {:ok, capacity} <- check_capacity(Map.get(opts, :capacity, @default_capacity)),
-         {:ok, wave_budget} <- check_wave_budget(opts, duration_s, interval_s) do
+         {:ok, wave_budget} <- check_wave_budget(opts, duration_s, interval_s),
+         :ok <- check_repo_spec(Map.get(opts, :repo, @default_repo)),
+         :ok <- check_wave_repo_caps() do
       {:ok,
        %{
          capacity: capacity,
@@ -190,6 +202,25 @@ defmodule Xaas.Ultracode.Campaign do
 
   defp check_capacity(capacity) when is_integer(capacity) and capacity >= 1, do: {:ok, capacity}
   defp check_capacity(capacity), do: {:error, {:bad_capacity, capacity}}
+
+  # The repo spec is validated for SHAPE at admission (bad shape = typed
+  # refusal before the campaign row exists); REGISTRY membership resolves
+  # per wave in `Autonomic` (`"all"` in particular means "registered at
+  # wave time", so membership is not frozen at admission). The per-repo
+  # wave caps (config) are likewise shape-validated at admission.
+  defp check_repo_spec(spec) do
+    case WavePlan.parse_spec(spec) do
+      {:ok, _} -> :ok
+      {:error, _} = err -> err
+    end
+  end
+
+  defp check_wave_repo_caps do
+    case WavePlan.validate_caps(Application.get_env(:xaas, :ultracode_wave_repo_caps)) do
+      {:ok, _caps} -> :ok
+      {:error, _} = err -> err
+    end
+  end
 
   defp check_wave_budget(opts, duration_s, interval_s) do
     case Map.get(opts, :max_waves) do
@@ -465,12 +496,16 @@ defmodule Xaas.Ultracode.Campaign do
     case report["items"] do
       items when is_list(items) ->
         Enum.map(items, fn i ->
-          %{
+          base = %{
             "item" => i["item"],
             "status" => i["status"],
             "epoch_id" => i["epoch_id"],
             "receipt_id" => i["receipt_id"]
           }
+
+          # Multi-repo waves tag each item with its repo; single-repo
+          # reports carry no "repo" key and keep the historical line shape.
+          if is_map_key(i, "repo"), do: Map.put(base, "repo", i["repo"]), else: base
         end)
 
       _ ->

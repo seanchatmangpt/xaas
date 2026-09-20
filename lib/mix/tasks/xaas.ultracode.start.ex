@@ -21,7 +21,11 @@ defmodule Mix.Tasks.Xaas.Ultracode.Start do
     * `--max-waves N` -- optional cap on the wave-count budget
       (default: ceil(duration / interval))
     * `--goal TEXT` -- campaign goal text (default: generated standing-order text)
-    * `--repo ALIAS` -- registered repo alias for `Autonomic` (default `aps`)
+    * `--repo SPEC` -- one registered alias (`aps`), a comma-separated
+      list (`alpha,beta`), or `all` (every registered alias, sorted).
+      Multi-repo campaigns draw each wave's items across the selected
+      repos with the deterministic WavePlan rotation; per-repo wave caps
+      via `config :xaas, :ultracode_wave_repo_caps` (default `aps`)
     * `--suite NAME` -- registered verifier suite (default `aps-dod`; the name
       is admission-validated against `config :xaas, :ultracode_verifier_suites`)
     * `--only a,b` -- restrict waves to these backlog item ids (bounded smokes)

@@ -505,7 +505,10 @@ defmodule Xaas.Ultracode.Verifier do
   # runtime, never while loading config. Unresolvable module = registry stays
   # as configured (fail closed, no invented suites).
   defp suites do
-    base = Application.get_env(:xaas, :ultracode_verifier_suites, %{})
+    # `|| %{}`: an earlier writer may have stored an EXPLICIT nil (a test
+    # on_exit restoring a nil original -- observed as `:maps.merge(nil, ...)`
+    # BadMapError in the full suite). Fail closed to the empty registry.
+    base = Application.get_env(:xaas, :ultracode_verifier_suites, %{}) || %{}
 
     case Application.get_env(:xaas, :ultracode_target_suites, nil) do
       module when is_atom(module) and not is_nil(module) ->
