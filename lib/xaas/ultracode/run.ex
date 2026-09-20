@@ -173,6 +173,15 @@ defmodule Xaas.Ultracode.Run do
         worker_module_name(Xaas.Ultracode.Run.Workers.AutonomicWave)
         queue(:ultracode_wave)
       end
+
+      # Semantic work is selected upstream; this clock only dispatches already
+      # materialized :autonomic_wave_attempt Epochs. It shares the one-slot
+      # queue with the legacy APS wave so shared controller waves never overlap.
+      schedule :semantic_wave, "*/30 * * * *" do
+        action(:semantic_wave)
+        worker_module_name(Xaas.Ultracode.Run.Workers.SemanticWave)
+        queue(:ultracode_wave)
+      end
     end
   end
 
@@ -193,6 +202,10 @@ defmodule Xaas.Ultracode.Run do
     # Internal scheduler call site. Like :tick, this action accepts no
     # caller-supplied subject or authority and is not a public DO surface.
     bypass action(:autonomic_wave) do
+      authorize_if(always())
+    end
+
+    bypass action(:semantic_wave) do
       authorize_if(always())
     end
 
@@ -388,6 +401,31 @@ defmodule Xaas.Ultracode.Run do
 
         case result do
           {:ok, report} -> {:ok, %{standing: report["standing"], receipt: report["receipt_path"]}}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+    # Separate scheduler call site for semantic work. This preserves the APS
+    # Autonomic loop unchanged while closing the semantic-work -> scheduled
+    # dispatch edge. SemanticWave itself cannot lease, verify, or crown work.
+    action :semantic_wave, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(
+            :xaas,
+            :ultracode_semantic_wave_runner,
+            {Xaas.Ultracode.SemanticWave, :run}
+          )
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[capacity: 5]])
+            fun when is_function(fun, 1) -> fun.(capacity: 5)
+          end
+
+        case result do
+          {:ok, report} -> {:ok, %{status: report["status"], receipt: report["receipt_path"]}}
           {:error, error} -> {:error, error}
         end
       end)
