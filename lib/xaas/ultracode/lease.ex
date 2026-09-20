@@ -509,7 +509,7 @@ defmodule Xaas.Ultracode.Lease do
                evidence: evidence,
                sealed_at: DateTime.utc_now()
              })
-             |> Ash.create() do
+             |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
         {:ok, epoch, receipt}
       end
     end
@@ -538,7 +538,7 @@ defmodule Xaas.Ultracode.Lease do
                evidence: Map.put(evidence, "refusal_reason", Atom.to_string(reason)),
                sealed_at: DateTime.utc_now()
              })
-             |> Ash.create() do
+             |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
         {:ok, epoch, receipt}
       end
     end

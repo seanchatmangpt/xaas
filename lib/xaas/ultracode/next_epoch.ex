@@ -95,7 +95,12 @@ defmodule Xaas.Ultracode.NextEpoch do
     end
   end
 
+  # XAAS-2601: the pipeline's real side effects carry the real system
+  # authority actor so the internal-mutation policies (Run/Epoch) evaluate
+  # a genuine admitted actor instead of nil.
   defp advance_from_completed(run, last_epoch) do
+    system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
+
     if run.cycle < run.max_cycles do
       {:ok, next_epoch} =
         Xaas.Ultracode.Epoch
@@ -114,11 +119,11 @@ defmodule Xaas.Ultracode.NextEpoch do
             expected_at: DateTime.utc_now()
           }
         )
-        |> Ash.create()
+        |> Ash.create(actor: system_actor)
 
       run
       |> Ash.Changeset.for_update(:advance_cycle, %{})
-      |> Ash.update!()
+      |> Ash.update!(actor: system_actor)
 
       Logger.info(
         "[ultracode] run #{run.id} advanced to epoch cycle=#{next_epoch.cycle} " <>
@@ -132,7 +137,7 @@ defmodule Xaas.Ultracode.NextEpoch do
         :transition_state,
         %{state: :completed, standing: :admitted}
       )
-      |> Ash.update!()
+      |> Ash.update!(actor: system_actor)
 
       Logger.info(
         "[ultracode] run #{run.id} reached max_cycles=#{run.max_cycles} -> Run :completed"

@@ -30,7 +30,7 @@ defmodule Xaas.Ultracode.Changes.CreateFirstEpoch do
           worktree: worktree
         }
       )
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
       |> case do
         {:ok, _epoch} -> {:ok, run}
         {:error, error} -> {:error, error}

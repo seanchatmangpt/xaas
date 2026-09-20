@@ -32,12 +32,12 @@ defmodule Xaas.Operations.AutofdePlannerCrossProductTest do
     {:ok, candidate} =
       Xaas.Operations.AutofdePlannerCandidate
       |> Ash.Changeset.for_create(:request_candidate, %{query: query})
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:autofde_coverage_monitor))
 
     {:ok, catalog} =
       Xaas.Operations.AutofdePlannerCatalog
       |> Ash.Changeset.for_create(:request_catalog, %{query: "list"})
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:autofde_coverage_monitor))
 
     assert is_binary(candidate.trajectory_sha256)
     assert String.length(candidate.trajectory_sha256) == 64

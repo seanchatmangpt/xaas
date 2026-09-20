@@ -23,11 +23,21 @@ defmodule Xaas.Platform.RouteSecrets do
     # level XaasWeb.Plugs.RequireInternalApiToken Bearer check plays the
     # equivalent gating role here.
     bypass action(:create) do
-      authorize_if(always())
+      # XAAS-2602: real system-authority predicate replaces the bare
+      # always() -- XaasWeb.Plugs.SetInternalApiSystemActor supplies the
+      # Xaas.SystemAuthority.new(:internal_api) actor AFTER the
+      # RequireInternalApiToken Bearer check (HTTP gate unchanged), so the
+      # action no longer authorizes literally any other actor/path.
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     bypass action(:destroy) do
-      authorize_if(always())
+      # XAAS-2602: real system-authority predicate replaces the bare
+      # always() -- XaasWeb.Plugs.SetInternalApiSystemActor supplies the
+      # Xaas.SystemAuthority.new(:internal_api) actor AFTER the
+      # RequireInternalApiToken Bearer check (HTTP gate unchanged), so the
+      # action no longer authorizes literally any other actor/path.
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do

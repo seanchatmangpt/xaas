@@ -119,7 +119,7 @@ defmodule Xaas.Ultracode.EpochReactor do
         action ->
           changeset = Ash.Changeset.for_update(epoch, action, %{})
 
-          case Ash.update(changeset) do
+          case Ash.update(changeset, actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
             {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: action}}
             {:error, error} -> {:error, {:construct_failed, action, error}}
           end
@@ -171,10 +171,13 @@ defmodule Xaas.Ultracode.EpochReactor do
             "action_taken" => Atom.to_string(action_taken)
           })
 
-        :start ->
-          case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, action: :read_unscoped) do
-            {:ok, %{state: :running} = fresh_epoch} ->
-              case Ash.Changeset.for_update(fresh_epoch, :mark_failed, %{}) |> Ash.update() do
+          :start ->
+            case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, action: :read_unscoped) do
+              {:ok, %{state: :running} = fresh_epoch} ->
+              fresh_epoch
+              |> Ash.Changeset.for_update(:mark_failed, %{})
+              |> Ash.update(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
+              |> case do
                 {:ok, failed_epoch} ->
                   undo_seal_receipt(failed_epoch, :build_broken, %{
                     "undo_reason" =>
@@ -221,8 +224,8 @@ defmodule Xaas.Ultracode.EpochReactor do
               )
 
               :ok
-          end
-      end
+            end
+        end
     end)
   end
 
@@ -302,7 +305,7 @@ defmodule Xaas.Ultracode.EpochReactor do
           sealed_at: DateTime.utc_now()
         }
       )
-      |> Ash.create()
+      |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
       |> case do
         {:ok, receipt} ->
           {:ok,
@@ -335,7 +338,7 @@ defmodule Xaas.Ultracode.EpochReactor do
       evidence: evidence,
       sealed_at: DateTime.utc_now()
     })
-    |> Ash.create()
+    |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
     |> case do
       {:ok, _receipt} ->
         :ok

@@ -81,10 +81,12 @@ defmodule Xaas.Ultracode.MissedEpochs do
 
     missed_ids =
       Enum.map(stale_epochs, fn epoch ->
+        system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
+
         missed_epoch =
           epoch
           |> Ash.Changeset.for_update(:mark_missed, %{})
-          |> Ash.update!()
+          |> Ash.update!(actor: system_actor)
 
         {:ok, _receipt} =
           Xaas.Ultracode.Receipt
@@ -103,7 +105,7 @@ defmodule Xaas.Ultracode.MissedEpochs do
               sealed_at: DateTime.utc_now()
             }
           )
-          |> Ash.create()
+          |> Ash.create(actor: system_actor)
 
         Logger.warning(
           "[ultracode] epoch #{epoch.id} (run #{run.id}, cycle #{epoch.cycle}) " <>

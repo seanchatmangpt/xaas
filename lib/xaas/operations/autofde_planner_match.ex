@@ -123,7 +123,11 @@ defmodule Xaas.Operations.AutofdePlannerMatch do
     end
 
     bypass action(:request_match) do
-      authorize_if(always())
+      # XAAS-2602: real system-authority predicate replaces the bare
+      # always() -- the only real callers (the xaas.close_coverage_gap Mix
+      # task and the planner integration tests) now pass
+      # Xaas.SystemAuthority.new(:autofde_coverage_monitor).
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do
