@@ -22,11 +22,20 @@ defmodule Xaas.Ultracode.Autonomic do
     4. **Verify.** The fabric, not the worker, decides done: `Lease.close/4`
        runs the verifier suite (`Xaas.Ultracode.Verifier`) against the exact
        closed head and seals the receipt.
-    5. **Repair.** A non-alive receipt appends the court's findings to the
-       ticket history and starts attempt n+1 on the SAME worktree (bounded);
-       an exhausted item is reported `blocked` with its full history, never
-       dropped. A worker that dies without closing is reaped (its lease is
-       refused) and counted as a failed attempt.
+    5. **Repair.** The judge (`judge_receipt/1`) accepts a closed receipt
+       WITHOUT re-dispatch iff the FABRIC's court passed the exact head
+       (`fabric_verifier.status == "pass"` AND `head_verified == true`) and
+       the worker's standing is honest (`alive`/`partial_alive`) -- an
+       honest `partial_alive` is the worker correctly declining to
+       self-verify, not a failure; the court already ruled on that head.
+       Everything else repairs: a court fail/timeout/error, a receipt with
+       no court verdict, an unverified head, or a terminal standing
+       (`build_broken`/`refused`/`blocked`). A repairing receipt appends
+       the court's findings to the ticket history and starts attempt n+1 on
+       the SAME worktree (bounded); an exhausted item is reported `blocked`
+       with its full history, never dropped. A worker that dies without
+       closing is reaped (its lease is refused) and counted as a failed
+       attempt.
     6. **Promote.** Alive items merge serially (`--no-ff`) into a fresh
        integration branch in a provisioned integration worktree. This is the
        one shared-state step, so it is the only serialized one. Nothing is ever
@@ -276,7 +285,13 @@ defmodule Xaas.Ultracode.Autonomic do
               item: item["id"],
               attempt: n,
               epoch_id: epoch.id,
-              receipt_id: receipt.id
+              receipt_id: receipt.id,
+              # WHICH acceptance rule promoted this item: `alive` (the
+              # worker closed alive and the court confirmed) or
+              # `partial_alive` (an honest worker's self-assessment,
+              # accepted because the court passed the exact head -- the
+              # evidence lives in the sealed receipt either way).
+              accepted_via: Atom.to_string(receipt.outcome)
             })
 
             %{
@@ -394,18 +409,86 @@ defmodule Xaas.Ultracode.Autonomic do
     do: {:failed, "epoch completed without a closing receipt (epoch #{epoch.id})"}
 
   defp judge(epoch, receipt) do
+    case judge_receipt(receipt) do
+      :accept -> {:done, receipt, epoch}
+      {:repair, reason} -> {:failed, reason}
+    end
+  end
+
+  @doc """
+  The judge: the wave loop's repair predicate for one closed epoch's sealed
+  receipt (`settle/2` finds the closing receipt; this decides).
+
+  ## Precedence law
+
+  The promotion decision is grounded in the FABRIC's verification -- the
+  court verdict `Lease.close/4` sealed into `receipt.evidence["fabric_verifier"]`
+  (`Xaas.Ultracode.Verifier` executed the operator's suite against the exact
+  confirmed head) -- NEVER in the worker's own standing claim. A leased
+  worker cannot run its own verification (`Lease.admit_tool/2` refuses
+  Bash), so an honest worker's `:partial_alive` is a *self-assessment*, not
+  evidence; the court is the evidence. The court outranks the worker in
+  BOTH directions:
+
+    * a fabricated `:alive` never promotes: `Lease.close/4` falsifies it to
+      `:build_broken` on a court fail, a worker-supplied `fabric_verifier`
+      key is dropped (never merged), and this predicate accepts only the
+      fabric's own `"pass"` verdict;
+    * an honest `:partial_alive` on a court-pass head no longer burns a
+      worker session: before 2026-09-19 this loop demanded `outcome ==
+      :alive` even when the court had passed the exact head, so every
+      honestly-closed item was re-dispatched for one extra full worker
+      session purely to manufacture the word `alive` (observed live,
+      campaign 9b9efe2c: attempt 1 court-pass + honest `partial_alive` ->
+      attempt 2 a full re-dispatch of the same item).
+
+  ## Acceptance rule
+
+  A receipt is accepted WITHOUT re-dispatch iff ALL of:
+
+    * `court == "pass"` -- `fabric_verifier.status == "pass"`;
+    * `head_verified == true` -- the court passed against the exact head
+      git confirmed (no confirmed head = no confirmed subject);
+    * the standing is honest -- `outcome` in `[:alive, :partial_alive]`.
+
+  Everything else repairs with a reason for the ticket history: a court
+  fail (falsified evidence), a court timeout/error (unverifiable), a
+  receipt with no court verdict at all (standing alone never promotes),
+  `head_verified: false`, or a terminal standing
+  (`:build_broken`/`:refused`/`:blocked`/`:unsupported`).
+
+  Seam: `config :xaas, :ultracode_judge_accept_court_verified_partial`
+  (default true). `false` restores the strict alive-only predicate; the
+  court's authority is untouched either way -- this seam can only ever
+  *keep* a court-pass head, never accept around a non-pass verdict.
+  """
+  @spec judge_receipt(Receipt.t()) :: :accept | {:repair, String.t()}
+  def judge_receipt(%Receipt{} = receipt) do
     fv = receipt.evidence["fabric_verifier"]
 
     cond do
-      receipt.outcome == :alive and is_map(fv) and fv["status"] == "pass" ->
-        {:done, receipt, epoch}
-
-      is_map(fv) ->
-        {:failed, court_failure_text(receipt.outcome, fv)}
-
-      true ->
-        {:failed, "closed #{receipt.outcome} with no fabric verifier verdict"}
+      accepted?(receipt, fv) -> :accept
+      is_map(fv) -> {:repair, court_failure_text(receipt.outcome, fv)}
+      true -> {:repair, "closed #{receipt.outcome} with no fabric verifier verdict"}
     end
+  end
+
+  # The acceptance rule, one clause per law above. `receipt.outcome` is the
+  # FABRIC-adjusted standing (`Lease.close/4` may falsify or downgrade the
+  # worker's claim before sealing), so honesty here means "the sealed
+  # standing is in the alive family", and the court-pass conjunct is what
+  # makes that family promotable.
+  defp accepted?(%Receipt{} = receipt, fv) do
+    court_pass? = is_map(fv) and fv["status"] == "pass"
+    head_verified? = receipt.evidence["head_verified"] == true
+    honest_standing? = receipt.outcome in [:alive, :partial_alive]
+
+    court_pass? and head_verified? and honest_standing? and
+      (receipt.outcome == :alive or accept_court_verified_partial?())
+  end
+
+  defp accept_court_verified_partial? do
+    Application.get_env(:xaas, :ultracode_judge_accept_court_verified_partial, true)
   end
 
   defp reap(epoch, ctx) do

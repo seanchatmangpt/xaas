@@ -240,4 +240,14 @@ config :xaas, :ultracode_repos, %{}
 # `config :xaas, :ultracode_engine_worker, {Mod, :fun}`.
 config :xaas, :ultracode_pool_capacity, 5
 
+# The wave loop's judge seam (`Xaas.Ultracode.Autonomic.judge_receipt/1`).
+# True (default): a receipt sealed `partial_alive` by an honest worker is
+# accepted WITHOUT re-dispatch when the fabric's own court passed the exact
+# head (`fabric_verifier.status == "pass"` AND `head_verified == true`) --
+# the court, never the worker's self-assessment, is the promotion authority.
+# `false` restores the strict alive-only predicate (pre-2026-09-19). The
+# court's authority is never weakened: a fail/timeout/error verdict, a
+# missing verdict, or an unverified head still repairs in both modes.
+config :xaas, :ultracode_judge_accept_court_verified_partial, true
+
 import_config "#{config_env()}.exs"

@@ -181,6 +181,48 @@ defmodule Xaas.Ultracode.AutonomicTest do
     assert Enum.count(events, &(&1 == "attempt_start")) == 2
   end
 
+  test "an honest partial_alive on a court-pass head completes in ONE worker session", %{
+    repo: _repo
+  } do
+    # The honest-worker protocol: the worker has no Bash and cannot run the
+    # court itself, so it closes :partial_alive even though the candidate is
+    # good. The fabric's court passes the exact head; the judge accepts, so
+    # the item is done in ONE worker session (pre-fix this burned a second
+    # full worker session to manufacture the word alive).
+    worker = scripted(fn _attempt -> @good_test end, :partial_alive)
+
+    assert {:ok, report} = run_loop(worker, only: ["contract-standing"])
+
+    assert [%{"status" => "done", "attempts" => 1} = item] = report["items"]
+    assert item["fabric_verifier"]["status"] == "pass"
+    assert report["standing"] == "ALIVE"
+    assert report["merged"] == ["contract-standing"]
+    assert report["canonical"]["status"] == "pass"
+
+    # Exactly one worker session: no failed attempt, no second dispatch.
+    lines = ledger_lines(report)
+    assert Enum.count(lines, &(&1["event"] == "attempt_start")) == 1
+    refute Enum.any?(lines, &(&1["event"] == "attempt_failed"))
+
+    assert [%{"data" => %{"attempt" => 1, "accepted_via" => "partial_alive"}}] =
+             Enum.filter(lines, &(&1["event"] == "item_done"))
+
+    # The sealed receipt the database holds is the honest one, court-verified
+    # on the exact head.
+    assert [%{outcome: :partial_alive, evidence: evidence, fv: fv}] =
+             receipts_for_item("contract-standing")
+
+    assert evidence["head_verified"] == true
+    assert fv["status"] == "pass"
+
+    # The integration branch really holds the court-approved work.
+    integration = report["integration"]
+    assert integration["head"] != report["base_sha"]
+
+    assert git(integration["worktree"], ["show", "HEAD:tests/test_contract_standing.py"]) =~
+             "StandingContract"
+  end
+
   test "a worker that dies without closing is reaped and the attempt is retried", %{repo: _repo} do
     worker = fn epoch, ctx ->
       case attempt_of(epoch) do
@@ -250,7 +292,11 @@ defmodule Xaas.Ultracode.AutonomicTest do
   # The scripted protocol client
   # ------------------------------------------------------------------
 
-  defp scripted(content_for_attempt) do
+  defp scripted(content_for_attempt), do: scripted(content_for_attempt, :alive)
+
+  # `outcome` is the worker's HONEST self-assessment at close time -- the
+  # court, not the worker, decides what the evidence is worth.
+  defp scripted(content_for_attempt, outcome) do
     fn epoch, _ctx ->
       attempt = attempt_of(epoch)
       worker_id = "scripted-worker-#{attempt}-#{String.slice(epoch.id, 0, 8)}"
@@ -278,7 +324,7 @@ defmodule Xaas.Ultracode.AutonomicTest do
       head = git(worktree, ["rev-parse", "HEAD"])
 
       {:ok, _epoch, _receipt} =
-        Lease.close(token, head, :alive, %{"note" => "scripted worker done"})
+        Lease.close(token, head, outcome, %{"note" => "scripted worker done"})
 
       :ok
     end
@@ -337,6 +383,14 @@ defmodule Xaas.Ultracode.AutonomicTest do
     |> Path.join("ledger.ndjson")
     |> File.stream!()
     |> Enum.map(&(&1 |> Jason.decode!() |> Map.fetch!("event")))
+  end
+
+  defp ledger_lines(report) do
+    report["receipt_path"]
+    |> Path.dirname()
+    |> Path.join("ledger.ndjson")
+    |> File.stream!()
+    |> Enum.map(&Jason.decode!/1)
   end
 
   # ------------------------------------------------------------------
