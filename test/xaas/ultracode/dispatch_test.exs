@@ -96,6 +96,74 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert path == "/nonexistent-dispatch-cli/bin/zcode.js"
   end
 
+  test "plan passes a registered repo's toolchain_env pin into the worker env; the plain string registry shape stays inherit-only",
+       %{
+         worktree: worktree
+       } do
+    original = Application.get_env(:xaas, :ultracode_repos)
+
+    Application.put_env(:xaas, :ultracode_repos, %{
+      "demo" => %{
+        "path" => worktree,
+        "toolchain_env" => %{"PATH" => "/opt/pinned/bin:/usr/bin:/bin"}
+      },
+      "plain" => worktree
+    })
+
+    on_exit(fn -> Application.put_env(:xaas, :ultracode_repos, original) end)
+
+    {:ok, pinned_run} =
+      Run
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          goal: "dispatch test goal",
+          provider: @provider,
+          max_cycles: 1,
+          execution_repo_alias: "demo",
+          base_sha: String.duplicate("a", 40)
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, pinned_epoch} = create_epoch_row!(pinned_run, worktree, 0, running_subject())
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    {:ok, plan} =
+      Dispatch.plan(pinned_epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    assert {"PATH", "/opt/pinned/bin:/usr/bin:/bin"} in plan.env_added
+    assert {"XAAS_WORKER", "1"} in plan.env_added
+    assert {"XAAS_LEASE_CWD", realpath(worktree)} in plan.env_added
+
+    {:ok, plain_run} =
+      Run
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          goal: "dispatch test goal",
+          provider: @provider,
+          max_cycles: 1,
+          execution_repo_alias: "plain",
+          base_sha: String.duplicate("b", 40)
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, plain_epoch} = create_epoch_row!(plain_run, worktree, 0, running_subject())
+
+    {:ok, plain_plan} =
+      Dispatch.plan(plain_epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    # Byte-for-byte the historical env: gate vars only, no toolchain pin.
+    assert plain_plan.env_added == [
+             {"XAAS_WORKER", "1"},
+             {"XAAS_LEASE_CWD", realpath(worktree)}
+           ]
+  end
+
   test "plan refuses an unresolvable node executable", %{worktree: worktree} do
     {_run, epoch} = create_epoch!(worktree)
     cli_dir = fake_cli_dir("exit 0\n")

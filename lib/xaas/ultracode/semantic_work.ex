@@ -274,6 +274,9 @@ defmodule Xaas.Ultracode.SemanticWork do
     |> Ash.update()
   end
 
+  # Collision-free per repo+work-order: the alias slug AND the alias are both
+  # folded into the derived name via Worktrees.epoch_worktree_name/2, so two
+  # repos sharing the global worktree root can never collide on one path.
   defp worktree_name(descriptor) do
     subject =
       Enum.join(
@@ -281,12 +284,7 @@ defmodule Xaas.Ultracode.SemanticWork do
         "|"
       )
 
-    suffix =
-      :crypto.hash(:sha256, subject)
-      |> Base.encode16(case: :lower)
-      |> String.slice(0, 20)
-
-    "gall-" <> suffix
+    "gall-" <> Worktrees.epoch_worktree_name(descriptor.execution_repo_alias, subject)
   end
 
   defp dependency_evidence(dependencies) do

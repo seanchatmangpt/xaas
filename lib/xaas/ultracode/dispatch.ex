@@ -33,7 +33,14 @@ defmodule Xaas.Ultracode.Dispatch do
        `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` added to the child
        env -- the two variables that arm the xaas-fabric plugin's
        PreToolUse gate (host-enforced admit_tool, worktree-confined
-       writes, Bash allowlist). No goal text is ever placed on the command
+       writes, Bash allowlist). When the epoch's run names a registered
+       repo whose `:ultracode_repos` entry pins `toolchain_env`, those
+       assignments ride along verbatim (literal values, no shell
+       expansion -- see the Worktrees "Worker environment contract"); the
+       caller's `:extra_env` is applied last and wins on duplicates. A
+       repo without a pin (the plain string registry shape, e.g. the APS
+       entry) dispatches exactly as before. No goal text is ever placed
+       on the command
        line: the worker reads the goal from the lease payload after it
        claims, so untrusted customer content never touches this argv.
        The worker id is constructed here (not left to the model to infer)
@@ -91,7 +98,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, Receipt}
+  alias Xaas.Ultracode.{Epoch, Receipt, Run, Worktrees}
 
   # Keep below the run default `epoch_timeout_seconds` (900), same bound the
   # bash dispatcher documents: the lease clock is the provider's to spend,
@@ -484,7 +491,7 @@ defmodule Xaas.Ultracode.Dispatch do
     env_added = [
       {"XAAS_WORKER", "1"},
       {"XAAS_LEASE_CWD", cwd_real}
-      | Map.to_list(resolved.extra_env)
+      | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
     ]
 
     argv_tail = [
@@ -516,6 +523,23 @@ defmodule Xaas.Ultracode.Dispatch do
     "/xaas Call claim_next with provider_worker_id exactly \"#{worker_id}\" " <>
       "and epoch_id exactly \"#{epoch_id}\"; do not use any other values."
   end
+
+  # Per-repo toolchain pass-through (see Xaas.Ultracode.Worktrees moduledoc,
+  # "Worker environment contract"): when the epoch's run names a registered
+  # repo whose entry pins `toolchain_env`, those assignments ride into the
+  # worker env between the gate vars and :extra_env. Unregistered alias or no
+  # pin -> [], i.e. the historical inherit-only behavior, byte for byte.
+  # Values are literal (no shell expansion); last assignment wins, so
+  # :extra_env deliberately overrides a repo pin on conflict.
+  defp repo_toolchain_env(%Epoch{run: %Run{execution_repo_alias: alias}})
+       when is_binary(alias) do
+    case Worktrees.registry_entry(alias) do
+      {:ok, %{toolchain_env: env}} when is_list(env) -> env
+      _ -> []
+    end
+  end
+
+  defp repo_toolchain_env(_), do: []
 
   defp worker_id(epoch_id) do
     host =

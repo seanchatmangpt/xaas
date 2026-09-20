@@ -166,7 +166,21 @@ defmodule Xaas.Ultracode.Autonomic do
 
   defp build_ctx(opts) do
     repo = Keyword.fetch!(opts, :repo)
-    repo_path = :xaas |> Application.get_env(:ultracode_repos, %{}) |> Map.fetch!(repo)
+
+    # Generalized registry: an alias maps to a local clone path (plain string
+    # shape) or to a map entry (path + per-repo worktree root + integration
+    # branch + toolchain env). Typed refusal at init; provisioning itself
+    # re-refuses fail-closed at use time.
+    repo_path =
+      case Worktrees.registry_entry(repo) do
+        {:ok, entry} ->
+          entry.path
+
+        {:error, reason} ->
+          raise ArgumentError,
+                "ultracode repo #{inspect(repo)} is not provisionable: #{inspect(reason)}"
+      end
+
     ticket_dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)
     base_sha = Keyword.get(opts, :base_sha) || git!(repo_path, ["rev-parse", "HEAD"])
     nonce = :crypto.strong_rand_bytes(3) |> Base.encode16(case: :lower)
@@ -194,7 +208,7 @@ defmodule Xaas.Ultracode.Autonomic do
 
   @doc false
   def sense(ctx) do
-    name = "aps-sense-#{ctx.nonce}"
+    name = "#{ctx.repo}-sense-#{ctx.nonce}"
 
     with {:ok, path} <- Worktrees.provision(ctx.repo, ctx.base_sha, name) do
       try do
@@ -223,7 +237,7 @@ defmodule Xaas.Ultracode.Autonomic do
   # ------------------------------------------------------------------
 
   defp process_item(item, ctx) do
-    name = "aps-#{item["id"]}-#{ctx.nonce}"
+    name = "#{ctx.repo}-#{item["id"]}-#{ctx.nonce}"
 
     with {:ok, worktree} <- Worktrees.provision(ctx.repo, ctx.base_sha, name) do
       ledger(ctx, :worktree, %{item: item["id"], path: worktree})
@@ -355,7 +369,7 @@ defmodule Xaas.Ultracode.Autonomic do
         %{
           run_id: run.id,
           cycle: 0,
-          exact_subject: "aps-autonomic:#{item["id"]}##{n}:#{run.id}",
+          exact_subject: "#{ctx.repo}-autonomic:#{item["id"]}##{n}:#{run.id}",
           state: :running,
           worktree: worktree
         },
@@ -691,8 +705,8 @@ defmodule Xaas.Ultracode.Autonomic do
   defp promote([], _ctx), do: {nil, [], []}
 
   defp promote(done, ctx) do
-    name = "aps-integration-#{ctx.nonce}"
-    branch = "aps-autonomic-#{ctx.nonce}"
+    name = "#{ctx.repo}-integration-#{ctx.nonce}"
+    branch = "#{ctx.repo}-autonomic-#{ctx.nonce}"
 
     with {:ok, wt} <- Worktrees.provision(ctx.repo, ctx.base_sha, name),
          {_, 0} <-
