@@ -36,8 +36,6 @@ defmodule Xaas.Ultracode.RunAutonomicWaveScheduleTest do
 
   alias Xaas.Ultracode.Run
 
-  @capture_table :autonomic_wave_runner_capture
-
   # Fixed origin for the injected budget-law clock.
   @t0 ~U[2026-09-19T08:00:00.000000Z]
 

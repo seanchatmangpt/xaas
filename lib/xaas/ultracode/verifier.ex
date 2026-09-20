@@ -505,7 +505,13 @@ defmodule Xaas.Ultracode.Verifier do
   # runtime, never while loading config. Unresolvable module = registry stays
   # as configured (fail closed, no invented suites).
   defp suites do
-    base = Application.get_env(:xaas, :ultracode_verifier_suites, %{})
+    # `|| %{}` is the permanent tripwire for the env-restore poison class:
+    # restoring this key with `Application.put_env/2` and a nil value SETS
+    # a literal nil, and get_env/3 then returns nil instead of this default
+    # -- which used to crash the maps.merge/2 below (the seed-dependent
+    # TargetSuitesTest flake). An unset OR nil'd registry means "no suites
+    # configured", never a crash.
+    base = Application.get_env(:xaas, :ultracode_verifier_suites, %{}) || %{}
 
     case Application.get_env(:xaas, :ultracode_target_suites, nil) do
       module when is_atom(module) and not is_nil(module) ->

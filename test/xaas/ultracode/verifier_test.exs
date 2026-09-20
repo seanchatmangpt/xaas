@@ -23,15 +23,21 @@ defmodule Xaas.Ultracode.VerifierTest do
     Application.put_env(:xaas, :ultracode_ticket_dir, Path.join(root, "tickets"))
 
     on_exit(fn ->
-      Application.put_env(:xaas, :ultracode_verifier_suites, original.suites)
-      Application.put_env(:xaas, :ultracode_worktree_root, original.root)
-      Application.put_env(:xaas, :ultracode_ticket_dir, original.tickets)
+      # nil = unset before this test: DELETE, never put_env(key, nil) --
+      # a literal nil poisons later `get_env(key, %{})` readers
+      # (see target_suites_test's restore_env note).
+      restore_env(:ultracode_verifier_suites, original.suites)
+      restore_env(:ultracode_worktree_root, original.root)
+      restore_env(:ultracode_ticket_dir, original.tickets)
       File.rm_rf(root)
     end)
 
     worktree = git_worktree(root)
     %{root: root, worktree: worktree, ctx: ctx(worktree)}
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:xaas, key)
+  defp restore_env(key, value), do: Application.put_env(:xaas, key, value)
 
   @env %{
     "PATH" => "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",

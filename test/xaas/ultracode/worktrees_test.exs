@@ -170,7 +170,7 @@ defmodule Xaas.Ultracode.WorktreesTest do
          repo: repo,
          sha: sha
        } do
-    {other_repo, _other_root, other_sha} = second_repo("other")
+    {other_repo, _other_root, _other_sha} = second_repo("other")
     Application.put_env(:xaas, :ultracode_repos, %{"demo" => repo, "other" => other_repo})
 
     # Deterministic; distinct across subjects of one repo and across repos

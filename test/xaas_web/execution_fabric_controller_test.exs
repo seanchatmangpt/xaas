@@ -1062,7 +1062,15 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
          %{conn: conn} do
       original = Application.get_env(:xaas, :ultracode_verifier_suites)
       Application.put_env(:xaas, :ultracode_verifier_suites, %{"ctl-suite" => %{steps: []}})
-      on_exit(fn -> Application.put_env(:xaas, :ultracode_verifier_suites, original) end)
+
+      # nil = unset before: DELETE, never put_env(key, nil) -- a literal nil
+      # poisons later `get_env(key, %{})` readers (the seed-dependent
+      # TargetSuitesTest flake class).
+      on_exit(fn ->
+        if is_nil(original),
+          do: Application.delete_env(:xaas, :ultracode_verifier_suites),
+          else: Application.put_env(:xaas, :ultracode_verifier_suites, original)
+      end)
 
       org = create_org!("acme-test-org-suite-known")
       token = org_token!("acme-token-suite-known", org)

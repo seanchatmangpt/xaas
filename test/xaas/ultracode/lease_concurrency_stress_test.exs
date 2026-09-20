@@ -40,8 +40,6 @@ defmodule Xaas.Ultracode.LeaseConcurrencyStressTest do
   use ExUnit.Case, async: false
   @moduletag :stress
 
-  require Ash.Query
-
   alias Xaas.Ultracode.{Epoch, Lease, Receipt, Run}
 
   setup do

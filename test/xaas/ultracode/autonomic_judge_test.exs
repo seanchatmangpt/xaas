@@ -39,8 +39,11 @@ defmodule Xaas.Ultracode.AutonomicJudgeTest do
     Application.delete_env(:xaas, :ultracode_judge_accept_court_verified_partial)
 
     on_exit(fn ->
-      Application.put_env(:xaas, :ultracode_verifier_suites, original.suites)
-      Application.put_env(:xaas, :ultracode_worktree_root, original.root)
+      # nil = unset before this test: DELETE, never put_env(key, nil) --
+      # a literal nil poisons later `get_env(key, %{})` readers
+      # (see target_suites_test's restore_env note).
+      restore_env(:ultracode_verifier_suites, original.suites)
+      restore_env(:ultracode_worktree_root, original.root)
 
       if is_nil(original.seam) do
         Application.delete_env(:xaas, :ultracode_judge_accept_court_verified_partial)
@@ -55,6 +58,9 @@ defmodule Xaas.Ultracode.AutonomicJudgeTest do
 
     %{root: root}
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:xaas, key)
+  defp restore_env(key, value), do: Application.put_env(:xaas, key, value)
 
   defp sh(id, script, extra \\ %{}),
     do: Map.merge(%{id: id, argv: ["/bin/sh", "-c", script], timeout_ms: 10_000}, extra)

@@ -39,14 +39,22 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
     Application.put_env(:xaas, :ultracode_worktree_root, root)
 
     on_exit(fn ->
-      Application.put_env(:xaas, :ultracode_verifier_suites, original.suites)
-      Application.put_env(:xaas, :ultracode_target_suites, original.targets)
-      Application.put_env(:xaas, :ultracode_worktree_root, original.root)
+      # nil = the key was UNSET before this test: restore by DELETING.
+      # `Application.put_env(key, nil)` would SET a literal nil, and every
+      # later `Application.get_env(key, %{})` reader (e.g. Verifier.suites/0)
+      # then receives nil instead of its default -- the seed-dependent
+      # TargetSuitesTest flake (maps.merge(nil, suites)).
+      restore_env(:ultracode_verifier_suites, original.suites)
+      restore_env(:ultracode_target_suites, original.targets)
+      restore_env(:ultracode_worktree_root, original.root)
       File.rm_rf(root)
     end)
 
     %{root: root}
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:xaas, key)
+  defp restore_env(key, value), do: Application.put_env(:xaas, key, value)
 
   test "the code-declared target suites pass the registration admission gate" do
     devs = TargetSuites.devs()

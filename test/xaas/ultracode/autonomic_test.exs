@@ -120,7 +120,14 @@ defmodule Xaas.Ultracode.AutonomicTest do
     Application.put_env(:xaas, :ultracode_verifier_suites, suites())
 
     on_exit(fn ->
-      for {key, value} <- original, do: Application.put_env(:xaas, key, value)
+      # nil = unset before this test: DELETE, never put_env(key, nil) --
+      # a literal nil poisons later `get_env(key, %{})` readers
+      # (see target_suites_test's restore_env note).
+      for {key, value} <- original do
+        if is_nil(value),
+          do: Application.delete_env(:xaas, key),
+          else: Application.put_env(:xaas, key, value)
+      end
     end)
 
     %{base: base, repo: repo}
