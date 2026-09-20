@@ -104,6 +104,37 @@ defmodule Xaas.Ultracode.DispatchTest do
              Dispatch.plan(epoch.id, cli_dir: cli_dir, node_path: "/nonexistent-node-xyz")
   end
 
+  test "plan resolves node from PATH when no :node_path is given (the documented default)" do
+    # Permanent guard for the 2026-09-20 campaign falsifier: an unset
+    # :node_path used to hard-refuse every launch {:node_unavailable,
+    # "node"} even with node on PATH, killing whole waves in <1s.
+    {:ok, _run, epoch} = create_running_epoch!()
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    case System.find_executable("node") do
+      nil ->
+        # No node on PATH: the fail-closed refusal is the lawful outcome.
+        assert {:error, {:node_unavailable, "node"}} = Dispatch.plan(epoch.id, cli_dir: cli_dir)
+
+      _node ->
+        assert {:ok, _plan} = Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir)
+    end
+  end
+
+  test "plan prefers a configured :ultracode_dispatch_node_path over the PATH default" do
+    # An explicitly configured path wins over the PATH lookup -- and a
+    # bogus one still fails closed, proving the configured path is the
+    # one actually checked.
+    {:ok, _run, epoch} = create_running_epoch!()
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    Application.put_env(:xaas, :ultracode_dispatch_node_path, "/nonexistent-node-xyz")
+    on_exit(fn -> Application.delete_env(:xaas, :ultracode_dispatch_node_path) end)
+
+    assert {:error, {:node_unavailable, "/nonexistent-node-xyz"}} =
+             Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir)
+  end
+
   # ------------------------------------------------------------------
   # Readiness fence
   # ------------------------------------------------------------------

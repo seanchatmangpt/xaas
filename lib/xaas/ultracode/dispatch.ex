@@ -495,9 +495,21 @@ defmodule Xaas.Ultracode.Dispatch do
       Keyword.get(opts, :cli_dir) ||
         Application.get_env(:xaas, :ultracode_dispatch_cli_dir, @default_cli_dir)
 
+    # The documented default (`:node_path` docs above): an unset option AND
+    # an unset `:ultracode_dispatch_node_path` fall back to a PATH lookup,
+    # NOT to a guaranteed refusal. The hard `check_node(nil)` fail-closed
+    # below still fires when node genuinely is not resolvable.
+    # PERMANENT GUARD (observed falsifier 2026-09-20, campaign
+    # 529f359a wave 1): with no app env set, every worker launch of the
+    # live 8-hour campaign returned `{:error, {:node_unavailable, "node"}}`
+    # in <1ms -- all 18 wave-1 attempt epochs refused (e.g.
+    # 82f2826f-240a-4272-b1ed-90e53e625e88, 75a0e737-d3d0-4a89-9c5f-052fa11a6aa8)
+    # and the wave burned all 3 attempts per item producing zero real work,
+    # while node was on PATH the whole time. Unset must MEAN "look it up".
     node_path =
       Keyword.get(opts, :node_path) ||
-        Application.get_env(:xaas, :ultracode_dispatch_node_path, nil)
+        Application.get_env(:xaas, :ultracode_dispatch_node_path, nil) ||
+        System.find_executable("node")
 
     timeout_seconds = Keyword.get(opts, :timeout_seconds, @default_timeout_seconds)
 
