@@ -93,15 +93,30 @@ defmodule Xaas.Ultracode.RunValidation do
   therefore accepts a bare run id end-to-end. Path input validates the
   JSON file directly. The derivation itself is NOT duplicated here.
 
-  ## Conformance-court dedup (W3-A6 interface, disclosed)
+  ## Conformance: the W3-A6 court is authoritative
 
-  W3-A6 owns the general OCEL conformance court. Until that lands on
-  this branch, the structural checks in `conformance/1` are the
-  in-family implementation of the same spec checks. When the court
-  lands, set `config :xaas, :ultracode_ocel_conformance_court, Mod`
-  (module exporting `check/1`, taking the decoded log map, returning a
-  list of violation maps) and `validate/2` delegates the structural
-  half to it instead of these local checks -- one court, not two.
+  The general OCEL conformance court LANDED (`Xaas.Ultracode.Ocel.
+  Validator.validate/1`, `{:ok, report} | {:error, [%{path, reason}]}`)
+  and is the structural authority here: `validate/2` hands the log to
+  the court (config `:xaas, :ultracode_ocel_conformance_court`, default
+  `Xaas.Ultracode.Ocel.Validator`) and any `{:error, violations}` are
+  mapped into this module's violation shape (`:court_violation`,
+  message `"<path>: <reason>"`, event_id parsed from `ocel:events[N].id`
+  paths where possible). The court is strictly stricter than the local
+  fallback checks (closed key vocabulary, mandatory qualifiers, zero-UTC
+  times), and that strictness wins: `inspection of the emitter` never
+  overrules the spec court.
+
+  Because the court judges only the standards' `"ocel:"-prefixed
+  serialization, the bridge translates the in-repo projection dialect
+  into court form first -- a pure notation pass that renames the four
+  collection keys, wraps string type declarations in `%{"name" => ...}`,
+  and defaults absent `"attributes"`/`"qualifier"` to empty/`"related"`.
+  It never DROPS anything, so a lying log still fails the court's
+  closed-vocabulary law. Logs already in the prefixed (egress) dialect
+  reach the court byte-for-byte. When the court module is absent or
+  config is set to `nil`, the local structural checks in `conformance/1`
+  (same spec, smaller vocabulary law) stand in, disclosed.
 
   This module is pure: no database, no process, no clock. The same log
   bytes always produce the same verdict.
@@ -193,20 +208,32 @@ defmodule Xaas.Ultracode.RunValidation do
     run_id = Keyword.get(opts, :run_id)
     capacity = Keyword.get(opts, :capacity, @default_capacity)
 
-    {structural_violations, events, objects} = conformance(log)
+    {local_violations, events, objects} = conformance(log)
 
     fatal = fatal_structure?(log)
 
-    # The conformance court (W3-A6, when it lands) replaces the local
-    # structural violation list wholesale -- it is never layered on top,
-    # so its verdict cannot double-count the local checks' findings.
+    # The conformance court (W3-A6's Xaas.Ultracode.Ocel.Validator) is
+    # the structural authority, judged on EVERY log (even a fatally
+    # broken one -- its non-cascading policy names the root corruption
+    # better than a cascade); its violations REPLACE the local list
+    # wholesale -- never layered on top, so nothing is double-counted.
+    # The local checks remain as (a) the disclosed fallback when the
+    # court module is absent or config nils it out, and (b) the source
+    # of the normalized event/object sets the semantic checks consume.
     structural_violations =
-      with false <- fatal,
-           court when not is_nil(court) <-
-             Application.get_env(:xaas, :ultracode_ocel_conformance_court) do
-        Enum.map(court.check(log), &Map.put_new(&1, :epoch_id, nil))
+      with court when not is_nil(court) <-
+             Application.get_env(
+               :xaas,
+               :ultracode_ocel_conformance_court,
+               Xaas.Ultracode.Ocel.Validator
+             ),
+           true <- Code.ensure_loaded?(court),
+           true <- function_exported?(court, :validate, 1),
+           {:error, court_violations} <- court.validate(to_court_form(log)) do
+        Enum.map(court_violations, &court_violation(log, &1))
       else
-        _ -> structural_violations
+        {:ok, _court_report} -> []
+        _court_absent_or_local -> local_violations
       end
 
     semantic_violations =
@@ -519,6 +546,113 @@ defmodule Xaas.Ultracode.RunValidation do
 
   defp qualifier_suffix(%{"qualifier" => q}) when is_binary(q), do: " (qualifier #{inspect(q)})"
   defp qualifier_suffix(_), do: ""
+
+  # ------------------------------------------------------------------
+  # Dialect bridge to the conformance court (notation only, never facts)
+  # ------------------------------------------------------------------
+
+  # The court judges the standards' ocel:-prefixed serialization. A log
+  # in the in-repo projection dialect (unprefixed keys, string type
+  # declarations, bare id/type objects) is translated: four key renames,
+  # %{"name" => ...} declaration wrapping, and empty-attribute/qualifier
+  # defaults. NOTHING is dropped or rewritten, so extra/lying keys still
+  # reach the court and fail its closed-vocabulary law. Prefixed (egress)
+  # logs pass through untouched; a log in neither dialect also passes
+  # through untouched (the court names the missing keys itself).
+  defp to_court_form(log) when is_map(log) do
+    prefixed? =
+      Enum.any?(~w(events objects eventTypes objectTypes), fn k -> is_list(log["ocel:" <> k]) end)
+
+    unprefixed? =
+      Enum.any?(~w(events objects eventTypes objectTypes), fn k -> is_list(log[k]) end)
+
+    cond do
+      prefixed? -> log
+      unprefixed? -> bridge_to_court(log)
+      true -> log
+    end
+  end
+
+  defp to_court_form(other), do: other
+
+  defp bridge_to_court(log) do
+    # Only collections that EXIST are bridged: a missing collection must
+    # stay missing so the court names it -- fabricating an empty list
+    # here would turn a missing-key lie into a silent empty log.
+    bridge = %{
+      "objectTypes" => "ocel:objectTypes",
+      "eventTypes" => "ocel:eventTypes",
+      "events" => "ocel:events",
+      "objects" => "ocel:objects"
+    }
+
+    Enum.reduce(bridge, %{}, fn {unprefixed, prefixed}, acc ->
+      case Map.get(log, unprefixed) do
+        nil -> acc
+        value -> Map.put(acc, prefixed, bridge_collection(unprefixed, value))
+      end
+    end)
+  end
+
+  defp bridge_collection("objectTypes", types), do: Enum.map(types, &court_type_decl/1)
+  defp bridge_collection("eventTypes", types), do: Enum.map(types, &court_type_decl/1)
+  defp bridge_collection("events", events), do: Enum.map(events, &court_event/1)
+  defp bridge_collection("objects", objects), do: Enum.map(objects, &court_object/1)
+
+  defp court_type_decl(type) when is_binary(type), do: %{"name" => type}
+  defp court_type_decl(%{"name" => _} = decl), do: decl
+
+  defp court_type_decl(%{"type" => type}) when is_binary(type), do: %{"name" => type}
+  defp court_type_decl(other), do: other
+
+  defp court_event(event) when is_map(event) do
+    event
+    |> Map.put_new("attributes", %{})
+    |> Map.update("relationships", [], fn
+      rels when is_list(rels) -> Enum.map(rels, &court_relationship/1)
+      other -> other
+    end)
+  end
+
+  defp court_event(other), do: other
+
+  defp court_object(object) when is_map(object) do
+    Map.put_new(object, "attributes", %{})
+  end
+
+  defp court_object(other), do: other
+
+  defp court_relationship(%{"objectId" => _} = rel) do
+    Map.put_new(rel, "qualifier", "related")
+  end
+
+  defp court_relationship(other), do: other
+
+  # Court violations are %{path, reason} JSON-path pairs; map them into
+  # this module's violation shape, recovering the event id from an
+  # "ocel:events[N]..." path when it is there to recover.
+  defp court_violation(log, %{path: path, reason: reason}) do
+    %{
+      code: :court_violation,
+      epoch_id: nil,
+      event_id: event_id_at_path(log, path),
+      message: "#{path}: #{reason}"
+    }
+  end
+
+  defp court_violation(_log, other) do
+    %{code: :court_violation, epoch_id: nil, message: inspect(other)}
+  end
+
+  defp event_id_at_path(log, path) do
+    with [_, index] <- Regex.run(~r/ocel:events\[(\d+)\]/, path),
+         {n, ""} <- Integer.parse(index),
+         event when is_map(event) <- log |> coll("events") |> List.wrap() |> Enum.at(n) do
+      Map.get(event, "id")
+    else
+      _ -> nil
+    end
+  end
 
   # ------------------------------------------------------------------
   # (b) Completeness -- every epoch claimed, exactly one verified

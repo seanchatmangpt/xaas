@@ -340,14 +340,12 @@ defmodule Xaas.Ultracode.RunValidationTest do
     assert result.verdict == :not_validated
     assert result.conformance == :failed
 
-    # The objects collection is gone, so EVERY event-to-object
-    # relationship dangles too -- but the missing collection itself is
-    # named first, before the per-relationship cascade.
-    assert [
-             %{code: :missing_collection, message: msg} | _rest
-           ] = result.violations
+    # The court is the structural authority; its non-cascading policy
+    # names the missing collection as THE violation (dependent checks
+    # are inadmissible, not piled on).
+    assert [%{code: :court_violation, message: msg}] = result.violations
 
-    assert msg =~ "\"objects\""
+    assert msg =~ "ocel:objects"
   end
 
   test "a relationship to an undeclared object fails conformance" do
@@ -359,10 +357,11 @@ defmodule Xaas.Ultracode.RunValidationTest do
     log = ocel_log(events, [run_object(@run)])
 
     # Both lifecycle events relate to the undeclared epoch object ep-0;
-    # each dangling reference is named with its event id.
+    # the court names each dangling reference and the bridge recovers
+    # the offending event id from the violation's JSON path.
     assert [
-             %{code: :dangling_relationship, event_id: "claim-ep-0", message: msg1},
-             %{code: :dangling_relationship, event_id: "close-ep-0", message: msg2}
+             %{code: :court_violation, event_id: "claim-ep-0", message: msg1},
+             %{code: :court_violation, event_id: "close-ep-0", message: msg2}
            ] = RunValidation.validate(log).violations
 
     assert msg1 =~ "ep-0"
@@ -383,7 +382,9 @@ defmodule Xaas.Ultracode.RunValidationTest do
       | "eventTypes" => ["epoch_claimed", "receipt_closed"]
     }
 
-    assert [%{code: :undeclared_type, message: msg}] = RunValidation.validate(log).violations
+    assert [%{code: :court_violation, event_id: "bogus-1", message: msg}] =
+             RunValidation.validate(log).violations
+
     assert msg =~ "epoch_teleported"
   end
 
@@ -395,19 +396,24 @@ defmodule Xaas.Ultracode.RunValidationTest do
 
     log = ocel_log(events, [run_object(@run), epoch_object("ep-0")])
 
-    assert [%{code: :duplicate_id, event_id: "dup"}] = RunValidation.validate(log).violations
+    assert [%{code: :court_violation, event_id: "dup"}] = RunValidation.validate(log).violations
   end
 
   test "an unparseable event time fails conformance" do
     events = [%{claimed("ep-0", minute(0)) | "time" => "not-a-time"}]
     log = ocel_log(events, [run_object(@run), epoch_object("ep-0")])
 
-    # The malformed event is dropped from the judged set, so the epoch it
-    # would have claimed also legitimately cascades to missing_claim.
-    assert [%{code: :malformed_event, message: msg}, %{code: :missing_claim, epoch_id: "ep-0"}] =
-             RunValidation.validate(log).violations
+    # The court names the unparseable time on the event (its violation's
+    # JSON path recovers the event id), and the malformed event is
+    # dropped from the judged set, so the epoch it would have claimed
+    # also legitimately cascades to missing_claim.
+    assert [
+             %{code: :court_violation, event_id: "claim-ep-0", message: msg},
+             %{code: :missing_claim, epoch_id: "ep-0"}
+           ] = RunValidation.validate(log).violations
 
-    assert msg =~ "ISO8601"
+    assert msg =~ "ocel:events"
+    assert msg =~ "time"
   end
 
   test "a claimed lifecycle event binding to no epoch is unattributable" do
@@ -492,9 +498,9 @@ defmodule Xaas.Ultracode.RunValidationTest do
           &%{"name" => &1}
         ),
       "ocel:objects" => [
-        %{"id" => "run-1", "type" => "Run"},
-        %{"id" => "ep-a", "type" => "Epoch"},
-        %{"id" => "ep-b", "type" => "Epoch"}
+        %{"id" => "run-1", "type" => "Run", "attributes" => %{}},
+        %{"id" => "ep-a", "type" => "Epoch", "attributes" => %{}},
+        %{"id" => "ep-b", "type" => "Epoch", "attributes" => %{}}
       ],
       "ocel:events" => events
     }
