@@ -80,11 +80,12 @@ defmodule Xaas.Ultracode.Run do
   and its MCP/hook tool schemas (`claim_next`, `admit_tool`, ...) carry no
   org-identifying field at all -- callers are keyed by the free-text
   `provider` string ("zcode", "opencode"), not by org. Every action
-  currently defined on `Run`/`Epoch` is also already unconditionally
-  `bypass action(...) do authorize_if(always()) end`ed (see `policies do`
-  below and `Epoch`'s own moduledoc) -- there are zero org-scoped policy
-  clauses to extend today, and no real fact ("which org does this caller
-  represent") reaches an Ultracode action to check.
+  currently defined on `Run`/`Epoch` is also either admitted only through
+  the real `Xaas.Checks.SystemActor` system-authority predicate (the
+  XAAS-2601/wave-4 mapping; see `policies do` below and `Epoch`'s own
+  moduledoc) or denied by the resource's deny floor -- there are zero
+  org-scoped policy clauses to extend today, and no real fact ("which org
+  does this caller represent") reaches an Ultracode action to check.
 
   Applying the existing convention here verbatim would be real but
   functionally inert dead code (a check with nothing real to compare
@@ -230,6 +231,15 @@ defmodule Xaas.Ultracode.Run do
         action(:autonomic_wave)
         worker_module_name(Xaas.Ultracode.Run.Workers.AutonomicWave)
         queue(:ultracode_wave)
+
+        # Wave-4 authority tightening (completing XAAS-2601/2602): the cron
+        # worker runs `:autonomic_wave` THROUGH authorization with the
+        # scheduler's own real system authority -- the same AshOban
+        # `default_actor` system-actor flow `:tick` uses. The action's
+        # previous `authorize_if(always())` bypass is deleted; the action
+        # is a canonical `Xaas.Checks.SystemActor` subject bound to
+        # `:oban_scheduler`.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
       end
 
       # Semantic work is selected upstream; this clock only dispatches already
@@ -239,6 +249,12 @@ defmodule Xaas.Ultracode.Run do
         action(:semantic_wave)
         worker_module_name(Xaas.Ultracode.Run.Workers.SemanticWave)
         queue(:ultracode_wave)
+
+        # Wave-4 authority tightening: same `default_actor` system-actor
+        # flow as `:autonomic_wave` above -- the scheduler's own admitted
+        # `:oban_scheduler` authority replaces the deleted
+        # `authorize_if(always())` bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
       end
 
       # The CONTINUOUS engine cadence (every 5 minutes) -- the between-waves
@@ -273,65 +289,50 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
-    # XAAS-2601: `:tick` (cron-fired), `:advance_cycle` and
-    # `:transition_state` (Ultracode Reactor pipeline) are internal-only
-    # mutations, admitted by the REAL system authority predicate instead
+    # XAAS-2601 + wave-4 authority tightening: EVERY internal-only Run
+    # mutation is admitted by the REAL system authority predicate instead
     # of the previous action-wide `authorize_if(always())` bypasses --
     # which any caller through the normal authorization path satisfied.
-    # `:tick` accepts no external arguments and exposes no Run/Epoch
-    # field to a caller; `:advance_cycle`/`:transition_state` accept no
-    # actor, capability, or execution context a bypass could have checked
-    # -- the system-actor check IS that missing internal predicate.
-    bypass action([:tick, :advance_cycle, :transition_state]) do
+    #
+    #   * `:tick` (cron) and the three schedule clocks `:autonomic_wave`/
+    #     `:semantic_wave`/`:engine_cycle` carry the `:oban_scheduler`
+    #     service (each schedule supplies it via AshOban `default_actor`);
+    #   * `:begin_wave_session`/`:record_wave` -- the duration-budget
+    #     bookkeeping the wave clock drives -- carry `:oban_scheduler`;
+    #   * `:advance_cycle`/`:transition_state` (the Ultracode Reactor
+    #     pipeline) and `:stop`/`:resume` (the engine kernel's lifecycle
+    #     recovery, `:running -> :abandoned` with lease revocation and the
+    #     `:abandoned -> :running` re-arm guarded by `RunTransitionAllowed`/
+    #     `RunResumable`) carry the `:ultracode_reactor` service.
+    #
+    # None of these actions accepts a caller-supplied subject or authority,
+    # and none is a public DO surface: an ambient/ordinary actor now falls
+    # through to the deny floor below. Real call sites pass the admitted
+    # actor explicitly (the schedule `default_actor`s, `Xaas.SystemAuthority`
+    # at the reactor/engine call sites) or are kernel paths that opt out of
+    # authorization explicitly (`authorize?: false`), so the tightening is
+    # behavior-preserving for every admitted caller while no longer
+    # admitting everything else.
+    bypass action([
+             :tick,
+             :advance_cycle,
+             :transition_state,
+             :autonomic_wave,
+             :semantic_wave,
+             :engine_cycle,
+             :begin_wave_session,
+             :record_wave,
+             :stop,
+             :resume
+           ]) do
       authorize_if({Xaas.Checks.SystemActor, []})
     end
 
-    # Internal scheduler call sites for the 30-minute `:autonomic_wave` and
-    # `:semantic_wave` clocks (postdating the XAAS-2601 classification).
-    # Like :tick, these actions accept no caller-supplied subject or
-    # authority and are not public DO surfaces, so they remain explicit
-    # scoped bypasses rather than unmapped SystemActor subjects.
-    bypass action(:autonomic_wave) do
-      authorize_if(always())
-    end
-
-    bypass action(:semantic_wave) do
-      authorize_if(always())
-    end
-
-    # Same internal-only carve-out shape as the bypasses above: `:stop` and
-    # `:resume` are the operator-facing lifecycle actions for a Run
-    # (`:running -> :abandoned` with live-lease revocation; `:abandoned ->
-    # :running` re-arm), guarded by `RunTransitionAllowed` and
-    # `RunResumable`, never reachable from an unauthenticated path (the
-    # execution-fabric surface they would join is behind
-    # `RequireInternalApiToken`).
-    bypass action(:stop) do
-      authorize_if(always())
-    end
-
-    bypass action(:resume) do
-      authorize_if(always())
-    end
-
-    bypass action(:engine_cycle) do
-      authorize_if(always())
-    end
-
     # Duration-budget scheduler internals (postdating the XAAS-2601
-    # classification, same shape as `:autonomic_wave`/`:semantic_wave`
-    # above): `:begin_wave_session` (writes started_at ONCE from the law
-    # clock) and `:record_wave` (counts one dispatched wave) accept no
-    # caller-supplied subject or authority and are not public DO
-    # surfaces -- explicit scoped bypasses, never unmapped SystemActor
-    # subjects.
-    bypass action(:begin_wave_session) do
-      authorize_if(always())
-    end
-
-    bypass action(:record_wave) do
-      authorize_if(always())
-    end
+    # classification): `:begin_wave_session` (writes started_at ONCE from
+    # the law clock) and `:record_wave` (counts one dispatched wave) are
+    # wave-session ledger mutations on the session Run -- classified above
+    # with the `:oban_scheduler` service they belong to.
 
     policy always() do
       forbid_if(always())

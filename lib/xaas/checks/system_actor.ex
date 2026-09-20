@@ -12,6 +12,14 @@ defmodule Xaas.Checks.SystemActor do
   HTTP service-boundary mutations require `:internal_api`, AutoFDE planner
   requests require `:autofde_coverage_monitor`, and the liveness cron action
   requires `:oban_scheduler`.
+
+  The wave-4 authority tightening completes the ultracode half of that law:
+  every `Xaas.Ultracode.Run`/`Xaas.Ultracode.Epoch` action that still
+  carried a scoped `authorize_if(always())` bypass after the XAAS-2601
+  retrofit (the `:autonomic_wave`/`:semantic_wave`/`:engine_cycle` schedule
+  clocks, the duration-budget bookkeeping, the engine lifecycle recovery,
+  and the lease-family actions) is now a canonical exact-subject mapping
+  here, and the bypasses are deleted.
   """
 
   use Ash.Policy.SimpleCheck
@@ -30,6 +38,34 @@ defmodule Xaas.Checks.SystemActor do
     {Xaas.Platform.WebhookDelivery, :deliver, :webhook_dispatcher},
     {Xaas.Library.HoldRequest, :expire_stale, :oban_scheduler},
     {Xaas.Library.HoldRequest, :expire, :oban_scheduler}
+  ]
+
+  # Wave-4 authority tightening (XAAS-2601/2602 completion): the reconciled
+  # ultracode schedules and their internal bookkeeping, bound to the two
+  # services the established conventions already use.
+  #
+  #   * `:oban_scheduler` owns Time -> Cycle: the three schedule clocks
+  #     (`:tick` above, plus `:autonomic_wave`, `:semantic_wave`,
+  #     `:engine_cycle`) and the duration-budget bookkeeping those clocks
+  #     drive (`:begin_wave_session`, `:record_wave`).
+  #   * `:ultracode_reactor` owns the kernel mutations: `:advance_cycle`/
+  #     `:transition_state` (above), the engine lifecycle recovery
+  #     (`:stop`/`:resume`), and the Epoch lease-family actions, whose only
+  #     historical Ash call sites were replaced by `Xaas.Ultracode.Lease`'s
+  #     raw atomic row writes (outside the Ash authorization path) -- they
+  #     stay mapped so any future re-wiring through Ash requires the
+  #     admitted kernel authority instead of an ambient bypass.
+  @ultracode_wave_actions [
+    {Xaas.Ultracode.Run, :autonomic_wave, :oban_scheduler},
+    {Xaas.Ultracode.Run, :semantic_wave, :oban_scheduler},
+    {Xaas.Ultracode.Run, :engine_cycle, :oban_scheduler},
+    {Xaas.Ultracode.Run, :begin_wave_session, :oban_scheduler},
+    {Xaas.Ultracode.Run, :record_wave, :oban_scheduler},
+    {Xaas.Ultracode.Run, :stop, :ultracode_reactor},
+    {Xaas.Ultracode.Run, :resume, :ultracode_reactor},
+    {Xaas.Ultracode.Epoch, :lease, :ultracode_reactor},
+    {Xaas.Ultracode.Epoch, :renew_lease, :ultracode_reactor},
+    {Xaas.Ultracode.Epoch, :record_final_head, :ultracode_reactor}
   ]
 
   @internal_api_actions [
@@ -98,7 +134,10 @@ defmodule Xaas.Checks.SystemActor do
     {Xaas.Operations.AutofdePlannerCandidate, :request_candidate}
   ]
 
-  @action_services Enum.reduce(@xaas_2601_actions, %{}, fn {resource, action, service}, acc ->
+  @action_services Enum.reduce(@xaas_2601_actions ++ @ultracode_wave_actions, %{}, fn {resource,
+                                                                                       action,
+                                                                                       service},
+                                                                                      acc ->
                      Map.put(acc, {resource, action}, service)
                    end)
                    |> Map.merge(Map.new(@internal_api_actions, &{&1, :internal_api}))

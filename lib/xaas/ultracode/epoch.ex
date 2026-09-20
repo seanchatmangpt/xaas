@@ -79,29 +79,34 @@ defmodule Xaas.Ultracode.Epoch do
       authorize_if(always())
     end
 
-    # XAAS-2601: every internal-only mutation action this repo's Ultracode
-    # Reactor pipeline calls (Reactor, EpochReactor, NextEpoch, MissedEpochs,
-    # Changes.CreateFirstEpoch) is admitted by the REAL system authority
+    # XAAS-2601 + wave-4 authority tightening: every internal-only mutation
+    # action this repo's Ultracode Reactor pipeline calls (Reactor,
+    # EpochReactor, NextEpoch, MissedEpochs, Changes.CreateFirstEpoch) plus
+    # the lease-family actions (`:lease`, `:renew_lease`,
+    # `:record_final_head`) is admitted by the REAL system authority
     # predicate -- `Xaas.Checks.SystemActor` over a `Xaas.SystemAuthority`
-    # actor the pipeline now passes explicitly -- instead of the previous
-    # action-wide `authorize_if(always())` bypasses, which any caller
-    # through the normal authorization path satisfied. The deny floor
-    # below stays real for every other actor, and any FUTURE action added
-    # to this resource remains deny-by-default.
-    bypass action([:create, :start, :complete, :mark_missed, :mark_failed]) do
+    # actor -- instead of the previous `authorize_if(always())` bypasses,
+    # which any caller through the normal authorization path satisfied.
+    #
+    # The lease-family trio's only historical Ash call sites were replaced
+    # by `Xaas.Ultracode.Lease`'s raw atomic row writes (outside the Ash
+    # authorization path entirely), so no authorized production caller
+    # exists today; they stay canonically mapped to `:ultracode_reactor`
+    # so any future re-wiring through Ash requires the admitted kernel
+    # authority, never an ambient bypass. The deny floor below stays real
+    # for every other actor, and any FUTURE action added to this resource
+    # remains deny-by-default.
+    bypass action([
+             :create,
+             :start,
+             :complete,
+             :mark_missed,
+             :mark_failed,
+             :lease,
+             :renew_lease,
+             :record_final_head
+           ]) do
       authorize_if({Xaas.Checks.SystemActor, []})
-    end
-
-    bypass action(:lease) do
-      authorize_if(always())
-    end
-
-    bypass action(:renew_lease) do
-      authorize_if(always())
-    end
-
-    bypass action(:record_final_head) do
-      authorize_if(always())
     end
 
     policy always() do
