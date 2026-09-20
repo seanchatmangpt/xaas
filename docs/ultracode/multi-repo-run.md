@@ -2,12 +2,13 @@
 
 **Version:** v26.9.20-wave5
 **Standing:** PARTIAL_ALIVE — split by surface, exactly tabled in §0. The
-single-repo loop this extends is ALIVE (its live 8h campaign `5d1e2669` read
-15/16 waves, all ALIVE, while this document was written). The OCEL v2
-validation chain was executed by this document's author (§9). The wave-5
-multi-repo surfaces were READ from their owning modules as they were being
-landed on sibling branches; each in-flight surface names its branch and
-module so the verify-ladder can be re-run the moment it lands.
+single-repo loop this extends is ALIVE and now has a completed full-length
+proof: the live 8h campaign `5d1e2669` read `completed (standing admitted)`,
+16/16 waves, every wave ALIVE (§9). The OCEL v2 validation chain was
+executed by this document's author (§9). The wave-5 multi-repo surfaces were
+READ from their owning modules as they were being landed on sibling
+branches; each in-flight surface names its branch and module so the
+verify-ladder can be re-run the moment it lands.
 
 Companion to `docs/ultracode/eight-hour-run.md` (the single-repo APS
 runbook). Read that first: the budget law (§2 there), prerequisites (§3),
@@ -385,7 +386,8 @@ Reading the telemetry: `tail -f /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjs
 | command | exit | observed |
 |---|---|---|
 | `mix compile` | 0 | 437 files, Generated xaas app |
-| `mix xaas.ultracode.status` (from campaign-8h worktree) | 0 | campaign `5d1e2669`: running, 15/16 waves (1–15 ALIVE), in-flight 6 (1 leased, 5 unleased) |
+| `mix xaas.ultracode.status` (from campaign-8h worktree, mid-run) | 0 | campaign `5d1e2669`: running, 15/16 waves (1–15 ALIVE), in-flight 6 (1 leased, 5 unleased) |
+| `mix xaas.ultracode.status` (same, ~40 min later) | 0 | **`completed (standing admitted)`, 16/16 waves, every wave ALIVE**, 618s of wall clock unused; 6 epochs still `:running` in the fabric at that instant — campaign-row completion is not per-epoch terminality; close per §5 (a)+(b)+(c) |
 | `mix xaas.ultracode.export_ocel 7be6069b` (8-hex prefix) | 1 | typed failure — the export needs the FULL UUID |
 | `mix xaas.ultracode.export_ocel 7be6069b-fda0-4e80-8947-c1701576923e --out /tmp/w5-ocel` | 0 | wrote `/tmp/w5-ocel/7be6069b-….ocel.json` (smoke campaign `9b9efe2c` wave) |
 | `mix xaas.ocel_validate /tmp/w5-ocel/7be6069b-….ocel.json` | 0 | `valid (4 events, 5 objects)` |
