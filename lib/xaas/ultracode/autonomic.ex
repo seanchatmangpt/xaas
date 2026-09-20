@@ -14,8 +14,9 @@ defmodule Xaas.Ultracode.Autonomic do
        allowed paths, mutants, append-only history) OUTSIDE the worktree, and a
        provider-pull `Run` naming the operator-registered verifier suite plus a
        running `Epoch` bound to that worktree.
-    3. **Act.** A worker (default: the hardened dispatcher in directed
-       `--epoch` mode, i.e. a gated headless zcode/GLM session) claims exactly
+    3. **Act.** A worker (default: `Xaas.Ultracode.Dispatch.autonomic_worker/2`,
+       the in-family dispatch boundary that launches one real gated headless
+       zcode/GLM turn for the epoch) claims exactly
        that epoch and constructs. Concurrency is bounded by a top-up semaphore
        that halves on a provider rate refusal (APS swarm pacing law).
     4. **Verify.** The fabric, not the worker, decides done: `Lease.close/4`
@@ -41,7 +42,8 @@ defmodule Xaas.Ultracode.Autonomic do
 
   A worker is any 2-arity function `(epoch, ctx) -> :ok | :rate_limited |
   {:error, reason}` that drives the lease protocol for that epoch. The default
-  launches the real dispatcher; tests pass a scripted protocol client that
+  launches one real gated worker agent per attempt through
+  `Xaas.Ultracode.Dispatch`; tests pass a scripted protocol client that
   really claims, edits, commits and closes through `Xaas.Ultracode.Lease`.
   """
 
@@ -513,10 +515,21 @@ defmodule Xaas.Ultracode.Autonomic do
   defp halve(ctx), do: Agent.update(ctx.sem, &%{&1 | limit: max(1, div(&1.limit, 2))})
 
   # ------------------------------------------------------------------
-  # Default worker: the hardened dispatcher in directed --epoch mode
+  # Default worker: the in-family dispatch boundary -- one real gated
+  # headless zcode/GLM turn per attempt (see Xaas.Ultracode.Dispatch,
+  # which owns command construction, timeout/kill, failover-class
+  # retry-once, output log, and receipt attachment). The legacy path
+  # (the bash dispatcher's directed --epoch mode) stays reachable via
+  # `worker: &Autonomic.script_dispatch_worker/2`.
   # ------------------------------------------------------------------
 
   defp dispatch_worker(epoch, ctx) do
+    Xaas.Ultracode.Dispatch.autonomic_worker(epoch, ctx)
+  end
+
+  @doc false
+  @spec script_dispatch_worker(Epoch.t(), map()) :: :ok | :rate_limited | {:error, term()}
+  def script_dispatch_worker(epoch, ctx) do
     script = Path.join(ctx.project_root, "scripts/xaas-glm-failover-dispatcher.sh")
     File.mkdir_p!(ctx.state_dir)
 
