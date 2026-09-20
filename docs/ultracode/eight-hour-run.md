@@ -14,6 +14,11 @@ This is an operator/coordinator runbook. It makes starting the operator-ordered
 8-hour, capacity-5 ultracode standing wave a single command, and it specifies
 the harness keep-alive automation (§7) verbatim.
 
+**Multi-repo campaigns** (`--repo a,b|all`, target registration, per-repo
+OCEL validation, and the multi-repo keep-alive variant): see
+`docs/ultracode/multi-repo-run.md` — same budget law, same cuts; this
+document's §2/§3/§6/§7 apply to it verbatim.
+
 ## 1. The single command
 
 ```bash
@@ -313,6 +318,10 @@ with 0 waves. All DateTime comparisons now go through `DateTime.compare/2`.
 
 ## See also
 
+- `docs/ultracode/multi-repo-run.md` — wave-5 multi-repo campaigns: target
+  registry, repo-spec planning/rotation, per-repo results and OCEL
+  validation, per-target suite prerequisites, and the multi-repo keep-alive
+  block.
 - `docs/ultracode/FAILOVER-RUNBOOK.md` — the dispatcher, the admission court,
   the 5-agent validation record, and the disclosed limitations this runbook
   builds on.
