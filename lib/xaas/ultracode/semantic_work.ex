@@ -11,7 +11,7 @@ defmodule Xaas.Ultracode.SemanticWork do
 
   require Ash.Query
 
-  alias Xaas.Ultracode.{Epoch, Run, Worktrees}
+  alias Xaas.Ultracode.{Epoch, Run, SemanticWaveTrigger, Worktrees}
 
   @sha ~r/^[0-9a-f]{40}$/
   @digest ~r/^sha256:[0-9a-f]{64}$/
@@ -90,6 +90,40 @@ defmodule Xaas.Ultracode.SemanticWork do
 
   Frontier selection itself is deliberately absent from this module. A canonical
   graph producer selects the frontier and projects an execution descriptor here.
+
+  ## The emitter contract (what ggen / the canonical producer must send)
+
+  `admit/1` (and therefore `materialize/2`) accepts a string- OR atom-keyed
+  map carrying EXACTLY these 11 required fields (line-anchored at
+  `@required` above and validated field-by-field in `admit/1`'s `with`
+  chain; the `@keys` mapping right below defines the accepted string
+  aliases -- notably `"repository"` is accepted as an alias for
+  `repository_identity`):
+
+    | field                  | type / format                                | validation                |
+    |------------------------|----------------------------------------------|---------------------------|
+    | `work_order_iri`       | string, absolute IRI (must contain `:`)      | `require_iri/2`           |
+    | `checkpoint_iri`       | string, absolute IRI (must contain `:`)      | `require_iri/2`           |
+    | `graph_digest`         | `"sha256:" <> 64 lowercase hex`              | `@digest` regex           |
+    | `repository_identity`  | `"owner/repo"` (`[A-Za-z0-9_.-]+/...`)       | `@repo_identity` regex    |
+    | `execution_repo_alias` | 1-128 of `[A-Za-z0-9_.-]` (Worktrees key)    | `@repo_alias` regex       |
+    | `base_sha`             | exactly 40 lowercase hex (a git SHA)         | `@sha` regex              |
+    | `goal`                 | nonempty string (worker instructions)        | `require_string/2`        |
+    | `provider`             | nonempty string (e.g. `"zcode"`)             | `require_string/2`        |
+    | `verifier_suite`       | nonempty string, operator-registered name    | `require_string/2`        |
+    | `execution_policy`     | `:continuous_epoch_run | :autonomic_wave_attempt` (atoms or strings) | `admit_execution_policy/1` |
+    | `dependencies`         | list (may be empty) of typed receipt edges   | `admit_dependencies/1`    |
+
+  Each dependency needs `work_order_iri` (IRI), `required_standing` and
+  `observed_standing` (only `ALIVE` is satisfiable), `receipt_iri` (IRI)
+  and `receipt_digest` (`sha256:` hex); duplicates by work-order identity
+  are refused. An optional top-level `"standing"` key is passed through
+  by the key normalization and otherwise ignored: standing is never
+  granted by admission.
+
+  Refusals are typed: `{:error, {:refused_semantic_work, reason}}` /
+  `{:error, {:refused_dependency, reason}}` /
+  `{:error, {:unsupported_required_standing, value}}`.
   """
   @spec admit(map()) :: {:ok, descriptor()} | {:error, term()}
   def admit(input) when is_map(input) do
@@ -127,20 +161,38 @@ defmodule Xaas.Ultracode.SemanticWork do
     * :autonomic_wave_attempt immediately applies the existing Epoch.:start
       transition so a bounded wave controller can lease it now.
 
+  ## Event-driven dispatch (wave-6 law)
+
+  On SUCCESS, a `:autonomic_wave_attempt` materialization enqueues the
+  semantic-wave dispatch IMMEDIATELY: `Xaas.Ultracode.SemanticWaveTrigger.
+  enqueue/1` runs INSIDE this function's `Xaas.Repo.transaction`, so the
+  wave Oban job and the ready Epoch commit atomically (transactional
+  outbox -- the job can never exist without its work, and an insert
+  failure rolls the whole materialization back). The `*/30` `:semantic_wave`
+  cron on `Xaas.Ultracode.Run` stays as the WATCHDOG for a missed event;
+  it is no longer the primary dispatch clock.
+
   The exact-SHA worktree is provisioned from execution_repo_alias, never from
   repository_identity. Failure after worktree creation rolls back DB state and
   cleans the worktree.
+
+  Returns `{:ok, %{run:, epoch:, worktree:, wave: trigger_receipt}}` where
+  `wave` is `Xaas.Ultracode.SemanticWaveTrigger`'s enqueue receipt
+  (`enqueued?`/`deduped?`/`policy_gated?`/`job_id`).
   """
   @spec materialize(map(), keyword()) ::
-          {:ok, %{run: Run.t(), epoch: Epoch.t(), worktree: String.t()}} | {:error, term()}
+          {:ok, %{run: Run.t(), epoch: Epoch.t(), worktree: String.t(), wave: map()}}
+          | {:error, term()}
   def materialize(input, opts \\ []) do
     with {:ok, descriptor} <- admit(input),
          name <- worktree_name(descriptor),
          {:ok, worktree} <-
            Worktrees.provision(descriptor.execution_repo_alias, descriptor.base_sha, name) do
       case Xaas.Repo.transaction(fn ->
-             case create_started_run(descriptor, worktree, opts) do
-               {:ok, result} -> result
+             with {:ok, result} <- create_started_run(descriptor, worktree, opts),
+                  {:ok, wave} <- SemanticWaveTrigger.enqueue(descriptor) do
+               Map.put(result, :wave, wave)
+             else
                {:error, reason} -> Xaas.Repo.rollback(reason)
              end
            end) do

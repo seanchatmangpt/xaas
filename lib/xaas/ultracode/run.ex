@@ -242,9 +242,17 @@ defmodule Xaas.Ultracode.Run do
         default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
       end
 
-      # Semantic work is selected upstream; this clock only dispatches already
+      # Semantic work is selected upstream; this clock dispatches already
       # materialized :autonomic_wave_attempt Epochs. It shares the one-slot
       # queue with the legacy APS wave so shared controller waves never overlap.
+      #
+      # WATCHDOG DEMOTION (wave-6 event-driven law): the PRIMARY dispatch
+      # clock is now the event path -- `Xaas.Ultracode.SemanticWaveTrigger`
+      # enqueues a deduplicated wave job the moment an admitted frontier
+      # transition materializes (transactionally with the ready Epoch).
+      # This */30 cron remains ONLY as the watchdog for missed events: on
+      # fire it dispatches whatever un-dispatched wave-ready Epoch exists
+      # (a lost/failed event-path job), else it is an IDLE no-op receipt.
       schedule :semantic_wave, "*/30 * * * *" do
         action(:semantic_wave)
         worker_module_name(Xaas.Ultracode.Run.Workers.SemanticWave)
@@ -688,9 +696,16 @@ defmodule Xaas.Ultracode.Run do
       end)
     end
 
-    # Separate scheduler call site for semantic work. This preserves the APS
-    # Autonomic loop unchanged while closing the semantic-work -> scheduled
-    # dispatch edge. SemanticWave itself cannot lease, verify, or crown work.
+    # Separate scheduler call site for semantic work: the WATCHDOG half of
+    # the event-driven dispatch law (wave-6). The primary clock is
+    # `Xaas.Ultracode.SemanticWaveTrigger`, which enqueues the same
+    # `:semantic_wave` action immediately (same `:ultracode_wave` queue,
+    # same `:oban_scheduler` authority) on every admitted frontier
+    # transition that materializes wave-attempt work. This cron fire only
+    # needs to catch a MISSED event: dispatch any ready wave Epoch that
+    # the event path did not reach (a lost job), else report IDLE --
+    # the no-op watchdog case. SemanticWave itself cannot lease, verify,
+    # or crown work.
     action :semantic_wave, :map do
       run(fn _input, _context ->
         runner =
