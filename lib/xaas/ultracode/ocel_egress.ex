@@ -1,0 +1,674 @@
+defmodule Xaas.Ultracode.OcelEgress do
+  @moduledoc """
+  OCEL 2.0 egress for Ultracode: derives a standards-conformant
+  object-centric event log (one JSON document per `Run`) from the
+  persisted Ultracode state, for the operator's process-mining
+  validation path ("the operator validates Ultracode's results through
+  OCEL v2").
+
+  The emitted document is plain OCEL 2.0 JSON -- exactly the four
+  top-level keys `ocel:objectTypes`, `ocel:eventTypes`, `ocel:events`,
+  `ocel:objects` -- no private dialect, no envelope. This is
+  deliberately NOT the `Xaas.Telemetry.OcelForwarder` ex4pm envelope
+  (`schema`/`producer`/`sequence`/`events`); see
+  `docs/claude/diataxis/explanation/ocel-egress-forwarder.md` for that
+  separate, network-facing path. The two share egress intent only.
+
+  ## Hook point: DERIVATION, not a live callback
+
+  Run state is fully persisted (`Run`/`Epoch`/`Receipt` are real
+  AshPostgres resources), so the log is DERIVED from persisted rows at
+  export time. Three reasons, in order of weight:
+
+    1. `Lease`'s claim/close/refuse writes deliberately bypass Ash's
+       changeset pipeline (`atomic_row_update/2` is a raw
+       `Xaas.Repo.update_all` -- its own doc records that the resource
+       carries no notifiers/`after_action` hooks to lose by doing so).
+       A telemetry/notifier callback would silently MISS the most
+       important events of the provider-pull flow; a derivation cannot.
+    2. The loop core stays untouched (zero new call sites inside
+       `Lease`/`NextEpoch`/`Autonomic`).
+    3. A derivation is deterministic and re-runnable: the same rows
+       always produce byte-identical output (see determinism guarantees
+       below), which is what a validating court wants.
+
+  Entry points:
+
+    * `derive_run/1` -- build the document map for one Run (struct or id).
+    * `derive_all/0` -- every Run, oldest first.
+    * `write_document/2` -- encode + write one document to a path.
+    * `export_run/2` / `export_all/1` -- derive + write, used by
+      `mix xaas.ultracode.export_ocel` (default output dir
+      `priv/ocel/ultracode`, matching the existing `priv/ocel/`
+      convention used by `Xaas.Telemetry.OcelAshEmitter`).
+
+  ## Object model (what the code actually persists)
+
+    * `Run` -- `Xaas.Ultracode.Run` row (id = the row's UUID).
+    * `Epoch` -- `Xaas.Ultracode.Epoch` row; object-to-object
+      relationship to its Run.
+    * `Worker` -- the lease holder (`Epoch.leased_to`, a free-form
+      provider worker identity -- `Lease` owns no resource of its own,
+      so the worker is derived from the lease fields). One object per
+      distinct `leased_to` value, with relationships to each Epoch it
+      leased.
+    * `Receipt` -- `Xaas.Ultracode.Receipt` row; relationship to its
+      Epoch.
+    * `Worktree` -- `Epoch.worktree` (a filesystem path as object id).
+      No resource exists for worktrees (`Xaas.Ultracode.Worktrees` is a
+      module, not a schema), so this object type is derived from the
+      path attribute alone.
+
+  `Epoch.lease_token` is deliberately NOT exported anywhere in the log:
+  it is a live capability, and an audit log is not a capability store.
+
+  ## Event model (mapping table: law -> code)
+
+  Every emitted event's time is a REAL persisted timestamp -- never a
+  reconstructed or defaulted one. An event whose moment is not persisted
+  is declared (below) but not emitted, rather than fabricated:
+
+    | event type            | emitted when                     | time source                          |
+    |-----------------------|----------------------------------|--------------------------------------|
+    | `run_started`         | `Run.started_at` present         | `Run.started_at` (`:start` action)   |
+    | `run_completed`       | `Run.state == :completed`        | `Run.updated_at` (a)                 |
+    | `run_failed`          | `Run.state == :failed`           | `Run.updated_at` (a)                 |
+    | `run_abandoned`       | `Run.state == :abandoned`        | `Run.updated_at` (a)                 |
+    | `epoch_scheduled`     | every Epoch                      | `Epoch.expected_at` || `inserted_at` |
+    | `epoch_started`       | `Epoch.started_at` present       | `Epoch.started_at` (`:start` action) |
+    | `epoch_completed`     | `Epoch.state == :completed`      | `Epoch.completed_at` (`:complete`)   |
+    | `epoch_missed`        | `Epoch.state == :missed`         | `Epoch.updated_at` (a)               |
+    | `epoch_failed`        | `Epoch.state == :failed`         | `Epoch.updated_at` (a)               |
+    | `receipt_closed`      | every sealed Receipt             | `Receipt.sealed_at` (`:seal`)        |
+    | `verification_passed` | evidence `fabric_verifier.status == "pass"` | `Receipt.sealed_at` (b)   |
+    | `verification_failed` | evidence `fabric_verifier.status == "fail"` | `Receipt.sealed_at` (b)   |
+    | `refused`             | `Receipt.outcome == :refused`    | `Receipt.sealed_at` (`Lease.refuse/3`)|
+
+    (a) `*_state`-transition moments are not stored in dedicated columns.
+    The derivation uses the row's `updated_at` -- the last real write to
+    that row, which for terminal states (`:completed`/`:failed`/
+    `:abandoned`/`:missed`) is the transition write itself, because no
+    later write targets a terminal row through any action in this
+    domain. Disclosed approximation, not a fabricated timestamp.
+    (b) The fabric verifier runs inside `Lease.close/4` immediately
+    before the receipt is sealed, so the receipt's own `sealed_at` is
+    the persisted moment of that verification.
+
+  Declared but NOT emitted by the derivation (real code-level operations
+  whose occurrence moments are not persisted anywhere):
+
+    * `epoch_claimed` -- `Lease.claim_next/3`'s atomic bind persists
+      `lease_token`/`leased_to`/`lease_expires_at` but no bind
+      timestamp. The worker-epoch association is still visible in the
+      log as `Worker` object relationships and `worker` relationships
+      on the events that co-occurred with the lease.
+    * `worker_heartbeat` -- `Lease.renew/1` only moves
+      `lease_expires_at`; renewals leave no occurrence record.
+
+  Deliberately NOT in the vocabulary at all: `wave_scheduled` -- the
+  `:autonomic_wave` AshOban schedule is a repo-level loop (it is not a
+  fact about any `Run` row), so there is no per-Run wave fact to model.
+  The per-Run scheduling fact this code actually has is an Epoch being
+  created `:expected`, modeled as `epoch_scheduled`.
+
+  ## Determinism
+
+  * Event list is sorted by `{time, id}`; object list is sorted by a
+    fixed type rank then id; relationship lists are sorted by
+    `objectId`; object ids are the domain's own identifiers (row UUIDs,
+    the `leased_to` string, the worktree path), never generated at
+    export time.
+  * Event ids are deterministic functions of the source row
+    (`"<type>:<row-uuid>"`), so re-deriving the same rows yields the
+    same ids.
+  * Encoding uses Elixir's built-in `JSON` (verified on this repo's
+    pinned toolchain, elixir 1.20.2-otp-28: map keys encode in sorted
+    order and repeated encodes of one value are byte-identical). No
+    timestamps-of-derivation, no map-iteration-order dependence, zero
+    new dependencies.
+  """
+
+  alias Xaas.Ultracode.{Epoch, Receipt, Run}
+
+  require Ash.Query
+
+  # Fixed declaration order (deterministic document skeleton). All five
+  # object types and all fifteen event types are ALWAYS declared, even
+  # when a given run's log contains zero instances of one -- declared
+  # vocabulary is the code's real event surface, emitted instances are
+  # only the facts persistence can prove (see the moduledoc mapping
+  # table).
+  @object_types ["Run", "Epoch", "Worker", "Receipt", "Worktree"]
+
+  @event_types [
+    "run_started",
+    "epoch_scheduled",
+    "epoch_started",
+    "epoch_claimed",
+    "worker_heartbeat",
+    "epoch_completed",
+    "epoch_missed",
+    "epoch_failed",
+    "receipt_closed",
+    "verification_passed",
+    "verification_failed",
+    "refused",
+    "run_completed",
+    "run_failed",
+    "run_abandoned"
+  ]
+
+  # Object list ordering rank -- Run before its Epochs before the
+  # Workers that leased them before the Receipts that closed them.
+  @object_type_rank %{
+    "Run" => 0,
+    "Epoch" => 1,
+    "Worker" => 2,
+    "Receipt" => 3,
+    "Worktree" => 4
+  }
+
+  @default_out_dir "priv/ocel/ultracode"
+
+  # Qualifier rule: the qualifier of ANY relationship (event-to-object
+  # or object-to-object) is the referenced object's type, lowercased.
+  # One deterministic rule, trivially checkable by a validator.
+
+  # --------------------------------------------------------------------------------
+  # Public API
+  # --------------------------------------------------------------------------------
+
+  @doc """
+  Derives the OCEL 2.0 document map for one Run (an `%Xaas.Ultracode.Run{}`
+  struct or a Run id string). Loads the Run's Epochs and their sealed
+  Receipts through the lawful `:read_unscoped` / `:for_epoch` actions.
+  """
+  @spec derive_run(Run.t() | String.t()) :: {:ok, map()} | {:error, :run_not_found}
+  def derive_run(%Run{} = run) do
+    {:ok, epochs} = load_epochs(run.id)
+    receipts_by_epoch = Map.new(epochs, fn epoch -> {epoch.id, load_receipts!(epoch.id)} end)
+    {:ok, build_document(run, epochs, receipts_by_epoch)}
+  end
+
+  def derive_run(run_id) when is_binary(run_id) do
+    case Ash.read_one(run_query(run_id)) do
+      {:ok, %Run{} = run} -> derive_run(run)
+      {:ok, nil} -> {:error, :run_not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Derives documents for every Run, oldest first (`derive_run/1` semantics
+  per row).
+  """
+  @spec derive_all() :: {:ok, [map()]}
+  def derive_all do
+    {:ok, runs} =
+      Run
+      |> Ash.Query.for_read(:read_unscoped)
+      |> Ash.Query.sort(inserted_at: :asc, id: :asc)
+      |> Ash.read()
+
+    {:ok, Enum.map(runs, fn run -> elem(derive_run(run), 1) end)}
+  end
+
+  @doc """
+  Pure core: builds the OCEL 2.0 document from already-loaded rows. No IO,
+  no clock, no DB -- the function the golden structure tests pin exactly.
+  `receipts_by_epoch` maps `epoch.id` to that epoch's sealed Receipts.
+  """
+  @spec build_document(Run.t(), [Epoch.t()], %{String.t() => [Receipt.t()]}) :: map()
+  def build_document(%Run{} = run, epochs, receipts_by_epoch)
+      when is_list(epochs) and is_map(receipts_by_epoch) do
+    epochs = Enum.sort_by(epochs, &{&1.cycle, &1.id})
+
+    %{
+      "ocel:objectTypes" => Enum.map(@object_types, fn name -> %{"name" => name} end),
+      "ocel:eventTypes" => Enum.map(@event_types, fn name -> %{"name" => name} end),
+      "ocel:events" =>
+        (run_events(run) ++
+           epoch_events(run, epochs) ++ receipt_events(run, epochs, receipts_by_epoch))
+        |> Enum.sort_by(&{&1["time"], &1["id"]}),
+      "ocel:objects" =>
+        (run_objects(run) ++
+           epoch_objects(run, epochs) ++
+           worker_objects(epochs) ++
+           receipt_objects(epochs, receipts_by_epoch) ++ worktree_objects(epochs))
+        |> Enum.sort_by(&{@object_type_rank[&1["type"]], &1["id"]})
+    }
+  end
+
+  @doc """
+  Encodes a document deterministically (built-in `JSON`, sorted keys,
+  trailing newline) and writes it to `path`.
+  """
+  @spec write_document(map(), Path.t()) :: {:ok, Path.t()} | {:error, term()}
+  def write_document(document, path) when is_map(document) do
+    with :ok <- File.mkdir_p(Path.dirname(path)),
+         :ok <- File.write(path, JSON.encode!(document) <> "\n") do
+      {:ok, path}
+    end
+  end
+
+  @doc """
+  Derives one Run's log and writes it to
+  `Path.join(out_dir, "<run_id>.ocel.json")`.
+  """
+  @spec export_run(Run.t() | String.t(), Path.t()) ::
+          {:ok, Path.t()} | {:error, :run_not_found | term()}
+  def export_run(run_or_id, out_dir \\ @default_out_dir)
+
+  def export_run(%Run{} = run, out_dir), do: do_export(run, run.id, out_dir)
+
+  def export_run(run_id, out_dir) when is_binary(run_id), do: do_export(run_id, run_id, out_dir)
+
+  defp do_export(run_or_id, file_stem, out_dir) do
+    with {:ok, document} <- derive_run(run_or_id),
+         {:ok, path} <- write_document(document, Path.join(out_dir, "#{file_stem}.ocel.json")) do
+      {:ok, path}
+    end
+  end
+
+  @doc """
+  Exports every Run's log into `out_dir`. Returns the list of written
+  paths.
+  """
+  @spec export_all(Path.t()) :: {:ok, [Path.t()]} | {:error, term()}
+  def export_all(out_dir \\ @default_out_dir) do
+    with {:ok, runs} <-
+           Run
+           |> Ash.Query.for_read(:read_unscoped)
+           |> Ash.Query.sort(inserted_at: :asc, id: :asc)
+           |> Ash.read() do
+      {:ok,
+       Enum.map(runs, fn run ->
+         {:ok, path} = export_run(run, out_dir)
+         path
+       end)}
+    end
+  end
+
+  @doc "The registered object type names (fixed, deterministic order)."
+  @spec object_types() :: [String.t()]
+  def object_types, do: @object_types
+
+  @doc "The registered event type names (fixed, deterministic order)."
+  @spec event_types() :: [String.t()]
+  def event_types, do: @event_types
+
+  @doc "Default output directory for `export_run/2` / `export_all/1`."
+  @spec default_out_dir() :: Path.t()
+  def default_out_dir, do: @default_out_dir
+
+  # --------------------------------------------------------------------------------
+  # Run-level events + object
+  # --------------------------------------------------------------------------------
+
+  # Run lifecycle events carry no payload attributes: the state machine
+  # facts are on the Run object; the event's existence + time is the fact.
+  defp run_events(run) do
+    Enum.concat([
+      maybe_event("run_started", run.id, ts(run.started_at), %{}, [rel(run.id, "run")]),
+      terminal_run_event(run, :completed),
+      terminal_run_event(run, :failed),
+      terminal_run_event(run, :abandoned)
+    ])
+  end
+
+  defp terminal_run_event(run, state) when state in [:completed, :failed, :abandoned] do
+    if run.state == state do
+      maybe_event(
+        "run_#{state}",
+        run.id,
+        ts(run.updated_at),
+        %{},
+        [rel(run.id, "run")]
+      )
+    else
+      []
+    end
+  end
+
+  defp run_objects(run) do
+    [
+      %{
+        "id" => run.id,
+        "type" => "Run",
+        "attributes" =>
+          drop_nils(%{
+            "goal" => run.goal,
+            "provider" => run.provider,
+            "verifier_suite" => run.verifier_suite,
+            "org_id" => run.org_id,
+            "state" => atom(run.state),
+            "standing" => atom(run.standing),
+            "cycle" => run.cycle,
+            "max_cycles" => run.max_cycles,
+            "epoch_timeout_seconds" => run.epoch_timeout_seconds,
+            "started_at" => ts(run.started_at),
+            "deadline_at" => ts(run.deadline_at)
+          }),
+        "relationships" => []
+      }
+    ]
+  end
+
+  # --------------------------------------------------------------------------------
+  # Epoch-level events + objects
+  # --------------------------------------------------------------------------------
+
+  defp epoch_events(run, epochs) do
+    Enum.flat_map(epochs, fn epoch ->
+      context = [
+        rel(run.id, "run"),
+        rel(epoch.id, "epoch"),
+        rel_opt(epoch.worktree, "worktree")
+      ]
+
+      terminal =
+        case atom(epoch.state) do
+          "completed" ->
+            maybe_event(
+              "epoch_completed",
+              epoch.id,
+              ts(epoch.completed_at),
+              epoch_attrs(epoch),
+              lease_context(epoch, context)
+            )
+
+          "missed" ->
+            maybe_event(
+              "epoch_missed",
+              epoch.id,
+              ts(epoch.updated_at),
+              epoch_attrs(epoch),
+              lease_context(epoch, context)
+            )
+
+          "failed" ->
+            maybe_event(
+              "epoch_failed",
+              epoch.id,
+              ts(epoch.updated_at),
+              epoch_attrs(epoch),
+              lease_context(epoch, context)
+            )
+
+          _ ->
+            []
+        end
+
+      Enum.concat([
+        maybe_event(
+          "epoch_scheduled",
+          epoch.id,
+          ts(epoch.expected_at) || ts(epoch.inserted_at),
+          epoch_attrs(epoch),
+          context
+        ),
+        maybe_event("epoch_started", epoch.id, ts(epoch.started_at), epoch_attrs(epoch), context),
+        terminal
+      ])
+    end)
+  end
+
+  defp epoch_attrs(epoch), do: %{"cycle" => epoch.cycle}
+
+  defp epoch_objects(run, epochs) do
+    Enum.map(epochs, fn epoch ->
+      %{
+        "id" => epoch.id,
+        "type" => "Epoch",
+        "attributes" =>
+          drop_nils(%{
+            "cycle" => epoch.cycle,
+            "exact_subject" => epoch.exact_subject,
+            "state" => atom(epoch.state),
+            "expected_at" => ts(epoch.expected_at),
+            "started_at" => ts(epoch.started_at),
+            "completed_at" => ts(epoch.completed_at),
+            "lease_expires_at" => ts(epoch.lease_expires_at),
+            "leased_to" => epoch.leased_to,
+            "worktree" => epoch.worktree,
+            "final_head" => epoch.final_head
+          }),
+        "relationships" => [rel(run.id, "run")]
+      }
+    end)
+  end
+
+  # Worker relationships on events: only for events whose fact
+  # co-occurred with the lease -- never `epoch_scheduled`/`epoch_started`
+  # (both precede any possible claim; the lease requires a `:running`
+  # epoch, i.e. one already past `:start`).
+  defp lease_context(epoch, context) do
+    case epoch.leased_to do
+      nil -> context
+      worker -> context ++ [rel(worker, "worker")]
+    end
+  end
+
+  defp worker_objects(epochs) do
+    epochs
+    |> Enum.filter(& &1.leased_to)
+    |> Enum.group_by(& &1.leased_to, & &1.id)
+    |> Enum.map(fn {worker, epoch_ids} ->
+      %{
+        "id" => worker,
+        "type" => "Worker",
+        "attributes" => %{},
+        "relationships" =>
+          epoch_ids
+          |> Enum.sort()
+          |> Enum.uniq()
+          |> Enum.map(&rel(&1, "epoch"))
+      }
+    end)
+  end
+
+  # --------------------------------------------------------------------------------
+  # Receipt-level events + objects
+  # --------------------------------------------------------------------------------
+
+  defp receipt_events(run, epochs, receipts_by_epoch) do
+    epochs
+    |> Enum.flat_map(fn epoch ->
+      context = [
+        rel(run.id, "run"),
+        rel(epoch.id, "epoch"),
+        rel_opt(epoch.worktree, "worktree"),
+        rel_opt(epoch.leased_to, "worker")
+      ]
+
+      receipts_by_epoch
+      |> Map.get(epoch.id, [])
+      |> Enum.flat_map(fn receipt ->
+        Enum.concat([
+          maybe_event(
+            "receipt_closed",
+            receipt.id,
+            ts(receipt.sealed_at),
+            receipt_closed_attrs(receipt),
+            context ++ [rel(receipt.id, "receipt")]
+          ),
+          verification_events(receipt, run, context),
+          refusal_event(receipt, context)
+        ])
+      end)
+    end)
+  end
+
+  defp verification_events(receipt, run, context) do
+    case verifier_status(receipt) do
+      nil ->
+        []
+
+      status when status in ["pass", "fail"] ->
+        attrs = drop_nils(%{"verifier_suite" => run.verifier_suite, "verifier_status" => status})
+
+        maybe_event(
+          if(status == "pass", do: "verification_passed", else: "verification_failed"),
+          receipt.id,
+          ts(receipt.sealed_at),
+          attrs,
+          context ++ [rel(receipt.id, "receipt")]
+        )
+
+      # "timeout"/"error": the suite could not produce a verdict -- the
+      # sealed outcome is the verdict (`:partial_alive`); recording a
+      # "verification_failed" event would falsify what happened.
+      _other ->
+        []
+    end
+  end
+
+  defp refusal_event(receipt, context) do
+    if atom(receipt.outcome) == "refused" do
+      maybe_event(
+        "refused",
+        receipt.id,
+        ts(receipt.sealed_at),
+        refusal_attrs(receipt),
+        context ++ [rel(receipt.id, "receipt")]
+      )
+    else
+      []
+    end
+  end
+
+  defp receipt_closed_attrs(receipt) do
+    evidence = evidence(receipt)
+
+    drop_nils(%{
+      "outcome" => atom(receipt.outcome),
+      "subject" => receipt.subject,
+      "head_verified" => ev_key(evidence, "head_verified"),
+      "refusal_reason" => ev_key(evidence, "refusal_reason"),
+      "verifier_status" => verifier_status(receipt),
+      "observed_head" => ev_key(evidence, "observed_head"),
+      "verifier_unavailable" => ev_key(evidence, "verifier_unavailable")
+    })
+  end
+
+  defp refusal_attrs(receipt) do
+    evidence = evidence(receipt)
+
+    drop_nils(%{
+      "outcome" => atom(receipt.outcome),
+      "subject" => receipt.subject,
+      "refusal_reason" => ev_key(evidence, "refusal_reason")
+    })
+  end
+
+  defp receipt_objects(epochs, receipts_by_epoch) do
+    epochs
+    |> Enum.flat_map(&Map.get(receipts_by_epoch, &1.id, []))
+    |> Enum.map(fn receipt ->
+      %{
+        "id" => receipt.id,
+        "type" => "Receipt",
+        "attributes" =>
+          drop_nils(%{
+            "subject" => receipt.subject,
+            "outcome" => atom(receipt.outcome)
+          }),
+        "relationships" => [rel(receipt.epoch_id, "epoch")]
+      }
+    end)
+  end
+
+  defp worktree_objects(epochs) do
+    epochs
+    |> Enum.map(& &1.worktree)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.map(fn path ->
+      %{"id" => path, "type" => "Worktree", "attributes" => %{}, "relationships" => []}
+    end)
+  end
+
+  # --------------------------------------------------------------------------------
+  # Shared constructors
+  # --------------------------------------------------------------------------------
+
+  # An event whose moment is not persisted is NEVER emitted (see the
+  # moduledoc mapping table) -- a nil time yields no event, never a
+  # defaulted or fabricated one.
+  defp maybe_event(_type, _row_id, nil, _attrs, _relationships), do: []
+
+  defp maybe_event(type, row_id, time, attrs, relationships) do
+    [
+      %{
+        "id" => "#{type}:#{row_id}",
+        "type" => type,
+        "time" => time,
+        "attributes" => attrs,
+        "relationships" =>
+          relationships
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq_by(& &1["objectId"])
+          |> Enum.sort_by(& &1["objectId"])
+      }
+    ]
+  end
+
+  defp rel(object_id, qualifier), do: %{"objectId" => object_id, "qualifier" => qualifier}
+  defp rel_opt(nil, _qualifier), do: nil
+  defp rel_opt(object_id, qualifier), do: rel(object_id, qualifier)
+
+  # Timestamps: Ash's `:utc_datetime_usec` loads real UTC DateTimes; the
+  # ISO8601 form ends in "Z". A nil timestamp yields nil -- callers emit
+  # no event rather than fabricating a moment (see `maybe_event/5`).
+  defp ts(nil), do: nil
+  defp ts(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+
+  # Evidence maps arrive with string keys from `Lease`, but Ash `:map`
+  # attributes preserve whatever the writer used -- normalize atom keys
+  # to strings so test fixtures and hand-sealed receipts behave
+  # identically to production. Never `String.to_existing_atom/1` on
+  # caller-shaped keys (the atom may not exist; that would raise).
+  defp evidence(receipt), do: receipt.evidence || %{}
+
+  defp normalize_keys(evidence) when is_map(evidence) do
+    Map.new(evidence, fn {key, value} -> {to_string(key), value} end)
+  end
+
+  defp normalize_keys(_evidence), do: %{}
+
+  defp ev_key(evidence, key), do: Map.get(normalize_keys(evidence), key)
+
+  defp verifier_status(receipt) do
+    case ev_key(evidence(receipt), "fabric_verifier") do
+      verifier when is_map(verifier) -> normalize_keys(verifier)["status"]
+      _ -> nil
+    end
+  end
+
+  defp atom(nil), do: nil
+  defp atom(value) when is_atom(value), do: Atom.to_string(value)
+  defp atom(value) when is_binary(value), do: value
+
+  defp drop_nils(map), do: map |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
+
+  defp run_query(run_id) do
+    Run
+    |> Ash.Query.for_read(:read_unscoped)
+    |> Ash.Query.filter(id == ^run_id)
+  end
+
+  defp load_epochs(run_id) do
+    Epoch
+    |> Ash.Query.for_read(:read_unscoped)
+    |> Ash.Query.filter(run_id == ^run_id)
+    |> Ash.Query.sort(cycle: :asc, id: :asc)
+    |> Ash.read()
+  end
+
+  defp load_receipts!(epoch_id) do
+    Receipt
+    |> Ash.Query.for_read(:for_epoch, %{epoch_id: epoch_id})
+    |> Ash.read!()
+  end
+end
