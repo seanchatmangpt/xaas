@@ -1,4 +1,5 @@
 @prefix s2b: <https://ggen.dev/ontology/sa2a-bridge#> .
+@prefix ema: <http://seanchatmangpt.github.io/packs/elixir-mcp-a2a#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -103,3 +104,56 @@ s2b:proof20 a s2b:ProofObligation ; s2b:sequence 20 ; s2b:requirement "the sole 
 s2b:proof30 a s2b:ProofObligation ; s2b:sequence 30 ; s2b:requirement "all four ERRC categories are present" .
 s2b:proof40 a s2b:ProofObligation ; s2b:sequence 40 ; s2b:requirement "ambient command policy is false" .
 s2b:proof50 a s2b:ProofObligation ; s2b:sequence 50 ; s2b:requirement "recovery verification precedes any repeated port DO attempt" .
+
+# MCP/A2A discoverability -- composes elixir-mcp-a2a-pack's real, already-
+# admitted vocabulary verbatim (ema:CapabilitySurface/ema:Capability and
+# their exact properties) rather than inventing a parallel one, so
+# Xaas.Sa2a.Bridge is discoverable as an MCP tool / A2A skill surface, not
+# only a standalone GenServer. mutationScope/requiresAuthority per
+# capability mirror this pack's own s2b:EdgeSpec doBoundary flags 1:1:
+# sa2a_execute is the sole "consequential" + requiresAuthority=true row,
+# matching elixir-mcp-a2a-pack's own gate (010_capability_descriptor_contract.rq)
+# forbidding mutationScope=consequential with requiresAuthority=false.
+s2b:xaasSa2aSurface a ema:CapabilitySurface ;
+  ema:appModule "Xaas" ;
+  ema:otpApp "xaas" ;
+  ema:agentModule "Sa2aBridgeAgent" ;
+  ema:agentName "xaas-sa2a-bridge" ;
+  ema:agentDescription "Bridges xaas's Ash outer control plane to autofde-lab's SA2A calculus over the real BEAM port bridge (Xaas.Sa2a.Bridge)." ;
+  ema:agentMountPath "/a2a/sa2a-bridge" ;
+  ema:skillsModule "Xaas.Sa2a.Generated.McpSkills" .
+
+s2b:capValidate a ema:Capability ;
+  ema:capabilityOf s2b:xaasSa2aSurface ; ema:capabilityOrder 10 ; ema:capabilityId "sa2a_validate" ;
+  ema:exposedVia "both" ; ema:capabilityName "validate" ;
+  ema:capabilityDescription "Validate SA2A agent card / profile compliance." ;
+  ema:observationScope "read_only" ; ema:mutationScope "none" ;
+  ema:requiresAuthority false ; ema:isReversible true ; ema:receiptSemantics "none" .
+
+s2b:capAdmit a ema:Capability ;
+  ema:capabilityOf s2b:xaasSa2aSurface ; ema:capabilityOrder 20 ; ema:capabilityId "sa2a_admit" ;
+  ema:exposedVia "both" ; ema:capabilityName "admit" ;
+  ema:capabilityDescription "Subject a candidate assertion to SA2A admission court." ;
+  ema:observationScope "read_write" ; ema:mutationScope "idempotent" ;
+  ema:requiresAuthority false ; ema:isReversible true ; ema:receiptSemantics "logged" .
+
+s2b:capPlan a ema:Capability ;
+  ema:capabilityOf s2b:xaasSa2aSurface ; ema:capabilityOrder 30 ; ema:capabilityId "sa2a_plan" ;
+  ema:exposedVia "both" ; ema:capabilityName "plan" ;
+  ema:capabilityDescription "Allocate CMCA exploration budget over the UNKNOWN candidate frontier." ;
+  ema:observationScope "read_write" ; ema:mutationScope "idempotent" ;
+  ema:requiresAuthority false ; ema:isReversible true ; ema:receiptSemantics "logged" .
+
+s2b:capExecute a ema:Capability ;
+  ema:capabilityOf s2b:xaasSa2aSurface ; ema:capabilityOrder 40 ; ema:capabilityId "sa2a_execute" ;
+  ema:exposedVia "both" ; ema:capabilityName "execute" ;
+  ema:capabilityDescription "Execute a query with deterministic machine-experience compilation -- the sole consequential DO edge (s2b:edge40)." ;
+  ema:observationScope "read_write" ; ema:mutationScope "consequential" ;
+  ema:requiresAuthority true ; ema:isReversible false ; ema:receiptSemantics "sealed_receipt" .
+
+s2b:capReplay a ema:Capability ;
+  ema:capabilityOf s2b:xaasSa2aSurface ; ema:capabilityOrder 50 ; ema:capabilityId "sa2a_replay" ;
+  ema:exposedVia "both" ; ema:capabilityName "replay" ;
+  ema:capabilityDescription "Deterministically verify a receipt or plan hash." ;
+  ema:observationScope "read_only" ; ema:mutationScope "none" ;
+  ema:requiresAuthority false ; ema:isReversible true ; ema:receiptSemantics "logged" .

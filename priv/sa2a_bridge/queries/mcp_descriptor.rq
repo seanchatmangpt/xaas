@@ -1,0 +1,10 @@
+PREFIX ema: <http://seanchatmangpt.github.io/packs/elixir-mcp-a2a#>
+SELECT ?capabilityOrder ?capabilityId ?exposedVia ?capabilityName ?capabilityDescription
+       ?observationScope ?mutationScope ?requiresAuthority ?isReversible ?receiptSemantics WHERE {
+  ?cap a ema:Capability ; ema:capabilityOf ?surface ;
+    ema:capabilityOrder ?capabilityOrder ; ema:capabilityId ?capabilityId ; ema:exposedVia ?exposedVia ;
+    ema:capabilityName ?capabilityName ; ema:capabilityDescription ?capabilityDescription ;
+    ema:observationScope ?observationScope ; ema:mutationScope ?mutationScope ;
+    ema:requiresAuthority ?requiresAuthority ; ema:isReversible ?isReversible ;
+    ema:receiptSemantics ?receiptSemantics .
+} ORDER BY ?capabilityOrder
