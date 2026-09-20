@@ -75,6 +75,9 @@ config :xaas, Oban,
   notifier: Oban.Notifiers.Postgres,
   queues: [
     default: 10,
+    # One shared integration/promote wave at a time; construction concurrency
+    # lives inside Xaas.Ultracode.Autonomic.
+    ultracode_wave: 1,
     hold_request_expire_stale_holds: 1,
     capability_liveness_receipt_check_regressions: 1,
     webhook_delivery_retry_failed_deliveries: 1
