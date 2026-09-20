@@ -136,6 +136,8 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     assert ttl =~ "gall:executionRepoAlias \"demo\""
     assert ttl =~ "gall:executionPolicy \"continuous_epoch_run\""
     assert ttl =~ "prov:wasDerivedFrom <urn:gall:receipt:dep-1>"
+    assert ttl =~ "<urn:gall:receipt:dep-1> a gall:Receipt, prov:Entity"
+    assert ttl =~ "gall:receiptDigest \"sha256:#{String.duplicate("c", 64)}\""
     assert ttl =~ "gall:candidateSha \"#{epoch.final_head}\""
   end
 
