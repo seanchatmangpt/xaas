@@ -162,16 +162,16 @@ defmodule Xaas.Ultracode.Run do
       schedule :tick, "* * * * *" do
         action(:tick)
         worker_module_name(Xaas.Ultracode.Run.Workers.Tick)
-
-        # Explicit `:default` queue -- `config :xaas, Oban` (config.exs)
-        # only lists `queues: [default: 10]`. AshOban's own default queue
-        # name for a scheduled action is the resource's short name plus
-        # the schedule name (e.g. `run_tick`), which this repo's Oban
-        # config does not list as a runnable queue -- an unlisted queue's
-        # jobs are enqueued but never processed. Pinning `:default` here
-        # keeps this scheduled action real/running rather than silently
-        # dormant.
         queue(:default)
+      end
+
+      # DfCM composition: keep item construction parallel while serializing
+      # the shared integration/promote phase. The action itself owns no
+      # additional authority; it only invokes the existing Autonomic loop.
+      schedule :autonomic_wave, "*/30 * * * *" do
+        action(:autonomic_wave)
+        worker_module_name(Xaas.Ultracode.Run.Workers.AutonomicWave)
+        queue(:ultracode_wave)
       end
     end
   end
@@ -187,6 +187,12 @@ defmodule Xaas.Ultracode.Run do
     # arguments and exposes no Run/Epoch field to a caller; it only
     # triggers the real `Xaas.Ultracode.Reactor` missed-epoch workflow.
     bypass action(:tick) do
+      authorize_if(always())
+    end
+
+    # Internal scheduler call site. Like :tick, this action accepts no
+    # caller-supplied subject or authority and is not a public DO surface.
+    bypass action(:autonomic_wave) do
       authorize_if(always())
     end
 
@@ -232,8 +238,13 @@ defmodule Xaas.Ultracode.Run do
         :provider,
         :org_id,
         :verifier_suite,
+        :work_order_iri,
         :checkpoint_iri,
         :graph_digest,
+        :repository_identity,
+        :execution_repo_alias,
+        :execution_policy,
+        :dependency_evidence,
         :base_sha
       ])
 
@@ -326,6 +337,13 @@ defmodule Xaas.Ultracode.Run do
         allow_nil?(false)
       end
 
+      # Optional exact-SHA worktree already provisioned by the caller's
+      # admitted materialization path. Carrying it here lets every semantic
+      # policy use the single Run.:start -> CreateFirstEpoch lifecycle.
+      argument :worktree, :string do
+        allow_nil?(true)
+      end
+
       validate({Xaas.Ultracode.Validations.RunIsPending, []})
 
       change(set_attribute(:state, :running))
@@ -348,6 +366,28 @@ defmodule Xaas.Ultracode.Run do
       run(fn _input, _context ->
         case Reactor.run(Xaas.Ultracode.Reactor) do
           {:ok, result} -> {:ok, %{advanced: result}}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+
+    # Scheduled composition controller. Five construction workers may run in
+    # parallel inside one wave; the dedicated one-slot Oban queue prevents
+    # two waves from racing the shared promotion/integration phase.
+    action :autonomic_wave, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(:xaas, :ultracode_wave_runner, {Xaas.Ultracode.Autonomic, :run})
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[capacity: 5]])
+            fun when is_function(fun, 1) -> fun.(capacity: 5)
+          end
+
+        case result do
+          {:ok, report} -> {:ok, %{standing: report["standing"], receipt: report["receipt_path"]}}
           {:error, error} -> {:error, error}
         end
       end)
@@ -395,8 +435,15 @@ defmodule Xaas.Ultracode.Run do
       constraints(max_length: 64, match: ~r/^[a-z0-9][a-z0-9_-]*$/)
     end
 
-    # Canonical semantic-work identity. These fields do not grant authority;
-    # they bind the durable Run to the admitted graph subject that caused it.
+    # Canonical semantic-work identity. These fields are descriptive evidence
+    # only. repository_identity names the semantic repository; execution_repo_alias
+    # is the operator-local Worktrees lookup key. They are intentionally distinct.
+    attribute :work_order_iri, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 1024)
+    end
+
     attribute :checkpoint_iri, :string do
       allow_nil?(true)
       public?(true)
@@ -407,6 +454,35 @@ defmodule Xaas.Ultracode.Run do
       allow_nil?(true)
       public?(true)
       constraints(max_length: 128)
+    end
+
+    attribute :repository_identity, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 512)
+    end
+
+    attribute :execution_repo_alias, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128)
+    end
+
+    # Explicit policy makes the pre-existing lifecycle variation semantic:
+    # continuous work waits for the tick clock; wave attempts are started
+    # immediately but still use the same Run.:start first-Epoch path.
+    attribute :execution_policy, :atom do
+      allow_nil?(true)
+      public?(true)
+      constraints(one_of: [:continuous_epoch_run, :autonomic_wave_attempt])
+    end
+
+    # Typed upstream receipt identities/digests projected from the canonical
+    # work graph. This is evidence carried by the Run, never authority.
+    attribute :dependency_evidence, :map do
+      allow_nil?(false)
+      default(%{})
+      public?(true)
     end
 
     attribute :base_sha, :string do
