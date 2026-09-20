@@ -27,11 +27,19 @@ defmodule Xaas.Ultracode.Validations.RunTransitionAllowed do
   - `{:running, :completed}` -- the real production edge
     `Xaas.Ultracode.NextEpoch.advance_from_completed/2` uses when a Run
     reaches `max_cycles`.
-  - `{:running, :failed}`, `{:running, :abandoned}` -- intentionally
-    provisioned, not yet exercised by any real caller, matching this
-    resource's `state` attribute's own declared `one_of` vocabulary
-    (`Run` documents `:failed`/`:abandoned` as real lifecycle states even
-    though nothing constructs them yet).
+  - `{:running, :failed}`, `{:running, :abandoned}` -- `:running -> :failed`
+    is now REALLY exercised: `Xaas.Ultracode.NextEpoch`'s bounded stale
+    recovery transitions an exhausted Run (cycle budget spent on a
+    `:missed`/`:failed` last epoch) to `:failed` with the stale state's
+    standing. `:running -> :abandoned` is the operator-facing
+    `Run.:stop` action's edge. Both were provisioned by this validation's
+    original pass; neither was a dead provision anymore once the engine
+    landed.
+  - `{:pending, :abandoned}` -- `Run.:stop` on a never-started Run: an
+    operator may withdraw a pending Run without first admitting it.
+  - `{:abandoned, :running}` -- the operator-facing `Run.:resume` action's
+    edge (`RunResumable` additionally refuses a resume with no active
+    epoch and no remaining cycle budget).
 
   Before this validation existed, `:transition_state` accepted ANY
   `{current, new}` pair unconditionally -- a real, unvalidated backdoor
@@ -47,7 +55,9 @@ defmodule Xaas.Ultracode.Validations.RunTransitionAllowed do
     {:pending, :running},
     {:running, :completed},
     {:running, :failed},
-    {:running, :abandoned}
+    {:running, :abandoned},
+    {:pending, :abandoned},
+    {:abandoned, :running}
   ]
 
   @impl true

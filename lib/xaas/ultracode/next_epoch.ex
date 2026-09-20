@@ -86,12 +86,20 @@ defmodule Xaas.Ultracode.NextEpoch do
       [%{state: :completed} = last_epoch] ->
         advance_from_completed(run, last_epoch)
 
-      [%{state: state}] ->
-        # :missed or :failed -- do not silently retry or skip forward.
-        # A real disposition for this case is a separate, not-yet-built
-        # decision (retry the same cycle? abandon the Run?), so leave
-        # it visible rather than guessing.
-        %{run_id: run.id, outcome: :blocked_on_stale_epoch, epoch_state: state}
+      [%{state: state} = last_epoch] when state in [:missed, :failed] ->
+        # The disposition that used to be left visible-but-unbuilt
+        # (`:blocked_on_stale_epoch` forever stalled the Run): bounded
+        # recovery. A terminal-stale epoch consumes the same cycle budget a
+        # completed one does -- while `run.cycle < run.max_cycles` the next
+        # epoch is constructed (the retry is VISIBLE: the prior epoch keeps
+        # its terminal state and its receipts, the subject is unchanged, and
+        # the new epoch is a fresh `:expected` row a later tick starts), and
+        # at exhaustion the Run itself lands `:failed` with the standing the
+        # last epoch's terminal state implies (`:blocked` for `:missed` --
+        # the work was never delivered; `:refused` for `:failed` -- a worker
+        # or the court refused it). Never a silent skip: every edge here is
+        # a real persisted transition on top of an intact receipt trail.
+        recover_from_terminal_stale(run, last_epoch, state)
     end
   end
 
@@ -102,28 +110,7 @@ defmodule Xaas.Ultracode.NextEpoch do
     system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
 
     if run.cycle < run.max_cycles do
-      {:ok, next_epoch} =
-        Xaas.Ultracode.Epoch
-        |> Ash.Changeset.for_create(
-          :create,
-          %{
-            run_id: run.id,
-            # Denormalized from the parent Run -- kept in sync at every
-            # real Epoch-create call site (see Epoch's own moduledoc "Org
-            # scoping" section); an org-less Run's next epoch stays
-            # org-less too.
-            org_id: run.org_id,
-            cycle: run.cycle,
-            exact_subject: last_epoch.exact_subject,
-            state: :expected,
-            expected_at: DateTime.utc_now()
-          }
-        )
-        |> Ash.create(actor: system_actor)
-
-      run
-      |> Ash.Changeset.for_update(:advance_cycle, %{})
-      |> Ash.update!(actor: system_actor)
+      {:ok, next_epoch} = construct_next_epoch(run, last_epoch, system_actor)
 
       Logger.info(
         "[ultracode] run #{run.id} advanced to epoch cycle=#{next_epoch.cycle} " <>
@@ -145,5 +132,77 @@ defmodule Xaas.Ultracode.NextEpoch do
 
       %{run_id: run.id, outcome: :run_completed}
     end
+  end
+
+  # Bounded recovery after a terminal `:missed`/`:failed` epoch -- the
+  # shared epoch-construction + cycle-advance body used by both the
+  # completed advance and the stale recovery, so the construction
+  # discipline (cycle numbering, subject reuse, expected_at) exists exactly
+  # once. Carries the same XAAS-2601 system authority actor.
+  defp recover_from_terminal_stale(run, last_epoch, stale_state) do
+    system_actor = Xaas.SystemAuthority.new(:ultracode_reactor)
+
+    if run.cycle < run.max_cycles do
+      {:ok, next_epoch} = construct_next_epoch(run, last_epoch, system_actor)
+
+      Logger.warning(
+        "[ultracode] run #{run.id} recovering from #{stale_state} epoch " <>
+          "#{last_epoch.id}: constructed replacement epoch cycle=#{next_epoch.cycle} " <>
+          "(epoch_id=#{next_epoch.id})"
+      )
+
+      %{
+        run_id: run.id,
+        outcome: :recovered_from_stale_epoch,
+        prior_epoch_state: stale_state,
+        epoch_id: next_epoch.id,
+        cycle: next_epoch.cycle
+      }
+    else
+      standing = if stale_state == :missed, do: :blocked, else: :refused
+
+      run
+      |> Ash.Changeset.for_update(:transition_state, %{state: :failed, standing: standing})
+      |> Ash.update!(actor: system_actor)
+
+      Logger.warning(
+        "[ultracode] run #{run.id} exhausted max_cycles=#{run.max_cycles} after a " <>
+          "#{stale_state} epoch -> Run :failed (standing :#{standing})"
+      )
+
+      %{
+        run_id: run.id,
+        outcome: :run_failed,
+        prior_epoch_state: stale_state,
+        standing: standing
+      }
+    end
+  end
+
+  defp construct_next_epoch(run, last_epoch, system_actor) do
+    {:ok, next_epoch} =
+      Xaas.Ultracode.Epoch
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          run_id: run.id,
+          # Denormalized from the parent Run -- kept in sync at every
+          # real Epoch-create call site (see Epoch's own moduledoc "Org
+          # scoping" section); an org-less Run's next epoch stays
+          # org-less too.
+          org_id: run.org_id,
+          cycle: run.cycle,
+          exact_subject: last_epoch.exact_subject,
+          state: :expected,
+          expected_at: DateTime.utc_now()
+        }
+      )
+      |> Ash.create(actor: system_actor)
+
+    run
+    |> Ash.Changeset.for_update(:advance_cycle, %{})
+    |> Ash.update!(actor: system_actor)
+
+    {:ok, next_epoch}
   end
 end

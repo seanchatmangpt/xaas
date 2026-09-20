@@ -366,7 +366,31 @@ defmodule Xaas.Ultracode.Autonomic do
     if epoch.lease_token do
       _ = Lease.refuse(epoch.lease_token, :worker_no_close, %{"reaped_by" => "xaas-autonomic"})
     else
-      epoch |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false) |> Ash.update()
+      # No live lease to refuse through -- same terminal disposition, and
+      # the SAME receipt invariant (`terminal epoch => receipt`): before
+      # this seal, a worker that died un-claimed left a `:failed` epoch
+      # with no receipt at all.
+      case epoch
+           |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false)
+           |> Ash.update() do
+        {:ok, failed} ->
+          Receipt
+          |> Ash.Changeset.for_create(
+            :seal,
+            %{
+              epoch_id: failed.id,
+              subject: failed.exact_subject,
+              outcome: :refused,
+              evidence: %{"reaped_by" => "xaas-autonomic", "refusal_reason" => "worker_no_close"},
+              sealed_at: DateTime.utc_now()
+            },
+            authorize?: false
+          )
+          |> Ash.create()
+
+        {:error, _} ->
+          {:error, :reap_failed}
+      end
     end
 
     {:failed, "worker ended without closing the lease"}

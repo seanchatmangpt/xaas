@@ -83,7 +83,12 @@ config :xaas, Oban,
     ultracode_wave: 1,
     hold_request_expire_stale_holds: 1,
     capability_liveness_receipt_check_regressions: 1,
-    webhook_delivery_retry_failed_deliveries: 1
+    webhook_delivery_retry_failed_deliveries: 1,
+    # `Xaas.Ultracode.Run`'s `:engine_cycle` schedule (every 5 minutes) --
+    # the continuous engine between waves: same single-slot serialization
+    # argument as `ultracode_wave` (slot-filling work must never overlap
+    # itself, or capacity accounting races).
+    ultracode_engine: 1
   ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
@@ -221,5 +226,18 @@ config :xaas, :ultracode_verifier_suites, %{}
 config :xaas, :ultracode_worktree_root, nil
 config :xaas, :ultracode_ticket_dir, nil
 config :xaas, :ultracode_repos, %{}
+
+# The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
+# pool_capacity/1`, enforced race-free inside `claim_next/3`): 5 live
+# leases per provider -- the operator-ordered standing wave size, now a
+# real fence on EVERY claim path (MCP workers included), not just the
+# wave's in-process semaphore. Integer = one bound for all providers; a
+# map gives per-provider bounds (`%{"zcode" => 5, default: 3}`); nil =
+# unbounded (the test-env choice, so `LeaseConcurrencyStressTest`'s
+# 25-way claim storm keeps its exact semantics). The default worker seam
+# for `Xaas.Ultracode.Engine.fill/1` stays unset (observe-only engine);
+# environments that want the engine actually dispatching configure
+# `config :xaas, :ultracode_engine_worker, {Mod, :fun}`.
+config :xaas, :ultracode_pool_capacity, 5
 
 import_config "#{config_env()}.exs"

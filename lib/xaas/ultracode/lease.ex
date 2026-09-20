@@ -31,6 +31,16 @@ defmodule Xaas.Ultracode.Lease do
       live-DB-confirmed finding that the previous `Ash.bulk_update`-based
       shape here was NOT actually atomic under real contention, despite
       reading as though it were;
+    * the provider POOL is capacity-bounded: at most
+      `pool_capacity/1` workers may hold live leases per provider at once
+      (production config pins 5 -- the operator-ordered standing wave size;
+      test config leaves it unbounded so concurrency stress tests keep
+      their exact semantics). Over-capacity claims get the typed
+      `{:error, :pool_at_capacity}`; the count and the bind serialize under
+      one `pg_advisory_xact_lock` per provider so the fence is real under
+      concurrency, and slots are released with no separate accounting --
+      a slot IS a live lease row (`live_leases/1`), so close/refuse/expiry
+      release it by construction;
     * `admit_tool/2` is per-consequence: construction tools are admitted;
       consequence-class tools are REFUSED — this domain deliberately does
       not model `AuthorityCeiling` (see `EpochReactor`'s :admit doc), so
@@ -77,6 +87,31 @@ defmodule Xaas.Ultracode.Lease do
 
   @default_lease_ttl_minutes 30
 
+  # Pool capacity -- the operator-ordered standing bound on how many workers
+  # may be in flight (live leases) per provider at once. This is the
+  # ENGINE-level counterpart of the wave's own in-memory semaphore
+  # (`Xaas.Ultracode.Autonomic`'s top-up semaphore bounds one wave's batch
+  # items; THIS bound lives in the claim kernel, so the MCP `claim_next`
+  # path -- which any number of external workers hit concurrently -- is
+  # fenced too).
+  #
+  # Read from `config :xaas, :ultracode_pool_capacity`:
+  #   * integer      -- one bound for every provider (production config pins 5);
+  #   * map          -- per-provider bounds, `%{default: n}` for unlisted ones;
+  #   * nil          -- UNBOUNDED (the config/test.exs default, so the real
+  #     `LeaseConcurrencyStressTest`'s 25-way one-provider claim storm keeps
+  #     its exact semantics); capacity is a production configuration, not an
+  #     implicit test behavior.
+  #
+  # Enforcement is race-safe by construction: the count and the bind happen
+  # inside ONE `pg_advisory_xact_lock` (keyed on the provider string) held
+  # for the whole claim -- two concurrent claimers can never both observe a
+  # free slot and both bind (the count-of-live-leases predicate alone would
+  # race, since a cross-row subselect inside one UPDATE's WHERE clause does
+  # not see a concurrent transaction's uncommitted insert of liveness on
+  # another row under READ COMMITTED).
+  @default_pool_capacity 5
+
   # Real, evidence-based bound (a live 25-way concurrent `claim_next/2`
   # stress test -- see `LeaseConcurrencyStressTest` -- observed several
   # simultaneous callers reading the SAME globally-oldest candidate before
@@ -104,22 +139,78 @@ defmodule Xaas.Ultracode.Lease do
   race retries (bounded by `:max_retries`, default `@default_claim_retries`)
   as long as other ready work may remain. Returns the leased epoch and the
   lease token, or `{:error, :no_ready_work}`.
+
+  Pool capacity: when the provider's configured capacity
+  (`pool_capacity/1`, overridable per call with `:pool_capacity`) is
+  non-nil and the number of live leases for the provider already equals
+  it, the claim is refused with the typed `{:error, :pool_at_capacity}`
+  -- never a silent over-capacity bind. The count and the bind run under
+  one `pg_advisory_xact_lock` per provider (see `@default_pool_capacity`'s
+  doc), so concurrent claimers cannot both squeeze past the bound.
+  `:pool_at_capacity` is deliberately NOT retried (unlike a lost bind):
+  capacity being full is terminal for this call -- the caller comes back
+  when a slot is released.
   """
   @spec claim_next(String.t(), String.t() | nil, keyword()) ::
-          {:ok, Epoch.t(), String.t(), Run.t()} | {:error, :no_ready_work | term()}
+          {:ok, Epoch.t(), String.t(), Run.t()}
+          | {:error, :no_ready_work | :pool_at_capacity | term()}
   def claim_next(provider, worker_id \\ nil, opts \\ [])
       when is_binary(provider) and (is_binary(worker_id) or is_nil(worker_id)) do
     ttl = Keyword.get(opts, :lease_ttl_minutes, @default_lease_ttl_minutes)
     max_retries = Keyword.get(opts, :max_retries, @default_claim_retries)
-    do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id))
+
+    # `:default` sentinel = not supplied -- resolve from config; an explicit
+    # `nil` opt means UNBOUNDED for this call, an integer overrides the config.
+    capacity =
+      case Keyword.get(opts, :pool_capacity, :default) do
+        :default -> pool_capacity(provider)
+        explicit -> explicit
+      end
+
+    do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id), capacity)
   end
 
+  defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id, capacity) do
+    result =
+      Xaas.Repo.transaction(
+        fn ->
+          # Serialize the capacity check against the bind for this provider
+          # pool. A no-op cost when capacity is unbounded (nil) -- the lock
+          # is only taken on the enforced path.
+          if capacity do
+            Xaas.Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", [
+              "ultracode_pool:" <> provider
+            ])
+
+            if live_leases(provider) >= capacity do
+              {:error, :pool_at_capacity}
+            else
+              select_and_bind(provider, worker_id, ttl, retries_left, epoch_id)
+            end
+          else
+            select_and_bind(provider, worker_id, ttl, retries_left, epoch_id)
+          end
+        end,
+        timeout: 30_000
+      )
+
+    case result do
+      {:ok, inner} -> inner
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # The candidate selection + atomic bind loop. Runs INSIDE the per-provider
+  # advisory-lock transaction when capacity is enforced (so the lost-bind
+  # retries below re-read under the same lock); identical semantics to the
+  # original unconditional shape when capacity is nil.
+  #
   # `epoch_id` (directed claim) narrows the candidate set to that one epoch:
   # it still has to be running, unleased-or-expired, and of this provider, so
   # it grants nothing an oldest-first claim of the same pool would not -- it
   # only lets a dispatcher that provisioned a worktree for a specific epoch
   # bind its worker to exactly that epoch instead of racing for the oldest.
-  defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id) do
+  defp select_and_bind(provider, worker_id, ttl, retries_left, epoch_id) do
     now = DateTime.utc_now()
 
     query =
@@ -145,7 +236,7 @@ defmodule Xaas.Ultracode.Lease do
         # 0` fails closed rather than spinning forever under pathological,
         # sustained contention.
         {:error, :no_ready_work} when retries_left > 0 ->
-          do_claim_next(provider, worker_id, ttl, retries_left - 1, epoch_id)
+          select_and_bind(provider, worker_id, ttl, retries_left - 1, epoch_id)
 
         other ->
           other
@@ -154,6 +245,50 @@ defmodule Xaas.Ultracode.Lease do
       {:ok, nil} -> {:error, :no_ready_work}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  @doc """
+  The provider's configured pool capacity (how many workers may hold live
+  leases at once), read from `config :xaas, :ultracode_pool_capacity` --
+  integer for all providers, map for per-provider bounds (with `:default`
+  for unlisted ones), nil = unbounded. Unset config means #{@default_pool_capacity}.
+  """
+  @spec pool_capacity(String.t()) :: pos_integer() | nil
+  def pool_capacity(provider) when is_binary(provider) do
+    case Application.get_env(:xaas, :ultracode_pool_capacity, @default_pool_capacity) do
+      nil ->
+        nil
+
+      %{} = per_provider ->
+        Map.get(per_provider, provider, Map.get(per_provider, :default, @default_pool_capacity))
+
+      capacity when is_integer(capacity) and capacity > 0 ->
+        capacity
+    end
+  end
+
+  @doc """
+  How many workers currently hold LIVE leases for this provider -- the
+  engine's in-flight slot meter. A lease is live iff its epoch is still
+  `:running`, a token is bound, and the TTL has not passed; closure,
+  refusal, and TTL expiry each release slots with no separate accounting
+  (a slot IS a live lease row, so the meter cannot drift from reality).
+  """
+  @spec live_leases(String.t()) :: non_neg_integer()
+  def live_leases(provider) when is_binary(provider) do
+    now = DateTime.utc_now()
+
+    query =
+      from(e in Epoch,
+        join: r in Run,
+        on: e.run_id == r.id,
+        where:
+          e.state == :running and not is_nil(e.lease_token) and
+            e.lease_expires_at >= ^now and r.provider == ^provider,
+        select: count(e.id)
+      )
+
+    Xaas.Repo.one!(query)
   end
 
   # ------------------------------------------------------------------

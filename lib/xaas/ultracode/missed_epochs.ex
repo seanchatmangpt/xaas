@@ -23,6 +23,23 @@ defmodule Xaas.Ultracode.MissedEpochs do
   `ALIVE/PARTIAL_ALIVE/BLOCKED/...` vocabulary -- a missed expectation is
   exactly what `:blocked` means, not a distinct new outcome atom), via the
   same `Receipt.:seal` action `EpochReactor`'s `:receipt` step uses.
+  ## Live leases are exempt (the worker's TTL is its liveness bound)
+
+  A `:running` Epoch whose lease is still LIVE (`lease_expires_at >= now`,
+  `Xaas.Ultracode.Lease`) is deliberately NOT marked `:missed`, no matter
+  how stale its `expected_at`: the lease TTL is the worker's real liveness
+  reservation, and terminalizing a live-leased epoch mid-work strands real
+  work (a worker that finishes after this reaping finds
+  `{:error, {:lease_not_live, :missed}}` on close, and the epoch can never
+  reach `:completed`). This is not hypothetical: the Run moduledoc records
+  a real failover trial where a provider worker's claim->edit->close round
+  trip outran the then-300s timeout and the epoch was marked `:missed`
+  MID-LEASE. The miss deadline for a live-leased epoch is therefore its
+  own `lease_expires_at` (default TTL 30 minutes); once the lease has
+  expired -- a crashed or stuck worker -- the ordinary
+  `expected_at + epoch_timeout_seconds` rule reaps it exactly as before,
+  receipt sealed. `:expected` epochs (never claimed) keep the original
+  deadline unchanged.
   """
 
   require Ash.Query
@@ -77,6 +94,12 @@ defmodule Xaas.Ultracode.MissedEpochs do
       |> Ash.Query.filter(run_id == ^run.id)
       |> Ash.Query.filter(state in [:expected, :running])
       |> Ash.Query.filter(not is_nil(expected_at) and expected_at < ^deadline)
+      # Live-lease exemption -- see the moduledoc section: a `:running`
+      # epoch still inside its lease TTL belongs to a working (or at least
+      # bounded) worker; only an expired/absent lease makes it reapable
+      # here. Evaluated against the SAME `now` the deadline above used so
+      # the two predicates cannot straddle a clock step.
+      |> Ash.Query.filter(is_nil(lease_token) or lease_expires_at < ^now)
       |> Ash.read()
 
     missed_ids =

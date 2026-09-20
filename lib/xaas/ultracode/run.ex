@@ -199,6 +199,31 @@ defmodule Xaas.Ultracode.Run do
         worker_module_name(Xaas.Ultracode.Run.Workers.SemanticWave)
         queue(:ultracode_wave)
       end
+
+      # The CONTINUOUS engine cadence (every 5 minutes) -- the between-waves
+      # half of the loop: reap stale epochs, fill free worker slots up to the
+      # provider pool capacity (5 in production config), advance
+      # completed/stalled epochs, and carry the tick-health verdict in its
+      # report. All logic lives in `Xaas.Ultracode.Engine`; this schedule is
+      # only Time -> Cycle, exactly like `:tick` and `:autonomic_wave`.
+      # Single-slot dedicated queue (`ultracode_engine: 1` in
+      # `config :xaas, Oban`) for the same serialization reason as
+      # `:ultracode_wave`: engine cycles are capacity-filling work whose
+      # slot accounting must never overlap itself.
+      schedule :engine_cycle, "*/5 * * * *" do
+        action(:engine_cycle)
+        worker_module_name(Xaas.Ultracode.Run.Workers.EngineCycle)
+
+        # XAAS-2601 system-actor flow, same as `:tick` above: the cron
+        # worker runs through authorization with no stored actor, so the
+        # scheduler's own authority is made explicit. (The engine's INTERNAL
+        # mutations -- epoch reaping, receipt sealing -- each carry the
+        # admitted `:ultracode_reactor` service directly, matching the
+        # `Xaas.Checks.SystemActor` capability map for those subjects.)
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
+        queue(:ultracode_engine)
+      end
     end
   end
 
@@ -230,6 +255,25 @@ defmodule Xaas.Ultracode.Run do
     end
 
     bypass action(:semantic_wave) do
+      authorize_if(always())
+    end
+
+    # Same internal-only carve-out shape as the bypasses above: `:stop` and
+    # `:resume` are the operator-facing lifecycle actions for a Run
+    # (`:running -> :abandoned` with live-lease revocation; `:abandoned ->
+    # :running` re-arm), guarded by `RunTransitionAllowed` and
+    # `RunResumable`, never reachable from an unauthenticated path (the
+    # execution-fabric surface they would join is behind
+    # `RequireInternalApiToken`).
+    bypass action(:stop) do
+      authorize_if(always())
+    end
+
+    bypass action(:resume) do
+      authorize_if(always())
+    end
+
+    bypass action(:engine_cycle) do
       authorize_if(always())
     end
 
@@ -393,7 +437,6 @@ defmodule Xaas.Ultracode.Run do
       end)
     end
 
-
     # Scheduled composition controller. Five construction workers may run in
     # parallel inside one wave; the dedicated one-slot Oban queue prevents
     # two waves from racing the shared promotion/integration phase.
@@ -438,6 +481,79 @@ defmodule Xaas.Ultracode.Run do
           {:error, error} -> {:error, error}
         end
       end)
+    end
+
+    # Real generic action -- the sole body of the AshOban `:engine_cycle`
+    # scheduled action (every 5 minutes), mirroring `:tick`/`:autonomic_wave`
+    # exactly: all engineering-workflow logic in `Xaas.Ultracode.Engine`
+    # (reap -> fill worker slots at pool capacity -> advance -> health),
+    # this action only the call site. The runner is read through an
+    # application-env seam so tests can capture/inject without reaching the
+    # real engine, same as the wave runner above.
+    action :engine_cycle, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(:xaas, :ultracode_engine_runner, {Xaas.Ultracode.Engine, :cycle})
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[]])
+            fun when is_function(fun, 1) -> fun.([])
+          end
+
+        case result do
+          {:ok, report} -> {:ok, report}
+          %{} = report -> {:ok, report}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+    # Operator-facing STOP: `:running -> :abandoned` (edge already
+    # allow-listed by `RunTransitionAllowed`), standing `:blocked` -- the
+    # work stopped mid-flight, which is exactly what `:blocked` means in
+    # this repo's standing vocabulary. The after-action
+    # (`Changes.RevokeLiveLeases`) refuses every LIVE lease this Run's
+    # epochs hold -- a stopped run's in-flight workers get the typed
+    # `:run_stopped` refusal and their own `:refused` receipts, so the
+    # epoch lifecycle still holds its `terminal => receipt` invariant
+    # after a stop. `:expected` (never-claimed) epochs are deliberately
+    # left frozen: a stopped Run is out of the tick's active set, so
+    # nothing advances them; a later `:resume` lets the normal missed/next
+    # machinery dispose of them lawfully.
+    update :stop do
+      accept([])
+      require_atomic?(false)
+
+      change(set_attribute(:state, :abandoned))
+      change(set_attribute(:standing, :blocked))
+      change(Xaas.Ultracode.Changes.RevokeLiveLeases)
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
+
+      multitenancy(:bypass)
+    end
+
+    # Operator-facing RESUME: `:abandoned -> :running` re-arm. Standing
+    # resets to `:unknown` (a resumed run has observed nothing since it
+    # stopped -- old standing must not masquerade as current). No epoch is
+    # constructed here: the tick machinery owns epoch construction, and on
+    # the next ticks it disposes of whatever the stop froze (stale
+    # `:expected` epochs go `:missed` with receipts; `NextEpoch`'s bounded
+    # stale recovery advances the Run). `RunResumable` refuses the
+    # degenerate case -- a Run with no cycles left and no live epoch -- as
+    # a typed error instead of letting the next tick immediately fail it.
+    update :resume do
+      accept([])
+      require_atomic?(false)
+
+      change(set_attribute(:state, :running))
+      change(set_attribute(:standing, :unknown))
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
+      validate({Xaas.Ultracode.Validations.RunResumable, []})
+
+      multitenancy(:bypass)
     end
   end
 
