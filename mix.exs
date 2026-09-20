@@ -138,8 +138,9 @@ defmodule Xaas.MixProject do
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
       # assertions in XaasWeb.AutofdeLab.StatusLiveTest need it).
       {:lazy_html, ">= 0.1.0", only: :test},
-      {:sourceror, "~> 1.8", only: [:dev, :test]},
-      {:igniter, "~> 0.6", only: [:dev, :test]},
+      {:sourceror, "~> 1.8", runtime: false},
+      # :ex4pm's `use Igniter.Mix.Task` needs Igniter at compile time in every env.
+      {:igniter, "~> 0.6", runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},
