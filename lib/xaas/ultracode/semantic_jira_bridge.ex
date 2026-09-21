@@ -34,16 +34,52 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
       standing already moved), `:unknown_work_order`;
     * a promotion the calculus refuses (courts, evidence, acceptance,
       falsifiers, ceiling, receipts, subject): `{:promotion_refused, [checks]}`
-      -- the log does not move and the work order stays on the frontier.
+      -- the log does not move and the work order stays on the frontier;
+    * a malformed export (a digest-valid export whose `fabric_verifier`, `steps`
+      or court receipt has the wrong shape): `{:malformed_export, path}`, never
+      an exception;
+    * a log the bridge cannot trust: `{:log_untrusted, detail}` (an event whose
+      `event_digest` does not re-derive from its own content, an unreadable event
+      file, a standing chain that skips a step). Nothing is eligible over such a
+      log and nothing is appended to it;
+    * an admission that could not be serialized: `{:log_lock, :perl_unavailable |
+      :lock_timeout | {:lock_failed, exit_status}}` (the OS lock of the log, see below);
+    * an append the log did not honour: `{:log_claim_orphaned, receipt_digest}`
+      (a writer died between claiming the event digest and writing the event, so
+      the log answers `already recorded` with no event; `reap_orphaned_claims/1`
+      clears it) and `{:receipt_not_recorded, ...}` (the log answered with an
+      event that cites a different receipt than the one submitted).
 
   ## Evidence provenance
 
   Acceptance / falsifier / court verdicts come ONLY from the fabric-produced
   court receipt inside the export (`Xaas.Ultracode.CourtReceipt`), only when
-  the fabric verifier passed and the receipt is bound to the sealed head. The
-  worker never supplies them. A required court counts as witnessed when the
-  fabric's own step for it passed at the sealed head. Fabric-only evidence
-  tops out at the `"repository-local"` ceiling.
+  the fabric verifier passed and the receipt is bound to the sealed head and to a
+  step the fabric ran. The worker never supplies them. A required court counts
+  as witnessed when the fabric's own step for it passed at the sealed head.
+  Fabric-only evidence tops out at the `"repository-local"` ceiling.
+
+  What makes a court receipt fabric-produced is enforced upstream of this
+  module, not read off the receipt: `Xaas.Ultracode.Verifier` drops a suite
+  script's printed JSON line that carries the fabric-only `"binding"` key and
+  pins the files that decide a verdict (mapped test files and the receipt
+  step's file operands) to their base-SHA bytes, and
+  `Xaas.Ultracode.SemanticReceipt.export/1` exports a court receipt only for a
+  Run that has a court map, bound to that Run's suite, sealed head and a step
+  it ran. Residual: a `mix_trace` suite maps test DESCRIPTIONS, not files, so
+  only its argv file operands are pinned.
+
+  ## The log is a trust root
+
+  The transition log directory is read as data written by the reconciler. Every
+  read through this module first checks that each event's `event_digest`
+  re-derives from the event's own content (`TransitionLog.event_digest/1`, which
+  commits to the receipt the event cites; logs written before that rule verify
+  under `TransitionLog.legacy_event_digest/1`) and that each work order's
+  standing chain is unbroken. This detects a tampered or hand-written event; it
+  cannot detect a forger who can write the directory and recomputes digests. The
+  check-then-append admission runs under `Xaas.Ultracode.LogLock`, an OS-level
+  lock, so admissions from separate OS processes are serialized too.
 
   ## Hand-written residue
 
@@ -58,7 +94,7 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
 
   alias GgenIgniter.SemanticJira
   alias GgenIgniter.SemanticJira.{Descriptor, Reconciler, Shacl, TransitionLog}
-  alias Xaas.Ultracode.{SemanticReceipt, SemanticWork}
+  alias Xaas.Ultracode.{LogLock, SemanticReceipt, SemanticWork}
 
   @sj "https://ggen-igniter.dev/ontology/semantic-jira#"
   @dcterms_identifier "http://purl.org/dc/terms/identifier"
@@ -131,10 +167,17 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
   # Frontier and replayable state
   # ------------------------------------------------------------------
 
-  @doc "The frontier over the projection of the transition log in `log_dir`."
+  @doc """
+  The frontier over the projection of the transition log in `log_dir`. Over a log
+  that fails verification (see "The log is a trust root") nothing is eligible and
+  every work order is blocked with reason `"log_untrusted"`.
+  """
   @spec frontier([work_order()], Path.t()) :: %{eligible: [map()], blocked: [map()]}
   def frontier(work_orders, log_dir) when is_list(work_orders) do
-    SemanticJira.frontier_from_events(work_orders, TransitionLog.read(log_dir))
+    case verified_events(log_dir) do
+      {:ok, events} -> SemanticJira.frontier_from_events(work_orders, events)
+      {:error, _refusal} -> %{eligible: [], blocked: untrusted_blocked(work_orders)}
+    end
   end
 
   @doc """
@@ -144,7 +187,16 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
   """
   @spec state([work_order()], Path.t()) :: map()
   def state(work_orders, log_dir) do
-    events = TransitionLog.read(log_dir)
+    case verified_events(log_dir) do
+      {:ok, events} ->
+        trusted_state(work_orders, events)
+
+      {:error, {:refused_bridge, {:log_untrusted, detail}}} ->
+        untrusted_state(work_orders, detail)
+    end
+  end
+
+  defp trusted_state(work_orders, events) do
     {projected, _evidence} = SemanticJira.project(work_orders, events)
     front = SemanticJira.frontier_from_events(work_orders, events)
 
@@ -160,6 +212,27 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
       "ledger_tail" => ledger_tail(events)
     }
   end
+
+  # A log that does not verify determines nothing: no standing moved, nothing is
+  # eligible, the events are not reported. `log_untrusted` names why.
+  defp untrusted_state(work_orders, reason) do
+    %{
+      "standings" =>
+        Map.new(work_orders, &{stringify(&1)["identity"], stringify(&1)["standing"]}),
+      "eligible" => [],
+      "blocked" => untrusted_blocked(work_orders),
+      "events" => [],
+      "ledger_tail" => @zero_digest,
+      "log_untrusted" => json_safe(reason)
+    }
+  end
+
+  defp untrusted_blocked(work_orders),
+    do:
+      Enum.map(
+        work_orders,
+        &%{"identity" => stringify(&1)["identity"], "reason" => "log_untrusted"}
+      )
 
   # ------------------------------------------------------------------
   # Descriptor emission
@@ -191,10 +264,10 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
           {:ok, %{descriptor: map(), execution: map()}} | refusal()
   def descriptor(work_orders, log_dir, identity, opts)
       when is_list(work_orders) and is_binary(identity) do
-    events = TransitionLog.read(log_dir)
     prefix = Keyword.get(opts, :iri_prefix, @work_order_prefix)
 
-    with {:ok, exec_alias} <- required_option(opts, :execution_repo_alias),
+    with {:ok, events} <- verified_events(log_dir),
+         {:ok, exec_alias} <- required_option(opts, :execution_repo_alias),
          {:ok, suite} <- required_option(opts, :verifier_suite),
          {:ok, graph_digest} <- digest_option(opts, :graph_digest),
          {:ok, raw} <- find(work_orders, identity),
@@ -244,8 +317,9 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
 
   Pure: standing is never inferred from the outcome. Refuses (typed) a
   non-map, a bridge that is not the descriptor's, a digest that is not the
-  export's own (tamper), a non-40-hex head, an unsupported outcome, and an
-  ALIVE claim without a verified head and a passing fabric verifier.
+  export's own (tamper), a digest-valid export of the wrong shape
+  (`{:malformed_export, path}`), a non-40-hex head, an unsupported outcome, and
+  an ALIVE claim without a verified head and a passing fabric verifier.
   """
   @spec reconciler_receipt(map(), work_order()) :: {:ok, map()} | refusal()
   def reconciler_receipt(export, work_order) when is_map(export) and is_map(work_order) do
@@ -254,6 +328,7 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
     with {:ok, admitted} <- kernel(work_order),
          {:ok, bridge} <- bridge_of(export, admitted),
          :ok <- digest_ok(export),
+         :ok <- shape_ok(export),
          :ok <- ensure(sha?(export["final_head"]), :invalid_final_head),
          {:ok, target} <- target(export["outcome"]),
          :ok <- ensure(is_boolean(export["head_verified"]), :head_verified_not_boolean),
@@ -287,8 +362,46 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
     end
   end
 
+  @doc """
+  Removes the digest claims of `log_dir` that no event backs: what a writer killed
+  between claiming an event digest and writing the event file leaves behind (and
+  what makes `admit/5` refuse `{:log_claim_orphaned, _}` for that receipt for good).
+
+  Runs under the log's lock, so no bridge admission is mid-append; call it only
+  when no OTHER writer is appending to `log_dir` (a writer that claimed a digest
+  moments ago and has not yet written its event would lose its claim). Returns
+  `{:ok, removed_claim_file_names}`.
+  """
+  @spec reap_orphaned_claims(Path.t()) :: {:ok, [String.t()]} | refusal()
+  def reap_orphaned_claims(log_dir) do
+    serialized(log_dir, fn ->
+      backed =
+        log_dir
+        |> TransitionLog.read()
+        |> MapSet.new(&("digest-" <> String.slice(&1["event_digest"], 7, 64) <> ".claim"))
+
+      orphans =
+        case File.ls(log_dir) do
+          {:ok, names} ->
+            names
+            |> Enum.filter(
+              &(String.starts_with?(&1, "digest-") and String.ends_with?(&1, ".claim"))
+            )
+            |> Enum.reject(&MapSet.member?(backed, &1))
+            |> Enum.sort()
+
+          {:error, _} ->
+            []
+        end
+
+      Enum.each(orphans, &File.rm!(Path.join(log_dir, &1)))
+      {:ok, orphans}
+    end)
+  end
+
   defp commit(work_orders, identity, raw, receipt, log_dir) do
-    with :ok <- on_frontier_or_recorded(work_orders, identity, receipt, log_dir),
+    with {:ok, events} <- verified_events(log_dir),
+         :ok <- on_frontier_or_recorded(work_orders, identity, receipt, events),
          {:ok, event, disposition} <- reconcile(raw, receipt, log_dir) do
       {:ok,
        %{
@@ -507,18 +620,72 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
   end
 
   defp digest_ok(export) do
-    cond do
-      not (is_binary(export["receipt_digest"]) and
-               Regex.match?(@digest, export["receipt_digest"])) ->
-        refuse(:invalid_receipt_digest)
+    if is_binary(export["receipt_digest"]) and Regex.match?(@digest, export["receipt_digest"]) do
+      case export_digest(export) do
+        {:ok, digest} -> ensure(digest == export["receipt_digest"], :receipt_digest_mismatch)
+        :error -> refuse(:export_not_json)
+      end
+    else
+      refuse(:invalid_receipt_digest)
+    end
+  end
 
-      SemanticReceipt.receipt_digest(export) != export["receipt_digest"] ->
-        refuse(:receipt_digest_mismatch)
+  # An export is JSON by contract; a term JSON cannot carry has no digest.
+  defp export_digest(export) do
+    {:ok, SemanticReceipt.receipt_digest(export)}
+  rescue
+    _error in [Jason.EncodeError, Protocol.UndefinedError] -> :error
+  end
+
+  # A digest-valid export can still be the wrong shape (a forger recomputes the
+  # digest). Every container the mapping walks must be the container it expects,
+  # so a wrong type is a typed refusal here instead of an exception downstream.
+  defp shape_ok(export) do
+    verifier = export["fabric_verifier"]
+
+    cond do
+      not is_map(verifier) ->
+        malformed(["fabric_verifier"])
+
+      not (is_nil(verifier["status"]) or is_binary(verifier["status"])) ->
+        malformed(["fabric_verifier", "status"])
+
+      not (is_nil(verifier["steps"]) or
+               (is_list(verifier["steps"]) and Enum.all?(verifier["steps"], &is_map/1))) ->
+        malformed(["fabric_verifier", "steps"])
+
+      true ->
+        court_shape(verifier["court_receipt"])
+    end
+  end
+
+  defp court_shape(nil), do: :ok
+
+  defp court_shape(%{} = court) do
+    path = ["fabric_verifier", "court_receipt"]
+
+    maps = ~w(binding acceptance_results falsifier_results court_results)
+    bad = Enum.find(maps, &(not (is_nil(court[&1]) or is_map(court[&1]))))
+
+    cond do
+      bad != nil ->
+        malformed(path ++ [bad])
+
+      not (is_nil(court["court_results"]) or
+               Enum.all?(Map.values(court["court_results"]), &is_map/1)) ->
+        malformed(path ++ ["court_results"])
+
+      not (is_nil(court["evidence_types"]) or is_list(court["evidence_types"])) ->
+        malformed(path ++ ["evidence_types"])
 
       true ->
         :ok
     end
   end
+
+  defp court_shape(_other), do: malformed(["fabric_verifier", "court_receipt"])
+
+  defp malformed(path), do: refuse({:malformed_export, path})
 
   defp target(outcome) do
     case Map.fetch(@outcomes, outcome) do
@@ -577,14 +744,27 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
     end
   end
 
-  # A produced court receipt names the head it judged: credit its verdicts only
-  # when that is the sealed head. A legacy adapter receipt has no binding.
+  # A produced court receipt names the head it judged and the step that judged
+  # it: credit its verdicts only when that is the sealed head and a step of this
+  # export that passed. A legacy adapter receipt has no binding.
   defp credible?(court, export) do
     case court["binding"] do
-      nil -> true
-      %{"head" => head} -> head == export["final_head"]
-      _ -> false
+      nil ->
+        true
+
+      %{"head" => head, "step_id" => step_id} ->
+        head == export["final_head"] and step_passed?(export, step_id)
+
+      _ ->
+        false
     end
+  end
+
+  defp step_passed?(export, step_id) do
+    export
+    |> get_in(["fabric_verifier", "steps"])
+    |> List.wrap()
+    |> Enum.any?(&(&1["id"] == step_id and &1["status"] == "pass"))
   end
 
   # A required court is witnessed by the fabric's own step: a step whose id IS
@@ -639,23 +819,27 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
   end
 
   defp fabric_check(export, opts) do
-    if Keyword.get(opts, :fabric_check, true) do
-      case SemanticReceipt.export(to_string(export["epoch_id"])) do
-        {:ok, sealed} ->
-          ensure(sealed == stringify(export), :export_not_sealed_by_fabric)
+    cond do
+      not Keyword.get(opts, :fabric_check, true) ->
+        :ok
 
-        {:error, reason} ->
-          refuse({:no_sealed_receipt, reason})
-      end
-    else
-      :ok
+      not is_binary(export["epoch_id"]) ->
+        refuse({:malformed_export, ["epoch_id"]})
+
+      true ->
+        case SemanticReceipt.export(export["epoch_id"]) do
+          {:ok, sealed} ->
+            ensure(sealed == stringify(export), :export_not_sealed_by_fabric)
+
+          {:error, reason} ->
+            refuse({:no_sealed_receipt, reason})
+        end
     end
   end
 
   # Only work the frontier currently lists may take a NEW transition; the exact
   # replay of a receipt already in the log is idempotent and passes through.
-  defp on_frontier_or_recorded(work_orders, identity, receipt, log_dir) do
-    events = TransitionLog.read(log_dir)
+  defp on_frontier_or_recorded(work_orders, identity, receipt, events) do
     digest = SemanticJira.digest(receipt)
 
     if Enum.any?(events, &(&1["receipt_digest"] == digest)) do
@@ -678,22 +862,134 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
 
   # The log is safe under concurrent writers, but the ADMISSION decision is
   # check-then-append: two different receipts racing for one work order would
-  # both pass the frontier check and both append. One admission per log at a
-  # time (per node) makes the decision as safe as the log.
+  # both pass the frontier check and both append. `:global.trans` orders the
+  # admissions of one node; `LogLock` (an flock held by a helper process) orders
+  # them across OS processes, and is released by the kernel if its holder dies.
   defp serialized(log_dir, fun) do
-    :global.trans({{__MODULE__, Path.expand(log_dir)}, self()}, fun, [node()], :infinity)
+    result =
+      :global.trans(
+        {{__MODULE__, Path.expand(log_dir)}, self()},
+        fn -> LogLock.with_lock(log_dir, fun) end,
+        [node()],
+        :infinity
+      )
+
+    case result do
+      {:ok, inner} -> inner
+      {:error, reason} -> refuse({:log_lock, reason})
+    end
   end
 
+  # What the log answers is checked against what was asked: a nil event is a
+  # claimed-but-never-written digest (a writer died mid-append), and an event
+  # that cites another receipt is another admission's transition, not this one.
   defp reconcile(work_order, receipt, log_dir) do
     case Reconciler.reconcile(work_order, receipt, log_dir) do
-      {:ok, event, disposition} -> {:ok, event, disposition}
+      {:ok, event, disposition} -> acknowledged(event, disposition, receipt)
       {:error, {:refused, reason}} -> refuse(reason)
+      {:error, other} -> refuse({:reconciler, json_safe(other)})
+    end
+  end
+
+  @doc false
+  # Pure: what `Reconciler.reconcile/4` answered, checked against the `receipt`
+  # that was submitted. Public only so its refusals can be exercised on their own.
+  @spec acknowledged(map() | nil, atom(), map()) :: {:ok, map(), atom()} | refusal()
+  def acknowledged(nil, _disposition, receipt),
+    do: refuse({:log_claim_orphaned, SemanticJira.digest(receipt)})
+
+  def acknowledged(%{} = event, disposition, receipt) do
+    submitted = SemanticJira.digest(receipt)
+
+    cond do
+      event["receipt_digest"] != submitted ->
+        refuse(
+          {:receipt_not_recorded,
+           %{"submitted" => submitted, "recorded" => event["receipt_digest"]}}
+        )
+
+      not derives?(event) ->
+        refuse(
+          {:log_untrusted, %{"seq" => event["seq"], "event_digest" => event["event_digest"]}}
+        )
+
+      true ->
+        {:ok, event, disposition}
+    end
+  end
+
+  # ------------------------------------------------------------------
+  # Log trust
+  # ------------------------------------------------------------------
+
+  # The events of `log_dir`, only if the log verifies: every event re-derives its
+  # `event_digest` from its own content, and each work order's standing chain is
+  # unbroken (an event's `from` is the previous event's `to`). A log that does
+  # not verify is not read as data: nothing over it is eligible, promoted or
+  # described.
+  defp verified_events(log_dir) do
+    events = TransitionLog.read(log_dir)
+
+    with :ok <- events_derive(events),
+         :ok <- events_chain(events) do
+      {:ok, events}
+    else
+      {:error, detail} -> refuse({:log_untrusted, detail})
+    end
+  rescue
+    error in [Jason.DecodeError, File.Error] ->
+      refuse({:log_untrusted, %{"unreadable" => Exception.message(error)}})
+  end
+
+  defp events_derive(events) do
+    case Enum.find(events, &(not derives?(&1))) do
+      nil -> :ok
+      %{} = bad -> {:error, %{"seq" => bad["seq"], "event_digest" => bad["event_digest"]}}
+      _not_an_event -> {:error, %{"unreadable" => "not an event"}}
+    end
+  end
+
+  # Current rule first; logs written before `event_digest` committed to the cited
+  # receipt verify under the legacy rule.
+  defp derives?(%{"event_digest" => digest} = event) when is_binary(digest) do
+    digest in [TransitionLog.event_digest(event), TransitionLog.legacy_event_digest(event)]
+  end
+
+  defp derives?(_event), do: false
+
+  defp events_chain(events) do
+    events
+    |> Enum.reduce_while(%{}, fn event, last ->
+      identity = event["identity"]
+
+      if Map.has_key?(last, identity) and last[identity] != event["from"] do
+        {:halt, {:error, %{"discontinuous" => identity, "seq" => event["seq"]}}}
+      else
+        {:cont, Map.put(last, identity, event["to"])}
+      end
+    end)
+    |> case do
+      {:error, _detail} = error -> error
+      _chain -> :ok
     end
   end
 
   # ------------------------------------------------------------------
   # Helpers
   # ------------------------------------------------------------------
+
+  defp json_safe(value) when is_map(value) and not is_struct(value),
+    do: Map.new(value, fn {key, item} -> {to_string(key), json_safe(item)} end)
+
+  defp json_safe(value) when is_tuple(value), do: value |> Tuple.to_list() |> json_safe()
+  defp json_safe(value) when is_list(value), do: Enum.map(value, &json_safe/1)
+
+  defp json_safe(value) when is_boolean(value) or is_nil(value) or is_number(value),
+    do: value
+
+  defp json_safe(value) when is_binary(value), do: value
+  defp json_safe(value) when is_atom(value), do: Atom.to_string(value)
+  defp json_safe(value), do: inspect(value)
 
   defp kernel(work_order) do
     case SemanticJira.admit_work_order(work_order) do
