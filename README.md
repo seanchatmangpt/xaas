@@ -39,3 +39,24 @@ mix test --include stress
 ```
 
 API routes under `/api` and `/internal-api` require the repository's internal API token policy; sensitive ledger/auth resources remain deliberately unwired unless an explicit access-control design is added.
+
+
+## ZOE full-event simulation
+
+`Xaas.Zoe.EventSimulation` consumes the authority-free
+`zoe-event-ops/v1` Planning Center observation contract and deterministically
+simulates a complete event: administration/rostering, registration/check-in,
+walk-ins, security capacity, reinforcement, incident routing, program start,
+incident resolution, attendance reconciliation, closing, and final
+reconciliation.
+
+Every trace item is shaped as a SA2A capability observation with an explicit
+`OBSERVE | SELECT | CONSTRUCT` authority boundary and
+`do_authority: false`. Safety incidents route to both church event leadership
+and security management in the simulation, so the incident subject is never
+the router. The internal-token-gated A2A surface is
+`/a2a/zoe-event`.
+
+The evidence ceiling is deliberately `SIMULATION_ONLY`. This PR does not
+claim an `AshA2A.CommandBus` production DO, a provider write, deployment, or
+runtime standing promotion.
