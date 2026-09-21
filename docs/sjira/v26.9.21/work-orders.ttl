@@ -1,0 +1,69 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sjira: <urn:seanchatmangpt:sjira:v1#> .
+@prefix work: <urn:seanchatmangpt:xaas:sjira:v26.9.21:> .
+
+work:package
+  a sjira:WorkPackage ;
+  dcterms:title "XaaS ZOE event simulation remaining WIP" ;
+  sjira:project "xaas" ;
+  sjira:repository "seanchatmangpt/xaas" ;
+  sjira:trackingBaseSha "8e72cfcb85bd901ad067589295598eb7580a1442" ;
+  sjira:reviewedSubjectSha "fee6edd2333b6e0ed23327d34f61c6b13ac5591d" ;
+  sjira:reviewedPullRequest "58" ;
+  sjira:evidenceCeiling "SIMULATION_ONLY" ;
+  sjira:authorityCeiling "OBSERVE|SELECT|CONSTRUCT" ;
+  sjira:standing "PARTIAL_ALIVE" ;
+  sjira:contains work:XAAS-SJIRA-2621-001,
+                 work:XAAS-SJIRA-2621-002,
+                 work:XAAS-SJIRA-2621-003 .
+
+work:XAAS-SJIRA-2621-001
+  a sjira:WorkOrder ;
+  dcterms:title "Make direct A2A participant admission strict-reference-only" ;
+  sjira:status "PARTIAL_ALIVE" ;
+  sjira:subject "XaasWeb.A2A.ZoeEventSimulationAgent -> Xaas.Zoe.EventSimulation" ;
+  sjira:observedEvidence "PR58@fee6edd rejects selected PII keys, but the direct A2A path accepts arbitrary non-blacklisted participant fields before simulation." ;
+  sjira:desiredConsequence "A direct A2A simulation request is admitted only when roster, registration, and check-in participant records conform to the same strict allowlist as zoe-event-ops/v1." ;
+  sjira:acceptancePredicate "An unknown participant field such as name is refused before a simulation result is constructed." ;
+  sjira:acceptancePredicate "Allowed opaque-reference records still simulate successfully." ;
+  sjira:acceptancePredicate "Every emitted trace remains OBSERVE, SELECT, or CONSTRUCT with do_authority=false." ;
+  sjira:falsifier "Any unknown participant field survives admission and appears in or influences a successful simulation result." ;
+  sjira:falsifier "Any path invokes production CommandBus or creates DO authority." ;
+  sjira:verificationCourt "mix test test/xaas/zoe/event_simulation_test.exs test/xaas_web/a2a/zoe_event_simulation_agent_test.exs" ;
+  sjira:authority "CONSTRUCT_ONLY" ;
+  sjira:productionActuation false ;
+  sjira:livePlanningCenterRead false .
+
+work:XAAS-SJIRA-2621-002
+  a sjira:WorkOrder ;
+  dcterms:title "Emit an exact-head focused ZOE simulation court receipt" ;
+  sjira:status "BLOCKED" ;
+  sjira:dependsOn work:XAAS-SJIRA-2621-001 ;
+  sjira:subjectSha "fee6edd2333b6e0ed23327d34f61c6b13ac5591d" ;
+  sjira:desiredConsequence "The narrow repository-native simulation and A2A tests execute green against the exact admitted subject after strict participant admission is repaired." ;
+  sjira:acceptancePredicate "Exact subject SHA is recorded before execution." ;
+  sjira:acceptancePredicate "Focused simulation and A2A test files exit zero." ;
+  sjira:acceptancePredicate "Receipt explicitly states SIMULATION_ONLY and production_receipt=false." ;
+  sjira:falsifier "A green result is reported without exact subject identity or without executing both focused test files." ;
+  sjira:evidenceCeiling "SIMULATION_ONLY" ;
+  sjira:authority "OBSERVE|SELECT|CONSTRUCT" .
+
+work:XAAS-SJIRA-2621-003
+  a sjira:WorkOrder ;
+  dcterms:title "Repair unrelated production compile blocker without promoting simulation standing" ;
+  sjira:status "BUILD_BROKEN" ;
+  sjira:observedEvidence "GitHub Actions run 35559028880 job 106209114841 failed compiling dependency ex4pm because Igniter.Mix.Task was unavailable." ;
+  sjira:desiredConsequence "Production compile court can execute independently of the ZOE simulation semantics." ;
+  sjira:acceptancePredicate "Exact-head production compile exits zero from a clean dependency state." ;
+  sjira:falsifier "The event-simulation court is treated as failed solely because this unrelated dependency compile remains red." ;
+  sjira:requiredForSemanticEventCourt false ;
+  sjira:productionActuation false .
+
+work:production-do-exclusion
+  a sjira:Exclusion ;
+  sjira:excludes "AshA2A.CommandBus production execution" ;
+  sjira:excludes "provider mutation" ;
+  sjira:excludes "deployment" ;
+  sjira:excludes "runtime ALIVE promotion" ;
+  sjira:reason "Outside PR58 and v26.9.21 simulation evidence ceiling" .
