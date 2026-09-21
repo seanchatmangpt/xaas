@@ -955,7 +955,10 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     {run, _epoch} = real_completed_run!()
 
     out_dir =
-      Path.join(System.tmp_dir!(), "xaas-ocel-egress-#{System.unique_integer([:positive])}")
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-ocel-egress-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
 
     on_exit(fn -> File.rm_rf!(out_dir) end)
 
@@ -971,7 +974,12 @@ defmodule Xaas.Ultracode.OcelEgressTest do
 
   test "mix xaas.ultracode.export_ocel writes the run's document to the requested dir" do
     {run, _epoch} = real_completed_run!()
-    out_dir = Path.join(System.tmp_dir!(), "xaas-ocel-mix-#{System.unique_integer([:positive])}")
+
+    out_dir =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-ocel-mix-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
 
     on_exit(fn -> File.rm_rf!(out_dir) end)
 

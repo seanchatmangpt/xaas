@@ -310,11 +310,13 @@ defmodule Xaas.Ultracode.VerifierTest do
     }
   end
 
+  # run_uid law (dispatch_test): System.unique_integer restarts per BEAM while
+  # $TMPDIR is machine-wide -- qualify per-run paths with wall clock too.
   defp mktmp(label) do
     dir =
       Path.join(
         System.tmp_dir!(),
-        "xaas-verifier-test-#{label}-#{System.unique_integer([:positive])}"
+        "xaas-verifier-test-#{label}-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
       )
 
     File.mkdir_p!(dir)

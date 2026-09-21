@@ -50,7 +50,12 @@ defmodule Mix.Tasks.Xaas.RunValidateTaskTest do
   end
 
   defp write_log! do
-    path = Path.join(System.tmp_dir!(), "run_validate_task_#{System.unique_integer()}.json")
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "run_validate_task_#{System.system_time(:millisecond)}-#{System.unique_integer()}.json"
+      )
+
     File.write!(path, Jason.encode!(three_epoch_log()))
     on_exit(fn -> File.rm(path) end)
     path
@@ -110,7 +115,12 @@ defmodule Mix.Tasks.Xaas.RunValidateTaskTest do
       "events" => events
     }
 
-    path = Path.join(System.tmp_dir!(), "run_validate_task_repo_#{System.unique_integer()}.json")
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "run_validate_task_repo_#{System.system_time(:millisecond)}-#{System.unique_integer()}.json"
+      )
+
     File.write!(path, Jason.encode!(log))
     on_exit(fn -> File.rm(path) end)
 

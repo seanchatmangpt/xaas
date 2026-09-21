@@ -208,11 +208,13 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
     String.trim(out)
   end
 
+  # run_uid law (dispatch_test): System.unique_integer restarts per BEAM while
+  # $TMPDIR is machine-wide -- qualify per-run paths with wall clock too.
   defp mktmp(label) do
     dir =
       Path.join(
         System.tmp_dir!(),
-        "xaas-target-suites-test-#{label}-#{System.unique_integer([:positive])}"
+        "xaas-target-suites-test-#{label}-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
       )
 
     File.mkdir_p!(dir)

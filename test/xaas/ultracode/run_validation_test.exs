@@ -115,7 +115,12 @@ defmodule Xaas.Ultracode.RunValidationTest do
   end
 
   test "validation is stable against the same log loaded from a path" do
-    path = Path.join(System.tmp_dir!(), "run_validation_positive_#{System.unique_integer()}.json")
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "run_validation_positive_#{System.system_time(:millisecond)}-#{System.unique_integer()}.json"
+      )
+
     File.write!(path, Jason.encode!(three_epoch_log()))
 
     on_exit(fn -> File.rm(path) end)

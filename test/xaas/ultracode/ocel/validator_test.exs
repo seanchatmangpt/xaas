@@ -465,7 +465,10 @@ defmodule Xaas.Ultracode.Ocel.ValidatorTest do
 
   defp write_tmp_log(name, body) do
     path =
-      Path.join(System.tmp_dir!(), "w3_ocel_court_#{System.unique_integer([:positive])}_#{name}")
+      Path.join(
+        System.tmp_dir!(),
+        "w3_ocel_court_#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}_#{name}"
+      )
 
     File.write!(path, body)
     on_exit(fn -> File.rm(path) end)
