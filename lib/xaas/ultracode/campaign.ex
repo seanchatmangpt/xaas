@@ -69,7 +69,7 @@ defmodule Xaas.Ultracode.Campaign do
 
   require Ash.Query
 
-  alias Xaas.Ultracode.{Epoch, Run}
+  alias Xaas.Ultracode.{Epoch, Run, WavePlan}
 
   @goal_marker "ultracode-campaign/1"
   @default_capacity 5
@@ -163,11 +163,19 @@ defmodule Xaas.Ultracode.Campaign do
   defp resumed_id(_), do: nil
 
   defp resolve_start(opts) do
+    repo_spec = Map.get(opts, :repo, @default_repo)
+
     with {:ok, duration_s} <- parse_duration(Map.get(opts, :duration, "8h")),
          {:ok, interval_s} <- parse_duration(Map.get(opts, :wave_interval, "30m")),
          :ok <- ticket_dir_configured(opts),
+         # Repo SPEC shape is validated at admission (before the campaign row
+         # exists); registry MEMBERSHIP resolves per wave inside the loop
+         # (`Xaas.Ultracode.WavePlan`).
+         {:ok, parsed_spec} <- WavePlan.parse_spec(repo_spec),
          {:ok, capacity} <- check_capacity(Map.get(opts, :capacity, @default_capacity)),
          {:ok, wave_budget} <- check_wave_budget(opts, duration_s, interval_s) do
+      single? = is_list(parsed_spec) and length(parsed_spec) == 1
+
       {:ok,
        %{
          capacity: capacity,
@@ -175,8 +183,13 @@ defmodule Xaas.Ultracode.Campaign do
          interval_s: interval_s,
          wave_budget: wave_budget,
          goal: Map.get(opts, :goal) || default_goal(capacity, duration_s, interval_s),
-         repo: Map.get(opts, :repo, @default_repo),
-         suite: Map.get(opts, :suite, @default_suite),
+         repo: repo_spec,
+         repo_spec: parsed_spec,
+         single_repo?: single?,
+         # The campaign ROW's suite is admission metadata (it carries the
+         # VerifierSuiteRegistered validation); the suite that judges each
+         # ITEM run is resolved per repo per wave inside the loop.
+         suite: Map.get(opts, :suite) || row_suite(parsed_spec),
          canonical_suite: Map.get(opts, :canonical_suite),
          only: Map.get(opts, :only),
          max_attempts: Map.get(opts, :max_attempts, 3),
@@ -189,6 +202,18 @@ defmodule Xaas.Ultracode.Campaign do
        }}
     end
   end
+
+  # The row suite for a multi-repo spec: the FIRST sorted alias's registry
+  # suite (deterministic, admission-valid), falling back to the historical
+  # default when the alias is not yet resolved in the enriched registry.
+  defp row_suite([first_alias | _]) when is_binary(first_alias) do
+    case Xaas.Ultracode.Repos.resolve(first_alias) do
+      {:ok, %{suite: suite}} when is_binary(suite) -> suite
+      _ -> @default_suite
+    end
+  end
+
+  defp row_suite(_), do: @default_suite
 
   defp check_capacity(capacity) when is_integer(capacity) and capacity >= 1, do: {:ok, capacity}
   defp check_capacity(capacity), do: {:error, {:bad_capacity, capacity}}
@@ -260,6 +285,7 @@ defmodule Xaas.Ultracode.Campaign do
         wave_interval_seconds: resolved.interval_s,
         wave_budget: resolved.wave_budget,
         repo: resolved.repo,
+        repos: (resolved.repo_spec == :all && "all") || Enum.sort(resolved.repo_spec),
         suite: resolved.suite,
         only: resolved.only,
         max_attempts: resolved.max_attempts
@@ -409,27 +435,39 @@ defmodule Xaas.Ultracode.Campaign do
   end
 
   defp run_wave(resolved, campaign, ledger, wave_number) do
+    # Single-repo waves carry the explicit suite facts (the historical
+    # precedence law); multi-repo waves carry ONLY the spec -- the loop
+    # resolves every repo's suite and canonical court from the registry.
+    suite_opts =
+      if resolved.single_repo? do
+        [
+          suite: resolved.suite,
+          # The canonical court must belong to the repo being waved, never fall
+          # through to another repo's gates: the Autonomic default
+          # (`aps-canonical`) is only correct for the default repo, so every
+          # other repo waves its own suite at the integration head (an explicit
+          # operator override always wins). Without this, a non-APS campaign
+          # merged cleanly and still reported BLOCKED -- judged by gates that
+          # were never its definition of done.
+          canonical_suite:
+            resolved.canonical_suite ||
+              if(resolved.repo == @default_repo, do: "aps-canonical", else: resolved.suite)
+        ]
+      else
+        []
+      end
+
     wave_opts =
       [
         capacity: resolved.capacity,
         repo: resolved.repo,
-        suite: resolved.suite,
-        # The canonical court must belong to the repo being waved, never fall
-        # through to another repo's gates: the Autonomic default
-        # (`aps-canonical`) is only correct for the default repo, so every
-        # other repo waves its own suite at the integration head (an explicit
-        # operator override always wins). Without this, a non-APS campaign
-        # merged cleanly and still reported BLOCKED -- judged by gates that
-        # were never its definition of done.
-        canonical_suite:
-          resolved.canonical_suite ||
-            if(resolved.repo == @default_repo, do: "aps-canonical", else: resolved.suite),
         only: resolved.only,
         max_attempts: resolved.max_attempts,
         base_sha: resolved.base_sha,
         ledger: ledger,
         state_dir: Path.join(campaign_dir(campaign.id), "dispatch-wave-#{wave_number}")
       ]
+      |> Kernel.++(suite_opts)
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
 
     append(ledger, %{

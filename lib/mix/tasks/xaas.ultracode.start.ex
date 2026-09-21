@@ -21,12 +21,22 @@ defmodule Mix.Tasks.Xaas.Ultracode.Start do
     * `--max-waves N` -- optional cap on the wave-count budget
       (default: ceil(duration / interval))
     * `--goal TEXT` -- campaign goal text (default: generated standing-order text)
-    * `--repo ALIAS` -- registered repo alias for `Autonomic` (default `aps`)
+    * `--repo SPEC` -- repo spec for the waves: one registered alias
+      (default `aps`, byte-for-byte the historical behavior), an explicit
+      comma list (`aps,nounverb,eds`), or `all` (every registered alias,
+      resolved per wave). Spec SHAPE is validated at admission; registry
+      MEMBERSHIP resolves per wave, so `all` picks up later registrations.
+      A multi-repo wave draws its items ROUND-ROBIN over the sorted aliases
+      (no starvation; per-repo caps live in
+      `config :xaas, :ultracode_wave_repo_caps`) and judges each repo by its
+      OWN registry suites; `--suite`/`--canonical-suite` are single-repo
+      overrides only.
     * `--suite NAME` -- registered verifier suite (default `aps-dod`; the name
-      is admission-validated against `config :xaas, :ultracode_verifier_suites`)
+      is admission-validated against `config :xaas, :ultracode_verifier_suites`).
+      Single-repo specs only.
     * `--canonical-suite NAME` -- registered suite for the integration-head
       court (default: `aps-canonical` for the default repo, the `--suite`
-      itself for every other repo)
+      itself for every other repo). Single-repo specs only.
     * `--only a,b` -- restrict waves to these backlog item ids (bounded smokes)
     * `--max-attempts N` -- per-item repair attempts per wave (default 3)
     * `--base-sha SHA` -- pin the backlog/worktree base (default: repo HEAD)

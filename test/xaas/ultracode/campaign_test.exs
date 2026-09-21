@@ -374,6 +374,66 @@ defmodule Xaas.Ultracode.CampaignTest do
     assert override_opts[:canonical_suite] == "aps-canonical"
   end
 
+  test "a multi-repo spec launches spec-carrying waves without single-repo suite overrides" do
+    ref = runner_ref()
+
+    {:ok, summary} =
+      Campaign.start(
+        capacity: 5,
+        duration: "1h",
+        wave_interval: "1s",
+        max_waves: 2,
+        repo: "nounverb,eds,aps",
+        ledger: ledger(),
+        runner: stub_runner!(ref),
+        sleeper: &no_sleep/1
+      )
+
+    assert summary.status == :completed
+    assert summary.waves_executed == 2
+
+    waves = Agent.get(ref, & &1)
+
+    # The SPEC rides into every wave verbatim; the loop (not the campaign)
+    # resolves registry membership per wave.
+    assert Enum.all?(waves, &(&1[:repo] == "nounverb,eds,aps"))
+
+    # One suite override would be AMBIGUOUS across repos: multi-repo waves
+    # carry no --suite/--canonical-suite; each repo is judged by its own
+    # registry suites inside the loop.
+    assert Enum.all?(waves, &(&1[:suite] == nil and &1[:canonical_suite] == nil))
+
+    # The admission-time facts are on the ledger: the campaign_start event
+    # names the spec's repos.
+    start = Enum.find(ledger_events(ledger()), &(&1["event"] == "campaign_start"))
+    assert start["repo"] == "nounverb,eds,aps"
+    assert start["repos"] == ["aps", "eds", "nounverb"]
+
+    campaign = Ash.get!(Run, summary.run_id, action: :read_unscoped, authorize?: false)
+    # The row's suite is admission metadata: the FIRST sorted alias's registry
+    # suite (unresolvable in this test env -> the historical default).
+    assert campaign.verifier_suite == @suite
+  end
+
+  test "a malformed repo spec is refused at admission (typed, before any campaign row exists)" do
+    ref = runner_ref()
+
+    assert {:error, {:bad_repo_spec, "aps,"}} =
+             Campaign.start(
+               capacity: 5,
+               duration: "1h",
+               wave_interval: "1s",
+               repo: "aps,",
+               ledger: ledger(),
+               runner: stub_runner!(ref),
+               sleeper: &no_sleep/1
+             )
+
+    assert [] = Agent.get(ref, & &1)
+
+    assert {:error, :no_campaign_found} = Campaign.status(nil)
+  end
+
   describe "parse_duration/1" do
     test "accepts strict <n>h|m|s" do
       assert Campaign.parse_duration("8h") == {:ok, 28_800}
