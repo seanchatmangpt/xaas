@@ -392,7 +392,18 @@ defmodule Xaas.Ultracode.LeaseTest do
       {:ok, _epoch, token, _run} = Lease.claim_next("zcode-test", "worker-1")
 
       real = git_head(worktree)
-      fake = "0" <> String.slice(real, 1..-1//1)
+
+      # PERMANENT TRIPWIRE (observed falsifier 2026-09-19, wave-8 flake hunt):
+      # a sha is hex, so the real head already starts with "0" for ~1 in 16
+      # commits -- and then `"0" <> rest` is a NO-OP: the "fake" head IS the
+      # real head, close/4 honestly verifies the match (head_verified: true),
+      # finds no verifier court, and downgrades to :partial_alive -- the
+      # production law working correctly against a buggy fixture (this exact
+      # failure was captured live: evidence %{"head_verified" => true}). Flip
+      # the leading char to a value the real head provably does not have.
+      fake =
+        if(String.starts_with?(real, "0"), do: "1", else: "0") <>
+          String.slice(real, 1..-1//1)
 
       assert {:ok, _epoch, receipt} = Lease.close(token, fake, :alive)
       assert receipt.outcome == :build_broken
@@ -499,8 +510,7 @@ defmodule Xaas.Ultracode.LeaseTest do
     end
 
     test "a nonexistent path is refused as worktree_not_found" do
-      missing =
-        Path.join(System.tmp_dir(), "xaas-worktree-safety-missing-#{System.unique_integer()}")
+      missing = Path.join(System.tmp_dir(), "xaas-worktree-safety-missing-#{run_uid()}")
 
       assert {:error, error} = epoch_create(missing)
 
@@ -510,7 +520,7 @@ defmodule Xaas.Ultracode.LeaseTest do
 
     test "a real, existing directory that is NOT a git repo is refused as worktree_not_a_git_repo" do
       plain_dir =
-        Path.join(System.tmp_dir(), "xaas-worktree-safety-plain-#{System.unique_integer()}")
+        Path.join(System.tmp_dir(), "xaas-worktree-safety-plain-#{run_uid()}")
 
       File.mkdir_p!(plain_dir)
 
@@ -604,7 +614,15 @@ defmodule Xaas.Ultracode.LeaseTest do
   # ------------------------------------------------------------------
 
   defp make_git_worktree do
-    dir = Path.join(System.tmp_dir(), "xaas-lease-test-#{System.unique_integer()}")
+    # Temp paths must not collide ACROSS mix test runs: System.unique_integer
+    # restarts per BEAM while $TMPDIR is shared by every concurrently running
+    # `mix test` VM, so two VMs can pick the SAME worktree dir -- observed
+    # 2026-09-19 (full-suite run): a colliding VM's `git init`/cleanup made
+    # `rev-parse HEAD` exit 128 inside `Lease.close/4`'s head verification,
+    # downgrading the receipt to :partial_alive where :build_broken was
+    # asserted. Wall-clock-qualify every per-run artifact path (the
+    # dispatch_test `run_uid` convention).
+    dir = Path.join(System.tmp_dir(), "xaas-lease-test-#{run_uid()}")
     File.mkdir_p!(dir)
 
     System.cmd("git", ["-C", dir, "init", "--quiet"], stderr_to_stdout: true)
@@ -628,4 +646,8 @@ defmodule Xaas.Ultracode.LeaseTest do
     {out, 0} = System.cmd("git", ["-C", worktree, "rev-parse", "HEAD"])
     String.trim(out)
   end
+
+  # Temp paths must not collide ACROSS mix test runs (see make_git_worktree
+  # above): System.unique_integer restarts per BEAM, $TMPDIR is machine-wide.
+  defp run_uid, do: System.system_time(:millisecond)
 end
