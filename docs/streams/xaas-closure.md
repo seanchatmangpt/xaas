@@ -198,6 +198,27 @@ GitHub marked all 12 merged and the remote head branches were removed (23 heads 
    all head results above come from that worktree.
 4. `main` was pushed to `origin` at about 12:46 PDT by another actor, not by this stream.
 
+## Qualifier Repairs (after 57c9865)
+
+Three qualifier findings, two already committed, plus two flakes found while re-running the
+narrow suites. Each has a permanent guard that was mutation-tested (the guard fails with the
+fix reverted, passes with it).
+
+| Finding | Root cause | Fix commit | Guard |
+|---|---|---|---|
+| Crown step "Assert no actuation dependency" exits 1 | Moduledoc prose in `computation.ex` spelled the forbidden module name; pre-existing at `e37b9f9`, red in CI run 35427336804 | `d169530` | `semantics_computation_test.exs` reads the grep pattern out of the workflow file and matches it against `computation.ex` |
+| `--check-formatted` overstated coverage | `Path.wildcard/1` skips dotfiles; `Mix.Tasks.Format` uses `match_dot: true`, so `.formatter.exs` and `.dialyzer_ignore.exs` left the gate | `7dae643` | `formatter_inputs_test.exs` (dotfiles in inputs, generated dir out, dotfiles formatted) |
+| `EngineTest` "fill dispatches exactly the free slots ..." flake, `:completed` vs `:running` | `Enum.max_by(rows, & &1.inserted_at)` compares `%DateTime{}` structurally (microsecond before minute/second); wrong "latest" row when inserts straddle a second | this stream | `datetime_structural_compare_guard_test.exs` (deterministic falsifier plus source lint of `lib/` and `test/`); same shape also fixed in `library/next_read_test.exs` |
+| Same test flake, `:handed_off` vs `:done` | Sandbox shared mode puts concurrent slot workers on one connection; DBConnection default `queue_target` 50 ms dropped waiters ("dropped from queue after 281ms") | this stream | `config/test.exs` queue settings, `repo_test_pool_config_test.exs` |
+
+Both `EngineTest` flakes are pre-existing: `lib/xaas/ultracode/` and `test/xaas/ultracode/`
+are unchanged between `e37b9f9` and this stream apart from the one-line comparator. The
+narrow ultracode run failed once (594 tests, 1 failure); `mix test
+test/xaas/ultracode/engine_test.exs --repeat-until-failure 15` reproduced the `:running`
+assertion within 3 iterations. With only the comparator fixed, two further runs failed within 2
+iterations on the `:handed_off` assertion. After both fixes `--repeat-until-failure 100`
+passed 101 consecutive iterations, and the narrow set (612 tests) passed with 0 failures.
+
 ## Falsifiers and Follow-ups
 
 - Falsifier for "gate passes": `mix compile --warnings-as-errors` or
@@ -216,5 +237,7 @@ GitHub marked all 12 merged and the remote head branches were removed (23 heads 
 
 - `.github/workflows/ci_cd.yaml` (format, compile, test, dialyzer, unused-deps steps)
 - `.github/workflows/castle-paas-bridge.yml` (CASTLE bridge format and court steps)
-- `.github/workflows/sa2a-computation-crown.yml` (dependency-free semantic court)
+- `.github/workflows/sa2a-computation-crown.yml` (dependency-free semantic court; its
+  "Assert no actuation dependency" step is guarded by
+  `test/xaas/semantics_computation_test.exs`)
 - `CLAUDE.md` (Chicago-style testing and mock grep)
