@@ -402,7 +402,7 @@ defmodule Xaas.Ultracode.Verifier do
         {:cd, worktree}
       ])
 
-    {:os_pid, os_pid} = Port.info(port, :os_pid)
+    os_pid = port_os_pid(port)
     deadline = System.monotonic_time(:millisecond) + timeout_ms
 
     try do
@@ -431,6 +431,19 @@ defmodule Xaas.Ultracode.Verifier do
     end
   end
 
+  # A step that exits before the caller is scheduled again (loaded scheduler,
+  # fast `true`) has already closed its port: `Port.info/2` is then `nil`. The
+  # data and exit_status messages are already in the mailbox, so the result is
+  # still collectable; only the process-group kill has nothing to address.
+  @doc false
+  @spec port_os_pid(port()) :: non_neg_integer() | nil
+  def port_os_pid(port) do
+    case Port.info(port, :os_pid) do
+      {:os_pid, os_pid} -> os_pid
+      nil -> nil
+    end
+  end
+
   # Killing the group usually closes the port first; closing a closed port
   # raises, and that must not turn a timeout into a spawn error.
   defp close_port(port) do
@@ -444,6 +457,8 @@ defmodule Xaas.Ultracode.Verifier do
 
   # Group-wide TERM, brief grace, then KILL. Safe to call when the group is
   # already gone.
+  defp kill_group(nil), do: :ok
+
   defp kill_group(os_pid) do
     _ = System.cmd("/bin/kill", ["-TERM", "--", "-#{os_pid}"], stderr_to_stdout: true)
 
