@@ -1,4 +1,4 @@
-defmodule Xaas.Zoe.EventSimulation do
+defmodule Xaas.Zoe.EventSimulationZoe do
   @moduledoc """
   Deterministic, side-effect-free simulation of a complete ZOE event.
 
