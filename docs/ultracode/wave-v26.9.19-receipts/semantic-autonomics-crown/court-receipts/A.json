@@ -1,0 +1,174 @@
+{
+    "outcome": "alive",
+    "epoch_id": "b832b89a-cdfa-41f6-8abb-a94106688784",
+    "leased_to": "zcode-dispatch-Mac-b832b89a-91445",
+    "final_head": "e34c526fff6d46a414c76f130cf2870ac42ee733",
+    "head_verified": true,
+    "fabric_verifier": {
+        "head": "e34c526fff6d46a414c76f130cf2870ac42ee733",
+        "steps": [
+            {
+                "id": "court",
+                "exit": 0,
+                "status": "pass",
+                "duration_ms": 2689,
+                "output_tail": "[CHI-INDEPENDENT] PASS executor and verifier identities differ\n[CHI-SCOPE] PASS 1 changed path(s), all within allowed_paths and unprotected\n[CHI-MOCK] PASS no unittest.mock/Mock/MagicMock/patch/monkeypatch/mocker in tests/ or tools/\n[CHI-ASSERT] PASS 6 new non-vacuous test(s) in 1 file(s)\n[CHI-CANONICAL] PASS all canonical gates and the new tests passed\n[CHI-MUTATION] PASS all 1 mutant(s) killed by the new tests\n[CHI-EXACT-HEAD] PASS\n[COURT] standing ALIVE exit 0\n{\"contractRef\":\"aps-ticket:contract-standing#1\",\"executorRef\":\"zcode-dispatch-Mac-b832b89a-91445\",\"inputDigest\":\"44c72f69d1e65145c98cf77494266699794f959d4a01be4974676f83ea7bf8f5\",\"observation\":{\"court\":\"aps-dod-court/1\",\"failures\":[],\"gates\":[{\"checks\":{\"base_ancestor_of_head\":true,\"clean_after\":true,\"clean_before\":true,\"head_exists\":true,\"head_matches\":true,\"head_unchanged_after\":true},\"detail\":\"head, ancestry and cleanliness verified before and after\",\"id\":\"CHI-EXACT-HEAD\",\"kind\":\"ok\",\"ms\":0,\"pass\":true},{\"detail\":\"executor and verifier identities differ\",\"id\":\"CHI-INDEPENDENT\",\"kind\":\"ok\",\"ms\":0,\"pass\":true},{\"detail\":\"1 changed path(s), all within allowed_paths and unprotected\",\"id\":\"CHI-SCOPE\",\"kind\":\"ok\",\"ms\":0,\"pass\":true},{\"detail\":\"no unittest.mock/Mock/MagicMock/patch/monkeypatch/mocker in tests/ or tools/\",\"id\":\"CHI-MOCK\",\"kind\":\"ok\",\"ms\":1,\"pass\":true},{\"detail\":\"6 new non-vacuous test(s) in 1 file(s)\",\"id\":\"CHI-ASSERT\",\"kind\":\"ok\",\"ms\":2,\"new_tests\":6,\"pass\":true},{\"detail\":\"all canonical gates and the new tests passed\",\"id\":\"CHI-CANONICAL\",\"kind\":\"ok\",\"ms\":1639,\"pass\":true,\"steps\":[{\"ms\":592,\"rc\":0,\"step\":\"verify\",\"tail\":\"...\\\"path\\\": \\\"specification-guide/src/v26_8_24/19_industrial_lineage_from_jig_to_autonomic_factory.md\\\",\\n      \\\"sha256\\\": \\\"585e84cb5dad33c7411b09e60c93d952241bc055f24fcf117f051b7d318779b9\\\"\\n    }\\n  ],\\n  \\\"failures\\\": [],\\n  \\\"nonClaims\\\": [\\n    \\\"ALIVE here means the repository satisfies its declared structural constitution and executable semantic/schema qualification.\\\",\\n    \\\"It does not prove Fortune-500 semantic closure, economic dominance, or safe universal actuation.\\\"\\n  ],\\n  \\\"schema\\\": \\\"aps.repository-verification.v26.8.24\\\",\\n  \\\"scope\\\": \\\"repository-coherence-not-crown-hypothesis\\\",\\n  \\\"standing\\\": \\\"ALIVE\\\"\\n}\\n\"},{\"ms\":419,\"rc\":0,\"step\":\"unittest\",\"tail\":\"...onTest.test_whole_repository_constitution) ... ok\\ntest_board_validation_objects_do_not_scale_with_artifact_count (test_simulation.Fortune500SensitivityTest.test_board_validation_objects_do_not_scale_with_artifact_count) ... ok\\ntest_candidate_space_multiplies_selected_space (test_simulation.Fortune500SensitivityTest.test_candidate_space_multiplies_selected_space) ... ok\\ntest_model_is_explicitly_non_empirical (test_simulation.Fortune500SensitivityTest.test_model_is_explicitly_non_empirical) ... ok\\n\\n----------------------------------------------------------------------\\nRan 10 tests in 0.173s\\n\\nOK\\n\"},{\"ms\":198,\"rc\":0,\"step\":\"ggen-static\",\"tail\":\"...232\\\",\\n  \\\"nonClaims\\\": [\\n    \\\"This static court does not claim ggen executed; exact-head CI must execute every cell.\\\",\\n    \\\"MANUFACTURED evidentiary standing is not production ACTUATED or VERIFIED standing.\\\",\\n    \\\"A DfCM SELECT projection is not DO authority.\\\",\\n    \\\"Multi-pack qualification does not prove complete APS self-hosting.\\\"\\n  ],\\n  \\\"packs\\\": {\\n    \\\"consequence-ir-pack\\\": \\\"0.2.0\\\",\\n    \\\"dfcm-maximalist-court-pack\\\": \\\"26.8.24\\\",\\n    \\\"mdbook-pattern-language-pack\\\": \\\"0.1.0\\\",\\n    \\\"standing-ladder-pack\\\": \\\"0.1.1\\\"\\n  },\\n  \\\"schema\\\": \\\"aps.ggen-ecosystem-static-court.v26.8.24.2\\\",\\n  \\\"standing\\\": \\\"ALIVE\\\"\\n}\\n\"},{\"ms\":138,\"rc\":0,\"step\":\"mdbook\",\"tail\":\"2026-09-20 17:12:35 [INFO] (mdbook::book): Book building has started\\n2026-09-20 17:12:35 [INFO] (mdbook::book): Running the html backend\\n\"},{\"ms\":81,\"rc\":0,\"step\":\"simulate\",\"tail\":\"...ifacts\\\": 1440000\\n  },\\n  \\\"nonClaims\\\": [\\n    \\\"These quantities are not measurements of a real Fortune-500 company.\\\",\\n    \\\"Generated lines are not economic value by themselves.\\\",\\n    \\\"The model does not prove that every enterprise capability is semantically closed.\\\",\\n    \\\"The model does not grant deployment authority.\\\",\\n    \\\"ALIVE means the deterministic sensitivity model executed and its arithmetic closed.\\\",\\n    \\\"The metrics are consequences of supplied assumptions, not empirical Fortune-500 measurements.\\\"\\n  ],\\n  \\\"schema\\\": \\\"aps.synthetic-fortune500-sensitivity.v26.8.24\\\",\\n  \\\"standing\\\": \\\"ALIVE\\\"\\n}\\n\"},{\"expected\":6,\"ms\":204,\"ok\":6,\"rc\":0,\"step\":\"new-tests\"}]},{\"detail\":\"all 1 mutant(s) killed by the new tests\",\"id\":\"CHI-MUTATION\",\"kill_ratio\":1.0,\"killed\":1,\"kind\":\"ok\",\"ms\":492,\"mutant_count\":1,\"mutants\":[{\"desc\":\"drop 'ALIVE' from enum\",\"id\":\"standing:drop-enum:root:ALIVE\",\"killed_by\":[\"test_contract_standing.StandingContractTest.test_alive_member_validates\",\"test_contract_standing.StandingContractTest.test_every_admitted_member_validates\"],\"kind\":\"schema-drop-enum-value\",\"status\":\"killed\"}],\"pass\":true}],\"killRatio\":1.0,\"newTests\":6,\"timingsMs\":{\"CHI-ASSERT\":2,\"CHI-CANONICAL\":1639,\"CHI-INDEPENDENT\":0,\"CHI-MOCK\":1,\"CHI-MUTATION\":492,\"CHI-SCOPE\":0},\"toolchain\":{\"git\":\"git version 2.51.2\",\"mdbook\":\"mdbook v0.4.52\",\"python\":\"3.14.3\"}},\"receiptId\":\"03576709-9a69-495c-a3c1-876dd4909f8c\",\"resultDigest\":\"7d33ab42377fc38b6ac644742ce11829d2705bebb559cd2bd63d935faa88e211\",\"sourceCoordinate\":\"aps@e34c526fff6d46a414c76f130cf2870ac42ee733\",\"standing\":\"ALIVE\",\"verifier\":{\"coordinate\":\"aps_dod_court.py@sha256:89c71399efc6711048b6159a6d969651dc04b43de055b902d8dbda630f677f02\",\"identity\":\"xaas-ultracode-verifier/26.9.17\"}}\n"
+            }
+        ],
+        "suite": "aps-dod",
+        "status": "pass",
+        "toolchain": {
+            "git --version": "git version 2.51.2",
+            "mdbook --version": "mdbook v0.4.52",
+            "python3 --version": "Python 3.14.3"
+        },
+        "argv_sha256": "11891d7e946bc0bb232c1ec4d01926e740d07d6b7ee40f01c79af59bdeab454b",
+        "court_receipt": {
+            "standing": "ALIVE",
+            "verifier": {
+                "identity": "xaas-ultracode-verifier/26.9.17",
+                "coordinate": "aps_dod_court.py@sha256:89c71399efc6711048b6159a6d969651dc04b43de055b902d8dbda630f677f02"
+            },
+            "receiptId": "03576709-9a69-495c-a3c1-876dd4909f8c",
+            "contractRef": "aps-ticket:contract-standing#1",
+            "executorRef": "zcode-dispatch-Mac-b832b89a-91445",
+            "inputDigest": "44c72f69d1e65145c98cf77494266699794f959d4a01be4974676f83ea7bf8f5",
+            "observation": {
+                "court": "aps-dod-court/1",
+                "gates": [
+                    {
+                        "id": "CHI-EXACT-HEAD",
+                        "ms": 0,
+                        "kind": "ok",
+                        "pass": true,
+                        "checks": {
+                            "clean_after": true,
+                            "head_exists": true,
+                            "clean_before": true,
+                            "head_matches": true,
+                            "head_unchanged_after": true,
+                            "base_ancestor_of_head": true
+                        },
+                        "detail": "head, ancestry and cleanliness verified before and after"
+                    },
+                    {
+                        "id": "CHI-INDEPENDENT",
+                        "ms": 0,
+                        "kind": "ok",
+                        "pass": true,
+                        "detail": "executor and verifier identities differ"
+                    },
+                    {
+                        "id": "CHI-SCOPE",
+                        "ms": 0,
+                        "kind": "ok",
+                        "pass": true,
+                        "detail": "1 changed path(s), all within allowed_paths and unprotected"
+                    },
+                    {
+                        "id": "CHI-MOCK",
+                        "ms": 1,
+                        "kind": "ok",
+                        "pass": true,
+                        "detail": "no unittest.mock/Mock/MagicMock/patch/monkeypatch/mocker in tests/ or tools/"
+                    },
+                    {
+                        "id": "CHI-ASSERT",
+                        "ms": 2,
+                        "kind": "ok",
+                        "pass": true,
+                        "detail": "6 new non-vacuous test(s) in 1 file(s)",
+                        "new_tests": 6
+                    },
+                    {
+                        "id": "CHI-CANONICAL",
+                        "ms": 1639,
+                        "kind": "ok",
+                        "pass": true,
+                        "steps": [
+                            {
+                                "ms": 592,
+                                "rc": 0,
+                                "step": "verify",
+                                "tail": "...\"path\": \"specification-guide/src/v26_8_24/19_industrial_lineage_from_jig_to_autonomic_factory.md\",\n      \"sha256\": \"585e84cb5dad33c7411b09e60c93d952241bc055f24fcf117f051b7d318779b9\"\n    }\n  ],\n  \"failures\": [],\n  \"nonClaims\": [\n    \"ALIVE here means the repository satisfies its declared structural constitution and executable semantic/schema qualification.\",\n    \"It does not prove Fortune-500 semantic closure, economic dominance, or safe universal actuation.\"\n  ],\n  \"schema\": \"aps.repository-verification.v26.8.24\",\n  \"scope\": \"repository-coherence-not-crown-hypothesis\",\n  \"standing\": \"ALIVE\"\n}\n"
+                            },
+                            {
+                                "ms": 419,
+                                "rc": 0,
+                                "step": "unittest",
+                                "tail": "...onTest.test_whole_repository_constitution) ... ok\ntest_board_validation_objects_do_not_scale_with_artifact_count (test_simulation.Fortune500SensitivityTest.test_board_validation_objects_do_not_scale_with_artifact_count) ... ok\ntest_candidate_space_multiplies_selected_space (test_simulation.Fortune500SensitivityTest.test_candidate_space_multiplies_selected_space) ... ok\ntest_model_is_explicitly_non_empirical (test_simulation.Fortune500SensitivityTest.test_model_is_explicitly_non_empirical) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 0.173s\n\nOK\n"
+                            },
+                            {
+                                "ms": 198,
+                                "rc": 0,
+                                "step": "ggen-static",
+                                "tail": "...232\",\n  \"nonClaims\": [\n    \"This static court does not claim ggen executed; exact-head CI must execute every cell.\",\n    \"MANUFACTURED evidentiary standing is not production ACTUATED or VERIFIED standing.\",\n    \"A DfCM SELECT projection is not DO authority.\",\n    \"Multi-pack qualification does not prove complete APS self-hosting.\"\n  ],\n  \"packs\": {\n    \"consequence-ir-pack\": \"0.2.0\",\n    \"dfcm-maximalist-court-pack\": \"26.8.24\",\n    \"mdbook-pattern-language-pack\": \"0.1.0\",\n    \"standing-ladder-pack\": \"0.1.1\"\n  },\n  \"schema\": \"aps.ggen-ecosystem-static-court.v26.8.24.2\",\n  \"standing\": \"ALIVE\"\n}\n"
+                            },
+                            {
+                                "ms": 138,
+                                "rc": 0,
+                                "step": "mdbook",
+                                "tail": "2026-09-20 17:12:35 [INFO] (mdbook::book): Book building has started\n2026-09-20 17:12:35 [INFO] (mdbook::book): Running the html backend\n"
+                            },
+                            {
+                                "ms": 81,
+                                "rc": 0,
+                                "step": "simulate",
+                                "tail": "...ifacts\": 1440000\n  },\n  \"nonClaims\": [\n    \"These quantities are not measurements of a real Fortune-500 company.\",\n    \"Generated lines are not economic value by themselves.\",\n    \"The model does not prove that every enterprise capability is semantically closed.\",\n    \"The model does not grant deployment authority.\",\n    \"ALIVE means the deterministic sensitivity model executed and its arithmetic closed.\",\n    \"The metrics are consequences of supplied assumptions, not empirical Fortune-500 measurements.\"\n  ],\n  \"schema\": \"aps.synthetic-fortune500-sensitivity.v26.8.24\",\n  \"standing\": \"ALIVE\"\n}\n"
+                            },
+                            {
+                                "ms": 204,
+                                "ok": 6,
+                                "rc": 0,
+                                "step": "new-tests",
+                                "expected": 6
+                            }
+                        ],
+                        "detail": "all canonical gates and the new tests passed"
+                    },
+                    {
+                        "id": "CHI-MUTATION",
+                        "ms": 492,
+                        "kind": "ok",
+                        "pass": true,
+                        "detail": "all 1 mutant(s) killed by the new tests",
+                        "killed": 1,
+                        "mutants": [
+                            {
+                                "id": "standing:drop-enum:root:ALIVE",
+                                "desc": "drop 'ALIVE' from enum",
+                                "kind": "schema-drop-enum-value",
+                                "status": "killed",
+                                "killed_by": [
+                                    "test_contract_standing.StandingContractTest.test_alive_member_validates",
+                                    "test_contract_standing.StandingContractTest.test_every_admitted_member_validates"
+                                ]
+                            }
+                        ],
+                        "kill_ratio": 1.0,
+                        "mutant_count": 1
+                    }
+                ],
+                "failures": [
+                ],
+                "newTests": 6,
+                "killRatio": 1.0,
+                "timingsMs": {
+                    "CHI-MOCK": 1,
+                    "CHI-SCOPE": 0,
+                    "CHI-ASSERT": 2,
+                    "CHI-MUTATION": 492,
+                    "CHI-CANONICAL": 1639,
+                    "CHI-INDEPENDENT": 0
+                },
+                "toolchain": {
+                    "git": "git version 2.51.2",
+                    "mdbook": "mdbook v0.4.52",
+                    "python": "3.14.3"
+                }
+            },
+            "resultDigest": "7d33ab42377fc38b6ac644742ce11829d2705bebb559cd2bd63d935faa88e211",
+            "sourceCoordinate": "aps@e34c526fff6d46a414c76f130cf2870ac42ee733"
+        }
+    }
+}

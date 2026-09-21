@@ -1,0 +1,107 @@
+[
+  {
+    "acceptance": [
+      "https://ggen-igniter.dev/ontology/semantic-jira#obs-879dc669a0ae-acceptance-delta"
+    ],
+    "admitted": true,
+    "authority": "NONE",
+    "authority_requirement": "NONE",
+    "base_sha": "5c31d9d05fe36dc1eca3a26c9eb5cd267a2cf625",
+    "candidate_sha": null,
+    "definition_digest": "sha256:796dc7425ab0a6b51424e014461ea1543e45d510cd39e2b12fd3e22d8b04ac89",
+    "dependencies": [],
+    "description": "Observed delta: Create exactly one new file, tests/test_contract_standing.py, containing Chicago-school unit tests for the JSON Schema contracts/standing.schema.json, then `git add tests/test_contract_standing.py` and `git commit -m \"test(contract): standing\"`. Touch no other file. You cannot run Python or tests in this session, so write plain, conservative code.\n\nRules (an independent court enforces every one; a violation is rejected and you are asked to repair):\n  1. Use only `unittest` and `jsonschema` (Draft202012Validator) against the REAL schema file, loaded from `pathlib.Path(__file__).resolve().parents[1] / \"contracts\" / \"standing.schema.json\"`. If the schema has a relative `$ref` to another file in contracts/, build a `referencing.Registry` from every contracts/*.schema.json keyed by its `$id` so the ref resolves.\n  2. Write at least 4 test methods in a `unittest.TestCase` subclass: at least 3 negative fixtures, each violating a different constraint (assert the validator reports an error, e.g. `assertFalse(validator.is_valid(x))` or `assertRaises(jsonschema.ValidationError)`), and at least 1 positive fixture that validates. Assertions must be state-based on validation results; no vacuous or always-true assertions; never skip a test.\n  3. Do not write the words unittest.mock, Mock(, MagicMock, patch(, monkeypatch or mocker anywhere in the file, including comments and docstrings. Use real objects only.\n  4. Hardcode the fixtures and expected constants in the test file; do NOT derive them by reading the schema you are testing (a test that computes its expectations from the schema cannot detect the schema being weakened).\n\nNon-vacuity check: the court will weaken a copy of the schema in each of these ways and require that at least one of your new tests then FAILS. Your fixtures must therefore detect every one of them:\n  - the enum member 'ALIVE' removed at the schema root\nFor an enum member, include a positive fixture using that exact member. For a removed `required` property, include a negative fixture that is otherwise valid but omits it. For `additionalProperties`, include a negative fixture that is otherwise valid but has one extra unknown property.\n\nWhen the commit exists, finish through the normal /xaas close protocol with your final head.",
+    "dimensions": {
+      "admitted": false,
+      "changed": false,
+      "constructed": false,
+      "deployed": false,
+      "executed": false,
+      "inferred": false,
+      "merged": false,
+      "observed": false,
+      "published": false,
+      "receipted": false,
+      "replayed": false,
+      "selected": false,
+      "verified": false
+    },
+    "evidence_ceiling": "repository-local",
+    "falsifiers": [
+      "https://ggen-igniter.dev/ontology/semantic-jira#obs-879dc669a0ae-falsifier-delta"
+    ],
+    "identity": "SJ-CROWN-A",
+    "path_scope": [
+      "tests/test_contract_standing.py"
+    ],
+    "projections": [
+      "jira",
+      "receipt"
+    ],
+    "promotion_rule": "exact-head fabric court receipt",
+    "replay_identity": "semantic-jira:observation:879dc669a0aed8d937effc579e06fa09bafe2c2c2a0a040b3cca156d6748443a",
+    "replay_required": false,
+    "repository": "seanchatmangpt/agile-protocol-specification",
+    "required_courts": [
+      "https://ggen-igniter.dev/ontology/semantic-jira#court-aps-dod"
+    ],
+    "required_evidence": [
+      "https://ggen-igniter.dev/ontology/semantic-jira#aps-dod-court-receipt-evidence"
+    ],
+    "required_receipt_classes": [
+      "verification"
+    ],
+    "standing": "UNKNOWN",
+    "subject": "semantic-jira:observation:879dc669a0aed8d937effc579e06fa09bafe2c2c2a0a040b3cca156d6748443a",
+    "title": "Resolve observed process delta 879dc669a0ae",
+    "work_order_digest": "sha256:829124bfd22c60d0691282f77a30b17d4d18a5f98870d76d75735aecc2e9a467"
+  },
+  {
+    "acceptance": [
+      "CHI-EXACT-HEAD",
+      "CHI-INDEPENDENT",
+      "CHI-SCOPE",
+      "CHI-MOCK",
+      "CHI-ASSERT",
+      "CHI-CANONICAL"
+    ],
+    "authority_requirement": "NONE",
+    "base_sha": "5c31d9d05fe36dc1eca3a26c9eb5cd267a2cf625",
+    "dependencies": [
+      {
+        "required_standing": "ALIVE",
+        "type": "requiresReceipt",
+        "upstream": "SJ-CROWN-A"
+      }
+    ],
+    "description": "Create exactly one new file, tests/test_contract_evidence_receipt.py, containing Chicago-school unit tests for the JSON Schema contracts/evidence-receipt.schema.json, then `git add tests/test_contract_evidence_receipt.py` and `git commit -m \"test(contract): evidence-receipt\"`. Touch no other file. You cannot run Python or tests in this session, so write plain, conservative code.\n\nRules (an independent court enforces every one; a violation is rejected and you are asked to repair):\n  1. Use only `unittest` and `jsonschema` (Draft202012Validator) against the REAL schema file, loaded from `pathlib.Path(__file__).resolve().parents[1] / \"contracts\" / \"evidence-receipt.schema.json\"`. If the schema has a relative `$ref` to another file in contracts/, build a `referencing.Registry` from every contracts/*.schema.json keyed by its `$id` so the ref resolves.\n  2. Write at least 4 test methods in a `unittest.TestCase` subclass: at least 3 negative fixtures, each violating a different constraint (assert the validator reports an error, e.g. `assertFalse(validator.is_valid(x))` or `assertRaises(jsonschema.ValidationError)`), and at least 1 positive fixture that validates. Assertions must be state-based on validation results; no vacuous or always-true assertions; never skip a test.\n  3. Do not write the words unittest.mock, Mock(, MagicMock, patch(, monkeypatch or mocker anywhere in the file, including comments and docstrings. Use real objects only.\n  4. Hardcode the fixtures and expected constants in the test file; do NOT derive them by reading the schema you are testing (a test that computes its expectations from the schema cannot detect the schema being weakened).\n\nNon-vacuity check: the court will weaken a copy of the schema in each of these ways and require that at least one of your new tests then FAILS. Your fixtures must therefore detect every one of them:\n  - `receiptId` removed from `required` at the schema root\n  - `sourceCoordinate` removed from `required` at the schema root\n  - `inputDigest` removed from `required` at the schema root\n  - `contractRef` removed from `required` at the schema root\n  - `additionalProperties` changed from false to true at the schema root\nFor an enum member, include a positive fixture using that exact member. For a removed `required` property, include a negative fixture that is otherwise valid but omits it. For `additionalProperties`, include a negative fixture that is otherwise valid but has one extra unknown property.\n\nWhen the commit exists, finish through the normal /xaas close protocol with your final head.",
+    "evidence_ceiling": "repository-local",
+    "falsifiers": [
+      "CHI-MUTATION"
+    ],
+    "identity": "SJ-CROWN-B",
+    "path_scope": [
+      "tests/test_contract_evidence_receipt.py"
+    ],
+    "projections": [
+      "jira",
+      "receipt"
+    ],
+    "promotion_rule": "exact-head fabric court receipt",
+    "replay_identity": "semantic-jira:crown:contract-evidence-receipt",
+    "replay_required": false,
+    "repository": "seanchatmangpt/agile-protocol-specification",
+    "required_courts": [
+      "https://ggen-igniter.dev/ontology/semantic-jira#court-aps-dod"
+    ],
+    "required_evidence": [
+      "https://ggen-igniter.dev/ontology/semantic-jira#aps-dod-court-receipt-evidence"
+    ],
+    "required_receipt_classes": [
+      "verification"
+    ],
+    "standing": "UNKNOWN",
+    "subject": "semantic-jira:crown:contract-evidence-receipt",
+    "title": "APS contract test hardening: contract-evidence-receipt"
+  }
+]
