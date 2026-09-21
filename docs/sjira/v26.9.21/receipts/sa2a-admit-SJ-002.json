@@ -1,0 +1,10 @@
+{
+  "admitted_assertion": "workorder:SJ-002 digest:sha256:e7f6c965e5360f9774e7acfa01228bb4c33f97aaa7c35981713d678a1f7efb26 requires-construction",
+  "candidate_hash": "e2abd398400e3d01379be69d9580decad936d0b48fe452acf00eebee0d1bef63",
+  "ok": true,
+  "reasons": [
+    "CONFORMS_TO_SPEC"
+  ],
+  "receipt_id": "rec-feb506cf",
+  "standing": "KNOWN"
+}

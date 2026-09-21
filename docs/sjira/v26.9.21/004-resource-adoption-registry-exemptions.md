@@ -51,6 +51,9 @@
 # SJ-004: Adopt Xaas.Resource on the registry-exempt resources
 
 - **Standing**: PARTIAL_ALIVE
+
+## Status
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description

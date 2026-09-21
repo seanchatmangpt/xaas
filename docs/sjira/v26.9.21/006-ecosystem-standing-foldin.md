@@ -53,6 +53,9 @@
 # SJ-006: Fold SA2A / Semantic Jira / zcode findings into autofde-lab ecosystem-standing
 
 - **Standing**: PARTIAL_ALIVE
+
+## Status
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/autofde-lab @ `2f4825a`
 
 ## Description

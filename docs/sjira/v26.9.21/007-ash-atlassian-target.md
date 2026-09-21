@@ -45,6 +45,9 @@
 # SJ-007: Scope the ash_atlassian migration target
 
 - **Standing**: BLOCKED
+
+## Status
+BLOCKED
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description

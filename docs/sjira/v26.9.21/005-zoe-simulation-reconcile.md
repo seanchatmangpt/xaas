@@ -49,6 +49,9 @@
 # SJ-005: Reconcile the two ZOE event simulations
 
 - **Standing**: PARTIAL_ALIVE
+
+## Status
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description

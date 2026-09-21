@@ -48,6 +48,9 @@
 # SJ-008: Close the four open gymact backlog tickets
 
 - **Standing**: PARTIAL_ALIVE
+
+## Status
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/gymact @ `4ab72e6`
 
 ## Description

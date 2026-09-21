@@ -73,7 +73,7 @@ idx=[]
 for w in W:
     fn=f"{w['n']:03d}-{w['slug']}.md"
     m=w['md']
-    body=f"---\n{json.dumps(m,indent=2)}\n---\n\n# {m['identity']}: {m['title']}\n\n- **Standing**: {m['standing']}\n- **Repository**: {m['repository']} @ `{m['base_sha'][:7]}`\n\n## Description\n{m['description']}\n\n## Evidence\n"+"".join(f"- {e}\n" for e in w['evidence'])+"\n## Definition of done\n"+"".join(f"- [ ] {a}\n" for a in m['acceptance'])+f"\nRunnable check:\n\n```sh\n{w['dod']}\n```\n\n## Falsifiers\n"+"".join(f"- {f}\n" for f in m['falsifiers'])
+    body=f"---\n{json.dumps(m,indent=2)}\n---\n\n# {m['identity']}: {m['title']}\n\n- **Standing**: {m['standing']}\n\n## Status\n{m['standing']}\n- **Repository**: {m['repository']} @ `{m['base_sha'][:7]}`\n\n## Description\n{m['description']}\n\n## Evidence\n"+"".join(f"- {e}\n" for e in w['evidence'])+"\n## Definition of done\n"+"".join(f"- [ ] {a}\n" for a in m['acceptance'])+f"\nRunnable check:\n\n```sh\n{w['dod']}\n```\n\n## Falsifiers\n"+"".join(f"- {f}\n" for f in m['falsifiers'])
     open(f"{OUT}/{fn}","w").write(body)
     idx.append(dict(id=m['identity'],path=fn,standing=m['standing'],repository=m['repository'],dependencies=[d['upstream'] for d in m['dependencies']]))
 json.dump(idx,open(f"{OUT}/index.json","w"),indent=2)

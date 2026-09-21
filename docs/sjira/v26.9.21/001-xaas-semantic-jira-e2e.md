@@ -51,6 +51,9 @@
 # SJ-001: xaas consumes a real Semantic Jira WorkOrder end to end
 
 - **Standing**: PARTIAL_ALIVE
+
+## Status
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description

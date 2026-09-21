@@ -51,6 +51,9 @@
 # SJ-003: Pay down HANDWRITTEN.md: promote zcode plugin templates into zcode-plugin-pack
 
 - **Standing**: PARTIAL_ALIVE
+
+## Status
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description

@@ -56,6 +56,9 @@
 # SJ-002: zcode-ocel-pack gets a real consumer
 
 - **Standing**: UNSUPPORTED
+
+## Status
+UNSUPPORTED
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description

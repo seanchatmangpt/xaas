@@ -1,0 +1,80 @@
+{
+  "allocations": [
+    {
+      "experiments": 2,
+      "fraction": 0.10447170557973882,
+      "item_id": "SJ-001",
+      "lane": 3,
+      "standing": "ADMITTED",
+      "ticks": 522,
+      "tokens": 52235
+    },
+    {
+      "experiments": 3,
+      "fraction": 0.19588444796201032,
+      "item_id": "SJ-002",
+      "lane": 0,
+      "standing": "ADMITTED",
+      "ticks": 979,
+      "tokens": 97942
+    },
+    {
+      "experiments": 2,
+      "fraction": 0.10447170557973882,
+      "item_id": "SJ-003",
+      "lane": 7,
+      "standing": "ADMITTED",
+      "ticks": 522,
+      "tokens": 52235
+    },
+    {
+      "experiments": 2,
+      "fraction": 0.10447170557973882,
+      "item_id": "SJ-004",
+      "lane": 4,
+      "standing": "ADMITTED",
+      "ticks": 522,
+      "tokens": 52235
+    },
+    {
+      "experiments": 2,
+      "fraction": 0.10447170557973882,
+      "item_id": "SJ-005",
+      "lane": 6,
+      "standing": "ADMITTED",
+      "ticks": 522,
+      "tokens": 52235
+    },
+    {
+      "experiments": 2,
+      "fraction": 0.14246141669964385,
+      "item_id": "SJ-006",
+      "lane": 1,
+      "standing": "ADMITTED",
+      "ticks": 712,
+      "tokens": 71230
+    },
+    {
+      "experiments": 2,
+      "fraction": 0.10447170557973882,
+      "item_id": "SJ-008",
+      "lane": 5,
+      "standing": "ADMITTED",
+      "ticks": 522,
+      "tokens": 52235
+    },
+    {
+      "experiments": 2,
+      "fraction": 0.13929560743965178,
+      "item_id": "SJ-009",
+      "lane": 2,
+      "standing": "ADMITTED",
+      "ticks": 696,
+      "tokens": 69647
+    }
+  ],
+  "ok": true,
+  "plan_hash": "2650e1d1b6055c88ee106162e96ef272a3669c6d323be7ec5c0aafab0c833d85",
+  "plan_id": "sjira-v26.9.21",
+  "total_entropy_preserved": 1.480807281361298
+}
