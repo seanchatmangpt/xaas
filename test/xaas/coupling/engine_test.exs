@@ -99,6 +99,34 @@ defmodule Xaas.Coupling.EngineTest do
     end
   end
 
+  describe "zero total weight (all proposals carry no real influence)" do
+    test "all-zero-confidence proposals are infeasible, not a division-by-zero crash" do
+      proposals = [
+        %{id: "a", vector: [1.0], confidence: 0.0, staleness: 0.0},
+        %{id: "b", vector: [2.0], confidence: 0.0, staleness: 0.0}
+      ]
+
+      assert {:infeasible, %{reason: :zero_total_weight}} = Engine.couple(proposals, %{})
+    end
+
+    test "staleness large enough to underflow exp(-staleness) to 0.0 is infeasible" do
+      proposals = [
+        %{id: "a", vector: [1.0], confidence: 1.0, staleness: 1.0e4}
+      ]
+
+      assert {:infeasible, %{reason: :zero_total_weight}} = Engine.couple(proposals, %{})
+    end
+
+    test "a mix of zero-confidence and underflowed-staleness proposals is still infeasible" do
+      proposals = [
+        %{id: "a", vector: [1.0, 2.0], confidence: 0.0, staleness: 0.0},
+        %{id: "b", vector: [3.0, 4.0], confidence: 1.0, staleness: 1.0e4}
+      ]
+
+      assert {:infeasible, %{reason: :zero_total_weight}} = Engine.couple(proposals, %{})
+    end
+  end
+
   describe "malformed input" do
     test "empty proposal set is a typed error, not a crash" do
       assert {:error, %{reason: :empty_proposal_set}} = Engine.couple([], %{})
