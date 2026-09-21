@@ -11,7 +11,7 @@ defmodule Xaas.Ultracode.SemanticWork do
 
   require Ash.Query
 
-  alias Xaas.Ultracode.{Epoch, Run, SemanticWaveTrigger, Worktrees}
+  alias Xaas.Ultracode.{CourtReceipt, Epoch, Run, SemanticWaveTrigger, Worktrees}
 
   @sha ~r/^[0-9a-f]{40}$/
   @digest ~r/^sha256:[0-9a-f]{64}$/
@@ -46,7 +46,8 @@ defmodule Xaas.Ultracode.SemanticWork do
     "verifier_suite" => :verifier_suite,
     "execution_policy" => :execution_policy,
     "dependencies" => :dependencies,
-    "standing" => :standing
+    "standing" => :standing,
+    "court_map" => :court_map
   }
 
   @dependency_keys %{
@@ -76,7 +77,8 @@ defmodule Xaas.Ultracode.SemanticWork do
           required(:provider) => String.t(),
           required(:verifier_suite) => String.t(),
           required(:execution_policy) => :continuous_epoch_run | :autonomic_wave_attempt,
-          required(:dependencies) => [dependency()]
+          required(:dependencies) => [dependency()],
+          optional(:court_map) => map()
         }
 
   @doc """
@@ -123,7 +125,22 @@ defmodule Xaas.Ultracode.SemanticWork do
 
   Refusals are typed: `{:error, {:refused_semantic_work, reason}}` /
   `{:error, {:refused_dependency, reason}}` /
-  `{:error, {:unsupported_required_standing, value}}`.
+  `{:error, {:unsupported_required_standing, value}}` /
+  `{:error, {:refused_court_map, reason}}`.
+
+  ## The optional court_map (fabric court-receipt contract)
+
+  An OPTIONAL 12th field, `"court_map"`, carries the work order's
+  minted acceptance/falsifier/court IRIs together with the one machine-
+  checkable predicate each maps to (see
+  `Xaas.Ultracode.CourtReceipt` for the exact shape, the verdict
+  vocabulary, and the fail-closed law). It is stored on the Run at
+  materialization (`court_map` attribute) and consumed ONLY by the fabric
+  at close time, so the sealed receipt can carry
+  `acceptance_results`/`falsifier_results` keyed by the work order's own
+  IRIs (`promote/3`'s acceptance/falsifiers/courts checks) without the
+  worker ever supplying them. Absent = today's behavior; present but
+  malformed = typed refusal.
   """
   @spec admit(map()) :: {:ok, descriptor()} | {:error, term()}
   def admit(input) when is_map(input) do
@@ -140,11 +157,13 @@ defmodule Xaas.Ultracode.SemanticWork do
          :ok <- require_string(descriptor, :provider),
          :ok <- require_string(descriptor, :verifier_suite),
          {:ok, policy} <- admit_execution_policy(descriptor.execution_policy),
-         {:ok, dependencies} <- admit_dependencies(descriptor.dependencies) do
+         {:ok, dependencies} <- admit_dependencies(descriptor.dependencies),
+         {:ok, court_map} <- CourtReceipt.admit(Map.get(descriptor, :court_map)) do
       {:ok,
        descriptor
        |> Map.put(:execution_policy, policy)
-       |> Map.put(:dependencies, dependencies)}
+       |> Map.put(:dependencies, dependencies)
+       |> Map.put(:court_map, court_map)}
     end
   end
 
@@ -298,6 +317,7 @@ defmodule Xaas.Ultracode.SemanticWork do
       execution_repo_alias: descriptor.execution_repo_alias,
       execution_policy: descriptor.execution_policy,
       dependency_evidence: dependency_evidence(descriptor.dependencies),
+      court_map: Map.get(descriptor, :court_map),
       base_sha: descriptor.base_sha
     }
 

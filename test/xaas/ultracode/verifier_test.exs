@@ -299,6 +299,146 @@ defmodule Xaas.Ultracode.VerifierTest do
   end
 
   # ------------------------------------------------------------------
+  # Court receipt mode (IRI-keyed verdicts) -- see Xaas.Ultracode.CourtReceipt
+  # for the ggen consumer contract. The suite output here is a scripted
+  # replica of real `pytest -v` lines; the REAL eds-dod RED/GREEN witness on
+  # a real eds worktree is out-of-test evidence (recorded in the wave
+  # ticket), per this file's Chicago-style law on toolchain footprints.
+  # ------------------------------------------------------------------
+
+  @sj "https://ggen-igniter.dev/ontology/semantic-jira"
+  @court_iri @sj <> "#exact-head-projection-court"
+  @acc_iri @sj <> "#obs-275a1f5e4de7-acceptance-delta"
+  @fal_iri @sj <> "#obs-275a1f5e4de7-falsifier-delta"
+
+  @delta_test "tests/seed.py::test_delta"
+
+  @git_env [
+    {"GIT_AUTHOR_NAME", "t"},
+    {"GIT_AUTHOR_EMAIL", "t@t"},
+    {"GIT_COMMITTER_NAME", "t"},
+    {"GIT_COMMITTER_EMAIL", "t@t"}
+  ]
+
+  defp court_map,
+    do: %{
+      "acceptance" => %{@acc_iri => %{"test" => @delta_test}},
+      "falsifiers" => %{@fal_iri => %{"test" => @delta_test}},
+      "courts" => [@court_iri]
+    }
+
+  defp verdict_script(marker) do
+    ~s(echo #{marker}-MODE; if [ -f broken.flag ]; then echo "#{@delta_test} FAILED [100%]"; exit 1; else echo "#{@delta_test} PASSED [100%]"; fi)
+  end
+
+  defp put_receipt_suite do
+    put_suite(
+      "t",
+      suite(
+        [
+          sh("probe", verdict_script("PLAIN"), %{
+            receipt: true,
+            receipt_argv: ["/bin/sh", "-c", verdict_script("VERBOSE")]
+          })
+        ],
+        %{result_format: "pytest_v"}
+      )
+    )
+  end
+
+  test "court mode: the receipt argv runs and the receipt is IRI-keyed", %{ctx: ctx} do
+    put_receipt_suite()
+
+    assert {:ok, result} = Verifier.run("t", Map.put(ctx, :court_map, court_map()))
+    assert result["status"] == "pass"
+
+    [%{"output_tail" => tail}] = result["steps"]
+    assert tail =~ "VERBOSE-MODE"
+
+    receipt = result["court_receipt"]
+    assert receipt["acceptance_results"][@acc_iri] == true
+    assert receipt["falsifier_results"][@fal_iri] == "survived"
+
+    court = receipt["court_results"][@court_iri]
+    assert court["passed"] == true
+    assert court["step_id"] == "probe"
+    assert court["head"] == ctx.head
+
+    assert receipt["binding"] == %{
+             "suite" => "t",
+             "step_id" => "probe",
+             "head" => ctx.head,
+             "argv_sha256" => result["argv_sha256"]
+           }
+  end
+
+  test "court mode RED: a failing predicate fires the falsifier in the receipt", %{
+    ctx: ctx,
+    worktree: worktree
+  } do
+    put_receipt_suite()
+    File.write!(Path.join(worktree, "broken.flag"), "x")
+    {_, 0} = System.cmd("git", ["-C", worktree, "add", "broken.flag"])
+    {_, 0} = System.cmd("git", ["-C", worktree, "commit", "-qm", "broken"], env: @git_env)
+    red_ctx = %{ctx | head: git_head(worktree)}
+
+    assert {:ok, result} = Verifier.run("t", Map.put(red_ctx, :court_map, court_map()))
+    assert result["status"] == "fail"
+
+    receipt = result["court_receipt"]
+    assert receipt["acceptance_results"][@acc_iri] == false
+    assert receipt["falsifier_results"][@fal_iri] == "failed"
+    assert receipt["court_results"][@court_iri]["passed"] == false
+  after
+    System.cmd("git", ["-C", worktree, "reset", "-q", "--hard", "HEAD~1"], env: @git_env)
+  end
+
+  test "court mode: a mapped test with no observed verdict makes the run error", %{ctx: ctx} do
+    put_suite(
+      "t",
+      suite(
+        [sh("probe", ~s(echo "tests/other.py::test_other PASSED [100%]"), %{receipt: true})],
+        %{result_format: "pytest_v"}
+      )
+    )
+
+    assert {:ok, %{"status" => "error", "reason" => reason}} =
+             Verifier.run("t", Map.put(ctx, :court_map, court_map()))
+
+    assert reason =~ "court_receipt_refused"
+    assert reason =~ "missing_verdict"
+  end
+
+  test "court mode: a court_map naming no receipt step in the suite is refused", %{ctx: ctx} do
+    put_suite("t", suite([sh("probe", "true")]))
+
+    assert {:ok, %{"status" => "error", "reason" => reason}} =
+             Verifier.run("t", Map.put(ctx, :court_map, court_map()))
+
+    assert reason =~ "receipt_step_undeclared"
+  end
+
+  test "court mode: a malformed court_map is a typed refusal", %{ctx: ctx} do
+    put_receipt_suite()
+
+    assert {:ok, %{"status" => "error", "reason" => reason}} =
+             Verifier.run("t", Map.put(ctx, :court_map, %{"bogus" => %{}}))
+
+    assert reason =~ "refused_court_map"
+  end
+
+  test "without a court_map the plain argv runs and no court_receipt is produced", %{ctx: ctx} do
+    put_receipt_suite()
+
+    assert {:ok, result} = Verifier.run("t", ctx)
+    assert result["status"] == "pass"
+
+    [%{"output_tail" => tail}] = result["steps"]
+    assert tail =~ "PLAIN-MODE"
+    refute Map.has_key?(result, "court_receipt")
+  end
+
+  # ------------------------------------------------------------------
 
   defp ctx(worktree) do
     %{

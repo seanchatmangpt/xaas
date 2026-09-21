@@ -377,6 +377,7 @@ defmodule Xaas.Ultracode.Run do
         :execution_repo_alias,
         :execution_policy,
         :dependency_evidence,
+        :court_map,
         :base_sha
       ])
 
@@ -894,6 +895,20 @@ defmodule Xaas.Ultracode.Run do
     attribute :dependency_evidence, :map do
       allow_nil?(false)
       default(%{})
+      public?(true)
+    end
+
+    # The fabric court-receipt contract (`Xaas.Ultracode.CourtReceipt`):
+    # the work order's minted acceptance/falsifier/court IRIs mapped to the
+    # one machine-checkable predicate each. Carried here from the execution
+    # descriptor at materialization and consumed ONLY by the fabric at
+    # close time, so the sealed receipt's acceptance_results /
+    # falsifier_results / court_results are keyed by the work order's own
+    # IRIs without the worker ever supplying them (`Lease.close/4` drops
+    # worker-supplied copies before merging the fabric-computed ones).
+    # nil = no court receipt contract (suite runs plain, today's behavior).
+    attribute :court_map, :map do
+      allow_nil?(true)
       public?(true)
     end
 

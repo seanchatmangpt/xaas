@@ -42,10 +42,13 @@ defmodule Xaas.Ultracode.TargetSuites do
   VerifierSuiteRegistered`); `validate/1` is the registration-time gate over
   the declarations themselves -- it refuses bad commands (empty/non-binary or
   placeholder-embedded argv elements) and bad timeouts (missing, non-integer,
-  zero/negative, or above the 1h cap) so a typo cannot reach close time.
+  zero/negative, or above the 1h cap) so a typo cannot reach close time. It
+  also gates the court-receipt declarations: a step's `receipt` must be a
+  boolean, its `receipt_argv` a well-formed argv list, and the suite's
+  `result_format` one of `Xaas.Ultracode.CourtReceipt.result_formats/0`.
   """
 
-  alias Xaas.Ultracode.Verifier
+  alias Xaas.Ultracode.{CourtReceipt, Verifier}
 
   @max_timeout_ms 3_600_000
 
@@ -57,6 +60,12 @@ defmodule Xaas.Ultracode.TargetSuites do
       # against the committed mix.lock, strict compile, full mix test. Hex is
       # resolved from the pinned MIX_ARCHIVES so a throwaway HOME never
       # triggers the interactive `mix local.hex` prompt.
+      #
+      # Deliberately NOT court-receipt flagged yet (`receipt: true` + a
+      # `mix test --trace` receipt_argv + result_format "mix_trace"): the
+      # extractor exists and is unit-qualified, but no RED/GREEN witness on
+      # the real nounverb worktree has been recorded, and a court flag is
+      # declared only where witnessed. Same for spr-dod.
       "nounverb-dod" => %{
         env: %{
           "PATH" =>
@@ -78,7 +87,18 @@ defmodule Xaas.Ultracode.TargetSuites do
       # the worktree's own src/ (relative PYTHONPATH), with the base temp
       # inside the verifier's per-run tmpdir so nothing is written outside
       # the worktree or shared between runs.
+      #
+      # COURT RECEIPT (Xaas.Ultracode.CourtReceipt): the step is flagged
+      # `receipt: true` and declares `receipt_argv` (the same suite with
+      # `-v` instead of `-q`, so per-test verdict lines are observed at
+      # all -- `-q` output names only failures, and a passing acceptance
+      # test would then be unverifiable) plus the suite-level
+      # `result_format: "pytest_v"`. When a Run carries a court_map, the
+      # fabric runs THIS argv and emits acceptance_results /
+      # falsifier_results keyed by the work order's minted IRIs. Plain
+      # runs (no court_map) keep the `-q` argv exactly as before.
       "eds-dod" => %{
+        result_format: "pytest_v",
         env: %{
           "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
           "LANG" => "en_US.UTF-8",
@@ -98,6 +118,18 @@ defmodule Xaas.Ultracode.TargetSuites do
           %{
             id: "test",
             timeout_ms: 300_000,
+            receipt: true,
+            receipt_argv: [
+              "python3",
+              "-m",
+              "pytest",
+              "tests",
+              "--basetemp",
+              "{tmpdir}",
+              "-v",
+              "-p",
+              "no:cacheprovider"
+            ],
             argv: [
               "python3",
               "-m",
@@ -190,7 +222,23 @@ defmodule Xaas.Ultracode.TargetSuites do
 
         toolchain_problems = toolchain_problems(ctx, Map.get(suite, :toolchain, []))
 
-        env_problems ++ step_problems ++ toolchain_problems
+        format_problems =
+          case Map.get(suite, :result_format) do
+            nil ->
+              []
+
+            format when is_binary(format) ->
+              if format in CourtReceipt.result_formats() do
+                []
+              else
+                [ctx <> "unknown result_format #{inspect(format)}"]
+              end
+
+            other ->
+              [ctx <> "result_format must be a string, got #{inspect(other)}"]
+          end
+
+        env_problems ++ step_problems ++ toolchain_problems ++ format_problems
 
       _ ->
         [ctx <> "suite must be a map"]
@@ -259,7 +307,44 @@ defmodule Xaas.Ultracode.TargetSuites do
           ["step #{inspect(Map.get(step, :id))}: infra_exit_codes must be integers"]
       end
 
-    for problem <- id_problem ++ argv_problems ++ timeout_problem ++ infra_problem,
+    receipt_problem =
+      case Map.get(step, :receipt) do
+        nil ->
+          []
+
+        flag when is_boolean(flag) ->
+          []
+
+        other ->
+          [
+            "step #{inspect(Map.get(step, :id))}: receipt must be a boolean, got #{inspect(other)}"
+          ]
+      end
+
+    receipt_argv_problem =
+      case Map.get(step, :receipt_argv) do
+        nil ->
+          []
+
+        argv when is_list(argv) ->
+          case argv_problems("receipt_argv", argv) do
+            [] -> []
+            problems -> ["step #{inspect(Map.get(step, :id))}: receipt_argv: " <> hd(problems)]
+          end
+
+        other ->
+          [
+            "step #{inspect(Map.get(step, :id))}: receipt_argv must be an argv list, got #{inspect(other)}"
+          ]
+      end
+
+    for problem <-
+          id_problem ++
+            argv_problems ++
+            timeout_problem ++
+            infra_problem ++
+            receipt_problem ++
+            receipt_argv_problem,
         do: ctx <> problem
   end
 

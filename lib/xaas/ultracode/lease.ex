@@ -802,9 +802,18 @@ defmodule Xaas.Ultracode.Lease do
   # ------------------------------------------------------------------
 
   defp verified_outcome(%Epoch{} = epoch, final_head, claimed_outcome, evidence) do
-    # `fabric_verifier` is fabric-owned evidence: a worker-supplied value under
-    # that key is dropped, never merged, so it cannot spoof a passing court.
-    evidence = Map.delete(evidence, "fabric_verifier")
+    # Fabric-owned evidence keys: worker-supplied values under ANY of these
+    # are dropped, never merged, so they cannot spoof a passing court or
+    # self-supply IRI-keyed verdicts. Every key is recomputed by the fabric
+    # below (or deliberately absent when there is no court contract).
+    evidence =
+      Map.drop(evidence, ~w(
+        fabric_verifier
+        acceptance_results
+        falsifier_results
+        court_results
+        court_binding
+      ))
 
     case worktree_head(epoch.worktree) do
       {:ok, ^final_head} ->
@@ -836,8 +845,20 @@ defmodule Xaas.Ultracode.Lease do
   # threat model). pass keeps the claimed outcome (never upgrades it); fail is
   # falsified evidence (:build_broken); timeout/error is unverifiable
   # (:partial_alive). Other claimed outcomes have nothing to verify.
+  #
+  # Court receipt mode: when the Run carries a court_map (the work order's
+  # minted acceptance/falsifier/court IRIs -- fabric-owned state persisted at
+  # materialization, never worker input), it is threaded into the verifier
+  # run and the produced IRI-keyed court receipt is published into the
+  # receipt EVIDENCE TOP LEVEL (`acceptance_results`, `falsifier_results`,
+  # `court_results`, `court_binding`) -- the exact keys
+  # `GgenIgniter.SemanticJira.promote/3`'s acceptance/falsifiers/courts
+  # checks read (see `Xaas.Ultracode.CourtReceipt`'s moduledoc). A court
+  # production refusal makes the verifier result "error", so an alive claim
+  # honestly downgrades to :partial_alive: the court could not witness the
+  # verdicts, and :alive requires a qualifying court.
   defp fabric_verified(
-         %Epoch{run: %Run{verifier_suite: suite}} = epoch,
+         %Epoch{run: %Run{verifier_suite: suite, court_map: court_map}} = epoch,
          final_head,
          claimed_outcome,
          evidence
@@ -849,10 +870,14 @@ defmodule Xaas.Ultracode.Lease do
         head: final_head,
         run_id: epoch.run_id,
         epoch_id: epoch.id,
-        executor: epoch.leased_to
+        executor: epoch.leased_to,
+        court_map: court_map
       })
 
-    evidence = Map.put(evidence, "fabric_verifier", result)
+    evidence =
+      evidence
+      |> Map.put("fabric_verifier", result)
+      |> publish_court_receipt(result)
 
     case result["status"] do
       "pass" -> {claimed_outcome, evidence}
@@ -875,6 +900,17 @@ defmodule Xaas.Ultracode.Lease do
 
   defp fabric_verified(_epoch, _final_head, claimed_outcome, evidence),
     do: {claimed_outcome, evidence}
+
+  # Only PRODUCED court receipts (they always carry the "binding" record)
+  # publish evidence keys; a legacy JSON-line court receipt (the APS court
+  # script's own shape) stays nested under fabric_verifier unchanged.
+  defp publish_court_receipt(evidence, %{"court_receipt" => %{"binding" => _} = receipt}) do
+    evidence
+    |> Map.merge(Map.take(receipt, ["acceptance_results", "falsifier_results", "court_results"]))
+    |> Map.put("court_binding", receipt["binding"])
+  end
+
+  defp publish_court_receipt(evidence, _no_produced_receipt), do: evidence
 
   # Repo-native, shell-free head verification: explicit argv, no shell
   # interpolation; the worktree comes from the epoch row, not the request.
