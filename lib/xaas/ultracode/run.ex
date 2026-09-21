@@ -289,6 +289,32 @@ defmodule Xaas.Ultracode.Run do
 
         queue(:ultracode_engine)
       end
+
+      # The FABRIC-NATIVE WAVE LOOP (hourly) -- the operator's loop clock.
+      # The zcode platform scheduler refuses automation creation from
+      # automation-owned sessions ("Cannot create a scheduled task inside a
+      # session that already belongs to a scheduled task"; verified
+      # platform-side, not in our fork), so the loop is THIS scheduler's
+      # own cron: each fire runs one full
+      # `Xaas.Ultracode.WaveLoop.tick/1` -- parse the loop STATE file,
+      # dispatch ONE real zcode worker for the first actionable step
+      # through the `Dispatch` boundary, settle STATE + telemetry from the
+      # sealed receipt. Single-slot dedicated queue (`ultracode_wave_loop:
+      # 1`) for the same serialization reason as the other wave queues: a
+      # tick's dispatch may legitimately run most of an hour, and two
+      # ticks must never overlap.
+      schedule :wave_loop, "0 * * * *" do
+        action(:wave_loop)
+        worker_module_name(Xaas.Ultracode.Run.Workers.WaveLoop)
+
+        # XAAS-2601 system-actor flow, same as every schedule above: the
+        # cron worker runs through authorization with the scheduler's own
+        # real system authority (canonical `Xaas.Checks.SystemActor`
+        # subject bound to `:oban_scheduler`).
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
+        queue(:ultracode_wave_loop)
+      end
     end
   end
 
@@ -302,9 +328,10 @@ defmodule Xaas.Ultracode.Run do
     # of the previous action-wide `authorize_if(always())` bypasses --
     # which any caller through the normal authorization path satisfied.
     #
-    #   * `:tick` (cron) and the three schedule clocks `:autonomic_wave`/
-    #     `:semantic_wave`/`:engine_cycle` carry the `:oban_scheduler`
-    #     service (each schedule supplies it via AshOban `default_actor`);
+    #   * `:tick` (cron) and the four schedule clocks `:autonomic_wave`/
+    #     `:semantic_wave`/`:engine_cycle`/`:wave_loop` carry the
+    #     `:oban_scheduler` service (each schedule supplies it via AshOban
+    #     `default_actor`);
     #   * `:begin_wave_session`/`:record_wave` -- the duration-budget
     #     bookkeeping the wave clock drives -- carry `:oban_scheduler`;
     #   * `:advance_cycle`/`:transition_state` (the Ultracode Reactor
@@ -328,6 +355,7 @@ defmodule Xaas.Ultracode.Run do
              :autonomic_wave,
              :semantic_wave,
              :engine_cycle,
+             :wave_loop,
              :begin_wave_session,
              :record_wave,
              :stop,
@@ -755,6 +783,41 @@ defmodule Xaas.Ultracode.Run do
       end)
     end
 
+    # Real generic action -- the sole body of the AshOban `:wave_loop`
+    # scheduled action (hourly), mirroring `:tick`/`:engine_cycle` exactly:
+    # all loop logic lives in `Xaas.Ultracode.WaveLoop` (STATE parse ->
+    # first actionable step -> ONE real dispatch -> receipt settle), this
+    # action only the call site. The runner is read through the
+    # application-env seam so tests capture the call without reaching the
+    # real STATE file or dispatcher, same as the other runners above.
+    # `WaveLoop.tick/1` ALWAYS returns `{:ok, report}` (the report is the
+    # receipt; loop-level facts -- corrupted STATE, busy slot, blocked
+    # deps -- are `:outcome` values, never job failures, because a failing
+    # Oban retry loop is exactly the crash loop the loop's own law
+    # forbids).
+    action :wave_loop, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(
+            :xaas,
+            :ultracode_wave_loop_runner,
+            {Xaas.Ultracode.WaveLoop, :tick}
+          )
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[]])
+            fun when is_function(fun, 1) -> fun.([])
+          end
+
+        case result do
+          {:ok, report} -> {:ok, report}
+          %{} = report -> {:ok, report}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
     # Operator-facing STOP: `:running -> :abandoned` (edge already
     # allow-listed by `RunTransitionAllowed`), standing `:blocked` -- the
     # work stopped mid-flight, which is exactly what `:blocked` means in
@@ -884,10 +947,15 @@ defmodule Xaas.Ultracode.Run do
     # Explicit policy makes the pre-existing lifecycle variation semantic:
     # continuous work waits for the tick clock; wave attempts are started
     # immediately but still use the same Run.:start first-Epoch path.
+    # `:wave_loop_step` marks the fabric-native wave loop's per-tick step
+    # Runs (`Xaas.Ultracode.WaveLoop`): provider-pull epochs the loop
+    # dispatches itself, excluded from the semantic-wave filters (which
+    # select `:autonomic_wave_attempt` only) and findable by the loop's
+    # busy/stale slot query. Stored as plain text -- no migration.
     attribute :execution_policy, :atom do
       allow_nil?(true)
       public?(true)
-      constraints(one_of: [:continuous_epoch_run, :autonomic_wave_attempt])
+      constraints(one_of: [:continuous_epoch_run, :autonomic_wave_attempt, :wave_loop_step])
     end
 
     # Typed upstream receipt identities/digests projected from the canonical

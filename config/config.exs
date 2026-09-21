@@ -88,7 +88,14 @@ config :xaas, Oban,
     # the continuous engine between waves: same single-slot serialization
     # argument as `ultracode_wave` (slot-filling work must never overlap
     # itself, or capacity accounting races).
-    ultracode_engine: 1
+    ultracode_engine: 1,
+    # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (hourly) -- the
+    # fabric-native wave loop: ONE real zcode worker per tick, dispatched
+    # synchronously by `Xaas.Ultracode.WaveLoop.tick/1` from the loop STATE
+    # file. A tick's dispatch may legitimately run most of an hour, so the
+    # single slot is what makes "one loop worker at a time" real; a second
+    # hourly fire waits here rather than overlapping.
+    ultracode_wave_loop: 1
   ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]

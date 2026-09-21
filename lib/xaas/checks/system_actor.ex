@@ -44,10 +44,10 @@ defmodule Xaas.Checks.SystemActor do
   # ultracode schedules and their internal bookkeeping, bound to the two
   # services the established conventions already use.
   #
-  #   * `:oban_scheduler` owns Time -> Cycle: the three schedule clocks
+  #   * `:oban_scheduler` owns Time -> Cycle: the four schedule clocks
   #     (`:tick` above, plus `:autonomic_wave`, `:semantic_wave`,
-  #     `:engine_cycle`) and the duration-budget bookkeeping those clocks
-  #     drive (`:begin_wave_session`, `:record_wave`).
+  #     `:engine_cycle`, `:wave_loop`) and the duration-budget bookkeeping
+  #     those clocks drive (`:begin_wave_session`, `:record_wave`).
   #   * `:ultracode_reactor` owns the kernel mutations: `:advance_cycle`/
   #     `:transition_state` (above), the engine lifecycle recovery
   #     (`:stop`/`:resume`), and the Epoch lease-family actions, whose only
@@ -59,6 +59,7 @@ defmodule Xaas.Checks.SystemActor do
     {Xaas.Ultracode.Run, :autonomic_wave, :oban_scheduler},
     {Xaas.Ultracode.Run, :semantic_wave, :oban_scheduler},
     {Xaas.Ultracode.Run, :engine_cycle, :oban_scheduler},
+    {Xaas.Ultracode.Run, :wave_loop, :oban_scheduler},
     {Xaas.Ultracode.Run, :begin_wave_session, :oban_scheduler},
     {Xaas.Ultracode.Run, :record_wave, :oban_scheduler},
     {Xaas.Ultracode.Run, :stop, :ultracode_reactor},

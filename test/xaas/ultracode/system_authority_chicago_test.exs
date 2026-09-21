@@ -9,7 +9,7 @@ defmodule Xaas.Ultracode.SystemAuthorityChicagoTest do
   Extended by the wave-4 authority tightening (XAAS-2601/2602 completion):
   every ultracode schedule clock and internal bookkeeping/lifecycle action
   that still carried a scoped `authorize_if(always())` bypass
-  (`:autonomic_wave`, `:semantic_wave`, `:engine_cycle`,
+  (`:autonomic_wave`, `:semantic_wave`, `:engine_cycle`, `:wave_loop`,
   `:begin_wave_session`, `:record_wave`, `:stop`, `:resume`, and the Epoch
   lease family) is now a canonical `Xaas.Checks.SystemActor` subject, and
   each newly-mapped action gets its exact-classification cases here:
@@ -250,10 +250,22 @@ defmodule Xaas.Ultracode.SystemAuthorityChicagoTest do
                |> Ash.run_action()
     end
 
-    test "the three schedule clocks admit exactly the oban_scheduler service" do
+    test "Run.wave_loop refuses an ordinary actor and a nil actor (real invocation)" do
+      assert {:error, %Ash.Error.Forbidden{}} =
+               Run
+               |> Ash.ActionInput.for_action(:wave_loop, %{})
+               |> Ash.run_action(actor: @ordinary_actor)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               Run
+               |> Ash.ActionInput.for_action(:wave_loop, %{})
+               |> Ash.run_action()
+    end
+
+    test "the four schedule clocks admit exactly the oban_scheduler service" do
       # Real policy calculus over the exact subjects -- no side effects,
       # the same `Ash.can?/2` engine the service-scope suite uses.
-      for action <- [:autonomic_wave, :semantic_wave, :engine_cycle] do
+      for action <- [:autonomic_wave, :semantic_wave, :engine_cycle, :wave_loop] do
         input = Run |> Ash.ActionInput.for_action(action, %{})
 
         assert Ash.can?(input, Xaas.SystemAuthority.new(:oban_scheduler)),
