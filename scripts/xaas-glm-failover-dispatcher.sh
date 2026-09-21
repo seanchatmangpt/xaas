@@ -103,7 +103,7 @@ find_ready_epochs() {
         JOIN ultracode_runs r ON r.id = e.run_id
         WHERE r.provider = 'zcode'
           AND e.state = 'running'
-          AND e.lease_token IS NULL
+          AND (e.lease_token IS NULL OR e.lease_expires_at < now())
         ORDER BY e.inserted_at ASC;" 2>&1
 }
 
@@ -268,7 +268,7 @@ if [ -n "$DIRECT_EPOCH" ]; then
   esac
   row="$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -t -A -F'|' \
     -c "SELECT e.id, COALESCE(e.worktree, ''), COALESCE(r.checkpoint_iri, ''), COALESCE(r.graph_digest, ''), COALESCE(r.work_order_iri, ''), COALESCE(r.repository_identity, ''), COALESCE(r.base_sha, '') FROM ultracode_epochs e JOIN ultracode_runs r ON r.id = e.run_id
-        WHERE e.id = '${DIRECT_EPOCH}' AND r.provider = 'zcode' AND e.state = 'running' AND e.lease_token IS NULL;" 2>&1)"
+        WHERE e.id = '${DIRECT_EPOCH}' AND r.provider = 'zcode' AND e.state = 'running' AND (e.lease_token IS NULL OR e.lease_expires_at < now());" 2>&1)"
   if [ "$?" -ne 0 ] || [ -z "$row" ]; then
     log "epoch ${DIRECT_EPOCH} is not a running, unleased zcode epoch (${row:-no row})"
     exit 3
