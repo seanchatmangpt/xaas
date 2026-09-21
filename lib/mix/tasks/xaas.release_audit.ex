@@ -112,7 +112,7 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
   end
 
   defp check_domains(failures) do
-    configured = Application.fetch_env!(:kanban, :ash_domains)
+    configured = Application.fetch_env!(:xaas, :ash_domains)
     actual_counts = Map.new(@domains, &{&1, length(Ash.Domain.Info.resources(&1))})
     resources = Enum.flat_map(@domains, &Ash.Domain.Info.resources/1)
 

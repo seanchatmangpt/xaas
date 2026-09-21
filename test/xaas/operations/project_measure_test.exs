@@ -46,7 +46,7 @@ defmodule Xaas.Operations.ProjectMeasureTest do
       Spark.Test.dsl_errors do
         defmodule Elixir.Xaas.ProjectMeasureInvalidDomain do
           use Ash.Domain,
-            otp_app: :kanban,
+            otp_app: :xaas,
             extensions: [Xaas.Operations.ProjectMeasure.Extension]
 
           project_measure do

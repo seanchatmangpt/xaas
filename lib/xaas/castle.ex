@@ -56,7 +56,7 @@ defmodule Xaas.Castle do
       intent: intent,
       actor: request.actor,
       tenant: request.tenant,
-      kernel: Application.get_env(:kanban, :castle_kernel_module, Xaas.Castle.Kernel.CLI),
+      kernel: Application.get_env(:xaas, :castle_kernel_module, Xaas.Castle.Kernel.CLI),
       now_epoch_ms: System.system_time(:millisecond)
     }
 
@@ -507,7 +507,7 @@ defmodule Xaas.Castle.Actions.Execute do
 
     with {:ok, witness} <- Xaas.Castle.Admission.witness(input, intent, now_epoch_ms),
          {:ok, checkpoint} <- Xaas.Castle.Admission.checkpoint(input, witness),
-         kernel <- Application.get_env(:kanban, :castle_kernel_module, Xaas.Castle.Kernel.CLI),
+         kernel <- Application.get_env(:xaas, :castle_kernel_module, Xaas.Castle.Kernel.CLI),
          {:ok, result} <- kernel.execute(intent, witness, checkpoint, now_epoch_ms) do
       {:ok,
        Map.merge(result, %{
@@ -543,7 +543,7 @@ defmodule Xaas.Castle.Kernel.CLI do
     * `CASTLE_KEY_ID` - receipt key identifier
     * `CASTLE_EVIDENCE_ROOT` - absolute durable filesystem root mounted for CASTLE evidence
 
-  Adapter profiles are server-owned `config :kanban, :castle_adapter_profiles, ...`.
+  Adapter profiles are server-owned `config :xaas, :castle_adapter_profiles, ...`.
   Caller/model input cannot provide provider programs, command maps, or signing material.
   """
 
@@ -761,7 +761,7 @@ defmodule Xaas.Castle.Kernel.CLI do
 
   defp build_request(runtime, intent, witness) do
     profile_id = field(intent, :adapter_profile_id)
-    profiles = Application.get_env(:kanban, :castle_adapter_profiles, %{})
+    profiles = Application.get_env(:xaas, :castle_adapter_profiles, %{})
     profile = if is_nil(profile_id), do: nil, else: Map.get(profiles, profile_id) || Map.get(profiles, to_string(profile_id))
 
     with profile when is_map(profile) <- profile,

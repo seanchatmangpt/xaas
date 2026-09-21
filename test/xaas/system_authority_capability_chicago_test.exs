@@ -82,7 +82,7 @@ defmodule Xaas.SystemAuthorityCapabilityChicagoTest do
              |> Ash.Changeset.for_update(:transition_state, %{state: :running})
              |> Ash.update(actor: Xaas.SystemAuthority.new(:webhook_dispatcher))
 
-    assert Ash.get!(Run, run.id, authorize?: false).state == :pending
+    assert Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false).state == :pending
   end
 
   test "Run.tick admits the scheduler capability and refuses the reactor capability" do

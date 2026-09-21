@@ -106,8 +106,8 @@ defmodule Xaas.CastleBridgeTest do
       }
     }
 
-    previous_profiles = Application.get_env(:kanban, :castle_adapter_profiles)
-    Application.put_env(:kanban, :castle_adapter_profiles, %{"xaas-local-proof" => profile})
+    previous_profiles = Application.get_env(:xaas, :castle_adapter_profiles)
+    Application.put_env(:xaas, :castle_adapter_profiles, %{"xaas-local-proof" => profile})
 
     on_exit(fn ->
       File.rm(signing_key_path)
@@ -117,8 +117,8 @@ defmodule Xaas.CastleBridgeTest do
       System.delete_env("CASTLE_EVIDENCE_ROOT")
 
       if is_nil(previous_profiles),
-        do: Application.delete_env(:kanban, :castle_adapter_profiles),
-        else: Application.put_env(:kanban, :castle_adapter_profiles, previous_profiles)
+        do: Application.delete_env(:xaas, :castle_adapter_profiles),
+        else: Application.put_env(:xaas, :castle_adapter_profiles, previous_profiles)
     end)
 
     key = "xaas-castle-#{System.unique_integer([:positive])}"

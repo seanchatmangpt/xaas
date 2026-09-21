@@ -1,6 +1,6 @@
 defmodule Xaas.Semantics.AshR2RMLTest.GoodResource do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer
 
@@ -31,7 +31,7 @@ end
 
 defmodule Xaas.Semantics.AshR2RMLTest.UnsupportedResource do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer
 

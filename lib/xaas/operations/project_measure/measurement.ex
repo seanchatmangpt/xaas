@@ -15,7 +15,7 @@ defmodule Xaas.Operations.ProjectMeasure.Measurement do
   """
 
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Operations,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshTypescript.Resource]
