@@ -53,8 +53,13 @@
 - **Standing**: PARTIAL_ALIVE
 
 ## Status
-PARTIAL_ALIVE
+PARTIAL_ALIVE (2026-09-21): promotion constructed and verified at code head `191e7d5` (branch `sjira/sj-003`); the literal runnable check's first step, a root-level `ggen sync`, was not observed to complete (see `receipts/SJ-003.md`). Plugin-project `ggen sync run` exit 0, clean-room render identical to the checked-in projection, HANDWRITTEN.md Active rows 20 -> 18, `mix test` exit 0 (1346 tests, 0 failures). Not merged, not pushed.
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
+
+## History
+
+- 2026-09-21 | BLOCKED (superseded) | zcode default agent, `--mode edit`: `No permission client configured for Bash`, plus 25x provider 429 (code 1302); no product edits; record kept in `receipts/SJ-003-zcode-attempt.md`
+- 2026-09-21 | PARTIAL_ALIVE | supervisor fallback construction in the same worktree: `191e7d5` (packs + ontology-lifted gate policy + HANDWRITTEN paydown); SA2A admit `rec-e088bcd4` (order) then `rec-ffcfcbb6` (construction claim) + replay verified; receipt `receipts/SJ-003.md`
 
 ## Description
 Wave manufactured-ratio was 0% (docs/ultracode/PROGRESS.md). Templates/generator under priv/zcode_plugin and the lease/controller rows in HANDWRITTEN.md still name owner packs that do not render them. Promote the contract-clean templates into zcode-plugin-pack and admit ultracode-actuation-lease-pack; delete the corresponding HANDWRITTEN.md rows.
