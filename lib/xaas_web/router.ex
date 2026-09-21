@@ -162,6 +162,15 @@ defmodule XaasWeb.Router do
   scope "/a2a" do
     pipe_through([:api, :require_internal_api_token])
 
+    # ZOE event simulation is intentionally registered before the generic
+    # Next Read catch-all. It exercises an authority-free SA2A-shaped event
+    # trace; no production consequence is dispatched from this surface.
+    forward("/zoe-event", A2A.Plug,
+      agent: XaasWeb.A2A.ZoeEventSimulationAgent,
+      base_url:
+        (System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a") <> "/zoe-event"
+    )
+
     forward("/", A2A.Plug,
       agent: XaasWeb.A2A.NextReadUserAgent,
       base_url: System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a"
