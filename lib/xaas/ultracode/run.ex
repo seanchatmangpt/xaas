@@ -80,11 +80,12 @@ defmodule Xaas.Ultracode.Run do
   and its MCP/hook tool schemas (`claim_next`, `admit_tool`, ...) carry no
   org-identifying field at all -- callers are keyed by the free-text
   `provider` string ("zcode", "opencode"), not by org. Every action
-  currently defined on `Run`/`Epoch` is also already unconditionally
-  `bypass action(...) do authorize_if(always()) end`ed (see `policies do`
-  below and `Epoch`'s own moduledoc) -- there are zero org-scoped policy
-  clauses to extend today, and no real fact ("which org does this caller
-  represent") reaches an Ultracode action to check.
+  currently defined on `Run`/`Epoch` is also either admitted only through
+  the real `Xaas.Checks.SystemActor` system-authority predicate (the
+  XAAS-2601/wave-4 mapping; see `policies do` below and `Epoch`'s own
+  moduledoc) or denied by the resource's deny floor -- there are zero
+  org-scoped policy clauses to extend today, and no real fact ("which org
+  does this caller represent") reaches an Ultracode action to check.
 
   Applying the existing convention here verbatim would be real but
   functionally inert dead code (a check with nothing real to compare
@@ -96,6 +97,41 @@ defmodule Xaas.Ultracode.Run do
   no enforcement, no policy change, so a real migration exists to build on
   without checking against a fact nothing yet supplies. See ADR-0002 for
   the full design note and what would need to land first.
+
+  ## Duration budget (the 8-hour standing-wave law)
+
+  A Run carries a real wall-clock DURATION BUDGET: `duration_budget_seconds`
+  (default 28_800 = 8 hours, configurable per run) counted from `started_at`
+  -- never reset, never restarted. The budget's single source of truth is
+  `Xaas.Ultracode.DurationBudget` (`deadline/1`, `exhausted?/2`, `gate/2`,
+  `drain_and_complete/2`); this resource carries the fields, the boundary
+  calculation (`budget_deadline_at`), and the enforcement call sites:
+
+    * the `:autonomic_wave` scheduler (the operator-ordered standing wave:
+      capacity 5, continuous 30-minute waves) consults the budget BEFORE
+      dispatching each wave: within budget -> dispatch and count the wave
+      (`:record_wave`); past it -> NO new dispatch, in-flight work is
+      drained (live leases finish, stale ones reaped per the existing
+      `MissedEpochs` rule), and the session Run transitions to the terminal
+      `:completed` with a final receipt (waves run, epochs
+      terminal-counted, duration actual vs budget);
+    * `Xaas.Ultracode.Lease.claim_next/3` excludes epochs of
+      budget-exhausted Runs from ready work (the DB-enforced
+      `budget_deadline_at > now` candidate filter -- a Run cannot keep
+      claiming new leases past its budget);
+    * `Xaas.Ultracode.NextEpoch` stops constructing new Epochs for an
+      exhausted Run and completes it once its last epoch is terminal --
+      an exhausted Run cannot silently keep cycling or sit `:running`
+      forever.
+
+  Resume semantics are the natural consequence of the law's shape: a
+  stopped session (process down, waves paused) whose budget is not yet
+  exhausted resumes on the next scheduler fire with its REMAINING budget,
+  because `started_at` is written once by `:begin_wave_session` and never
+  rewritten -- the budget is wall-clock from start, not from resume. A
+  Run without `started_at` (never started; e.g. the per-item-attempt Runs
+  the Autonomic loop creates directly with a `:running` Epoch) has no
+  budget in force and keeps today's exact behavior.
 
   ## Scheduling (`oban do` block)
 
@@ -118,6 +154,12 @@ defmodule Xaas.Ultracode.Run do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshOban, AshRateLimiter]
+
+  # The duration-budget law (`:autonomic_wave` scheduler gate below) --
+  # module-level alias because the action DSL expands this resource's
+  # blocks into generated functions, where a lexically-scoped alias
+  # inside one block is dropped as unused.
+  alias Xaas.Ultracode.DurationBudget
 
   postgres do
     table("ultracode_runs")
@@ -163,6 +205,14 @@ defmodule Xaas.Ultracode.Run do
         action(:tick)
         worker_module_name(Xaas.Ultracode.Run.Workers.Tick)
 
+        # XAAS-2601: the cron worker runs `:tick` THROUGH authorization
+        # (`config :ash_oban, :authorize?` defaults true) with no stored
+        # actor, so the policy below would refuse it unless the schedule
+        # itself supplies the real system authority actor. This is the
+        # AshOban-documented `default_actor` "system-actor flow" -- the
+        # scheduler's own authority, made explicit instead of a bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
         # Explicit `:default` queue -- `config :xaas, Oban` (config.exs)
         # only lists `queues: [default: 10]`. AshOban's own default queue
         # name for a scheduled action is the resource's short name plus
@@ -174,18 +224,96 @@ defmodule Xaas.Ultracode.Run do
         queue(:default)
       end
 
+      # DfCM composition: keep item construction parallel while serializing
+      # the shared integration/promote phase. The action itself owns no
+      # additional authority; it only invokes the existing Autonomic loop.
       schedule :autonomic_wave, "*/30 * * * *" do
         action(:autonomic_wave)
         worker_module_name(Xaas.Ultracode.Run.Workers.AutonomicWave)
-
-        # Dedicated single-slot queue (`ultracode_wave: 1` in
-        # `config :xaas, Oban`, listed for the same require_queues!/4
-        # reason as above). A wave is tens-of-minutes work whose promote
-        # step is the one shared-state operation in the loop, so waves
-        # must serialize rather than overlap: with one queue slot, a wave
-        # that outlives the 30-minute period holds the next cron job in
-        # the queue instead of running concurrently with it.
         queue(:ultracode_wave)
+
+        # Wave-4 authority tightening (completing XAAS-2601/2602): the cron
+        # worker runs `:autonomic_wave` THROUGH authorization with the
+        # scheduler's own real system authority -- the same AshOban
+        # `default_actor` system-actor flow `:tick` uses. The action's
+        # previous `authorize_if(always())` bypass is deleted; the action
+        # is a canonical `Xaas.Checks.SystemActor` subject bound to
+        # `:oban_scheduler`.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+      end
+
+      # Semantic work is selected upstream; this clock dispatches already
+      # materialized :autonomic_wave_attempt Epochs. It shares the one-slot
+      # queue with the legacy APS wave so shared controller waves never overlap.
+      #
+      # WATCHDOG DEMOTION (wave-6 event-driven law): the PRIMARY dispatch
+      # clock is now the event path -- `Xaas.Ultracode.SemanticWaveTrigger`
+      # enqueues a deduplicated wave job the moment an admitted frontier
+      # transition materializes (transactionally with the ready Epoch).
+      # This */30 cron remains ONLY as the watchdog for missed events: on
+      # fire it dispatches whatever un-dispatched wave-ready Epoch exists
+      # (a lost/failed event-path job), else it is an IDLE no-op receipt.
+      schedule :semantic_wave, "*/30 * * * *" do
+        action(:semantic_wave)
+        worker_module_name(Xaas.Ultracode.Run.Workers.SemanticWave)
+        queue(:ultracode_wave)
+
+        # Wave-4 authority tightening: same `default_actor` system-actor
+        # flow as `:autonomic_wave` above -- the scheduler's own admitted
+        # `:oban_scheduler` authority replaces the deleted
+        # `authorize_if(always())` bypass.
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+      end
+
+      # The CONTINUOUS engine cadence (every 5 minutes) -- the between-waves
+      # half of the loop: reap stale epochs, fill free worker slots up to the
+      # provider pool capacity (5 in production config), advance
+      # completed/stalled epochs, and carry the tick-health verdict in its
+      # report. All logic lives in `Xaas.Ultracode.Engine`; this schedule is
+      # only Time -> Cycle, exactly like `:tick` and `:autonomic_wave`.
+      # Single-slot dedicated queue (`ultracode_engine: 1` in
+      # `config :xaas, Oban`) for the same serialization reason as
+      # `:ultracode_wave`: engine cycles are capacity-filling work whose
+      # slot accounting must never overlap itself.
+      schedule :engine_cycle, "*/5 * * * *" do
+        action(:engine_cycle)
+        worker_module_name(Xaas.Ultracode.Run.Workers.EngineCycle)
+
+        # XAAS-2601 system-actor flow, same as `:tick` above: the cron
+        # worker runs through authorization with no stored actor, so the
+        # scheduler's own authority is made explicit. (The engine's INTERNAL
+        # mutations -- epoch reaping, receipt sealing -- each carry the
+        # admitted `:ultracode_reactor` service directly, matching the
+        # `Xaas.Checks.SystemActor` capability map for those subjects.)
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
+        queue(:ultracode_engine)
+      end
+
+      # The FABRIC-NATIVE WAVE LOOP (hourly) -- the operator's loop clock.
+      # The zcode platform scheduler refuses automation creation from
+      # automation-owned sessions ("Cannot create a scheduled task inside a
+      # session that already belongs to a scheduled task"; verified
+      # platform-side, not in our fork), so the loop is THIS scheduler's
+      # own cron: each fire runs one full
+      # `Xaas.Ultracode.WaveLoop.tick/1` -- parse the loop STATE file,
+      # dispatch ONE real zcode worker for the first actionable step
+      # through the `Dispatch` boundary, settle STATE + telemetry from the
+      # sealed receipt. Single-slot dedicated queue (`ultracode_wave_loop:
+      # 1`) for the same serialization reason as the other wave queues: a
+      # tick's dispatch may legitimately run most of an hour, and two
+      # ticks must never overlap.
+      schedule :wave_loop, "0 * * * *" do
+        action(:wave_loop)
+        worker_module_name(Xaas.Ultracode.Run.Workers.WaveLoop)
+
+        # XAAS-2601 system-actor flow, same as every schedule above: the
+        # cron worker runs through authorization with the scheduler's own
+        # real system authority (canonical `Xaas.Checks.SystemActor`
+        # subject bound to `:oban_scheduler`).
+        default_actor(%Xaas.SystemAuthority{service: :oban_scheduler})
+
+        queue(:ultracode_wave_loop)
       end
     end
   end
@@ -195,29 +323,52 @@ defmodule Xaas.Ultracode.Run do
       authorize_if(always())
     end
 
-    # Real, scoped carve-out for the cron-fired `:tick` action -- same
-    # `bypass action(:name)` shape as `Xaas.Platform.WebhookDelivery`'s
-    # `:retry_failed_deliveries` bypass. `:tick` accepts no external
-    # arguments and exposes no Run/Epoch field to a caller; it only
-    # triggers the real `Xaas.Ultracode.Reactor` missed-epoch workflow.
-    bypass action(:tick) do
-      authorize_if(always())
+    # XAAS-2601 + wave-4 authority tightening: EVERY internal-only Run
+    # mutation is admitted by the REAL system authority predicate instead
+    # of the previous action-wide `authorize_if(always())` bypasses --
+    # which any caller through the normal authorization path satisfied.
+    #
+    #   * `:tick` (cron) and the four schedule clocks `:autonomic_wave`/
+    #     `:semantic_wave`/`:engine_cycle`/`:wave_loop` carry the
+    #     `:oban_scheduler` service (each schedule supplies it via AshOban
+    #     `default_actor`);
+    #   * `:begin_wave_session`/`:record_wave` -- the duration-budget
+    #     bookkeeping the wave clock drives -- carry `:oban_scheduler`;
+    #   * `:advance_cycle`/`:transition_state` (the Ultracode Reactor
+    #     pipeline) and `:stop`/`:resume` (the engine kernel's lifecycle
+    #     recovery, `:running -> :abandoned` with lease revocation and the
+    #     `:abandoned -> :running` re-arm guarded by `RunTransitionAllowed`/
+    #     `RunResumable`) carry the `:ultracode_reactor` service.
+    #
+    # None of these actions accepts a caller-supplied subject or authority,
+    # and none is a public DO surface: an ambient/ordinary actor now falls
+    # through to the deny floor below. Real call sites pass the admitted
+    # actor explicitly (the schedule `default_actor`s, `Xaas.SystemAuthority`
+    # at the reactor/engine call sites) or are kernel paths that opt out of
+    # authorization explicitly (`authorize?: false`), so the tightening is
+    # behavior-preserving for every admitted caller while no longer
+    # admitting everything else.
+    bypass action([
+             :tick,
+             :advance_cycle,
+             :transition_state,
+             :autonomic_wave,
+             :semantic_wave,
+             :engine_cycle,
+             :wave_loop,
+             :begin_wave_session,
+             :record_wave,
+             :stop,
+             :resume
+           ]) do
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
-    # ERRC raise: same shape as `:tick` above, closing a gap the
-    # authorize?: false / dead-policies review surfaced but didn't name
-    # explicitly on this resource -- `:advance_cycle` and `:transition_state`
-    # are both internal-only mutations the Ultracode Reactor pipeline
-    # (`Xaas.Ultracode.NextEpoch.advance_from_completed/2`) invokes, and
-    # were previously called with `authorize?: false` rather than an
-    # explicit bypass, same dead-policy pattern as Epoch/Receipt.
-    bypass action(:advance_cycle) do
-      authorize_if(always())
-    end
-
-    bypass action(:transition_state) do
-      authorize_if(always())
-    end
+    # Duration-budget scheduler internals (postdating the XAAS-2601
+    # classification): `:begin_wave_session` (writes started_at ONCE from
+    # the law clock) and `:record_wave` (counts one dispatched wave) are
+    # wave-session ledger mutations on the session Run -- classified above
+    # with the `:oban_scheduler` service they belong to.
 
     policy always() do
       forbid_if(always())
@@ -245,7 +396,17 @@ defmodule Xaas.Ultracode.Run do
         :epoch_timeout_seconds,
         :provider,
         :org_id,
-        :verifier_suite
+        :verifier_suite,
+        :duration_budget_seconds,
+        :work_order_iri,
+        :checkpoint_iri,
+        :graph_digest,
+        :repository_identity,
+        :execution_repo_alias,
+        :execution_policy,
+        :dependency_evidence,
+        :court_map,
+        :base_sha
       ])
 
       # `:allow_global`: called both from the customer-facing controller
@@ -276,7 +437,8 @@ defmodule Xaas.Ultracode.Run do
         :epoch_timeout_seconds,
         :provider,
         :org_id,
-        :verifier_suite
+        :verifier_suite,
+        :duration_budget_seconds
       ])
 
       validate({Xaas.Ultracode.Validations.VerifierSuiteRegistered, []})
@@ -319,6 +481,11 @@ defmodule Xaas.Ultracode.Run do
 
       validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
 
+      # Terminal-only: sets `terminal_at` iff the destination state closes
+      # the Run (`:completed`/`:failed`/`:abandoned`) -- see the change's
+      # own moduledoc and the `terminal_at` attribute doc.
+      change(Xaas.Ultracode.Changes.SetTerminalAt)
+
       multitenancy(:bypass)
     end
 
@@ -337,12 +504,60 @@ defmodule Xaas.Ultracode.Run do
         allow_nil?(false)
       end
 
+      # Optional exact-SHA worktree already provisioned by the caller's
+      # admitted materialization path. Carrying it here lets every semantic
+      # policy use the single Run.:start -> CreateFirstEpoch lifecycle.
+      argument :worktree, :string do
+        allow_nil?(true)
+      end
+
       validate({Xaas.Ultracode.Validations.RunIsPending, []})
 
       change(set_attribute(:state, :running))
-      change(set_attribute(:started_at, &DateTime.utc_now/0))
+      # Through the DurationBudget clock seam (default DateTime.utc_now/0)
+      # -- identical behavior today, injectable in tests, and the one
+      # place `started_at` is written so the duration budget's wall-clock
+      # anchor has a single source of truth.
+      change(set_attribute(:started_at, &Xaas.Ultracode.DurationBudget.now/0))
       change(increment(:cycle))
       change(Xaas.Ultracode.Changes.CreateFirstEpoch)
+
+      multitenancy(:bypass)
+    end
+
+    # Real admitted action beginning the operator-ordered standing wave
+    # session (the 8-hour run: capacity 5, continuous 30-minute waves --
+    # see the moduledoc "Duration budget" section). Marks the Run as THE
+    # wave session (`wave_session: true`) and writes `started_at` ONCE,
+    # from the DurationBudget clock seam: the budget is wall-clock from
+    # this instant, never reset by a later resume. Refuses (typed, not a
+    # silent no-op) if the Run is not `:pending` -- same discipline as
+    # `:start` above. The scheduler (`:autonomic_wave`) calls this
+    # implicitly on the first fire via DurationBudget.find_or_begin...;
+    # it is also the operator's explicit one-call way to materialize the
+    # standing-wave order.
+    update :begin_wave_session do
+      accept([])
+      require_atomic?(false)
+
+      validate({Xaas.Ultracode.Validations.RunIsPending, []})
+
+      change(set_attribute(:state, :running))
+      change(set_attribute(:wave_session, true))
+      change(set_attribute(:started_at, &Xaas.Ultracode.DurationBudget.now/0))
+
+      multitenancy(:bypass)
+    end
+
+    # Real admitted action counting one dispatched wave on the session
+    # Run (`Xaas.Ultracode.DurationBudget`'s scheduler gate calls it after
+    # a wave actually ran; the count is what the final receipt reports as
+    # "waves run"). Waves, not epoch cycles -- the session Run owns no
+    # Epochs, so `:advance_cycle`'s cycle counter would be a semantic
+    # overload; this is the explicit, dedicated ledger.
+    update :record_wave do
+      accept([])
+      change(increment(:waves_run))
 
       multitenancy(:bypass)
     end
@@ -367,10 +582,13 @@ defmodule Xaas.Ultracode.Run do
     # Real generic action -- the sole body of the AshOban `:autonomic_wave`
     # scheduled action above (every 30 minutes), mirroring `:tick` exactly:
     # a generic action, all engineering-workflow logic in
-    # `Xaas.Ultracode.Autonomic`, this action only the call site. The one
-    # knob the schedule carries is the worker capacity -- 5 concurrent
-    # leased workers (subagents) per wave, the operator-ordered standing
-    # wave size -- every other default is `Autonomic`'s own. The loop is
+    # `Xaas.Ultracode.Autonomic` and `Xaas.Ultracode.DurationBudget`, this
+    # action only the call site. The one knob the schedule carries is the
+    # worker capacity -- 5 concurrent leased workers (subagents) per wave,
+    # the operator-ordered standing wave size -- every other default is
+    # `Autonomic`'s own. Five construction workers may run in parallel
+    # inside one wave; the dedicated one-slot Oban queue prevents two waves
+    # from racing the shared promotion/integration phase. The loop is
     # itself receipt-bearing (ndjson ledger plus the JSON receipt written
     # beside it) and human_inputs is 0 by construction. `Autonomic.run/1`
     # is synchronous on purpose: the AshOban worker runs it to completion
@@ -379,10 +597,152 @@ defmodule Xaas.Ultracode.Run do
     # integration merges) never overlaps another wave. The runner is read
     # through an application-env seam purely so the qualification test can
     # capture the call without reaching the real subprocess dispatcher.
+    #
+    # Duration budget (the operator's "keep a 5 agent loop running for 8
+    # hours" order, materialized): every fire resolves the standing-wave
+    # session Run (`DurationBudget.find_or_begin_wave_session/1` -- the
+    # FIRST fire begins it and starts the wall clock; later fires find it,
+    # including after a restart, which is the resume path), then gates on
+    # its budget BEFORE dispatching:
+    #
+    #   * `:allow` -> the wave runs at capacity 5 and is counted
+    #     (`:record_wave`);
+    #   * `{:refuse, :budget_exhausted}` -> NO new dispatch, ever; the
+    #     session is drained (live leases finish, stale ones reaped per
+    #     the existing `MissedEpochs` rule), transitioned to terminal
+    #     `:completed`, and the final receipt (waves run, epochs
+    #     terminal-counted, duration actual vs budget) is returned -- and
+    #     persisted beside the ledger when a ticket dir is configured.
+    #     Until every in-flight worker is truly terminal the session
+    #     reports `draining` instead of silently claiming completion.
     action :autonomic_wave, :map do
       run(fn _input, _context ->
+        now = DurationBudget.now()
+
+        case DurationBudget.find_or_begin_wave_session(now: now) do
+          {:ok, session, _phase} ->
+            case DurationBudget.gate(session, now) do
+              :allow ->
+                runner =
+                  Application.get_env(:xaas, :ultracode_wave_runner, {
+                    Xaas.Ultracode.Autonomic,
+                    :run
+                  })
+
+                result =
+                  case runner do
+                    {mod, fun} when is_atom(mod) and is_atom(fun) ->
+                      apply(mod, fun, [[capacity: 5]])
+
+                    fun when is_function(fun, 1) ->
+                      fun.(capacity: 5)
+                  end
+
+                case result do
+                  {:ok, report} ->
+                    {:ok, recorded} = DurationBudget.record_wave(session)
+
+                    {:ok,
+                     %{
+                       standing: report["standing"],
+                       receipt: report["receipt_path"],
+                       budget: %{
+                         run_id: session.id,
+                         dispatch: :allowed,
+                         waves_run: recorded.waves_run,
+                         budget_seconds: session.duration_budget_seconds,
+                         remaining_seconds: DurationBudget.remaining_seconds(session, now)
+                       }
+                     }}
+
+                  {:error, error} ->
+                    {:error, error}
+                end
+
+              # The one law-critical branch: past the boundary the ONLY
+              # allowed actions are drain, terminal transition, receipt.
+              {:refuse, :budget_exhausted, _details} ->
+                case DurationBudget.drain_and_complete(session, now: now) do
+                  {:ok, %{run: run, receipt: receipt}} ->
+                    {:ok,
+                     %{
+                       standing: "REFUSED_BUDGET_EXHAUSTED",
+                       receipt: receipt["receipt_path"],
+                       budget: %{
+                         run_id: run.id,
+                         dispatch: :budget_exhausted,
+                         waves_run: run.waves_run,
+                         budget_seconds: run.duration_budget_seconds,
+                         remaining_seconds: 0,
+                         session_state: to_string(run.state),
+                         draining: false,
+                         receipt: receipt
+                       }
+                     }}
+
+                  {:error, {:draining, info}} ->
+                    # Never claim completion over live in-flight workers;
+                    # also never dispatch. The next fire (or tick) finishes
+                    # the drain.
+                    {:ok,
+                     %{
+                       standing: "REFUSED_BUDGET_EXHAUSTED",
+                       receipt: nil,
+                       budget:
+                         Map.merge(info, %{
+                           dispatch: :budget_exhausted,
+                           draining: true
+                         })
+                     }}
+                end
+            end
+
+          # The 8-hour run already completed and re-arm is off: the
+          # operator's order was "waves for exactly 8 hours, THEN STOP
+          # DISPATCHING" -- so this fire dispatches nothing and reports
+          # the completed session's receipt.
+          {:refuse, :standing_wave_completed, session} ->
+            receipt = DurationBudget.final_receipt(session, now)
+
+            {:ok,
+             %{
+               standing: "REFUSED_BUDGET_EXHAUSTED",
+               receipt: receipt["receipt_path"],
+               budget: %{
+                 run_id: session.id,
+                 dispatch: :stopped_after_budget,
+                 waves_run: session.waves_run,
+                 budget_seconds: session.duration_budget_seconds,
+                 remaining_seconds: 0,
+                 session_state: to_string(session.state),
+                 receipt: receipt
+               }
+             }}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end)
+    end
+
+    # Separate scheduler call site for semantic work: the WATCHDOG half of
+    # the event-driven dispatch law (wave-6). The primary clock is
+    # `Xaas.Ultracode.SemanticWaveTrigger`, which enqueues the same
+    # `:semantic_wave` action immediately (same `:ultracode_wave` queue,
+    # same `:oban_scheduler` authority) on every admitted frontier
+    # transition that materializes wave-attempt work. This cron fire only
+    # needs to catch a MISSED event: dispatch any ready wave Epoch that
+    # the event path did not reach (a lost job), else report IDLE --
+    # the no-op watchdog case. SemanticWave itself cannot lease, verify,
+    # or crown work.
+    action :semantic_wave, :map do
+      run(fn _input, _context ->
         runner =
-          Application.get_env(:xaas, :ultracode_wave_runner, {Xaas.Ultracode.Autonomic, :run})
+          Application.get_env(
+            :xaas,
+            :ultracode_semantic_wave_runner,
+            {Xaas.Ultracode.SemanticWave, :run}
+          )
 
         result =
           case runner do
@@ -391,10 +751,122 @@ defmodule Xaas.Ultracode.Run do
           end
 
         case result do
-          {:ok, report} -> {:ok, %{standing: report["standing"], receipt: report["receipt_path"]}}
+          {:ok, report} -> {:ok, %{status: report["status"], receipt: report["receipt_path"]}}
           {:error, error} -> {:error, error}
         end
       end)
+    end
+
+    # Real generic action -- the sole body of the AshOban `:engine_cycle`
+    # scheduled action (every 5 minutes), mirroring `:tick`/`:autonomic_wave`
+    # exactly: all engineering-workflow logic in `Xaas.Ultracode.Engine`
+    # (reap -> fill worker slots at pool capacity -> advance -> health),
+    # this action only the call site. The runner is read through an
+    # application-env seam so tests can capture/inject without reaching the
+    # real engine, same as the wave runner above.
+    action :engine_cycle, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(:xaas, :ultracode_engine_runner, {Xaas.Ultracode.Engine, :cycle})
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[]])
+            fun when is_function(fun, 1) -> fun.([])
+          end
+
+        case result do
+          {:ok, report} -> {:ok, report}
+          %{} = report -> {:ok, report}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+    # Real generic action -- the sole body of the AshOban `:wave_loop`
+    # scheduled action (hourly), mirroring `:tick`/`:engine_cycle` exactly:
+    # all loop logic lives in `Xaas.Ultracode.WaveLoop` (STATE parse ->
+    # first actionable step -> ONE real dispatch -> receipt settle), this
+    # action only the call site. The runner is read through the
+    # application-env seam so tests capture the call without reaching the
+    # real STATE file or dispatcher, same as the other runners above.
+    # `WaveLoop.tick/1` ALWAYS returns `{:ok, report}` (the report is the
+    # receipt; loop-level facts -- corrupted STATE, busy slot, blocked
+    # deps -- are `:outcome` values, never job failures, because a failing
+    # Oban retry loop is exactly the crash loop the loop's own law
+    # forbids).
+    action :wave_loop, :map do
+      run(fn _input, _context ->
+        runner =
+          Application.get_env(
+            :xaas,
+            :ultracode_wave_loop_runner,
+            {Xaas.Ultracode.WaveLoop, :tick}
+          )
+
+        result =
+          case runner do
+            {mod, fun} when is_atom(mod) and is_atom(fun) -> apply(mod, fun, [[]])
+            fun when is_function(fun, 1) -> fun.([])
+          end
+
+        case result do
+          {:ok, report} -> {:ok, report}
+          %{} = report -> {:ok, report}
+          {:error, error} -> {:error, error}
+        end
+      end)
+    end
+
+    # Operator-facing STOP: `:running -> :abandoned` (edge already
+    # allow-listed by `RunTransitionAllowed`), standing `:blocked` -- the
+    # work stopped mid-flight, which is exactly what `:blocked` means in
+    # this repo's standing vocabulary. The after-action
+    # (`Changes.RevokeLiveLeases`) refuses every LIVE lease this Run's
+    # epochs hold -- a stopped run's in-flight workers get the typed
+    # `:run_stopped` refusal and their own `:refused` receipts, so the
+    # epoch lifecycle still holds its `terminal => receipt` invariant
+    # after a stop. `:expected` (never-claimed) epochs are deliberately
+    # left frozen: a stopped Run is out of the tick's active set, so
+    # nothing advances them; a later `:resume` lets the normal missed/next
+    # machinery dispose of them lawfully.
+    update :stop do
+      accept([])
+      require_atomic?(false)
+
+      change(set_attribute(:state, :abandoned))
+      change(set_attribute(:standing, :blocked))
+      # `:abandoned` is terminal -- persists the closing moment (`terminal_at`,
+      # the egress's `run_abandoned` event time) via the same conditional
+      # change `:transition_state` uses.
+      change(Xaas.Ultracode.Changes.SetTerminalAt)
+      change(Xaas.Ultracode.Changes.RevokeLiveLeases)
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
+
+      multitenancy(:bypass)
+    end
+
+    # Operator-facing RESUME: `:abandoned -> :running` re-arm. Standing
+    # resets to `:unknown` (a resumed run has observed nothing since it
+    # stopped -- old standing must not masquerade as current). No epoch is
+    # constructed here: the tick machinery owns epoch construction, and on
+    # the next ticks it disposes of whatever the stop froze (stale
+    # `:expected` epochs go `:missed` with receipts; `NextEpoch`'s bounded
+    # stale recovery advances the Run). `RunResumable` refuses the
+    # degenerate case -- a Run with no cycles left and no live epoch -- as
+    # a typed error instead of letting the next tick immediately fail it.
+    update :resume do
+      accept([])
+      require_atomic?(false)
+
+      change(set_attribute(:state, :running))
+      change(set_attribute(:standing, :unknown))
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
+      validate({Xaas.Ultracode.Validations.RunResumable, []})
+
+      multitenancy(:bypass)
     end
   end
 
@@ -439,6 +911,81 @@ defmodule Xaas.Ultracode.Run do
       constraints(max_length: 64, match: ~r/^[a-z0-9][a-z0-9_-]*$/)
     end
 
+    # Canonical semantic-work identity. These fields are descriptive evidence
+    # only. repository_identity names the semantic repository; execution_repo_alias
+    # is the operator-local Worktrees lookup key. They are intentionally distinct.
+    attribute :work_order_iri, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 1024)
+    end
+
+    attribute :checkpoint_iri, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 1024)
+    end
+
+    attribute :graph_digest, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128)
+    end
+
+    attribute :repository_identity, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 512)
+    end
+
+    attribute :execution_repo_alias, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128)
+    end
+
+    # Explicit policy makes the pre-existing lifecycle variation semantic:
+    # continuous work waits for the tick clock; wave attempts are started
+    # immediately but still use the same Run.:start first-Epoch path.
+    # `:wave_loop_step` marks the fabric-native wave loop's per-tick step
+    # Runs (`Xaas.Ultracode.WaveLoop`): provider-pull epochs the loop
+    # dispatches itself, excluded from the semantic-wave filters (which
+    # select `:autonomic_wave_attempt` only) and findable by the loop's
+    # busy/stale slot query. Stored as plain text -- no migration.
+    attribute :execution_policy, :atom do
+      allow_nil?(true)
+      public?(true)
+      constraints(one_of: [:continuous_epoch_run, :autonomic_wave_attempt, :wave_loop_step])
+    end
+
+    # Typed upstream receipt identities/digests projected from the canonical
+    # work graph. This is evidence carried by the Run, never authority.
+    attribute :dependency_evidence, :map do
+      allow_nil?(false)
+      default(%{})
+      public?(true)
+    end
+
+    # The fabric court-receipt contract (`Xaas.Ultracode.CourtReceipt`):
+    # the work order's minted acceptance/falsifier/court IRIs mapped to the
+    # one machine-checkable predicate each. Carried here from the execution
+    # descriptor at materialization and consumed ONLY by the fabric at
+    # close time, so the sealed receipt's acceptance_results /
+    # falsifier_results / court_results are keyed by the work order's own
+    # IRIs without the worker ever supplying them (`Lease.close/4` drops
+    # worker-supplied copies before merging the fabric-computed ones).
+    # nil = no court receipt contract (suite runs plain, today's behavior).
+    attribute :court_map, :map do
+      allow_nil?(true)
+      public?(true)
+    end
+
+    attribute :base_sha, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(match: ~r/^[0-9a-f]{40}$/)
+    end
+
     # Real, disclosed, schema-only seam -- see this module's own moduledoc
     # ("org_id -- real, disclosed, NOT ENFORCED") and ADR-0002. Nullable,
     # unenforced: no policy or check reads this attribute today. It exists
@@ -465,6 +1012,18 @@ defmodule Xaas.Ultracode.Run do
     end
 
     attribute :started_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    # The terminal-transition moment: written when this Run closes into
+    # `:completed`/`:failed`/`:abandoned` (via `:transition_state` or
+    # `:stop`, through `Changes.SetTerminalAt`; `:resume` and the
+    # `{:pending, :running}` edge never write it). The OCEL egress uses
+    # this as the `run_completed`/`run_failed`/`run_abandoned` event time
+    # -- a dedicated persisted fact replacing the former `updated_at`
+    # approximation. Nullable: a Run that never closed (and rows predating
+    # the column) emits no terminal event rather than a fabricated time.
+    attribute :terminal_at, :utc_datetime_usec do
       public?(true)
     end
 
@@ -506,8 +1065,73 @@ defmodule Xaas.Ultracode.Run do
       public?(true)
     end
 
+    # ------------------------------------------------------------------
+    # Duration budget (the 8-hour standing-wave law -- see the moduledoc
+    # section of the same name and `Xaas.Ultracode.DurationBudget`, the
+    # law's single source of truth).
+    # ------------------------------------------------------------------
+
+    # Wall-clock budget in seconds, counted from `started_at` (written
+    # once by `:start`/`:begin_wave_session` and never rewritten -- the
+    # budget is from start, not from resume). 28_800 = the operator's
+    # 8-hour order for the standing wave; per-run configurable. A Run
+    # with `started_at: nil` has no budget in force (today's behavior).
+    attribute :duration_budget_seconds, :integer do
+      allow_nil?(false)
+      default(28_800)
+      constraints(min: 1)
+      public?(true)
+    end
+
+    # Waves actually dispatched for this Run -- the standing-wave
+    # session's count, incremented by `:record_wave` after each real wave
+    # returns ok. What the final receipt reports as "waves run". (Epoch
+    # cycles are `cycle`'s ledger; waves are this one's -- the two are
+    # deliberately separate ledgers for separate questions.)
+    attribute :waves_run, :integer do
+      allow_nil?(false)
+      default(0)
+      public?(true)
+    end
+
+    # Marks THE standing-wave session Run (at most one `:running` at a
+    # time by scheduler discipline; the `:autonomic_wave` action finds it
+    # by this flag). Plain `false` on every ordinary Run so the tick
+    # machinery's `state == :running` scans treat a session exactly like
+    # today's epoch-less Runs (a real no-op) -- no scan-site filters were
+    # touched to introduce sessions.
+    attribute :wave_session, :boolean do
+      allow_nil?(false)
+      default(false)
+      public?(true)
+    end
+
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
+  end
+
+  calculations do
+    # The budget boundary as ONE DB-computable statement:
+    # `started_at + duration_budget_seconds` (nil when never started --
+    # no budget in force). An expression calculation, not runtime, so
+    # `Xaas.Ultracode.Lease.claim_next/3`'s ready-work candidate query
+    # can enforce `is_nil(budget_deadline_at) or budget_deadline_at > now`
+    # inside the database (an exhausted Run's epochs are not ready work),
+    # and so the same boundary the pure law (`DurationBudget.deadline/1`)
+    # computes in Elixir is the boundary the DB filters on -- one law,
+    # two provably-identical statements, no drift.
+    calculate :budget_deadline_at, :utc_datetime_usec do
+      public?(true)
+
+      calculation(
+        expr(
+          type(
+            fragment("? + (? * interval '1 second')", started_at, duration_budget_seconds),
+            :utc_datetime_usec
+          )
+        )
+      )
+    end
   end
 
   relationships do

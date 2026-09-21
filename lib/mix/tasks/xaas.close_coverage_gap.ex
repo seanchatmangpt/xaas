@@ -92,9 +92,14 @@ defmodule Mix.Tasks.Xaas.CloseCoverageGap do
       "== Act: invoking #{inspect(mod)}.#{action} with real params=#{inspect(act_params)} =="
     )
 
+    # XAAS-2602: the planner request_* actions are now gated by the real
+    # system-authority predicate (Xaas.Checks.SystemActor) instead of a
+    # bare always() bypass -- this Mix task is one of their only real
+    # callers, so it passes the real system authority actor explicitly
+    # rather than relying on the old authorize-anything bypass.
     case mod
          |> Ash.Changeset.for_create(action, act_params)
-         |> Ash.create() do
+         |> Ash.create(actor: Xaas.SystemAuthority.new(:autofde_coverage_monitor)) do
       {:ok, record} ->
         Mix.shell().info("Act succeeded, real record id=#{record.id}")
 

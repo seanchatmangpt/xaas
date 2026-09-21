@@ -31,6 +31,16 @@ defmodule Xaas.Ultracode.Lease do
       live-DB-confirmed finding that the previous `Ash.bulk_update`-based
       shape here was NOT actually atomic under real contention, despite
       reading as though it were;
+    * the provider POOL is capacity-bounded: at most
+      `pool_capacity/1` workers may hold live leases per provider at once
+      (production config pins 5 -- the operator-ordered standing wave size;
+      test config leaves it unbounded so concurrency stress tests keep
+      their exact semantics). Over-capacity claims get the typed
+      `{:error, :pool_at_capacity}`; the count and the bind serialize under
+      one `pg_advisory_xact_lock` per provider so the fence is real under
+      concurrency, and slots are released with no separate accounting --
+      a slot IS a live lease row (`live_leases/1`), so close/refuse/expiry
+      release it by construction;
     * `admit_tool/2` is per-consequence: construction tools are admitted;
       consequence-class tools are REFUSED — this domain deliberately does
       not model `AuthorityCeiling` (see `EpochReactor`'s :admit doc), so
@@ -41,7 +51,14 @@ defmodule Xaas.Ultracode.Lease do
       before an :alive-family outcome is sealed; mismatch or an
       unavailable verifier downgrades the sealed outcome (falsified
       evidence is :build_broken; unverifiable evidence is
-      :partial_alive with the reason in evidence).
+      :partial_alive with the reason in evidence). And under the receipt
+      vocabulary law, `:alive` requires a QUALIFYING terminal court --
+      head_verified plus a passing registered verifier suite; a close on
+      a Run with no suite downgrades an `:alive` claim to `:partial_alive`
+      (`verifier_suite_absent` in evidence), and
+      `Xaas.Ultracode.Validations.AliveRequiresCourt` refuses at the
+      `Receipt.:seal` boundary should any path ever try to seal `:alive`
+      without that court.
 
   ## `actuate/2` -- a lease may also reach Path A, never by widening Path B
 
@@ -73,9 +90,34 @@ defmodule Xaas.Ultracode.Lease do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run, Verifier}
+  alias Xaas.Ultracode.{DurationBudget, Epoch, Receipt, Run, Verifier}
 
   @default_lease_ttl_minutes 30
+
+  # Pool capacity -- the operator-ordered standing bound on how many workers
+  # may be in flight (live leases) per provider at once. This is the
+  # ENGINE-level counterpart of the wave's own in-memory semaphore
+  # (`Xaas.Ultracode.Autonomic`'s top-up semaphore bounds one wave's batch
+  # items; THIS bound lives in the claim kernel, so the MCP `claim_next`
+  # path -- which any number of external workers hit concurrently -- is
+  # fenced too).
+  #
+  # Read from `config :xaas, :ultracode_pool_capacity`:
+  #   * integer      -- one bound for every provider (production config pins 5);
+  #   * map          -- per-provider bounds, `%{default: n}` for unlisted ones;
+  #   * nil          -- UNBOUNDED (the config/test.exs default, so the real
+  #     `LeaseConcurrencyStressTest`'s 25-way one-provider claim storm keeps
+  #     its exact semantics); capacity is a production configuration, not an
+  #     implicit test behavior.
+  #
+  # Enforcement is race-safe by construction: the count and the bind happen
+  # inside ONE `pg_advisory_xact_lock` (keyed on the provider string) held
+  # for the whole claim -- two concurrent claimers can never both observe a
+  # free slot and both bind (the count-of-live-leases predicate alone would
+  # race, since a cross-row subselect inside one UPDATE's WHERE clause does
+  # not see a concurrent transaction's uncommitted insert of liveness on
+  # another row under READ COMMITTED).
+  @default_pool_capacity 5
 
   # Real, evidence-based bound (a live 25-way concurrent `claim_next/2`
   # stress test -- see `LeaseConcurrencyStressTest` -- observed several
@@ -104,23 +146,79 @@ defmodule Xaas.Ultracode.Lease do
   race retries (bounded by `:max_retries`, default `@default_claim_retries`)
   as long as other ready work may remain. Returns the leased epoch and the
   lease token, or `{:error, :no_ready_work}`.
+
+  Pool capacity: when the provider's configured capacity
+  (`pool_capacity/1`, overridable per call with `:pool_capacity`) is
+  non-nil and the number of live leases for the provider already equals
+  it, the claim is refused with the typed `{:error, :pool_at_capacity}`
+  -- never a silent over-capacity bind. The count and the bind run under
+  one `pg_advisory_xact_lock` per provider (see `@default_pool_capacity`'s
+  doc), so concurrent claimers cannot both squeeze past the bound.
+  `:pool_at_capacity` is deliberately NOT retried (unlike a lost bind):
+  capacity being full is terminal for this call -- the caller comes back
+  when a slot is released.
   """
   @spec claim_next(String.t(), String.t() | nil, keyword()) ::
-          {:ok, Epoch.t(), String.t(), Run.t()} | {:error, :no_ready_work | term()}
+          {:ok, Epoch.t(), String.t(), Run.t()}
+          | {:error, :no_ready_work | :pool_at_capacity | term()}
   def claim_next(provider, worker_id \\ nil, opts \\ [])
       when is_binary(provider) and (is_binary(worker_id) or is_nil(worker_id)) do
     ttl = Keyword.get(opts, :lease_ttl_minutes, @default_lease_ttl_minutes)
     max_retries = Keyword.get(opts, :max_retries, @default_claim_retries)
-    do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id))
+
+    # `:default` sentinel = not supplied -- resolve from config; an explicit
+    # `nil` opt means UNBOUNDED for this call, an integer overrides the config.
+    capacity =
+      case Keyword.get(opts, :pool_capacity, :default) do
+        :default -> pool_capacity(provider)
+        explicit -> explicit
+      end
+
+    do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id), capacity)
   end
 
+  defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id, capacity) do
+    result =
+      Xaas.Repo.transaction(
+        fn ->
+          # Serialize the capacity check against the bind for this provider
+          # pool. A no-op cost when capacity is unbounded (nil) -- the lock
+          # is only taken on the enforced path.
+          if capacity do
+            Xaas.Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", [
+              "ultracode_pool:" <> provider
+            ])
+
+            if live_leases(provider) >= capacity do
+              {:error, :pool_at_capacity}
+            else
+              select_and_bind(provider, worker_id, ttl, retries_left, epoch_id)
+            end
+          else
+            select_and_bind(provider, worker_id, ttl, retries_left, epoch_id)
+          end
+        end,
+        timeout: 30_000
+      )
+
+    case result do
+      {:ok, inner} -> inner
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # The candidate selection + atomic bind loop. Runs INSIDE the per-provider
+  # advisory-lock transaction when capacity is enforced (so the lost-bind
+  # retries below re-read under the same lock); identical semantics to the
+  # original unconditional shape when capacity is nil.
+  #
   # `epoch_id` (directed claim) narrows the candidate set to that one epoch:
   # it still has to be running, unleased-or-expired, and of this provider, so
   # it grants nothing an oldest-first claim of the same pool would not -- it
   # only lets a dispatcher that provisioned a worktree for a specific epoch
   # bind its worker to exactly that epoch instead of racing for the oldest.
-  defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id) do
-    now = DateTime.utc_now()
+  defp select_and_bind(provider, worker_id, ttl, retries_left, epoch_id) do
+    now = DurationBudget.now()
 
     query =
       Epoch
@@ -128,6 +226,14 @@ defmodule Xaas.Ultracode.Lease do
       |> Ash.Query.filter(state == :running)
       |> Ash.Query.filter(is_nil(lease_token) or lease_expires_at < ^now)
       |> Ash.Query.filter(run.provider == ^provider)
+      # Duration-budget gate (the DB-enforced half of the law in
+      # `Xaas.Ultracode.DurationBudget`): a budget-exhausted Run's epochs
+      # are NOT ready work -- `run.budget_deadline_at` is the expression
+      # calculation mirroring `DurationBudget.deadline/1`, so the exclusion
+      # happens in SQL, oldest-candidate-first, with no truncation. A Run
+      # with `started_at: nil` has no budget in force (`is_nil` arm --
+      # e.g. the Autonomic loop's per-item Runs keep today's behavior).
+      |> Ash.Query.filter(is_nil(run.budget_deadline_at) or run.budget_deadline_at > ^now)
       |> then(fn q ->
         if is_binary(epoch_id), do: Ash.Query.filter(q, id == ^epoch_id), else: q
       end)
@@ -145,7 +251,7 @@ defmodule Xaas.Ultracode.Lease do
         # 0` fails closed rather than spinning forever under pathological,
         # sustained contention.
         {:error, :no_ready_work} when retries_left > 0 ->
-          do_claim_next(provider, worker_id, ttl, retries_left - 1, epoch_id)
+          select_and_bind(provider, worker_id, ttl, retries_left - 1, epoch_id)
 
         other ->
           other
@@ -156,6 +262,50 @@ defmodule Xaas.Ultracode.Lease do
     end
   end
 
+  @doc """
+  The provider's configured pool capacity (how many workers may hold live
+  leases at once), read from `config :xaas, :ultracode_pool_capacity` --
+  integer for all providers, map for per-provider bounds (with `:default`
+  for unlisted ones), nil = unbounded. Unset config means #{@default_pool_capacity}.
+  """
+  @spec pool_capacity(String.t()) :: pos_integer() | nil
+  def pool_capacity(provider) when is_binary(provider) do
+    case Application.get_env(:xaas, :ultracode_pool_capacity, @default_pool_capacity) do
+      nil ->
+        nil
+
+      %{} = per_provider ->
+        Map.get(per_provider, provider, Map.get(per_provider, :default, @default_pool_capacity))
+
+      capacity when is_integer(capacity) and capacity > 0 ->
+        capacity
+    end
+  end
+
+  @doc """
+  How many workers currently hold LIVE leases for this provider -- the
+  engine's in-flight slot meter. A lease is live iff its epoch is still
+  `:running`, a token is bound, and the TTL has not passed; closure,
+  refusal, and TTL expiry each release slots with no separate accounting
+  (a slot IS a live lease row, so the meter cannot drift from reality).
+  """
+  @spec live_leases(String.t()) :: non_neg_integer()
+  def live_leases(provider) when is_binary(provider) do
+    now = DateTime.utc_now()
+
+    query =
+      from(e in Epoch,
+        join: r in Run,
+        on: e.run_id == r.id,
+        where:
+          e.state == :running and not is_nil(e.lease_token) and
+            e.lease_expires_at >= ^now and r.provider == ^provider,
+        select: count(e.id)
+      )
+
+    Xaas.Repo.one!(query)
+  end
+
   # ------------------------------------------------------------------
   # Real atomicity primitive -- see this module's `atomic_row_update/2`
   # doc below for the critical finding this replaces.
@@ -163,19 +313,41 @@ defmodule Xaas.Ultracode.Lease do
 
   defp bind_lease(%Epoch{} = candidate, worker_id, ttl_minutes) do
     token = lease_token()
-    expires_at = DateTime.add(DateTime.utc_now(), ttl_minutes * 60, :second)
-    now = DateTime.utc_now()
+    expires_at = DateTime.add(DurationBudget.now(), ttl_minutes * 60, :second)
+    now = DurationBudget.now()
 
     result =
       atomic_row_update(
         from(e in Epoch,
+          join: r in Run,
+          on: r.id == e.run_id,
+          # Duration-budget precondition, re-checked ATOMICALLY at the
+          # bind (the candidate query's filter alone would leave a
+          # check-then-bind window): a Run whose budget expires
+          # between the read and this UPDATE loses the bind -- the
+          # same fail-closed shape as every other precondition here.
+          # Same arithmetic as `DurationBudget.deadline/1` and the
+          # `budget_deadline_at` calculation.
           where:
             e.id == ^candidate.id and e.state == :running and
-              (is_nil(e.lease_token) or e.lease_expires_at < ^now)
+              (is_nil(e.lease_token) or e.lease_expires_at < ^now) and
+              (is_nil(r.started_at) or
+                 fragment(
+                   "? + (? * interval '1 second')",
+                   r.started_at,
+                   r.duration_budget_seconds
+                 ) > ^now)
         ),
         lease_token: token,
         lease_expires_at: expires_at,
-        leased_to: worker_id || candidate.run.provider
+        leased_to: worker_id || candidate.run.provider,
+        # The bind moment, persisted in the SAME single atomic UPDATE that
+        # binds the lease (atomicity preserved -- one statement, one row
+        # lock). This is the fact the OCEL egress's `epoch_claimed` event
+        # derives from; before this column the bind wrote no timestamp and
+        # the event could only be declared, never emitted. A re-claim of an
+        # expired lease overwrites it with the new claim's moment.
+        claimed_at: now
       )
 
     case result do
@@ -258,9 +430,17 @@ defmodule Xaas.Ultracode.Lease do
   @spec renew(String.t()) :: :ok | {:error, term()}
   def renew(lease_token) when is_binary(lease_token) do
     with {:ok, epoch} <- live_lease(lease_token) do
-      expires_at = DateTime.add(DateTime.utc_now(), @default_lease_ttl_minutes * 60, :second)
+      now = DateTime.utc_now()
+      expires_at = DateTime.add(now, @default_lease_ttl_minutes * 60, :second)
 
-      case atomic_lease_write(epoch, lease_token, lease_expires_at: expires_at) do
+      case atomic_lease_write(epoch, lease_token,
+             lease_expires_at: expires_at,
+             # The heartbeat moment, persisted in the same atomic write that
+             # extends the TTL -- the OCEL egress's `worker_heartbeat` event
+             # time. One column keeps the LATEST renewal's moment (renewal
+             # history deliberately collapses into it; see the attribute doc).
+             last_heartbeat_at: now
+           ) do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
       end
@@ -476,6 +656,7 @@ defmodule Xaas.Ultracode.Lease do
       when is_binary(lease_token) and is_binary(final_head) and is_atom(claimed_outcome) do
     with {:ok, epoch} <- live_lease(lease_token, [:run]) do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
+      evidence = bind_semantic_work_identity(epoch, evidence)
 
       # Real finding, real-concurrency-tested (see `LeaseConcurrencyStressTest`
       # "concurrent close/refuse on the same lease_token"): the previous
@@ -508,7 +689,7 @@ defmodule Xaas.Ultracode.Lease do
                evidence: evidence,
                sealed_at: DateTime.utc_now()
              })
-             |> Ash.create() do
+             |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
         {:ok, epoch, receipt}
       end
     end
@@ -521,11 +702,20 @@ defmodule Xaas.Ultracode.Lease do
   @spec refuse(String.t(), atom(), map()) :: {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
   def refuse(lease_token, reason, evidence \\ %{})
       when is_binary(lease_token) and is_atom(reason) do
-    with {:ok, epoch} <- live_lease(lease_token) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+      evidence = bind_semantic_work_identity(epoch, evidence)
+
       # Same atomic lease-token-guarded write as `close/4` above -- closes
       # the identical real double-close race for the refuse path (and for
-      # a `close/4` racing a `refuse/3` on the same token).
-      with {:ok, epoch} <- atomic_lease_write(epoch, lease_token, state: :failed),
+      # a `close/4` racing a `refuse/3` on the same token). `terminal_at`
+      # is this transition's own persisted moment (the egress's
+      # `epoch_failed` event time -- same dedicated column `:mark_failed`
+      # writes; `updated_at` was only ever an approximation of it).
+      with {:ok, epoch} <-
+             atomic_lease_write(epoch, lease_token,
+               state: :failed,
+               terminal_at: DateTime.utc_now()
+             ),
            {:ok, receipt} <-
              Receipt
              |> Ash.Changeset.for_create(:seal, %{
@@ -535,7 +725,7 @@ defmodule Xaas.Ultracode.Lease do
                evidence: Map.put(evidence, "refusal_reason", Atom.to_string(reason)),
                sealed_at: DateTime.utc_now()
              })
-             |> Ash.create() do
+             |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
         {:ok, epoch, receipt}
       end
     end
@@ -548,7 +738,11 @@ defmodule Xaas.Ultracode.Lease do
   defp live_lease(lease_token, load \\ []) do
     case find_by_lease(lease_token, load) do
       {:ok, %Epoch{state: :running, lease_expires_at: expires_at} = epoch} ->
-        if DateTime.compare(expires_at, DateTime.utc_now()) == :lt do
+        # Through the DurationBudget clock seam (default DateTime.utc_now/0)
+        # so the whole lease-lifetime world -- TTL writes here, expiry
+        # checks, and the budget boundary -- moves on ONE clock; identical
+        # behavior in production, consistently fast-forwardable in tests.
+        if DateTime.compare(expires_at, DurationBudget.now()) == :lt do
           {:error, {:lease_expired, lease_token}}
         else
           {:ok, epoch}
@@ -572,14 +766,54 @@ defmodule Xaas.Ultracode.Lease do
     |> Ash.read_one(load: load)
   end
 
+  # Preserve the canonical semantic subject and upstream receipt evidence in
+  # every terminal lease receipt. This is evidence binding only; it never
+  # changes verifier outcome or manufactures authority.
+  defp bind_semantic_work_identity(%Epoch{run: %Run{} = run}, evidence) do
+    required = [
+      run.work_order_iri,
+      run.checkpoint_iri,
+      run.graph_digest,
+      run.repository_identity,
+      run.execution_repo_alias,
+      run.base_sha
+    ]
+
+    if Enum.all?(required, &is_binary/1) do
+      Map.put(evidence, "semantic_work", %{
+        "work_order_iri" => run.work_order_iri,
+        "checkpoint_iri" => run.checkpoint_iri,
+        "graph_digest" => run.graph_digest,
+        "repository_identity" => run.repository_identity,
+        "execution_repo_alias" => run.execution_repo_alias,
+        "execution_policy" => if(run.execution_policy, do: Atom.to_string(run.execution_policy)),
+        "dependency_evidence" => run.dependency_evidence || %{},
+        "base_sha" => run.base_sha
+      })
+    else
+      evidence
+    end
+  end
+
+  defp bind_semantic_work_identity(_epoch, evidence), do: evidence
+
   # ------------------------------------------------------------------
   # Closure verification
   # ------------------------------------------------------------------
 
   defp verified_outcome(%Epoch{} = epoch, final_head, claimed_outcome, evidence) do
-    # `fabric_verifier` is fabric-owned evidence: a worker-supplied value under
-    # that key is dropped, never merged, so it cannot spoof a passing court.
-    evidence = Map.delete(evidence, "fabric_verifier")
+    # Fabric-owned evidence keys: worker-supplied values under ANY of these
+    # are dropped, never merged, so they cannot spoof a passing court or
+    # self-supply IRI-keyed verdicts. Every key is recomputed by the fabric
+    # below (or deliberately absent when there is no court contract).
+    evidence =
+      Map.drop(evidence, ~w(
+        fabric_verifier
+        acceptance_results
+        falsifier_results
+        court_results
+        court_binding
+      ))
 
     case worktree_head(epoch.worktree) do
       {:ok, ^final_head} ->
@@ -611,8 +845,20 @@ defmodule Xaas.Ultracode.Lease do
   # threat model). pass keeps the claimed outcome (never upgrades it); fail is
   # falsified evidence (:build_broken); timeout/error is unverifiable
   # (:partial_alive). Other claimed outcomes have nothing to verify.
+  #
+  # Court receipt mode: when the Run carries a court_map (the work order's
+  # minted acceptance/falsifier/court IRIs -- fabric-owned state persisted at
+  # materialization, never worker input), it is threaded into the verifier
+  # run and the produced IRI-keyed court receipt is published into the
+  # receipt EVIDENCE TOP LEVEL (`acceptance_results`, `falsifier_results`,
+  # `court_results`, `court_binding`) -- the exact keys
+  # `GgenIgniter.SemanticJira.promote/3`'s acceptance/falsifiers/courts
+  # checks read (see `Xaas.Ultracode.CourtReceipt`'s moduledoc). A court
+  # production refusal makes the verifier result "error", so an alive claim
+  # honestly downgrades to :partial_alive: the court could not witness the
+  # verdicts, and :alive requires a qualifying court.
   defp fabric_verified(
-         %Epoch{run: %Run{verifier_suite: suite}} = epoch,
+         %Epoch{run: %Run{verifier_suite: suite, court_map: court_map}} = epoch,
          final_head,
          claimed_outcome,
          evidence
@@ -624,10 +870,14 @@ defmodule Xaas.Ultracode.Lease do
         head: final_head,
         run_id: epoch.run_id,
         epoch_id: epoch.id,
-        executor: epoch.leased_to
+        executor: epoch.leased_to,
+        court_map: court_map
       })
 
-    evidence = Map.put(evidence, "fabric_verifier", result)
+    evidence =
+      evidence
+      |> Map.put("fabric_verifier", result)
+      |> publish_court_receipt(result)
 
     case result["status"] do
       "pass" -> {claimed_outcome, evidence}
@@ -636,8 +886,31 @@ defmodule Xaas.Ultracode.Lease do
     end
   end
 
+  # Receipt law (Xaas.Ultracode.Validations.AliveRequiresCourt): :alive is
+  # manufactured ONLY by a qualifying terminal court -- head_verified plus a
+  # PASSING fabric verifier. A Run with NO registered verifier suite has no
+  # court, so an :alive claim downgrades to :partial_alive BEFORE sealing:
+  # the head was verified, but nothing independently verified the work. This
+  # keeps `Lease.close/4` from ever tripping the sealing guard (which would
+  # strand a completed epoch without its receipt), while keeping the sealed
+  # vocabulary honest -- only a court-pass head can ever say :alive.
+  defp fabric_verified(_epoch, _final_head, :alive, evidence) do
+    {:partial_alive, Map.put(evidence, "verifier_suite_absent", true)}
+  end
+
   defp fabric_verified(_epoch, _final_head, claimed_outcome, evidence),
     do: {claimed_outcome, evidence}
+
+  # Only PRODUCED court receipts (they always carry the "binding" record)
+  # publish evidence keys; a legacy JSON-line court receipt (the APS court
+  # script's own shape) stays nested under fabric_verifier unchanged.
+  defp publish_court_receipt(evidence, %{"court_receipt" => %{"binding" => _} = receipt}) do
+    evidence
+    |> Map.merge(Map.take(receipt, ["acceptance_results", "falsifier_results", "court_results"]))
+    |> Map.put("court_binding", receipt["binding"])
+  end
+
+  defp publish_court_receipt(evidence, _no_produced_receipt), do: evidence
 
   # Repo-native, shell-free head verification: explicit argv, no shell
   # interpolation; the worktree comes from the epoch row, not the request.

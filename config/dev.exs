@@ -125,7 +125,52 @@ config :swoosh, :api_client, false
 # resolved from this app's priv/ (never from a worktree the worker controls).
 config :xaas, :ultracode_worktree_root, Path.expand("~/xaas-worktrees/runs")
 config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas-worktrees/tickets")
-config :xaas, :ultracode_repos, %{"aps" => Path.expand("~/xaas-worktrees/repos/aps")}
+
+# Multi-repo registry (Xaas.Ultracode.Repos). This env entry is the
+# code-seeded baseline; durable operator registrations -- other campaign
+# targets -- live in the registry file written ONLY by
+# `mix xaas.ultracode.repos --register` and merged over this baseline
+# (file wins per alias).
+config :xaas, :ultracode_repos_file, Path.expand("~/xaas-worktrees/ultracode-repos.json")
+
+config :xaas, :ultracode_repos, %{
+  # Structured form: the entry names its own suite/sensing facts.
+  "aps" => %{
+    path: Path.expand("~/xaas-worktrees/repos/aps"),
+    sensing: "aps",
+    suite: "aps-dod",
+    canonical_suite: "aps-canonical"
+  },
+  # Additional operator-owned targets (wave-5 onward): fresh clones with real
+  # test suites, judged at close time by the matching <alias>-dod verifier
+  # suite. Structured entries NAME their suite facts (the historical
+  # path-string default -- aps-dod/aps-canonical -- is correct for aps only).
+  "nounverb" => %{
+    path: Path.expand("~/xaas-worktrees/repos/nounverb"),
+    sensing: "nounverb",
+    suite: "nounverb-dod",
+    canonical_suite: "nounverb-dod"
+  },
+  "eds" => %{
+    path: Path.expand("~/xaas-worktrees/repos/eds"),
+    sensing: "eds",
+    suite: "eds-dod",
+    canonical_suite: "eds-dod"
+  },
+  "spr" => Path.expand("~/xaas-worktrees/repos/spr")
+}
+
+# Per-repo sense scripts (`Xaas.Ultracode.Autonomic.backlog_script/1`): the
+# SPR family derives Chicago-school negative-test items from the public
+# functions of its root tool module; the eds and nounverb families derive
+# them from their package/CLI public surface (eds: every src/eds module,
+# nounverb: the lib/ex_noun_verb_cli Elixir modules); APS keeps its default
+# script.
+config :xaas, :ultracode_backlog_scripts, %{
+  "spr" => "spr_backlog.py",
+  "eds" => "eds_backlog.py",
+  "nounverb" => "nounverb_backlog.py"
+}
 
 # APS's own five canonical gates, run by the fabric at the integration head.
 aps_env = %{
@@ -228,3 +273,10 @@ config :xaas, :ultracode_verifier_suites, %{
     ]
   }
 }
+
+# Non-APS targets: declared as code in Xaas.Ultracode.TargetSuites (with a
+# registration-time admission gate, TargetSuites.validate/1). The value is the
+# MODULE ITSELF -- only an atom at config-evaluation time -- and the verifier
+# resolves and merges it at runtime, so config never depends on project
+# compilation. Unset (test/prod) = registry unchanged.
+config :xaas, :ultracode_target_suites, Xaas.Ultracode.TargetSuites

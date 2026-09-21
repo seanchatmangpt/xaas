@@ -150,6 +150,10 @@ defmodule Xaas.Ultracode.NextEpochTest do
 
     assert length(receipts) == 4
     assert Enum.all?(receipts, &(&1.subject == subject))
-    assert Enum.all?(receipts, &(&1.outcome == :alive))
+
+    # Tick receipts are the typed non-standing :heartbeat class -- the
+    # tick manufactures lifecycle records, never standing (receipt law:
+    # only a qualifying terminal court manufactures :alive).
+    assert Enum.all?(receipts, &(&1.outcome == :heartbeat))
   end
 end

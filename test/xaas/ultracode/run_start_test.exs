@@ -113,8 +113,10 @@ defmodule Xaas.Ultracode.RunStartTest do
       |> Ash.Query.filter(epoch_id in ^Enum.map(all_epochs, & &1.id))
       |> Ash.read(authorize?: false)
 
-    # 2 receipts per epoch (start, complete) x 2 epochs = 4.
+    # 2 receipts per epoch (start, complete) x 2 epochs = 4. Tick receipts
+    # are the typed non-standing :heartbeat class -- the tick manufactures
+    # lifecycle records, never standing.
     assert length(receipts) == 4
-    assert Enum.all?(receipts, &(&1.outcome == :alive))
+    assert Enum.all?(receipts, &(&1.outcome == :heartbeat))
   end
 end

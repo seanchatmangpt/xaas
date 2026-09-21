@@ -1,0 +1,91 @@
+{
+  "contract": "gall-work",
+  "contract_version": 1,
+  "description": "Native claim -> construct -> close lifecycle between the XaaS fabric dispatcher and the zcode CLI. Shared fixture: this file is byte-identical in xaas (priv/zcode_plugin/gall-work.contract.json) and zcode-cli (test/fixtures/gall-work.contract.json); both sides' tests pin its sha256. Any change must land in both repos in the same wave.",
+  "command": {
+    "name": "zcode gall-work",
+    "argv": ["gall-work", "--worker-id", "<worker_id>", "--epoch-id", "<epoch_uuid>", "--cwd", "<abs_cwd>", "--json"],
+    "argv_lease_form": ["gall-work", "--lease", "<descriptor.json>", "--json"],
+    "process_cwd": "<zcode_cli_dir>",
+    "descriptor_schema": "gall.work-lease/1"
+  },
+  "env": {
+    "XAAS_WORKER": "1",
+    "XAAS_LEASE_CWD": "<abs_cwd>",
+    "XAAS_MCP_URL": "optional: overrides the fabric MCP endpoint",
+    "XAAS_MCP_TOKEN": "optional: overrides the bearer token secret"
+  },
+  "fabric": {
+    "transport": "stateless JSON-RPC 2.0 over HTTP POST",
+    "endpoint_default": "http://localhost:4000/internal-api/execution/mcp",
+    "endpoint_resolution_order": ["env XAAS_MCP_URL", "config mcp.servers.xaas-execution.url"],
+    "auth_resolution_order": ["env XAAS_MCP_TOKEN as Bearer", "config mcp.servers.xaas-execution.headers.Authorization"],
+    "tools": {
+      "claim_next": {
+        "arguments": {
+          "provider": "zcode",
+          "provider_worker_id": "<worker_id>",
+          "epoch_id": "<epoch_uuid>"
+        },
+        "result_fields": ["lease_token", "lease_expires_at", "epoch_id", "cycle", "exact_subject", "goal", "worktree", "verifier_suite"]
+      },
+      "heartbeat": {
+        "arguments": {"lease_token": "<token>"},
+        "result_fields": ["status"]
+      },
+      "close_candidate": {
+        "arguments": {"lease_token": "<token>", "final_head": "<git_sha>", "outcome": "<outcome>", "evidence": {}},
+        "result_fields": ["status", "epoch_id", "outcome"]
+      },
+      "refuse": {
+        "arguments": {"lease_token": "<token>", "reason": "<reason>"},
+        "result_fields": ["status", "epoch_id", "outcome"]
+      }
+    },
+    "outcome_vocabulary": ["alive", "partial_alive", "blocked", "build_broken", "unsupported", "refused"],
+    "refuse_reasons": ["blocked", "build_broken", "no_authority"]
+  },
+  "goal_transport": "work-order file: the goal NEVER travels on argv; gall-work writes <tmpdir>/xaas-fabric/<sha256(realpath(cwd))>.work-order.json and the construct prompt references only that path",
+  "stages": [
+    {"stage": "claim", "failure": "typed refusal, exit 1, no receipt"},
+    {"stage": "persist", "failure": "exit 65 on live lease_conflict for this cwd"},
+    {"stage": "construct", "failure": "turn failure still closes: outcome blocked with evidence.runtime_exit_code; receipt sealed; exit 0"},
+    {"stage": "close", "failure": "typed refusal, exit 1, close error surfaced"}
+  ],
+  "outcome_mapping": {
+    "construct_exit_0": "close outcome alive",
+    "construct_exit_nonzero": "close outcome blocked (evidence: runtime_exit_code, output_tail)",
+    "construct_spawn_failure": "refuse reason blocked",
+    "worktree_head_unavailable": "refuse reason blocked"
+  },
+  "stdout_final_document": {
+    "schema": "gall.work-result/1",
+    "success_example": {
+      "schema": "gall.work-result/1",
+      "standing": "ALIVE",
+      "epoch_id": "<epoch_uuid>",
+      "worker_id": "<worker_id>",
+      "outcome": "alive",
+      "final_head": "<git_sha>",
+      "runtime_exit_code": 0
+    },
+    "failure_example": {
+      "schema": "gall.work-result/1",
+      "standing": "REFUSED_CLAIM",
+      "epoch_id": "<epoch_uuid>",
+      "worker_id": "<worker_id>",
+      "code": "no_ready_work",
+      "detail": "<server reason text>"
+    },
+    "standing_vocabulary": ["ALIVE", "PARTIAL_ALIVE", "BLOCKED", "BUILD_BROKEN", "UNSUPPORTED", "REFUSED", "REFUSED_CLAIM", "REFUSED_CLOSE", "REFUSED_LEASE_CONFLICT", "REFUSED_NO_FABRIC", "REFUSED_NO_HEAD", "REFUSED_SUBJECT_MISMATCH"]
+  },
+  "exit_codes": {
+    "0": "a fabric receipt was sealed (close_candidate or refuse succeeded); the epoch is terminal",
+    "1": "typed failure with no receipt (claim refused, fabric unreachable, close refused)",
+    "2": "usage error",
+    "65": "lease_conflict: a different live lease is already saved for this cwd",
+    "142": "killed by the external dispatcher deadline; the lease expires by TTL"
+  },
+  "failover_grep": "\"code\"\\s*:\\s*\"?1302|HTTP 429|status(Code)?[\": ]+429|Too Many Requests|High concurrency usage",
+  "no_fallback_law": "neither side may fall back to the /xaas claim_next prompt protocol for this dispatch; an old CLI without native gall-work exits non-zero and the dispatch is classified failed, never re-dispatched as a prompt"
+}

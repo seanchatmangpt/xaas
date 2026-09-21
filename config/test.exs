@@ -90,6 +90,16 @@ config :req, default_options: [retry_delay: fn _n -> 0 end]
 # only on the admitted actions the scheduler would eventually call.
 config :xaas, Oban, testing: :manual
 
+# Pool capacity is UNBOUNDED in tests: production pins 5 (the operator's
+# standing wave size, enforced in `Xaas.Ultracode.Lease.claim_next/3`), but
+# every existing claim-side test (including `LeaseConcurrencyStressTest`'s
+# 25-way one-provider claim storm, `--include stress`) asserts its exact
+# semantics against an unbounded pool. Tests that qualify the capacity
+# fence itself set it explicitly (per-call `:pool_capacity` opt or an
+# `Application.put_env` + `on_exit` restore), the same pattern
+# `:ultracode_provider_tools` tests use.
+config :xaas, :ultracode_pool_capacity, nil
+
 # Test-only real OTel SDK config for
 # test/xaas/telemetry/ocel_real_otel_span_test.exs: configuring ANY
 # processor here just ensures :opentelemetry's real supervision tree

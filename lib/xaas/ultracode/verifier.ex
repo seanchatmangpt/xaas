@@ -56,6 +56,30 @@ defmodule Xaas.Ultracode.Verifier do
   `{head}`, `{run_id}`, `{epoch_id}`, `{executor}`, `{ticket}`, `{verifier_id}`,
   `{tmpdir}`. A placeholder is only ever a WHOLE element.
 
+  ## Court receipt mode (IRI-keyed verdicts)
+
+  When the run ctx carries a `:court_map` (the work order's minted
+  acceptance/falsifier/court IRIs mapped to predicates -- threaded by
+  `Lease.close/4` from the fabric-owned Run row, never from the worker),
+  the suite's `receipt: true` step becomes a COURT step and the run
+  produces an IRI-keyed court receipt (see
+  `Xaas.Ultracode.CourtReceipt` for the consumer contract and the
+  fail-closed law):
+
+    * the step runs with its `receipt_argv` (a per-step declaration, so a
+      generic pytest/mix suite can opt into per-test verbose output for
+      the receipt run without changing its plain run);
+    * the suite declares `result_format` (`"pytest_v"` for
+      `pytest -v` output, `"mix_trace"` for `mix test --trace`);
+    * `result["court_receipt"]` carries `acceptance_results` /
+      `falsifier_results` keyed by the work order's IRIs, `court_results`
+      keyed by the required court IRIs, and a `binding` (suite, step id,
+      exact head, argv digest);
+    * ANY production refusal (undeclared receipt step, unknown result
+      format, a mapped test with no observed verdict) makes the whole run
+      `"error"` with reason `{:court_receipt_refused, _}` -- a defaulted
+      or skipped verdict row would be a fabricated one.
+
   ## Result
 
   `run/2` always returns `{:ok, result}`; `result["status"]` is one of
@@ -64,6 +88,8 @@ defmodule Xaas.Ultracode.Verifier do
   """
 
   require Logger
+
+  alias Xaas.Ultracode.CourtReceipt
 
   @grace_ms 2_000
   @default_max_output 65_536
@@ -74,13 +100,18 @@ defmodule Xaas.Ultracode.Verifier do
           required(:head) => String.t(),
           required(:run_id) => String.t(),
           required(:epoch_id) => String.t(),
-          optional(:executor) => String.t() | nil
+          optional(:executor) => String.t() | nil,
+          optional(:court_map) => map() | nil
         }
 
   @doc "True when `name` is a registered suite. Never raises on non-binaries."
   @spec registered?(term()) :: boolean()
   def registered?(name) when is_binary(name), do: Map.has_key?(suites(), name)
   def registered?(_), do: false
+
+  @doc "Placeholder argv elements a suite may reference (as WHOLE elements only)."
+  @spec placeholders() :: [String.t()]
+  def placeholders, do: @placeholders
 
   @doc "Registered suite names (for typed error messages and docs)."
   @spec suite_names() :: [String.t()]
@@ -132,19 +163,31 @@ defmodule Xaas.Ultracode.Verifier do
       tmp = make_tmp(ctx.epoch_id)
 
       try do
-        steps = run_steps(suite, ctx, worktree, tmp)
+        court = court_contract(suite, ctx)
+        steps = run_steps(suite, ctx, worktree, tmp, court != nil)
         status = steps |> Enum.map(& &1["status"]) |> worst_status()
 
         base =
           base |> Map.put("steps", steps) |> Map.put("toolchain", toolchain(suite, worktree, tmp))
 
-        base = maybe_put_receipt(base, suite, steps)
+        {base, court_error} = court_receipt(base, suite, steps, court)
 
-        case {status, head_is(worktree, ctx.head, :after), tree_clean(worktree, :after)} do
-          {:pass, :ok, :ok} -> finish(base, :pass, nil)
-          {:pass, {:error, reason}, _} -> finish(base, :error, reason)
-          {:pass, _, {:error, reason}} -> finish(base, :error, reason)
-          {status, _, _} -> finish(base, status, first_failure(steps))
+        case {court_error, status, head_is(worktree, ctx.head, :after),
+              tree_clean(worktree, :after)} do
+          {{:refused, reason}, _, _, _} ->
+            finish(base, :error, {:court_receipt_refused, reason})
+
+          {nil, :pass, :ok, :ok} ->
+            finish(base, :pass, nil)
+
+          {nil, :pass, {:error, reason}, _} ->
+            finish(base, :error, reason)
+
+          {nil, :pass, _, {:error, reason}} ->
+            finish(base, :error, reason)
+
+          {nil, status, _, _} ->
+            finish(base, status, first_failure(steps))
         end
       after
         File.rm_rf(tmp)
@@ -152,6 +195,33 @@ defmodule Xaas.Ultracode.Verifier do
     else
       {:error, {:worker_left_uncommitted_changes, _} = reason} -> finish(base, :fail, reason)
       {:error, reason} -> finish(base, :error, reason)
+    end
+  end
+
+  # The court receipt contract in force for this run, if any: the ctx's
+  # court_map (validated -- a malformed map is a typed refusal, never a
+  # silent "no court") plus the suite's receipt-flagged step. A court_map
+  # with NO receipt step in the suite is a misdeclared contract and is
+  # refused -- silently skipping would close alive-family with the
+  # IRI-keyed evidence missing.
+  defp court_contract(suite, ctx) do
+    case Map.get(ctx, :court_map) do
+      nil ->
+        nil
+
+      raw ->
+        case CourtReceipt.admit(raw) do
+          {:ok, nil} -> nil
+          {:ok, court_map} -> receipt_step(suite, court_map)
+          {:error, reason} -> {:refused, reason}
+        end
+    end
+  end
+
+  defp receipt_step(suite, court_map) do
+    case Enum.find(suite.steps, &Map.get(&1, :receipt, false)) do
+      nil -> {:refused, :receipt_step_undeclared}
+      step -> {step, court_map}
     end
   end
 
@@ -191,6 +261,33 @@ defmodule Xaas.Ultracode.Verifier do
       _ -> base
     end
   end
+
+  # Court receipt mode: produce the IRI-keyed receipt from the receipt
+  # step's output (replacing the legacy JSON-line path entirely -- when a
+  # court_map is in force it owns the receipt contract). Any production
+  # refusal surfaces as a court_error that makes the whole run "error".
+  defp court_receipt(base, _suite, _steps, {:refused, reason}) do
+    {base, {:refused, reason}}
+  end
+
+  defp court_receipt(base, suite, steps, {step, court_map}) do
+    step_result = Enum.find(steps, &(&1["id"] == to_string(step.id)))
+
+    CourtReceipt.produce(
+      court_map,
+      base["suite"],
+      suite,
+      step_result || %{"id" => to_string(step.id)},
+      base["head"],
+      base["argv_sha256"]
+    )
+    |> case do
+      {:ok, receipt} -> {Map.put(base, "court_receipt", receipt), nil}
+      {:error, reason} -> {base, {:refused, reason}}
+    end
+  end
+
+  defp court_receipt(base, suite, steps, nil), do: {maybe_put_receipt(base, suite, steps), nil}
 
   defp last_line(tail) do
     tail |> String.split("\n", trim: true) |> List.last()
@@ -286,15 +383,26 @@ defmodule Xaas.Ultracode.Verifier do
   # Steps
   # ------------------------------------------------------------------
 
-  defp run_steps(suite, ctx, worktree, tmp) do
+  defp run_steps(suite, ctx, worktree, tmp, court_mode) do
     subst = substitutions(ctx, worktree, tmp)
 
     Enum.reduce_while(suite.steps, [], fn step, acc ->
-      result = run_step(step, suite, subst, worktree, tmp)
+      result =
+        step
+        |> maybe_receipt_argv(court_mode)
+        |> run_step(suite, subst, worktree, tmp)
+
       acc = acc ++ [result]
       if result["status"] == "pass", do: {:cont, acc}, else: {:halt, acc}
     end)
   end
+
+  # In court receipt mode a receipt-flagged step runs its declared
+  # `receipt_argv` (per-test verbose output) instead of its plain argv.
+  defp maybe_receipt_argv(%{receipt: true} = step, true),
+    do: Map.put(step, :argv, CourtReceipt.step_argv(step, true))
+
+  defp maybe_receipt_argv(step, _court_mode), do: step
 
   defp substitutions(ctx, worktree, tmp) do
     ticket_dir = Application.get_env(:xaas, :ultracode_ticket_dir, "")
@@ -477,7 +585,7 @@ defmodule Xaas.Ultracode.Verifier do
 
   defp argv_digest(suite) do
     suite.steps
-    |> Enum.map(&Map.take(&1, [:id, :argv, :timeout_ms]))
+    |> Enum.map(&Map.take(&1, [:id, :argv, :timeout_ms, :receipt_argv]))
     |> Jason.encode!()
     |> then(&:crypto.hash(:sha256, &1))
     |> Base.encode16(case: :lower)
@@ -494,5 +602,30 @@ defmodule Xaas.Ultracode.Verifier do
     dir
   end
 
-  defp suites, do: Application.get_env(:xaas, :ultracode_verifier_suites, %{})
+  # The registry is environment config plus, when the environment opts in via
+  # `:ultracode_target_suites`, the code-declared suites for non-APS targets
+  # (see `Xaas.Ultracode.TargetSuites`). The config value is the module itself
+  # -- a bare atom at config-evaluation time -- so it is resolved HERE, at
+  # runtime, never while loading config. Unresolvable module = registry stays
+  # as configured (fail closed, no invented suites).
+  defp suites do
+    # `|| %{}` is the permanent tripwire for the env-restore poison class:
+    # restoring this key with `Application.put_env/2` and a nil value SETS
+    # a literal nil, and get_env/3 then returns nil instead of this default
+    # -- which used to crash the maps.merge/2 below (the seed-dependent
+    # TargetSuitesTest flake). An unset OR nil'd registry means "no suites
+    # configured", never a crash.
+    base = Application.get_env(:xaas, :ultracode_verifier_suites, %{}) || %{}
+
+    case Application.get_env(:xaas, :ultracode_target_suites, nil) do
+      module when is_atom(module) and not is_nil(module) ->
+        case Code.ensure_loaded(module) do
+          {:module, _} -> Map.merge(base, module.devs())
+          {:error, _} -> base
+        end
+
+      _ ->
+        base
+    end
+  end
 end

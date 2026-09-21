@@ -7,25 +7,38 @@ defmodule Xaas.Ultracode.Autonomic do
   receipt. The loop is sense -> plan -> act -> verify -> repair -> promote ->
   learn:
 
-    1. **Sense.** `priv/verifiers/aps_backlog.py` derives work items
+    1. **Sense.** a per-repo deterministic backlog script (default
+       `priv/verifiers/aps_backlog.py`; a repo alias may register its own
+       basename via `config :xaas, :ultracode_backlog_scripts`, resolved by
+       `backlog_script/1`) derives work items
        deterministically from the repository at an exact `base_sha` (a
        throwaway provisioned worktree, never the operator clone's tree).
     2. **Plan.** Per item: a provisioned worktree, a ticket file (mission,
        allowed paths, mutants, append-only history) OUTSIDE the worktree, and a
        provider-pull `Run` naming the operator-registered verifier suite plus a
        running `Epoch` bound to that worktree.
-    3. **Act.** A worker (default: the hardened dispatcher in directed
-       `--epoch` mode, i.e. a gated headless zcode/GLM session) claims exactly
+    3. **Act.** A worker (default: `Xaas.Ultracode.Dispatch.autonomic_worker/2`,
+       the in-family dispatch boundary that launches one real gated headless
+       zcode/GLM turn for the epoch) claims exactly
        that epoch and constructs. Concurrency is bounded by a top-up semaphore
        that halves on a provider rate refusal (APS swarm pacing law).
     4. **Verify.** The fabric, not the worker, decides done: `Lease.close/4`
        runs the verifier suite (`Xaas.Ultracode.Verifier`) against the exact
        closed head and seals the receipt.
-    5. **Repair.** A non-alive receipt appends the court's findings to the
-       ticket history and starts attempt n+1 on the SAME worktree (bounded);
-       an exhausted item is reported `blocked` with its full history, never
-       dropped. A worker that dies without closing is reaped (its lease is
-       refused) and counted as a failed attempt.
+    5. **Repair.** The judge (`judge_receipt/1`) accepts a closed receipt
+       WITHOUT re-dispatch iff the FABRIC's court passed the exact head
+       (`fabric_verifier.status == "pass"` AND `head_verified == true`) and
+       the worker's standing is honest (`alive`/`partial_alive`) -- an
+       honest `partial_alive` is the worker correctly declining to
+       self-verify, not a failure; the court already ruled on that head.
+       Everything else repairs: a court fail/timeout/error, a receipt with
+       no court verdict, an unverified head, or a terminal standing
+       (`build_broken`/`refused`/`blocked`). A repairing receipt appends
+       the court's findings to the ticket history and starts attempt n+1 on
+       the SAME worktree (bounded); an exhausted item is reported `blocked`
+       with its full history, never dropped. A worker that dies without
+       closing is reaped (its lease is refused) and counted as a failed
+       attempt.
     6. **Promote.** Alive items merge serially (`--no-ff`) into a fresh
        integration branch in a provisioned integration worktree. This is the
        one shared-state step, so it is the only serialized one. Nothing is ever
@@ -41,11 +54,12 @@ defmodule Xaas.Ultracode.Autonomic do
 
   A worker is any 2-arity function `(epoch, ctx) -> :ok | :rate_limited |
   {:error, reason}` that drives the lease protocol for that epoch. The default
-  launches the real dispatcher; tests pass a scripted protocol client that
+  launches one real gated worker agent per attempt through
+  `Xaas.Ultracode.Dispatch`; tests pass a scripted protocol client that
   really claims, edits, commits and closes through `Xaas.Ultracode.Lease`.
   """
 
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Run, Verifier, Worktrees}
+  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Repos, Run, Verifier, WavePlan, Worktrees}
 
   @git_env [
     {"GIT_AUTHOR_NAME", "xaas-autonomic"},
@@ -65,39 +79,105 @@ defmodule Xaas.Ultracode.Autonomic do
     rate_backoff_ms: 30_000
   ]
 
+  @default_repo "aps"
+
   @doc """
   Runs the loop and returns `{:ok, report}`; the report is also written as JSON
-  next to the ledger. Options: `:repo`, `:base_sha`, `:only` (item ids),
-  `:suite`, `:canonical_suite` (nil to skip), `:provider`, `:capacity`,
-  `:max_attempts`, `:worker`, `:ledger`, `:state_dir`, `:project_root`.
+  next to the ledger. Options: `:repo` (one alias, a comma list such as
+  `"aps,nounverb,eds"`, or a list of aliases -- the multi-repo wave), `:base_sha`,
+  `:only` (item ids), `:suite`, `:canonical_suite` (nil to skip; single-repo
+  specs only -- a multi-repo wave resolves suite facts per repo from the
+  registry), `:provider`, `:capacity`, `:max_attempts`, `:worker`, `:ledger`,
+  `:state_dir`, `:project_root`.
   """
   @spec run(keyword()) :: {:ok, map()} | {:error, term()}
   def run(opts \\ []) do
-    ctx = build_ctx(Keyword.merge(@defaults, opts))
+    ctx = build_ctx(opts)
     File.mkdir_p!(ctx.out_dir)
-    ledger(ctx, :start, %{repo: ctx.repo, base_sha: ctx.base_sha, capacity: ctx.capacity})
+
+    start_data =
+      if ctx.multi do
+        # The multi-repo wave names EVERY selected repo and its exact base
+        # sha -- the durable per-repo attribution the campaign ledger (and
+        # `mix xaas.run_validate --per-repo-capacity`) reads back.
+        %{
+          repo: ctx.aliases,
+          repos: Map.new(ctx.aliases, &{&1, Map.fetch!(ctx.repos, &1).base_sha}),
+          capacity: ctx.capacity
+        }
+      else
+        %{repo: ctx.repo, base_sha: ctx.base_sha, capacity: ctx.capacity}
+      end
+
+    ledger(ctx, :start, start_data)
 
     with {:ok, items} <- sense(ctx) do
       ledger(ctx, :sensed, %{items: Enum.map(items, & &1["id"])})
-      {:ok, sem} = Agent.start_link(fn -> %{limit: ctx.capacity, in_flight: 0} end)
-      ctx = Map.put(ctx, :sem, sem)
 
       results =
         items
-        |> Task.async_stream(&process_item(&1, ctx),
-          max_concurrency: max(length(items), 1),
-          timeout: :infinity,
-          ordered: true
-        )
+        |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
+          process_item(item, Map.merge(ctx, sem_ctx))
+        end)
         |> Enum.zip(items)
         |> Enum.map(fn
           {{:ok, result}, _item} -> result
           {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
         end)
 
-      Agent.stop(sem)
       finish(ctx, items, results)
     end
+  end
+
+  @doc """
+  The capacity governor: dispatches `fun` over `items` with a hard,
+  real-time bound of `capacity` slot-holding workers at any instant.
+
+  This is the ONE in-family enforcement of the standing wave's capacity
+  law -- `run/1` calls it with `ctx.capacity` (5 for the scheduled
+  `:autonomic_wave` standing wave), so every wave's workers are admitted
+  through this exact gate. It is public (test-qualified, not
+  doc-hidden) so the invariant "a capacity-5 loop never has more than 5
+  workers in flight at any instant" is directly property-tested against
+  the production governor rather than a test double
+  (`duration_budget_test.exs`).
+
+  `fun` is 2-arity: `fun.(item, sem_ctx)` where `sem_ctx` carries THIS
+  governor's semaphore (`sem_ctx.sem`). Callers whose workers re-acquire
+  a slot per internal step (run/1's repair loop re-acquires per attempt)
+  merge `sem_ctx` into their own context so EVERY acquisition -- first
+  dispatch and every retry -- flows through the one semaphore; that is
+  what makes the bound real under retries, and it is exactly the shape
+  `run/1` had before this function was extracted (the semaphore used to
+  live on the loop's ctx directly). The semaphore also halves on provider
+  rate refusals (`halve/1`), so the bound only ever TIGHTENS mid-wave.
+
+  Task-level exits surface per-item as `{:exit, reason}`, aligned with
+  `items` by order (async_stream preserves input order).
+  """
+  @spec dispatch_bounded(list(), pos_integer(), (term(), map() -> term())) :: [
+          {:ok, term()} | {:exit, term()}
+        ]
+  def dispatch_bounded(items, capacity, fun)
+      when is_list(items) and is_integer(capacity) and capacity >= 1 and is_function(fun, 2) do
+    {:ok, sem} = Agent.start_link(fn -> %{limit: capacity, in_flight: 0} end)
+
+    # Materialize BEFORE stopping the semaphore: async_stream is lazy, and
+    # workers acquire/release through `sem` during enumeration. Yields
+    # {:ok, result} | {:exit, reason} per item, aligned with `items` by
+    # order -- exactly this function's contract.
+    results =
+      items
+      |> Task.async_stream(
+        fn item -> fun.(item, %{sem: sem}) end,
+        max_concurrency: max(capacity, 1),
+        timeout: :infinity,
+        ordered: true
+      )
+      |> Enum.to_list()
+
+    Agent.stop(sem)
+    results
   end
 
   # ------------------------------------------------------------------
@@ -105,22 +185,132 @@ defmodule Xaas.Ultracode.Autonomic do
   # ------------------------------------------------------------------
 
   @doc false
-  def new_ctx(opts), do: build_ctx(Keyword.merge(@defaults, opts))
+  def new_ctx(opts), do: build_ctx(opts)
 
-  defp build_ctx(opts) do
-    repo = Keyword.fetch!(opts, :repo)
-    repo_path = :xaas |> Application.get_env(:ultracode_repos, %{}) |> Map.fetch!(repo)
+  defp build_ctx(raw_opts) do
+    repo_opt = Keyword.fetch!(raw_opts, :repo)
+
+    # The repo SPEC (`Xaas.Ultracode.WavePlan`): one alias (byte-for-byte the
+    # historical behavior), a comma list, a list, or `all`. Spec SHAPE is
+    # parsed here; registry MEMBERSHIP resolves at ctx build (i.e. per wave).
+    {parsed_spec, shape_error} =
+      case WavePlan.parse_spec(repo_opt) do
+        {:ok, spec} -> {spec, nil}
+        {:error, reason} -> {nil, reason}
+      end
+
+    aliases =
+      case parsed_spec && WavePlan.resolve(parsed_spec) do
+        {:ok, resolved} ->
+          resolved
+
+        {:error, reason} ->
+          raise ArgumentError,
+                "ultracode repo spec #{inspect(repo_opt)} is not resolvable: #{inspect(reason)}"
+      end
+
+    multi? = length(aliases) > 1
+
+    if shape_error do
+      raise ArgumentError,
+            "ultracode repo spec #{inspect(repo_opt)} is malformed: #{inspect(shape_error)}"
+    end
+
+    if multi? and
+         (Keyword.has_key?(raw_opts, :suite) or Keyword.has_key?(raw_opts, :canonical_suite)) do
+      raise ArgumentError,
+            "a multi-repo wave (#{inspect(aliases)}) cannot take one explicit :suite/" <>
+              ":canonical_suite -- one suite is ambiguous across repos; suite facts " <>
+              "resolve per repo from the registry"
+    end
+
+    opts = Keyword.merge(@defaults, raw_opts)
+
+    # Per-repo facts (path + suite + canonical suite + base sha), ONE resolved
+    # entry per selected alias. Typed refusal at init; provisioning itself
+    # re-refuses fail-closed at use time.
+    repos =
+      Map.new(aliases, fn repo_alias ->
+        path =
+          case Worktrees.registry_entry(repo_alias) do
+            {:ok, entry} ->
+              entry.path
+
+            {:error, reason} ->
+              raise ArgumentError,
+                    "ultracode repo #{inspect(repo_alias)} is not provisionable: #{inspect(reason)}"
+          end
+
+        # Registry facts enrichment (Xaas.Ultracode.Repos: the config baseline
+        # plus the durable file, file wins). Purely ADDITIVE -- a repo
+        # provisionable here but unresolved in the enriched registry keeps the
+        # historical defaults.
+        repos_entry =
+          case Repos.resolve(repo_alias) do
+            {:ok, entry} -> entry
+            {:error, _} -> nil
+          end
+
+        {suite, canonical} =
+          if multi? do
+            # Multi-repo suite law (Campaign law verbatim): the Autonomic
+            # default canonical (`aps-canonical`) is only correct for the
+            # default repo, so every OTHER repo waves its OWN suite at the
+            # integration head -- never another repo's gates.
+            suite = (repos_entry && repos_entry.suite) || @defaults[:suite]
+
+            if repo_alias == @default_repo do
+              {suite, (repos_entry && repos_entry.canonical_suite) || "aps-canonical"}
+            else
+              {suite, suite}
+            end
+          else
+            # Single-repo precedence, byte-for-byte the historical law:
+            # explicit options win; an EXPLICIT nil `:canonical_suite` skips
+            # the canonical suite.
+            suite =
+              Keyword.get(opts, :suite) || (repos_entry && repos_entry.suite) || @defaults[:suite]
+
+            canonical =
+              cond do
+                Keyword.has_key?(opts, :canonical_suite) -> opts[:canonical_suite]
+                repos_entry && is_nil(repos_entry.canonical_suite) -> nil
+                repos_entry -> repos_entry.canonical_suite
+                true -> @defaults[:canonical_suite]
+              end
+
+            {suite, canonical}
+          end
+
+        base_sha = Keyword.get(opts, :base_sha) || git!(path, ["rev-parse", "HEAD"])
+
+        {repo_alias,
+         %{
+           path: path,
+           suite: suite,
+           canonical_suite: canonical,
+           base_sha: base_sha,
+           sensing: repos_entry && repos_entry.sensing
+         }}
+      end)
+
+    primary = Map.fetch!(repos, hd(aliases))
+
     ticket_dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)
-    base_sha = Keyword.get(opts, :base_sha) || git!(repo_path, ["rev-parse", "HEAD"])
     nonce = :crypto.strong_rand_bytes(3) |> Base.encode16(case: :lower)
     out_dir = Path.join(ticket_dir, "autonomic-#{nonce}")
 
     opts
     |> Map.new()
     |> Map.merge(%{
-      repo_path: repo_path,
+      repo: hd(aliases),
+      repo_path: primary.path,
+      sensing: primary.sensing,
       ticket_dir: ticket_dir,
-      base_sha: base_sha,
+      base_sha: primary.base_sha,
+      aliases: aliases,
+      repos: repos,
+      multi: multi?,
       nonce: nonce,
       out_dir: out_dir,
       ledger: Keyword.get(opts, :ledger, Path.join(out_dir, "ledger.ndjson")),
@@ -136,12 +326,47 @@ defmodule Xaas.Ultracode.Autonomic do
   # ------------------------------------------------------------------
 
   @doc false
-  def sense(ctx) do
-    name = "aps-sense-#{ctx.nonce}"
+  def sense(ctx)
 
-    with {:ok, path} <- Worktrees.provision(ctx.repo, ctx.base_sha, name) do
+  def sense(%{multi: true} = ctx) do
+    # Per-repo sense (each repo: its own script, its own exact base sha, its
+    # own throwaway worktree), items tagged with their repo, then the
+    # WavePlan rotation (round-robin over sorted aliases, per-repo caps). A
+    # repo that cannot be sensed FAILS the wave -- a silently skipped repo
+    # would fabricate per-repo coverage.
+    case sense_by_repo(ctx) do
+      {:ok, items_by_repo} -> {:ok, WavePlan.rotate(items_by_repo, WavePlan.caps())}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def sense(%{multi: false} = ctx) do
+    sense_one(ctx, ctx.repo, ctx.base_sha)
+  end
+
+  # Senses each selected repo, tagging every item with its repo. Determinism
+  # of the ITEM ids belongs to the scripts; only the `repo` tag is added here.
+  defp sense_by_repo(ctx) do
+    Enum.reduce_while(ctx.aliases, {:ok, %{}}, fn repo_alias, {:ok, acc} ->
+      rctx = Map.fetch!(ctx.repos, repo_alias)
+
+      case sense_one(ctx, repo_alias, rctx.base_sha) do
+        {:ok, items} ->
+          {:cont,
+           {:ok, Map.put(acc, repo_alias, Enum.map(items, &Map.put(&1, "repo", repo_alias)))}}
+
+        {:error, reason} ->
+          {:halt, {:error, {:sense_failed, repo_alias, reason}}}
+      end
+    end)
+  end
+
+  defp sense_one(ctx, repo_alias, base_sha) do
+    name = "#{repo_alias}-sense-#{ctx.nonce}"
+
+    with {:ok, path} <- Worktrees.provision(repo_alias, base_sha, name) do
       try do
-        script = Application.app_dir(:xaas, "priv/verifiers/aps_backlog.py")
+        script = backlog_script(%{ctx | repo: repo_alias})
 
         case System.cmd("python3", [script, "--repo", path],
                env: [{"PYTHONDONTWRITEBYTECODE", "1"}],
@@ -156,9 +381,27 @@ defmodule Xaas.Ultracode.Autonomic do
             {:error, {:backlog_failed, code, String.slice(out, -500, 500)}}
         end
       after
-        Worktrees.cleanup(ctx.repo, path)
+        Worktrees.cleanup(repo_alias, path)
       end
     end
+  end
+
+  @doc """
+  Resolves the deterministic backlog ("sense") script for `ctx.repo`.
+
+  A repo alias may register its own script basename (looked up inside this
+  app's `priv/verifiers/`, never from the repo or the worker) under
+  `config :xaas, :ultracode_backlog_scripts` (`%{"spr" => "spr_backlog.py"}`);
+  the default, and the fallback for every unregistered alias, stays the
+  original `aps_backlog.py`, so APS behavior is unchanged. This is the same
+  registry shape the verifier suites use
+  (`config :xaas, :ultracode_verifier_suites`): an operator-owned NAME mapping,
+  never a caller-supplied path.
+  """
+  def backlog_script(ctx) do
+    scripts = Application.get_env(:xaas, :ultracode_backlog_scripts, %{})
+    name = Map.get(scripts, ctx.repo, "aps_backlog.py")
+    Application.app_dir(:xaas, Path.join("priv/verifiers", name))
   end
 
   # ------------------------------------------------------------------
@@ -166,10 +409,14 @@ defmodule Xaas.Ultracode.Autonomic do
   # ------------------------------------------------------------------
 
   defp process_item(item, ctx) do
-    name = "aps-#{item["id"]}-#{ctx.nonce}"
+    # Multi-repo waves tag every item with its repo; single-repo items
+    # default to ctx.repo -- the worktree stands on THAT repo's base sha.
+    repo_alias = Map.get(item, "repo") || ctx.repo
+    rctx = Map.fetch!(ctx.repos, repo_alias)
+    name = "#{repo_alias}-#{item["id"]}-#{ctx.nonce}"
 
-    with {:ok, worktree} <- Worktrees.provision(ctx.repo, ctx.base_sha, name) do
-      ledger(ctx, :worktree, %{item: item["id"], path: worktree})
+    with {:ok, worktree} <- Worktrees.provision(repo_alias, rctx.base_sha, name) do
+      ledger(ctx, :worktree, %{item: item["id"], repo: repo_alias, path: worktree})
       attempt(item, worktree, 1, [], 0, ctx)
     else
       {:error, reason} -> errored(item, {:provision_failed, reason})
@@ -228,7 +475,13 @@ defmodule Xaas.Ultracode.Autonomic do
               item: item["id"],
               attempt: n,
               epoch_id: epoch.id,
-              receipt_id: receipt.id
+              receipt_id: receipt.id,
+              # WHICH acceptance rule promoted this item: `alive` (the
+              # worker closed alive and the court confirmed) or
+              # `partial_alive` (an honest worker's self-assessment,
+              # accepted because the court passed the exact head -- the
+              # evidence lives in the sealed receipt either way).
+              accepted_via: Atom.to_string(receipt.outcome)
             })
 
             %{
@@ -256,6 +509,14 @@ defmodule Xaas.Ultracode.Autonomic do
   def create_run_and_epoch(item, worktree, n, history, ctx) do
     File.mkdir_p!(ctx.ticket_dir)
 
+    # The item's repo (multi-repo waves tag every item; single-repo items
+    # default to ctx.repo) decides which suite judges this run and which
+    # base sha the worktree stands on. The alias rides on the RUN itself
+    # (`execution_repo_alias`) -- per-repo attribution for the OCEL egress,
+    # run validation, and the dispatcher's per-repo toolchain env.
+    repo_alias = Map.get(item, "repo") || ctx.repo
+    rctx = Map.fetch!(ctx.repos, repo_alias)
+
     {:ok, run} =
       Run
       |> Ash.Changeset.for_create(
@@ -264,7 +525,9 @@ defmodule Xaas.Ultracode.Autonomic do
           goal: repair_goal(item["goal"], history),
           provider: ctx.provider,
           max_cycles: 1,
-          verifier_suite: ctx.suite
+          verifier_suite: rctx.suite,
+          execution_repo_alias: repo_alias,
+          base_sha: rctx.base_sha
         },
         authorize?: false
       )
@@ -275,8 +538,9 @@ defmodule Xaas.Ultracode.Autonomic do
       Jason.encode!(%{
         schemaVersion: "aps-ticket/1",
         item: item["id"],
+        repo: repo_alias,
         attempt: n,
-        base_sha: ctx.base_sha,
+        base_sha: rctx.base_sha,
         allowed_paths: item["allowed_paths"],
         min_new_tests: item["min_new_tests"],
         min_kill_ratio: item["min_kill_ratio"],
@@ -292,7 +556,7 @@ defmodule Xaas.Ultracode.Autonomic do
         %{
           run_id: run.id,
           cycle: 0,
-          exact_subject: "aps-autonomic:#{item["id"]}##{n}:#{run.id}",
+          exact_subject: "#{repo_alias}-autonomic:#{item["id"]}##{n}:#{run.id}",
           state: :running,
           worktree: worktree
         },
@@ -346,18 +610,91 @@ defmodule Xaas.Ultracode.Autonomic do
     do: {:failed, "epoch completed without a closing receipt (epoch #{epoch.id})"}
 
   defp judge(epoch, receipt) do
+    case judge_receipt(receipt) do
+      :accept -> {:done, receipt, epoch}
+      {:repair, reason} -> {:failed, reason}
+    end
+  end
+
+  @doc """
+  The judge: the wave loop's repair predicate for one closed epoch's sealed
+  receipt (`settle/2` finds the closing receipt; this decides).
+
+  ## Precedence law
+
+  The promotion decision is grounded in the FABRIC's verification -- the
+  court verdict `Lease.close/4` sealed into `receipt.evidence["fabric_verifier"]`
+  (`Xaas.Ultracode.Verifier` executed the operator's suite against the exact
+  confirmed head) -- NEVER in the worker's own standing claim. A leased
+  worker cannot run its own verification (`Lease.admit_tool/2` refuses
+  Bash), so an honest worker's `:partial_alive` is a *self-assessment*, not
+  evidence; the court is the evidence. The court outranks the worker in
+  BOTH directions:
+
+    * a fabricated `:alive` never promotes: `Lease.close/4` falsifies it to
+      `:build_broken` on a court fail, a worker-supplied `fabric_verifier`
+      key is dropped (never merged), and this predicate accepts only the
+      fabric's own `"pass"` verdict;
+    * an honest `:partial_alive` on a court-pass head no longer burns a
+      worker session: before 2026-09-19 this loop demanded `outcome ==
+      :alive` even when the court had passed the exact head, so every
+      honestly-closed item was re-dispatched for one extra full worker
+      session purely to manufacture the word `alive` (observed live,
+      campaign 9b9efe2c: attempt 1 court-pass + honest `partial_alive` ->
+      attempt 2 a full re-dispatch of the same item).
+
+  ## Acceptance rule
+
+  A receipt is accepted WITHOUT re-dispatch iff ALL of:
+
+    * `court == "pass"` -- `fabric_verifier.status == "pass"`;
+    * `head_verified == true` -- the court passed against the exact head
+      git confirmed (no confirmed head = no confirmed subject);
+    * the standing is honest -- `outcome` in `[:alive, :partial_alive]`.
+
+  Everything else repairs with a reason for the ticket history: a court
+  fail (falsified evidence), a court timeout/error (unverifiable), a
+  receipt with no court verdict at all (standing alone never promotes),
+  `head_verified: false`, or a terminal standing
+  (`:build_broken`/`:refused`/`:blocked`/`:unsupported`). The typed
+  NON-STANDING `:heartbeat` class (Run-tick lifecycle/liveness records,
+  see `Xaas.Ultracode.Receipt`'s moduledoc) is not in the honest-standing
+  family by construction -- a heartbeat can never promote an item, and
+  `settle/2` never even selects one as the closing receipt (its evidence
+  carries no `head_verified` key).
+
+  Seam: `config :xaas, :ultracode_judge_accept_court_verified_partial`
+  (default true). `false` restores the strict alive-only predicate; the
+  court's authority is untouched either way -- this seam can only ever
+  *keep* a court-pass head, never accept around a non-pass verdict.
+  """
+  @spec judge_receipt(Receipt.t()) :: :accept | {:repair, String.t()}
+  def judge_receipt(%Receipt{} = receipt) do
     fv = receipt.evidence["fabric_verifier"]
 
     cond do
-      receipt.outcome == :alive and is_map(fv) and fv["status"] == "pass" ->
-        {:done, receipt, epoch}
-
-      is_map(fv) ->
-        {:failed, court_failure_text(receipt.outcome, fv)}
-
-      true ->
-        {:failed, "closed #{receipt.outcome} with no fabric verifier verdict"}
+      accepted?(receipt, fv) -> :accept
+      is_map(fv) -> {:repair, court_failure_text(receipt.outcome, fv)}
+      true -> {:repair, "closed #{receipt.outcome} with no fabric verifier verdict"}
     end
+  end
+
+  # The acceptance rule, one clause per law above. `receipt.outcome` is the
+  # FABRIC-adjusted standing (`Lease.close/4` may falsify or downgrade the
+  # worker's claim before sealing), so honesty here means "the sealed
+  # standing is in the alive family", and the court-pass conjunct is what
+  # makes that family promotable.
+  defp accepted?(%Receipt{} = receipt, fv) do
+    court_pass? = is_map(fv) and fv["status"] == "pass"
+    head_verified? = receipt.evidence["head_verified"] == true
+    honest_standing? = receipt.outcome in [:alive, :partial_alive]
+
+    court_pass? and head_verified? and honest_standing? and
+      (receipt.outcome == :alive or accept_court_verified_partial?())
+  end
+
+  defp accept_court_verified_partial? do
+    Application.get_env(:xaas, :ultracode_judge_accept_court_verified_partial, true)
   end
 
   defp reap(epoch, ctx) do
@@ -366,7 +703,31 @@ defmodule Xaas.Ultracode.Autonomic do
     if epoch.lease_token do
       _ = Lease.refuse(epoch.lease_token, :worker_no_close, %{"reaped_by" => "xaas-autonomic"})
     else
-      epoch |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false) |> Ash.update()
+      # No live lease to refuse through -- same terminal disposition, and
+      # the SAME receipt invariant (`terminal epoch => receipt`): before
+      # this seal, a worker that died un-claimed left a `:failed` epoch
+      # with no receipt at all.
+      case epoch
+           |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false)
+           |> Ash.update() do
+        {:ok, failed} ->
+          Receipt
+          |> Ash.Changeset.for_create(
+            :seal,
+            %{
+              epoch_id: failed.id,
+              subject: failed.exact_subject,
+              outcome: :refused,
+              evidence: %{"reaped_by" => "xaas-autonomic", "refusal_reason" => "worker_no_close"},
+              sealed_at: DateTime.utc_now()
+            },
+            authorize?: false
+          )
+          |> Ash.create()
+
+        {:error, _} ->
+          {:error, :reap_failed}
+      end
     end
 
     {:failed, "worker ended without closing the lease"}
@@ -443,10 +804,21 @@ defmodule Xaas.Ultracode.Autonomic do
   defp halve(ctx), do: Agent.update(ctx.sem, &%{&1 | limit: max(1, div(&1.limit, 2))})
 
   # ------------------------------------------------------------------
-  # Default worker: the hardened dispatcher in directed --epoch mode
+  # Default worker: the in-family dispatch boundary -- one real gated
+  # headless zcode/GLM turn per attempt (see Xaas.Ultracode.Dispatch,
+  # which owns command construction, timeout/kill, failover-class
+  # retry-once, output log, and receipt attachment). The legacy path
+  # (the bash dispatcher's directed --epoch mode) stays reachable via
+  # `worker: &Autonomic.script_dispatch_worker/2`.
   # ------------------------------------------------------------------
 
   defp dispatch_worker(epoch, ctx) do
+    Xaas.Ultracode.Dispatch.autonomic_worker(epoch, ctx)
+  end
+
+  @doc false
+  @spec script_dispatch_worker(Epoch.t(), map()) :: :ok | :rate_limited | {:error, term()}
+  def script_dispatch_worker(epoch, ctx) do
     script = Path.join(ctx.project_root, "scripts/xaas-glm-failover-dispatcher.sh")
     File.mkdir_p!(ctx.state_dir)
 
@@ -466,53 +838,93 @@ defmodule Xaas.Ultracode.Autonomic do
 
   defp finish(ctx, items, results) do
     done = results |> Enum.filter(&(&1.status == :done)) |> Enum.sort_by(& &1.item)
+    by_id = Map.new(items, &{&1["id"], &1})
 
-    {integration, merged, conflicted} = promote(done, ctx)
-    canonical = canonical(integration, ctx)
+    {integration, merged, conflicted, canonical} =
+      if ctx.multi do
+        # Per-repo integration: each repo gets its OWN integration worktree
+        # (provisioned at ITS base sha), its own --no-ff merge series, and
+        # its OWN canonical court -- serialized per repo, never concurrent.
+        per_repo =
+          done
+          |> Enum.group_by(&repo_of(&1, by_id, ctx))
+          |> Enum.sort_by(fn {repo_alias, _} -> repo_alias end)
+          |> Enum.map(fn {repo_alias, repo_done} ->
+            rctx = Map.fetch!(ctx.repos, repo_alias)
+            {int, mrg, con} = promote(repo_done, ctx, repo_alias, rctx)
+            can = canonical(int, rctx.canonical_suite, ctx, repo_alias)
+
+            %{
+              repo: repo_alias,
+              integration: int && stringify_integration(int),
+              merged: mrg,
+              conflicted: con,
+              canonical: can
+            }
+          end)
+
+        {
+          Map.new(per_repo, &{&1.repo, &1.integration}),
+          Enum.flat_map(per_repo, & &1.merged),
+          Enum.flat_map(per_repo, & &1.conflicted),
+          Map.new(per_repo, &{&1.repo, &1.canonical})
+        }
+      else
+        rctx = Map.fetch!(ctx.repos, ctx.repo)
+        {int, mrg, con} = promote(done, ctx, ctx.repo, rctx)
+        can = canonical(int, rctx.canonical_suite, ctx, ctx.repo)
+        {int && stringify_integration(int), mrg, con, can}
+      end
 
     standing = standing(items, merged, canonical)
 
-    report = %{
-      "schema" => "xaas.autonomic-loop-receipt/1",
-      "standing" => standing,
-      "repo" => ctx.repo,
-      "base_sha" => ctx.base_sha,
-      "started_at" => DateTime.to_iso8601(ctx.started_at),
-      "finished_at" => DateTime.to_iso8601(DateTime.utc_now()),
-      "human_inputs" => 0,
-      "backlog" => Enum.map(items, & &1["id"]),
-      "items" =>
-        Enum.map(results, fn r ->
-          r
-          |> Map.take([
-            :item,
-            :status,
-            :attempts,
-            :head,
-            :epoch_id,
-            :run_id,
-            :receipt_id,
-            :executor,
-            :fabric_verifier,
-            :reason
-          ])
-          |> Map.put(:history, Enum.map(r.history, &stringify/1))
-          |> Map.new(fn {k, v} -> {to_string(k), v} end)
-          |> Map.update!("status", &to_string/1)
-        end),
-      "integration" =>
-        integration &&
-          Map.take(integration, [:branch, :head, :worktree])
-          |> Map.new(fn {k, v} -> {to_string(k), v} end),
-      "merged" => merged,
-      "merge_conflicts" => conflicted,
-      "canonical" => canonical,
-      "non_claims" => [
-        "Not a proof of open-ended or long-horizon autonomy.",
-        "One repository, one model, one bounded backlog family.",
-        "Nothing was pushed; the integration branch is local."
-      ]
-    }
+    report =
+      %{
+        "schema" => "xaas.autonomic-loop-receipt/1",
+        "standing" => standing,
+        "repo" => if(ctx.multi, do: ctx.aliases, else: ctx.repo),
+        "base_sha" => ctx.base_sha,
+        "started_at" => DateTime.to_iso8601(ctx.started_at),
+        "finished_at" => DateTime.to_iso8601(DateTime.utc_now()),
+        "human_inputs" => 0,
+        "backlog" => Enum.map(items, & &1["id"]),
+        "items" =>
+          Enum.map(results, fn r ->
+            r
+            |> Map.take([
+              :item,
+              :status,
+              :attempts,
+              :head,
+              :epoch_id,
+              :run_id,
+              :receipt_id,
+              :executor,
+              :fabric_verifier,
+              :reason
+            ])
+            |> Map.put(:repo, repo_of(r, by_id, ctx))
+            |> Map.put(:history, Enum.map(r.history, &stringify/1))
+            |> Map.new(fn {k, v} -> {to_string(k), v} end)
+            |> Map.update!("status", &to_string/1)
+          end),
+        "integration" => integration,
+        "merged" => merged,
+        "merge_conflicts" => conflicted,
+        "canonical" => canonical,
+        "non_claims" => non_claims(ctx)
+      }
+      |> then(fn report ->
+        # The multi-repo report carries the per-repo base shas; the single-repo
+        # report stays byte-for-byte its historical shape.
+        if ctx.multi do
+          Map.merge(report, %{
+            "base_shas" => Map.new(ctx.aliases, &{&1, Map.fetch!(ctx.repos, &1).base_sha})
+          })
+        else
+          report
+        end
+      end)
 
     path = Path.join(ctx.out_dir, "receipt.json")
     File.write!(path, Jason.encode!(report, pretty: true))
@@ -520,15 +932,46 @@ defmodule Xaas.Ultracode.Autonomic do
     {:ok, Map.put(report, "receipt_path", path)}
   end
 
+  defp stringify_integration(integration) do
+    integration
+    |> Map.take([:branch, :head, :worktree])
+    |> Map.new(fn {k, v} -> {to_string(k), v} end)
+  end
+
+  defp non_claims(%{multi: true}) do
+    [
+      "Not a proof of open-ended or long-horizon autonomy.",
+      "Several repositories, one model, bounded backlog families per repo; rotation is round-robin and the capacity bound is one semaphore.",
+      "Nothing was pushed; the integration branches are local."
+    ]
+  end
+
+  defp non_claims(_ctx) do
+    [
+      "Not a proof of open-ended or long-horizon autonomy.",
+      "One repository, one model, one bounded backlog family.",
+      "Nothing was pushed; the integration branch is local."
+    ]
+  end
+
+  # An item's repo: the tag the sense stage put on it, or ctx.repo for the
+  # untagged (single-repo, historical) family.
+  defp repo_of(r, by_id, ctx) do
+    case by_id[r.item] do
+      %{"repo" => repo_alias} when is_binary(repo_alias) -> repo_alias
+      _ -> ctx.repo
+    end
+  end
+
   defp stringify(%{} = m), do: Map.new(m, fn {k, v} -> {to_string(k), v} end)
 
-  defp promote([], _ctx), do: {nil, [], []}
+  defp promote([], _ctx, _repo_alias, _rctx), do: {nil, [], []}
 
-  defp promote(done, ctx) do
-    name = "aps-integration-#{ctx.nonce}"
-    branch = "aps-autonomic-#{ctx.nonce}"
+  defp promote(done, ctx, repo_alias, rctx) do
+    name = "#{repo_alias}-integration-#{ctx.nonce}"
+    branch = "#{repo_alias}-autonomic-#{ctx.nonce}"
 
-    with {:ok, wt} <- Worktrees.provision(ctx.repo, ctx.base_sha, name),
+    with {:ok, wt} <- Worktrees.provision(repo_alias, rctx.base_sha, name),
          {_, 0} <-
            System.cmd("git", ["-C", wt, "checkout", "-q", "-b", branch], stderr_to_stdout: true) do
       {merged, conflicted} =
@@ -566,10 +1009,11 @@ defmodule Xaas.Ultracode.Autonomic do
     end
   end
 
-  defp canonical(nil, _ctx), do: %{"status" => "skipped", "reason" => "no integration branch"}
+  defp canonical(nil, _suite, _ctx, _repo_alias),
+    do: %{"status" => "skipped", "reason" => "no integration branch"}
 
-  defp canonical(%{worktree: wt, head: head}, ctx) do
-    case Map.get(ctx, :canonical_suite) do
+  defp canonical(%{worktree: wt, head: head}, suite, ctx, repo_alias) do
+    case suite do
       nil ->
         %{"status" => "skipped", "reason" => "no canonical suite configured"}
 
@@ -583,15 +1027,28 @@ defmodule Xaas.Ultracode.Autonomic do
             executor: "xaas-autonomic-controller"
           })
 
-        ledger(ctx, :canonical, %{suite: suite, status: result["status"]})
+        data = %{suite: suite, status: result["status"]}
+        data = if ctx.multi, do: Map.put(data, :repo, repo_alias), else: data
+        ledger(ctx, :canonical, data)
         result
     end
   end
 
   defp standing(items, merged, canonical) do
+    # Single-repo: the canonical result itself. Multi-repo: one result per
+    # repo -- the wave stands only when EVERY repo's own court passed.
+    verdicts =
+      if Map.has_key?(canonical, "status") do
+        [canonical]
+      else
+        Map.values(canonical)
+      end
+
+    all_pass? = verdicts != [] and Enum.all?(verdicts, &(&1["status"] == "pass"))
+
     cond do
-      items != [] and length(merged) == length(items) and canonical["status"] == "pass" -> "ALIVE"
-      merged != [] and canonical["status"] == "pass" -> "PARTIAL_ALIVE"
+      items != [] and length(merged) == length(items) and all_pass? -> "ALIVE"
+      merged != [] and all_pass? -> "PARTIAL_ALIVE"
       true -> "BLOCKED"
     end
   end

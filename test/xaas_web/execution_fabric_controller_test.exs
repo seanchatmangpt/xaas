@@ -88,12 +88,13 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
     |> Jason.decode!()
   end
 
-  defp provider_run_and_epoch(provider, worktree \\ nil) do
+  defp provider_run_and_epoch(provider, worktree \\ nil, verifier_suite \\ nil) do
     {:ok, run} =
       Run
       |> Ash.Changeset.for_create(
         :create,
-        %{goal: "Chicago qualification over real HTTP.", provider: provider},
+        %{goal: "Chicago qualification over real HTTP.", provider: provider}
+        |> then(&if(verifier_suite, do: Map.put(&1, :verifier_suite, verifier_suite), else: &1)),
         authorize?: false
       )
       |> Ash.create()
@@ -114,6 +115,63 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       |> Ash.create()
 
     {run, epoch}
+  end
+
+  # The real fabric court, end to end: a registered verifier suite plus a
+  # containment root, with the worktree created INSIDE the root (the
+  # verifier refuses worktrees outside it). Restores both env keys on exit.
+  defp with_court(suite_name, fun) do
+    original_root = Application.get_env(:xaas, :ultracode_worktree_root)
+    original_suites = Application.get_env(:xaas, :ultracode_verifier_suites)
+
+    # run_uid convention (wave-8 flake hunt): System.unique_integer() is only
+    # per-VM unique; $TMPDIR is shared by every concurrent `mix test` VM, so
+    # qualify with wall clock too -- cross-VM collision becomes impossible.
+    root =
+      Path.join(
+        System.tmp_dir(),
+        "xaas-fabric-court-#{System.system_time(:millisecond)}-#{System.unique_integer()}"
+      )
+
+    File.mkdir_p!(root)
+
+    Application.put_env(:xaas, :ultracode_worktree_root, root)
+
+    Application.put_env(:xaas, :ultracode_verifier_suites, %{
+      suite_name => %{
+        env: %{"PATH" => "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin"},
+        steps: [%{id: "ok", argv: ["/bin/sh", "-c", "true"], timeout_ms: 10_000}]
+      }
+    })
+
+    on_exit(fn ->
+      File.rm_rf!(root)
+
+      if is_nil(original_root),
+        do: Application.delete_env(:xaas, :ultracode_worktree_root),
+        else: Application.put_env(:xaas, :ultracode_worktree_root, original_root)
+
+      if is_nil(original_suites),
+        do: Application.delete_env(:xaas, :ultracode_verifier_suites),
+        else: Application.put_env(:xaas, :ultracode_verifier_suites, original_suites)
+    end)
+
+    worktree = Path.join(root, "wt-#{System.unique_integer()}")
+    File.mkdir_p!(worktree)
+
+    {_, 0} = System.cmd("git", ["-C", worktree, "init", "--quiet"])
+
+    {_, 0} =
+      System.cmd("git", ["-C", worktree, "commit", "--allow-empty", "-m", "init", "--quiet"],
+        env: [
+          {"GIT_AUTHOR_NAME", "test"},
+          {"GIT_AUTHOR_EMAIL", "test@test"},
+          {"GIT_COMMITTER_NAME", "test"},
+          {"GIT_COMMITTER_EMAIL", "test@test"}
+        ]
+      )
+
+    fun.(root, worktree)
   end
 
   describe "fail-closed token gate" do
@@ -276,27 +334,70 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
   end
 
   describe "full provider-pull loop over real rows" do
-    test "claim -> admit -> head-verified close seals an alive Receipt", %{conn: conn} do
+    test "claim -> admit -> court-passed close seals an alive Receipt (alive is court-manufactured only)",
+         %{conn: conn} do
+      with_court("fabric-court-pass", fn _root, worktree ->
+        provider = "zcode-chicago-court-#{System.unique_integer([:positive])}"
+        {run, epoch} = provider_run_and_epoch(provider, worktree, "fabric-court-pass")
+
+        claim =
+          tool_call(conn, "claim_next", %{provider: provider, provider_worker_id: "worker-1"})
+
+        assert claim["lease_token"]
+        assert claim["epoch_id"] == epoch.id
+        assert claim["exact_subject"] == epoch.exact_subject
+        assert claim["goal"] == run.goal
+        assert claim["worktree"] == worktree
+
+        # Admission court over the wire.
+        assert tool_call(conn, "admit_tool", %{
+                 lease_token: claim["lease_token"],
+                 tool: "Edit"
+               }) == %{"decision" => "allow"}
+
+        assert tool_call(conn, "admit_tool", %{
+                 lease_token: claim["lease_token"],
+                 tool: "git_push"
+               }) == %{"error" => "refused_no_authority:\"git_push\""}
+
+        # Head-verified closure THROUGH THE REAL VERIFIER COURT over the wire.
+        closed =
+          tool_call(conn, "close_candidate", %{
+            lease_token: claim["lease_token"],
+            final_head: git_head(worktree),
+            outcome: "alive",
+            evidence: %{"verifier" => "mix test"}
+          })
+
+        assert closed["status"] == "closed"
+        assert closed["outcome"] == "alive"
+
+        # The DB row really landed: epoch completed, receipt sealed.
+        reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+        assert reloaded.state == :completed
+        assert reloaded.final_head == git_head(worktree)
+      end)
+    end
+
+    test "an ALIVE claim with NO registered verifier suite is honestly downgraded to partial_alive over the wire",
+         %{conn: conn} do
+      # No court configured for this run: head verification passes but no
+      # verifier suite exists, so the receipt law refuses `:alive` and
+      # `Lease.close/4` lands the honest downgrade.
       worktree = make_git_worktree()
-      {run, epoch} = provider_run_and_epoch("zcode-chicago", worktree)
+
+      {run, epoch} =
+        provider_run_and_epoch(
+          "zcode-chicago-nocourt-#{System.unique_integer([:positive])}",
+          worktree
+        )
 
       claim =
-        tool_call(conn, "claim_next", %{provider: "zcode-chicago", provider_worker_id: "worker-1"})
+        tool_call(conn, "claim_next", %{
+          provider: run.provider,
+          provider_worker_id: "worker-nc"
+        })
 
-      assert claim["lease_token"]
-      assert claim["epoch_id"] == epoch.id
-      assert claim["exact_subject"] == epoch.exact_subject
-      assert claim["goal"] == run.goal
-      assert claim["worktree"] == worktree
-
-      # Admission court over the wire.
-      assert tool_call(conn, "admit_tool", %{lease_token: claim["lease_token"], tool: "Edit"}) ==
-               %{"decision" => "allow"}
-
-      assert tool_call(conn, "admit_tool", %{lease_token: claim["lease_token"], tool: "git_push"}) ==
-               %{"error" => "refused_no_authority:\"git_push\""}
-
-      # Head-verified closure over the wire.
       closed =
         tool_call(conn, "close_candidate", %{
           lease_token: claim["lease_token"],
@@ -306,37 +407,37 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
         })
 
       assert closed["status"] == "closed"
-      assert closed["outcome"] == "alive"
+      assert closed["outcome"] == "partial_alive"
 
-      # The DB row really landed: epoch completed, receipt sealed.
-      reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
-      assert reloaded.state == :completed
-      assert reloaded.final_head == git_head(worktree)
+      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state ==
+               :completed
     end
 
     test "standing reported in natural casing ('ALIVE') is not silently downgraded", %{
       conn: conn
     } do
-      worktree = make_git_worktree()
-      {_run, epoch} = provider_run_and_epoch("zcode-chicago", worktree)
+      with_court("fabric-court-casing", fn _root, worktree ->
+        provider = "zcode-chicago-casing-#{System.unique_integer([:positive])}"
+        {_run, epoch} = provider_run_and_epoch(provider, worktree, "fabric-court-casing")
 
-      claim =
-        tool_call(conn, "claim_next", %{provider: "zcode-chicago", provider_worker_id: "worker-3"})
+        claim =
+          tool_call(conn, "claim_next", %{provider: provider, provider_worker_id: "worker-3"})
 
-      # Live regression guard: the stop hook and worker command report
-      # "ALIVE" in natural casing; the transport must normalize, never
-      # silently downgrade an honest ALIVE to partial_alive.
-      closed =
-        tool_call(conn, "close_candidate", %{
-          lease_token: claim["lease_token"],
-          final_head: git_head(worktree),
-          outcome: "ALIVE"
-        })
+        # Live regression guard: the stop hook and worker command report
+        # "ALIVE" in natural casing; the transport must normalize, never
+        # silently downgrade an honest ALIVE before the court sees it.
+        closed =
+          tool_call(conn, "close_candidate", %{
+            lease_token: claim["lease_token"],
+            final_head: git_head(worktree),
+            outcome: "ALIVE"
+          })
 
-      assert closed["outcome"] == "alive"
+        assert closed["outcome"] == "alive"
 
-      assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state ==
-               :completed
+        assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state ==
+                 :completed
+      end)
     end
 
     test "an outcome outside the valid vocabulary (e.g. 'UNKNOWN') is silently normalized to partial_alive, not fenced or rejected",
@@ -622,7 +723,9 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       assert body["epoch_id"] == epoch.id
       assert [receipt] = body["receipts"]
-      assert receipt["outcome"] == "alive"
+      # No verifier suite is registered for this run, so the receipt law
+      # (alive is court-manufactured only) seals the honest downgrade.
+      assert receipt["outcome"] == "partial_alive"
       assert receipt["epoch_id"] == epoch.id
       assert receipt["evidence"]["verifier"] == "mix test"
     end
@@ -850,7 +953,8 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
         |> json_response(200)
 
       assert [admin_receipt] = admin_receipts["receipts"]
-      assert admin_receipt["outcome"] == "alive"
+      # Suite-less close: the receipt law seals partial_alive, not alive.
+      assert admin_receipt["outcome"] == "partial_alive"
 
       # Org B's own token CAN read its own epoch's receipt (positive path).
       own_body =
@@ -860,7 +964,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
         |> json_response(200)
 
       assert [own_receipt] = own_body["receipts"]
-      assert own_receipt["outcome"] == "alive"
+      assert own_receipt["outcome"] == "partial_alive"
 
       # Org A's own token cannot see it: a real 404, never the empty
       # `receipts: []` false negative the legacy/unscoped path would give.
@@ -964,7 +1068,9 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
         |> json_response(200)
 
       assert [receipt] = body["receipts"]
-      assert receipt["outcome"] == "alive"
+      # Suite-less close: the receipt law seals the honest downgrade
+      # (partial_alive); the read path itself is the regression surface here.
+      assert receipt["outcome"] == "partial_alive"
     end
 
     # ------------------------------------------------------------------
@@ -1062,7 +1168,15 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
          %{conn: conn} do
       original = Application.get_env(:xaas, :ultracode_verifier_suites)
       Application.put_env(:xaas, :ultracode_verifier_suites, %{"ctl-suite" => %{steps: []}})
-      on_exit(fn -> Application.put_env(:xaas, :ultracode_verifier_suites, original) end)
+
+      # nil = unset before: DELETE, never put_env(key, nil) -- a literal nil
+      # poisons later `get_env(key, %{})` readers (the seed-dependent
+      # TargetSuitesTest flake class).
+      on_exit(fn ->
+        if is_nil(original),
+          do: Application.delete_env(:xaas, :ultracode_verifier_suites),
+          else: Application.put_env(:xaas, :ultracode_verifier_suites, original)
+      end)
 
       org = create_org!("acme-test-org-suite-known")
       token = org_token!("acme-token-suite-known", org)
@@ -1213,8 +1327,16 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
   # ------------------------------------------------------------------
 
   defp make_git_worktree do
-    dir = Path.join(System.tmp_dir(), "xaas-fabric-http-#{System.unique_integer()}")
+    # run_uid convention: wall clock + unique_integer so two concurrent BEAM
+    # VMs sharing $TMPDIR can never mint the same path; removed on exit.
+    dir =
+      Path.join(
+        System.tmp_dir(),
+        "xaas-fabric-http-#{System.system_time(:millisecond)}-#{System.unique_integer()}"
+      )
+
     File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf!(dir) end)
 
     System.cmd("git", ["-C", dir, "init", "--quiet"], stderr_to_stdout: true)
 

@@ -46,14 +46,17 @@ defmodule Xaas.Ultracode.LeaseVerifierTest do
       Application.put_env(:xaas, :ultracode_verifier_suites, %{name => %{env: @env, steps: steps}})
 
   # A leased epoch on a real worktree; returns {token, head, worktree}.
-  defp leased(root, suite, worktree \\ nil) do
+  defp leased(root, suite, worktree \\ nil, run_attrs \\ %{}) do
     worktree = worktree || git_worktree(root)
 
     {:ok, run} =
       Run
       |> Ash.Changeset.for_create(
         :create,
-        %{goal: "Verifier qualification.", provider: @provider, verifier_suite: suite},
+        Map.merge(
+          %{goal: "Verifier qualification.", provider: @provider, verifier_suite: suite},
+          run_attrs
+        ),
         authorize?: false
       )
       |> Ash.create()
@@ -158,8 +161,98 @@ defmodule Xaas.Ultracode.LeaseVerifierTest do
     spoof = %{"fabric_verifier" => %{"status" => "pass"}}
     assert {:ok, _epoch, receipt} = Lease.close(token, head, :alive, spoof)
 
-    assert receipt.outcome == :alive
+    # The spoofed court key is dropped (never merged), and with no suite
+    # there is no qualifying court -- the receipt law downgrades the :alive
+    # claim to the honest :partial_alive instead of sealing it.
+    assert receipt.outcome == :partial_alive
+    assert receipt.evidence["verifier_suite_absent"] == true
     refute Map.has_key?(receipt.evidence, "fabric_verifier")
+  end
+
+  # ------------------------------------------------------------------
+  # Court receipt mode (Run.court_map): the fabric publishes IRI-keyed
+  # acceptance/falsifier/court results into the sealed evidence TOP LEVEL
+  # -- the exact keys GgenIgniter.SemanticJira.promote/3 reads -- and a
+  # worker can never supply or spoof them.
+  # ------------------------------------------------------------------
+
+  @sj "https://ggen-igniter.dev/ontology/semantic-jira"
+  @court_iri @sj <> "#exact-head-projection-court"
+  @acc_iri @sj <> "#obs-275a1f5e4de7-acceptance-delta"
+  @fal_iri @sj <> "#obs-275a1f5e4de7-falsifier-delta"
+  @delta_test "tests/seed.py::test_delta"
+
+  @court_map %{
+    "acceptance" => %{@acc_iri => %{"test" => @delta_test}},
+    "falsifiers" => %{@fal_iri => %{"test" => @delta_test}},
+    "courts" => [@court_iri]
+  }
+
+  @verdict_script ~s(echo "#{@delta_test} PASSED [100%]")
+
+  test "a close with a court_map publishes IRI-keyed verdicts at evidence top level and drops the worker's copies",
+       %{root: root} do
+    Application.put_env(:xaas, :ultracode_verifier_suites, %{
+      "t-court" => %{
+        env: @env,
+        result_format: "pytest_v",
+        steps: [sh("probe", @verdict_script, %{receipt: true})]
+      }
+    })
+
+    {token, head, _wt} =
+      leased(root, "t-court", nil, %{court_map: @court_map})
+
+    worker_evidence = %{
+      "acceptance_results" => %{"https://spoof.example/fake" => true},
+      "falsifier_results" => %{"https://spoof.example/fake" => "survived"},
+      "court_results" => %{"https://spoof.example/fake" => %{"passed" => true}}
+    }
+
+    assert {:ok, _epoch, receipt} = Lease.close(token, head, :alive, worker_evidence)
+
+    assert receipt.outcome == :alive
+    assert receipt.evidence["head_verified"] == true
+
+    assert receipt.evidence["acceptance_results"] == %{@acc_iri => true}
+    assert receipt.evidence["falsifier_results"] == %{@fal_iri => "survived"}
+
+    assert %{"passed" => true, "suite" => "t-court", "step_id" => "probe", "head" => ^head} =
+             receipt.evidence["court_results"][@court_iri]
+
+    assert receipt.evidence["court_binding"]["head"] == head
+    refute Map.has_key?(receipt.evidence["acceptance_results"], "https://spoof.example/fake")
+  end
+
+  test "a court production refusal is an honest :partial_alive with the typed reason", %{
+    root: root
+  } do
+    # The mapped test never appears in the output: the court cannot witness
+    # it, so no verdict may be manufactured.
+    Application.put_env(:xaas, :ultracode_verifier_suites, %{
+      "t-court-missing" => %{
+        env: @env,
+        result_format: "pytest_v",
+        steps: [
+          sh("probe", ~s(echo "tests/other.py::test_other PASSED [100%]"), %{receipt: true})
+        ]
+      }
+    })
+
+    {token, head, _wt} =
+      leased(root, "t-court-missing", nil, %{court_map: @court_map})
+
+    assert {:ok, _epoch, receipt} = Lease.close(token, head, :alive)
+
+    assert receipt.outcome == :partial_alive
+    assert receipt.evidence["fabric_verifier"]["status"] == "error"
+
+    assert receipt.evidence["fabric_verifier"]["reason"] =~ "court_receipt_refused"
+    assert receipt.evidence["fabric_verifier"]["reason"] =~ "missing_verdict"
+
+    refute Map.has_key?(receipt.evidence, "acceptance_results")
+    refute Map.has_key?(receipt.evidence, "falsifier_results")
+    refute Map.has_key?(receipt.evidence, "court_results")
   end
 
   test "claims that are not alive-family are not verified (nothing to judge)", %{root: root} do
@@ -268,11 +361,13 @@ defmodule Xaas.Ultracode.LeaseVerifierTest do
 
   # ------------------------------------------------------------------
 
+  # run_uid law (dispatch_test): System.unique_integer restarts per BEAM while
+  # $TMPDIR is machine-wide -- qualify per-run paths with wall clock too.
   defp mktmp(label) do
     dir =
       Path.join(
         System.tmp_dir!(),
-        "xaas-lease-verifier-#{label}-#{System.unique_integer([:positive])}"
+        "xaas-lease-verifier-#{label}-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
       )
 
     File.mkdir_p!(dir)

@@ -118,8 +118,11 @@ defmodule Xaas.Ultracode.EpochReactorTest do
 
     assert first_result.epoch_id == active_epoch.id
     assert first_result.action_taken == :start
-    # 6/8) Real verification outcome + a real persisted Receipt id.
-    assert first_result.outcome == :alive
+    # 6/8) Real receipt id. The `:start` tick is LIFECYCLE, not standing:
+    # the receipt is the typed non-standing `:heartbeat` class -- only a
+    # qualifying terminal court manufactures `:alive` (receipt law,
+    # `Validations.AliveRequiresCourt`).
+    assert first_result.outcome == :heartbeat
     assert is_binary(first_result.receipt_id)
 
     after_start = Ash.get!(Epoch, active_epoch.id, action: :read_unscoped, authorize?: false)
@@ -128,24 +131,27 @@ defmodule Xaas.Ultracode.EpochReactorTest do
     first_receipt = Ash.get!(Receipt, first_result.receipt_id, authorize?: false)
     assert first_receipt.epoch_id == active_epoch.id
     assert first_receipt.subject == subject
-    assert first_receipt.outcome == :alive
+    assert first_receipt.outcome == :heartbeat
     assert first_receipt.evidence["expected_state"] == "running"
     assert first_receipt.evidence["observed_state"] == "running"
+    assert first_receipt.evidence["action_taken"] == "start"
 
     # 7) Second pass over the same Epoch: real CONSTRUCT :running ->
     # :completed, exercising the invariant `CompletedEpoch => Receipt`
-    # (this second real Receipt is what satisfies it).
+    # (this second real Receipt is what satisfies it). The completion is
+    # the tick machinery's own lifecycle turn -- a heartbeat receipt, not
+    # a standing claim.
     {:ok, second_result} = Reactor.run(Xaas.Ultracode.EpochReactor, %{epoch_id: active_epoch.id})
 
     assert second_result.action_taken == :complete
-    assert second_result.outcome == :alive
+    assert second_result.outcome == :heartbeat
 
     completed_epoch = Ash.get!(Epoch, active_epoch.id, action: :read_unscoped, authorize?: false)
     assert completed_epoch.state == :completed
 
     second_receipt = Ash.get!(Receipt, second_result.receipt_id, authorize?: false)
     assert second_receipt.epoch_id == active_epoch.id
-    assert second_receipt.outcome == :alive
+    assert second_receipt.outcome == :heartbeat
     assert second_receipt.evidence["observed_state"] == "completed"
 
     # Real distinct receipts persisted -- Receipt.subject == Epoch.subject
@@ -207,7 +213,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
         )
         |> Ash.create!()
         |> Ash.Changeset.for_update(:transition_state, %{state: :running})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       construct_step =
         Xaas.Ultracode.EpochReactor.reactor().plan
@@ -230,7 +236,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
           state: :expected,
           expected_at: DateTime.utc_now()
         })
-        |> Ash.create!()
+        |> Ash.create!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       # Real Construct-equivalent mutation: :expected -> :running, the
       # exact transition the real :construct step's run/2 performs for
@@ -238,7 +244,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       constructed_epoch =
         epoch
         |> Ash.Changeset.for_update(:start, %{})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       assert constructed_epoch.state == :running
 
@@ -270,7 +276,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
           state: :running,
           expected_at: DateTime.utc_now()
         })
-        |> Ash.create!()
+        |> Ash.create!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       # Real Construct-equivalent mutation: :running -> :completed, the
       # exact transition the real :construct step's run/2 performs for
@@ -278,7 +284,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       constructed_epoch =
         epoch
         |> Ash.Changeset.for_update(:complete, %{})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       assert constructed_epoch.state == :completed
 
@@ -315,7 +321,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
           state: :expected,
           expected_at: DateTime.utc_now()
         })
-        |> Ash.create!()
+        |> Ash.create!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       # Real Construct-equivalent mutation: :expected -> :running -- the
       # exact transition the real :construct step's run/2 performs for
@@ -327,7 +333,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       stale_constructed_epoch =
         epoch
         |> Ash.Changeset.for_update(:start, %{})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       assert stale_constructed_epoch.state == :running
 
@@ -341,7 +347,7 @@ defmodule Xaas.Ultracode.EpochReactorTest do
       concurrently_completed_epoch =
         stale_constructed_epoch
         |> Ash.Changeset.for_update(:complete, %{})
-        |> Ash.update!()
+        |> Ash.update!(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
 
       assert concurrently_completed_epoch.state == :completed
 

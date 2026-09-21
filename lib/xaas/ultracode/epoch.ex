@@ -79,47 +79,34 @@ defmodule Xaas.Ultracode.Epoch do
       authorize_if(always())
     end
 
-    # ERRC raise: real, scoped carve-outs for every internal-only
-    # mutation action this repo's Ultracode Reactor pipeline calls --
-    # matching `Xaas.Ultracode.Run`'s own `bypass action(:tick)` shape.
-    # Previously every one of these actions was invoked with
-    # `authorize?: false` at every call site instead (Reactor, EpochReactor,
-    # NextEpoch, MissedEpochs, Changes.CreateFirstEpoch), which routed
-    # around `Ash.Policy.Authorizer` entirely and made the `forbid_if
-    # always()` floor below dead code for every real production mutation
-    # path. Bypassing here instead means the floor is real: any FUTURE
-    # action added to this resource is deny-by-default unless explicitly
-    # bypassed, exactly like this repo's Ash policy convention requires.
-    bypass action(:create) do
-      authorize_if(always())
-    end
-
-    bypass action(:start) do
-      authorize_if(always())
-    end
-
-    bypass action(:complete) do
-      authorize_if(always())
-    end
-
-    bypass action(:mark_missed) do
-      authorize_if(always())
-    end
-
-    bypass action(:mark_failed) do
-      authorize_if(always())
-    end
-
-    bypass action(:lease) do
-      authorize_if(always())
-    end
-
-    bypass action(:renew_lease) do
-      authorize_if(always())
-    end
-
-    bypass action(:record_final_head) do
-      authorize_if(always())
+    # XAAS-2601 + wave-4 authority tightening: every internal-only mutation
+    # action this repo's Ultracode Reactor pipeline calls (Reactor,
+    # EpochReactor, NextEpoch, MissedEpochs, Changes.CreateFirstEpoch) plus
+    # the lease-family actions (`:lease`, `:renew_lease`,
+    # `:record_final_head`) is admitted by the REAL system authority
+    # predicate -- `Xaas.Checks.SystemActor` over a `Xaas.SystemAuthority`
+    # actor -- instead of the previous `authorize_if(always())` bypasses,
+    # which any caller through the normal authorization path satisfied.
+    #
+    # The lease-family trio's only historical Ash call sites were replaced
+    # by `Xaas.Ultracode.Lease`'s raw atomic row writes (outside the Ash
+    # authorization path entirely), so no authorized production caller
+    # exists today; they stay canonically mapped to `:ultracode_reactor`
+    # so any future re-wiring through Ash requires the admitted kernel
+    # authority, never an ambient bypass. The deny floor below stays real
+    # for every other actor, and any FUTURE action added to this resource
+    # remains deny-by-default.
+    bypass action([
+             :create,
+             :start,
+             :complete,
+             :mark_missed,
+             :mark_failed,
+             :lease,
+             :renew_lease,
+             :record_final_head
+           ]) do
+      authorize_if({Xaas.Checks.SystemActor, []})
     end
 
     policy always() do
@@ -253,6 +240,11 @@ defmodule Xaas.Ultracode.Epoch do
       require_atomic?(false)
       change(set_attribute(:state, :missed))
 
+      # The transition's own moment, persisted (the egress's `epoch_missed`
+      # event time -- replaces the former `updated_at` approximation; see
+      # the `terminal_at` attribute doc).
+      change(set_attribute(:terminal_at, &DateTime.utc_now/0))
+
       validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
 
       multitenancy(:bypass)
@@ -262,6 +254,10 @@ defmodule Xaas.Ultracode.Epoch do
       accept([])
       require_atomic?(false)
       change(set_attribute(:state, :failed))
+
+      # Same dedicated transition moment as `:mark_missed` above (the
+      # egress's `epoch_failed` event time).
+      change(set_attribute(:terminal_at, &DateTime.utc_now/0))
 
       validate({Xaas.Ultracode.Validations.EpochTransitionAllowed, from: [:expected, :running]})
 
@@ -358,6 +354,19 @@ defmodule Xaas.Ultracode.Epoch do
       public?(true)
     end
 
+    # The `:missed`/`:failed` transition moment -- the dedicated terminal
+    # timestamp for the two terminal states that have no per-state column
+    # (`:completed` uses `completed_at` above). Written by `:mark_missed`,
+    # `:mark_failed`, and `Lease.refuse/3`'s atomic `state: :failed` write.
+    # Nullable: an epoch still in flight has no terminal moment, and rows
+    # predating this column carry NULL -- the OCEL egress omits the
+    # `epoch_missed`/`epoch_failed` event in that case rather than
+    # fabricating a time (this column replaces the egress's former
+    # `updated_at` approximation for those two events).
+    attribute :terminal_at, :utc_datetime_usec do
+      public?(true)
+    end
+
     # ------------------------------------------------------------------
     # ActuationLease fields (the provider-pull edge between Plan and
     # Construct). An Epoch is the bounded work unit, so the lease lives
@@ -374,6 +383,28 @@ defmodule Xaas.Ultracode.Epoch do
     end
 
     attribute :lease_expires_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    # The bind moment: when `Lease.claim_next/3`'s atomic UPDATE bound this
+    # epoch's lease. Written in the SAME single `UPDATE ... WHERE ...
+    # RETURNING *` statement that sets `lease_token`/`lease_expires_at`/
+    # `leased_to` (atomicity preserved). Nullable: an epoch never claimed
+    # has no bind moment. This is the persisted fact the OCEL egress's
+    # `epoch_claimed` event derives from -- before this column existed the
+    # bind wrote no timestamp and that event could only be declared, never
+    # emitted. A re-claim of an expired lease overwrites it with the new
+    # claim's moment (column-level persistence keeps the latest claim).
+    attribute :claimed_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    # The latest heartbeat moment: written by `Lease.renew/1`'s atomic
+    # lease write alongside the extended `lease_expires_at`. One column
+    # carrying the LATEST value -- renewal history deliberately collapses
+    # here (per-renewal event spam is not persisted; the egress emits one
+    # `worker_heartbeat` event per epoch, from the latest moment).
+    attribute :last_heartbeat_at, :utc_datetime_usec do
       public?(true)
     end
 

@@ -22,6 +22,66 @@ env:
   SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  autonomic-wave-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: Exact-head autonomic-wave contract
+    env:
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:15.2
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$actual"
+          test "$actual" = "$SUBJECT_SHA" || {
+            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
+            exit 2
+          }
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Cache exact-toolchain deps and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
+
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
+
+      - name: Run focused autonomic-wave court
+        run: >-
+          mix test test/xaas/ultracode/autonomic_wave_schedule_test.exs
+          --only autonomic_wave_contract
+          --max-failures 1
+          --trace
+
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 20

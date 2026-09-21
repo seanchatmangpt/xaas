@@ -84,10 +84,16 @@ defmodule Xaas.Autofde.StatusParserTest do
   end
 
   defp write_temp_status!(content) do
+    # run_uid convention: wall clock + unique_integer (cross-VM collision
+    # impossible); removed by callers' after-clauses, with an on_exit backstop.
     path =
-      Path.join(System.tmp_dir!(), "status_parser_test_#{System.unique_integer([:positive])}.md")
+      Path.join(
+        System.tmp_dir!(),
+        "status_parser_test_#{System.system_time(:millisecond)}_#{System.unique_integer([:positive])}.md"
+      )
 
     File.write!(path, content)
+    on_exit(fn -> File.rm(path) end)
     path
   end
 end

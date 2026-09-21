@@ -75,13 +75,27 @@ config :xaas, Oban,
   notifier: Oban.Notifiers.Postgres,
   queues: [
     default: 10,
+    # One shared integration/promote wave at a time; construction concurrency
+    # lives inside Xaas.Ultracode.Autonomic. `Xaas.Ultracode.Run`'s
+    # `:autonomic_wave` and `:semantic_wave` schedules (every 30 minutes)
+    # share this queue: exactly one slot so concurrent waves can never
+    # overlap -- a wave's promote step is the loop's one shared-state operation.
+    ultracode_wave: 1,
     hold_request_expire_stale_holds: 1,
     capability_liveness_receipt_check_regressions: 1,
     webhook_delivery_retry_failed_deliveries: 1,
-    # `Xaas.Ultracode.Run`'s `:autonomic_wave` schedule (every 30 minutes):
-    # exactly one slot so concurrent waves can never overlap -- a wave's
-    # promote step is the loop's one shared-state operation.
-    ultracode_wave: 1
+    # `Xaas.Ultracode.Run`'s `:engine_cycle` schedule (every 5 minutes) --
+    # the continuous engine between waves: same single-slot serialization
+    # argument as `ultracode_wave` (slot-filling work must never overlap
+    # itself, or capacity accounting races).
+    ultracode_engine: 1,
+    # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (hourly) -- the
+    # fabric-native wave loop: ONE real zcode worker per tick, dispatched
+    # synchronously by `Xaas.Ultracode.WaveLoop.tick/1` from the loop STATE
+    # file. A tick's dispatch may legitimately run most of an hour, so the
+    # single slot is what makes "one loop worker at a time" real; a second
+    # hourly fire waits here rather than overlapping.
+    ultracode_wave_loop: 1
   ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
@@ -215,9 +229,43 @@ config :phoenix, :json_library, Jason
 # no suites are registered by default, and a suite only ever runs in a worktree
 # under `:ultracode_worktree_root`. Environments that use it register named
 # suites (argv lists, never shell strings) in their own config file.
+
+# Same fail-closed law for the sense stage (`Xaas.Ultracode.Autonomic.backlog_script/1`):
+# a repo alias may map to its own deterministic backlog script basename resolved
+# from this app's priv/verifiers/; every unregistered alias (and the default)
+# stays `aps_backlog.py`. Names only, never caller-supplied paths.
 config :xaas, :ultracode_verifier_suites, %{}
+config :xaas, :ultracode_backlog_scripts, %{}
 config :xaas, :ultracode_worktree_root, nil
 config :xaas, :ultracode_ticket_dir, nil
+# Opt-in module value (an atom, e.g. Xaas.Ultracode.TargetSuites) whose devs/0
+# declares extra fabric verifier suites for non-APS targets; Xaas.Ultracode.
+# Verifier resolves it at runtime, never at config-evaluation time. nil = no
+# extra suites.
+config :xaas, :ultracode_target_suites, nil
 config :xaas, :ultracode_repos, %{}
+
+# The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
+# pool_capacity/1`, enforced race-free inside `claim_next/3`): 5 live
+# leases per provider -- the operator-ordered standing wave size, now a
+# real fence on EVERY claim path (MCP workers included), not just the
+# wave's in-process semaphore. Integer = one bound for all providers; a
+# map gives per-provider bounds (`%{"zcode" => 5, default: 3}`); nil =
+# unbounded (the test-env choice, so `LeaseConcurrencyStressTest`'s
+# 25-way claim storm keeps its exact semantics). The default worker seam
+# for `Xaas.Ultracode.Engine.fill/1` stays unset (observe-only engine);
+# environments that want the engine actually dispatching configure
+# `config :xaas, :ultracode_engine_worker, {Mod, :fun}`.
+config :xaas, :ultracode_pool_capacity, 5
+
+# The wave loop's judge seam (`Xaas.Ultracode.Autonomic.judge_receipt/1`).
+# True (default): a receipt sealed `partial_alive` by an honest worker is
+# accepted WITHOUT re-dispatch when the fabric's own court passed the exact
+# head (`fabric_verifier.status == "pass"` AND `head_verified == true`) --
+# the court, never the worker's self-assessment, is the promotion authority.
+# `false` restores the strict alive-only predicate (pre-2026-09-19). The
+# court's authority is never weakened: a fail/timeout/error verdict, a
+# missing verdict, or an unverified head still repairs in both modes.
+config :xaas, :ultracode_judge_accept_court_verified_partial, true
 
 import_config "#{config_env()}.exs"
