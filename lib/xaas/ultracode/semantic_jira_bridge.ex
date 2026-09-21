@@ -204,17 +204,15 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
          {:ok, court_map} <- court_map(Keyword.get(opts, :court_map), admitted),
          {:ok, dependencies} <- dependencies(admitted, events, prefix),
          execution =
-           execution(
-             admitted,
-             v1,
-             events,
-             exec_alias,
-             suite,
-             dependencies,
-             court_map,
-             prefix,
-             opts
-           ),
+           execution(admitted, v1, %{
+             tail: ledger_tail(events),
+             exec_alias: exec_alias,
+             suite: suite,
+             dependencies: dependencies,
+             court_map: court_map,
+             prefix: prefix,
+             opts: opts
+           }),
          :ok <- work_admit(execution) do
       {:ok, %{descriptor: v1, execution: execution}}
     end
@@ -284,8 +282,13 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
   def admit(work_orders, identity, export, log_dir, opts \\ []) when is_list(work_orders) do
     with {:ok, raw} <- find(work_orders, identity),
          {:ok, receipt} <- reconciler_receipt(export, raw),
-         :ok <- fabric_check(export, opts),
-         :ok <- on_frontier_or_recorded(work_orders, identity, receipt, log_dir),
+         :ok <- fabric_check(export, opts) do
+      serialized(log_dir, fn -> commit(work_orders, identity, raw, receipt, log_dir) end)
+    end
+  end
+
+  defp commit(work_orders, identity, raw, receipt, log_dir) do
+    with :ok <- on_frontier_or_recorded(work_orders, identity, receipt, log_dir),
          {:ok, event, disposition} <- reconcile(raw, receipt, log_dir) do
       {:ok,
        %{
@@ -338,25 +341,23 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
     end
   end
 
-  defp execution(admitted, v1, events, exec_alias, suite, deps, court_map, prefix, opts) do
-    tail = ledger_tail(events)
-
+  defp execution(admitted, v1, ctx) do
     %{
-      "work_order_iri" => prefix <> admitted["identity"],
-      "checkpoint_iri" => @checkpoint_prefix <> tail <> attempt_suffix(opts[:attempt]),
+      "work_order_iri" => ctx.prefix <> admitted["identity"],
+      "checkpoint_iri" => @checkpoint_prefix <> ctx.tail <> attempt_suffix(ctx.opts[:attempt]),
       "graph_digest" => v1["graph_digest"],
       "repository_identity" => v1["repository"],
-      "execution_repo_alias" => exec_alias,
+      "execution_repo_alias" => ctx.exec_alias,
       "base_sha" => v1["base_sha"],
       "goal" => goal(admitted),
       "provider" => v1["provider"],
-      "verifier_suite" => suite,
+      "verifier_suite" => ctx.suite,
       "execution_policy" =>
-        to_string(Keyword.get(opts, :execution_policy, "autonomic_wave_attempt")),
-      "dependencies" => deps,
-      "bridge" => bridge(admitted, v1, tail)
+        to_string(Keyword.get(ctx.opts, :execution_policy, "autonomic_wave_attempt")),
+      "dependencies" => ctx.dependencies,
+      "bridge" => bridge(admitted, v1, ctx.tail)
     }
-    |> put_unless_nil("court_map", court_map)
+    |> put_unless_nil("court_map", ctx.court_map)
   end
 
   defp attempt_suffix(nil), do: ""
@@ -673,6 +674,14 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
           refuse(:unknown_work_order)
       end
     end
+  end
+
+  # The log is safe under concurrent writers, but the ADMISSION decision is
+  # check-then-append: two different receipts racing for one work order would
+  # both pass the frontier check and both append. One admission per log at a
+  # time (per node) makes the decision as safe as the log.
+  defp serialized(log_dir, fun) do
+    :global.trans({{__MODULE__, Path.expand(log_dir)}, self()}, fun, [node()], :infinity)
   end
 
   defp reconcile(work_order, receipt, log_dir) do

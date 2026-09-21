@@ -406,6 +406,30 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeTest do
       assert length(TransitionLog.read(ctx.dir)) == 1
     end
 
+    test "concurrent receipts for one work order: exactly one transition lands", ctx do
+      bridge = root_export(ctx)["bridge"]
+
+      exports = for n <- 1..8, do: F.export(ctx.root, bridge, head: F.sha("racer-#{n}"))
+
+      results =
+        exports
+        |> Task.async_stream(
+          &Bridge.admit(ctx.graph, "FIX-BROKEN", &1, ctx.dir, fabric_check: false),
+          max_concurrency: 8,
+          timeout: 60_000
+        )
+        |> Enum.map(fn {:ok, result} -> result end)
+
+      assert Enum.count(results, &match?({:ok, %{disposition: :appended}}, &1)) == 1
+
+      assert Enum.count(
+               results,
+               &match?({:error, {:refused_bridge, {:not_on_frontier, "standing=ALIVE"}}}, &1)
+             ) == 7
+
+      assert [%{"to" => "ALIVE"}] = TransitionLog.read(ctx.dir)
+    end
+
     test "a candidate_sha the work order pins must match the sealed head", ctx do
       pinned = F.work_order("FIX-BROKEN", @base, [], %{"candidate_sha" => F.sha("pinned")})
       {_v1, execution} = descriptor!([pinned], ctx.dir, "FIX-BROKEN", ctx.opts)

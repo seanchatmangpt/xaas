@@ -26,9 +26,9 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeCrownTest do
 
   alias GgenIgniter.SemanticJira
   alias GgenIgniter.SemanticJira.TransitionLog
+  alias Xaas.Ultracode.{Epoch, Lease, Run, SemanticReceipt, SemanticWork}
   alias Xaas.Ultracode.SemanticJiraBridge, as: Bridge
   alias Xaas.Ultracode.SemanticJiraBridgeFixtures, as: F
-  alias Xaas.Ultracode.{Epoch, Lease, Run, SemanticReceipt, SemanticWork}
 
   @provider "zcode-bridge"
   @exec_alias "bridge-demo"
