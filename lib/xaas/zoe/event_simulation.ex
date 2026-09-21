@@ -132,7 +132,15 @@ defmodule Xaas.Zoe.EventSimulation do
     }
   end
 
-  defp emit(state, capability_id, actor_role, boundary, consequence_class, subject_ref, payload) do
+  defp emit(
+         state,
+         capability_id,
+         actor_role,
+         boundary,
+         consequence_class,
+         subject_ref,
+         payload
+       ) do
     sequence = state.sequence + 1
 
     item = %{
