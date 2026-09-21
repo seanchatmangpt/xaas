@@ -37,7 +37,9 @@ defmodule Xaas.Zoe.EventSimulation do
           | {:minor_pii_refused, String.t()}
 
   @spec simulate(map(), map()) :: {:ok, map()} | {:error, simulation_error()}
-  def simulate(snapshot, scenario \\ %{}) when is_map(snapshot) and is_map(scenario) do
+  def simulate(snapshot, scenario \\ %{})
+
+  def simulate(snapshot, scenario) when is_map(snapshot) and is_map(scenario) do
     with :ok <- refuse_pii(snapshot),
          :ok <- refuse_pii(scenario),
          :ok <- validate_snapshot(snapshot),
@@ -486,7 +488,9 @@ defmodule Xaas.Zoe.EventSimulation do
     |> field("ref")
   end
 
-  defp field(map, key, default \\ nil)\n\n  defp field(map, key, default) when is_map(map) and is_binary(key) do
+  defp field(map, key, default \\ nil)
+
+  defp field(map, key, default) when is_map(map) and is_binary(key) do
     atom_key =
       try do
         String.to_existing_atom(key)
