@@ -79,6 +79,33 @@ Mutants of the bridge, each killed by at least one test: credible-head gate forc
 gate off, digest check off, fabric re-check off, court witness forced true, ceiling taken from the
 work order instead of the fabric ceiling.
 
+## Verification (2026-09-21)
+
+Run in the stream worktree with `MIX_TEST_PARTITION=jb` (own database), machine load average
+above 100 throughout.
+
+| Check | Result |
+|---|---|
+| `SemanticJiraBridgeTest` + `SemanticJiraBridgeCrownTest` + `SemanticReceiptTest` | 48 tests, 0 failures |
+| Existing ultracode/semantic suites (receipt, work, wave, court, lease) | 139, 0 failed |
+| `test/xaas/ultracode` (whole directory, `--include subprocess`) | 571 tests, 1 failure |
+| xaas A2A agents, gall, zoe, frontier evidence under the path dependency | 76 tests, 0 failed |
+| `mix format --check-formatted` on touched files | clean |
+| `mix credo --strict` on touched files (scratch runner, xaas has no credo) | no issues |
+| Mock grep over touched files | exit 1, no output |
+| `mix compile --force --warnings-as-errors` on the branch | exit 1, pre-existing |
+| Same gate on the branch merged with `main` (scratch worktree) | exit 0 |
+| Narrow suites on the branch merged with `main` | 108 tests, 0 failures |
+
+Pre-existing, not introduced here:
+
+- The compile gate fails at the base only on `lib/xaas/castle.ex:572,839` and
+  `lib/xaas/semantics/computation.ex:390`; `main` (`8e72cfc`, errc/xaas-closure) fixes them.
+- `AutonomicMultiRepoTest` ("one wave works several repos end to end") returns `PARTIAL_ALIVE`,
+  not `ALIVE`, identically at the base SHA with the hex `ggen_igniter` and no change of ours.
+- `mix format --check-formatted` on `main` flags `test/xaas/semantics/registry_test.exs`.
+- `SemanticCrownTest` is skipped by name (no operator APS clone, no `semantic_jira.*` tasks).
+
 ## Standing ledger
 
 - Evidence ceiling is `repository-local`: fabric-only evidence never reaches a higher ceiling, so a
