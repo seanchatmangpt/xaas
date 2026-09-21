@@ -74,8 +74,11 @@ defmodule Xaas.Billing.Revenue do
          true <- MapSet.member?(@accounting_classifications, value) do
       {:ok, value}
     else
-      false -> {:error, {:invalid_accounting_classification, attr(attrs, :accounting_classification)}}
-      {:error, _} = error -> error
+      false ->
+        {:error, {:invalid_accounting_classification, attr(attrs, :accounting_classification)}}
+
+      {:error, _} = error ->
+        error
     end
   end
 

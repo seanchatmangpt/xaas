@@ -93,8 +93,11 @@ defmodule Xaas.Actuation do
         resources,
         fn ->
           case Xaas.Actuation.Kernel.checkpoint_external(admission, checkpoint) do
-            {:ok, updated} -> updated
-            {:error, reason} -> Ash.DataLayer.rollback(resources, {:external_checkpoint_failed, reason})
+            {:ok, updated} ->
+              updated
+
+            {:error, reason} ->
+              Ash.DataLayer.rollback(resources, {:external_checkpoint_failed, reason})
           end
         end,
         nil,
@@ -538,9 +541,14 @@ defmodule Xaas.Actuation.Kernel do
 
   defp find_or_create(args, projection, projection_hash, input_hash, mode) do
     case find_intent(args.idempotency_key) do
-      {:ok, nil} -> create_admission(args, projection, projection_hash, input_hash)
-      {:ok, intent} -> replay_or_refuse(intent, args, projection, projection_hash, input_hash, mode)
-      {:error, reason} -> {:error, reason}
+      {:ok, nil} ->
+        create_admission(args, projection, projection_hash, input_hash)
+
+      {:ok, intent} ->
+        replay_or_refuse(intent, args, projection, projection_hash, input_hash, mode)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

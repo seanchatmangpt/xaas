@@ -52,17 +52,17 @@ defmodule Xaas.Operations.RouteCastleRun do
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     action :execute, :map do
-      public? false
-      transaction? true
+      public?(false)
+      transaction?(true)
 
       argument :intent, :map do
-        allow_nil? false
+        allow_nil?(false)
       end
 
-      run Xaas.Castle.Actions.Execute
+      run(Xaas.Castle.Actions.Execute)
     end
   end
 

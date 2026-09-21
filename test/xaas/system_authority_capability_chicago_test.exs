@@ -62,12 +62,10 @@ defmodule Xaas.SystemAuthorityCapabilityChicagoTest do
     assert {:ok, %Xaas.SystemAuthority{service: :webhook_dispatcher}} =
              Xaas.SystemAuthority.delegate(scheduler, :webhook_dispatcher)
 
-    assert {:error,
-            {:authority_delegation_refused, :oban_scheduler, :ultracode_reactor}} =
+    assert {:error, {:authority_delegation_refused, :oban_scheduler, :ultracode_reactor}} =
              Xaas.SystemAuthority.delegate(scheduler, :ultracode_reactor)
 
-    assert {:error,
-            {:authority_delegation_refused, :ultracode_reactor, :webhook_dispatcher}} =
+    assert {:error, {:authority_delegation_refused, :ultracode_reactor, :webhook_dispatcher}} =
              Xaas.SystemAuthority.delegate(
                Xaas.SystemAuthority.new(:ultracode_reactor),
                :webhook_dispatcher

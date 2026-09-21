@@ -179,8 +179,7 @@ defmodule XaasWeb.Router do
     # trace; no production consequence is dispatched from this surface.
     forward("/zoe-event", XaasWeb.A2A.ZoeEventPlug,
       agent: XaasWeb.A2A.ZoeEventSimulationAgent,
-      base_url:
-        (System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a") <> "/zoe-event"
+      base_url: (System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a") <> "/zoe-event"
     )
 
     forward("/", A2A.Plug,

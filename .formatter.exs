@@ -10,5 +10,14 @@
   import_deps: [:ash_onetime, :ecto, :ecto_sql, :phoenix],
   subdirectories: ["priv/*/migrations"],
   plugins: [Phoenix.LiveView.HTMLFormatter],
-  inputs: ["*.{heex,ex,exs}", "{config,lib,test}/**/*.{heex,ex,exs}", "priv/*/seeds.exs"]
+  inputs:
+    Enum.flat_map(
+      ["*.{heex,ex,exs}", "{config,lib,test}/**/*.{heex,ex,exs}", "priv/*/seeds.exs"],
+      &Path.wildcard/1
+    ) --
+      # lib/xaas/generated/ is a projection rendered by the ggen-marketplace pack renderer
+      # ("GENERATED ... Do not hand-edit"). Formatting it in place would break byte-identity
+      # with the generator's output, so the next regeneration would re-introduce the
+      # --check-formatted failure. The formatting fix belongs in the pack template, not here.
+      Path.wildcard("lib/xaas/generated/**/*.{ex,exs}")
 ]

@@ -12,9 +12,7 @@ defmodule Xaas.Repo.Migrations.PinFiboRevisionOnRevenueRecognitions do
       "UPDATE billing_revenue_recognitions SET source_revision = '#{@fibo_revision}' WHERE source_revision IS NULL"
     )
 
-    execute(
-      "ALTER TABLE billing_revenue_recognitions ALTER COLUMN source_revision SET NOT NULL"
-    )
+    execute("ALTER TABLE billing_revenue_recognitions ALTER COLUMN source_revision SET NOT NULL")
 
     create index(:billing_revenue_recognitions, [:source_iri, :source_revision])
   end

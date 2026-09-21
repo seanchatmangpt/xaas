@@ -54,6 +54,7 @@ defmodule Xaas.Semantics.RegistryTest do
           Enum.map(projection.relationships, & &1.predicate)
 
       assert iris != []
+
       assert Enum.all?(iris, &Registry.public_iri?/1),
              "#{inspect(resource)} emitted a non-public ontology IRI"
 
