@@ -1,6 +1,6 @@
 # Ultracode multi-repo campaigns — register, run, validate (wave 5)
 
-**Version:** v26.9.20-wave5
+**Version:** v26.9.21-wave8 (adds §10 Campaign 3 handoff)
 **Standing:** PARTIAL_ALIVE — split by surface, exactly tabled in §0. The
 single-repo loop this extends is ALIVE and now has a completed full-length
 proof: the live 8h campaign `5d1e2669` read `completed (standing admitted)`,
@@ -411,6 +411,135 @@ xaas.ultracode.repos` (+ `--register`), `--repo a,b|all` on start/run,
 Run each surface's verify-commands from §2/§3/§5 the moment its branch
 lands; a campaign refuses an unlanded shape at admission, so there is no
 silent path.
+
+## 10. Campaign 3 handoff (wave 8 — launching the first multi-repo campaign)
+
+**Status: PREPARED, not yet executed.** Written 2026-09-21 by wave-8 agent
+W7→W8-A7 from `/tmp/xaas-w8-loop` @ `22aa308`. The predecessor campaign
+`5d1e2669` (single-repo aps) is TERMINAL, 16/16 waves ALIVE — the
+completed 8-hour proof this section now extends to multiple repos. The
+10-minute keep-alive (§8) ran that campaign and was retired 2026-09-20
+(last tick 43, 2026-09-20T19:48:03Z; deletion — the operator cut — leaves
+no terminal tick by design). The wave-8 loop is hourly and STATE-driven:
+it executes from `/Users/sac/xaas-tmp/w8-loop/STATE.md` (outside every
+repo), which gates this launch on its steps [1]–[6] being `done`.
+
+### 10.0 Prerequisites — ALL must hold before launch
+
+- STATE.md steps `[1] court-receipt producer` (structured court receipts at
+  fabric close), `[3] branch integrations` (origin tip carries them),
+  `[6] CampaignTest fix` are `done`; `[2] crown v2`, `[4] sole-source
+  fold`, `[5] ggen CI green` should be `done` too (blocking [7] only by
+  policy, not mechanism).
+- Registry: `mix xaas.ultracode.repos` lists `aps`, `nounverb`, `eds` as
+  registered and validated. `spr` stays OUT of Campaign 3's spec until its
+  `spr-dod` suite is verified; `infinite-agentic-cli`/`bitstar` are
+  reserved (suites pending — a campaign targeting them would fail closed
+  at admission, and that is the correct behavior).
+- Target suites cover all three aliases: `aps-dod`, `nounverb-dod`
+  (~40s), `eds-dod` (~3s), and — via [1] — manufacture structured court
+  receipts keyed by work-order IRIs at close.
+
+### 10.1 The fabric redeploy law (COORDINATOR-ONLY cut)
+
+The Phoenix endpoint on :4000 IS the fabric court: a campaign is only as
+current as the code the server beam runs. This cut has already been
+necessary once — the wave-6 crown receipt sealed `partial_alive` because
+the then-running server predated the TargetSuites commit; W7-A5 redeployed
+the fabric from `e802e91` and the upgrade receipt (`42785cfe`) re-verified
+the same head ALIVE. **WHO: the coordinator, and only the coordinator.**
+Agents and the loop runner never restart or kill processes. HOW (per
+`docs/ultracode/FAILOVER-RUNBOOK.md` §2, worktree variant — never from the
+operator checkout `/Users/sac/xaas`):
+
+```bash
+# liveness probe first (any HTTP answer = a server is up; 000 = down)
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4000/
+git -C /Users/sac/xaas fetch origin
+git -C /Users/sac/xaas worktree add -B ultracode/w8-fabric \
+  /tmp/xaas-w8-fabric origin/feat/ultracode-cron-wave
+cd /tmp/xaas-w8-fabric
+export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"
+mix --version   # MUST print Mix 1.20.2 (compiled with Erlang/OTP 28)
+mix deps.get && mix compile
+# stop the previous server beam (coordinator only), then start current tip:
+INTERNAL_API_TOKEN="$INTERNAL_API_TOKEN" MIX_ENV=dev nohup mix phx.server \
+  > /tmp/xaas-w8-fabric-server.log 2>&1 &
+until [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4000/)" != "000" ]; do sleep 2; done
+```
+
+`INTERNAL_API_TOKEN` is read from the coordinator's own shell environment
+(local dev secret; FAILOVER-RUNBOOK §2 — never printed into any file, never
+committed). Do not start the server while a lock-guarded compile/test stage
+is held (`.claude/workflow-compile-lock.sh check`), per the runbook's
+toolchain-mixing and compile-lock warnings.
+
+### 10.2 Launch sequence (fresh worktree at the then-current tip)
+
+```bash
+git -C /Users/sac/xaas fetch origin
+TIP=$(git -C /Users/sac/xaas rev-parse origin/feat/ultracode-cron-wave) \
+  && echo "campaign base: $TIP"
+git -C /Users/sac/xaas worktree add --detach \
+  /Users/sac/xaas-worktrees/campaign-8h-c3 "$TIP"
+cd /Users/sac/xaas-worktrees/campaign-8h-c3
+export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"
+mix --version   # MUST print Mix 1.20.2
+mix deps.get && mix compile
+mix xaas.ultracode.repos          # registry membership + gaps, fail closed
+mix xaas.ultracode.start --repo aps,nounverb,eds --capacity 5
+```
+
+- **`--repo aps,nounverb,eds` — explicit list, deliberately NOT `all`:**
+  `all` resolves membership at wave time, so a later registration (e.g. a
+  verified `spr`) would join mid-campaign. Campaign 3 is pinned to the
+  three ALIVE-capable aliases.
+- **`--capacity 5`** remains the wave's TOTAL in-flight worker bound across
+  all repos (§3); rotation is round-robin over sorted aliases (no
+  starvation); per-repo caps, if ever needed, live in
+  `config :xaas, :ultracode_wave_repo_caps` and are read at boot — the
+  clean adjustment is stop/cap/resume (§7).
+- Budget law: eight-hour-run §2 verbatim — 16 × 30-minute serial waves.
+- The hourly loop monitors from THIS worktree (`mix xaas.ultracode.status`)
+  and appends telemetry ONLY to `/Users/sac/xaas-tmp/w8-loop/loop.ndjson`.
+
+### 10.3 Validation chain — per wave, during and after the run
+
+Full wave-run UUID from the campaign ledger's `attempt_start` events (the
+export refuses an 8-hex prefix, §5):
+
+```bash
+cd /Users/sac/xaas-worktrees/campaign-8h-c3
+export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"
+mix xaas.ultracode.export_ocel <wave-run-uuid> --out /tmp/c3-ocel
+mix xaas.ocel_validate /tmp/c3-ocel/<wave-run-uuid>.ocel.json
+mix xaas.run_validate /tmp/c3-ocel/<wave-run-uuid>.ocel.json \
+  --run-id <wave-run-uuid> --capacity 5 --per-repo-capacity 2
+```
+
+Exit 1 = NOT_VALIDATED, always traceable to named events
+(`:repo_unattributable` names the epoch; `:per_repo_capacity_breach` names
+the repo; the global capacity law stays enforced on top). The campaign is
+judged validated ONLY per §5 (a) terminal row + every wave's epochs
+terminal, (b) `head_verified` on every alive item's receipt, (c) every
+wave's OCEL log passes both validators. Any single failure = PARTIAL_ALIVE
+with the failing part named. Final sweep ownership: STATE.md step [8].
+
+### 10.4 Cuts (§7 applies verbatim)
+
+`mix xaas.ultracode.stop` → SIGTERM the `start` process → DELETE the loop
+automation (the operator cut) → `phx.server` down. Nothing in this path
+ever pushes to any remote; promotion is local `--no-ff` merges per repo.
+
+### 10.5 Verification record for this section (W7→W8-A7, 2026-09-21)
+
+| command | exit | observed |
+|---|---|---|
+| `git -C /Users/sac/xaas fetch origin` | 0 | origin tip `22aa308` |
+| `git -C /Users/sac/xaas worktree add -b ultracode/w8-loop /tmp/xaas-w8-loop origin/feat/ultracode-cron-wave` | 0 | this section written here |
+| `curl -s -o /dev/null -w '%{http_code}' http://localhost:4000/` | 0 | HTTP answered (Phoenix error page on an unrouted path = endpoint alive); server `/tmp/xaas-w7-fabric` @ `e802e91`, BEHIND tip → §10.1 redeploy required before launch |
+| `gh pr checks 20` (ggen_igniter) | 0 | PR #20 CI RED (2 failing runs) — STATE.md step [5] |
+| `tail`/`grep` `/Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson` | 0 | 53 records, last tick 43 @ 2026-09-20T19:48:03Z, no terminal record — retirement recorded, deletion is coordinator-owned |
 
 ## See also
 
