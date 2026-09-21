@@ -1,0 +1,70 @@
+[
+  {
+    "id": "SJ-001",
+    "path": "001-xaas-semantic-jira-e2e.md",
+    "standing": "PARTIAL_ALIVE",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-002",
+    "path": "002-zcode-ocel-pack-consumer.md",
+    "standing": "UNSUPPORTED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "SJ-001"
+    ]
+  },
+  {
+    "id": "SJ-003",
+    "path": "003-handwritten-paydown-zcode-plugin.md",
+    "standing": "PARTIAL_ALIVE",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-004",
+    "path": "004-resource-adoption-registry-exemptions.md",
+    "standing": "PARTIAL_ALIVE",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-005",
+    "path": "005-zoe-simulation-reconcile.md",
+    "standing": "PARTIAL_ALIVE",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-006",
+    "path": "006-ecosystem-standing-foldin.md",
+    "standing": "PARTIAL_ALIVE",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": [
+      "SJ-001",
+      "SJ-002"
+    ]
+  },
+  {
+    "id": "SJ-007",
+    "path": "007-ash-atlassian-target.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-008",
+    "path": "008-gymact-open-backlog.md",
+    "standing": "PARTIAL_ALIVE",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-009",
+    "path": "009-ash-ai-dependency-retest.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  }
+]
