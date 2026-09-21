@@ -124,7 +124,15 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
     original_root = Application.get_env(:xaas, :ultracode_worktree_root)
     original_suites = Application.get_env(:xaas, :ultracode_verifier_suites)
 
-    root = Path.join(System.tmp_dir(), "xaas-fabric-court-#{System.unique_integer()}")
+    # run_uid convention (wave-8 flake hunt): System.unique_integer() is only
+    # per-VM unique; $TMPDIR is shared by every concurrent `mix test` VM, so
+    # qualify with wall clock too -- cross-VM collision becomes impossible.
+    root =
+      Path.join(
+        System.tmp_dir(),
+        "xaas-fabric-court-#{System.system_time(:millisecond)}-#{System.unique_integer()}"
+      )
+
     File.mkdir_p!(root)
 
     Application.put_env(:xaas, :ultracode_worktree_root, root)
@@ -137,6 +145,8 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
     })
 
     on_exit(fn ->
+      File.rm_rf!(root)
+
       if is_nil(original_root),
         do: Application.delete_env(:xaas, :ultracode_worktree_root),
         else: Application.put_env(:xaas, :ultracode_worktree_root, original_root)
@@ -1317,8 +1327,16 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
   # ------------------------------------------------------------------
 
   defp make_git_worktree do
-    dir = Path.join(System.tmp_dir(), "xaas-fabric-http-#{System.unique_integer()}")
+    # run_uid convention: wall clock + unique_integer so two concurrent BEAM
+    # VMs sharing $TMPDIR can never mint the same path; removed on exit.
+    dir =
+      Path.join(
+        System.tmp_dir(),
+        "xaas-fabric-http-#{System.system_time(:millisecond)}-#{System.unique_integer()}"
+      )
+
     File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf!(dir) end)
 
     System.cmd("git", ["-C", dir, "init", "--quiet"], stderr_to_stdout: true)
 

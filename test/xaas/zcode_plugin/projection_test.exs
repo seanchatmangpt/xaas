@@ -28,8 +28,13 @@ defmodule Xaas.ZcodePlugin.ProjectionTest do
 
   @tag skip: if(@ggen_present, do: false, else: "ggen binary not on PATH")
   test "the committed projection is exactly what ggen sync renders from the ontology" do
+    # run_uid convention: wall clock + unique_integer (cross-VM collision
+    # impossible among concurrent `mix test` VMs sharing $TMPDIR).
     tmp =
-      Path.join(System.tmp_dir!(), "xaas-zcode-plugin-sync-#{System.unique_integer([:positive])}")
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-zcode-plugin-sync-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
 
     File.mkdir_p!(tmp)
     on_exit(fn -> File.rm_rf(tmp) end)

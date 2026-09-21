@@ -25,7 +25,14 @@ defmodule Xaas.ZcodePlugin.GateTest do
   @scripts "priv/zcode_plugin/marketplace/xaas-fabric/scripts"
 
   setup_all do
-    dir = Path.join(System.tmp_dir!(), "xaas-gate-plugin-#{System.unique_integer([:positive])}")
+    # run_uid convention (wave-8 flake hunt): wall clock + unique_integer so
+    # concurrent `mix test` VMs sharing $TMPDIR can never mint the same path.
+    dir =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-gate-plugin-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
+
     File.mkdir_p!(dir)
 
     for name <- ["xaas-gate.mjs", "xaas-lease.mjs"] do
@@ -345,8 +352,16 @@ defmodule Xaas.ZcodePlugin.GateTest do
   end
 
   defp make_plain_dir do
-    dir = Path.join(System.tmp_dir!(), "xaas-gate-bare-#{System.unique_integer([:positive])}")
+    # run_uid convention: wall clock + unique_integer (cross-VM collision
+    # impossible); the directory is removed after the test.
+    dir =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-gate-bare-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
+
     File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf(dir) end)
     canonical(dir)
   end
 

@@ -25,8 +25,13 @@ defmodule Xaas.GenerationTest do
   # Real temp file helper -- writes real bytes to a real file on disk and
   # returns its path. No in-memory fake filesystem.
   defp write_tmp(name, content) do
+    # run_uid convention (wave-8 flake hunt): wall clock + unique_integer so
+    # concurrent `mix test` VMs sharing $TMPDIR can never mint the same path.
     path =
-      Path.join(System.tmp_dir!(), "xaas_dgc_test_#{name}_#{:erlang.unique_integer([:positive])}")
+      Path.join(
+        System.tmp_dir!(),
+        "xaas_dgc_test_#{name}_#{System.system_time(:millisecond)}_#{:erlang.unique_integer([:positive])}"
+      )
 
     File.write!(path, content)
     on_exit_delete(path)
