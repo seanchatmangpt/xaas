@@ -1,5 +1,5 @@
 # SA2A driver for the Semantic Jira loop. Usage (from ~/xaas, autofde on PATH):
-#   PATH=$HOME/autofde-lab/.venv/bin:$PATH mix run --no-start docs/sjira/v26.9.21/sa2a_loop.exs plan
+#   PATH=$HOME/autofde-lab/.venv/bin:$PATH [SJ_IDS=SJ-007,SJ-010 SJ_PLAN_ID=<id>] mix run --no-start docs/sjira/v26.9.21/sa2a_loop.exs plan
 #   ... admit SJ-001 <work_order_digest>
 #   ... replay <manifest.json> [expected_sha256]   (omits expected -> computes canonical sha256)
 # Speaks only validate/admit/plan/replay; sa2a_execute is a DO edge and is never called here.
@@ -12,6 +12,11 @@ dir = Path.dirname(__ENV__.file)
 case System.argv() do
   ["plan"] ->
     idx = File.read!(Path.join(dir, "index.json")) |> Jason.decode!() |> Enum.reject(&(&1["standing"] == "BLOCKED"))
+    # Bridge caps the frontier at 8 lanes: SJ_IDS="SJ-007,SJ-010" narrows the candidate set.
+    idx = case System.get_env("SJ_IDS") do
+      nil -> idx
+      ids -> keep = String.split(ids, ","); Enum.filter(idx, &(&1["id"] in keep))
+    end
     weight = %{"UNSUPPORTED" => 0.9, "UNKNOWN" => 0.8, "PARTIAL_ALIVE" => 0.6, "BLOCKED" => 0.2}
     cands =
       for o <- idx do
@@ -20,7 +25,7 @@ case System.argv() do
           "estimated_cost" => 5.0 + 3.0 * length(o["dependencies"]),
           "historical_yield" => Map.get(weight, o["standing"], 0.5)}
       end
-    {:ok, resp} = Bridge.plan(cands, plan_id: "sjira-v26.9.21", ticks: 5000, tokens: 500_000, experiments: 20)
+    {:ok, resp} = Bridge.plan(cands, plan_id: System.get_env("SJ_PLAN_ID", "sjira-v26.9.21"), ticks: 5000, tokens: 500_000, experiments: 20)
     IO.puts(Jason.encode!(resp, pretty: true))
 
   ["admit", id, digest] ->

@@ -49,7 +49,7 @@
   {
     "id": "SJ-007",
     "path": "007-ash-atlassian-target.md",
-    "standing": "BLOCKED",
+    "standing": "PARTIAL_ALIVE",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
   },
@@ -66,5 +66,29 @@
     "standing": "UNKNOWN",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
+  },
+  {
+    "id": "SJ-010",
+    "path": "010-atlassian-public-vocab-pin.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-011",
+    "path": "011-public-ash-projection-extend.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-012",
+    "path": "012-ash-atlassian-profile-admit.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "SJ-010",
+      "SJ-011"
+    ]
   }
 ]

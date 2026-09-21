@@ -6,7 +6,7 @@
   "subject": "ash-atlassian-target",
   "repository": "seanchatmangpt/xaas",
   "base_sha": "8e72cfcb85bd901ad067589295598eb7580a1442",
-  "standing": "BLOCKED",
+  "standing": "PARTIAL_ALIVE",
   "evidence_ceiling": "CONSTRUCTED",
   "promotion_rule": "verified_by_required_courts_then_receipted",
   "replay_identity": "sjira-v26.9.21-sj-007",
@@ -44,10 +44,10 @@
 
 # SJ-007: Scope the ash_atlassian migration target
 
-- **Standing**: BLOCKED
+- **Standing**: PARTIAL_ALIVE
 
 ## Status
-BLOCKED
+PARTIAL_ALIVE
 - **Repository**: seanchatmangpt/xaas @ `8e72cfc`
 
 ## Description
@@ -69,3 +69,8 @@ test -f docs/sjira/v26.9.21/ash-atlassian-ard.md
 
 ## Falsifiers
 - ARD proposes hand-written resources where a pack could generate them
+
+## History
+- 2026-09-21 | BLOCKED | sjira/sj-007 @ 8e72cfc | order issued (generate.py, admitted rec-68ad2c76 family) | all
+- 2026-09-21 | PARTIAL_ALIVE | sjira/sj-007 @ 8e72cfc (worktree, UNCOMMITTED — git add/commit gated: REFUSED_NO_EXECUTION_SURFACE; commit msg + exact commands at receipts/sj-007-commitmsg.txt) | DoD `test -f docs/sjira/v26.9.21/ash-atlassian-ard.md` exit 0; ARD written (resources, ontology source, pack route per REUSE/EXTEND ladder, zero hand-written resources); evidence corrected: `~/atlassian` is the 1.1 MB whitepaper chat export, not an empty stub; follow-up orders SJ-010/011/012 emitted against seanchatmangpt/ggen-marketplace @ f1c350b; admission of the emitted set NOT executed this session (python/mix gated) — re-admit with `python3 docs/sjira/v26.9.21/.gen-sj007.py` then `WO=/tmp/sj007-wo.json mix run admit.exs` from ~/ggen_igniter | commit; SJ-010..012 execution; greenfield ash_atlassian orders issuance-gated on first scaffold commit; SJ-009 gates the Rovo phase
+- 2026-09-21 | PARTIAL_ALIVE | sjira/sj-007 @ 8e72cfc (supervisor close, committed; supersedes the UNCOMMITTED note above; receipts/sj-007-commitmsg.txt removed) | DoD `test -f docs/sjira/v26.9.21/ash-atlassian-ard.md` exit 0; 010-012 regenerated from generate.py byte-identical (012 was hand-rendered with one differing line, replaced by generator output); GgenIgniter.SemanticJira.admit_work_order ADMITTED SJ-001..012; SA2A plan `sjira-v26.9.21-sj007` + admit KNOWN for SJ-007/010/011/012 (receipts/sa2a-*); ARD gate names corrected to their owning pack | SJ-010/011/012 execution against ggen-marketplace; greenfield ash_atlassian scaffold orders issuance-gated
