@@ -1,0 +1,34 @@
+# PodDisruptionBudget for the xaas Deployment -- no PDB existed anywhere in
+# k8s/ before this. Without one, a voluntary disruption (node drain during
+# cluster upgrade, cluster-autoscaler scale-down) can evict every xaas pod
+# at once with zero guarantee of surviving replicas, even though
+# k8s/hpa.yaml already allows scaling up to 3.
+#
+# maxUnavailable: 1 (not minAvailable: 1) deliberately, so this PDB is a
+# real constraint at replicas=1 too (HPA's floor): at minReplicas=1,
+# minAvailable: 1 would make the single pod fully undisruptable (blocking
+# any voluntary eviction, including legitimate node drains) -- maxUnavailable: 1
+# still permits draining the sole replica when there is only one, while
+# preventing >1 simultaneous voluntary eviction once HPA has scaled up.
+#
+# postgres and prometheus are NOT given a PDB here: both run replicas: 1
+# with no HPA and no replication (postgres has a single RWO PVC -- a
+# second replica couldn't schedule concurrently regardless; prometheus is
+# a single scraper with no clustering). A PDB against a workload that can
+# never have more than one replica just blocks all voluntary disruption of
+# it outright, which is not the desired Fortune-500 posture for these
+# still-single-instance-by-design workloads -- their actual gap is lack of
+# real HA (a second postgres replica behind real replication, a second
+# prometheus using remote-write, or a managed equivalent), not a missing
+# PDB. That is out of scope for this pass; disclosed rather than papered
+# over with a PDB that wouldn't fix the real problem.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: xaas
+  namespace: default
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: xaas

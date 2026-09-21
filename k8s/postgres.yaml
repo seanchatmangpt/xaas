@@ -15,9 +15,30 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        # runAsNonRoot deliberately NOT set here: the official
+        # postgres:16-alpine entrypoint needs to run as root on first
+        # boot to chown/chmod a fresh PVC's data directory before it
+        # drops privileges itself (gosu postgres) -- forcing non-root at
+        # the pod level would break first-time initialization against an
+        # empty volume.
       containers:
         - name: postgres
           image: postgres:16-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            # capabilities.drop: ["ALL"] was tried and reverted: real,
+            # reproducible failure on this exact cluster --
+            # `chmod: /var/run/postgresql: Operation not permitted` /
+            # `chown: /var/lib/postgresql/data: Operation not permitted`
+            # in the pod's own logs, because dropping ALL removes
+            # CAP_CHOWN/CAP_FOWNER the root-run entrypoint needs for
+            # first-boot volume ownership before it drops to the
+            # `postgres` user itself. Left at the container-runtime
+            # default capability set until a real fsGroup + pre-chowned
+            # PVC path is verified to make a narrower drop safe.
           ports:
             - containerPort: 5432
           resources:
