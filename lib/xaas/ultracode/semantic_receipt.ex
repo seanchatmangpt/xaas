@@ -29,9 +29,16 @@ defmodule Xaas.Ultracode.SemanticReceipt do
 
   Court-specific observations come from an adapter keyed by the Run's
   verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`), except that a
-  court receipt PRODUCED by the fabric (`Xaas.Ultracode.CourtReceipt`: it always
-  carries its `"binding"`) is exported verbatim for any suite. Suites with
-  neither export only step statuses.
+  court receipt PRODUCED by the fabric (`Xaas.Ultracode.CourtReceipt`) is
+  exported verbatim for any suite. Suites with neither export only step
+  statuses.
+
+  "Produced by the fabric" is checked here, not read off the receipt: the Run
+  must carry a court map (only `CourtReceipt.produce/6` runs, and only for a Run
+  that has one), and the receipt's `"binding"` must name this Run's suite, this
+  epoch's sealed head and a step the verifier really ran. A `"binding"` alone is
+  not a trust marker (the suite step's printed output is worker-reachable, and
+  `Verifier` also refuses to record a legacy script line that carries one).
   """
 
   alias Xaas.Ultracode.{Epoch, Receipt, Run}
@@ -89,7 +96,7 @@ defmodule Xaas.Ultracode.SemanticReceipt do
       "outcome" => to_string(closing.outcome),
       "final_head" => epoch.final_head,
       "head_verified" => evidence["head_verified"] == true,
-      "fabric_verifier" => fabric_verifier(verifier, run.verifier_suite, bridge),
+      "fabric_verifier" => fabric_verifier(verifier, run, epoch, bridge),
       "bridge" => bridge
     }
 
@@ -97,7 +104,7 @@ defmodule Xaas.Ultracode.SemanticReceipt do
     Map.put(normalized, "receipt_digest", receipt_digest(normalized))
   end
 
-  defp fabric_verifier(%{} = verifier, suite, bridge) do
+  defp fabric_verifier(%{} = verifier, %Run{verifier_suite: suite} = run, epoch, bridge) do
     steps =
       Enum.map(verifier["steps"] || [], fn step ->
         %{"id" => step["id"], "status" => step["status"]}
@@ -107,13 +114,13 @@ defmodule Xaas.Ultracode.SemanticReceipt do
     aliases = court_steps(suite, steps, courts)
     base = %{"status" => verifier["status"], "steps" => steps ++ aliases}
 
-    case observed(suite, verifier["court_receipt"], bridge) do
+    case observed(run, epoch, steps, verifier["court_receipt"], bridge) do
       nil -> base
       court -> Map.put(base, "court_receipt", court)
     end
   end
 
-  defp fabric_verifier(_none, _suite, _bridge), do: %{"status" => "none", "steps" => []}
+  defp fabric_verifier(_none, _run, _epoch, _bridge), do: %{"status" => "none", "steps" => []}
 
   defp court_steps(suite, steps, courts) do
     case Map.get(@adapters, suite) do
@@ -124,11 +131,31 @@ defmodule Xaas.Ultracode.SemanticReceipt do
 
   # A court receipt PRODUCED by the fabric is fabric-owned evidence: exported
   # verbatim so the receipt digest binds the IRI-keyed verdicts the graph side
-  # promotes on. A legacy suite-script court receipt (no binding) still needs
-  # its adapter.
-  defp observed(_suite, %{"binding" => %{}} = produced, _bridge), do: produced
+  # promotes on. A legacy suite-script court receipt still needs its adapter.
+  defp observed(run, epoch, steps, court_receipt, bridge) do
+    if fabric_produced?(court_receipt, run, epoch, steps) do
+      court_receipt
+    else
+      adapted(run.verifier_suite, court_receipt, bridge)
+    end
+  end
 
-  defp observed(suite, court_receipt, bridge) do
+  # Only a Run with a court map has a fabric court, and the receipt must be bound
+  # to THIS run's suite, THIS epoch's sealed head and a step the verifier ran.
+  defp fabric_produced?(
+         %{"binding" => %{} = binding},
+         %Run{court_map: %{} = court_map} = run,
+         epoch,
+         steps
+       )
+       when map_size(court_map) > 0 do
+    binding["suite"] == run.verifier_suite and binding["head"] == epoch.final_head and
+      is_binary(binding["step_id"]) and Enum.any?(steps, &(&1["id"] == binding["step_id"]))
+  end
+
+  defp fabric_produced?(_court_receipt, _run, _epoch, _steps), do: false
+
+  defp adapted(suite, court_receipt, bridge) do
     with adapter when not is_nil(adapter) <- Map.get(@adapters, suite),
          %{} = court <- court_receipt do
       adapter.observe(court, get_in(bridge, ["requires"]) || %{})
