@@ -4,6 +4,9 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
   alias Xaas.Ultracode.{SemanticWave, SemanticWork}
 
   setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
+
     original = %{
       repos: Application.get_env(:xaas, :ultracode_repos),
       root: Application.get_env(:xaas, :ultracode_worktree_root),

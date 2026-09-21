@@ -258,7 +258,8 @@ defmodule Xaas.Ultracode.Run do
         :execution_repo_alias,
         :execution_policy,
         :dependency_evidence,
-        :base_sha
+        :base_sha,
+        :semantic_bridge
       ])
 
       # `:allow_global`: called both from the customer-facing controller
@@ -526,6 +527,14 @@ defmodule Xaas.Ultracode.Run do
       allow_nil?(true)
       public?(true)
       constraints(match: ~r/^[0-9a-f]{40}$/)
+    end
+
+    # Opaque JSON object the canonical work graph attached to the descriptor
+    # (its `bridge`). XaaS stores and echoes it verbatim in the exported
+    # receipt; it never reads, interprets or acts on any key inside it.
+    attribute :semantic_bridge, :map do
+      allow_nil?(true)
+      public?(true)
     end
 
     # Real, disclosed, schema-only seam -- see this module's own moduledoc

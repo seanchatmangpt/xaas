@@ -46,7 +46,8 @@ defmodule Xaas.Ultracode.SemanticWork do
     "verifier_suite" => :verifier_suite,
     "execution_policy" => :execution_policy,
     "dependencies" => :dependencies,
-    "standing" => :standing
+    "standing" => :standing,
+    "bridge" => :bridge
   }
 
   @dependency_keys %{
@@ -105,6 +106,7 @@ defmodule Xaas.Ultracode.SemanticWork do
          :ok <- require_string(descriptor, :goal),
          :ok <- require_string(descriptor, :provider),
          :ok <- require_string(descriptor, :verifier_suite),
+         :ok <- optional_bridge(descriptor),
          {:ok, policy} <- admit_execution_policy(descriptor.execution_policy),
          {:ok, dependencies} <- admit_dependencies(descriptor.dependencies) do
       {:ok,
@@ -246,7 +248,8 @@ defmodule Xaas.Ultracode.SemanticWork do
       execution_repo_alias: descriptor.execution_repo_alias,
       execution_policy: descriptor.execution_policy,
       dependency_evidence: dependency_evidence(descriptor.dependencies),
-      base_sha: descriptor.base_sha
+      base_sha: descriptor.base_sha,
+      semantic_bridge: Map.get(descriptor, :bridge)
     }
 
     Run
@@ -336,6 +339,15 @@ defmodule Xaas.Ultracode.SemanticWork do
     case Map.get(map, key) do
       value when is_binary(value) and value != "" -> :ok
       _ -> {:error, {:refused_semantic_work, {:invalid, key}}}
+    end
+  end
+
+  # The bridge is opaque to XaaS: only "absent or a JSON object" is checked.
+  defp optional_bridge(map) do
+    case Map.get(map, :bridge) do
+      nil -> :ok
+      %{} = bridge when not is_struct(bridge) -> :ok
+      _ -> {:error, {:refused_semantic_work, {:invalid, :bridge}}}
     end
   end
 
