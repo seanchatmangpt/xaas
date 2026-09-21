@@ -203,14 +203,15 @@ defmodule Xaas.MixProject do
       # only, so `/ex4pm` never exists inside the builder stage
       # ("Cannot compile dependency :ex4pm because it isn't available"),
       # confirmed via a real failed `docker build`, not assumed. ex4pm is a
-      # real, tagged, checksum-verifiable Hex release (hex.pm/packages/
-      # ex4pm/26.9.9) -- switched to that, exact-pinned (mirroring
-      # ash_ex4pm's own mix.exs rationale: ex4pm has no stated versioning
-      # policy for its third CalVer component yet, so `~>` can't actually
-      # guarantee compatibility). This also makes xaas a real downstream
-      # consumer of beam4pm's own façade rather than a live path into
-      # whatever happens to be checked out on the host.
-      {:ex4pm, "== 26.9.9"}
+      # Hex ex4pm 26.9.9 is production-BUILD_BROKEN because its
+      # generator Mix task unconditionally loads the dev/test-only Igniter
+      # dependency. Until a repaired Hex artifact is published, consume the
+      # exact admitted source candidate from ex4pm PR #46. The immutable ref
+      # gives source identity for this candidate court; it does not imply
+      # merge or publication standing for ex4pm.
+      {:ex4pm,
+       git: "https://github.com/seanchatmangpt/ex4pm.git",
+       ref: "17e7761ffff482ff1b2ec936ad9705a99356451a"}
     ]
   end
 

@@ -56,6 +56,24 @@ defmodule Xaas.SystemAuthorityCapabilityChicagoTest do
     refute Xaas.SystemAuthority.system?(%Xaas.SystemAuthority{service: nil})
   end
 
+  test "system authority delegation is an explicit closed edge" do
+    scheduler = Xaas.SystemAuthority.new(:oban_scheduler)
+
+    assert {:ok, %Xaas.SystemAuthority{service: :webhook_dispatcher}} =
+             Xaas.SystemAuthority.delegate(scheduler, :webhook_dispatcher)
+
+    assert {:error,
+            {:authority_delegation_refused, :oban_scheduler, :ultracode_reactor}} =
+             Xaas.SystemAuthority.delegate(scheduler, :ultracode_reactor)
+
+    assert {:error,
+            {:authority_delegation_refused, :ultracode_reactor, :webhook_dispatcher}} =
+             Xaas.SystemAuthority.delegate(
+               Xaas.SystemAuthority.new(:ultracode_reactor),
+               :webhook_dispatcher
+             )
+  end
+
   test "Ultracode mutations refuse a valid system actor from the wrong service" do
     run = pending_run!("cross-service authority must fail closed")
 
