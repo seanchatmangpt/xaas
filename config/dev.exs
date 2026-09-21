@@ -157,7 +157,62 @@ config :xaas, :ultracode_repos, %{
     suite: "eds-dod",
     canonical_suite: "eds-dod"
   },
-  "spr" => Path.expand("~/xaas-worktrees/repos/spr")
+  "spr" => Path.expand("~/xaas-worktrees/repos/spr"),
+  # SJ-program targets (`git clone --local` of the operator checkouts; each
+  # opts in to `refresh` so a stale clone is fetched + fast-forwarded before
+  # the loop pins base_sha). Sensing names resolve to the declared profiles
+  # below; suites are declared as code in Xaas.Ultracode.TargetSuites.
+  "xaas" => %{
+    path: Path.expand("~/xaas-worktrees/repos/xaas"),
+    sensing: "xaas-sjira",
+    suite: "xaas-dod",
+    canonical_suite: "xaas-canonical",
+    refresh: true
+  },
+  "autofde-lab" => %{
+    path: Path.expand("~/xaas-worktrees/repos/autofde-lab"),
+    sensing: "autofde-lab-jira",
+    suite: "autofde-lab-dod",
+    canonical_suite: "autofde-lab-canonical",
+    refresh: true
+  },
+  "gymact" => %{
+    path: Path.expand("~/xaas-worktrees/repos/gymact"),
+    sensing: "gymact-jira",
+    suite: "gymact-dod",
+    canonical_suite: "gymact-canonical",
+    refresh: true
+  },
+  "ggen-igniter" => %{
+    path: Path.expand("~/xaas-worktrees/repos/ggen-igniter"),
+    sensing: "ggen-igniter-jira",
+    suite: "ggen-igniter-dod",
+    canonical_suite: "ggen-igniter-canonical",
+    refresh: true
+  }
+}
+
+# Sensing profiles (`Xaas.Ultracode.Sensing.profile_for/1`): a registry entry's
+# `sensing` NAME resolves here. A repo whose name resolves is sensed from its
+# OWN artifacts -- the `## Status` first word of each ticket decides open vs
+# closed (DONE/MERGED/LANDED/CLOSED/RESOLVED/ALIVE are closed; PARTIAL_ALIVE,
+# BLOCKED, UNSUPPORTED, UNKNOWN stay open) -- every other repo keeps its
+# `:ultracode_backlog_scripts` script. xaas senses the Semantic Jira orders
+# under docs/sjira; the rest sense their versioned docs/jira ticket trees.
+config :xaas, :ultracode_sensing_profiles, %{
+  "xaas-sjira" => %{"type" => "jira_dir", "dir" => "docs/sjira"},
+  "autofde-lab-jira" => %{"type" => "jira_dir", "dir" => "docs/jira"},
+  "gymact-jira" => %{"type" => "jira_dir", "dir" => "docs/jira"},
+  # ggen-igniter's older tickets carry free-form bold statuses; the profile's
+  # own `closed` option lists the completion words actually used there, so the
+  # loop is not pointed at work that is already done (PLANNED and
+  # PARTIAL_ALIVE stay open).
+  "ggen-igniter-jira" => %{
+    "type" => "jira_dir",
+    "dir" => "docs/jira",
+    "closed" =>
+      ~w(DONE MERGED LANDED CLOSED RESOLVED ALIVE COMPLETE. **EXECUTED **EXECUTED.** **REWRITTEN **IMPLEMENTED)
+  }
 }
 
 # Per-repo sense scripts (`Xaas.Ultracode.Autonomic.backlog_script/1`): the

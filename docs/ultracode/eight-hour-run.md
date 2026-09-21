@@ -60,7 +60,9 @@ extend it with:
 ```bash
 mix xaas.ultracode.repos    # list every entry: status, path, suites, gaps
 mix xaas.ultracode.repos --register ALIAS --path /abs/clone \
-  [--sensing PROFILE] [--suite NAME] [--canonical-suite NAME] [--worktree-root PATH]
+  [--sensing PROFILE] [--suite NAME] [--canonical-suite NAME] [--worktree-root PATH] \
+  [--refresh-before-sense]
+mix xaas.ultracode.repos --refresh ALIAS|all   # fetch + fast-forward a stale clone
 ```
 
 Registration validates before writing (alias format, `--path` must be an
@@ -82,6 +84,22 @@ are sibling wave-5 entries in the config baseline):
 | `aps` | `~/xaas-worktrees/repos/aps` | `aps-dod` + `aps-canonical` suites | ready |
 | `infinite-agentic-cli` | `~/xaas-worktrees/repos/infinite-agentic-cli` | `uv run --frozen pytest tests/test_analysis.py -q` | reserved: suite `infinite-agentic-cli-dod` (sensing `generic-pytest` recorded) |
 | `bitstar` | `~/xaas-worktrees/repos/bitstar` | `uv run --frozen pytest test_cli_fixes.py -q` | reserved: suite `bitstar-dod` (sensing `generic-pytest` recorded) |
+| `xaas` | `~/xaas-worktrees/repos/xaas` | `xaas-dod` (seed, deps, strict compile, format, actuation + ultracode tests) + `xaas-canonical` (same gates, full `mix test`) | ready; sensing `xaas-sjira` (`jira_dir` over `docs/sjira`); `refresh` on |
+| `autofde-lab` | `~/xaas-worktrees/repos/autofde-lab` | `autofde-lab-dod` (subject guard + `tests/sa2a tests/beam`) + `autofde-lab-canonical` (the repo's `just test` set) | ready; sensing `autofde-lab-jira` (no ticket carries a `## Status` yet, so it senses 0 items); `refresh` on |
+| `gymact` | `~/xaas-worktrees/repos/gymact` | `gymact-dod` + `gymact-canonical` (venv-pinned pytest; see the standing note below) | ready; sensing `gymact-jira`; `refresh` on |
+| `ggen-igniter` | `~/xaas-worktrees/repos/ggen-igniter` | `ggen-igniter-dod` + `ggen-igniter-canonical` (elixir 1.18.4-otp-27, `mix test`) | ready; sensing `ggen-igniter-jira`; `refresh` on |
+
+The four SJ-program rows (T1) are `git clone --local` clones of the operator
+checkouts. Their registry entries opt in to `refresh`: before the loop pins
+`base_sha`, `Repos.refresh/1` fetches the clone's upstream and fast-forwards
+the checked-out branch (`merge --ff-only` only — an ahead or diverged clone
+is reported and left untouched; the per-alias integration branch is never
+involved). `mix xaas.ultracode.repos --refresh ALIAS|all` runs the same step
+by hand. Sensing names resolve to declared profiles
+(`config :xaas, :ultracode_sensing_profiles`,
+`Xaas.Ultracode.Sensing.profile_for/1`); a repo whose name resolves is sensed
+from its own tickets (the `## Status` first word decides open vs closed),
+every other repo keeps its backlog script.
 
 ## 2. The budget law (what makes this ONE run, not an infinite cron)
 

@@ -159,6 +159,12 @@ Full adversarial-review transcript: workflow run `wf_c87d7295-9a9`
 findings confirmed real on re-verification, all fixed before this ledger
 entry was written).
 
+lib/xaas/ultracode/target_suites.ex (`sj_program_suites/0` and helpers) | fabric verifier suites for the four Semantic Jira program targets (xaas, autofde-lab, gymact, ggen-igniter): pinned toolchain env, seed take/publish and per-run-DB `mix test` shell wrappers, Python subject-identity step, curated exclusions of tests that rewrite tracked files (2026-09-21) | no admitted pack renders a verifier-suite declaration (argv, env allowlist, timeouts, seed/partition wrappers) from a target-repo ontology fact | ultracode-actuation-lease-pack (verifier gate) + a target-suite pack promoted from this shape | 2026-09-21
+
+lib/xaas/ultracode/repos.ex (`refresh/1`, `refresh` entry field), lib/mix/tasks/xaas.ultracode.repos.ex (`--refresh`, `--refresh-before-sense`), lib/xaas/ultracode/sensing.ex (`profile_for/1`), lib/xaas/ultracode/autonomic.ex (`derive_items/3`, refresh-before-base_sha) | non-destructive fetch + `merge --ff-only` clone refresh and the registry-name -> declared-sensing-profile binding that lets the autonomic loop sense registered repos from their own tickets (2026-09-21) | no admitted pack renders a registry-entry field, a clone-refresh state machine, or a name-to-profile resolver on the Ultracode seam | ultracode-actuation-lease-pack + a scheduler pack promoted from this shape | 2026-09-21
+
+test/xaas/ultracode/{repos_refresh,autonomic_profile_sense,sj_program_registry}_test.exs | Chicago-style qualification of clone refresh, profile-driven sensing through `Autonomic.sense/1`, the committed dev.exs baseline for the four targets, the suite environment law and the Python subject-identity guard (2026-09-21) | no admitted gate pack for registry/suite qualification | ultracode-actuation-lease-pack gates/ | 2026-09-21
+
 (baseline established 2026-09-15; note: the first attempt at this change
 invented parallel ExecutionWorker/WorkContract/Execution resources and was
 reverted — `backup/execution-fabric-v1` — in favor of extending the

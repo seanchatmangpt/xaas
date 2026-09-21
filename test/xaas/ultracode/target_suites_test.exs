@@ -59,7 +59,21 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   test "the code-declared target suites pass the registration admission gate" do
     devs = TargetSuites.devs()
 
-    assert MapSet.new(Map.keys(devs)) == MapSet.new(["eds-dod", "nounverb-dod", "spr-dod"])
+    assert MapSet.new(Map.keys(devs)) ==
+             MapSet.new([
+               "eds-dod",
+               "nounverb-dod",
+               "spr-dod",
+               "xaas-dod",
+               "xaas-canonical",
+               "autofde-lab-dod",
+               "autofde-lab-canonical",
+               "gymact-dod",
+               "gymact-canonical",
+               "ggen-igniter-dod",
+               "ggen-igniter-canonical"
+             ])
+
     assert TargetSuites.validate(devs) == :ok
   end
 
@@ -97,7 +111,8 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   end
 
   test "a bad timeout is refused: missing, zero, negative, non-integer, over the cap" do
-    base = %{"t" => hd(Map.values(TargetSuites.devs()))}
+    # A one-step suite (the mutation below addresses step 0 / the sole step).
+    base = %{"t" => TargetSuites.devs()["spr-dod"]}
 
     for bad <- [0, -1, "300000", 3_600_001] do
       mutated =

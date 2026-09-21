@@ -73,6 +73,17 @@ defmodule Xaas.Ultracode.Sensing do
       "source"          %{"file" => ..., "line" => ..., "text" => ...} -- the
                         exact artifact line the item came from
 
+  ## Named profiles (the registry binding)
+
+  A registered repo (`Xaas.Ultracode.Repos`) records its sensing profile as a
+  NAME. `profile_for/1` resolves that name to the profile map declared under
+  `config :xaas, :ultracode_sensing_profiles` (an operator-owned name =>
+  profile map, the same shape as `:ultracode_backlog_scripts` and the verifier
+  suites -- never a caller-supplied path or command). `Xaas.Ultracode.Autonomic`
+  senses a repo through its named profile when one resolves, and through the
+  legacy per-repo backlog script otherwise, so script-backed targets (aps,
+  spr, eds, nounverb) are untouched.
+
   ## Determinism and pinning
 
   `derive/2` reads a CHECKOUT PATH; callers pin the tree by provisioning a
@@ -98,6 +109,21 @@ defmodule Xaas.Ultracode.Sensing do
   @id_re ~r/\A[A-Za-z0-9._:-]+\z/
 
   @type profile :: map()
+
+  @doc """
+  Resolves a registry `sensing` NAME to its declared profile map, or `:error`
+  when the name has no declared profile (a script-backed or reserved target).
+  Never raises on odd input.
+  """
+  @spec profile_for(term()) :: {:ok, profile()} | :error
+  def profile_for(name) when is_binary(name) do
+    case Application.get_env(:xaas, :ultracode_sensing_profiles, %{}) do
+      %{^name => profile} when is_map(profile) -> {:ok, profile}
+      _ -> :error
+    end
+  end
+
+  def profile_for(_name), do: :error
 
   @doc """
   Senses a REGISTERED repo alias at an exact `base_sha`: provisions a detached
