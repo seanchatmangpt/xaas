@@ -158,10 +158,39 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert {:error, {:malformed_state, :empty_step_table}} = State.parse(raw)
     end
 
-    test "malformed: a short row is a typed refusal" do
+    test "malformed: a two-cell row whose first cell is not an id is a typed refusal" do
       raw = "| step | status | evidence |\n|---|---|---|\n| only | two |\n"
 
-      assert {:error, {:malformed_state, {:short_step_row, ["only", "two"]}}} = State.parse(raw)
+      assert {:error, {:malformed_state, {:bad_step_row, "only"}}} = State.parse(raw)
+    end
+
+    test "a two-cell row (coordinator's omitted empty evidence cell) parses with empty evidence" do
+      # Live failed edge, telemetry tick 1 (2026-09-21): the real STATE's
+      # row 4 shipped as `| 4 sole-source fold | PENDING — not started |`.
+      # That is id+name+status with EMPTY evidence -- parsed, never guessed.
+      raw =
+        "| step | status | evidence |\n|---|---|---|\n| 4 sole-source fold | PENDING — not started (#19/#23 audit) |\n"
+
+      assert {:ok, state} = State.parse(raw)
+      s4 = fetch_step(state, "4")
+      assert s4.status == :pending
+      assert s4.evidence == ""
+      assert {:ok, %{id: "4"}} = State.first_actionable(state)
+
+      # Rendering normalizes it to the three-cell grammar and evidence
+      # appends land in the previously-missing cell.
+      assert {:ok, updated} = State.set_row(raw, "4", "DONE", "receipt exit=0")
+      {:ok, state2} = State.parse(updated)
+      assert fetch_step(state2, "4").status == :done
+      assert fetch_step(state2, "4").evidence == "receipt exit=0"
+      assert updated =~ "| 4 sole-source fold | DONE | receipt exit=0 |"
+    end
+
+    test "malformed: a one-cell row is still a typed refusal" do
+      raw = "| step | status | evidence |\n|---|---|---|\n| 4 sole-source fold |\n"
+
+      assert {:error, {:malformed_state, {:short_step_row, ["4 sole-source fold"]}}} =
+               State.parse(raw)
     end
 
     test "malformed: note naming an unknown step is a typed refusal" do
