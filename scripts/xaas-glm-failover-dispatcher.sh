@@ -187,7 +187,7 @@ dispatch_one_epoch() {
             epoch_id: process.env.GALL_EPOCH_ID,
             worker_id: process.env.GALL_WORKER_ID,
             worktree: process.env.GALL_WORKTREE
-          }) + "\\n", { mode: 0o600 });
+          }) + "\n", { mode: 0o600 });
         ' "$leasefile" || exit 127
 
       run_with_timeout node bin/zcode.js gall-work --lease "$leasefile"
