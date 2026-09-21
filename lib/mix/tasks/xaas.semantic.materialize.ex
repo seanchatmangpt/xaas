@@ -23,8 +23,18 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   @impl Mix.Task
   def run(args) do
     {opts, _rest, _invalid} =
-      OptionParser.parse(args, strict: [descriptor: :string, ticket_file: :string])
+      OptionParser.parse(args,
+        strict: [descriptor: :string, ticket_file: :string, help: :boolean]
+      )
 
+    if opts[:help] do
+      Mix.shell().info(Mix.Task.moduledoc(__MODULE__))
+    else
+      materialize(opts)
+    end
+  end
+
+  defp materialize(opts) do
     path = opts[:descriptor] || Mix.raise("--descriptor PATH is required")
     Mix.Task.run("app.start")
 

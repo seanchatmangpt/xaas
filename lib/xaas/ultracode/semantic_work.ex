@@ -48,6 +48,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     "dependencies" => :dependencies,
     "standing" => :standing,
     "court_map" => :court_map,
+    "admission_digest" => :admission_digest,
     "bridge" => :bridge
   }
 
@@ -108,6 +109,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     | `work_order_iri`       | string, absolute IRI (must contain `:`)      | `require_iri/2`           |
     | `checkpoint_iri`       | string, absolute IRI (must contain `:`)      | `require_iri/2`           |
     | `graph_digest`         | `"sha256:" <> 64 lowercase hex`              | `@digest` regex           |
+    | `admission_digest`     | optional; valid digest AND equal to `graph_digest` when present | `optional_admission_digest/1` |
     | `repository_identity`  | `"owner/repo"` (`[A-Za-z0-9_.-]+/...`)       | `@repo_identity` regex    |
     | `execution_repo_alias` | 1-128 of `[A-Za-z0-9_.-]` (Worktrees key)    | `@repo_alias` regex       |
     | `base_sha`             | exactly 40 lowercase hex (a git SHA)         | `@sha` regex              |
@@ -122,7 +124,14 @@ defmodule Xaas.Ultracode.SemanticWork do
   and `receipt_digest` (`sha256:` hex); duplicates by work-order identity
   are refused. An optional top-level `"standing"` key is passed through
   by the key normalization and otherwise ignored: standing is never
-  granted by admission.
+  granted by admission. An optional `"admission_digest"` key is the
+  fail-closed integrity envelope for producers that bind the descriptor
+  to one admission snapshot (`graph_digest` := the admission's
+  work-order digest): when present it must be a valid digest AND equal
+  `graph_digest`, so a descriptor whose digest was altered after
+  admission is refused HERE, at the materialize boundary, not only at
+  the emitter. Absent = today's behavior; the field is admission-time
+  only and never persisted (the Run schema is unchanged).
 
   Refusals are typed: `{:error, {:refused_semantic_work, reason}}` /
   `{:error, {:refused_dependency, reason}}` /
@@ -151,6 +160,7 @@ defmodule Xaas.Ultracode.SemanticWork do
          :ok <- require_iri(descriptor, :work_order_iri),
          :ok <- require_iri(descriptor, :checkpoint_iri),
          :ok <- require_match(descriptor, :graph_digest, @digest),
+         :ok <- optional_admission_digest(descriptor),
          :ok <- require_match(descriptor, :repository_identity, @repo_identity),
          :ok <- require_match(descriptor, :execution_repo_alias, @repo_alias),
          :ok <- require_match(descriptor, :base_sha, @sha),
@@ -442,6 +452,34 @@ defmodule Xaas.Ultracode.SemanticWork do
 
       _ ->
         {:error, {:refused_semantic_work, {:invalid, key}}}
+    end
+  end
+
+  # Opt-in integrity envelope for descriptor producers that bind the
+  # execution to one admission snapshot (graph_digest := the admission's
+  # work-order digest): `admission_digest` is then a second, independent copy
+  # of that same digest, and a descriptor whose digest was altered after
+  # admission fails closed HERE, at the materialize boundary. Absent (or nil)
+  # = today's behavior. Admission-time only; never persisted.
+  defp optional_admission_digest(map) do
+    case Map.get(map, :admission_digest) do
+      nil ->
+        :ok
+
+      admission when is_binary(admission) ->
+        cond do
+          not Regex.match?(@digest, admission) ->
+            {:error, {:refused_semantic_work, {:invalid, :admission_digest}}}
+
+          admission != map.graph_digest ->
+            {:error, {:refused_semantic_work, {:admission_digest_mismatch, admission}}}
+
+          true ->
+            :ok
+        end
+
+      _ ->
+        {:error, {:refused_semantic_work, {:invalid, :admission_digest}}}
     end
   end
 

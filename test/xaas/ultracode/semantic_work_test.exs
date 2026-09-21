@@ -44,6 +44,37 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
              SemanticWork.admit(input)
   end
 
+  describe "admission_digest integrity envelope" do
+    test "absent is today's behavior", %{sha: sha} do
+      assert {:ok, admitted} = SemanticWork.admit(checkpoint(sha))
+      refute Map.get(admitted, :admission_digest)
+    end
+
+    test "equal to graph_digest is admitted", %{sha: sha} do
+      digest = "sha256:" <> String.duplicate("a", 64)
+
+      assert {:ok, admitted} =
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, digest))
+
+      assert admitted.admission_digest == digest
+    end
+
+    test "a digest altered after admission is refused (falsifier: tamper accepted)", %{sha: sha} do
+      altered = "sha256:" <> String.duplicate("b", 64)
+
+      assert {:error, {:refused_semantic_work, {:admission_digest_mismatch, ^altered}}} =
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, altered))
+    end
+
+    test "a malformed admission digest is refused", %{sha: sha} do
+      assert {:error, {:refused_semantic_work, {:invalid, :admission_digest}}} =
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, "main"))
+
+      assert {:error, {:refused_semantic_work, {:invalid, :admission_digest}}} =
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, 42))
+    end
+  end
+
   test "branch names cannot stand in for exact base identity", %{sha: sha} do
     assert {:error, {:refused_semantic_work, {:invalid, :base_sha}}} =
              SemanticWork.admit(%{checkpoint(sha) | base_sha: "main"})
