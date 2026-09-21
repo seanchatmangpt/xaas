@@ -1,8 +1,8 @@
 defmodule Xaas.Ultracode.SemanticReceipt do
   @moduledoc """
-  Exports the sealed receipt of a semantic-work Epoch in the contract the
-  canonical work graph's reconciler consumes
-  (`GgenIgniter.SemanticJira.Descriptor.receipt_from_xaas/2`):
+  Exports the sealed receipt of a semantic-work Epoch in the wire contract
+  `Xaas.Ultracode.SemanticJiraBridge.reconciler_receipt/2` maps onto the
+  canonical work graph's reconciler (`GgenIgniter.SemanticJira.Reconciler`):
 
       %{"epoch_id", "run_id", "receipt_id", "receipt_digest", "outcome",
         "final_head", "head_verified",
@@ -17,14 +17,21 @@ defmodule Xaas.Ultracode.SemanticReceipt do
   `bridge` stored on the Run is opaque and echoed byte-for-byte as JSON.
 
   `receipt_digest` is `sha256:` + hex of the canonical JSON of the export
-  without that key. "Canonical" is the graph side's
-  `GgenIgniter.SemanticJira.digest_exact/1`: every map becomes a list of
-  `[key, value]` pairs sorted by key, atoms become strings, and the result is
-  encoded as compact JSON.
+  without that key: every map becomes a list of `[key, value]` pairs sorted by
+  key, atoms become strings, and the result is encoded as compact JSON. On an
+  export this is the graph side's `GgenIgniter.SemanticJira.digest/1`
+  byte-for-byte (proved by `SemanticJiraBridgeTest`), EXCEPT that the kernel
+  digest silently drops seven reserved top-level keys (`work_order_digest`,
+  `transition_digest`, `evidence_digest`, `receipt_digest`, ...), so a foreign
+  export carrying one of them would verify under the kernel digest but not
+  here. That divergence is why this module keeps its own digest instead of
+  delegating (see the same test's falsifier).
 
   Court-specific observations come from an adapter keyed by the Run's
-  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`). Suites
-  without an adapter export only step statuses.
+  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`), except that a
+  court receipt PRODUCED by the fabric (`Xaas.Ultracode.CourtReceipt`: it always
+  carries its `"binding"`) is exported verbatim for any suite. Suites with
+  neither export only step statuses.
   """
 
   alias Xaas.Ultracode.{Epoch, Receipt, Run}
@@ -114,6 +121,12 @@ defmodule Xaas.Ultracode.SemanticReceipt do
       adapter -> adapter.court_steps(steps, courts)
     end
   end
+
+  # A court receipt PRODUCED by the fabric is fabric-owned evidence: exported
+  # verbatim so the receipt digest binds the IRI-keyed verdicts the graph side
+  # promotes on. A legacy suite-script court receipt (no binding) still needs
+  # its adapter.
+  defp observed(_suite, %{"binding" => %{}} = produced, _bridge), do: produced
 
   defp observed(suite, court_receipt, bridge) do
     with adapter when not is_nil(adapter) <- Map.get(@adapters, suite),

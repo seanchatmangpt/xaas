@@ -191,7 +191,14 @@ defmodule Xaas.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # XaasWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, "~> 26.9.12"},
+      # ERRC semantic-jira-bridge: 26.9.20 (GgenIgniter.SemanticJira.{Reconciler,
+      # TransitionLog,Descriptor}, GgenIgniter.SemanticA2A) is not yet published to
+      # Hex, so this worktree consumes the exact ggen_igniter source
+      # (dcebc422978498fefff90854a475b1001804f17a) by path. `override: true`
+      # because ash_a2a's own `{:ggen_igniter, "~> 26.9"}` requirement is
+      # satisfied by 26.9.20 but Hex metadata for it is absent. Revert to the
+      # published `"~> 26.9.20"` requirement once it is released.
+      {:ggen_igniter, path: "/Users/sac/ggen_igniter-wt2/xaas-dep", override: true},
       {:faker, "~> 0.18", only: [:dev, :test]},
       # Real dependency on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a
