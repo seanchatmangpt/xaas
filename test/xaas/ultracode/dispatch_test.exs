@@ -418,9 +418,14 @@ defmodule Xaas.Ultracode.DispatchTest do
     refute logged =~ "Call claim_next"
 
     # The descriptor file existed for the child and is gone afterwards.
-    descriptor_glob = Path.join(System.tmp_dir!(), "xaas-dispatch-gall-*.json")
+    # w9 guard: assert the EXACT path the child was handed (parsed from the
+    # logged argv), not a global tmp wildcard — an unqualified
+    # `xaas-dispatch-gall-*.json` glob collides with any concurrent dispatch
+    # on the same machine (same class as the run_uid qualification law of
+    # 082a9b2) and fails spuriously under sibling load.
+    assert [descriptor_path] = Regex.run(~r/--lease (\S+)/, logged, capture: :all_but_first)
 
-    assert Enum.empty?(Path.wildcard(descriptor_glob)),
+    refute File.exists?(descriptor_path),
            "descriptor temp files must be removed when the dispatch ends"
   end
 
