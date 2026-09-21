@@ -293,7 +293,10 @@ defmodule Xaas.Ultracode.EngineTest do
     assert Enum.all?(report.dispatched, &(&1.status == :done))
 
     # The 6th was never dispatched -- capacity held the fence.
-    sixth = Enum.max_by(epochs, & &1.inserted_at)
+    # `DateTime` as the comparator is load-bearing: default `Enum.max_by/2` compares the
+    # %DateTime{} structs structurally (microsecond before minute/second), so the six inserts
+    # straddling a second boundary picked the wrong "latest" epoch and this test flaked.
+    sixth = Enum.max_by(epochs, & &1.inserted_at, DateTime)
     sixth_after = Ash.get!(Epoch, sixth.id, action: :read_unscoped, authorize?: false)
     assert sixth_after.state == :running
     assert is_nil(sixth_after.lease_token)
