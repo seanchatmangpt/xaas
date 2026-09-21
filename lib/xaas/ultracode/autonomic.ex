@@ -587,7 +587,8 @@ defmodule Xaas.Ultracode.Autonomic do
 
   # Reads the sealed state back from the database and decides. Reaps a worker
   # that never closed.
-  defp settle(%Epoch{id: id}, ctx) do
+  @doc false
+  def settle(%Epoch{id: id}, ctx) do
     epoch = Ash.get!(Epoch, id, action: :read_unscoped, authorize?: false)
 
     receipts =

@@ -1,0 +1,37 @@
+{
+  "acceptance": [
+    "CHI-ASSERT"
+  ],
+  "authority_requirement": "NONE",
+  "base_sha": "5c31d9d05fe36dc1eca3a26c9eb5cd267a2cf625",
+  "dependencies": [],
+  "description": "Chicago-school test hardening of one APS contract schema.",
+  "evidence_ceiling": "repository-local",
+  "falsifiers": [
+    "CHI-MUTATION"
+  ],
+  "identity": "SJ-CROWN-BASE",
+  "path_scope": [
+    "tests/test_contract_standing.py"
+  ],
+  "projections": [
+    "jira",
+    "receipt"
+  ],
+  "promotion_rule": "exact-head fabric court receipt",
+  "replay_identity": "semantic-jira:crown:base",
+  "replay_required": false,
+  "repository": "seanchatmangpt/agile-protocol-specification",
+  "required_courts": [
+    "https://ggen-igniter.dev/ontology/semantic-jira#court-aps-dod"
+  ],
+  "required_evidence": [
+    "https://ggen-igniter.dev/ontology/semantic-jira#aps-dod-court-receipt-evidence"
+  ],
+  "required_receipt_classes": [
+    "verification"
+  ],
+  "standing": "UNKNOWN",
+  "subject": "semantic-jira:crown:base",
+  "title": "APS contract test hardening"
+}

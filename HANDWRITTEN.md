@@ -39,6 +39,14 @@ priv/verifiers/tests/*.py, test/xaas/ultracode/{verifier,lease_verifier,worktree
 
 test/xaas/ultracode/lease_test.exs | lease-edge qualification tests, + `actuate/2` registry-admission/refusal/authority-evidence tests (2026-09-17) | no admitted gate pack for lease semantics | ultracode-actuation-lease-pack gates/ | 2026-09-15
 
+lib/xaas/ultracode/semantic_receipt.ex, lib/xaas/ultracode/semantic_receipt/aps_dod.ex, lib/mix/tasks/xaas.semantic.receipt.ex | sealed-receipt export in the canonical-graph reconciler contract (canonical-JSON digest identical to the graph side's `digest_exact/1`, `bridge` echoed verbatim) and the `aps-dod` court-gate adapter that maps observed gates onto acceptance/falsifier results (2026-09-20) | no admitted pack renders the fabric-to-graph receipt projection or a court-gate-to-criterion mapping | ultracode-actuation-lease-pack | 2026-09-20
+
+lib/xaas/ultracode/semantic_crown.ex, lib/mix/tasks/xaas.semantic.{materialize,crown}.ex | autonomics crown controller: observation, SHACL-admitted candidate, frontier, descriptor, Run/Epoch, worker, sealed receipt, ledger transition, dependent unlock, fresh-process replay and a live negative control, driving the graph side as real `mix semantic_jira.*` processes (2026-09-20) | no admitted pack renders a cross-system loop controller | ultracode-actuation-lease-pack | 2026-09-20
+
+priv/repo/migrations/20260920230000_add_semantic_bridge_to_ultracode_runs.exs, lib/xaas/ultracode/run.ex (`semantic_bridge`) | additive nullable jsonb column storing the descriptor bridge opaquely; hand-written like the sibling semantic-identity migration (no resource snapshot) (2026-09-20) | ash.codegen snapshot for the semantic-identity/bridge columns not generated | ultracode-actuation-lease-pack | 2026-09-20
+
+test/xaas/ultracode/{semantic_receipt,semantic_crown}_test.exs | Chicago qualification of the exporter, court adapter, materialize task and the end-to-end crown with a refused-candidate control (2026-09-20) | no admitted gate pack for the fabric-to-graph loop | ultracode-actuation-lease-pack gates/ | 2026-09-20
+
 ## Paydown plan
 
 1. Qualify the rendered plugin against ZCode 3.11.2 live (hook event names,
