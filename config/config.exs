@@ -22,6 +22,7 @@ config :xaas,
     Xaas.Ocel,
     Xaas.Operations,
     Xaas.Platform,
+    Xaas.TemporalMemory,
     Xaas.Ultracode
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
