@@ -702,36 +702,58 @@ defmodule Xaas.Ultracode.Autonomic do
     ledger(ctx, :reap, %{epoch_id: epoch.id, leased: not is_nil(epoch.lease_token)})
 
     if epoch.lease_token do
-      _ = Lease.refuse(epoch.lease_token, :worker_no_close, %{"reaped_by" => "xaas-autonomic"})
+      case Lease.refuse(epoch.lease_token, :worker_no_close, %{"reaped_by" => "xaas-autonomic"}) do
+        {:ok, _epoch, _receipt} ->
+          :ok
+
+        _refusal_error ->
+          # PERMANENT TRIPWIRE (observed falsifier 2026-09-21, Campaign 3
+          # wave 1 -- run_validate `missing_terminal` on epoch 7b54bd5c):
+          # the worker's lease TTL expired before it vanished, so
+          # `refuse/3` errors with `{:lease_expired, token}` and CANNOT
+          # terminate the epoch. The result used to be discarded (`_ =`),
+          # leaving a stuck-claimed epoch no receipt accounted for. The
+          # `terminal epoch => receipt` invariant is enforced here
+          # unconditionally: whatever the refusal outcome, the epoch ends
+          # terminal with its refused receipt.
+          mark_failed_and_seal(epoch)
+      end
     else
       # No live lease to refuse through -- same terminal disposition, and
       # the SAME receipt invariant (`terminal epoch => receipt`): before
       # this seal, a worker that died un-claimed left a `:failed` epoch
       # with no receipt at all.
-      case epoch
-           |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false)
-           |> Ash.update() do
-        {:ok, failed} ->
-          Receipt
-          |> Ash.Changeset.for_create(
-            :seal,
-            %{
-              epoch_id: failed.id,
-              subject: failed.exact_subject,
-              outcome: :refused,
-              evidence: %{"reaped_by" => "xaas-autonomic", "refusal_reason" => "worker_no_close"},
-              sealed_at: DateTime.utc_now()
-            },
-            authorize?: false
-          )
-          |> Ash.create()
-
-        {:error, _} ->
-          {:error, :reap_failed}
-      end
+      mark_failed_and_seal(epoch)
     end
 
     {:failed, "worker ended without closing the lease"}
+  end
+
+  # The direct terminal seal (no live lease, or a refusal that could not
+  # terminate the epoch): `:failed` epoch + a refused receipt carrying the
+  # reason.
+  defp mark_failed_and_seal(epoch) do
+    case epoch
+         |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false)
+         |> Ash.update() do
+      {:ok, failed} ->
+        Receipt
+        |> Ash.Changeset.for_create(
+          :seal,
+          %{
+            epoch_id: failed.id,
+            subject: failed.exact_subject,
+            outcome: :refused,
+            evidence: %{"reaped_by" => "xaas-autonomic", "refusal_reason" => "worker_no_close"},
+            sealed_at: DateTime.utc_now()
+          },
+          authorize?: false
+        )
+        |> Ash.create()
+
+      {:error, _} ->
+        {:error, :reap_failed}
+    end
   end
 
   defp court_failure_text(outcome, fv) do
