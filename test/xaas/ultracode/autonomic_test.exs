@@ -259,6 +259,65 @@ defmodule Xaas.Ultracode.AutonomicTest do
     assert first.evidence["refusal_reason"] == "worker_no_close"
   end
 
+  test "an EXPIRED lease is reaped to a terminal epoch with a refused receipt", %{repo: _repo} do
+    # PERMANENT TRIPWIRE (observed falsifier 2026-09-21, Campaign 3 wave 1):
+    # when the worker's lease TTL expires before it vanishes, `Lease.refuse/3`
+    # errors with `{:lease_expired, _}` and the reap used to DISCARD that
+    # result -- the epoch stayed stuck `:running` forever, and
+    # `mix xaas.run_validate` named it `missing_terminal`. The terminal
+    # epoch => receipt invariant must hold through the expired-lease path.
+    worker = fn epoch, ctx ->
+      case attempt_of(epoch) do
+        1 ->
+          # Claim with a ZERO TTL: by the time the worker vanishes the lease
+          # is genuinely expired (the sanctioned fast-forward from
+          # lease_concurrency_stress_test), so the loop's refuse/3 hits
+          # `{:lease_expired, _}` instead of being what terminates the epoch.
+          {:ok, _claimed, _token, _run} =
+            Lease.claim_next(@provider, "expires-#{epoch.id}",
+              epoch_id: epoch.id,
+              lease_ttl_minutes: 0
+            )
+
+          Process.sleep(5)
+
+          :ok
+
+        _ ->
+          scripted(fn _ -> @good_test end).(epoch, ctx)
+      end
+    end
+
+    assert {:ok, report} = run_loop(worker, only: ["contract-standing"])
+
+    assert [%{"status" => "done", "attempts" => 2} = item] = report["items"]
+
+    assert [%{"attempt" => 1, "failure" => "worker ended without closing the lease"}] =
+             item["history"]
+
+    assert report["standing"] == "ALIVE"
+
+    # THE INVARIANT: the attempt-1 epoch is TERMINAL, not stuck claimed.
+    [expired_epoch] =
+      for run <- Ash.read!(Run, action: :read_unscoped, authorize?: false),
+          run.provider == @provider,
+          epoch <- Ash.read!(Epoch, action: :read_unscoped, authorize?: false),
+          epoch.run_id == run.id,
+          String.starts_with?(epoch.exact_subject, "aps-autonomic:contract-standing#1:"),
+          do: epoch
+
+    assert expired_epoch.state == :failed
+
+    # ...and the receipt invariant holds: a refused receipt sealed at reap.
+    assert [%{outcome: :refused} = receipt] =
+             Receipt
+             |> Ash.Query.for_read(:for_epoch, %{epoch_id: expired_epoch.id})
+             |> Ash.read!(authorize?: false)
+             |> Enum.filter(&Map.has_key?(&1.evidence, "refusal_reason"))
+
+    assert receipt.evidence["refusal_reason"] == "worker_no_close"
+  end
+
   test "a provider rate refusal halves the pace and retries without spending an attempt", %{
     repo: _repo
   } do
