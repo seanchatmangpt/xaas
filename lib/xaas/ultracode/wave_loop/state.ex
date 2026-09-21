@@ -15,8 +15,11 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     * STEP TABLE -- the LAST markdown table whose header row is
       `| step | status | evidence |` (case/space tolerant; a later
       coordinator update supersedes earlier tables). Data rows are
-      `| <id> <name> | <status> | <evidence> |` with an integer id. The
-      `|---|` separator row is skipped. Escaped cells (`\\|`) round-trip.
+      `| <id> <name> | <status> | <evidence> |` with an integer id; the
+      coordinator's omitted-empty-evidence form `| <id> <name> | <status>
+      |` (two cells, live STATE row 4 on 2026-09-21) parses as
+      empty-evidence. The `|---|` separator row is skipped. Escaped cells
+      (`\\|`) round-trip.
     * STATUS -- one of (case-insensitive):
 
         * starts with `done` or contains the whole word `complete` -> `:done`
@@ -333,6 +336,17 @@ defmodule Xaas.Ultracode.WaveLoop.State do
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
+  end
+
+  # Live failed edge (2026-09-21, telemetry tick 1): the coordinator's own
+  # writer omits an EMPTY trailing evidence cell -- `| 4 sole-source fold |
+  # PENDING — not started |` -- so the real STATE shipped a two-cell row
+  # and the first live tick typed it `{:short_step_row, _}` and refused. A
+  # two-cell row unambiguously carries id+name+status with empty evidence:
+  # accept it as exactly that (narrow shape, no guess); anything SHORTER is
+  # still refused.
+  defp row_to_step([first, status]) when is_binary(first) and is_binary(status) do
+    row_to_step([first, status, ""])
   end
 
   defp row_to_step([first, status | evidence_cells]) when length(evidence_cells) >= 1 do
