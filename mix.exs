@@ -69,7 +69,6 @@ defmodule Xaas.MixProject do
       # narrower guess) would not compile against the real resource files.
       {:ash, "~> 3.0", override: true},
       {:ash_postgres, "~> 2.0"},
-      {:ash_r2rml, "26.8.22"},
       {:opentelemetry_ash, "~> 0.1"},
       # Real finding, this session: only opentelemetry_api (the interface)
       # was a dependency, never opentelemetry (the actual SDK that creates
