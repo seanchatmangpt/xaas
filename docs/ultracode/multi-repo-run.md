@@ -316,6 +316,15 @@ additions:
 
 ## 8. Harness keep-alive automation for multi-repo campaigns (paste verbatim)
 
+> The wave loop is now FABRIC-NATIVE: the zcode-scheduler automation variant
+> below is unavailable platform-side (the platform refuses automation
+> creation from automation-owned sessions — verified finding, 2026-09-19), so
+> the loop clock is the fabric's own hourly Oban schedule `:wave_loop`
+> (`Xaas.Ultracode.WaveLoop`, single-slot `:ultracode_wave_loop` queue): each
+> tick parses the loop STATE file, dispatches ONE real zcode worker through
+> the `Dispatch` boundary, and settles STATE + telemetry from the sealed
+> receipt. The paste-verbatim harness variant is retained for provenance.
+
 Same bounded shape as eight-hour-run §8 (10-minute cadence, max 48 ticks,
 telemetry OUTSIDE any repo, never push, status + at most one top-up pass).
 The differences: it runs from the campaign worktree, pins the
