@@ -12,9 +12,12 @@ defmodule Xaas.Ultracode.RunAutonomicWaveScheduleTest do
       `:ultracode_wave` queue -- the ULTRACODE-50 failure mode was schedules
       that existed in the DSL but never reached the running crontab, so the
       assertion is on the merged config, not the DSL;
-    * the dedicated `:ultracode_wave` queue is listed with exactly one slot
-      (`AshOban.require_queues!/4` fails the boot otherwise, and the single
-      slot is what serializes waves whose promote step is shared state);
+    * the generated worker is REALLY bound to `:ultracode_wave`, that queue
+      is listed with exactly one local execution slot, and AshOban's generated
+      Oban worker carries `period: :infinity, states: :incomplete` uniqueness.
+      The queue limit serializes execution per node; the worker uniqueness
+      prevents a later identical scheduled wave from being inserted while the
+      prior wave is still incomplete, including while it is executing;
     * running the `:autonomic_wave` action drives `Autonomic.run/1` with
       `capacity: 5` (the operator-ordered wave size) and maps the loop's
       report onto the action result, with a failed wave surfacing as a real
@@ -42,6 +45,7 @@ defmodule Xaas.Ultracode.RunAutonomicWaveScheduleTest do
   def clock, do: Agent.get(__MODULE__.Clock, & &1)
 
   describe ":autonomic_wave schedule registration" do
+    @tag :autonomic_wave_contract
     test "AshOban merges a */30 crontab entry for the generated worker" do
       built =
         AshOban.config(
@@ -75,9 +79,18 @@ defmodule Xaas.Ultracode.RunAutonomicWaveScheduleTest do
       assert to_string(cron) == "*/30 * * * *"
     end
 
-    test "the :ultracode_wave queue is listed with exactly one slot" do
+    @tag :autonomic_wave_contract
+    test "generated worker is routed to the single-slot queue with incomplete-job uniqueness" do
       queues = Application.fetch_env!(:xaas, Oban)[:queues]
+      worker_opts = Xaas.Ultracode.Run.Workers.AutonomicWave.__opts__()
+      unique = worker_opts[:unique]
+
       assert queues[:ultracode_wave] == 1
+      assert worker_opts[:queue] == :ultracode_wave
+      assert unique[:period] == :infinity
+      assert unique[:states] == :incomplete
+      assert unique[:keys] == [:primary_key, :action_arguments, :tenant]
+      assert :executing in Oban.Job.unique_states(unique[:states])
     end
   end
 
@@ -111,6 +124,7 @@ defmodule Xaas.Ultracode.RunAutonomicWaveScheduleTest do
       :ok
     end
 
+    @tag :autonomic_wave_contract
     test "drives Autonomic.run with capacity 5 and surfaces the wave report" do
       {:ok, result} =
         Run
@@ -131,6 +145,7 @@ defmodule Xaas.Ultracode.RunAutonomicWaveScheduleTest do
       assert session.duration_budget_seconds == 28_800
     end
 
+    @tag :autonomic_wave_contract
     test "a failed wave is an action error, never a silently-ok tick" do
       Application.put_env(:xaas, :ultracode_wave_runner, {__MODULE__, :failing_runner})
 
