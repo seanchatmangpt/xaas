@@ -3,7 +3,7 @@ defmodule Xaas.Semantics.ComputationArtifact do
   Runtime-neutral identity for a computation that may participate in SA2A.
 
   The artifact describes how to invoke a capability; it does not grant standing,
-  authority, or permission to cross Xaas.Actuation.
+  authority, or permission to cross the actuation boundary.
   """
 
   alias Xaas.Semantics.Registry
