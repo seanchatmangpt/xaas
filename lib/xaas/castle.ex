@@ -143,53 +143,53 @@ defmodule Xaas.Castle.Reactor do
 
   use Reactor
 
-  input :admission
-  input :intent
-  input :actor
-  input :tenant
-  input :kernel
-  input :now_epoch_ms
+  input(:admission)
+  input(:intent)
+  input(:actor)
+  input(:tenant)
+  input(:kernel)
+  input(:now_epoch_ms)
 
   step :witness do
-    async? false
-    argument :admission, input(:admission)
-    argument :intent, input(:intent)
-    argument :now_epoch_ms, input(:now_epoch_ms)
+    async?(false)
+    argument(:admission, input(:admission))
+    argument(:intent, input(:intent))
+    argument(:now_epoch_ms, input(:now_epoch_ms))
 
-    run fn args, _context ->
+    run(fn args, _context ->
       Xaas.Castle.Admission.witness(args.admission, args.intent, args.now_epoch_ms)
-    end
+    end)
   end
 
   step :manufacture_construct do
-    async? false
-    argument :kernel, input(:kernel)
-    argument :intent, input(:intent)
-    argument :witness, result(:witness)
+    async?(false)
+    argument(:kernel, input(:kernel))
+    argument(:intent, input(:intent))
+    argument(:witness, result(:witness))
 
-    run fn args, _context -> args.kernel.manufacture(args.intent, args.witness) end
+    run(fn args, _context -> args.kernel.manufacture(args.intent, args.witness) end)
   end
 
   step :checkpoint_outer_receipt do
-    async? false
-    argument :admission, input(:admission)
-    argument :construct, result(:manufacture_construct)
+    async?(false)
+    argument(:admission, input(:admission))
+    argument(:construct, result(:manufacture_construct))
 
-    run fn args, _context ->
+    run(fn args, _context ->
       Xaas.Actuation.checkpoint_external(args.admission, %{
         "castle_construct" => args.construct
       })
-    end
+    end)
   end
 
   step :execute_private_action do
-    async? false
-    argument :admission, result(:checkpoint_outer_receipt)
-    argument :intent, input(:intent)
-    argument :actor, input(:actor)
-    argument :tenant, input(:tenant)
+    async?(false)
+    argument(:admission, result(:checkpoint_outer_receipt))
+    argument(:intent, input(:intent))
+    argument(:actor, input(:actor))
+    argument(:tenant, input(:tenant))
 
-    run fn args, _context ->
+    run(fn args, _context ->
       action_input =
         Ash.ActionInput.for_action(
           Xaas.Operations.RouteCastleRun,
@@ -209,20 +209,20 @@ defmodule Xaas.Castle.Reactor do
          actor: args.actor,
          tenant: args.tenant
        )}
-    end
+    end)
   end
 
   step :seal_outer_receipt do
-    async? false
-    argument :admission, result(:checkpoint_outer_receipt)
-    argument :execution, result(:execute_private_action)
+    async?(false)
+    argument(:admission, result(:checkpoint_outer_receipt))
+    argument(:execution, result(:execute_private_action))
 
-    run fn args, _context ->
+    run(fn args, _context ->
       Xaas.Actuation.seal_external(args.admission, args.execution)
-    end
+    end)
   end
 
-  return :seal_outer_receipt
+  return(:seal_outer_receipt)
 end
 
 defmodule Xaas.Castle.Admission do
@@ -238,7 +238,11 @@ defmodule Xaas.Castle.Admission do
     end
   end
 
-  def witness(%{intent: outer_intent, receipt: outer_receipt, projection_hash: projection_hash}, intent, now_epoch_ms)
+  def witness(
+        %{intent: outer_intent, receipt: outer_receipt, projection_hash: projection_hash},
+        intent,
+        now_epoch_ms
+      )
       when is_map(intent) and is_integer(now_epoch_ms) do
     context = %{
       intent_id: to_string(outer_intent.id),
@@ -428,20 +432,21 @@ defmodule Xaas.Castle.Admission do
         {:error, :REFUSED_CASTLE_CHECKPOINT_WITNESS_MISMATCH}
 
       not Enum.all?(
-            [
-              checkpoint["construct_digest"],
-              checkpoint["construct_receipt_digest"],
-              checkpoint["process_digest"],
-              checkpoint["replay_identity_digest"],
-              checkpoint["kernel_binary_sha256"],
-              checkpoint["signing_key_sha256"],
-              checkpoint["adapter_profile_digest"]
-            ],
-            &digest?/1
-          ) ->
+        [
+          checkpoint["construct_digest"],
+          checkpoint["construct_receipt_digest"],
+          checkpoint["process_digest"],
+          checkpoint["replay_identity_digest"],
+          checkpoint["kernel_binary_sha256"],
+          checkpoint["signing_key_sha256"],
+          checkpoint["adapter_profile_digest"]
+        ],
+        &digest?/1
+      ) ->
         {:error, :REFUSED_CASTLE_CHECKPOINT_DIGEST}
 
-      not (is_binary(checkpoint["evidence_dir"]) and Path.type(checkpoint["evidence_dir"]) == :absolute) ->
+      not (is_binary(checkpoint["evidence_dir"]) and
+               Path.type(checkpoint["evidence_dir"]) == :absolute) ->
         {:error, :REFUSED_CASTLE_CHECKPOINT_EVIDENCE_PATH}
 
       true ->
@@ -480,7 +485,10 @@ defmodule Xaas.Castle.Admission do
 
   defp required_string(map, key) do
     value = field(map, key)
-    if is_binary(value) and value != "", do: {:ok, value}, else: {:error, {:REFUSED_REQUIRED_FIELD, key}}
+
+    if is_binary(value) and value != "",
+      do: {:ok, value},
+      else: {:error, {:REFUSED_REQUIRED_FIELD, key}}
   end
 
   defp required_map(map, key) do
@@ -569,7 +577,7 @@ defmodule Xaas.Castle.Kernel.CLI do
 
       {:ok,
        %{
-         "protocol" => Atom.to_string(contract.protocol),
+         "protocol" => contract.protocol,
          "castle_paas_source_sha" => contract.castle_paas_source_sha,
          "witness_digest" => witness["witness_digest"],
          "construct_digest" => construct["construct_digest"],
@@ -617,9 +625,14 @@ defmodule Xaas.Castle.Kernel.CLI do
 
       {:error, reason} ->
         case recover_existing_evidence(runtime, request, checkpoint) do
-          {:ok, recovered} when is_map(recovered) -> {:ok, recovered}
-          {:ok, nil} -> {:error, reason}
-          {:error, recovery_reason} -> {:error, {:castle_do_and_recovery_failed, reason, recovery_reason}}
+          {:ok, recovered} when is_map(recovered) ->
+            {:ok, recovered}
+
+          {:ok, nil} ->
+            {:error, reason}
+
+          {:error, recovery_reason} ->
+            {:error, {:castle_do_and_recovery_failed, reason, recovery_reason}}
         end
     end
   end
@@ -762,7 +775,11 @@ defmodule Xaas.Castle.Kernel.CLI do
   defp build_request(runtime, intent, witness) do
     profile_id = field(intent, :adapter_profile_id)
     profiles = Application.get_env(:kanban, :castle_adapter_profiles, %{})
-    profile = if is_nil(profile_id), do: nil, else: Map.get(profiles, profile_id) || Map.get(profiles, to_string(profile_id))
+
+    profile =
+      if is_nil(profile_id),
+        do: nil,
+        else: Map.get(profiles, profile_id) || Map.get(profiles, to_string(profile_id))
 
     with profile when is_map(profile) <- profile,
          {:ok, subject} <- required_string(intent, :subject),
@@ -774,9 +791,12 @@ defmodule Xaas.Castle.Kernel.CLI do
          ^authority <- witness["authority"],
          :ok <- digest(witness["witness_digest"]),
          adapter_policy when is_map(adapter_policy) <- Map.get(profile, :adapter_policy),
-         allowed_authorities when is_list(allowed_authorities) <- Map.get(profile, :allowed_authorities),
+         allowed_authorities when is_list(allowed_authorities) <-
+           Map.get(profile, :allowed_authorities),
          true <- authority in allowed_authorities do
-      profile_digest = fingerprint(%{adapter_policy: adapter_policy, allowed_authorities: allowed_authorities})
+      profile_digest =
+        fingerprint(%{adapter_policy: adapter_policy, allowed_authorities: allowed_authorities})
+
       evidence_dir = Path.join(runtime.evidence_root, witness["witness_digest"])
 
       {:ok,
@@ -804,10 +824,13 @@ defmodule Xaas.Castle.Kernel.CLI do
 
   defp runtime do
     with bin when is_binary(bin) and bin != "" <- System.get_env("CASTLE_BIN"),
-         expected when is_binary(expected) and byte_size(expected) == 64 <- System.get_env("CASTLE_BIN_SHA256"),
-         signing_key_path when is_binary(signing_key_path) and signing_key_path != "" <- System.get_env("CASTLE_SIGNING_KEY_PATH"),
+         expected when is_binary(expected) and byte_size(expected) == 64 <-
+           System.get_env("CASTLE_BIN_SHA256"),
+         signing_key_path when is_binary(signing_key_path) and signing_key_path != "" <-
+           System.get_env("CASTLE_SIGNING_KEY_PATH"),
          key_id when is_binary(key_id) and key_id != "" <- System.get_env("CASTLE_KEY_ID"),
-         evidence_root when is_binary(evidence_root) and evidence_root != "" <- System.get_env("CASTLE_EVIDENCE_ROOT"),
+         evidence_root when is_binary(evidence_root) and evidence_root != "" <-
+           System.get_env("CASTLE_EVIDENCE_ROOT"),
          true <- Path.type(evidence_root) == :absolute,
          {:ok, bytes} <- File.read(bin),
          actual <- Base.encode16(:crypto.hash(:sha256, bytes), case: :lower),
@@ -836,7 +859,7 @@ defmodule Xaas.Castle.Kernel.CLI do
     contract = Xaas.Castle.Contract.identity()
 
     cond do
-      checkpoint["protocol"] != Atom.to_string(contract.protocol) ->
+      checkpoint["protocol"] != contract.protocol ->
         {:error, :REFUSED_CASTLE_CHECKPOINT_PROTOCOL_MISMATCH}
 
       checkpoint["castle_paas_source_sha"] != contract.castle_paas_source_sha ->
@@ -940,7 +963,13 @@ defmodule Xaas.Castle.Kernel.CLI do
 
   defp reject_ambient_command_policy(value) when is_map(value) do
     if Enum.any?(value, fn {key, item} ->
-         to_string(key) in ["adapter_policy", "commands", "program", "signing_key_path", "evidence_dir"] or
+         to_string(key) in [
+           "adapter_policy",
+           "commands",
+           "program",
+           "signing_key_path",
+           "evidence_dir"
+         ] or
            reject_ambient_command_policy(item) != :ok
        end) do
       {:error, :REFUSED_AMBIENT_CASTLE_COMMAND_POLICY}
@@ -991,7 +1020,10 @@ defmodule Xaas.Castle.Kernel.CLI do
 
   defp required_string(map, key) do
     value = field(map, key)
-    if is_binary(value) and value != "", do: {:ok, value}, else: {:error, {:REFUSED_REQUIRED_FIELD, key}}
+
+    if is_binary(value) and value != "",
+      do: {:ok, value},
+      else: {:error, {:REFUSED_REQUIRED_FIELD, key}}
   end
 
   defp required_map(map, key) do

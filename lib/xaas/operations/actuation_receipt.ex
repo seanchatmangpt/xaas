@@ -51,9 +51,9 @@ defmodule Xaas.Operations.ActuationReceipt do
     end
 
     update :checkpoint do
-      public? false
-      accept [:result_hash, :result]
-      require_atomic? false
+      public?(false)
+      accept([:result_hash, :result])
+      require_atomic?(false)
     end
 
     update :seal do

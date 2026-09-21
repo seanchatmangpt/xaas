@@ -181,7 +181,11 @@ defmodule Xaas.Zoe.EventSimulation do
     |> maybe_add_attendance_submission(event_id, observation)
   end
 
-  defp maybe_add_roster(acc, event_id, %{"phase" => "pre_event", "roster_complete" => false} = observation) do
+  defp maybe_add_roster(
+         acc,
+         event_id,
+         %{"phase" => "pre_event", "roster_complete" => false} = observation
+       ) do
     [
       obligation(event_id, observation, "zoe.event.admin.complete_roster", %{
         "roster_complete" => false

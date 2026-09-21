@@ -5,26 +5,26 @@ defmodule Xaas.Semantics.AshR2RMLTest.GoodResource do
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "r2rml_good_resources"
-    repo Xaas.Repo
+    table("r2rml_good_resources")
+    repo(Xaas.Repo)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :name, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :amount, :decimal do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :occurred_at, :utc_datetime do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end
@@ -36,16 +36,16 @@ defmodule Xaas.Semantics.AshR2RMLTest.UnsupportedResource do
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "r2rml_unsupported_resources"
-    repo Xaas.Repo
+    table("r2rml_unsupported_resources")
+    repo(Xaas.Repo)
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :payload, :map do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
   end
 end
@@ -159,7 +159,9 @@ defmodule Xaas.Semantics.AshR2RMLTest do
 
   test "SPARQL facade executes local observation without acquiring mutation authority" do
     graph =
-      RDF.Graph.new({RDF.iri("urn:xaas:test:subject"), RDF.iri("urn:xaas:test:predicate"), "value"})
+      RDF.Graph.new(
+        {RDF.iri("urn:xaas:test:subject"), RDF.iri("urn:xaas:test:predicate"), "value"}
+      )
 
     query = "SELECT ?s WHERE { ?s <urn:xaas:test:predicate> ?o }"
 

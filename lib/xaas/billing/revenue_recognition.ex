@@ -23,27 +23,27 @@ defmodule Xaas.Billing.RevenueRecognition do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "billing_revenue_recognitions"
-    repo Xaas.Repo
+    table("billing_revenue_recognitions")
+    repo(Xaas.Repo)
   end
 
   policies do
     bypass action_type(:read) do
-      authorize_if always()
+      authorize_if(always())
     end
 
     policy always() do
-      forbid_if always()
+      forbid_if(always())
     end
   end
 
   actions do
-    defaults [:read]
+    defaults([:read])
 
     create :actuate_recognition do
-      public? false
+      public?(false)
 
-      accept [
+      accept([
         :org_id,
         :source_key,
         :source_label,
@@ -61,95 +61,95 @@ defmodule Xaas.Billing.RevenueRecognition do
         :period_start,
         :period_end,
         :recognized_at
-      ]
+      ])
 
-      validate Xaas.Actuation.Validations.ReactorContext
+      validate(Xaas.Actuation.Validations.ReactorContext)
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :org_id, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :source_key, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :source_label, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :source_iri, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :source_revision, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :economic_family, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :accounting_classification, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :recognition_basis, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :amount, :decimal do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :currency, :string do
-      allow_nil? false
-      public? true
+      allow_nil?(false)
+      public?(true)
     end
 
     attribute :contract_ref, :string do
-      public? true
+      public?(true)
     end
 
     attribute :counterparty_ref, :string do
-      public? true
+      public?(true)
     end
 
     attribute :external_ref, :string do
-      public? true
+      public?(true)
     end
 
     attribute :evidence, :map do
-      allow_nil? false
-      default %{}
-      public? true
+      allow_nil?(false)
+      default(%{})
+      public?(true)
     end
 
     attribute :period_start, :utc_datetime do
-      public? true
+      public?(true)
     end
 
     attribute :period_end, :utc_datetime do
-      public? true
+      public?(true)
     end
 
     attribute :recognized_at, :utc_datetime do
-      allow_nil? false
-      default &DateTime.utc_now/0
-      public? true
+      allow_nil?(false)
+      default(&DateTime.utc_now/0)
+      public?(true)
     end
 
     timestamps()

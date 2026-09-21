@@ -231,6 +231,7 @@ defmodule Xaas.Billing.FiboRevenueProfile do
     label = Map.get(source, :label) || Map.get(source, "label")
     family = Map.get(source, :family) || Map.get(source, "family") || "fibo_cash_flow"
     iri = Map.get(source, :ontology_iri) || Map.get(source, "ontology_iri")
+
     revision =
       Map.get(source, :ontology_revision) ||
         Map.get(source, "ontology_revision") ||
@@ -275,6 +276,9 @@ defmodule Xaas.Billing.FiboRevenueProfile do
 
   @doc "True when a named key is explicitly known to be a non-revenue inflow."
   def non_revenue?(source) when is_atom(source), do: non_revenue?(Atom.to_string(source))
-  def non_revenue?(source) when is_binary(source), do: MapSet.member?(@non_revenue_sources, source)
+
+  def non_revenue?(source) when is_binary(source),
+    do: MapSet.member?(@non_revenue_sources, source)
+
   def non_revenue?(_), do: false
 end

@@ -144,8 +144,8 @@ defmodule Xaas.CastleBridgeTest do
     assert byte_size(first.result["xaas_outer_admission"]["witness_digest"]) == 64
 
     contract = Xaas.Castle.Contract.identity()
-    assert is_atom(contract.protocol)
-    assert first.result["contract"]["protocol"] == Atom.to_string(contract.protocol)
+    assert is_binary(contract.protocol)
+    assert first.result["contract"]["protocol"] == contract.protocol
     assert first.result["contract"]["castle_paas_source_sha"] == contract.castle_paas_source_sha
     assert first.result["contract"]["castle_paas_pack_sha"] == contract.castle_paas_pack_sha
     assert first.result["contract"]["ash_r2rml_sha"] == contract.ash_r2rml_sha

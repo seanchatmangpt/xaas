@@ -165,10 +165,17 @@ defmodule Xaas.Semantics.ComputationClaim do
          authorizes_actuation: false
        }}
     else
-      true -> {:error, :computation_claim_cannot_authorize_actuation}
-      standing when is_binary(standing) -> {:error, {:computation_claim_standing_refused, standing}}
-      {:error, _} = error -> error
-      _ -> {:error, :invalid_computation_claim}
+      true ->
+        {:error, :computation_claim_cannot_authorize_actuation}
+
+      standing when is_binary(standing) ->
+        {:error, {:computation_claim_standing_refused, standing}}
+
+      {:error, _} = error ->
+        error
+
+      _ ->
+        {:error, :invalid_computation_claim}
     end
   end
 
@@ -322,7 +329,6 @@ defmodule Xaas.Semantics.PlanningAdvice do
   end
 end
 
-
 defmodule Xaas.Semantics.RuntimeEquivalence do
   @moduledoc """
   Narrow portability court for the same computation executed in two runtimes.
@@ -341,6 +347,8 @@ defmodule Xaas.Semantics.RuntimeEquivalence do
   @spec qualify(%{String.t() => number()}, %{String.t() => number()}, number()) ::
           {:ok, result()} | {:error, term()}
   def qualify(reference, candidate, tolerance \\ 1.0e-6)
+
+  def qualify(reference, candidate, tolerance)
       when is_map(reference) and is_map(candidate) and is_number(tolerance) do
     cond do
       tolerance < 0 ->

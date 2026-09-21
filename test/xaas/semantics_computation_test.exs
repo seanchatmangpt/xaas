@@ -85,6 +85,7 @@ defmodule Xaas.Semantics.ComputationTest do
              )
 
     assert ordered == ["rollback", "failover", "restart", "scale-out"]
+
     assert MapSet.new(ordered) ==
              MapSet.new(["restart", "rollback", "failover", "scale-out"])
 
@@ -138,5 +139,4 @@ defmodule Xaas.Semantics.ComputationTest do
                0.05
              )
   end
-
 end
