@@ -72,6 +72,33 @@
       "template": "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex",
       "updated_at": "2026-09-14T18:11:37.880651Z"
     },
+    "priv/sa2a_bridge/templates/sa2a_bridge_contract.ex.eex=>lib/xaas/generated/sa2a_bridge_contract.ex": {
+      "out_template": "lib/xaas/generated/sa2a_bridge_contract.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas/generated/sa2a_bridge_contract.ex": "sha256:a3ee8136858ccd6cda4c81fcba6becb39f785c0100670e9fd5759f8609b9f87b"
+      },
+      "pack_dir": null,
+      "template": "priv/sa2a_bridge/templates/sa2a_bridge_contract.ex.eex",
+      "updated_at": "2026-09-20T07:14:16.642523Z"
+    },
+    "priv/sa2a_bridge/templates/sa2a_bridge_edges.ex.eex=>lib/xaas/generated/sa2a_bridge_edges.ex": {
+      "out_template": "lib/xaas/generated/sa2a_bridge_edges.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas/generated/sa2a_bridge_edges.ex": "sha256:821faf64fdca5a089b2255e346458c367dc7b423ca669178713488fbb683df90"
+      },
+      "pack_dir": null,
+      "template": "priv/sa2a_bridge/templates/sa2a_bridge_edges.ex.eex",
+      "updated_at": "2026-09-20T07:14:22.566664Z"
+    },
+    "priv/sa2a_bridge/templates/sa2a_mcp_descriptor.ex.eex=>lib/xaas/generated/sa2a_mcp_descriptor.ex": {
+      "out_template": "lib/xaas/generated/sa2a_mcp_descriptor.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas/generated/sa2a_mcp_descriptor.ex": "sha256:dda0d8d0a6f70ffb2a585a3118f862cfe978563f5c39e5e4a8e41ce4aee52e41"
+      },
+      "pack_dir": null,
+      "template": "priv/sa2a_bridge/templates/sa2a_mcp_descriptor.ex.eex",
+      "updated_at": "2026-09-20T08:24:39.834185Z"
+    },
     "templates-hooks/compile-proof-eex.txt.tmpl=>GGEN-SH-AFTER-PROOF-EEX.txt": {
       "out_template": "GGEN-SH-AFTER-PROOF-EEX.txt",
       "outputs": {

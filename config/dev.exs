@@ -194,5 +194,37 @@ config :xaas, :ultracode_verifier_suites, %{
         ]
       }
     ]
+  },
+
+  # TEMPORARY OPERATIONAL PATCH (wave-5 W5-A7, 2026-09-20, uncommitted by
+  # design: the committed mechanism for non-APS suites is Xaas.Ultracode.
+  # TargetSuites on feat/ultracode-cron-wave @ a3bd1a9; the RUNNING server
+  # here predates it, so the spr-dod court is registered old-shape until the
+  # server's next real deploy). SPR's definition of done: its own pytest
+  # suite green at the closed head.
+  "spr-dod" => %{
+    env: %{
+      "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG" => "en_US.UTF-8"
+    },
+    max_output_bytes: 16_384,
+    toolchain: [["python3", "--version"], ["git", "--version"]],
+    steps: [
+      %{
+        id: "test",
+        timeout_ms: 300_000,
+        argv: [
+          "python3",
+          "-m",
+          "pytest",
+          "tests",
+          "--basetemp",
+          "{tmpdir}",
+          "-q",
+          "-p",
+          "no:cacheprovider"
+        ]
+      }
+    ]
   }
 }

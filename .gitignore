@@ -99,3 +99,4 @@ _build_clean/
 # Python bytecode (priv/verifiers)
 __pycache__/
 *.pyc
+tmp_out/
