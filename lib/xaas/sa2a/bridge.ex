@@ -35,6 +35,22 @@ defmodule Xaas.Sa2a.Bridge do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name, __MODULE__))
   end
 
+  @doc """
+  True when the `autofde` executable this bridge shells out to
+  (`System.find_executable/1`) is actually on `PATH` in this environment.
+
+  Used by `Xaas.Application` to decide, honestly and visibly, whether to
+  include this GenServer in the supervision tree at all -- an environment
+  without autofde-lab installed (e.g. a bare CI runner for this repo) must
+  not fail application boot over a missing optional binary, but the gate
+  itself must be real, not a silent no-op. See also the guard in `init/1`,
+  which returns the same typed `{:executable_not_found, ...}` failure when
+  this GenServer is started directly (bypassing the supervision-tree gate,
+  e.g. from a test) against an environment where the binary is absent.
+  """
+  @spec available?() :: boolean()
+  def available?(command \\ @port_command), do: System.find_executable(command) != nil
+
   @spec validate(keyword()) :: {:ok, map()} | {:error, term()}
   def validate(opts \\ []) do
     req =
@@ -104,15 +120,30 @@ defmodule Xaas.Sa2a.Bridge do
     command = Keyword.get(opts, :port_command, @port_command)
     args = Keyword.get(opts, :port_args, @port_args)
 
-    port =
-      Port.open({:spawn_executable, System.find_executable(command)}, [
-        :binary,
-        {:args, args},
-        {:line, 1_048_576},
-        :exit_status
-      ])
+    # Real, honest guard: `System.find_executable/1` returns `nil` when the
+    # binary isn't on PATH, and `Port.open({:spawn_executable, nil}, ...)`
+    # raises an opaque `%ErlangError{original: :enoent}` deep inside the
+    # port driver (confirmed live) rather than failing this GenServer's
+    # start in a way any caller (Xaas.Application's supervision tree, a
+    # test's `start_supervised/2`) can pattern-match on. Fail explicitly
+    # instead, via the normal `{:stop, reason}` init contract -- OTP turns
+    # this into `{:error, {:executable_not_found, command}}` from
+    # `start_link/1`, exactly like any other documented startup failure.
+    case System.find_executable(command) do
+      nil ->
+        {:stop, {:executable_not_found, command}}
 
-    {:ok, %{port: port, waiting: nil}}
+      executable ->
+        port =
+          Port.open({:spawn_executable, executable}, [
+            :binary,
+            {:args, args},
+            {:line, 1_048_576},
+            :exit_status
+          ])
+
+        {:ok, %{port: port, waiting: nil}}
+    end
   end
 
   @impl true
