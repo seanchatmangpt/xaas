@@ -86,7 +86,7 @@ above 100 throughout.
 
 | Check | Result |
 |---|---|
-| `SemanticJiraBridgeTest` + `SemanticJiraBridgeCrownTest` + `SemanticReceiptTest` | 48 tests, 0 failures |
+| Bridge, bridge crown and receipt suites (three files) | 48 tests, 0 failures |
 | Existing ultracode/semantic suites (receipt, work, wave, court, lease) | 139, 0 failed |
 | `test/xaas/ultracode` (whole directory, `--include subprocess`) | 571 tests, 1 failure |
 | xaas A2A agents, gall, zoe, frontier evidence under the path dependency | 76 tests, 0 failed |
