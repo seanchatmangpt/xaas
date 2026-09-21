@@ -1,18 +1,26 @@
 ---
-to: "marketplace/xaas-fabric/scripts/xaas-lease.mjs"
+to: "{{ installPath }}"
+for_each: proto
 force: true
+sparql:
+  proto: |
+    PREFIX ul: <http://seanchatmangpt.github.io/packs/ultracode-actuation-lease#>
+    SELECT ?installPath ?script ?stateDir ?conflictExit ?usageExit WHERE {
+      ?p a ul:LeaseStateProtocol ; ul:installPath ?installPath ; ul:scriptName ?script ;
+         ul:stateDirName ?stateDir ; ul:conflictExitCode ?conflictExit ; ul:usageExitCode ?usageExit .
+    }
 ---
 // Agent-facing lease CLI. The worker uses it to persist the claim result
 // so it can recover its lease token across tool calls within this worktree
 // (host-side admission is the PreToolUse gate, scripts/xaas-gate.mjs, active
 // only under XAAS_WORKER=1; every admit/close call is otherwise the worker's own).
 //
-//   node xaas-lease.mjs save   '<claim JSON>' [--force]  # writes lease for this cwd
-//   node xaas-lease.mjs get                               # prints lease JSON or null
-//   node xaas-lease.mjs clear                              # drops the lease
+//   node {{ proto[0].script }} save   '<claim JSON>' [--force]  # writes lease for this cwd
+//   node {{ proto[0].script }} get                               # prints lease JSON or null
+//   node {{ proto[0].script }} clear                              # drops the lease
 //
 // `save` refuses to clobber a still-live lease for this cwd that carries a
-// DIFFERENT lease_token (exit 65) unless the existing lease has already
+// DIFFERENT lease_token (exit {{ proto[0].conflictExit }}) unless the existing lease has already
 // expired, belongs to the same token (a renewal/re-save), or `--force` is
 // passed explicitly. Without this, a second claim_next in the same worktree
 // would silently overwrite the first worker's only capability with no
@@ -26,7 +34,7 @@ import path from "node:path";
 const [, , cmd, payload, ...rest] = process.argv;
 const force = rest.includes("--force");
 
-const STATE_DIR = path.join(tmpdir(), "xaas-fabric");
+const STATE_DIR = path.join(tmpdir(), {{ proto[0].stateDir | json_encode }});
 const file = path.join(
   STATE_DIR,
   `${createHash("sha256").update(process.cwd()).digest("hex")}.json`
@@ -74,7 +82,7 @@ if (cmd === "save") {
             "first, or pass --force to override deliberately.",
         }) + "\n"
       );
-      process.exit(65);
+      process.exit({{ proto[0].conflictExit }});
     }
   }
 
@@ -91,6 +99,6 @@ if (cmd === "save") {
   await rm(file, { force: true });
   process.stdout.write("cleared\n");
 } else {
-  process.stderr.write("usage: xaas-lease.mjs save '<json>' | get | clear\n");
-  process.exit(64);
+  process.stderr.write("usage: {{ proto[0].script }} save '<json>' | get | clear\n");
+  process.exit({{ proto[0].usageExit }});
 }
