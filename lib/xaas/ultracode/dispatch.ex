@@ -25,11 +25,34 @@ defmodule Xaas.Ultracode.Dispatch do
        claim and refuse the epoch through the fabric, unblocking the queue
        head, exactly like the bash script's reap path. The scratch dir is
        removed when the dispatch ends.
-    3. Builds the canonical gated worker invocation (byte-identical prompt
-       shape to the bash script's): `<node> bin/zcode.js --prompt "/xaas
-       Call claim_next with provider_worker_id exactly <worker_id> and
-       epoch_id exactly <epoch_id>; do not use any other values." --cwd
-       <cwd> --json`, run with cwd = the zcode CLI dir and
+    3. Builds the canonical gated worker invocation, chosen by the run's
+       semantic identity (the gall-work contract, contract_version 1,
+       `priv/zcode_plugin/gall-work.contract.json` -- byte-identical in
+       zcode-cli at `test/fixtures/gall-work.contract.json`):
+
+         * a SEMANTIC run (work_order_iri, checkpoint_iri, graph_digest,
+           repository_identity and base_sha all present) dispatches the
+           NATIVE protocol: `<node> bin/zcode.js gall-work --lease
+           <descriptor.json>`, where this boundary materializes the
+           `gall.work-lease/1` descriptor (the same document the bash
+           script's semantic path writes) to a per-dispatch temp file and
+           removes it afterwards. The CLI then runs the full lifecycle
+           itself: claim_next over the MCP fabric, lease persistence for
+           the host gate, the constructed turn (goal OFF argv, in the
+           work-order file), head capture, close_candidate. There is NO
+           `/xaas claim_next` fallback here: an old CLI without native
+           gall-work exits non-zero and the dispatch is classified
+           :failed -- the failure is typed, never re-projected as a
+           prompt.
+
+         * a run WITHOUT full semantic identity keeps the generic
+           `/xaas` prompt path for non-semantic waves, byte-identical to
+           the bash script's: `<node> bin/zcode.js --prompt "/xaas
+           Call claim_next with provider_worker_id exactly <worker_id>
+           and epoch_id exactly <epoch_id>; do not use any other
+           values." --cwd <cwd> --json`.
+
+       Either way it runs with cwd = the zcode CLI dir and
        `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` added to the child
        env -- the two variables that arm the xaas-fabric plugin's
        PreToolUse gate (host-enforced admit_tool, worktree-confined
@@ -84,6 +107,7 @@ defmodule Xaas.Ultracode.Dispatch do
     * CLI dir / `bin/zcode.js` missing → `{:error, {:cli_unavailable, path}}`
     * node executable not resolvable → `{:error, {:node_unavailable, "node"}}`
     * log file not writable → `{:error, {:log_unavailable, path}}`
+    * gall-work descriptor not writable → `{:error, {:descriptor_unavailable, path, reason}}`
     * spawn failure → `{:error, {:spawn_failed, message}}`
     * timeout → the whole process group is killed and the result status is
       `:timeout`, never a hang
@@ -151,12 +175,13 @@ defmodule Xaas.Ultracode.Dispatch do
           required(:epoch_id) => String.t(),
           required(:worker_id) => String.t(),
           required(:mode) => :claim | :reap,
+          required(:protocol) => :gall_work_native | :xaas_prompt,
           required(:attempts) => pos_integer(),
           required(:exit_code) => non_neg_integer() | nil,
           required(:duration_ms) => non_neg_integer(),
           required(:output_tail) => String.t(),
           required(:log_path) => String.t(),
-          required(:prompt) => String.t(),
+          required(:prompt) => String.t() | nil,
           required(:epoch_state) => atom(),
           required(:receipts) => [map()]
         }
@@ -199,8 +224,11 @@ defmodule Xaas.Ultracode.Dispatch do
   @doc """
   The dry-run half of `dispatch/2`: identical construction, zero
   execution. Returns `{:ok, plan}` where `plan` carries the exact argv,
-  added env, cwd, prompt, worker id, mode, log path, and timeout a real
-  dispatch would use.
+  added env, cwd, protocol (`:gall_work_native` for semantic runs, with
+  the `gall.work-lease/1` descriptor content and its would-be path, or
+  `:xaas_prompt` with the two-identifier prompt), worker id, mode, log
+  path, and timeout a real dispatch would use. A dry run touches no
+  filesystem: the descriptor is only written by a real dispatch.
   """
   @spec plan(Epoch.t() | String.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def plan(epoch_or_id, opts \\ []) do
@@ -247,11 +275,20 @@ defmodule Xaas.Ultracode.Dispatch do
     with {:ok, resolved} <- resolve_opts(opts),
          {:ok, epoch} <- ready_epoch(epoch_or_id, resolved),
          {:ok, built} <- build(epoch, resolved),
+         :ok <- materialize_descriptor(built),
          {:ok, log} <- open_log(built.log_path) do
       built = Map.put(built, :log, log)
       max_retries = resolved.failover_retries
 
-      outcome = attempt_loop(built, resolved, 1, max_retries)
+      outcome =
+        try do
+          attempt_loop(built, resolved, 1, max_retries)
+        after
+          # The native protocol's gall.work-lease/1 descriptor was ours for
+          # this dispatch only.
+          remove_descriptor(built)
+        end
+
       duration = System.monotonic_time(:millisecond) - started
 
       File.close(built.log)
@@ -269,6 +306,7 @@ defmodule Xaas.Ultracode.Dispatch do
             epoch_id: epoch.id,
             worker_id: built.worker_id,
             mode: built.mode,
+            protocol: built.protocol,
             attempts: attempts,
             exit_code: exit_code,
             duration_ms: duration,
@@ -281,6 +319,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
           Logger.info(
             "[ultracode] dispatch epoch=#{epoch.id} status=#{status} " <>
+              "protocol=#{built.protocol} " <>
               "attempts=#{attempts} exit=#{inspect(exit_code)} duration_ms=#{duration}"
           )
 
@@ -484,7 +523,6 @@ defmodule Xaas.Ultracode.Dispatch do
     worker_id = worker_id(epoch_id)
     {mode, cwd} = pick_cwd(epoch.worktree)
     {:ok, cwd_real} = realpath(cwd)
-    prompt = prompt(worker_id, epoch_id)
 
     log_path = resolved.log_path || default_log_path(epoch_id)
 
@@ -494,14 +532,27 @@ defmodule Xaas.Ultracode.Dispatch do
       | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
     ]
 
-    argv_tail = [
-      "bin/zcode.js",
-      "--prompt",
-      prompt,
-      "--cwd",
-      cwd_real,
-      "--json"
-    ]
+    {protocol, prompt, argv_tail, descriptor} =
+      case semantic_descriptor(epoch, worker_id, cwd_real) do
+        {:ok, descriptor} ->
+          # Native gall-work (contract_version 1): the CLI claims via the
+          # MCP fabric itself and closes with head-verified evidence. The
+          # descriptor is materialized to a per-dispatch temp file only
+          # when a real attempt runs (materialize_descriptor/1).
+          path = descriptor_path(epoch_id)
+
+          {:gall_work_native, nil, ["bin/zcode.js", "gall-work", "--lease", path],
+           %{path: path, content: descriptor}}
+
+        :none ->
+          # Generic /xaas prompt path for non-semantic waves: byte-identical
+          # to the bash script's compatibility projection. Goal text never
+          # enters it -- the two identifiers only.
+          prompt = prompt(worker_id, epoch_id)
+
+          {:xaas_prompt, prompt,
+           ["bin/zcode.js", "--prompt", prompt, "--cwd", cwd_real, "--json"], nil}
+      end
 
     {:ok,
      %{
@@ -509,7 +560,9 @@ defmodule Xaas.Ultracode.Dispatch do
        worker_id: worker_id,
        mode: mode,
        cwd: cwd_real,
+       protocol: protocol,
        prompt: prompt,
+       descriptor: descriptor,
        env_added: env_added,
        argv_tail: argv_tail,
        cli_dir: resolved.cli_dir,
@@ -523,6 +576,63 @@ defmodule Xaas.Ultracode.Dispatch do
     "/xaas Call claim_next with provider_worker_id exactly \"#{worker_id}\" " <>
       "and epoch_id exactly \"#{epoch_id}\"; do not use any other values."
   end
+
+  # A run is SEMANTIC iff the full canonical checkpoint identity is present
+  # (the same five fields the bash script's semantic path requires, and the
+  # same `gall.work-lease/1` document it writes). Partial identity is NOT
+  # semantic here: the run keeps the generic prompt path, and a semantically
+  # broken identity is the run factory's defect, not this boundary's to
+  # guess around.
+  defp semantic_descriptor(%Epoch{run: %Run{} = run, id: epoch_id}, worker_id, worktree) do
+    fields = %{
+      "work_order_iri" => run.work_order_iri,
+      "checkpoint_iri" => run.checkpoint_iri,
+      "graph_digest" => run.graph_digest,
+      "repository_identity" => run.repository_identity,
+      "base_sha" => run.base_sha
+    }
+
+    if fields |> Map.values() |> Enum.all?(&is_binary/1) do
+      {:ok,
+       %{
+         "schema" => "gall.work-lease/1",
+         "work_order_iri" => run.work_order_iri,
+         "checkpoint_iri" => run.checkpoint_iri,
+         "graph_digest" => run.graph_digest,
+         "repository_identity" => run.repository_identity,
+         "base_sha" => run.base_sha,
+         "epoch_id" => epoch_id,
+         "worker_id" => worker_id,
+         "worktree" => worktree
+       }}
+    else
+      :none
+    end
+  end
+
+  defp semantic_descriptor(_epoch, _worker_id, _worktree), do: :none
+
+  defp descriptor_path(epoch_id) do
+    Path.join(
+      System.tmp_dir!(),
+      "xaas-dispatch-gall-#{String.slice(epoch_id, 0, 8)}-#{System.unique_integer([:positive])}.json"
+    )
+  end
+
+  # Writes the gall.work-lease/1 document the native CLI reads. Only a real
+  # execution needs it; a dry-run plan carries the content and path without
+  # touching the filesystem.
+  defp materialize_descriptor(%{descriptor: %{path: path, content: content}}) do
+    case File.write(path, Jason.encode!(content) <> "\n", [:write, :create]) do
+      :ok -> :ok
+      {:error, reason} -> {:error, {:descriptor_unavailable, path, reason}}
+    end
+  end
+
+  defp materialize_descriptor(_built), do: :ok
+
+  defp remove_descriptor(%{descriptor: %{path: path}}), do: _ = File.rm(path)
+  defp remove_descriptor(_built), do: :ok
 
   # Per-repo toolchain pass-through (see Xaas.Ultracode.Worktrees moduledoc,
   # "Worker environment contract"): when the epoch's run names a registered

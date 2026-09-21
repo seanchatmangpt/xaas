@@ -68,6 +68,10 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.cli_dir == cli_dir
     assert String.starts_with?(plan.log_path, System.tmp_dir!())
 
+    # A run without full semantic identity keeps the generic /xaas prompt
+    # path for non-semantic waves: byte-identical to the bash script's.
+    assert plan.protocol == :xaas_prompt
+
     # The gate env: exactly what arms the plugin's PreToolUse check.
     assert {"XAAS_WORKER", "1"} in plan.env_added
     assert {"XAAS_LEASE_CWD", realpath(worktree)} in plan.env_added
@@ -85,6 +89,71 @@ defmodule Xaas.Ultracode.DispatchTest do
              plan.cwd,
              "--json"
            ]
+  end
+
+  test "a semantic run plans the native gall-work protocol with the gall.work-lease/1 descriptor and no prompt",
+       %{worktree: worktree} do
+    {_run, epoch} =
+      create_epoch!(worktree,
+        work_order_iri: "urn:gall:work-order:dispatch:test",
+        checkpoint_iri: "urn:gall:checkpoint:dispatch:test",
+        graph_digest: "sha256:#{String.duplicate("a", 64)}",
+        repository_identity: "seanchatmangpt/xaas",
+        base_sha: String.duplicate("b", 40)
+      )
+
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    {:ok, plan} =
+      Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    # Native protocol, no prompt, no goal on argv.
+    assert plan.protocol == :gall_work_native
+    assert plan.prompt == nil
+    assert plan.argv_tail == ["bin/zcode.js", "gall-work", "--lease", plan.descriptor.path]
+
+    # The descriptor is exactly the document the native CLI validates:
+    # closed canonical subject identity bound to THIS epoch and worktree.
+    descriptor = plan.descriptor.content
+    assert descriptor["schema"] == "gall.work-lease/1"
+    assert descriptor["epoch_id"] == epoch.id
+    assert descriptor["worktree"] == realpath(worktree)
+    assert descriptor["worker_id"] == plan.worker_id
+    assert descriptor["base_sha"] == String.duplicate("b", 40)
+
+    # A dry run touches no filesystem: the descriptor is only written by a
+    # real dispatch.
+    refute File.exists?(plan.descriptor.path)
+  end
+
+  test "a semantic run with only PARTIAL identity keeps the generic prompt path (never guesses)",
+       %{worktree: worktree} do
+    {:ok, run} =
+      Run
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          goal: "dispatch test goal",
+          provider: @provider,
+          max_cycles: 1,
+          work_order_iri: "urn:gall:work-order:dispatch:partial"
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, epoch} = create_epoch_row!(run, worktree, 0, running_subject())
+
+    {:ok, plan} =
+      Dispatch.plan(epoch.id,
+        provider: @provider,
+        cli_dir: fake_cli_dir("exit 0\n"),
+        node_path: @sh
+      )
+
+    assert plan.protocol == :xaas_prompt
+    assert plan.prompt =~ epoch.id
+    assert plan.descriptor == nil
   end
 
   test "plan refuses a CLI directory that does not hold bin/zcode.js" do
@@ -287,6 +356,7 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert result.attempts == 1
     assert result.exit_code == 0
     assert result.mode == :claim
+    assert result.protocol == :xaas_prompt
     assert result.epoch_state == :running
     assert result.epoch_id == epoch.id
     assert is_integer(result.duration_ms) and result.duration_ms >= 0
@@ -304,6 +374,97 @@ defmodule Xaas.Ultracode.DispatchTest do
              result.receipts
 
     assert run.id
+  end
+
+  test "a semantic dispatch runs the NATIVE protocol: gall-work argv, descriptor on disk, no /xaas anywhere",
+       %{worktree: worktree} do
+    {_run, epoch} =
+      create_epoch!(worktree,
+        work_order_iri: "urn:gall:work-order:dispatch:native",
+        checkpoint_iri: "urn:gall:checkpoint:dispatch:native",
+        graph_digest: "sha256:#{String.duplicate("c", 64)}",
+        repository_identity: "seanchatmangpt/xaas",
+        base_sha: String.duplicate("d", 40)
+      )
+
+    fake_log = test_path("dispatch-native", ".log")
+
+    cli_dir =
+      fake_cli_dir("""
+      printf 'args=%s\\n' "$*" > "$FAKE_LOG"
+      exit 0
+      """)
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        extra_env: %{"FAKE_LOG" => fake_log}
+      )
+
+    assert result.status == :ok
+    assert result.protocol == :gall_work_native
+    assert result.prompt == nil
+
+    # The child was invoked with the exact contract argv: gall-work --lease
+    # <descriptor>; never a /xaas prompt projection (the prompt protocol's
+    # signatures -- the --prompt flag and the claim_next phrasing -- appear
+    # nowhere in the child argv).
+    logged = File.read!(fake_log)
+    assert logged =~ "gall-work --lease"
+    refute logged =~ "--prompt"
+    refute logged =~ "Call claim_next"
+
+    # The descriptor file existed for the child and is gone afterwards.
+    descriptor_glob = Path.join(System.tmp_dir!(), "xaas-dispatch-gall-*.json")
+
+    assert Enum.empty?(Path.wildcard(descriptor_glob)),
+           "descriptor temp files must be removed when the dispatch ends"
+  end
+
+  test "an old CLI without native gall-work REFUSES: typed failure, no prompt fallback",
+       %{worktree: worktree} do
+    {_run, epoch} =
+      create_epoch!(worktree,
+        work_order_iri: "urn:gall:work-order:dispatch:oldcli",
+        checkpoint_iri: "urn:gall:checkpoint:dispatch:oldcli",
+        graph_digest: "sha256:#{String.duplicate("e", 64)}",
+        repository_identity: "seanchatmangpt/xaas",
+        base_sha: String.duplicate("f", 40)
+      )
+
+    fake_log = test_path("dispatch-oldcli", ".log")
+
+    # What a pre-gall-work zcode CLI does with an unknown command: exit 2,
+    # usage error. The boundary must classify :failed and NEVER re-project
+    # the dispatch as the /xaas claim_next prompt.
+    cli_dir =
+      fake_cli_dir("""
+      printf 'args=%s\\n' "$*" > "$FAKE_LOG"
+      echo "Error: unknown command: gall-work" >&2
+      exit 2
+      """)
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        extra_env: %{"FAKE_LOG" => fake_log}
+      )
+
+    assert result.status == :failed
+    assert result.exit_code == 2
+    assert result.protocol == :gall_work_native
+    assert result.output_tail =~ "unknown command: gall-work"
+
+    logged = File.read!(fake_log)
+    assert logged =~ "gall-work --lease"
+    refute logged =~ "--prompt"
+    refute logged =~ "Call claim_next"
   end
 
   test "a failover-class outcome is retried exactly once and then succeeds", %{worktree: worktree} do
@@ -837,15 +998,28 @@ defmodule Xaas.Ultracode.DispatchTest do
   # ------------------------------------------------------------------
 
   defp create_epoch!(worktree, overrides \\ []) do
+    provider = Keyword.get(overrides, :provider, @provider)
+
     {:ok, run} =
       Run
       |> Ash.Changeset.for_create(
         :create,
         %{
           goal: "dispatch test goal",
-          provider: Keyword.get(overrides, :provider, @provider),
+          provider: provider,
           max_cycles: 1
-        },
+        }
+        |> Map.merge(
+          Map.new(
+            Keyword.take(overrides, [
+              :work_order_iri,
+              :checkpoint_iri,
+              :graph_digest,
+              :repository_identity,
+              :base_sha
+            ])
+          )
+        ),
         authorize?: false
       )
       |> Ash.create()

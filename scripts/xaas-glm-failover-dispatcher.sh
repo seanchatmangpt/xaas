@@ -4,10 +4,19 @@
 #
 # Unattended trigger for the zcode/GLM failover worker. Polls the XaaS
 # Postgres for provider='zcode' epochs that are :running (advanced there by the
-# real Oban :tick -> Xaas.Ultracode.Reactor) with lease_token IS NULL, and runs
-# one headless zcode turn (`/xaas`, the plugin's worker protocol) per pass so
-# the worker claims via the MCP fabric. It never grants tools: Bash, git_push
-# and publish stay hard-refused server-side by Xaas.Ultracode.Lease.admit_tool.
+# real Oban :tick -> Xaas.Ultracode.Reactor) with lease_token IS NULL, and
+# dispatches one worker per pass:
+#   * semantic epochs (full checkpoint identity) -> NATIVE `zcode gall-work
+#     --lease <descriptor>`: the CLI runs the whole claim -> persist ->
+#     construct -> close lifecycle against the MCP fabric itself (gall-work
+#     contract, contract_version 1, priv/zcode_plugin/gall-work.contract.json,
+#     byte-identical in zcode-cli). No `/xaas claim_next` fallback: an old CLI
+#     without native gall-work exits non-zero and the dispatch is classified
+#     failed.
+#   * epochs without semantic identity -> the generic /xaas prompt path for
+#     non-semantic waves, unchanged.
+# Either way it never grants tools: Bash, git_push and publish stay
+# hard-refused server-side by Xaas.Ultracode.Lease.admit_tool.
 #
 # Usage: xaas-glm-failover-dispatcher.sh [--once] [--interval SECONDS]
 #        xaas-glm-failover-dispatcher.sh --epoch EPOCH_UUID
