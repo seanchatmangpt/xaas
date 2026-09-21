@@ -20,6 +20,7 @@ defmodule Xaas.Billing do
     resource(Xaas.Billing.ApprovalQuotaOverride)
     resource(Xaas.Billing.ApprovalSlaCreditApply)
     resource(Xaas.Billing.ApprovalTierDowngrade)
+    resource(Xaas.Billing.RevenueRecognition)
     resource(Xaas.Billing.Subscription)
   end
 end

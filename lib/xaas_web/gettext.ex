@@ -26,6 +26,10 @@ defmodule XaasWeb.Gettext do
       # Domain-based translation
       dgettext("errors", "Here is the error message to translate")
 
+  New code should prefer `use Gettext, backend: KanbanWeb.Gettext`. The local
+  `gettext/2` compatibility macro keeps existing imported call sites compiling
+  while preserving Gettext's explicit-backend extraction semantics.
+
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
   use Gettext.Backend, otp_app: :xaas
