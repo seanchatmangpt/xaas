@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           actual="$(git rev-parse HEAD)"
-          printf 'admitted=%s\\nobserved=%s\\n' "$SUBJECT_SHA" "$actual"
+          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$actual"
           test "$actual" = "$SUBJECT_SHA" || {
             echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
             exit 2
