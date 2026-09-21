@@ -86,7 +86,14 @@ defmodule Xaas.Ultracode.LeaseConcurrencyStressTest do
   end
 
   defp make_git_worktree do
-    dir = Path.join(System.tmp_dir(), "xaas-lease-stress-#{System.unique_integer()}")
+    # run_uid law (dispatch_test): unique_integer restarts per BEAM; qualify
+    # with wall clock so concurrent `mix test` runs never share the dir.
+    dir =
+      Path.join(
+        System.tmp_dir(),
+        "xaas-lease-stress-#{System.system_time(:millisecond)}-#{System.unique_integer()}"
+      )
+
     File.mkdir_p!(dir)
 
     System.cmd("git", ["-C", dir, "init", "--quiet"], stderr_to_stdout: true)

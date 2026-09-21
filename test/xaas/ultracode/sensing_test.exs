@@ -12,7 +12,14 @@ defmodule Xaas.Ultracode.SensingTest do
   @id_charset ~r/\A[A-Za-z0-9._:-]+\z/
 
   setup do
-    dir = Path.join(System.tmp_dir!(), "xaas-sensing-test-#{System.unique_integer([:positive])}")
+    # run_uid law (dispatch_test): unique_integer restarts per BEAM; wall-clock
+    # qualify so concurrent `mix test` VMs never share this dir.
+    dir =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-sensing-test-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
+
     File.mkdir_p!(dir)
     on_exit(fn -> File.rm_rf(dir) end)
     %{base: dir}

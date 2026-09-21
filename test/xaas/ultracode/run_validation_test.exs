@@ -33,6 +33,7 @@ defmodule Xaas.Ultracode.RunValidationTest do
 
   defp epoch_object(id), do: %{"id" => id, "type" => "epoch"}
   defp run_object(id), do: %{"id" => id, "type" => "run"}
+  defp receipt_object(id), do: %{"id" => id, "type" => "receipt"}
 
   defp event(id, type, iso_time, attributes, relationships) do
     %{
@@ -114,7 +115,12 @@ defmodule Xaas.Ultracode.RunValidationTest do
   end
 
   test "validation is stable against the same log loaded from a path" do
-    path = Path.join(System.tmp_dir!(), "run_validation_positive_#{System.unique_integer()}.json")
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "run_validation_positive_#{System.system_time(:millisecond)}-#{System.unique_integer()}.json"
+      )
+
     File.write!(path, Jason.encode!(three_epoch_log()))
 
     on_exit(fn -> File.rm(path) end)
@@ -627,6 +633,77 @@ defmodule Xaas.Ultracode.RunValidationTest do
 
     assert result.verdict == :not_validated
     assert Enum.any?(result.violations, &match?(%{code: :missing_terminal, epoch_id: "ep-a"}, &1))
+  end
+
+  # ------------------------------------------------------------------
+  # Receipt-scoped sibling verification (W8-A8 sweep finding F1)
+  # ------------------------------------------------------------------
+
+  # Pre-hygiene heartbeat ticks were sealed as ordinary :alive receipts,
+  # so an honest egress projection can carry several receipt_closed
+  # events on one epoch. Only the receipt whose verification is its own
+  # attribute or a SAME-receipt sibling counts as the terminal.
+  defp bound_event(id, type, at, epoch_id, receipt_id, attrs \\ %{}) do
+    event(id, type, at, Map.merge(attrs, %{"epoch_id" => epoch_id, "run_id" => @run}), [
+      epoch_rel(epoch_id),
+      run_rel(@run),
+      %{"objectId" => receipt_id, "qualifier" => "receipt"}
+    ])
+  end
+
+  test "tick receipt_closeds do not inherit a sibling verification bound to a different receipt" do
+    events =
+      [
+        claimed("ep-0", minute(0)),
+        bound_event("receipt_closed:tick-1", "receipt_closed", minute(1), "ep-0", "tick-1"),
+        bound_event("receipt_closed:tick-2", "receipt_closed", minute(2), "ep-0", "tick-2"),
+        bound_event("receipt_closed:real", "receipt_closed", minute(3), "ep-0", "real"),
+        bound_event("verification_passed:real", "verification_passed", minute(3), "ep-0", "real")
+      ]
+
+    objects = [
+      run_object(@run),
+      epoch_object("ep-0"),
+      receipt_object("tick-1"),
+      receipt_object("tick-2"),
+      receipt_object("real")
+    ]
+
+    result = RunValidation.validate(ocel_log(events, objects), run_id: @run)
+
+    assert result.verdict == :validated, "violations: #{inspect(result.violations)}"
+    assert result.epochs["ep-0"].terminal.event_id == "receipt_closed:real"
+  end
+
+  test "an epoch whose only receipt_closeds are ticks beside a foreign-receipt verdict has no terminal" do
+    events =
+      [
+        claimed("ep-0", minute(0)),
+        bound_event("receipt_closed:tick-1", "receipt_closed", minute(1), "ep-0", "tick-1"),
+        bound_event("receipt_closed:tick-2", "receipt_closed", minute(2), "ep-0", "tick-2"),
+        # A court verdict bound to a receipt that never closed on this
+        # epoch verifies nothing here.
+        bound_event(
+          "verification_passed:other",
+          "verification_passed",
+          minute(3),
+          "ep-0",
+          "other"
+        )
+      ]
+
+    objects = [
+      run_object(@run),
+      epoch_object("ep-0"),
+      receipt_object("tick-1"),
+      receipt_object("tick-2"),
+      receipt_object("other")
+    ]
+
+    result = RunValidation.validate(ocel_log(events, objects), run_id: @run)
+
+    assert result.verdict == :not_validated
+    assert Enum.any?(result.violations, &match?(%{code: :missing_terminal, epoch_id: "ep-0"}, &1))
   end
 
   # ------------------------------------------------------------------
