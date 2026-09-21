@@ -69,6 +69,30 @@ done
 
 mkdir -p "$STATE_DIR"
 
+# The zcode CLI's own package.json is the contract (Xaas.Ultracode.ZcodePackage
+# is the Elixir mirror of this check): name must be zcode-app-cli, the launcher
+# is bin.zcode, and the running node must satisfy engines.node (">=X.Y.Z").
+# Nothing here hard-codes the launcher path or the Node floor.
+zcode_package_preflight() {
+  local out
+  out="$(node -e '
+    const fs = require("fs"), path = require("path");
+    const dir = process.argv[1];
+    const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+    if (pkg.name !== "zcode-app-cli") { console.error("wrong package name: " + pkg.name); process.exit(2); }
+    const bin = pkg.bin && pkg.bin.zcode;
+    if (!bin) { console.error("package.json has no bin.zcode"); process.exit(2); }
+    const script = path.resolve(dir, bin);
+    if (!script.startsWith(path.resolve(dir) + path.sep) || !fs.statSync(script).isFile()) { console.error("launcher missing or escapes CLI dir: " + script); process.exit(2); }
+    const m = /^>=\s*(\d+)\.(\d+)\.(\d+)$/.exec((pkg.engines && pkg.engines.node) || "");
+    if (!m) { console.error("unsupported engines.node: " + (pkg.engines && pkg.engines.node)); process.exit(2); }
+    const have = process.versions.node.split(".").map(Number), need = m.slice(1).map(Number);
+    for (let i = 0; i < 3; i++) { if (have[i] > need[i]) break; if (have[i] < need[i]) { console.error("node " + process.versions.node + " < engines.node " + pkg.engines.node); process.exit(2); } }
+    console.log(bin);
+  ' "$ZCODE_CLI_DIR" 2>&1)" || { log "zcode package preflight FAILED: ${out}"; return 1; }
+  ZCODE_BIN="$out"
+}
+
 log() {
   printf '%s [xaas-glm-failover] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1"
 }
@@ -199,7 +223,7 @@ dispatch_one_epoch() {
           }) + "\n", { mode: 0o600 });
         ' "$leasefile" || exit 127
 
-      run_with_timeout node bin/zcode.js gall-work --lease "$leasefile"
+      run_with_timeout node "$ZCODE_BIN" gall-work --lease "$leasefile"
       rc=$?
       rm -f "$leasefile"
       exit "$rc"
@@ -207,7 +231,7 @@ dispatch_one_epoch() {
 
     # Compatibility path for Runs created before semantic checkpoint identity
     # became canonical. New semantic Runs never use this prompt projection.
-    run_with_timeout node bin/zcode.js \
+    run_with_timeout node "$ZCODE_BIN" \
       --prompt "/xaas Call claim_next with provider_worker_id exactly \"${worker_id}\" and epoch_id exactly \"${epoch_id}\"; do not use any other values." \
       --cwd "$cwd_real" --json
   ) > "$logfile" 2>&1
@@ -270,6 +294,8 @@ EOF
   return 0
 }
 
+zcode_package_preflight || exit 127
+
 if [ -n "$DIRECT_EPOCH" ]; then
   case "$DIRECT_EPOCH" in
     [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*-*-*-*) ;;
@@ -302,6 +328,6 @@ if [ "$ONCE" -eq 1 ]; then
 fi
 
 while true; do
-  run_once_pass
+  zcode_package_preflight && run_once_pass
   sleep "$POLL_INTERVAL"
 done

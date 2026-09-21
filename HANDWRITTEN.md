@@ -163,3 +163,5 @@ entry was written).
 invented parallel ExecutionWorker/WorkContract/Execution resources and was
 reverted — `backup/execution-fabric-v1` — in favor of extending the
 existing Ultracode seam)
+
+lib/xaas/ultracode/zcode_package.ex | `Xaas.Ultracode.ZcodePackage`: reads ~/dev/zcode-cli/package.json (name, bin.zcode, engines.node floor) and measures the worker node via `--version` | no admitted pack expresses an external-CLI package contract reader | zcode-plugin-pack | 2026-09-21
