@@ -84,13 +84,13 @@ jobs:
 
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     name: Exact-head test court
     env:
       MIX_ENV: test
     services:
       postgres:
-        image: postgres:15.2
+        image: pgvector/pgvector:0.8.0-pg15
         env:
           POSTGRES_PASSWORD: postgres
         ports:

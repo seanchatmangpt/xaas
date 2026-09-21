@@ -91,7 +91,10 @@ defmodule Xaas.Ultracode.LeaseVerifierTest do
              Lease.close(token, head, :alive, %{"note" => "worker says done"})
 
     assert epoch.state == :completed
-    assert receipt.outcome == :alive
+
+    assert receipt.outcome == :alive,
+           "fabric verdict: " <> inspect(receipt.evidence["fabric_verifier"])
+
     assert receipt.evidence["head_verified"] == true
     assert receipt.evidence["note"] == "worker says done"
 

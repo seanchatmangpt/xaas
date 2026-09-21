@@ -77,6 +77,51 @@ defmodule Xaas.Ultracode.VerifierTest do
     assert again["argv_sha256"] == result["argv_sha256"]
   end
 
+  test "a port that already closed has no os_pid: nil, never a crash" do
+    port = Port.open({:spawn_executable, "/usr/bin/true"}, [:exit_status, :hide])
+    ref = Port.monitor(port)
+    assert_receive {^port, {:exit_status, 0}}, 5_000
+    assert_receive {:DOWN, ^ref, :port, ^port, _reason}, 5_000
+
+    assert Verifier.port_os_pid(port) == nil
+  end
+
+  @tag timeout: 180_000
+  test "fast steps stay pass when the caller is descheduled past the step's lifetime (loaded scheduler)",
+       %{ctx: ctx} do
+    put_suite("t", suite([sh("quick", "true")]))
+
+    burners =
+      for _ <- 1..(System.schedulers_online() * 2) do
+        spawn(fn -> burn() end)
+      end
+
+    try do
+      results =
+        1..160
+        |> Task.async_stream(
+          fn _ ->
+            {:ok, result} = Verifier.run("t", Map.put(ctx, :epoch_id, Ecto.UUID.generate()))
+            {result["status"], result["reason"], Enum.map(result["steps"], & &1["reason"])}
+          end,
+          max_concurrency: System.schedulers_online() * 4,
+          timeout: 120_000
+        )
+        |> Enum.map(fn {:ok, value} -> value end)
+
+      assert Enum.frequencies_by(results, &elem(&1, 0)) == %{"pass" => 160},
+             "non-pass verdicts under load: " <>
+               inspect(Enum.reject(results, &(elem(&1, 0) == "pass")) |> Enum.take(3))
+    after
+      Enum.each(burners, &Process.exit(&1, :kill))
+    end
+  end
+
+  defp burn do
+    :erlang.phash2(:erlang.unique_integer())
+    burn()
+  end
+
   test "a failing step is fail and later steps do not run", %{ctx: ctx} do
     put_suite("t", suite([sh("bad", "echo boom; exit 1"), sh("never", "echo unreachable")]))
 

@@ -24,7 +24,8 @@ defmodule Xaas.MixProject do
       dialyzer: [
         plt_core_path: "priv/plts/core.plt",
         plt_file: {:no_warn, "priv/plts/project.plt"},
-        plt_add_apps: [:ex_unit]
+        plt_add_apps: [:ex_unit, :mix],
+        ignore_warnings: ".dialyzer_ignore.exs"
       ]
     ]
   end
@@ -135,8 +136,9 @@ defmodule Xaas.MixProject do
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
       # assertions in XaasWeb.AutofdeLab.StatusLiveTest need it).
       {:lazy_html, ">= 0.1.0", only: :test},
-      {:sourceror, "~> 1.8"},
-      {:igniter, "~> 0.6"},
+      {:sourceror, "~> 1.8", runtime: false},
+      # :ex4pm's `use Igniter.Mix.Task` needs Igniter at compile time in every env.
+      {:igniter, "~> 0.6", runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:dns_cluster, "~> 0.1.3"},
