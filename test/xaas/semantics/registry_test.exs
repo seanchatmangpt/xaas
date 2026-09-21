@@ -32,6 +32,7 @@ defmodule Xaas.Semantics.RegistryTest do
 
     Enum.each(resources, fn resource ->
       Code.ensure_loaded!(resource)
+
       assert function_exported?(resource, :ontology_projection, 0),
              "#{inspect(resource)} does not use Xaas.Resource"
 
