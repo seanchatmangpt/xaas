@@ -21,9 +21,24 @@ defmodule Xaas.Sa2a.Bridge do
   catalog); `validate/1`, `admit/2`, `plan/1`, `replay/2` are
   verify/admit/construct/receipt operations per
   `Xaas.Sa2a.Generated.EdgeCatalog.all/0`.
+
+  Authority admission runs fail-closed, in `call/2`, before the request ever
+  reaches `GenServer.call`/`Port.command/2`: the op is looked up against
+  `Xaas.Sa2a.Generated.McpDescriptor.requires_authority?/1` (real, generated,
+  fail-closed for any unregistered id -- see that module), and when it
+  answers `true` a non-empty `authority` evidence map must be present or the
+  call is refused with `{:error, :sa2a_authority_evidence_required}` without
+  ever touching the port process. This mirrors the same
+  `authority: Keyword.get(opts, :authority, %{})` /
+  `is_map(authority) and map_size(authority) > 0` admission pattern already
+  established for delegated actuation in `Xaas.Actuation.admit_authority/2`
+  and for the CASTLE bridge in `Xaas.Castle.request/2`
+  (`:castle_authority_evidence_required`) -- not a new convention.
   """
 
   use GenServer
+
+  alias Xaas.Sa2a.Generated.McpDescriptor
 
   @port_command "autofde"
   @port_args ["beam-bridge"]
@@ -75,14 +90,20 @@ defmodule Xaas.Sa2a.Bridge do
     call(req)
   end
 
-  @doc "The sole consequential DO edge -- see s2b:edge40 / edge catalog's do_boundary?: true row."
+  @doc """
+  The sole consequential DO edge -- see s2b:edge40 / edge catalog's
+  `do_boundary?: true` row. `requires_authority?: true` in the generated MCP
+  descriptor, so a non-empty `:authority` evidence map is required in
+  `opts` or the call is refused before the port is ever touched -- see
+  `call/2`.
+  """
   @spec execute(String.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def execute(query, opts \\ []) do
     req =
       %{"op" => "sa2a_execute", "query" => query}
       |> maybe_put("compiled_rules", Keyword.get(opts, :compiled_rules))
 
-    call(req)
+    call(req, authority: Keyword.get(opts, :authority))
   end
 
   @spec replay(term(), String.t()) :: {:ok, map()} | {:error, term()}
@@ -93,9 +114,36 @@ defmodule Xaas.Sa2a.Bridge do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  defp call(req, timeout \\ @default_timeout_ms) do
-    GenServer.call(__MODULE__, {:request, req}, timeout)
+  @spec call(map(), keyword()) :: {:ok, map()} | {:error, term()}
+  defp call(req, opts \\ []) do
+    timeout = Keyword.get(opts, :timeout, @default_timeout_ms)
+
+    with :ok <- admit_authority(Map.get(req, "op"), Keyword.get(opts, :authority)) do
+      GenServer.call(__MODULE__, {:request, req}, timeout)
+    end
   end
+
+  # -- authority admission -------------------------------------------------
+  #
+  # Fail-closed, and evaluated entirely before `GenServer.call/3` (hence
+  # before `Port.command/2`) is ever reached -- a refusal here never starts
+  # the port round trip. `McpDescriptor.requires_authority?/1` is the real,
+  # generated, fail-closed lookup (unregistered ids answer `true`); the
+  # non-empty-map check mirrors the established
+  # `Xaas.Actuation.admit_authority/2` / `Xaas.Castle.request/2` pattern.
+  defp admit_authority(op, authority) do
+    if McpDescriptor.requires_authority?(op) do
+      admit_authority_evidence(authority)
+    else
+      :ok
+    end
+  end
+
+  defp admit_authority_evidence(authority) when is_map(authority) and map_size(authority) > 0,
+    do: :ok
+
+  defp admit_authority_evidence(_authority),
+    do: {:error, :sa2a_authority_evidence_required}
 
   # -- server -------------------------------------------------------------
 
