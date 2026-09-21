@@ -101,21 +101,30 @@ defmodule Xaas.Zoe.EventSimulation do
       :registration_exceptions
     ]
 
-    with true <- phase in @phases or {:error, {:invalid, :phase}},
+    with {:ok, phase} <- valid_phase(phase),
          :ok <- validate_counts(observation, required_counts),
-         true <- is_boolean(value(observation, :roster_complete?)) or {:error, {:invalid, :roster_complete?}},
-         true <-
-           is_boolean(value(observation, :attendance_submitted?)) or
-             {:error, {:invalid, :attendance_submitted?}},
-         incidents when is_list(incidents) <- value(observation, :incidents, []) do
+         :ok <- validate_boolean(observation, :roster_complete?),
+         :ok <- validate_boolean(observation, :attendance_submitted?),
+         {:ok, _incidents} <- validate_incidents(observation) do
       {:ok, Map.put(observation, :phase, phase)}
-    else
-      {:error, _} = error -> error
-      _ -> {:error, {:invalid, :incidents}}
     end
   end
 
   defp validate_observation(_), do: {:error, {:invalid, :observation}}
+
+  defp valid_phase(phase) when phase in @phases, do: {:ok, phase}
+  defp valid_phase(_), do: {:error, {:invalid, :phase}}
+
+  defp validate_boolean(observation, key) do
+    if is_boolean(value(observation, key)), do: :ok, else: {:error, {:invalid, key}}
+  end
+
+  defp validate_incidents(observation) do
+    case value(observation, :incidents, []) do
+      incidents when is_list(incidents) -> {:ok, incidents}
+      _ -> {:error, {:invalid, :incidents}}
+    end
+  end
 
   defp validate_counts(observation, keys) do
     Enum.reduce_while(keys, :ok, fn key, :ok ->
