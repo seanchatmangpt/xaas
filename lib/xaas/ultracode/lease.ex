@@ -51,7 +51,14 @@ defmodule Xaas.Ultracode.Lease do
       before an :alive-family outcome is sealed; mismatch or an
       unavailable verifier downgrades the sealed outcome (falsified
       evidence is :build_broken; unverifiable evidence is
-      :partial_alive with the reason in evidence).
+      :partial_alive with the reason in evidence). And under the receipt
+      vocabulary law, `:alive` requires a QUALIFYING terminal court --
+      head_verified plus a passing registered verifier suite; a close on
+      a Run with no suite downgrades an `:alive` claim to `:partial_alive`
+      (`verifier_suite_absent` in evidence), and
+      `Xaas.Ultracode.Validations.AliveRequiresCourt` refuses at the
+      `Receipt.:seal` boundary should any path ever try to seal `:alive`
+      without that court.
 
   ## `actuate/2` -- a lease may also reach Path A, never by widening Path B
 
@@ -852,6 +859,18 @@ defmodule Xaas.Ultracode.Lease do
       "fail" -> {:build_broken, evidence}
       _unverifiable -> {:partial_alive, evidence}
     end
+  end
+
+  # Receipt law (Xaas.Ultracode.Validations.AliveRequiresCourt): :alive is
+  # manufactured ONLY by a qualifying terminal court -- head_verified plus a
+  # PASSING fabric verifier. A Run with NO registered verifier suite has no
+  # court, so an :alive claim downgrades to :partial_alive BEFORE sealing:
+  # the head was verified, but nothing independently verified the work. This
+  # keeps `Lease.close/4` from ever tripping the sealing guard (which would
+  # strand a completed epoch without its receipt), while keeping the sealed
+  # vocabulary honest -- only a court-pass head can ever say :alive.
+  defp fabric_verified(_epoch, _final_head, :alive, evidence) do
+    {:partial_alive, Map.put(evidence, "verifier_suite_absent", true)}
   end
 
   defp fabric_verified(_epoch, _final_head, claimed_outcome, evidence),

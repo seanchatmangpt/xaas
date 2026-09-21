@@ -77,8 +77,10 @@ defmodule Xaas.Ultracode.EpochReactor do
   # leased out to a provider worker and completes only through
   # `Xaas.Ultracode.Lease.close/3` on verified provider evidence. Until
   # then the cycle is `:await_provider`: a real no-op-with-receipt turn,
-  # not a completion claim. Legacy provider-less Runs keep the original
-  # complete-next-cycle semantics unchanged.
+  # not a completion claim -- the receipt is a `:heartbeat` (the typed
+  # non-standing tick class), never a standing claim. Legacy provider-less
+  # Runs keep the original complete-next-cycle semantics unchanged (their
+  # tick receipts are heartbeats too, for the same reason).
   step :plan do
     argument(:admission, result(:admit))
 
@@ -234,7 +236,24 @@ defmodule Xaas.Ultracode.EpochReactor do
   # struct `Construct` returned) and assert its `state` actually matches what
   # was planned. This is the falsifier -- if the DB disagrees with what
   # `Construct` believes it did, this step catches it and the outcome is
-  # `:build_broken`, not `:alive`.
+  # `:build_broken`, not a clean turn.
+  #
+  # Receipt-vocabulary law (2026-09-20, W7 receipt hygiene): a tick turn is
+  # LIFECYCLE, not standing. A matched-state tick seals `outcome: :heartbeat`
+  # -- the typed NON-STANDING receipt class (see
+  # `Xaas.Ultracode.Receipt`'s moduledoc) -- because no terminal court ever
+  # ran here: `:start` proves the epoch began running, `:await_provider` is a
+  # no-op turn waiting for the provider, and a provider-less `:complete` is
+  # the machinery closing its own lifecycle, never evidence the WORK passed
+  # anything. The old shape sealed `:alive` on all three, so every tick a
+  # leased Run waited on manufactured a standing-looking ALIVE receipt with
+  # `await_provider` evidence -- pollution that only jsonb forensics could
+  # distinguish from a court-manufactured `:alive`. `:heartbeat` receipts are
+  # non-standing everywhere they are consumed (OCEL egress emits them as
+  # `heartbeat_recorded`, never `receipt_closed`; run validation cannot
+  # close an epoch with them; the autonomic judge repairs on them), and
+  # `Validations.AliveRequiresCourt` refuses any tick-shaped `:alive` seal
+  # at the Receipt boundary.
   step :verify do
     argument(:constructed, result(:construct))
     argument(:original, result(:observe))
@@ -251,7 +270,7 @@ defmodule Xaas.Ultracode.EpochReactor do
         {:ok, %{state: ^expected_state} = reloaded} ->
           {:ok,
            %{
-             outcome: :alive,
+             outcome: :heartbeat,
              epoch: reloaded,
              original_state: original.state,
              action_taken: action_taken,

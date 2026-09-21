@@ -50,6 +50,36 @@ defmodule Xaas.Ultracode.Receipt do
   so the carve-out is scoped as narrowly as the DSL allows (one action,
   one required filter argument) at the Ash layer, and reuses the
   existing token gate (not a new one) at the HTTP layer.
+
+  ## Receipt classes: standing vs. non-standing (heartbeat), and the
+     alive-requires-court law
+
+  The `outcome` atom doubles as the receipt CLASS, so the two families
+  are distinguishable by a typed column value -- never by jsonb
+  forensics over `evidence`:
+
+    * STANDING (the DfCM vocabulary this resource was modeled on):
+      `:alive`, `:partial_alive`, `:blocked`, `:build_broken`,
+      `:unsupported`, `:refused`. These are claims about the subject's
+      standing and are consumed as such (campaign standings, the OCEL
+      egress's terminal `receipt_closed` events, run validation).
+    * NON-STANDING: `:heartbeat` -- a Run-tick lifecycle/liveness record
+      (`EpochReactor`'s `:start`, `:await_provider`, `:complete` turns).
+      It evidences that the tick machinery advanced an epoch's lifecycle
+      state; it evidences NO standing. Every consumer treats it as
+      non-standing: the OCEL egress emits it as its own
+      `heartbeat_recorded` event type (never a `receipt_closed`), run
+      validation can never satisfy a verified-terminal requirement with
+      it, and the autonomic judge repairs on it. Legacy tick receipts
+      that sealed `outcome: :alive` with `await_provider` evidence were
+      standing pollution -- this class is the fix.
+
+  The sealing law (`Validations.AliveRequiresCourt`, attached to
+  `:seal` below): `:alive` is manufactured ONLY by a qualifying terminal
+  court -- `evidence["head_verified"] == true` AND
+  `evidence["fabric_verifier"]["status"] == "pass"` (`Lease.close/4`'s
+  head check plus the fabric verifier's pass verdict). Any other `:alive`
+  seal request is REFUSED with `REFUSED_ALIVE_WITHOUT_COURT`.
   """
 
   use Xaas.Resource,
@@ -115,6 +145,11 @@ defmodule Xaas.Ultracode.Receipt do
     create :seal do
       public?(false)
       accept([:epoch_id, :subject, :outcome, :evidence, :sealed_at])
+
+      # The receipt-vocabulary law (see the moduledoc's "Receipt classes"
+      # section): :alive enters this table ONLY through a qualifying
+      # terminal court. Fail-closed backstop in front of every producer.
+      validate({Xaas.Ultracode.Validations.AliveRequiresCourt, []})
     end
   end
 
@@ -129,8 +164,21 @@ defmodule Xaas.Ultracode.Receipt do
     attribute :outcome, :atom do
       allow_nil?(false)
 
+      # Standing family (first six) + the typed NON-STANDING heartbeat
+      # class (see the moduledoc's "Receipt classes" section): a
+      # `:heartbeat` outcome is a Run-tick lifecycle/liveness record and
+      # never counts as standing anywhere it is consumed. Stored as plain
+      # text -- this vocabulary change is Ash-level only, no DB migration.
       constraints(
-        one_of: [:alive, :partial_alive, :blocked, :build_broken, :unsupported, :refused]
+        one_of: [
+          :alive,
+          :partial_alive,
+          :blocked,
+          :build_broken,
+          :unsupported,
+          :refused,
+          :heartbeat
+        ]
       )
 
       public?(true)

@@ -62,6 +62,7 @@ defmodule Xaas.Ultracode.OcelEgressTest do
                %{"name" => "epoch_missed"},
                %{"name" => "epoch_failed"},
                %{"name" => "receipt_closed"},
+               %{"name" => "heartbeat_recorded"},
                %{"name" => "verification_passed"},
                %{"name" => "verification_failed"},
                %{"name" => "refused"},
@@ -330,6 +331,7 @@ defmodule Xaas.Ultracode.OcelEgressTest do
                %{"name" => "epoch_missed"},
                %{"name" => "epoch_failed"},
                %{"name" => "receipt_closed"},
+               %{"name" => "heartbeat_recorded"},
                %{"name" => "verification_passed"},
                %{"name" => "verification_failed"},
                %{"name" => "refused"},
@@ -864,6 +866,66 @@ defmodule Xaas.Ultracode.OcelEgressTest do
     failed = Enum.find(doc["ocel:events"], &(&1["type"] == "verification_failed"))
     assert %{"type" => "verification_failed"} = failed
     assert failed["attributes"]["verifier_status"] == "fail"
+  end
+
+  test "end-to-end: a heartbeat receipt emits its own heartbeat_recorded event, NEVER a receipt_closed" do
+    # The typed NON-STANDING tick class, sealed as a real row through the
+    # real `:seal` action with real tick evidence (no court verdict).
+    {run, epoch, _token} = real_claimed_run!()
+
+    epoch =
+      epoch
+      |> Ash.Changeset.for_update(:complete, %{final_head: "e2e-final-head"}, authorize?: false)
+      |> Ash.update!()
+
+    {:ok, receipt} =
+      Receipt
+      |> Ash.Changeset.for_create(
+        :seal,
+        %{
+          epoch_id: epoch.id,
+          subject: epoch.exact_subject,
+          outcome: :heartbeat,
+          evidence: %{
+            "expected_state" => "running",
+            "observed_state" => "running",
+            "action_taken" => "await_provider"
+          },
+          sealed_at: ~U[2026-09-20 10:00:00.000000Z]
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, doc} = OcelEgress.derive_run(run.id)
+
+    events = Map.new(doc["ocel:events"], &{&1["id"], &1})
+    heartbeat = events["heartbeat_recorded:#{receipt.id}"]
+
+    assert %{"type" => "heartbeat_recorded"} = heartbeat
+    assert heartbeat["time"] == "2026-09-20T10:00:00.000000Z"
+    assert heartbeat["attributes"]["outcome"] == "heartbeat"
+    assert heartbeat["attributes"]["action_taken"] == "await_provider"
+
+    # No standing events are fabricated from the heartbeat: not a terminal,
+    # not a verification, not a refusal.
+    refute Map.has_key?(events, "receipt_closed:#{receipt.id}")
+    refute Map.has_key?(events, "verification_passed:#{receipt.id}")
+    refute Map.has_key?(events, "verification_failed:#{receipt.id}")
+    refute Map.has_key?(events, "refused:#{receipt.id}")
+
+    # The Receipt OBJECT (a persisted-row fact, not an event) is still
+    # emitted, carrying its honest typed outcome.
+    receipt_objects =
+      doc["ocel:objects"]
+      |> Enum.filter(&(&1["type"] == "Receipt" and &1["id"] == receipt.id))
+
+    assert [%{"attributes" => %{"outcome" => "heartbeat"}}] = receipt_objects
+
+    # The event type is declared in the skeleton and the whole document
+    # still passes the real OCEL conformance court.
+    assert Enum.any?(doc["ocel:eventTypes"], &(&1["name"] == "heartbeat_recorded"))
+    assert {:ok, _report} = Xaas.Ultracode.Ocel.Validator.validate(doc)
   end
 
   test "end-to-end: a pending run with no epochs derives an empty, still-valid document" do

@@ -158,6 +158,15 @@ defmodule Xaas.Ultracode.RunValidation do
   @verification_events ~w(verification_passed verification_failed refused)
 
   # All event types that carry per-epoch semantic weight.
+  #
+  # Receipt-vocabulary law: `heartbeat_recorded` (the OCEL egress's event
+  # for the typed NON-STANDING `:heartbeat` receipt class) is DELIBERATELY
+  # absent from every list here. It is not a claim, not a terminal, not a
+  # verification -- a tick/liveness record must never satisfy the
+  # verified-terminal requirement, never hold or free a capacity slot, and
+  # never be grouped into an epoch's lifecycle accounting. An epoch whose
+  # only receipt is a heartbeat stays `:missing_terminal` -- stuck, not
+  # receipt-accounted -- exactly as the law requires.
   @epoch_lifecycle_events ~w(epoch_claimed epoch_started epoch_scheduled receipt_closed verification_passed verification_failed refused)
 
   @type violation :: %{

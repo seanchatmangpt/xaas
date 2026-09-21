@@ -355,7 +355,7 @@ defmodule Xaas.Ultracode.LeaseTest do
   end
 
   describe "close/4" do
-    test "seals an alive receipt when final_head matches the worktree HEAD" do
+    test "an :alive claim on a Run with NO verifier suite downgrades to :partial_alive -- alive is court-manufactured only" do
       worktree = make_git_worktree()
       provider_run_and_epoch("zcode-test", worktree)
       {:ok, _epoch, token, _run} = Lease.claim_next("zcode-test", "worker-1")
@@ -365,7 +365,24 @@ defmodule Xaas.Ultracode.LeaseTest do
 
       assert epoch.state == :completed
       assert epoch.final_head == git_head(worktree)
-      assert receipt.outcome == :alive
+
+      # Receipt vocabulary law: the head was verified, but no registered
+      # court ran, so `:alive` may not be sealed (`Lease.close/4` performs
+      # the honest downgrade itself; `Validations.AliveRequiresCourt`
+      # refuses at the boundary should any path ever try).
+      assert receipt.outcome == :partial_alive
+      assert receipt.evidence["head_verified"] == true
+      assert receipt.evidence["verifier_suite_absent"] == true
+    end
+
+    test "a claimed :partial_alive with no verifier suite still seals :partial_alive" do
+      worktree = make_git_worktree()
+      provider_run_and_epoch("zcode-test", worktree)
+      {:ok, _epoch, token, _run} = Lease.claim_next("zcode-test", "worker-1")
+
+      assert {:ok, _epoch, receipt} = Lease.close(token, git_head(worktree), :partial_alive)
+
+      assert receipt.outcome == :partial_alive
       assert receipt.evidence["head_verified"] == true
     end
 
@@ -556,12 +573,18 @@ defmodule Xaas.Ultracode.LeaseTest do
       assert {:ok, result} = Reactor.run(Xaas.Ultracode.EpochReactor, %{epoch_id: epoch.id})
 
       assert result.action_taken == :await_provider
-      assert result.outcome == :alive
+
+      # The await_provider turn is a TICK HEARTBEAT, not standing: its
+      # receipt is the typed non-standing `:heartbeat` class -- never
+      # `:alive` (that manufactured the standing pollution this class law
+      # ends; only a qualifying terminal court manufactures `:alive`).
+      assert result.outcome == :heartbeat
 
       reloaded = Ash.get!(Epoch, epoch.id, action: :read_unscoped)
       assert reloaded.state == :running
 
       receipt = Ash.get!(Xaas.Ultracode.Receipt, result.receipt_id, authorize?: false)
+      assert receipt.outcome == :heartbeat
       assert receipt.evidence["action_taken"] == "await_provider"
       refute Map.has_key?(receipt.evidence, "head_verified")
     end

@@ -158,6 +158,75 @@ defmodule Xaas.Ultracode.RunValidationTest do
     assert msg =~ "stuck"
   end
 
+  # ---- receipt-vocabulary law: heartbeats are NON-STANDING --------------
+  # `heartbeat_recorded` is the OCEL egress's event for the typed
+  # non-standing `:heartbeat` Receipt class (Run-tick lifecycle/liveness
+  # records). It is deliberately absent from this module's claim, terminal,
+  # and verification vocabularies: a heartbeat can never close an epoch,
+  # never hold or free a capacity slot, and never be promoted into terminal
+  # evidence by carrying a "verification" attribute.
+
+  defp heartbeat(epoch_id, at, attributes \\ %{}) do
+    event(
+      "hb-#{epoch_id}",
+      "heartbeat_recorded",
+      at,
+      Map.merge(
+        %{"epoch_id" => epoch_id, "run_id" => @run, "outcome" => "heartbeat"},
+        attributes
+      ),
+      [epoch_rel(epoch_id), run_rel(@run)]
+    )
+  end
+
+  test "a claimed epoch whose only receipt is a heartbeat_recorded is still missing_terminal" do
+    log =
+      ocel_log(
+        [claimed("ep-0", minute(0)), heartbeat("ep-0", minute(5))],
+        [run_object(@run), epoch_object("ep-0")]
+      )
+
+    result = RunValidation.validate(log, run_id: @run)
+
+    assert result.verdict == :not_validated
+    assert [%{code: :missing_terminal, epoch_id: "ep-0", message: msg}] = result.violations
+    assert msg =~ "stuck"
+  end
+
+  test "a heartbeat_recorded with a 'verification' attribute is still not terminal evidence" do
+    log =
+      ocel_log(
+        [claimed("ep-0", minute(0)), heartbeat("ep-0", minute(5), %{"verification" => "passed"})],
+        [run_object(@run), epoch_object("ep-0")]
+      )
+
+    result = RunValidation.validate(log, run_id: @run)
+
+    assert result.verdict == :not_validated
+    assert [%{code: :missing_terminal, epoch_id: "ep-0"}] = result.violations
+  end
+
+  test "a heartbeat alongside a real claim and verified terminal disturbs nothing" do
+    events = [
+      claimed("ep-0", minute(0)),
+      heartbeat("ep-0", minute(5)),
+      closed("ep-0", "passed", minute(10))
+    ]
+
+    log = ocel_log(events, [run_object(@run), epoch_object("ep-0")])
+
+    result = RunValidation.validate(log, run_id: @run)
+
+    assert result.verdict == :validated
+    assert result.violations == []
+    assert result.max_in_flight == 1
+
+    # The heartbeat is invisible to the per-epoch accounting: the epoch's
+    # appearance is its claim and its terminal is the receipt_closed.
+    assert result.epochs["ep-0"].appearance_type == "epoch_claimed"
+    assert result.epochs["ep-0"].terminal.verification == "passed"
+  end
+
   # ---- negative control 2: capacity breach ------------------------------
 
   test "6 workers in flight at one instant is not_validated with a capacity_breach" do

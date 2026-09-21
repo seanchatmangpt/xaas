@@ -125,12 +125,17 @@ defmodule Xaas.Ultracode.SystemAuthorityChicagoTest do
     test "Receipt.seal refuses an ordinary actor" do
       _run = running_run!("falsifier: receipt seal for ordinary actors")
 
+      # :blocked (a standing-family outcome with no vocabulary guard) so the
+      # refusal this falsifier proves is the AUTHORITY floor's Forbidden --
+      # the receipt-vocabulary guard (`Validations.AliveRequiresCourt`)
+      # would otherwise fire first on an evidence-less :alive and return
+      # Invalid instead.
       assert {:error, %Ash.Error.Forbidden{}} =
                Receipt
                |> Ash.Changeset.for_create(:seal, %{
                  epoch_id: Ash.UUIDv7.generate(),
                  subject: "falsifier-subject",
-                 outcome: :alive,
+                 outcome: :blocked,
                  evidence: %{},
                  sealed_at: DateTime.utc_now()
                })

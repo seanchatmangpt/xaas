@@ -196,17 +196,53 @@ defmodule Xaas.Ultracode.AutonomicJudgeTest do
   end
 
   # Fail-closed: standing alone never promotes. An alive claim on a verified
-  # head with NO court verdict (the run names no suite) still repairs.
-  test "an alive claim with no court verdict repairs", %{root: root} do
+  # head with NO court verdict (the run names no suite) is DOWNGRADED by
+  # `Lease.close/4` to the honest :partial_alive (`verifier_suite_absent`)
+  # -- `:alive` is court-manufactured only -- and the judge still repairs.
+  test "an alive claim with no court verdict downgrades to partial_alive and repairs", %{
+    root: root
+  } do
     {token, head, _wt} = leased(root, nil)
 
     {:ok, _epoch, receipt} = Lease.close(token, head, :alive, %{"note" => "trust me"})
 
-    assert receipt.outcome == :alive
+    assert receipt.outcome == :partial_alive
     assert receipt.evidence["head_verified"] == true
+    assert receipt.evidence["verifier_suite_absent"] == true
     refute Map.has_key?(receipt.evidence, "fabric_verifier")
 
     assert {:repair, reason} = Autonomic.judge_receipt(receipt)
+    assert reason =~ "no fabric verifier verdict"
+  end
+
+  # Receipt-vocabulary law: a Run-tick `:heartbeat` receipt is the typed
+  # NON-STANDING class. It is never in the honest-standing family, so it can
+  # never promote an item -- the wave loop repairs on it, and campaign
+  # standings derived from judge outcomes cannot see it as standing. Sealed
+  # here as a real row through the real `:seal` action (a tick heartbeat
+  # carries tick evidence, no court verdict).
+  test "a heartbeat receipt never promotes -- the judge repairs on it", %{root: root} do
+    register("j-pass", [sh("ok", "true")])
+    {_token, _head, epoch, _run} = leased_with_epoch(root, "j-pass")
+
+    {:ok, heartbeat} =
+      Xaas.Ultracode.Receipt
+      |> Ash.Changeset.for_create(
+        :seal,
+        %{
+          epoch_id: epoch.id,
+          subject: epoch.exact_subject,
+          outcome: :heartbeat,
+          evidence: %{"action_taken" => "await_provider", "observed_state" => "running"},
+          sealed_at: DateTime.utc_now()
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+
+    assert heartbeat.outcome == :heartbeat
+
+    assert {:repair, reason} = Autonomic.judge_receipt(heartbeat)
     assert reason =~ "no fabric verifier verdict"
   end
 
@@ -271,6 +307,39 @@ defmodule Xaas.Ultracode.AutonomicJudgeTest do
 
     {:ok, _epoch, token, _run} = Lease.claim_next(@provider, "worker-judge", epoch_id: epoch.id)
     {token, git_head(worktree), worktree}
+  end
+
+  # Same real claim path, but returns the real Epoch and Run structs too --
+  # for tests that seal their own receipt against the real rows.
+  defp leased_with_epoch(root, suite) do
+    worktree = git_worktree(root)
+
+    {:ok, run} =
+      Run
+      |> Ash.Changeset.for_create(
+        :create,
+        %{goal: "Judge seam qualification.", provider: @provider, verifier_suite: suite},
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, epoch} =
+      Epoch
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: "judge qualification",
+          state: :running,
+          worktree: worktree
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+
+    {:ok, _epoch, token, _run} = Lease.claim_next(@provider, "worker-judge", epoch_id: epoch.id)
+    {token, git_head(worktree), epoch, run}
   end
 
   defp mktmp(label) do

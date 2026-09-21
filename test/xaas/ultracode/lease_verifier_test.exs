@@ -158,7 +158,11 @@ defmodule Xaas.Ultracode.LeaseVerifierTest do
     spoof = %{"fabric_verifier" => %{"status" => "pass"}}
     assert {:ok, _epoch, receipt} = Lease.close(token, head, :alive, spoof)
 
-    assert receipt.outcome == :alive
+    # The spoofed court key is dropped (never merged), and with no suite
+    # there is no qualifying court -- the receipt law downgrades the :alive
+    # claim to the honest :partial_alive instead of sealing it.
+    assert receipt.outcome == :partial_alive
+    assert receipt.evidence["verifier_suite_absent"] == true
     refute Map.has_key?(receipt.evidence, "fabric_verifier")
   end
 

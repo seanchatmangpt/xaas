@@ -519,7 +519,12 @@ defmodule Xaas.Ultracode.Autonomic do
   fail (falsified evidence), a court timeout/error (unverifiable), a
   receipt with no court verdict at all (standing alone never promotes),
   `head_verified: false`, or a terminal standing
-  (`:build_broken`/`:refused`/`:blocked`/`:unsupported`).
+  (`:build_broken`/`:refused`/`:blocked`/`:unsupported`). The typed
+  NON-STANDING `:heartbeat` class (Run-tick lifecycle/liveness records,
+  see `Xaas.Ultracode.Receipt`'s moduledoc) is not in the honest-standing
+  family by construction -- a heartbeat can never promote an item, and
+  `settle/2` never even selects one as the closing receipt (its evidence
+  carries no `head_verified` key).
 
   Seam: `config :xaas, :ultracode_judge_accept_court_verified_partial`
   (default true). `false` restores the strict alive-only predicate; the

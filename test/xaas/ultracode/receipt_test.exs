@@ -52,7 +52,15 @@ defmodule Xaas.Ultracode.ReceiptTest do
     epoch
   end
 
-  defp seal_receipt(epoch, subject, evidence \\ %{"verifier" => "mix test"}) do
+  # A qualifying terminal court: head_verified plus a passing fabric
+  # verifier -- the ONLY evidence shape that may manufacture `:alive`
+  # (`Validations.AliveRequiresCourt`).
+  @court_evidence %{
+    "head_verified" => true,
+    "fabric_verifier" => %{"status" => "pass"}
+  }
+
+  defp seal_receipt(epoch, subject, evidence \\ @court_evidence) do
     Receipt
     |> Ash.Changeset.for_create(
       :seal,
@@ -76,7 +84,7 @@ defmodule Xaas.Ultracode.ReceiptTest do
       assert {:ok, [read_back]} = Receipt.for_epoch(epoch.id)
       assert read_back.id == receipt.id
       assert read_back.outcome == :alive
-      assert read_back.evidence == %{"verifier" => "mix test"}
+      assert read_back.evidence == @court_evidence
     end
 
     test "is scoped: a different epoch's receipts are never returned" do
@@ -113,6 +121,132 @@ defmodule Xaas.Ultracode.ReceiptTest do
         {:error, other} ->
           flunk("expected Forbidden or a filtered empty read, got: #{inspect(other)}")
       end
+    end
+  end
+
+  describe "the alive-requires-court sealing law" do
+    test "a terminal-court seal (head_verified + fabric verifier pass) yields :alive" do
+      epoch = run_and_epoch("court-alive")
+
+      assert %Receipt{} = seal_receipt(epoch, "court-alive")
+    end
+
+    test "an :alive seal with NO court evidence is REFUSED, not sealed" do
+      epoch = run_and_epoch("alive-no-court")
+
+      assert {:error, error} =
+               Receipt
+               |> Ash.Changeset.for_create(
+                 :seal,
+                 %{
+                   epoch_id: epoch.id,
+                   subject: "alive-no-court",
+                   outcome: :alive,
+                   evidence: %{"note" => "trust me"},
+                   sealed_at: DateTime.utc_now()
+                 },
+                 authorize?: false
+               )
+               |> Ash.create()
+
+      refute match?(%Receipt{}, error)
+      assert Exception.message(error) =~ "REFUSED_ALIVE_WITHOUT_COURT"
+    end
+
+    test "an :alive seal with head_verified but NO passing verifier verdict is REFUSED" do
+      epoch = run_and_epoch("alive-head-only")
+
+      assert {:error, error} =
+               Receipt
+               |> Ash.Changeset.for_create(
+                 :seal,
+                 %{
+                   epoch_id: epoch.id,
+                   subject: "alive-head-only",
+                   outcome: :alive,
+                   evidence: %{"head_verified" => true},
+                   sealed_at: DateTime.utc_now()
+                 },
+                 authorize?: false
+               )
+               |> Ash.create()
+
+      assert Exception.message(error) =~ "REFUSED_ALIVE_WITHOUT_COURT"
+    end
+
+    test "an :alive seal with a passing verifier but head_verified false is REFUSED" do
+      epoch = run_and_epoch("alive-unverified-head")
+
+      assert {:error, error} =
+               Receipt
+               |> Ash.Changeset.for_create(
+                 :seal,
+                 %{
+                   epoch_id: epoch.id,
+                   subject: "alive-unverified-head",
+                   outcome: :alive,
+                   evidence: %{
+                     "head_verified" => false,
+                     "fabric_verifier" => %{"status" => "pass"}
+                   },
+                   sealed_at: DateTime.utc_now()
+                 },
+                 authorize?: false
+               )
+               |> Ash.create()
+
+      assert Exception.message(error) =~ "REFUSED_ALIVE_WITHOUT_COURT"
+    end
+
+    test "a tick heartbeat seals as the typed non-standing :heartbeat class, never :alive" do
+      epoch = run_and_epoch("tick-heartbeat")
+
+      {:ok, receipt} =
+        Receipt
+        |> Ash.Changeset.for_create(
+          :seal,
+          %{
+            epoch_id: epoch.id,
+            subject: "tick-heartbeat",
+            outcome: :heartbeat,
+            evidence: %{
+              "expected_state" => "running",
+              "observed_state" => "running",
+              "action_taken" => "await_provider"
+            },
+            sealed_at: DateTime.utc_now()
+          },
+          authorize?: false
+        )
+        |> Ash.create()
+
+      assert receipt.outcome == :heartbeat
+      assert receipt.evidence["action_taken"] == "await_provider"
+
+      # The typed class, readable back through the real lawful read path.
+      assert {:ok, [read_back]} = Receipt.for_epoch(epoch.id)
+      assert read_back.outcome == :heartbeat
+    end
+
+    test "an unverified :partial_alive still seals (the honest downgrade class)" do
+      epoch = run_and_epoch("partial-no-court")
+
+      {:ok, receipt} =
+        Receipt
+        |> Ash.Changeset.for_create(
+          :seal,
+          %{
+            epoch_id: epoch.id,
+            subject: "partial-no-court",
+            outcome: :partial_alive,
+            evidence: %{"head_verified" => false, "verifier_unavailable" => "no_worktree"},
+            sealed_at: DateTime.utc_now()
+          },
+          authorize?: false
+        )
+        |> Ash.create()
+
+      assert receipt.outcome == :partial_alive
     end
   end
 end

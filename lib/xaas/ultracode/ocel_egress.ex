@@ -118,7 +118,8 @@ defmodule Xaas.Ultracode.OcelEgress do
     | `epoch_completed`     | `Epoch.state == :completed`      | `Epoch.completed_at` (`:complete`)   |
     | `epoch_missed`        | `Epoch.state == :missed`         | `Epoch.terminal_at` (a)              |
     | `epoch_failed`        | `Epoch.state == :failed`         | `Epoch.terminal_at` (a)              |
-    | `receipt_closed`      | every sealed Receipt             | `Receipt.sealed_at` (`:seal`)        |
+    | `receipt_closed`      | every sealed Receipt EXCEPT the heartbeat class (b2) | `Receipt.sealed_at` (`:seal`)        |
+    | `heartbeat_recorded`  | `Receipt.outcome == :heartbeat`  | `Receipt.sealed_at` (`EpochReactor`) |
     | `verification_passed` | evidence `fabric_verifier.status == "pass"` | `Receipt.sealed_at` (b)   |
     | `verification_failed` | evidence `fabric_verifier.status == "fail"` | `Receipt.sealed_at` (b)   |
     | `refused`             | `Receipt.outcome == :refused`    | `Receipt.sealed_at` (`Lease.refuse/3`)|
@@ -145,6 +146,13 @@ defmodule Xaas.Ultracode.OcelEgress do
     LATEST heartbeat per epoch, so N renewals collapse into ONE emitted
     event carrying the latest moment -- a disclosed collapse of history,
     not a loss of the newest fact.
+    (b2) Receipt-vocabulary law: `:heartbeat` is the typed NON-STANDING
+    tick class (`Xaas.Ultracode.Receipt`'s moduledoc). A heartbeat
+    receipt is a real persisted fact, so it is emitted -- as its own
+    `heartbeat_recorded` event type, carrying only `outcome`, `subject`
+    and `action_taken` -- and NEVER as a `receipt_closed` or with a
+    verification/refused sibling: manufacturing standing events from
+    tick/liveness records is exactly what the class law forbids.
 
   Deliberately NOT in the vocabulary at all: `wave_scheduled` -- the
   `:autonomic_wave` AshOban schedule is a repo-level loop (it is not a
@@ -174,7 +182,7 @@ defmodule Xaas.Ultracode.OcelEgress do
   require Ash.Query
 
   # Fixed declaration order (deterministic document skeleton). All five
-  # base object types and all fifteen event types are ALWAYS declared,
+  # base object types and all sixteen event types are ALWAYS declared,
   # even when a given run's log contains zero instances of one -- declared
   # vocabulary is the code's real event surface, emitted instances are
   # only the facts persistence can prove (see the moduledoc mapping
@@ -194,6 +202,7 @@ defmodule Xaas.Ultracode.OcelEgress do
     "epoch_missed",
     "epoch_failed",
     "receipt_closed",
+    "heartbeat_recorded",
     "verification_passed",
     "verification_failed",
     "refused",
@@ -578,19 +587,49 @@ defmodule Xaas.Ultracode.OcelEgress do
       receipts_by_epoch
       |> Map.get(epoch.id, [])
       |> Enum.flat_map(fn receipt ->
-        Enum.concat([
+        if heartbeat_receipt?(receipt) do
+          # Receipt-vocabulary law: a `:heartbeat` receipt is the typed
+          # NON-STANDING tick class. It emits its OWN event type -- never a
+          # `receipt_closed` (terminal standing evidence) and never a
+          # verification/refused sibling (a heartbeat carries no court
+          # verdict, and fabricating standing events from heartbeats is
+          # exactly the pollution this class exists to end). RunValidation
+          # deliberately does not know this type, so a heartbeat can never
+          # satisfy a verified-terminal requirement.
           maybe_event(
-            "receipt_closed",
+            "heartbeat_recorded",
             receipt.id,
             ts(receipt.sealed_at),
-            receipt_closed_attrs(receipt),
+            heartbeat_attrs(receipt),
             context ++ [rel(receipt.id, "receipt")]
-          ),
-          verification_events(receipt, run, context),
-          refusal_event(receipt, context)
-        ])
+          )
+        else
+          Enum.concat([
+            maybe_event(
+              "receipt_closed",
+              receipt.id,
+              ts(receipt.sealed_at),
+              receipt_closed_attrs(receipt),
+              context ++ [rel(receipt.id, "receipt")]
+            ),
+            verification_events(receipt, run, context),
+            refusal_event(receipt, context)
+          ])
+        end
       end)
     end)
+  end
+
+  # The class test is the typed outcome atom -- never jsonb forensics over
+  # evidence.
+  defp heartbeat_receipt?(receipt), do: atom(receipt.outcome) == "heartbeat"
+
+  defp heartbeat_attrs(receipt) do
+    drop_nils(%{
+      "outcome" => atom(receipt.outcome),
+      "subject" => receipt.subject,
+      "action_taken" => ev_key(evidence(receipt), "action_taken")
+    })
   end
 
   defp verification_events(receipt, run, context) do
