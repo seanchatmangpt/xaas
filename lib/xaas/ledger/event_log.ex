@@ -7,7 +7,7 @@ defmodule Xaas.Ledger.EventLog do
   transaction model.
   """
 
-  use Ash.Resource,
+  use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.Ledger,
     data_layer: AshPostgres.DataLayer,

@@ -11,17 +11,11 @@ defmodule Xaas.Semantics.RegistryTest do
 
   alias Xaas.Semantics.Registry
 
-  # Library-generated (AshAuthentication nonce, AshPaperTrail `.Version`) and
-  # not-yet-migrated resources: disclosed exemptions, not silent skips.
+  # Library-generated only: AshAuthentication's RevokeNonce plus AshPaperTrail
+  # `.Version` modules (via the suffix clause below). Owned resources no longer
+  # belong here -- disclosed exemptions, not silent skips.
   @pending [
-    Xaas.Accounts.Token.RevokeNonce,
-    Xaas.Coupling.CouplingRun,
-    Xaas.Ledger.EventLog,
-    Xaas.Operations.AutofdePlannerCacheHotset,
-    Xaas.Operations.AutofdePlannerCacheStats,
-    Xaas.Operations.AutofdePlannerCandidate,
-    Xaas.Operations.AutofdePlannerCatalog,
-    Xaas.Operations.AutofdePlannerMatch
+    Xaas.Accounts.Token.RevokeNonce
   ]
   defp exempt?(r), do: r in @pending or String.ends_with?(inspect(r), ".Version")
 
