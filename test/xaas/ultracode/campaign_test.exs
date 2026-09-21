@@ -34,10 +34,31 @@ defmodule Xaas.Ultracode.CampaignTest do
       Application.delete_env(:xaas, :ultracode_wave_runner)
     end)
 
-    ledger =
-      Path.join(System.tmp_dir!(), "xaas-campaign-test-#{System.unique_integer()}/ledger.ndjson")
+    # PERMANENT TRIPWIRE (observed falsifier 2026-09-19, wave-8 flake hunt):
+    # this ledger path used to be `System.unique_integer()`-qualified only.
+    # unique_integer restarts per BEAM while $TMPDIR is shared by EVERY
+    # concurrently running `mix test` VM on the machine, so two VMs picked the
+    # SAME path (evidence: 114 of 444 on-disk ledger files contained events
+    # from 2-5 distinct campaign_run_ids) and appended each other's campaign
+    # events -- a foreign campaign_wave_done inflated `stub_calls()` ("left:
+    # 3/4") and a foreign campaign_start's run id 404'd in this test's own
+    # sandbox ("record not found" in the stop-during-wave test). Qualify every
+    # per-run artifact path with wall clock + unique_integer (the
+    # dispatch_test `run_uid` convention) so cross-VM collision is impossible,
+    # and remove the directory afterwards.
+    ledger_dir =
+      Path.join(
+        System.tmp_dir!(),
+        "xaas-campaign-test-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
+
+    ledger = Path.join(ledger_dir, "ledger.ndjson")
 
     Process.put(:campaign_ledger, ledger)
+
+    on_exit(fn ->
+      File.rm_rf!(ledger_dir)
+    end)
 
     {:ok, ledger: ledger}
   end
