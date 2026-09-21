@@ -822,12 +822,36 @@ defmodule Xaas.Ultracode.RunValidation do
 
   # A receipt_closed is VERIFIED (terminal evidence) when its own
   # attributes carry a lawful verification value, or when the log carries
-  # a sibling verification event for the same epoch.
+  # a sibling verification event bound to the SAME receipt. A sibling
+  # bound to a DIFFERENT receipt never verifies: on an epoch with several
+  # receipt_closed events (e.g. pre-hygiene heartbeat ticks honestly
+  # projected as receipt_closed), the true terminal's court verdict must
+  # not launder the other receipts into "verified" terminals. When
+  # neither side binds a receipt (hand-authored epoch-scoped logs), the
+  # epoch-level sibling still verifies -- there is only one receipt in
+  # play, so the binding cannot be ambiguous.
   defp verified?(terminal_event, sibling_events) do
     case terminal_event["attributes"]["verification"] do
-      v when is_binary(v) -> v in @terminal_verifications
-      _absent -> Enum.any?(sibling_events, &(&1["type"] in @verification_events))
+      v when is_binary(v) ->
+        v in @terminal_verifications
+
+      _absent ->
+        terminal_receipt = receipt_binding(terminal_event)
+
+        Enum.any?(sibling_events, fn sibling ->
+          sibling["type"] in @verification_events and
+            receipt_binding(sibling) == terminal_receipt
+        end)
     end
+  end
+
+  # The objectId bound with the "receipt" qualifier, or nil when the
+  # event carries no receipt relationship.
+  defp receipt_binding(event) do
+    Enum.find_value(List.wrap(event["relationships"]), fn
+      %{"qualifier" => "receipt", "objectId" => id} -> id
+      _other -> nil
+    end)
   end
 
   defp epoch_violations(epoch_id, epoch_events) do
@@ -1232,6 +1256,11 @@ defmodule Xaas.Ultracode.RunValidation do
 
       siblings = Enum.filter(epoch_events, &(&1["type"] in @verification_events))
 
+      verified_terminals =
+        terminals
+        |> Enum.filter(&verified?(&1, siblings))
+        |> Enum.sort_by(& &1["__parsed_time"], {:asc, DateTime})
+
       # Same priority rule as the capacity interval: the appearance that
       # first held the slot (claimed > started > scheduled).
       hold_event = priority_claim(claims)
@@ -1240,8 +1269,12 @@ defmodule Xaas.Ultracode.RunValidation do
        %{
          claimed_at: event_time(hold_event),
          appearance_type: appearance_type(hold_event),
+         # The accounting reports the VERIFIED terminal (the same event the
+         # terminal-count law counts), never the earliest bare
+         # receipt_closed: on an epoch with pre-hygiene tick receipt_closeds
+         # the earliest one is a heartbeat tick, not the court verdict.
          terminal:
-           case Enum.at(terminals, 0) do
+           case Enum.at(verified_terminals, 0) do
              nil ->
                nil
 
@@ -1249,7 +1282,7 @@ defmodule Xaas.Ultracode.RunValidation do
                verification =
                  case t["attributes"]["verification"] do
                    v when is_binary(v) -> v
-                   _absent -> sibling_verification(siblings)
+                   _absent -> sibling_verification(t, siblings)
                  end
 
                %{event_id: t["id"], verification: verification}
@@ -1278,10 +1311,17 @@ defmodule Xaas.Ultracode.RunValidation do
     end
   end
 
-  defp sibling_verification(siblings) do
-    case Enum.find(@verification_events, fn type -> Enum.any?(siblings, &(&1["type"] == type)) end) do
+  # The sibling verdict that actually verifies this terminal: bound to the
+  # same receipt (or epoch-level when neither side binds a receipt --
+  # mirror of verified?/2's scope).
+  defp sibling_verification(terminal, siblings) do
+    receipt = receipt_binding(terminal)
+
+    case Enum.find(siblings, fn s ->
+           s["type"] in @verification_events and receipt_binding(s) == receipt
+         end) do
       nil -> nil
-      type -> type
+      sibling -> sibling["type"]
     end
   end
 
