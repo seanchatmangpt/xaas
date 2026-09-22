@@ -253,8 +253,19 @@ defmodule Xaas.Ultracode.DispatchTest do
         # No node on PATH: the fail-closed refusal is the lawful outcome.
         assert {:error, {:node_unavailable, "node"}} = Dispatch.plan(epoch.id, cli_dir: cli_dir)
 
-      _node ->
-        assert {:ok, _plan} = Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir)
+      node ->
+        # The PATH lookup must resolve (never `node_unavailable`). Whether the
+        # resolved node then satisfies the CLI's engines.node floor is a
+        # property of the machine's PATH, not of this guard: a v20 node first
+        # on PATH is the typed, measured `node_too_old` refusal (observed
+        # falsifier: PATH=/usr/local/bin:$PATH with node v20.13.0).
+        case Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir) do
+          {:ok, _plan} ->
+            :ok
+
+          {:error, {:node_too_old, ^node, found, ">=22.19.0"}} ->
+            assert found =~ ~r/\A\d+\.\d+\.\d+\z/
+        end
     end
   end
 

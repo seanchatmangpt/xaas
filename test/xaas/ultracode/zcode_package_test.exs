@@ -78,9 +78,24 @@ defmodule Xaas.Ultracode.ZcodePackageTest do
            do: false,
            else: "~/dev/zcode-cli not present"
          )
-  test "the real ~/dev/zcode-cli package.json is admitted and the machine's node satisfies it" do
-    assert {:ok, pkg} = ZcodePackage.check(@real_cli, System.find_executable("node") || "node")
+  test "the real ~/dev/zcode-cli package.json is admitted; the machine's node is measured against it" do
+    node = System.find_executable("node") || "node"
+
+    # Admission of the package is independent of which node is first on PATH.
+    assert {:ok, pkg} = ZcodePackage.load(@real_cli)
     assert pkg.name == "zcode-app-cli"
     assert pkg.bin == "bin/zcode.js"
+
+    # The node verdict is a property of the machine's PATH: satisfied, or the
+    # typed measured refusal (observed falsifier: PATH=/usr/local/bin:$PATH
+    # puts node v20.13.0 first and must yield node_too_old, not a red suite).
+    case ZcodePackage.check(@real_cli, node) do
+      {:ok, ^pkg} ->
+        :ok
+
+      {:error, {:node_too_old, ^node, found, needs}} ->
+        assert found =~ ~r/\A\d+\.\d+\.\d+\z/
+        assert needs =~ ~r/\A>=\d+\.\d+\.\d+\z/
+    end
   end
 end
