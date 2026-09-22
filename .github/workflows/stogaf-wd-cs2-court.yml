@@ -1,6 +1,9 @@
 name: WD CS2 STOGAF court
 
 on:
+  push:
+    branches:
+      - feat/stogaf-wd-cs2-v26.9.22
   pull_request:
     paths:
       - "docs/rfc/RFC-STOGAF-v26.9.22.md"
@@ -21,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: wd-cs2-stogaf-${{ github.event.pull_request.number || github.ref }}
+  group: wd-cs2-stogaf-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 env:
