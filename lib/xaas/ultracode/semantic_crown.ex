@@ -60,6 +60,19 @@ defmodule Xaas.Ultracode.SemanticCrown do
   @b_identity "SJ-CROWN-B"
   @test_file "tests/test_contract_standing.py"
 
+  # Digest contract of the descriptors `mix semantic_jira.descriptor` emits,
+  # declared HERE by the trusted caller (never by the descriptor's content): its
+  # `graph_digest` is graph-wide (a digest over every definition digest, the same
+  # for SJ-CROWN-A and SJ-CROWN-B in the recorded receipts), not the per-work-order
+  # snapshot digest, and it carries no `admitted_work_order` for XaaS to recompute
+  # from. So `AdmissionBinding`'s fail-closed `:snapshot` default would refuse every
+  # real descriptor, and `:graph` leaves `graph_digest` UNBOUND: a descriptor
+  # rewritten between emission and materialize is NOT detected on this path.
+  # SJ-001 stays PARTIAL_ALIVE / UNSUPPORTED(graph side) until the emitter sends
+  # `admitted_work_order` (then declare `:snapshot`) or the crown supplies a
+  # trusted pin (`expected_graph_digest:` / `expected_snapshot_digest:`).
+  @descriptor_binding :graph
+
   @vacuous_test """
   import unittest
 
@@ -315,7 +328,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
            ]),
          descriptor = descriptor_path |> File.read!() |> Jason.decode!(),
          {:ok, %{run: run, epoch: epoch, worktree: worktree}} <-
-           SemanticWork.materialize(descriptor) do
+           SemanticWork.materialize(descriptor, binding: @descriptor_binding) do
       write_ticket(ctx, run, Map.fetch!(seeded.items, identity), attempt, history)
       log(ctx, :materialized, %{identity: identity, run_id: run.id, epoch_id: epoch.id})
       worker_result = ctx.worker.(epoch, ctx)
@@ -519,7 +532,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
          # its checkpoint IRI carries a control marker.
          descriptor = Map.update!(descriptor, "checkpoint_iri", &(&1 <> ":control")),
          {:ok, %{run: run, epoch: epoch, worktree: worktree}} <-
-           SemanticWork.materialize(descriptor) do
+           SemanticWork.materialize(descriptor, binding: @descriptor_binding) do
       write_ticket(ctx, run, seeded.items[@a_identity], 1, [])
       close_bad_candidate(ctx.controls, ctx, epoch, worktree)
 

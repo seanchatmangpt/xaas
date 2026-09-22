@@ -15,14 +15,19 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
     state: state
   } do
     assert {:ok, %{epoch: wave_a}} =
-             SemanticWork.materialize(semantic_descriptor(sha, "a", "autonomic_wave_attempt"))
+             SemanticWork.materialize(semantic_descriptor(sha, "a", "autonomic_wave_attempt"),
+               binding: :graph
+             )
 
     assert {:ok, %{epoch: wave_b}} =
-             SemanticWork.materialize(semantic_descriptor(sha, "b", "autonomic_wave_attempt"))
+             SemanticWork.materialize(semantic_descriptor(sha, "b", "autonomic_wave_attempt"),
+               binding: :graph
+             )
 
     assert {:ok, %{epoch: continuous}} =
              SemanticWork.materialize(
-               semantic_descriptor(sha, "continuous", "continuous_epoch_run")
+               semantic_descriptor(sha, "continuous", "continuous_epoch_run"),
+               binding: :graph
              )
 
     parent = self()
@@ -53,7 +58,8 @@ defmodule Xaas.Ultracode.SemanticWaveTest do
   test "an already-leased semantic Epoch is not redispatched", %{sha: sha, state: state} do
     assert {:ok, %{epoch: wave}} =
              SemanticWork.materialize(
-               semantic_descriptor(sha, "leased", "autonomic_wave_attempt")
+               semantic_descriptor(sha, "leased", "autonomic_wave_attempt"),
+               binding: :graph
              )
 
     assert {:ok, _epoch, _token, _run} =

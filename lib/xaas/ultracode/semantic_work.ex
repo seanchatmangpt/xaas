@@ -149,17 +149,26 @@ defmodule Xaas.Ultracode.SemanticWork do
       (the exact map `GgenIgniter.SemanticJira.admit_work_order/1`
       returned). XaaS recomputes its digest from its own content; a stale
       digest, or a descriptor `base_sha` / `repository_identity` /
-      `work_order_iri` / bridge field that is not the snapshot's, is
-      refused;
+      `work_order_iri` / `goal` / `checkpoint_iri` / `dependencies` / bridge
+      field (incl. `bridge.subject` and `bridge.requires`) that is not the
+      snapshot's projection, is refused;
     * `bridge.source_snapshot_digest`: the real bridge's per-work-order
       snapshot digest, a second anchor that must agree with the first;
     * option `binding:`, declared by the TRUSTED caller and never by the
-      descriptor: `:snapshot` requires `graph_digest` to equal the snapshot
-      digest plus at least one independent anchor (`:admission_anchor_missing`
-      otherwise); `:graph` declares `graph_digest` graph-wide (the digest the
-      real `Descriptor.build/4` emits over every definition digest) and
-      leaves it unbound; `:auto` (default) behaves as `:snapshot` when the
-      producer carried an `admitted_work_order`, else as `:graph`.
+      descriptor. `:snapshot` (the DEFAULT, fail-closed) requires
+      `graph_digest` to equal the snapshot digest plus at least one in-band
+      anchor (`:admission_anchor_missing` otherwise). `:graph` is the
+      explicit opt-out for a producer whose `graph_digest` is graph-wide (the
+      digest the real `Descriptor.build/4` emits over every definition
+      digest): `graph_digest` is then bound only by a pin. There is no
+      content-selected mode: `:auto` is refused
+      (`{:invalid_binding_option, :auto}`), because a guard the descriptor can
+      switch off by deleting its own snapshot is not a guard;
+    * options `expected_graph_digest:` / `expected_snapshot_digest:`, the
+      OUT-OF-BAND trust roots (an operator's admission record). They are the
+      only anchors a tamperer cannot rewrite together with the descriptor;
+      without one, a fully re-forged self-consistent descriptor is
+      indistinguishable from the real one.
 
   Refusals are typed: `{:error, {:refused_semantic_work, reason}}` /
   `{:error, {:refused_dependency, reason}}` /
@@ -186,7 +195,7 @@ defmodule Xaas.Ultracode.SemanticWork do
   def admit(input, opts) when is_map(input) and is_list(opts) do
     descriptor = normalize_keys(input)
 
-    with {:ok, binding} <- binding_mode(opts),
+    with {:ok, binding} <- AdmissionBinding.options(opts),
          :ok <- require_fields(descriptor),
          :ok <- require_iri(descriptor, :work_order_iri),
          :ok <- require_iri(descriptor, :checkpoint_iri),
@@ -484,13 +493,6 @@ defmodule Xaas.Ultracode.SemanticWork do
 
       _ ->
         {:error, {:refused_semantic_work, {:invalid, key}}}
-    end
-  end
-
-  defp binding_mode(opts) do
-    case Keyword.get(opts, :binding, :auto) do
-      mode when mode in [:auto, :snapshot, :graph] -> {:ok, mode}
-      other -> {:error, {:refused_semantic_work, {:invalid_binding_option, other}}}
     end
   end
 

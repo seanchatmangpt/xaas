@@ -298,7 +298,9 @@ defmodule Xaas.Ultracode.CourtReceiptTest do
     }
 
     test "a valid court_map is admitted onto the descriptor" do
-      assert {:ok, descriptor} = SemanticWork.admit(Map.put(@descriptor, :court_map, court_map()))
+      assert {:ok, descriptor} =
+               SemanticWork.admit(Map.put(@descriptor, :court_map, court_map()), binding: :graph)
+
       assert descriptor.court_map["courts"] == [@court]
     end
 
@@ -306,14 +308,18 @@ defmodule Xaas.Ultracode.CourtReceiptTest do
       raw = %{@descriptor | execution_policy: "autonomic_wave_attempt"}
 
       assert {:ok, descriptor} =
-               SemanticWork.admit(Map.put(raw, "court_map", %{"courts" => [@court]}))
+               SemanticWork.admit(Map.put(raw, "court_map", %{"courts" => [@court]}),
+                 binding: :graph
+               )
 
       assert descriptor.court_map["courts"] == [@court]
     end
 
     test "a malformed court_map is a typed refusal" do
       assert {:error, {:refused_court_map, {:unknown_keys, _}}} =
-               SemanticWork.admit(Map.put(@descriptor, :court_map, %{"bogus" => %{}}))
+               SemanticWork.admit(Map.put(@descriptor, :court_map, %{"bogus" => %{}}),
+                 binding: :graph
+               )
     end
   end
 end

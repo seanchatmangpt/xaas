@@ -47,7 +47,8 @@ defmodule Xaas.Ultracode.TestDbLeakGuardTest do
 
     assert {:ok, %{run: run, epoch: epoch}} =
              SemanticWork.materialize(
-               semantic_descriptor(sha, "leak-guard", "autonomic_wave_attempt")
+               semantic_descriptor(sha, "leak-guard", "autonomic_wave_attempt"),
+               binding: :graph
              )
 
     # The writes are real, not vacuously passing: visible inside the owning

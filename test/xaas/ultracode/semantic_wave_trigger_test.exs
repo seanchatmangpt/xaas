@@ -41,7 +41,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
 
   test "an admitted frontier transition enqueues the wave dispatch immediately", %{sha: sha} do
     assert {:ok, %{run: run, epoch: epoch, wave: wave}} =
-             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "evt"))
+             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "evt"), binding: :graph)
 
     # The transition completed: admitted descriptor -> running wave epoch.
     assert run.execution_policy == :autonomic_wave_attempt
@@ -63,12 +63,12 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
 
   test "dedup: one pending wave per graph_digest/repository pair, never a herd", %{sha: sha} do
     assert {:ok, %{wave: first}} =
-             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "d1"))
+             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "d1"), binding: :graph)
 
     # Same semantic head (digest+repo), a DIFFERENT work order: the pending
     # wave already covers it, so no second job.
     assert {:ok, %{wave: second}} =
-             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "d2"))
+             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "d2"), binding: :graph)
 
     assert first[:enqueued?] == true
     assert second[:enqueued?] == false
@@ -77,7 +77,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
 
     # A different graph digest is a different frontier: its own wave.
     assert {:ok, %{wave: third}} =
-             SemanticWork.materialize(wave_descriptor(sha, @digest_b, "d3"))
+             SemanticWork.materialize(wave_descriptor(sha, @digest_b, "d3"), binding: :graph)
 
     assert third[:enqueued?] == true
     assert pending_wave_count() == 2
@@ -106,10 +106,13 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
 
   test "policy gate: a continuous_epoch_run admission enqueues no wave", %{sha: sha} do
     assert {:ok, %{wave: wave}} =
-             SemanticWork.materialize(%{
-               wave_descriptor(sha, @digest_a, "cont")
-               | execution_policy: :continuous_epoch_run
-             })
+             SemanticWork.materialize(
+               %{
+                 wave_descriptor(sha, @digest_a, "cont")
+                 | execution_policy: :continuous_epoch_run
+               },
+               binding: :graph
+             )
 
     assert wave[:enqueued?] == false
     assert wave[:policy_gated?] == true
@@ -122,7 +125,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     # leave zero trace.
     input = %{wave_descriptor(sha, @digest_a, "boom") | verifier_suite: "not-registered"}
 
-    assert {:error, _} = SemanticWork.materialize(input)
+    assert {:error, _} = SemanticWork.materialize(input, binding: :graph)
     assert pending_wave_count() == 0
   end
 
@@ -130,7 +133,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
 
   test "the watchdog catches a simulated missed event insert and dispatches it", %{sha: sha} do
     assert {:ok, %{epoch: epoch}} =
-             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "missed"))
+             SemanticWork.materialize(wave_descriptor(sha, @digest_a, "missed"), binding: :graph)
 
     # The event happened, but its wave job was LOST (a genuinely missed
     # insert: a cancelled/crashed job) -- simulated through the trigger's
@@ -157,10 +160,13 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     # wave-ready, nothing pending -- the watchdog must report IDLE and
     # dispatch nothing.
     assert {:ok, _} =
-             SemanticWork.materialize(%{
-               wave_descriptor(sha, @digest_a, "idle")
-               | execution_policy: :continuous_epoch_run
-             })
+             SemanticWork.materialize(
+               %{
+                 wave_descriptor(sha, @digest_a, "idle")
+                 | execution_policy: :continuous_epoch_run
+               },
+               binding: :graph
+             )
 
     assert {:ok, %{status: "IDLE", receipt: receipt_path}} = SemanticWaveTrigger.dispatch_now()
 
@@ -184,7 +190,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
       |> Map.delete("repository_identity")
 
     assert {:ok, %{epoch: epoch, wave: %{enqueued?: true, job_id: job_id}}} =
-             SemanticWork.materialize(descriptor)
+             SemanticWork.materialize(descriptor, binding: :graph)
 
     assert {:ok, %{status: "DISPATCHED"}} =
              SemanticWaveTrigger.Worker.perform(%Oban.Job{id: job_id, args: %{}})

@@ -9,7 +9,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
   alias Xaas.Ultracode.SemanticWork
 
   test "admits a typed execution descriptor with exact upstream receipt evidence", %{sha: sha} do
-    assert {:ok, admitted} = SemanticWork.admit(checkpoint(sha))
+    assert {:ok, admitted} = SemanticWork.admit(checkpoint(sha), binding: :graph)
     assert admitted.execution_policy == :continuous_epoch_run
     assert [dependency] = admitted.dependencies
     assert dependency.receipt_iri == "urn:gall:receipt:dep-1"
@@ -23,7 +23,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       end)
 
     assert {:error, {:refused_dependency, {:standing, "urn:gall:work-order:dep-1"}}} =
-             SemanticWork.admit(input)
+             SemanticWork.admit(input, binding: :graph)
   end
 
   test "dependency without exact receipt digest is refused", %{sha: sha} do
@@ -33,7 +33,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       end)
 
     assert {:error, {:refused_dependency, {:invalid, :receipt_digest}}} =
-             SemanticWork.admit(input)
+             SemanticWork.admit(input, binding: :graph)
   end
 
   test "duplicate dependency identity is refused", %{sha: sha} do
@@ -41,12 +41,12 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     input = %{checkpoint(sha) | dependencies: [dependency, dependency]}
 
     assert {:error, {:refused_dependency, :duplicate_work_order_identity}} =
-             SemanticWork.admit(input)
+             SemanticWork.admit(input, binding: :graph)
   end
 
   describe "admission_digest integrity envelope" do
     test "absent is today's behavior", %{sha: sha} do
-      assert {:ok, admitted} = SemanticWork.admit(checkpoint(sha))
+      assert {:ok, admitted} = SemanticWork.admit(checkpoint(sha), binding: :graph)
       refute Map.get(admitted, :admission_digest)
     end
 
@@ -54,7 +54,9 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       digest = "sha256:" <> String.duplicate("a", 64)
 
       assert {:ok, admitted} =
-               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, digest))
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, digest),
+                 binding: :graph
+               )
 
       assert admitted.admission_digest == digest
     end
@@ -63,21 +65,27 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       altered = "sha256:" <> String.duplicate("b", 64)
 
       assert {:error, {:refused_semantic_work, {:admission_digest_mismatch, ^altered}}} =
-               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, altered))
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, altered),
+                 binding: :graph
+               )
     end
 
     test "a malformed admission digest is refused", %{sha: sha} do
       assert {:error, {:refused_semantic_work, {:invalid, :admission_digest}}} =
-               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, "main"))
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, "main"),
+                 binding: :graph
+               )
 
       assert {:error, {:refused_semantic_work, {:invalid, :admission_digest}}} =
-               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, 42))
+               SemanticWork.admit(Map.put(checkpoint(sha), :admission_digest, 42),
+                 binding: :graph
+               )
     end
   end
 
   test "branch names cannot stand in for exact base identity", %{sha: sha} do
     assert {:error, {:refused_semantic_work, {:invalid, :base_sha}}} =
-             SemanticWork.admit(%{checkpoint(sha) | base_sha: "main"})
+             SemanticWork.admit(%{checkpoint(sha) | base_sha: "main"}, binding: :graph)
   end
 
   test "runtime does not own a second semantic frontier selector" do
@@ -88,7 +96,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     sha: sha
   } do
     assert {:ok, %{run: run, epoch: epoch, worktree: worktree}} =
-             SemanticWork.materialize(checkpoint(sha))
+             SemanticWork.materialize(checkpoint(sha), binding: :graph)
 
     assert run.state == :running
     assert run.work_order_iri == "urn:gall:work-order:xaas:001"
@@ -117,7 +125,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
         execution_policy: "autonomic_wave_attempt"
       )
 
-    assert {:ok, %{run: run, epoch: epoch}} = SemanticWork.materialize(input)
+    assert {:ok, %{run: run, epoch: epoch}} = SemanticWork.materialize(input, binding: :graph)
 
     assert run.state == :running
     assert run.execution_policy == :autonomic_wave_attempt
@@ -129,8 +137,8 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     a = checkpoint(sha, work_order_iri: "urn:gall:work-order:xaas:a")
     b = checkpoint(sha, work_order_iri: "urn:gall:work-order:xaas:b")
 
-    assert {:ok, %{worktree: path_a}} = SemanticWork.materialize(a)
-    assert {:ok, %{worktree: path_b}} = SemanticWork.materialize(b)
+    assert {:ok, %{worktree: path_a}} = SemanticWork.materialize(a, binding: :graph)
+    assert {:ok, %{worktree: path_b}} = SemanticWork.materialize(b, binding: :graph)
 
     refute path_a == path_b
     assert File.dir?(path_a)

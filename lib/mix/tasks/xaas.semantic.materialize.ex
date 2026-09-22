@@ -9,7 +9,8 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   never interpreted.
 
       mix xaas.semantic.materialize --descriptor descriptor.json \\
-        [--ticket-file ticket.json] [--binding auto|snapshot|graph]
+        [--ticket-file ticket.json] [--binding snapshot|graph] \\
+        [--expected-graph-digest sha256:..] [--expected-snapshot-digest sha256:..]
 
   `--ticket-file` copies a definition-of-done ticket to
   `<ticket_dir>/<run_id>.json`, the location suites that use the `{ticket}`
@@ -18,11 +19,22 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
 
   `--binding` declares the producer's digest contract to
   `Xaas.Ultracode.SemanticWork.AdmissionBinding` (the operator declares it,
-  never the descriptor): `snapshot` requires `graph_digest` to equal the
-  admitted work-order snapshot digest XaaS recomputes/reads from the
-  descriptor's own anchors and refuses a descriptor stripped of every anchor;
-  `graph` declares `graph_digest` graph-wide (unbound); `auto` (default) binds
-  when the descriptor carries an `admitted_work_order`.
+  never the descriptor):
+
+    * `snapshot` (the DEFAULT, fail-closed) requires `graph_digest` to equal
+      the admitted work-order snapshot digest XaaS recomputes/reads from the
+      descriptor's own anchors, and refuses a descriptor stripped of every
+      anchor (`admission_anchor_missing`).
+    * `graph` is the explicit opt-out for a producer whose `graph_digest` is
+      graph-wide (what `mix semantic_jira.descriptor` emits today, without an
+      `admitted_work_order`). It leaves `graph_digest` UNBOUND unless you also
+      pass a pin below.
+
+  `--expected-graph-digest` / `--expected-snapshot-digest` are out-of-band
+  trust roots taken from your own admission record (never from the descriptor
+  file): `graph_digest` must equal the first, every in-band snapshot anchor
+  must equal the second. They are the only defence against a descriptor that
+  was rewritten wholesale after admission.
   """
 
   use Mix.Task
@@ -33,7 +45,14 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   def run(args) do
     {opts, _rest, _invalid} =
       OptionParser.parse(args,
-        strict: [descriptor: :string, ticket_file: :string, binding: :string, help: :boolean]
+        strict: [
+          descriptor: :string,
+          ticket_file: :string,
+          binding: :string,
+          expected_graph_digest: :string,
+          expected_snapshot_digest: :string,
+          help: :boolean
+        ]
       )
 
     if opts[:help] do
@@ -49,7 +68,7 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
 
     descriptor = path |> File.read!() |> Jason.decode!()
 
-    case SemanticWork.materialize(descriptor, binding: binding_mode(opts[:binding])) do
+    case SemanticWork.materialize(descriptor, admission_options(opts)) do
       {:ok, %{run: run, epoch: epoch, worktree: worktree}} ->
         if opts[:ticket_file], do: copy_ticket(opts[:ticket_file], run.id)
 
@@ -60,14 +79,24 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
     end
   end
 
-  # Whitelisted, never String.to_atom/1 on operator input.
-  defp binding_mode(nil), do: :auto
-  defp binding_mode("auto"), do: :auto
+  # Only set what the operator gave: an absent flag keeps the library's
+  # fail-closed default rather than restating it here.
+  defp admission_options(opts) do
+    [
+      binding: opts[:binding] && binding_mode(opts[:binding]),
+      expected_graph_digest: opts[:expected_graph_digest],
+      expected_snapshot_digest: opts[:expected_snapshot_digest]
+    ]
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+  end
+
+  # Whitelisted, never String.to_atom/1 on operator input. `auto` is not a
+  # mode: a guard the descriptor's own content can switch off is no guard.
   defp binding_mode("snapshot"), do: :snapshot
   defp binding_mode("graph"), do: :graph
 
   defp binding_mode(other),
-    do: Mix.raise("--binding must be auto, snapshot or graph, got: #{other}")
+    do: Mix.raise("--binding must be snapshot or graph, got: #{other}")
 
   defp copy_ticket(source, run_id) do
     dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)
