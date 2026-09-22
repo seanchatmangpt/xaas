@@ -1,11 +1,11 @@
 {
   "wo": "XAAS-26922-26",
   "part": "rt-A",
-  "title": "scripts/ultracode-run.mjs workflow runtime, Strategy A (source-transformation loader), as a ggen template body",
+  "title": "scripts/ultracode-run.mjs workflow runtime, Strategy A (source-transformation loader), as a ggen template body -- repair round 1 (court CONFORMANCE runtime-A refutation closed, rt-B grafts)",
   "identity": {
-    "subject": "XAAS-26922-26 rt-A: priv/zcode_plugin/templates/script-ultracode-run.mjs.tmpl -> marketplace/xaas-fabric/scripts/ultracode-run.mjs",
+    "subject": "XAAS-26922-26 rt-A (repair round 1): priv/zcode_plugin/templates/script-ultracode-run.mjs.tmpl -> marketplace/xaas-fabric/scripts/ultracode-run.mjs",
     "repo": "/Users/sac/wt/v26922/xaas/uc-rt-A",
-    "subject_sha": "31626b70174dfe2e70241033e7919e220f7c5a82",
+    "subject_sha": "fafca584146bf30a5cc0fe952d657e82b4d6cea4",
     "base_sha": "ec06b7c8b956ef5a7cfe21a25b013f274062c853"
   },
   "authority": {
@@ -16,7 +16,9 @@
   "consequence": {
     "commits": [
       "81b2b97106d311b98f470c2ca04b3e67dcc8d367",
-      "31626b70174dfe2e70241033e7919e220f7c5a82"
+      "31626b70174dfe2e70241033e7919e220f7c5a82",
+      "0af1c480386e0afa3d4d55b92baf1d13d66da3ef",
+      "fafca584146bf30a5cc0fe952d657e82b4d6cea4"
     ],
     "files_changed": [
       "priv/zcode_plugin/templates/script-ultracode-run.mjs.tmpl",
@@ -24,6 +26,7 @@
       "priv/zcode_plugin/test/ultracode-scripted-agent.mjs",
       "priv/zcode_plugin/test/ultracode-mutants.sh",
       "priv/zcode_plugin/test/fixtures/sa2a-sjira-autonomic-survey-wf_5c2db1e9-3e8.args.json",
+      "priv/zcode_plugin/ontology.ttl",
       "HANDWRITTEN.md"
     ],
     "remote_effects": []
@@ -31,67 +34,89 @@
   "replay": {
     "commands": [
       {
+        "cmd": "sh $SCRATCH/sel/run.sh A f5b; sh $SCRATCH/sel/run.sh A f5g; sh $SCRATCH/sel/run.sh A g5e  (court fixtures; runtime at 620912b vs at 0af1c48)",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
+        "exit": 0,
+        "summary": "refutation reproduced at 620912b: f5b/f5g/g5e exit=2 spawns=1; after the repair: f5b/f5g/g5e exit=2 spawns=0 SCHEMA_CONTRADICTION (static pre-flight); f5a/f5d/f5h/g5d/g5f unchanged exit=2 spawns=0"
+      },
+      {
         "cmd": "cd priv/zcode_plugin && ggen sync run && ggen sync run && cd ../.. && git status --porcelain | wc -l",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "ggen 26.8.18: both runs exit 0; 0 porcelain lines after the second run (projection idempotent, marketplace file produced only by ggen)"
+        "summary": "ggen 26.8.18: both runs exit 0; 0 porcelain lines at fafca58; projection sha256 f1d74bbe...76d9, template raw body byte-equal to the projection (102k bytes)"
       },
       {
         "cmd": "cp -R priv/zcode_plugin/{ggen.toml,ontology.ttl,templates} $TMP && (cd $TMP && ggen sync run) && diff -r $TMP/marketplace priv/zcode_plugin/marketplace",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "fresh render in a temp copy == committed marketplace tree (PROJECTION_NO_DRIFT); same check as test/xaas/zcode_plugin/projection_test.exs; run at 81b2b97 whose templates/ontology are unchanged at 31626b7"
+        "summary": "fresh render == committed marketplace tree (PROJECTION_NO_DRIFT) at fafca58, including the ontology.ttl comment change"
       },
       {
         "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs selftest",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "selftest: 14 passed, 0 failed (body form, module form, META_NOT_LITERAL, SCHEMA_CONTRADICTION x3 variants with zero spawns, re-ask via --resume + fenced/outermost parse + bounded retries -> null, rate-limit backoff + unrecoverable -> null, Explore read-only + worktree isolation, concurrency cap peak 2, workflow() one level + WORKFLOW_DEPTH, AGENT_CAP, NONDETERMINISTIC_CALL, resume from ZCode run dir, resume from Claude transcript dir by label, same-run-dir continuation)",
-        "output_sha256": "5f31de3abb23b22fa0e39bc954063c46cd162c85b749ccadde86d7c1cff9a6cd"
+        "summary": "selftest: 16 passed, 0 failed; new: value-dependent schema pre-flight x8 variants zero spawns with expected layer (7 static, 1 probe) + negative control; sessionless fresh re-ask carries errors; --concurrency/ULTRACODE_CONCURRENCY/both/default; workflow() by ULTRACODE_CLAUDE_HOME name; recorded null replays + ULTRACODE_RERUN_NULL opt-in; kept-branch -r2 worktree; fake-HOME untouched check",
+        "output_sha256": "9339fd6f588696326cdc3b3983ffb12592ac7c49e0ec4962334d6c460f77a934"
       },
       {
         "cmd": "sh priv/zcode_plugin/test/ultracode-mutants.sh",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "6/6 mutants of the projected runtime KILLED by selftest: semaphore-cap-ignored, label-off-by-one, reask-without-resume, no-schema-preflight, no-explore-readonly, no-nondeterminism-check",
-        "output_sha256": "d3ab984818fd8624fce27c240dc80c05b95460edb014f5c8dd884cf0ad7394d9"
+        "summary": "mutants: 14 killed of 14 (6 prior + no-static-schema-scan, no-static-children, probe-empty-arrays, rerun-null-by-default, fresh-reask-drops-errors, ignore-ultracode-home, ignore-concurrency-env, worktree-name-collision)",
+        "output_sha256": "848c493eba2e411967496b51f92b21c1d75d24f5dabd6f6eade189db1f1b3ea6"
       },
       {
         "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs run /Users/sac/.claude/projects/-Users-sac--claude-plans/1fecd79a-9323-4b57-a949-d7892a3ea283/workflows/scripts/sa2a-sjira-autonomic-survey-wf_5c2db1e9-3e8.js --args @priv/zcode_plugin/test/fixtures/sa2a-sjira-autonomic-survey-wf_5c2db1e9-3e8.args.json --resume-from /Users/sac/.claude/projects/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/subagents/workflows/wf_5c2db1e9-3e8 --dry-run --json",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "real Claude journal (83 lines, 41 started/41 result, v2 keys): {\"live_agents_needed\":0,\"resumed\":41,\"completed\":true}; args recovered verbatim from the session transcript's Workflow tool_use input, 19 repos, path order identical to /Users/sac/wt/v26922/survey.json perRepo[].survey.path",
-        "output_sha256": "ed7b4e123a5ddbb9296268f39abe242a87e9173f6e16afb08c06a8941ef6c38c"
+        "summary": "real Claude journal: {\"live_agents_needed\":0,\"resumed\":41,\"completed\":true,\"agent_calls\":41}",
+        "output_sha256": "c187283e79d60c380c795ebeec5d52f011258c52ba69aec7af63f908368be2d2"
       },
       {
-        "cmd": "ULTRACODE_AGENT_CMD=/usr/bin/false ULTRACODE_QUIET=1 node .../ultracode-run.mjs run <same script> --args @<same args> --resume-from <same Claude dir> --run-dir $SCRATCH/v-replay && python3 canonical-compare $SCRATCH/v-replay/result.json /Users/sac/wt/v26922/survey.json",
+        "cmd": "ULTRACODE_AGENT_CMD=/usr/bin/false node .../ultracode-run.mjs run <same script> --args @<same args> --resume-from <same Claude dir> --run-dir $SCRATCH/rtA-r1/v-replay; canonical-compare result.json vs /Users/sac/wt/v26922/survey.json",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "full (non-dry) replay with any live spawn pinned to fail: summary live 0 / resumed 41 / null 0 / completed; replayed result.json canonical-equal to the result Claude produced (survey.json) -> True"
+        "summary": "full replay: status completed, live 0 / resumed 41 / null 0; result.json canonical-equal to survey.json: True"
       },
       {
-        "cmd": "copy of the Claude journal minus the synthesize agent's result line; node .../ultracode-run.mjs run <same script> --args @<same args> --resume-from <truncated copy> --dry-run --json",
+        "cmd": "dry-run <same script/args> against (a) a copy of the Claude journal minus the synthesize result line, (b) a copy with loop-tracer's result set to null, (c) (b) with ULTRACODE_RERUN_NULL=1, (d) (b) with the 620912b runtime",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "falsifier: {\"live_agents_needed\":1,\"resumed\":40,\"completed\":false} (exactly the one unfinished agent), run at 81b2b97 (runtime unchanged at 31626b7)"
+        "summary": "(a) live_agents_needed 1 / resumed 40 / completed false; (b) 0 / 41 / completed true (recorded null replays); (c) 1 / 40 / false (opt-in re-run); (d) 1 / 40 / false (the refuted pre-repair behaviour)"
+      },
+      {
+        "cmd": "for each of 681 persisted Claude workflow scripts (~/.claude/projects/*/*/workflows/scripts/*.js + ~/.claude/workflows/*.js): dry-run with the 620912b runtime and with the repaired runtime (fake HOME/ULTRACODE_HOME/ULTRACODE_CLAUDE_HOME, ULTRACODE_AGENT_CMD=/usr/bin/false) and compare",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
+        "exit": 0,
+        "summary": "0 differences in error code / completed / live_agents_needed across 681 real scripts (no false SCHEMA_CONTRADICTION); static scan checked 1306 literal agent schemas in 469 scripts; falsifier: 208 injected required-not-in-properties contradictions -> 202 refused by the static scan, 5 by the probe (schemas held in task tables), 1 landed in a prompt template string (not a schema)"
       },
       {
         "cmd": "grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\\|jest.mock\\|jest.fn' priv/zcode_plugin/test priv/zcode_plugin/templates/script-ultracode-run.mjs.tmpl; test $? -eq 1",
         "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-A",
         "exit": 0,
-        "summary": "zero mock matches; runtime and backend import node: builtins only (child_process, crypto, fs, os, path, url); node v26.8.1"
+        "summary": "zero mock matches; runtime and backend import node: builtins only (child_process, crypto, fs, os, path, url); node v26.8.1; find ~/.zcode/ultracode ~/.claude/workflows -newer <prior receipt>: 0 entries"
       }
     ],
     "durable_location": "receipts/v26.9.22/XAAS-26922-26-rt-A.json"
   },
   "standing": {
     "value": "ALIVE",
-    "derived_from": "selftest (14/14), mutants (6/6 killed), real-journal resume dry-run (live_agents_needed 0, completed true), full replay equal to survey.json, and 2x ggen sync with a clean tree, all executed at subject_sha 31626b70174dfe2e70241033e7919e220f7c5a82"
+    "derived_from": "at subject_sha fafca58: court refutation fixtures f5b/f5g/g5e 0 spawns, selftest 16/16, mutants 14/14 killed, real-journal resume dry-run completed true (agent_calls 41), full replay equal to survey.json, 681-script corpus with 0 regressions, ggen sync x2 clean + fresh-render no drift"
   },
   "handwritten": "UNSUPPORTED(generator-capability): workflow runtime logic -- HANDWRITTEN.md rows for script-ultracode-run.mjs.tmpl and the test backend/mutants/fixture",
   "unverified": [
     "live execution against the real zcode CLI (node /Users/sac/dev/zcode-cli/bin/zcode.js --prompt ... --json --mode yolo) was not run: every live path was exercised through the scripted backend only",
-    "Claude v2 journal key derivation: 14 candidate encodings of {prompt, opts} did not reproduce v2:fb9e029d...; Claude journals are matched by label (nth call <-> nth result), per the spec",
+    "static scan scope (observed residual, not a claim of coverage): only pure-literal schemas (inline or a top-level const) passed directly to agent(...) are checked statically; a schema computed at runtime behind a branch the probe does not take still spawns once before SCHEMA_CONTRADICTION (fixture $SCRATCH/sel/fx/r1-residual.js: exit=2 spawns=1)",
+    "Claude v2 journal key derivation still unreproduced; Claude journals are matched by label (nth call <-> nth result), per the spec",
+    "no real Claude journal on disk carries a null result (0 of the local journals); null replay was exercised on synthetic journals and a real journal with one result set to null",
     "mix test test/xaas/zcode_plugin/projection_test.exs was not run in this worktree (no deps/_build); its drift assertion was replayed directly with ggen + diff -r"
-  ]
+  ],
+  "supersedes": {
+    "receipt_commit": "620912bffa5b58f6bea0482ae64b05aefeb502df",
+    "subject_sha": "31626b70174dfe2e70241033e7919e220f7c5a82",
+    "why": "court verdict refuted the zero-spawn schema pre-flight at 620912b (f5b/f5g/g5e spawned 1 agent) and the recorded-null resume semantics; both repaired forward in 0af1c48"
+  },
+  "alternatives": {
+    "retained_not_grafted": "rt-B node:module register() loader hook (real ESM, no source rewrite): kept as a recorded alternative; A's source rewrite passes every conformance case and is what enables the nondeterminism scan and the static schema scan"
+  }
 }
