@@ -10,7 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Ingestion, LearningLoop, MorningBrief, SemanticWork}
+  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Evaluation, Ingestion, LearningLoop, MorningBrief, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.ArchitectureChange
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
@@ -26,6 +26,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:architecture_change, nil)
      |> assign(:morning_brief, MorningBrief.summary())
      |> assign(:ingestion_fixture, Ingestion.ingest_known_fixture())
+     |> assign(:evaluation, Evaluation.offline_report())
      |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
      |> assign(:case_capabilities, CapabilitySelector.for_case("known_firmware"))
      |> assign(:architecture, Stogaf.demo_projection())
@@ -297,6 +298,21 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         <ul data-testid="stogaf-building-blocks">
           <%= for block <- @architecture.building_blocks do %>
             <li>{block}</li>
+          <% end %>
+        </ul>
+      </section>
+
+
+      <section class="mt-6 rounded border p-4" data-testid="offline-evaluation">
+        <h2 class="font-semibold">Offline falsification court</h2>
+        <p data-testid="evaluation-controls">
+          {@evaluation.controls_passed}/{@evaluation.controls_total} controls passed
+        </p>
+        <p data-testid="evaluation-ceiling">ceiling: {@evaluation.evidence_ceiling}</p>
+        <p data-testid="production-mttr">production MTTR: {@evaluation.production_metrics.mttr}</p>
+        <ul>
+          <%= for control <- @evaluation.controls do %>
+            <li>{control.id} · {if control.passed, do: "PASS", else: "FAIL"}</li>
           <% end %>
         </ul>
       </section>

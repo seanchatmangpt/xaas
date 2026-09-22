@@ -10,6 +10,9 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="brief-missing-evidence"]')).toHaveText("1");
     await expect(page.locator('[data-testid="brief-prior-art-ready"]')).toHaveText("1");
     await expect(page.locator('[data-testid="brief-authority-rule"]')).toContainText("consequential disposition remains with the engineer");
+    await expect(page.locator('[data-testid="evaluation-controls"]')).toHaveText("6/6 controls passed");
+    await expect(page.locator('[data-testid="evaluation-ceiling"]')).toContainText("REPO_LOCAL_FIXTURE");
+    await expect(page.locator('[data-testid="production-mttr"]')).toContainText("UNMEASURED");
     await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-A-FIRMWARE");
     await expect(page.locator('[data-testid="source-timeout_waveform"]')).toContainText("fixture://wd/");
@@ -41,6 +44,8 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     expect(architecture.morning_brief.missing_evidence).toBe(1);
     expect(architecture.morning_brief.prior_art_ready).toBe(1);
     expect(architecture.ingestion_fixture.artifacts).toHaveLength(3);
+    expect(architecture.offline_evaluation.controls_passed).toBe(6);
+    expect(architecture.offline_evaluation.production_metrics.mttr).toBe("UNMEASURED");
     expect(architecture.ingestion_fixture.artifacts.map((artifact) => artifact.modality).sort()).toEqual(["plot", "structured", "text"]);
     expect(architecture.architecture.target_conformance).toBe("ST-6 AUTONOMIC");
     expect(architecture.requirements).toHaveLength(16);
