@@ -3,8 +3,9 @@
 # ZCode plugin topology for the XaaS execution fabric. Source of truth for
 # every manifest and every command/agent/skill frontmatter under
 # marketplace/. Project root: `cd priv/zcode_plugin && ggen sync run`.
-# Prose bodies and the two node scripts are the irreducible handwritten
-# residue (see HANDWRITTEN.md); everything else here is projected.
+# Prose bodies and the node script bodies (xaas-gate, xaas-lease,
+# ultracode-run) are the irreducible handwritten residue (see
+# HANDWRITTEN.md); everything else here is projected.
 
 <urn:zp:marketplace/xaas-fabric-marketplace> a zp:Marketplace ;
     zp:marketplaceName "xaas-fabric-marketplace" ;
