@@ -53,9 +53,14 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
 
       <nav class="mb-6 flex gap-3" data-testid="scenario-nav">
         <%= for id <- WdFa.scenario_ids() do %>
-          <button type="button" phx-click="select_scenario" phx-value-id={id}
-            data-testid={"scenario-" <> id} class="rounded border px-3 py-2">
-            <%= id %>
+          <button
+            type="button"
+            phx-click="select_scenario"
+            phx-value-id={id}
+            data-testid={"scenario-" <> id}
+            class="rounded border px-3 py-2"
+          >
+            {id}
           </button>
         <% end %>
       </nav>
@@ -63,23 +68,25 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
       <section class="grid gap-4 md:grid-cols-4">
         <article class="rounded border p-4">
           <h2 class="font-semibold">Classification</h2>
-          <div class="mt-2 text-2xl font-bold" data-testid="classification"><%= @state.classification %></div>
-          <div data-testid="standing"><%= @state.standing %></div>
+          <div class="mt-2 text-2xl font-bold" data-testid="classification">
+            {@state.classification}
+          </div>
+          <div data-testid="standing">{@state.standing}</div>
         </article>
         <article class="rounded border p-4">
           <h2 class="font-semibold">Admitted mode</h2>
-          <div class="mt-2" data-testid="admitted-mode"><%= @state.admitted_mode || "NONE" %></div>
-          <div class="text-sm" data-testid="confidence-basis"><%= @state.confidence_basis %></div>
+          <div class="mt-2" data-testid="admitted-mode">{@state.admitted_mode || "NONE"}</div>
+          <div class="text-sm" data-testid="confidence-basis">{@state.confidence_basis}</div>
         </article>
         <article class="rounded border p-4">
           <h2 class="font-semibold">Next action</h2>
-          <div class="mt-2" data-testid="next-action"><%= @state.next_action %></div>
-          <div class="text-sm" data-testid="owning-team"><%= @state.owning_team %></div>
+          <div class="mt-2" data-testid="next-action">{@state.next_action}</div>
+          <div class="text-sm" data-testid="owning-team">{@state.owning_team}</div>
         </article>
         <article class="rounded border p-4">
           <h2 class="font-semibold">Authority</h2>
-          <div class="mt-2" data-testid="authority"><%= @state.authority %></div>
-          <div class="text-sm" data-testid="human-gate"><%= @state.human_gate %></div>
+          <div class="mt-2" data-testid="authority">{@state.authority}</div>
+          <div class="text-sm" data-testid="human-gate">{@state.human_gate}</div>
         </article>
       </section>
 
@@ -87,14 +94,18 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         <article class="rounded border p-4">
           <h2 class="font-semibold">Evidence</h2>
           <ul data-testid="evidence-list">
-            <%= for evidence <- @state.evidence do %><li><%= evidence %></li><% end %>
+            <%= for evidence <- @state.evidence do %>
+              <li>{evidence}</li>
+            <% end %>
           </ul>
           <h3 class="mt-4 font-semibold">Missing required evidence</h3>
           <ul data-testid="missing-evidence">
             <%= if @state.missing_evidence == [] do %>
               <li>NONE</li>
             <% else %>
-              <%= for evidence <- @state.missing_evidence do %><li><%= evidence %></li><% end %>
+              <%= for evidence <- @state.missing_evidence do %>
+                <li>{evidence}</li>
+              <% end %>
             <% end %>
           </ul>
         </article>
@@ -104,8 +115,8 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           <ol data-testid="hypothesis-list">
             <%= for hypothesis <- @state.ranked_hypotheses do %>
               <li class="mb-3">
-                <strong><%= hypothesis.mode %></strong>
-                <span> score=<%= hypothesis.score %></span>
+                <strong>{hypothesis.mode}</strong>
+                <span> score={hypothesis.score}</span>
                 <span> · candidate only</span>
               </li>
             <% end %>
@@ -115,7 +126,9 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
             <%= if @state.prior_cases == [] do %>
               <li>NONE</li>
             <% else %>
-              <%= for prior <- @state.prior_cases do %><li><%= prior %></li><% end %>
+              <%= for prior <- @state.prior_cases do %>
+                <li>{prior}</li>
+              <% end %>
             <% end %>
           </ul>
         </article>
@@ -125,8 +138,12 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         <h2 class="font-semibold">Standardized learning</h2>
         <p>UNKNOWN → investigation → verified disposition → MachineExperience → future KNOWN</p>
         <%= if @selected == "novel_x" and not @experience_admitted do %>
-          <button type="button" phx-click="admit_experience" data-testid="admit-experience"
-            class="mt-3 rounded border px-3 py-2">
+          <button
+            type="button"
+            phx-click="admit_experience"
+            data-testid="admit-experience"
+            class="mt-3 rounded border px-3 py-2"
+          >
             Admit verified MachineExperience fixture
           </button>
         <% end %>

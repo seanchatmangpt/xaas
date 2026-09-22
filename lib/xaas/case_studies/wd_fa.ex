@@ -141,8 +141,15 @@ defmodule Xaas.CaseStudies.WdFa do
       record_event!(
         "failure_observed",
         "#{run}:event:observed",
-        [objects.case, objects.drive, objects.lot, objects.supplier, objects.bom,
-         objects.firmware, objects.station] ++ evidence,
+        [
+          objects.case,
+          objects.drive,
+          objects.lot,
+          objects.supplier,
+          objects.bom,
+          objects.firmware,
+          objects.station
+        ] ++ evidence,
         %{"symptom" => scenario.symptom}
       )
 
