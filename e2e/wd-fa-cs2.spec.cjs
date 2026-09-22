@@ -22,6 +22,15 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="stogaf-viewpoints"]')).toContainText("FA Morning Brief");
     await expect(page.locator('[data-testid="stogaf-workgraph-boundary"]')).toContainText("SJ-011 → SJ-020");
 
+    const architectureResponse = await page.request.get("/case-studies/wd-fa/stogaf.json");
+    expect(architectureResponse.ok()).toBeTruthy();
+    const architecture = await architectureResponse.json();
+    expect(architecture.architecture.current_conformance).toBe("ST-4 CONSTRAINED");
+    expect(architecture.architecture.target_conformance).toBe("ST-6 AUTONOMIC");
+    expect(architecture.requirements).toHaveLength(16);
+    expect(architecture.capabilities.some((capability) => capability.plane === "DO")).toBeFalsy();
+    expect(architecture.excluded_production_do.plane).toBe("DO");
+
     await page.locator('[data-testid="scenario-partial_firmware"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("PARTIAL");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("NONE");

@@ -1,6 +1,7 @@
 @prefix stogaf: <urn:xaas:stogaf:> .
 @prefix wdcs2: <urn:xaas:wd-cs2:> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 stogaf:ArchitectureEpisodeShape a sh:NodeShape ;
