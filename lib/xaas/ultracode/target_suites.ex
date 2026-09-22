@@ -55,6 +55,170 @@ defmodule Xaas.Ultracode.TargetSuites do
   @doc "Suite declarations merged into the dev verifier registry by config/dev.exs."
   @spec devs() :: map()
   def devs do
+    # Shared env for the uv (Python) targets. Two pins, both observed
+    # necessary 2026-09-21:
+    #   * UV_CACHE_DIR at the operator-owned toolchain dir -- the verifier
+    #     gives children a throwaway HOME, so an unpinned uv cache would be
+    #     cold (and re-downloaded) on every close.
+    #   * UV_PYTHON at an absolute PATH-reachable interpreter -- the
+    #     infinite-agentic-cli clone's .venv was bound to a uv-MANAGED
+    #     CPython under ~/.local/share/uv, which does not exist under the
+    #     throwaway HOME; `uv run` then silently fell back to a non-venv
+    #     pytest and the project import failed at collection (observed:
+    #     ModuleNotFoundError: infinite_agentic_cli). Pinning the interpreter
+    #     keeps every venv on a python that exists inside the child env.
+    uv_env = %{
+      "PATH" => "/Users/sac/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG" => "en_US.UTF-8",
+      "UV_CACHE_DIR" => Path.expand("~/xaas/worktrees/toolchain/uv-cache"),
+      "UV_PYTHON" => "/opt/homebrew/bin/python3.13"
+    }
+
+    # Shared env for the Elixir (mix) targets, same pin shape as
+    # nounverb-dod below: absolute asdf install dirs (throwaway HOME defeats
+    # asdf shim resolution) + the operator-owned MIX_ARCHIVES so hex never
+    # prompts.
+    xaas_env = %{
+      "PATH" =>
+        "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:" <>
+          "/Users/sac/.asdf/installs/erlang/28.3/bin:" <>
+          "/Users/sac/.cargo/bin:" <>
+          "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG" => "en_US.UTF-8",
+      "MIX_ARCHIVES" => Path.expand("~/xaas/worktrees/toolchain/mix-archives"),
+      # Mix finds rebar3 ONLY via this env var (or ~/.mix, which a throwaway
+      # HOME erases): the Erlang dep :idna needs it. Observed 2026-09-21:
+      # "Could not find rebar3" without the pin even though rebar3 is on PATH.
+      "MIX_REBAR3" => "/opt/homebrew/bin/rebar3",
+      # Rustler NIF build (the :ggen_igniter dependency) needs the rust
+      # toolchain AND the real rustup home under a throwaway HOME.
+      "RUSTUP_HOME" => "/Users/sac/.rustup",
+      "CARGO_HOME" => "/Users/sac/.cargo",
+      # The xaas test database is xaas_test#{MIX_TEST_PARTITION}
+      # (config/test.exs); the partition keeps the clone's Chicago sandbox
+      # OFF the main checkout's xaas_test so a campaign close and a local
+      # `mix test` never share one mutable database.
+      "MIX_TEST_PARTITION" => "_ultracode"
+    }
+
+    # ------------------------------------------------------------------
+    # Overnight-run targets (2026-09-21): the durable registry file
+    # ~/xaas/worktrees/ultracode-repos.json names SIX targets. Three of
+    # them are registered here -- each target names a `-dod` suite (the
+    # per-item close judge) AND a `-canonical` suite (the per-repo
+    # integration-head judge that Autonomic resolves from the registry
+    # entry) -- the same judge at both heads, the nounverb/eds pattern.
+    # Every argv below was executed against the real clone under this
+    # exact env (verifier-shaped: throwaway HOME/TMPDIR) on 2026-09-21;
+    # observed exits live in the wave receipt. The other three targets
+    # (autofde-lab, ggen-igniter, gymact) are deliberately NOT registered:
+    # see the block below.
+    # ------------------------------------------------------------------
+
+    # bitstar clone (~/xaas/worktrees/repos/bitstar): NO pyproject.toml at
+    # the root, so `uv run` takes its no-project fallback and resolves
+    # `pytest` from PATH (homebrew). test_cli_fixes.py is import-free pure
+    # logic; the verifier-forced PYTHONDONTWRITEBYTECODE and the repo's
+    # own .gitignore keep the tree clean.
+    # Observed 2026-09-21: exit 0, "3 passed in 0.04s".
+    bitstar = %{
+      env: uv_env,
+      max_output_bytes: 65_536,
+      toolchain: [["uv", "--version"], ["git", "--version"]],
+      steps: [
+        %{
+          id: "test",
+          timeout_ms: 300_000,
+          argv: ["uv", "run", "--frozen", "pytest", "test_cli_fixes.py", "-q"]
+        }
+      ]
+    }
+
+    # infinite-agentic-cli clone: the runbook §1.1 verifier command,
+    # verbatim. The UV_PYTHON pin in uv_env is REQUIRED here (observed:
+    # without it the throwaway HOME cannot see the uv-managed CPython the
+    # clone's .venv was bound to, `uv run` falls back to a non-venv pytest,
+    # and collection dies on `ModuleNotFoundError: infinite_agentic_cli`).
+    # The repo's pytest ini writes reports/pytest.xml -- gitignored.
+    # Observed 2026-09-21 (with the pin): exit 0, "11 passed in 0.77s".
+    micli = %{
+      env: uv_env,
+      max_output_bytes: 65_536,
+      toolchain: [["uv", "--version"], ["git", "--version"]],
+      steps: [
+        %{
+          id: "test",
+          timeout_ms: 300_000,
+          argv: ["uv", "run", "--frozen", "pytest", "tests/test_analysis.py", "-q"]
+        }
+      ]
+    }
+
+    # autofde-lab, ggen-igniter, gymact: DELIBERATELY NOT REGISTERED
+    # (2026-09-21) -- each suite was executed against its real clone under
+    # the verifier-shaped env (throwaway HOME) and is structurally
+    # red/dirty there, so a registration would fake readiness while every
+    # close failed. Prerequisites live in the TARGET repos, not here:
+    #
+    #   * autofde-lab (120/1193 failed): machine-coupled collaborators a
+    #     fresh clone lacks -- vendored `cmca_rank_cli` Rust binary
+    #     (resolve checks $BCINR_CMCA_CLI / ~/bcinr / vendor target),
+    #     beam-port + AtomVM + helm-chart + sregym/POWL sibling checkouts
+    #     under ~/, and the identity anti-vacuity counts. Its REAL CI
+    #     qualification is Linux-only (wheel install + MiniZinc + ray
+    #     partitions). Also by design one hot-loop test rewrites the
+    #     tracked docs/jira/.../concurrency-stress-findings.md -- an
+    #     after-run clean-tree violation on its own.
+    #   * ggen-igniter (28/1185 failed, rest green in 1056s): three
+    #     test files (ggen_igniter_base_code_module/_pattern_string/
+    #     _project_formatter_taskaliases) read the sibling `~/ex4pm`
+    #     checkout via a COMPILE-TIME `System.user_home!()` fixture with
+    #     no env override, and the verifier sets HOME after merging suite
+    #     env. mix test cannot exclude files without blinding new-file
+    #     detection. Prerequisite: EX4PM_ROOT-style override in the
+    #     fixture. (Env pins needed to even compile: asdf elixir
+    #     1.18.4-otp-27 per its own CI -- mix.lock's faker 0.18.0 has a
+    #     raw \\u0085 the 1.20 tokenizer rejects; MIX_REBAR3 for :idna;
+    #     cargo + RUSTUP_HOME/CARGO_HOME for the Rustler NIF.)
+    #   * gymact (exit 2 + tracked-file rewrites): module-level
+    #     `import gymnasium` etc. make a bare sync die at collection
+    #     (needs `uv sync --all-extras --group dev`); standing-gated real
+    #     gyms degrade only with GYMACT_ALLOW_DEGRADED_STANDINGS; but the
+    #     suite REWRITES tracked reports/ocel + tests/fixtures files and
+    #     drops untracked .inspect_logs/*.eval, several tests fail
+    #     hermetically (chatman_state PROVIDER_ERROR:ValueError; local-
+    #     repo/github discovery), and filterwarnings=["error"] promotes
+    #     benign GC warnings to exit != 0. Also no committed uv.lock (the
+    #     repo gitignores it), so every close re-resolves the world.
+
+    # xaas clone: the repo's own fast boundary -- `mix test` (alias:
+    # ecto.create + ecto.migrate + test; the :external/:kind/:stress/...
+    # heavy tags stay excluded by test_helper.exs). MIX_TEST_PARTITION
+    # gives the clone its OWN xaas_test_ultracode database
+    # (config/test.exs concatenates it), so a campaign close and a local
+    # `mix test` in the main checkout never share one mutable database.
+    # cargo MUST be on PATH and rustup/cargo homes pinned: the
+    # :ggen_igniter dependency compiles a Rustler NIF
+    # (native/ggen_graph_nif) -- observed :enoent without cargo on PATH,
+    # then "rustup could not choose a version of cargo" under a throwaway
+    # HOME without RUSTUP_HOME/CARGO_HOME. Plain `mix compile` (not
+    # --warnings-as-errors): the clone's dep tree carries charlist
+    # deprecation warnings. First compile builds the EXLA C++ extension
+    # from source (minutes); UV_CACHE_DIR-style warmth does not apply, the
+    # per-worktree _build pays it once per epoch.
+    # Observed 2026-09-21 (warm _build): compile exit 0; test exit 0,
+    # "1351 passed, 72 excluded" in 68.9s.
+    xaasclone = %{
+      env: xaas_env,
+      max_output_bytes: 65_536,
+      toolchain: [["mix", "--version"], ["cargo", "--version"], ["git", "--version"]],
+      steps: [
+        %{id: "deps", timeout_ms: 600_000, argv: ["mix", "deps.get"]},
+        %{id: "compile", timeout_ms: 900_000, argv: ["mix", "compile"]},
+        %{id: "test", timeout_ms: 1_800_000, argv: ["mix", "test"]}
+      ]
+    }
+
     %{
       # ex_noun_verb_cli clone (~/xaas/worktrees/repos/nounverb): mix deps.get
       # against the committed mix.lock, strict compile, full mix test. Hex is
@@ -180,7 +344,13 @@ defmodule Xaas.Ultracode.TargetSuites do
             ]
           }
         ]
-      }
+      },
+      "bitstar-dod" => bitstar,
+      "bitstar-canonical" => bitstar,
+      "infinite-agentic-cli-dod" => micli,
+      "infinite-agentic-cli-canonical" => micli,
+      "xaas-dod" => xaasclone,
+      "xaas-canonical" => xaasclone
     }
   end
 
