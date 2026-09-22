@@ -40,3 +40,17 @@ Testing is Chicago-style: real Postgres through the repository's Ecto sandbox, r
 Ash authorization is deny-by-default. Do not weaken the policy floor mechanically. `/internal-api` and `/api` routes require the real internal token gate and fail closed when it is unset. Financial-ledger resources and auth/PII resources documented as deliberately unwired must remain unwired unless the task includes an explicit access-control design.
 
 Do not freeze volatile commands here: discover and execute the current commands from `CLAUDE.md`, manifests, and CI at the admitted SHA. Claims such as compile, test, server boot, HTTP behavior, or generation require the real run named by the claim.
+
+## Zcode integration (added 2026-09-22)
+
+This repository is the SOURCE of the xaas-fabric zcode plugin. ggen projects `ontology.ttl` + `templates/*.tmpl` → `priv/zcode_plugin/marketplace/xaas-fabric/` (8 files); drift is checked by `test/xaas/zcode_plugin/projection_test.exs`. The installed user-side copy at `~/.zcode/cli/plugins/cache/xaas-fabric-marketplace/xaas-fabric/26.9.17/` was byte-identical as of 2026-09-22. Edit the owning ontology/templates, never the projection.
+
+The execution fabric MCP surface is `POST /internal-api/execution/mcp` (JSON-RPC; 7 verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`), `POST /internal-api/execution/hooks/:event`, and `GET /internal-api/execution/epochs/:epoch_id/receipts` — all behind `RequireInternalApiToken` (`router.ex:80-112`).
+
+Native dispatch: semantic runs invoke `zcode gall-work --lease <descriptor>`. The contract file `priv/zcode_plugin/gall-work.contract.json` must stay byte-identical to zcode-cli's `test/fixtures/gall-work.contract.json`.
+
+Worker semantics: `XAAS_WORKER=1` arms the plugin PreToolUse gate (`scripts/xaas-gate.mjs`); `XAAS_ALLOW_SUBAGENTS=1` overrides its agent-spawn denial; `XAAS_MCP_URL`/`XAAS_MCP_TOKEN` override endpoints.
+
+Receipt conventions: `docs/ultracode/<wave>-receipts/` directories, `PROGRESS.md` entries, and `standing-ledger.ndjson` hash chains (see `wave-v26.9.19-receipts/semantic-autonomics-crown/`).
+
+Known asymmetry (open work order): `AuditMcpToolCall` covers `/mcp` but NOT `/internal-api/execution/mcp`.
