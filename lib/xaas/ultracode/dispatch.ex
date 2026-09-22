@@ -122,7 +122,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run, Worktrees}
+  alias Xaas.Ultracode.{Epoch, Receipt, Run, Worktrees, ZcodePackage}
 
   # Keep below the run default `epoch_timeout_seconds` (900), same bound the
   # bash dispatcher documents: the lease clock is the provider's to spend,
@@ -541,7 +541,7 @@ defmodule Xaas.Ultracode.Dispatch do
           # when a real attempt runs (materialize_descriptor/1).
           path = descriptor_path(epoch_id)
 
-          {:gall_work_native, nil, ["bin/zcode.js", "gall-work", "--lease", path],
+          {:gall_work_native, nil, [resolved.zcode_bin, "gall-work", "--lease", path],
            %{path: path, content: descriptor}}
 
         :none ->
@@ -551,7 +551,7 @@ defmodule Xaas.Ultracode.Dispatch do
           prompt = prompt(worker_id, epoch_id)
 
           {:xaas_prompt, prompt,
-           ["bin/zcode.js", "--prompt", prompt, "--cwd", cwd_real, "--json"], nil}
+           [resolved.zcode_bin, "--prompt", prompt, "--cwd", cwd_real, "--json"], nil}
       end
 
     {:ok,
@@ -763,11 +763,14 @@ defmodule Xaas.Ultracode.Dispatch do
 
     timeout_seconds = Keyword.get(opts, :timeout_seconds, @default_timeout_seconds)
 
-    with {:ok, checked_cli} <- check_cli_dir(cli_dir),
-         {:ok, checked_node} <- check_node(node_path) do
+    with {:ok, pkg} <- ZcodePackage.load(cli_dir),
+         {:ok, checked_node} <- check_node(node_path),
+         :ok <- ZcodePackage.check_node(pkg, checked_node) do
       {:ok,
        %{
-         cli_dir: checked_cli,
+         cli_dir: pkg.dir,
+         zcode_bin: pkg.bin,
+         zcode_version: pkg.version,
          node_path: checked_node,
          timeout_seconds: timeout_seconds,
          failover_retries: Keyword.get(opts, :failover_retries, @default_failover_retries),
@@ -780,16 +783,6 @@ defmodule Xaas.Ultracode.Dispatch do
        }}
     end
   end
-
-  defp check_cli_dir(cli_dir) when is_binary(cli_dir) do
-    script = Path.join(cli_dir, "bin/zcode.js")
-
-    if File.dir?(cli_dir) and File.regular?(script),
-      do: {:ok, cli_dir},
-      else: {:error, {:cli_unavailable, script}}
-  end
-
-  defp check_cli_dir(_), do: {:error, {:cli_unavailable, "unset"}}
 
   defp check_node(nil), do: {:error, {:node_unavailable, "node"}}
 

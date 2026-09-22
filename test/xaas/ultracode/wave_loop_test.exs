@@ -648,7 +648,7 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                WaveLoop.tick(
                  state_path: state_path,
                  telemetry_path: telemetry_path,
-                 dispatch_opts: [cli_dir: cli_dir, node_path: "/bin/sh", timeout_seconds: 60]
+                 dispatch_opts: [cli_dir: cli_dir, node_path: Path.expand("../../support/fake-node.sh", __DIR__), timeout_seconds: 60]
                )
 
       # The REAL subprocess really ran (Dispatch -> port -> sh -> script).
@@ -917,6 +917,17 @@ defmodule Xaas.Ultracode.WaveLoopTest do
     path = Path.join([dir, "bin", "zcode.js"])
     File.write!(path, script)
     File.chmod!(path, 0o755)
+
+    File.write!(
+      Path.join(dir, "package.json"),
+      Jason.encode!(%{
+        "name" => "zcode-app-cli",
+        "version" => "0.0.0-test",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=22.19.0"}
+      })
+    )
+
     dir
   end
 

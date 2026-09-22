@@ -17,7 +17,7 @@ defmodule Xaas.Ultracode.DispatchTest do
   alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Receipt, Run}
 
   @provider "zcode-dispatch-test"
-  @sh "/bin/sh"
+  @sh Path.expand("../../support/fake-node.sh", __DIR__)
 
   @git_env [
     {"GIT_AUTHOR_NAME", "dispatch-test"},
@@ -156,13 +156,13 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.descriptor == nil
   end
 
-  test "plan refuses a CLI directory that does not hold bin/zcode.js" do
+  test "plan refuses a CLI directory that does not hold package.json" do
     {:ok, _run, epoch} = create_running_epoch!()
 
     assert {:error, {:cli_unavailable, path}} =
              Dispatch.plan(epoch.id, cli_dir: "/nonexistent-dispatch-cli", node_path: @sh)
 
-    assert path == "/nonexistent-dispatch-cli/bin/zcode.js"
+    assert path == "/nonexistent-dispatch-cli/package.json"
   end
 
   test "plan passes a registered repo's toolchain_env pin into the worker env; the plain string registry shape stays inherit-only",
@@ -1142,6 +1142,17 @@ defmodule Xaas.Ultracode.DispatchTest do
     path = Path.join([dir, "bin", "zcode.js"])
     File.write!(path, script)
     File.chmod!(path, 0o755)
+
+    File.write!(
+      Path.join(dir, "package.json"),
+      Jason.encode!(%{
+        "name" => "zcode-app-cli",
+        "version" => "0.0.0-test",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=22.19.0"}
+      })
+    )
+
     dir
   end
 
