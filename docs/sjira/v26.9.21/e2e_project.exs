@@ -20,7 +20,13 @@
 #                admission_digest envelope can refuse any post-admission
 #                tamper. The bridge carries the graph-side identity
 #                (definition_digest, source_snapshot_digest) verbatim; Xaas
-#                stores it and never interprets it.
+#                stores it and never interprets it. The descriptor ALSO carries
+#                the admitted snapshot itself (`admitted_work_order`, exactly
+#                what admit_work_order/1 returned) so Xaas can RECOMPUTE the
+#                work-order digest from the admitted content instead of
+#                trusting any digest string (Xaas.Ultracode.SemanticWork.
+#                AdmissionBinding); with the envelope omitted or altered
+#                consistently, a tamper is still refused.
 #
 # Dependencies: this driver has no receipt ledger, so a work order with
 # non-empty dependencies is refused (upstream receipt evidence would have to
@@ -66,6 +72,7 @@ case GgenIgniter.SemanticJira.admit_work_order(work_order) do
             "urn:semantic-jira:checkpoint:" <> admitted["identity"] <> "@" <> digest <> suffix,
           "graph_digest" => digest,
           "admission_digest" => digest,
+          "admitted_work_order" => admitted,
           "repository_identity" => admitted["repository"],
           "execution_repo_alias" => alias_name,
           "base_sha" => admitted["base_sha"],

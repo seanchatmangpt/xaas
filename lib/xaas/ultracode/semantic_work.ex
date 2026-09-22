@@ -12,6 +12,7 @@ defmodule Xaas.Ultracode.SemanticWork do
   require Ash.Query
 
   alias Xaas.Ultracode.{CourtReceipt, Epoch, Run, SemanticWaveTrigger, Worktrees}
+  alias Xaas.Ultracode.SemanticWork.AdmissionBinding
 
   @sha ~r/^[0-9a-f]{40}$/
   @digest ~r/^sha256:[0-9a-f]{64}$/
@@ -49,6 +50,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     "standing" => :standing,
     "court_map" => :court_map,
     "admission_digest" => :admission_digest,
+    "admitted_work_order" => :admitted_work_order,
     "bridge" => :bridge
   }
 
@@ -110,6 +112,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     | `checkpoint_iri`       | string, absolute IRI (must contain `:`)      | `require_iri/2`           |
     | `graph_digest`         | `"sha256:" <> 64 lowercase hex`              | `@digest` regex           |
     | `admission_digest`     | optional; valid digest AND equal to `graph_digest` when present | `optional_admission_digest/1` |
+    | `admitted_work_order`  | optional; admitted snapshot, digest recomputed by XaaS | `AdmissionBinding.verify/2` |
     | `repository_identity`  | `"owner/repo"` (`[A-Za-z0-9_.-]+/...`)       | `@repo_identity` regex    |
     | `execution_repo_alias` | 1-128 of `[A-Za-z0-9_.-]` (Worktrees key)    | `@repo_alias` regex       |
     | `base_sha`             | exactly 40 lowercase hex (a git SHA)         | `@sha` regex              |
@@ -125,13 +128,38 @@ defmodule Xaas.Ultracode.SemanticWork do
   are refused. An optional top-level `"standing"` key is passed through
   by the key normalization and otherwise ignored: standing is never
   granted by admission. An optional `"admission_digest"` key is the
-  fail-closed integrity envelope for producers that bind the descriptor
-  to one admission snapshot (`graph_digest` := the admission's
-  work-order digest): when present it must be a valid digest AND equal
-  `graph_digest`, so a descriptor whose digest was altered after
-  admission is refused HERE, at the materialize boundary, not only at
-  the emitter. Absent = today's behavior; the field is admission-time
+  integrity envelope for producers that bind the descriptor to one
+  admission snapshot (`graph_digest` := the admission's work-order
+  digest): when present it must be a valid digest AND equal
+  `graph_digest`. The envelope alone is only a second in-band copy, so
+  the falsifier "materialize accepts a WorkOrder whose digest was
+  altered after admission" does NOT rest on it (an omitted envelope, or
+  one altered together with `graph_digest`, would defeat it); it rests
+  on the XaaS-side digest binding below. The envelope is admission-time
   only and never persisted (the Run schema is unchanged).
+
+  ## Digest binding (fail-closed, recomputed on the XaaS side)
+
+  `admit/2` verifies the descriptor's digests against anchors XaaS
+  recomputes or reads itself, so a tamper is refused with a typed reason
+  WITH OR WITHOUT the envelope (contract:
+  `Xaas.Ultracode.SemanticWork.AdmissionBinding`):
+
+    * optional `"admitted_work_order"`: the producer's admitted snapshot
+      (the exact map `GgenIgniter.SemanticJira.admit_work_order/1`
+      returned). XaaS recomputes its digest from its own content; a stale
+      digest, or a descriptor `base_sha` / `repository_identity` /
+      `work_order_iri` / bridge field that is not the snapshot's, is
+      refused;
+    * `bridge.source_snapshot_digest`: the real bridge's per-work-order
+      snapshot digest, a second anchor that must agree with the first;
+    * option `binding:`, declared by the TRUSTED caller and never by the
+      descriptor: `:snapshot` requires `graph_digest` to equal the snapshot
+      digest plus at least one independent anchor (`:admission_anchor_missing`
+      otherwise); `:graph` declares `graph_digest` graph-wide (the digest the
+      real `Descriptor.build/4` emits over every definition digest) and
+      leaves it unbound; `:auto` (default) behaves as `:snapshot` when the
+      producer carried an `admitted_work_order`, else as `:graph`.
 
   Refusals are typed: `{:error, {:refused_semantic_work, reason}}` /
   `{:error, {:refused_dependency, reason}}` /
@@ -152,11 +180,14 @@ defmodule Xaas.Ultracode.SemanticWork do
   worker ever supplying them. Absent = today's behavior; present but
   malformed = typed refusal.
   """
-  @spec admit(map()) :: {:ok, descriptor()} | {:error, term()}
-  def admit(input) when is_map(input) do
+  @spec admit(map(), keyword()) :: {:ok, descriptor()} | {:error, term()}
+  def admit(input, opts \\ [])
+
+  def admit(input, opts) when is_map(input) and is_list(opts) do
     descriptor = normalize_keys(input)
 
-    with :ok <- require_fields(descriptor),
+    with {:ok, binding} <- binding_mode(opts),
+         :ok <- require_fields(descriptor),
          :ok <- require_iri(descriptor, :work_order_iri),
          :ok <- require_iri(descriptor, :checkpoint_iri),
          :ok <- require_match(descriptor, :graph_digest, @digest),
@@ -168,6 +199,7 @@ defmodule Xaas.Ultracode.SemanticWork do
          :ok <- require_string(descriptor, :provider),
          :ok <- require_string(descriptor, :verifier_suite),
          :ok <- optional_bridge(descriptor),
+         :ok <- AdmissionBinding.verify(descriptor, binding),
          {:ok, policy} <- admit_execution_policy(descriptor.execution_policy),
          {:ok, dependencies} <- admit_dependencies(descriptor.dependencies),
          {:ok, court_map} <- CourtReceipt.admit(Map.get(descriptor, :court_map)) do
@@ -179,7 +211,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     end
   end
 
-  def admit(_), do: {:error, {:refused_semantic_work, :not_a_map}}
+  def admit(_input, _opts), do: {:error, {:refused_semantic_work, :not_a_map}}
 
   @doc """
   Materializes one already-selected semantic work order into the existing
@@ -215,7 +247,7 @@ defmodule Xaas.Ultracode.SemanticWork do
           {:ok, %{run: Run.t(), epoch: Epoch.t(), worktree: String.t(), wave: map()}}
           | {:error, term()}
   def materialize(input, opts \\ []) do
-    with {:ok, descriptor} <- admit(input),
+    with {:ok, descriptor} <- admit(input, opts),
          name <- worktree_name(descriptor),
          {:ok, worktree} <-
            Worktrees.provision(descriptor.execution_repo_alias, descriptor.base_sha, name) do
@@ -452,6 +484,13 @@ defmodule Xaas.Ultracode.SemanticWork do
 
       _ ->
         {:error, {:refused_semantic_work, {:invalid, key}}}
+    end
+  end
+
+  defp binding_mode(opts) do
+    case Keyword.get(opts, :binding, :auto) do
+      mode when mode in [:auto, :snapshot, :graph] -> {:ok, mode}
+      other -> {:error, {:refused_semantic_work, {:invalid_binding_option, other}}}
     end
   end
 

@@ -22,7 +22,7 @@
     "source_snapshot_digest": "sha256:4e0458934ec42dcc4953107d1fde191cc2ab2cb27f33fcf0804a30bfa6b91dda",
     "subject": "xaas-semantic-jira-e2e"
   },
-  "epoch_id": "aaa952e5-9132-49be-8b04-b5a034f175ad",
+  "epoch_id": "97deaf82-0718-47b8-94ca-7e1dede36290",
   "fabric_verifier": {
     "status": "fail",
     "steps": [
@@ -36,10 +36,10 @@
       }
     ]
   },
-  "final_head": "79e36a21e653947e905f254c1f19beab7ca74b75",
+  "final_head": "d7c269f146fc0e593ae57920ae4d6e221aba25e2",
   "head_verified": true,
   "outcome": "build_broken",
-  "receipt_digest": "sha256:0cbebc734aeba6e83788ca09bbdd5ff8603c039cbfb20c662272c2d73705cd8e",
-  "receipt_id": "a24c3fba-d5c4-4415-bc01-65336b55d0ce",
-  "run_id": "cbf4afd0-d910-4b01-ae5b-f7d1924e1023"
+  "receipt_digest": "sha256:d7f03c9ab0d078074af04be5566a7db5fe026dbddf9527f8000edb75c78a06ef",
+  "receipt_id": "34ad3653-4fda-4a57-8f22-94acf63fd2de",
+  "run_id": "44eec3fc-e4af-4203-9ac5-2d98ff051d0f"
 }

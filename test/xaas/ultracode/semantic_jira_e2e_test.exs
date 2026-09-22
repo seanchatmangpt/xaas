@@ -14,12 +14,25 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
   descriptor. The Xaas side is the real `mix xaas.semantic.materialize` /
   `mix xaas.semantic.receipt` tasks, real sandboxed Postgres, a real clone
   of this exact checkout, a real git worktree at the work order's base_sha,
-  a real shell verifier suite and the real `Lease.claim_next`/`Lease.close`
-  fabric court. The worker is a scripted protocol client; it stands in only
-  for the model's judgment.
+  a real verifier suite and the real `Lease.claim_next`/`Lease.close` fabric
+  court. The `compile` court is a REAL `mix compile` of the exact-head
+  worktree (private APFS clones of this checkout's `deps` and `_build/test`,
+  `env -i` allowlist, as the fabric verifier always runs steps); the `tests`
+  and `chicago_no_mocks` courts remain fixture shell steps over the candidate
+  head. The worker is a scripted protocol client; it stands in only for the
+  model's judgment.
 
-  Not tagged `:subprocess` on purpose: it pays three nested BEAM boots (admit +
-  project, the emission-guard refusal, the negative control) and the work
+  Falsifier 1 (digest altered after admission) is attacked at the real
+  `mix xaas.semantic.materialize` boundary with probes A (mismatch), B
+  (envelope omitted), C (envelope altered consistently), D (every anchor
+  stripped) and E (admitted snapshot edited), all against the descriptor the
+  real graph-side admission emitted; falsifier 2 (a court that did not pass
+  must not seal alive) with one candidate that fails the fixture `tests`
+  court and one whose source does not compile.
+
+  Not tagged `:subprocess` on purpose: it pays several nested BEAM boots (admit +
+  project, the emission-guard refusal, two negative controls), two real
+  `mix compile` runs per candidate epoch, and the work
   order's runnable check is the plain
   `mix test test/xaas/ultracode`, which must exercise this proof. Skips
   (never fails) when the ggen_igniter checkout is absent.
@@ -33,6 +46,7 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
   use ExUnit.Case, async: false
 
   alias Xaas.Ultracode.{Epoch, Lease, Receipt, SemanticReceipt}
+  alias Xaas.Ultracode.SemanticWork.AdmissionBinding
 
   @moduletag timeout: 1_200_000
 
@@ -128,6 +142,11 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
     assert descriptor["bridge"]["identity"] == "SJ-001"
     assert descriptor["bridge"]["definition_digest"] == definition
     assert descriptor["bridge"]["source_snapshot_digest"] == digest
+    assert descriptor["admitted_work_order"]["work_order_digest"] == digest
+
+    # XaaS recomputes the admitted digest itself and reproduces the graph's
+    assert AdmissionBinding.snapshot_digest(descriptor["admitted_work_order"]) == digest
+    assert AdmissionBinding.definition_digest(descriptor["admitted_work_order"]) == definition
     assert descriptor["bridge"]["requires"]["courts"] == order["required_courts"]
 
     # -- materialize through the real mix task ----------------------------------
@@ -145,7 +164,9 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
       "--descriptor",
       descriptor_path,
       "--ticket-file",
-      ticket
+      ticket,
+      "--binding",
+      "snapshot"
     ])
 
     assert_received {:mix_shell, :info, [line]}
@@ -187,6 +208,14 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
     assert export["fabric_verifier"]["status"] == "pass"
     assert export["bridge"]["identity"] == "SJ-001"
 
+    # all three required courts ran in order and passed; `compile` is a real
+    # `mix compile` of the exact-head worktree
+    assert step_statuses(export) == [
+             {"compile", "pass"},
+             {"tests", "pass"},
+             {"chicago_no_mocks", "pass"}
+           ]
+
     closing =
       Receipt
       |> Ash.Query.for_read(:for_epoch, %{epoch_id: epoch_id})
@@ -215,58 +244,77 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
 
     refute File.exists?(Path.join(base, "descriptor-altered.json"))
 
-    # at materialize: the descriptor's two digest copies disagree
-    assert_raise Mix.Error, ~r/materialize refused.*admission_digest_mismatch/, fn ->
-      altered = %{descriptor | "graph_digest" => flip(digest)}
+    # at materialize, on what the REAL producer emitted. Every probe is refused
+    # with a typed reason, with or without the envelope; nothing is provisioned.
+    altered = flip(digest)
+    tampered = Map.put(descriptor, "graph_digest", altered)
+    bridge_only = Map.delete(descriptor, "admitted_work_order")
 
-      Mix.Tasks.Xaas.Semantic.Materialize.run([
-        "--descriptor",
-        spill(base, "descriptor-altered-2.json", altered)
-      ])
+    stripped =
+      descriptor
+      |> Map.delete("admitted_work_order")
+      |> Map.delete("admission_digest")
+      |> update_in(["bridge"], &Map.delete(&1, "source_snapshot_digest"))
+      |> Map.put("graph_digest", altered)
+
+    probes = [
+      {"a-graph-altered", tampered, ["--binding", "snapshot"], ~r/admission_digest_mismatch/},
+      {"a-envelope-altered", %{descriptor | "admission_digest" => altered},
+       ["--binding", "snapshot"], ~r/admission_digest_mismatch/},
+      {"a-envelope-malformed", %{descriptor | "admission_digest" => "sha256:not-hex"},
+       ["--binding", "snapshot"], ~r/invalid, :admission_digest/},
+      {"b-no-envelope", Map.delete(tampered, "admission_digest"), ["--binding", "snapshot"],
+       ~r/graph_digest_unbound, :admitted_work_order/},
+      {"b-no-envelope-auto", Map.delete(tampered, "admission_digest"), [],
+       ~r/graph_digest_unbound, :admitted_work_order/},
+      {"b-bridge-anchor",
+       bridge_only |> Map.put("graph_digest", altered) |> Map.delete("admission_digest"),
+       ["--binding", "snapshot"], ~r/graph_digest_unbound, :bridge_source_snapshot_digest/},
+      {"c-consistent", Map.put(tampered, "admission_digest", altered), ["--binding", "graph"],
+       ~r/admission_anchor_disagree, :admitted_work_order, :admission_digest/},
+      {"c-consistent-bridge",
+       Map.put(bridge_only, "graph_digest", altered) |> Map.put("admission_digest", altered),
+       ["--binding", "snapshot"],
+       ~r/admission_anchor_disagree, :bridge_source_snapshot_digest, :admission_digest/},
+      {"d-stripped", stripped, ["--binding", "snapshot"], ~r/admission_anchor_missing/},
+      {"e-snapshot-edited",
+       put_in(descriptor["admitted_work_order"]["title"], "edited after admission"),
+       ["--binding", "snapshot"], ~r/admitted_snapshot_stale/}
+    ]
+
+    for {name, probe, extra_args, expected} <- probes do
+      path = spill(base, "descriptor-probe-#{name}.json", probe)
+
+      error =
+        assert_raise Mix.Error, ~r/materialize refused/, fn ->
+          Mix.Tasks.Xaas.Semantic.Materialize.run(["--descriptor", path | extra_args])
+        end
+
+      assert error.message =~ expected,
+             "probe #{name}: expected #{inspect(expected)}, got: #{error.message}"
     end
 
-    assert_raise Mix.Error, ~r/materialize refused.*admission_digest_mismatch/, fn ->
-      tampered = %{descriptor | "admission_digest" => flip(digest)}
+    # -- falsifier 2: a court that did not pass never seals alive ---------------
+    # (a) the fixture `tests` court fails: the candidate omits the worker note
+    control_export =
+      sealed_control(base, wo, "control", fn worktree -> commit_candidate(worktree, false) end)
 
-      Mix.Tasks.Xaas.Semantic.Materialize.run([
-        "--descriptor",
-        spill(base, "descriptor-altered-3.json", tampered)
-      ])
-    end
-
-    assert_raise Mix.Error, ~r/materialize refused.*invalid.*admission_digest/, fn ->
-      malformed = %{descriptor | "admission_digest" => "sha256:not-hex"}
-
-      Mix.Tasks.Xaas.Semantic.Materialize.run([
-        "--descriptor",
-        spill(base, "descriptor-altered-4.json", malformed)
-      ])
-    end
-
-    # -- falsifier 2: a failing court seals build_broken, never alive ------------
-    control_path = Path.join(base, "descriptor-control.json")
-    {0, %{"ok" => true}} = project(wo, control_path, [{"CHECKPOINT_SUFFIX", ":control"}])
-
-    Mix.Tasks.Xaas.Semantic.Materialize.run(["--descriptor", control_path])
-
-    assert_received {:mix_shell, :info, [control_line]}
-
-    assert %{"epoch_id" => control_epoch_id, "worktree" => control_worktree} =
-             Jason.decode!(control_line)
-
-    {:ok, _c, control_token, _} =
-      Lease.claim_next("zcode", "sj001-control", epoch_id: control_epoch_id)
-
-    # the control candidate omits the note: the fabric's `tests` court must fail
-    control_head = commit_candidate(control_worktree, false)
-
-    {:ok, _, _} =
-      Lease.close(control_token, control_head, :alive, %{"note" => "control claims ALIVE"})
-
-    assert {:ok, control_export} = SemanticReceipt.export(control_epoch_id)
     assert control_export["outcome"] == "build_broken"
     assert control_export["fabric_verifier"]["status"] == "fail"
+    assert step_statuses(control_export) == [{"compile", "pass"}, {"tests", "fail"}]
     assert control_export["receipt_digest"] == SemanticReceipt.receipt_digest(control_export)
+
+    # (b) the REAL compile court fails: the worker note is present (so the
+    # fixture courts would pass) but a candidate source file does not compile
+    broken_export =
+      sealed_control(base, wo, "compile-broken", fn worktree ->
+        commit_candidate(worktree, true, true)
+      end)
+
+    assert broken_export["outcome"] == "build_broken"
+    assert broken_export["fabric_verifier"]["status"] == "fail"
+    assert step_statuses(broken_export) == [{"compile", "fail"}]
+    assert broken_export["receipt_digest"] == SemanticReceipt.receipt_digest(broken_export)
 
     tap_evidence(%{
       "admit" => admit,
@@ -278,7 +326,8 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
         "db_reexport_digest" => again["receipt_digest"],
         "sealed_digest" => export["receipt_digest"]
       },
-      "control" => control_export
+      "control" => control_export,
+      "compile_broken" => broken_export
     })
   end
 
@@ -371,18 +420,39 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
     Jason.decode!(json)
   end
 
-  # One real shell step per court the work order requires, run by the fabric
-  # verifier (not the worker) inside the exact-head worktree. The steps are
-  # non-vacuous: each fails when the candidate head lacks what it inspects.
+  # One step per court the work order requires, run by the fabric verifier (not
+  # the worker) inside the exact-head worktree, each halting the suite on its
+  # first non-pass. `compile` is the REAL thing: the worktree is a fresh checkout
+  # of the order's base_sha, so the step APFS-clones this checkout's `deps` and
+  # `_build/test` into it (both are gitignored, so the tree the verifier checks
+  # stays clean) and runs `mix compile`. It is non-vacuous: a candidate whose
+  # source does not compile fails it. `tests` and `chicago_no_mocks` are still
+  # fixture shell steps over the candidate head (a worker-note presence check
+  # and a grep of the proof test), disclosed as such in the SJ-001 receipt.
   @proof_test "test/xaas/ultracode/semantic_jira_e2e_test.exs"
   @mock_pattern "Mo[x]|:mec[k]|unittest[.]mock|MagicMoc[k]|monkeypatc[h]"
+  @compile_court """
+  set -eu
+  test -f mix.exs && test -f lib/xaas/ultracode/semantic_work.ex
+  [ -d deps ] || cp -cR "$SJ001_DEPS_SRC" deps
+  mkdir -p _build
+  [ -d _build/test ] || cp -cR "$SJ001_BUILD_SRC" _build/test
+  MIX_ENV=test mix compile --no-deps-check
+  """
 
   defp suite do
     %{
-      env: %{"PATH" => "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin"},
+      env: %{
+        "PATH" => toolchain_path(),
+        "LANG" => "en_US.UTF-8",
+        "MIX_HOME" => System.get_env("MIX_HOME") || Path.join(System.user_home!(), ".mix"),
+        "HEX_HOME" => System.get_env("HEX_HOME") || Path.join(System.user_home!(), ".hex"),
+        "SJ001_DEPS_SRC" => Path.join(@project_root, "deps"),
+        "SJ001_BUILD_SRC" => Path.join([@project_root, "_build", "test"])
+      },
       max_output_bytes: 4096,
       steps: [
-        step("compile", "test -f mix.exs && test -f lib/xaas/ultracode/semantic_work.ex"),
+        step("compile", @compile_court, 900_000),
         step("tests", "test -s #{@proof_test} && test -f sj001-worker-note.md"),
         step(
           "chicago_no_mocks",
@@ -392,14 +462,61 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
     }
   end
 
-  defp step(id, script),
-    do: %{id: id, argv: ["/bin/sh", "-c", script], timeout_ms: 20_000}
+  # The fabric runs steps under `env -i`: the toolchain must be on the explicit
+  # PATH allowlist (the directories of the `mix` and `erl` this run uses).
+  defp toolchain_path do
+    ["mix", "erl", "git"]
+    |> Enum.map(&(System.find_executable(&1) || flunk("#{&1} not on PATH")))
+    |> Enum.map(&Path.dirname/1)
+    |> Kernel.++(["/usr/bin", "/bin"])
+    |> Enum.uniq()
+    |> Enum.join(":")
+  end
+
+  defp step(id, script, timeout_ms \\ 20_000),
+    do: %{id: id, argv: ["/bin/sh", "-c", script], timeout_ms: timeout_ms}
+
+  defp step_statuses(export) do
+    Enum.map(export["fabric_verifier"]["steps"], &{&1["id"], &1["status"]})
+  end
+
+  # One negative control: project a fresh descriptor under its own checkpoint,
+  # materialize it through the real mix task, lease it, let `candidate` commit
+  # into the worktree, and close claiming :alive so only the fabric's courts
+  # can decide the outcome. Returns the exported sealed receipt.
+  defp sealed_control(base, wo, label, candidate) do
+    path = Path.join(base, "descriptor-#{label}.json")
+    {0, %{"ok" => true}} = project(wo, path, [{"CHECKPOINT_SUFFIX", ":" <> label}])
+
+    Mix.Tasks.Xaas.Semantic.Materialize.run(["--descriptor", path, "--binding", "snapshot"])
+    assert_received {:mix_shell, :info, [line]}
+    assert %{"epoch_id" => epoch_id, "worktree" => worktree} = Jason.decode!(line)
+
+    {:ok, _claimed, token, _run} =
+      Lease.claim_next("zcode", "sj001-#{label}", epoch_id: epoch_id)
+
+    head = candidate.(worktree)
+
+    {:ok, _epoch, _receipt} =
+      Lease.close(token, head, :alive, %{"note" => "#{label} claims ALIVE"})
+
+    assert {:ok, export} = SemanticReceipt.export(epoch_id)
+    export
+  end
 
   # The scripted worker's candidate: the note plus the proof test itself, so the
   # tests / chicago_no_mocks courts inspect a real changed test file at the head.
-  defp commit_candidate(worktree, note?) do
+  defp commit_candidate(worktree, note?, broken? \\ false) do
     if note?,
       do: File.write!(Path.join(worktree, "sj001-worker-note.md"), "# SJ-001 worker note\n")
+
+    # a source file that cannot compile: only the REAL compile court can see it
+    if broken?,
+      do:
+        File.write!(
+          Path.join(worktree, "lib/sj001_broken.ex"),
+          "defmodule Sj001Broken do\n  def x(, do: end\n"
+        )
 
     File.mkdir_p!(Path.join(worktree, Path.dirname(@proof_test)))
     File.cp!(Path.join(@project_root, @proof_test), Path.join(worktree, @proof_test))

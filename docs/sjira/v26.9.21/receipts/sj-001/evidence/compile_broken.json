@@ -22,28 +22,20 @@
     "source_snapshot_digest": "sha256:4e0458934ec42dcc4953107d1fde191cc2ab2cb27f33fcf0804a30bfa6b91dda",
     "subject": "xaas-semantic-jira-e2e"
   },
-  "epoch_id": "59e42899-d90d-4b61-ad3c-7c7727454f3e",
+  "epoch_id": "b7bb2bcd-69a7-48b9-9c85-df7fd85dfaf3",
   "fabric_verifier": {
-    "status": "pass",
+    "status": "fail",
     "steps": [
       {
         "id": "compile",
-        "status": "pass"
-      },
-      {
-        "id": "tests",
-        "status": "pass"
-      },
-      {
-        "id": "chicago_no_mocks",
-        "status": "pass"
+        "status": "fail"
       }
     ]
   },
-  "final_head": "b3fa3d16832ad378d6194b75c03abe6ce9b3044b",
+  "final_head": "ae423434ac9efe9ac70b266aedda55efd4a90af0",
   "head_verified": true,
-  "outcome": "alive",
-  "receipt_digest": "sha256:528d91c4e4886fc372fb5f2efe1114dca577f991e832586f18b8f7ad35b1bc04",
-  "receipt_id": "ab10df01-eb55-4317-b90e-0adf97bbc54d",
-  "run_id": "bb986280-6bd7-45f8-bf93-87f1acf4bb05"
+  "outcome": "build_broken",
+  "receipt_digest": "sha256:60c352b822b4d7f32ed45b8acd5793a9d9d4ad431d515659c03ce9a94bf3c314",
+  "receipt_id": "534fbd31-49be-4893-afc6-2fdd4625f524",
+  "run_id": "650d9af3-eeee-421e-94bc-4032d65932d7"
 }

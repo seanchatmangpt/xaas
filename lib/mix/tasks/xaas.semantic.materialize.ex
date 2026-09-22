@@ -8,12 +8,21 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   one started Epoch. The descriptor's `bridge` object is stored on the Run and
   never interpreted.
 
-      mix xaas.semantic.materialize --descriptor descriptor.json [--ticket-file ticket.json]
+      mix xaas.semantic.materialize --descriptor descriptor.json \\
+        [--ticket-file ticket.json] [--binding auto|snapshot|graph]
 
   `--ticket-file` copies a definition-of-done ticket to
   `<ticket_dir>/<run_id>.json`, the location suites that use the `{ticket}`
   placeholder read from. Prints one JSON object: `run_id`, `epoch_id`,
   `worktree`. A refusal prints the typed reason and exits non-zero.
+
+  `--binding` declares the producer's digest contract to
+  `Xaas.Ultracode.SemanticWork.AdmissionBinding` (the operator declares it,
+  never the descriptor): `snapshot` requires `graph_digest` to equal the
+  admitted work-order snapshot digest XaaS recomputes/reads from the
+  descriptor's own anchors and refuses a descriptor stripped of every anchor;
+  `graph` declares `graph_digest` graph-wide (unbound); `auto` (default) binds
+  when the descriptor carries an `admitted_work_order`.
   """
 
   use Mix.Task
@@ -24,7 +33,7 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   def run(args) do
     {opts, _rest, _invalid} =
       OptionParser.parse(args,
-        strict: [descriptor: :string, ticket_file: :string, help: :boolean]
+        strict: [descriptor: :string, ticket_file: :string, binding: :string, help: :boolean]
       )
 
     if opts[:help] do
@@ -40,7 +49,7 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
 
     descriptor = path |> File.read!() |> Jason.decode!()
 
-    case SemanticWork.materialize(descriptor) do
+    case SemanticWork.materialize(descriptor, binding: binding_mode(opts[:binding])) do
       {:ok, %{run: run, epoch: epoch, worktree: worktree}} ->
         if opts[:ticket_file], do: copy_ticket(opts[:ticket_file], run.id)
 
@@ -50,6 +59,15 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
         Mix.raise("materialize refused: #{inspect(reason)}")
     end
   end
+
+  # Whitelisted, never String.to_atom/1 on operator input.
+  defp binding_mode(nil), do: :auto
+  defp binding_mode("auto"), do: :auto
+  defp binding_mode("snapshot"), do: :snapshot
+  defp binding_mode("graph"), do: :graph
+
+  defp binding_mode(other),
+    do: Mix.raise("--binding must be auto, snapshot or graph, got: #{other}")
 
   defp copy_ticket(source, run_id) do
     dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)
