@@ -1,0 +1,54 @@
+{
+  "subject": "wd-cs2-stogaf-architecture-episode",
+  "goal": "ST-6 AUTONOMIC at REPO_LOCAL_FIXTURE standing",
+  "entry": "SJ-011",
+  "terminal": "SJ-020",
+  "edges": [
+    [
+      "SJ-011",
+      "SJ-012"
+    ],
+    [
+      "SJ-012",
+      "SJ-013"
+    ],
+    [
+      "SJ-013",
+      "SJ-014"
+    ],
+    [
+      "SJ-013",
+      "SJ-015"
+    ],
+    [
+      "SJ-015",
+      "SJ-016"
+    ],
+    [
+      "SJ-013",
+      "SJ-017"
+    ],
+    [
+      "SJ-014",
+      "SJ-017"
+    ],
+    [
+      "SJ-016",
+      "SJ-017"
+    ],
+    [
+      "SJ-017",
+      "SJ-018"
+    ],
+    [
+      "SJ-018",
+      "SJ-019"
+    ],
+    [
+      "SJ-019",
+      "SJ-020"
+    ]
+  ],
+  "authority": "SELECT_CONSTRUCT_ONLY",
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE"
+}

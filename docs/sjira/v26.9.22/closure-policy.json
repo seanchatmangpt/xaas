@@ -1,0 +1,17 @@
+{
+  "selection": "lowest numbered non-ALIVE work order with all dependencies admitted",
+  "alive_requires": "observed exact-subject execution where a court is named",
+  "no_human_reconstruction_goal": true,
+  "known_class_llm_policy": "ZERO_GENERAL_LLM_REQUIRED",
+  "do_policy": "NO_PRODUCTION_DO_IN_FRIDAY_EPISODE",
+  "failure_policy": "FAIL_CLOSED",
+  "allowed_standing": [
+    "UNKNOWN",
+    "PARTIAL_ALIVE",
+    "ALIVE",
+    "BLOCKED",
+    "BUILD_BROKEN",
+    "UNSUPPORTED",
+    "REFUSED"
+  ]
+}

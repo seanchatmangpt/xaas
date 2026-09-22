@@ -1,0 +1,72 @@
+[
+  {
+    "id": "reconstruct_subject",
+    "plane": "OBSERVE",
+    "authority": "NONE",
+    "runtime_intelligence": "NONE",
+    "output": "SubjectContext"
+  },
+  {
+    "id": "retrieve_prior_cases",
+    "plane": "OBSERVE",
+    "authority": "NONE",
+    "runtime_intelligence": "OPTIONAL_RETRIEVAL",
+    "output": "PriorCaseSet"
+  },
+  {
+    "id": "rank_hypotheses",
+    "plane": "SELECT",
+    "authority": "NONE",
+    "runtime_intelligence": "BOUNDED_MODEL_ALLOWED",
+    "output": "CandidateHypothesisSet"
+  },
+  {
+    "id": "test_applicability",
+    "plane": "SELECT",
+    "authority": "NONE",
+    "runtime_intelligence": "NONE",
+    "output": "AdmissionResult"
+  },
+  {
+    "id": "construct_diagnostic_work",
+    "plane": "CONSTRUCT",
+    "authority": "NONE",
+    "runtime_intelligence": "NONE",
+    "output": "SemanticWorkOrder"
+  },
+  {
+    "id": "project_sjira",
+    "plane": "CONSTRUCT",
+    "authority": "NONE",
+    "runtime_intelligence": "NONE",
+    "output": "WorkProjection"
+  },
+  {
+    "id": "project_view",
+    "plane": "CONSTRUCT",
+    "authority": "NONE",
+    "runtime_intelligence": "NONE",
+    "output": "ArchitectureView"
+  },
+  {
+    "id": "verify_receipt",
+    "plane": "OBSERVE",
+    "authority": "NONE",
+    "runtime_intelligence": "NONE",
+    "output": "VerificationResult"
+  },
+  {
+    "id": "compile_machine_experience",
+    "plane": "CONSTRUCT",
+    "authority": "VERIFIED_INPUT_REQUIRED",
+    "runtime_intelligence": "NONE",
+    "output": "MachineExperience"
+  },
+  {
+    "id": "production_do",
+    "plane": "DO",
+    "authority": "OUTSIDE_FRIDAY_SCOPE",
+    "runtime_intelligence": "N/A",
+    "output": "ConsequenceReceipt"
+  }
+]
