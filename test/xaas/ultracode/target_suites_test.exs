@@ -59,8 +59,10 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   test "the code-declared target suites pass the registration admission gate" do
     devs = TargetSuites.devs()
 
-    # The three wave-5 suites plus three durable-registry targets'
-    # `-dod` AND `-canonical` judges (2026-09-21): Run admission validates
+    # The three wave-5 suites plus FOUR durable-registry targets'
+    # `-dod` AND `-canonical` judges (2026-09-21; `spr` joined the
+    # registered set the same day, replacing its legacy aps courts per the
+    # V4/V10 mis-registration finding): Run admission validates
     # the `-dod` name per item, and Autonomic resolves the `-canonical`
     # name from the registry entry at the per-repo integration head -- a
     # missing half fails tonight's multi-repo run closed. The OTHER THREE
@@ -74,6 +76,7 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
                "eds-dod",
                "nounverb-dod",
                "spr-dod",
+               "spr-canonical",
                "bitstar-dod",
                "bitstar-canonical",
                "infinite-agentic-cli-dod",

@@ -219,6 +219,51 @@ defmodule Xaas.Ultracode.TargetSuites do
       ]
     }
 
+    # spr clone (~/xaas/worktrees/repos/spr): the full pytest suite. The
+    # module under test sits at the repo root and tests/test_sprtool.py
+    # inserts the repo root on sys.path itself, so no PYTHONPATH is needed
+    # and pytest resolves from the Homebrew interpreter on PATH. The tree
+    # carries no .gitignore, but the verifier forces PYTHONDONTWRITEBYTECODE
+    # on every child and `-p no:cacheprovider` + `--basetemp {tmpdir}` keep
+    # every write inside the worktree/per-run tmpdir, so the verifier's
+    # after-run tree-clean check holds.
+    #
+    # BOTH heads share this one judge ("spr-canonical" is the same map, the
+    # bitstar pattern), so a durable-registry `spr` entry is
+    # admission-ready with its OWN suites instead of the legacy aps courts
+    # (the mis-registration the 2026-09-21 V4/V10 finding eliminated).
+    # Observed 2026-09-21 (verifier-shaped `env -i` run, clone head
+    # 4283aab4): exit 0, "16 passed, 4 subtests passed in 0.25s", tree clean.
+    spr = %{
+      env: %{
+        "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "LANG" => "en_US.UTF-8"
+      },
+      max_output_bytes: 16_384,
+      toolchain: [
+        ["python3", "--version"],
+        ["python3", "-m", "pytest", "--version"],
+        ["git", "--version"]
+      ],
+      steps: [
+        %{
+          id: "test",
+          timeout_ms: 300_000,
+          argv: [
+            "python3",
+            "-m",
+            "pytest",
+            "tests",
+            "--basetemp",
+            "{tmpdir}",
+            "-q",
+            "-p",
+            "no:cacheprovider"
+          ]
+        }
+      ]
+    }
+
     %{
       # ex_noun_verb_cli clone (~/xaas/worktrees/repos/nounverb): mix deps.get
       # against the committed mix.lock, strict compile, full mix test. Hex is
@@ -308,43 +353,11 @@ defmodule Xaas.Ultracode.TargetSuites do
           }
         ]
       },
-      # spr clone (~/xaas/worktrees/repos/spr): the full pytest suite. The
-      # module under test sits at the repo root and tests/test_sprtool.py
-      # inserts the repo root on sys.path itself, so no PYTHONPATH is needed
-      # and pytest resolves from the Homebrew interpreter on PATH. The tree
-      # carries no .gitignore, but the verifier forces PYTHONDONTWRITEBYTECODE
-      # on every child and `-p no:cacheprovider` + `--basetemp {tmpdir}` keep
-      # every write inside the worktree/per-run tmpdir, so the verifier's
-      # after-run tree-clean check holds.
-      "spr-dod" => %{
-        env: %{
-          "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
-          "LANG" => "en_US.UTF-8"
-        },
-        max_output_bytes: 16_384,
-        toolchain: [
-          ["python3", "--version"],
-          ["python3", "-m", "pytest", "--version"],
-          ["git", "--version"]
-        ],
-        steps: [
-          %{
-            id: "test",
-            timeout_ms: 300_000,
-            argv: [
-              "python3",
-              "-m",
-              "pytest",
-              "tests",
-              "--basetemp",
-              "{tmpdir}",
-              "-q",
-              "-p",
-              "no:cacheprovider"
-            ]
-          }
-        ]
-      },
+      # spr clone (~/xaas/worktrees/repos/spr): the `spr` binding below --
+      # ONE judge at BOTH heads (the bitstar pattern), so the durable
+      # `spr` registry entry is admission-ready with its OWN suites.
+      "spr-dod" => spr,
+      "spr-canonical" => spr,
       "bitstar-dod" => bitstar,
       "bitstar-canonical" => bitstar,
       "infinite-agentic-cli-dod" => micli,
