@@ -42,12 +42,12 @@ defmodule Xaas.CaseStudies.WdFaChicagoTest do
 
   test "verified MachineExperience converts the exact novel fixture into reusable prior art" do
     before = WdFa.presentation_state("novel_x")
-    after = WdFa.presentation_state("novel_x", true)
+    learned = WdFa.presentation_state("novel_x", true)
     assert before.classification == "UNKNOWN"
-    assert after.classification == "KNOWN"
-    assert after.admitted_mode == "MODE-X-NOVEL"
-    assert after.prior_cases == ["MX-NOVEL-X-001"]
-    assert after.confidence_basis == "ADMITTED_MACHINE_EXPERIENCE"
+    assert learned.classification == "KNOWN"
+    assert learned.admitted_mode == "MODE-X-NOVEL"
+    assert learned.prior_cases == ["MX-NOVEL-X-001"]
+    assert learned.confidence_basis == "ADMITTED_MACHINE_EXPERIENCE"
   end
 
   test "real Ash/OCEL persistence binds observation to manufacturing and evidence objects" do
