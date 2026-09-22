@@ -3,12 +3,12 @@ defmodule Xaas.CaseStudies.WdFaEvaluationTest do
 
   alias Xaas.CaseStudies.WdFa.Evaluation
 
-  test "offline report executes all six negative/positive controls" do
+  test "offline report executes all seven negative/positive controls" do
     report = Evaluation.offline_report()
 
     assert report.evidence_ceiling == "REPO_LOCAL_FIXTURE"
-    assert report.controls_total == 6
-    assert report.controls_passed == 6
+    assert report.controls_total == 7
+    assert report.controls_passed == 7
     assert report.all_controls_passed
     assert Enum.all?(report.controls, & &1.passed)
   end

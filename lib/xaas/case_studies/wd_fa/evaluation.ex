@@ -6,7 +6,7 @@ defmodule Xaas.CaseStudies.WdFa.Evaluation do
   """
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{LearningLoop, VerificationReceipt}
+  alias Xaas.CaseStudies.WdFa.{EvidencePolicy, LearningLoop, VerificationReceipt}
 
   @spec offline_report() :: map()
   def offline_report do
@@ -37,7 +37,17 @@ defmodule Xaas.CaseStudies.WdFa.Evaluation do
       control("novel-remains-unknown", novel.classification == "UNKNOWN" and is_nil(novel.admitted_mode)),
       control("self-certification-refused", self_certification_refused),
       control("tampered-receipt-refused", not VerificationReceipt.verify(tampered)),
-      control("verified-replay-known", learned.classification == "KNOWN" and learned.admitted_mode == "MODE-X-NOVEL")
+      control("verified-replay-known", learned.classification == "KNOWN" and learned.admitted_mode == "MODE-X-NOVEL"),
+      control(
+        "private-evidence-refused",
+        match?(
+          {:error, :classification_not_authorized},
+          EvidencePolicy.admit_private_fixture(%{
+            clearances: ["INTERNAL_FIXTURE"],
+            purpose: "FA_TRIAGE"
+          })
+        )
+      )
     ]
 
     %{

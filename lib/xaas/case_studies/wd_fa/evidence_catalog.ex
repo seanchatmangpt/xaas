@@ -5,26 +5,36 @@ defmodule Xaas.CaseStudies.WdFa.EvidenceCatalog do
     "fw_trace" => %{
       kind: "firmware_trace",
       modality: "structured",
+      classification: "INTERNAL_FIXTURE",
+      purpose: "FA_TRIAGE",
       source_ref: "fixture://wd/fa/firmware#trace"
     },
     "timeout_waveform" => %{
       kind: "waveform",
       modality: "plot",
+      classification: "INTERNAL_FIXTURE",
+      purpose: "FA_TRIAGE",
       source_ref: "fixture://wd/fa/presentation#timeout-waveform"
     },
     "lot_genealogy" => %{
       kind: "genealogy",
       modality: "structured",
+      classification: "INTERNAL_FIXTURE",
+      purpose: "FA_TRIAGE",
       source_ref: "fixture://wd/fa/datalake#lot-genealogy"
     },
     "servo_trace" => %{
       kind: "servo_trace",
       modality: "structured",
+      classification: "INTERNAL_FIXTURE",
+      purpose: "FA_TRIAGE",
       source_ref: "fixture://wd/fa/servo#trace"
     },
     "media_scan" => %{
       kind: "media_scan",
       modality: "structured",
+      classification: "INTERNAL_FIXTURE",
+      purpose: "FA_TRIAGE",
       source_ref: "fixture://wd/fa/media#scan"
     }
   }

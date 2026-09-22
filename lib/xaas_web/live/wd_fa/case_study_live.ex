@@ -152,6 +152,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
               <li>
                 <strong>{evidence}</strong>
                 <span> · {detail.modality}</span>
+                <span> · {detail.classification}</span>
                 <span data-testid={"source-" <> evidence}> · {detail.source_ref}</span>
               </li>
             <% end %>

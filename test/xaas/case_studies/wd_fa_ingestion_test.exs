@@ -21,6 +21,8 @@ defmodule Xaas.CaseStudies.WdFaIngestionTest do
 
     Enum.each(payload.artifacts, fn artifact ->
       assert String.starts_with?(artifact.source_ref, "fixture://wd/")
+      assert artifact.classification == "INTERNAL_FIXTURE"
+      assert artifact.purpose == "FA_TRIAGE"
       assert String.starts_with?(artifact.digest, "sha256:")
       assert artifact.bytes > 0
     end)

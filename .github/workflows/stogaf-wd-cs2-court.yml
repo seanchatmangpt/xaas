@@ -130,7 +130,7 @@ jobs:
         run: |
           mix xaas.wd.fa_eval wd-cs2-evaluation.json
           test -s wd-cs2-evaluation.json
-          grep -q '"controls_passed": 6' wd-cs2-evaluation.json
+          grep -q '"controls_passed": 7' wd-cs2-evaluation.json
           grep -q '"mttr": "UNMEASURED"' wd-cs2-evaluation.json
 
       - name: Manufacture exact-head STOGAF receipt
