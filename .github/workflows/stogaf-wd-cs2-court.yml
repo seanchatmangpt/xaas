@@ -1,24 +1,28 @@
 name: WD CS2 STOGAF court
 
 on:
-  push:
-    branches:
-      - feat/stogaf-wd-cs2-v26.9.22
   pull_request:
     paths:
       - "docs/rfc/RFC-STOGAF-v26.9.22.md"
       - "docs/case-studies/wd-fa/**"
       - "docs/sjira/v26.9.22/**"
-      - "priv/packs/wd_cs2_pack/stogaf.ttl"
+      - "priv/packs/wd_cs2_pack/**"
       - "lib/xaas/case_studies/wd_fa/**"
       - "lib/xaas_web/live/wd_fa/**"
+      - "lib/xaas_web/controllers/wd_fa_stogaf_controller.ex"
+      - "lib/mix/tasks/xaas.wd.*"
       - "test/xaas/case_studies/**"
+      - "test/xaas_web/controllers/wd_fa_stogaf_controller_test.exs"
       - "e2e/wd-fa-cs2.spec.cjs"
       - ".github/workflows/stogaf-wd-cs2-court.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: wd-cs2-stogaf-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -74,20 +78,10 @@ jobs:
       - name: Compile exact subject
         run: mix compile --force --warnings-as-errors
 
-      - name: Run STOGAF conformance courts
+      - name: Run complete WD / STOGAF court
         run: |
-          mix test \
-            test/xaas/case_studies/wd_fa_stogaf_test.exs \
-            test/xaas/case_studies/wd_fa_stogaf_artifacts_test.exs \
-            test/xaas/case_studies/wd_fa_stogaf_registry_test.exs \
-            test/xaas/case_studies/wd_fa_stogaf_capabilities_test.exs \
-            test/xaas/case_studies/wd_fa_stogaf_receipt_test.exs \
-            test/xaas/case_studies/wd_fa_stogaf_semantic_files_test.exs \
-            test/xaas_web/controllers/wd_fa_stogaf_controller_test.exs \
-            --trace
-
-      - name: Run WD Chicago court
-        run: mix test test/xaas/case_studies/wd_fa_chicago_test.exs --trace
+          mix test test/xaas/case_studies/wd_fa*.exs --trace
+          mix test test/xaas_web/controllers/wd_fa_stogaf_controller_test.exs --trace
 
       - name: Assert semantic profile files
         run: |
@@ -96,6 +90,14 @@ jobs:
           test -s docs/case-studies/wd-fa/STOGAF-DEMO-VIEWPOINTS.md
           test -s docs/sjira/v26.9.22/011-stogaf-wd-cs2.md
           test -s priv/packs/wd_cs2_pack/stogaf.ttl
+          test -s priv/packs/wd_cs2_pack/stogaf-core.ttl
+          test -s priv/packs/wd_cs2_pack/stogaf-shapes.ttl
+          test -s docs/case-studies/wd-fa/architecture-episode.json
+          test -s docs/case-studies/wd-fa/requirements.json
+          test -s docs/case-studies/wd-fa/conformance.json
+          test -s docs/case-studies/wd-fa/viewpoints.json
+          test -s docs/case-studies/wd-fa/adm.json
+          test -s docs/sjira/v26.9.22/index.json
           grep -q "ST-4 CONSTRAINED" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
           grep -q "ST-6 AUTONOMIC" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
           ! grep -q "Current cumulative level: ST-7" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
