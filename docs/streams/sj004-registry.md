@@ -141,3 +141,21 @@ file will fail it on integration; the remedy is the same `standing/NNN.*` inputs
 The receipts in `standing/004.receipts.md` describe the subject head `0f73fa8`; this repair changed
 docs, `generate.py` and one test only, no `lib/` file (`git diff 0f73fa8 HEAD -- lib/` is empty).
 
+### Re-verification at repair head `47fe7b3` (logs `sj004rr.*` beside the worktree)
+
+| Check | Command | Result |
+|---|---|---|
+| defect reproduced | fb85ca7 `generate.py` (OUT redirected to scratch) vs checked-in 004 | 4 diff hunks (standing bound, Repository suffix, three DoD ticks, the 30-line Receipts section deleted); other orders and `index.json` identical |
+| fix | new `generate.py` into scratch vs checked-in, all nine orders and `index.json` | byte-identical (ten files) |
+| compile | `mix compile --warnings-as-errors` | exit 0 |
+| format | `mix format --check-formatted` | exit 0 |
+| required dirs | `MIX_TEST_PARTITION=sj004r mix test test/xaas/semantics test/xaas/operations test/xaas/coupling test/xaas/ledger` | exit 0, 63 tests, 0 failures, 5 excluded (`test/xaas/ledger` absent) |
+| guard + semantics | `MIX_TEST_PARTITION=sj004rr mix test test/xaas/sjira_orders_generation_test.exs test/xaas/semantics test/xaas/formatter_inputs_test.exs` | exit 0, 18 tests, 0 failures |
+| admission | `MIX_ENV=test mix run sj004.admit.exs` | seven `{:ok, projection}`, hashes equal `Registry.hash/1`, identical to the 0f73fa8 run; 98 resources, only `RevokeNonce` and six `.Version` modules lack a hash |
+| policy floor | `sj004.policy.exs` head vs the base capture | 28 data lines identical |
+| migrations | `mix ash_postgres.generate_migrations --check` | exit 1, 3 pending files; `--dry-run` identical to base `2ec5fdb` modulo worktree path and timestamps; zero mentions of `coupling_runs`, `event_logs`, `autofde_planner` (pre-existing) |
+| mock grep | `grep -rn "unittest.mock\|Mock(\|MagicMock\|monkeypatch\|Mox\b\|:meck\|meck\." test/ lib/` | 6 hits, the same six false positives as above; new test file has none |
+
+No test failed in this stream, so no failing test needed classification against base. Not run:
+the full `mix test`.
+
