@@ -2,7 +2,8 @@
 #   PATH=$HOME/autofde-lab/.venv/bin:$PATH mix run --no-start docs/sjira/v26.9.21/sa2a_loop.exs plan
 #   ... admit SJ-001 <work_order_digest>
 #   ... replay <manifest.json> [expected_sha256]   (omits expected -> computes canonical sha256)
-# Speaks only validate/admit/plan/replay; sa2a_execute is a DO edge and is never called here.
+# Speaks only validate/admit/plan/replay; sa2a_execute is a DO edge and is never called here
+# (its autonomic, policy-bound path is `mix xaas.sa2a.execute`, via Xaas.Sa2a.Executor).
 alias Xaas.Sa2a.Bridge
 
 canon = fn v -> Jason.encode!(v) end

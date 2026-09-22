@@ -32,6 +32,7 @@ defmodule Xaas.Operations do
   resources do
     resource(Xaas.Operations.ActuationIntent)
     resource(Xaas.Operations.ActuationReceipt)
+    resource(Xaas.Sa2a.Execution)
     resource(Xaas.Operations.ApprovalCastleVerbSchedule)
     resource(Xaas.Operations.AuditLogEntry)
     resource(Xaas.Operations.ApprovalK8sFaultRemediateSuggest)

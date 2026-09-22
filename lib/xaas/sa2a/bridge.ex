@@ -16,10 +16,12 @@ defmodule Xaas.Sa2a.Bridge do
   matches that script's `for line in sys.stdin: ... sys.stdout.write(...)`
   read/flush loop exactly -- no length-prefix framing on either side.
 
-  Only `execute/1` is a consequential DO edge (`s2b:edge40`,
-  `port_op: "sa2a_execute"`, `do_boundary?: true` in the generated edge
-  catalog); `validate/1`, `admit/2`, `plan/1`, `replay/2` are
-  verify/admit/construct/receipt operations per
+  Only `execute/2` is a consequential DO edge (`s2b:edge40`, `port_op: "sa2a_execute"`,
+  `do_boundary?: true` in the generated edge catalog). It is autonomic ONLY through
+  `Xaas.Sa2a.Executor` -> `Xaas.Actuation.run/4` -> `Xaas.Sa2a.Execution`'s `:execute`
+  action (machine policy in `Xaas.Sa2a.Court`); nothing else in `lib/` may call it
+  (asserted by `test/xaas/sa2a/execute_test.exs`). `validate/1`, `admit/3`, `plan/2`,
+  `replay/2` are verify/admit/construct/receipt operations per
   `Xaas.Sa2a.Generated.EdgeCatalog.all/0`.
   """
 
