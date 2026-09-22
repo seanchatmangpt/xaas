@@ -131,7 +131,7 @@ defmodule Xaas.Ultracode.Dispatch do
   @default_failover_retries 1
   @default_failover_backoff_ms 15_000
   @default_max_output_bytes 65_536
-  @default_cli_dir "/Users/sac/dev/zcode-cli"
+  @default_cli_dir ZcodePackage.default_cli_dir()
   @grace_ms 2_000
   @kill_confirm_ms 1_000
   @alarm_grace_s 2

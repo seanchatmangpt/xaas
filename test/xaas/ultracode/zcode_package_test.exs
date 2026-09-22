@@ -7,7 +7,12 @@ defmodule Xaas.Ultracode.ZcodePackageTest do
   @real_cli Path.expand("~/dev/zcode-cli")
 
   defp cli(pkg, script? \\ true) do
-    dir = Path.join(System.tmp_dir!(), "zcode-pkg-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}")
+    dir =
+      Path.join(
+        System.tmp_dir!(),
+        "zcode-pkg-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}"
+      )
+
     File.mkdir_p!(Path.join(dir, "bin"))
     if script?, do: File.write!(Path.join(dir, "bin/zcode.js"), "")
     File.write!(Path.join(dir, "package.json"), Jason.encode!(pkg))
@@ -16,7 +21,12 @@ defmodule Xaas.Ultracode.ZcodePackageTest do
 
   defp good(overrides \\ %{}) do
     Map.merge(
-      %{"name" => "zcode-app-cli", "version" => "3.12.3-26", "bin" => %{"zcode" => "bin/zcode.js"}, "engines" => %{"node" => ">=22.19.0"}},
+      %{
+        "name" => "zcode-app-cli",
+        "version" => "3.12.3-26",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=22.19.0"}
+      },
       overrides
     )
   end
@@ -56,12 +66,18 @@ defmodule Xaas.Ultracode.ZcodePackageTest do
     assert :ok = ZcodePackage.check_node(pkg, @fake_node)
 
     {:ok, strict} = ZcodePackage.load(cli(good(%{"engines" => %{"node" => ">=99.0.0"}})))
-    assert {:error, {:node_too_old, _, "26.8.1", ">=99.0.0"}} = ZcodePackage.check_node(strict, @fake_node)
+
+    assert {:error, {:node_too_old, _, "26.8.1", ">=99.0.0"}} =
+             ZcodePackage.check_node(strict, @fake_node)
 
     assert {:error, {:node_version_unreadable, _, _}} = ZcodePackage.check_node(pkg, "/bin/echo")
   end
 
-  @tag skip: (if File.regular?(Path.join(@real_cli, "package.json")), do: false, else: "~/dev/zcode-cli not present")
+  @tag skip:
+         if(File.regular?(Path.join(@real_cli, "package.json")),
+           do: false,
+           else: "~/dev/zcode-cli not present"
+         )
   test "the real ~/dev/zcode-cli package.json is admitted and the machine's node satisfies it" do
     assert {:ok, pkg} = ZcodePackage.check(@real_cli, System.find_executable("node") || "node")
     assert pkg.name == "zcode-app-cli"

@@ -165,3 +165,4 @@ reverted — `backup/execution-fabric-v1` — in favor of extending the
 existing Ultracode seam)
 
 lib/xaas/ultracode/zcode_package.ex | `Xaas.Ultracode.ZcodePackage`: reads ~/dev/zcode-cli/package.json (name, bin.zcode, engines.node floor) and measures the worker node via `--version` | no admitted pack expresses an external-CLI package contract reader | zcode-plugin-pack | 2026-09-21
+lib/xaas/ultracode/provider_health.ex | `Xaas.Ultracode.ProviderHealth`: one-call zcode provider health (`check/1` -> `{:ok, %{zcode_version, zcode_bin, node_version}}` or a typed error, `gate/1` -> `:ok | {:error, {:provider_unhealthy, reason}}`) over `ZcodePackage.verify_node/2`, for the autonomic loop to gate leases on | no admitted pack expresses an external-CLI provider health probe | zcode-plugin-pack | 2026-09-21

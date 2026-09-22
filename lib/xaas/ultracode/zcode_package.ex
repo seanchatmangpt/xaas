@@ -61,7 +61,17 @@ defmodule Xaas.Ultracode.ZcodePackage do
 
   @doc "Does `node_path` (an executable) satisfy the package's `engines.node` floor?"
   @spec check_node(t(), String.t()) :: :ok | {:error, term()}
-  def check_node(%{node_floor: floor}, node_path) when is_binary(node_path) do
+  def check_node(pkg, node_path) do
+    with {:ok, _found} <- verify_node(pkg, node_path), do: :ok
+  end
+
+  @doc """
+  Like `check_node/2`, but on success returns the node version that was
+  measured (`{major, minor, patch}`), so callers can report it.
+  """
+  @spec verify_node(t(), String.t()) ::
+          {:ok, {non_neg_integer(), non_neg_integer(), non_neg_integer()}} | {:error, term()}
+  def verify_node(%{node_floor: floor}, node_path) when is_binary(node_path) do
     exe = System.find_executable(node_path) || node_path
 
     case System.cmd(exe, ["--version"], stderr_to_stdout: true) do
@@ -71,7 +81,7 @@ defmodule Xaas.Ultracode.ZcodePackage do
             found = {String.to_integer(a), String.to_integer(b), String.to_integer(c)}
 
             if found >= floor,
-              do: :ok,
+              do: {:ok, found},
               else: {:error, {:node_too_old, node_path, tuple_s(found), ">=" <> tuple_s(floor)}}
 
           _ ->
@@ -79,11 +89,20 @@ defmodule Xaas.Ultracode.ZcodePackage do
         end
 
       {out, status} ->
-        {:error, {:node_version_unreadable, node_path, "exit #{status}: " <> String.slice(out, 0, 80)}}
+        {:error,
+         {:node_version_unreadable, node_path, "exit #{status}: " <> String.slice(out, 0, 80)}}
     end
   rescue
     error in ErlangError -> {:error, {:node_unavailable, node_path, inspect(error.original)}}
   end
+
+  @doc "Render a `{major, minor, patch}` version tuple as `\"X.Y.Z\"`."
+  @spec version_string({non_neg_integer(), non_neg_integer(), non_neg_integer()}) :: String.t()
+  def version_string(version), do: tuple_s(version)
+
+  @doc "The CLI checkout xaas dispatches against unless `:cli_dir` / app env says otherwise."
+  @spec default_cli_dir() :: String.t()
+  def default_cli_dir, do: "/Users/sac/dev/zcode-cli"
 
   @doc "Load the package and check the node in one call."
   @spec check(term(), String.t()) :: {:ok, t()} | {:error, term()}
@@ -108,7 +127,10 @@ defmodule Xaas.Ultracode.ZcodePackage do
   end
 
   defp name(%{"name" => @package_name}, _path), do: :ok
-  defp name(%{"name" => other}, path), do: {:error, {:zcode_package_invalid, path, {:wrong_name, other}}}
+
+  defp name(%{"name" => other}, path),
+    do: {:error, {:zcode_package_invalid, path, {:wrong_name, other}}}
+
   defp name(_, path), do: {:error, {:zcode_package_invalid, path, :missing_name}}
 
   defp bin(%{"bin" => %{"zcode" => rel}}, _path) when is_binary(rel) and rel != "", do: {:ok, rel}

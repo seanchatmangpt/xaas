@@ -78,7 +78,9 @@ zcode_package_preflight() {
   out="$(node -e '
     const fs = require("fs"), path = require("path");
     const dir = process.argv[1];
-    const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+    let pkg;
+    try { pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")); }
+    catch (e) { console.error("cli_unavailable: cannot read " + path.join(dir, "package.json") + " (" + e.code + ")"); process.exit(2); }
     if (pkg.name !== "zcode-app-cli") { console.error("wrong package name: " + pkg.name); process.exit(2); }
     const bin = pkg.bin && pkg.bin.zcode;
     if (!bin) { console.error("package.json has no bin.zcode"); process.exit(2); }

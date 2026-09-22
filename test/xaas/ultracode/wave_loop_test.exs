@@ -648,7 +648,11 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                WaveLoop.tick(
                  state_path: state_path,
                  telemetry_path: telemetry_path,
-                 dispatch_opts: [cli_dir: cli_dir, node_path: Path.expand("../../support/fake-node.sh", __DIR__), timeout_seconds: 60]
+                 dispatch_opts: [
+                   cli_dir: cli_dir,
+                   node_path: Path.expand("../../support/fake-node.sh", __DIR__),
+                   timeout_seconds: 60
+                 ]
                )
 
       # The REAL subprocess really ran (Dispatch -> port -> sh -> script).
