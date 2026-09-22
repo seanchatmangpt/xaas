@@ -58,7 +58,6 @@ defmodule Xaas.Semantics.ComputationArtifact do
        }}
     else
       nil -> {:error, :deterministic_required}
-      false -> {:error, :deterministic_must_be_boolean}
       {:error, _} = error -> error
       _ -> {:error, :invalid_computation_artifact}
     end
