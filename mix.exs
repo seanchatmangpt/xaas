@@ -36,8 +36,11 @@ defmodule Xaas.MixProject do
   # "MIX_ENV=dev but the task you are running needs to be run in the
   # :test env"). Declaring it here is the real fix, not
   # MIX_ENV=test mix test.full at every call site.
+  # xaas.sjira.yield (XAAS-26922-21) is a pure file fold whose stdout is one JSON
+  # document piped to jq; running it in :test reuses the build `mix test` just made,
+  # so no "Compiling N files" line lands on stdout ahead of the JSON.
   def cli do
-    [preferred_envs: ["test.full": :test, "test.integration": :test]]
+    [preferred_envs: ["test.full": :test, "test.integration": :test, "xaas.sjira.yield": :test]]
   end
 
   # Configuration for the OTP application.
