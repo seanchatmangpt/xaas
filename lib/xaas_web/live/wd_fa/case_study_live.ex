@@ -210,6 +210,12 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         <article class="rounded border p-4" data-testid="semantic-work">
           <h2 class="font-semibold">Semantic work order</h2>
           <p data-testid="work-id">{@semantic_work.id}</p>
+          <a
+            data-testid="context-link"
+            href={"/case-studies/wd-fa/context/#{@selected}.json?viewpoint=fa-engineer"}
+          >
+            semantic context
+          </a>
           <p data-testid="work-standing">{@semantic_work.standing}</p>
           <p data-testid="work-obligation">{@semantic_work.obligation}</p>
           <p data-testid="work-owner">owner: {@semantic_work.owner}</p>

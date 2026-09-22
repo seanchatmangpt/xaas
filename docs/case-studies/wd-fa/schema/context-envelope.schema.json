@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:xaas:wd-cs2:context-envelope-v1",
+  "title": "WD FA Semantic Context Envelope",
+  "type": "object",
+  "required": [
+    "schema",
+    "canonical_subject",
+    "case_id",
+    "viewpoint",
+    "classification",
+    "standing",
+    "evidence_ids",
+    "work_identity",
+    "work_standing",
+    "authority_ceiling",
+    "human_gate",
+    "evidence_ceiling"
+  ],
+  "properties": {
+    "schema": {
+      "const": "WD_FA_CONTEXT_ENVELOPE_V1"
+    },
+    "canonical_subject": {
+      "type": "string",
+      "pattern": "^urn:xaas:wd-cs2:case:"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "viewpoint": {
+      "enum": [
+        "fa-engineer",
+        "fa-manager",
+        "executive",
+        "architecture",
+        "assessment"
+      ]
+    },
+    "classification": {
+      "enum": [
+        "KNOWN",
+        "PARTIAL",
+        "UNKNOWN"
+      ]
+    },
+    "standing": {
+      "type": "string"
+    },
+    "admitted_mode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prior_cases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "work_identity": {
+      "type": "string"
+    },
+    "work_standing": {
+      "type": "string"
+    },
+    "authority_ceiling": {
+      "const": "SELECT_CONSTRUCT_ONLY"
+    },
+    "human_gate": {
+      "const": "ENGINEER_DISPOSITION_REQUIRED"
+    },
+    "evidence_ceiling": {
+      "const": "REPO_LOCAL_FIXTURE"
+    },
+    "replay_identity": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

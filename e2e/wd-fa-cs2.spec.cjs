@@ -25,6 +25,13 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="ingestion-modalities"]')).toContainText("plot");
     await expect(page.locator('[data-testid="work-standing"]')).toHaveText("READY_FOR_ENGINEER_DISPOSITION");
     await expect(page.locator('[data-testid="work-authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
+    const contextHref = await page.locator('[data-testid="context-link"]').getAttribute("href");
+    expect(contextHref).toContain("/case-studies/wd-fa/context/known_firmware.json");
+    const contextResponse = await page.request.get(contextHref);
+    expect(contextResponse.ok()).toBeTruthy();
+    const context = await contextResponse.json();
+    expect(context.canonical_subject).toBe("urn:xaas:wd-cs2:case:known_firmware");
+    expect(context.authority_ceiling).toBe("SELECT_CONSTRUCT_ONLY");
     await expect(page.locator('[data-testid="case-capabilities"]')).toContainText("test_applicability");
     await expect(page.locator('[data-testid="human-gate"]')).toHaveText("ENGINEER_DISPOSITION_REQUIRED");
     await expect(page.locator('[data-testid="authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
