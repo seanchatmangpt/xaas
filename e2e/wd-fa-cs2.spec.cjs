@@ -1,0 +1,31 @@
+// @ts-check
+const { test, expect } = require("@playwright/test");
+
+test.describe("WD Case Study 2 deterministic reference surface", () => {
+  test("proves KNOWN, PARTIAL, UNKNOWN and MachineExperience replay without an LLM", async ({ page }) => {
+    await page.goto("/case-studies/wd-fa", { waitUntil: "networkidle" });
+
+    await expect(page.locator('[data-testid="wd-fa-root"]')).toBeVisible();
+    await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");
+    await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-A-FIRMWARE");
+    await expect(page.locator('[data-testid="human-gate"]')).toHaveText("ENGINEER_DISPOSITION_REQUIRED");
+    await expect(page.locator('[data-testid="authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
+
+    await page.locator('[data-testid="scenario-partial_firmware"]').click();
+    await expect(page.locator('[data-testid="classification"]')).toHaveText("PARTIAL");
+    await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("NONE");
+    await expect(page.locator('[data-testid="missing-evidence"]')).toContainText("timeout_waveform");
+
+    await page.locator('[data-testid="scenario-novel_x"]').click();
+    await expect(page.locator('[data-testid="classification"]')).toHaveText("UNKNOWN");
+    await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("NONE");
+    await expect(page.locator('[data-testid="next-action"]')).toHaveText("ESCALATE_NOVEL_INVESTIGATION");
+    await expect(page.locator('[data-testid="hypothesis-list"]')).toContainText("MODE-X-CANDIDATE");
+
+    await page.locator('[data-testid="admit-experience"]').click();
+    await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");
+    await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-X-NOVEL");
+    await expect(page.locator('[data-testid="confidence-basis"]')).toHaveText("ADMITTED_MACHINE_EXPERIENCE");
+    await expect(page.locator('[data-testid="prior-cases"]')).toContainText("MX-NOVEL-X-001");
+  });
+});

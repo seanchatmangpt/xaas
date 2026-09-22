@@ -1,0 +1,90 @@
+name: WD CS2 exact-head court
+
+on:
+  push:
+    branches:
+      - feat/wd-cs2-quality-loop-v26.9.21
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SUBJECT_SHA: \${{ github.event.pull_request.head.sha || github.sha }}
+  MIX_ENV: test
+  DEV_DB_USERNAME: postgres
+  DEV_DB_PASSWORD: postgres
+  DEV_DB_HOSTNAME: localhost
+  DEV_DB_PORT: "5432"
+
+jobs:
+  wd-cs2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: \${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+      - name: Assert exact subject
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+      - uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Resolve dependencies
+        run: |
+          mix deps.get --check-locked
+          npm ci
+      - name: Prepare database
+        run: mix ecto.create && mix ecto.migrate
+      - name: Compile exact subject
+        run: mix compile --force --warnings-as-errors
+      - name: Run WD Chicago court
+        run: mix test test/xaas/case_studies/wd_fa_chicago_test.exs --trace
+      - name: No owned-collaborator mock audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -rnE 'unittest\.mock|Mock\(|MagicMock|monkeypatch|Mox\b|:meck|meck\.' \
+            lib/xaas/case_studies lib/xaas_web/live/wd_fa test/xaas/case_studies e2e/wd-fa-cs2.spec.cjs
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start real Phoenix server
+        env:
+          PHX_SERVER: "true"
+        run: |
+          MIX_ENV=test mix phx.server > /tmp/wd-cs2-phx.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4002/case-studies/wd-fa >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/wd-cs2-phx.log
+          exit 1
+      - name: Run Playwright WD court
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4002
+        run: npx playwright test e2e/wd-fa-cs2.spec.cjs
+      - name: Print standing
+        run: |
+          echo "WD_CS2_REFERENCE=ALIVE"
+          echo "AUTHORITY=SELECT_CONSTRUCT_ONLY"
+          echo "HUMAN_GATE=ENGINEER_DISPOSITION_REQUIRED"

@@ -1,0 +1,26 @@
+@prefix wdcs2: <urn:xaas:wd-cs2:> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix pplan: <http://purl.org/net/p-plan#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+wdcs2:profile a prov:Entity ;
+  dct:title "WD Case Study 2 quality-loop profile" ;
+  dct:description "Toyota/TPS supplies structure, not a separate customer scenario." .
+
+wdcs2:standard a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.standard" ; dct:title "Define admissible failure-analysis standard work" .
+wdcs2:observe a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.observe" ; dct:title "Observe symptom and manufacturing/evidence context" .
+wdcs2:admit a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.admit" ; dct:title "Classify KNOWN, PARTIAL, or UNKNOWN deterministically" .
+wdcs2:work a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.work" ; dct:title "Construct bounded diagnostic work" .
+wdcs2:disposition a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.disposition" ; dct:title "Retain engineer disposition authority" .
+wdcs2:experience a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.experience" ; dct:title "Admit verified MachineExperience" .
+wdcs2:improve a pplan:Plan, prov:Plan ; dct:identifier "wd-cs2.improve" ; dct:title "Project verified experience into future standard work" .
+
+wdcs2:Known a skos:Concept ; skos:prefLabel "KNOWN" .
+wdcs2:Partial a skos:Concept ; skos:prefLabel "PARTIAL" .
+wdcs2:Unknown a skos:Concept ; skos:prefLabel "UNKNOWN" .
+
+wdcs2:classificationShape a sh:NodeShape ;
+  sh:targetClass prov:Entity ;
+  sh:property [ sh:path dct:identifier ; sh:minCount 1 ] .
