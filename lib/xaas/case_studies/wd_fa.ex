@@ -12,6 +12,8 @@ defmodule Xaas.CaseStudies.WdFa do
   ENGINEER_DISPOSITION_REQUIRED.
   """
 
+  alias Xaas.CaseStudies.WdFa.LearningLoop
+  alias Xaas.CaseStudies.WdFa.Stogaf.ArchitectureChange
   alias Xaas.Ocel.{Event, Object, ObjectObject, Projection}
 
   @scenarios %{
@@ -56,7 +58,11 @@ defmodule Xaas.CaseStudies.WdFa do
     "FirmwareRevision",
     "TestStation",
     "EvidenceArtifact",
-    "StandardWork"
+    "StandardWork",
+    "SemanticWorkOrder",
+    "EngineerDisposition",
+    "VerificationReceipt",
+    "MachineExperience"
   ]
 
   def scenario_ids, do: @scenarios |> Map.keys() |> Enum.sort()
@@ -171,6 +177,114 @@ defmodule Xaas.CaseStudies.WdFa do
     {:ok, projection} = Projection.project([observed.id, triaged.id])
 
     %{run_id: run, state: state, projection: projection}
+  end
+
+
+  @doc """
+  Materializes the complete repository-local learning episode in real Ash/OCEL
+  persistence. The disposition and receipt are fixture evidence only; this
+  function performs no external or production consequence.
+  """
+  def seed_learning_ocel! do
+    scenario = Map.fetch!(@scenarios, "novel_x")
+    before = presentation_state("novel_x")
+    {:ok, %{receipt: receipt, experience: experience}} = LearningLoop.verify_novel_fixture()
+    {:ok, change} = ArchitectureChange.from_experience(experience)
+    run = Ash.UUID.generate()
+
+    objects = %{
+      case: register!("FailureCase", "#{run}:case:novel_x"),
+      drive: register!("Drive", "#{run}:drive:SN-NOVEL"),
+      standard_v1: register!("StandardWork", "#{run}:standard:CS2-V1"),
+      work: register!("SemanticWorkOrder", "#{run}:work:novel-investigation"),
+      disposition: register!("EngineerDisposition", "#{run}:disposition:MODE-X-NOVEL"),
+      receipt: register!("VerificationReceipt", "#{run}:receipt:#{receipt.receipt_digest}"),
+      experience: register!("MachineExperience", "#{run}:experience:#{experience.id}"),
+      standard_v2: register!("StandardWork", "#{run}:standard:CS2-V2")
+    }
+
+    relate!(objects.case, objects.drive, "investigates")
+    relate!(objects.case, objects.standard_v1, "evaluated_against")
+    relate!(objects.case, objects.work, "requires_work")
+    relate!(objects.work, objects.disposition, "resolved_by")
+    relate!(objects.disposition, objects.receipt, "verified_by")
+    relate!(objects.receipt, objects.experience, "admits")
+    relate!(objects.experience, objects.standard_v2, "updates_standard")
+
+    events = [
+      record_event!(
+        "failure_observed",
+        "#{run}:event:failure-observed",
+        [objects.case, objects.drive],
+        %{"symptom" => scenario.symptom}
+      ),
+      record_event!(
+        "triage_constructed",
+        "#{run}:event:triage",
+        [objects.case, objects.standard_v1],
+        %{
+          "classification" => before.classification,
+          "standing" => before.standing,
+          "authority" => before.authority
+        }
+      ),
+      record_event!(
+        "diagnostic_work_constructed",
+        "#{run}:event:work",
+        [objects.case, objects.work],
+        %{
+          "next_action" => before.next_action,
+          "authority" => "SELECT_CONSTRUCT_ONLY"
+        }
+      ),
+      record_event!(
+        "engineer_disposition_observed",
+        "#{run}:event:disposition",
+        [objects.case, objects.disposition],
+        %{
+          "observed_disposition" => receipt.observed_disposition,
+          "evidence_ceiling" => receipt.authority_scope
+        }
+      ),
+      record_event!(
+        "verification_receipt_observed",
+        "#{run}:event:receipt",
+        [objects.disposition, objects.receipt],
+        %{
+          "receipt_digest" => receipt.receipt_digest,
+          "verifier_id" => receipt.verifier_id
+        }
+      ),
+      record_event!(
+        "machine_experience_admitted",
+        "#{run}:event:experience",
+        [objects.receipt, objects.experience],
+        %{
+          "experience_id" => experience.id,
+          "replay_identity" => experience.replay_identity
+        }
+      ),
+      record_event!(
+        "standard_updated",
+        "#{run}:event:standard",
+        [objects.experience, objects.standard_v1, objects.standard_v2],
+        %{
+          "from_standard" => change.from_standard,
+          "to_standard" => change.to_standard,
+          "authority" => change.authority
+        }
+      )
+    ]
+
+    {:ok, projection} = Projection.project(Enum.map(events, & &1.id))
+
+    %{
+      run_id: run,
+      projection: projection,
+      receipt: receipt,
+      experience: experience,
+      architecture_change: change
+    }
   end
 
   defp build_state(scenario, overrides) do

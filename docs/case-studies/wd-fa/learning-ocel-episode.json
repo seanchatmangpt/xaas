@@ -1,0 +1,23 @@
+{
+  "id": "wd-cs2-learning-episode",
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "events": [
+    "failure_observed",
+    "triage_constructed",
+    "diagnostic_work_constructed",
+    "engineer_disposition_observed",
+    "verification_receipt_observed",
+    "machine_experience_admitted",
+    "standard_updated"
+  ],
+  "objects": [
+    "FailureCase",
+    "Drive",
+    "StandardWork",
+    "SemanticWorkOrder",
+    "EngineerDisposition",
+    "VerificationReceipt",
+    "MachineExperience"
+  ],
+  "authority_note": "Repository-local observed fixture disposition; no external DO."
+}
