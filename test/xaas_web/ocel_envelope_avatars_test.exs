@@ -164,7 +164,9 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
   end
 
   # Real-mailbox scan for the envelope whose single wrapped event's
-  # "ocel:activity" contains `substring` -- multiple real Ash actions can
+  # activity (the OCEL 2.0 "type" key -- the E9 reshape forwards plain
+  # spec-keyed events, there is no "ocel:activity" on real traffic
+  # anymore) contains `substring` -- multiple real Ash actions can
   # each emit and forward their own envelope inside the same test (e.g. a
   # background `ash_ai_update_embeddings` update triggered by book
   # creation), so asserting on strictly the first received message is not
@@ -175,7 +177,7 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
         events = Map.get(envelope, "events", [])
 
         if Enum.any?(List.wrap(events), fn event ->
-             String.contains?(to_string(event["ocel:activity"]), substring)
+             String.contains?(to_string(event["type"]), substring)
            end) do
           envelope
         else
@@ -227,7 +229,7 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
     assert is_map(validated.producer)
     assert is_integer(validated.sequence)
     assert [event] = validated.events
-    assert String.contains?(event["ocel:activity"], "read")
+    assert String.contains?(event["type"], "read")
   end
 
   # -- Avatar 2 ---------------------------------------------------------------
@@ -258,7 +260,7 @@ defmodule XaasWeb.OcelEnvelopeAvatarsTest do
     assert {:ok, validated} = Ex4pm.OCEL.validate_envelope(envelope)
     assert validated.schema == "xaas.ocel.v2"
     assert [event] = validated.events
-    assert String.contains?(event["ocel:activity"], "borrow")
+    assert String.contains?(event["type"], "borrow")
   end
 
   # -- Avatar 3 -----------------------------------------------------------

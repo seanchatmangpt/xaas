@@ -46,5 +46,25 @@ defmodule XaasWeb.OcelSummaryControllerTest do
     assert Map.has_key?(body["by_activity"], "capability_liveness_receipt.ingest")
     assert body["by_activity"]["capability_liveness_receipt.ingest"] >= 1
     assert String.ends_with?(body["log_path"], "priv/ocel/ash-actions.ndjson")
+
+    # OCEL v2 reshape alignment: the real action above returned {:ok, _},
+    # so its event's `attributes.outcome` is "ok" -- asserting it proves
+    # the aggregate is sourced from the NEW per-line document shape
+    # (`ocel:events[].attributes.outcome`), not the eliminated flat
+    # `ocel:vmap` (whose reader would have yielded only "unknown"s).
+    assert Map.has_key?(body["by_outcome"], "ok")
+
+    # And the real lines behind the aggregate are complete OCEL v2
+    # documents: decode the log's last real line and require the
+    # `ocel:events` document key (the emitter appends exactly one event
+    # per line, so total_events counts every event of every line).
+    last_line =
+      Xaas.Telemetry.OcelAshEmitter.log_path()
+      |> File.stream!()
+      |> Enum.to_list()
+      |> List.last()
+
+    assert {:ok, %{"ocel:events" => events}} = Jason.decode(last_line)
+    assert is_list(events) and events != []
   end
 end
