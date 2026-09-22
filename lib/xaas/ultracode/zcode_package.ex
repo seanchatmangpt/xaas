@@ -48,7 +48,7 @@ defmodule Xaas.Ultracode.ZcodePackage do
       {:ok,
        %{
          name: pkg["name"],
-         version: Map.get(pkg, "version", "unknown"),
+         version: version(pkg),
          dir: cli_dir,
          bin: bin,
          script: script,
@@ -125,6 +125,11 @@ defmodule Xaas.Ultracode.ZcodePackage do
       _ -> {:error, {:zcode_package_invalid, path, :not_json_object}}
     end
   end
+
+  # QUALIFIER FIX: `t()` promises a String; a non-string package.json version
+  # (123, null, object) used to flow through verbatim into ProviderHealth.
+  defp version(%{"version" => v}) when is_binary(v) and v != "", do: v
+  defp version(_), do: "unknown"
 
   defp name(%{"name" => @package_name}, _path), do: :ok
 

@@ -96,11 +96,16 @@ zcode_package_preflight() {
     const range = pkg.engines && pkg.engines.node;
     const m = typeof range === "string" ? /^>=\s*(\d+)\.(\d+)\.(\d+)$/.exec(range.trim()) : null;
     if (!m) fail("unsupported engines.node: " + range);
-    const have = process.versions.node.split(".").map(Number), need = m.slice(1).map(Number);
+    // QUALIFIER FIX: drop a prerelease suffix ("22.19.0-nightly...") like the Elixir side does;
+    // otherwise the patch component is NaN and compares neither greater nor lesser (silent pass).
+    const have = process.versions.node.split("-")[0].split(".").map(Number), need = m.slice(1).map(Number);
     for (let i = 0; i < 3; i++) { if (have[i] > need[i]) break; if (have[i] < need[i]) fail("node " + process.versions.node + " < engines.node " + range); }
-    console.log(bin);
+    console.log("ZCODE_BIN=" + bin);
   ' "$ZCODE_CLI_DIR" 2>&1)" || { log "zcode package preflight FAILED: ${out}"; return 1; }
-  ZCODE_BIN="$out"
+  # QUALIFIER FIX: stderr is merged into $out (for the refusal message), so a warning from a
+  # node preload (NODE_OPTIONS=--require) must not become part of the launcher path.
+  ZCODE_BIN="$(printf '%s\n' "$out" | sed -n 's/^ZCODE_BIN=//p' | tail -n 1)"
+  [ -n "$ZCODE_BIN" ] || { log "zcode package preflight FAILED: no launcher reported: ${out}"; return 1; }
 }
 
 log() {
