@@ -1,0 +1,4 @@
+flowchart LR
+  O[OBSERVE] --> S[SELECT] --> C[CONSTRUCT] --> H{Engineer disposition}
+  H -->|authorized| D[DO] --> R[Receipt]
+  H -->|not authorized| C

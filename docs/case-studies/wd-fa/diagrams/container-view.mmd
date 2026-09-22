@@ -1,0 +1,14 @@
+flowchart TB
+  Sources[Source adapters]
+  Graph[Canonical RDF / OCEL]
+  Rank[Candidate ranker]
+  Admit[Deterministic admission]
+  Work[sJira]
+  Cap[SA2A]
+  View[Human views]
+  Receipt[Receipt / Replay]
+  MX[MachineExperience]
+  Sources --> Graph --> Rank --> Admit
+  Admit --> Work --> Cap
+  Admit --> View
+  Cap --> Receipt --> MX --> Graph
