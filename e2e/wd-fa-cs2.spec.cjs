@@ -14,6 +14,13 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="stogaf-target"]')).toHaveText("ST-6 AUTONOMIC");
     await expect(page.locator('[data-testid="stogaf-adm-phase"]')).toHaveText("G IMPLEMENTATION_GOVERNANCE → H ARCHITECTURE_CHANGE_MANAGEMENT");
     await expect(page.locator('[data-testid="stogaf-authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
+    await expect(page.locator('[data-testid="stogaf-requirements-count"]')).toHaveText("16");
+    await expect(page.locator('[data-testid="stogaf-viewpoints-count"]')).toHaveText("5");
+    await expect(page.locator('[data-testid="stogaf-workorders-count"]')).toHaveText("10");
+    await expect(page.locator('[data-testid="stogaf-unclaimed-count"]')).toHaveText("3");
+    await expect(page.locator('[data-testid="stogaf-requirements"]')).toContainText("R-16");
+    await expect(page.locator('[data-testid="stogaf-viewpoints"]')).toContainText("FA Morning Brief");
+    await expect(page.locator('[data-testid="stogaf-workgraph-boundary"]')).toContainText("SJ-011 → SJ-020");
 
     await page.locator('[data-testid="scenario-partial_firmware"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("PARTIAL");

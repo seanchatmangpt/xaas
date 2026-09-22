@@ -11,6 +11,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
 
   alias Xaas.CaseStudies.WdFa
   alias Xaas.CaseStudies.WdFa.Stogaf
+  alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,6 +20,11 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:selected, "known_firmware")
      |> assign(:experience_admitted, false)
      |> assign(:architecture, Stogaf.demo_projection())
+     |> assign(:requirements, Requirements.all())
+     |> assign(:viewpoints, Viewpoints.all())
+     |> assign(:conformance, Conformance.all())
+     |> assign(:workgraph, WorkGraph.all())
+     |> assign(:dfcm_metrics, Metrics.summary())
      |> assign(:state, WdFa.presentation_state("known_firmware"))}
   end
 
@@ -168,6 +174,45 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
             </div>
           </div>
         </div>
+
+
+        <div class="mt-6 grid gap-4 md:grid-cols-4" data-testid="stogaf-dfcm">
+          <article class="rounded border p-3">
+            <strong>Requirements mapped</strong>
+            <div data-testid="stogaf-requirements-count">{@dfcm_metrics.requirements_mapped}</div>
+          </article>
+          <article class="rounded border p-3">
+            <strong>Viewpoints</strong>
+            <div data-testid="stogaf-viewpoints-count">{@dfcm_metrics.viewpoints}</div>
+          </article>
+          <article class="rounded border p-3">
+            <strong>ST-6 work orders</strong>
+            <div data-testid="stogaf-workorders-count">{@dfcm_metrics.work_orders}</div>
+          </article>
+          <article class="rounded border p-3">
+            <strong>Production levels unclaimed</strong>
+            <div data-testid="stogaf-unclaimed-count">{@dfcm_metrics.production_levels_unclaimed}</div>
+          </article>
+        </div>
+
+        <h3 class="mt-4 font-semibold">Requirement coverage</h3>
+        <ul data-testid="stogaf-requirements">
+          <%= for requirement <- @requirements do %>
+            <li>{requirement.id} · {requirement.name} · {requirement.standing}</li>
+          <% end %>
+        </ul>
+
+        <h3 class="mt-4 font-semibold">Viewpoints</h3>
+        <ul data-testid="stogaf-viewpoints">
+          <%= for viewpoint <- @viewpoints do %>
+            <li>{viewpoint.view} · {viewpoint.concern}</li>
+          <% end %>
+        </ul>
+
+        <h3 class="mt-4 font-semibold">ST-6 closure work graph</h3>
+        <p data-testid="stogaf-workgraph-boundary">
+          SJ-011 → SJ-020 · SELECT/CONSTRUCT only
+        </p>
 
         <h3 class="mt-4 font-semibold">Architecture building blocks</h3>
         <ul data-testid="stogaf-building-blocks">
