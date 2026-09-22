@@ -1,0 +1,85 @@
+{
+  "identity": {
+    "subject": "XAAS-26922-26-rt-B",
+    "repo": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+    "subject_sha": "daa2aa1b2e0754b15c4c8fc3d54d0bac4960dc78",
+    "base_sha": "ec06b7c8b956ef5a7cfe21a25b013f274062c853"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "workflow-orchestrator task XAAS-26922-26 part rt-B (runtime strategy B): local worktree branch law/XAAS-26922-26-rt-B, commits only; no push/merge/tag",
+    "actor": "claude-opus-5-5 subagent (workflow harness)"
+  },
+  "consequence": {
+    "commits": [
+      "daa2aa1b2e0754b15c4c8fc3d54d0bac4960dc78"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "priv/zcode_plugin/ontology.ttl",
+      "priv/zcode_plugin/templates/script-ultracode-run.mjs.tmpl",
+      "priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs",
+      "priv/zcode_plugin/test/ultracode-scripted-agent.mjs",
+      "priv/zcode_plugin/test/fixtures/survey-wf_5c2db1e9-3e8.args.json"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "cd priv/zcode_plugin && ggen sync run && ggen sync run && cd ../.. && git status --porcelain",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+        "exit": 0,
+        "summary": "ggen 26.8.18: sync1=0 sync2=0, porcelain empty at daa2aa1 (generated marketplace file == committed; idempotent)"
+      },
+      {
+        "cmd": "cp -R priv/zcode_plugin/{ggen.toml,ontology.ttl,templates} $T && (cd $T && ggen sync run) && diff -r $T/marketplace priv/zcode_plugin/marketplace",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+        "exit": 0,
+        "summary": "projection-drift check (same shape as test/xaas/zcode_plugin/projection_test.exs) in a tmp copy: PROJECTION_MATCHES_COMMITTED"
+      },
+      {
+        "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs selftest",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+        "exit": 0,
+        "summary": "15 passed, 0 failed (body form, module form, parallel/pipeline, pure-literal meta, schema pre-flight x3 zero spawns, parse/re-ask/exhaustion, rate-limit backoff, worktree isolation, concurrency cap 2 and 3, agent cap, workflow() one level, zc1 own-key resume, Claude dry-run, Claude nth-label resume, ULTRACODE_HOME isolation)",
+        "output_sha256": "c7fcc2478fc944a6158e79c1370132c6956aa51531b1b92e6ecd8cb9c17b2c82"
+      },
+      {
+        "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs run /Users/sac/.claude/projects/-Users-sac--claude-plans/1fecd79a-9323-4b57-a949-d7892a3ea283/workflows/scripts/sa2a-sjira-autonomic-survey-wf_5c2db1e9-3e8.js --args @priv/zcode_plugin/test/fixtures/survey-wf_5c2db1e9-3e8.args.json --resume-from /Users/sac/.claude/projects/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/subagents/workflows/wf_5c2db1e9-3e8 --dry-run --json",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+        "exit": 0,
+        "summary": "{\"live_agents_needed\":0,\"resumed\":41,\"completed\":true,\"agent_calls\":41}",
+        "output_sha256": "c187283e79d60c380c795ebeec5d52f011258c52ba69aec7af63f908368be2d2"
+      },
+      {
+        "cmd": "ULTRACODE_AGENT_CMD=/usr/bin/false ULTRACODE_HOME=$SP/home node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs run /Users/sac/.claude/projects/-Users-sac--claude-plans/1fecd79a-9323-4b57-a949-d7892a3ea283/workflows/scripts/sa2a-sjira-autonomic-survey-wf_5c2db1e9-3e8.js --args @priv/zcode_plugin/test/fixtures/survey-wf_5c2db1e9-3e8.args.json --resume-from /Users/sac/.claude/projects/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/subagents/workflows/wf_5c2db1e9-3e8 --run-dir $SP/replay --json && python3 -c '<canonical-JSON compare result.json vs /Users/sac/wt/v26922/survey.json>'",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+        "exit": 0,
+        "summary": "full (non-dry) replay with spawning disabled: summary {live_agents:0, resumed_agents:41, null_agents:0}; result.json == survey.json (canonical JSON) True"
+      },
+      {
+        "cmd": "! grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|jest.mock\\|jest.fn\\|sinon' priv/zcode_plugin/test priv/zcode_plugin/templates/script-ultracode-run.mjs.tmpl",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-rt-B",
+        "exit": 0,
+        "summary": "zero mock matches; the one double is the scripted agent executable, justified in its header"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/XAAS-26922-26-rt-B.json"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "replay commands 1-6 executed at subject_sha daa2aa1 in the rt-B worktree; runtime file sha256 eaf9e17f7b48ac3e00f98d5bad3e2a23b7d8b0732b9240a8771f123ae89b8f58"
+  },
+  "falsifiers": {
+    "mutation_kills": "5/5 injected faults each killed by its targeted selftest case (run on the pre-commit tree; template unchanged since first generation): semaphore unbounded -> concurrency FAIL (overlap 6); preflight pass disabled -> schema pre-flight FAIL (6 spawns); label match always index 0 -> both Claude-resume cases FAIL; re-ask drops --resume -> structured-output FAIL; meta parser accepts identifiers -> pure-literal FAIL",
+    "real_journal": "a replay that needed any live agent would have exited non-zero under ULTRACODE_AGENT_CMD=/usr/bin/false and reported live_agents>0"
+  },
+  "notes": [
+    "Strategy B uses module.register (deprecated DEP0205 on Node 26 in favour of registerHooks); the one warning is silenced around the call. Node 26.8.1 was used for all runs.",
+    "Survey args were not recoverable from disk; reconstructed as {repos:[{name,path}]} by pairing the 19 survey:<name> journal labels (started order) with /Users/sac/wt/v26922/survey.json perRepo[].survey.path, basename-verified.",
+    "Journal 'started' lines are written after the first spawn returns (agentId = zcode sessionId) and carry n (per-label ordinal) so label resume is order-exact; null agent results are not journaled so they re-run on resume.",
+    "UNVERIFIED: live spawn against the real zcode CLI (node /Users/sac/dev/zcode-cli/bin/zcode.js) was not exercised; only the scripted backend. isolation 'worktree' with a real agent committing inside the worktree was not exercised.",
+    "Cleanup of 5 kept mutation-run tmp dirs under /Users/sac/.cache/tmp/ultracode-selftest-* was denied by the permission system; they remain."
+  ]
+}
