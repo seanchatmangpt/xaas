@@ -6,8 +6,13 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await page.goto("/case-studies/wd-fa", { waitUntil: "networkidle" });
 
     await expect(page.locator('[data-testid="wd-fa-root"]')).toBeVisible();
+    await expect(page.locator('[data-testid="brief-needs-judgment"]')).toHaveText("1");
+    await expect(page.locator('[data-testid="brief-missing-evidence"]')).toHaveText("1");
+    await expect(page.locator('[data-testid="brief-prior-art-ready"]')).toHaveText("1");
+    await expect(page.locator('[data-testid="brief-authority-rule"]')).toContainText("consequential disposition remains with the engineer");
     await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-A-FIRMWARE");
+    await expect(page.locator('[data-testid="source-timeout_waveform"]')).toContainText("fixture://wd/");
     await expect(page.locator('[data-testid="human-gate"]')).toHaveText("ENGINEER_DISPOSITION_REQUIRED");
     await expect(page.locator('[data-testid="authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
     await expect(page.locator('[data-testid="stogaf-current"]')).toHaveText("ST-4 CONSTRAINED");
@@ -26,6 +31,9 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     expect(architectureResponse.ok()).toBeTruthy();
     const architecture = await architectureResponse.json();
     expect(architecture.architecture.current_conformance).toBe("ST-4 CONSTRAINED");
+    expect(architecture.morning_brief.needs_judgment).toBe(1);
+    expect(architecture.morning_brief.missing_evidence).toBe(1);
+    expect(architecture.morning_brief.prior_art_ready).toBe(1);
     expect(architecture.architecture.target_conformance).toBe("ST-6 AUTONOMIC");
     expect(architecture.requirements).toHaveLength(16);
     expect(architecture.capabilities.some((capability) => capability.plane === "DO")).toBeFalsy();

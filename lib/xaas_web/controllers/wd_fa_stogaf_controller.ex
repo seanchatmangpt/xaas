@@ -1,12 +1,14 @@
 defmodule XaasWeb.WdFaStogafController do
   use XaasWeb, :controller
 
+  alias Xaas.CaseStudies.WdFa.MorningBrief
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{Capabilities, Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
   def show(conn, _params) do
     json(conn, %{
       architecture: Stogaf.demo_projection(),
+      morning_brief: MorningBrief.summary(),
       conformance: Conformance.all(),
       requirements: Requirements.all(),
       viewpoints: Viewpoints.all(),

@@ -10,6 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
+  alias Xaas.CaseStudies.WdFa.{EvidenceCatalog, MorningBrief}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
@@ -19,6 +20,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      socket
      |> assign(:selected, "known_firmware")
      |> assign(:experience_admitted, false)
+     |> assign(:morning_brief, MorningBrief.summary())
      |> assign(:architecture, Stogaf.demo_projection())
      |> assign(:requirements, Requirements.all())
      |> assign(:viewpoints, Viewpoints.all())
@@ -58,6 +60,29 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           standard → evidence → abnormality → work → disposition → verified experience → improved standard
         </p>
       </header>
+
+
+      <section class="mb-6 rounded border p-4" data-testid="morning-brief">
+        <p class="text-sm font-semibold uppercase tracking-wide">FA Morning Brief</p>
+        <h2 class="text-xl font-bold">Start with what needs an engineer</h2>
+        <div class="mt-3 grid gap-3 md:grid-cols-3">
+          <article class="rounded border p-3">
+            <strong>Needs judgment</strong>
+            <div data-testid="brief-needs-judgment">{@morning_brief.needs_judgment}</div>
+          </article>
+          <article class="rounded border p-3">
+            <strong>Missing evidence</strong>
+            <div data-testid="brief-missing-evidence">{@morning_brief.missing_evidence}</div>
+          </article>
+          <article class="rounded border p-3">
+            <strong>Prior-art ready</strong>
+            <div data-testid="brief-prior-art-ready">{@morning_brief.prior_art_ready}</div>
+          </article>
+        </div>
+        <p class="mt-3 text-sm" data-testid="brief-authority-rule">
+          {@morning_brief.semantic_rule}
+        </p>
+      </section>
 
       <nav class="mb-6 flex gap-3" data-testid="scenario-nav">
         <%= for id <- WdFa.scenario_ids() do %>
@@ -103,7 +128,12 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           <h2 class="font-semibold">Evidence</h2>
           <ul data-testid="evidence-list">
             <%= for evidence <- @state.evidence do %>
-              <li>{evidence}</li>
+              <% detail = EvidenceCatalog.fetch(evidence) %>
+              <li>
+                <strong>{evidence}</strong>
+                <span> · {detail.modality}</span>
+                <span data-testid={"source-" <> evidence}> · {detail.source_ref}</span>
+              </li>
             <% end %>
           </ul>
           <h3 class="mt-4 font-semibold">Missing required evidence</h3>
