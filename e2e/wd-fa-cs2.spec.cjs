@@ -13,6 +13,9 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-A-FIRMWARE");
     await expect(page.locator('[data-testid="source-timeout_waveform"]')).toContainText("fixture://wd/");
+    await expect(page.locator('[data-testid="ingestion-modalities"]')).toContainText("structured");
+    await expect(page.locator('[data-testid="ingestion-modalities"]')).toContainText("text");
+    await expect(page.locator('[data-testid="ingestion-modalities"]')).toContainText("plot");
     await expect(page.locator('[data-testid="work-standing"]')).toHaveText("READY_FOR_ENGINEER_DISPOSITION");
     await expect(page.locator('[data-testid="work-authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
     await expect(page.locator('[data-testid="case-capabilities"]')).toContainText("test_applicability");
@@ -37,6 +40,8 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     expect(architecture.morning_brief.needs_judgment).toBe(1);
     expect(architecture.morning_brief.missing_evidence).toBe(1);
     expect(architecture.morning_brief.prior_art_ready).toBe(1);
+    expect(architecture.ingestion_fixture.artifacts).toHaveLength(3);
+    expect(architecture.ingestion_fixture.artifacts.map((artifact) => artifact.modality).sort()).toEqual(["plot", "structured", "text"]);
     expect(architecture.architecture.target_conformance).toBe("ST-6 AUTONOMIC");
     expect(architecture.requirements).toHaveLength(16);
     expect(architecture.capabilities.some((capability) => capability.plane === "DO")).toBeFalsy();

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240">
+  <title>synthetic timeout waveform</title>
+  <desc>Repository-local fixture plot for WD CS2 ingestion court.</desc>
+  <rect x="0" y="0" width="640" height="240" fill="white"/>
+  <line x1="40" y1="200" x2="610" y2="200" stroke="black"/>
+  <line x1="40" y1="20" x2="40" y2="200" stroke="black"/>
+  <polyline points="40,150 100,145 160,148 220,80 280,85 340,150 400,152 460,60 520,65 580,150"
+    fill="none" stroke="black" stroke-width="3"/>
+  <text x="44" y="32">timeout waveform fixture</text>
+</svg>

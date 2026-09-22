@@ -10,7 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, MorningBrief, SemanticWork}
+  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Ingestion, MorningBrief, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
@@ -21,6 +21,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:selected, "known_firmware")
      |> assign(:experience_admitted, false)
      |> assign(:morning_brief, MorningBrief.summary())
+     |> assign(:ingestion_fixture, Ingestion.ingest_known_fixture())
      |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
      |> assign(:case_capabilities, CapabilitySelector.for_case("known_firmware"))
      |> assign(:architecture, Stogaf.demo_projection())
@@ -142,6 +143,16 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
               </li>
             <% end %>
           </ul>
+
+          <h3 class="mt-4 font-semibold">Representative multimodal ingestion</h3>
+          <ul data-testid="ingestion-modalities">
+            <%= for artifact <- @ingestion_fixture.artifacts do %>
+              <li>
+                {artifact.modality} · {artifact.kind} · {artifact.source_ref}
+              </li>
+            <% end %>
+          </ul>
+
           <h3 class="mt-4 font-semibold">Missing required evidence</h3>
           <ul data-testid="missing-evidence">
             <%= if @state.missing_evidence == [] do %>

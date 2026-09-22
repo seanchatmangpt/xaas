@@ -1,0 +1,25 @@
+{
+  "case_id": "known_firmware",
+  "evidence": [
+    {
+      "id": "build_history",
+      "path": "build_history.csv",
+      "modality": "structured",
+      "kind": "build_provenance"
+    },
+    {
+      "id": "fa_report",
+      "path": "fa_report.md",
+      "modality": "text",
+      "kind": "failure_analysis_report"
+    },
+    {
+      "id": "timeout_waveform",
+      "path": "timeout_waveform.svg",
+      "modality": "plot",
+      "kind": "waveform"
+    }
+  ],
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "note": "Synthetic representative modalities; not WD source data."
+}
