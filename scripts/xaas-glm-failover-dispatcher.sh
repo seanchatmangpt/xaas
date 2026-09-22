@@ -77,19 +77,27 @@ zcode_package_preflight() {
   local out
   out="$(node -e '
     const fs = require("fs"), path = require("path");
-    const dir = process.argv[1];
-    let pkg;
-    try { pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")); }
-    catch (e) { console.error("cli_unavailable: cannot read " + path.join(dir, "package.json") + " (" + e.code + ")"); process.exit(2); }
-    if (pkg.name !== "zcode-app-cli") { console.error("wrong package name: " + pkg.name); process.exit(2); }
+    const fail = (msg) => { console.error(msg); process.exit(2); };
+    const dir = process.argv[1], file = path.join(dir, "package.json");
+    let raw, pkg;
+    try { raw = fs.readFileSync(file, "utf8"); }
+    catch (e) { fail("cli_unavailable: cannot read " + file + " (" + e.code + ")"); }
+    try { pkg = JSON.parse(raw); }
+    catch (e) { fail("zcode_package_invalid: " + file + " is not valid JSON"); }
+    if (pkg === null || typeof pkg !== "object" || Array.isArray(pkg)) fail("zcode_package_invalid: " + file + " is not a JSON object");
+    if (pkg.name !== "zcode-app-cli") fail("wrong package name: " + pkg.name);
     const bin = pkg.bin && pkg.bin.zcode;
-    if (!bin) { console.error("package.json has no bin.zcode"); process.exit(2); }
+    if (typeof bin !== "string" || bin === "") fail("package.json has no bin.zcode");
     const script = path.resolve(dir, bin);
-    if (!script.startsWith(path.resolve(dir) + path.sep) || !fs.statSync(script).isFile()) { console.error("launcher missing or escapes CLI dir: " + script); process.exit(2); }
-    const m = /^>=\s*(\d+)\.(\d+)\.(\d+)$/.exec((pkg.engines && pkg.engines.node) || "");
-    if (!m) { console.error("unsupported engines.node: " + (pkg.engines && pkg.engines.node)); process.exit(2); }
+    if (!script.startsWith(path.resolve(dir) + path.sep)) fail("launcher escapes CLI dir: " + script);
+    let regular = false;
+    try { regular = fs.statSync(script).isFile(); } catch (e) { regular = false; }
+    if (!regular) fail("cli_unavailable: launcher missing or not a regular file: " + script);
+    const range = pkg.engines && pkg.engines.node;
+    const m = typeof range === "string" ? /^>=\s*(\d+)\.(\d+)\.(\d+)$/.exec(range.trim()) : null;
+    if (!m) fail("unsupported engines.node: " + range);
     const have = process.versions.node.split(".").map(Number), need = m.slice(1).map(Number);
-    for (let i = 0; i < 3; i++) { if (have[i] > need[i]) break; if (have[i] < need[i]) { console.error("node " + process.versions.node + " < engines.node " + pkg.engines.node); process.exit(2); } }
+    for (let i = 0; i < 3; i++) { if (have[i] > need[i]) break; if (have[i] < need[i]) fail("node " + process.versions.node + " < engines.node " + range); }
     console.log(bin);
   ' "$ZCODE_CLI_DIR" 2>&1)" || { log "zcode package preflight FAILED: ${out}"; return 1; }
   ZCODE_BIN="$out"
