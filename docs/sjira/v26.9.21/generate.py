@@ -32,7 +32,7 @@ wo(3,"handwritten-paydown-zcode-plugin","Pay down HANDWRITTEN.md: promote zcode 
  ["ggen renders the plugin files from the pack","HANDWRITTEN.md has strictly fewer Active rows","`git diff` of rendered output is empty on re-sync"],
  ["a rendered file differs from the checked-in one","HANDWRITTEN.md row removed while the file is still hand-edited"],
  "cd ~/xaas && ggen sync && git diff --exit-code && mix test",["HANDWRITTEN.md","priv/zcode_plugin/**","lib/xaas/generated/**"],proj=("jira","machine","verification","receipt")),
-wo(4,"resource-adoption-registry-exemptions","Adopt Xaas.Resource on the registry-exempt resources",X,"PARTIAL_ALIVE",
+wo(4,"resource-adoption-registry-exemptions","Adopt Xaas.Resource on the registry-exempt resources",X,"ALIVE",
  "test/xaas/semantics/registry_test.exs carries a disclosed `@pending` exemption list (CouplingRun, EventLog, AutofdePlannerCacheHotset/CacheStats/Candidate/Catalog/Match; plus library-generated RevokeNonce and *.Version). Migrate the seven owned resources to `use Xaas.Resource` (base_resources) and shrink the list to library-generated only.",
  ["commit on main: 'exempt library-generated resources in registry test'","`Xaas.Resource` is the configured base_resources entry in config/config.exs"],
  ["`@pending` contains only RevokeNonce","`mix test test/xaas/semantics` passes","deny-by-default policy floor preserved on each touched resource"],

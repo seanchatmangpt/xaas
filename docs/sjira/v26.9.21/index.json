@@ -25,7 +25,7 @@
   {
     "id": "SJ-004",
     "path": "004-resource-adoption-registry-exemptions.md",
-    "standing": "PARTIAL_ALIVE",
+    "standing": "ALIVE",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
   },
