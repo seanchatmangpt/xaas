@@ -25,6 +25,18 @@ defmodule Xaas.Semantics.ComputationTest do
     refute ComputationArtifact.hash(onnx) == ComputationArtifact.hash(nx)
   end
 
+  test "deterministic false is admitted and non-boolean deterministic is refused" do
+    assert {:ok, artifact} =
+             ComputationArtifact.new(artifact_attrs() |> Map.put(:deterministic, false))
+
+    refute artifact.deterministic
+
+    assert {:error, :invalid_computation_artifact} =
+             artifact_attrs()
+             |> Map.put(:deterministic, "no")
+             |> ComputationArtifact.new()
+  end
+
   test "any computation output remains a powerless candidate claim" do
     assert {:ok, artifact} = ComputationArtifact.new(artifact_attrs())
 

@@ -19,7 +19,7 @@ defmodule Xaas.Ultracode.AutonomicBacklogScriptTest do
 
   @moduletag :subprocess
 
-  @source Path.expand("~/xaas-worktrees/repos/spr")
+  @source Path.expand("~/xaas/worktrees/repos/spr")
 
   @moduletag skip:
                (cond do

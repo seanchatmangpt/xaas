@@ -56,7 +56,7 @@ defmodule Xaas.Ultracode.TargetSuites do
   @spec devs() :: map()
   def devs do
     %{
-      # ex_noun_verb_cli clone (~/xaas-worktrees/repos/nounverb): mix deps.get
+      # ex_noun_verb_cli clone (~/xaas/worktrees/repos/nounverb): mix deps.get
       # against the committed mix.lock, strict compile, full mix test. Hex is
       # resolved from the pinned MIX_ARCHIVES so a throwaway HOME never
       # triggers the interactive `mix local.hex` prompt.
@@ -73,7 +73,7 @@ defmodule Xaas.Ultracode.TargetSuites do
               "/Users/sac/.asdf/installs/erlang/28.3/bin:" <>
               "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
           "LANG" => "en_US.UTF-8",
-          "MIX_ARCHIVES" => Path.expand("~/xaas-worktrees/toolchain/mix-archives")
+          "MIX_ARCHIVES" => Path.expand("~/xaas/worktrees/toolchain/mix-archives")
         },
         max_output_bytes: 65_536,
         toolchain: [["mix", "--version"], ["git", "--version"]],
@@ -83,7 +83,7 @@ defmodule Xaas.Ultracode.TargetSuites do
           %{id: "test", timeout_ms: 300_000, argv: ["mix", "test"]}
         ]
       },
-      # eds clone (~/xaas-worktrees/repos/eds): the full pytest suite against
+      # eds clone (~/xaas/worktrees/repos/eds): the full pytest suite against
       # the worktree's own src/ (relative PYTHONPATH), with the base temp
       # inside the verifier's per-run tmpdir so nothing is written outside
       # the worktree or shared between runs.
@@ -144,7 +144,7 @@ defmodule Xaas.Ultracode.TargetSuites do
           }
         ]
       },
-      # spr clone (~/xaas-worktrees/repos/spr): the full pytest suite. The
+      # spr clone (~/xaas/worktrees/repos/spr): the full pytest suite. The
       # module under test sits at the repo root and tests/test_sprtool.py
       # inserts the repo root on sys.path itself, so no PYTHONPATH is needed
       # and pytest resolves from the Homebrew interpreter on PATH. The tree
