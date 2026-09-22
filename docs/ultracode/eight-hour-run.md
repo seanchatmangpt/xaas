@@ -124,11 +124,15 @@ refusal (`{:campaign_already_running, id}`), never a silent overlap.
   the dispatcher inherits your PATH, so **a PATH whose first `node` is
   v20 (e.g. `/usr/local/bin/node`) kills every worker instantly** with
   `No such built-in module: node:sqlite` (observed 2026-09-20, campaign
-  `d6d977be` epoch `bcf50839` → reaped `failed`). A working invocation prefixes
-  a dir whose `node` is ≥ 22.5 (homebrew v26 is proven):
-  `export PATH="/opt/homebrew/bin:$HOME/.asdf/shims:$PATH"` — then verify
-  `which mix` still resolves under asdf shims, or symlink just `node` into a
-  private bin dir and prepend that.
+  `d6d977be` epoch `bcf50839` → reaped `failed`). Prepending all of
+  `/opt/homebrew/bin` is not a fix: its `mix` is homebrew 1.19.5 and would
+  shadow the asdf shim, breaking the toolchain law above. The fix symlinks
+  just `node` (≥ 22.5; homebrew v26 is the proven source) into a private bin
+  dir and prepends that. Deployed on this host as
+  `~/.local-xaas-bin/` (`node → /opt/homebrew/bin/node`, v26.8.1), so the
+  launch shell uses `export PATH="$HOME/.local-xaas-bin:$HOME/.asdf/shims:$PATH"`
+  — node ≥ 22.5 first, `mix` still under asdf shims (verified 2026-09-21:
+  `mix --version` → Mix 1.20.2 / OTP 28, exit 0).
 - **Auth**: the campaign loop itself is in-process (Ash + the dispatcher's
   direct psql/zcode path), but the WORKER leg is not: workers claim over the
   `xaas-execution` MCP endpoint, whose `RequireInternalApiToken` plug fails
@@ -304,7 +308,7 @@ authority: you run two read-only-or-idempotent local commands, append one
 telemetry line, and quit.
 
 1. STATUS. Run exactly:
-     cd /Users/sac/xaas && export PATH="/opt/homebrew/bin:$HOME/.asdf/shims:$PATH" && mix xaas.ultracode.status
+     cd /Users/sac/xaas && export PATH="$HOME/.local-xaas-bin:$HOME/.asdf/shims:$PATH" && mix xaas.ultracode.status
    (First tick only: also record now as START_TS and the printed campaign id
    as RUN_ID; on later ticks, if the printed campaign id differs from RUN_ID,
    treat the run as finished: go to step 5 with reason "new-campaign".)
