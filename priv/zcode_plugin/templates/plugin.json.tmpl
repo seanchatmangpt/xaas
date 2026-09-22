@@ -17,7 +17,7 @@ sparql:
   "userConfig": {
     {{ plugin[0].tokenKey | json_encode }}: {
       "type": "string",
-      "sensitive": false,
+      "sensitive": true,
       "default": "unset",
       "description": "Bearer token for the XaaS internal API (/internal-api). Set with: zcode plugins configure {{ plugin[0].name }}@<marketplace> --options-file"
     }
