@@ -222,8 +222,8 @@ defmodule Xaas.Ultracode.TargetSuites do
   # suite -- a missing/partial seed only costs time (deps.get + a cold
   # compile follow). A half-copied dir is removed so it cannot poison the run.
   @seed_take ~S"""
-  [ -d deps ] || { [ -d "$SEED/deps" ] && { cp -cR "$SEED/deps" deps 2>/dev/null || cp -R "$SEED/deps" deps || rm -rf deps; }; }
-  [ -d _build ] || { [ -d "$SEED/_build" ] && { cp -cR "$SEED/_build" _build 2>/dev/null || cp -R "$SEED/_build" _build || rm -rf _build; }; }
+  [ -d deps ] || { [ -d "$XAAS_TOOLCHAIN_SEED/deps" ] && { cp -cR "$XAAS_TOOLCHAIN_SEED/deps" deps 2>/dev/null || cp -R "$XAAS_TOOLCHAIN_SEED/deps" deps || rm -rf deps; }; }
+  [ -d _build ] || { [ -d "$XAAS_TOOLCHAIN_SEED/_build" ] && { cp -cR "$XAAS_TOOLCHAIN_SEED/_build" _build 2>/dev/null || cp -R "$XAAS_TOOLCHAIN_SEED/_build" _build || rm -rf _build; }; }
   exit 0
   """
 
@@ -232,13 +232,13 @@ defmodule Xaas.Ultracode.TargetSuites do
   # exists. Copy into a private temp dir and `mv` into place, so a concurrent
   # or interrupted publish can never leave a half-written seed visible.
   @seed_publish ~S"""
-  [ -d "$SEED/deps" ] && exit 0
-  mkdir -p "$(dirname "$SEED")" || exit 0
-  tmp="$SEED.tmp.$$"
+  [ -d "$XAAS_TOOLCHAIN_SEED/deps" ] && exit 0
+  mkdir -p "$(dirname "$XAAS_TOOLCHAIN_SEED")" || exit 0
+  tmp="$XAAS_TOOLCHAIN_SEED.tmp.$$"
   rm -rf "$tmp"
   mkdir "$tmp" || exit 0
   { { cp -cR deps "$tmp/deps" 2>/dev/null || cp -R deps "$tmp/deps"; } && { cp -cR _build "$tmp/_build" 2>/dev/null || cp -R _build "$tmp/_build"; }; } || { rm -rf "$tmp"; exit 0; }
-  if [ -e "$SEED" ]; then rm -rf "$tmp"; else mv "$tmp" "$SEED" || rm -rf "$tmp"; fi
+  if [ -e "$XAAS_TOOLCHAIN_SEED" ]; then rm -rf "$tmp"; else mv "$tmp" "$XAAS_TOOLCHAIN_SEED" || rm -rf "$tmp"; fi
   exit 0
   """
 
@@ -400,7 +400,7 @@ defmodule Xaas.Ultracode.TargetSuites do
       "LANG" => "en_US.UTF-8",
       "MIX_ENV" => "test",
       "MIX_ARCHIVES" => Path.expand("~/xaas-worktrees/toolchain/mix-archives"),
-      "SEED" => seed
+      "XAAS_TOOLCHAIN_SEED" => seed
     }
 
     test_step =

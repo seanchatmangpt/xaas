@@ -27,7 +27,7 @@ defmodule Xaas.Ultracode.SjProgramRegistryTest do
 
   @aliases ~w(xaas autofde-lab gymact ggen-igniter)
   @closed ~w(DONE MERGED LANDED CLOSED RESOLVED ALIVE)
-  @env_allowlist ~w(PATH LANG MIX_ENV MIX_ARCHIVES SEED PYTHONPATH GYMACT_ALLOW_DEGRADED_STANDINGS)
+  @env_allowlist ~w(PATH LANG MIX_ENV MIX_ARCHIVES XAAS_TOOLCHAIN_SEED PYTHONPATH GYMACT_ALLOW_DEGRADED_STANDINGS)
 
   @python System.find_executable("python3")
 
