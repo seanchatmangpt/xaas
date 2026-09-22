@@ -10,6 +10,10 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-A-FIRMWARE");
     await expect(page.locator('[data-testid="human-gate"]')).toHaveText("ENGINEER_DISPOSITION_REQUIRED");
     await expect(page.locator('[data-testid="authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
+    await expect(page.locator('[data-testid="stogaf-current"]')).toHaveText("ST-4 CONSTRAINED");
+    await expect(page.locator('[data-testid="stogaf-target"]')).toHaveText("ST-6 AUTONOMIC");
+    await expect(page.locator('[data-testid="stogaf-adm-phase"]')).toHaveText("G IMPLEMENTATION_GOVERNANCE → H ARCHITECTURE_CHANGE_MANAGEMENT");
+    await expect(page.locator('[data-testid="stogaf-authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
 
     await page.locator('[data-testid="scenario-partial_firmware"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("PARTIAL");

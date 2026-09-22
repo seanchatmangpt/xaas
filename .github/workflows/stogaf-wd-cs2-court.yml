@@ -1,0 +1,125 @@
+name: WD CS2 STOGAF court
+
+on:
+  push:
+    branches:
+      - feat/stogaf-wd-cs2-v26.9.22
+  pull_request:
+    paths:
+      - "docs/rfc/RFC-STOGAF-v26.9.22.md"
+      - "docs/case-studies/wd-fa/**"
+      - "docs/sjira/v26.9.22/**"
+      - "priv/packs/wd_cs2_pack/stogaf.ttl"
+      - "lib/xaas/case_studies/wd_fa/**"
+      - "lib/xaas_web/live/wd_fa/**"
+      - "test/xaas/case_studies/**"
+      - "e2e/wd-fa-cs2.spec.cjs"
+      - ".github/workflows/stogaf-wd-cs2-court.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  MIX_ENV: test
+  DEV_DB_USERNAME: postgres
+  DEV_DB_PASSWORD: postgres
+  DEV_DB_HOSTNAME: localhost
+  DEV_DB_PORT: "5432"
+
+jobs:
+  stogaf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Resolve dependencies
+        run: |
+          mix deps.get --check-locked
+          npm ci
+
+      - name: Prepare database
+        run: mix ecto.create && mix ecto.migrate
+
+      - name: Compile exact subject
+        run: mix compile --force --warnings-as-errors
+
+      - name: Run STOGAF conformance court
+        run: mix test test/xaas/case_studies/wd_fa_stogaf_test.exs --trace
+
+      - name: Run WD Chicago court
+        run: mix test test/xaas/case_studies/wd_fa_chicago_test.exs --trace
+
+      - name: Assert semantic profile files
+        run: |
+          test -s docs/rfc/RFC-STOGAF-v26.9.22.md
+          test -s docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
+          test -s docs/case-studies/wd-fa/STOGAF-DEMO-VIEWPOINTS.md
+          test -s docs/sjira/v26.9.22/011-stogaf-wd-cs2.md
+          test -s priv/packs/wd_cs2_pack/stogaf.ttl
+          grep -q "ST-4 CONSTRAINED" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
+          grep -q "ST-6 AUTONOMIC" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
+          ! grep -q "Current cumulative level: ST-7" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
+
+      - name: No owned-collaborator mock audit
+        run: |
+          set -euo pipefail
+          ! grep -rnE 'unittest\.mock|Mock\(|MagicMock|monkeypatch|Mox\b|:meck|meck\.' \
+            lib/xaas/case_studies/wd_fa test/xaas/case_studies e2e/wd-fa-cs2.spec.cjs
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Phoenix
+        env:
+          PHX_SERVER: "true"
+        run: |
+          MIX_ENV=test mix phx.server > /tmp/stogaf-wd.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4002/case-studies/wd-fa >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/stogaf-wd.log
+          exit 1
+
+      - name: Run browser court
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4002
+        run: npx playwright test e2e/wd-fa-cs2.spec.cjs
+
+      - name: Print bounded standing
+        run: |
+          echo "STOGAF_CURRENT=ST-4_CONSTRAINED"
+          echo "STOGAF_TARGET=ST-6_AUTONOMIC"
+          echo "AUTHORITY=SELECT_CONSTRUCT_ONLY"
+          echo "ST7_PLUS=UNCLAIMED"

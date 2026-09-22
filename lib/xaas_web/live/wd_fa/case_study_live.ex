@@ -10,6 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
+  alias Xaas.CaseStudies.WdFa.Stogaf
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,6 +18,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      socket
      |> assign(:selected, "known_firmware")
      |> assign(:experience_admitted, false)
+     |> assign(:architecture, Stogaf.demo_projection())
      |> assign(:state, WdFa.presentation_state("known_firmware"))}
   end
 
@@ -132,6 +134,47 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
             <% end %>
           </ul>
         </article>
+      </section>
+
+
+      <section class="mt-6 rounded border p-4" data-testid="stogaf-architecture">
+        <h2 class="font-semibold">STOGAF architecture standing</h2>
+        <p>
+          TOGAF-compatible semantic execution profile · repository-local evidence ceiling
+        </p>
+        <div class="mt-3 grid gap-3 md:grid-cols-4">
+          <div>
+            <strong>Current</strong>
+            <div data-testid="stogaf-current">
+              {@architecture.current_conformance}
+            </div>
+          </div>
+          <div>
+            <strong>Target</strong>
+            <div data-testid="stogaf-target">
+              {@architecture.target_conformance}
+            </div>
+          </div>
+          <div>
+            <strong>ADM</strong>
+            <div data-testid="stogaf-adm-phase">
+              {@architecture.current_adm_phase} → {@architecture.next_adm_phase}
+            </div>
+          </div>
+          <div>
+            <strong>Authority</strong>
+            <div data-testid="stogaf-authority">
+              {@architecture.authority}
+            </div>
+          </div>
+        </div>
+
+        <h3 class="mt-4 font-semibold">Architecture building blocks</h3>
+        <ul data-testid="stogaf-building-blocks">
+          <%= for block <- @architecture.building_blocks do %>
+            <li>{block}</li>
+          <% end %>
+        </ul>
       </section>
 
       <section class="mt-6 rounded border p-4" data-testid="learning-loop">
