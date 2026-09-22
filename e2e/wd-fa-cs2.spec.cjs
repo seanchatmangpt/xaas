@@ -13,6 +13,9 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-A-FIRMWARE");
     await expect(page.locator('[data-testid="source-timeout_waveform"]')).toContainText("fixture://wd/");
+    await expect(page.locator('[data-testid="work-standing"]')).toHaveText("READY_FOR_ENGINEER_DISPOSITION");
+    await expect(page.locator('[data-testid="work-authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
+    await expect(page.locator('[data-testid="case-capabilities"]')).toContainText("test_applicability");
     await expect(page.locator('[data-testid="human-gate"]')).toHaveText("ENGINEER_DISPOSITION_REQUIRED");
     await expect(page.locator('[data-testid="authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
     await expect(page.locator('[data-testid="stogaf-current"]')).toHaveText("ST-4 CONSTRAINED");
@@ -38,17 +41,22 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     expect(architecture.requirements).toHaveLength(16);
     expect(architecture.capabilities.some((capability) => capability.plane === "DO")).toBeFalsy();
     expect(architecture.excluded_production_do.plane).toBe("DO");
+    expect(architecture.demo_work.partial_firmware.standing).toBe("BLOCKED_ON_EVIDENCE");
+    expect(architecture.demo_capabilities.novel_x.some((capability) => capability.plane === "DO")).toBeFalsy();
 
     await page.locator('[data-testid="scenario-partial_firmware"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("PARTIAL");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("NONE");
     await expect(page.locator('[data-testid="missing-evidence"]')).toContainText("timeout_waveform");
+    await expect(page.locator('[data-testid="work-standing"]')).toHaveText("BLOCKED_ON_EVIDENCE");
+    await expect(page.locator('[data-testid="work-obligation"]')).toContainText("timeout_waveform");
 
     await page.locator('[data-testid="scenario-novel_x"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("UNKNOWN");
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("NONE");
     await expect(page.locator('[data-testid="next-action"]')).toHaveText("ESCALATE_NOVEL_INVESTIGATION");
     await expect(page.locator('[data-testid="hypothesis-list"]')).toContainText("MODE-X-CANDIDATE");
+    await expect(page.locator('[data-testid="work-standing"]')).toHaveText("NOVEL_INVESTIGATION_REQUIRED");
 
     await page.locator('[data-testid="admit-experience"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("KNOWN");

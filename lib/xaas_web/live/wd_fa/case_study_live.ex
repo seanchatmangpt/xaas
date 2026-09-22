@@ -10,7 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{EvidenceCatalog, MorningBrief}
+  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, MorningBrief, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
@@ -21,6 +21,8 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:selected, "known_firmware")
      |> assign(:experience_admitted, false)
      |> assign(:morning_brief, MorningBrief.summary())
+     |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
+     |> assign(:case_capabilities, CapabilitySelector.for_case("known_firmware"))
      |> assign(:architecture, Stogaf.demo_projection())
      |> assign(:requirements, Requirements.all())
      |> assign(:viewpoints, Viewpoints.all())
@@ -37,6 +39,8 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
     {:noreply,
      socket
      |> assign(:selected, id)
+     |> assign(:semantic_work, SemanticWork.for_case(id, learned?))
+     |> assign(:case_capabilities, CapabilitySelector.for_case(id, learned?))
      |> assign(:state, WdFa.presentation_state(id, learned?))}
   end
 
@@ -46,6 +50,8 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      socket
      |> assign(:selected, "novel_x")
      |> assign(:experience_admitted, true)
+     |> assign(:semantic_work, SemanticWork.for_case("novel_x", true))
+     |> assign(:case_capabilities, CapabilitySelector.for_case("novel_x", true))
      |> assign(:state, WdFa.presentation_state("novel_x", true))}
   end
 
@@ -172,6 +178,27 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         </article>
       </section>
 
+
+
+      <section class="mt-6 grid gap-6 md:grid-cols-2">
+        <article class="rounded border p-4" data-testid="semantic-work">
+          <h2 class="font-semibold">Semantic work order</h2>
+          <p data-testid="work-id">{@semantic_work.id}</p>
+          <p data-testid="work-standing">{@semantic_work.standing}</p>
+          <p data-testid="work-obligation">{@semantic_work.obligation}</p>
+          <p data-testid="work-owner">owner: {@semantic_work.owner}</p>
+          <p data-testid="work-authority">{@semantic_work.authority}</p>
+        </article>
+
+        <article class="rounded border p-4" data-testid="case-capabilities">
+          <h2 class="font-semibold">Selected bounded capabilities</h2>
+          <ul>
+            <%= for capability <- @case_capabilities do %>
+              <li>{capability.plane} · {capability.id} · {capability.intelligence}</li>
+            <% end %>
+          </ul>
+        </article>
+      </section>
 
       <section class="mt-6 rounded border p-4" data-testid="stogaf-architecture">
         <h2 class="font-semibold">STOGAF architecture standing</h2>
