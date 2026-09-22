@@ -9,6 +9,11 @@ defmodule Xaas.SystemAuthority do
 
   Cross-service handoff is also closed. A caller may not manufacture a second
   service identity ad hoc; `delegate/2` admits only declared delegation edges.
+  `:sa2a_executor` is the machine capability for the SA2A `sa2a_execute` DO edge
+  (`Xaas.Sa2a.Execution`, action `:execute`). It has no delegation edge in or out:
+  it is held only by `Xaas.Sa2a.Executor`, which grants it to a call only after the
+  `Xaas.Sa2a.Court` admission conditions all hold.
+
   This remains an application-level capability inside the trusted BEAM VM, not
   a cryptographic or OS isolation primitive.
   """
@@ -18,7 +23,8 @@ defmodule Xaas.SystemAuthority do
     :webhook_dispatcher,
     :oban_scheduler,
     :internal_api,
-    :autofde_coverage_monitor
+    :autofde_coverage_monitor,
+    :sa2a_executor
   ]
   @delegations %{
     oban_scheduler: [:webhook_dispatcher]
@@ -33,6 +39,7 @@ defmodule Xaas.SystemAuthority do
           | :oban_scheduler
           | :internal_api
           | :autofde_coverage_monitor
+          | :sa2a_executor
   @type t :: %__MODULE__{service: service()}
 
   @doc "Returns the closed internal-service vocabulary admitted by this authority type."
