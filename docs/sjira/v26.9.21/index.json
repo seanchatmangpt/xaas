@@ -32,7 +32,7 @@
   {
     "id": "SJ-005",
     "path": "005-zoe-simulation-reconcile.md",
-    "standing": "PARTIAL_ALIVE",
+    "standing": "ALIVE",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
   },
