@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WD CS2 Standing Vocabulary",
+  "enum": [
+    "UNKNOWN",
+    "PARTIAL_ALIVE",
+    "ALIVE",
+    "ALIVE_FIXTURE",
+    "BLOCKED",
+    "BUILD_BROKEN",
+    "UNSUPPORTED",
+    "REFUSED",
+    "KNOWN_REPLAY",
+    "DESIGN"
+  ]
+}

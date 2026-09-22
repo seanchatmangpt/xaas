@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Failure Analysis Evidence Artifact",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "modality",
+    "source_ref",
+    "subject",
+    "provenance_state"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "modality": {
+      "type": "string"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "provenance_state": {
+      "enum": [
+        "OBSERVED",
+        "DERIVED"
+      ]
+    },
+    "digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

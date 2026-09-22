@@ -1,0 +1,32 @@
+{
+  "case_id": "novel_x",
+  "symptom": "non-deterministic replay mismatch",
+  "expected_classification": "UNKNOWN",
+  "expected_mode": null,
+  "evidence": [
+    {
+      "id": "servo_trace",
+      "kind": "servo_trace",
+      "modality": "structured",
+      "source_ref": "fixture://wd/novel_x/servo_trace",
+      "subject": "novel_x",
+      "provenance_state": "OBSERVED"
+    },
+    {
+      "id": "media_scan",
+      "kind": "media_scan",
+      "modality": "structured",
+      "source_ref": "fixture://wd/novel_x/media_scan",
+      "subject": "novel_x",
+      "provenance_state": "OBSERVED"
+    },
+    {
+      "id": "lot_genealogy",
+      "kind": "genealogy",
+      "modality": "structured",
+      "source_ref": "fixture://wd/novel_x/lot_genealogy",
+      "subject": "novel_x",
+      "provenance_state": "OBSERVED"
+    }
+  ]
+}

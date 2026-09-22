@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WD CS2 Requirement",
+  "type": "object",
+  "required": [
+    "id",
+    "requirement",
+    "building_block",
+    "court",
+    "standing"
+  ],
+  "properties": {
+    "id": {
+      "pattern": "^R-[0-9]{2}$"
+    },
+    "requirement": {
+      "type": "string"
+    },
+    "building_block": {
+      "type": "string"
+    },
+    "court": {
+      "type": "string"
+    },
+    "standing": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

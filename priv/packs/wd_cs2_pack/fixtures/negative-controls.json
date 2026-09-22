@@ -1,0 +1,32 @@
+[
+  {
+    "id": "NC-01",
+    "name": "high-score-novel",
+    "must_hold": "candidate ranking cannot create KNOWN"
+  },
+  {
+    "id": "NC-02",
+    "name": "missing-waveform",
+    "must_hold": "required evidence absence prevents admission"
+  },
+  {
+    "id": "NC-03",
+    "name": "misleading-similarity",
+    "must_hold": "deterministic applicability overrides similarity"
+  },
+  {
+    "id": "NC-04",
+    "name": "tampered-receipt",
+    "must_hold": "receipt verification fails"
+  },
+  {
+    "id": "NC-05",
+    "name": "self-certification",
+    "must_hold": "producer cannot self-certify"
+  },
+  {
+    "id": "NC-06",
+    "name": "ambient-do",
+    "must_hold": "Friday capability set contains zero DO"
+  }
+]
