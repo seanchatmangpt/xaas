@@ -70,6 +70,10 @@ jobs:
         with:
           node-version: "22"
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
       - name: Resolve dependencies
         run: |
           mix deps.get --check-locked
@@ -77,6 +81,21 @@ jobs:
 
       - name: Prepare database
         run: mix ecto.create && mix ecto.migrate
+
+      - name: Install semantic court dependencies
+        run: python -m pip install "rdflib>=7,<8" "pyshacl>=0.30,<1"
+
+      - name: Execute RDF / SHACL / SPARQL court
+        run: |
+          python scripts/stogaf_semantic_court.py             --pack priv/packs/wd_cs2_pack             --output wd-cs2-stogaf-semantic-report.json
+          python - <<'PY'
+          import json
+          report = json.load(open("wd-cs2-stogaf-semantic-report.json"))
+          assert report["standing"] == "ALIVE", report
+          assert report["shacl"]["conforms"] is True, report
+          assert report["refusal_rows"] == 0, report
+          assert report["gate_count"] >= 5, report
+          PY
 
       - name: Compile exact subject
         run: mix compile --force --warnings-as-errors
@@ -153,6 +172,7 @@ jobs:
           path: |
             wd-cs2-stogaf-receipt.json
             wd-cs2-evaluation.json
+            wd-cs2-stogaf-semantic-report.json
           if-no-files-found: error
           retention-days: 30
 
