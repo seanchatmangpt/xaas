@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 env:
-  SUBJECT_SHA: \${{ github.event.pull_request.head.sha || github.sha }}
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   MIX_ENV: test
   DEV_DB_USERNAME: postgres
   DEV_DB_PASSWORD: postgres
@@ -31,14 +31,14 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd pg_isready -U postgres
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: \${{ env.SUBJECT_SHA }}
+          ref: ${{ env.SUBJECT_SHA }}
           persist-credentials: false
       - name: Assert exact subject
         shell: bash
