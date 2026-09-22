@@ -1,0 +1,54 @@
+@prefix stogaf: <urn:xaas:stogaf:> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+stogaf:ArchitectureEpisode a skos:Concept ; skos:prefLabel "Architecture Episode" .
+stogaf:ArchitectureState a skos:Concept ; skos:prefLabel "Architecture State" .
+stogaf:Requirement a skos:Concept ; skos:prefLabel "Requirement" .
+stogaf:Constraint a skos:Concept ; skos:prefLabel "Constraint" .
+stogaf:BuildingBlock a skos:Concept ; skos:prefLabel "Architecture Building Block" .
+stogaf:Viewpoint a skos:Concept ; skos:prefLabel "Viewpoint" .
+stogaf:View a skos:Concept ; skos:prefLabel "View" .
+stogaf:Gap a skos:Concept ; skos:prefLabel "Gap" .
+stogaf:Transition a skos:Concept ; skos:prefLabel "Transition" .
+stogaf:Evidence a skos:Concept ; skos:prefLabel "Evidence" .
+stogaf:Authority a skos:Concept ; skos:prefLabel "Authority" .
+stogaf:Verification a skos:Concept ; skos:prefLabel "Verification" .
+stogaf:ConformanceLevel a skos:Concept ; skos:prefLabel "Conformance Level" .
+stogaf:MachineExperience a skos:Concept ; skos:prefLabel "MachineExperience" .
+
+stogaf:subject a rdf:Property .
+stogaf:baseline a rdf:Property .
+stogaf:target a rdf:Property .
+stogaf:gap a rdf:Property .
+stogaf:currentConformance a rdf:Property .
+stogaf:targetConformance a rdf:Property .
+stogaf:evidenceCeiling a rdf:Property .
+stogaf:authority a rdf:Property .
+stogaf:humanGate a rdf:Property .
+stogaf:currentAdmPhase a rdf:Property .
+stogaf:nextAdmPhase a rdf:Property .
+stogaf:projectsTo a rdf:Property .
+stogaf:satisfiesRequirement a rdf:Property .
+stogaf:requiresEvidence a rdf:Property .
+stogaf:verifiedBy a rdf:Property .
+stogaf:standing a rdf:Property .
+stogaf:levelNumber a rdf:Property .
+stogaf:cumulative a rdf:Property .
+stogaf:applicability a rdf:Property .
+stogaf:replayIdentity a rdf:Property .
+stogaf:receiptIdentity a rdf:Property .
+
+stogaf:ST0 a stogaf:ConformanceLevel ; stogaf:levelNumber 0 ; skos:prefLabel "ST-0 DOCUMENTED" .
+stogaf:ST1 a stogaf:ConformanceLevel ; stogaf:levelNumber 1 ; skos:prefLabel "ST-1 ADDRESSABLE" .
+stogaf:ST2 a stogaf:ConformanceLevel ; stogaf:levelNumber 2 ; skos:prefLabel "ST-2 LINKED" .
+stogaf:ST3 a stogaf:ConformanceLevel ; stogaf:levelNumber 3 ; skos:prefLabel "ST-3 PROVENANCED" .
+stogaf:ST4 a stogaf:ConformanceLevel ; stogaf:levelNumber 4 ; skos:prefLabel "ST-4 CONSTRAINED" .
+stogaf:ST5 a stogaf:ConformanceLevel ; stogaf:levelNumber 5 ; skos:prefLabel "ST-5 GENERATED" .
+stogaf:ST6 a stogaf:ConformanceLevel ; stogaf:levelNumber 6 ; skos:prefLabel "ST-6 AUTONOMIC" .
+stogaf:ST7 a stogaf:ConformanceLevel ; stogaf:levelNumber 7 ; skos:prefLabel "ST-7 ACTUATED" .
+stogaf:ST8 a stogaf:ConformanceLevel ; stogaf:levelNumber 8 ; skos:prefLabel "ST-8 CLOSED_LOOP" .
+stogaf:ST9 a stogaf:ConformanceLevel ; stogaf:levelNumber 9 ; skos:prefLabel "ST-9 LEARNING" .

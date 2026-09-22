@@ -1,0 +1,19 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+
+SELECT ?experience ?reason WHERE {
+  ?experience a stogaf:MachineExperience .
+  {
+    FILTER NOT EXISTS { ?experience stogaf:requiresEvidence ?evidence }
+    BIND("machine-experience-missing-evidence" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?experience stogaf:applicability ?applicability }
+    BIND("machine-experience-missing-applicability" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?experience stogaf:replayIdentity ?replay }
+    BIND("machine-experience-missing-replay-identity" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?experience stogaf:receiptIdentity ?receipt }
+    BIND("machine-experience-missing-receipt" AS ?reason)
+  }
+}
+ORDER BY ?experience ?reason
