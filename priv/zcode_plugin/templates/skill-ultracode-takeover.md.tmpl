@@ -111,9 +111,15 @@ not prose for a human).
 
 ## 3. Takeover procedure (ZCode)
 
-1. Find candidates: `node scripts/ultracode-watch.mjs scan` lists handoff records whose
-   transcript dir has had no write for `ULTRACODE_STALE_MINUTES` (default 15) and whose dry-run
-   still needs live agents.
+1. Find candidates: `node scripts/ultracode-watch.mjs scan` lists handoff records (not
+   `completed`/`taken_over`, no `.takeover` lock) that are eligible: the owning Claude session is
+   dead (`~/.claude/sessions/<pid>.json` pid gone or reused per `procStart`) and the transcript
+   dir has had no write for `ULTRACODE_DEAD_GRACE_MIN` (default 2), or the session is alive but
+   silent for `ULTRACODE_STALE_MINUTES` (default 45) with an API-failure marker (rate limit,
+   overloaded, usage limit, 529/503) in its last 200 transcript lines — and whose dry-run still
+   needs live agents (a dry-run reporting 0 marks the record `completed`).
+   `run-once --auto` does the same and takes over every eligible run; `install` registers it
+   as the launchd agent `dev.zcode.ultracode-watch` (every 300 s).
 2. Take over one run: `node scripts/ultracode-watch.mjs takeover <runId>` — writes the
    `.takeover` lock, then runs
    `node scripts/ultracode-run.mjs run <scriptFile> --args @<handoff args> --resume-from <transcriptDir> --run-dir ~/.zcode/ultracode/runs/<runId>`.
