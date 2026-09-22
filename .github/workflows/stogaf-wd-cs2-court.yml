@@ -74,8 +74,17 @@ jobs:
       - name: Compile exact subject
         run: mix compile --force --warnings-as-errors
 
-      - name: Run STOGAF conformance court
-        run: mix test test/xaas/case_studies/wd_fa_stogaf_test.exs --trace
+      - name: Run STOGAF conformance courts
+        run: |
+          mix test \
+            test/xaas/case_studies/wd_fa_stogaf_test.exs \
+            test/xaas/case_studies/wd_fa_stogaf_artifacts_test.exs \
+            test/xaas/case_studies/wd_fa_stogaf_registry_test.exs \
+            test/xaas/case_studies/wd_fa_stogaf_capabilities_test.exs \
+            test/xaas/case_studies/wd_fa_stogaf_receipt_test.exs \
+            test/xaas/case_studies/wd_fa_stogaf_semantic_files_test.exs \
+            test/xaas_web/controllers/wd_fa_stogaf_controller_test.exs \
+            --trace
 
       - name: Run WD Chicago court
         run: mix test test/xaas/case_studies/wd_fa_chicago_test.exs --trace
@@ -116,6 +125,22 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4002
         run: npx playwright test e2e/wd-fa-cs2.spec.cjs
+
+      - name: Manufacture exact-head STOGAF receipt
+        env:
+          STOGAF_SUBJECT_SHA: ${{ env.SUBJECT_SHA }}
+        run: |
+          mix xaas.wd.stogaf_receipt wd-cs2-stogaf-receipt.json
+          test -s wd-cs2-stogaf-receipt.json
+          grep -q '"current_conformance": "ST-4 CONSTRAINED"' wd-cs2-stogaf-receipt.json
+          grep -q '"friday_do_capabilities": 0' wd-cs2-stogaf-receipt.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wd-cs2-stogaf-receipt-${{ env.SUBJECT_SHA }}
+          path: wd-cs2-stogaf-receipt.json
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Print bounded standing
         run: |

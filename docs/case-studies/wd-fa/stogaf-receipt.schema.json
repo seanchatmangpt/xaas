@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:xaas:stogaf:wd-cs2-receipt-v1",
+  "title": "WD CS2 STOGAF Architecture Receipt",
+  "type": "object",
+  "required": [
+    "schema",
+    "subject_sha",
+    "current_conformance",
+    "target_conformance",
+    "evidence_ceiling",
+    "authority",
+    "human_gate",
+    "requirements_mapped",
+    "viewpoints",
+    "work_orders",
+    "friday_do_capabilities",
+    "production_levels_unclaimed",
+    "standing"
+  ],
+  "properties": {
+    "schema": {
+      "const": "STOGAF_WD_CS2_RECEIPT_V1"
+    },
+    "subject_sha": {
+      "type": "string",
+      "minLength": 1
+    },
+    "current_conformance": {
+      "const": "ST-4 CONSTRAINED"
+    },
+    "target_conformance": {
+      "const": "ST-6 AUTONOMIC"
+    },
+    "evidence_ceiling": {
+      "const": "REPO_LOCAL_FIXTURE"
+    },
+    "authority": {
+      "const": "SELECT_CONSTRUCT_ONLY"
+    },
+    "human_gate": {
+      "const": "ENGINEER_DISPOSITION_REQUIRED"
+    },
+    "requirements_mapped": {
+      "const": 16
+    },
+    "viewpoints": {
+      "const": 5
+    },
+    "work_orders": {
+      "const": 10
+    },
+    "friday_do_capabilities": {
+      "const": 0
+    },
+    "production_levels_unclaimed": {
+      "const": 3
+    },
+    "known_path_general_llm_required": {
+      "const": false
+    },
+    "standing": {
+      "const": "REPO_LOCAL_ARCHITECTURE_RECEIPT"
+    }
+  },
+  "additionalProperties": true
+}
