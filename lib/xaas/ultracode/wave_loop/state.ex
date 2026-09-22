@@ -1,8 +1,8 @@
 defmodule Xaas.Ultracode.WaveLoop.State do
   @moduledoc """
   Tolerant parser and renderer for the wave loop's STATE file
-  (`/Users/sac/xaas-tmp/w8-loop/STATE.md` -- lives OUTSIDE every repo, like
-  all loop telemetry; see the file's own header and
+  (`/Users/sac/xaas/tmp/w8-loop/STATE.md` -- lives under the repo root's
+  gitignored `tmp/`, like all loop telemetry; see the file's own header and
   `Xaas.Ultracode.WaveLoop`).
 
   The parser is deliberately narrow: it understands exactly the shapes the

@@ -7,12 +7,17 @@ defmodule Xaas.Ultracode.Autonomic do
   receipt. The loop is sense -> plan -> act -> verify -> repair -> promote ->
   learn:
 
-    1. **Sense.** a per-repo deterministic backlog script (default
-       `priv/verifiers/aps_backlog.py`; a repo alias may register its own
-       basename via `config :xaas, :ultracode_backlog_scripts`, resolved by
-       `backlog_script/1`) derives work items
-       deterministically from the repository at an exact `base_sha` (a
-       throwaway provisioned worktree, never the operator clone's tree).
+    1. **Sense.** per repo, per wave: the deterministic backlog script
+       (default `priv/verifiers/aps_backlog.py`; a repo alias may register
+       its own basename via `config :xaas, :ultracode_backlog_scripts`,
+       resolved by `backlog_script/1`) derives work items deterministically
+       from the repository at an exact `base_sha` (a throwaway provisioned
+       worktree, never the operator clone's tree). FALLBACK LAW: a script
+       that exits 0 wins unchanged; on a script failure the registry
+       entry's `sensing:` name drives the profile-driven sensing of
+       `Xaas.Ultracode.Sensing` (`config :xaas, :ultracode_sensing_profiles`)
+       over the same provisioned tree; with no implemented profile the
+       stage refuses TYPED -- never a silently skipped repo.
     2. **Plan.** Per item: a provisioned worktree, a ticket file (mission,
        allowed paths, mutants, append-only history) OUTSIDE the worktree, and a
        provider-pull `Run` naming the operator-registered verifier suite plus a
@@ -59,7 +64,18 @@ defmodule Xaas.Ultracode.Autonomic do
   really claims, edits, commits and closes through `Xaas.Ultracode.Lease`.
   """
 
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Repos, Run, Verifier, WavePlan, Worktrees}
+  alias Xaas.Ultracode.{
+    Epoch,
+    ItemRuns,
+    Lease,
+    Receipt,
+    Repos,
+    Run,
+    Sensing,
+    Verifier,
+    WavePlan,
+    Worktrees
+  }
 
   @git_env [
     {"GIT_AUTHOR_NAME", "xaas-autonomic"},
@@ -341,16 +357,17 @@ defmodule Xaas.Ultracode.Autonomic do
   end
 
   def sense(%{multi: false} = ctx) do
-    sense_one(ctx, ctx.repo, ctx.base_sha)
+    sense_one(ctx, ctx.repo, ctx.base_sha, Map.get(ctx, :sensing))
   end
 
   # Senses each selected repo, tagging every item with its repo. Determinism
-  # of the ITEM ids belongs to the scripts; only the `repo` tag is added here.
+  # of the ITEM ids belongs to the scripts (or the sensing profile); only the
+  # `repo` tag is added here.
   defp sense_by_repo(ctx) do
     Enum.reduce_while(ctx.aliases, {:ok, %{}}, fn repo_alias, {:ok, acc} ->
       rctx = Map.fetch!(ctx.repos, repo_alias)
 
-      case sense_one(ctx, repo_alias, rctx.base_sha) do
+      case sense_one(ctx, repo_alias, rctx.base_sha, rctx.sensing) do
         {:ok, items} ->
           {:cont,
            {:ok, Map.put(acc, repo_alias, Enum.map(items, &Map.put(&1, "repo", repo_alias)))}}
@@ -361,29 +378,85 @@ defmodule Xaas.Ultracode.Autonomic do
     end)
   end
 
-  defp sense_one(ctx, repo_alias, base_sha) do
+  # Senses one repo at its exact base sha (worktree-provisioned, always
+  # cleaned up) under the FALLBACK LAW:
+  #
+  #   1. the repo's registered backlog script runs first; a script that
+  #     EXITS 0 wins, its items used unchanged;
+  #   2. ELSE the registry entry's `sensing:` name drives the deterministic
+  #     profile sensing of `Xaas.Ultracode.Sensing` over the SAME
+  #     provisioned tree;
+  #   3. ELSE the stage refuses TYPED (naming both the script error and the
+  #     profile gap) -- a silently skipped repo would fabricate per-repo
+  #     coverage.
+  defp sense_one(ctx, repo_alias, base_sha, sensing_name) do
     name = "#{repo_alias}-sense-#{ctx.nonce}"
 
     with {:ok, path} <- Worktrees.provision(repo_alias, base_sha, name) do
       try do
-        script = backlog_script(%{ctx | repo: repo_alias})
+        case run_backlog_script(%{ctx | repo: repo_alias}, path) do
+          {:ok, items} ->
+            {:ok, only_items(ctx, items)}
 
-        case System.cmd("python3", [script, "--repo", path],
-               env: [{"PYTHONDONTWRITEBYTECODE", "1"}],
-               stderr_to_stdout: false
-             ) do
-          {out, 0} ->
-            %{"items" => items} = Jason.decode!(out)
-            only = Map.get(ctx, :only)
-            {:ok, if(only, do: Enum.filter(items, &(&1["id"] in only)), else: items)}
-
-          {out, code} ->
-            {:error, {:backlog_failed, code, String.slice(out, -500, 500)}}
+          {:error, script_reason} ->
+            profile_fallback(ctx, repo_alias, path, sensing_name, script_reason)
         end
       after
         Worktrees.cleanup(repo_alias, path)
       end
     end
+  end
+
+  defp run_backlog_script(ctx, path) do
+    script = backlog_script(ctx)
+
+    case System.cmd("python3", [script, "--repo", path],
+           env: [{"PYTHONDONTWRITEBYTECODE", "1"}],
+           stderr_to_stdout: false
+         ) do
+      {out, 0} ->
+        %{"items" => items} = Jason.decode!(out)
+        {:ok, items}
+
+      {out, code} ->
+        {:error, {:backlog_failed, code, String.slice(out, -500, 500)}}
+    end
+  end
+
+  # The name -> profile mapping is explicit and validated
+  # (`Sensing.profile/1`): an unknown or malformed name is a TYPED refusal
+  # carrying BOTH the script error and the profile gap, never a silent
+  # skip. A profile that is implemented but cannot derive (missing dir, bad
+  # command, ...) refuses typed too.
+  defp profile_fallback(ctx, repo_alias, path, sensing_name, script_reason) do
+    case Sensing.profile(sensing_name) do
+      {:ok, profile} ->
+        case Sensing.derive(profile, path) do
+          {:ok, doc} ->
+            # The fallback is EVIDENCE, not a silent recovery: it rides the
+            # wave ledger when the ctx has one (hand-built ctxes may not).
+            if Map.get(ctx, :ledger),
+              do:
+                ledger(ctx, :sense_fallback, %{
+                  repo: repo_alias,
+                  profile: sensing_name,
+                  script_error: inspect(script_reason)
+                })
+
+            {:ok, only_items(ctx, doc["items"])}
+
+          {:error, reason} ->
+            {:error, {:profile_sensing_failed, sensing_name, reason}}
+        end
+
+      {:error, profile_reason} ->
+        {:error, {:sense_refused, script_reason, profile_reason}}
+    end
+  end
+
+  defp only_items(ctx, items) do
+    only = Map.get(ctx, :only)
+    if only, do: Enum.filter(items, &(&1["id"] in only)), else: items
   end
 
   @doc """
@@ -396,7 +469,9 @@ defmodule Xaas.Ultracode.Autonomic do
   original `aps_backlog.py`, so APS behavior is unchanged. This is the same
   registry shape the verifier suites use
   (`config :xaas, :ultracode_verifier_suites`): an operator-owned NAME mapping,
-  never a caller-supplied path.
+  never a caller-supplied path. A script that exits NONZERO no longer fails
+  the repo outright: `sense_one/4` then falls back to the registry entry's
+  `sensing:` profile (the FALLBACK LAW in the moduledoc).
   """
   def backlog_script(ctx) do
     scripts = Application.get_env(:xaas, :ultracode_backlog_scripts, %{})
@@ -454,6 +529,12 @@ defmodule Xaas.Ultracode.Autonomic do
         halve(ctx)
         _ = settle(epoch, ctx)
 
+        # The rate-killed attempt's Run still terminalizes from whatever
+        # settle/2 just made terminal (done -> :completed/:admitted;
+        # reaped/failed -> per the classify law) -- a rate limit must not
+        # leave a second kind of row that never transitions.
+        ItemRuns.close_attempt!(run, epoch)
+
         if rate_used < ctx.rate_retries do
           Process.sleep(ctx.rate_backoff_ms)
           attempt(item, worktree, n, history, rate_used + 1, ctx)
@@ -471,6 +552,15 @@ defmodule Xaas.Ultracode.Autonomic do
       _ok_or_error ->
         case settle(epoch, ctx) do
           {:done, receipt, epoch} ->
+            # THE REAL TRANSITION (wave-2 finding): the item attempt is
+            # done -- court-verified alive/partial_alive -- so its Run row
+            # terminalizes NOW (`:running -> :completed`, standing
+            # `:admitted` through the admitted `:transition_state` action
+            # with the `:ultracode_reactor` system authority), instead of
+            # sitting `:pending` forever while the ledger/epoch/receipt
+            # carry the terminality.
+            ItemRuns.close_attempt!(run, epoch)
+
             ledger(ctx, :item_done, %{
               item: item["id"],
               attempt: n,
@@ -499,6 +589,14 @@ defmodule Xaas.Ultracode.Autonomic do
             }
 
           {:failed, failure} ->
+            # Per-attempt terminality (wave-2 finding): this attempt's Run
+            # closes per the classify law -- `:failed` with the evidence's
+            # standing; when THIS failure exhausts the item (next
+            # recursion is `item_blocked`) the run lands on the state
+            # machine's lawful abandoned-work edge, `:abandoned`/
+            # `:blocked`, the same edge `Run.:stop` uses.
+            ItemRuns.close_attempt!(run, epoch, exhausted: n >= ctx.max_attempts)
+
             ledger(ctx, :attempt_failed, %{item: item["id"], attempt: n, failure: failure})
             attempt(item, worktree, n + 1, history ++ [%{attempt: n, failure: failure}], 0, ctx)
         end
@@ -517,12 +615,18 @@ defmodule Xaas.Ultracode.Autonomic do
     repo_alias = Map.get(item, "repo") || ctx.repo
     rctx = Map.fetch!(ctx.repos, repo_alias)
 
+    # Learning projection (fail-open): the campaign's OCEL-derived facts,
+    # memoized once per TTL (see Xaas.Ultracode.Learn.Projection). nil
+    # facts (standalone run, Learn absent/erroring) yield an empty context
+    # and no ticket section -- the loop never depends on Learn to progress.
+    learn = Xaas.Ultracode.Learn.Projection.item_learning(ctx, item["id"])
+
     {:ok, run} =
       Run
       |> Ash.Changeset.for_create(
         :create,
         %{
-          goal: repair_goal(item["goal"], history),
+          goal: repair_goal(item["goal"], history) <> learn.context,
           provider: ctx.provider,
           max_cycles: 1,
           verifier_suite: rctx.suite,
@@ -535,7 +639,7 @@ defmodule Xaas.Ultracode.Autonomic do
 
     File.write!(
       Path.join(ctx.ticket_dir, "#{run.id}.json"),
-      Jason.encode!(%{
+      %{
         schemaVersion: "aps-ticket/1",
         item: item["id"],
         repo: repo_alias,
@@ -546,7 +650,11 @@ defmodule Xaas.Ultracode.Autonomic do
         min_kill_ratio: item["min_kill_ratio"],
         mutants: item["mutants"],
         history: history
-      })
+      }
+      # The ticket's "learn" section lands on repair attempts (>= 2) only;
+      # a no-facts wave stamps nothing (fail-open, byte-identical ticket).
+      |> Xaas.Ultracode.Learn.Projection.stamp_ticket(n, learn)
+      |> Jason.encode!()
     )
 
     {:ok, epoch} =
@@ -563,6 +671,13 @@ defmodule Xaas.Ultracode.Autonomic do
         authorize?: false
       )
       |> Ash.create()
+
+    # The item attempt is LIVE the moment its `:running` Epoch exists --
+    # the Run row says so too (`:pending -> :running`, the admitted
+    # `:transition_state` edge, `:ultracode_reactor` system authority).
+    # Before this, item runs were born `:pending` and (the wave-2
+    # finding) never left it.
+    {:ok, _opened_or_already} = ItemRuns.open!(run.id)
 
     {run, epoch}
   end

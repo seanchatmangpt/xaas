@@ -32,7 +32,7 @@ defmodule XaasWeb.A2A.ZoeEventSimulationAgent do
 
     cond do
       text == "contract" ->
-        {:reply, [A2A.Part.Text.new(Jason.encode!(Xaas.Zoe.EventSimulationZoe.contract()))]}
+        {:reply, [A2A.Part.Text.new(Jason.encode!(Xaas.Zoe.EventSimulation.contract()))]}
 
       String.starts_with?(text, "simulate ") ->
         run_simulation(String.replace_prefix(text, "simulate ", ""))
@@ -51,7 +51,7 @@ defmodule XaasWeb.A2A.ZoeEventSimulationAgent do
     with {:ok, payload} <- Jason.decode(raw_json),
          snapshot when is_map(snapshot) <- Map.get(payload, "snapshot"),
          scenario when is_map(scenario) <- Map.get(payload, "scenario", %{}),
-         {:ok, result} <- Xaas.Zoe.EventSimulationZoe.simulate(snapshot, scenario) do
+         {:ok, result} <- Xaas.Zoe.EventSimulation.simulate(snapshot, scenario) do
       {:reply, [A2A.Part.Text.new(Jason.encode!(result))]}
     else
       {:error, %Jason.DecodeError{} = error} ->

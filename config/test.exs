@@ -30,6 +30,15 @@ config :xaas, Xaas.Repo,
   database: "xaas_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 20,
+  # Real fix: under the SQL Sandbox in shared mode every process shares ONE connection, so
+  # concurrent Task.async_stream slot workers (Xaas.Ultracode.Engine.fill/1) queue on it.
+  # DBConnection's defaults (queue_target 50ms / queue_interval 1000ms) drop those waiters
+  # ("connection not available and request was dropped from queue after 281ms"), which made
+  # test/xaas/ultracode/engine_test.exs "fill dispatches exactly the free slots ..." flake
+  # with :handed_off instead of :done under CPU load. Guarded by
+  # test/xaas/repo_test_pool_config_test.exs.
+  queue_target: 5_000,
+  queue_interval: 10_000,
   # Real fix: without this, Postgrex.DefaultTypes doesn't know how to
   # encode/decode the pgvector `vector` wire type -- every query touching
   # Book.embedding raises "type `vector` can not be handled by the types

@@ -174,7 +174,10 @@ defmodule XaasWeb.OcelLiveServerChainTest do
 
     org_event =
       Enum.find(all_events, fn event ->
-        is_binary(event["ocel:activity"]) and String.contains?(event["ocel:activity"], "org")
+        # OCEL v2 reshape (E9): forwarded events carry the activity under
+        # the spec's plain "type" key (ex4pm's own alias list reads the
+        # same key); the old "ocel:activity" no longer exists on the wire.
+        is_binary(event["type"]) and String.contains?(event["type"], "org")
       end)
 
     assert org_event, "expected an \"org\"-activity event across #{inspect(all_events)}"

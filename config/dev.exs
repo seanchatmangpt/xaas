@@ -121,22 +121,22 @@ config :phoenix, :plug_init_mode, :runtime
 config :swoosh, :api_client, false
 
 # Fabric verifier: the APS Chicago-TDD definition-of-done court. Operator-owned
-# worktrees and tickets live under ~/xaas-worktrees; the court script is
+# worktrees and tickets live under ~/xaas/worktrees; the court script is
 # resolved from this app's priv/ (never from a worktree the worker controls).
-config :xaas, :ultracode_worktree_root, Path.expand("~/xaas-worktrees/runs")
-config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas-worktrees/tickets")
+config :xaas, :ultracode_worktree_root, Path.expand("~/xaas/worktrees/runs")
+config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas/worktrees/tickets")
 
 # Multi-repo registry (Xaas.Ultracode.Repos). This env entry is the
 # code-seeded baseline; durable operator registrations -- other campaign
 # targets -- live in the registry file written ONLY by
 # `mix xaas.ultracode.repos --register` and merged over this baseline
 # (file wins per alias).
-config :xaas, :ultracode_repos_file, Path.expand("~/xaas-worktrees/ultracode-repos.json")
+config :xaas, :ultracode_repos_file, Path.expand("~/xaas/worktrees/ultracode-repos.json")
 
 config :xaas, :ultracode_repos, %{
   # Structured form: the entry names its own suite/sensing facts.
   "aps" => %{
-    path: Path.expand("~/xaas-worktrees/repos/aps"),
+    path: Path.expand("~/xaas/worktrees/repos/aps"),
     sensing: "aps",
     suite: "aps-dod",
     canonical_suite: "aps-canonical"
@@ -146,18 +146,18 @@ config :xaas, :ultracode_repos, %{
   # suite. Structured entries NAME their suite facts (the historical
   # path-string default -- aps-dod/aps-canonical -- is correct for aps only).
   "nounverb" => %{
-    path: Path.expand("~/xaas-worktrees/repos/nounverb"),
+    path: Path.expand("~/xaas/worktrees/repos/nounverb"),
     sensing: "nounverb",
     suite: "nounverb-dod",
     canonical_suite: "nounverb-dod"
   },
   "eds" => %{
-    path: Path.expand("~/xaas-worktrees/repos/eds"),
+    path: Path.expand("~/xaas/worktrees/repos/eds"),
     sensing: "eds",
     suite: "eds-dod",
     canonical_suite: "eds-dod"
   },
-  "spr" => Path.expand("~/xaas-worktrees/repos/spr")
+  "spr" => Path.expand("~/xaas/worktrees/repos/spr")
 }
 
 # Per-repo sense scripts (`Xaas.Ultracode.Autonomic.backlog_script/1`): the
@@ -170,6 +170,20 @@ config :xaas, :ultracode_backlog_scripts, %{
   "spr" => "spr_backlog.py",
   "eds" => "eds_backlog.py",
   "nounverb" => "nounverb_backlog.py"
+}
+
+# Sensing-profile names -> deterministic profiles (`Xaas.Ultracode.Sensing.
+# profile/1`): the Autonomic sense stage's fallback when a repo's backlog
+# script fails (xaas has no fitting script; the aps default exits 2 on it).
+# "xaas-sjira" reads the xaas clone's own docs/sjira tickets: open = the
+# `## Status` section's first word NOT in `closed`; BLOCKED tickets are real
+# but not worker-workable, so they are closed to the wave.
+config :xaas, :ultracode_sensing_profiles, %{
+  "xaas-sjira" => %{
+    "type" => "jira_dir",
+    "dir" => "docs/sjira",
+    "closed" => ["DONE", "MERGED", "LANDED", "CLOSED", "RESOLVED", "ALIVE", "BLOCKED"]
+  }
 }
 
 # APS's own five canonical gates, run by the fabric at the integration head.
