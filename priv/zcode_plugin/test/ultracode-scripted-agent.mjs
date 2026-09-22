@@ -20,6 +20,9 @@
 //   fenced <json>          reply prose with the JSON in a ```json fence
 //   prose-object <json>    reply prose with the JSON object inline
 //   bad-then <json>        first turn: non-JSON prose; resumed turn (--resume): <json>
+//   nosession-bad-then <json>  reply with an empty sessionId (no --resume possible): non-JSON
+//                          prose, unless the prompt carries the runtime's fresh re-ask block,
+//                          then <json>
 //   always-bad             never JSON
 //   ratelimit-once <text>  first call for this prompt: "429 ... 1302" on stderr, exit 75; then reply <text>
 //   die                    exit 1 (unrecoverable)
@@ -73,15 +76,17 @@ const record = (exit) => {
     resume, cwd, mode, json, exit,
     harness: prompt.startsWith("[UltraCode"),
     readonly: /READ-ONLY/.test(prompt),
+    fresh_reask: prompt.includes("--- previous attempt ---"),
+    carries_errors: /failed schema validation:\n- /.test(prompt),
     prompt_head: prompt.slice(0, 300),
     t_start: tStart, t_end: Date.now(),
   }) + "\n");
 };
 
-const reply = (response) => {
+const reply = (response, { sessionless = false } = {}) => {
   fs.writeFileSync(path.join(sessions, `${session.id}.json`), JSON.stringify(session));
   record(0);
-  process.stdout.write(JSON.stringify({ sessionId: session.id, traceId: `trace-${session.id.slice(5)}`, response }) + "\n");
+  process.stdout.write(JSON.stringify({ sessionId: sessionless ? "" : session.id, traceId: `trace-${session.id.slice(5)}`, response }) + "\n");
   process.exit(0);
 };
 
@@ -105,6 +110,9 @@ switch (session.verb) {
     break;
   case "bad-then":
     reply(session.turns === 1 ? "I could not produce JSON this time." : session.arg);
+    break;
+  case "nosession-bad-then":
+    reply(prompt.includes("--- previous attempt ---") ? session.arg : "no JSON and no session to resume", { sessionless: true });
     break;
   case "always-bad":
     reply(`still not json, turn ${session.turns}`);
