@@ -9,11 +9,14 @@ defmodule Xaas.CaseStudies.WdFa.MorningBrief do
 
   alias Xaas.CaseStudies.WdFa
 
-  @spec summary() :: map()
-  def summary do
+  @spec summary(boolean()) :: map()
+  def summary(experience_admitted? \\ false) do
     states =
       WdFa.scenario_ids()
-      |> Enum.map(&{&1, WdFa.presentation_state(&1)})
+      |> Enum.map(fn id ->
+        learned? = experience_admitted? and id == "novel_x"
+        {id, WdFa.presentation_state(id, learned?)}
+      end)
 
     %{
       needs_judgment: count_class(states, "UNKNOWN"),

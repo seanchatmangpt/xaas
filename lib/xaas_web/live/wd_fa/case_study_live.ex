@@ -10,7 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Ingestion, MorningBrief, SemanticWork}
+  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Ingestion, LearningLoop, MorningBrief, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
@@ -20,6 +20,8 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      socket
      |> assign(:selected, "known_firmware")
      |> assign(:experience_admitted, false)
+     |> assign(:verification_receipt, nil)
+     |> assign(:machine_experience, nil)
      |> assign(:morning_brief, MorningBrief.summary())
      |> assign(:ingestion_fixture, Ingestion.ingest_known_fixture())
      |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
@@ -47,10 +49,15 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
 
   @impl true
   def handle_event("admit_experience", _params, socket) do
+    {:ok, %{receipt: receipt, experience: experience}} = LearningLoop.verify_novel_fixture()
+
     {:noreply,
      socket
      |> assign(:selected, "novel_x")
      |> assign(:experience_admitted, true)
+     |> assign(:verification_receipt, receipt)
+     |> assign(:machine_experience, experience)
+     |> assign(:morning_brief, MorningBrief.summary(true))
      |> assign(:semantic_work, SemanticWork.for_case("novel_x", true))
      |> assign(:case_capabilities, CapabilitySelector.for_case("novel_x", true))
      |> assign(:state, WdFa.presentation_state("novel_x", true))}
@@ -302,6 +309,16 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           >
             Admit verified MachineExperience fixture
           </button>
+        <% end %>
+
+        <%= if @verification_receipt do %>
+          <div class="mt-4 rounded border p-3" data-testid="verification-receipt">
+            <strong>Independent verification receipt</strong>
+            <p data-testid="receipt-digest">{@verification_receipt.receipt_digest}</p>
+            <p data-testid="receipt-verifier">verifier: {@verification_receipt.verifier_id}</p>
+            <p data-testid="receipt-scope">scope: {@verification_receipt.authority_scope}</p>
+            <p data-testid="experience-id">experience: {@machine_experience.id}</p>
+          </div>
         <% end %>
       </section>
     </main>

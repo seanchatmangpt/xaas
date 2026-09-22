@@ -68,5 +68,12 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="admitted-mode"]')).toHaveText("MODE-X-NOVEL");
     await expect(page.locator('[data-testid="confidence-basis"]')).toHaveText("ADMITTED_MACHINE_EXPERIENCE");
     await expect(page.locator('[data-testid="prior-cases"]')).toContainText("MX-NOVEL-X-001");
+    await expect(page.locator('[data-testid="verification-receipt"]')).toBeVisible();
+    await expect(page.locator('[data-testid="receipt-digest"]')).toContainText("sha256:");
+    await expect(page.locator('[data-testid="receipt-verifier"]')).toContainText("independent-observer");
+    await expect(page.locator('[data-testid="receipt-scope"]')).toContainText("REPO_LOCAL_FIXTURE");
+    await expect(page.locator('[data-testid="experience-id"]')).toContainText("MX-NOVEL-X-001");
+    await expect(page.locator('[data-testid="brief-needs-judgment"]')).toHaveText("0");
+    await expect(page.locator('[data-testid="brief-prior-art-ready"]')).toHaveText("2");
   });
 });
