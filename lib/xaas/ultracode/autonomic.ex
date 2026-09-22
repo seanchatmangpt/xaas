@@ -59,7 +59,17 @@ defmodule Xaas.Ultracode.Autonomic do
   really claims, edits, commits and closes through `Xaas.Ultracode.Lease`.
   """
 
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Repos, Run, Verifier, WavePlan, Worktrees}
+  alias Xaas.Ultracode.{
+    Epoch,
+    Lease,
+    Receipt,
+    Repos,
+    Run,
+    SuiteHealth,
+    Verifier,
+    WavePlan,
+    Worktrees
+  }
 
   @git_env [
     {"GIT_AUTHOR_NAME", "xaas-autonomic"},
@@ -111,7 +121,8 @@ defmodule Xaas.Ultracode.Autonomic do
 
     ledger(ctx, :start, start_data)
 
-    with {:ok, items} <- sense(ctx) do
+    with :ok <- suite_health_gate(ctx),
+         {:ok, items} <- sense(ctx) do
       ledger(ctx, :sensed, %{items: Enum.map(items, & &1["id"])})
 
       results =
@@ -126,6 +137,49 @@ defmodule Xaas.Ultracode.Autonomic do
         end)
 
       finish(ctx, items, results)
+    end
+  end
+
+  @doc """
+  The suite-health gate (`Xaas.Ultracode.SuiteHealth`), run before every wave:
+  re-checks each managed suite this wave judges with (item suite and canonical
+  suite of every selected repo) that is quarantined or near its expiry, then
+  refuses the whole wave -- typed `{:suite_unhealthy, [{suite, reason}]}` --
+  if any is still quarantined. A wave against a suite that cannot tell green
+  from red would only manufacture false `alive`s or burn attempts on
+  unrepairable rejections, so it stops itself; the next wave's sweep releases
+  the suite the moment the court records a healthy result. Unmanaged suites
+  (no `health` declaration) pass untouched.
+  """
+  @spec suite_health_gate(map()) :: :ok | {:error, {:suite_unhealthy, list()}}
+  def suite_health_gate(ctx) do
+    suites =
+      ctx.repos
+      |> Map.values()
+      |> Enum.flat_map(&[&1.suite, &1.canonical_suite])
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    rows = SuiteHealth.sweep(suites: suites)
+
+    for %{action: :checked} = row <- rows do
+      ledger(ctx, :suite_health, %{
+        suite: row.suite,
+        verdict: row.verdict,
+        status: inspect(row.status)
+      })
+    end
+
+    case for(%{status: {:quarantined, reason}, suite: suite} <- rows, do: {suite, reason}) do
+      [] ->
+        :ok
+
+      quarantined ->
+        ledger(ctx, :suite_quarantined, %{
+          suites: Enum.map(quarantined, fn {suite, reason} -> [suite, inspect(reason)] end)
+        })
+
+        {:error, {:suite_unhealthy, quarantined}}
     end
   end
 
@@ -498,6 +552,26 @@ defmodule Xaas.Ultracode.Autonomic do
               history: history
             }
 
+          {:refused, refusal, failure} ->
+            # The DoD itself was refused (vacuous, unhealthy suite, unprovable
+            # probes): nothing a worker repairs -- re-dispatching only burns
+            # sessions. Stop the item with the typed refusal.
+            ledger(ctx, :item_blocked, %{
+              item: item["id"],
+              attempts: n,
+              refusal: refusal,
+              failure: failure
+            })
+
+            %{
+              item: item["id"],
+              status: :blocked,
+              refusal: refusal,
+              attempts: n,
+              worktree: worktree,
+              history: history ++ [%{attempt: n, failure: failure}]
+            }
+
           {:failed, failure} ->
             ledger(ctx, :attempt_failed, %{item: item["id"], attempt: n, failure: failure})
             attempt(item, worktree, n + 1, history ++ [%{attempt: n, failure: failure}], 0, ctx)
@@ -533,9 +607,8 @@ defmodule Xaas.Ultracode.Autonomic do
       )
       |> Ash.create()
 
-    File.write!(
-      Path.join(ctx.ticket_dir, "#{run.id}.json"),
-      Jason.encode!(%{
+    ticket =
+      %{
         schemaVersion: "aps-ticket/1",
         item: item["id"],
         repo: repo_alias,
@@ -546,8 +619,13 @@ defmodule Xaas.Ultracode.Autonomic do
         min_kill_ratio: item["min_kill_ratio"],
         mutants: item["mutants"],
         history: history
-      })
-    )
+      }
+      # Falsifier probes a Semantic Jira order declared (`OrderProbes`): the
+      # verifier reads them back from this controller-written file.
+      |> put_present(:probes, item["probes"])
+      |> put_present(:probes_error, item["probes_error"])
+
+    File.write!(Path.join(ctx.ticket_dir, "#{run.id}.json"), Jason.encode!(ticket))
 
     {:ok, epoch} =
       Epoch
@@ -566,6 +644,9 @@ defmodule Xaas.Ultracode.Autonomic do
 
     {run, epoch}
   end
+
+  defp put_present(map, _key, nil), do: map
+  defp put_present(map, key, value), do: Map.put(map, key, value)
 
   defp repair_goal(goal, []), do: goal
 
@@ -612,8 +693,24 @@ defmodule Xaas.Ultracode.Autonomic do
 
   defp judge(epoch, receipt) do
     case judge_receipt(receipt) do
-      :accept -> {:done, receipt, epoch}
-      {:repair, reason} -> {:failed, reason}
+      :accept ->
+        {:done, receipt, epoch}
+
+      {:repair, reason} ->
+        case refusal_of(receipt) do
+          nil -> {:failed, reason}
+          refusal -> {:refused, refusal, reason}
+        end
+    end
+  end
+
+  # Typed verifier refusals that are properties of the DoD, not of the work.
+  @unrepairable ~w(vacuous_dod probes_refused suite_unhealthy)
+
+  defp refusal_of(%Receipt{evidence: evidence}) do
+    case evidence["fabric_verifier"] do
+      %{"refusal" => refusal} when refusal in @unrepairable -> refusal
+      _ -> nil
     end
   end
 

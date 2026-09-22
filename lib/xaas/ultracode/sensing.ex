@@ -72,6 +72,12 @@ defmodule Xaas.Ultracode.Sensing do
       "min_kill_ratio"  nil unless set via "item_overrides"
       "source"          %{"file" => ..., "line" => ..., "text" => ...} -- the
                         exact artifact line the item came from
+      "probes"          (jira_dir only, optional) the machine falsifier probes the
+                        order declared in a ```xaas-probes block
+                        (`Xaas.Ultracode.OrderProbes`); `Autonomic` writes them
+                        into the run's ticket and the fabric verifier enforces
+                        them. An invalid block yields "probes_error" instead,
+                        which the verifier refuses rather than ignores.
 
   ## Determinism and pinning
 
@@ -88,7 +94,7 @@ defmodule Xaas.Ultracode.Sensing do
         "items" => [...sorted by id...]}
   """
 
-  alias Xaas.Ultracode.Worktrees
+  alias Xaas.Ultracode.{OrderProbes, Worktrees}
 
   @schema_version "xaas-sensing/1"
   @default_max_items 20
@@ -274,7 +280,7 @@ defmodule Xaas.Ultracode.Sensing do
     if open? do
       # Stable content = relative path + title: History appends (the
       # operator's append-only ticket convention) must not churn the id.
-      [
+      item =
         build_item(
           "jira",
           title,
@@ -286,7 +292,11 @@ defmodule Xaas.Ultracode.Sensing do
           },
           prof.allowed_paths
         )
-      ]
+
+      # An order that declares machine falsifier probes (`OrderProbes`) carries
+      # them on its item; the controller puts them in the run's ticket and the
+      # fabric verifier enforces them. Orders without a probes block add nothing.
+      [Map.merge(item, OrderProbes.item_fields(text))]
     else
       []
     end

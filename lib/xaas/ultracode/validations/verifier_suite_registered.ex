@@ -18,9 +18,22 @@ defmodule Xaas.Ultracode.Validations.VerifierSuiteRegistered do
         :ok
 
       name ->
-        if Verifier.registered?(name),
-          do: :ok,
-          else: {:error, field: :verifier_suite, message: "unknown_verifier_suite"}
+        if Verifier.registered?(name) do
+          case Verifier.admission(name) do
+            :ok ->
+              :ok
+
+            {:quarantined, reason} ->
+              {:error,
+               field: :verifier_suite, message: "suite_unhealthy:" <> reason_token(reason)}
+          end
+        else
+          {:error, field: :verifier_suite, message: "unknown_verifier_suite"}
+        end
     end
   end
+
+  defp reason_token({:unhealthy, verdict}), do: "unhealthy_" <> to_string(verdict)
+  defp reason_token(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp reason_token(_), do: "unknown"
 end
