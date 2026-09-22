@@ -1,0 +1,6 @@
+PREFIX xz: <https://ggen.io/ontology/xaas-zcode-ocel#>
+SELECT ?event ?fromState ?toState
+WHERE {
+  ?t a xz:Transition ; xz:event ?event ; xz:fromState ?fromState ; xz:toState ?toState .
+}
+ORDER BY ?event
