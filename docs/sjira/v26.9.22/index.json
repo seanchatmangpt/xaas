@@ -1,0 +1,18 @@
+[
+  {
+    "id": "SJ-010",
+    "path": "SJ-010-zcode-ocel-pack-consumer.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "zcode-cli gall-work landed on main (2026-09-22)"
+    ]
+  },
+  {
+    "id": "SJ-011",
+    "path": "SJ-011-execution-mcp-audit-coverage.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  }
+]
