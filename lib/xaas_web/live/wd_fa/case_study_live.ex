@@ -12,6 +12,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   alias Xaas.CaseStudies.WdFa
   alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Ingestion, LearningLoop, MorningBrief, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
+  alias Xaas.CaseStudies.WdFa.Stogaf.ArchitectureChange
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
   @impl true
@@ -22,6 +23,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:experience_admitted, false)
      |> assign(:verification_receipt, nil)
      |> assign(:machine_experience, nil)
+     |> assign(:architecture_change, nil)
      |> assign(:morning_brief, MorningBrief.summary())
      |> assign(:ingestion_fixture, Ingestion.ingest_known_fixture())
      |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
@@ -50,6 +52,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   @impl true
   def handle_event("admit_experience", _params, socket) do
     {:ok, %{receipt: receipt, experience: experience}} = LearningLoop.verify_novel_fixture()
+    {:ok, architecture_change} = ArchitectureChange.from_experience(experience)
 
     {:noreply,
      socket
@@ -57,6 +60,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:experience_admitted, true)
      |> assign(:verification_receipt, receipt)
      |> assign(:machine_experience, experience)
+     |> assign(:architecture_change, architecture_change)
      |> assign(:morning_brief, MorningBrief.summary(true))
      |> assign(:semantic_work, SemanticWork.for_case("novel_x", true))
      |> assign(:case_capabilities, CapabilitySelector.for_case("novel_x", true))
@@ -318,6 +322,10 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
             <p data-testid="receipt-verifier">verifier: {@verification_receipt.verifier_id}</p>
             <p data-testid="receipt-scope">scope: {@verification_receipt.authority_scope}</p>
             <p data-testid="experience-id">experience: {@machine_experience.id}</p>
+            <p data-testid="standard-change">
+              standard: {@architecture_change.from_standard} → {@architecture_change.to_standard}
+            </p>
+            <p data-testid="architecture-change-phase">{@architecture_change.adm_phase}</p>
           </div>
         <% end %>
       </section>

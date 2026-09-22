@@ -73,6 +73,8 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="receipt-verifier"]')).toContainText("independent-observer");
     await expect(page.locator('[data-testid="receipt-scope"]')).toContainText("REPO_LOCAL_FIXTURE");
     await expect(page.locator('[data-testid="experience-id"]')).toContainText("MX-NOVEL-X-001");
+    await expect(page.locator('[data-testid="standard-change"]')).toContainText("CS2-V1 → CS2-V2");
+    await expect(page.locator('[data-testid="architecture-change-phase"]')).toHaveText("H ARCHITECTURE_CHANGE_MANAGEMENT");
     await expect(page.locator('[data-testid="brief-needs-judgment"]')).toHaveText("0");
     await expect(page.locator('[data-testid="brief-prior-art-ready"]')).toHaveText("2");
   });
