@@ -241,6 +241,32 @@ defmodule Xaas.Ultracode.DispatchTest do
              Dispatch.plan(epoch.id, cli_dir: cli_dir, node_path: "/nonexistent-node-xyz")
   end
 
+  test "plan is bounded by :node_version_timeout_ms when node --version hangs", %{
+    worktree: worktree,
+    base: base
+  } do
+    {_run, epoch} = create_epoch!(worktree)
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    # Real executable whose --version never returns (5s, so an orphan expires
+    # by itself if the bound were ever broken).
+    hang = Path.join(base, "hang-node.sh")
+    File.write!(hang, "#!/bin/sh\nexec sleep 5\n")
+    File.chmod!(hang, 0o755)
+
+    started = System.monotonic_time(:millisecond)
+
+    assert {:error, {:node_version_unreadable, ^hang, "timeout after 400ms"}} =
+             Dispatch.plan(epoch.id,
+               provider: @provider,
+               cli_dir: cli_dir,
+               node_path: hang,
+               node_version_timeout_ms: 400
+             )
+
+    assert System.monotonic_time(:millisecond) - started < 3_000
+  end
+
   test "plan resolves node from PATH when no :node_path is given (the documented default)" do
     # Permanent guard for the 2026-09-20 campaign falsifier: an unset
     # :node_path used to hard-refuse every launch {:node_unavailable,

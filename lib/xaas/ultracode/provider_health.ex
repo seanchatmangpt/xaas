@@ -18,6 +18,7 @@ defmodule Xaas.Ultracode.ProviderHealth do
       {:error, {:cli_unavailable, path}}
       {:error, {:zcode_package_invalid, path, reason}}
       {:error, {:node_unavailable, "node"}}
+      {:error, {:node_version_unreadable, node, "timeout after 5000ms"}}
       {:error, {:node_too_old, node, "20.0.0", ">=22.19.0"}}
   """
 
@@ -26,7 +27,11 @@ defmodule Xaas.Ultracode.ProviderHealth do
   @type health :: %{zcode_version: String.t(), zcode_bin: String.t(), node_version: String.t()}
 
   @doc """
-  Options: `:cli_dir`, `:node_path` (same fallbacks as `Dispatch.run/1`).
+  Options: `:cli_dir`, `:node_path` (same fallbacks as `Dispatch.run/1`),
+  `:node_version_timeout_ms` (deadline for the `node --version` probe,
+  default `ZcodePackage.default_version_timeout_ms/0`). The whole call is
+  bounded: a hung node yields
+  `{:error, {:node_version_unreadable, node, "timeout after Nms"}}`.
   """
   @spec check(keyword()) :: {:ok, health()} | {:error, term()}
   def check(opts \\ []) do
@@ -41,7 +46,12 @@ defmodule Xaas.Ultracode.ProviderHealth do
 
     with {:ok, pkg} <- ZcodePackage.load(cli_dir),
          {:ok, node_path} <- node_exe(node_path),
-         {:ok, found} <- ZcodePackage.verify_node(pkg, node_path) do
+         {:ok, found} <-
+           ZcodePackage.verify_node(
+             pkg,
+             node_path,
+             Keyword.take(opts, [:node_version_timeout_ms])
+           ) do
       {:ok,
        %{
          zcode_version: pkg.version,

@@ -90,8 +90,12 @@ zcode_package_preflight() {
     if (typeof bin !== "string" || bin === "") fail("package.json has no bin.zcode");
     const script = path.resolve(dir, bin);
     if (!script.startsWith(path.resolve(dir) + path.sep)) fail("launcher escapes CLI dir: " + script);
+    let realScript, realDir;
+    try { realScript = fs.realpathSync(script); realDir = fs.realpathSync(dir); }
+    catch (e) { fail("cli_unavailable: launcher missing or not a regular file: " + script); }
+    if (!realScript.startsWith(realDir + path.sep)) fail("launcher escapes CLI dir: " + script + " -> " + realScript);
     let regular = false;
-    try { regular = fs.statSync(script).isFile(); } catch (e) { regular = false; }
+    try { regular = fs.statSync(realScript).isFile(); } catch (e) { regular = false; }
     if (!regular) fail("cli_unavailable: launcher missing or not a regular file: " + script);
     const range = pkg.engines && pkg.engines.node;
     const m = typeof range === "string" ? /^>=\s*(\d+)\.(\d+)\.(\d+)$/.exec(range.trim()) : null;

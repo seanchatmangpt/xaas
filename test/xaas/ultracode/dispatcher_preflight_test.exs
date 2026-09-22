@@ -119,8 +119,20 @@ defmodule Xaas.Ultracode.DispatcherPreflightTest do
     real = Path.expand("~/dev/zcode-cli")
 
     if File.regular?(Path.join(real, "package.json")) do
-      assert {out, 2} = preflight(real)
-      assert out =~ "bad --epoch value"
+      # The node verdict is a property of the machine's PATH: satisfied (stops
+      # at the epoch check, exit 2) or the typed measured refusal when an older
+      # node is first on PATH (observed: PATH=/usr/local/bin:$PATH puts node
+      # v20.13.0 first) -- never a raw trace and never a red suite.
+      case preflight(real) do
+        {out, 2} ->
+          assert out =~ "bad --epoch value"
+
+        {out, 127} ->
+          assert out =~ ~r/zcode package preflight FAILED: node \d+\.\d+\.\d+ < engines\.node >=/,
+                 out
+
+          refute out =~ ~r/node:internal|TypeError/, out
+      end
     end
   end
 end
