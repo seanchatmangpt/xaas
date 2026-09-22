@@ -53,7 +53,7 @@ Every flag is real and exercised:
 
 `--repo` names an entry in the validated multi-repo registry
 (`Xaas.Ultracode.Repos`): `config :xaas, :ultracode_repos` (the code-seeded
-baseline) merged with the durable file `~/xaas-worktrees/ultracode-repos.json`
+baseline) merged with the durable file `~/xaas/worktrees/ultracode-repos.json`
 (written ONLY by the registering task; file wins per alias). Inspect and
 extend it with:
 
@@ -79,9 +79,9 @@ are sibling wave-5 entries in the config baseline):
 
 | alias | clone | verifier (observed exit 0) | status |
 |---|---|---|---|
-| `aps` | `~/xaas-worktrees/repos/aps` | `aps-dod` + `aps-canonical` suites | ready |
-| `infinite-agentic-cli` | `~/xaas-worktrees/repos/infinite-agentic-cli` | `uv run --frozen pytest tests/test_analysis.py -q` | reserved: suite `infinite-agentic-cli-dod` (sensing `generic-pytest` recorded) |
-| `bitstar` | `~/xaas-worktrees/repos/bitstar` | `uv run --frozen pytest test_cli_fixes.py -q` | reserved: suite `bitstar-dod` (sensing `generic-pytest` recorded) |
+| `aps` | `~/xaas/worktrees/repos/aps` | `aps-dod` + `aps-canonical` suites | ready |
+| `infinite-agentic-cli` | `~/xaas/worktrees/repos/infinite-agentic-cli` | `uv run --frozen pytest tests/test_analysis.py -q` | reserved: suite `infinite-agentic-cli-dod` (sensing `generic-pytest` recorded) |
+| `bitstar` | `~/xaas/worktrees/repos/bitstar` | `uv run --frozen pytest test_cli_fixes.py -q` | reserved: suite `bitstar-dod` (sensing `generic-pytest` recorded) |
 
 ## 2. The budget law (what makes this ONE run, not an infinite cron)
 
@@ -116,9 +116,9 @@ refusal (`{:campaign_already_running, id}`), never a silent overlap.
   (`PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d xaas_dev -c "select 1;"`).
   `DEV_DB_*` env vars override the postgres/postgres defaults.
 - **APS clone + operator dirs** (dev.exs, already configured):
-  `~/xaas-worktrees/repos/aps` (the sensed repo),
-  `~/xaas-worktrees/runs` (provisioned epoch worktrees),
-  `~/xaas-worktrees/tickets` (tickets, campaign ledgers, wave receipts).
+  `~/xaas/worktrees/repos/aps` (the sensed repo),
+  `~/xaas/worktrees/runs` (provisioned epoch worktrees),
+  `~/xaas/worktrees/tickets` (tickets, campaign ledgers, wave receipts).
 - **zcode CLI + a Node ≥ 22.5 for the worker** (`node:sqlite` is required by
   `bin/zcode.js`): `ZCODE_CLI_DIR` defaults to `/Users/sac/dev/zcode-cli`;
   the dispatcher inherits your PATH, so **a PATH whose first `node` is
@@ -141,8 +141,8 @@ Each wave is one `Xaas.Ultracode.Autonomic.run/1` pass (identical to
 
 1. **Sense**: `priv/verifiers/aps_backlog.py` derives work items at an exact
    `base_sha` in a throwaway worktree.
-2. **Plan**: per item — a provisioned worktree under `~/xaas-worktrees/runs/`,
-   a ticket JSON under `~/xaas-worktrees/tickets/`, and a `Run` + `:running`
+2. **Plan**: per item — a provisioned worktree under `~/xaas/worktrees/runs/`,
+   a ticket JSON under `~/xaas/worktrees/tickets/`, and a `Run` + `:running`
    `Epoch` bound to that worktree.
 3. **Act**: the dispatcher in directed mode —
    `scripts/xaas-glm-failover-dispatcher.sh --epoch <uuid>` (lock-free,
@@ -162,9 +162,9 @@ Each wave is one `Xaas.Ultracode.Autonomic.run/1` pass (identical to
 Paths, for campaign run id `<ID>` (first 8 hex = `<ID8>`):
 
 - Campaign ledger (the durable session record):
-  `~/xaas-worktrees/tickets/campaign-<ID8>/ledger.ndjson`
-- Per-dispatch state/logs: `~/xaas-worktrees/tickets/campaign-<ID8>/dispatch-wave-<n>/`
-- Per-wave terminal receipts: `~/xaas-worktrees/tickets/autonomic-<nonce>/receipt.json`
+  `~/xaas/worktrees/tickets/campaign-<ID8>/ledger.ndjson`
+- Per-dispatch state/logs: `~/xaas/worktrees/tickets/campaign-<ID8>/dispatch-wave-<n>/`
+- Per-wave terminal receipts: `~/xaas/worktrees/tickets/autonomic-<nonce>/receipt.json`
 - Ash→OCEL telemetry egress (already live): `<build>/priv/ocel/ash-actions.ndjson`
   (the `Xaas.Telemetry.OcelAshEmitter` handlers write this at boot — observed
   in every campaign boot log).
@@ -187,7 +187,7 @@ the ledger's `attempt_start`/`item_done` events):
 ```bash
 python3 - <<'EOF'
 import json, subprocess
-led = f"/Users/sac/xaas-worktrees/tickets/campaign-<ID8>/ledger.ndjson"
+led = f"/Users/sac/xaas/worktrees/tickets/campaign-<ID8>/ledger.ndjson"
 ids = [json.loads(l)["data"]["epoch_id"] for l in open(led)
        if '"attempt_start"' in l]
 print(" ".join(ids))
@@ -316,15 +316,17 @@ telemetry line, and quit.
    never install launchd, never run two --once passes concurrently with
    yourself, never retry a failed pass within the same tick.
 4. TELEMETRY. Append EXACTLY ONE ndjson line (create the directory first with
-   mkdir -p; this path is OUTSIDE the repo — never write anywhere under
-   /Users/sac/xaas):
-     /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson
+   mkdir -p; writing inside /Users/sac/xaas is permitted ONLY to this exact
+   sanctioned gitignored telemetry path — never write anywhere else under
+   /Users/sac/xaas, no repo-tree writes):
+     /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson
    Line schema (single line, UTF-8, UTC ISO8601 ts):
      {"ts":"...","kind":"ultracode-keepalive/1","tick":K,"run_id":"...","state":"running","waves_executed":N,"wave_budget":M,"seconds_remaining":S,"in_flight":{"total":T,"leased":L,"unleased":U},"topup":{"ran":true,"exit":0},"action":"topup|none","reason":"..."}
 5. END SILENTLY. Produce no prose, no summary, no recommendations. Hard
    prohibitions: never git push anything (force or otherwise), never check
    out or touch main or any branch, never edit or delete files except
-   appending to /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson, never
+   appending to the sanctioned telemetry path
+   /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson, never
    restart or kill any process or server, never run mix test/compile, never
    widen these commands with extra flags. If any command errors, record the
    error in the telemetry line's "reason" field and still end silently.
@@ -332,7 +334,7 @@ Hard limits: at most 48 ticks at 10-minute cadence (= 8 hours). Killing this
 automation (deleting it from the scheduler) is the operator cut.
 ```
 
-Reading the telemetry: `tail -f /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson`.
+Reading the telemetry: `tail -f /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson`.
 
 ## 9. Smoke evidence (bounded, 2026-09-20, this branch)
 
