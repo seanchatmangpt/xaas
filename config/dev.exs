@@ -172,6 +172,20 @@ config :xaas, :ultracode_backlog_scripts, %{
   "nounverb" => "nounverb_backlog.py"
 }
 
+# Sensing-profile names -> deterministic profiles (`Xaas.Ultracode.Sensing.
+# profile/1`): the Autonomic sense stage's fallback when a repo's backlog
+# script fails (xaas has no fitting script; the aps default exits 2 on it).
+# "xaas-sjira" reads the xaas clone's own docs/sjira tickets: open = the
+# `## Status` section's first word NOT in `closed`; BLOCKED tickets are real
+# but not worker-workable, so they are closed to the wave.
+config :xaas, :ultracode_sensing_profiles, %{
+  "xaas-sjira" => %{
+    "type" => "jira_dir",
+    "dir" => "docs/sjira",
+    "closed" => ["DONE", "MERGED", "LANDED", "CLOSED", "RESOLVED", "ALIVE", "BLOCKED"]
+  }
+}
+
 # APS's own five canonical gates, run by the fabric at the integration head.
 aps_env = %{
   "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",

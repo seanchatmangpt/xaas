@@ -237,6 +237,14 @@ config :phoenix, :json_library, Jason
 # stays `aps_backlog.py`. Names only, never caller-supplied paths.
 config :xaas, :ultracode_verifier_suites, %{}
 config :xaas, :ultracode_backlog_scripts, %{}
+# The sensing-profile NAME registry (`Xaas.Ultracode.Sensing.profile/1`): a
+# repo's registered `sensing:` name maps to a deterministic profile (the same
+# shape `Sensing.derive/2` takes). Driven by the Autonomic sense stage's
+# fallback when a repo's backlog script fails; an unmapped name stays a
+# visible registration gap (`Repos.gaps/1`) and a typed sense refusal, never
+# a silent skip. Environments that use it register named profiles in their
+# own config file.
+config :xaas, :ultracode_sensing_profiles, %{}
 config :xaas, :ultracode_worktree_root, nil
 config :xaas, :ultracode_ticket_dir, nil
 # Opt-in module value (an atom, e.g. Xaas.Ultracode.TargetSuites) whose devs/0

@@ -16,7 +16,8 @@ defmodule Xaas.Ultracode.ReposTest do
             :ultracode_repos,
             :ultracode_repos_file,
             :ultracode_worktree_root,
-            :ultracode_verifier_suites
+            :ultracode_verifier_suites,
+            :ultracode_sensing_profiles
           ],
           into: %{},
           do: {key, Application.get_env(:xaas, key)}
@@ -29,6 +30,7 @@ defmodule Xaas.Ultracode.ReposTest do
     Application.delete_env(:xaas, :ultracode_repos_file)
     Application.delete_env(:xaas, :ultracode_worktree_root)
     Application.delete_env(:xaas, :ultracode_verifier_suites)
+    Application.delete_env(:xaas, :ultracode_sensing_profiles)
 
     on_exit(fn ->
       for {key, value} <- original do
@@ -55,18 +57,28 @@ defmodule Xaas.Ultracode.ReposTest do
     assert entry.path == repo
     # No suites configured in this env: the gap is HONEST, not hidden.
     refute entry.suite_registered
+    # No IMPLEMENTED "aps" sensing profile either (APS sensing is
+    # script-primary): the fallback gap is honest the same way -- it bites
+    # only if the script ever fails.
+    refute entry.sensing_registered
   end
 
-  test "a structured entry with registered suites is ready with no gaps", %{repo: repo} do
+  test "a structured entry with registered suites and sensing profile is ready with no gaps", %{
+    repo: repo
+  } do
     Application.put_env(:xaas, :ultracode_verifier_suites, %{
       "demo-dod" => %{},
       "demo-canonical" => %{}
     })
 
+    Application.put_env(:xaas, :ultracode_sensing_profiles, %{
+      "demo-jira" => %{"type" => "jira_dir"}
+    })
+
     Application.put_env(:xaas, :ultracode_repos, %{
       "demo" => %{
         path: repo,
-        sensing: "aps",
+        sensing: "demo-jira",
         suite: "demo-dod",
         canonical_suite: "demo-canonical"
       }
@@ -75,6 +87,7 @@ defmodule Xaas.Ultracode.ReposTest do
     assert {:ok, entry} = Repos.resolve("demo")
     assert entry.suite_registered
     assert entry.canonical_suite_registered
+    assert entry.sensing_registered
     assert Repos.ready?(entry)
     assert Repos.gaps(entry) == []
   end
@@ -93,13 +106,37 @@ defmodule Xaas.Ultracode.ReposTest do
 
     assert {:ok, entry} = Repos.resolve("iac")
     refute entry.suite_registered
-    # The sensing name is recorded metadata (owned by Xaas.Ultracode.Sensing),
-    # never judged here.
+    # The sensing name rides on the entry, and since "generic-pytest" maps to
+    # no IMPLEMENTED profile here it is a VISIBLE registration gap -- the
+    # metadata is never silently ignored.
     assert entry.sensing == "generic-pytest"
-    # Explicit nil canonical_suite stays nil (canonical skipped), so only
-    # the suite gap is reported.
-    assert Repos.gaps(entry) == [:suite_not_registered]
+    refute entry.sensing_registered
+    # Explicit nil canonical_suite stays nil (canonical skipped), so the
+    # reported gaps are the suite AND the unimplemented sensing profile.
+    assert Repos.gaps(entry) == [:suite_not_registered, :sensing_profile_not_registered]
     refute Repos.ready?(entry)
+  end
+
+  test "registering the sensing profile closes the sensing gap without touching suites", %{
+    repo: repo
+  } do
+    Application.put_env(:xaas, :ultracode_sensing_profiles, %{
+      "generic-pytest" => %{"type" => "failing_tests", "command" => ["pytest", "-q"]}
+    })
+
+    Application.put_env(:xaas, :ultracode_repos, %{
+      "iac" => %{
+        "path" => repo,
+        "sensing" => "generic-pytest",
+        "suite" => "iac-dod",
+        "canonical_suite" => nil
+      }
+    })
+
+    assert {:ok, entry} = Repos.resolve("iac")
+    assert entry.sensing_registered
+    # The suite gap is independent: registering the profile never papers over it.
+    assert Repos.gaps(entry) == [:suite_not_registered]
   end
 
   test "an unknown alias is a typed refusal, never a guess" do

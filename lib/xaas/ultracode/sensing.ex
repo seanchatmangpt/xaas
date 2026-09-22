@@ -73,6 +73,20 @@ defmodule Xaas.Ultracode.Sensing do
       "source"          %{"file" => ..., "line" => ..., "text" => ...} -- the
                         exact artifact line the item came from
 
+  ## Registered profile names (the fallback seam)
+
+  A repo's registry entry CARRIES a profile name (`sensing: "xaas-sjira"`);
+  the name-to-profile mapping itself is explicit operator config --
+  `config :xaas, :ultracode_sensing_profiles` (`%{"xaas-sjira" => %{...}}
+  `, same shape `derive/2` takes) -- resolved by `profile/1`.
+  `registered?/1` is the registration-gap check `Xaas.Ultracode.Repos`
+  computes for every entry. An unknown name, or a name mapped to a
+  malformed profile, is a TYPED error -- never silently ignored. The
+  consumer is the Autonomic sense stage's fallback law: a repo's backlog
+  script that exits 0 wins unchanged; on a script failure the entry's
+  `sensing:` name drives `derive/2` over the SAME provisioned tree; with no
+  implemented profile the stage refuses typed.
+
   ## Determinism and pinning
 
   `derive/2` reads a CHECKOUT PATH; callers pin the tree by provisioning a
@@ -98,6 +112,43 @@ defmodule Xaas.Ultracode.Sensing do
   @id_re ~r/\A[A-Za-z0-9._:-]+\z/
 
   @type profile :: map()
+
+  @doc """
+  Resolves a REGISTERED profile NAME to its explicit profile from
+  `config :xaas, :ultracode_sensing_profiles`. This is the seam the
+  Autonomic sense stage's fallback drives: a registry entry's `sensing:`
+  name means nothing until it maps to a profile here, and the mapping is
+  validated fail-closed -- an unknown name is `{:unknown_sensing_profile,
+  name}`, a name mapped to a profile `derive/2` cannot normalize is
+  `{:invalid_sensing_profile, name, reason}`. Never a guess, never a silent
+  skip.
+  """
+  @spec profile(term()) ::
+          {:ok, profile()}
+          | {:error, {:unknown_sensing_profile, term()}}
+          | {:error, {:invalid_sensing_profile, term(), term()}}
+  def profile(name) when is_binary(name) do
+    profiles = Application.get_env(:xaas, :ultracode_sensing_profiles, %{})
+
+    with {:ok, prof} <- Map.fetch(profiles, name),
+         {:ok, _normalized} <- normalize(prof) do
+      {:ok, prof}
+    else
+      :error -> {:error, {:unknown_sensing_profile, name}}
+      {:error, reason} -> {:error, {:invalid_sensing_profile, name, reason}}
+    end
+  end
+
+  def profile(other), do: {:error, {:unknown_sensing_profile, other}}
+
+  @doc """
+  True iff `profile/1` resolves `name` to an implemented profile -- the
+  registration-gap check `Xaas.Ultracode.Repos` computes for every entry
+  (an unimplemented name is a visible `:sensing_profile_not_registered`
+  gap, never silently ignored).
+  """
+  @spec registered?(term()) :: boolean()
+  def registered?(name), do: match?({:ok, _}, profile(name))
 
   @doc """
   Senses a REGISTERED repo alias at an exact `base_sha`: provisions a detached

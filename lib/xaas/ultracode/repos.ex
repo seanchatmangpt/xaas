@@ -61,17 +61,21 @@ defmodule Xaas.Ultracode.Repos do
   computed on every read (`gaps/1`, `ready?/1`) and printed by
   `mix xaas.ultracode.repos`. Dispatch still fails closed where the gap
   bites: `Run` admission refuses an unregistered suite
-  (`VerifierSuiteRegistered`). The entry's `sensing` name is RECORDED
-  metadata for the target (profile-driven sensing is owned by
-  `Xaas.Ultracode.Sensing`; the loop's script-backed aps stage is wired in
-  `Autonomic.sense/1`) -- this module never judges or resolves it.
+  (`VerifierSuiteRegistered`). The entry's `sensing` name is judged here only
+  as a REGISTRATION GAP: `sensing_registered` records whether the name maps
+  to an IMPLEMENTED profile (`config :xaas, :ultracode_sensing_profiles`,
+  `Sensing.registered?/1`), so an unknown name is a visible
+  `:sensing_profile_not_registered` gap -- never silently ignored. This
+  module never RESOLVES or interprets the profile itself (profile-driven
+  sensing is owned by `Xaas.Ultracode.Sensing`; the loop's script-backed
+  stage with the profile fallback is wired in `Autonomic.sense/1`).
 
   This module is registry-only: it never starts the application, never
   touches a database, and never runs a suite. It reads config, the
   filesystem, and git -- nothing else.
   """
 
-  alias Xaas.Ultracode.Verifier
+  alias Xaas.Ultracode.{Sensing, Verifier}
 
   @name_format ~r/^[a-z][a-z0-9_-]{0,31}$/
 
@@ -93,7 +97,8 @@ defmodule Xaas.Ultracode.Repos do
           required(:canonical_suite) => String.t() | nil,
           required(:worktree_root) => String.t() | nil,
           required(:suite_registered) => boolean(),
-          required(:canonical_suite_registered) => boolean() | nil
+          required(:canonical_suite_registered) => boolean() | nil,
+          required(:sensing_registered) => boolean()
         }
 
   @typedoc "A source-level warning (a corrupt registry file, a bad env shape)."
@@ -169,7 +174,8 @@ defmodule Xaas.Ultracode.Repos do
          worktree_root: worktree_root,
          suite_registered: Verifier.registered?(fields.suite),
          canonical_suite_registered:
-           if(fields.canonical_suite, do: Verifier.registered?(fields.canonical_suite))
+           if(fields.canonical_suite, do: Verifier.registered?(fields.canonical_suite)),
+         sensing_registered: Sensing.registered?(fields.sensing)
        }}
     else
       {:error, reason} -> {:error, {:invalid_repo_entry, alias, reason}}
@@ -209,10 +215,14 @@ defmodule Xaas.Ultracode.Repos do
     end
   end
 
-  @doc "True when the entry has no registration gaps (suites registered)."
+  @doc "True when the entry has no registration gaps (suites + sensing profile registered)."
   @spec ready?(entry()) :: boolean()
-  def ready?(%{suite_registered: suite?, canonical_suite_registered: canonical?}) do
-    suite? and (is_nil(canonical?) or canonical?)
+  def ready?(%{
+        suite_registered: suite?,
+        canonical_suite_registered: canonical?,
+        sensing_registered: sensing?
+      }) do
+    suite? and sensing? and (is_nil(canonical?) or canonical?)
   end
 
   @doc "The registration gaps of an entry (empty iff `ready?/1`), for listings and docs."
@@ -223,7 +233,8 @@ defmodule Xaas.Ultracode.Repos do
       if(is_nil(entry.canonical_suite) or entry.canonical_suite_registered,
         do: nil,
         else: :canonical_suite_not_registered
-      )
+      ),
+      if(entry.sensing_registered, do: nil, else: :sensing_profile_not_registered)
     ]
     |> Enum.reject(&is_nil/1)
   end
