@@ -1,0 +1,32 @@
+[
+  {
+    "id": "fa-engineer",
+    "view": "FA Morning Brief",
+    "concern": "what requires engineer judgment now",
+    "projection": "operator"
+  },
+  {
+    "id": "fa-manager",
+    "view": "FA Operating Board",
+    "concern": "queue blockers evidence and throughput",
+    "projection": "management"
+  },
+  {
+    "id": "executive",
+    "view": "FA Agent Board Deck",
+    "concern": "value risk adoption and decision",
+    "projection": "executive"
+  },
+  {
+    "id": "architecture",
+    "view": "System / Space",
+    "concern": "canonical state projections authority and reuse",
+    "projection": "architecture"
+  },
+  {
+    "id": "assessment",
+    "view": "WD Case Study 2 Deck",
+    "concern": "requirements tradeoffs evidence and delivery",
+    "projection": "assessment"
+  }
+]

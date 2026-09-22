@@ -1,0 +1,33 @@
+{
+  "id": "wd-cs2-architecture-episode-v26.9.22",
+  "profile": "Semantic TOGAF v26.9.22",
+  "equation": "A = μ(O*)",
+  "subject": "WD Case Study 2 semantic failure analysis",
+  "baseline": "fragmented failure-analysis evidence requiring repeated human reconstruction",
+  "target": "closed semantic FA quality loop with reusable verified prior art",
+  "gap": "closure from canonical state to work, views, capabilities, verification and learning",
+  "current_conformance": "ST-4 CONSTRAINED",
+  "target_conformance": "ST-6 AUTONOMIC",
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "authority": "SELECT_CONSTRUCT_ONLY",
+  "human_gate": "ENGINEER_DISPOSITION_REQUIRED",
+  "current_adm_phase": "G",
+  "next_adm_phase": "H",
+  "canonical_state": "O*",
+  "projections": [
+    "ocel",
+    "sjira",
+    "sa2a",
+    "morning-brief",
+    "case-view",
+    "board-view",
+    "ash-xaas",
+    "generated-runtime"
+  ],
+  "non_claims": [
+    "WD_PRODUCTION_DATA",
+    "PRODUCTION_DO",
+    "MEASURED_MTTR",
+    "ST7_PLUS"
+  ]
+}

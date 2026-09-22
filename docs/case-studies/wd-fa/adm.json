@@ -1,0 +1,52 @@
+[
+  {
+    "phase": "PRELIMINARY",
+    "meaning": "principles vocabulary governance evidence ceilings authority",
+    "wd": "STOGAF profile and BRCE boundary"
+  },
+  {
+    "phase": "A",
+    "meaning": "architecture vision",
+    "wd": "reduce repeated FA work without weakening trust"
+  },
+  {
+    "phase": "B",
+    "meaning": "business architecture",
+    "wd": "closed FA quality operating loop"
+  },
+  {
+    "phase": "C",
+    "meaning": "information systems architecture",
+    "wd": "evidence graph sJira SA2A views APIs"
+  },
+  {
+    "phase": "D",
+    "meaning": "technology architecture",
+    "wd": "Ash Postgres OCEL RDF/SHACL ggen browser courts"
+  },
+  {
+    "phase": "E",
+    "meaning": "opportunities and solutions",
+    "wd": "reusable evidence triage work receipt experience blocks"
+  },
+  {
+    "phase": "F",
+    "meaning": "migration planning",
+    "wd": "30/60/90"
+  },
+  {
+    "phase": "G",
+    "meaning": "implementation governance",
+    "wd": "Chicago Playwright exact-head receipts"
+  },
+  {
+    "phase": "H",
+    "meaning": "architecture change management",
+    "wd": "MachineExperience changes future standard work"
+  },
+  {
+    "phase": "REQUIREMENTS",
+    "meaning": "continuous requirements management",
+    "wd": "sJira obligations and evidence"
+  }
+]

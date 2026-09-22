@@ -1,0 +1,62 @@
+[
+  {
+    "level": "ST-0",
+    "name": "DOCUMENTED",
+    "standing": "ALIVE",
+    "evidence": "RFC and case-study architecture package"
+  },
+  {
+    "level": "ST-1",
+    "name": "ADDRESSABLE",
+    "standing": "ALIVE",
+    "evidence": "stable case/object/work identities"
+  },
+  {
+    "level": "ST-2",
+    "name": "LINKED",
+    "standing": "ALIVE",
+    "evidence": "OCEL and semantic relations"
+  },
+  {
+    "level": "ST-3",
+    "name": "PROVENANCED",
+    "standing": "ALIVE",
+    "evidence": "source/evidence/receipt provenance"
+  },
+  {
+    "level": "ST-4",
+    "name": "CONSTRAINED",
+    "standing": "ALIVE",
+    "evidence": "deterministic admission and authority ceiling"
+  },
+  {
+    "level": "ST-5",
+    "name": "GENERATED",
+    "standing": "PARTIAL_ALIVE",
+    "evidence": "projection manufacture closure in progress"
+  },
+  {
+    "level": "ST-6",
+    "name": "AUTONOMIC",
+    "standing": "PARTIAL_ALIVE",
+    "evidence": "sJira/SA2A closure in progress"
+  },
+  {
+    "level": "ST-7",
+    "name": "ACTUATED",
+    "standing": "UNKNOWN",
+    "evidence": "no production DO authority"
+  },
+  {
+    "level": "ST-8",
+    "name": "CLOSED_LOOP",
+    "standing": "UNKNOWN",
+    "evidence": "no production consequence reconciliation"
+  },
+  {
+    "level": "ST-9",
+    "name": "LEARNING",
+    "standing": "UNKNOWN",
+    "evidence": "no longitudinal production learning evidence"
+  }
+]
