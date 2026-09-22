@@ -39,6 +39,8 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="stogaf-requirements"]')).toContainText("R-16");
     await expect(page.locator('[data-testid="stogaf-viewpoints"]')).toContainText("FA Morning Brief");
     await expect(page.locator('[data-testid="stogaf-workgraph-boundary"]')).toContainText("SJ-011 → SJ-020");
+    await expect(page.locator('[data-testid="autonomic-next"]')).toContainText("SJ-011");
+    await expect(page.locator('[data-testid="autonomic-intelligence"]')).toContainText("NONE");
 
     const architectureResponse = await page.request.get("/case-studies/wd-fa/stogaf.json");
     expect(architectureResponse.ok()).toBeTruthy();
@@ -55,6 +57,8 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     expect(architecture.requirements).toHaveLength(16);
     expect(architecture.capabilities.some((capability) => capability.plane === "DO")).toBeFalsy();
     expect(architecture.excluded_production_do.plane).toBe("DO");
+    expect(architecture.autonomic_planner.next.id).toBe("SJ-011");
+    expect(architecture.autonomic_planner.next.runtime_intelligence).toBe("NONE");
     expect(architecture.demo_work.partial_firmware.standing).toBe("BLOCKED_ON_EVIDENCE");
     expect(architecture.demo_capabilities.novel_x.some((capability) => capability.plane === "DO")).toBeFalsy();
 

@@ -3,11 +3,16 @@ defmodule XaasWeb.WdFaStogafController do
 
   alias Xaas.CaseStudies.WdFa.{CapabilitySelector, Evaluation, Ingestion, MorningBrief, ProcessDelta, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
+  alias Xaas.CaseStudies.WdFa.Stogaf.AutonomicPlanner
   alias Xaas.CaseStudies.WdFa.Stogaf.{Capabilities, Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
   def show(conn, _params) do
     json(conn, %{
       architecture: Stogaf.demo_projection(),
+      autonomic_planner: %{
+        current_standings: AutonomicPlanner.initial_standings(),
+        next: planner_projection()
+      },
       morning_brief: MorningBrief.summary(),
       ingestion_fixture: Ingestion.ingest_known_fixture(),
       offline_evaluation: Evaluation.offline_report(),
@@ -30,5 +35,13 @@ defmodule XaasWeb.WdFaStogafController do
       excluded_production_do: Capabilities.production_do(),
       dfcm: Metrics.summary()
     })
+  end
+
+  defp planner_projection do
+    case AutonomicPlanner.next(AutonomicPlanner.initial_standings()) do
+      {:work, work} -> work
+      {:blocked, ids} -> %{standing: "BLOCKED", blocked: ids}
+      :complete -> %{standing: "COMPLETE"}
+    end
   end
 end

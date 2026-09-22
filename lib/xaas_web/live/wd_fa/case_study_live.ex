@@ -12,7 +12,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   alias Xaas.CaseStudies.WdFa
   alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Evaluation, Ingestion, LearningLoop, MorningBrief, ProcessDelta, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
-  alias Xaas.CaseStudies.WdFa.Stogaf.ArchitectureChange
+  alias Xaas.CaseStudies.WdFa.Stogaf.{ArchitectureChange, AutonomicPlanner}
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
   @impl true
@@ -31,6 +31,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
      |> assign(:case_capabilities, CapabilitySelector.for_case("known_firmware"))
      |> assign(:architecture, Stogaf.demo_projection())
+     |> assign(:autonomic_next, AutonomicPlanner.next(AutonomicPlanner.initial_standings()))
      |> assign(:requirements, Requirements.all())
      |> assign(:viewpoints, Viewpoints.all())
      |> assign(:conformance, Conformance.all())
@@ -295,6 +296,20 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         <p data-testid="stogaf-workgraph-boundary">
           SJ-011 → SJ-020 · SELECT/CONSTRUCT only
         </p>
+
+
+        <h3 class="mt-4 font-semibold">Autonomic work selection</h3>
+        <%= case @autonomic_next do %>
+          <% {:work, work} -> %>
+            <p data-testid="autonomic-next">{work.id} · {work.selection_basis}</p>
+            <p data-testid="autonomic-intelligence">
+              runtime intelligence: {work.runtime_intelligence}
+            </p>
+          <% {:blocked, ids} -> %>
+            <p data-testid="autonomic-next">BLOCKED · {Enum.join(ids, ",")}</p>
+          <% :complete -> %>
+            <p data-testid="autonomic-next">COMPLETE</p>
+        <% end %>
 
         <h3 class="mt-4 font-semibold">Architecture building blocks</h3>
         <ul data-testid="stogaf-building-blocks">

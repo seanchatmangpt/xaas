@@ -1,0 +1,21 @@
+{
+  "subject": "wd-cs2-stogaf-architecture-episode",
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "note": "Initial repository projection before exact-head admission. Presence of files does not promote standing.",
+  "standings": {
+    "SJ-011": "UNKNOWN",
+    "SJ-012": "UNKNOWN",
+    "SJ-013": "UNKNOWN",
+    "SJ-014": "UNKNOWN",
+    "SJ-015": "UNKNOWN",
+    "SJ-016": "UNKNOWN",
+    "SJ-017": "UNKNOWN",
+    "SJ-018": "UNKNOWN",
+    "SJ-019": "UNKNOWN",
+    "SJ-020": "UNKNOWN"
+  },
+  "expected_next": "SJ-011",
+  "selector": "LOWEST_DECLARED_ELIGIBLE_WORK_ORDER",
+  "runtime_intelligence": "NONE",
+  "authority": "SELECT_CONSTRUCT_ONLY"
+}
