@@ -129,8 +129,16 @@ refusal (`{:campaign_already_running, id}`), never a silent overlap.
   `export PATH="/opt/homebrew/bin:$HOME/.asdf/shims:$PATH"` — then verify
   `which mix` still resolves under asdf shims, or symlink just `node` into a
   private bin dir and prepend that.
-- **Auth**: no `INTERNAL_API_TOKEN` needed — the campaign loop is in-process
-  (Ash + the dispatcher's direct psql/zcode path), no HTTP surface involved.
+- **Auth**: the campaign loop itself is in-process (Ash + the dispatcher's
+  direct psql/zcode path), but the WORKER leg is not: workers claim over the
+  `xaas-execution` MCP endpoint, whose `RequireInternalApiToken` plug fails
+  closed with 503 `internal_api_misconfigured` when the server was started
+  without `INTERNAL_API_TOKEN`. Start phx WITH the token matching the
+  plugin's `zcode_xaas_token` (observed fail-closed 2026-09-21: every worker
+  BLOCKED "cannot reach xaas-execution" until the server was restarted with
+  the token). The worker session also needs a project `.mcp.json` in
+  `ZCODE_CLI_DIR` registering `xaas-execution` (shape: the plugin cache's
+  `.mcp.json`) — headless sessions do not register it from user scope alone.
 - **GLM provider quota**: each wave spawns up to `capacity` real zcode/GLM
   sessions; `[1302]`/429 rate-kills are expected occasionally (§6).
 
