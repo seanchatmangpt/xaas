@@ -131,4 +131,65 @@ defmodule Xaas.Ultracode.DispatcherPreflightOutputTest do
 
     assert :refused = preflight(dir)
   end
+
+  # Permanent guards for the real-path containment (fs.realpathSync on both
+  # sides), mirroring ZcodePackageFalsifierTest.
+  defp package_json(dir) do
+    File.write!(
+      Path.join(dir, "package.json"),
+      Jason.encode!(%{
+        "name" => "zcode-app-cli",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=1.0.0"}
+      })
+    )
+  end
+
+  test "a bin/ directory symlinked outside the CLI dir is refused" do
+    outside = tmp("preflight-bindir-outside")
+    File.write!(Path.join(outside, "zcode.js"), "")
+
+    dir = tmp("preflight-bindir")
+    :ok = File.ln_s(outside, Path.join(dir, "bin"))
+    package_json(dir)
+
+    assert :refused = preflight(dir)
+  end
+
+  test "a symlink loop and a dangling symlink are refused" do
+    loop = tmp("preflight-loop")
+    File.mkdir_p!(Path.join(loop, "bin"))
+    :ok = File.ln_s("zcode.js", Path.join(loop, "bin/zcode.js"))
+    package_json(loop)
+    assert :refused = preflight(loop)
+
+    dangling = tmp("preflight-dangling")
+    File.mkdir_p!(Path.join(dangling, "bin"))
+    :ok = File.ln_s("/nonexistent-zcode-launcher.js", Path.join(dangling, "bin/zcode.js"))
+    package_json(dangling)
+    assert :refused = preflight(dangling)
+  end
+
+  test "control: a symlink that stays inside the CLI dir is admitted" do
+    dir = tmp("preflight-inside")
+    File.mkdir_p!(Path.join(dir, "dist"))
+    File.mkdir_p!(Path.join(dir, "bin"))
+    File.write!(Path.join(dir, "dist/cli.js"), "")
+    :ok = File.ln_s("../dist/cli.js", Path.join(dir, "bin/zcode.js"))
+    package_json(dir)
+
+    assert {:ok, "bin/zcode.js"} = preflight(dir)
+  end
+
+  test "control: a CLI dir reached through a symlinked path is admitted" do
+    real = tmp("preflight-real-cli")
+    File.mkdir_p!(Path.join(real, "bin"))
+    File.write!(Path.join(real, "bin/zcode.js"), "")
+    package_json(real)
+
+    via = Path.join(tmp("preflight-via"), "cli-link")
+    :ok = File.ln_s(real, via)
+
+    assert {:ok, "bin/zcode.js"} = preflight(via)
+  end
 end

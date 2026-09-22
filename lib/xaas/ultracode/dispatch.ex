@@ -122,7 +122,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run, Worktrees, ZcodePackage}
+  alias Xaas.Ultracode.{Epoch, ProcessGroup, Receipt, Run, Worktrees, ZcodePackage}
 
   # Keep below the run default `epoch_timeout_seconds` (900), same bound the
   # bash dispatcher documents: the lease clock is the provider's to spend,
@@ -765,7 +765,12 @@ defmodule Xaas.Ultracode.Dispatch do
 
     with {:ok, pkg} <- ZcodePackage.load(cli_dir),
          {:ok, checked_node} <- check_node(node_path),
-         :ok <- ZcodePackage.check_node(pkg, checked_node) do
+         :ok <-
+           ZcodePackage.check_node(
+             pkg,
+             checked_node,
+             Keyword.take(opts, [:node_version_timeout_ms])
+           ) do
       {:ok,
        %{
          cli_dir: pkg.dir,
@@ -835,42 +840,9 @@ defmodule Xaas.Ultracode.Dispatch do
   # group-wide TERM, bounded grace, then KILL; safe when already gone)
   # ------------------------------------------------------------------
 
-  # The kill is verified, not assumed: TERM, then poll the group until it is
-  # gone (or the grace budget expires), then KILL, then poll again. The
-  # dispatch must not report completion while a group member might still be
-  # dying -- observed 2026-09-20: under test load a forked child sat
-  # pre-exec for seconds, so a blind grace sleep let a straggler outlive
-  # its own dispatch result.
-  defp kill_group(os_pid) do
-    _ = System.cmd("/bin/kill", ["-TERM", "--", "-#{os_pid}"], stderr_to_stdout: true)
-    await_group_gone(os_pid, System.monotonic_time(:millisecond) + @grace_ms)
-
-    unless group_alive?(os_pid) do
-      :ok
-    else
-      _ = System.cmd("/bin/kill", ["-KILL", "--", "-#{os_pid}"], stderr_to_stdout: true)
-      await_group_gone(os_pid, System.monotonic_time(:millisecond) + @kill_confirm_ms)
-
-      if group_alive?(os_pid) do
-        # A same-uid KILL cannot be ignored; reaching here means the group
-        # identity itself is misbehaving. Say so loudly, never silently.
-        Logger.warning("[ultracode] dispatch process group -#{os_pid} still alive after KILL")
-      end
-
-      :ok
-    end
-  end
-
-  defp await_group_gone(os_pid, deadline) do
-    if group_alive?(os_pid) and System.monotonic_time(:millisecond) < deadline do
-      Process.sleep(100)
-      await_group_gone(os_pid, deadline)
-    end
-  end
-
-  defp group_alive?(os_pid) do
-    match?({_, 0}, System.cmd("/bin/kill", ["-0", "--", "-#{os_pid}"], stderr_to_stdout: true))
-  end
+  # The kill is verified, not assumed (TERM, poll, KILL, poll): see
+  # `Xaas.Ultracode.ProcessGroup`, shared with the node --version probe.
+  defp kill_group(os_pid), do: ProcessGroup.kill(os_pid, @grace_ms, @kill_confirm_ms)
 
   # Killing the group usually closes the port first; closing a closed port
   # raises, and that must not turn a timeout into a spawn error.
