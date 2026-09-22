@@ -43,12 +43,14 @@ defmodule Xaas.Ultracode.TargetSuites do
   the declarations themselves -- it refuses bad commands (empty/non-binary or
   placeholder-embedded argv elements) and bad timeouts (missing, non-integer,
   zero/negative, or above the 1h cap) so a typo cannot reach close time. It
-  also gates the court-receipt declarations: a step's `receipt` must be a
+  also gates the DoD-trust declarations (`probes`, `require_probes`, `health`;
+  see `Xaas.Ultracode.Probes` and `Xaas.Ultracode.SuiteHealth`) and the
+  court-receipt declarations: a step's `receipt` must be a
   boolean, its `receipt_argv` a well-formed argv list, and the suite's
   `result_format` one of `Xaas.Ultracode.CourtReceipt.result_formats/0`.
   """
 
-  alias Xaas.Ultracode.{CourtReceipt, Verifier}
+  alias Xaas.Ultracode.{CourtReceipt, Probes, SuiteHealth, Verifier}
 
   @max_timeout_ms 3_600_000
 
@@ -238,11 +240,36 @@ defmodule Xaas.Ultracode.TargetSuites do
               [ctx <> "result_format must be a string, got #{inspect(other)}"]
           end
 
-        env_problems ++ step_problems ++ toolchain_problems ++ format_problems
+        env_problems ++
+          step_problems ++
+          toolchain_problems ++ format_problems ++ dod_trust_problems(ctx, suite)
 
       _ ->
         [ctx <> "suite must be a map"]
     end
+  end
+
+  # DoD-trust declarations (falsifier probes, probe requirement, health court).
+  defp dod_trust_problems(ctx, suite) do
+    probe_problems = for problem <- Probes.problems(Map.get(suite, :probes)), do: ctx <> problem
+
+    require_problems =
+      case Map.get(suite, :require_probes) do
+        nil -> []
+        flag when is_boolean(flag) -> []
+        other -> [ctx <> "require_probes must be a boolean, got #{inspect(other)}"]
+      end
+
+    health_problems =
+      case Map.fetch(suite, :health) do
+        :error ->
+          []
+
+        {:ok, health} ->
+          for problem <- SuiteHealth.declaration_problems(health), do: ctx <> problem
+      end
+
+    probe_problems ++ require_problems ++ health_problems
   end
 
   defp env_problems(_ctx, nil), do: []

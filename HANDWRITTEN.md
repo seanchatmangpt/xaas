@@ -47,6 +47,12 @@ priv/repo/migrations/20260920230000_add_semantic_bridge_to_ultracode_runs.exs, l
 
 test/xaas/ultracode/{semantic_receipt,semantic_crown}_test.exs | Chicago qualification of the exporter, court adapter, materialize task and the end-to-end crown with a refused-candidate control (2026-09-20) | no admitted gate pack for the fabric-to-graph loop | ultracode-actuation-lease-pack gates/ | 2026-09-20
 
+lib/xaas/ultracode/probes.ex, lib/xaas/ultracode/suite_health.ex, lib/xaas/ultracode/order_probes.ex, lib/mix/tasks/xaas.ultracode.suite_health.ex | DoD-trust courts: falsifier-probe mutation catalogue applied to a scratch clone of the head under test (`replace`/`delete_line`/`delete_file`/`truncate`/`revert_commit`, symlink and path containment), the suite health court (green passes, red fails, sealed receipt, fail-closed quarantine derived from the latest receipt, sweep) and the Semantic Jira order-falsifier reader (front matter + `xaas-probes` block) (2026-09-21) | no admitted pack renders a mutation-based vacuity court or a verifier-suite drift/quarantine controller; nearest prior art is gate-vacuity-court-pack's falsifier template and the `priv/verifiers/aps_dod_court.py` mutant catalogue (APS-only) | a `chicago-dod-court-pack` (probe catalogue + health court generated from the gate catalogue) | 2026-09-21
+
+lib/xaas/ultracode/{verifier,target_suites,autonomic,sensing}.ex, lib/xaas/ultracode/validations/verifier_suite_registered.ex (DoD-trust edits) | probe phase and `suite_unhealthy` gate in `Verifier.run/2`, `probes`/`require_probes`/`health` registration checks in `TargetSuites.validate/1`, `Autonomic.suite_health_gate/1` + typed-refusal short-circuit + ticket probes, `jira_dir` item probes, Run admission quarantine refusal (2026-09-21) | extends the hand-written verifier/controller rows above; same missing pack | ultracode-actuation-lease-pack + chicago-dod-court-pack | 2026-09-21
+
+test/support/dod_fixture.ex, test/xaas/ultracode/{probes,verifier_probes,suite_health,order_probes,dod_trust_wiring}_test.exs | Chicago qualification of the DoD-trust courts over real git repos, real subprocess suites, the real receipt store, real Postgres-backed Run/Lease and the real mix task; includes a deliberately vacuous (`exit 0`) suite refused end to end (2026-09-21) | no admitted gate pack for verifier-suite vacuity/drift qualification | chicago-dod-court-pack gates/ | 2026-09-21
+
 ## Paydown plan
 
 1. Qualify the rendered plugin against ZCode 3.11.2 live (hook event names,
