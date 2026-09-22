@@ -1,5 +1,9 @@
 import json, os
-OUT=os.path.expanduser("~/xaas/docs/sjira/v26.9.21")
+HERE=os.path.dirname(os.path.abspath(__file__))
+OUT=os.environ.get("SJIRA_OUT",HERE)
+# Observed standing is a generator INPUT, not a hand edit of the generated order file:
+# <STANDING>/NNN.json = {standing, standing_note?, repository_suffix?, done:[acceptance idx], receipts:"NNN.receipts.md"}
+STANDING=os.environ.get("SJIRA_STANDING",os.path.join(HERE,"standing"))
 X=("seanchatmangpt/xaas","8e72cfcb85bd901ad067589295598eb7580a1442")
 A=("seanchatmangpt/autofde-lab","2f4825a232bfea543764d13f3b75fcb0ff33da1f")
 G=("seanchatmangpt/gymact","4ab72e685302aa591f65fecad0ec73129ecd3589")
@@ -32,7 +36,7 @@ wo(3,"handwritten-paydown-zcode-plugin","Pay down HANDWRITTEN.md: promote zcode 
  ["ggen renders the plugin files from the pack","HANDWRITTEN.md has strictly fewer Active rows","`git diff` of rendered output is empty on re-sync"],
  ["a rendered file differs from the checked-in one","HANDWRITTEN.md row removed while the file is still hand-edited"],
  "cd ~/xaas && ggen sync && git diff --exit-code && mix test",["HANDWRITTEN.md","priv/zcode_plugin/**","lib/xaas/generated/**"],proj=("jira","machine","verification","receipt")),
-wo(4,"resource-adoption-registry-exemptions","Adopt Xaas.Resource on the registry-exempt resources",X,"ALIVE",
+wo(4,"resource-adoption-registry-exemptions","Adopt Xaas.Resource on the registry-exempt resources",X,"PARTIAL_ALIVE",
  "test/xaas/semantics/registry_test.exs carries a disclosed `@pending` exemption list (CouplingRun, EventLog, AutofdePlannerCacheHotset/CacheStats/Candidate/Catalog/Match; plus library-generated RevokeNonce and *.Version). Migrate the seven owned resources to `use Xaas.Resource` (base_resources) and shrink the list to library-generated only.",
  ["commit on main: 'exempt library-generated resources in registry test'","`Xaas.Resource` is the configured base_resources entry in config/config.exs"],
  ["`@pending` contains only RevokeNonce","`mix test test/xaas/semantics` passes","deny-by-default policy floor preserved on each touched resource"],
@@ -69,11 +73,27 @@ wo(9,"ash-ai-dependency-retest","Retest the ash_ai dependency probe against curr
  ["result reported without running deps.get + compile + test"],
  "cd <worktree> && mix deps.get && mix compile && mix test",["mix.exs","mix.lock"],proj=("jira","verification","receipt")),
 ]
+def observed(w):
+    """Overlay observed standing/ticks/receipts for one order. ALIVE requires every DoD item ticked and a receipts file."""
+    p=os.path.join(STANDING,f"{w['n']:03d}.json")
+    if not os.path.exists(p):
+        return dict(done=[],note=None,suffix="",receipts="")
+    o=json.load(open(p))
+    n=len(w['md']['acceptance'])
+    done=sorted(set(o.get("done",[])))
+    assert all(isinstance(i,int) and 0<=i<n for i in done), f"{p}: done index outside acceptance[0..{n})"
+    receipts=open(os.path.join(STANDING,o["receipts"])).read() if o.get("receipts") else ""
+    if o["standing"]=="ALIVE":
+        assert len(done)==n, f"{p}: ALIVE with {n-len(done)} unticked DoD item(s)"
+        assert receipts.startswith("## Receipts"), f"{p}: ALIVE without a receipts section"
+    w['md']['standing']=o["standing"]
+    return dict(done=done,note=o.get("standing_note"),suffix=o.get("repository_suffix",""),receipts=receipts)
 idx=[]
 for w in W:
     fn=f"{w['n']:03d}-{w['slug']}.md"
+    ov=observed(w)
     m=w['md']
-    body=f"---\n{json.dumps(m,indent=2)}\n---\n\n# {m['identity']}: {m['title']}\n\n- **Standing**: {m['standing']}\n\n## Status\n{m['standing']}\n- **Repository**: {m['repository']} @ `{m['base_sha'][:7]}`\n\n## Description\n{m['description']}\n\n## Evidence\n"+"".join(f"- {e}\n" for e in w['evidence'])+"\n## Definition of done\n"+"".join(f"- [ ] {a}\n" for a in m['acceptance'])+f"\nRunnable check:\n\n```sh\n{w['dod']}\n```\n\n## Falsifiers\n"+"".join(f"- {f}\n" for f in m['falsifiers'])
+    body=f"---\n{json.dumps(m,indent=2)}\n---\n\n# {m['identity']}: {m['title']}\n\n- **Standing**: {m['standing']}{' ('+ov['note']+')' if ov['note'] else ''}\n\n## Status\n{m['standing']}\n- **Repository**: {m['repository']} @ `{m['base_sha'][:7]}`{ov['suffix']}\n\n## Description\n{m['description']}\n\n## Evidence\n"+"".join(f"- {e}\n" for e in w['evidence'])+"\n## Definition of done\n"+"".join(f"- [{'x' if i in ov['done'] else ' '}] {a}\n" for i,a in enumerate(m['acceptance']))+f"\nRunnable check:\n\n```sh\n{w['dod']}\n```\n\n## Falsifiers\n"+"".join(f"- {f}\n" for f in m['falsifiers'])+("\n"+ov['receipts'] if ov['receipts'] else "")
     open(f"{OUT}/{fn}","w").write(body)
     idx.append(dict(id=m['identity'],path=fn,standing=m['standing'],repository=m['repository'],dependencies=[d['upstream'] for d in m['dependencies']]))
 json.dump(idx,open(f"{OUT}/index.json","w"),indent=2)

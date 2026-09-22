@@ -14,6 +14,7 @@ Stream `sj004-registry` (branch `errc2/sj004-registry`) for `seanchatmangpt/xaas
 | Worker | wave-1 construction was zcode default agent (mixed); this stream is claude_direct verification and docs |
 | Compile | `mix compile --warnings-as-errors` exit 0 |
 | Tests | 63 (dirs), 9 (semantics), 199 (27-file union), 18 (ontology/actuation): 0 failures each |
+| Repair | fb85ca7 hand-edited a generated order file; fixed forward: order standing/receipts are now generator inputs, plus a guard test (see Repair) |
 | Pre-existing failure | `mix ash_postgres.generate_migrations --check` exit 1 at base and head, identical pending set |
 
 ## Merge reconciliation
@@ -104,3 +105,39 @@ plus the clean rerun, not on a base full run.
 - Handwritten: seven one-line `use` swaps and the `registry_test.exs` list shrink (wave-1, zcode
   agent), plus the order and stream docs here. No generator exists for adopting a base resource on
   existing Ash modules: UNSUPPORTED(generator-capability), recorded in `HANDWRITTEN.md`.
+
+## Repair: hand-edited generated output (fix-forward of fb85ca7)
+
+Finding: `docs/sjira/v26.9.21/004-*.md` and `index.json` are outputs of `generate.py`. Commit
+`fb85ca7` edited the order file by hand (ticked boxes, header bound, observed-head Repository suffix,
+the whole Receipts section) and patched only the standing token in `generate.py`. Its message says
+the `generate.py` change means "regeneration does not revert" ALIVE. That claim was false for
+everything but the bare standing token: regenerating from the checked-in `generate.py` produced
+`- **Standing**: ALIVE` with three unchecked DoD boxes and no Receipts section (reproduced by
+running the checked-in generator into a scratch dir and diffing). This correction supersedes that
+sentence of the `fb85ca7` message; the commit itself stays (fix-forward).
+
+Root cause: observed standing had no generator input, so the only way to record it was to edit
+generated output. Fix:
+
+1. `generate.py` reads `standing/NNN.json` (`standing`, `standing_note`, `repository_suffix`, `done`
+   acceptance indices, `receipts` file) and `standing/NNN.receipts.md`, and renders them into the
+   order file and `index.json`. The declared order-4 standing in `generate.py` returns to
+   `PARTIAL_ALIVE` (pre-evidence); the observed `ALIVE` lives in `standing/004.json`.
+2. The generator asserts that `ALIVE` needs every DoD item ticked and a `## Receipts` section.
+3. `OUT` defaulted to a hard-coded `~/xaas/...`, so a run from a worktree wrote into the primary
+   tree. It now defaults to the script's own directory (`SJIRA_OUT` overrides; `SJIRA_STANDING`
+   overrides the input dir).
+4. Equivalence proof before changing content: with the overlay extracted verbatim from `fb85ca7`,
+   regeneration into a scratch dir was byte-identical for all nine orders and `index.json`.
+5. Guard `test/xaas/sjira_orders_generation_test.exs` (6 tests, real `python3` subprocess and files):
+   regeneration equals the checked-in ten files, ALIVE implies ticked DoD plus receipts, the
+   generator refuses ALIVE with unticked DoD or without receipts, a hand-edit is reported as
+   divergence, `index.json` standing agrees with the front matter.
+
+Scope note: the guard covers all nine orders. Any other wave-1 stream that hand-edits its own order
+file will fail it on integration; the remedy is the same `standing/NNN.*` inputs.
+
+The receipts in `standing/004.receipts.md` describe the subject head `0f73fa8`; this repair changed
+docs, `generate.py` and one test only, no `lib/` file (`git diff 0f73fa8 HEAD -- lib/` is empty).
+
