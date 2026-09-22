@@ -58,5 +58,38 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -nE 'Xaas\.Actuation|Reactor\.run|Ash\.create|Ash\.update|Ash\.destroy' \
-            lib/xaas/semantics/computation.ex
+          elixir -e '
+          source = File.read!("lib/xaas/semantics/computation.ex")
+          ast = Code.string_to_quoted!(source)
+
+          forbidden_calls = MapSet.new([
+            {[:Reactor], :run},
+            {[:Ash], :create},
+            {[:Ash], :update},
+            {[:Ash], :destroy}
+          ])
+
+          {_ast, hits} =
+            Macro.prewalk(ast, [], fn
+              {:alias, _, [{:__aliases__, _, [:Xaas, :Actuation]}]} = node, acc ->
+                {node, [{:alias, "Xaas.Actuation"} | acc]}
+
+              {{:., _, [{:__aliases__, _, module}, fun]}, _, _args} = node, acc ->
+                if MapSet.member?(forbidden_calls, {module, fun}) do
+                  label = Enum.map_join(module, ".", &Atom.to_string/1)
+                  {node, [{:call, label, fun} | acc]}
+                else
+                  {node, acc}
+                end
+
+              node, acc ->
+                {node, acc}
+            end)
+
+          if hits == [] do
+            IO.puts("sa2a computation boundary: no forbidden actuation AST")
+          else
+            IO.inspect(Enum.reverse(hits), label: "forbidden actuation dependency")
+            System.halt(1)
+          end
+          '

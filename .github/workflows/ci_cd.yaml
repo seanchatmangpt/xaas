@@ -74,7 +74,7 @@ jobs:
       MIX_ENV: test
     services:
       postgres:
-        image: postgres:15.2
+        image: pgvector/pgvector:0.8.0-pg15
         env:
           POSTGRES_PASSWORD: postgres
         ports:
