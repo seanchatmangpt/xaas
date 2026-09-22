@@ -1,7 +1,7 @@
 defmodule XaasWeb.WdFaStogafController do
   use XaasWeb, :controller
 
-  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, Evaluation, Ingestion, MorningBrief, SemanticWork}
+  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, Evaluation, Ingestion, MorningBrief, ProcessDelta, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{Capabilities, Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
 
@@ -11,6 +11,7 @@ defmodule XaasWeb.WdFaStogafController do
       morning_brief: MorningBrief.summary(),
       ingestion_fixture: Ingestion.ingest_known_fixture(),
       offline_evaluation: Evaluation.offline_report(),
+      process_delta: ProcessDelta.verified_replay_delta(),
       demo_work: %{
         known_firmware: SemanticWork.for_case("known_firmware"),
         partial_firmware: SemanticWork.for_case("partial_firmware"),

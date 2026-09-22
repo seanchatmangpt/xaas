@@ -6,7 +6,7 @@ defmodule Xaas.CaseStudies.WdFa.Stogaf.Requirements do
     %{id: "R-02", name: "supporting evidence", block: "EvidenceGraph", standing: "ALIVE_FIXTURE"},
     %{id: "R-03", name: "closest prior cases", block: "EvidenceGraph", standing: "ALIVE_FIXTURE"},
     %{id: "R-04", name: "specific next action", block: "SemanticWorkOrder", standing: "ALIVE_FIXTURE"},
-    %{id: "R-05", name: "multimodal corpus", block: "EvidenceGraph", standing: "PARTIAL_ALIVE"},
+    %{id: "R-05", name: "multimodal corpus", block: "EvidenceGraph", standing: "ALIVE_FIXTURE"},
     %{id: "R-06", name: "structured/unstructured joins", block: "EvidenceGraph", standing: "ALIVE_FIXTURE"},
     %{id: "R-07", name: "grounding and traceability", block: "VerificationReceipt", standing: "ALIVE_FIXTURE"},
     %{id: "R-08", name: "prevent confidently wrong root cause", block: "TriageAdmission", standing: "ALIVE_FIXTURE"},

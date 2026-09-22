@@ -59,7 +59,7 @@ wdcs2:req01 a stogaf:Requirement ; dct:title "Rank probable failure modes" ; sto
 wdcs2:req02 a stogaf:Requirement ; dct:title "Bind supporting evidence" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "evidence-binding" .
 wdcs2:req03 a stogaf:Requirement ; dct:title "Expose closest prior cases" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "prior-art-applicability" .
 wdcs2:req04 a stogaf:Requirement ; dct:title "Construct next action" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "next-action-present" .
-wdcs2:req05 a stogaf:Requirement ; dct:title "Preserve multimodal corpus provenance" ; stogaf:standing "PARTIAL_ALIVE" ; stogaf:verifiedBy "source-modality-provenance" .
+wdcs2:req05 a stogaf:Requirement ; dct:title "Preserve multimodal corpus provenance" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "source-modality-provenance" .
 wdcs2:req06 a stogaf:Requirement ; dct:title "Join structured and unstructured context" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "ocel-object-relations" .
 wdcs2:req07 a stogaf:Requirement ; dct:title "Ground with traceability" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "exact-source-binding" .
 wdcs2:req08 a stogaf:Requirement ; dct:title "Prevent confidently wrong root cause" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "false-known-negative-control" .

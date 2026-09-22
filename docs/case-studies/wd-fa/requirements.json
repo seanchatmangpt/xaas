@@ -32,7 +32,7 @@
     "requirement": "multimodal_corpus",
     "building_block": "EvidenceGraph",
     "court": "source-modality-provenance",
-    "standing": "PARTIAL_ALIVE"
+    "standing": "ALIVE_FIXTURE"
   },
   {
     "id": "R-06",

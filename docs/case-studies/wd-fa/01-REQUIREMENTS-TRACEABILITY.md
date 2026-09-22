@@ -8,7 +8,7 @@ Each requirement is bound to an architecture element, implementation surface, fa
 | R-02 | Supporting evidence | every recommendation binds evidence identities | OCEL objects + evidence list | recommendation with no supporting evidence is refused/partial | ALIVE repo-local |
 | R-03 | Closest prior FA cases | prior art is explicit and applicability-bounded | `prior_cases` | nearest case cannot create KNOWN | ALIVE repo-local |
 | R-04 | Specific next action | work is typed and owned | `next_action`, `owning_team`, sJira | action must exist for every surfaced case | ALIVE repo-local |
-| R-05 | Messy corpus incl. images/plots | preserve modality/source provenance | EvidenceArtifact architecture | source-less normalization is non-conformant | PARTIAL_ALIVE |
+| R-05 | Messy corpus incl. images/plots | preserve modality/source provenance | structured + narrative + SVG plot ingestion fixture | source-less normalization is non-conformant | ALIVE representative fixture; production connectors UNKNOWN |
 | R-06 | Structured joins | serial/lot/supplier/BOM/FW/station are object relations | OCEL object graph | flat text-only join is insufficient | ALIVE fixture |
 | R-07 | Grounding / traceability | every claim retains source and standing | OCEL + receipts + STOGAF | unsupported claim cannot be promoted | ALIVE fixture |
 | R-08 | Avoid confidently wrong root cause | probability cannot grant admission | deterministic evidence closure | false-known negative control | ALIVE fixture |

@@ -10,7 +10,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Evaluation, Ingestion, LearningLoop, MorningBrief, SemanticWork}
+  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Evaluation, Ingestion, LearningLoop, MorningBrief, ProcessDelta, SemanticWork}
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.ArchitectureChange
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
@@ -27,6 +27,7 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
      |> assign(:morning_brief, MorningBrief.summary())
      |> assign(:ingestion_fixture, Ingestion.ingest_known_fixture())
      |> assign(:evaluation, Evaluation.offline_report())
+     |> assign(:process_delta, ProcessDelta.verified_replay_delta())
      |> assign(:semantic_work, SemanticWork.for_case("known_firmware"))
      |> assign(:case_capabilities, CapabilitySelector.for_case("known_firmware"))
      |> assign(:architecture, Stogaf.demo_projection())
@@ -302,6 +303,21 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         </ul>
       </section>
 
+
+
+      <section class="mt-6 rounded border p-4" data-testid="process-delta">
+        <h2 class="font-semibold">Verified replay process delta</h2>
+        <p data-testid="delta-before">
+          before: {@process_delta.before.classification} · {@process_delta.before.work_standing}
+        </p>
+        <p data-testid="delta-after">
+          after: {@process_delta.after.classification} · {@process_delta.after.work_standing}
+        </p>
+        <p data-testid="delta-retired">
+          novel investigation retired: {if @process_delta.novel_investigation_retired, do: "YES", else: "NO"}
+        </p>
+        <p data-testid="delta-time">production time saved: {@process_delta.production_time_saved}</p>
+      </section>
 
       <section class="mt-6 rounded border p-4" data-testid="offline-evaluation">
         <h2 class="font-semibold">Offline falsification court</h2>
