@@ -54,7 +54,14 @@ jobs:
             -r lib/xaas/semantics/computation.ex \
             -e 'ExUnit.start(); Code.require_file("test/xaas/semantics_computation_test.exs")'
 
-      - name: Assert no actuation dependency
+      - name: Assert no actuation dependency (grep guard, main lineage)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -nE 'Xaas\.Actuation|Reactor\.run|Ash\.create|Ash\.update|Ash\.destroy' \
+            lib/xaas/semantics/computation.ex
+
+      - name: Assert no actuation dependency (AST court, PR #60 lineage)
         shell: bash
         run: |
           set -euo pipefail
