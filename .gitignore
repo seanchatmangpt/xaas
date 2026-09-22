@@ -100,3 +100,7 @@ _build_clean/
 __pycache__/
 *.pyc
 tmp_out/
+
+# Consolidated xaas* runtime trees (2026-09-21 migration)
+/worktrees/
+/tmp/

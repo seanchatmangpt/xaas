@@ -32,7 +32,7 @@ defmodule Xaas.Ultracode.Repos do
       as before this registry) or a MAP with `path` plus optional `sensing`,
       `suite`, `canonical_suite`, `worktree_root` (string or atom keys).
     * the durable registry file (`config :xaas, :ultracode_repos_file`,
-      default `~/xaas-worktrees/ultracode-repos.json` in dev) -- written ONLY
+      default `~/xaas/worktrees/ultracode-repos.json` in dev) -- written ONLY
       through `register/2` (the `mix xaas.ultracode.repos --register` path),
       which validates before writing and merges additively. File entries WIN
       over env entries for the same alias: the file is the operator's latest
