@@ -1,0 +1,66 @@
+{
+  "identity": {
+    "subject": "XAAS-26922-26-watch: ultracode-watch.mjs stall detector + takeover driver (ggen-rendered)",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "7c6cf32fc85b4687d89ca31acacad995563a2019",
+    "base_sha": "ec06b7c8b956ef5a7cfe21a25b013f274062c853"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "workflow task XAAS-26922-26 watch stage: worktree /Users/sac/wt/v26922/xaas/uc-watch on branch law/XAAS-26922-26-watch; local commit only, no push/merge",
+    "actor": "claude-opus-5-5 subagent (workflow-orchestrated)"
+  },
+  "consequence": {
+    "commits": ["7c6cf32fc85b4687d89ca31acacad995563a2019"],
+    "files_changed": [
+      "priv/zcode_plugin/templates/script-ultracode-watch.mjs.tmpl",
+      "priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs",
+      "priv/zcode_plugin/templates/skill-ultracode-takeover.md.tmpl",
+      "priv/zcode_plugin/marketplace/xaas-fabric/skills/ultracode-takeover/SKILL.md",
+      "HANDWRITTEN.md"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "cd priv/zcode_plugin && ggen sync run && cd ../.. && git status --porcelain | wc -l",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "ggen 26.8.18 sync exit 0; 0 porcelain lines after sync at 7c6cf32 (committed projection == render); two consecutive syncs hash-identical over marketplace/",
+        "output_sha256": "1f1f91060adbcc1b5ac9080552986e975e7426178954628a9107b09c3ca5b601"
+      },
+      {
+        "cmd": "cp -R ggen.toml ontology.ttl templates <tmp>/ && (cd <tmp> && ggen sync run) && diff -r <tmp>/marketplace priv/zcode_plugin/marketplace",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "fresh render in a clean copy is byte-identical to the committed marketplace/ (same check as test/xaas/zcode_plugin/projection_test.exs, run without mix)"
+      },
+      {
+        "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs selftest",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "node v26.8.1: 11 passed, 0 failed, 4 skipped. PASS: liveness alive / pid-reuse / killed; scan dead stale-vs-fresh; scan alive 45m + API-failure marker (with 503 false-positive bait); closed records skipped; ARGS_UNAVAILABLE refusal (no lock); LOCKED refusal; 8-process O_EXCL race exactly one winner; print passes plutil -lint; run-once without --auto takes no action. SKIP (runtime absent at sibling scripts/ultracode-run.mjs): scan+runtime complete journal; 6-process barrier takeover race; CLI takeover exit 0; run-once --auto",
+        "output_sha256": "4d2ac3775d41e038e66430ff82c746a404a3e380dba313a94a1a7e7c0b25fe90"
+      },
+      {
+        "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs print | plutil -lint -",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "<stdin>: OK",
+        "output_sha256": "20f836261f578f30ece49c8a9629c63e719e055602b07ca1cd6b88b4c57c0b7e"
+      },
+      {
+        "cmd": "! grep -nE 'unittest\\.mock|Mock\\(|MagicMock|patch\\(|monkeypatch|jest\\.(mock|fn)' priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs priv/zcode_plugin/templates/script-ultracode-watch.mjs.tmpl",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "zero mock matches; only test double is the scripted agent backend selected by ULTRACODE_AGENT_CMD, justified in the selftest header"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/XAAS-26922-26-watch.json on branch law/XAAS-26922-26-watch"
+  },
+  "standing": {
+    "value": "PARTIAL_ALIVE",
+    "derived_from": "selftest at 7c6cf32: the 11 runtime-independent cases ALIVE; the 4 runtime-dependent cases (dry-run confirmation, completed-marking, barrier takeover race, run-once --auto) are UNVERIFIED against the real ultracode-run.mjs, which is not yet on this branch (law/XAAS-26922-26-rt-A/B unmerged); integration stage reruns selftest with the runtime beside the watcher"
+  }
+}
