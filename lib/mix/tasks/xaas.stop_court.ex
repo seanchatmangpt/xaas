@@ -42,14 +42,23 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   the gate receipt. It writes one R-schema gate receipt per gate to
   `<receipts-dir>/<gate>.json` (`~/.claude/dfcm/receipt.schema.json`:
   identity, authority, consequence, replay, standing). A gate's standing is
-  `ALIVE` when its court command exited 0 and `UNKNOWN` otherwise (a failing
-  or missing court witnesses nothing). Court exit-code contract, recorded as
+  `ALIVE` when its court command exited 0, `BLOCKED:<reason>` for a typed
+  exit 77 (below), and `UNKNOWN` otherwise (a failing or missing court
+  witnesses nothing). Court exit-code contract, recorded as
   `gate.outcome`:
 
     * `0` -> `passed` (standing `ALIVE`);
     * `75` (`unknown_exit/0`, sysexits EX_TEMPFAIL) -> `machinery_absent`: the
       court printed `UNKNOWN: <gate> machinery lands in lane <LANE>`
       (standing `UNKNOWN`);
+    * `77` (`blocked_exit/0`, sysexits EX_NOPERM) -> `blocked`: every witness
+      of the court held and its only open item is an edge the court may not
+      close itself (e.g. operator acceptance, GC23-12 lane V23-H). Its last
+      output line must be typed `BLOCKED(<reason>): ... (broken_term <term>)`
+      with `<reason>` in `[a-z][a-z0-9_]*` and `<term>` a Chatman broken term
+      of the R schema; the gate standing is then `BLOCKED:<reason>` and the
+      receipt's `standing.broken_term` is `<term>`. An exit 77 without such a
+      line is `court_failed` (an untyped block witnesses nothing);
     * `124` after the deadline -> `timeout` (standing `UNKNOWN`);
     * anything else -> `court_failed` (standing `UNKNOWN`).
 
@@ -149,9 +158,15 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   @default_timeout_s 900
 
   # Court exit-code contract: 0 passed (ALIVE); @unknown_exit = the gate's
-  # machinery has not landed (UNKNOWN); @timeout_exit = deadline (UNKNOWN);
-  # anything else = the court ran and witnessed nothing (UNKNOWN).
+  # machinery has not landed (UNKNOWN); @blocked_exit = every witness held and
+  # the one open item is an edge outside the court (BLOCKED:<reason>, typed
+  # last line required); @timeout_exit = deadline (UNKNOWN); anything else =
+  # the court ran and witnessed nothing (UNKNOWN).
   @unknown_exit 75
+  @blocked_exit 77
+  @blocked_line ~r/\ABLOCKED\(([a-z][a-z0-9_]*)\)/
+  @broken_terms ~w(mu_on_O admission_vacuous mu_unlawful R_missing_identity R_missing_authority
+                   R_missing_consequence R_missing_replay R_missing_standing R_not_fed_back)
 
   @perl "/usr/bin/perl"
   @wrapper "setpgrp(0,0); alarm(shift @ARGV); exec @ARGV or exit 127;"
@@ -296,6 +311,14 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   @doc "The court exit code that means the gate's machinery has not landed (standing UNKNOWN)."
   @spec unknown_exit() :: 75
   def unknown_exit, do: @unknown_exit
+
+  @doc """
+  The court exit code that means every witness held and the one open item is
+  an edge the court may not close (standing `BLOCKED:<reason>` from a typed
+  `BLOCKED(<reason>): ... (broken_term <term>)` last line).
+  """
+  @spec blocked_exit() :: 77
+  def blocked_exit, do: @blocked_exit
 
   @doc """
   The contract tuple digest: `"sha256:" <> hex(sha256(canonical JSON))` over
@@ -820,8 +843,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
     duration_ms = System.monotonic_time(:millisecond) - started
 
-    standing = if status == :exited and exit_code == 0, do: "ALIVE", else: "UNKNOWN"
-    outcome = outcome(status, exit_code)
+    {standing, outcome, broken_term} = judge_exit(status, exit_code, tail)
     path = gate_receipt_path(gate, ctx)
 
     summary =
@@ -852,12 +874,15 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         ],
         "durable_location" => Path.relative_to(path, ctx.repo)
       },
-      "standing" => %{
-        "value" => standing,
-        "derived_from" =>
-          "court command of #{ctx.checkpoint}/#{gate.id} exited #{exit_code}" <>
-            " (#{outcome}) at #{ctx.subject_sha}; ALIVE iff exit 0"
-      },
+      "standing" =>
+        %{
+          "value" => standing,
+          "derived_from" =>
+            "court command of #{ctx.checkpoint}/#{gate.id} exited #{exit_code}" <>
+              " (#{outcome}) at #{ctx.subject_sha}; ALIVE iff exit 0, BLOCKED iff exit" <>
+              " #{@blocked_exit} with a typed BLOCKED(<reason>) (broken_term <term>) line"
+        }
+        |> put_broken_term(broken_term),
       "gate" => %{
         "checkpoint" => ctx.checkpoint,
         "gate" => gate.id,
@@ -880,6 +905,46 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       outcome: outcome
     }
   end
+
+  # {standing, outcome, broken_term} of one court run (the exit-code contract
+  # in the moduledoc). A BLOCKED standing needs the court's typed last line;
+  # an exit 77 without one witnesses nothing and is court_failed.
+  defp judge_exit(:exited, 0, _tail), do: {"ALIVE", "passed", nil}
+
+  defp judge_exit(:exited, @blocked_exit, tail) do
+    case blocked_line(tail) do
+      {:ok, reason, term} -> {"BLOCKED:" <> reason, "blocked", term}
+      :error -> {"UNKNOWN", "court_failed", nil}
+    end
+  end
+
+  defp judge_exit(status, exit_code, _tail), do: {"UNKNOWN", outcome(status, exit_code), nil}
+
+  @doc """
+  Parses a court's typed BLOCKED line (its last non-empty output line):
+  `{:ok, reason, broken_term}` for `BLOCKED(<reason>): ... (broken_term
+  <term>)` with `<term>` one of the R schema's broken terms, else `:error`.
+  """
+  @spec blocked_line(String.t()) :: {:ok, String.t(), String.t()} | :error
+  def blocked_line(output) when is_binary(output) do
+    line =
+      output
+      |> String.split("\n", trim: true)
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+      |> List.last() || ""
+
+    with [_, reason] <- Regex.run(@blocked_line, line),
+         [_, term] <- Regex.run(~r/\(broken_term ([A-Za-z_]+)\)\s*\z/, line),
+         true <- term in @broken_terms do
+      {:ok, reason, term}
+    else
+      _ -> :error
+    end
+  end
+
+  defp put_broken_term(standing, nil), do: standing
+  defp put_broken_term(standing, term), do: Map.put(standing, "broken_term", term)
 
   defp outcome(:timeout, _exit_code), do: "timeout"
   defp outcome(:exited, 0), do: "passed"

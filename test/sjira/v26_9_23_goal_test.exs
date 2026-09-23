@@ -396,9 +396,9 @@ defmodule Xaas.Sjira.V26923GoalTest do
       end
 
     # Courts already real: GC23-0 .. GC23-3 (V23-K), GC23-4 .. GC23-8 (V23-D),
-    # GC23-9 (V23-M), GC23-10 (V23-R), GC23-11 (V23-F). Only GC23-12 (V23-H)
-    # may still be the machinery-absent stub.
-    assert Enum.all?(stubs, &(&1 == 12)), "still stubbed: #{inspect(Enum.sort(stubs))}"
+    # GC23-9 (V23-M), GC23-10 (V23-R), GC23-11 (V23-F), GC23-12 (V23-H). No
+    # gate is the machinery-absent stub any more.
+    assert stubs == [], "still stubbed: #{inspect(Enum.sort(stubs))}"
   end
 
   test "courts/check_scripts.sh accepts the committed court scripts (real sh)" do
@@ -411,8 +411,11 @@ defmodule Xaas.Sjira.V26923GoalTest do
 
   # ------------------------------------------------------------------ the real stop court
 
-  # GC23-12 is the last gate whose court is still the machinery-absent stub
-  # (lane V23-H replaces it after V23-K); GC23-0..GC23-3 run real courts now.
+  # The real GC23-12 court (lane V23-H) runs here: every witness over the
+  # committed successor holds, and until the operator commits
+  # docs/sjira/v26.9.23/successor/ACCEPTED naming the successor prose digest
+  # its one open item is BLOCKED(operator_acceptance) (exit 77).
+  @tag timeout: 900_000
   test "the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete" do
     receipts = tmp_dir("v23_registry")
 
@@ -441,9 +444,20 @@ defmodule Xaas.Sjira.V26923GoalTest do
     assert Enum.map(report.gates, & &1.id) == Enum.map(0..12, &"GC23-#{&1}")
     assert report.stop == false
 
-    gc12 = Path.join(receipts, "GC23-12.json") |> File.read!() |> Jason.decode!()
-    assert gc12["standing"]["value"] == "UNKNOWN"
-    assert gc12["gate"]["outcome"] == "machinery_absent"
+    gc12_path = Path.join(receipts, "GC23-12.json")
+    gc12 = gc12_path |> File.read!() |> Jason.decode!()
+    assert {0, _} = validate([gc12_path])
+
+    if File.regular?(Path.join(@dir, "successor/ACCEPTED")) do
+      assert gc12["standing"]["value"] == "ALIVE", inspect(gc12["replay"])
+      assert gc12["gate"]["outcome"] == "passed"
+    else
+      assert gc12["standing"]["value"] == "BLOCKED:operator_acceptance", inspect(gc12["replay"])
+      assert gc12["standing"]["broken_term"] == "R_missing_authority"
+      assert gc12["gate"]["outcome"] == "blocked"
+      assert [%{"exit" => 77}] = gc12["replay"]["commands"]
+    end
+
     assert gc12["gate"]["env"]["XAAS_DIR"] == @repo
 
     # Required orders: every lane except V23-W (under the successor bucket, not the root).
@@ -989,6 +1003,52 @@ defmodule Xaas.Sjira.V26923GoalTest do
       end)
 
     assert outcomes == %{"GA" => "passed", "GB" => "machinery_absent", "GC" => "court_failed"}
+  end
+
+  # Lane V23-H: exit 77 is BLOCKED only with a typed last line (reason +
+  # R-schema broken term); an untyped or mistyped 77 witnesses nothing.
+  test "court exit-code contract: typed 77 blocked/BLOCKED:<reason> + broken_term, untyped 77 court_failed/UNKNOWN" do
+    assert StopCourt.blocked_exit() == 77
+    repo = fixture_repo()
+
+    write_fixture(repo, [
+      {"GA",
+       "echo 'BLOCKED(operator_acceptance): fixture awaits the operator (broken_term R_missing_authority)'; exit 77"},
+      {"GB", "echo 'BLOCKED: untyped'; exit 77"},
+      {"GC",
+       "echo 'BLOCKED(operator_acceptance): no such term (broken_term not_a_term)'; exit 77"}
+    ])
+
+    {code, out} = fixture_court(repo)
+    assert code == 1
+    assert out =~ ~r/^GA\s+Core\s+BLOCKED:operator_acceptance\s+77\s/m
+    assert out =~ ~r/^GB\s+Core\s+UNKNOWN\s+77\s/m
+    assert out =~ ~r/^GC\s+Core\s+UNKNOWN\s+77\s/m
+
+    receipts =
+      Map.new(~w(GA GB GC), fn id ->
+        path = Path.join(repo, "gate-receipts/#{id}.json")
+        assert {0, _} = validate([path])
+        {id, path |> File.read!() |> Jason.decode!()}
+      end)
+
+    assert receipts["GA"]["standing"]["value"] == "BLOCKED:operator_acceptance"
+    assert receipts["GA"]["standing"]["broken_term"] == "R_missing_authority"
+    assert receipts["GA"]["gate"]["outcome"] == "blocked"
+
+    for id <- ~w(GB GC) do
+      assert receipts[id]["standing"]["value"] == "UNKNOWN"
+      refute Map.has_key?(receipts[id]["standing"], "broken_term")
+      assert receipts[id]["gate"]["outcome"] == "court_failed"
+    end
+
+    assert StopCourt.blocked_line("x\nBLOCKED(operator_acceptance): y (broken_term mu_on_O)\n") ==
+             {:ok, "operator_acceptance", "mu_on_O"}
+
+    assert StopCourt.blocked_line(
+             "BLOCKED(operator_acceptance): y (broken_term mu_on_O)\nlater\n"
+           ) ==
+             :error
   end
 
   test "court env: XAAS_DIR is the repository under judgement, GGEN_IGNITER_DIR follows --ggen-igniter-dir" do

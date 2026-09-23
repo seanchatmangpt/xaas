@@ -1,0 +1,363 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.24",
+  "inputs": {
+    "dependencies_query_sha256": "sha256:d939849961b7a6385fbe73ac1891f1a3b7dbe2171a723ea687015b7ed77041f8",
+    "goal_sha256": "sha256:8a5b1b76e5697b88d06507fdf44fb88a7920c75185caf4761cecd40cb2ee1585",
+    "orders_sha256": "sha256:91357028bc558ac0b9ed6f1f013ef14027b2d72f3c8128bfe2065b618c68100a",
+    "work_orders_query_sha256": "sha256:46657c741e6951a171225f5b0efd04174e0d8842de6637a7ca1ce95bc05028b2"
+  },
+  "projection": "semantic-jira-pack bootstrap/work_orders.rq + dependencies.rq (Bootstrap.Graph.orders/3)",
+  "schema": "xaas/successor-work-graph/v1",
+  "work_orders": [
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#LastMile",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-3",
+      "consequence_class": "verification",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Postcondition proposition https://ggen-igniter.dev/sjira/v26.9.23#P-5fde57949cad3644 (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [1467, 1626) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-3 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-falsifier"
+      ],
+      "identity": "WO-14958CC7712C739E",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "An independent run of ggen sync --check on a fresh worktree at the produced head exits 0, and the same check exits non-zero when the recipe commit is reverted.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-5fde57949cad3644 or its gate GC24-3; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-14958CC7712C739E",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-5fde57949cad3644",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "An independent run of ggen sync --check on a fresh worktree at the produced head exits 0, and the same check exits non-zero when the recipe commit is reverted.",
+      "tuple_digest": "sha256:69e3e85717e565968829fe9a69c21fcb4935be9935083c7adb329ed1e6725a4b"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-225c3317ac8b1a7c-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#Core",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "consequence_class": "verification",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Falsifier proposition https://ggen-igniter.dev/sjira/v26.9.23#P-665cf62cda37215d (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [2158, 2259) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-2 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-225c3317ac8b1a7c-falsifier"
+      ],
+      "identity": "WO-225C3317AC8B1A7C",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-225c3317ac8b1a7c",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "A hand-edited generated file survives the repair while the ggen-sync-check court exits 0.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-665cf62cda37215d or its gate GC24-2; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-225C3317AC8B1A7C",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-225c3317ac8b1a7c-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-665cf62cda37215d",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "A hand-edited generated file survives the repair while the ggen-sync-check court exits 0.",
+      "tuple_digest": "sha256:5d20ca0fa6c4dac37e477efd0902025d77eed7c57c830f55ecc4f1484a53ac0f"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-84e5c77ba6e27329-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#LastMile",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-3",
+      "consequence_class": "verification",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Falsifier proposition https://ggen-igniter.dev/sjira/v26.9.23#P-1a6690f304a126bc (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [2260, 2356) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-3 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-84e5c77ba6e27329-falsifier"
+      ],
+      "identity": "WO-84E5C77BA6E27329",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-84e5c77ba6e27329",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "ggen sync --check still exits 0 after the recipe commit is reverted.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-1a6690f304a126bc or its gate GC24-3; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-84E5C77BA6E27329",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-84e5c77ba6e27329-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-1a6690f304a126bc",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "ggen sync --check still exits 0 after the recipe commit is reverted.",
+      "tuple_digest": "sha256:761e8f2f1c81003bc13e8fe6dde0dd457b35d96f249d32d0dcda4946725ad63f"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-95b42e31b8d14f21-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#Core",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "consequence_class": "verification",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Invariant proposition https://ggen-igniter.dev/sjira/v26.9.23#P-a4f1c33fd2841d94 (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [1788, 1879) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-2 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-95b42e31b8d14f21-falsifier"
+      ],
+      "identity": "WO-95B42E31B8D14F21",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-95b42e31b8d14f21",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "No LLM, network model API or zcode binary participates on the projection-drift repair path.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-a4f1c33fd2841d94 or its gate GC24-2; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-95B42E31B8D14F21",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-95b42e31b8d14f21-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-a4f1c33fd2841d94",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "No LLM, network model API or zcode binary participates on the projection-drift repair path.",
+      "tuple_digest": "sha256:749761e64e96106338a22c6074c14e6cc315c5caa92c4efb0d76e4ee85f6edbb"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-a5bdbed88ad1a65c-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#Core",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-1",
+      "consequence_class": "verification",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Postcondition proposition https://ggen-igniter.dev/sjira/v26.9.23#P-4e5c43114996b4e8 (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [1062, 1238) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-1 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-a5bdbed88ad1a65c-falsifier"
+      ],
+      "identity": "WO-A5BDBED88AD1A65C",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-a5bdbed88ad1a65c",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "The ggen-sync-check verifier runs ggen sync --check in a clean worktree of the episode subject and exits non-zero whenever a generated file differs from what ggen sync renders.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-4e5c43114996b4e8 or its gate GC24-1; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-A5BDBED88AD1A65C",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-a5bdbed88ad1a65c-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-4e5c43114996b4e8",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "The ggen-sync-check verifier runs ggen sync --check in a clean worktree of the episode subject and exits non-zero whenever a generated file differs from what ggen sync renders.",
+      "tuple_digest": "sha256:8e4bdc911cb471c1d1fab699fb44bed46f289685e916bf06719539f4746faae9"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-eb2622dc89b96973-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#Core",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "consequence_class": "verification",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Invariant proposition https://ggen-igniter.dev/sjira/v26.9.23#P-ad49046a63dbed74 (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [1880, 1942) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-2 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-eb2622dc89b96973-falsifier"
+      ],
+      "identity": "WO-EB2622DC89B96973",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-eb2622dc89b96973",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "Only files that ggen sync renders change in the repair commit.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-ad49046a63dbed74 or its gate GC24-2; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-EB2622DC89B96973",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-eb2622dc89b96973-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-ad49046a63dbed74",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "Only files that ggen sync renders change in the repair commit.",
+      "tuple_digest": "sha256:3baf0b583e8435f9eed4b5b95f737d7e00c51d151bb12a79b6c0ea009a1a8e0c"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-f0d81444c49fc00d-acceptance"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "boundary_class": "https://ggen-igniter.dev/ontology/semantic-jira#Core",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "consequence_class": "postcondition",
+      "dependencies": [],
+      "description": "Manufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Postcondition proposition https://ggen-igniter.dev/sjira/v26.9.23#P-107a4577b52df3e4 (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [1270, 1432) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-2 and not witnessed by an ALIVE receipt.",
+      "evidence_ceiling": "EXECUTED_VERIFIED",
+      "evidence_horizon": "EXECUTED_VERIFIED",
+      "exclusions": [
+        "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+        "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+        "The repair uses no network access beyond ggen pack fetch."
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-f0d81444c49fc00d-falsifier"
+      ],
+      "identity": "WO-F0D81444C49FC00D",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-f0d81444c49fc00d",
+      "path_scope": [
+        "unassigned"
+      ],
+      "postcondition": "The capability recipe:ggen-sync resolves to the recipe-worker provider, which runs ggen sync on the drifted subject and commits only files that ggen sync renders.",
+      "projections": [
+        "jira"
+      ],
+      "promotion_rule": "Standing advances only from an ADMITTED receipt whose identity.subject names https://ggen-igniter.dev/sjira/v26.9.23#P-107a4577b52df3e4 or its gate GC24-2; the sj:standing literal of this order is a shape placeholder.",
+      "replay_identity": "semantic-jira:GC-26.9.24:WO-F0D81444C49FC00D",
+      "repository": "seanchatmangpt/xaas",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-f0d81444c49fc00d-court"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "required_receipt_classes": [
+        "postcondition"
+      ],
+      "requires_capability": "recipe:ggen-sync",
+      "standing": "UNKNOWN",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-107a4577b52df3e4",
+      "successor_policy": "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24",
+      "title": "The capability recipe:ggen-sync resolves to the recipe-worker provider, which runs ggen sync on the drifted subject and commits only files that ggen sync renders.",
+      "tuple_digest": "sha256:9d4680c21c87f2c33fcfbcd90d94fc162f569e6bc25eaff86bb2fbfb01f11687"
+    }
+  ]
+}

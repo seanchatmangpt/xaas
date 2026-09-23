@@ -1,0 +1,185 @@
+[
+ {
+  "kind": "Authority",
+  "required_by": "GC24-0",
+  "boundary_class": "FirstMile",
+  "statement": "Only the operator accepts the successor prose, by committing docs/sjira/v26.9.23/successor/ACCEPTED containing its sha256.",
+  "quote": "The operator accepts it only by committing\ndocs/sjira/v26.9.23/successor/ACCEPTED containing the sha256 of this file."
+ },
+ {
+  "kind": "Successor",
+  "boundary_class": "Successor",
+  "statement": "Until the operator accepts the prose, every GC-26.9.24 work order is a successor candidate, never current work.",
+  "quote": "Until then every GC-26.9.24 work order is a successor candidate, never current work."
+ },
+ {
+  "kind": "State",
+  "boundary_class": "Core",
+  "statement": "A ggen-generated projection drifts when a person edits the generated file or the ontology changes without a sync.",
+  "quote": "A projection that ggen generated drifts when a person edits the generated file\nor the ontology changes without a sync."
+ },
+ {
+  "kind": "Capability",
+  "boundary_class": "Core",
+  "statement": "From v26.9.24, ggen projection-drift repair is a KNOWN class.",
+  "quote": "Starting with v26.9.24, ggen projection-drift repair is a KNOWN class."
+ },
+ {
+  "kind": "Evidence",
+  "required_by": "GC24-0",
+  "boundary_class": "FirstMile",
+  "statement": "The operator accepted the successor prose, and the GC-26.9.24 work orders are recomputed from it by mix semantic_jira.compile_prose with no hand-authored backlog.",
+  "quote": "the operator accepted this prose, and the GC-26.9.24 work orders are\nrecomputed from it by mix semantic_jira.compile_prose with no hand-authored backlog."
+ },
+ {
+  "kind": "Postcondition",
+  "required_by": "GC24-1",
+  "boundary_class": "Core",
+  "statement": "The ggen-sync-check verifier runs ggen sync --check in a clean worktree of the episode subject and exits non-zero whenever a generated file differs from what ggen sync renders.",
+  "quote": "the ggen-sync-check verifier runs ggen sync --check in a clean worktree\nof the episode subject and exits non-zero whenever a generated file differs from what ggen\nsync renders.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "verification",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Postcondition",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "The capability recipe:ggen-sync resolves to the recipe-worker provider, which runs ggen sync on the drifted subject and commits only files that ggen sync renders.",
+  "quote": "the capability recipe:ggen-sync resolves to the recipe-worker\nprovider, which runs ggen sync on the drifted subject and commits only files that ggen sync renders.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "postcondition",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Postcondition",
+  "required_by": "GC24-3",
+  "boundary_class": "LastMile",
+  "statement": "An independent run of ggen sync --check on a fresh worktree at the produced head exits 0, and the same check exits non-zero when the recipe commit is reverted.",
+  "quote": "an independent run of ggen sync --check on a fresh worktree at\nthe produced head exits 0, and the same check exits non-zero when the recipe commit is reverted.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "verification",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Object",
+  "boundary_class": "Core",
+  "statement": "Episode subjects are xaas commits on a dedicated branch v24/episode-<name> that hand-edit one generated projection.",
+  "quote": "Episode subjects are xaas commits on a dedicated branch v24/episode-<name> that hand-edit one\ngenerated projection."
+ },
+ {
+  "kind": "Invariant",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "No LLM, network model API or zcode binary participates on the projection-drift repair path.",
+  "quote": "No LLM, network model API or zcode binary participates on the projection-drift repair path.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "verification",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Invariant",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "Only files that ggen sync renders change in the repair commit.",
+  "quote": "Only files that ggen sync renders change in the repair commit.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "verification",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Exclusion",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+  "quote": "The repair never publishes to a registry: no hex, crates, npm, GHCR or Homebrew publish."
+ },
+ {
+  "kind": "Exclusion",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "The repair uses no network access beyond ggen pack fetch.",
+  "quote": "The repair uses no network access beyond ggen pack fetch."
+ },
+ {
+  "kind": "Exclusion",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "Episode drift commits are never made on friday/gc-fri-0800 or main.",
+  "quote": "Episode drift commits are never made on friday/gc-fri-0800 or main."
+ },
+ {
+  "kind": "Falsifier",
+  "required_by": "GC24-2",
+  "boundary_class": "Core",
+  "statement": "A hand-edited generated file survives the repair while the ggen-sync-check court exits 0.",
+  "quote": "The class is falsified when a hand-edited generated file survives the repair while the court\nexits 0.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "verification",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Falsifier",
+  "required_by": "GC24-3",
+  "boundary_class": "LastMile",
+  "statement": "ggen sync --check still exits 0 after the recipe commit is reverted.",
+  "quote": "The class is falsified when ggen sync --check still exits 0 after the recipe commit is reverted.",
+  "hints": {
+   "requiresCapability": "recipe:ggen-sync",
+   "consequenceClass": "verification",
+   "exclusion": [
+    "The repair never publishes to a registry (no hex, crates, npm, GHCR or Homebrew publish).",
+    "The repair uses no network access beyond ggen pack fetch.",
+    "Episode drift commits are never made on friday/gc-fri-0800 or main."
+   ]
+  }
+ },
+ {
+  "kind": "Authority",
+  "boundary_class": "Core",
+  "statement": "Naming a capability grants no authority.",
+  "quote": "Naming a capability grants no authority."
+ },
+ {
+  "kind": "Successor",
+  "boundary_class": "Successor",
+  "statement": "Until recipe:ggen-sync is registered in the XaaS recipe registry, resolving it yields a typed UNSUPPORTED(provider_capability) successor item, not an error.",
+  "quote": "Until recipe:ggen-sync is registered in the XaaS recipe registry, resolving it yields a typed\nUNSUPPORTED(provider_capability) successor item, not an error."
+ }
+]
