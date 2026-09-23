@@ -1,0 +1,36 @@
+{
+  "contextId": "sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e",
+  "input": [
+    {
+      "data": {
+        "schema": "semantic-jira/route-tuple/v1",
+        "tuple": {
+          "authorityCeiling": "CONSTRUCT",
+          "consequenceClass": "postcondition",
+          "evidenceCeiling": "EXECUTED_VERIFIED",
+          "exclusions": [
+            "no LLM provider on the KNOWN path",
+            "no file outside path_scope changes",
+            "no push, merge or publish"
+          ],
+          "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+          "requiresCapability": "recipe:mix-format",
+          "subject": "seanchatmangpt/ggen_igniter@friday/gc-fri-0800#FRI-G5-FMT-S1"
+        },
+        "workOrderDigest": "sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e"
+      },
+      "kind": "data"
+    }
+  ],
+  "metadata": {
+    "authority": "NONE",
+    "baseSha": "5984ec480c2318e86aa621da5f496e5e014b0fac",
+    "graphDigest": "sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e",
+    "schema": "semantic-jira/route-tuple/v1"
+  },
+  "status": {
+    "reasonCode": "UNKNOWN",
+    "state": "submitted"
+  },
+  "taskId": "urn:semantic-jira:v26.9.22:FRI-G5-FMT-S1"
+}
