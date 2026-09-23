@@ -63,7 +63,7 @@
   {
     "id": "SJ-009",
     "path": "009-ash-ai-dependency-retest.md",
-    "standing": "UNKNOWN",
+    "standing": "ALIVE",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
   }
