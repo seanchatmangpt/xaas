@@ -1,0 +1,447 @@
+{
+  "ocel:eventTypes": [
+    "WorkOrderCreated",
+    "CapabilityResolved",
+    "LeaseAcquired",
+    "ActuationStarted",
+    "ActuationCompleted",
+    "VerificationCompleted",
+    "ReceiptSealed",
+    "StandingChanged",
+    "FrontierChanged",
+    "MachineExperienceAdmitted"
+  ],
+  "ocel:events": [
+    {
+      "attributes": {
+        "source": "work_graph",
+        "standing": "UNKNOWN"
+      },
+      "id": "e001-WorkOrderCreated",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "subject:seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+          "qualifier": "subject"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        },
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T09:48:52.734999Z",
+      "type": "WorkOrderCreated"
+    },
+    {
+      "attributes": {
+        "capability": "recipe:mix-format",
+        "provider": "recipe"
+      },
+      "id": "e002-CapabilityResolved",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        }
+      ],
+      "time": "2026-09-23T09:48:52.738444Z",
+      "type": "CapabilityResolved"
+    },
+    {
+      "attributes": {
+        "epoch_id": "eed260ac-acc8-4c70-8284-57555bd271da",
+        "provider": "recipe"
+      },
+      "id": "e003-ActuationStarted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T09:48:54.742290Z",
+      "type": "ActuationStarted"
+    },
+    {
+      "attributes": {
+        "epoch_id": "eed260ac-acc8-4c70-8284-57555bd271da",
+        "leased_to": "recipe-worker"
+      },
+      "id": "e004-LeaseAcquired",
+      "relationships": [
+        {
+          "objectId": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        }
+      ],
+      "time": "2026-09-23T09:48:54.794892Z",
+      "type": "LeaseAcquired"
+    },
+    {
+      "attributes": {
+        "argv_sha256": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4",
+        "final_head": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+        "steps": "[\"format:0\"]"
+      },
+      "id": "e005-ActuationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T09:48:56.962651Z",
+      "type": "ActuationCompleted"
+    },
+    {
+      "attributes": {
+        "court": "fabric",
+        "head": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+        "status": "pass",
+        "suite": "ggen-igniter-format"
+      },
+      "id": "e006-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T09:48:56.963647Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": {
+        "outcome": "alive",
+        "receipt_digest": "sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1"
+      },
+      "id": "e007-ReceiptSealed",
+      "relationships": [
+        {
+          "objectId": "receipt:fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        },
+        {
+          "objectId": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+          "qualifier": "lease"
+        }
+      ],
+      "time": "2026-09-23T09:48:56.996986Z",
+      "type": "ReceiptSealed"
+    },
+    {
+      "attributes": {
+        "court": "independent",
+        "head": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+        "status": "pass",
+        "suite": "ggen-igniter-format"
+      },
+      "id": "e008-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T09:48:58.475039Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": {
+        "court": "revert-falsifier",
+        "head": "27ea6b64078e0be6257777948964ed2f1fbb709b",
+        "status": "fail",
+        "suite": "ggen-igniter-format",
+        "verdict": "killed"
+      },
+      "id": "e009-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "reverted"
+        }
+      ],
+      "time": "2026-09-23T09:48:59.339180Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": {
+        "event_digest": "sha256:41c2dd0faf87393a70d35aadabe043cabebb6c90e09545f0ff4250c18644648e",
+        "from": "UNKNOWN",
+        "status": "applied",
+        "to": "ALIVE"
+      },
+      "id": "e010-StandingChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "receipt:fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T09:49:00.650017Z",
+      "type": "StandingChanged"
+    },
+    {
+      "attributes": {
+        "eligible_after": "[\"EP-B\"]",
+        "eligible_before": "[\"EP-A\"]",
+        "entered": "[\"EP-B\"]",
+        "ledger_tail": "sha256:41c2dd0faf87393a70d35aadabe043cabebb6c90e09545f0ff4250c18644648e",
+        "left": "[\"EP-A\"]"
+      },
+      "id": "e011-FrontierChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "left"
+        },
+        {
+          "objectId": "workorder:EP-B",
+          "qualifier": "entered"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T09:49:01.262089Z",
+      "type": "FrontierChanged"
+    }
+  ],
+  "ocel:objectTypes": [
+    "GoalCheckpoint",
+    "WorkOrder",
+    "Subject",
+    "Provider",
+    "Capability",
+    "Lease",
+    "Receipt",
+    "Repository",
+    "Commit",
+    "MachineExperience"
+  ],
+  "ocel:objects": [
+    {
+      "attributes": {
+        "argv_sha256": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4",
+        "capability_id": "recipe:mix-format",
+        "recipe_id": "mix-format"
+      },
+      "id": "capability:recipe:mix-format",
+      "relationships": [],
+      "type": "Capability"
+    },
+    {
+      "attributes": {
+        "iri": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23"
+      },
+      "id": "checkpoint:GC-26.9.23",
+      "relationships": [],
+      "type": "GoalCheckpoint"
+    },
+    {
+      "attributes": {
+        "role": "episode subject",
+        "sha": "80a8a4c71b331a39771ad65d1149eb835645d17c"
+      },
+      "id": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+      "relationships": [
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": {
+        "author": "recipe-worker",
+        "parent": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+        "sha": "9c5e7571c948f97f6ae08d9399f69f502d81efd4"
+      },
+      "id": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+      "relationships": [
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "parent"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": {
+        "epoch_id": "eed260ac-acc8-4c70-8284-57555bd271da",
+        "leased_to": "recipe-worker",
+        "provider": "recipe"
+      },
+      "id": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+      "relationships": [],
+      "type": "Lease"
+    },
+    {
+      "attributes": {
+        "deterministic": "true",
+        "executor": "recipe-worker",
+        "provider": "recipe"
+      },
+      "id": "provider:recipe-worker",
+      "relationships": [],
+      "type": "Provider"
+    },
+    {
+      "attributes": {
+        "head_verified": "true",
+        "outcome": "alive",
+        "receipt_digest": "sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1",
+        "receipt_id": "fa8694c3-ce5a-4fb1-8634-2c2969f23c1d"
+      },
+      "id": "receipt:fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+      "relationships": [],
+      "type": "Receipt"
+    },
+    {
+      "attributes": {
+        "identity": "seanchatmangpt/ggen_igniter",
+        "path": "/Users/sac/ggen_igniter"
+      },
+      "id": "repository:seanchatmangpt/ggen_igniter",
+      "relationships": [],
+      "type": "Repository"
+    },
+    {
+      "attributes": {
+        "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A"
+      },
+      "id": "subject:seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+      "relationships": [
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "base"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Subject"
+    },
+    {
+      "attributes": {
+        "capability": "recipe:mix-format",
+        "identity": "EP-A",
+        "standing": "UNKNOWN"
+      },
+      "id": "workorder:EP-A",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "type": "WorkOrder"
+    },
+    {
+      "attributes": {
+        "capability": "recipe:mix-format",
+        "identity": "EP-B",
+        "standing": "UNKNOWN"
+      },
+      "id": "workorder:EP-B",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "requiresReceipt"
+        }
+      ],
+      "type": "WorkOrder"
+    }
+  ]
+}

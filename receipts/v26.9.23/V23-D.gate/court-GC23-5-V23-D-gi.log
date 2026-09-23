@@ -1,0 +1,6 @@
+HEAD=7fec9d883580984ef8ac623c210b9985652d4398 GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/V23-D-gi (bc8ea06d7fa4e249283f2b8fcd00fef5128b4151)
+executor recipe-worker; OCEL 11 events, 0 LLM-provider events/objects
+control: {"no_llm_guard":"passed","standing":"ALIVE"}
+F3: {"broken_term":"mu_on_O","detail":{"binaries":[],"variables":["ANTHROPIC_API_KEY"]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}
+ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused)
+COURT_EXIT=0

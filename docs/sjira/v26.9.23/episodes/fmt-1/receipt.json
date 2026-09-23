@@ -1,0 +1,76 @@
+{
+  "bridge": {
+    "authority_ceiling": "CONSTRUCT",
+    "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+    "consequence_class": "postcondition",
+    "definition_digest": "sha256:9e7833aea62a843e884e0fe2e0ca4cf13c5e61d8b40ab9b1b4050704c6bcab44",
+    "evidence_ceiling": "repository-local",
+    "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+    "exclusions": [
+      "no LLM provider on the KNOWN path",
+      "no file outside path_scope changes",
+      "no push, merge or publish"
+    ],
+    "identity": "EP-A",
+    "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+    "replay_identity": "semantic-jira:v26.9.23:episode:fmt-1:EP-A",
+    "repository": "seanchatmangpt/ggen_igniter",
+    "requires": {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check"
+      ],
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+      ],
+      "evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-fmt-1-format-check"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent"
+      ]
+    },
+    "requires_capability": "recipe:mix-format",
+    "source_snapshot_digest": "sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c",
+    "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A"
+  },
+  "epoch_id": "eed260ac-acc8-4c70-8284-57555bd271da",
+  "fabric_verifier": {
+    "court_receipt": {
+      "acceptance_results": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check": true
+      },
+      "binding": {
+        "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+        "head": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+        "step_id": "format",
+        "suite": "ggen-igniter-format"
+      },
+      "court_results": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format": {
+          "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+          "head": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "passed": true,
+          "step_id": "format",
+          "suite": "ggen-igniter-format"
+        }
+      },
+      "falsifier_results": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent": "survived"
+      }
+    },
+    "status": "pass",
+    "steps": [
+      {
+        "id": "format",
+        "status": "pass"
+      }
+    ]
+  },
+  "final_head": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+  "head_verified": true,
+  "outcome": "alive",
+  "receipt_digest": "sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1",
+  "receipt_id": "fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+  "run_id": "3e70ff03-aea9-413f-9fa7-fb3c2dcd6cfa"
+}

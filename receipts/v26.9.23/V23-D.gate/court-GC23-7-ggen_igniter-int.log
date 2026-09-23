@@ -1,0 +1,7 @@
+HEAD=7fec9d883580984ef8ac623c210b9985652d4398 GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (52798a00a7c36314ba6bb65249626ea50f6763a3)
+validator: ADMITTED /Users/sac/wt/v26922/v23/V23-D/docs/sjira/v26.9.23/episodes/fmt-1/receipt.r.json
+R: ALIVE at 9c5e7571c948f97f6ae08d9399f69f502d81efd4, native sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1
+ocel_validate: /Users/sac/wt/v26922/v23/V23-D/docs/sjira/v26.9.23/episodes/fmt-1/ocel.json: valid (11 events, 11 objects)
+pm4py: 11 events, 11 objects, classes ['ActuationCompleted', 'ActuationStarted', 'CapabilityResolved', 'FrontierChanged', 'LeaseAcquired', 'ReceiptSealed', 'StandingChanged', 'VerificationCompleted', 'WorkOrderCreated'], object types ['Capability', 'Commit', 'GoalCheckpoint', 'Lease', 'Provider', 'Receipt', 'Repository', 'Subject', 'WorkOrder']
+ALIVE: GC23-7 receipt ADMITTED and OCEL conformant (xaas court + pm4py) on episode fmt-1
+COURT_EXIT=0

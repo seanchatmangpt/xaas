@@ -222,10 +222,23 @@ defmodule Xaas.Sa2a.Route do
     end
   end
 
+  # `SemanticWork.admit/1` admits the executed `capability` against the same
+  # canonical `sj:capabilityId` pattern this module types the tuple with
+  # (FRI-T2's optional_capability, merged after FRI-T4). Its refusal of that
+  # one field IS this contract's invalid capability field -- reported as
+  # `{:invalid_field, "capability"}` like at every other hop, not as an
+  # opaque epoch-contract refusal. Every other admission refusal stays
+  # `{:epoch_contract, reason}`.
   defp admit_epoch(epoch) do
     case SemanticWork.admit(epoch) do
-      {:ok, admitted} -> {:ok, admitted}
-      {:error, reason} -> {:refused, {:epoch_contract, reason}}
+      {:ok, admitted} ->
+        {:ok, admitted}
+
+      {:error, {:refused_semantic_work, {:invalid, :capability}}} ->
+        {:refused, {:invalid_field, "capability"}}
+
+      {:error, reason} ->
+        {:refused, {:epoch_contract, reason}}
     end
   end
 
