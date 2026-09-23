@@ -57,6 +57,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     "court_map" => :court_map,
     "admission_digest" => :admission_digest,
     "admitted_work_order" => :admitted_work_order,
+    "digest_form" => :digest_form,
     "bridge" => :bridge,
     "capability" => :capability
   }
@@ -120,6 +121,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     | `graph_digest`         | `"sha256:" <> 64 lowercase hex`              | `@digest` regex           |
     | `admission_digest`     | optional; valid digest AND equal to `graph_digest` when present | `optional_admission_digest/1` |
     | `admitted_work_order`  | optional; admitted snapshot, digest recomputed by XaaS | `AdmissionBinding.verify/2` |
+    | `digest_form`          | required with `admitted_work_order`: the producer's declared digest form (`"sjira-digest/2"`; `"sjira-digest/1"` only on historical artifacts) | `AdmissionBinding.verify/2` |
     | `repository_identity`  | `"owner/repo"` (`[A-Za-z0-9_.-]+/...`)       | `@repo_identity` regex    |
     | `execution_repo_alias` | 1-128 of `[A-Za-z0-9_.-]` (Worktrees key)    | `@repo_alias` regex       |
     | `base_sha`             | exactly 40 lowercase hex (a git SHA)         | `@sha` regex              |
@@ -154,7 +156,9 @@ defmodule Xaas.Ultracode.SemanticWork do
 
     * optional `"admitted_work_order"`: the producer's admitted snapshot
       (the exact map `GgenIgniter.SemanticJira.admit_work_order/1`
-      returned). XaaS recomputes its digest from its own content; a stale
+      returned), with the producer's declared `"digest_form"` (the versioned
+      digest contract; undeclared or unknown is refused, never inferred).
+      XaaS recomputes its digests from its own content under that form; a stale
       digest, or a descriptor `base_sha` / `repository_identity` /
       `work_order_iri` / `goal` / `checkpoint_iri` / `dependencies` / bridge
       field (incl. `bridge.subject` and `bridge.requires`) that is not the
