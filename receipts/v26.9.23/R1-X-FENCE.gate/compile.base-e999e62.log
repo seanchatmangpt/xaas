@@ -1,0 +1,17 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/base-wt/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 520 files (.ex)
+Compiling lib/mix/tasks/xaas.autonomic.controls.ex (it's taking more than 10s)
+    warning: unused require Ash.Query
+    │
+ 78 │   require Ash.Query
+    │   ~
+    │
+    └─ lib/xaas/ultracode/semantic_drive.ex:78:3
+
+Compilation failed due to warnings while using the --warnings-as-errors option

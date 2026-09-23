@@ -1,0 +1,5 @@
+publish-image github.event_name == 'push' && github.ref == 'refs/heads/main'
+deploy github.event_name == 'push' && github.ref == 'refs/heads/main'
+308:    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+409:    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+lane gate on base exit=1

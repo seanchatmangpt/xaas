@@ -1,0 +1,20 @@
+condition publish-image: "github.event_name == 'push' && github.ref == 'refs/heads/main'"
+condition deploy: "github.event_name == 'push' && github.ref == 'refs/heads/main'"
+github.sha (derived repo HEAD): cb6da9611804e43edbc73546f99adbcc5864c01d
+act exit=0 | push main                                     | publish-image | RUN (UNEXPECTED)
+act exit=0 | push main                                     | deploy        | RUN (UNEXPECTED)
+act exit=0 | push feat/x                                   | publish-image | SKIP
+act exit=0 | push feat/x                                   | deploy        | SKIP
+act exit=0 | pull_request -> main                          | publish-image | SKIP
+act exit=0 | pull_request -> main                          | deploy        | SKIP
+act exit=0 | dispatch main, no inputs                      | publish-image | SKIP
+act exit=0 | dispatch main, no inputs                      | deploy        | SKIP
+act exit=0 | dispatch main, expected=HEAD, reason          | publish-image | SKIP (UNEXPECTED)
+act exit=0 | dispatch main, expected=HEAD, reason          | deploy        | SKIP (UNEXPECTED)
+act exit=0 | dispatch main, expected=other sha, reason     | publish-image | SKIP
+act exit=0 | dispatch main, expected=other sha, reason     | deploy        | SKIP
+act exit=0 | dispatch main, expected=HEAD, empty reason    | publish-image | SKIP
+act exit=0 | dispatch main, expected=HEAD, empty reason    | deploy        | SKIP
+act exit=0 | dispatch feat/x, expected=HEAD, reason        | publish-image | SKIP
+act exit=0 | dispatch feat/x, expected=HEAD, reason        | deploy        | SKIP
+FENCE BROKEN

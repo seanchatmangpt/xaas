@@ -1,0 +1,8 @@
+.github/workflows/ci_cd.yaml:324:88: property "expected_head_shax" is not defined in object type {expected_head_sha: string; reason: string} [expression]
+    |
+324 |     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_shaX == github.sha && inputs.reason != ''
+    |                                                                                        ^~~~~~~~~~~~~~~~~~~~~~~~~
+.github/workflows/ci_cd.yaml:510:88: property "expected_head_shax" is not defined in object type {expected_head_sha: string; reason: string} [expression]
+    |
+510 |     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_shaX == github.sha && inputs.reason != ''
+    |                                                                                        ^~~~~~~~~~~~~~~~~~~~~~~~~

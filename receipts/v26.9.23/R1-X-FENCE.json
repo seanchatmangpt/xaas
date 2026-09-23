@@ -1,0 +1,180 @@
+{
+  "identity": {
+    "subject": "R1-X-FENCE",
+    "repo": "/Users/sac/xaas",
+    "repo_slug": "seanchatmangpt/xaas",
+    "subject_sha": "9b31db8f5e6f84e34d6a758fde068f7533a30fee",
+    "base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+    "base_sha_why": "git merge-base v23/R1-X-FENCE friday/gc-fri-0800 at lane start (= the frozen release subject e999e62)",
+    "branch": "v23/R1-X-FENCE",
+    "worktree": "/Users/sac/wt/v26922/v23/R1-X-FENCE",
+    "work_order": null,
+    "tuple_digest": null,
+    "tuple_digest_why": "no goal.ttl order for lane R1-X-FENCE (docs/sjira/v26.9.23/goal.ttl names none; R1a is the release defect repair wave lanes/wave-R1a.json); the receipt is not linked by the stop court",
+    "prd_ard": "Required_23 authority + CE23-8 UNRECEIPTED_ACTUATION=0 (chatman-ce23.md); ARD section 11 (BRCE: the only DO path, zero unreceipted actuation), section 21 (Security and Authority: 'No generated artifact may inherit deployment/publish authority merely because its build passed'), section 27 (Release Receipt: UNRECEIPTED_ACTUATION = 0); PRD PR-010 (Singular DO boundary), section 10 (Non-Goals: fully autonomous production deployment)",
+    "toolchain": {
+      "elixir": "Elixir 1.20.2 (compiled with Erlang/OTP 28), erts-16.4.0.2 (.tool-versions pin elixir 1.20.2-otp-28, erlang 28.5.0.2; log receipts/v26.9.23/R1-X-FENCE.gate/toolchain.log)",
+      "mix": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix",
+      "build_provenance": "deps/ APFS-cloned (cp -cR) from /Users/sac/wt/v26922/fri/xaas-int (mix.lock byte-identical, cmp exit 0); _build fresh in the lane worktree (xaas-int _build/test was compiled by Elixir 1.19.5, not the pin)",
+      "actionlint": "1.7.11 (with shellcheck /opt/homebrew/bin/shellcheck)",
+      "act": "nektos/act 0.2.87 (dry run, -P ubuntu-latest=catthehacker/ubuntu:act-latest)",
+      "python": "python3 + PyYAML 6.0.3"
+    }
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "wave R1a lane R1-X-FENCE (operator release sequence REL-A2 repair wave, /Users/sac/wt/v26922/v26923/DRIVER.md 12:50 PT; COORDINATION.md v26.9.23 scope). Commits on v23/R1-X-FENCE only: no push, no integrate, no workflow dispatch, no registry or deploy effect. The release-defect rule applies: only the named defect changed.",
+    "actor": "claude-opus-5.5 workflow subagent (lane R1-X-FENCE)"
+  },
+  "consequence": {
+    "commits": [
+      "9b31db8f5e6f84e34d6a758fde068f7533a30fee"
+    ],
+    "commit_notes": {
+      "9b31db8": "ci(authority): publish-image and deploy run only on workflow_dispatch from refs/heads/main with inputs.expected_head_sha == github.sha and a reason; in-job byte-exact admission (typed REFUSED, exit 64); publication + deployment receipt artifacts; HANDWRITTEN row; evidence harnesses"
+    },
+    "files_changed": [
+      ".github/workflows/ci_cd.yaml",
+      "HANDWRITTEN.md",
+      "receipts/v26.9.23/R1-X-FENCE.gate/conserve.py",
+      "receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.py",
+      "receipts/v26.9.23/R1-X-FENCE.gate/steps_eval.py"
+    ],
+    "files_changed_basis": "git diff --name-only e999e62 9b31db8; the receipt commit adds receipts/v26.9.23/R1-X-FENCE.json and the receipts/v26.9.23/R1-X-FENCE.gate/*.log files",
+    "remote_effects": [],
+    "defect_classification": "subject defect (authority): at e999e62 .github/workflows/ci_cd.yaml publish-image (GHCR push) and deploy (swarm deploy with GH_PAT/AWS/AGE/SSH secrets) had `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`, so the v26.9.23 release PR merge would publish and deploy with no operator act and no receipt",
+    "diff_scope": "conserve.py over the YAML parse: top-level keys, push/pull_request triggers and the 8 other jobs identical; publish-image/deploy keep every base step in order and every non-step key; added: on.workflow_dispatch.inputs {expected_head_sha, reason} (optional, default ''), the two job `if:`s, per job an admission step (id admit) + receipt step + upload step, step ids build/deploy on the existing actuation steps",
+    "reserved_files": "none of the Friday/v26.9.23 reserved files touched (goal.ttl, stop.rq, prd-ard.md, courts, lib/**, docs/sjira/** unchanged)",
+    "generated_vs_handwritten": {
+      "generated": [],
+      "handwritten": [
+        ".github/workflows/ci_cd.yaml (dispatch inputs, two job conditions, admission/receipt/upload steps, two step ids)",
+        "receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.py, receipts/v26.9.23/R1-X-FENCE.gate/steps_eval.py, receipts/v26.9.23/R1-X-FENCE.gate/conserve.py (qualification harnesses)"
+      ],
+      "ledger": "HANDWRITTEN.md row '.github/workflows/ci_cd.yaml (...)': UNSUPPORTED(generator-capability) -- xaas has no gha: instance graph; github-actions-pack 0.3.2 renders a whole workflow from gha: facts, so adopting it re-renders all 10 jobs + a GENERATED header, forbidden on the frozen subject; owner github-actions-pack"
+    }
+  },
+  "replay": {
+    "durable_location": "receipts/v26.9.23/R1-X-FENCE.gate/ (committed logs + harness scripts); base file for the witnesses = git show e999e62:.github/workflows/ci_cd.yaml",
+    "commands": [
+      {
+        "cmd": "python3 -c \"import yaml,sys; d=yaml.safe_load(open('.github/workflows/ci_cd.yaml')); [print(j, d['jobs'][j].get('if')) for j in ('publish-image','deploy')]\" && sh -c '! grep -nE \"^    if: github.event_name == .push. && github.ref == .refs/heads/main.$\" .github/workflows/ci_cd.yaml'",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 0,
+        "summary": "lane gate: YAML parse prints publish-image and deploy `if` = github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''; the push-to-main condition line is absent",
+        "output_sha256": "7a1ff5b8846b136a50f6594dd4cf863837445dc70801ae4bc89d4082326e28f3",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/lane-gate.log"
+      },
+      {
+        "cmd": "python3 receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.py .github/workflows/ci_cd.yaml /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 0,
+        "summary": "act 0.2.87 dry run of the two job conditions copied by YAML parse: push main, push feat/x, pull_request->main, dispatch main without inputs, dispatch with other sha, dispatch with empty reason, dispatch from feat/x -> both SKIP (act 'Skipping job'); dispatch main expected=HEAD + reason -> both RUN; FENCE HOLDS",
+        "output_sha256": "4fc671fb52a4a9f6b4cfccd8b4d8590931e4377fe43cfcf597b4af257f1fdd36",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.log"
+      },
+      {
+        "cmd": "python3 receipts/v26.9.23/R1-X-FENCE.gate/steps_eval.py .github/workflows/ci_cd.yaml /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 0,
+        "summary": "admission steps run as real bash (runner flags): push -> REFUSED[NOT_OPERATOR_DISPATCH], feat/x -> REFUSED[NOT_MAIN], other sha and UPPERCASED sha -> REFUSED[HEAD_MOVED], empty reason -> REFUSED[REASON_MISSING] (all exit 64), admitted -> 0, for both jobs; receipt steps: failed build -> UNKNOWN/unobserved, digest not served -> UNKNOWN, real registry read of docker.io/library/alpine:3.20 with its digest -> ALIVE verified (raw-manifest sha256 == digest), wrong digest -> UNKNOWN, deploy success -> PARTIAL_ALIVE, failure/skipped -> UNKNOWN; receipt_sha256 recomputes in every case; STEPS HOLD",
+        "output_sha256": "e259db21d472e76c10853964ca98535e553e1e7e2d5a798a80589dbb08dbdde0",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/steps_eval.log"
+      },
+      {
+        "cmd": "git show e999e62:.github/workflows/ci_cd.yaml > /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/base/ci_cd.yaml && python3 receipts/v26.9.23/R1-X-FENCE.gate/conserve.py /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/base/ci_cd.yaml .github/workflows/ci_cd.yaml",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 0,
+        "summary": "CONSERVED: 8 other jobs + top-level keys + push/pull_request triggers identical; both fenced jobs keep all base steps in order and all non-step keys; no job deleted",
+        "output_sha256": "43dc1d2260ec71b03a37b2fb9bf80296803cd1357f16a0d38a0f0bebc375cfa8",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/conserve.log"
+      },
+      {
+        "cmd": "actionlint -no-color .github/workflows/ci_cd.yaml",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 0,
+        "summary": "no findings (expression type check incl. inputs.* against the declared dispatch inputs; shellcheck over run: scripts); same as the base (exit 0, no findings)",
+        "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/actionlint.log"
+      },
+      {
+        "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 0,
+        "summary": "xaas lane gate prefix step 1: no unformatted-file lines (log is the fresh dev deps compile the formatter plugins trigger; only pre-existing dependency warnings e.g. deps/ex4pm/mix.exs Application.get_env)",
+        "output_sha256": "957a7f162e1b84c820594a197bf7037aaceb210e03fb2992c19a873f0e62e8d3",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/format.log"
+      }
+    ]
+  },
+  "standing": {
+    "value": "PARTIAL_ALIVE",
+    "components": {
+      "fence (lane gate, act, admission/receipt steps, conservation, actionlint)": "ALIVE",
+      "xaas lane gate prefix": "format ALIVE; MIX_ENV=test compile --force --warnings-as-errors BUILD_BROKEN, PRE-EXISTING at base e999e62 under the pin (lib/xaas/ultracode/semantic_drive.ex:78 unused require Ash.Query); compile inputs lib/ config/ mix.exs mix.lock priv/ test/ are byte-identical between base and subject (git diff --stat empty); not the named defect (release-defect rule), owner lane R1-X-PIN (full suites under the .tool-versions pins)"
+    },
+    "derived_from": "observed runs on the exact committed subject 9b31db8f5e6f84e34d6a758fde068f7533a30fee (tracked tree clean): lane gate 0; act evaluation of both job conditions: no push/pull_request context runs either job, only the admitted dispatch runs both; the admission steps refuse every non-admitted context as real bash; receipt steps derive standing from outcome + registry read; conservation 0; actionlint 0; xaas gate prefix format 0, compile 1 (compile failure pre-existing at base e999e62 under the same pin, witnessed; this lane changes no compile input). Anti-vacuity witnesses on the base e999e62 file: lane gate 1, fence_eval 1 (push main RUNS both jobs), actionlint on an undefined-input mutant 1. Scope: act is a reimplementation of GitHub's expression evaluator; the GitHub-hosted evaluation is observed at the release PR's exact-head CI and merge (V23-Q), not here."
+  },
+  "falsifiers": {
+    "F_push_main": "a push to refs/heads/main (the release PR merge) runs publish-image or deploy: fence_eval scenario 'push main' must SKIP both (it RUNs both on the base file: fence_eval.base-e999e62.log)",
+    "F_unadmitted_dispatch": "a dispatch with no/other expected_head_sha, an empty reason, or from a non-main ref runs either job (act) or passes the in-job admission (bash)",
+    "F_case_fold": "GitHub `==` is case-insensitive, so an uppercased sha passes the job `if`; the bash admission must refuse it with REFUSED[HEAD_MOVED] (steps_eval)",
+    "F_unreceipted": "an admitted publication/deployment ends without a receipt artifact: receipt + upload steps run under always() once admission succeeded, including after a failed actuation step (standing UNKNOWN), and publication ALIVE requires the registry to serve the pushed digest",
+    "F_scope": "any job other than publish-image/deploy, or any trigger other than workflow_dispatch, changes (conserve.py)",
+    "F_undefined_input": "a condition referencing an undeclared input: actionlint refuses the mutant inputs.expected_head_shaX (actionlint.mutant-undefined-input.log, exit 1)"
+  },
+  "witnesses": {
+    "note": "runs whose non-zero exit is the expected observation (anti-vacuity); kept out of replay.commands, which the validator requires to be all exit 0 for ALIVE",
+    "commands": [
+      {
+        "cmd": "python3 -c \"import yaml,sys; d=yaml.safe_load(open('.github/workflows/ci_cd.yaml')); [print(j, d['jobs'][j].get('if')) for j in ('publish-image','deploy')]\" && sh -c '! grep -nE \"^    if: github.event_name == .push. && github.ref == .refs/heads/main.$\" .github/workflows/ci_cd.yaml'",
+        "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/basetree (the base e999e62 ci_cd.yaml)",
+        "exit": 1,
+        "summary": "lane gate on the base file fails: both `if`s print the push-to-main condition and grep finds it at lines 308 and 409",
+        "output_sha256": "f8f09f5b4de7b8029eccb797a9826999a255c81648f0172f63dfee152d17d8b9",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/lane-gate.base-e999e62.log"
+      },
+      {
+        "cmd": "python3 receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.py /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/base/ci_cd.yaml /private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE  # = git show e999e62:.github/workflows/ci_cd.yaml",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 1,
+        "summary": "FENCE BROKEN on the base file: push main -> publish-image RUN, deploy RUN; admitted dispatch -> both SKIP",
+        "output_sha256": "51a34db10c82dc94b05417d06d0eeabd723bd8eb42c77efcf55697ee5584a687",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.base-e999e62.log"
+      },
+      {
+        "cmd": "actionlint -no-color .github/workflows/ci_cd.yaml (committed file with inputs.expected_head_sha -> inputs.expected_head_shaX)",
+        "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/mut",
+        "exit": 1,
+        "summary": "2 findings: property \"expected_head_shax\" is not defined in object type {expected_head_sha: string; reason: string} at the publish-image and deploy `if`s",
+        "output_sha256": "0874da25940ae8f021925be618c3514f8c9715be0d136053e4f09727ede5bbe4",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/actionlint.mutant-undefined-input.log"
+      },
+      {
+        "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ 9b31db8 (clean tracked tree)",
+        "exit": 1,
+        "summary": "xaas lane gate prefix step 2 at the subject under the pin: Compiling 520 files (.ex); warning: unused require Ash.Query (lib/xaas/ultracode/semantic_drive.ex:78:3); Compilation failed due to warnings while using the --warnings-as-errors option -- PRE-EXISTING (identical at base e999e62, next witness); this lane changes no compile input",
+        "output_sha256": "489d175399b2f6be1fce4c27d5637b3216866214d60324f38028f6ae27132725",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/compile.log"
+      },
+      {
+        "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-FENCE/base-wt (detached scratch worktree at e999e62, deps/_build APFS-cloned from the lane worktree, same pin)",
+        "exit": 1,
+        "summary": "PRE-EXISTING at the base e999e62 under the .tool-versions pin: the identical failure (warning: unused require Ash.Query, lib/xaas/ultracode/semantic_drive.ex:78:3; Compilation failed due to warnings while using the --warnings-as-errors option). The fleet qualification's exit-0 compile ran under Elixir 1.19.5, not the 1.20.2 pin.",
+        "output_sha256": "791c70acb9570896f9261dd3f7c7f0dd36766dc3a30ada67ccdb86ec51a89a87",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/compile.base-e999e62.log"
+      }
+    ]
+  },
+  "observations": {
+    "other_workflows": "pattern survey (grep -cE 'push: true|docker push|flyctl deploy|packer build|gh release create|terraform apply|git push|packages: write|contents: write') over .github/workflows/* at the subject: among workflows with a push trigger only ci_cd.yaml matches (2 lines: the fenced publish job's push: true and packages: write); fly_deploy.yaml (workflow_dispatch only, receipted) 2 lines; claude-daily-drain.yml (schedule/dispatch, no push trigger) 1 line. A survey, not a proof."
+  },
+  "open": {
+    "concurrency": "workflow-level concurrency group xaas-ci-${{ github.event.pull_request.number || github.ref }} with cancel-in-progress: true is shared by an operator dispatch and pushes on refs/heads/main, so a push during a dispatch cancels it; the receipt steps run under always() (which runs on cancellation), but a cancellable actuation is successor work (GC-26.9.24): changing workflow-level concurrency is outside the named defect",
+    "receipt_job_text": "the unchanged receipt job writes the literal \"publication\": \"not_attempted_by_candidate_court\"; on an operator dispatch run the publication receipt is the xaas-publish-<sha> artifact (successor: derive that field)",
+    "deploy_verification": "the swarm deploy path has no post-deploy health check, so deployment receipts are PARTIAL_ALIVE at best (fly_deploy.yaml verifies its hosted path); successor",
+    "generator": "HANDWRITTEN row: github-actions-pack gha: instance graph for ci_cd.yaml (successor)"
+  }
+}
