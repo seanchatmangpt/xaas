@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import site
 import subprocess
 import sys
 import tempfile
@@ -309,6 +310,21 @@ wdc:C6 a wdc:Claim ;
         proc = self.check("--validator", (self.root / "no-such-validator.py").as_posix())
         self.assertEqual(proc.returncode, 1)
         self.assertIn("validator_unavailable", self.codes(proc))
+
+    def test_check_admits_under_a_fresh_home_like_the_f3_court_env(self) -> None:
+        self.render()
+        with tempfile.TemporaryDirectory() as home:
+            proc = subprocess.run(
+                [sys.executable, SCRIPT.as_posix(), "check", "--ledger", self.ledger.as_posix(), "--proposal", self.proposal.as_posix()],
+                cwd=self.root,
+                capture_output=True,
+                text=True,
+                check=False,
+                # a fresh HOME hides the user site; the F3 court passes it explicitly
+                env=dict(os.environ, HOME=home, DFCM_VALIDATOR=VALIDATOR.as_posix(), PYTHONUSERBASE=site.getuserbase()),
+            )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("2 receipts ADMITTED", proc.stdout)
 
     def test_render_refuses_a_placeholder_without_a_claim(self) -> None:
         self.write_ledger(LEDGER.replace("{C5} Everything", "{C42} Everything"))

@@ -51,8 +51,10 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 WDC = "https://ggen-igniter.dev/sjira/v26.9.23/wd-fa/claims#"
@@ -111,8 +113,12 @@ class Ledger:
 
 
 def load_ledger(path: Path, refusals: Refusals) -> Ledger | None:
-    from rdflib import Graph, Literal, URIRef
-    from rdflib.namespace import RDF
+    try:
+        from rdflib import Graph, Literal, URIRef
+        from rdflib.namespace import RDF
+    except ImportError as exc:
+        refusals.add(path.as_posix(), "rdflib_unavailable", f"{exc} (under a fresh HOME pass PYTHONUSERBASE explicitly)")
+        return None
 
     graph = Graph()
     try:
@@ -460,13 +466,33 @@ def validate_receipts(paths: set[str], root: Path, validator: Path, refusals: Re
     if not validator.is_file():
         refusals.add(validator.as_posix(), "validator_unavailable", "fleet receipt validator not found")
         return 0
-    proc = subprocess.run(
-        [sys.executable, validator.as_posix(), *existing], cwd=root, capture_output=True, text=True, check=False
-    )
+    with tempfile.TemporaryDirectory() as home:
+        # validate_receipt.py reads ~/.claude/dfcm/receipt.schema.json. Run it
+        # with a fresh HOME holding only that schema (copied from beside the
+        # validator), so the check behaves the same in the F3 no-LLM court
+        # environment (fresh HOME) and in an ordinary shell, and never reads
+        # anything else under the caller's home.
+        env = dict(os.environ)
+        schema = validator.parent / "receipt.schema.json"
+        if schema.is_file():
+            target = Path(home) / ".claude" / "dfcm"
+            target.mkdir(parents=True)
+            shutil.copyfile(schema, target / schema.name)
+            env["HOME"] = home
+        proc = subprocess.run(
+            [sys.executable, validator.as_posix(), *existing],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
     admitted = {line[len("ADMITTED ") :].strip() for line in proc.stdout.splitlines() if line.startswith("ADMITTED ")}
     for rel in existing:
         if rel not in admitted:
-            refusals.add(rel, "receipt_not_admitted", f"validator exit {proc.returncode}: {short(proc.stdout.strip(), 160)}")
+            errors = proc.stderr.strip().splitlines()
+            said = proc.stdout.strip() or (errors[-1] if errors else "")
+            refusals.add(rel, "receipt_not_admitted", f"validator exit {proc.returncode}: {short(said, 160)}")
     return len(admitted & set(existing))
 
 
