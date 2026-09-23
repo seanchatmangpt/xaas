@@ -1,0 +1,6 @@
+PREFIX xz: <https://ggen.io/ontology/xaas-zcode-ocel#>
+SELECT ?name ?order ?primaryObject
+WHERE {
+  ?e a xz:EventType ; xz:name ?name ; xz:order ?order ; xz:primaryObject ?primaryObject .
+}
+ORDER BY ?order

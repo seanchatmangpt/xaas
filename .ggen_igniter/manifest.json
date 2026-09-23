@@ -72,6 +72,15 @@
       "template": "priv/packs/xaas_ultracode_pack/templates/probe_resource.ex.eex",
       "updated_at": "2026-09-14T18:11:37.880651Z"
     },
+    "priv/packs/xaas_zcode_ocel_pack/templates/zcode_event_registry.ex.eex=>lib/xaas/generated/zcode_event_registry.ex": {
+      "out_template": "lib/xaas/generated/zcode_event_registry.ex",
+      "outputs": {
+        "/Users/sac/xaas/worktrees/sjira/sj-002/lib/xaas/generated/zcode_event_registry.ex": "sha256:d185723654af3eca4c8f710752ce78f5e4ce4f123b34041bdc4448993ddef861"
+      },
+      "pack_dir": "priv/packs/xaas_zcode_ocel_pack",
+      "template": "priv/packs/xaas_zcode_ocel_pack/templates/zcode_event_registry.ex.eex",
+      "updated_at": "2026-09-22T18:53:57.343889Z"
+    },
     "priv/sa2a_bridge/templates/sa2a_bridge_contract.ex.eex=>lib/xaas/generated/sa2a_bridge_contract.ex": {
       "out_template": "lib/xaas/generated/sa2a_bridge_contract.ex",
       "outputs": {

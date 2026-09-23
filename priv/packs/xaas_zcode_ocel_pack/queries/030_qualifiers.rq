@@ -1,0 +1,6 @@
+PREFIX xz: <https://ggen.io/ontology/xaas-zcode-ocel#>
+SELECT ?event ?object ?qualifier
+WHERE {
+  ?q a xz:Qualifier ; xz:event ?event ; xz:object ?object ; xz:qualifier ?qualifier .
+}
+ORDER BY ?event ?object
