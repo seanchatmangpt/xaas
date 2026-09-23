@@ -63,17 +63,19 @@ defmodule XaasWeb.OcelLiveServerChainTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
 
-    receiver_port = 42_100 + :erlang.phash2(make_ref(), 400)
-    app_port = 42_600 + :erlang.phash2(make_ref(), 400)
-
+    # OS-assigned ephemeral ports (port 0, read back via
+    # ThousandIsland.listener_info/1) instead of hash-derived ports that
+    # can collide and raise :eaddrinuse (SJ-009).
     {:ok, receiver_pid} =
       Bandit.start_link(
         plug: XaasWeb.OcelLiveServerChainTest.CapturingReceiverPlug,
-        port: receiver_port,
+        port: 0,
         ip: {127, 0, 0, 1}
       )
 
     Process.unlink(receiver_pid)
+
+    {:ok, {_address, receiver_port}} = ThousandIsland.listener_info(receiver_pid)
 
     previous_ingest_url = Application.get_env(:xaas, :ex4pm_ocel_ingest_url)
 
@@ -90,11 +92,13 @@ defmodule XaasWeb.OcelLiveServerChainTest do
     {:ok, app_pid} =
       Bandit.start_link(
         plug: XaasWeb.Endpoint,
-        port: app_port,
+        port: 0,
         ip: {127, 0, 0, 1}
       )
 
     Process.unlink(app_pid)
+
+    {:ok, {_address, app_port}} = ThousandIsland.listener_info(app_pid)
 
     on_exit(fn ->
       if Process.alive?(app_pid), do: Process.exit(app_pid, :shutdown)

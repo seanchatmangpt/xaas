@@ -89,12 +89,17 @@ defmodule Xaas.Platform.DeliverWebhookTest do
 
   test "a real 2xx response marks the delivery :delivered and the real listener receives the real signed payload" do
     {:ok, agent} = Agent.start_link(fn -> nil end)
-    port = 20_000 + :erlang.phash2(self(), 10_000)
+    # OS-assigned ephemeral port read back from ranch, and shutdown of the
+    # ref actually started (the previous on_exit shut down
+    # CapturingPlug.HTTP, a ref never started here, leaking the listener).
+    ref = make_ref()
 
     {:ok, _pid} =
-      Plug.Cowboy.http(CapturingPlug, [agent: agent], port: port, ref: make_ref())
+      Plug.Cowboy.http(CapturingPlug, [agent: agent], port: 0, ref: ref)
 
-    on_exit(fn -> Plug.Cowboy.shutdown(CapturingPlug.HTTP) end)
+    port = :ranch.get_port(ref)
+
+    on_exit(fn -> Plug.Cowboy.shutdown(ref) end)
 
     secret = "real-hmac-secret-#{System.unique_integer([:positive])}"
     payload = %{"hello" => "world", "n" => System.unique_integer([:positive])}
@@ -123,7 +128,11 @@ defmodule Xaas.Platform.DeliverWebhookTest do
   test "a closed local port leaves the delivery :failed with attempt_count incremented, no crash" do
     # A real port nothing is listening on -- a real connection-refused
     # transport error, not a simulated one.
-    closed_port = 20_000 + :erlang.phash2(make_ref(), 10_000)
+    # Bind an OS-assigned port, then close it: nothing listens there now,
+    # unlike a hash-derived port that another test's listener may hold.
+    {:ok, probe} = :gen_tcp.listen(0, ip: {127, 0, 0, 1})
+    {:ok, closed_port} = :inet.port(probe)
+    :ok = :gen_tcp.close(probe)
 
     webhook = create_webhook!("http://127.0.0.1:#{closed_port}/")
     delivery = create_delivery!(webhook)
