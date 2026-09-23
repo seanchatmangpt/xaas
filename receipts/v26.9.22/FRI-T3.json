@@ -1,0 +1,94 @@
+{
+  "identity": {
+    "subject": "FRI-T3",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "2393308c907921ad8acafb4f0c7918f35b6654d1",
+    "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "GC-FRI-0800 approved plan ~/.claude/plans/i-need-you-to-iterative-sedgewick.md, lane FRI-T3 (worktree-local commits only; no push/merge)",
+    "actor": "claude-opus-5-5 workflow subagent FRI-T3"
+  },
+  "consequence": {
+    "commits": [
+      "2393308c907921ad8acafb4f0c7918f35b6654d1"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "lib/xaas/receipt/r_projection.ex",
+      "lib/xaas/ultracode/court_receipt.ex",
+      "lib/xaas/ultracode/semantic_receipt.ex",
+      "lib/xaas/ultracode/target_suites.ex",
+      "test/xaas/receipt/r_projection_test.exs",
+      "test/xaas/ultracode/court_receipt_test.exs",
+      "test/xaas/ultracode/semantic_receipt_test.exs",
+      "test/xaas/ultracode/target_suites_test.exs"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T3",
+        "exit": 0,
+        "summary": "clean at 2393308"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T3",
+        "exit": 0,
+        "summary": "Compiling 505 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/xaas/ultracode/court_receipt_test.exs test/xaas/ultracode/semantic_receipt_test.exs test/xaas/receipt/r_projection_test.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T3",
+        "exit": 0,
+        "summary": "51 tests, 0 failures (exact head, clean tree)"
+      },
+      {
+        "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" <touched lib+test files>",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T3",
+        "exit": 0,
+        "summary": "zero mock matches in touched files"
+      },
+      {
+        "cmd": "mix test test/xaas/ultracode test/xaas/receipt",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T3",
+        "exit": 0,
+        "summary": "722 tests, 0 failures (25 excluded); tree content identical to 2393308 (run before commit, git status clean after commit)"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/FRI-T3.json (branch fri/FRI-T3)"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "replay commands 1-4 at subject_sha 2393308c907921ad8acafb4f0c7918f35b6654d1 on a clean tree; command 5 over the identical tree"
+  },
+  "lane": "FRI-T3",
+  "gate": "G7",
+  "checkpoint": "GC-FRI-0800",
+  "falsifiers": [
+    {
+      "mutation": "semantic_receipt.ex adapterless passthrough -> nil; court_receipt.ex non-zero fail exit -> :pass",
+      "cmd": "mix test test/xaas/ultracode/court_receipt_test.exs test/xaas/ultracode/semantic_receipt_test.exs",
+      "observed": "45 tests, 4 failures (exit_status unit + REAL mix format court + passthrough + REAL ggen-igniter-format court)",
+      "restored": true
+    },
+    {
+      "mutation": "r_projection.ex identity-completeness guard disabled; digest recompute check made vacuous",
+      "cmd": "mix test test/xaas/receipt/r_projection_test.exs",
+      "observed": "6 tests, 2 failures (missing subject_sha REFUSED; forged receipt digest mismatch)",
+      "restored": true
+    }
+  ],
+  "handwritten": [
+    "lib/xaas/receipt/r_projection.ex + test: UNSUPPORTED(generator-capability) -- HANDWRITTEN.md row",
+    "court_receipt.ex exit_status, target_suites.ex ggen-igniter-format, semantic_receipt.ex passthrough + tests: UNSUPPORTED(generator-capability) -- HANDWRITTEN.md row"
+  ],
+  "not_done": [
+    "Verifier moduledoc (verifier.ex) still lists only pytest_v/mix_trace result formats; left untouched to avoid conflict with lane T2 (spawn_and_collect public)",
+    "No R projection has yet been written for a live Friday episode receipt; RProjection.write/2 is exercised only against tmp sealed receipts in tests (G7 live court belongs to T9/stop_court)"
+  ]
+}
