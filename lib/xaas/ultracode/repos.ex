@@ -20,6 +20,7 @@ defmodule Xaas.Ultracode.Repos do
         suite: "aps-dod",                 # per-item verifier suite name
         canonical_suite: "aps-canonical", # integration-head suite (nil = skip)
         worktree_root: nil,               # nil = global :ultracode_worktree_root
+        refresh: false,                   # fetch + fast-forward the clone before sensing
         suite_registered: true            # named in :ultracode_verifier_suites?
       }
 
@@ -30,7 +31,8 @@ defmodule Xaas.Ultracode.Repos do
       historical APS defaults -- sensing "aps", suite "aps-dod",
       canonical_suite "aps-canonical" -- so `%{"aps" => path}` behaves exactly
       as before this registry) or a MAP with `path` plus optional `sensing`,
-      `suite`, `canonical_suite`, `worktree_root` (string or atom keys).
+      `suite`, `canonical_suite`, `worktree_root`, `refresh` (string or atom
+      keys).
     * the durable registry file (`config :xaas, :ultracode_repos_file`,
       default `~/xaas/worktrees/ultracode-repos.json` in dev) -- written ONLY
       through `register/2` (the `mix xaas.ultracode.repos --register` path),
@@ -70,9 +72,24 @@ defmodule Xaas.Ultracode.Repos do
   sensing is owned by `Xaas.Ultracode.Sensing`; the loop's script-backed
   stage with the profile fallback is wired in `Autonomic.sense/1`).
 
-  This module is registry-only: it never starts the application, never
-  touches a database, and never runs a suite. It reads config, the
-  filesystem, and git -- nothing else.
+  ## Refresh law (a stale clone never senses silently)
+
+  A clone created with `git clone --local <source>` (the way the operator
+  targets `xaas`, `autofde-lab`, `gymact` and `ggen-igniter` are provisioned)
+  goes stale the moment its source moves. `refresh/1` is the machine step that
+  fixes that without a human: `git fetch <remote>` for the clone's upstream,
+  then `git merge --ff-only` of the upstream ref into the clone's checked-out
+  branch. It is deliberately non-destructive -- a clone that is ahead of, or
+  has diverged from, its upstream is left untouched and reported as a typed
+  result/refusal, and the per-alias integration branch (where court-approved
+  work lands) is never involved. An entry opts in with `refresh: true`;
+  `Xaas.Ultracode.Autonomic` then refreshes it before it pins `base_sha`, and
+  `mix xaas.ultracode.repos --refresh ALIAS` runs the same step by hand.
+
+  This module never starts the application, never touches a database, and
+  never runs a suite. It reads config, the filesystem, and git -- and
+  `refresh/1` additionally fetches from the clone's own configured remote
+  (a local path for `git clone --local` clones; no other network is opened).
   """
 
   alias Xaas.Ultracode.{Sensing, Verifier}
@@ -85,7 +102,8 @@ defmodule Xaas.Ultracode.Repos do
     sensing: "aps",
     suite: "aps-dod",
     canonical_suite: "aps-canonical",
-    worktree_root: nil
+    worktree_root: nil,
+    refresh: false
   }
 
   @typedoc "A validated registry entry."
@@ -96,6 +114,7 @@ defmodule Xaas.Ultracode.Repos do
           required(:suite) => String.t(),
           required(:canonical_suite) => String.t() | nil,
           required(:worktree_root) => String.t() | nil,
+          required(:refresh) => boolean(),
           required(:suite_registered) => boolean(),
           required(:canonical_suite_registered) => boolean() | nil,
           required(:sensing_registered) => boolean()
@@ -163,6 +182,7 @@ defmodule Xaas.Ultracode.Repos do
              is_nil(fields.canonical_suite) or name?(fields.canonical_suite),
              {:bad_suite_name, fields.canonical_suite}
            ),
+         :ok <- check(is_boolean(fields.refresh), {:bad_refresh, fields.refresh}),
          {:ok, worktree_root} <- validate_worktree_root(fields.worktree_root) do
       {:ok,
        %{
@@ -172,6 +192,7 @@ defmodule Xaas.Ultracode.Repos do
          suite: fields.suite,
          canonical_suite: fields.canonical_suite,
          worktree_root: worktree_root,
+         refresh: fields.refresh,
          suite_registered: Verifier.registered?(fields.suite),
          canonical_suite_registered:
            if(fields.canonical_suite, do: Verifier.registered?(fields.canonical_suite)),
@@ -239,6 +260,132 @@ defmodule Xaas.Ultracode.Repos do
     |> Enum.reject(&is_nil/1)
   end
 
+  @typedoc """
+  What `refresh/1` did to the clone: `:advanced` (fast-forwarded to the
+  upstream head), `:current` (already at it) or `:ahead` (the clone holds
+  commits its upstream lacks -- left untouched). `from`/`head` are the clone's
+  HEAD before and after; `upstream` is the tracked ref (`origin/main`).
+  """
+  @type refresh_result :: %{
+          status: :advanced | :current | :ahead,
+          branch: String.t(),
+          upstream: String.t(),
+          from: String.t(),
+          head: String.t()
+        }
+
+  @doc """
+  Brings a registered clone up to its upstream so the loop never senses (and
+  never pins `base_sha` at) a stale tree: fetches the tracked remote, then
+  fast-forwards the checked-out branch to the upstream ref.
+
+  Non-destructive by construction: only `git fetch` and `git merge --ff-only`
+  are ever run, so a clone ahead of its upstream is reported `:ahead` and left
+  alone, and a diverged clone is a typed refusal
+  (`{:refresh_diverged, from, upstream_head}`) -- never a reset, never a
+  rebase. Other typed refusals: `{:unknown_repo_alias, _}` /
+  `{:invalid_repo_entry, _, _}` (registry law), `:refresh_detached_head`,
+  `:refresh_no_upstream`, `{:refresh_fetch_failed, code, output}`,
+  `{:refresh_ff_failed, code, output}`.
+  """
+  @spec refresh(term()) :: {:ok, refresh_result()} | {:error, term()}
+  def refresh(repo_alias) do
+    with {:ok, entry} <- resolve(repo_alias) do
+      refresh_clone(entry.path)
+    end
+  end
+
+  defp refresh_clone(path) do
+    with {:ok, branch} <- current_branch(path),
+         {:ok, upstream} <- upstream_of(path, branch),
+         :ok <- fetch_remote(path, upstream),
+         {:ok, from} <- rev(path, "HEAD"),
+         {:ok, target} <- rev(path, upstream) do
+      cond do
+        from == target ->
+          {:ok, refresh_result(:current, branch, upstream, from, from)}
+
+        ancestor?(path, target, from) ->
+          {:ok, refresh_result(:ahead, branch, upstream, from, from)}
+
+        ancestor?(path, from, target) ->
+          case System.cmd("git", ["-C", path, "merge", "--ff-only", "--quiet", upstream],
+                 stderr_to_stdout: true
+               ) do
+            {_, 0} ->
+              with {:ok, head} <- rev(path, "HEAD") do
+                {:ok, refresh_result(:advanced, branch, upstream, from, head)}
+              end
+
+            {out, code} ->
+              {:error, {:refresh_ff_failed, code, String.trim(out)}}
+          end
+
+        true ->
+          {:error, {:refresh_diverged, from, target}}
+      end
+    end
+  end
+
+  defp refresh_result(status, branch, upstream, from, head),
+    do: %{status: status, branch: branch, upstream: upstream, from: from, head: head}
+
+  defp current_branch(path) do
+    case System.cmd("git", ["-C", path, "symbolic-ref", "--quiet", "--short", "HEAD"],
+           stderr_to_stdout: true
+         ) do
+      {out, 0} -> {:ok, String.trim(out)}
+      {_, _} -> {:error, :refresh_detached_head}
+    end
+  end
+
+  defp upstream_of(path, branch) do
+    case System.cmd(
+           "git",
+           [
+             "-C",
+             path,
+             "rev-parse",
+             "--abbrev-ref",
+             "--symbolic-full-name",
+             branch <> "@{upstream}"
+           ],
+           stderr_to_stdout: true
+         ) do
+      {out, 0} -> {:ok, String.trim(out)}
+      {_, _} -> {:error, :refresh_no_upstream}
+    end
+  end
+
+  # `upstream` is "<remote>/<branch>"; fetch exactly that remote (its
+  # configured refspec updates refs/remotes/<remote>/*, never a local branch).
+  defp fetch_remote(path, upstream) do
+    [remote | _] = String.split(upstream, "/", parts: 2)
+
+    case System.cmd("git", ["-C", path, "fetch", "--quiet", remote], stderr_to_stdout: true) do
+      {_, 0} -> :ok
+      {out, code} -> {:error, {:refresh_fetch_failed, code, String.trim(out)}}
+    end
+  end
+
+  defp rev(path, ref) do
+    case System.cmd("git", ["-C", path, "rev-parse", "--verify", "--quiet", ref <> "^{commit}"],
+           stderr_to_stdout: true
+         ) do
+      {out, 0} -> {:ok, String.trim(out)}
+      {_, _} -> {:error, {:refresh_unresolvable_ref, ref}}
+    end
+  end
+
+  defp ancestor?(path, maybe_ancestor, descendant) do
+    match?(
+      {_, 0},
+      System.cmd("git", ["-C", path, "merge-base", "--is-ancestor", maybe_ancestor, descendant],
+        stderr_to_stdout: true
+      )
+    )
+  end
+
   # ------------------------------------------------------------------
   # Sources
   # ------------------------------------------------------------------
@@ -301,12 +448,20 @@ defmodule Xaas.Ultracode.Repos do
       sensing: lookup(raw, :sensing) || "aps",
       suite: lookup(raw, :suite) || "aps-dod",
       canonical_suite: canonical_of(raw),
-      worktree_root: lookup(raw, :worktree_root)
+      worktree_root: lookup(raw, :worktree_root),
+      refresh: refresh_of(raw)
     }
   end
 
   defp normalize_raw(other),
-    do: %{path: other, sensing: nil, suite: nil, canonical_suite: nil, worktree_root: nil}
+    do: %{
+      path: other,
+      sensing: nil,
+      suite: nil,
+      canonical_suite: nil,
+      worktree_root: nil,
+      refresh: false
+    }
 
   # Raw entries may carry atom or string keys (config files vs the JSON
   # registry file). Single total clause -- no guarded clause pairs.
@@ -325,6 +480,16 @@ defmodule Xaas.Ultracode.Repos do
       "aps-canonical"
     else
       lookup(raw, :canonical_suite)
+    end
+  end
+
+  # Absent key = no refresh. A present-but-non-boolean value is passed
+  # through so `validate/2` refuses it as `{:bad_refresh, value}` instead of
+  # silently coercing operator intent.
+  defp refresh_of(raw) do
+    case lookup(raw, :refresh) do
+      nil -> false
+      value -> value
     end
   end
 

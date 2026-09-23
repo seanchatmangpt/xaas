@@ -149,6 +149,22 @@ defmodule Xaas.Ultracode.Sensing do
   """
   @spec registered?(term()) :: boolean()
   def registered?(name), do: match?({:ok, _}, profile(name))
+  @doc """
+  Raw registry binding lookup (`t1` stream): `{:ok, profile}` when `name` is
+  declared under `config :xaas, :ultracode_sensing_profiles`, else `:error`.
+  Unlike `profile/1` it performs no shape validation -- callers that act on the
+  profile must go through `profile/1` (fail-closed) or `derive/2`.
+  """
+  @spec profile_for(term()) :: {:ok, profile()} | :error
+  def profile_for(name) when is_binary(name) do
+    case Application.get_env(:xaas, :ultracode_sensing_profiles, %{}) do
+      %{^name => profile} when is_map(profile) -> {:ok, profile}
+      _ -> :error
+    end
+  end
+
+  def profile_for(_name), do: :error
+
 
   @doc """
   Senses a REGISTERED repo alias at an exact `base_sha`: provisions a detached

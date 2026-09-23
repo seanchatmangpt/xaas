@@ -64,6 +64,8 @@ defmodule Xaas.Ultracode.Autonomic do
   really claims, edits, commits and closes through `Xaas.Ultracode.Lease`.
   """
 
+  require Logger
+
   alias Xaas.Ultracode.{
     Epoch,
     ItemRuns,
@@ -126,6 +128,14 @@ defmodule Xaas.Ultracode.Autonomic do
       end
 
     ledger(ctx, :start, start_data)
+
+    # Clone refresh outcomes (only for entries that opted in): the durable
+    # record that a wave sensed a freshly fast-forwarded base -- or that a
+    # refused refresh fell back to the clone's current head.
+    case refresh_ledger(ctx) do
+      refreshes when map_size(refreshes) == 0 -> :ok
+      refreshes -> ledger(ctx, :refresh, refreshes)
+    end
 
     with {:ok, items} <- sense(ctx) do
       ledger(ctx, :sensed, %{items: Enum.map(items, & &1["id"])})
@@ -298,6 +308,29 @@ defmodule Xaas.Ultracode.Autonomic do
             {suite, canonical}
           end
 
+        # Refresh law (`Repos.refresh/1`): an entry that opts in has its
+        # clone fetched + fast-forwarded BEFORE `base_sha` is pinned, so a
+        # stale clone never senses silently. Non-destructive; a refusal
+        # (diverged clone, no upstream, fetch failure) degrades to the
+        # clone's current head with a logged warning and the typed result
+        # recorded on the repo facts -- an unattended wave keeps moving on a
+        # consistent (if older) base rather than halting.
+        refresh =
+          if repos_entry && repos_entry.refresh do
+            case Repos.refresh(repo_alias) do
+              {:ok, result} ->
+                result
+
+              {:error, reason} ->
+                Logger.warning(
+                  "[ultracode] clone refresh refused for #{repo_alias}: #{inspect(reason)}; " <>
+                    "sensing the clone's current head"
+                )
+
+                {:error, reason}
+            end
+          end
+
         base_sha = Keyword.get(opts, :base_sha) || git!(path, ["rev-parse", "HEAD"])
 
         {repo_alias,
@@ -306,7 +339,8 @@ defmodule Xaas.Ultracode.Autonomic do
            suite: suite,
            canonical_suite: canonical,
            base_sha: base_sha,
-           sensing: repos_entry && repos_entry.sensing
+           sensing: repos_entry && repos_entry.sensing,
+           refresh: refresh
          }}
       end)
 
@@ -401,9 +435,6 @@ defmodule Xaas.Ultracode.Autonomic do
           {:error, script_reason} ->
             profile_fallback(ctx, repo_alias, path, sensing_name, script_reason)
         end
-      after
-        Worktrees.cleanup(repo_alias, path)
-      end
     end
   end
 
@@ -1202,6 +1233,28 @@ defmodule Xaas.Ultracode.Autonomic do
 
     File.mkdir_p!(Path.dirname(ctx.ledger))
     File.write!(ctx.ledger, line, [:append])
+  end
+
+  # JSON-safe per-alias refresh outcomes for the ledger (`nil` = the entry
+  # did not opt in, so it is absent).
+  defp refresh_ledger(ctx) do
+    for alias_name <- ctx.aliases,
+        result = Map.get(Map.fetch!(ctx.repos, alias_name), :refresh),
+        into: %{} do
+      case result do
+        {:error, reason} ->
+          {alias_name, %{"error" => inspect(reason)}}
+
+        %{status: status, from: from, head: head, upstream: upstream} ->
+          {alias_name,
+           %{
+             "status" => to_string(status),
+             "from" => from,
+             "head" => head,
+             "upstream" => upstream
+           }}
+      end
+    end
   end
 
   defp git!(repo, args) do

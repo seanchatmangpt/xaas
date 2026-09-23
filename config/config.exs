@@ -253,6 +253,7 @@ config :xaas, :ultracode_ticket_dir, nil
 # extra suites.
 config :xaas, :ultracode_target_suites, nil
 config :xaas, :ultracode_repos, %{}
+config :xaas, :ultracode_sensing_profiles, %{}
 
 # The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
 # pool_capacity/1`, enforced race-free inside `claim_next/3`): 5 live
