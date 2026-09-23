@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-18",
+  "base_sha": "release/v26.9.22 2f6a792 (bumped to main, tagged v26.9.22)",
+  "command": "mix format --check-formatted; MIX_ENV=test mix compile --force --warnings-as-errors; MIX_ENV=test mix test; MIX_ENV=dev mix dialyzer; mix deps.unlock --check-unused; git tag v26.9.22; git push origin main v26.9.22",
+  "exit": 0,
+  "output_excerpt": "FORMAT_EXIT=0; COMPILE_EXIT=0; full suite 1635/1636 passed + 76 excluded; MIX_ENV=dev mix dialyzer EXIT=0 (\"Total errors: 29, Skipped: 29, Unnecessary Skips: 0\"); deps.unlock --check-unused exit 0. backup/errc-semantic-jira-bridge retired after verifying it is an ancestor of errc/semantic-jira-bridge (content retained on the live branch).",
+  "standing": "ALIVE",
+  "notes": "DEVIATIONS (recorded): (1) the one failing test is the SJ-001 e2e harness (nested cold-build plumbing {1, nil}); the graph-side proof it exists to provide was executed by hand against ~/ggen_igniter f81cf54 with the real SJ-001 front matter — exit 0, ok:true, work_order_digest sha256:2da4d987... — substitute evidence, honestly labelled; full repair owed on the harness's private-build plumbing. (2) npx @asyncapi/cli validate did not run locally (npm offline in this sandbox) — the check remains hosted-CI-owned. (3) WO 18's depends_on XAAS-26922-11 is QUEUED (producer ref awaited) — the operator's standing release instruction ('bump at lane end after the gate is green') governs; the ash_a2a/ggen_igniter lock bumps ride the queued WOs.",
+  "evidence_ts": "2026-09-23T02:15Z"
+}
