@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-08",
+  "base_sha": "1b1cede on release/v26.9.22 (t6 6bc52b6 + sjira/sj-007 59082ed)",
+  "command": "MIX_TEST_PARTITION=t6 mix test test/xaas/sjira; mix xaas.sjira.ard_court docs/sjira/v26.9.21/ash-atlassian-ard.md --receipt docs/sjira/v26.9.21/receipts/SJ-007-ard-court.json",
+  "exit": 0,
+  "output_excerpt": "test/xaas/sjira exit 0. ARD court ACCEPTED: receipts/SJ-007-ard-court.json sealed (ARD sha256 262900ee..., ARD-001 required sections pass, ARD-002 manifest parsed, 7 required sections present). ash_atlassian subject bound: 36b1799381d04b50da2bececd4b201defc231333 (~/ash_atlassian HEAD, declared in the v26.9.22 graph).",
+  "standing": "ALIVE",
+  "notes": "sjira/sj-007 add/add resolved keeping the t6 ARD per merge plan; generate.py union kept the standing-input architecture plus sj-007's SJ-010..012 orders.",
+  "evidence_ts": "2026-09-22T18:42Z"
+}

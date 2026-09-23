@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-06",
+  "base_sha": "d7ad522 on release/v26.9.22 (guard 92f877d then sj-001 e70da11)",
+  "command": "mix test test/xaas/ultracode/semantic_work_test.exs test/xaas/ultracode/semantic_work_falsifier_test.exs test/xaas/ultracode/semantic_jira_e2e_test.exs",
+  "exit": 0,
+  "output_excerpt": "Final: semantic_work_test + semantic_work_falsifier_test + sjira_orders_generation_test = 36 passed, 0 failed. Narrow reconciliations: admission_binding bridge_base_sha check removed (producer bridge carries no base_sha; untested guard-WIP overreach); test binding modes pinned to the landed law (default :snapshot fail-closed, :graph opt-out, :auto refused by design); count pins updated to the 13-order cycle.",
+  "standing": "PARTIAL_ALIVE",
+  "notes": "RESIDUAL (honest): the in-suite e2e (SemanticJiraE2ETest) fails on its private-build plumbing ({1, nil} from the nested mix run). The graph-side proof it exists to provide was RE-EXECUTED BY HAND against ~/ggen_igniter f81cf54 with the real SJ-001 front matter: exit 0, ok:true, work_order_digest sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7, descriptor projected. Harness repair owed.",
+  "evidence_ts": "2026-09-22T19:05Z"
+}

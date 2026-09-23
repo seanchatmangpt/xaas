@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-12",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED: the scheduled frontier feeder consumes SemanticJiraBridge (WO 11) and the ggen_igniter frontier-over-events surface (gates/050_frontier.rq reading the TransitionLog projection instead of static sj:standing \"UNKNOWN\"). Awaiting XAAS-26922-11 and GGEN_IGNITER-26922-07.",
+  "awaiting_refs": ["XAAS-26922-11", "GGEN_IGNITER-26922-07"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}

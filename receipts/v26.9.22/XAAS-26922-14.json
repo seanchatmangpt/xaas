@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-14",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED: SA2A-in-the-loop is gated on the user's SA2A-role decision (operator approval not granted this wave) and on XAAS-26922-12 plus AFDE-26922-06 (autofde-lab frontier-to-descriptor stack). The t3 executor work is preserved on branch auto/t3-sa2a-execute (525caa5) and is NOT merged.",
+  "awaiting_refs": ["XAAS-26922-12", "AFDE-26922-06", "user SA2A-role decision"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}
