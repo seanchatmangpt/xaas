@@ -1,0 +1,199 @@
+{
+  "digest_contract": "tuple: Xaas.Sa2a.Route.digest/1; request: SemanticDrive.request_digest/1 (ARD section 8 SemanticExecutionRequest); both sha256 over canonical JSON (sorted keys, compact separators, UTF-8 unescaped, exclusions sorted)",
+  "fields": [
+    "subject",
+    "postcondition",
+    "capability",
+    "evidence_ceiling",
+    "authority_ceiling",
+    "consequence_class",
+    "exclusions"
+  ],
+  "hops": [
+    {
+      "carrier": "sJira work-graph row EP-A (work.json); graph_digest = frontier work_order_digest",
+      "digest": "sha256:c18dde9d7d3e5b3de40c74087d60b08fd5ca375625899a6ca1096d64cb558602",
+      "hop": "sjira",
+      "request": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "graph_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+        "work_order": "EP-A"
+      },
+      "request_digest": "sha256:d67ce43127952e67d8d6610f9a16e6588525c468e93acb62f8398f1b9bd02066",
+      "tuple": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_ceiling": "repository-local",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+      }
+    },
+    {
+      "carrier": "GgenIgniter.SemanticA2A.task_from_work_order/2 (sa2a_task.json)",
+      "digest": "sha256:c18dde9d7d3e5b3de40c74087d60b08fd5ca375625899a6ca1096d64cb558602",
+      "hop": "sa2a",
+      "request": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "graph_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+        "work_order": "EP-A"
+      },
+      "request_digest": "sha256:d67ce43127952e67d8d6610f9a16e6588525c468e93acb62f8398f1b9bd02066",
+      "tuple": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_ceiling": "repository-local",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+      }
+    },
+    {
+      "carrier": "XaaS epoch contract admitted by SemanticWork.admit/2 (contract.json)",
+      "digest": "sha256:c18dde9d7d3e5b3de40c74087d60b08fd5ca375625899a6ca1096d64cb558602",
+      "hop": "xaas",
+      "request": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "graph_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+        "work_order": "EP-A"
+      },
+      "request_digest": "sha256:d67ce43127952e67d8d6610f9a16e6588525c468e93acb62f8398f1b9bd02066",
+      "tuple": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_ceiling": "repository-local",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+      }
+    },
+    {
+      "carrier": "Run.semantic_bridge + executed recipe (sealed evidence), executor recipe-worker",
+      "digest": "sha256:c18dde9d7d3e5b3de40c74087d60b08fd5ca375625899a6ca1096d64cb558602",
+      "executor": "recipe-worker",
+      "hop": "provider",
+      "request": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "graph_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+        "work_order": "EP-A"
+      },
+      "request_digest": "sha256:d67ce43127952e67d8d6610f9a16e6588525c468e93acb62f8398f1b9bd02066",
+      "run_capability_id": "recipe:mix-format",
+      "tuple": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_ceiling": "repository-local",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+      }
+    },
+    {
+      "carrier": "sealed XaaS receipt bridge (SemanticReceipt.export/1, receipt.json)",
+      "digest": "sha256:c18dde9d7d3e5b3de40c74087d60b08fd5ca375625899a6ca1096d64cb558602",
+      "hop": "receipt",
+      "request": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "graph_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+        "work_order": "EP-A"
+      },
+      "request_digest": "sha256:d67ce43127952e67d8d6610f9a16e6588525c468e93acb62f8398f1b9bd02066",
+      "tuple": {
+        "authority_ceiling": "CONSTRUCT",
+        "capability": "recipe:mix-format",
+        "consequence_class": "postcondition",
+        "evidence_ceiling": "repository-local",
+        "exclusions": [
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes",
+          "no push, merge or publish"
+        ],
+        "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+      }
+    }
+  ],
+  "request_fields": [
+    "work_order",
+    "subject",
+    "postcondition",
+    "capability",
+    "evidence_horizon",
+    "authority_ceiling",
+    "consequence_class",
+    "exclusions",
+    "graph_digest"
+  ],
+  "schema": "xaas/semantic-drive-hops/v1",
+  "work_order": "EP-A"
+}

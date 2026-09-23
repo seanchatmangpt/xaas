@@ -1,0 +1,53 @@
+{
+  "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+  "bridge": {
+    "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+    "definition_digest": "sha256:7db51e16c6fc481bff19bb0c83b4aa76e9c2282cf97802a7876b0ac9cb255301",
+    "evidence_ceiling": "repository-local",
+    "identity": "EP-A",
+    "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "replay_identity": "semantic-jira:v26.9.23:episode:me-1:EP-A",
+    "repository": "seanchatmangpt/ggen_igniter",
+    "requires": {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check"
+      ],
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format"
+      ],
+      "evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-me-1-format-check"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent"
+      ]
+    },
+    "source_snapshot_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+    "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+  },
+  "checkpoint_iri": "urn:semantic-jira:checkpoint:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "court_map": {
+    "acceptance": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check": {
+        "test": "format"
+      }
+    },
+    "courts": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format"
+    ],
+    "falsifiers": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent": {
+        "test": "format"
+      }
+    }
+  },
+  "dependencies": [],
+  "execution_policy": "autonomic_wave_attempt",
+  "execution_repo_alias": "ggen_igniter",
+  "goal": "EP-A: EP-A of MachineExperience episode me-1: repair the format_drift of lib/ggen_igniter/semantic_jira/reconciler.ex\n\nFailure class format_drift on subject v23/episode-me-1 (drift commit 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f changes lib/ggen_igniter/semantic_jira/reconciler.ex). The order declares no capability: it routes KNOWN only from an admitted MachineExperience, else UNKNOWN (PRD PR-014, PR-016).\n\nAcceptance:\n- https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check\n\nFalsifiers:\n- https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent\n\nPath scope:\n- .formatter.exs\n- config\n- lib\n- mix.exs\n- test",
+  "graph_digest": "sha256:d4c589cf8504fdb9bf85b5a1f6b52f8871553037a69ee4021f3cbb2b6e7cf35f",
+  "provider": "recipe",
+  "repository_identity": "seanchatmangpt/ggen_igniter",
+  "verifier_suite": "ggen-igniter-format",
+  "work_order_iri": "urn:semantic-jira:work-order:EP-A"
+}

@@ -1,0 +1,158 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23",
+  "court_maps": {
+    "EP-A": {
+      "acceptance": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check": {
+          "test": "format"
+        }
+      },
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format"
+      ],
+      "falsifiers": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent": {
+          "test": "format"
+        }
+      }
+    },
+    "EP-B": {
+      "acceptance": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-me-1-acceptance-format-check": {
+          "test": "format"
+        }
+      },
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format"
+      ],
+      "falsifiers": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-me-1-falsifier-drift-absent": {
+          "test": "format"
+        }
+      }
+    }
+  },
+  "episode": "me-1",
+  "schema": "xaas/semantic-drive-work-graph/v1",
+  "work_orders": [
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+      "consequence_class": "postcondition",
+      "dependencies": [],
+      "description": "Failure class format_drift on subject v23/episode-me-1 (drift commit 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f changes lib/ggen_igniter/semantic_jira/reconciler.ex). The order declares no capability: it routes KNOWN only from an admitted MachineExperience, else UNKNOWN (PRD PR-014, PR-016).",
+      "evidence_ceiling": "repository-local",
+      "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+      "exclusions": [
+        "no LLM provider on the KNOWN path",
+        "no file outside path_scope changes",
+        "no push, merge or publish"
+      ],
+      "failure_class": "format_drift",
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent"
+      ],
+      "identity": "EP-A",
+      "next_checkpoint": "GC-26.9.23",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+      "projections": [
+        "jira",
+        "sa2a",
+        "worker",
+        "verification",
+        "receipt",
+        "replay"
+      ],
+      "promotion_rule": "EP-A leaves UNKNOWN only through a ledger transition whose XaaS receipt binds the candidate head descended from 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f: the ggen-igniter-format court must observe exit 0 at that head and a non-zero exit when the recipe commit is reverted.",
+      "replay_identity": "semantic-jira:v26.9.23:episode:me-1:EP-A",
+      "repository": "seanchatmangpt/ggen_igniter",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-me-1-format-check"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:mix-format",
+      "standing": "UNKNOWN",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+      "successor_policy": "a format drift the recipe cannot repair is typed UNSUPPORTED and handed to successor v23:GC-26.9.24",
+      "title": "EP-A of MachineExperience episode me-1: repair the format_drift of lib/ggen_igniter/semantic_jira/reconciler.ex"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-me-1-acceptance-format-check"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+      "consequence_class": "postcondition",
+      "dependencies": [
+        {
+          "required_standing": "ALIVE",
+          "type": "requiresReceipt",
+          "upstream": "EP-A"
+        }
+      ],
+      "description": "Failure class format_drift on subject v23/episode-me-1 (drift commit 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f changes lib/ggen_igniter/semantic_jira/reconciler.ex). The order declares no capability: it routes KNOWN only from an admitted MachineExperience, else UNKNOWN (PRD PR-014, PR-016).",
+      "evidence_ceiling": "repository-local",
+      "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+      "exclusions": [
+        "no LLM provider on the KNOWN path",
+        "no file outside path_scope changes",
+        "no push, merge or publish"
+      ],
+      "failure_class": "format_drift",
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-me-1-falsifier-drift-absent"
+      ],
+      "identity": "EP-B",
+      "next_checkpoint": "GC-26.9.23",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+      "projections": [
+        "jira",
+        "sa2a",
+        "worker",
+        "verification",
+        "receipt",
+        "replay"
+      ],
+      "promotion_rule": "EP-B is eligible only when the ledger holds an ALIVE transition of EP-A; its own promotion follows EP-A's court law.",
+      "replay_identity": "semantic-jira:v26.9.23:episode:me-1:EP-B",
+      "repository": "seanchatmangpt/ggen_igniter",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-me-1-format-check"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "standing": "UNKNOWN",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-B",
+      "successor_policy": "a format drift the recipe cannot repair is typed UNSUPPORTED and handed to successor v23:GC-26.9.24",
+      "title": "EP-B of MachineExperience episode me-1: repair the format_drift of lib/ggen_igniter/semantic_jira/reconciler.ex"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-L/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+08:31:21.688 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+08:31:22.071 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+08:31:22.372 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+08:31:22.445 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:31:22.445 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+08:31:22.459 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:31:22.459 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+08:31:22.471 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:31:22.471 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+08:31:22.479 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:31:22.479 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 473228, max_cases: 32
+08:31:22.489 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:31:22.489 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+Excluding tags: [:test]
+Including tags: [location: {"test/sjira/v26_9_23_goal_test.exs", 364}]
+
+08:31:22.497 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:31:22.497 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+
+
+  1) test each gate's UNKNOWN stub names a lane whose order's path scope covers that court script (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:364
+     still stubbed: [1, 2, 3, 4, 9, 12]
+     code: assert Enum.all?(stubs, &(&1 not in [0, 4, 5, 6, 7, 8, 10, 11])),
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:400: (test)
+
+
+Finished in 0.5 seconds (0.00s async, 0.5s sync)
+1 test, 1 failure (22 excluded)

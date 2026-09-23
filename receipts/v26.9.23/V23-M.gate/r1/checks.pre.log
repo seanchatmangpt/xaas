@@ -1,0 +1,8 @@
+subject d19623ed280fbdeff831676a5e86d652f8707cd3
+validate GC23-9.json: ADMITTED /Users/sac/wt/v26922/v23/V23-M/receipts/v26.9.23/V23-M.gate/r1/GC23-9.json exit=0
+validate STOP-GC-26.9.23.json: ADMITTED /Users/sac/wt/v26922/v23/V23-M/receipts/v26.9.23/V23-M.gate/r1/STOP-GC-26.9.23.json exit=0
+mockgrep: 0 matches
+reserved/goal/prd diff vs 04599d6: []
+prd-ard: 7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 39386 bytes
+episode refs: v23/episode-me-1=92d0a43 v23/episode-me-1-receipt=bd84b3e v23/episode-me-2=3660553 v23/episode-me-2-receipt=48ae4ad 
+df: 50 GB free

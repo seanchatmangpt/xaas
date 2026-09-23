@@ -1,0 +1,64 @@
+{
+  "base_sha": "36605534141aa44429586d3e15e8ff159f3d5bc8",
+  "bridge": {
+    "authority_ceiling": "CONSTRUCT",
+    "base_sha": "36605534141aa44429586d3e15e8ff159f3d5bc8",
+    "consequence_class": "postcondition",
+    "definition_digest": "sha256:600dd71f078f4ac2fde27098bd4c98700029c7010e7b7a8b12ec0aabe969398a",
+    "evidence_ceiling": "repository-local",
+    "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+    "exclusions": [
+      "no LLM provider on the KNOWN path",
+      "no file outside path_scope changes",
+      "no push, merge or publish"
+    ],
+    "identity": "EP-A",
+    "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+    "replay_identity": "semantic-jira:v26.9.23:episode:me-2:EP-A",
+    "repository": "seanchatmangpt/ggen_igniter",
+    "requires": {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-2-acceptance-format-check"
+      ],
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-2-format"
+      ],
+      "evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-me-2-format-check"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-2-falsifier-drift-absent"
+      ]
+    },
+    "requires_capability": "recipe:mix-format",
+    "source_snapshot_digest": "sha256:f89dc1421694a688a3e977a34bd4112970ef094cc5c00d3ed486fb1a832a5d22",
+    "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-2#EP-A"
+  },
+  "capability": "recipe:mix-format",
+  "checkpoint_iri": "urn:semantic-jira:checkpoint:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "court_map": {
+    "acceptance": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-2-acceptance-format-check": {
+        "test": "format"
+      }
+    },
+    "courts": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-2-format"
+    ],
+    "falsifiers": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-2-falsifier-drift-absent": {
+        "test": "format"
+      }
+    }
+  },
+  "dependencies": [],
+  "execution_policy": "autonomic_wave_attempt",
+  "execution_repo_alias": "ggen_igniter",
+  "goal": "EP-A: EP-A of MachineExperience episode me-2: repair the format_drift of lib/ggen_igniter/semantic_jira/transition_log.ex\n\nFailure class format_drift on subject v23/episode-me-2 (drift commit 36605534141aa44429586d3e15e8ff159f3d5bc8 changes lib/ggen_igniter/semantic_jira/transition_log.ex). The order declares no capability: it routes KNOWN only from an admitted MachineExperience, else UNKNOWN (PRD PR-014, PR-016).\n\nAcceptance:\n- https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-2-acceptance-format-check\n\nFalsifiers:\n- https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-2-falsifier-drift-absent\n\nPath scope:\n- .formatter.exs\n- config\n- lib\n- mix.exs\n- test",
+  "graph_digest": "sha256:dbf62517a8803c231e6efde63f25e0281c7933d9ed7e4158bfec3a6132b14158",
+  "provider": "recipe",
+  "repository_identity": "seanchatmangpt/ggen_igniter",
+  "verifier_suite": "ggen-igniter-format",
+  "work_order_iri": "urn:semantic-jira:work-order:EP-A"
+}

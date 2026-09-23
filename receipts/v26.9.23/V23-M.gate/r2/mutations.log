@@ -1,0 +1,16 @@
+scratch: /private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23m-r2/mut d9939a63f1bb222b199f7cd56c14a4cf391ba53a porcelain 0
+BASELINE compile 0
+BASELINE test 0: 25 tests, 0 failures
+BASELINE court 0: ALIVE: GC23-9 episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 with 0 LLM-provider and 0 exploration events and fewer events/steps
+M1-route-skips-admission-digest: compile 0; test 2: 25 tests, 4 failures; court 1: REFUSED: GC23-9 falsifier: route over the edited-capability graph exited 3, expected 3 experience_admission_invalid admission_digest_mismatch; KILLED
+M2-skips-experience-digest: compile 0; test 2: 25 tests, 2 failures; court 1: REFUSED: GC23-9 falsifier: route over the edited-subject graph exited 3, expected 3 experience_admission_invalid experience_digest_mismatch; KILLED
+M3-invalid-admissions-ignored(REFUTE-2): compile 0; test 2: 25 tests, 5 failures; court 1: REFUSED: GC23-9 falsifier: route over the no-me graph exited 4, expected 3 experience_admission_invalid experience_absent; KILLED
+M4-closure-skipped: compile 0; test 2: 25 tests, 1 failure; court 1: REFUSED: GC23-9 falsifier: route over the extra-triple graph exited 0, expected 3 experience_admission_invalid admission_not_closed; KILLED
+M5-admission-digest-binds-only-experience-digest(v1): compile 0; test 2: 25 tests, 2 failures; court 1: REFUSED: GC23-9 live route over the admitted graph exited 3, expected 0 (KNOWN); KILLED
+M6-refs-order-unchecked: compile 0; test 2: 25 tests, 1 failure; court 0: ALIVE: GC23-9 episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 with 0 LLM-provider and 0 exploration events and fewer events/steps; KILLED
+M7-runner-unsorted-refs: compile 0; test 2: 25 tests, 1 failure; court 0: ALIVE: GC23-9 episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 with 0 LLM-provider and 0 exploration events and fewer events/steps; KILLED
+M8-ggen-digest-formula-drift: compile 0; test 2: 25 tests, 2 failures; court 1: REFUSED: GC23-9 live route over the admitted graph exited 3, expected 0 (KNOWN); KILLED
+RESTORED compile 0; porcelain 0
+KILLED 8/8
+python3 mutate.py  265.03s user 469.84s system 125% cpu 9:46.48 total
+MUT_EXIT=0

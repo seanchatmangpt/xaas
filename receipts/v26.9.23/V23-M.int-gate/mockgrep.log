@@ -1,0 +1,3 @@
+cmd: grep -rn 'unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|mock' lib/xaas/ultracode/machine_experience.ex lib/xaas/ultracode/machine_experience lib/mix/tasks/xaas.machine_experience.ex scripts/machine_experience.exs test/xaas/ultracode/machine_experience_test.exs docs/sjira/v26.9.23/courts/GC23-9.sh
+grep_exit=1 (1 = 0 matches)
+control (pattern fires): same grep over test/xaas/ultracode/semantic_replay_test.exs => exit 0, 2 prose matches

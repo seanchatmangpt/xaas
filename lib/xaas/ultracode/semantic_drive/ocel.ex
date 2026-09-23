@@ -28,6 +28,11 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
                     FrontierChanged MachineExperienceAdmitted)
   @object_types ~w(GoalCheckpoint WorkOrder Subject Provider Capability Lease Receipt
                    Repository Commit MachineExperience)
+  # Classes beyond the ARD section 13 minimum, observed only by the
+  # MachineExperience episodes (lane V23-M, PRD PR-014/PR-016, ARD section
+  # 15): the router's decision and the bounded UNKNOWN exploration. A drive
+  # renders them only when its caller declares them (`court_form/2`).
+  @extension_classes ~w(RouteDecided ExplorationStarted ExplorationCompleted)
   @epoch_time "1970-01-01T00:00:00Z"
 
   @typedoc "One observed event."
@@ -49,6 +54,14 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
   @spec object_types() :: [String.t()]
   def object_types, do: @object_types
 
+  @doc """
+  The event classes beyond the ARD section 13 minimum (ARD section 13 names
+  a minimum set): `RouteDecided`, `ExplorationStarted`,
+  `ExplorationCompleted` (the MachineExperience episodes, lane V23-M).
+  """
+  @spec extension_classes() :: [String.t()]
+  def extension_classes, do: @extension_classes
+
   @doc "The distinct event classes present in `events`, in lifecycle order."
   @spec reached([event()]) :: [String.t()]
   def reached(events) do
@@ -56,12 +69,16 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
     Enum.filter(@event_classes, &MapSet.member?(present, &1))
   end
 
-  @doc "The court-vocabulary rendering (`mix xaas.ocel_validate`)."
-  @spec court_form({[event()], objects()}) :: map()
-  def court_form({events, objects}) do
+  @doc """
+  The court-vocabulary rendering (`mix xaas.ocel_validate`). `event_types`
+  declares the event classes (default: the ARD section 13 classes;
+  `event_classes() ++ extension_classes()` for a MachineExperience episode).
+  """
+  @spec court_form({[event()], objects()}, [String.t()]) :: map()
+  def court_form({events, objects}, event_types \\ @event_classes) do
     %{
       "ocel:objectTypes" => @object_types,
-      "ocel:eventTypes" => @event_classes,
+      "ocel:eventTypes" => event_types,
       "ocel:objects" =>
         Enum.map(sorted_objects(objects), fn {id, object} ->
           %{
@@ -86,16 +103,16 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
     }
   end
 
-  @doc "The OCEL 2.0 standard JSON rendering (`pm4py.read_ocel2_json/1`)."
-  @spec standard_form({[event()], objects()}) :: map()
-  def standard_form({events, objects}) do
+  @doc "The OCEL 2.0 standard JSON rendering (`pm4py.read_ocel2_json/1`); `event_types` as in `court_form/2`."
+  @spec standard_form({[event()], objects()}, [String.t()]) :: map()
+  def standard_form({events, objects}, event_types \\ @event_classes) do
     %{
       "objectTypes" =>
         Enum.map(@object_types, fn type ->
           %{"name" => type, "attributes" => declared(objects |> Map.values(), type)}
         end),
       "eventTypes" =>
-        Enum.map(@event_classes, fn type ->
+        Enum.map(event_types, fn type ->
           %{"name" => type, "attributes" => declared(events, type)}
         end),
       "objects" =>
@@ -163,6 +180,59 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
 
     court_events == standard_events and court_objects == standard_objects
   end
+
+  @doc """
+  The observations a court-form document renders (the inverse of
+  `court_form/2`): events in document order with their parsed UTC times,
+  attributes and relationships; objects keyed by id. Re-rendering the result
+  with the same event types yields the same document (event ids are the
+  document order and type), so an episode can compose one drive's recorded
+  log with its own observations without re-describing them.
+  """
+  @spec from_court_form(map()) :: {:ok, {[event()], objects()}} | {:error, term()}
+  def from_court_form(%{"ocel:events" => events, "ocel:objects" => objects})
+      when is_list(events) and is_list(objects) do
+    with {:ok, events} <- parse_events(events) do
+      {:ok, {events, Map.new(objects, &parse_object/1)}}
+    end
+  end
+
+  def from_court_form(_other), do: {:error, :not_a_court_form_document}
+
+  defp parse_events(events) do
+    Enum.reduce_while(events, {:ok, []}, fn event, {:ok, acc} ->
+      case DateTime.from_iso8601(event["time"] || "") do
+        {:ok, time, 0} ->
+          entry = %{
+            type: event["type"],
+            time: time,
+            attributes: event["attributes"] || %{},
+            relationships: parse_relationships(event["relationships"])
+          }
+
+          {:cont, {:ok, [entry | acc]}}
+
+        _ ->
+          {:halt, {:error, {:unparseable_time, event["id"], event["time"]}}}
+      end
+    end)
+    |> case do
+      {:ok, reversed} -> {:ok, Enum.reverse(reversed)}
+      error -> error
+    end
+  end
+
+  defp parse_object(object) do
+    {object["id"],
+     %{
+       type: object["type"],
+       attributes: object["attributes"] || %{},
+       relationships: parse_relationships(object["relationships"])
+     }}
+  end
+
+  defp parse_relationships(relationships),
+    do: Enum.map(relationships || [], &{&1["objectId"], &1["qualifier"]})
 
   # -- helpers ----------------------------------------------------------------
 
