@@ -1,0 +1,5 @@
+route_test: 74 tests, 0 failures
+Traceback (most recent call last):
+  File "<stdin>", line 21, in <module>
+AssertionError: provider: tuple digest does not recompute
+REFUSED: GC23-4 hop digests do not recompute, disagree, or do not match their carriers

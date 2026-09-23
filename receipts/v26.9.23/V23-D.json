@@ -2,22 +2,24 @@
  "identity": {
   "subject": "V23-D",
   "repo": "/Users/sac/xaas",
-  "subject_sha": "7fec9d883580984ef8ac623c210b9985652d4398",
+  "subject_sha": "10f3af9e11b75c6513c8021dbe2754a03d5946b7",
   "base_sha": "b3f85b3e4da2488b6ec41510894617e1eb7ce760",
   "branch": "v23/V23-D",
   "worktree": "/Users/sac/wt/v26922/v23/V23-D",
   "work_order": "v23:WO-V23-D",
   "tuple_digest": "sha256:3d3b9cf4ea96e6498d1d5c1a0c490fb8fd67f7cd68cf210eb889dd5b92801d58",
-  "tuple_digest_observed": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 at this worktree printed `order V23-D ... digest=sha256:3d3b9cf4...` (equal to DRIVER.md)",
+  "tuple_digest_observed": "B1b: GGEN_IGNITER_DIR=ggen_igniter-int MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-4..GC23-8 at 10f3af9 printed `order V23-D standing=... digest=sha256:3d3b9cf4ea96e6498d1d5c1a0c490fb8fd67f7cd68cf210eb889dd5b92801d58` (equal to DRIVER.md; goal.ttl unchanged)",
   "graph_side": {
-   "ggen_igniter_dir": "/Users/sac/wt/v26922/v23/V23-D-gi",
-   "ggen_igniter_sha": "bc8ea06d7fa4e249283f2b8fcd00fef5128b4151",
-   "why": "ggen_igniter friday/gc-fri-0800 (ggen_igniter-int 52798a0) lacks the restored mix semantic_jira.* tasks; per the wave binding the lane made its own detached worktree at fri/FRI-T6 (V23-T6R in flight) for the episode and the graph side of the tests",
-   "episode_base": "bc8ea06d7fa4e249283f2b8fcd00fef5128b4151 (fri/FRI-T6 head, used because friday/gc-fri-0800 lacks the restored mix tasks)",
+   "judge": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+   "ggen_igniter_sha": "c90c17b878d96e14a008c1de498555bc97515937",
+   "why": "V23-T6R merged fri/FRI-T6 (e103a77) into ggen_igniter friday/gc-fri-0800 as c90c17b: the restored mix semantic_jira.* surface is on the judge; every B1b run uses it",
+   "build_compiler": "int _build/test compiled by Elixir 1.19.5 on OTP 28 (compile.elixir_scm); resolved by SemanticDrive.graph_toolchain/2 source build_manifest",
+   "episode_base": "bc8ea06d7fa4e249283f2b8fcd00fef5128b4151 (fri/FRI-T6 head; an ancestor of int c90c17b: git merge-base --is-ancestor exit 0). The committed episode fmt-1 is unchanged; its GC23-4..8 courts re-judge it against int",
    "episode_subject": "v23/episode-fmt-1 = 80a8a4c71b331a39771ad65d1149eb835645d17c",
    "episode_receipt_head": "v23/episode-fmt-1-receipt = 9c5e7571c948f97f6ae08d9399f69f502d81efd4"
   },
-  "prd_ard": "PRD PR-008, PR-009, PR-010, PR-011, PR-012; ARD section 8, section 10, section 13, section 14, section 18, section 20, section 26 F2/F3/F4"
+  "prd_ard": "PRD PR-008, PR-009, PR-010, PR-011, PR-012; ARD section 8, section 10, section 13, section 14, section 18, section 20, section 26 F2/F3/F4",
+  "continuation": "wave B1b continuation of B1 round 1 (38d8864, PARTIAL_ALIVE mu_on_O)"
  },
  "authority": {
   "ceiling": "CONSTRUCT",
@@ -27,11 +29,13 @@
  "consequence": {
   "commits": [
    "03f3d270b902af3f68b2a9c98cb45355d301bda5",
-   "7fec9d883580984ef8ac623c210b9985652d4398"
+   "7fec9d883580984ef8ac623c210b9985652d4398",
+   "10f3af9e11b75c6513c8021dbe2754a03d5946b7"
   ],
   "commit_notes": {
    "03f3d27": "SemanticDrive + Episode + Ocel + mix xaas.episode + scripts/sa2a_route_task.exs + courts GC23-4..8 + no_llm_env.sh + route.ex epoch-hop capability repair + drive tests + HANDWRITTEN rows",
-   "7fec9d8": "episode fmt-1 artifacts (real run under the no-LLM env, driven by the code of 03f3d27)"
+   "7fec9d8": "episode fmt-1 artifacts (real run under the no-LLM env, driven by the code of 03f3d27)",
+   "10f3af9": "SemanticDrive.graph_toolchain/2 (the build's own compiler, else the pin) + BUILD_BROKEN(graph_side_build_broken) typing + mix xaas.episode --graph-toolchain + GC23-8 live recompute via that resolution (compile failure -> UNKNOWN) + SemanticDriveToolchainTest + HANDWRITTEN row"
   },
   "files_changed": [
    "HANDWRITTEN.md",
@@ -65,9 +69,9 @@
    "scripts/sa2a_route_task.exs",
    "test/xaas/ultracode/semantic_drive_test.exs"
   ],
-  "files_changed_basis": "git diff --name-only b3f85b3 7fec9d8; the receipt commit adds receipts/v26.9.23/V23-D.json and receipts/v26.9.23/V23-D.gate/*",
+  "files_changed_basis": "git diff --name-only b3f85b3 10f3af9; the receipt commits add receipts/v26.9.23/V23-D.json and receipts/v26.9.23/V23-D.gate/** (round 1 + b1b/)",
   "path_scope_note": "goal.ttl v23:WO-V23-D sj:pathScope covers lib/xaas/sa2a/, lib/xaas/ultracode/, lib/mix/tasks/, test/xaas/, courts/GC23-4..8.sh and this receipt; the task also mandates HANDWRITTEN.md rows, the committed episode artifacts (docs/sjira/v26.9.23/episodes/fmt-1/**) and the SA2A hop script (scripts/sa2a_route_task.exs); courts/no_llm_env.sh is the F3 environment helper the courts call. lib/xaas/sa2a/route.ex is a Friday-reserved file; changed under this order's lib/xaas/sa2a/ scope to repair a pre-existing integration failure on the lane gate.",
-  "reserved_files_untouched": "semantic_crown.ex, recipe_worker.ex, engine.ex, court_receipt.ex, target_suites.ex, semantic_receipt.ex, xaas.stop_court.ex, docs/sjira/v26.9.22/friday/** unchanged",
+  "reserved_files_untouched": "semantic_crown.ex, recipe_worker.ex, engine.ex, court_receipt.ex, target_suites.ex, semantic_receipt.ex, xaas.stop_court.ex, docs/sjira/v26.9.22/friday/** unchanged (git diff b3f85b3 10f3af9 -- those paths: empty); route.ex as in round 1",
   "generated_vs_handwritten": {
    "generated": [
     "docs/sjira/v26.9.23/episodes/fmt-1/* (by mix xaas.episode: prepare + drive)"
@@ -87,12 +91,217 @@
   "external_refs": {
    "/Users/sac/ggen_igniter refs/heads/v23/episode-fmt-1": "80a8a4c71b331a39771ad65d1149eb835645d17c",
    "/Users/sac/ggen_igniter refs/heads/v23/episode-fmt-1-receipt": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
-   "ggen_igniter worktree": "/Users/sac/wt/v26922/v23/V23-D-gi (detached bc8ea06, APFS-cloned deps/_build; kept for GC23-8 until FRI-T6 merges)"
+   "ggen_igniter worktree": "/Users/sac/wt/v26922/v23/V23-D-gi (detached bc8ea06) -- no longer needed for GC23-8; kept (episode provenance; removal is the driver's call)"
   },
   "remote_effects": []
  },
  "replay": {
-  "durable_location": "receipts/v26.9.23/V23-D.gate/ (tracked on v23/V23-D) + docs/sjira/v26.9.23/episodes/fmt-1/",
+  "durable_location": "receipts/v26.9.23/V23-D.gate/b1b/ (B1b logs, tamper script, stop-court gate receipts) + receipts/v26.9.23/V23-D.gate/ (round 1) + docs/sjira/v26.9.23/episodes/fmt-1/",
+  "commands": [
+   {
+    "cmd": "git merge --no-ff friday/gc-fri-0800",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 38d8864",
+    "exit": 0,
+    "summary": "Already up to date: xaas friday/gc-fri-0800 = b3f85b3 = merge base of v23/V23-D (no xaas predecessor landed since round 1)"
+   },
+   {
+    "cmd": "cd /Users/sac/wt/v26922/fri/ggen_igniter-int && env -i ... MIX_BUILD_PATH=<private APFS clone of _build/test> /opt/homebrew/bin/mix semantic_jira.frontier --work-orders episodes/fmt-1/work.json --ledger <empty>",
+    "cwd": "/Users/sac/wt/v26922/fri/ggen_igniter-int @ c90c17b (read only)",
+    "exit": 0,
+    "summary": "probe: under the build's own compiler (Elixir 1.19.5) nothing recompiles (0.68 s) and the int graph reproduces episodes/fmt-1/frontier_before.json field for field (eligible, blocked, standings, events, ledger_tail) -> the gap is the toolchain choice, not the int graph",
+    "output_sha256": "800775c089c74c98bf692fb3001034614f339fa1c9812726454c8a093d0f75bd",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/probe-frontier-int-homebrew-1.19.5.out"
+   },
+   {
+    "cmd": "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d mix test test/xaas/ultracode/semantic_drive_test.exs test/xaas/sa2a/route_test.exs test/xaas/ultracode/recipe_worker_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "LANE GATE on the committed subject against the mandated judge ggen_igniter-int c90c17b: format 0, compile --force --warnings-as-errors 0 (Compiling 512 files, Generated xaas app), 101 tests, 0 failures, 0 skipped (9 drive incl. 4 toolchain + 74 route + 18 recipe_worker)",
+    "output_sha256": "1b317d699c947b585cd14fc2b14f5924e940f4fc283a0bd63a83f62c6021256a",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/gate-int.log"
+   },
+   {
+    "cmd": "XAAS_DIR=/Users/sac/wt/v26922/v23/V23-D GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "GC23-4 court against ggen_igniter-int c90c17b: ALIVE: 5 equal hop digests, route_test, --verify-hops, both F2 mutations refused",
+    "output_sha256": "0a11b5b5bfa1a321d2cfe378d6954369b679552f719a843f7d52b2da1b61e680",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/court-GC23-4-ggen_igniter-int.log"
+   },
+   {
+    "cmd": "XAAS_DIR=/Users/sac/wt/v26922/v23/V23-D GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d sh docs/sjira/v26.9.23/courts/GC23-5.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "GC23-5 court against ggen_igniter-int c90c17b: ALIVE: executor recipe-worker, 0 LLM-provider OCEL events, no-LLM env control passes, F3 ANTHROPIC_API_KEY=x rerun REFUSED(llm_credential_present)",
+    "output_sha256": "432ec383b0dac5b8f19b3f9fcd5de0a2a510deda33e6efc8341bb1d4897afde2",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/court-GC23-5-ggen_igniter-int.log"
+   },
+   {
+    "cmd": "XAAS_DIR=/Users/sac/wt/v26922/v23/V23-D GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d sh docs/sjira/v26.9.23/courts/GC23-6.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "GC23-6 court against ggen_igniter-int c90c17b: ALIVE: fresh worktree at receipt head 9c5e757 mix format --check-formatted exit 0; F4 revert falsifier killed",
+    "output_sha256": "45f82500113760500886603cfeafc1c72aab3553c90d077d565b21d43cc6a4c0",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/court-GC23-6-ggen_igniter-int.log"
+   },
+   {
+    "cmd": "XAAS_DIR=/Users/sac/wt/v26922/v23/V23-D GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "GC23-7 court against ggen_igniter-int c90c17b: ALIVE: receipt.r.json ADMITTED, ocel.json valid under mix xaas.ocel_validate, pm4py.read_ocel2_json, equivalence, reached ARD section 13 classes",
+    "output_sha256": "40b3a5964ea2cfefbf8cc96db916ba87832564cfa46cd652f4123f5647e86eec",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/court-GC23-7-ggen_igniter-int.log"
+   },
+   {
+    "cmd": "XAAS_DIR=/Users/sac/wt/v26922/v23/V23-D GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d sh docs/sjira/v26.9.23/courts/GC23-8.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "GC23-8 court against ggen_igniter-int c90c17b: ALIVE: recorded diff + LIVE recompute by the int graph side (toolchain: build_manifest elixir 1.19.5), frontier_before/after identical",
+    "output_sha256": "8b2591efd9a0e0a25f26caf7435d97a7df870edfdcf8db43b6b0d79233f79c02",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/court-GC23-8-ggen_igniter-int.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/V23-D.gate/b1b/court-tamper.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "court anti-vacuity against ggen_igniter-int: 6/6 HELD (exit 1 each): GC23-4 provider hop subject forged; GC23-5 actor=zcode; GC23-6 final_head = drift subject; GC23-7 one ocel2 event dropped; GC23-8 EP-B not entered; GC23-8 frontier_before work_order_digest zeroed -> refused by the LIVE recompute half (proves the int graph side ran)",
+    "output_sha256": "d92e311dafaed3f38b1e12e041c8757616e09b6da8310f0ece40d5726a75e1d5",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/court-tamper.log"
+   },
+   {
+    "cmd": "! GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d mix test test/xaas/ultracode/semantic_drive_test.exs  # MUT-5: graph_toolchain never uses the build manifest",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9 + mutation (restored by git checkout; porcelain empty after)",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 9 tests, 7 failures = the 4 toolchain tests + the 3 graph-reaching drive tests (the original cargo/NIF refusal)",
+    "output_sha256": "37738fbc2cf994142a09acb326e2e612b4e9139078413fd2f77748d840cbd6e6",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/mut5-graph-toolchain.log"
+   },
+   {
+    "cmd": "for f in receipts/v26.9.23/V23-D.gate/b1b/GC23-*.json receipts/v26.9.23/V23-D.gate/b1b/STOP-GC-26.9.23.json; do python3 ~/.claude/dfcm/validate_receipt.py $f; done",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "6 x ADMITTED",
+    "output_sha256": "e7ecb335fbc3c2d493fac18a38a169a2463046ab3e8d874af1ec834921071c07",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/gate-receipts-validate.log"
+   },
+   {
+    "cmd": "sh docs/sjira/v26.9.23/courts/check_scripts.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "OK: 13 court scripts exist, sh -n clean, goal.ttl points each gate at its own script (rdflib parse agrees)",
+    "output_sha256": "b816f078894f5b6b1d3798ebdeb67df73b19f3a4c78e923316789e1fa14069f9",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/check-scripts.log"
+   },
+   {
+    "cmd": "! git diff --name-only b3f85b3 HEAD -- lib test scripts | xargs grep -nE 'unittest.mock|Mock\\(|MagicMock|patch\\(|monkeypatch|Mox\\b|:meck|meck\\.'",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 0,
+    "summary": "inner grep exit 1: 0 matches in the 7 lane-touched lib/test/scripts files",
+    "output_sha256": "65cfadf63e0ce335a69ffa8da683240eab7aed2713916171bbe152c2162492e5",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/mockgrep.log"
+   }
+  ],
+  "observations": [
+   {
+    "cmd": "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d mix test test/xaas/ultracode/semantic_drive_test.exs test/xaas/sa2a/route_test.exs test/xaas/ultracode/recipe_worker_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 38d8864 (round-1 head)",
+    "exit": 2,
+    "summary": "BEFORE the repair, against ggen_igniter-int c90c17b: FORMAT 0, COMPILE 0, 97 tests 3 failures -- the 3 drive tests that reach the graph side refused REFUSED(frontier_refused) at the sjira hop: the pinned Elixir 1.18.4 recompiled int's _build/test (built by 1.19.5/OTP 28) incl. the rustler NIF -> System.cmd(\"cargo\") :enoent",
+    "output_sha256": "af4273a192f899fd77b728426b0e5d027f7964df963c1a6f7ad205874c44bbdb",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/gate-int-before-fix.log"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-4,GC23-5,GC23-6,GC23-7,GC23-8 --receipts-dir <scratch>",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 1,
+    "summary": "real stop court: GC23-4..GC23-8 ALIVE (exit 0), gate receipts ADMITTED (subject_sha 10f3af9, copied to V23-D.gate/b1b/GC23-*.json); prints `order V23-D ... digest=sha256:3d3b9cf4...` (= DRIVER.md); STOP=false (exit 1 = other gates open)",
+    "output_sha256": "e1b5709da4d65a3bb73c8fff2cd47edb596dfcb52da4d34f58033ccc864af206",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/stop-court.log"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d mix test test/sjira/v26_9_23_goal_test.exs test/xaas/sa2a test/xaas/ultracode",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 2,
+    "summary": "regression: 843 tests, 2 failures (26 excluded): SJ-001 e2e (AdmissionBinding.snapshot_digest != graph work_order_digest) and DispatchTest hard-timeout process-group kill -- both PRE-EXISTING, see the next two commands",
+    "output_sha256": "b563e677ca7064b172575327633bb0119dc4d3d238961077b5fbdc786bdd7b79",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/regression.log"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23d mix test test/xaas/ultracode/semantic_jira_e2e_test.exs test/xaas/ultracode/dispatch_test.exs:600",
+    "cwd": "scratch detached xaas worktree at friday/gc-fri-0800 b3f85b3 (deps/_build APFS-cloned; removed after)",
+    "exit": 2,
+    "summary": "PRE-EXISTING: the same 2 failures at the untouched xaas base with ggen_igniter-int c90c17b (identical left/right digests) -> not introduced by V23-D",
+    "output_sha256": "157dc9e7d1486fc5500e798da65c296e882f9046fa719aa25adea8c2a616a2cd",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/preexisting-at-xaas-b3f85b3.log"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/V23-D-gi MIX_TEST_PARTITION=_v23d mix test test/xaas/ultracode/semantic_jira_e2e_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-D @ 10f3af9",
+    "exit": 2,
+    "summary": "SJ-001 fails identically against fri/FRI-T6 bc8ea06: the gap came with the FRI-T6 (WO-03) digest law, not with int's delta over bc8ea06",
+    "output_sha256": "184902041e4e78381c0f3126272784f2f41fb70a0ad2cd938ac5d6e81bce4c9c",
+    "log": "receipts/v26.9.23/V23-D.gate/b1b/preexisting-sj001-graph-bc8ea06.log"
+   }
+  ],
+  "observations_note": "Non-zero observations kept verbatim, outside the standing derivation: the pre-repair gate (the gap this continuation closed), the stop court's overall exit 1 (STOP=false because other gates are open; GC23-4..8 each exit 0 and their gate receipts validate ADMITTED -- replay command above), and the regression / base runs that show the 2 regression failures are pre-existing."
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "observed runs on the exact committed subject 10f3af9e11b75c6513c8021dbe2754a03d5946b7 against the mandated judge GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (c90c17b): lane gate exit 0 (101 tests, 0 failures, 0 skipped); courts GC23-4..GC23-8 each exit 0; the real stop court maps all five ALIVE with ADMITTED gate receipts bound to 10f3af9; 6/6 court tampers refused; MUT-5 revert-mutation of the new resolver fails 7 tests. Order tuple digest = DRIVER.md V23-D digest."
+ },
+ "falsifiers": {
+  "F2": "witnessed at 10f3af9 vs int: GC23-4 court (internal F2 mutations refused) + tamper provider-subject-mutated refused; drive tests (verify_hops, live conserve/3)",
+  "F3": "witnessed at 10f3af9 vs int: GC23-5 court (ANTHROPIC_API_KEY=x -> exit 3 REFUSED(llm_credential_present), control passes) + tamper actor=zcode refused; drive test (credential env, real claude executable on PATH)",
+  "F4": "witnessed at 10f3af9 vs int: GC23-6 court (revert of the recipe commit -> mix format --check-formatted exit 1) + tamper final_head=subject refused; drive no_delta refusal",
+  "GC23-8": "witnessed at 10f3af9 vs int: live frontier recompute by the int graph side; tamper of frontier_before work_order_digest refused by the live half",
+  "graph_toolchain": "MUT-5 (resolver forced to the pin): 7/9 drive-file tests fail against int, reproducing the round-1 cargo/NIF refusal"
+ },
+ "notes": [
+  "ARD section 8: the Route contract tuple (FRI-T4, 7 fields incl. evidence_ceiling) and the ARD SemanticExecutionRequest (9 fields incl. work_order, evidence_horizon, graph_digest) are both digested at every hop; graph_digest = the admitted work-order snapshot digest (frontier work_order_digest = SA2A workOrderDigest = descriptor bridge source_snapshot_digest).",
+  "The sJira descriptor emitter (ggen_igniter bc8ea06) carries no tuple: the XaaS epoch contract takes it from the SA2A task and lets the descriptor's own subject/evidence_ceiling win, so a disagreement between the two graph-side processes is refused by Route.conserve/3 (successor: semantic-jira-pack emits the tuple in the bridge).",
+  "OCEL: the xaas court vocabulary (closed top level, ocel: keys, attribute objects) and the OCEL 2.0 standard JSON pm4py reads are disjoint, so one observation set is rendered twice (ocel.json, ocel2.json) and the GC23-7 court proves them equivalent.",
+  "Graph-side toolchain: Elixir from the ggen_igniter .tool-versions (asdf 1.18.4-otp-27) on the running node's ERTS (OTP 28.3.1), matching how the fleet's graph checkouts are compiled; the pinned erlang 27.2.4 forces a full rebuild that cannot read the OTP-28 rebar beams (observed: thousand_island compile crash). Recorded in drive.json.",
+  "TargetSuites.devs/0 (reserved) expands ~/.asdf when read; under the F3 court's fresh HOME the ggen-igniter-format court then ran homebrew elixir with no erl (observed BUILD_BROKEN on the first probe). mix xaas.episode binds that PATH to ASDF_DATA_DIR (Mix.Tasks.Xaas.Episode.court_suite/0); successor: make the declaration HOME-independent.",
+  "The episode's Run/Epoch/Receipt rows lived in one rolled-back sandbox checkout (MIX_TEST_PARTITION=_v23d); the R projection was sealed against them before rollback; the durable record is the committed artifacts.",
+  "Pre-existing, not introduced here: route_test 16 failures at friday/gc-fri-0800 b3f85b3 (FRI-T2 capability admission x FRI-T4 route), repaired in route.ex (MUT-4 reproduces them).",
+  "B1b: xaas friday/gc-fri-0800 did not move (b3f85b3); the merge was a no-op. ggen_igniter friday/gc-fri-0800 moved 52798a0 -> c90c17b (V23-T6R).",
+  "B1b gap found and fixed on the xaas side only: the drive (and GC23-8) ran the graph side under the .tool-versions pin (1.18.4) while int's _build/test was compiled by 1.19.5/OTP 28; the full recompile needs cargo for the rustler NIF. The int graph itself agrees with the committed episode (probe). No ggen_igniter change is required by the drive: no BLOCKED graph-side item for V23-D.",
+  "Toolchain note supersedes round 1's: the graph side now runs under the compiler of the build under judgement (recorded in drive.json graph_side.toolchain.build_compiler for new episodes); fmt-1's drive.json keeps its round-1 record (1.18.4 on V23-D-gi).",
+  "PRE-EXISTING, outside the V23-D order, reported for dispatch: (a) SJ-001 e2e (test/xaas/ultracode/semantic_jira_e2e_test.exs:148) fails at xaas b3f85b3 x ggen_igniter-int c90c17b and x bc8ea06: the FRI-T6/WO-03 graph law adds `definition_digest` to the admitted snapshot (dropped by the graph's drop_digest_fields/1) and redefines definition_digest as a closed @definition_fields take, while xaas AdmissionBinding still drops only the old digest fields and computes definition as snapshot minus standing/dimensions; aligning it also requires regenerating the committed v26.9.21 real-descriptor fixture (semantic_work_test 'XaaS recomputes exactly the digests...'), so it was not done in this lane. Typed: BLOCKED:sj001_digest_law_drift, broken_term mu_unlawful (the T6R merge into ggen_igniter-int removed SJ-001's witnessed ALIVE at 52798a0 without a conservation receipt). (b) DispatchTest 'hard timeout kills the whole process group' fails at the same base too (surviving PIDs listed; environment/load-dependent)."
+ ],
+ "successor": {
+  "checkpoint": "v23:GC-26.9.24",
+  "items": [
+   "semantic-jira-pack: emit the ARD section 8 request tuple in the descriptor bridge and the SA2A task (retires the contract merge and scripts/sa2a_route_task.exs)",
+   "TargetSuites ggen-igniter-format: resolve the asdf data dir at run time, not ~ at read time",
+   "ggen-ecosystem-ocel-pack: admit the ARD section 13 classes and a runtime-observation input (retires SemanticDrive.Ocel)",
+   "TargetSuites / graph checkouts: one fleet rule for which Elixir compiles a checkout's _build (int was built by 1.19.5 while pinning 1.18.4-otp-27); retire graph_toolchain/2's manifest branch once pins and builds agree"
+  ]
+ },
+ "blocked_items": [
+  {
+   "item": "SJ-001 e2e digest law drift (xaas AdmissionBinding vs ggen_igniter SemanticJira at FRI-T6/int)",
+   "standing": "BLOCKED:sj001_digest_law_drift",
+   "broken_term": "mu_unlawful",
+   "owner_hint": "xaas-side companion of V23-T6R (V23-K class): AdmissionBinding @digest_fields += definition_digest; definition_digest = Map.take(GgenIgniter.SemanticJira @definition_fields); regenerate docs/sjira/v26.9.21 real descriptor via e2e_project.exs against int",
+   "evidence": [
+    "receipts/v26.9.23/V23-D.gate/b1b/preexisting-at-xaas-b3f85b3.log",
+    "receipts/v26.9.23/V23-D.gate/b1b/preexisting-sj001-graph-bc8ea06.log",
+    "receipts/v26.9.23/V23-D.gate/b1b/preexisting-sj001-graph-int.log"
+   ],
+   "not_in_V23-D_acceptance": true
+  }
+ ],
+ "round1": {
+  "subject_sha": "7fec9d883580984ef8ac623c210b9985652d4398",
+  "graph_side": {
+   "ggen_igniter_dir": "/Users/sac/wt/v26922/v23/V23-D-gi",
+   "ggen_igniter_sha": "bc8ea06d7fa4e249283f2b8fcd00fef5128b4151",
+   "why": "ggen_igniter friday/gc-fri-0800 (ggen_igniter-int 52798a0) lacks the restored mix semantic_jira.* tasks; per the wave binding the lane made its own detached worktree at fri/FRI-T6 (V23-T6R in flight) for the episode and the graph side of the tests",
+   "episode_base": "bc8ea06d7fa4e249283f2b8fcd00fef5128b4151 (fri/FRI-T6 head, used because friday/gc-fri-0800 lacks the restored mix tasks)",
+   "episode_subject": "v23/episode-fmt-1 = 80a8a4c71b331a39771ad65d1149eb835645d17c",
+   "episode_receipt_head": "v23/episode-fmt-1-receipt = 9c5e7571c948f97f6ae08d9399f69f502d81efd4"
+  },
   "commands": [
    {
     "cmd": "mix format --check-formatted",
@@ -269,34 +478,13 @@
     "summary": "inner grep exit 1: 0 matches in the 7 lane-touched lib/test/scripts files",
     "output_sha256": "4b9acf1f985e852614284f86518e08e35680bf352231af488e8e264bfed993be"
    }
-  ]
- },
- "standing": {
-  "value": "PARTIAL_ALIVE",
-  "derived_from": "lane gate exit 0 at 7fec9d883580984ef8ac623c210b9985652d4398 with GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/V23-D-gi (97 tests, 0 failures) and with GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (97 tests, 0 failures, 5 named skips); courts GC23-4..GC23-7 exit 0 against ggen_igniter-int and GC23-4..GC23-8 exit 0 against the FRI-T6 graph checkout; the real stop court maps them ALIVE. Not ALIVE: against the mandated judge ggen_igniter-int the GC23-8 court exits 75 (UNKNOWN) and the drive tests skip, because the graph side this episode ran on (fri/FRI-T6 bc8ea06, restored mix semantic_jira.*) is not yet admitted into ggen_igniter friday/gc-fri-0800 (lane V23-T6R).",
-  "broken_term": "mu_on_O",
-  "closes_when": "V23-T6R merges fri/FRI-T6 into ggen_igniter friday/gc-fri-0800; then rerun `sh docs/sjira/v26.9.23/courts/GC23-8.sh` and the lane gate with GGEN_IGNITER_DIR=ggen_igniter-int (no xaas change expected)"
- },
- "falsifiers": {
-  "F2": "witnessed: GC23-4 court (f2-underneath refused at sa2a, f2-forged refused at provider) and semantic_drive_test (verify_hops + live conserve/3 on a mutated SA2A task)",
-  "F3": "witnessed: GC23-5 court (ANTHROPIC_API_KEY=x rerun -> exit 3 REFUSED(llm_credential_present) at the guard, control passes) and semantic_drive_test (credential env, real `claude` executable on PATH, real mix subprocess)",
-  "F4": "witnessed: GC23-6 court (recipe commit reverted -> mix format --check-formatted exit 1; drift subject exit 1), the drive's own revert falsifier (verification.json verdict killed), semantic_drive_test no_delta refusal (REFUSED(no_delta), R_missing_consequence), court tamper (final_head = subject refused)"
- },
- "notes": [
-  "ARD section 8: the Route contract tuple (FRI-T4, 7 fields incl. evidence_ceiling) and the ARD SemanticExecutionRequest (9 fields incl. work_order, evidence_horizon, graph_digest) are both digested at every hop; graph_digest = the admitted work-order snapshot digest (frontier work_order_digest = SA2A workOrderDigest = descriptor bridge source_snapshot_digest).",
-  "The sJira descriptor emitter (ggen_igniter bc8ea06) carries no tuple: the XaaS epoch contract takes it from the SA2A task and lets the descriptor's own subject/evidence_ceiling win, so a disagreement between the two graph-side processes is refused by Route.conserve/3 (successor: semantic-jira-pack emits the tuple in the bridge).",
-  "OCEL: the xaas court vocabulary (closed top level, ocel: keys, attribute objects) and the OCEL 2.0 standard JSON pm4py reads are disjoint, so one observation set is rendered twice (ocel.json, ocel2.json) and the GC23-7 court proves them equivalent.",
-  "Graph-side toolchain: Elixir from the ggen_igniter .tool-versions (asdf 1.18.4-otp-27) on the running node's ERTS (OTP 28.3.1), matching how the fleet's graph checkouts are compiled; the pinned erlang 27.2.4 forces a full rebuild that cannot read the OTP-28 rebar beams (observed: thousand_island compile crash). Recorded in drive.json.",
-  "TargetSuites.devs/0 (reserved) expands ~/.asdf when read; under the F3 court's fresh HOME the ggen-igniter-format court then ran homebrew elixir with no erl (observed BUILD_BROKEN on the first probe). mix xaas.episode binds that PATH to ASDF_DATA_DIR (Mix.Tasks.Xaas.Episode.court_suite/0); successor: make the declaration HOME-independent.",
-  "The episode's Run/Epoch/Receipt rows lived in one rolled-back sandbox checkout (MIX_TEST_PARTITION=_v23d); the R projection was sealed against them before rollback; the durable record is the committed artifacts.",
-  "Pre-existing, not introduced here: route_test 16 failures at friday/gc-fri-0800 b3f85b3 (FRI-T2 capability admission x FRI-T4 route), repaired in route.ex (MUT-4 reproduces them)."
- ],
- "successor": {
-  "checkpoint": "v23:GC-26.9.24",
-  "items": [
-   "semantic-jira-pack: emit the ARD section 8 request tuple in the descriptor bridge and the SA2A task (retires the contract merge and scripts/sa2a_route_task.exs)",
-   "TargetSuites ggen-igniter-format: resolve the asdf data dir at run time, not ~ at read time",
-   "ggen-ecosystem-ocel-pack: admit the ARD section 13 classes and a runtime-observation input (retires SemanticDrive.Ocel)"
-  ]
+  ],
+  "standing": {
+   "value": "PARTIAL_ALIVE",
+   "derived_from": "lane gate exit 0 at 7fec9d883580984ef8ac623c210b9985652d4398 with GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/V23-D-gi (97 tests, 0 failures) and with GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (97 tests, 0 failures, 5 named skips); courts GC23-4..GC23-7 exit 0 against ggen_igniter-int and GC23-4..GC23-8 exit 0 against the FRI-T6 graph checkout; the real stop court maps them ALIVE. Not ALIVE: against the mandated judge ggen_igniter-int the GC23-8 court exits 75 (UNKNOWN) and the drive tests skip, because the graph side this episode ran on (fri/FRI-T6 bc8ea06, restored mix semantic_jira.*) is not yet admitted into ggen_igniter friday/gc-fri-0800 (lane V23-T6R).",
+   "broken_term": "mu_on_O",
+   "closes_when": "V23-T6R merges fri/FRI-T6 into ggen_igniter friday/gc-fri-0800; then rerun `sh docs/sjira/v26.9.23/courts/GC23-8.sh` and the lane gate with GGEN_IGNITER_DIR=ggen_igniter-int (no xaas change expected)"
+  },
+  "durable_location": "receipts/v26.9.23/V23-D.gate/ (tracked on v23/V23-D) + docs/sjira/v26.9.23/episodes/fmt-1/"
  }
 }

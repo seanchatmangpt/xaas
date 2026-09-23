@@ -1,0 +1,69 @@
+{
+  "authority": {
+    "actor": "xaas.stop_court",
+    "ceiling": "OBSERVE",
+    "grant": "NONE"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": []
+  },
+  "identity": {
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
+    "repo": "/Users/sac/wt/v26922/v23/V23-D",
+    "subject": "GC-26.9.23/STOP",
+    "subject_sha": "10f3af9e11b75c6513c8021dbe2754a03d5946b7"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-D",
+        "exit": 0,
+        "output_sha256": "6fc8144187fa77b42fc42c38a9cef7a07dafc4e7981bb3a007576e8a1052ee13",
+        "summary": "ALIVE: GC23-4 SA2A conservation witnessed on episode fmt-1 (5 equal hop digests, F2 refused)"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-5.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-D",
+        "exit": 0,
+        "output_sha256": "24d2e0f615408ba7ee7b2df1b5a9a8fa67007c3cf824574212647934a6731f62",
+        "summary": "ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused)"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-6.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-D",
+        "exit": 0,
+        "output_sha256": "4292fc14788dc8047f13a63c64f17d8f8bbe4ed82bbab2387992e1bedcb62df8",
+        "summary": "ALIVE: GC23-6 consequence independently observed at 9c5e7571c948f97f6ae08d9399f69f502d81efd4; F4 revert falsifier killed"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-D",
+        "exit": 0,
+        "output_sha256": "1bbdc90859aba1d26b7335241dfc7814b2d7fd35b018f7d4572d162a16cb450a",
+        "summary": "ALIVE: GC23-7 receipt ADMITTED and OCEL conformant (xaas court + pm4py) on episode fmt-1"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-8.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-D",
+        "exit": 0,
+        "output_sha256": "a636af9d68915c1c5c03e36ff25f50a556bf6de52c17cec56515504bc5546e67",
+        "summary": "ALIVE: GC23-8 closed frontier on episode fmt-1 (EP-A left ALIVE, EP-B entered, recomputed live)"
+      },
+      {
+        "cmd": "mix xaas.stop_court --checkpoint GC-26.9.23",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-D",
+        "exit": 1,
+        "summary": "sj:stopQuery ASK over the goal graph + 5 admitted gate receipts: STOP=false"
+      }
+    ],
+    "durable_location": "/private/tmp/claude-501/v23-scratch/B1b-V23-D/stop-receipts/STOP-GC-26.9.23.json"
+  },
+  "standing": {
+    "derived_from": "sj:stopQuery of GC-26.9.23 at 10f3af9e11b75c6513c8021dbe2754a03d5946b7: 5/13 gates ALIVE; STOP=false",
+    "value": "UNKNOWN"
+  }
+}
