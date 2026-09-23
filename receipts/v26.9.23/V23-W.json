@@ -1,0 +1,283 @@
+{
+  "identity": {
+    "subject": "V23-W",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "4ddc25f1a61c96e09a156c0b771f57ab2baa3f4b",
+    "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+    "base_sha_basis": "git merge-base 4ddc25f friday/gc-fri-0800 = b4ef5d6 (friday/gc-fri-0800 head when the lane worktree was created; unchanged at the gate run)",
+    "branch": "v23/V23-W",
+    "worktree": "/Users/sac/wt/v26922/v23/V23-W",
+    "work_order": "v23:WO-V23-W",
+    "tuple_digest": "sha256:21083611fd68d1ff66930b997a8891ba570466a4300b62bb7209fb0a47a62b17",
+    "tuple_digest_observed": "python replica of Mix.Tasks.Xaas.StopCourt.tuple_digest/order_tuple over docs/sjira/v26.9.23/goal.ttl at 4ddc25f (goal.ttl unchanged by this lane); the same replica reproduces the DRIVER.md digests of V23-D (3d3b9cf4...), V23-M (10199e1d...) and V23-R (01861be7...) exactly. The real stop court at 4ddc25f prints no V23-W order line because WO-V23-W is sj:checkpointOf v23:GC-26.9.24 (typed Successor), outside checkpointOf+ GC-26.9.23; DRIVER.md lists V23-W as '(successor bucket; typed Successor in goal.ttl)'.",
+    "graph_side": {
+      "judge": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+      "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+      "judge_dirty": "?? .oclnr-cache/ only"
+    },
+    "external_subjects": {
+      "autofde-lab": {
+        "pr": 170,
+        "merge": "eb93405cab20dd9dfa7b3742caa6e1997be51269",
+        "head": "a78d774225ff9692d5e54e464b981f26693d5f2b",
+        "receipt": "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json"
+      },
+      "ggen-marketplace": {
+        "pr": 474,
+        "merge": "420bc91e7c1e291be73ab749b7e443252bc7bab8",
+        "head": "ef2631d4a49876daacc352ca6a2736d55ba0e13a",
+        "receipt": "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json"
+      },
+      "xaas-pr-61": {
+        "state": "OPEN (draft)",
+        "head": "2a595315f4423c7e58877ff19dadd04e96dbff36",
+        "exact_head_court_run": "35791935089 = failure",
+        "use": "PUBLICLY_OBSERVABLE only (claim C59); none of its claims is cited as observed"
+      },
+      "supplied_zip": {
+        "path": "/Users/sac/Downloads/FA Morning Brief System.zip",
+        "sha256": "sha256:0c4f056187376fc78fe9ee4c1ca8e137537281f4adcd5721b0adb8992be3c8e6",
+        "receipt": "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json"
+      }
+    }
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "wave B1c lane V23-W task (workflow script; DRIVER.md authority unchanged). This lane pushed nothing, opened no PR, merged nothing and wrote only inside its own worktree and scratch dir; the fri int worktrees and other lanes were read, never edited.",
+    "actor": "claude-opus-5-5 lane V23-W (wave B1c, v26.9.23), workflow subagent"
+  },
+  "consequence": {
+    "commits": [
+      "757be458cf14395b27f90eea5c5f6513dcb9c400",
+      "d6fb40e3a6868365c8944625d01c2aa8cc76cdad",
+      "4ddc25f1a61c96e09a156c0b771f57ab2baa3f4b"
+    ],
+    "commit_notes": {
+      "757be45": "WBPR (DRAFT), LLM extraction JSON, candidates.ttl (prose_spans emit), goal.ttl GC-WDFA-PILOT, compiled/{propositions,orders}.ttl (compile_prose at ggen_igniter-int 3937a4f), supplied deck texts, probes, wd_claims.py + tests",
+      "d6fb40e": "wd_claims.py validator run under a schema-only fresh HOME (F3-safe) + typed rdflib refusal + fresh-HOME test; courts/wdfa_gate.sh; HANDWRITTEN rows",
+      "4ddc25f": "claims.ttl (89 claims), proposal.md (rendered), supporting receipts WDFA-{SUPPLY,COMPILE,KERNEL-PROBE,PACK-COURT,COURT}, README"
+    },
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "docs/sjira/v26.9.23/wd-fa/README.md",
+      "docs/sjira/v26.9.23/wd-fa/candidates.ttl",
+      "docs/sjira/v26.9.23/wd-fa/claims.ttl",
+      "docs/sjira/v26.9.23/wd-fa/compiled/orders.ttl",
+      "docs/sjira/v26.9.23/wd-fa/compiled/propositions.ttl",
+      "docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh",
+      "docs/sjira/v26.9.23/wd-fa/goal.ttl",
+      "docs/sjira/v26.9.23/wd-fa/probes/deck_text.py",
+      "docs/sjira/v26.9.23/wd-fa/probes/rdflib_gate_runner.py",
+      "docs/sjira/v26.9.23/wd-fa/probes/wd_fa_kernel_probe.py",
+      "docs/sjira/v26.9.23/wd-fa/proposal.md",
+      "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json",
+      "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COURT.json",
+      "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json",
+      "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json",
+      "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json",
+      "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt",
+      "docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt",
+      "docs/sjira/v26.9.23/wd-fa/wbpr.extract.json",
+      "docs/sjira/v26.9.23/wd-fa/wbpr.md",
+      "scripts/sjira/test_wd_claims.py",
+      "scripts/sjira/wd_claims.py"
+    ],
+    "files_changed_basis": "git diff --name-only b4ef5d6 4ddc25f; the receipt commit adds receipts/v26.9.23/V23-W.json",
+    "remote_effects": [],
+    "reserved_files": "untouched: goal.ttl, prd-ard.md, stop.rq, docs/sjira/v26.9.22/friday/**, lib/**, the GC23 court scripts and every Friday-reserved file (git diff b4ef5d6 4ddc25f -- lib docs/sjira/v26.9.23/goal.ttl docs/sjira/v26.9.23/prd-ard.md docs/sjira/v26.9.23/courts docs/sjira/v26.9.22: empty). HANDWRITTEN.md gained three rows only.",
+    "generated_vs_handwritten": {
+      "generated": [
+        "docs/sjira/v26.9.23/wd-fa/candidates.ttl (prose_spans.py emit)",
+        "docs/sjira/v26.9.23/wd-fa/compiled/propositions.ttl, compiled/orders.ttl (mix semantic_jira.compile_prose)",
+        "docs/sjira/v26.9.23/wd-fa/proposal.md (wd_claims.py render)",
+        "docs/sjira/v26.9.23/wd-fa/supplied/*.txt (probes/deck_text.py)",
+        "the semantic gate witness court used by WDFA-PACK-COURT (ggen sync of semantic-gate-witness-court-pack, scratch only)"
+      ],
+      "canonical_sources": [
+        "wd-fa/wbpr.md (DRAFT prose, provenance)",
+        "wd-fa/goal.ttl (goal graph)",
+        "wd-fa/claims.ttl (claims graph)"
+      ],
+      "llm_candidate_outputs": [
+        "wd-fa/wbpr.extract.json (candidate extraction)",
+        "the sentences and classes in wd-fa/claims.ttl (wdc:classifiedBy llm:claude-opus-5-5@wave-B1c/V23-W), admitted only by the deterministic wd_claims.py court"
+      ],
+      "handwritten_residue": [
+        "scripts/sjira/wd_claims.py, scripts/sjira/test_wd_claims.py",
+        "wd-fa/probes/{wd_fa_kernel_probe,rdflib_gate_runner,deck_text}.py",
+        "wd-fa/courts/wdfa_gate.sh"
+      ],
+      "ledger": "HANDWRITTEN.md rows added for each residue item: UNSUPPORTED(generator-capability) with the packs checked and the owner packs named"
+    }
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "test $(git rev-parse HEAD) = 4ddc25f1a61c96e09a156c0b771f57ab2baa3f4b && test -z \"$(git status --porcelain)\" && git merge-base HEAD friday/gc-fri-0800",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "exact subject, clean tree: b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+        "output_sha256": "040bf23490ee2bc32ef7a1c7654fefbf4d971a6231ededfa313a3062801ba2df"
+      },
+      {
+        "cmd": "python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/wd-fa/wbpr.md --candidates docs/sjira/v26.9.23/wd-fa/candidates.ttl && python3 scripts/sjira/wd_claims.py check --ledger docs/sjira/v26.9.23/wd-fa/claims.ttl --proposal docs/sjira/v26.9.23/wd-fa/proposal.md",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "LANE GATE (task text) on the committed head: CHECK OK: 89 claims (SUPPLIED=56 PUBLICLY_OBSERVABLE=6 ARCHITECTURAL_INFERENCE=14 WD_DEPENDENT_UNKNOWN=13); 124 sentences, 89 marked; 10 receipts ADMITTED; proposal == render(ledger)",
+        "output_sha256": "2edaa4bc7e78fbd58eff12d14f467a70054b411106781d9a3e23b61204ff6647"
+      },
+      {
+        "cmd": "mix format --check-formatted > /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/format2.log 2>&1; rc=$?; echo \"format exit $rc (only the pre-existing deps/ex4pm mix.exs notice is printed)\"; exit $rc",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "xaas gate prefix 1: mix format --check-formatted: format exit 0 (only the pre-existing deps/ex4pm mix.exs notice is printed)",
+        "output_sha256": "49e3076f1c80f4e32b5123546dba4a79a6290cfddd9cdf77283211fa5670c253"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors 2>&1 | tail -2 | tr '\\n' ' '; exit ${pipestatus[1]}",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "xaas gate prefix 2: MIX_ENV=test mix compile --force --warnings-as-errors: Compiling 518 files (.ex) Generated xaas app",
+        "output_sha256": "1bb47c8ffd11d365659d6d687639a89985628686d0ccd5bbacfa70d452b663ab"
+      },
+      {
+        "cmd": "python3 -m unittest discover -s scripts/sjira -p 'test_*.py' 2>&1 | tail -3 | tr '\\n' ' '; exit ${pipestatus[1]}",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "all scripts/sjira python tests incl. the committed-ledger test (52): Ran 52 tests in 31.368s  OK",
+        "output_sha256": "1f1d3d586ba0253aad2719ab33ec1c853c3590b518e7c1263bacf0949dce8b10"
+      },
+      {
+        "cmd": "python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/wd-fa/wbpr.md --candidates docs/sjira/v26.9.23/wd-fa/candidates.ttl --extract docs/sjira/v26.9.23/wd-fa/wbpr.extract.json | head -1",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "candidates re-emit byte-equal from the recorded LLM extraction: CHECK OK: 61 candidates bound to docs/sjira/v26.9.23/wd-fa/wbpr.md sha256:6df43627027c20e360af34d6f68d7857104bc7441f1dcd58dbc20753b7c949d4",
+        "output_sha256": "22ce14d9e2f9439fa9e6514de4c2360d0447d0d03c604e51cfb521b8eeff6dc4"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int TMPDIR=/private/tmp/claude-501/v23-scratch/B1c-V23-W sh docs/sjira/v26.9.23/courts/gi_mix.sh semantic_jira.compile_prose --source /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/wbpr.md --candidates /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/candidates.ttl --goal /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/goal.ttl --out-dir /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/compiled --check > /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/compile-check2.log 2>&1; rc=$?; grep -E '^(ADMITTED|DELTA|CHECK)' /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/compile-check2.log; exit $rc",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "compile_prose --check at the head against ggen_igniter-int 3937a4f (F3 env via gi_mix.sh): CHECK: /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/compiled outputs recompute byte-identically",
+        "output_sha256": "f5927ce5b2a5a54194666aa953849615f611f910990752c1ad9144fec036cc15"
+      },
+      {
+        "cmd": "python3 scripts/sjira/wd_claims.py render --ledger docs/sjira/v26.9.23/wd-fa/claims.ttl --out /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/proposal.rerender.md && cmp /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/proposal.rerender.md docs/sjira/v26.9.23/wd-fa/proposal.md && echo RENDER_IDENTICAL",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "render is a pure function of the ledger: re-render equals the committed proposal: RENDER_IDENTICAL",
+        "output_sha256": "07f2d6d40945834cef66db0dcddff9b42bb24517794ae154b5977dd6676c68d2"
+      },
+      {
+        "cmd": "python3 ~/.claude/dfcm/validate_receipt.py docs/sjira/v26.9.23/wd-fa/receipts/*.json | tr '\\n' ' '",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "supporting receipts ADMITTED: ADMITTED docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json ADMITTED docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COURT.json ADMITTED docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json ADMITTED docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json ADMITTED docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json",
+        "output_sha256": "b8b2db8a0f864132ecb10afb0ce90d5a4c310b02b07de476ffeafa6ffcd1767a"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/no_llm_env.sh PYTHONUSERBASE=$(python3 -m site --user-base) DFCM_VALIDATOR=$HOME/.claude/dfcm/validate_receipt.py -- sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-0 > /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/wdfa0-2.log 2>&1; rc=$?; tail -1 /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/wdfa0-2.log; test $rc -eq 75",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "WDFA-0 court under the F3 no-LLM env: ledger admitted, gate UNKNOWN (75) until acceptance is recorded: UNKNOWN: WDFA-0 claims ledger admitted; WBPR acceptance (operator, then a Western Digital sponsor) is not recorded in docs/sjira/v26.9.23/wd-fa/acceptance.json",
+        "output_sha256": "984a85ed65354d84208d5cea2dff4c9b67b6cf5c30a4765950a89e9870e874fa"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int TMPDIR=/private/tmp/claude-501/v23-scratch/B1c-V23-W MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 --receipts-dir /private/tmp/claude-501/v23-scratch/B1c-V23-W/stop-receipts > /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/stop-court2.log 2>&1; grep -E '^GC23-0 .*ALIVE +0 ' /private/tmp/claude-501/v23-scratch/B1c-V23-W/gate/stop-court2.log | tr -s ' '",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "non-interference: the real stop court still maps GC23-0 ALIVE at this head (process exits 1 only because STOP=false with --only GC23-0): GC23-0 FirstMile ALIVE 0 33.5 ADMITTED ran",
+        "output_sha256": "f6a7d233b9414a3aa991c0f8898fbdcc84d04ac5957c65ccbbbc95ff6929b50f"
+      },
+      {
+        "cmd": "python3 /private/tmp/claude-501/v23-scratch/B1c-V23-W/tuple_digest.py docs/sjira/v26.9.23/goal.ttl V23-D V23-M V23-R V23-W | tr '\\n' ' '",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "V23-W tuple digest (python replica of Mix.Tasks.Xaas.StopCourt.tuple_digest/order_tuple; reproduces the DRIVER.md digests of V23-D, V23-M, V23-R): V23-D sha256:3d3b9cf4ea96e6498d1d5c1a0c490fb8fd67f7cd68cf210eb889dd5b92801d58 V23-M sha256:10199e1d08495cc7bcb4423e76cabd9878375f7e695dfe5e8603201c3818fa02 V23-R sha256:01861be76e742250e796228de64e8dde326ed035812f8532743c930d55520cc3 V23-W sha256:21083611fd68d1ff66930b997a8891ba570466a4300b62bb7209fb0a47a62b17",
+        "output_sha256": "ba603438fdec5e4f841a989d941e4b61e9282e3c2db012943dd41ec02d7a05d6"
+      },
+      {
+        "cmd": "! grep -n 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch' scripts/sjira/wd_claims.py scripts/sjira/test_wd_claims.py docs/sjira/v26.9.23/wd-fa/probes/*.py && echo 'zero matches'",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "Chicago mock grep over the lane's python: zero matches",
+        "output_sha256": "9e25db661e8dba83624e539f2b69e7f1d24609376477a4aba90b474ae9d8b8d4"
+      }
+    ],
+    "durable_location": "xaas branch v23/V23-W at 4ddc25f: docs/sjira/v26.9.23/wd-fa/ (artifacts, supporting receipts with their own replay commands), scripts/sjira/wd_claims.py; this receipt at receipts/v26.9.23/V23-W.json"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed runs on the exact committed subject 4ddc25f (clean tree) against GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f): the task's lane gate exit 0 (61 candidates bound; 89 claims, SUPPLIED 56 / PUBLICLY_OBSERVABLE 6 / ARCHITECTURAL_INFERENCE 14 / WD_DEPENDENT_UNKNOWN 13, 124 sentences, 89 marked, 10 cited receipts ADMITTED, proposal == render(ledger)); xaas gate prefix format 0 + compile --force --warnings-as-errors 0; 52 python tests OK; compile_prose --check byte-identical; the stop court still maps GC23-0 ALIVE. Scope: the V23-W order (a Successor-typed reference flow). The WBPR is DRAFT; the WDFA gates are UNKNOWN (WDFA-0 until acceptance; WDFA-1..6 on unsupplied WD inputs)."
+  },
+  "falsifiers": {
+    "order_falsifier": "A claim-bearing sentence has no class, or a WD-internal fact that was never supplied is classified as anything but WD_DEPENDENT_UNKNOWN (goal.ttl v23:falsifier-V23-W).",
+    "runs": [
+      {
+        "mutation": "revert to the base b4ef5d6 (git archive into scratch): no wd-fa artifacts",
+        "lane_gate_exit": 1,
+        "observed": "FileNotFoundError docs/sjira/v26.9.23/wd-fa/wbpr.md"
+      },
+      {
+        "mutation": "claim C66 (the MTTR baseline) retyped ARCHITECTURAL_INFERENCE",
+        "check_exit": 1,
+        "observed": "REFUSED C66: unsupplied_wd_fact (guard of missing input MI-mttr)"
+      },
+      {
+        "mutation": "claim C77 quote -40% changed to -45%",
+        "check_exit": 1,
+        "observed": "REFUSED C77: quote_not_in_supplied_source"
+      },
+      {
+        "mutation": "claim C41 observed-proof receipt swapped to the committed UNKNOWN gate receipt GC23-5.json",
+        "check_exit": 1,
+        "observed": "REFUSED C41: proof_not_alive (standing UNKNOWN)"
+      },
+      {
+        "mutation": "hand edit of proposal.md adding an unmarked 'will' sentence",
+        "check_exit": 1,
+        "observed": "REFUSED unmarked_claim_sentence + projection_drift"
+      },
+      {
+        "mutation": "wd_claims.py revert-mutations M1..M4 (scratch copy)",
+        "suite": "each FAILED",
+        "receipt": "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COURT.json"
+      },
+      {
+        "mutation": "autofde-lab kernel: novel->ALIVE + self-certification allowed (scratch copy)",
+        "probe_exit": 1,
+        "receipt": "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json"
+      },
+      {
+        "mutation": "wd-failure-analysis-pack: false-KNOWN witness in the pass slot of 050_novel_is_unknown",
+        "court_exit": 1,
+        "receipt": "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json"
+      },
+      {
+        "mutation": "LLM credential variable ANTHROPIC_API_KEY=x in the WDFA court env",
+        "court_exit": 3,
+        "observed": "REFUSED(llm_credential_present) (broken_term mu_on_O)"
+      }
+    ]
+  },
+  "llm_edges": {
+    "recorded": [
+      "candidate extraction: wd-fa/wbpr.extract.json (sj:extractedBy llm:claude-opus-5-5@wave-B1c/V23-W on every candidate)",
+      "claim sentences and their classification in wd-fa/claims.ttl (wdc:classifiedBy on every claim); the WBPR prose itself was drafted by the same model from the supplied deck"
+    ],
+    "executed_product_path": "no LLM, network model API or zcode binary: prose_spans.py, compile_prose (under the F3 env), wd_claims.py, the probes and the courts are deterministic"
+  },
+  "ocel": "not produced: V23-W is a projection-class Successor order with no actuation; no ARD section 13 event was emitted or claimed",
+  "later_steps_not_done": [
+    "DOCX/PDF render of proposal.md (regenerated from claims.ttl) -- later step",
+    "the operator's text freeze of the proposal -- later step, after operator acceptance",
+    "operator acceptance of wd-fa/wbpr.md, then a Western Digital sponsor's (wd-fa/acceptance.json; WDFA-0 stays UNKNOWN until then)",
+    "WDFA-1..WDFA-6 machinery: needs the unsupplied WD inputs named in claims.ttl (MTTR baseline, corpus/data-lake access, QMS/MES write-back decision, brief sections 2a-2h content, authorization roles, failure-mode catalogue, golden set, pilot scope)"
+  ],
+  "limits": [
+    "TPOT is not installed here: 10 of 14 autofde-lab PR 170 court tests were not executed locally; they are PUBLICLY_OBSERVABLE via CI run 35797506789 (success at a78d7742), not SUPPLIED.",
+    "Every observed Western Digital case is a synthetic fixture; no Western Digital data was used.",
+    "ggen-marketplace PR 474's body calls the change docs-only with courts PLANNED; its merged tree contains the wd-failure-analysis-pack gates and witnesses that WDFA-PACK-COURT executed."
+  ],
+  "successor": "v23:GC-26.9.24 (WO-V23-W is typed Successor; the WD FA pilot goal GC-WDFA-PILOT is a separate DRAFT goal graph)"
+}
