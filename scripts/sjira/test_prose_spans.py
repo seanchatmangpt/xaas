@@ -72,9 +72,7 @@ EXTRACT = [
 
 
 def run(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *args], capture_output=True, text=True, check=False
-    )
+    return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, check=False)
 
 
 class ProseSpansTest(unittest.TestCase):
@@ -99,17 +97,20 @@ class ProseSpansTest(unittest.TestCase):
     def emit(self, extract: Path | None = None, out: Path | None = None) -> subprocess.CompletedProcess:
         return run(
             "emit",
-            "--source", str(self.source),
-            "--extract", str(extract or self.extract),
-            "--out", str(out or self.ttl),
-            "--source-path", "docs/prose.md",
-            "--extracted-by", "llm:test@unit",
+            "--source",
+            str(self.source),
+            "--extract",
+            str(extract or self.extract),
+            "--out",
+            str(out or self.ttl),
+            "--source-path",
+            "docs/prose.md",
+            "--extracted-by",
+            "llm:test@unit",
         )
 
     def check(self, *extra: str) -> subprocess.CompletedProcess:
-        return run(
-            "check", "--source", str(self.source), "--candidates", str(self.ttl), "--require-gates", "2", *extra
-        )
+        return run("check", "--source", str(self.source), "--candidates", str(self.ttl), "--require-gates", "2", *extra)
 
     def emitted(self) -> str:
         result = self.emit()
@@ -237,8 +238,11 @@ class ProseSpansTest(unittest.TestCase):
     def test_deleting_only_candidate_for_required_gate_is_refused(self) -> None:
         text = self.emitted()
         blocks = text.split("\n\n")
-        kept = [b for b in blocks if "sj:requiredBy v23:GC23-0" not in b and "-acceptance-1 a" not in b
-                and "-falsifier-" not in b]
+        kept = [
+            b
+            for b in blocks
+            if "sj:requiredBy v23:GC23-0" not in b and "-acceptance-1 a" not in b and "-falsifier-" not in b
+        ]
         self.assertEqual(len(blocks) - len(kept), 4, "the GC23-0 candidate and its 3 hint nodes")
         self.ttl.write_text("\n\n".join(kept), encoding="utf-8")
         result = self.check()
@@ -259,8 +263,9 @@ class ProseSpansTest(unittest.TestCase):
         self.assert_refused(self.check(), "candidate_standing_invalid")
         self.ttl.write_text(text + '\nv23:extra sj:standing "ALIVE" .\n', encoding="utf-8")
         self.assert_refused(self.check(), "stray_subject")
-        self.ttl.write_text(text.replace(' a sj:Proposition ;', ' a sj:Proposition ;\n    sj:standing "ALIVE" ;', 1),
-                            encoding="utf-8")
+        self.ttl.write_text(
+            text.replace(" a sj:Proposition ;", ' a sj:Proposition ;\n    sj:standing "ALIVE" ;', 1), encoding="utf-8"
+        )
         self.assert_refused(self.check(), "unknown_predicate")
 
     def test_statement_edit_is_projection_drift(self) -> None:
@@ -282,15 +287,30 @@ class ProseSpansTest(unittest.TestCase):
             "the accepted prose is byte-identical to the operator text",
         )
         result = run(
-            "check", "--source", str(source), "--candidates", str(ttl), "--require-gates", "13",
-            "--extract", str(extract),
+            "check",
+            "--source",
+            str(source),
+            "--candidates",
+            str(ttl),
+            "--require-gates",
+            "13",
+            "--extract",
+            str(extract),
         )
         self.assertEqual(result.returncode, 0, result.stdout)
         out = self.dir / "prd-ard.ttl"
         emitted = run(
-            "emit", "--source", str(source), "--extract", str(extract), "--out", str(out),
-            "--source-path", "docs/sjira/v26.9.23/prd-ard.md",
-            "--extracted-by", "llm:claude-opus-5-5@wave-B0/V23-X",
+            "emit",
+            "--source",
+            str(source),
+            "--extract",
+            str(extract),
+            "--out",
+            str(out),
+            "--source-path",
+            "docs/sjira/v26.9.23/prd-ard.md",
+            "--extracted-by",
+            "llm:claude-opus-5-5@wave-B0/V23-X",
         )
         self.assertEqual(emitted.returncode, 0, emitted.stdout)
         self.assertEqual(out.read_bytes(), ttl.read_bytes())

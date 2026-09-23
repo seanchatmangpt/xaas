@@ -460,9 +460,7 @@ def verify_turtle(
         if statement is not None and (not str(statement).strip() or "\n" in str(statement)):
             refusals.add(name, "statement_invalid", "statement must be one non-empty line")
         doc = values.get("sourceDocument")
-        if doc is not None and not (
-            resolved_source == str(doc) or resolved_source.endswith("/" + str(doc))
-        ):
+        if doc is not None and not (resolved_source == str(doc) or resolved_source.endswith("/" + str(doc))):
             refusals.add(name, "source_document_mismatch", f"{str(doc)!r} does not name {source_arg}")
         digest = values.get("sourceSha256")
         if digest is not None and str(digest) != sha:
@@ -471,9 +469,7 @@ def verify_turtle(
         span_ok = True
         for label_, lit in (("sourceStart", start), ("sourceEnd", end)):
             if lit is not None and (
-                not isinstance(lit, Literal)
-                or str(lit.datatype) != XSD_INTEGER
-                or not isinstance(lit.toPython(), int)
+                not isinstance(lit, Literal) or str(lit.datatype) != XSD_INTEGER or not isinstance(lit.toPython(), int)
             ):
                 refusals.add(name, "offset_invalid", f"sj:{label_} is not an xsd:integer")
                 span_ok = False
