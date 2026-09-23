@@ -252,6 +252,45 @@ defmodule Xaas.Sa2a.RouteTest do
     end
   end
 
+  # The closed GALL vocabulary, as `AshA2A.Gall.Capability.labels/0` returns it
+  # in ash_a2a 26.9.21 (lib/ash_a2a/gall/capability.ex). It is written out here
+  # because the ash_a2a xaas pins (26.9.12) does not ship `AshA2A.Gall`; the
+  # first test below fails the day it does, so this mirror is replaced by the
+  # module rather than left to drift.
+  @gall_labels ~w(Read Write Edit Commit Push Publish Deploy Merge)
+
+  describe "capability typing: GALL labels are not sj:capabilityId values" do
+    test "the pinned ash_a2a does not ship AshA2A.Gall.Capability" do
+      refute Code.ensure_loaded?(AshA2A.Gall.Capability),
+             "ash_a2a now ships AshA2A.Gall.Capability: replace @gall_labels with " <>
+               "AshA2A.Gall.Capability.labels/0 and assert its decode/1 refuses \"recipe:mix-format\""
+    end
+
+    for label <- @gall_labels, spelling <- [label, String.downcase(label)] do
+      @spelling spelling
+      test "#{spelling} is refused as a capability at every hop and by the registry", ctx do
+        for hop <- @hops do
+          labelled = mutate(ctx, hop, "capability", fn _ -> @spelling end)
+
+          assert Route.tuple(hop, carrier(labelled, hop)) ==
+                   {:refused, {:invalid_field, "capability"}}
+        end
+
+        assert Route.resolve(@spelling) == {:refused, :unregistered_capability}
+      end
+    end
+
+    test "a route whose hops all carry one GALL label conserves nothing", ctx do
+      labelled =
+        Enum.reduce(@hops, ctx, fn hop, acc ->
+          mutate(acc, hop, "capability", fn _ -> "Commit" end)
+        end)
+
+      assert Route.conserve(labelled.order, labelled.task, labelled.epoch) ==
+               {:refused, %{broken_term: "admission_vacuous", field: "capability"}}
+    end
+  end
+
   # -- helpers ---------------------------------------------------------------
 
   defp read_json!(name), do: @fixture_dir |> Path.join(name) |> File.read!() |> Jason.decode!()

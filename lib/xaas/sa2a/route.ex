@@ -30,6 +30,15 @@ defmodule Xaas.Sa2a.Route do
   `resolve/1` maps a capability id (`"recipe:<id>"`) to its provider through
   the `config :xaas, :ultracode_construction_recipes` registry (read-only).
   Nothing here grants authority, selects frontier, or actuates.
+
+  Capability typing is the open `sj:capabilityId` form `provider:id`, not the
+  closed GALL vocabulary `AshA2A.Gall.Capability` (Read, Write, Edit, Commit,
+  Push, Publish, Deploy, Merge). The two are disjoint: GALL refuses every
+  `provider:id` name (`decode("recipe:mix-format") == :error`, ash_a2a
+  26.9.21), and a GALL label is refused here as a capability id. The ash_a2a
+  xaas pins (26.9.12) does not ship `AshA2A.Gall` at all. What a recipe may
+  do in GALL terms (requires/forbids) belongs to its registry entry, not to
+  the conserved tuple.
   """
 
   alias Xaas.Ultracode.SemanticWork
