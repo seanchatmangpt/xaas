@@ -2,7 +2,7 @@
   "identity": {
     "subject": "FRI-T2 (GC-FRI-0800 G6 xaas side: deterministic recipe provider + engine provider allowlist)",
     "repo": "/Users/sac/xaas",
-    "subject_sha": "1db4eb16d2937c6bf55a00f531080c2671276c13",
+    "subject_sha": "a1a2f75c33a9c17a72f31617f23c6df28a9fc10f",
     "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6"
   },
   "authority": {
@@ -12,7 +12,8 @@
   },
   "consequence": {
     "commits": [
-      "1db4eb16d2937c6bf55a00f531080c2671276c13"
+      "1db4eb16d2937c6bf55a00f531080c2671276c13",
+      "a1a2f75c33a9c17a72f31617f23c6df28a9fc10f"
     ],
     "files_changed": [
       "config/config.exs",
@@ -36,60 +37,91 @@
         "cmd": "mix format --check-formatted",
         "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
         "exit": 0,
-        "summary": "at HEAD 1db4eb1, clean tree",
+        "summary": "at HEAD a1a2f75, clean tree",
         "output_sha256": "018db565809eb1770bfe557bde2892220b123518d3e3beabb00c3fbe9b31d642"
       },
       {
         "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
         "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
         "exit": 0,
-        "summary": "Compiling 505 files (.ex); Generated xaas app",
+        "summary": "Compiling 505 files (.ex); Generated xaas app (only warning: deps/ex4pm/mix.exs, not xaas)",
         "output_sha256": "a2377984c661cbda54de0cf3a077cb0cb405bf77579ba537e5d0f80f7c2c2b60"
       },
       {
         "cmd": "mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs",
         "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
         "exit": 0,
-        "summary": "27 tests, 0 failures (seed 456152)",
-        "output_sha256": "226677b08451561420b5f91152288e2802ef91dd1aa6d7a7208c6ea696a108ca"
+        "summary": "27 tests, 0 failures (seed 719697) at a1a2f75, clean tree",
+        "output_sha256": "c856427d4597b5911d39895868ac11b2ba33b1892bb8a9ae88b7bbcc5122e745"
       },
       {
         "cmd": "mix test test/xaas/ultracode",
         "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
         "exit": 0,
-        "summary": "719 tests, 0 failures (25 excluded), 649.8s; working tree byte-identical to 1db4eb1 (run immediately before the commit, no edits between)",
-        "output_sha256": "b3421be5c176844a319c70076027d2f2c8050989894c5bf288c7b3fa1a365b6b"
+        "summary": "719 tests, 0 failures (25 excluded), 1081.0s (seed 879901) at a1a2f75, clean tree",
+        "output_sha256": "9d504d8257eb30033d631abcc0c430848ef2682bef43659584bff2920bb2e154"
       },
       {
-        "cmd": "! grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.' <9 touched files>",
+        "cmd": "! grep -n 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.' config/config.exs lib/xaas/ultracode/{engine,recipe_worker,run,semantic_work,verifier}.ex priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs test/xaas/ultracode/{engine,recipe_worker}_test.exs",
         "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
         "exit": 0,
-        "summary": "0 matches in touched files; 178 pre-existing whole-tree matches (test/xaas_web controller tests, Phoenix patch(conn, ...)), not introduced here"
+        "summary": "0 matches in the 9 touched non-receipt files (grep exit 1). Whole lib+test: 178 matches at HEAD and 178 at base 0d57147 (git grep), so none introduced; by directory: test/xaas_web 93, lib/xaas 53, test/xaas 20, test/mix 10, lib/xaas_web 1, lib/mix 1"
       },
       {
-        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs  # under mutation M1: engine allowlist disabled in ready_providers/resolve_worker",
-        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "cmd": "! mix test test/xaas/ultracode/engine_test.exs  # R1 full revert: every non-test lane file at base 0d57147, lane-added non-test files deleted, lane tests kept (standalone git-init APFS scratch clone)",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
         "exit": 0,
-        "summary": "falsifier held: suite failed (27 tests, 4 failures: recipe zcode-untouched, directed non-allowlisted, 2 engine allowlist tests); engine.ex restored byte-identical from backup"
+        "summary": "falsifier held: 20 tests, 3 failures, all 3 'Assertion with == failed' (behavioral: default fill reports :no_worker_configured, undirected fill closes the non-allowlisted epoch, malformed allowlist fill reaps it); 17 pre-existing engine tests pass",
+        "output_sha256": "db4e17b4b7f62bc0cd8098f0c176d47ab429f6d34adea1c94c3282030251bfd6"
       },
       {
-        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs  # under mutation M2: RecipeWorker closes at base head without committing",
-        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs  # R1 full revert, both lane files",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
         "exit": 0,
-        "summary": "falsifier held: 7 tests, 1 failure (format-drift test: head == base_head); restored"
+        "summary": "falsifier held: 27 tests, 10 failures (7 recipe_worker: RecipeWorker module absent; 3 engine allowlist: behavioral), 0 already_shared -- no sandbox cascade",
+        "output_sha256": "435668eef7a97ff66c08030dacbf57ddaf97bae4a05345d0f3536bb958b7d2a2"
       },
       {
-        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs  # under mutation M3: RecipeWorker claims before resolving the recipe",
-        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs  # control: R1 subject with recipe_worker_test.exs from 7332d7e (pre-repair setup)",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
         "exit": 0,
-        "summary": "falsifier held: 7 tests, 2 failures (unregistered + inadmissible no-claim tests); restored (cmp identical)"
+        "summary": "cascade reproduced as expected (inner mix test exit 2): 27 tests, 27 failures, 26 already_shared lines: the court's cascade reproduces without the setup repair, so the repair is causal; repaired test file restored (cmp identical)",
+        "output_sha256": "4c45a9f2186561920863105ed15571964403dd29532dc439b15643ba42a1e076"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs  # M1: engine allowlist disabled (allowlisted?/1 -> true, ready_providers unfiltered), provider_allowlist/0 intact",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
+        "exit": 0,
+        "summary": "falsifier held at a1a2f75: 27 tests, 5 failures (format-drift zcode-untouched, directed non-allowlisted, and all 3 engine allowlist tests incl. the configured-default test, which M1 did not fail before this repair); engine.ex restored (cmp identical)",
+        "output_sha256": "958549915499b466d1142c4b4a0280a90690b566c5ea08d2f174068bfb61ec8c"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs  # M2: RecipeWorker closes :alive at base_head without committing",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
+        "exit": 0,
+        "summary": "falsifier held at a1a2f75: 7 tests, 1 failure (format-drift test); restored (cmp identical)",
+        "output_sha256": "8d00f3ef3359c7b30f21ba8a9a0605e0f6b1e20feaff4e7d32ce5fb661d1e73d"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs  # M3: RecipeWorker claims before resolving the recipe",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
+        "exit": 0,
+        "summary": "falsifier held at a1a2f75: 7 tests, 2 failures (unregistered + inadmissible no-claim tests); restored (cmp identical)",
+        "output_sha256": "804d82816261fd4727f99b5f1d1fc333b67012a7bc93db5fee20161d81e0445c"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs  # M4: config/config.exs alone at base 0d57147",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/fri-t2-mut",
+        "exit": 0,
+        "summary": "falsifier held at a1a2f75: 27 tests, 8 failures (7 recipe_worker: recipe:mix-format unregistered; configured-default engine test: ultracode_engine_providers is nil), 0 already_shared; config restored (cmp identical)",
+        "output_sha256": "38a217c0aa4426320085234c1b393a40ed6a8fa739a8f7f0a252e0911d5220a1"
       }
     ],
     "durable_location": "xaas branch fri/FRI-T2 receipts/v26.9.22/FRI-T2.json"
   },
   "standing": {
     "value": "ALIVE",
-    "derived_from": "lane gate (format check, forced strict compile, recipe_worker_test + engine_test 27/27) re-run at subject_sha 1db4eb1 on a clean tree; ultracode dir 719/719 on the identical tree; three revert-mutations each made acceptance fail. Scope: the FRI-T2 deliverables only. The G6 gate court (credential-free env episode on a ggen_igniter subject, OCEL zero LLM provider events) is not run here: UNKNOWN until the T9 episode."
+    "derived_from": "lane gate (format check, forced strict compile, recipe_worker_test + engine_test 27/27) and the ultracode dir (719/0, 25 excluded) re-run at subject_sha a1a2f75 on a clean tree; full revert R1 fails acceptance behaviorally with no sandbox cascade (control reproduces the cascade on the pre-repair setup); M1-M4 each made acceptance fail. Scope: the FRI-T2 deliverables only. The G6 gate court (credential-free env episode on a ggen_igniter subject, OCEL zero LLM provider events) is not run here: UNKNOWN until the T9 episode."
   },
   "handwritten": [
     {
@@ -112,7 +144,9 @@
     "an undirected Engine.fill hands a ready zcode epoch to the configured worker (M1 exercised)",
     "RecipeWorker closes :alive without a commit (M2 exercised)",
     "an unregistered or inadmissible recipe binds a lease row (M3 exercised)",
+    "the shipped config.exs stops registering recipe:mix-format / the recipe worker / the [\"recipe\"] allowlist (M4 exercised)",
+    "a crash in recipe_worker_test setup leaks the shared sandbox owner into later modules (:already_shared; control run reproduces it on the pre-repair setup)",
     "fabric court mix format --check-formatted fails at the recipe-worker head (asserted pass in the drift test)"
   ],
-  "notes": "Capability carried as new nullable Run.capability_id (descriptor key 'capability', sj:capabilityId shape) because Run/Epoch had no capability field and semantic_bridge is documented opaque to XaaS. Engine fill/1 now honors a single :provider opt (existing engine tests passed it; it was silently ignored). Recipe toolchain pinned to ggen_igniter .tool-versions (elixir 1.18.4-otp-27, erlang 27.2.4) via absolute asdf dirs; test asserts the pinned mix exists. deps/_build were APFS-cloned from /Users/sac/wt/v26922/xaas/int (same mix.lock); deps recompiled once (10m10s) on first test compile."
+  "notes": "Capability carried as new nullable Run.capability_id (descriptor key 'capability', sj:capabilityId shape) because Run/Epoch had no capability field and semantic_bridge is documented opaque to XaaS. Engine fill/1 now honors a single :provider opt (existing engine tests passed it; it was silently ignored). Recipe toolchain pinned to ggen_igniter .tool-versions (elixir 1.18.4-otp-27, erlang 27.2.4) via absolute asdf dirs; test asserts the pinned mix exists. deps/_build were APFS-cloned from /Users/sac/wt/v26922/xaas/int (same mix.lock); deps recompiled once (10m10s) on first test compile. Court repair round 1 (a1a2f75, tests only; runtime/config unchanged since 1db4eb1): recipe_worker_test registers the sandbox stop_owner on_exit right after start_owner! (the court's full revert had 26 :already_shared cascade failures); engine allowlist tests assert fill behavior before the provider_allowlist/0 accessor and the default test drives Engine.fill() with the shipped config, so a revert fails on engine behavior, not an undefined function. Mock-grep breakdown corrected: of the 178 pre-existing lib+test matches only 93 are in test/xaas_web (the prior receipt attributed all of them there). Mutation runs executed in a standalone git-init APFS clone in the session scratchpad, never in FRI-T2."
 }
