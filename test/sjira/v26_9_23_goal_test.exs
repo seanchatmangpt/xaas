@@ -356,25 +356,49 @@ defmodule Xaas.Sjira.V26923GoalTest do
     assert upstream == Map.keys(@lanes) |> Kernel.--(["V23-Q", "V23-W"]) |> Enum.sort()
   end
 
+  # A court still at the V23-P stub is exactly two code lines (the UNKNOWN
+  # line and `exit 75`); a machinery lane's real court may keep a guarded
+  # "machinery lands in lane" line (e.g. GC23-10, GC23-11) that exits 75
+  # inline. Every such line, stub or guard, must name the lane that owns the
+  # script (V23-K: the stub-only reading refused GC23-10's inline guard).
   test "each gate's UNKNOWN stub names a lane whose order's path scope covers that court script" do
     g = graph()
     orders = by_identifier(g, @sj <> "WorkOrder")
 
-    for n <- 0..12 do
-      rel = "docs/sjira/v26.9.23/courts/GC23-#{n}.sh"
-      body = File.read!(Path.join(@repo, rel))
+    stubs =
+      for n <- 0..12, reduce: [] do
+        acc ->
+          rel = "docs/sjira/v26.9.23/courts/GC23-#{n}.sh"
+          body = File.read!(Path.join(@repo, rel))
+          pattern = ~r/"UNKNOWN: GC23-#{n} machinery lands in lane (V23-[A-Z])"/
 
-      case Regex.run(~r/"UNKNOWN: GC23-#{n} machinery lands in lane (V23-[A-Z])"/, body) do
-        [_, lane] ->
-          assert body =~ ~r/^exit #{StopCourt.unknown_exit()}$/m
-          scope = strings(g, Map.fetch!(orders, lane), iri(@sj, "pathScope"))
-          assert rel in scope or ("xaas:" <> rel) in scope, "#{lane} does not own #{rel}"
+          for [_, lane] <- Regex.scan(pattern, body) do
+            scope = strings(g, Map.fetch!(orders, lane), iri(@sj, "pathScope"))
+            assert rel in scope or ("xaas:" <> rel) in scope, "#{lane} does not own #{rel}"
+          end
 
-        nil ->
-          # The machinery lane replaced this stub with its real court.
-          :ok
+          code =
+            body
+            |> String.split("\n")
+            |> Enum.map(&String.trim/1)
+            |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "#")))
+
+          case code do
+            ["echo " <> message, "exit " <> exit_code] ->
+              assert message =~ pattern, "#{rel}: stub message #{message}"
+              assert exit_code == Integer.to_string(StopCourt.unknown_exit())
+              [n | acc]
+
+            _ ->
+              # The machinery lane replaced this stub with its real court.
+              acc
+          end
       end
-    end
+
+    # Courts already real on friday/gc-fri-0800 at 3b1d184 (GC23-0 and GC23-11
+    # V23-P/V23-F, GC23-4 .. GC23-8 V23-D, GC23-10 V23-R) are never stubs.
+    assert Enum.all?(stubs, &(&1 not in [0, 4, 5, 6, 7, 8, 10, 11])),
+           "still stubbed: #{inspect(Enum.sort(stubs))}"
   end
 
   test "courts/check_scripts.sh accepts the committed court scripts (real sh)" do
