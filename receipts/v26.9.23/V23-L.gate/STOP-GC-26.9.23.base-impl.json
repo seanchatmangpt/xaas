@@ -1,0 +1,41 @@
+{
+  "authority": {
+    "actor": "xaas.stop_court",
+    "ceiling": "OBSERVE",
+    "grant": "NONE"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": []
+  },
+  "identity": {
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
+    "repo": "/Users/sac/wt/v26922/v23/V23-L",
+    "subject": "GC-26.9.23/STOP",
+    "subject_sha": "fc0b3a2fab57f7df45c52a1812befeafcbe5ea4a"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-0.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+        "exit": 75,
+        "output_sha256": "5431ceea3420695e715b11d6024547b51039b610b8edbc85a6bbf51a5579a457",
+        "summary": "UNKNOWN: GC23-0 machinery lands in lane V23-C"
+      },
+      {
+        "cmd": "mix xaas.stop_court --checkpoint GC-26.9.23",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+        "exit": 1,
+        "summary": "sj:stopQuery ASK over the goal graph + 1 admitted gate receipts: STOP=false"
+      }
+    ],
+    "durable_location": "/private/tmp/claude-501/v23-scratch/C0-V23-L/real-court-base/STOP-GC-26.9.23.json"
+  },
+  "standing": {
+    "derived_from": "sj:stopQuery of GC-26.9.23 at fc0b3a2fab57f7df45c52a1812befeafcbe5ea4a: 0/13 gates ALIVE; STOP=false",
+    "value": "UNKNOWN"
+  }
+}

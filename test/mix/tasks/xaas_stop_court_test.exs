@@ -184,6 +184,11 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     successor =
       if Keyword.get(opts, :successor, false), do: "sj:boundaryClass sj:Successor ;", else: ""
 
+    exclusions =
+      if Keyword.get(opts, :exclusions, true),
+        do: ~s(sj:exclusion "no network access during the episode", "no LLM on the KNOWN path" ;),
+        else: ""
+
     """
     fri:cap-mix-format a sj:Capability ; sj:capabilityId "recipe:mix-format" .
     fri:WO-1 a sj:WorkOrder ;
@@ -192,11 +197,11 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
         sj:subject "fixture:mix-format-drift" ;
         #{postcondition}
         #{successor}
+        #{exclusions}
         sj:requiresCapability fri:cap-mix-format ;
         sj:evidenceCeiling "EXECUTED_VERIFIED" ;
         sj:authorityCeiling "CONSTRUCT" ;
-        sj:consequenceClass "verification" ;
-        sj:exclusion "no network access during the episode", "no LLM on the KNOWN path" .
+        sj:consequenceClass "verification" .
     """
   end
 
@@ -392,6 +397,108 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     {code, out} = court(repo)
     assert code == 0
     assert out =~ "successor=true"
+  end
+
+  # sj:exclusion is 0..n (lane V23-L aligns the court with the pack shapes):
+  # an order without one is tuple-complete with exclusions [] and links on
+  # the digest over that empty list.
+  test "an order with no sj:exclusion is tuple-complete (exclusions []) and links on its digest" do
+    repo = repo()
+    write_goal(repo, [{"G1", "true"}], order_ttl(exclusions: false))
+    tuple = %{@wo1_tuple | "exclusions" => []}
+    digest = python_digest(tuple)
+    assert StopCourt.tuple_digest(tuple) == digest
+    refute digest == python_digest(@wo1_tuple)
+
+    {code, out} = court(repo)
+    assert code == 1
+    assert out =~ "order WO-1 standing=NONE receipt=MISSING digest=#{digest}"
+    refute out =~ "incomplete"
+
+    write_order_receipt(repo, digest)
+    {code, out} = court(repo)
+    assert code == 0, out
+    assert out =~ "order WO-1 standing=ALIVE receipt=ADMITTED digest=#{digest}"
+  end
+
+  # ------------------------------------------------------------------ order receipts dirs (lane V23-L)
+
+  defp git_checkout(prefix) do
+    dir = Path.join(System.tmp_dir!(), "#{prefix}_#{System.unique_integer([:positive])}")
+    on_exit(fn -> File.rm_rf(dir) end)
+    File.mkdir_p!(dir)
+    {_, 0} = System.cmd("git", ["init", "-q", dir])
+
+    {_, 0} =
+      System.cmd("git", [
+        "-C",
+        dir,
+        "-c",
+        "user.email=court@example.org",
+        "-c",
+        "user.name=court",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "fixture"
+      ])
+
+    toplevel(dir)
+  end
+
+  defp toplevel(dir) do
+    {top, 0} = System.cmd("git", ["-C", dir, "rev-parse", "--show-toplevel"])
+    String.trim(top)
+  end
+
+  test "GC-FRI-0800 keeps one order-receipts dir: a receipt only under GGEN_IGNITER_DIR/receipts/v26.9.22 stays MISSING" do
+    repo = repo()
+    top = toplevel(repo)
+    write_goal(repo, [{"G1", "true"}], order_ttl())
+    ggen = git_checkout("stop_court_ggen")
+    digest = python_digest(@wo1_tuple)
+
+    # No --order-receipts-dir: the registry's single dir under the repository.
+    registry_args = fn ->
+      args(repo)
+      |> Enum.take(8)
+      |> Kernel.++(["--ggen-igniter-dir", ggen])
+    end
+
+    run = fn ->
+      code = make_ref()
+      out = capture_io(fn -> send(self(), {code, StopCourt.cli(registry_args.())}) end)
+      assert_received {^code, exit_code}
+      {exit_code, out}
+    end
+
+    {:ok, report} = StopCourt.court(registry_args.())
+
+    assert Enum.map(report.order_receipts_dirs, &{&1.origin, &1.dir}) == [
+             {"repo", Path.join(top, "receipts/v26.9.22")}
+           ]
+
+    File.mkdir_p!(Path.join(ggen, "receipts/v26.9.22"))
+    ggen_receipt = Path.join(ggen, "receipts/v26.9.22/WO-1.json")
+    File.cp!(write_order_receipt(repo, digest), ggen_receipt)
+    assert {0, _} = validate([ggen_receipt])
+
+    {code, out} = run.()
+    assert code == 1
+    assert out =~ "order WO-1 standing=NONE receipt=MISSING digest=#{digest}"
+
+    File.mkdir_p!(Path.join(repo, "receipts/v26.9.22"))
+    File.cp!(ggen_receipt, Path.join(repo, "receipts/v26.9.22/WO-1.json"))
+    {code, out} = run.()
+    assert code == 0, out
+    assert out =~ "order WO-1 standing=ALIVE receipt=ADMITTED digest=#{digest}"
+    assert out =~ "from=repo:#{top}/receipts/v26.9.22@#{head(repo)}"
+
+    # The behaviour above is the preservation claim; the registry entry is its source.
+    assert StopCourt.checkpoints()["GC-FRI-0800"].order_receipts_dirs == [
+             {:repo, "receipts/v26.9.22"}
+           ]
   end
 
   # ------------------------------------------------------------------ refusals (exit 2)

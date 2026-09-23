@@ -17,14 +17,19 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
     * `GC-FRI-0800` -> `docs/sjira/v26.9.22/friday/goal.ttl`, gate receipts in
       `docs/sjira/v26.9.22/friday/receipts`, order receipts in
-      `receipts/v26.9.22`, `GGEN_IGNITER_DIR` default `~/ggen_igniter` (the
-      fallback its court commands already name);
+      `receipts/v26.9.22` (one directory), `GGEN_IGNITER_DIR` default
+      `~/ggen_igniter` (the fallback its court commands already name);
     * `GC-26.9.23` -> `docs/sjira/v26.9.23/goal.ttl`, gate receipts in
-      `docs/sjira/v26.9.23/receipts`, order receipts in `receipts/v26.9.23`,
+      `docs/sjira/v26.9.23/receipts`, order receipts in the ordered list
+      `receipts/v26.9.23` (the xaas repository under judgement), then
+      `$GGEN_IGNITER_DIR/receipts/v26.9.23` (the other critical-path
+      repository, resolved with the same precedence as the court env below),
       `GGEN_IGNITER_DIR` default `/Users/sac/wt/v26922/fri/ggen_igniter-int`.
 
-  An explicit option always wins. A checkpoint outside the registry needs
-  `--graph`, `--receipts-dir` and `--order-receipts-dir`.
+  An explicit option always wins; `--order-receipts-dir` is repeatable and,
+  when given, replaces the registry's list (in the given order). A
+  checkpoint outside the registry needs `--graph`, `--receipts-dir` and
+  `--order-receipts-dir`.
 
   For each gate (a `sj:GoalCheckpoint` with `sj:checkpointOf` the named root)
   it runs the gate's `sj:courtCommand` with `/bin/sh -c` from the repository
@@ -58,13 +63,19 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     * gate receipts are linked only when `identity.subject` is
       `<checkpoint>/<gate>`;
     * each `sj:WorkOrder` under the root (`sj:checkpointOf+`: on the root
-      itself or on one of its gates, transitively) is read from
-      `<order-receipts-dir>/<identifier>.json` and linked only when its tuple
-      is complete and `identity.tuple_digest` equals the order's tuple digest
-      (`"sha256:" <> hex(sha256(canonical JSON))` over `subject`,
-      `postcondition`, `capability` (the `sj:capabilityId`),
+      itself or on one of its gates, transitively) is looked up as
+      `<dir>/<identifier>.json` in every order-receipts directory and linked
+      only when its tuple is complete and `identity.tuple_digest` equals the
+      order's tuple digest (`"sha256:" <> hex(sha256(canonical JSON))` over
+      `subject`, `postcondition`, `capability` (the `sj:capabilityId`),
       `evidence_ceiling`, `authority_ceiling`, `consequence_class`,
-      `exclusions` sorted; sorted keys, compact).
+      `exclusions` sorted; sorted keys, compact). `sj:exclusion` is 0..n:
+      an order without one has `exclusions` `[]`. A receipt found in one
+      directory is judged from there; the same bytes found in several
+      directories are judged from the first; different bytes for one order in
+      two directories are never picked silently: the order is refused
+      `REFUSED(duplicate_order_receipt)` (broken term `R_missing_identity`)
+      and stays open.
 
   The goal graph itself may not assert a receipt (`sj:receipt` or an
   `sj:Receipt` node): it is refused, so standing is only ever observed. When
@@ -80,8 +91,16 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   true iff one row comes back.
 
   After the ASK it writes `<receipts-dir>/STOP-<checkpoint>.json` (standing
-  `ALIVE` iff STOP, `UNKNOWN` otherwise), prints the per-gate table and
-  `STOP=true|false`.
+  `ALIVE` iff STOP, `UNKNOWN` otherwise), prints the per-gate table, one line
+  per order and `STOP=true|false`. The STOP receipt's `stop` section lists
+  the order-receipts directories (with the git toplevel and HEAD of the
+  repository holding each, SHA-1 or SHA-256; when the HEAD is `null`,
+  `repo_head_why` says why: directory absent, no git checkout, unborn HEAD,
+  or the git failure, never a git failure reported as "no git checkout") and,
+  per order, the directory and repository HEAD its receipt came from, whether
+  those receipt bytes are the blob committed at that HEAD (`true`, `false`
+  with the reason, or `null` with the git failure), every path it was found
+  at, and the refusal if any.
 
   Exit codes: `0` STOP=true, `1` STOP=false, `2` the court could not run
   (bad arguments, unreadable graph, unknown checkpoint, asserted receipts,
@@ -104,24 +123,28 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   # Per-checkpoint defaults (paths relative to the repository root). The goal
   # graph stays the authority for gates and court commands; this registry only
   # says where each checkpoint's graph and receipts live.
+  # `order_receipts_dirs` is ordered: `{:repo, rel}` is relative to the
+  # repository under judgement, `{:ggen_igniter, rel}` to the resolved
+  # GGEN_IGNITER_DIR (lane V23-L: the GC-26.9.23 orders V23-B and V23-C
+  # carry their receipts in ggen_igniter).
   @checkpoints %{
     "GC-FRI-0800" => %{
       graph: "docs/sjira/v26.9.22/friday/goal.ttl",
       receipts_dir: "docs/sjira/v26.9.22/friday/receipts",
-      order_receipts_dir: "receipts/v26.9.22",
+      order_receipts_dirs: [{:repo, "receipts/v26.9.22"}],
       ggen_igniter_dir: "~/ggen_igniter"
     },
     "GC-26.9.23" => %{
       graph: "docs/sjira/v26.9.23/goal.ttl",
       receipts_dir: "docs/sjira/v26.9.23/receipts",
-      order_receipts_dir: "receipts/v26.9.23",
+      order_receipts_dirs: [{:repo, "receipts/v26.9.23"}, {:ggen_igniter, "receipts/v26.9.23"}],
       ggen_igniter_dir: "/Users/sac/wt/v26922/fri/ggen_igniter-int"
     }
   }
   @path_options [
     graph: "--graph",
     receipts_dir: "--receipts-dir",
-    order_receipts_dir: "--order-receipts-dir"
+    order_receipts_dirs: "--order-receipts-dir"
   ]
   @default_timeout_s 900
 
@@ -137,6 +160,9 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   @tail_bytes 4096
 
   @sha ~r/\A[0-9a-f]{40}\z/
+  # A commit id in either object format (SHA-1, SHA-256): the HEAD of a
+  # repository that holds order receipts is provenance, not a receipt subject.
+  @object_id ~r/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/
   @ask ~r/\A((?:\s*(?:#[^\n]*(?:\n|\z)|(?:PREFIX|BASE)\b[^\n]*(?:\n|\z)))*\s*)ASK\b/i
   @tuple_fields ~w(subject postcondition capability evidence_ceiling authority_ceiling consequence_class exclusions)
 
@@ -144,7 +170,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     checkpoint: :string,
     graph: :string,
     receipts_dir: :string,
-    order_receipts_dir: :string,
+    order_receipts_dir: :keep,
     only: :keep,
     timeout: :integer,
     repo: :string,
@@ -206,7 +232,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         base_sha: base_sha(root, subject_sha),
         graph_hash: "sha256:" <> sha256_hex(bytes),
         receipts_dir: abs(paths.receipts_dir, repo),
-        order_receipts_dir: abs(paths.order_receipts_dir, repo),
+        order_receipts_dirs: order_receipts_dirs(paths, repo),
         timeout_ms: (opts[:timeout] || @default_timeout_s) * 1000,
         validator: validator,
         court_env: court_env,
@@ -220,14 +246,15 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       orders = orders(graph, root, ctx)
 
       judged_paths =
-        Enum.map(gates, &gate_receipt_path(&1, ctx)) ++ Enum.map(orders, & &1.receipt_path)
+        Enum.map(gates, &gate_receipt_path(&1, ctx)) ++
+          (orders |> Enum.reject(& &1.conflict) |> Enum.map(& &1.receipt_path))
 
       with {:ok, verdicts} <- validate(judged_paths, ctx) do
         gates = Enum.map(gates, &judge_gate(&1, ctx, verdicts))
         orders = Enum.map(orders, &judge_order(&1, verdicts))
 
         with {:ok, stop} <- ask(graph, gates, orders, stop_query) do
-          stop_receipt = write_stop_receipt(stop, gates, ctx)
+          stop_receipt = write_stop_receipt(stop, gates, orders, ctx)
 
           stop_verdict =
             case validate([stop_receipt], ctx) do
@@ -242,7 +269,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
              subject_sha: subject_sha,
              court_env: court_env,
              receipts_dir: ctx.receipts_dir,
-             order_receipts_dir: ctx.order_receipts_dir,
+             order_receipts_dir: hd(ctx.order_receipts_dirs).dir,
+             order_receipts_dirs: ctx.order_receipts_dirs,
              graph: graph_path,
              gates: gates,
              orders: orders,
@@ -256,11 +284,13 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   end
 
   @doc """
-  The checkpoint registry: checkpoint identifier -> default `:graph`,
-  `:receipts_dir`, `:order_receipts_dir` (relative to the repository root) and
+  The checkpoint registry: checkpoint identifier -> default `:graph` and
+  `:receipts_dir` (relative to the repository root), the ordered
+  `:order_receipts_dirs` (`{:repo, rel}` relative to the repository root,
+  `{:ggen_igniter, rel}` relative to the resolved `GGEN_IGNITER_DIR`) and
   `:ggen_igniter_dir` (exported to court commands as `GGEN_IGNITER_DIR`).
   """
-  @spec checkpoints() :: %{String.t() => %{atom() => String.t()}}
+  @spec checkpoints() :: %{String.t() => %{atom() => term()}}
   def checkpoints, do: @checkpoints
 
   @doc "The court exit code that means the gate's machinery has not landed (standing UNKNOWN)."
@@ -320,8 +350,17 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   defp paths(opts) do
     defaults = Map.get(@checkpoints, opts[:checkpoint], %{})
 
-    resolved =
-      Map.new(@path_options, fn {key, _flag} -> {key, present(opts[key]) || defaults[key]} end)
+    explicit_order_dirs =
+      case opts |> Keyword.get_values(:order_receipts_dir) |> Enum.filter(&present/1) do
+        [] -> nil
+        dirs -> Enum.map(dirs, &{:option, &1})
+      end
+
+    resolved = %{
+      graph: present(opts[:graph]) || defaults[:graph],
+      receipts_dir: present(opts[:receipts_dir]) || defaults[:receipts_dir],
+      order_receipts_dirs: explicit_order_dirs || defaults[:order_receipts_dirs]
+    }
 
     case for({key, flag} <- @path_options, resolved[key] == nil, do: flag) do
       [] ->
@@ -338,6 +377,115 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
   defp present(value) when is_binary(value) and value != "", do: value
   defp present(_value), do: nil
+
+  # The ordered order-receipts directories, absolute and de-duplicated, each
+  # with the typed probe of the repository that holds it (`checkout/1`). A
+  # `{:ggen_igniter, _}` entry resolves against the same GGEN_IGNITER_DIR the
+  # court env exports and is dropped when none is known.
+  defp order_receipts_dirs(paths, repo) do
+    paths.order_receipts_dirs
+    |> Enum.flat_map(fn
+      {:repo, rel} ->
+        [{"repo", Path.expand(rel, repo)}]
+
+      {:option, dir} ->
+        [{"option", Path.expand(dir, repo)}]
+
+      {:ggen_igniter, rel} ->
+        case paths.ggen_igniter_dir do
+          nil -> []
+          dir -> [{"ggen_igniter", Path.expand(rel, Path.expand(dir))}]
+        end
+    end)
+    |> Enum.uniq_by(fn {_origin, dir} -> dir end)
+    |> Enum.map(fn {origin, dir} -> Map.merge(%{dir: dir, origin: origin}, checkout(dir)) end)
+  end
+
+  # The repository holding an order-receipts dir, typed; a git failure is
+  # never reported as "no git checkout" (`probe`, `repo` toplevel, `head`
+  # object id, `why` = the reason `head` is nil):
+  #
+  #   * `:ok`          - toplevel and HEAD commit id (SHA-1, or SHA-256 in a
+  #                      `--object-format=sha256` repository);
+  #   * `:absent`      - the directory does not exist;
+  #   * `:no_checkout` - git finds no repository AND no ancestor of the
+  #                      directory holds a `.git` entry (an independent
+  #                      filesystem observation, not a parse of git's message);
+  #   * `:unborn`      - a checkout whose HEAD branch has no commit (proven:
+  #                      `symbolic-ref` names the branch, `show-ref` exits 1);
+  #   * `:git_failed`  - git could not answer although a `.git` is there
+  #                      (dubious ownership, corrupt HEAD, not a work tree, git
+  #                      missing), or git's toplevel is not the directory that
+  #                      holds the nearest `.git` (a skipped nested repository).
+  defp checkout(dir) do
+    if File.dir?(dir),
+      do: probe_checkout(dir, git_holder(dir)),
+      else: probe(:absent, "directory absent")
+  end
+
+  defp probe_checkout(dir, holder) do
+    case git(dir, ["rev-parse", "--show-toplevel"]) do
+      {:ok, root} ->
+        case same_dir(root, holder) do
+          :same -> probe_head(dir, root)
+          mismatch -> probe(:git_failed, inspect(mismatch), root)
+        end
+
+      {:error, {:git_failed, _args, _code, _out}} when holder == nil ->
+        probe(:no_checkout, "no git checkout holds the receipt dir")
+
+      {:error, reason} ->
+        probe(:git_failed, inspect(reason))
+    end
+  end
+
+  defp probe_head(dir, root) do
+    case git(dir, ["rev-parse", "--verify", "HEAD"]) do
+      {:ok, head} ->
+        if Regex.match?(@object_id, head),
+          do: %{probe: :ok, repo: root, head: head, why: nil},
+          else: probe(:git_failed, inspect({:not_an_object_id, head}), root)
+
+      {:error, reason} ->
+        # Unborn only when proven; otherwise the original git failure stands.
+        with {:ok, ref} <- git(dir, ["symbolic-ref", "--quiet", "HEAD"]),
+             {:error, {:git_failed, _args, 1, ""}} <-
+               git(dir, ["show-ref", "--verify", "--quiet", ref]) do
+          probe(:unborn, "HEAD #{ref} has no commit (unborn branch)", root)
+        else
+          _not_proven -> probe(:git_failed, inspect(reason), root)
+        end
+    end
+  end
+
+  defp probe(kind, why, root \\ nil), do: %{probe: kind, repo: root, head: nil, why: why}
+
+  # The nearest ancestor (or the directory itself) holding a `.git` entry (a
+  # directory, or the file of a linked worktree / submodule).
+  defp git_holder(dir) do
+    dir |> Path.expand() |> ancestors() |> Enum.find(&File.exists?(Path.join(&1, ".git")))
+  end
+
+  defp ancestors(path) do
+    case Path.dirname(path) do
+      ^path -> [path]
+      parent -> [path | ancestors(parent)]
+    end
+  end
+
+  # Same directory by inode (git prints the resolved path: /private/var for /var).
+  defp same_dir(root, nil), do: {:toplevel_mismatch, root, nil}
+
+  defp same_dir(root, holder) do
+    with {:ok, a} <- File.stat(root),
+         {:ok, b} <- File.stat(holder) do
+      if {a.major_device, a.inode} == {b.major_device, b.inode},
+        do: :same,
+        else: {:toplevel_mismatch, root, holder}
+    else
+      {:error, posix} -> {:stat_failed, root, holder, posix}
+    end
+  end
 
   # XAAS_DIR is always the repository root under judgement (the receipts'
   # subject_sha is its HEAD); GGEN_IGNITER_DIR is exported only when known.
@@ -509,15 +657,48 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     |> Enum.map(fn desc ->
       id = identifier(desc) || to_string(desc.subject)
 
-      %{
-        id: id,
-        iri: desc.subject,
-        successor?: RDF.iri(@sj <> "Successor") in values(desc, "boundaryClass"),
-        tuple: order_tuple(graph, desc),
-        receipt_path: Path.join(ctx.order_receipts_dir, id <> ".json")
-      }
+      Map.merge(
+        %{
+          id: id,
+          iri: desc.subject,
+          successor?: RDF.iri(@sj <> "Successor") in values(desc, "boundaryClass"),
+          tuple: order_tuple(graph, desc)
+        },
+        locate(id, ctx.order_receipts_dirs)
+      )
     end)
     |> Enum.sort_by(&natural(&1.id))
+  end
+
+  # Where an order's receipt comes from: `<dir>/<id>.json` in every
+  # order-receipts dir, in order. Not found -> the first dir's path (judged
+  # MISSING). Found once, or the same bytes found several times -> the first
+  # hit. Different bytes in two dirs -> `conflict` (never a silent pick).
+  defp locate(id, [first | _] = dirs) do
+    hits =
+      for dir <- dirs,
+          path = Path.join(dir.dir, id <> ".json"),
+          File.regular?(path),
+          do: {dir, path}
+
+    found = Enum.map(hits, &elem(&1, 1))
+
+    case hits do
+      [] ->
+        %{
+          receipt_path: Path.join(first.dir, id <> ".json"),
+          source: nil,
+          found: [],
+          conflict: nil
+        }
+
+      [{dir, path} | rest] ->
+        bytes = File.read!(path)
+
+        if Enum.all?(rest, fn {_dir, other} -> File.read!(other) == bytes end),
+          do: %{receipt_path: path, source: dir, found: found, conflict: nil},
+          else: %{receipt_path: path, source: nil, found: found, conflict: found}
+    end
   end
 
   # The root plus every node that reaches it over sj:checkpointOf edges.
@@ -571,7 +752,6 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         {:halt, {:ambiguous, field}}
     end)
     |> case do
-      {:ok, %{"exclusions" => []}} -> {:incomplete, "exclusions"}
       {:ok, tuple} -> {:ok, tuple, tuple_digest(tuple)}
       refusal -> refusal
     end
@@ -831,6 +1011,18 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     })
   end
 
+  # Different receipts for one order in two dirs: refused, never picked.
+  defp judge_order(%{conflict: [_ | _] = paths} = order, _verdicts) do
+    Map.merge(order, %{
+      verdict: :refused,
+      receipt: nil,
+      digest: tuple_digest_or_nil(order.tuple),
+      linked?: false,
+      why_unlinked: {:duplicate_order_receipt, paths},
+      standing: nil
+    })
+  end
+
   defp judge_order(order, verdicts) do
     {verdict, receipt} = load(order.receipt_path, verdicts)
 
@@ -863,6 +1055,9 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       standing: if(linked?, do: get_in(receipt, ["standing", "value"]), else: nil)
     })
   end
+
+  defp tuple_digest_or_nil({:ok, _tuple, digest}), do: digest
+  defp tuple_digest_or_nil(_refusal), do: nil
 
   defp load(path, verdicts) do
     case Map.get(verdicts, path) do
@@ -913,9 +1108,10 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
   # ------------------------------------------------------------------ stop receipt
 
-  defp write_stop_receipt(stop, gates, ctx) do
+  defp write_stop_receipt(stop, gates, orders, ctx) do
     path = Path.join(ctx.receipts_dir, "STOP-#{ctx.checkpoint}.json")
     linked = Enum.filter(gates, & &1.linked?)
+    linked_orders = Enum.count(orders, & &1.linked?)
 
     gate_commands =
       Enum.flat_map(linked, fn gate ->
@@ -943,7 +1139,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
                 "cwd" => ctx.repo,
                 "exit" => if(stop, do: 0, else: 1),
                 "summary" =>
-                  "sj:stopQuery ASK over the goal graph + #{length(linked)} admitted gate receipts: STOP=#{stop}"
+                  "sj:stopQuery ASK over the goal graph + #{length(linked)} admitted gate receipts" <>
+                    " + #{linked_orders}/#{length(orders)} linked order receipts: STOP=#{stop}"
               }
             ],
         "durable_location" => Path.relative_to(path, ctx.repo)
@@ -952,11 +1149,98 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         "value" => if(stop, do: "ALIVE", else: "UNKNOWN"),
         "derived_from" =>
           "sj:stopQuery of #{ctx.checkpoint} at #{ctx.subject_sha}: #{alive}/#{length(gates)} gates ALIVE; STOP=#{stop}"
+      },
+      "stop" => %{
+        "checkpoint" => ctx.checkpoint,
+        "order_receipt_dirs" => Enum.map(ctx.order_receipts_dirs, &dir_json/1),
+        "orders" => Enum.map(orders, &order_json/1)
       }
     }
 
     File.write!(path, Jason.encode!(receipt, pretty: true) <> "\n")
     path
+  end
+
+  defp dir_json(dir) do
+    %{
+      "dir" => dir.dir,
+      "origin" => dir.origin,
+      "repo" => dir.repo,
+      "repo_head" => dir.head,
+      "repo_head_why" => dir.why
+    }
+  end
+
+  # Per order: where its receipt came from (dir + the HEAD of the repository
+  # holding it, and whether those bytes are the blob committed at that HEAD),
+  # every path it was found at, and the typed refusal if any.
+  defp order_json(order) do
+    source = order.source
+
+    %{
+      "order" => order.id,
+      "tuple_digest" => order.digest,
+      "verdict" => verdict_label(order.verdict, order.linked?),
+      "linked" => order.linked?,
+      "standing" => order.standing,
+      "why_unlinked" => order.why_unlinked && inspect(order.why_unlinked),
+      "found_in" => order.found,
+      "receipt" => source && order.receipt_path,
+      "receipt_sha256" => source && "sha256:" <> sha256_hex(File.read!(order.receipt_path)),
+      "dir" => source && source.dir,
+      "origin" => source && source.origin,
+      "repo" => source && source.repo,
+      "repo_head" => source && source.head,
+      "repo_head_why" => source && source.why,
+      "committed_at_head" => nil,
+      "committed_at_head_why" => nil
+    }
+    |> Map.merge(commit_json(order.receipt_path, source))
+    |> Map.merge(refusal_json(order.why_unlinked))
+  end
+
+  defp refusal_json({:duplicate_order_receipt, _paths}),
+    do: %{"refusal" => "REFUSED(duplicate_order_receipt)", "broken_term" => "R_missing_identity"}
+
+  defp refusal_json(_why), do: %{}
+
+  # Whether the receipt bytes are exactly the blob at HEAD in the repository
+  # holding them, typed three ways: `true`; `false` with the reason (no git
+  # checkout, an unborn HEAD, no blob at that path in HEAD, different bytes);
+  # `null` with the git failure when git could not answer, e.g. a directory
+  # probe git refused (`:git_failed`) or an unreadable HEAD tree (never folded
+  # into `false`). `ls-tree` is used rather than `rev-parse --verify --quiet
+  # HEAD:./name`, which exits 1 silently for both "no such path" and "tree
+  # object missing". Both git calls run in the receipt's own directory (paths
+  # relative to it), so a symlinked path (macOS /var -> /private/var) cannot
+  # mis-relativize.
+  defp commit_json(_path, nil), do: %{}
+
+  defp commit_json(path, source) do
+    {state, why} = commit_state(path, source)
+    %{"committed_at_head" => state, "committed_at_head_why" => why}
+  end
+
+  defp commit_state(_path, %{probe: :git_failed, why: why}), do: {nil, why}
+
+  defp commit_state(_path, %{probe: probe, why: why})
+       when probe in [:no_checkout, :unborn, :absent],
+       do: {false, why}
+
+  defp commit_state(path, %{probe: :ok}) do
+    dir = Path.dirname(path)
+    name = Path.basename(path)
+
+    with {:ok, listing} <- git(dir, ["ls-tree", "HEAD", "--", name]),
+         {:ok, hashed} <- git(dir, ["hash-object", "--", name]) do
+      case Regex.run(~r/^\d+ blob ([0-9a-f]{40,64})\t/, listing) do
+        [_, ^hashed] -> {true, nil}
+        [_, _other] -> {false, "receipt bytes differ from the blob at HEAD"}
+        nil -> {false, "HEAD has no blob at this path"}
+      end
+    else
+      {:error, reason} -> {nil, inspect(reason)}
+    end
   end
 
   # ------------------------------------------------------------------ print
@@ -970,6 +1254,10 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       "court env " <>
         (report.court_env |> Enum.sort() |> Enum.map_join(" ", fn {k, v} -> "#{k}=#{v}" end))
     )
+
+    Enum.each(report.order_receipts_dirs, fn dir ->
+      shell.info("order receipts #{dir.origin} #{dir.dir}" <> dir_label(dir))
+    end)
 
     shell.info(row(["GATE", "BOUNDARY", "STANDING", "EXIT", "SECS", "RECEIPT", "SOURCE"]))
 
@@ -1002,7 +1290,11 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         "order #{order.id} standing=#{order.standing || "NONE"} receipt=#{verdict_label(order.verdict, order.linked?)}" <>
           " digest=#{order.digest || "-"}" <>
           if(order.why_unlinked, do: " unlinked=#{inspect(order.why_unlinked)}", else: "") <>
-          if(order.successor?, do: " successor=true", else: "")
+          if(order.successor?, do: " successor=true", else: "") <>
+          if(order.source,
+            do: " from=#{order.source.origin}:#{order.source.dir}@#{order.source.head || "-"}",
+            else: ""
+          )
       )
     end)
 
@@ -1012,6 +1304,12 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
     shell.info("STOP=#{report.stop}")
   end
+
+  defp dir_label(%{probe: :ok} = dir), do: " (#{dir.repo} @ #{dir.head})"
+  defp dir_label(%{probe: :no_checkout}), do: " (no git checkout)"
+  defp dir_label(%{probe: :absent}), do: " (absent)"
+  defp dir_label(%{probe: :unborn} = dir), do: " (#{dir.repo} @ unborn: #{dir.why})"
+  defp dir_label(%{probe: :git_failed} = dir), do: " (#{dir.repo || "-"} git failed: #{dir.why})"
 
   defp receipt_exit(%{"replay" => %{"commands" => [%{"exit" => exit_code} | _]}}),
     do: to_string(exit_code)

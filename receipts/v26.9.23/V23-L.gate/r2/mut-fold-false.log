@@ -1,0 +1,47 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-L/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+Generated xaas app
+08:58:35.249 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+08:58:35.628 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+08:58:35.912 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+08:58:35.988 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:58:35.989 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+08:58:36.004 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:58:36.004 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+Running ExUnit with seed: 3306, max_cases: 32
+08:58:36.017 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:58:36.017 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Excluding tags: [:test]
+Including tags: [location: {"test/sjira/v26_9_23_goal_test.exs", 1185}]
+
+08:58:36.023 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:58:36.023 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+08:58:36.031 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:58:36.031 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+08:58:36.033 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:58:36.033 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+
+
+  1) test the receipt-dir probe is typed: unborn HEAD, a checkout git cannot read, and SHA-256 HEADs are never 'no git checkout' (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1185
+     Assertion with == failed
+     code:  assert wo["committed_at_head"] == nil
+     left:  false
+     right: nil
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:1248: anonymous fn/4 in Xaas.Sjira.V26923GoalTest."test the receipt-dir probe is typed: unborn HEAD, a checkout git cannot read, and SHA-256 HEADs are never 'no git checkout'"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/sjira/v26_9_23_goal_test.exs:1231: (test)
+
+
+Finished in 2.1 seconds (0.00s async, 2.1s sync)
+1 test, 1 failure (23 excluded)
