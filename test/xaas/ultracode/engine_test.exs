@@ -682,6 +682,27 @@ defmodule Xaas.Ultracode.EngineTest do
     end
 
     test "the configured default is the deterministic recipe provider only" do
+      # Behavior first, so a revert fails on WHAT the engine does, not only
+      # on a missing function: with the shipped config (configured worker,
+      # no :worker/:providers opt) a ready epoch of a non-recipe provider is
+      # neither discovered nor reported -- not even as :no_worker_configured.
+      provider = unique_provider()
+      {_run, epoch} = running_run_and_epoch(provider)
+
+      assert Engine.fill() == []
+
+      untouched = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+      assert untouched.state == :running
+      assert is_nil(untouched.lease_token)
+      assert is_nil(untouched.leased_to)
+
+      # The shipped config itself (config/config.exs), not only the code
+      # default `provider_allowlist/0` falls back to when unset.
+      assert Application.get_env(:xaas, :ultracode_engine_providers) == ["recipe"]
+
+      assert Application.get_env(:xaas, :ultracode_engine_worker) ==
+               {Xaas.Ultracode.RecipeWorker, :run}
+
       assert Engine.provider_allowlist() == ["recipe"]
     end
 
@@ -707,15 +728,18 @@ defmodule Xaas.Ultracode.EngineTest do
       provider = unique_provider()
       {_run, _epoch} = running_run_and_epoch(provider)
 
+      # Behavioral assertions precede the accessor checks (see the default
+      # test above): the fill result is what a revert must break.
       Application.put_env(:xaas, :ultracode_engine_providers, [:not_a_string])
-      assert Engine.provider_allowlist() == []
       assert Engine.fill(worker: &ghost_worker/2) == []
+      assert Engine.provider_allowlist() == []
 
       Application.put_env(:xaas, :ultracode_engine_providers, :all)
-      assert Engine.provider_allowlist() == :all
 
       assert [%{provider: ^provider, dispatched: [%{status: :rate_limited}]}] =
                Engine.fill(worker: fn _epoch, _ctx -> :rate_limited end)
+
+      assert Engine.provider_allowlist() == :all
     end
   end
 

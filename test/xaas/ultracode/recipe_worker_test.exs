@@ -37,11 +37,25 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
   setup do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Xaas.Repo, shared: true)
 
+    # Registered BEFORE anything below can raise: `start_owner!` spawns an
+    # UNLINKED owner that holds the shared sandbox mode, so a setup crash
+    # with this on_exit not yet registered would leak it and fail every
+    # later module's `start_owner!(shared: true)` with `:already_shared`
+    # (observed under the court's full revert-mutation: 26 cascade failures
+    # masking which tests constrain the change).
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+
     original = %{
       suites: Application.get_env(:xaas, :ultracode_verifier_suites),
       root: Application.get_env(:xaas, :ultracode_worktree_root),
       recipes: Application.get_env(:xaas, :ultracode_construction_recipes)
     }
+
+    on_exit(fn ->
+      restore_env(:ultracode_verifier_suites, original.suites)
+      restore_env(:ultracode_worktree_root, original.root)
+      restore_env(:ultracode_construction_recipes, original.recipes)
+    end)
 
     root = canonical(mktmp("root"))
     Application.put_env(:xaas, :ultracode_worktree_root, root)
@@ -61,13 +75,6 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
         ]
       }
     })
-
-    on_exit(fn ->
-      restore_env(:ultracode_verifier_suites, original.suites)
-      restore_env(:ultracode_worktree_root, original.root)
-      restore_env(:ultracode_construction_recipes, original.recipes)
-      Ecto.Adapters.SQL.Sandbox.stop_owner(pid)
-    end)
 
     %{root: root, recipe: recipe}
   end
