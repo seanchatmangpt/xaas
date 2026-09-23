@@ -1,0 +1,1078 @@
+{
+  "checkpoint": "GC-26.9.23",
+  "gate": "GC23-11",
+  "network": true,
+  "observed_at": "2026-09-23T06:40:42Z",
+  "repositories": [
+    {
+      "ahead": 0,
+      "behind": 54,
+      "branch": "fix/test-determinism-v26.9.21",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "85e57381d4adaf4cec6698965051ece8eb888049",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ash_a2a",
+      "head_sha": "ffff182add3cac4944b076bf50238f532ca6552d",
+      "name": "ash_a2a",
+      "open_prs": [
+        {
+          "headRefName": "gall/dfcm-029-030-policy-budget-court",
+          "number": 28,
+          "title": "GALL-029..030: enforce semantic policy, scope and one-DO budget"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ash_a2a --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ash_a2a"
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "0338b9ba169e93d0f5df91f175ef2e62e668fa97",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ash_atlassian",
+      "head_sha": "0338b9ba169e93d0f5df91f175ef2e62e668fa97",
+      "name": "ash_atlassian",
+      "open_prs": [],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ash_atlassian --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ash_atlassian"
+    },
+    {
+      "ahead": 518,
+      "behind": 1,
+      "branch": "feat/dfcm-surface-core",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "7d5492795d9b9a0956f51545ed1ad1932768b77e",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ash_surface",
+      "head_sha": "386135cbef8b1de78f19cca8095552aaab39a27c",
+      "name": "ash_surface",
+      "open_prs": [
+        {
+          "headRefName": "v26.9.13/exact-head-ci",
+          "number": 3,
+          "title": "v26.9.13: qualify literal PR heads"
+        },
+        {
+          "headRefName": "feat/v26.9.19-blue-river-dam",
+          "number": 4,
+          "title": "feat(v26.9.19): DfCM live command center projection"
+        },
+        {
+          "headRefName": "adopt/engineering-standards-v26.9.21",
+          "number": 5,
+          "title": "chore(root): adopt engineering-standards v26.9.21"
+        },
+        {
+          "headRefName": "feat/v26.9.21-zoe-human-surface",
+          "number": 6,
+          "title": "feat(v26.9.21): project ZOE human surface with DfCM"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ash_surface --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ash_surface"
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "master",
+      "default_ref": "master",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "1c25fdc7766c019f3738193145f7873a1e8f1fd3",
+      "dirty_paths": 5,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/autofde-lab",
+      "head_sha": "1c25fdc7766c019f3738193145f7873a1e8f1fd3",
+      "name": "autofde-lab",
+      "open_prs": [
+        {
+          "headRefName": "feat/sa2a-universal-computation-interface",
+          "number": 162,
+          "title": "feat(sa2a): make ML/AI a universal powerless computation interface"
+        },
+        {
+          "headRefName": "feat/v26.9.18-semantic-work-fabric",
+          "number": 163,
+          "title": "feat(v26.9.18): project GALL frontier into HDDL"
+        },
+        {
+          "headRefName": "fabric/dfcm-xaas-execution-descriptor",
+          "number": 167,
+          "title": "Semantic Work: manufacture exact XaaS execution descriptors"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/autofde-lab --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/autofde-lab"
+    },
+    {
+      "ahead": 3,
+      "behind": 0,
+      "branch": "chore/consume-ash-a2a-26.9.21",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "574368706e6afd804c7a13771bed3cf03da33ce0",
+      "dirty_paths": 3,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/beam4pm",
+      "head_sha": "a386b6e2854f8f8901d5c7718d84073800e77639",
+      "name": "beam4pm",
+      "open_prs": [
+        {
+          "headRefName": "integration/htn-fond-hddl",
+          "number": 59,
+          "title": "merge: integrate feat/ferroplan-hddl into feat/htn-fond-dispatch"
+        },
+        {
+          "headRefName": "feat/economic-isa-ocel-projection",
+          "number": 60,
+          "title": "feat: project canonical economic ISA into OCEL"
+        },
+        {
+          "headRefName": "feat/fortune5-enterprise-planning",
+          "number": 61,
+          "title": "feat(planning): Fortune 5 enterprise planning surface"
+        },
+        {
+          "headRefName": "feat/ash-a2a-agent-facing",
+          "number": 63,
+          "title": "feat(a2a): wire ash_a2a onto beam4pm as additive agent-facing layer"
+        },
+        {
+          "headRefName": "feat/frontier-evidence-v1",
+          "number": 64,
+          "title": "feat: export bounded FrontierEvidence planning fragment"
+        },
+        {
+          "headRefName": "prod/ppcx-control-plane-boundary-20260911",
+          "number": 66,
+          "title": "feat(ppcx): codify production control-plane authority boundary"
+        },
+        {
+          "headRefName": "feat/errc-closure",
+          "number": 69,
+          "title": "chore(errc): bind beam4pm to planning closure and reusable marketplace head"
+        },
+        {
+          "headRefName": "codex/dfcm-fond-hddl-20260912",
+          "number": 70,
+          "title": "feat(dfcm): compose option preservation with FOND + HDDL"
+        },
+        {
+          "headRefName": "gall/checkpoint-004-independent-observer",
+          "number": 75,
+          "title": "GALL-004: independent postcondition and OCEL observer seal"
+        },
+        {
+          "headRefName": "gall/checkpoint-004-weaver-semantic-court",
+          "number": 76,
+          "title": "GALL-004: add Weaver semantic telemetry court before OCEL"
+        },
+        {
+          "headRefName": "gall/v26.9.18-final-specs",
+          "number": 77,
+          "title": "GALL v26.9.18: object-centric process intelligence specs"
+        },
+        {
+          "headRefName": "feat/v26.9.18-semantic-work-fabric",
+          "number": 78,
+          "title": "feat(v26.9.18): model GALL semantic-work lifecycle observations"
+        },
+        {
+          "headRefName": "gall/dfcm-004-hosted-receipts",
+          "number": 79,
+          "title": "GALL-004: hosted observer and Weaver receipt courts"
+        },
+        {
+          "headRefName": "gall/implement-024-028-process-intelligence",
+          "number": 80,
+          "title": "GALL-024..028: implement object-centric process intelligence courts"
+        },
+        {
+          "headRefName": "automation/ws2-planner-league-50-20260920",
+          "number": 81,
+          "title": "feat(ws2): extend autonomic planner league with 50 selection contracts"
+        },
+        {
+          "headRefName": "dependabot/docker/hexpm/erlang-29.1-debian-bookworm-20260824-slim",
+          "number": 82,
+          "title": "chore(deps): bump hexpm/erlang from 29.0-debian-bookworm-20260610-slim to 29.1-debian-bookworm-20260824-slim"
+        },
+        {
+          "headRefName": "dependabot/github_actions/github-actions-58af7c2bf0",
+          "number": 83,
+          "title": "chore(deps): bump the github-actions group across 1 directory with 7 updates"
+        },
+        {
+          "headRefName": "fix/ws2-dfcm-scheduled-recovery",
+          "number": 84,
+          "title": "fix(ws2): replace failed scheduler loop with DfCM recovery court"
+        },
+        {
+          "headRefName": "adopt/engineering-standards-v26.9.21",
+          "number": 85,
+          "title": "chore(root): adopt engineering-standards v26.9.21"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/beam4pm --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/beam4pm"
+    },
+    {
+      "ahead": null,
+      "behind": null,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "ls-remote --symref https://github.com/seanchatmangpt/chatman-ecosystem.git HEAD",
+      "default_remote": null,
+      "default_sha": "c59596f5506e7a00ca4ed6b909ebf6d6659b74c1",
+      "default_sha_local": false,
+      "dirty_paths": 0,
+      "errors": [
+        "no remote",
+        "default-branch commit absent locally (unrelated lineage or unfetched)"
+      ],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/chatman-ecosystem",
+      "head_sha": "6c21e2527a5cb67e8fdd3fc3bb049f8bbf776d7d",
+      "name": "chatman-ecosystem",
+      "open_prs": [
+        {
+          "headRefName": "errc/production-innovations-20260912",
+          "number": 250,
+          "title": "feat(errc): implement MuStar, governance courts, OCEL and SLA closure"
+        },
+        {
+          "headRefName": "agent/v26.9.20-verified-accomplishment-log",
+          "number": 251,
+          "title": "feat: verified daily accomplishment log for 250/hour plant accounting"
+        },
+        {
+          "headRefName": "adopt/engineering-standards-v26.9.21",
+          "number": 252,
+          "title": "chore(root): adopt engineering-standards v26.9.21"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/chatman-ecosystem --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/chatman-ecosystem"
+    },
+    {
+      "ahead": null,
+      "behind": null,
+      "branch": null,
+      "default_ref": "main",
+      "default_ref_source": "ls-remote --symref",
+      "default_remote": null,
+      "default_sha": "610944c48bce6377291c088a3e07775e9ef2908b",
+      "dirty_paths": null,
+      "errors": [],
+      "fetch": {
+        "reason": "no local checkout",
+        "status": "skipped"
+      },
+      "github": "seanchatmangpt/engineering-standards",
+      "head_sha": null,
+      "name": "engineering-standards",
+      "open_prs": [
+        {
+          "headRefName": "refactor/semantic-engineering-protocol-v26.9.21",
+          "number": 1,
+          "title": "refactor(root): make engineering-standards the ecosystem semantic root"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/engineering-standards --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": null
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "9c872ceef75d03e33a323fbd0bac5ae22ece725c",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ferroplan",
+      "head_sha": "9c872ceef75d03e33a323fbd0bac5ae22ece725c",
+      "name": "ferroplan",
+      "open_prs": [],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ferroplan --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ferroplan"
+    },
+    {
+      "ahead": 48,
+      "behind": 0,
+      "branch": "feat/duckdb-1.5.5",
+      "default_ref": "master",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "a3a69e43fadb3f683d402936415af7d2ff9f7384",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/frozen-duckdb",
+      "head_sha": "632d3f5a1eeda382a256d7eaac078df215a6bcda",
+      "name": "frozen-duckdb",
+      "open_prs": [
+        {
+          "headRefName": "feat/duckdb-1.5.5",
+          "number": 4,
+          "title": "docs+fix: land post-PR#3 wave-4/5 crawl, CLI fixes, v1.5.5 polish (48 commits)"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/frozen-duckdb --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/frozen-duckdb"
+    },
+    {
+      "ahead": 34,
+      "behind": 315,
+      "branch": "fix/ggen-v26.9.17-boundary",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "bfdc8a21fd83ee930a8ffff4f9b8e8e0e23b441e",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "error": "error: could not fetch origin",
+        "exit": 1,
+        "failed_remotes": [
+          "origin",
+          "upstream"
+        ],
+        "rejected_reasons": [
+          "would clobber existing tag"
+        ],
+        "rejected_refs": 36,
+        "status": "failed"
+      },
+      "github": "seanchatmangpt/ggen",
+      "head_sha": "5cc8808c12e465c89cf4e441a68cb340ca884ccc",
+      "name": "ggen",
+      "open_prs": [
+        {
+          "headRefName": "agent/v2030-1-1-prd-ard-20260819",
+          "number": 658,
+          "title": "docs: align ggen with Chatman Ecosystem v2030.1.1"
+        },
+        {
+          "headRefName": "agent/portable-projection-reference-v1",
+          "number": 659,
+          "title": "feat(protocol): add portable consequence reference projection"
+        },
+        {
+          "headRefName": "agent/ggen-cloud-dfcm",
+          "number": 661,
+          "title": "ci(cloud): ChatGPT cloud bootstrap for the ggen ecosystem"
+        },
+        {
+          "headRefName": "docs/refresh-agents-20260823",
+          "number": 663,
+          "title": "docs: rebuild AGENTS.md operating contract"
+        },
+        {
+          "headRefName": "feat/marketplace-sparql-semantic-search",
+          "number": 672,
+          "title": "feat(marketplace): SPARQL semantic search + clippy repair (v26.8.16 WIP close-out)"
+        },
+        {
+          "headRefName": "tps/ws1-ocel-gate-contract-tests-20260828",
+          "number": 677,
+          "title": "test(ocel): add executable falsifier fixtures for evidence contracts"
+        },
+        {
+          "headRefName": "tps/ws1-ocel-contract-court-20260827-20",
+          "number": 683,
+          "title": "TPS WS1: extend OCEL ontology contract court 1130–1620"
+        },
+        {
+          "headRefName": "tps/ws1-ocel-executable-gate-regression-20260827-21",
+          "number": 685,
+          "title": "TPS WS1: execute OCEL paired-witness contracts 010–480"
+        },
+        {
+          "headRefName": "tps/ws1-ocel-admission-v4-20260827-21",
+          "number": 686,
+          "title": "TPS WS1: OCEL admission court v4 (1130–1620)"
+        },
+        {
+          "headRefName": "feat/instrument-gain-ggen-sync-20260827",
+          "number": 687,
+          "title": "feat(instrument-gain): manufacture no-handwriting calibration cell"
+        },
+        {
+          "headRefName": "probe/instrument-gain-existing-pack-20260827",
+          "number": 688,
+          "title": "probe(instrument-gain): execute existing CMD pack against 32-state design"
+        },
+        {
+          "headRefName": "reconcile/fortune5-fixes-and-git-env-leak-fixes",
+          "number": 694,
+          "title": "Reconcile fortune5-* pack fixes with upstream + fix a real GIT_DIR env leak in cmds::sbb/pack"
+        },
+        {
+          "headRefName": "feat/pack-scaffold-qualification",
+          "number": 695,
+          "title": "fix(pack-scaffold): emit qualification/consumer.ttl for new packs"
+        },
+        {
+          "headRefName": "v26.9.16/rfc-closure",
+          "number": 714,
+          "title": "v26.9.16: close GraphLaw/MFW/manufacture RFC surfaces"
+        },
+        {
+          "headRefName": "dependabot/cargo/minor-and-patch-9d281b2e9f",
+          "number": 717,
+          "title": "chore(deps): bump the minor-and-patch group across 1 directory with 19 updates"
+        },
+        {
+          "headRefName": "gall/checkpoint-001-semantic-pack-receipt-v2",
+          "number": 720,
+          "title": "GALL-001: semantic pack receipt replay seal"
+        },
+        {
+          "headRefName": "feat/v26.9.18-semantic-work-fabric",
+          "number": 722,
+          "title": "feat(v26.9.18): add GALL semantic-work projection pack"
+        },
+        {
+          "headRefName": "fabric/dfcm-semantic-work-execution-contract",
+          "number": 723,
+          "title": "Semantic Work: generate the exact XaaS/zcode execution contract"
+        },
+        {
+          "headRefName": "fix/v26922-gall-semantic-work-descriptor",
+          "number": 729,
+          "title": "feat(gall): one unified gall-semantic-work descriptor (XaaS @required contract)"
+        },
+        {
+          "headRefName": "fix/v26922-homebrew-release",
+          "number": 730,
+          "title": "fix(release): homebrew formula must serve all four platforms"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ggen --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ggen"
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "21a8deee052ceeabaf5fc18ffd873cdca6540f1f",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ggen-ecosystem",
+      "head_sha": "21a8deee052ceeabaf5fc18ffd873cdca6540f1f",
+      "name": "ggen-ecosystem",
+      "open_prs": [
+        {
+          "headRefName": "feat/github-max-dx-qol-20260829-r2",
+          "number": 159,
+          "title": "feat(github): maximize native DX and QoL"
+        },
+        {
+          "headRefName": "repair/chicago-evidence-boundary-20260829",
+          "number": 174,
+          "title": "fix(chicago): eliminate synthetic standing and require real consumer execution"
+        },
+        {
+          "headRefName": "feat/g07-release-gate-rebuild-v2",
+          "number": 201,
+          "title": "feat(g07): rebuild ecosystem-release-verifier run_gate.py in a committed branch"
+        },
+        {
+          "headRefName": "feat/local-github-dfcm-runtime",
+          "number": 225,
+          "title": "feat(local-github): compose zero-hosted-minutes DfCM runtime"
+        },
+        {
+          "headRefName": "repair/mfact-marketplace-drift-20260902211340",
+          "number": 229,
+          "title": "fix(receipts): repair stale ggen/marketplace pins in v26.8.28 release receipt (#226)"
+        },
+        {
+          "headRefName": "fix/v26.9.10-alive-standing",
+          "number": 310,
+          "title": "fix(v26.9.10): make exact-head standing provable ALIVE"
+        },
+        {
+          "headRefName": "dependabot/github_actions/github-actions-44842c4a56",
+          "number": 329,
+          "title": "chore(actions): bump the github-actions group across 1 directory with 9 updates"
+        },
+        {
+          "headRefName": "feat/v26.9.21-youth-readiness-semantic-bridge",
+          "number": 345,
+          "title": "feat(v26.9.21): compose Youth readiness semantic bridge"
+        },
+        {
+          "headRefName": "adopt/engineering-standards-v26.9.21",
+          "number": 348,
+          "title": "chore(root): adopt engineering-standards v26.9.21"
+        },
+        {
+          "headRefName": "feat/v26.9.22-semantic-life-loop-crown",
+          "number": 350,
+          "title": "feat(v26.9.22): crown semantic life loop composition"
+        },
+        {
+          "headRefName": "chore/reconcile-recent-versions-v26.9.22",
+          "number": 363,
+          "title": "chore(ecosystem): reconcile recent project versions"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ggen-ecosystem --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ggen-ecosystem"
+    },
+    {
+      "ahead": 3,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "420bc91e7c1e291be73ab749b7e443252bc7bab8",
+      "dirty_paths": 3,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ggen-marketplace",
+      "head_sha": "d23e0c3743bbe525f2db4ee5aa12ae8827cd0b9c",
+      "name": "ggen-marketplace",
+      "open_prs": [
+        {
+          "headRefName": "feat/v26.9.22-semantic-life-loop-pack",
+          "number": 477,
+          "title": "feat(pack): manufacture semantic life-loop observation deltas"
+        },
+        {
+          "headRefName": "release-prep/v26.9.22",
+          "number": 481,
+          "title": "GGMKT-26922-10: v26.9.22 release prep (version bump + jira tickets + RFC + wave receipts) — OPERATOR-QUEUED PUBLISH"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ggen-marketplace --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ggen-marketplace"
+    },
+    {
+      "ahead": 146,
+      "behind": 0,
+      "branch": "feat/zcode-ocel-pack",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "d84da1419a6945c6a8a64b8f6cdca9d0b2c9e0f3",
+      "dirty_paths": 1,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/ggen_igniter",
+      "head_sha": "d83d6c809dcfaad23d64ea1142c5a8640d2a9337",
+      "name": "ggen_igniter",
+      "open_prs": [
+        {
+          "headRefName": "v26.9.16/rfc-closure",
+          "number": 16,
+          "title": "v26.9.16: enforce projected-ephemeral Ash construction invariants"
+        },
+        {
+          "headRefName": "gall/checkpoint-002-project-manufacturer",
+          "number": 18,
+          "title": "GALL-002: project manufacturer and projection seal"
+        },
+        {
+          "headRefName": "feat/v26.9.18-semantic-work-fabric",
+          "number": 19,
+          "title": "feat(v26.9.18): add RDF GALL semantic-work pack"
+        },
+        {
+          "headRefName": "feat/semantic-jira-v26.9.19",
+          "number": 20,
+          "title": "feat(pack): manufacture Semantic Jira work orders from RDF"
+        },
+        {
+          "headRefName": "fix/pr20-dfcm-shacl-court",
+          "number": 21,
+          "title": "fix(semantic-jira): make SHACL a first-class Reactor admission court"
+        },
+        {
+          "headRefName": "gall/dfcm-002-portable-receipt",
+          "number": 22,
+          "title": "GALL-002: portable manufacturer receipt court"
+        },
+        {
+          "headRefName": "fabric/dfcm-semantic-work-execution-contract",
+          "number": 23,
+          "title": "Semantic Work: derive exact XaaS/zcode execution contract from RDF"
+        },
+        {
+          "headRefName": "fix/pr21-dfcm-shacl-reconciled",
+          "number": 24,
+          "title": "fix(semantic-jira): reconcile SHACL admission court onto live base"
+        },
+        {
+          "headRefName": "feat/v26.9.21-youth-readiness-ingest",
+          "number": 25,
+          "title": "feat(semantic-jira): ingest ZOE readiness deltas as bounded work"
+        },
+        {
+          "headRefName": "adopt/engineering-standards-v26.9.21",
+          "number": 26,
+          "title": "chore(root): adopt engineering-standards v26.9.21"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/ggen_igniter --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/ggen_igniter"
+    },
+    {
+      "ahead": 34,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "8bfff10b11d172c3886bc3c2f4808d9e31798ce1",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/gitvan",
+      "head_sha": "c818a379dce292d2a5e62e9e305ce4deda296db2",
+      "name": "gitvan",
+      "open_prs": [
+        {
+          "headRefName": "agent/fortune5-enterprise-hardening-20260812",
+          "number": 22,
+          "title": "Harden GitVan for Fortune-5 enterprise actuation"
+        },
+        {
+          "headRefName": "feat/kgc4d-native-event-receipts",
+          "number": 23,
+          "title": "feat: make KGC-4D the native temporal receipt layer"
+        },
+        {
+          "headRefName": "feat/frontier-evidence-v1",
+          "number": 24,
+          "title": "feat: export bounded FrontierEvidence KGC receipt fragment"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/gitvan --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/gitvan"
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "5141f88e5049cf1265cd847a86090c35852200cd",
+      "dirty_paths": 1,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/gymact",
+      "head_sha": "5141f88e5049cf1265cd847a86090c35852200cd",
+      "name": "gymact",
+      "open_prs": [
+        {
+          "headRefName": "feat/sa2a-model-advice-boundary",
+          "number": 135,
+          "title": "feat(dcm): admit ML advice only as powerless frontier ordering"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/gymact --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/gymact"
+    },
+    {
+      "ahead": 305,
+      "behind": 41,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "19110557537ffdbc7590a4243c36b1e5bfc1e58e",
+      "dirty_paths": 18,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/open-ontologies",
+      "head_sha": "948a99230549b3a378bff55690578f6bf64cd699",
+      "name": "open-ontologies",
+      "open_prs": [
+        {
+          "headRefName": "integration/all-relevant-20260819",
+          "number": 40,
+          "title": "merge: consolidate relevant open-ontologies branches"
+        },
+        {
+          "headRefName": "agent/v2030-1-1-prd-ard-20260819",
+          "number": 41,
+          "title": "docs: align open-ontologies with Chatman Ecosystem v2030.1.1"
+        },
+        {
+          "headRefName": "feat/in-repo-ggen-pack-20260819",
+          "number": 42,
+          "title": "feat(ggen): add self-hosted open-ontologies pack"
+        },
+        {
+          "headRefName": "fix/portable-constitution-20260819",
+          "number": 43,
+          "title": "fix(repo): restore portable constitutional substrate"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/open-ontologies --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/open-ontologies"
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "fa0b8e278e27ba888fc7198323a2193264e25ff2",
+      "dirty_paths": 254,
+      "errors": [],
+      "fetch": {
+        "error": "fatal: repository 'https://github.com/seanchatmangpt/remo.git/' not found",
+        "exit": 128,
+        "failed_remotes": [],
+        "status": "failed"
+      },
+      "github": "seanchatmangpt/remo",
+      "head_sha": "fa0b8e278e27ba888fc7198323a2193264e25ff2",
+      "name": "remo",
+      "open_prs": null,
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/remo --state open --limit 200 --json number,title,headRefName",
+        "error": "GraphQL: Could not resolve to a Repository with the name 'seanchatmangpt/remo'. (repository)",
+        "exit": 1
+      },
+      "path": "/Users/sac/remo"
+    },
+    {
+      "ahead": 1,
+      "behind": 12,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "2ae1cd5f8b80f6d810461267c8199c46634095dc",
+      "dirty_paths": 2,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/turbo-fieldfare",
+      "head_sha": "6fbeb1ff688aac4bb90dea14fb74b72a23865666",
+      "name": "turbo-fieldfare",
+      "open_prs": [],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/turbo-fieldfare --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/turbo-fieldfare"
+    },
+    {
+      "ahead": 0,
+      "behind": 7,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "5ecffdee7b02a407951db5918b3dafd28184d7b2",
+      "dirty_paths": 153,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/unjucks",
+      "head_sha": "3cea56131f5b8c9135b2f15519968ccb44b1e624",
+      "name": "unjucks",
+      "open_prs": [
+        {
+          "headRefName": "dependabot/npm_and_yarn/opentelemetry/semantic-conventions-1.43.0",
+          "number": 311,
+          "title": "chore(deps): bump @opentelemetry/semantic-conventions from 1.37.0 to 1.43.0"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/sparqljs-3.7.4",
+          "number": 312,
+          "title": "chore(deps): bump sparqljs from 3.7.3 to 3.7.4"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/vm2-3.11.5",
+          "number": 313,
+          "title": "chore(deps): bump vm2 from 3.9.19 to 3.11.5"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/fs-extra-11.4.0",
+          "number": 314,
+          "title": "chore(deps): bump fs-extra from 11.3.2 to 11.4.0"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/ora-9.4.1",
+          "number": 315,
+          "title": "chore(deps): bump ora from 9.0.0 to 9.4.1"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/prettier-3.9.6",
+          "number": 316,
+          "title": "chore(deps-dev): bump prettier from 3.6.2 to 3.9.6"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/eslint-10.8.0",
+          "number": 317,
+          "title": "chore(deps-dev): bump eslint from 8.57.1 to 10.8.0"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/noble/ed25519-3.1.0",
+          "number": 318,
+          "title": "chore(deps): bump @noble/ed25519 from 3.0.0 to 3.1.0"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/vitest-4.1.10",
+          "number": 319,
+          "title": "chore(deps-dev): bump vitest from 3.2.4 to 4.1.10"
+        },
+        {
+          "headRefName": "dependabot/npm_and_yarn/jsondiffpatch-0.7.6",
+          "number": 320,
+          "title": "chore(deps): bump jsondiffpatch from 0.7.3 to 0.7.6"
+        },
+        {
+          "headRefName": "dependabot/github_actions/actions/upload-artifact-7",
+          "number": 321,
+          "title": "ci(deps): bump actions/upload-artifact from 3 to 7"
+        },
+        {
+          "headRefName": "dependabot/github_actions/actions/cache-6",
+          "number": 322,
+          "title": "ci(deps): bump actions/cache from 3 to 6"
+        },
+        {
+          "headRefName": "dependabot/github_actions/pnpm/action-setup-6.0.9",
+          "number": 323,
+          "title": "ci(deps): bump pnpm/action-setup from 2 to 6.0.9"
+        },
+        {
+          "headRefName": "dependabot/github_actions/hashicorp/setup-terraform-4",
+          "number": 324,
+          "title": "ci(deps): bump hashicorp/setup-terraform from 3 to 4"
+        },
+        {
+          "headRefName": "dependabot/github_actions/actions/setup-python-7",
+          "number": 325,
+          "title": "ci(deps): bump actions/setup-python from 4 to 7"
+        },
+        {
+          "headRefName": "remediate/iso27001-security-policy-20260825",
+          "number": 326,
+          "title": "fix(compliance): remediate ISO 27001 security-policy control"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/unjucks --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/unjucks"
+    },
+    {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/origin/HEAD",
+      "default_remote": "origin",
+      "default_sha": "2fb10156c00a821a6915f239ace517bd860c1479",
+      "dirty_paths": 1,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/xaas",
+      "head_sha": "2fb10156c00a821a6915f239ace517bd860c1479",
+      "name": "xaas",
+      "open_prs": [
+        {
+          "headRefName": "feat/wd-cs2-quality-loop-v26.9.21",
+          "number": 61,
+          "title": "feat(wd-cs2): deterministic quality-loop reference implementation"
+        },
+        {
+          "headRefName": "feat/stogaf-wd-cs2-v26.9.22",
+          "number": 62,
+          "title": "feat(stogaf): backfill WD CS2 with semantic architecture execution"
+        },
+        {
+          "headRefName": "docs/readme-refresh",
+          "number": 63,
+          "title": "Docs/readme refresh"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/xaas --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/xaas"
+    },
+    {
+      "ahead": 4,
+      "behind": 0,
+      "branch": "main",
+      "default_ref": "main",
+      "default_ref_source": "symbolic-ref refs/remotes/fork/HEAD",
+      "default_remote": "fork",
+      "default_sha": "f0014f16980f8de82a7397f4281a470d11e718aa",
+      "dirty_paths": 0,
+      "errors": [],
+      "fetch": {
+        "exit": 0,
+        "status": "ok"
+      },
+      "github": "seanchatmangpt/zcode-cli",
+      "head_sha": "198f0dc45879bdda238352c0bcae25a60cf649eb",
+      "name": "zcode-cli",
+      "open_prs": [
+        {
+          "headRefName": "adopt/engineering-standards-v26.9.21",
+          "number": 4,
+          "title": "chore(root): adopt engineering-standards v26.9.21"
+        }
+      ],
+      "open_prs_probe": {
+        "cmd": "gh pr list --repo seanchatmangpt/zcode-cli --state open --limit 200 --json number,title,headRefName",
+        "exit": 0
+      },
+      "path": "/Users/sac/dev/zcode-cli"
+    }
+  ],
+  "schema": "xaas.fleet.observations/v1",
+  "subjects": [
+    {
+      "branch": "friday/gc-fri-0800",
+      "dirty_paths": 0,
+      "head_sha": "5984ec480c2318e86aa621da5f496e5e014b0fac",
+      "name": "ggen_igniter",
+      "path": "/Users/sac/wt/v26922/fri/ggen_igniter-int"
+    },
+    {
+      "branch": "friday/gc-fri-0800",
+      "dirty_paths": 0,
+      "head_sha": "48c5e3f07915c08ee25d19408887796bee7887de",
+      "name": "xaas",
+      "path": "/Users/sac/wt/v26922/fri/xaas-int"
+    }
+  ],
+  "universe_sha256": "sha256:29bd4c7e1d2b65ecadccab20adfe8b5553fb4e20a8d5ae36926edf225425c6fa"
+}
