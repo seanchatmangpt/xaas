@@ -1,0 +1,6 @@
+7f8bdbd709528c99f4c00d4446916e106a39ade1
+test/sjira/v26_9_23_goal_test.exs
+
+Auto-merging HANDWRITTEN.md
+Auto-merging test/sjira/v26_9_23_goal_test.exs
+CONFLICT (content): Merge conflict in test/sjira/v26_9_23_goal_test.exs
