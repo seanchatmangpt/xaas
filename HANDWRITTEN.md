@@ -49,6 +49,8 @@ lib/xaas/ultracode/semantic_work/admission_binding.ex, lib/xaas/ultracode/semant
 
 test/xaas/ultracode/{semantic_receipt,semantic_crown}_test.exs | Chicago qualification of the exporter, court adapter, materialize task and the end-to-end crown with a refused-candidate control (2026-09-20) | no admitted gate pack for the fabric-to-graph loop | ultracode-actuation-lease-pack gates/ | 2026-09-20
 
+lib/xaas/coupling/coupling_run.ex, lib/xaas/ledger/event_log.ex, lib/xaas/operations/autofde_planner_{cache_hotset,cache_stats,candidate,catalog,match}.ex | one-line `use Xaas.Resource` adoption on seven owned Ash resources (SJ-004; supersedes the registry-test `@pending` exemption for them) | no generator adopts a base resource on existing Ash modules: UNSUPPORTED(generator-capability) | ash-resource / ontology-projection pack (ggen_igniter Ash resource generator) | 2026-09-21
+
 ## Paydown plan
 
 1. Qualify the rendered plugin against ZCode 3.11.2 live (hook event names,
