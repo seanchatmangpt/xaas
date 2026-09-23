@@ -1,0 +1,161 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v23: <https://ggen-igniter.dev/sjira/v26.9.23#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# GC-WDFA-PILOT: the WD FA Morning Brief System phase-one goal graph (lane
+# V23-W, wave B1c; PRD section 9.2 reference first-mile scenario, the Friday
+# G12 deliverable). Source prose: docs/sjira/v26.9.23/wd-fa/wbpr.md, a DRAFT
+# WBPR awaiting operator acceptance (sj:sourceSha256 below pins its bytes).
+#
+# This graph is NOT part of GC-26.9.23: it is a separate goal compiled through
+# the same first-mile pipeline (prose_spans.py -> mix semantic_jira.compile_prose)
+# into docs/sjira/v26.9.23/wd-fa/compiled/. The lane order v23:WO-V23-W in
+# docs/sjira/v26.9.23/goal.ttl is typed Successor under v23:GC-26.9.24, so this
+# graph cannot hold GC-26.9.23 open (PR-017, ARD section 26 F8). Its instances
+# share the v23: namespace only because PVOCAB proposition IRIs are
+# <goal namespace>P-<hash> and the lane gate checks them with the default
+# namespace; every local name here is prefixed WDFA / GC-WDFA / cap-wdfa.
+#
+# Law (same as GC-26.9.23): this graph never asserts a receipt or a standing
+# other than the placeholders; standing is observed. Gate courts are
+# "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-<n>" run from the
+# xaas root: WDFA-0 runs the claims-ledger court (exit 0 ALIVE); WDFA-1 ..
+# WDFA-6 print "UNKNOWN: WDFA-<n> requires Western Digital input: ..." and exit
+# 75 (the stop court's machinery-absent code), because their machinery needs
+# WD inputs that were not supplied (PRD section 9.2, section 10 non-goal: live
+# WD integration).
+
+v23:GC-WDFA-PILOT a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-WDFA-PILOT" ;
+    rdfs:label "GC-WDFA-PILOT WD FA Morning Brief System phase one (DRAFT)" ;
+    dcterms:description "STOP(GC-WDFA-PILOT) = WDFA-0 ∧ … ∧ WDFA-6 ALIVE and every WorkOrder under the root typed Successor or carrying a terminal receipt. DRAFT: the WBPR awaits operator acceptance, then a Western Digital sponsor; until then WDFA-0 can be ALIVE only for the claims ledger, and WDFA-1 .. WDFA-6 stay UNKNOWN on WD inputs." ;
+    dcterms:source "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    sj:sourceSha256 "sha256:6df43627027c20e360af34d6f68d7857104bc7441f1dcd58dbc20753b7c949d4" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "b4ef5d664cb5afa2ab5456ac20d28500f5b00144" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:replayIdentity "semantic-jira:v26.9.23:GC-WDFA-PILOT" ;
+    sj:successorPolicy "Work discovered during the WD FA pilot that falsifies no GC-WDFA-PILOT proposition enters a successor goal; it never reopens this checkpoint." ;
+    sj:exclusion "Live WD integration is a v26.9.23 non-goal (PRD section 10) until Western Digital authorizes it.",
+        "WD-internal facts that were not supplied are never manufactured (PRD section 9.2)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh GC-WDFA-PILOT" ;
+    rdfs:seeAlso v23:WO-V23-W, v23:GC-26.9.24 ;
+    sj:stopQuery """# STOP(GC-WDFA-PILOT): true iff the root has a gate, every gate has an ALIVE
+# gate receipt, and every WorkOrder under the root is typed Successor or has a
+# terminal receipt (ALIVE, BLOCKED*, UNSUPPORTED*, REFUSED*). Receipts enter
+# only as sj:Receipt nodes projected from validated receipts; this graph
+# asserts none, so STOP is false until the courts run.
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+ASK {
+  ?gc a sj:GoalCheckpoint ;
+      dcterms:identifier "GC-WDFA-PILOT" .
+  FILTER EXISTS { ?anyGate a sj:GoalCheckpoint ; sj:checkpointOf ?gc . }
+  FILTER NOT EXISTS {
+    ?gate a sj:GoalCheckpoint ; sj:checkpointOf ?gc .
+    FILTER NOT EXISTS { ?gate sj:receipt ?r . ?r a sj:Receipt ; sj:standing "ALIVE" . }
+  }
+  FILTER NOT EXISTS {
+    ?order a sj:WorkOrder ; sj:checkpointOf+ ?gc .
+    FILTER NOT EXISTS { ?order sj:boundaryClass sj:Successor . }
+    FILTER NOT EXISTS {
+      ?order sj:receipt ?or . ?or a sj:Receipt ; sj:standing ?s .
+      FILTER(?s = "ALIVE" || STRSTARTS(?s, "BLOCKED") || STRSTARTS(?s, "UNSUPPORTED") || STRSTARTS(?s, "REFUSED"))
+    }
+  }
+}""" .
+
+# -- Gates WDFA-0 .. WDFA-6 ---------------------------------------------------
+
+v23:WDFA-0 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-0" ;
+    rdfs:label "WDFA-0 Accepted future and claims ledger" ;
+    dcterms:description "The WBPR is accepted (operator, then a Western Digital sponsor) and every claim of the proposal compiled from it carries exactly one PRD section 9.2 class with evidence." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-0" .
+
+v23:WDFA-1 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-1" ;
+    rdfs:label "WDFA-1 Evidence first mile" ;
+    dcterms:description "The pilot corpus is normalized into one FA case schema with exact source spans, queued low-confidence rows and access control carried to retrieval." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-1" .
+
+v23:WDFA-2 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-2" ;
+    rdfs:label "WDFA-2 Deterministic triage by applicability" ;
+    dcterms:description "Triage admits a known failure mode only by applicability and unfired falsifiers; rankings are candidates; novel and evidence-poor cases stay UNKNOWN." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:Core ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-2" .
+
+v23:WDFA-3 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-3" ;
+    rdfs:label "WDFA-3 Morning brief projection" ;
+    dcterms:description "The morning brief and email are projections of admitted case state with citation-or-nothing and explicit non-happy states." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:Core ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-3" .
+
+v23:WDFA-4 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-4" ;
+    rdfs:label "WDFA-4 Authorized consequence" ;
+    dcterms:description "Every consequential action is authorized by a named human, states its consequence first and produces a five-field receipt; write-back only if Western Digital permits it." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:LastMile ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-4" .
+
+v23:WDFA-5 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-5" ;
+    rdfs:label "WDFA-5 Learning ratchet" ;
+    dcterms:description "Dispositions are labels, reopened closures demote rules, and a verified novel investigation becomes experience that routes an equivalent case as known." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:Core ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-5" .
+
+v23:WDFA-6 a sj:GoalCheckpoint ;
+    dcterms:identifier "WDFA-6" ;
+    rdfs:label "WDFA-6 Shadow baseline and pilot stop" ;
+    dcterms:description "A four-week shadow period records the baseline Western Digital defines, the golden set replays blind, and every falsifier is exercised without firing." ;
+    sj:checkpointOf v23:GC-WDFA-PILOT ;
+    sj:boundaryClass sj:LastMile ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-6" .
+
+# -- Capabilities (naming a capability grants no authority) -------------------
+
+v23:cap-wdfa-claims-ledger a sj:Capability ;
+    rdfs:label "WD FA claims ledger court" ;
+    dcterms:description "scripts/sjira/wd_claims.py check over wd-fa/claims.ttl and wd-fa/proposal.md (lane V23-W). Provider: deterministic script in xaas." ;
+    sj:capabilityId "wd-fa:claims-ledger" .
+v23:cap-wdfa-evidence-normalization a sj:Capability ;
+    rdfs:label "WD FA evidence normalization" ;
+    dcterms:description "Corpus -> FA case schema with source spans. Provider UNKNOWN: needs the Western Digital corpus and data lake access." ;
+    sj:capabilityId "wd-fa:evidence-normalization" .
+v23:cap-wdfa-deterministic-triage a sj:Capability ;
+    rdfs:label "WD FA deterministic triage" ;
+    dcterms:description "Applicability + falsifier admission of known failure modes. Reference provider candidate: autofde-lab src/autofde_lab/wd_fa at eb93405c (observed on its synthetic fixtures only); the Western Digital rule set is UNKNOWN." ;
+    sj:capabilityId "wd-fa:deterministic-triage" .
+v23:cap-wdfa-brief-projection a sj:Capability ;
+    rdfs:label "WD FA morning brief projection" ;
+    dcterms:description "Brief/email/case-view projection of admitted case state. Provider UNKNOWN (prototype pages only)." ;
+    sj:capabilityId "wd-fa:brief-projection" .
+v23:cap-wdfa-authorized-actuation a sj:Capability ;
+    rdfs:label "WD FA authorized actuation" ;
+    dcterms:description "Human authorization -> action service -> receipt. Provider UNKNOWN: needs Western Digital authorization roles and the write-back decision." ;
+    sj:capabilityId "wd-fa:authorized-actuation" .
+v23:cap-wdfa-experience-ratchet a sj:Capability ;
+    rdfs:label "WD FA experience ratchet" ;
+    dcterms:description "Disposition labels, rule credit/demotion and MachineExperience routing. Reference providers: xaas MachineExperience (V23-M, format-drift class) and the autofde-lab wd_fa compile_experience path; no Western Digital provider." ;
+    sj:capabilityId "wd-fa:experience-ratchet" .
+v23:cap-wdfa-shadow-measurement a sj:Capability ;
+    rdfs:label "WD FA shadow measurement" ;
+    dcterms:description "Shadow-period baseline and pilot metrics. Provider UNKNOWN: needs the Western Digital MTTR baseline and measurement method." ;
+    sj:capabilityId "wd-fa:shadow-measurement" .
+v23:cap-wdfa-pilot-stop a sj:Capability ;
+    rdfs:label "WD FA pilot stop court" ;
+    dcterms:description "Evaluates STOP(GC-WDFA-PILOT) from gate receipts. Provider: the xaas stop-court pattern; not yet run for this root." ;
+    sj:capabilityId "wd-fa:pilot-stop" .
