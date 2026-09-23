@@ -40,13 +40,13 @@
           "qualifier": "base"
         }
       ],
-      "time": "2026-09-23T13:57:26.415300Z",
+      "time": "2026-09-23T15:14:16.228543Z",
       "type": "WorkOrderCreated"
     },
     {
       "attributes": {
         "capability": "recipe:mix-format",
-        "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+        "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
         "provider": "recipe",
         "route_source": "machine_experience"
       },
@@ -65,16 +65,16 @@
           "qualifier": "provider"
         },
         {
-          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
           "qualifier": "machine-experience"
         }
       ],
-      "time": "2026-09-23T13:57:26.419002Z",
+      "time": "2026-09-23T15:14:16.230632Z",
       "type": "CapabilityResolved"
     },
     {
       "attributes": {
-        "epoch_id": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+        "epoch_id": "a13260eb-0163-435f-9909-419caf9c7986",
         "provider": "recipe"
       },
       "id": "e003-ActuationStarted",
@@ -96,18 +96,18 @@
           "qualifier": "base"
         }
       ],
-      "time": "2026-09-23T13:57:28.211949Z",
+      "time": "2026-09-23T15:14:18.090542Z",
       "type": "ActuationStarted"
     },
     {
       "attributes": {
-        "epoch_id": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+        "epoch_id": "a13260eb-0163-435f-9909-419caf9c7986",
         "leased_to": "recipe-worker"
       },
       "id": "e004-LeaseAcquired",
       "relationships": [
         {
-          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "objectId": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
           "qualifier": "lease"
         },
         {
@@ -119,13 +119,13 @@
           "qualifier": "provider"
         }
       ],
-      "time": "2026-09-23T13:57:28.265721Z",
+      "time": "2026-09-23T15:14:18.153752Z",
       "type": "LeaseAcquired"
     },
     {
       "attributes": {
         "argv_sha256": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4",
-        "final_head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+        "final_head": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
         "steps": "[\"format:0\"]"
       },
       "id": "e005-ActuationCompleted",
@@ -139,21 +139,21 @@
           "qualifier": "provider"
         },
         {
-          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "objectId": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
           "qualifier": "lease"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         }
       ],
-      "time": "2026-09-23T13:57:30.146930Z",
+      "time": "2026-09-23T15:14:20.140939Z",
       "type": "ActuationCompleted"
     },
     {
       "attributes": {
         "court": "fabric",
-        "head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+        "head": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
         "status": "pass",
         "suite": "ggen-igniter-format"
       },
@@ -164,22 +164,22 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         }
       ],
-      "time": "2026-09-23T13:57:30.147889Z",
+      "time": "2026-09-23T15:14:20.141831Z",
       "type": "VerificationCompleted"
     },
     {
       "attributes": {
         "outcome": "alive",
-        "receipt_digest": "sha256:f92f8bad5ebbb86f4a73ce16da19aa2f24a0ccfbfd62ca92b73871607c9b6911"
+        "receipt_digest": "sha256:627cbad2a46c8267b5c2ee6829f3f7929bab881203b200a9b956dc8c85c1a438"
       },
       "id": "e007-ReceiptSealed",
       "relationships": [
         {
-          "objectId": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+          "objectId": "receipt:53c97bb1-30cd-4991-8785-760be1f00bfe",
           "qualifier": "receipt"
         },
         {
@@ -187,21 +187,21 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         },
         {
-          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "objectId": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
           "qualifier": "lease"
         }
       ],
-      "time": "2026-09-23T13:57:30.177360Z",
+      "time": "2026-09-23T15:14:20.173023Z",
       "type": "ReceiptSealed"
     },
     {
       "attributes": {
         "court": "independent",
-        "head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+        "head": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
         "status": "pass",
         "suite": "ggen-igniter-format"
       },
@@ -212,17 +212,17 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         }
       ],
-      "time": "2026-09-23T13:57:31.347420Z",
+      "time": "2026-09-23T15:14:21.373796Z",
       "type": "VerificationCompleted"
     },
     {
       "attributes": {
         "court": "revert-falsifier",
-        "head": "672289c85944206bb4a6698c1ff8b4922e4cf958",
+        "head": "7cb6f256912685d39fbf8f0d7bca94c10cc0eed7",
         "status": "fail",
         "suite": "ggen-igniter-format",
         "verdict": "killed"
@@ -234,11 +234,11 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "reverted"
         }
       ],
-      "time": "2026-09-23T13:57:32.182057Z",
+      "time": "2026-09-23T15:14:22.233681Z",
       "type": "VerificationCompleted"
     },
     {
@@ -255,7 +255,7 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+          "objectId": "receipt:53c97bb1-30cd-4991-8785-760be1f00bfe",
           "qualifier": "receipt"
         },
         {
@@ -263,7 +263,7 @@
           "qualifier": "checkpoint"
         }
       ],
-      "time": "2026-09-23T13:57:33.419286Z",
+      "time": "2026-09-23T15:14:23.501871Z",
       "type": "StandingChanged"
     },
     {
@@ -289,7 +289,7 @@
           "qualifier": "checkpoint"
         }
       ],
-      "time": "2026-09-23T13:57:33.987144Z",
+      "time": "2026-09-23T15:14:24.075923Z",
       "type": "FrontierChanged"
     }
   ],
@@ -326,25 +326,11 @@
     },
     {
       "attributes": {
-        "role": "episode subject",
-        "sha": "36605534141aa44429586d3e15e8ff159f3d5bc8"
-      },
-      "id": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
-      "relationships": [
-        {
-          "objectId": "repository:seanchatmangpt/ggen_igniter",
-          "qualifier": "repository"
-        }
-      ],
-      "type": "Commit"
-    },
-    {
-      "attributes": {
         "author": "recipe-worker",
         "parent": "36605534141aa44429586d3e15e8ff159f3d5bc8",
-        "sha": "48ae4ad82613f808868330a2bc313f6ae0feee5f"
+        "sha": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3"
       },
-      "id": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+      "id": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
       "relationships": [
         {
           "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
@@ -359,22 +345,36 @@
     },
     {
       "attributes": {
-        "epoch_id": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+        "role": "episode subject",
+        "sha": "36605534141aa44429586d3e15e8ff159f3d5bc8"
+      },
+      "id": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+      "relationships": [
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": {
+        "epoch_id": "a13260eb-0163-435f-9909-419caf9c7986",
         "leased_to": "recipe-worker",
         "provider": "recipe"
       },
-      "id": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+      "id": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
       "relationships": [],
       "type": "Lease"
     },
     {
       "attributes": {
-        "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
-        "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
-        "iri": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+        "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434-admission",
+        "experience_digest": "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222",
+        "iri": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
         "problem_class": "format_drift"
       },
-      "id": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+      "id": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
       "relationships": [],
       "type": "MachineExperience"
     },
@@ -392,10 +392,10 @@
       "attributes": {
         "head_verified": "true",
         "outcome": "alive",
-        "receipt_digest": "sha256:f92f8bad5ebbb86f4a73ce16da19aa2f24a0ccfbfd62ca92b73871607c9b6911",
-        "receipt_id": "f9369f76-9b98-462f-925e-62b653f839f6"
+        "receipt_digest": "sha256:627cbad2a46c8267b5c2ee6829f3f7929bab881203b200a9b956dc8c85c1a438",
+        "receipt_id": "53c97bb1-30cd-4991-8785-760be1f00bfe"
       },
-      "id": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+      "id": "receipt:53c97bb1-30cd-4991-8785-760be1f00bfe",
       "relationships": [],
       "type": "Receipt"
     },

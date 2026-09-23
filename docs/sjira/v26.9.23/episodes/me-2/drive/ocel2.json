@@ -201,7 +201,7 @@
           "qualifier": "base"
         }
       ],
-      "time": "2026-09-23T13:57:26.415300Z",
+      "time": "2026-09-23T15:14:16.228543Z",
       "type": "WorkOrderCreated"
     },
     {
@@ -212,7 +212,7 @@
         },
         {
           "name": "machine_experience",
-          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
         },
         {
           "name": "provider",
@@ -238,18 +238,18 @@
           "qualifier": "provider"
         },
         {
-          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
           "qualifier": "machine-experience"
         }
       ],
-      "time": "2026-09-23T13:57:26.419002Z",
+      "time": "2026-09-23T15:14:16.230632Z",
       "type": "CapabilityResolved"
     },
     {
       "attributes": [
         {
           "name": "epoch_id",
-          "value": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1"
+          "value": "a13260eb-0163-435f-9909-419caf9c7986"
         },
         {
           "name": "provider",
@@ -275,14 +275,14 @@
           "qualifier": "base"
         }
       ],
-      "time": "2026-09-23T13:57:28.211949Z",
+      "time": "2026-09-23T15:14:18.090542Z",
       "type": "ActuationStarted"
     },
     {
       "attributes": [
         {
           "name": "epoch_id",
-          "value": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1"
+          "value": "a13260eb-0163-435f-9909-419caf9c7986"
         },
         {
           "name": "leased_to",
@@ -292,7 +292,7 @@
       "id": "e004-LeaseAcquired",
       "relationships": [
         {
-          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "objectId": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
           "qualifier": "lease"
         },
         {
@@ -304,7 +304,7 @@
           "qualifier": "provider"
         }
       ],
-      "time": "2026-09-23T13:57:28.265721Z",
+      "time": "2026-09-23T15:14:18.153752Z",
       "type": "LeaseAcquired"
     },
     {
@@ -315,7 +315,7 @@
         },
         {
           "name": "final_head",
-          "value": "48ae4ad82613f808868330a2bc313f6ae0feee5f"
+          "value": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3"
         },
         {
           "name": "steps",
@@ -333,15 +333,15 @@
           "qualifier": "provider"
         },
         {
-          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "objectId": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
           "qualifier": "lease"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         }
       ],
-      "time": "2026-09-23T13:57:30.146930Z",
+      "time": "2026-09-23T15:14:20.140939Z",
       "type": "ActuationCompleted"
     },
     {
@@ -352,7 +352,7 @@
         },
         {
           "name": "head",
-          "value": "48ae4ad82613f808868330a2bc313f6ae0feee5f"
+          "value": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3"
         },
         {
           "name": "status",
@@ -370,11 +370,11 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         }
       ],
-      "time": "2026-09-23T13:57:30.147889Z",
+      "time": "2026-09-23T15:14:20.141831Z",
       "type": "VerificationCompleted"
     },
     {
@@ -385,13 +385,13 @@
         },
         {
           "name": "receipt_digest",
-          "value": "sha256:f92f8bad5ebbb86f4a73ce16da19aa2f24a0ccfbfd62ca92b73871607c9b6911"
+          "value": "sha256:627cbad2a46c8267b5c2ee6829f3f7929bab881203b200a9b956dc8c85c1a438"
         }
       ],
       "id": "e007-ReceiptSealed",
       "relationships": [
         {
-          "objectId": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+          "objectId": "receipt:53c97bb1-30cd-4991-8785-760be1f00bfe",
           "qualifier": "receipt"
         },
         {
@@ -399,15 +399,15 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         },
         {
-          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "objectId": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
           "qualifier": "lease"
         }
       ],
-      "time": "2026-09-23T13:57:30.177360Z",
+      "time": "2026-09-23T15:14:20.173023Z",
       "type": "ReceiptSealed"
     },
     {
@@ -418,7 +418,7 @@
         },
         {
           "name": "head",
-          "value": "48ae4ad82613f808868330a2bc313f6ae0feee5f"
+          "value": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3"
         },
         {
           "name": "status",
@@ -436,11 +436,11 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "head"
         }
       ],
-      "time": "2026-09-23T13:57:31.347420Z",
+      "time": "2026-09-23T15:14:21.373796Z",
       "type": "VerificationCompleted"
     },
     {
@@ -451,7 +451,7 @@
         },
         {
           "name": "head",
-          "value": "672289c85944206bb4a6698c1ff8b4922e4cf958"
+          "value": "7cb6f256912685d39fbf8f0d7bca94c10cc0eed7"
         },
         {
           "name": "status",
@@ -473,11 +473,11 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "objectId": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
           "qualifier": "reverted"
         }
       ],
-      "time": "2026-09-23T13:57:32.182057Z",
+      "time": "2026-09-23T15:14:22.233681Z",
       "type": "VerificationCompleted"
     },
     {
@@ -506,7 +506,7 @@
           "qualifier": "work-order"
         },
         {
-          "objectId": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+          "objectId": "receipt:53c97bb1-30cd-4991-8785-760be1f00bfe",
           "qualifier": "receipt"
         },
         {
@@ -514,7 +514,7 @@
           "qualifier": "checkpoint"
         }
       ],
-      "time": "2026-09-23T13:57:33.419286Z",
+      "time": "2026-09-23T15:14:23.501871Z",
       "type": "StandingChanged"
     },
     {
@@ -555,7 +555,7 @@
           "qualifier": "checkpoint"
         }
       ],
-      "time": "2026-09-23T13:57:33.987144Z",
+      "time": "2026-09-23T15:14:24.075923Z",
       "type": "FrontierChanged"
     }
   ],
@@ -765,6 +765,37 @@
     {
       "attributes": [
         {
+          "name": "author",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "parent",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "36605534141aa44429586d3e15e8ff159f3d5bc8"
+        },
+        {
+          "name": "sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3"
+        }
+      ],
+      "id": "commit:1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
+      "relationships": [
+        {
+          "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+          "qualifier": "parent"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": [
+        {
           "name": "role",
           "time": "1970-01-01T00:00:00Z",
           "value": "episode subject"
@@ -787,40 +818,9 @@
     {
       "attributes": [
         {
-          "name": "author",
-          "time": "1970-01-01T00:00:00Z",
-          "value": "recipe-worker"
-        },
-        {
-          "name": "parent",
-          "time": "1970-01-01T00:00:00Z",
-          "value": "36605534141aa44429586d3e15e8ff159f3d5bc8"
-        },
-        {
-          "name": "sha",
-          "time": "1970-01-01T00:00:00Z",
-          "value": "48ae4ad82613f808868330a2bc313f6ae0feee5f"
-        }
-      ],
-      "id": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
-      "relationships": [
-        {
-          "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
-          "qualifier": "parent"
-        },
-        {
-          "objectId": "repository:seanchatmangpt/ggen_igniter",
-          "qualifier": "repository"
-        }
-      ],
-      "type": "Commit"
-    },
-    {
-      "attributes": [
-        {
           "name": "epoch_id",
           "time": "1970-01-01T00:00:00Z",
-          "value": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1"
+          "value": "a13260eb-0163-435f-9909-419caf9c7986"
         },
         {
           "name": "leased_to",
@@ -833,7 +833,7 @@
           "value": "recipe"
         }
       ],
-      "id": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+      "id": "lease:epoch:a13260eb-0163-435f-9909-419caf9c7986",
       "relationships": [],
       "type": "Lease"
     },
@@ -842,17 +842,17 @@
         {
           "name": "admission",
           "time": "1970-01-01T00:00:00Z",
-          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission"
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434-admission"
         },
         {
           "name": "experience_digest",
           "time": "1970-01-01T00:00:00Z",
-          "value": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81"
+          "value": "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222"
         },
         {
           "name": "iri",
           "time": "1970-01-01T00:00:00Z",
-          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
         },
         {
           "name": "problem_class",
@@ -860,7 +860,7 @@
           "value": "format_drift"
         }
       ],
-      "id": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+      "id": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
       "relationships": [],
       "type": "MachineExperience"
     },
@@ -901,15 +901,15 @@
         {
           "name": "receipt_digest",
           "time": "1970-01-01T00:00:00Z",
-          "value": "sha256:f92f8bad5ebbb86f4a73ce16da19aa2f24a0ccfbfd62ca92b73871607c9b6911"
+          "value": "sha256:627cbad2a46c8267b5c2ee6829f3f7929bab881203b200a9b956dc8c85c1a438"
         },
         {
           "name": "receipt_id",
           "time": "1970-01-01T00:00:00Z",
-          "value": "f9369f76-9b98-462f-925e-62b653f839f6"
+          "value": "53c97bb1-30cd-4991-8785-760be1f00bfe"
         }
       ],
-      "id": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+      "id": "receipt:53c97bb1-30cd-4991-8785-760be1f00bfe",
       "relationships": [],
       "type": "Receipt"
     },

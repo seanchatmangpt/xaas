@@ -34,7 +34,7 @@
     "source_snapshot_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
     "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
   },
-  "epoch_id": "a987bca8-b6bb-43d0-9763-99e3f80a322d",
+  "epoch_id": "8ba5e6bf-db46-4a64-9a00-95f46658954a",
   "fabric_verifier": {
     "court_receipt": {
       "acceptance_results": {
@@ -42,14 +42,14 @@
       },
       "binding": {
         "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
-        "head": "bd84b3e1af5c49fcd9243b531c57800b0a4a05ce",
+        "head": "77df08277fa3fa1aa535265fd92029e604890944",
         "step_id": "format",
         "suite": "ggen-igniter-format"
       },
       "court_results": {
         "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format": {
           "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
-          "head": "bd84b3e1af5c49fcd9243b531c57800b0a4a05ce",
+          "head": "77df08277fa3fa1aa535265fd92029e604890944",
           "passed": true,
           "step_id": "format",
           "suite": "ggen-igniter-format"
@@ -67,10 +67,10 @@
       }
     ]
   },
-  "final_head": "bd84b3e1af5c49fcd9243b531c57800b0a4a05ce",
+  "final_head": "77df08277fa3fa1aa535265fd92029e604890944",
   "head_verified": true,
   "outcome": "alive",
-  "receipt_digest": "sha256:717b2b89600d4569f697d243179191abf4055b139bf4d284cb5a45362f483aec",
-  "receipt_id": "820959d3-5baa-48f6-bfff-044d840e9bd6",
-  "run_id": "fd494f8c-b628-4045-834c-6d99e55d5ef8"
+  "receipt_digest": "sha256:c1dbbbfc2fd9030e24180cae819782f29af56a926c5f9f0f61ded87e7ed062d6",
+  "receipt_id": "3bc80b38-932a-4f5a-a9eb-376f6acd3497",
+  "run_id": "d27ab81f-6d64-41bb-9a4c-3fb973a07dc5"
 }

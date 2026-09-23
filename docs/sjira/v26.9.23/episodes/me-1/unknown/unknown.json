@@ -20,7 +20,7 @@
   "replay": {
     "commands": [
       {
-        "cmd": "mix xaas.machine_experience --name me-1 --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --ggen-build-path /private/tmp/claude-501/v23-scratch/B1b-V23-M/build-ep/test --work-root /private/tmp/claude-501/v23-scratch/B1b-V23-M/work-root",
+        "cmd": "mix xaas.machine_experience --name me-1 --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --ggen-build-path /private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23m-r2/build/test --work-root /private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23m-r2/work --pin-ref v23/episode-me-1-r2-receipt",
         "cwd": "/Users/sac/wt/v26922/v23/V23-M",
         "exit": 4,
         "summary": "UNKNOWN(no_capability_no_experience)"
@@ -39,8 +39,10 @@
   ],
   "unknown": {
     "detail": {
+      "admissions_not_admitted": [],
       "experiences_applicable": [],
       "experiences_considered": [],
+      "experiences_without_admission": [],
       "exploration": "absent: docs/sjira/v26.9.23/episodes/me-1/exploration.json",
       "failure_class": "format_drift",
       "order": "EP-A"

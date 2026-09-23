@@ -3,7 +3,7 @@
   "decision": "KNOWN",
   "drive": {
     "dir": "docs/sjira/v26.9.23/episodes/me-2/drive",
-    "head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+    "head": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
     "provider": {
       "capability": "recipe:mix-format",
       "executor": "recipe-worker",
@@ -16,12 +16,12 @@
   "experience_sources": [
     {
       "path": "docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl",
-      "sha256": "sha256:ef68cc70953aa3e11406ef51b44e9f14f0f3aed79614fb4f3729e7b66afbbdb3"
+      "sha256": "sha256:cfd0136e0f1b27fc5dd27c792174651fafbf71a9978336b7cde2781f0730d430"
     }
   ],
   "exploration": null,
   "failure_class": "format_drift",
-  "finished_at": "2026-09-23T13:57:34.101185Z",
+  "finished_at": "2026-09-23T15:14:24.184152Z",
   "machine_experience": null,
   "no_llm_guard": "passed",
   "ocel": {
@@ -45,17 +45,17 @@
   },
   "order": "EP-A",
   "route": {
-    "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
-    "admission_digest": "sha256:e042b7e74bed7507925e7fbab14b5681e0583ce41cfd9a34f62811f190771c56",
+    "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434-admission",
+    "admission_digest": "sha256:7d69cb3ec1875e4b93303c2e18a1a99229698dd65a7721df094f50b8400aafd1",
     "capability": "recipe:mix-format",
-    "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+    "experience_digest": "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222",
     "experiences_applicable": [
-      "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
     ],
     "experiences_considered": [
-      "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
     ],
-    "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+    "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
     "order": "EP-A",
     "predicate_sha256": "sha256:3e6523a47a725da300771eee7c06e0487ab22da181db885b01bd54b0414c73d0",
     "problem_class": "format_drift",
@@ -64,7 +64,7 @@
   },
   "schema": "xaas/machine-experience-episode/v1",
   "standing": "ALIVE",
-  "started_at": "2026-09-23T13:57:25.717721Z",
+  "started_at": "2026-09-23T15:14:15.503103Z",
   "step_count": 16,
   "steps": [
     "guard",
