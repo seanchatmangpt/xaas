@@ -1,0 +1,8 @@
+/dev/disk3s5       926  851        41    96% 17083417 440329480    4%   /System/Volumes/Data
+head 13e4cfa837e440d0d66ec9fd600bb34ccd403042 porcelain=0
+F3: helper with ANTHROPIC_API_KEY=x refused REFUSED(llm_credential_present), broken_term mu_on_O
+run1: STATE_DIGEST sha256:fbd160a79e1dba077d2492bf57c92dce2613d4a8faab82b9a262fe96b595716b ORDERS 12 (critical_path 10) FRONTIER blocked=6 eligible=5 settled=1 SUBJECTS 21 RECEIPTS 12 
+run2: STATE_DIGEST sha256:fbd160a79e1dba077d2492bf57c92dce2613d4a8faab82b9a262fe96b595716b ORDERS 12 (critical_path 10) FRONTIER blocked=6 eligible=5 settled=1 SUBJECTS 21 RECEIPTS 12 
+OK: GC23-1 two cold bootstrap runs byte-identical (sha256:fbd160a79e1dba077d2492bf57c92dce2613d4a8faab82b9a262fe96b595716b); critical-path orders reconstructed: V23-B V23-C V23-D V23-F V23-H V23-M V23-P V23-Q V23-R V23-X 
+ALIVE: GC23-1 two cold no-LLM reconstructions from durable artifacts are byte-identical; F3 refused
+GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-1.sh => 0 (5 s)

@@ -395,10 +395,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
           end
       end
 
-    # Courts already real on friday/gc-fri-0800 at 3b1d184 (GC23-0 and GC23-11
-    # V23-P/V23-F, GC23-4 .. GC23-8 V23-D, GC23-10 V23-R) are never stubs.
-    assert Enum.all?(stubs, &(&1 not in [0, 4, 5, 6, 7, 8, 10, 11])),
-           "still stubbed: #{inspect(Enum.sort(stubs))}"
+    # Courts already real: GC23-0 .. GC23-3 (V23-K), GC23-4 .. GC23-8 (V23-D),
+    # GC23-9 (V23-M), GC23-10 (V23-R), GC23-11 (V23-F). Only GC23-12 (V23-H)
+    # may still be the machinery-absent stub.
+    assert Enum.all?(stubs, &(&1 == 12)), "still stubbed: #{inspect(Enum.sort(stubs))}"
   end
 
   test "courts/check_scripts.sh accepts the committed court scripts (real sh)" do
@@ -411,6 +411,8 @@ defmodule Xaas.Sjira.V26923GoalTest do
 
   # ------------------------------------------------------------------ the real stop court
 
+  # GC23-12 is the last gate whose court is still the machinery-absent stub
+  # (lane V23-H replaces it after V23-K); GC23-0..GC23-3 run real courts now.
   test "the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete" do
     receipts = tmp_dir("v23_registry")
 
@@ -421,7 +423,7 @@ defmodule Xaas.Sjira.V26923GoalTest do
         "--receipts-dir",
         receipts,
         "--only",
-        "GC23-1"
+        "GC23-12"
       ])
 
     assert report.graph == @goal_ttl
@@ -439,10 +441,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
     assert Enum.map(report.gates, & &1.id) == Enum.map(0..12, &"GC23-#{&1}")
     assert report.stop == false
 
-    gc1 = Path.join(receipts, "GC23-1.json") |> File.read!() |> Jason.decode!()
-    assert gc1["standing"]["value"] == "UNKNOWN"
-    assert gc1["gate"]["outcome"] == "machinery_absent"
-    assert gc1["gate"]["env"]["XAAS_DIR"] == @repo
+    gc12 = Path.join(receipts, "GC23-12.json") |> File.read!() |> Jason.decode!()
+    assert gc12["standing"]["value"] == "UNKNOWN"
+    assert gc12["gate"]["outcome"] == "machinery_absent"
+    assert gc12["gate"]["env"]["XAAS_DIR"] == @repo
 
     # Required orders: every lane except V23-W (under the successor bucket, not the root).
     assert Enum.map(report.orders, & &1.id) |> Enum.sort() ==
@@ -457,7 +459,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
     assert StopCourt.checkpoints()["GC-FRI-0800"].graph == "docs/sjira/v26.9.22/friday/goal.ttl"
   end
 
-  test "mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 (real subprocess): ADMITTED UNKNOWN receipt, STOP=false" do
+  # The real GC23-0 court (lane V23-K): prose_spans.py check + ggen_igniter
+  # compile_prose --check over the committed projection, under the no-LLM env.
+  @tag timeout: 600_000
+  test "mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 (real subprocess): ADMITTED ALIVE receipt, STOP=false" do
     receipts = tmp_dir("v23_subprocess")
 
     {out, code} =
@@ -479,7 +484,7 @@ defmodule Xaas.Sjira.V26923GoalTest do
 
     assert code == 1, out
     assert out =~ "STOP=false"
-    assert out =~ ~r/^GC23-0\s+FirstMile\s+UNKNOWN\s+75\s.*ran/m
+    assert out =~ ~r/^GC23-0\s+FirstMile\s+ALIVE\s+0\s.*ran/m
 
     path = Path.join(receipts, "GC23-0.json")
     {vcode, vout} = validate([path, Path.join(receipts, "STOP-GC-26.9.23.json")])
@@ -494,21 +499,23 @@ defmodule Xaas.Sjira.V26923GoalTest do
              "sha256:" <>
                Base.encode16(:crypto.hash(:sha256, File.read!(@goal_ttl)), case: :lower)
 
-    assert receipt["standing"]["value"] == "UNKNOWN"
-    assert receipt["gate"]["outcome"] == "machinery_absent"
+    assert receipt["standing"]["value"] == "ALIVE"
+    assert receipt["gate"]["outcome"] == "passed"
     assert receipt["gate"]["boundary_class"] == "FirstMile"
     assert receipt["gate"]["env"]["XAAS_DIR"] == @repo
 
     assert [
              %{
                "cmd" => "sh docs/sjira/v26.9.23/courts/GC23-0.sh",
-               "exit" => 75,
+               "exit" => 0,
                "summary" => summary
              }
            ] =
              receipt["replay"]["commands"]
 
-    assert summary == "UNKNOWN: GC23-0 machinery lands in lane V23-C"
+    assert summary ==
+             "ALIVE: GC23-0 accepted prose + complete admitted semantic projection " <>
+               "(compile_prose --check byte-identical, no LLM)"
   end
 
   test "an unregistered checkpoint without --graph is refused (exit 2 class)" do
@@ -523,6 +530,297 @@ defmodule Xaas.Sjira.V26923GoalTest do
       end)
 
     assert err =~ "unregistered_checkpoint"
+  end
+
+  # ------------------------------------------------------------------ first-mile + bootstrap courts (lane V23-K)
+
+  @compiled Path.join(@dir, "compiled")
+  @candidates Path.join(@dir, "candidates/prd-ard.ttl")
+  @f8 Path.join(@dir, "courts/fixtures/f8")
+  @delta_kinds ~w(Postcondition Invariant Falsifier)
+
+  defp ggen_dir do
+    case System.get_env("GGEN_IGNITER_DIR") do
+      dir when is_binary(dir) and dir != "" -> Path.expand(dir)
+      _ -> Path.expand(StopCourt.checkpoints()["GC-26.9.23"].ggen_igniter_dir)
+    end
+  end
+
+  defp sha256_file(path),
+    do: "sha256:" <> Base.encode16(:crypto.hash(:sha256, File.read!(path)), case: :lower)
+
+  # A committed tmp git copy of what the GC23-0..GC23-3 courts read, after
+  # `mutate` edits it; the court judges it as XAAS_DIR.
+  defp court_repo(mutate) do
+    dir = tmp_dir("v23_court_repo")
+
+    for rel <- [
+          "docs/sjira/v26.9.23/prd-ard.md",
+          "docs/sjira/v26.9.23/goal.ttl",
+          "docs/sjira/v26.9.23/candidates",
+          "docs/sjira/v26.9.23/compiled",
+          "docs/sjira/v26.9.23/courts",
+          "docs/sjira/v26.9.23/fleet/universe.json",
+          "docs/sjira/v26.9.22/friday/goal.ttl",
+          "scripts/sjira/prose_spans.py"
+        ] do
+      target = Path.join(dir, rel)
+      File.mkdir_p!(Path.dirname(target))
+      File.cp_r!(Path.join(@repo, rel), target)
+    end
+
+    mutate.(dir)
+    {_, 0} = System.cmd("git", ["init", "-q", dir])
+    {_, 0} = System.cmd("git", ["-C", dir, "add", "-A"])
+
+    {_, 0} =
+      System.cmd("git", [
+        "-C",
+        dir,
+        "-c",
+        "user.email=court@example.org",
+        "-c",
+        "user.name=court",
+        "commit",
+        "-q",
+        "-m",
+        "court fixture"
+      ])
+
+    {top, 0} = System.cmd("git", ["-C", dir, "rev-parse", "--show-toplevel"])
+    String.trim(top)
+  end
+
+  # The court as the stop court runs it: /bin/sh from the xaas root, MIX_ENV unset.
+  defp run_court(repo, gate, ggen) do
+    System.cmd("sh", [Path.join(repo, "docs/sjira/v26.9.23/courts/#{gate}.sh")],
+      cd: repo,
+      stderr_to_stdout: true,
+      env: [{"XAAS_DIR", repo}, {"GGEN_IGNITER_DIR", ggen}, {"MIX_ENV", nil}]
+    )
+  end
+
+  defp mutate_file!(path, fun) do
+    before = File.read!(path)
+    after_ = fun.(before)
+    assert after_ != before, "mutation of #{path} changed nothing"
+    File.write!(path, after_)
+  end
+
+  test "compiled/ is the admitted projection of the committed prose, candidates and goal; each order sits under the gate requiring its proposition" do
+    props_ttl = File.read!(Path.join(@compiled, "propositions.ttl"))
+    orders_ttl = File.read!(Path.join(@compiled, "orders.ttl"))
+
+    for ttl <- [props_ttl, orders_ttl] do
+      assert ttl =~ "\n# source: docs/sjira/v26.9.23/prd-ard.md sha256:#{@prose_sha256}\n"
+
+      assert ttl =~
+               "\n# candidates: #{sha256_file(@candidates)}; goal: #{sha256_file(@goal_ttl)}\n"
+    end
+
+    props = RDF.Turtle.read_string!(props_ttl)
+    orders = RDF.Turtle.read_string!(orders_ttl)
+    candidates = RDF.Turtle.read_file!(@candidates)
+    g = graph()
+
+    admitted = MapSet.new(typed(props, @sj <> "Proposition"))
+    assert admitted == MapSet.new(typed(candidates, @sj <> "Proposition"))
+
+    for p <- admitted do
+      assert get(props, p, iri(@sj, "candidateStanding")) == []
+      assert [_digest] = get(props, p, iri(@sj, "admissionDigest"))
+    end
+
+    root = iri(@v23, "GC-26.9.23")
+
+    gates =
+      for s <- typed(g, @sj <> "GoalCheckpoint"),
+          root in get(g, s, iri(@sj, "checkpointOf")),
+          into: MapSet.new([root]),
+          do: s
+
+    assert MapSet.size(gates) == 14
+
+    required_delta =
+      for p <- admitted,
+          one(props, p, iri(@sj, "propositionKind")) in @delta_kinds,
+          get(props, p, iri(@sj, "requiredBy")) != [],
+          into: MapSet.new(),
+          do: p
+
+    placed =
+      for wo <- typed(orders, @sj <> "WorkOrder") do
+        proposition = RDF.iri(one(orders, wo, iri(@sj, "subject")))
+        assert proposition in required_delta, "#{wo}: #{proposition}"
+        assert [gate] = get(props, proposition, iri(@sj, "requiredBy"))
+        assert get(orders, wo, iri(@sj, "checkpointOf")) == [gate], "#{wo}"
+        assert gate in gates
+        proposition
+      end
+
+    assert length(placed) == MapSet.size(required_delta)
+    assert MapSet.new(placed) == required_delta
+  end
+
+  test "F8 fixture: the successor root pins the discovered prose; both extractions bind the same proposition, one to GC23-8 and one to GC24-F8" do
+    discovered = Path.join(@f8, "discovered.md")
+    successor = RDF.Turtle.read_file!(Path.join(@f8, "successor-goal.ttl"))
+    bucket = iri(@v23, "GC-26.9.24")
+    fixture_gate = iri(@v23, "GC24-F8")
+
+    assert one(successor, bucket, iri(@sj, "sourceSha256")) == sha256_file(discovered)
+    assert get(successor, bucket, iri(@sj, "successorOf")) == [iri(@v23, "GC-26.9.23")]
+    assert get(successor, fixture_gate, iri(@sj, "checkpointOf")) == [bucket]
+    # the fixture gate never enters the governing graph
+    refute RDF.Graph.describes?(graph(), fixture_gate)
+
+    refute one(graph(), iri(@v23, "GC-26.9.23"), iri(@sj, "sourceSha256")) ==
+             sha256_file(discovered)
+
+    emitted =
+      for x <- ~w(attack routed) do
+        out = Path.join(tmp_dir("v23_f8_#{x}"), "#{x}.ttl")
+
+        {log, 0} =
+          System.cmd(
+            "python3",
+            [
+              Path.join(@repo, "scripts/sjira/prose_spans.py"),
+              "emit",
+              "--source",
+              "docs/sjira/v26.9.23/courts/fixtures/f8/discovered.md",
+              "--extract",
+              Path.join(@f8, "extract-#{x}.json"),
+              "--out",
+              out,
+              "--source-path",
+              "docs/sjira/v26.9.23/courts/fixtures/f8/discovered.md",
+              "--extracted-by",
+              "fixture:GC23-2-F8"
+            ],
+            cd: @repo,
+            stderr_to_stdout: true
+          )
+
+        assert log =~ "EMIT: 1 candidates"
+        candidate = RDF.Turtle.read_file!(out)
+        assert [p] = typed(candidate, @sj <> "Proposition")
+        {p, get(candidate, p, iri(@sj, "requiredBy"))}
+      end
+
+    assert [{p, [attack]}, {p, [routed]}] = emitted
+    assert attack == iri(@v23, "GC23-8")
+    assert routed == fixture_gate
+  end
+
+  test "GC23-0..GC23-3 courts map an absent ggen_igniter machinery to UNKNOWN (exit 75)" do
+    empty = tmp_dir("v23_no_ggen")
+
+    for {gate, lane} <- [
+          {"GC23-0", "V23-C"},
+          {"GC23-1", "V23-B"},
+          {"GC23-2", "V23-C"},
+          {"GC23-3", "V23-C"}
+        ] do
+      {out, code} = run_court(@repo, gate, empty)
+      assert code == StopCourt.unknown_exit(), "#{gate}: #{out}"
+      assert out =~ ~r/^UNKNOWN: #{gate} .*\(lane #{lane}\) absent/m
+    end
+  end
+
+  # gi_mix.sh judges GGEN_IGNITER_DIR read-only: mix compiles into a private
+  # clone of its _build/test (MIX_BUILD_PATH), removed on exit. A real mix
+  # project in a tmp dir stands in for ggen_igniter (real compile, real sh).
+  test "courts/gi_mix.sh runs mix in GGEN_IGNITER_DIR against a private build copy and writes nothing there" do
+    project = tmp_dir("v23_gi_mix_probe")
+    File.mkdir_p!(Path.join(project, "lib"))
+    File.mkdir_p!(Path.join(project, "_build/test"))
+    File.write!(Path.join(project, "_build/test/marker"), "judged build\n")
+
+    File.write!(Path.join(project, "mix.exs"), """
+    defmodule GiMixProbe.MixProject do
+      use Mix.Project
+      def project, do: [app: :gi_mix_probe, version: "0.1.0", deps: []]
+    end
+    """)
+
+    File.write!(Path.join(project, "lib/gi_mix_probe.ex"), """
+    defmodule GiMixProbe do
+      def hello, do: :world
+    end
+    """)
+
+    private_root = tmp_dir("v23_gi_mix_tmp")
+
+    {out, code} =
+      System.cmd(
+        "sh",
+        [
+          Path.join(@dir, "courts/gi_mix.sh"),
+          "run",
+          "--no-start",
+          "-e",
+          ~S|IO.puts("BUILD_PATH=" <> Mix.Project.build_path() <> " HELLO=#{GiMixProbe.hello()}")|
+        ],
+        stderr_to_stdout: true,
+        env: [
+          {"GGEN_IGNITER_DIR", project},
+          {"TMPDIR", private_root},
+          {"MIX_ENV", nil},
+          {"GI_MIX_ENV", nil}
+        ]
+      )
+
+    assert code == 0, out
+    assert [_, build_path] = Regex.run(~r/^BUILD_PATH=(\S+) HELLO=world$/m, out)
+    assert String.starts_with?(build_path, private_root), build_path
+    assert build_path =~ ~r{/gi-mix-build\.[^/]+/test$}
+    # the judged checkout's _build is untouched; the private copy is gone
+    assert File.ls!(Path.join(project, "_build")) == ["test"]
+    assert File.ls!(Path.join(project, "_build/test")) == ["marker"]
+    assert File.read!(Path.join(project, "_build/test/marker")) == "judged build\n"
+    refute File.exists?(Path.dirname(build_path))
+  end
+
+  @tag timeout: 600_000
+  test "GC23-0 (real sh + ggen_igniter compile_prose --check) refuses a hand-edited compiled/orders.ttl" do
+    repo =
+      court_repo(fn dir ->
+        mutate_file!(Path.join(dir, "docs/sjira/v26.9.23/compiled/orders.ttl"), fn bytes ->
+          bytes <> "<urn:x:hand> <urn:x:edited> \"not manufactured\" .\n"
+        end)
+      end)
+
+    {out, code} = run_court(repo, "GC23-0", ggen_dir())
+    assert code == 1, out
+    assert out =~ ~r/^REFUSED\(output_drift\) .*compiled\/orders\.ttl: /m
+    assert out =~ "REFUSED: GC23-0 compile_prose --check exited 1"
+    refute out =~ "ALIVE: GC23-0"
+  end
+
+  @tag timeout: 600_000
+  test "GC23-3 (real sh + ggen_igniter --admit-goal) refuses a goal.ttl whose lane order lost sj:postcondition (F1)" do
+    repo =
+      court_repo(fn dir ->
+        mutate_file!(Path.join(dir, "docs/sjira/v26.9.23/goal.ttl"), fn bytes ->
+          String.replace(
+            bytes,
+            ~r/^    sj:postcondition "One reference KNOWN WorkOrder[^\n]*\n/m,
+            ""
+          )
+        end)
+      end)
+
+    {out, code} = run_court(repo, "GC23-3", ggen_dir())
+    assert code == 1, out
+
+    assert out =~
+             ~r/^REFUSED\(goal_inadmissible\) #{Regex.escape(@v23)}WO-V23-D: .*postcondition/m
+
+    assert out =~
+             "REFUSED: GC23-3 docs/sjira/v26.9.23/goal.ttl is not admitted under the pack shapes"
+
+    refute out =~ "ALIVE: GC23-3"
   end
 
   # ------------------------------------------------------------------ fixture courts over the real stop.rq

@@ -1,0 +1,8 @@
+/dev/disk3s5       926  851        41    96% 17083430 440307960    4%   /System/Volumes/Data
+head 13e4cfa837e440d0d66ec9fd600bb34ccd403042 porcelain=0
+goal.ttl: ADMITTED sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3 (11 WorkOrders, 15 GoalCheckpoints, 919 triples = rdflib), every WorkOrder sj:checkpointOf-linked
+orders.ttl: ADMITTED sha256:c572d56cb525de7a08a614e8c082c24dc95c1670e5fcd38f1ddfc09083bd8d09 (110 WorkOrders, 0 GoalCheckpoints, 4635 triples = rdflib), every WorkOrder sj:checkpointOf-linked
+F1 WO-V23-B: 11/11 field deletions REFUSED(goal_inadmissible) naming the field; control and no-exclusion copies admitted
+F1 WO-0aa0e5e90661885b: 11/11 field deletions REFUSED(goal_inadmissible) naming the field; control and no-exclusion copies admitted
+ALIVE: GC23-3 every WorkOrder of goal.ttl and compiled/orders.ttl carries the full tuple under the pack shapes; F1 refused
+GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-3.sh => 0 (35 s)
