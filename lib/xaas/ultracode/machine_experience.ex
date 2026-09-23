@@ -55,6 +55,8 @@ defmodule Xaas.Ultracode.MachineExperience do
   semantic-jira-pack ontology -- HANDWRITTEN.md).
   """
 
+  alias Xaas.Ultracode.MachineExperience.Exploration
+
   @sj "https://ggen-igniter.dev/ontology/semantic-jira#"
   @v23 "https://ggen-igniter.dev/sjira/v26.9.23#"
   @xme "https://xaas.dev/ontology/machine-experience#"
@@ -211,22 +213,53 @@ defmodule Xaas.Ultracode.MachineExperience do
   end
 
   @doc """
-  True iff the SPARQL `predicate` selects `row`'s IRI over `order_graph/1`.
-  A predicate SPARQL.ex cannot parse or evaluate is false (never applicable).
+  Evaluates the SPARQL `predicate` over `order_graph/1` of `row`:
+  `{:ok, true}` iff it selects `row`'s IRI as `?order`, `{:ok, false}` when
+  it evaluates and does not, and `{:error, detail}` when it cannot be judged
+  -- not a string, SPARQL.ex refuses to parse or evaluate it (its error, or
+  what it raised), the result is not a SELECT result, or the SELECT does
+  not project `?order`. An unevaluable predicate is never read as "does not
+  apply": callers turn `{:error, detail}` into their own typed refusal
+  (`route/2`: `REFUSED(experience_predicate_unevaluable)`; `admit/4`:
+  `REFUSED(predicate_unevaluable)`).
   """
-  @spec applies?(String.t(), map()) :: boolean()
-  def applies?(predicate, row) when is_binary(predicate) do
+  @spec applicability(term(), map()) :: {:ok, boolean()} | {:error, map()}
+  def applicability(predicate, row) when is_binary(predicate) do
     iri = RDF.iri(order_iri(row))
 
-    case SPARQL.execute_query(order_graph(row), predicate) do
-      %SPARQL.Query.Result{results: results} -> Enum.any?(results, &(&1["order"] == iri))
-      _other -> false
+    case evaluate(order_graph(row), predicate) do
+      {:ok, %SPARQL.Query.Result{variables: variables, results: results}} ->
+        if "order" in List.wrap(variables),
+          do: {:ok, Enum.any?(results, &(&1["order"] == iri))},
+          else: unevaluable("select_without_order", %{"variables" => variables})
+
+      {:ok, other} ->
+        unevaluable("not_a_select_result", %{"result" => inspect(other, limit: 5)})
+
+      {:error, reason} ->
+        unevaluable("sparql_error", %{"error" => reason})
     end
-  rescue
-    _error -> false
   end
 
-  def applies?(_predicate, _row), do: false
+  def applicability(predicate, _row),
+    do: unevaluable("predicate_not_a_string", %{"predicate" => inspect(predicate, limit: 5)})
+
+  # SPARQL.ex returns `{:error, message}` for what its scanner/parser
+  # refuses and may raise on what it cannot evaluate; both are reported,
+  # never swallowed.
+  defp evaluate(graph, predicate) do
+    case SPARQL.execute_query(graph, predicate) do
+      {:error, reason} -> {:error, to_string_safe(reason)}
+      result -> {:ok, result}
+    end
+  rescue
+    error -> {:error, Exception.format(:error, error, __STACKTRACE__) |> String.slice(0, 600)}
+  end
+
+  defp unevaluable(kind, detail), do: {:error, Map.put(detail, "kind", kind)}
+
+  defp to_string_safe(reason) when is_binary(reason), do: reason
+  defp to_string_safe(reason), do: inspect(reason, limit: 20)
 
   @doc """
   The consequence bounds of a source order: its authority ceiling,
@@ -350,7 +383,12 @@ defmodule Xaas.Ultracode.MachineExperience do
   `xme:admittedCapability`), or `{:unknown, typed}` with standing
   `"UNKNOWN"` and reason `no_capability_no_experience` /
   `ambiguous_experience`. `{:refused, typed}` for a declared capability
-  outside the canonical `provider:id` pattern.
+  outside the canonical `provider:id` pattern, and
+  `REFUSED(experience_predicate_unevaluable)` (broken term `mu_on_O`) when
+  an admitted experience's applicability predicate cannot be evaluated
+  (`applicability/2`): the router fails closed rather than report "no
+  experience" for an experience it could not judge (it might apply, and
+  with another experience make the route ambiguous).
   """
   @spec route(map(), RDF.Graph.t() | nil) ::
           {:known, map()} | {:unknown, map()} | {:refused, map()}
@@ -371,12 +409,43 @@ defmodule Xaas.Ultracode.MachineExperience do
   def route(row, graph) do
     considered = if graph, do: experiences(graph), else: []
 
-    applicable =
-      Enum.filter(considered, fn experience ->
-        applies?(experience["applicability_predicate"], row) and
-          within_bounds?(experience["consequence_bounds"], row)
-      end)
+    with {:ok, applicable} <- applicable(considered, row) do
+      decide(row, considered, applicable)
+    end
+  end
 
+  defp applicable(considered, row) do
+    Enum.reduce_while(considered, {:ok, []}, fn experience, {:ok, acc} ->
+      case applicability(experience["applicability_predicate"], row) do
+        {:ok, true} ->
+          if within_bounds?(experience["consequence_bounds"], row),
+            do: {:cont, {:ok, acc ++ [experience]}},
+            else: {:cont, {:ok, acc}}
+
+        {:ok, false} ->
+          {:cont, {:ok, acc}}
+
+        {:error, error} ->
+          {:halt,
+           {:refused,
+            typed(
+              "REFUSED(experience_predicate_unevaluable)",
+              "experience_predicate_unevaluable",
+              "mu_on_O",
+              "route",
+              %{
+                "order" => row["identity"],
+                "machine_experience" => experience["machine_experience"],
+                "admission" => experience["admission"],
+                "predicate_sha256" => sha256(to_string(experience["applicability_predicate"])),
+                "error" => error
+              }
+            )}}
+      end
+    end)
+  end
+
+  defp decide(row, considered, applicable) do
     detail = %{
       "order" => row["identity"],
       "failure_class" => row["failure_class"],
@@ -523,11 +592,18 @@ defmodule Xaas.Ultracode.MachineExperience do
   ggen_igniter record must be exactly the shape's field set with standing
   CANDIDATE, authority NONE and sha256-shaped digests; every ARD section 15
   field must be non-blank; the admitted capability must be canonical; the
-  applicability predicate must select its own source order and the bounds
-  must contain it; and `evidence` must show an ALIVE drive whose independent
-  court passed and whose revert falsifier killed. `{:ok, admission}` (the
-  fields plus `"admission" => "ADMITTED"` and `"admission_digest"`) or
-  `{:refused, typed}` naming the first failed condition.
+  applicability predicate must evaluate (`applicability/2`) and select its
+  own source order, and the bounds must contain it; `evidence` must show an
+  ALIVE drive whose independent court passed and whose revert falsifier
+  killed; and the experience must come from a recorded, bounded
+  exploration (PRD PR-016): `evidence["exploration"]` (`"digest"`,
+  `"budget"`, `"used"`) is bound to the fields' `source_exploration` digest
+  and its usage is within every budget dimension
+  (`Exploration.within_budget/2`) -- an over-budget exploration never
+  becomes an admitted experience. `{:ok, admission}` (the fields plus
+  `"admission" => "ADMITTED"` and `"admission_digest"`) or
+  `{:refused, typed}` (broken term `admission_vacuous`) naming the first
+  failed condition, in the order above.
   """
   @spec admit(map(), map(), map(), map()) :: {:ok, map()} | {:refused, map()}
   def admit(experience, fields, row, evidence) do
@@ -536,33 +612,66 @@ defmodule Xaas.Ultracode.MachineExperience do
     drive = evidence["drive"] || %{}
     verification = evidence["verification"] || %{}
 
+    # Lazy: each condition runs only when every earlier one held, so a later
+    # condition never evaluates inputs an earlier one already refused.
     checks = [
-      {keys == expected, "experience_fields_unmapped", %{"keys" => keys}},
-      {experience["kind"] == "MachineExperience" and experience["standing"] == "CANDIDATE" and
-         experience["authority"] == "NONE", "experience_not_candidate",
-       Map.take(experience, ~w(kind standing authority))},
-      {Enum.all?(
-         ~w(work_order_digest execution_receipt_hash verification_digest resulting_state_digest experience_digest),
-         &Regex.match?(@digest, experience[&1] || "")
-       ), "experience_digest_malformed", Map.take(experience, ~w(experience_digest))},
-      {Enum.all?(@ard_fields, &nonblank_field?(fields[&1])), "ard_field_missing",
-       %{"missing" => Enum.reject(@ard_fields, &nonblank_field?(fields[&1]))}},
-      {Regex.match?(@capability, fields["admitted_capability"] || ""), "invalid_capability",
-       %{"capability" => fields["admitted_capability"]}},
-      {applies?(fields["applicability_predicate"], row), "predicate_excludes_source",
-       %{"order" => row["identity"]}},
-      {within_bounds?(decode(fields["consequence_bounds"]), row), "bounds_exclude_source",
-       %{"order" => row["identity"]}},
-      {drive["standing"] == "ALIVE", "source_not_alive", %{"standing" => drive["standing"]}},
-      {get_in(verification, ["independent", "status"]) == "pass" and
-         get_in(verification, ["revert_falsifier", "verdict"]) == "killed", "source_unverified",
-       %{
-         "independent" => get_in(verification, ["independent", "status"]),
-         "revert_falsifier" => get_in(verification, ["revert_falsifier", "verdict"])
-       }}
+      fn -> check(keys == expected, "experience_fields_unmapped", %{"keys" => keys}) end,
+      fn ->
+        check(
+          experience["kind"] == "MachineExperience" and experience["standing"] == "CANDIDATE" and
+            experience["authority"] == "NONE",
+          "experience_not_candidate",
+          Map.take(experience, ~w(kind standing authority))
+        )
+      end,
+      fn ->
+        check(
+          Enum.all?(
+            ~w(work_order_digest execution_receipt_hash verification_digest resulting_state_digest experience_digest),
+            &Regex.match?(@digest, experience[&1] || "")
+          ),
+          "experience_digest_malformed",
+          Map.take(experience, ~w(experience_digest))
+        )
+      end,
+      fn ->
+        check(Enum.all?(@ard_fields, &nonblank_field?(fields[&1])), "ard_field_missing", %{
+          "missing" => Enum.reject(@ard_fields, &nonblank_field?(fields[&1]))
+        })
+      end,
+      fn ->
+        check(
+          Regex.match?(@capability, fields["admitted_capability"] || ""),
+          "invalid_capability",
+          %{"capability" => fields["admitted_capability"]}
+        )
+      end,
+      fn -> predicate_selects_source(fields["applicability_predicate"], row) end,
+      fn ->
+        check(
+          within_bounds?(decode(fields["consequence_bounds"]), row),
+          "bounds_exclude_source",
+          %{"order" => row["identity"]}
+        )
+      end,
+      fn ->
+        check(drive["standing"] == "ALIVE", "source_not_alive", %{"standing" => drive["standing"]})
+      end,
+      fn ->
+        check(
+          get_in(verification, ["independent", "status"]) == "pass" and
+            get_in(verification, ["revert_falsifier", "verdict"]) == "killed",
+          "source_unverified",
+          %{
+            "independent" => get_in(verification, ["independent", "status"]),
+            "revert_falsifier" => get_in(verification, ["revert_falsifier", "verdict"])
+          }
+        )
+      end,
+      fn -> bounded_exploration(fields["source_exploration"], evidence["exploration"]) end
     ]
 
-    case Enum.find(checks, fn {ok, _reason, _detail} -> not ok end) do
+    case Enum.find_value(checks, fn condition -> refusal(condition.()) end) do
       nil ->
         admission = Map.put(fields, "admission", "ADMITTED")
 
@@ -575,8 +684,62 @@ defmodule Xaas.Ultracode.MachineExperience do
 
         {:ok, Map.put(admission, "admission_digest", digest)}
 
-      {_ok, reason, detail} ->
+      {reason, detail} ->
         {:refused, typed("REFUSED(#{reason})", reason, "admission_vacuous", "admit", detail)}
+    end
+  end
+
+  defp drop_attempts(%{} = used), do: Map.drop(used, ["attempts"])
+  defp drop_attempts(used), do: used
+
+  defp check(true, _reason, _detail), do: :ok
+  defp check(false, reason, detail), do: {:refuse, reason, detail}
+
+  defp refusal(:ok), do: nil
+  defp refusal({:refuse, reason, detail}), do: {reason, detail}
+
+  defp predicate_selects_source(predicate, row) do
+    case applicability(predicate, row) do
+      {:ok, true} ->
+        :ok
+
+      {:ok, false} ->
+        {:refuse, "predicate_excludes_source", %{"order" => row["identity"]}}
+
+      {:error, error} ->
+        {:refuse, "predicate_unevaluable", %{"order" => row["identity"], "error" => error}}
+    end
+  end
+
+  defp bounded_exploration(source_exploration, exploration) do
+    cond do
+      not nonblank?(source_exploration) or not is_map(exploration) ->
+        {:refuse, "exploration_unrecorded",
+         %{
+           "source_exploration" => source_exploration,
+           "exploration" => if(is_map(exploration), do: "present", else: "absent")
+         }}
+
+      exploration["digest"] != source_exploration ->
+        {:refuse, "exploration_unbound",
+         %{
+           "source_exploration" => source_exploration,
+           "exploration_digest" => exploration["digest"]
+         }}
+
+      true ->
+        case Exploration.within_budget(exploration, exploration["used"]) do
+          :ok ->
+            :ok
+
+          {:exhausted, which} ->
+            {:refuse, "exploration_over_budget",
+             %{
+               "exhausted" => which,
+               "budget" => exploration["budget"],
+               "used" => drop_attempts(exploration["used"])
+             }}
+        end
     end
   end
 

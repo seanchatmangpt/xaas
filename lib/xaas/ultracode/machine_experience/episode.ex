@@ -28,7 +28,10 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
       admits it (`MachineExperience.admit/4`), has ggen_igniter's SHACL court
       judge the Turtle against the pack's `sj:MachineExperienceShape`, and
       records it: Episode 1. An exhausted budget is the receipted UNKNOWN
-      `exploration_budget_exhausted`.
+      `exploration_budget_exhausted` -- metered before each candidate drive
+      and again after it, so a drive that overruns `time_s` ends UNKNOWN
+      (its head named in the receipt's consequence), never ALIVE, and
+      `MachineExperience.admit/4` refuses an over-budget exploration.
 
   Every run writes `route.json` and `order.ttl` (the order's RDF the
   predicate was evaluated on) and, when it reaches a drive, the composed
@@ -308,46 +311,74 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
             "candidates" => used["candidates"] + 1
         }
 
-        case result do
-          {:ok, evidence, attempt_ctx} ->
-            shown = Exploration.evidence(evidence)
+        {entry, outcome} = attempt_entry(plan, candidate, dir, seconds, result)
 
-            entry = %{
-              "capability" => candidate["capability"],
-              "dir" => dir,
-              "evidence" => shown,
-              "seconds" => seconds
-            }
-
-            if Exploration.resolved?(plan, shown) do
-              conclude(
-                attempt_ctx,
-                route,
-                evidence,
+        # The budget is metered again after the drive (PR-016): a candidate
+        # that resolved only by overrunning the budget is exhausted, never
+        # resolved -- the drive's consequence is receipted in the UNKNOWN,
+        # and no MachineExperience is manufactured from it.
+        case {Exploration.within_budget(plan, used), outcome} do
+          {{:exhausted, which}, {:drove, _evidence, attempt_ctx, _resolved}} ->
+            write_unknown(
+              attempt_ctx,
+              Exploration.exhausted(
                 plan,
-                Map.put(used, "attempts", attempts ++ [entry])
-              )
-            else
-              try_candidates(
-                ctx,
-                plan,
-                rest,
+                which,
                 used,
-                attempts ++ [Map.put(entry, "resolved", false)]
+                attempts ++ [Map.put(entry, "over_budget", which)]
               )
-            end
+            )
 
-          {:refused, typed, _ctx} ->
-            entry = %{
-              "capability" => candidate["capability"],
-              "dir" => dir,
-              "refused" => typed,
-              "seconds" => seconds
-            }
+          {{:exhausted, which}, :refused} ->
+            write_unknown(
+              ctx,
+              Exploration.exhausted(
+                plan,
+                which,
+                used,
+                attempts ++ [Map.put(entry, "over_budget", which)]
+              )
+            )
 
+          {:ok, {:drove, evidence, attempt_ctx, true}} ->
+            conclude(
+              attempt_ctx,
+              route,
+              evidence,
+              plan,
+              Map.put(used, "attempts", attempts ++ [entry])
+            )
+
+          {:ok, _unresolved_or_refused} ->
             try_candidates(ctx, plan, rest, used, attempts ++ [entry])
         end
     end
+  end
+
+  defp attempt_entry(plan, candidate, dir, seconds, {:ok, evidence, attempt_ctx}) do
+    shown = Exploration.evidence(evidence)
+    resolved = Exploration.resolved?(plan, shown)
+
+    entry = %{
+      "capability" => candidate["capability"],
+      "dir" => dir,
+      "evidence" => shown,
+      "resolved" => resolved,
+      "standing" => get_in(evidence, ["drive", "standing"]),
+      "head" => get_in(evidence, ["drive", "subject", "head"]),
+      "seconds" => seconds
+    }
+
+    {entry, {:drove, evidence, attempt_ctx, resolved}}
+  end
+
+  defp attempt_entry(_plan, candidate, dir, seconds, {:refused, typed, _ctx}) do
+    {%{
+       "capability" => candidate["capability"],
+       "dir" => dir,
+       "refused" => typed,
+       "seconds" => seconds
+     }, :refused}
   end
 
   # One drive of the order with `route`'s capability: the routed work graph
@@ -416,8 +447,18 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
   # -- conclusion ---------------------------------------------------------------------
 
   defp conclude(ctx, route, evidence, plan, used) do
+    evidence =
+      if plan,
+        do:
+          Map.put(evidence, "exploration", %{
+            "digest" => plan["digest"],
+            "budget" => plan["budget"],
+            "used" => Map.drop(used, ["attempts"])
+          }),
+        else: evidence
+
     with {:ok, ctx, experience_record} <- maybe_manufacture(ctx, route, evidence, plan),
-         {:ok, drive_obs} <- Ocel.from_court_form(evidence["ocel"]) do
+         {:ok, drive_obs} <- drive_observations(evidence) do
       {drive_events, drive_objects} = drive_obs
       event_types = Ocel.event_classes() ++ Ocel.extension_classes()
 
@@ -443,15 +484,28 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
       court = Ocel.court_form(observations, event_types)
       standard = Ocel.standard_form(observations, event_types)
 
-      case Validator.validate(court) do
-        {:ok, _report} ->
+      case {Validator.validate(court), Ocel.equivalent?(court, standard)} do
+        {{:ok, _report}, true} ->
           write_json(Path.join(ctx.out_dir, "ocel.json"), court)
           write_json(Path.join(ctx.out_dir, "ocel2.json"), standard)
-          summary = summary(ctx, route, evidence, plan, used, experience_record, court)
+          summary = summary(ctx, route, evidence, plan, used, experience_record, court, true)
           write_json(Path.join(ctx.out_dir, "episode.json"), summary)
           {:ok, summary}
 
-        {:error, violations} ->
+        {{:ok, _report}, false} ->
+          {:refused,
+           typed(
+             "REFUSED(ocel_forms_diverge)",
+             "ocel_forms_diverge",
+             "R_missing_consequence",
+             "ocel",
+             %{
+               "court_events" => length(court["ocel:events"]),
+               "standard_events" => length(standard["events"] || [])
+             }
+           )}
+
+        {{:error, violations}, _equivalent} ->
           {:refused,
            typed(
              "REFUSED(ocel_nonconformant)",
@@ -463,6 +517,23 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
              }
            )}
       end
+    end
+  end
+
+  defp drive_observations(evidence) do
+    case Ocel.from_court_form(evidence["ocel"]) do
+      {:ok, observations} ->
+        {:ok, observations}
+
+      {:error, reason} ->
+        {:refused,
+         typed(
+           "REFUSED(drive_ocel_unreadable)",
+           "drive_ocel_unreadable",
+           "R_missing_consequence",
+           "ocel",
+           %{"dir" => evidence["dir"], "error" => inspect(reason, limit: 10)}
+         )}
     end
   end
 
@@ -630,7 +701,7 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
 
   # -- summary ------------------------------------------------------------------------
 
-  defp summary(ctx, route, evidence, plan, used, experience_record, court) do
+  defp summary(ctx, route, evidence, plan, used, experience_record, court, equivalent) do
     events = court["ocel:events"]
     objects = court["ocel:objects"]
 
@@ -696,7 +767,7 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
         "by_class" => Enum.frequencies_by(events, & &1["type"]),
         "llm_provider_events" => llm_events,
         "exploration_events" => Enum.count(events, &(&1["type"] in @exploration_classes)),
-        "equivalent" => true
+        "equivalent" => equivalent
       },
       "no_llm_guard" => "passed",
       "started_at" => DateTime.to_iso8601(ctx.started),
@@ -710,6 +781,21 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
     repo = repo_path(ctx)
     path = Path.join(ctx.record_dir, "unknown.json")
 
+    # Candidate drives that ran (an exhausted exploration may have driven
+    # one to a head before its budget ran out) are consequence, never
+    # hidden behind "nothing executed".
+    drove =
+      typed
+      |> get_in(["detail", "attempts"])
+      |> List.wrap()
+      |> Enum.filter(&is_binary(&1["head"]))
+
+    grant =
+      if drove == [],
+        do: "NONE (routing only: nothing executed)",
+        else:
+          "exploration candidate drive(s) #{Enum.map_join(drove, ", ", & &1["dir"])} under the RecipeWorker lease; no MachineExperience admitted"
+
     receipt = %{
       "identity" => %{
         "subject" => "episode #{ctx.name} #{ctx.row["identity"]}",
@@ -721,10 +807,14 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
       },
       "authority" => %{
         "ceiling" => ctx.row["authority_ceiling"] || "CONSTRUCT",
-        "grant" => "NONE (routing only: nothing executed)",
+        "grant" => grant,
         "actor" => "xaas-machine-experience-router"
       },
-      "consequence" => %{"commits" => [], "files_changed" => [], "remote_effects" => []},
+      "consequence" => %{
+        "commits" => Enum.map(drove, & &1["head"]),
+        "files_changed" => [],
+        "remote_effects" => []
+      },
       "replay" => %{
         "commands" => [
           %{

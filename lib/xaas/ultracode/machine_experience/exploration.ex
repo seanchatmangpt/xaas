@@ -27,7 +27,13 @@ defmodule Xaas.Ultracode.MachineExperience.Exploration do
 
   Budget exhaustion (no candidate resolved within `drive_runs`, `time_s`,
   `candidates`) is the receipted terminal outcome `UNKNOWN`
-  (`exploration_budget_exhausted`), never success and never failure.
+  (`exploration_budget_exhausted`), never success and never failure. The
+  budget is metered twice: `next/2` before a candidate drive (another drive
+  fits) and `within_budget/2` after it (what was used, including that
+  drive's wall-clock time, stays within every dimension) -- a candidate
+  that resolved only by overrunning `time_s` is exhausted, not resolved,
+  and `Xaas.Ultracode.MachineExperience.admit/4` refuses an experience
+  whose exploration usage is over budget.
   """
 
   @schema "xaas/machine-experience-exploration/v1"
@@ -117,6 +123,25 @@ defmodule Xaas.Ultracode.MachineExperience.Exploration do
       true -> :ok
     end
   end
+
+  @doc """
+  The budget verdict after a candidate drive: `:ok` iff `used` (a map with
+  integer `"drive_runs"`, `"candidates"` and `"elapsed_s"`) stays within
+  the budget's `drive_runs`, `candidates` and `time_s` (`<=`), else
+  `{:exhausted, which}` naming the first dimension over budget (or
+  unrecorded: a missing or non-integer usage is never within budget).
+  """
+  @spec within_budget(map(), term()) :: :ok | {:exhausted, String.t()}
+  def within_budget(%{"budget" => %{} = budget}, %{} = used) do
+    [{"drive_runs", "drive_runs"}, {"candidates", "candidates"}, {"elapsed_s", "time_s"}]
+    |> Enum.find_value(:ok, fn {spent, limit} ->
+      if is_integer(used[spent]) and is_integer(budget[limit]) and used[spent] <= budget[limit],
+        do: nil,
+        else: {:exhausted, limit}
+    end)
+  end
+
+  def within_budget(_plan, _used), do: {:exhausted, "budget_or_usage_unrecorded"}
 
   @doc """
   The evidence kinds a finished drive showed: `drive_alive` (standing

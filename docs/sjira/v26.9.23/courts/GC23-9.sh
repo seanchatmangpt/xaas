@@ -43,8 +43,11 @@
 #      with an LLM credential exposed it is REFUSED(llm_credential_present);
 #   8. falsifier: with the sj:MachineExperience node removed from the graph
 #      (and, separately, with its admission node removed) the same route is
-#      UNKNOWN, and the episode runner on a copy of me-2 refuses to execute:
-#      exit 4, UNKNOWN, no drive, unknown/unknown.json written.
+#      UNKNOWN; with the admitted predicate replaced by one SPARQL cannot
+#      evaluate the route is REFUSED(experience_predicate_unevaluable) (exit
+#      3: the router fails closed, it never reports "no experience" for one
+#      it could not judge); and the episode runner on a copy of me-2 refuses
+#      to execute: exit 4, UNKNOWN, no drive, unknown/unknown.json written.
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
@@ -186,6 +189,9 @@ no_adm = rdflib.Graph(); no_adm.parse(f"{ep1}/machine_experience.ttl", format="t
 no_adm.remove((adm, None, None)); no_adm.serialize(f"{tmp}/no-admission.ttl", format="turtle")
 promoted = rdflib.Graph(); promoted.parse(f"{ep1}/machine_experience.ttl", format="turtle")
 promoted.set((me, SJ.standing, rdflib.Literal("ALIVE"))); promoted.serialize(f"{tmp}/promoted.ttl", format="turtle")
+unevaluable = rdflib.Graph(); unevaluable.parse(f"{ep1}/machine_experience.ttl", format="turtle")
+unevaluable.set((adm, XME.applicabilityPredicate, rdflib.Literal("SELECT nonsense")))
+unevaluable.serialize(f"{tmp}/unevaluable.ttl", format="turtle")
 open(f"{tmp}/me.iri", "w").write(str(me))
 print(f"recorded: me-1 {n1} events / {e1['step_count']} steps (LLM-provider {len(llm1)}, exploration {len(x1)}); "
       f"me-2 {n2} events / {e2['step_count']} steps (LLM-provider 0, exploration 0); route cites {me} -> {capability}")
@@ -265,6 +271,12 @@ for g in no-me no-admission; do
     { tail -3 "$tmp/$g.log"; refuse "falsifier: route over the $g graph exited $code, expected 4 UNKNOWN"; }
   echo "falsifier ($g): UNKNOWN"
 done
+MIX_ENV=test sh "$env_sh" -- mix xaas.machine_experience --route --work "$ep2/work.json" \
+  --experience "$tmp/unevaluable.ttl" >"$tmp/unevaluable.log" 2>&1
+code=$?
+[ "$code" = "3" ] && tail -1 "$tmp/unevaluable.log" | grep -q '"reason":"experience_predicate_unevaluable"' ||
+  { tail -3 "$tmp/unevaluable.log"; refuse "falsifier: route over an admitted experience with an unevaluable predicate exited $code, expected 3 REFUSED(experience_predicate_unevaluable) (fail closed, never 'no experience')"; }
+echo "falsifier (unevaluable predicate): REFUSED(experience_predicate_unevaluable)"
 mkdir -p "$tmp/eps/me-2"
 cp "$ep2/work.json" "$tmp/eps/me-2/work.json"
 : >"$tmp/eps/me-2/ledger.ndjson"

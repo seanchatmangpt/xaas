@@ -19,7 +19,7 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
   use ExUnit.Case, async: true
 
   alias Xaas.Ultracode.MachineExperience
-  alias Xaas.Ultracode.MachineExperience.Exploration
+  alias Xaas.Ultracode.MachineExperience.{Episode, Exploration}
   alias Xaas.Ultracode.Ocel.Validator
   alias Xaas.Ultracode.SemanticDrive.Ocel
 
@@ -91,6 +91,17 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
         "r" => %{"standing" => %{"value" => "ALIVE"}},
         "hops" => %{
           "hops" => [%{"hop" => "sjira", "request" => %{"graph_digest" => digest("graph")}}]
+        },
+        "exploration" => %{
+          "digest" => digest("exploration"),
+          "budget" => %{
+            "time_s" => 600,
+            "drive_runs" => 1,
+            "candidates" => 1,
+            "consequence_ceiling" => "CONSTRUCT",
+            "evidence_requirement" => Exploration.evidence_kinds()
+          },
+          "used" => %{"drive_runs" => 1, "candidates" => 1, "elapsed_s" => 42}
         }
       },
       overrides
@@ -128,7 +139,7 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
     test "selects the source order and an equivalent order on another subject; nothing else" do
       {:ok, predicate} = MachineExperience.applicability_predicate(row())
 
-      assert MachineExperience.applies?(predicate, row())
+      assert {:ok, true} = MachineExperience.applicability(predicate, row())
 
       other_subject =
         row(%{
@@ -137,18 +148,31 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
           "replay_identity" => "semantic-jira:v26.9.23:episode:me-y:EP-A"
         })
 
-      assert MachineExperience.applies?(predicate, other_subject)
+      assert {:ok, true} = MachineExperience.applicability(predicate, other_subject)
 
-      refute MachineExperience.applies?(predicate, row(%{"failure_class" => "compile_error"}))
-      refute MachineExperience.applies?(predicate, row(%{"repository" => "seanchatmangpt/xaas"}))
-      refute MachineExperience.applies?(predicate, row(%{"authority_ceiling" => "DO"}))
+      for excluded <- [
+            row(%{"failure_class" => "compile_error"}),
+            row(%{"repository" => "seanchatmangpt/xaas"}),
+            row(%{"authority_ceiling" => "DO"}),
+            row(%{"requires_capability" => "recipe:mix-format"})
+          ] do
+        assert {:ok, false} = MachineExperience.applicability(predicate, excluded)
+      end
+    end
 
-      refute MachineExperience.applies?(
-               predicate,
-               row(%{"requires_capability" => "recipe:mix-format"})
-             )
+    test "a predicate that cannot be judged is a typed error, never 'does not apply'" do
+      assert {:error,
+              %{"kind" => "sparql_error", "error" => "SPARQL language scanner error" <> _}} =
+               MachineExperience.applicability("SELECT nonsense", row())
 
-      refute MachineExperience.applies?("SELECT nonsense", row())
+      assert {:error, %{"kind" => "select_without_order", "variables" => ["x"]}} =
+               MachineExperience.applicability("SELECT ?x WHERE { ?x ?p ?o }", row())
+
+      assert {:error, %{"kind" => "not_a_select_result"}} =
+               MachineExperience.applicability("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }", row())
+
+      assert {:error, %{"kind" => "predicate_not_a_string"}} =
+               MachineExperience.applicability(nil, row())
     end
 
     test "an order without a failure class has nothing to generalize over" do
@@ -242,6 +266,13 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
 
       assert refused.(
                experience(),
+               Map.put(fields, "applicability_predicate", "SELECT nonsense"),
+               row(),
+               evidence()
+             ) == "predicate_unevaluable"
+
+      assert refused.(
+               experience(),
                fields,
                row(%{"path_scope" => ["priv"]}),
                evidence()
@@ -260,6 +291,52 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
                row(),
                put_in(evidence(), ["verification", "revert_falsifier", "verdict"], "survived")
              ) == "source_unverified"
+    end
+
+    test "refuses an experience whose exploration is unrecorded, unbound or over budget (PR-016)",
+         %{fields: fields} do
+      refused = fn fields, evidence ->
+        {:refused,
+         %{"reason" => reason, "broken_term" => "admission_vacuous", "detail" => detail}} =
+          MachineExperience.admit(experience(), fields, row(), evidence)
+
+        {reason, detail}
+      end
+
+      assert {"exploration_unrecorded", _} =
+               refused.(fields, Map.delete(evidence(), "exploration"))
+
+      assert {"exploration_unrecorded", _} =
+               refused.(Map.delete(fields, "source_exploration"), evidence())
+
+      assert {"exploration_unbound", %{"exploration_digest" => "sha256:" <> _}} =
+               refused.(fields, put_in(evidence(), ["exploration", "digest"], digest("other")))
+
+      # the doctrine case: proposal time inside the budget, the drive overran it
+      assert {"exploration_over_budget",
+              %{"exhausted" => "time_s", "used" => %{"elapsed_s" => 601}}} =
+               refused.(fields, put_in(evidence(), ["exploration", "used", "elapsed_s"], 601))
+
+      assert {"exploration_over_budget", %{"exhausted" => "drive_runs"}} =
+               refused.(fields, put_in(evidence(), ["exploration", "used", "drive_runs"], 2))
+
+      assert {"exploration_over_budget", %{"exhausted" => "time_s"}} =
+               refused.(
+                 fields,
+                 put_in(evidence(), ["exploration", "used"], %{
+                   "drive_runs" => 1,
+                   "candidates" => 1
+                 })
+               )
+
+      # exactly at the budget is within it
+      assert {:ok, _} =
+               MachineExperience.admit(
+                 experience(),
+                 fields,
+                 row(),
+                 put_in(evidence(), ["exploration", "used", "elapsed_s"], 600)
+               )
     end
   end
 
@@ -329,6 +406,45 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
 
       assert {:unknown, %{"reason" => "no_capability_no_experience"}} =
                MachineExperience.route(%{episode2 | "path_scope" => ["lib", "priv"]}, graph)
+    end
+
+    test "an admitted experience whose predicate cannot be evaluated refuses the route (fails closed), naming it" do
+      ttl = admitted_ttl!()
+      graph = graph!(ttl)
+      [experience] = MachineExperience.experiences(graph)
+      admission = RDF.iri(experience["admission"])
+      predicate = RDF.iri(MachineExperience.namespaces()["xme"] <> "applicabilityPredicate")
+
+      broken =
+        graph
+        |> RDF.Graph.delete(
+          {admission, predicate, RDF.literal(experience["applicability_predicate"])}
+        )
+        |> RDF.Graph.add({admission, predicate, RDF.literal("SELECT nonsense")})
+
+      assert [%{"applicability_predicate" => "SELECT nonsense"}] =
+               MachineExperience.experiences(broken)
+
+      assert {:refused,
+              %{
+                "standing" => "REFUSED(experience_predicate_unevaluable)",
+                "reason" => "experience_predicate_unevaluable",
+                "broken_term" => "mu_on_O",
+                "hop" => "route",
+                "detail" => %{
+                  "machine_experience" => iri,
+                  "error" => %{"kind" => "sparql_error"}
+                }
+              }} = MachineExperience.route(row(), broken)
+
+      assert iri == experience["machine_experience"]
+
+      # beside a sound experience the broken one still refuses: it might apply
+      two = RDF.Graph.add(broken, graph!(admitted_ttl!(row(), "y")))
+      assert length(MachineExperience.experiences(two)) == 2
+
+      assert {:refused, %{"reason" => "experience_predicate_unevaluable"}} =
+               MachineExperience.route(row(), two)
     end
 
     test "two applicable experiences naming different capabilities are ambiguous (UNKNOWN)" do
@@ -460,6 +576,28 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
 
       refute Exploration.resolved?(plan, killed_not)
     end
+
+    test "after a drive the budget is metered again: within means <= on every dimension" do
+      {:ok, plan} = Exploration.admit(exploration(), row(), digest("e"))
+      within = %{"drive_runs" => 1, "candidates" => 1, "elapsed_s" => 600}
+      assert :ok = Exploration.within_budget(plan, within)
+
+      # proposal 60 s passed the pre-drive check (60 < 600); the drive took 541 s
+      assert {:exhausted, "time_s"} =
+               Exploration.within_budget(plan, %{within | "elapsed_s" => 601})
+
+      assert {:exhausted, "drive_runs"} =
+               Exploration.within_budget(plan, %{within | "drive_runs" => 2})
+
+      assert {:exhausted, "candidates"} =
+               Exploration.within_budget(plan, %{within | "candidates" => 3})
+
+      assert {:exhausted, "time_s"} =
+               Exploration.within_budget(plan, Map.delete(within, "elapsed_s"))
+
+      assert {:exhausted, "budget_or_usage_unrecorded"} = Exploration.within_budget(plan, nil)
+      assert {:exhausted, "budget_or_usage_unrecorded"} = Exploration.within_budget(%{}, within)
+    end
   end
 
   describe "OCEL composition" do
@@ -509,6 +647,67 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
         task(["ANTHROPIC_API_KEY=x"], ["--route", "--work", work, "--experience", ttl])
 
       assert last_json(refused)["standing"] == "REFUSED(llm_credential_present)"
+
+      broken = Path.join(dir, "broken.ttl")
+
+      File.write!(
+        broken,
+        String.replace(
+          admitted_ttl!(),
+          ~r/xme:applicabilityPredicate "[^"\\]*(?:\\.[^"\\]*)*"/,
+          ~s(xme:applicabilityPredicate "SELECT nonsense")
+        )
+      )
+
+      assert File.read!(broken) =~ ~s(xme:applicabilityPredicate "SELECT nonsense")
+
+      {unevaluable, 3} = task([], ["--route", "--work", work, "--experience", broken])
+      assert last_json(unevaluable)["reason"] == "experience_predicate_unevaluable"
+    end
+  end
+
+  describe "Episode.run/1 no-LLM guard (F3, runner level)" do
+    test "a credential variable or an LLM binary on PATH refuses before anything is read or written" do
+      out = mktmp("f3-run")
+      File.write!(Path.join(out, "work.json"), Jason.encode!(%{"work_orders" => [row()]}))
+      bin = mktmp("f3-bin")
+      claude = Path.join(bin, "claude")
+      File.write!(claude, "#!/bin/sh\nexit 0\n")
+      File.chmod!(claude, 0o755)
+
+      for {env, field, named} <- [
+            {%{"PATH" => "/usr/bin:/bin", "ANTHROPIC_API_KEY" => "x"}, "variables",
+             ["ANTHROPIC_API_KEY"]},
+            {%{"PATH" => bin <> ":/usr/bin:/bin"}, "binaries", [claude]}
+          ] do
+        assert {:refused,
+                %{
+                  "standing" => "REFUSED(llm_credential_present)",
+                  "broken_term" => "mu_on_O",
+                  "detail" => detail
+                }} =
+                 Episode.run(
+                   name: "t-me-f3",
+                   out_dir: out,
+                   ggen_igniter_dir: "/nonexistent",
+                   env: env
+                 )
+
+        assert detail[field] == named
+        assert File.ls!(out) == ["work.json"]
+      end
+
+      # the same runner with a clean env reads the order and routes it (UNKNOWN here)
+      assert {:unknown, %{"reason" => "no_capability_no_experience"}} =
+               Episode.run(
+                 name: "t-me-f3",
+                 out_dir: out,
+                 ggen_igniter_dir: "/nonexistent",
+                 env: %{"PATH" => "/usr/bin:/bin"},
+                 repo_path: out
+               )
+
+      assert File.regular?(Path.join([out, "unknown", "unknown.json"]))
     end
   end
 
@@ -592,6 +791,23 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
                     false
                 end)
 
+  # The episode SUBJECT base is episode data, not the checkout under
+  # judgement: the committed episodes me-1/me-2 recorded theirs in
+  # prepare.json ("base"), a commit whose tree is format-clean under the
+  # repository's pinned toolchain, so the drift commit is the only format
+  # failure and the recipe's consequence is exactly the drift file. The
+  # graph side (every `mix semantic_jira.*`, `machine_experience/1`, SHACL)
+  # still runs from GGEN_IGNITER_DIR at its own HEAD. A GGEN_IGNITER_DIR
+  # HEAD is not a sound subject base in general: ggen_igniter-int 3937a4f
+  # carries lib/ggen_igniter/semantic_jira/bootstrap.ex unformatted under
+  # its .tool-versions Elixir 1.18.4 (clean under 1.19.5), so the recipe
+  # also reformats that file. Falls back to HEAD only when the recorded
+  # base is not in the repository.
+  @recorded_base Path.expand(
+                   "../../../docs/sjira/v26.9.23/episodes/me-1/prepare.json",
+                   __DIR__
+                 )
+
   setup_all do
     base = mktmp_all("me-all")
     {:ok, repo} = DriveEpisode.repo_root(@ggen_dir)
@@ -602,7 +818,18 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
     {head, 0} = System.cmd("git", ["-C", @ggen_dir, "rev-parse", "HEAD"])
     on_exit(fn -> File.rm_rf(base) end)
-    %{subject: subject, build: Path.join(build, "test"), base_sha: String.trim(head)}
+    %{subject: subject, build: Path.join(build, "test"), base_sha: subject_base(subject, head)}
+  end
+
+  defp subject_base(subject, head) do
+    recorded = @recorded_base |> File.read!() |> Jason.decode!() |> Map.fetch!("base")
+
+    case System.cmd("git", ["-C", subject, "cat-file", "-e", recorded <> "^{commit}"],
+           stderr_to_stdout: true
+         ) do
+      {_, 0} -> recorded
+      _ -> String.trim(head)
+    end
   end
 
   setup %{subject: subject} do
@@ -732,6 +959,95 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
     assert File.ls!(ctx.root) == []
   end
 
+  test "a candidate that resolves only by overrunning time_s is exhausted, not resolved: receipted UNKNOWN naming the drive's head, no experience",
+       ctx do
+    eps = mktmp("eps-t")
+    n = name("overrun")
+    ep = Path.join(eps, n)
+    {:ok, _} = prepare(ctx, n, @s1, ep)
+    # proposal 5 s of a 6 s budget: the pre-drive check passes (5 < 6), the
+    # real drive takes more than the remaining second
+    write_exploration!(ep, "recipe:mix-format", drive_runs: 1, time_s: 6)
+
+    assert {:unknown,
+            %{
+              "reason" => "exploration_budget_exhausted",
+              "detail" => %{
+                "exhausted" => "time_s",
+                "attempts" => [attempt],
+                "used" => %{"drive_runs" => 1, "elapsed_s" => elapsed}
+              },
+              "receipt" => receipt
+            }} = run(ctx, n, ep, [])
+
+    assert elapsed > 6
+    assert attempt["over_budget"] == "time_s"
+    assert attempt["standing"] == "ALIVE"
+    assert attempt["resolved"] == true
+    assert receipt == Path.join(ep, "unknown.json")
+    assert validate!(receipt) =~ "ADMITTED"
+    unknown = read!(ep, "unknown.json")
+    assert unknown["standing"]["value"] == "UNKNOWN"
+    assert unknown["consequence"]["commits"] == [attempt["head"]]
+    assert unknown["authority"]["grant"] =~ "no MachineExperience admitted"
+    refute File.exists?(Path.join(ep, "machine_experience.ttl"))
+    refute File.exists?(Path.join(ep, "machine_experience.json"))
+    refute File.exists?(Path.join(ep, "episode.json"))
+  end
+
+  test "the drive refuses a route whose capability is not the tuple's (route_capability_mismatch) before any lease",
+       ctx do
+    eps = mktmp("eps-m")
+    n = name("mismatch")
+    ep = Path.join(eps, n)
+    {:ok, _} = prepare(ctx, n, @s1, ep)
+    dir = Path.join(ep, "drive")
+    File.mkdir_p!(dir)
+
+    routed =
+      ep
+      |> read!("work.json")
+      |> Map.update!("work_orders", fn rows ->
+        Enum.map(rows, fn row ->
+          if row["identity"] == "EP-A",
+            do: Map.put(row, "requires_capability", "recipe:mix-format"),
+            else: row
+        end)
+      end)
+
+    File.write!(Path.join(dir, "work.json"), Jason.encode!(routed))
+
+    assert {:refused,
+            %{
+              "reason" => "route_capability_mismatch",
+              "hop" => "resolve",
+              "broken_term" => "admission_vacuous",
+              "detail" => %{"capability" => "recipe:mix-format"}
+            }} =
+             SemanticDrive.drive(
+               ggen_igniter_dir: @ggen_dir,
+               work_graph: Path.join(dir, "work.json"),
+               ledger: Path.join(ep, "ledger.ndjson"),
+               order: "EP-A",
+               out_dir: dir,
+               env: clean_env(),
+               ggen_build_path: ctx.build,
+               route: %{
+                 "source" => "exploration",
+                 "capability" => "recipe:other-fix",
+                 "producer" => "test:chicago-fixture",
+                 "producer_class" => "test",
+                 "exploration_digest" => MachineExperience.sha256("x")
+               }
+             )
+
+    refusal = read!(dir, "refused.json")
+    assert refusal["outcome"]["reason"] == "route_capability_mismatch"
+    refute "CapabilityResolved" in refusal["ocel_reached"]
+    assert File.read!(Path.join(ep, "ledger.ndjson")) == ""
+    assert File.ls!(ctx.root) == []
+  end
+
   test "an exploration whose only candidate cannot be driven exhausts its budget: receipted UNKNOWN, no experience",
        ctx do
     eps = mktmp("eps-x")
@@ -793,7 +1109,7 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
         "started_at" => DateTime.to_iso8601(DateTime.add(now, -5, :second)),
         "finished_at" => DateTime.to_iso8601(now),
         "budget" => %{
-          "time_s" => 1_200,
+          "time_s" => Keyword.get(opts, :time_s, 1_200),
           "drive_runs" => Keyword.fetch!(opts, :drive_runs),
           "candidates" => 1,
           "consequence_ceiling" => "CONSTRUCT",
