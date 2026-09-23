@@ -787,4 +787,299 @@ defmodule Xaas.Sjira.V26923GoalTest do
       assert String.trim(py) == to_string(expected) |> String.capitalize(), nt
     end
   end
+
+  # ------------------------------------------------------------------ order receipts from both critical-path repos (lane V23-L)
+
+  # A real git checkout standing in for GGEN_IGNITER_DIR (its toplevel path).
+  defp ggen_checkout do
+    dir = tmp_dir("v23l_ggen_igniter")
+    {_, 0} = System.cmd("git", ["init", "-q", dir])
+    commit!(dir, "ggen fixture")
+    {top, 0} = System.cmd("git", ["-C", dir, "rev-parse", "--show-toplevel"])
+    String.trim(top)
+  end
+
+  defp commit!(repo, message) do
+    {_, 0} = System.cmd("git", ["-C", repo, "add", "-A"])
+
+    {_, 0} =
+      System.cmd("git", [
+        "-C",
+        repo,
+        "-c",
+        "user.email=court@example.org",
+        "-c",
+        "user.name=court",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        message
+      ])
+
+    head(repo)
+  end
+
+  # The registry defaults for GC-26.9.23: no --order-receipts-dir, so the
+  # order receipts are read from <repo>/receipts/v26.9.23, then
+  # <ggen>/receipts/v26.9.23.
+  defp registry_args(repo, ggen, more) do
+    [
+      "--checkpoint",
+      "GC-26.9.23",
+      "--repo",
+      repo,
+      "--graph",
+      Path.join(repo, "goal/goal.ttl"),
+      "--receipts-dir",
+      Path.join(repo, "gate-receipts"),
+      "--ggen-igniter-dir",
+      ggen
+    ] ++ more
+  end
+
+  defp registry_court(repo, ggen, more \\ []) do
+    code = make_ref()
+
+    out =
+      capture_io(fn -> send(self(), {code, StopCourt.cli(registry_args(repo, ggen, more))}) end)
+
+    assert_received {^code, exit_code}
+    {exit_code, out}
+  end
+
+  # An R-schema order receipt in `dir`, identity bound to the HEAD of the
+  # repository that holds `dir`; `note` varies the bytes.
+  defp put_order_receipt(dir, id, digest, standing, note) do
+    File.mkdir_p!(dir)
+    {top, 0} = System.cmd("git", ["-C", dir, "rev-parse", "--show-toplevel"])
+    top = String.trim(top)
+    sha = head(top)
+    path = Path.join(dir, "#{id}.json")
+
+    File.write!(
+      path,
+      Jason.encode!(%{
+        "identity" => %{
+          "subject" => id,
+          "repo" => top,
+          "subject_sha" => sha,
+          "base_sha" => sha,
+          "tuple_digest" => digest
+        },
+        "authority" => %{"ceiling" => "CONSTRUCT", "grant" => "NONE", "actor" => "fixture"},
+        "consequence" => %{"commits" => [], "files_changed" => [], "remote_effects" => []},
+        "replay" => %{"commands" => [%{"cmd" => "true", "cwd" => top, "exit" => 0}]},
+        "standing" => %{"value" => standing, "derived_from" => note}
+      })
+    )
+
+    path
+  end
+
+  # The STOP receipt, re-validated by an independent validator run, keyed by order.
+  defp stop_orders(repo) do
+    path = Path.join(repo, "gate-receipts/STOP-GC-26.9.23.json")
+    {vcode, vout} = validate([path])
+    assert vcode == 0, vout
+    assert vout =~ "ADMITTED #{path}"
+    receipt = path |> File.read!() |> Jason.decode!()
+    {receipt, Map.new(receipt["stop"]["orders"], &{&1["order"], &1})}
+  end
+
+  defp sha256_of(path),
+    do: "sha256:" <> Base.encode16(:crypto.hash(:sha256, File.read!(path)), case: :lower)
+
+  test "GC-26.9.23 registry: order receipts from <repo>/receipts/v26.9.23, then GGEN_IGNITER_DIR/receipts/v26.9.23 (--ggen-igniter-dir precedence)" do
+    assert StopCourt.checkpoints()["GC-26.9.23"].order_receipts_dirs == [
+             {:repo, "receipts/v26.9.23"},
+             {:ggen_igniter, "receipts/v26.9.23"}
+           ]
+
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    File.mkdir_p!(Path.join(ggen, "receipts/v26.9.23"))
+
+    {:ok, report} = StopCourt.court(registry_args(repo, ggen, []))
+
+    assert Enum.map(report.order_receipts_dirs, &{&1.origin, &1.dir, &1.repo, &1.head}) == [
+             {"repo", Path.join(repo, "receipts/v26.9.23"), nil, nil},
+             {"ggen_igniter", Path.join(ggen, "receipts/v26.9.23"), ggen, head(ggen)}
+           ]
+
+    assert report.order_receipts_dir == Path.join(repo, "receipts/v26.9.23")
+    assert report.court_env["GGEN_IGNITER_DIR"] == ggen
+
+    {stop, _orders} = stop_orders(repo)
+
+    assert stop["stop"]["order_receipt_dirs"] == [
+             %{
+               "dir" => Path.join(repo, "receipts/v26.9.23"),
+               "origin" => "repo",
+               "repo" => nil,
+               "repo_head" => nil
+             },
+             %{
+               "dir" => Path.join(ggen, "receipts/v26.9.23"),
+               "origin" => "ggen_igniter",
+               "repo" => ggen,
+               "repo_head" => head(ggen)
+             }
+           ]
+  end
+
+  test "an order whose receipt lives only in the second dir (GGEN_IGNITER_DIR) links ALIVE; the STOP receipt records that dir and repo HEAD" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    digest = python_digest(@wo_a_tuple)
+    dir = Path.join(ggen, "receipts/v26.9.23")
+
+    path = put_order_receipt(dir, "WO-A", digest, "ALIVE", "fixture command exit 0")
+    receipt_head = commit!(ggen, "WO-A receipt")
+    refute File.exists?(Path.join(repo, "receipts/v26.9.23/WO-A.json"))
+
+    {code, out} = registry_court(repo, ggen)
+    assert code == 0, out
+    assert out =~ "order WO-A standing=ALIVE receipt=ADMITTED digest=#{digest}"
+    assert out =~ "from=ggen_igniter:#{dir}@#{receipt_head}"
+    assert out =~ "order receipts ggen_igniter #{dir} (#{ggen} @ #{receipt_head})"
+    assert out =~ "STOP=true"
+
+    {stop, orders} = stop_orders(repo)
+    assert stop["standing"]["value"] == "ALIVE"
+
+    assert orders["WO-A"] == %{
+             "order" => "WO-A",
+             "tuple_digest" => digest,
+             "verdict" => "ADMITTED",
+             "linked" => true,
+             "standing" => "ALIVE",
+             "why_unlinked" => nil,
+             "found_in" => [path],
+             "receipt" => path,
+             "receipt_sha256" => sha256_of(path),
+             "dir" => dir,
+             "origin" => "ggen_igniter",
+             "repo" => ggen,
+             "repo_head" => receipt_head,
+             "committed_at_head" => true
+           }
+
+    # The same dir, bytes no longer the blob at HEAD: still linked, recorded uncommitted.
+    put_order_receipt(dir, "WO-A", digest, "ALIVE", "fixture command exit 0 (edited)")
+    assert {0, _} = registry_court(repo, ggen)
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["linked"] == true
+    assert orders["WO-A"]["committed_at_head"] == false
+  end
+
+  test "an order receipt missing from every dir stays MISSING (STOP=false)" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    File.mkdir_p!(Path.join(repo, "receipts/v26.9.23"))
+    File.mkdir_p!(Path.join(ggen, "receipts/v26.9.23"))
+    digest = python_digest(@wo_a_tuple)
+
+    {code, out} = registry_court(repo, ggen)
+    assert code == 1
+    assert out =~ "order WO-A standing=NONE receipt=MISSING digest=#{digest} unlinked=:missing\n"
+    assert out =~ "STOP=false"
+
+    {stop, orders} = stop_orders(repo)
+    assert stop["standing"]["value"] == "UNKNOWN"
+    assert orders["WO-A"]["verdict"] == "MISSING"
+    assert orders["WO-A"]["linked"] == false
+    assert orders["WO-A"]["found_in"] == []
+    assert orders["WO-A"]["dir"] == nil
+    assert orders["WO-A"]["repo_head"] == nil
+  end
+
+  test "different receipts for one order in both dirs: REFUSED(duplicate_order_receipt), never a silent pick" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    digest = python_digest(@wo_a_tuple)
+    xaas_dir = Path.join(repo, "receipts/v26.9.23")
+    ggen_dir = Path.join(ggen, "receipts/v26.9.23")
+
+    a = put_order_receipt(xaas_dir, "WO-A", digest, "ALIVE", "the xaas copy")
+    b = put_order_receipt(ggen_dir, "WO-A", digest, "ALIVE", "the ggen_igniter copy")
+
+    # Each copy alone is ADMITTED and bound to the digest: either would link.
+    {vcode, vout} = validate([a, b])
+    assert vcode == 0, vout
+
+    {code, out} = registry_court(repo, ggen)
+    assert code == 1, out
+
+    assert out =~
+             "order WO-A standing=NONE receipt=REFUSED digest=#{digest}" <>
+               " unlinked=#{inspect({:duplicate_order_receipt, [a, b]})}"
+
+    assert out =~ "STOP=false"
+    refute out =~ "from="
+
+    {stop, orders} = stop_orders(repo)
+    assert stop["standing"]["value"] == "UNKNOWN"
+    wo = orders["WO-A"]
+    assert wo["refusal"] == "REFUSED(duplicate_order_receipt)"
+    assert wo["broken_term"] == "R_missing_identity"
+    assert wo["verdict"] == "REFUSED"
+    assert wo["linked"] == false
+    assert wo["found_in"] == [a, b]
+    assert wo["receipt"] == nil
+    assert wo["dir"] == nil
+
+    # Same bytes in both dirs is one receipt, judged from the first dir.
+    File.cp!(b, a)
+    {code, out} = registry_court(repo, ggen)
+    assert code == 0, out
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["dir"] == xaas_dir
+    assert orders["WO-A"]["origin"] == "repo"
+    assert orders["WO-A"]["found_in"] == [a, b]
+    refute Map.has_key?(orders["WO-A"], "refusal")
+
+    # Only the second dir left: it links from there.
+    File.rm!(a)
+    {code, _out} = registry_court(repo, ggen)
+    assert code == 0
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["dir"] == ggen_dir
+    assert orders["WO-A"]["found_in"] == [b]
+  end
+
+  test "--order-receipts-dir is repeatable and replaces the registry list (GGEN_IGNITER_DIR is then not read)" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    digest = python_digest(@wo_a_tuple)
+    first = Path.join(repo, "first")
+    second = Path.join(repo, "second")
+
+    put_order_receipt(Path.join(ggen, "receipts/v26.9.23"), "WO-A", digest, "ALIVE", "ggen copy")
+    more = ["--order-receipts-dir", first, "--order-receipts-dir", second]
+
+    {:ok, report} = StopCourt.court(registry_args(repo, ggen, more))
+
+    assert Enum.map(report.order_receipts_dirs, &{&1.origin, &1.dir}) == [
+             {"option", first},
+             {"option", second}
+           ]
+
+    {code, out} = registry_court(repo, ggen, more)
+    assert code == 1
+    assert out =~ "order WO-A standing=NONE receipt=MISSING digest=#{digest}"
+
+    path = put_order_receipt(second, "WO-A", digest, "ALIVE", "second copy")
+    {code, out} = registry_court(repo, ggen, more)
+    assert code == 0, out
+    assert out =~ "from=option:#{second}@#{head(repo)}"
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["found_in"] == [path]
+    assert orders["WO-A"]["repo"] == repo
+  end
 end
