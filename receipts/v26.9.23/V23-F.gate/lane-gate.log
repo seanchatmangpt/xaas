@@ -1,10 +1,17 @@
+test_an_internal_error_exits_cannot_run_not_refused (test_fleet_matrix.FleetMatrixTest.test_an_internal_error_exits_cannot_run_not_refused) ... ok
 test_check_standing_admits_an_alive_receipt_at_the_exact_head (test_fleet_matrix.FleetMatrixTest.test_check_standing_admits_an_alive_receipt_at_the_exact_head) ... ok
 test_check_standing_binds_a_relative_int_path_to_an_absolute_receipt_repo (test_fleet_matrix.FleetMatrixTest.test_check_standing_binds_a_relative_int_path_to_an_absolute_receipt_repo) ... ok
 test_check_standing_refuses_a_receipt_the_validator_does_not_admit (test_fleet_matrix.FleetMatrixTest.test_check_standing_refuses_a_receipt_the_validator_does_not_admit) ... ok
 test_check_standing_refuses_non_alive_excluded_and_unobserved_subjects (test_fleet_matrix.FleetMatrixTest.test_check_standing_refuses_non_alive_excluded_and_unobserved_subjects) ... ok
+test_check_standing_reports_unreadable_and_non_r_receipts_instead_of_dropping_them (test_fleet_matrix.FleetMatrixTest.test_check_standing_reports_unreadable_and_non_r_receipts_instead_of_dropping_them) ... ok
 test_classification_outside_the_universe_is_refused (test_fleet_matrix.FleetMatrixTest.test_classification_outside_the_universe_is_refused) ... ok
 test_complete_classification_is_admitted (test_fleet_matrix.FleetMatrixTest.test_complete_classification_is_admitted) ... ok
 test_court_executing_a_nonrequired_repository_is_refused (test_fleet_matrix.FleetMatrixTest.test_court_executing_a_nonrequired_repository_is_refused) ... ok
+test_court_is_unknown_without_exact_head_receipts_and_alive_with_them (test_fleet_matrix.FleetMatrixTest.test_court_is_unknown_without_exact_head_receipts_and_alive_with_them) ... ok
+test_court_refuses_an_unclassified_repository_ard_f7 (test_fleet_matrix.FleetMatrixTest.test_court_refuses_an_unclassified_repository_ard_f7) ... ok
+test_court_reports_a_classification_that_cannot_run_as_unknown_not_refused (test_fleet_matrix.FleetMatrixTest.test_court_reports_a_classification_that_cannot_run_as_unknown_not_refused) ... ok
+test_court_reports_absent_rdflib_as_unknown_not_an_f7_refusal (test_fleet_matrix.FleetMatrixTest.test_court_reports_absent_rdflib_as_unknown_not_an_f7_refusal) ... ok
+test_court_reports_check_standing_that_cannot_run_as_unknown (test_fleet_matrix.FleetMatrixTest.test_court_reports_check_standing_that_cannot_run_as_unknown) ... ok
 test_duplicate_classification_is_refused (test_fleet_matrix.FleetMatrixTest.test_duplicate_classification_is_refused) ... ok
 test_emit_is_byte_identical_for_identical_inputs_and_refuses_uncovered_rows (test_fleet_matrix.FleetMatrixTest.test_emit_is_byte_identical_for_identical_inputs_and_refuses_uncovered_rows) ... ok
 test_f6_receipt_at_a_stale_subject_no_longer_applies (test_fleet_matrix.FleetMatrixTest.test_f6_receipt_at_a_stale_subject_no_longer_applies) ... ok
@@ -14,7 +21,7 @@ test_required_flag_and_successor_target_are_checked (test_fleet_matrix.FleetMatr
 test_universe_is_the_sorted_union_of_fleet_survey_and_ard_section_4 (test_fleet_matrix.FleetMatrixTest.test_universe_is_the_sorted_union_of_fleet_survey_and_ard_section_4) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 12.475s
+Ran 21 tests in 34.468s
 
 OK
 check-classification: OK 21 repositories classified exactly once (Blocked=1, CriticalPath=2, Refused=3, Successor=14, Unsupported=1)

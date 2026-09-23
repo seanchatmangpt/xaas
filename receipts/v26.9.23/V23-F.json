@@ -7,7 +7,8 @@
   "consequence": {
     "commits": [
       "fb0cff683104873e6c8210a70e921ecb5fdfd5b6",
-      "5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c"
+      "5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c",
+      "6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012"
     ],
     "files_changed": [
       "HANDWRITTEN.md",
@@ -24,6 +25,9 @@
     ],
     "remote_effects": []
   },
+  "environment": {
+    "disk": "2 GB free at start, 0-3 GB during the run (ENOSPC hit twice on the harness output file); oclnr snapshot thin --bytes 20GB exit 0 x2, thinned 0 snapshots (none present); oclnr emergency dry-run lists 14.06 GB of regenerable caches, not executed (cache deletion outside this lane's authority)"
+  },
   "external_effects": [
     "git fetch --all --tags --no-prune --no-recurse-submodules (gc.auto=0, maintenance.auto=false) in the 20 local fleet checkouts named by fleet/universe.json: remote-tracking refs and tags only, nothing forced, no prune",
     "ggen: fetch exit 1, 36 tag updates refused as 'would clobber existing tag' from origin and upstream (left as found)",
@@ -32,6 +36,7 @@
   ],
   "falsifiers": {
     "chicago_mock_grep": {
+      "at": "6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012",
       "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\" scripts/sjira/",
       "exit": 1,
       "matches": 0
@@ -41,7 +46,7 @@
       "C2a clone + tiny ggen_igniter repo + scratch ALIVE receipts at both exact heads (validator ADMITTED) -> GC23-11.sh exit 0 ALIVE (court is not vacuous-UNKNOWN); first attempt exposed the relative --int binding defect fixed in 5aba8d0",
       "C2b (ARD F6) one commit on the xaas clone after the receipt -> REFUSED(stale_subject) for xaas, GC23-11.sh exit 3 UNKNOWN"
     ],
-    "note": "mutations applied to scratch copies of scripts/sjira/{fleet_matrix,test_fleet_matrix}.py; court falsifiers run on git clone --shared copies of the lane in the session scratchpad; lane worktree untouched",
+    "note": "mutations applied to scratch copies of scripts/sjira/{fleet_matrix,test_fleet_matrix}.py and courts/GC23-11.sh in the session scratchpad; court falsifiers run on git clone --shared copies (round 0) and on real temp checkouts inside the tests (repair 1); lane worktree untouched by mutation",
     "revert_mutations_killed": [
       "r1 product script absent (tests only) -> 13 of 13 tests fail (run before the regression test was added)",
       "M1 unclassified check removed -> test_f7_unclassified_repository_fails_the_fleet_checkpoint + emit test fail",
@@ -119,10 +124,11 @@
     "court": "sh docs/sjira/v26.9.23/courts/GC23-11.sh",
     "cwd": "/Users/sac/wt/v26922/v23/V23-F",
     "exit": 3,
-    "exit_mapping": "REFUSED_EXIT=1 (classification violation), UNKNOWN_EXIT=3 (standing not established); stop court on friday/gc-fri-0800 maps 0->ALIVE, non-zero->UNKNOWN. Align UNKNOWN_EXIT with any distinct code V23-P lands (same path, merged at integration).",
-    "output_sha256": "f41bc566ca31bfa55b97bd1ab48b80bdf74af17b7b9c8b1787019f55122858e9",
-    "reason": "check-classification OK (F7 holds); check-standing: xaas and ggen_igniter have no validator-ADMITTED ALIVE receipt at their exact heads. Expected until release (V23-Q): such a receipt must live outside its subject (a commit cannot carry a receipt of itself), e.g. GC23_FLEET_RECEIPTS_DIR=/Users/sac/wt/v26922/v26923/receipts/fleet.",
-    "standing": "UNKNOWN"
+    "exit_mapping": "fleet_matrix.py: 0 holds, 1 explicit refusal only, 2 cannot run (CannotRun, rdflib absent, or an internal error with traceback). GC23-11.sh: check-classification/emit exit 1 -> REFUSED (exit 1); any other non-zero step exit -> 'UNKNOWN: GC23-11 <step> could not run (exit N)' (exit 3); check-standing exit 1 -> UNKNOWN lacking exact-head standing (exit 3). Stop court on friday/gc-fri-0800 maps 0->ALIVE, non-zero->UNKNOWN and keeps the last line as summary. Align UNKNOWN_EXIT with any distinct code V23-P lands (same path, merged at integration).",
+    "output_sha256": "e068dd78723b5f6dafc189dc5e547ab53920d8681cc03c56970ef5d28b9e14b6",
+    "reason": "check-classification OK (F7 holds); check-standing: xaas (6f4f280) and ggen_igniter (5984ec48) have no validator-ADMITTED ALIVE receipt at their exact heads. Expected until release (V23-Q): such a receipt must live outside its subject (a commit cannot carry a receipt of itself), e.g. GC23_FLEET_RECEIPTS_DIR=/Users/sac/wt/v26922/v26923/receipts/fleet.",
+    "standing": "UNKNOWN",
+    "summary": "GC23-11 gate UNKNOWN (expected): classification OK; xaas 6f4f280 has only a stale lane receipt (REFUSED(stale_subject) at 5aba8d0), ggen_igniter-int 5984ec48 has 0 receipts; 0 unreadable receipts"
   },
   "generated_vs_handwritten": {
     "generated": [
@@ -150,44 +156,71 @@
     "prose": "docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 (39386 bytes, byte copy)",
     "repo": "/Users/sac/xaas",
     "subject": "V23-F",
-    "subject_sha": "5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c",
+    "subject_sha": "6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012",
     "worktree": "/Users/sac/wt/v26922/v23/V23-F"
   },
   "llm_on_product_path": "none: no LLM, model API or zcode binary is invoked by fleet_matrix.py or GC23-11.sh; classification.ttl was authored by this lane from observations (a CONSTRUCT candidate admitted by check-classification)",
+  "repair_1": {
+    "answers": "wave-B0 DOCTRINE court verdict refuted (broken_term swallowed_error) at 1d5dc40; GATE and REVERT-MUTATION lenses passed at 1d5dc40",
+    "commit": "6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012",
+    "new_tests": [
+      "test_check_standing_reports_unreadable_and_non_r_receipts_instead_of_dropping_them (corrupt JSON, a directory named *.json -> IsADirectoryError, a JSON list)",
+      "test_an_internal_error_exits_cannot_run_not_refused (universe.json '[]' -> traceback + exit 2)",
+      "test_court_reports_a_classification_that_cannot_run_as_unknown_not_refused (corrupt universe.json -> court exit 3, last line UNKNOWN)",
+      "test_court_reports_absent_rdflib_as_unknown_not_an_f7_refusal (PYTHONNOUSERSITE=1 hides user-site rdflib; ran, not skipped, on this host)",
+      "test_court_reports_check_standing_that_cannot_run_as_unknown (HOME without ~/.claude/dfcm/validate_receipt.py)",
+      "test_court_refuses_an_unclassified_repository_ard_f7 (court exit 1, last line REFUSED ... (ARD F7))",
+      "test_court_is_unknown_without_exact_head_receipts_and_alive_with_them (court exit 3 then exit 0 ALIVE with a corrupt receipt reported alongside)"
+    ],
+    "not_mutation_covered": "GC23-11.sh emit 'could not run' branch: emit reads only files check-classification/observe already accepted, so no external input reaches emit exit 2 after those succeed; the branch is the same rc mapping as the covered check-classification branch",
+    "refutations_addressed": [
+      "swallowed_error fleet_matrix.py:858-861: load_receipts now prints REFUSED(unreadable_receipt): <path>: <ExceptionType>: <msg> per unreadable/corrupt file and IGNORED(not_r_receipt) per JSON without identity; the UNKNOWN line and summary carry the counts; an unreadable receipt binds no repository (can lower standing, never raise it)",
+      "standing mis-typed GC23-11.sh: rc 1 from check-classification/emit -> REFUSED; any other non-zero (2 CannotRun, 127, signal) -> UNKNOWN '<step> could not run (exit N)' exit 3; check-standing rc 1 vs other separated",
+      "root cause of the mis-typing closed at the source: rdflib absent -> CannotRun via require_rdflib; any uncaught exception -> traceback + exit 2 (Python's default exit 1 collided with REFUSED_EXIT)"
+    ],
+    "revert_mutations_killed": [
+      "Ma silent continue restored in load_receipts -> 2 FAIL (unreadable-receipt test, court ALIVE test)",
+      "Mb court check-classification any-nonzero -> REFUSED restored -> 2 FAIL (corrupt-universe court test, absent-rdflib court test)",
+      "Mc crash handler removed -> 1 FAIL (internal-error test)",
+      "Md require_rdflib reverted to bare import -> 1 FAIL (absent-rdflib court test)",
+      "Me court check-standing rc branch collapsed -> 1 FAIL (check-standing cannot-run court test)",
+      "control (unmutated scratch copy) -> Ran 21 tests OK"
+    ]
+  },
   "replay": {
     "commands": [
       {
         "cmd": "python3 -m unittest discover -s scripts/sjira -p 'test_fleet*.py' -v && python3 scripts/sjira/fleet_matrix.py check-classification --classification docs/sjira/v26.9.23/fleet/classification.ttl --universe docs/sjira/v26.9.23/fleet/universe.json",
         "cwd": "/Users/sac/wt/v26922/v23/V23-F",
         "exit": 0,
-        "output_sha256": "8837dc4e6631c4738089aeff6e829b18f46a9a6a6f47152ba2cc03e16981b7f6",
-        "summary": "lane gate: Ran 14 tests OK; check-classification OK 21 repositories classified exactly once (Blocked=1, CriticalPath=2, Refused=3, Successor=14, Unsupported=1)"
+        "output_sha256": "11e69992318b04a1372ef511650318898c1e4de7bd3c0e66a85e2121fcc5a7cd",
+        "summary": "lane gate at 6f4f280: Ran 21 tests OK (14 prior + 7 repair-1); check-classification OK 21 repositories classified exactly once (Blocked=1, CriticalPath=2, Refused=3, Successor=14, Unsupported=1)"
       },
       {
         "cmd": "mix format --check-formatted",
         "cwd": "/Users/sac/wt/v26922/v23/V23-F",
         "exit": 0,
-        "output_sha256": "c991c1dba001b996b15efaf2ed934770687c14cbcf3dc8b5735b6fba38efe767",
-        "summary": "xaas lane gate prefix (deps/_build APFS-cloned from fri/xaas-int; 0 Elixir files changed by this lane)"
+        "output_sha256": "305836dc573032a9b1a8757e76a65aaf04fd0fd1f97a661e24b985102a2970fd",
+        "summary": "xaas lane gate prefix; only output is the pre-existing deps/ex4pm/mix.exs Application.get_env warning (dependency, not app code); 0 Elixir files changed by this lane"
       },
       {
         "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
         "cwd": "/Users/sac/wt/v26922/v23/V23-F",
         "exit": 0,
-        "output_sha256": "d33bcc8fb33d2770da39eb474ee8fcbccc63508e78f8361df6b8222dd8f7f984",
+        "output_sha256": "3e4120949a8c73536257d72c2b701f382c869c94ff71197438a8961280ae1db9",
         "summary": "Compiling 506 files (.ex); Generated xaas app"
       },
       {
         "cmd": "python3 scripts/sjira/fleet_matrix.py emit --classification docs/sjira/v26.9.23/fleet/classification.ttl --observations docs/sjira/v26.9.23/fleet/observations.json --out-ttl <scratch>/matrix.ttl --out-md <scratch>/matrix.md && cmp <scratch>/matrix.ttl docs/sjira/v26.9.23/fleet/matrix.ttl && cmp <scratch>/matrix.md docs/sjira/v26.9.23/fleet/matrix.md",
         "cwd": "/Users/sac/wt/v26922/v23/V23-F",
         "exit": 0,
-        "summary": "committed matrix baseline reproduces byte-identically from the committed inputs"
+        "summary": "committed matrix baseline reproduces byte-identically from the committed inputs at 6f4f280"
       }
     ],
     "durable_location": "receipts/v26.9.23/V23-F.json + receipts/v26.9.23/V23-F.gate/*.log (git-tracked)"
   },
   "standing": {
-    "derived_from": "lane V23-F deliverables: the four replay commands exited 0 at 5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c in /Users/sac/wt/v26922/v23/V23-F (lane gate = wave-B0.json V23-F gate). This is lane standing, not GC23-11 gate standing (see gc23_11).",
+    "derived_from": "lane V23-F deliverables at 6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012 in /Users/sac/wt/v26922/v23/V23-F: lane gate (wave-B0.json V23-F gate) exit 0, mix format exit 0, MIX_ENV=test mix compile --force --warnings-as-errors exit 0, emit replay cmp exit 0; the GC23-11 court ran and exited 3 as recorded. This is lane standing, not GC23-11 gate standing (see gc23_11).",
     "value": "ALIVE"
   },
   "unresolved": [
@@ -197,6 +230,8 @@
     "CriticalPath exact-head receipts must be produced out-of-subject at release (V23-Q); catalog composition C21",
     "open-ontologies is absent from fleet.ttl/survey.json (found via ARD section 4 + local checkout): regenerate the fleet registry in the successor",
     "admit fleet vocabulary + classification shape into semantic-jira-pack; retire observe/emit once GGEN_IGNITER-26922-15 lands (GC-26.9.24)",
-    "court-reference guard is lexical (paths, ~/name, $HOME/name, NAME_DIR); a court reaching a repo only through a PATH executable is not detected"
+    "court-reference guard is lexical (paths, ~/name, $HOME/name, NAME_DIR); a court reaching a repo only through a PATH executable is not detected",
+    "disk pressure is fleet-wide (0-3 GB free): operator/driver edge to run oclnr emergency --yes or clean merged-lane _build/deps via osx-clnr plan",
+    "the court-level ALIVE path is now exercised inside the unit tests (temp checkouts); the release-time out-of-subject receipt location is still V23-Q's"
   ]
 }
