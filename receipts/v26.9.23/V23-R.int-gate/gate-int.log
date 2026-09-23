@@ -1,0 +1,26 @@
+subject: 86345d991c3a5f69bb3068d175a7ff8301f34bc6 (merge of v23/V23-R 87716d0 onto 04599d6); ggen_igniter-int 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+cmd: mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/semantic_replay_test.exs && XAAS_DIR=$PWD GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-10.sh
+format_exit=0
+Compiling 514 files (.ex)
+Generated xaas app
+compile_exit=0
+07:21:15.543 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+07:21:15.913 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+07:21:16.186 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+Running ExUnit with seed: 272679, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+.............
+Finished in 45.7 seconds (0.00s async, 45.7s sync)
+13 tests, 0 failures
+test_exit=0
+record matches the episode-time projection: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb
+recorded: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb (subject ref v23/episode-fmt-1-receipt)
+fence: /Users/sac/.claude unreadable under the replay profile
+cold: 2 runs, digest sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb == recorded; standing {'EP-A': 'ALIVE', 'EP-B': 'UNKNOWN'}, completed ['EP-A'], eligible ['EP-B']
+F3: REFUSED(llm_credential_present), broken term mu_on_O
+F5: EP-A ALIVE -> UNKNOWN, eligible ['EP-A'], typed [('unreceipted_transition', 'R_missing_replay', 'EP-A')]
+F6: covered commit -> EP-A UNKNOWN typed [('subject_changed', 'R_missing_identity', 'EP-A')]; control (docs/ only) -> EP-A ALIVE, frontier as recorded
+ALIVE: GC23-10 cold replay of episode fmt-1 reproduces the recorded digest twice under the no-LLM, ~/.claude-fenced env; F3, F5 and F6 witnessed
+court_exit=0
