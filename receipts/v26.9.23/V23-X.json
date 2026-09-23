@@ -207,5 +207,48 @@
   },
   "unsupported": [
     "UNSUPPORTED(generator-capability): no generator renders a quote-to-byte-span binder or deterministic PVOCAB serializer (checked ggen crates, ggen_igniter lib/ + semantic-jira-pack, ggen-marketplace semantic-documentation-contract-pack sd:SourceSpan line/column only, open-ontologies src/extract_scaffold.rs). Ledger: HANDWRITTEN.md"
-  ]
+  ],
+  "integration": {
+    "target_branch": "friday/gc-fri-0800",
+    "worktree": "/Users/sac/wt/v26922/fri/xaas-int",
+    "lock": "/Users/sac/wt/v26922/fri/xaas-int.merge.lock (owner claude:B0:V23-X)",
+    "merged_ref": "v23/V23-X",
+    "merged_sha": "5fef0ac7a2676fc499c7d2863cf5e7b168c722d6",
+    "pre_merge_head": "2478a2621c4d9dab0861686bf23bf3cc72235f5b",
+    "merge_cmd": "git merge --no-ff v23/V23-X -F <msgfile>",
+    "merge_commit": "b7b17721e9da7de2729af15858f58eea4684cd24",
+    "merge_note": "merge-base bd1efb1; docs/sjira/v26.9.23/prd-ard.md is blob d7e1d61 on both sides (sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212), no conflict",
+    "conflicts": [
+      {
+        "path": "HANDWRITTEN.md",
+        "kind": "content: both sides inserted one Active row at the same position (int: V23-F fleet_matrix row; lane: V23-X prose_spans row)",
+        "resolution": "kept both rows (int row, blank line, lane row); diff vs pre-merge head +2 lines, diff vs lane head +6 lines, no row dropped"
+      }
+    ],
+    "lane_gate": [
+      {
+        "cmd": "python3 -m unittest discover -s scripts/sjira -p 'test_*.py' -v && python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/prd-ard.md --candidates docs/sjira/v26.9.23/candidates/prd-ard.ttl --require-gates 13",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-X.int-gate/lane_gate.log",
+        "output_sha256": "sha256:3b38c8555c65cea23a37f45b511337b1c1e6111fcb3d6b67c61c14f05481c364",
+        "summary": "Ran 36 tests OK (prose_spans + fleet_matrix); CHECK OK: 241 candidates, 13 gates covered; required 215 + not_required 26"
+      },
+      {
+        "cmd": "mix format --check-formatted",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-X.int-gate/format.log",
+        "output_sha256": "sha256:8f1c65f9bdd102cb8cfdd13a71f75d0c82ca72ff20d318776752e02ffe4a7907"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-X.int-gate/compile.log",
+        "output_sha256": "sha256:469993b5389531b8e5d26618248b52b0474c2ac4ef62616babaf09a3721895a9",
+        "summary": "Compiling 507 files (.ex); Generated xaas app"
+      }
+    ],
+    "subject_sha_of_gate": "b7b17721e9da7de2729af15858f58eea4684cd24",
+    "gate_standing_claimed": false,
+    "note": "integration does not change the lane standing scope: candidates stay UNKNOWN until V23-C admission; GC23-0 gate standing is not asserted"
+  }
 }

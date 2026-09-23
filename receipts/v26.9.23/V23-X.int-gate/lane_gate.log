@@ -1,0 +1,43 @@
+test_an_internal_error_exits_cannot_run_not_refused (test_fleet_matrix.FleetMatrixTest.test_an_internal_error_exits_cannot_run_not_refused) ... ok
+test_check_standing_admits_an_alive_receipt_at_the_exact_head (test_fleet_matrix.FleetMatrixTest.test_check_standing_admits_an_alive_receipt_at_the_exact_head) ... ok
+test_check_standing_binds_a_relative_int_path_to_an_absolute_receipt_repo (test_fleet_matrix.FleetMatrixTest.test_check_standing_binds_a_relative_int_path_to_an_absolute_receipt_repo) ... ok
+test_check_standing_refuses_a_receipt_the_validator_does_not_admit (test_fleet_matrix.FleetMatrixTest.test_check_standing_refuses_a_receipt_the_validator_does_not_admit) ... ok
+test_check_standing_refuses_non_alive_excluded_and_unobserved_subjects (test_fleet_matrix.FleetMatrixTest.test_check_standing_refuses_non_alive_excluded_and_unobserved_subjects) ... ok
+test_check_standing_reports_unreadable_and_non_r_receipts_instead_of_dropping_them (test_fleet_matrix.FleetMatrixTest.test_check_standing_reports_unreadable_and_non_r_receipts_instead_of_dropping_them) ... ok
+test_classification_outside_the_universe_is_refused (test_fleet_matrix.FleetMatrixTest.test_classification_outside_the_universe_is_refused) ... ok
+test_complete_classification_is_admitted (test_fleet_matrix.FleetMatrixTest.test_complete_classification_is_admitted) ... ok
+test_court_executing_a_nonrequired_repository_is_refused (test_fleet_matrix.FleetMatrixTest.test_court_executing_a_nonrequired_repository_is_refused) ... ok
+test_court_is_unknown_without_exact_head_receipts_and_alive_with_them (test_fleet_matrix.FleetMatrixTest.test_court_is_unknown_without_exact_head_receipts_and_alive_with_them) ... ok
+test_court_refuses_an_unclassified_repository_ard_f7 (test_fleet_matrix.FleetMatrixTest.test_court_refuses_an_unclassified_repository_ard_f7) ... ok
+test_court_reports_a_classification_that_cannot_run_as_unknown_not_refused (test_fleet_matrix.FleetMatrixTest.test_court_reports_a_classification_that_cannot_run_as_unknown_not_refused) ... ok
+test_court_reports_absent_rdflib_as_unknown_not_an_f7_refusal (test_fleet_matrix.FleetMatrixTest.test_court_reports_absent_rdflib_as_unknown_not_an_f7_refusal) ... ok
+test_court_reports_check_standing_that_cannot_run_as_unknown (test_fleet_matrix.FleetMatrixTest.test_court_reports_check_standing_that_cannot_run_as_unknown) ... ok
+test_duplicate_classification_is_refused (test_fleet_matrix.FleetMatrixTest.test_duplicate_classification_is_refused) ... ok
+test_emit_is_byte_identical_for_identical_inputs_and_refuses_uncovered_rows (test_fleet_matrix.FleetMatrixTest.test_emit_is_byte_identical_for_identical_inputs_and_refuses_uncovered_rows) ... ok
+test_f6_receipt_at_a_stale_subject_no_longer_applies (test_fleet_matrix.FleetMatrixTest.test_f6_receipt_at_a_stale_subject_no_longer_applies) ... ok
+test_f7_unclassified_repository_fails_the_fleet_checkpoint (test_fleet_matrix.FleetMatrixTest.test_f7_unclassified_repository_fails_the_fleet_checkpoint) ... ok
+test_observe_records_exact_git_state_without_touching_the_checkout (test_fleet_matrix.FleetMatrixTest.test_observe_records_exact_git_state_without_touching_the_checkout) ... ok
+test_required_flag_and_successor_target_are_checked (test_fleet_matrix.FleetMatrixTest.test_required_flag_and_successor_target_are_checked) ... ok
+test_universe_is_the_sorted_union_of_fleet_survey_and_ard_section_4 (test_fleet_matrix.FleetMatrixTest.test_universe_is_the_sorted_union_of_fleet_survey_and_ard_section_4) ... ok
+test_boundary_standing_and_stray_triples_are_refused (test_prose_spans.ProseSpansTest.test_boundary_standing_and_stray_triples_are_refused) ... ok
+test_committed_prd_ard_candidates_verify_and_reproject (test_prose_spans.ProseSpansTest.test_committed_prd_ard_candidates_verify_and_reproject) ... ok
+test_deleting_only_candidate_for_required_gate_is_refused (test_prose_spans.ProseSpansTest.test_deleting_only_candidate_for_required_gate_is_refused) ... ok
+test_emit_is_byte_identical_and_order_independent (test_prose_spans.ProseSpansTest.test_emit_is_byte_identical_and_order_independent) ... ok
+test_emit_refuses_duplicate_span_and_kind (test_prose_spans.ProseSpansTest.test_emit_refuses_duplicate_span_and_kind) ... ok
+test_emit_refuses_missing_quote_bad_kind_and_unknown_key (test_prose_spans.ProseSpansTest.test_emit_refuses_missing_quote_bad_kind_and_unknown_key) ... ok
+test_emit_then_check_passes_with_byte_offsets (test_prose_spans.ProseSpansTest.test_emit_then_check_passes_with_byte_offsets) ... ok
+test_one_kind_mutated_is_refused (test_prose_spans.ProseSpansTest.test_one_kind_mutated_is_refused) ... ok
+test_one_offset_mutated_is_refused (test_prose_spans.ProseSpansTest.test_one_offset_mutated_is_refused) ... ok
+test_one_source_byte_mutated_is_refused (test_prose_spans.ProseSpansTest.test_one_source_byte_mutated_is_refused) ... ok
+test_one_source_text_mutated_is_refused (test_prose_spans.ProseSpansTest.test_one_source_text_mutated_is_refused) ... ok
+test_quote_with_two_occurrences_needs_an_index (test_prose_spans.ProseSpansTest.test_quote_with_two_occurrences_needs_an_index) ... ok
+test_statement_edit_is_projection_drift (test_prose_spans.ProseSpansTest.test_statement_edit_is_projection_drift) ... ok
+test_summary_of_a_refused_graph_says_failed (test_prose_spans.ProseSpansTest.test_summary_of_a_refused_graph_says_failed) ... ok
+test_summary_tallies_verified_candidates (test_prose_spans.ProseSpansTest.test_summary_tallies_verified_candidates) ... ok
+
+----------------------------------------------------------------------
+Ran 36 tests in 27.168s
+
+OK
+CHECK OK: 241 candidates bound to docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212; gates GC23-0=24 GC23-1=7 GC23-2=9 GC23-3=13 GC23-4=16 GC23-5=32 GC23-6=9 GC23-7=13 GC23-8=14 GC23-9=21 GC23-10=9 GC23-11=27 GC23-12=6
+TALLY: required 215 + not_required 26 = 241 (multi_required 0); requiredBy GC-26.9.23=15 GC23-0=24 GC23-1=7 GC23-10=9 GC23-11=27 GC23-12=6 GC23-2=9 GC23-3=13 GC23-4=16 GC23-5=32 GC23-6=9 GC23-7=13 GC23-8=14 GC23-9=21
