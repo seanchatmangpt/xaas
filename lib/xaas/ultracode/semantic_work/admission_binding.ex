@@ -107,11 +107,15 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
 
   # Top-level fields the graph side never feeds into a digest
   # (GgenIgniter.SemanticJira.drop_digest_fields/1).
-  @digest_fields ~w(work_order_digest transition_digest evidence_digest receipt_digest
-                    experience_digest repair_digest finding_digest composition_digest)
-  # Extra fields dropped for the stable definition identity
-  # (GgenIgniter.SemanticJira.definition_digest/1).
-  @definition_fields ~w(standing dimensions)
+  @digest_fields ~w(definition_digest work_order_digest transition_digest evidence_digest
+                    receipt_digest experience_digest repair_digest finding_digest
+                    composition_digest)
+  # The fields the stable definition identity is taken over
+  # (GgenIgniter.SemanticJira @definition_fields, digested by Map.take).
+  @definition_fields ~w(identity title description subject repository base_sha
+                        evidence_ceiling authority_requirement promotion_rule replay_identity
+                        dependencies required_courts required_evidence required_receipt_classes
+                        acceptance falsifiers projections path_scope)
 
   @type mode :: :snapshot | :graph
   @type options :: %{
@@ -176,7 +180,7 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
   """
   @spec definition_digest(map()) :: String.t()
   def definition_digest(snapshot) when is_map(snapshot) do
-    snapshot |> drop(@digest_fields ++ @definition_fields) |> SemanticReceipt.digest()
+    snapshot |> Map.take(@definition_fields) |> SemanticReceipt.digest()
   end
 
   @doc """
