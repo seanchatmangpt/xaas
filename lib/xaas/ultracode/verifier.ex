@@ -631,7 +631,16 @@ defmodule Xaas.Ultracode.Verifier do
     |> Map.new()
   end
 
-  defp argv_digest(suite) do
+  @doc """
+  The `argv_sha256` a verification (and its court receipt binding) records
+  for `suite`: lowercase hex sha256 over the JSON of each step's `:id`,
+  `:argv`, `:timeout_ms` and `:receipt_argv`. Environment, toolchain probes
+  and output limits are not part of it. Public so a court can check that a
+  receipt's replay command is the command the declaration that produced its
+  evidence runs (`Xaas.Receipt.RProjection.consistency/2`).
+  """
+  @spec argv_digest(map()) :: String.t()
+  def argv_digest(suite) do
     suite.steps
     |> Enum.map(&Map.take(&1, [:id, :argv, :timeout_ms, :receipt_argv]))
     |> Jason.encode!()

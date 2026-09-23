@@ -40,7 +40,12 @@ defmodule Xaas.Ultracode.SemanticDrive do
   `admission_vacuous`) the moment one hop's digest differs from the sJira
   digest. `verify_hops/1` replays that law over a recorded `hops.json`:
   each hop's digest must recompute from its recorded tuple AND equal every
-  other hop's digest.
+  other hop's digest. That law is internal consistency only: a `hops.json`
+  forged consistently at every hop satisfies it. `verify_hops/2` anchors
+  hop 0 to the admitted order: `anchor/1` re-derives the sJira-hop tuple
+  and request digests from the committed work graph through the graph
+  side's own `mix semantic_jira.descriptor` (the admitted snapshot digest is
+  the graph_digest), and every recorded hop must equal that anchor.
 
   ## Typed outcomes
 
@@ -74,8 +79,6 @@ defmodule Xaas.Ultracode.SemanticDrive do
   `machine_experience` route relates the event to its `MachineExperience`
   object by IRI, an `exploration` route to the candidate's proposer).
   """
-
-  require Ash.Query
 
   alias Xaas.Receipt.RProjection
   alias Xaas.Sa2a.Route
@@ -235,6 +238,284 @@ defmodule Xaas.Ultracode.SemanticDrive do
     do:
       {:refused,
        typed("REFUSED(hops_incomplete)", "hops_incomplete", "admission_vacuous", "replay", %{})}
+
+  @doc """
+  `verify_hops/1` AND the hop-0 anchor (ARD section 8: the digest is checked
+  sJira -> SA2A -> XaaS -> provider -> receipt, starting from the admitted
+  order, not from whatever the recording says hop 0 carried). `anchor` is
+  `anchor/1` / `anchor_from/2` output: every recorded hop's tuple digest must
+  equal the anchor's `tuple_digest` and every request digest its
+  `request_digest`, else `REFUSED(tuple_digest_mismatch)`
+  (`admission_vacuous`, hop `sjira`, detail `"anchor" =>
+  "admitted_work_graph"` with the carrier and the first differing field).
+  A hops document forged consistently at every hop passes `verify_hops/1`
+  and is refused here. `{:ok, %{"tuple_digest", "request_digest",
+  "anchor"}}` on success.
+  """
+  @spec verify_hops(map(), map()) :: {:ok, map()} | {:refused, map()}
+  def verify_hops(
+        doc,
+        %{"tuple_digest" => tuple_digest, "request_digest" => request_digest} = anchor
+      )
+      when is_binary(tuple_digest) and is_binary(request_digest) do
+    with {:ok, digests} <- verify_hops(doc),
+         :ok <- anchored(doc, "tuple", digests["tuple_digest"], anchor, Route.fields()),
+         :ok <- anchored(doc, "request", digests["request_digest"], anchor, @request_fields) do
+      {:ok,
+       Map.put(
+         digests,
+         "anchor",
+         Map.take(anchor, ~w(work_order tuple_digest request_digest graph_digest source))
+       )}
+    end
+  end
+
+  def verify_hops(_doc, _anchor),
+    do:
+      {:refused,
+       typed("REFUSED(hops_unanchored)", "hops_unanchored", "admission_vacuous", "sjira", %{
+         "reason" => "no anchor derived from the admitted work graph"
+       })}
+
+  defp anchored(%{"hops" => [first | _]}, key, recorded, anchor, fields) do
+    {digest_key, expected} =
+      if key == "tuple",
+        do: {"tuple_digest", anchor["tuple_digest"]},
+        else: {"request_digest", anchor["request_digest"]}
+
+    if recorded == expected do
+      :ok
+    else
+      mismatch("sjira", %{
+        "anchor" => "admitted_work_graph",
+        "carrier" => key,
+        "digest" => digest_key,
+        "expected" => expected,
+        "observed" => recorded,
+        "field" => Enum.find(fields, &(anchor[key][&1] != first[key][&1]))
+      })
+    end
+  end
+
+  @doc """
+  The hop-0 anchor of `row` (one work-graph row) admitted under
+  `graph_digest` (the graph side's admitted snapshot digest of that row):
+  the `Xaas.Sa2a.Route` tuple of the row and the ARD section 8
+  `SemanticExecutionRequest` (`work_order` = the row's identity,
+  `evidence_horizon` = the row's, `graph_digest`), each with its digest --
+  exactly what the drive records at the sJira hop. Pure; `anchor/1` runs the
+  graph side for `graph_digest`. `REFUSED(tuple_incomplete)` /
+  `REFUSED(tuple_digest_mismatch)` when the row cannot carry a full tuple.
+  """
+  @spec anchor_from(map(), String.t()) :: {:ok, map()} | {:refused, map()}
+  def anchor_from(%{} = row, graph_digest) do
+    with {:ok, tuple} <- hop_tuple(:order, row, "sjira"),
+         {:ok, request} <-
+           well_formed(
+             request(row["identity"], tuple, row["evidence_horizon"], graph_digest),
+             @request_fields,
+             "sjira",
+             "request"
+           ) do
+      {:ok,
+       %{
+         "work_order" => row["identity"],
+         "tuple" => tuple,
+         "tuple_digest" => Route.digest(tuple),
+         "request" => request,
+         "request_digest" => request_digest(request),
+         "graph_digest" => graph_digest
+       }}
+    end
+  end
+
+  @doc """
+  Derives the hop-0 anchor of order `:order` from the committed work graph
+  `:work_graph` through the graph side (`:ggen_igniter_dir`): one real
+  `mix semantic_jira.descriptor` OS process (the drive's own descriptor
+  path: `--work-orders <work graph> --ledger <a fresh empty ledger>
+  --identity <order> --alias <row repository>=<:repo_alias>
+  --verifier-suite <:suite> --provider <:provider>`, plus the graph's court
+  map for the order), run exactly like the drive's graph side
+  (`graph_side/3`: `graph_toolchain/2`, `MIX_BUILD_PATH` =
+  `:ggen_build_path`, stdin `/dev/null`, a hard deadline, every
+  model-credential variable unset). The empty ledger is the pre-drive state
+  (`Episode.prepare/1` writes a fresh ledger). The descriptor's bridge must
+  name the order (identity, subject, base_sha, evidence_ceiling of the row)
+  and carry an admitted `source_snapshot_digest`, which becomes the
+  anchor's `graph_digest` (`anchor_from/2`).
+
+  Options: `:ggen_igniter_dir`, `:work_graph`, `:order` (required);
+  `:ggen_build_path` (default `<dir>/_build/<mix_env>`; pass a private clone
+  so the judged checkout's build is never written), `:mix_env` (`"test"`),
+  `:ggen_timeout_s` (900), `:repo_alias` (`"ggen_igniter"`), `:suite`
+  (`"ggen-igniter-format"`), `:provider` (`"recipe"`), `:scratch`.
+
+  Refusals: `BUILD_BROKEN` (`graph_side_build_broken`, `mu_unlawful`) when
+  the graph side does not compile under the resolved toolchain (the anchor
+  cannot be witnessed), `REFUSED(descriptor_refused)` (`mu_on_O`),
+  `REFUSED(anchor_descriptor_mismatch)` (`admission_vacuous`) when the
+  descriptor does not name the row, plus the work-graph refusals of the
+  drive (`work_graph_unreadable`, `work_graph_invalid`,
+  `order_not_in_work_graph`).
+  """
+  @spec anchor(keyword()) :: {:ok, map()} | {:refused, map()}
+  def anchor(opts) do
+    dir = Keyword.fetch!(opts, :ggen_igniter_dir)
+    work_graph = Keyword.fetch!(opts, :work_graph)
+    order = Keyword.fetch!(opts, :order)
+    mix_env = Keyword.get(opts, :mix_env, "test")
+    build = Keyword.get(opts, :ggen_build_path) || Path.join([dir, "_build", mix_env])
+    own_scratch = is_nil(opts[:scratch])
+    scratch = opts[:scratch] || make_scratch()
+
+    try do
+      with {:ok, bytes} <- read_bytes(work_graph),
+           {:ok, graph} <- read_json(work_graph, "work_graph_unreadable", "sjira"),
+           {:ok, rows} <- work_orders(graph),
+           {:ok, row} <- find_order(rows, order),
+           {:ok, toolchain} <- graph_toolchain(dir, build) do
+        ctx = %{
+          ggen_dir: dir,
+          scratch: scratch,
+          mix_env: mix_env,
+          toolchain: toolchain,
+          ggen_build_path: build,
+          timeout_s: Keyword.get(opts, :ggen_timeout_s, 900)
+        }
+
+        source = %{
+          "work_graph" => work_graph,
+          "work_graph_sha256" =>
+            "sha256:" <> (:crypto.hash(:sha256, bytes) |> Base.encode16(case: :lower)),
+          "process" => "mix semantic_jira.descriptor (empty ledger)",
+          "ggen_igniter_dir" => dir,
+          "ggen_igniter_sha" => git_head(dir),
+          "toolchain" => Map.take(toolchain, ~w(source elixir erlang mix build_compiler))
+        }
+
+        with {:ok, descriptor} <- anchor_descriptor(ctx, work_graph, graph, row, opts),
+             {:ok, graph_digest} <- anchor_bridge(descriptor, row, opts),
+             {:ok, anchor} <- anchor_from(row, graph_digest) do
+          {:ok, Map.put(anchor, "source", source)}
+        end
+      end
+    after
+      if own_scratch, do: File.rm_rf(scratch)
+    end
+  end
+
+  defp read_bytes(path) do
+    case File.read(path) do
+      {:ok, bytes} ->
+        {:ok, bytes}
+
+      {:error, reason} ->
+        {:refused,
+         typed("REFUSED(work_graph_unreadable)", "work_graph_unreadable", "mu_on_O", "sjira", %{
+           "path" => path,
+           "error" => inspect(reason)
+         })}
+    end
+  end
+
+  defp anchor_descriptor(ctx, work_graph, graph, row, opts) do
+    order = row["identity"]
+    ledger = Path.join(ctx.scratch, "anchor-ledger.ndjson")
+    out = Path.join(ctx.scratch, "anchor-descriptor.json")
+    File.write!(ledger, "")
+
+    court_map_args =
+      case get_in(graph, ["court_maps", order]) do
+        %{} = map ->
+          path = Path.join(ctx.scratch, "anchor-court-map.json")
+          File.write!(path, Jason.encode!(map))
+          ["--court-map", path]
+
+        _ ->
+          []
+      end
+
+    args =
+      [
+        "--work-orders",
+        work_graph,
+        "--ledger",
+        ledger,
+        "--identity",
+        order,
+        "--alias",
+        "#{row["repository"]}=#{Keyword.get(opts, :repo_alias, @repo_alias)}",
+        "--verifier-suite",
+        Keyword.get(opts, :suite, @suite),
+        "--provider",
+        Keyword.get(opts, :provider, @provider),
+        "--out",
+        out
+      ] ++ court_map_args
+
+    case ggen(ctx, "semantic_jira.descriptor", args) do
+      {0, _json, _out} ->
+        read_json(out, "descriptor_unreadable", "sjira")
+
+      {code, json, text} ->
+        if build_broken?(code, text) do
+          {:refused,
+           typed("BUILD_BROKEN", "graph_side_build_broken", "mu_unlawful", "sjira", %{
+             "exit" => code,
+             "toolchain" => Map.take(ctx.toolchain, ~w(source elixir mix build_compiler)),
+             "reason" => brief(json, text)
+           })}
+        else
+          {:refused,
+           typed("REFUSED(descriptor_refused)", "descriptor_refused", "mu_on_O", "sjira", %{
+             "exit" => code,
+             "reason" => brief(json, text)
+           })}
+        end
+    end
+  end
+
+  defp anchor_bridge(descriptor, row, opts) do
+    bridge = descriptor["bridge"] || %{}
+    digest = bridge["source_snapshot_digest"]
+
+    expected = %{
+      "identity" => row["identity"],
+      "subject" => row["subject"],
+      "base_sha" => row["base_sha"],
+      "evidence_ceiling" => row["evidence_ceiling"]
+    }
+
+    differs =
+      Enum.find(Map.keys(expected) |> Enum.sort(), &(bridge[&1] != expected[&1])) ||
+        if(descriptor["provider"] != Keyword.get(opts, :provider, @provider), do: "provider")
+
+    cond do
+      differs ->
+        {:refused,
+         typed(
+           "REFUSED(anchor_descriptor_mismatch)",
+           "anchor_descriptor_mismatch",
+           "admission_vacuous",
+           "sjira",
+           %{"field" => differs, "order" => row["identity"]}
+         )}
+
+      not (is_binary(digest) and Regex.match?(~r/\Asha256:[0-9a-f]{64}\z/, digest)) ->
+        {:refused,
+         typed(
+           "REFUSED(anchor_descriptor_mismatch)",
+           "anchor_descriptor_mismatch",
+           "admission_vacuous",
+           "sjira",
+           %{"field" => "source_snapshot_digest", "order" => row["identity"]}
+         )}
+
+      true ->
+        {:ok, digest}
+    end
+  end
 
   defp hop_names(names) do
     if names == @hops,

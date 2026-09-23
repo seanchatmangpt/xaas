@@ -68,7 +68,7 @@ defmodule Xaas.Receipt.RProjection do
       its witnesses is `REFUSED(alive_unwitnessed)` (`admission_vacuous`).
   """
 
-  alias Xaas.Ultracode.{SemanticReceipt, TargetSuites}
+  alias Xaas.Ultracode.{SemanticReceipt, TargetSuites, Verifier}
 
   @sha ~r/\A[0-9a-f]{40}\z/
 
@@ -134,6 +134,340 @@ defmodule Xaas.Receipt.RProjection do
   end
 
   def project(_other, _opts), do: {:error, {:r_projection_refused, :not_a_map}}
+
+  # -- consistency (the GC23-7 court law; lane R1-X-COURTS) -----------------
+
+  @doc """
+  Judges an R projection `r` for internal consistency against the order it
+  claims and the real subject repository (PRD GC23-7 "the episode produces
+  conformant durable evidence"; ARD section 12; PR-011). The fleet validator
+  checks the R schema, ALIVE replay exits and that `subject_sha` is a
+  commit; it has no rule tying the five fields to each other, so an R that
+  says ALIVE over a false acceptance, a consequence that is not the
+  subject's, an out-of-scope change or a trivial replay command is ADMITTED
+  by it. This function refuses each of those.
+
+  Options: `:order` (required) -- the work-graph row the receipt is for
+  (`identity`, `base_sha`, `path_scope`, `acceptance`, `falsifiers`,
+  `required_courts`); `:repo` (required) -- the local subject repository
+  the commits are read from (never the path the receipt names); `:suites`
+  -- suite declarations (default: `Xaas.Ultracode.TargetSuites.devs/0`
+  merged with the configured verifier suites).
+
+  Laws, in order (first failure wins; every refusal is typed with a Chatman
+  broken term):
+
+    1. identity: `identity.subject` is the order and `identity.base_sha` its
+       `base_sha` -- `REFUSED(receipt_not_for_order)` (`R_missing_identity`);
+       `subject_sha` is a commit of `:repo` -- else
+       `BLOCKED:subject_unreachable` (`mu_on_O`: the court cannot witness);
+       `base_sha` is an ancestor of it -- `REFUSED(subject_not_descended)`
+       (`R_missing_identity`).
+    2. acceptance (ALIVE only): every order acceptance IRI is `true`, every
+       order falsifier `"survived"`, every required court `passed` -- else
+       `REFUSED(alive_acceptance_false)` (`admission_vacuous`).
+    3. consequence: `consequence.commits` non-empty and each one in
+       `git rev-list base_sha..subject_sha` -- `REFUSED(consequence_not_subject)`
+       (`R_missing_consequence`); every recorded and every observed
+       (`git diff --name-only base_sha subject_sha`) changed file is inside
+       the order's `path_scope` (a scope entry `p` covers `p` and `p/...`) --
+       `REFUSED(consequence_outside_path_scope)` (`R_missing_authority`); every
+       recorded file was observed -- `REFUSED(consequence_not_observed)`
+       (`R_missing_consequence`).
+    4. replay: the court binding (`court.binding`: suite, step_id, head,
+       argv_sha256) is on `subject_sha`, every court result carries the same
+       binding, the registered suite's declaration still hashes to
+       `argv_sha256` (`Xaas.Ultracode.Verifier.argv_digest/1`) and every
+       replay command is that declaration's command for one of its steps,
+       the bound step among them -- `REFUSED(replay_command_unbound)`
+       (`R_missing_replay`). A command the court never ran (e.g. `true`)
+       can never replay the evidence.
+
+  `{:ok, facts}` (standing, subject, observed commits/files, the bound
+  command) when every law holds.
+  """
+  @spec consistency(map(), keyword()) :: {:ok, map()} | {:refused, map()}
+  def consistency(%{} = r, opts) do
+    order = Keyword.fetch!(opts, :order)
+    repo = Keyword.fetch!(opts, :repo)
+    standing = get_in(r, ["standing", "value"])
+    identity = map_or_empty(r["identity"])
+
+    with :ok <- for_order(identity, order),
+         :ok <- subject_reachable(repo, identity),
+         :ok <- acceptance_witnessed(standing, map_or_empty(r["court"]), order),
+         {:ok, observed} <- consequence_of_subject(repo, identity, r["consequence"], order),
+         {:ok, command} <- replay_bound(r, identity, opts) do
+      {:ok,
+       %{
+         "standing" => "CONSISTENT",
+         "r_standing" => standing,
+         "subject" => identity["subject"],
+         "subject_sha" => identity["subject_sha"],
+         "commits" => observed.commits,
+         "files" => observed.files,
+         "path_scope" => List.wrap(order["path_scope"]),
+         "replay_command" => command
+       }}
+    end
+  end
+
+  def consistency(_other, _opts),
+    do: inconsistent("receipt_not_for_order", "R_missing_identity", %{"reason" => "not a map"})
+
+  defp for_order(identity, order) do
+    cond do
+      identity["subject"] != order["identity"] ->
+        inconsistent("receipt_not_for_order", "R_missing_identity", %{
+          "field" => "identity.subject",
+          "expected" => order["identity"],
+          "observed" => identity["subject"]
+        })
+
+      identity["base_sha"] != order["base_sha"] or not sha?(identity["base_sha"]) ->
+        inconsistent("receipt_not_for_order", "R_missing_identity", %{
+          "field" => "identity.base_sha",
+          "expected" => order["base_sha"],
+          "observed" => identity["base_sha"]
+        })
+
+      not is_list(order["path_scope"]) or order["path_scope"] == [] ->
+        inconsistent("receipt_not_for_order", "R_missing_identity", %{
+          "field" => "order.path_scope",
+          "reason" => "the order declares no path scope to judge the consequence against"
+        })
+
+      true ->
+        :ok
+    end
+  end
+
+  defp subject_reachable(repo, %{"subject_sha" => head, "base_sha" => base}) do
+    cond do
+      not (sha?(head) and git_ok?(repo, ["cat-file", "-e", head <> "^{commit}"])) ->
+        {:refused,
+         %{
+           "standing" => "BLOCKED:subject_unreachable",
+           "reason" => "subject_unreachable",
+           "broken_term" => "mu_on_O",
+           "hop" => "receipt",
+           "detail" => %{"subject_sha" => head, "repo" => repo}
+         }}
+
+      not git_ok?(repo, ["merge-base", "--is-ancestor", base, head]) ->
+        inconsistent("subject_not_descended", "R_missing_identity", %{
+          "base_sha" => base,
+          "subject_sha" => head
+        })
+
+      true ->
+        :ok
+    end
+  end
+
+  defp subject_reachable(repo, identity),
+    do:
+      inconsistent("subject_not_descended", "R_missing_identity", %{
+        "repo" => repo,
+        "subject_sha" => identity["subject_sha"]
+      })
+
+  defp acceptance_witnessed("ALIVE", court, order) do
+    acceptance = map_or_empty(court["acceptance_results"])
+    falsifiers = map_or_empty(court["falsifier_results"])
+    courts = map_or_empty(court["court_results"])
+
+    unwitnessed =
+      Enum.flat_map(List.wrap(order["acceptance"]), fn iri ->
+        if acceptance[iri] == true,
+          do: [],
+          else: [%{"acceptance" => iri, "result" => acceptance[iri]}]
+      end) ++
+        Enum.flat_map(Map.to_list(acceptance), fn {iri, value} ->
+          if value == true, do: [], else: [%{"acceptance" => iri, "result" => value}]
+        end) ++
+        Enum.flat_map(List.wrap(order["falsifiers"]), fn iri ->
+          if falsifiers[iri] in ["survived", true],
+            do: [],
+            else: [%{"falsifier" => iri, "result" => falsifiers[iri]}]
+        end) ++
+        Enum.flat_map(List.wrap(order["required_courts"]), fn iri ->
+          if get_in(courts, [iri, "passed"]) == true,
+            do: [],
+            else: [%{"court" => iri, "result" => courts[iri]}]
+        end)
+
+    cond do
+      List.wrap(order["acceptance"]) == [] ->
+        inconsistent("alive_acceptance_false", "admission_vacuous", %{
+          "reason" => "the order declares no acceptance to witness ALIVE"
+        })
+
+      unwitnessed != [] ->
+        inconsistent("alive_acceptance_false", "admission_vacuous", %{
+          "unwitnessed" => Enum.uniq(unwitnessed)
+        })
+
+      true ->
+        :ok
+    end
+  end
+
+  defp acceptance_witnessed(_standing, _court, _order), do: :ok
+
+  defp consequence_of_subject(repo, identity, consequence, order) do
+    consequence = map_or_empty(consequence)
+    base = identity["base_sha"]
+    head = identity["subject_sha"]
+    recorded_commits = consequence["commits"]
+    recorded_files = consequence["files_changed"]
+    scope = order["path_scope"]
+
+    with {:ok, commits} <- git_lines(repo, ["rev-list", "--reverse", "#{base}..#{head}"]),
+         {:ok, files} <- git_lines(repo, ["diff", "--name-only", base, head]) do
+      outside = fn paths -> Enum.reject(paths, &in_scope?(&1, scope)) end
+
+      cond do
+        not (is_list(recorded_commits) and recorded_commits != [] and
+                 Enum.all?(recorded_commits, &(&1 in commits))) ->
+          inconsistent("consequence_not_subject", "R_missing_consequence", %{
+            "recorded" => recorded_commits,
+            "subject_commits" => commits
+          })
+
+        not (is_list(recorded_files) and Enum.all?(recorded_files, &is_binary/1)) ->
+          inconsistent("consequence_not_observed", "R_missing_consequence", %{
+            "recorded" => recorded_files
+          })
+
+        (bad = outside.(recorded_files ++ files)) != [] ->
+          inconsistent("consequence_outside_path_scope", "R_missing_authority", %{
+            "outside" => Enum.uniq(bad),
+            "path_scope" => scope
+          })
+
+        (unseen = recorded_files -- files) != [] ->
+          inconsistent("consequence_not_observed", "R_missing_consequence", %{
+            "unobserved" => unseen,
+            "observed" => files
+          })
+
+        true ->
+          {:ok, %{commits: commits, files: files}}
+      end
+    else
+      :error ->
+        inconsistent("consequence_not_subject", "R_missing_consequence", %{
+          "reason" => "git could not read #{base}..#{head} in #{repo}"
+        })
+    end
+  end
+
+  # A scope entry names a file or a directory (git's literal pathspec for
+  # a path without glob characters): `lib` covers `lib` and `lib/...`.
+  defp in_scope?(path, scope) do
+    Enum.any?(scope, fn entry ->
+      entry = String.trim_trailing(entry, "/")
+      entry != "" and (path == entry or String.starts_with?(path, entry <> "/"))
+    end)
+  end
+
+  defp replay_bound(r, identity, opts) do
+    court = map_or_empty(r["court"])
+    binding = map_or_empty(court["binding"])
+    commands = get_in(r, ["replay", "commands"])
+    suite = binding["suite"]
+
+    declaration =
+      if is_binary(suite) do
+        opts
+        |> Keyword.get_lazy(:suites, fn ->
+          configured = Application.get_env(:xaas, :ultracode_verifier_suites, %{}) || %{}
+          Map.merge(TargetSuites.devs(), configured)
+        end)
+        |> Map.get(suite)
+      end
+
+    steps = if is_map(declaration), do: List.wrap(Map.get(declaration, :steps)), else: []
+    bound = Enum.find(steps, &(to_string(Map.get(&1, :id)) == binding["step_id"]))
+    allowed = Enum.map(steps, &step_command/1)
+    bound_command = bound && step_command(bound)
+
+    unbound = fn reason, detail ->
+      inconsistent(
+        "replay_command_unbound",
+        "R_missing_replay",
+        Map.merge(%{"reason" => reason, "binding" => binding}, detail)
+      )
+    end
+
+    cond do
+      binding == %{} or not is_binary(suite) ->
+        unbound.("no court binding records the command that produced the evidence", %{})
+
+      binding["head"] != identity["subject_sha"] ->
+        unbound.("the court binding judged another head", %{
+          "subject_sha" => identity["subject_sha"]
+        })
+
+      Enum.any?(Map.values(map_or_empty(court["court_results"])), fn result ->
+        not is_map(result) or
+            Map.take(result, ~w(suite step_id head argv_sha256)) !=
+              Map.take(binding, ~w(suite step_id head argv_sha256))
+      end) ->
+        unbound.("a court result carries another binding", %{})
+
+      is_nil(declaration) ->
+        unbound.("the bound suite is not declared", %{})
+
+      Verifier.argv_digest(declaration) != binding["argv_sha256"] ->
+        unbound.("the declared suite no longer hashes to the bound argv_sha256", %{
+          "declared_argv_sha256" => Verifier.argv_digest(declaration)
+        })
+
+      is_nil(bound_command) ->
+        unbound.("the bound step is not declared", %{})
+
+      not (is_list(commands) and commands != []) ->
+        unbound.("no replay command", %{})
+
+      Enum.any?(commands, &(not is_map(&1) or &1["cmd"] not in allowed)) ->
+        unbound.("a replay command is not the court-recorded command", %{
+          "recorded" => Enum.map(List.wrap(commands), &(is_map(&1) && &1["cmd"])),
+          "court_commands" => allowed
+        })
+
+      not Enum.any?(commands, &(&1["cmd"] == bound_command)) ->
+        unbound.("the bound step's command is not replayed", %{"bound" => bound_command})
+
+      true ->
+        {:ok, bound_command}
+    end
+  end
+
+  # The command a declared step runs, rendered exactly as `project/2`
+  # renders replay commands (`step_cmd/3`).
+  defp step_command(step) do
+    case Map.get(step, :argv) do
+      [_ | _] = argv -> Enum.map_join(argv, " ", &shell_quote/1)
+      _ -> nil
+    end
+  end
+
+  defp git_ok?(repo, args) do
+    match?({_, 0}, System.cmd("git", ["-C", repo | args], stderr_to_stdout: true))
+  end
+
+  defp inconsistent(reason, term, detail) do
+    {:refused,
+     %{
+       "standing" => "REFUSED(#{reason})",
+       "reason" => reason,
+       "broken_term" => term,
+       "hop" => "receipt",
+       "detail" => detail
+     }}
+  end
 
   # -- identity / authority -------------------------------------------------
 
