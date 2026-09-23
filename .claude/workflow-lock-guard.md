@@ -18,7 +18,7 @@ imports) that looked like real code bugs but were purely an execution-environmen
 Any workflow script (or any Bash-driven compile loop) planning to run `mix compile`
 concurrently with other agents against this repo should:
 
-1. Before a compile-heavy stage, check for `/Users/sac/xaas/.claude/.workflow-compile.lock`.
+1. Before a compile-heavy stage, check for `.claude/.workflow-compile.lock`.
    If present and its PID (`cat` the file) is a live process, wait/back off rather than
    compiling concurrently.
 2. Write `<pid>:<timestamp>:<label>` to that lock file before a real `mix compile
