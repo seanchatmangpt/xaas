@@ -1,0 +1,23 @@
+{
+  "receipt_class": "manufacture",
+  "order": "SJ-007",
+  "replay_identity": "sjira-v26.9.21-sj-007",
+  "session_date": "2026-09-21",
+  "repo": "seanchatmangpt/xaas",
+  "worktree": "Users/sac/xaas-worktrees/sjira/sj-007",
+  "branch": "sjira/sj-007",
+  "base": "8e72cfcb85bd901ad067589295598eb7580a1442",
+  "manufactured": {
+    "ard": "docs/sjira/v26.9.21/ash-atlassian-ard.md — scoped ARD: 6 resources mapped to public classes (oslc_cm:ChangeRequest, doap:Project, sioc:Space, sioc:Post, schema:Comment, foaf:Person), ontology source = ggen-marketplace ontologies/public (pinned: dcterms/doap/foaf/schema.org; to-pin: OSLC CM, SIOC), generator route = EXTEND xaas-public-ash-projection-pack family (failed edges e1-e5 recorded), zero hand-written resources",
+    "work_orders": [
+      "010-atlassian-public-vocab-pin.md (seanchatmangpt/ggen-marketplace @ f1c350b)",
+      "011-public-ash-projection-extend.md (seanchatmangpt/ggen-marketplace @ f1c350b)",
+      "012-ash-atlassian-profile-admit.md (seanchatmangpt/ggen-marketplace @ f1c350b, dependsReceipt SJ-010+SJ-011)"
+    ],
+    "manufacturer_update": "generate.py: W list extended with orders 10-12; OUT now honors env override (default ~/xaas unchanged); SJ-007 standing BLOCKED -> PARTIAL_ALIVE",
+    "index": "index.json: SJ-007 standing updated, 3 rows appended"
+  },
+  "manufacture_route": "010-012 and index rows are the deterministic projection of generate.py (single source). python3 execution was gated by the session sandbox (REFUSED_NO_EXECUTION_SURFACE), so the files were rendered byte-faithfully to the generator's documented f-string + json.dumps(indent=2) format from the updated generate.py source. Falsifier for this claim: re-run `OUT=<milestone-dir> WO_JSON=<wo.json> python3 generate.py` — regenerated 010-012 must be byte-identical; 007 differs only in the agent-layer History append.",
+  "evidence_correction": "Order evidence said `~/atlassian` is an empty stub. Verified truth: 1,117,044-byte ASCII ChatGPT export (26,850 lines) containing the whitepaper itself (migration thesis line 3491; Issue resource design 2453-2591; enum designs 2628-2665; AshAi module 2943+; Atlassian-in-Ash domain guidance 9045-9215). Blocker NO_TARGET_PACKAGE still true: no local dir, no GitHub remote (`gh repo view` -> could not resolve).",
+  "operator_did_not_write": "whitepaper extraction and line citations; public-class mapping and enum values; REUSE survey and failed-edge table; ARD sections; work-order frontmatter and bodies; ticket History transition; these receipts."
+}

@@ -5,6 +5,7 @@ OUT=os.environ.get("SJIRA_OUT",HERE)
 # <STANDING>/NNN.json = {standing, standing_note?, repository_suffix?, done:[acceptance idx], receipts:"NNN.receipts.md"}
 STANDING=os.environ.get("SJIRA_STANDING",os.path.join(HERE,"standing"))
 X=("seanchatmangpt/xaas","8e72cfcb85bd901ad067589295598eb7580a1442")
+M=("seanchatmangpt/ggen-marketplace","f1c350b0b1dc732eb4d01cc5b66f186a6840849d")
 A=("seanchatmangpt/autofde-lab","2f4825a232bfea543764d13f3b75fcb0ff33da1f")
 G=("seanchatmangpt/gymact","4ab72e685302aa591f65fecad0ec73129ecd3589")
 COURTS=["compile","tests","chicago_no_mocks"]
@@ -54,7 +55,7 @@ wo(6,"ecosystem-standing-foldin","Fold SA2A / Semantic Jira / zcode findings int
  ["ecosystem-standing.md has a row per system with standing + command","no row is ALIVE without an observed run"],
  ["a row claims ALIVE with no command"],
  "cd ~/autofde-lab && .venv/bin/python -m pytest tests/beam/ -v",["docs/ecosystem-standing.md"],deps=(1,2),proj=("jira","executive","receipt"),courts=["tests"],ceiling="OBSERVED"),
-wo(7,"ash-atlassian-target","Scope the ash_atlassian migration target",X,"BLOCKED",
+wo(7,"ash-atlassian-target","Scope the ash_atlassian migration target",X,"PARTIAL_ALIVE",
  "The whitepaper's Atlassian -> ash_atlassian migration has no target: ~/ash_atlassian does not exist and ~/atlassian is an empty stub. BLOCKED:NO_TARGET_PACKAGE. Deliverable is a scoped ARD (resources, ontology source, generator route via ggen-marketplace) so the blocker becomes a buildable order.",
  ["`ls ~/ash_atlassian` -> No such file or directory","`ls ~/atlassian` -> one stub entry (verified 2026-09-21)"],
  ["an ARD under docs/sjira/v26.9.21/ names the ontology source and pack route","a follow-up work order set is emitted as new SJ files"],
@@ -72,6 +73,24 @@ wo(9,"ash-ai-dependency-retest","Retest the ash_ai dependency probe against curr
  ["a receipt states COMPATIBLE or the exact failing dependency edge"],
  ["result reported without running deps.get + compile + test"],
  "cd <worktree> && mix deps.get && mix compile && mix test",["mix.exs","mix.lock"],proj=("jira","verification","receipt")),
+wo(10,"atlassian-public-vocab-pin","Pin OSLC CM and SIOC public vocabularies",M,"UNKNOWN",
+ "SJ-007's ARD (docs/sjira/v26.9.21/ash-atlassian-ard.md section 5) needs OSLC CM and SIOC pinned before any ash_atlassian profile shape can be admitted: batch 1 pinned oslc automation/config/rm only and sioc is absent. Pin both under ontologies/public/xaas-profile-batch-2/ following the batch-1 MANIFEST discipline: real retrieval (HTTP 200), bytes verified as RDF, SHA-256, publisher, and disclosed failures for anything not obtained.",
+ ["ontologies/public/xaas-profile-batch-1/ pins oslc automation/config/rm but no cm (verified 2026-09-21)","no sioc vocabulary file under ontologies/public/ (verified 2026-09-21)","OSLC CM vocab source observed: https://raw.githubusercontent.com/oasis-tcs/oslc-domains/master/cm/change-mgt-vocab.ttl (HTTP 200, 13178 bytes, sha256 cb9514f87955a997a01548ae407dfb9a751f8828ae29054d09cf0dcb235feeb9 at 2026-09-21; SJ-010 must recompute, not copy)"],
+ ["OSLC CM and SIOC vocabularies pinned under ontologies/public/xaas-profile-batch-2/ with SHA-256 rows","MANIFEST.md lists source URL, publisher and disclosed failures for anything not retrieved"],
+ ["a MANIFEST row whose SHA-256 was not computed from the retrieved bytes","a failed retrieval silently dropped instead of disclosed"],
+ "cd ~/ggen-marketplace && test -f ontologies/public/xaas-profile-batch-2/oslc-cm-vocab.ttl && test -f ontologies/public/xaas-profile-batch-2/sioc-ns.ttl",["ontologies/public/**"],proj=("jira","verification","receipt"),courts=["tests"],ceiling="OBSERVED"),
+wo(11,"public-ash-projection-extend","Extend the public-ash projection family (namespace, enums, relationships)",M,"UNKNOWN",
+ "The public-ash projection family (xaas-public-ash-projection-pack + xaas-ash-core-pack) hard-binds module/domain to Xaas.Public (queries/ash-gen-commands.rq BIND lines), projects no sh:in enums, and fails closed on all object properties. Extend the family per ARD section 6 failed edges e1-e3: consumer-declared namespace derivation as a ggen.toml generation fact (never RDF vocabulary), sh:in-constrained string shapes rendered through mix ash.gen.enum, and object-property -> relationship projection admitted only behind an explicit profile fact (fail-closed default unchanged). Add pack tests (pytest, ash-revops-structural-factory-pack pattern).",
+ ["both packs' queries/ash-gen-commands.rq BIND CONCAT(\"Xaas.Public.\") and domain \"Xaas.Public\" (projection pack line 17, core pack line 15; verified 2026-09-21)","gates/060_object_property_projection_pending.rq exists; pack README keeps relationship projection fail-closed","xaas-public-ash-projection-pack has no tests/ directory; xaas-ash-core-pack/tests holds only test_public_projection_adapter.py (verified 2026-09-21)"],
+ ["namespace fact drives module/domain derivation with pack tests; no Xaas.Public hard-bind remains","sh:in string shapes render mix ash.gen.enum plus enum-typed attributes","relationship projection fires only behind an explicit admitted profile fact; default unchanged","family gates 010/020/030/040/050/060 still pass on existing fixtures"],
+ ["template renders .ex files directly instead of ash.gen.* commands","namespace fact lands in RDF as local vocabulary (gate 010 violation)","object properties project without an explicit admission fact"],
+ "cd ~/ggen-marketplace && python3 -m pytest packs/xaas-public-ash-projection-pack/tests -q && ggen sync",["packs/xaas-public-ash-projection-pack/**","packs/xaas-ash-core-pack/**"],proj=("jira","machine","verification","receipt"),courts=["tests"]),
+wo(12,"ash-atlassian-profile-admit","Admit the ash_atlassian SHACL application profile",M,"UNKNOWN",
+ "Admit the ARD section 4 SHACL application profile over the SJ-010-pinned public classes (oslc_cm:ChangeRequest, doap:Project, sioc:Space, sioc:Post, schema:Comment, foaf:Person) into the family's designated profile surface: six NodeShapes targeting public classes, datatype property shapes per the ARD section 4 table, enum-valued oslc_cm:status/oslc_cm:priority via the SJ-011 enum projection. Gates 010/020 green; ggen sync renders mix ash.gen.* commands with AshAtlassian.* modules from the consumer-namespace fact.",
+ ["ARD §4 lists six public target classes with datatype paths (docs/sjira/v26.9.21/ash-atlassian-ard.md)","xaas-ash-core-pack/profiles/public-shapes.ttl is empty on purpose awaiting admitted public mappings"],
+ ["profile admitted in exactly one family profile surface with gates 010_no_custom_vocabulary and 020_public_target_classes passing","ggen sync renders ash.gen.resource commands with AshAtlassian.* module names in the pack's declared output file","no local owl:Class/rdf:Property appears anywhere in the admitted graph"],
+ ["profile declares any local owl:Class or rdf:Property","ggen sync output is a hand-editable resource file instead of generator commands"],
+ "cd ~/ggen-marketplace && ggen sync && grep -q 'ash.gen.resource' packs/xaas-public-ash-projection-pack/xaas-public-ash-GENERATED.sh && grep -q 'AshAtlassian' packs/xaas-public-ash-projection-pack/xaas-public-ash-GENERATED.sh",["packs/xaas-public-ash-projection-pack/**","packs/xaas-ash-core-pack/**"],deps=(10,11),proj=("jira","ard","verification","receipt"),courts=["tests"]),
 ]
 def observed(w):
     """Overlay observed standing/ticks/receipts for one order. ALIVE requires every DoD item ticked and a receipts file."""
