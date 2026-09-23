@@ -230,5 +230,55 @@
    "token_leak_refuse_close": "fixed in 3fc60a1 (execute/4 single exit + refuse/3 + close path redact at any depth); falsified by MUT-B",
    "additionally": "the lease-loss window after the final renew (a commit could still land after the lease was lost while staging) is closed by the lease fence; falsified by MUT-A and MUT-A2"
   }
+ },
+ "integration": {
+  "target_branch": "friday/gc-fri-0800",
+  "worktree": "/Users/sac/wt/v26922/fri/xaas-int",
+  "lock": "/Users/sac/wt/v26922/fri/xaas-int.merge.lock (owner claude:B1:V23-T2R)",
+  "merged_ref": "fri/FRI-T2",
+  "merged_sha": "460e877e346a8abf0b52130d83cb014431c40294",
+  "pre_merge_head": "c18ecd3f415834d47be78402ff64b7908b392b18",
+  "merge_cmd": "git merge --no-ff fri/FRI-T2 -F <msgfile>",
+  "merge_commit": "a626e7bccc591014629ef448c502b7be78957ef5",
+  "merge_note": "merge-base = pre_merge_head c18ecd3 (fri/FRI-T2 had already merged friday/gc-fri-0800 @ c18ecd3 in repair round 1, 22500a4); ort merge, no conflicts; 44 files, 6293 insertions, 42 deletions; tree of a626e7b equals the tree of 460e877",
+  "conflicts": [],
+  "court_env": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (HEAD 52798a00a7c36314ba6bb65249626ea50f6763a3), MIX_TEST_PARTITION=_t2rint (fresh partition DB xaas_test_t2rint, created+migrated by the mix test alias)",
+  "lane_gate": [
+   {
+    "cmd": "mix format --check-formatted",
+    "cwd": "/Users/sac/wt/v26922/fri/xaas-int @ a626e7b",
+    "exit": 0,
+    "log": "receipts/v26.9.23/V23-T2R.int-gate/format.log",
+    "output_sha256": "sha256:d895a3d4a388eeaea918fb7734ea2c0cadeca682fd76ffeacc2347146aae903a",
+    "summary": "FORMAT_EXIT=0"
+   },
+   {
+    "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/fri/xaas-int @ a626e7b",
+    "exit": 0,
+    "log": "receipts/v26.9.23/V23-T2R.int-gate/compile.log",
+    "output_sha256": "sha256:7fdbc86460a4ac5b8da97b0478792197931b33f5831a7aa3be6e06d9d85f33a9",
+    "summary": "Compiling 508 files (.ex); Generated xaas app; only warning is deps/ex4pm/mix.exs (dependency, pre-existing)"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_t2rint mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs test/xaas/ultracode",
+    "cwd": "/Users/sac/wt/v26922/fri/xaas-int @ a626e7b",
+    "exit": 0,
+    "log": "receipts/v26.9.23/V23-T2R.int-gate/test.log",
+    "output_sha256": "sha256:bbbf114c4c7755d5ab842f2036c71e363fb9abfdb8f1b0bbfee55c88bb3bc1ce",
+    "summary": "738 tests, 0 failures (25 excluded), 213.6 s; same count as the lane run at 19060ec"
+   },
+   {
+    "cmd": "grep -rnE 'unittest.mock|Mock\\(|MagicMock|patch\\(|monkeypatch|Mox|:meck|mock\\(' test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs",
+    "cwd": "/Users/sac/wt/v26922/fri/xaas-int @ a626e7b",
+    "exit": 1,
+    "log": "receipts/v26.9.23/V23-T2R.int-gate/mockgrep.log",
+    "output_sha256": "sha256:ea0e1eb34b96fa07188bc34e2ad33630774db1c614877a5686f93526e261f203",
+    "summary": "0 matches (Chicago discipline)"
+   }
+  ],
+  "standing": "ALIVE",
+  "standing_scope": "lane gate observed on the exact merge commit a626e7b in the int worktree under the court env; this addendum commit changes only receipts/v26.9.23/V23-T2R.json and receipts/v26.9.23/V23-T2R.int-gate/**. Not claimed: any GC23 gate standing (GC23-4..8 remain with lane V23-D; stop court not run here).",
+  "pre_existing_vs_new": "no failures observed; the ambient-default SJ-001 failure disclosed in standing.disclosed_observations (GGEN_IGNITER_DIR unset) is pre-existing and not re-run here"
  }
 }
