@@ -6,6 +6,6 @@ module.exports = defineConfig({
   timeout: 30_000,
   use: {
     // Real, already-running dev server (mix phx.server), not a mock.
-    baseURL: "http://localhost:4000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4000",
   },
 });
