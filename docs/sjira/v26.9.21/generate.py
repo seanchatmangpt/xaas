@@ -147,5 +147,15 @@ for w in W:
     open(f"{OUT}/{fn}","w").write(body)
     idx.append(dict(id=m['identity'],path=fn,standing=m['standing'],repository=m['repository'],dependencies=[d['upstream'] for d in m['dependencies']]))
 json.dump(idx,open(f"{OUT}/index.json","w"),indent=2)
+# Pass-through: checked-in order files this generator does not emit (e.g.
+# hand-authored orders like SJ-013 wd-cs2) are inputs too — copied verbatim so
+# a fresh OUT reproduces the whole checked-in cycle, and regeneration into the
+# cycle dir never deletes an order it does not own.
+import glob as _glob, shutil as _shutil
+emitted = {f"{w['n']:03d}-{w['slug']}.md" for w in W}
+for _p in sorted(_glob.glob(os.path.join(HERE, "[0-9][0-9][0-9]-*.md"))):
+    _fn = os.path.basename(_p)
+    if _fn not in emitted and os.path.dirname(os.path.abspath(_p)) != os.path.abspath(OUT):
+        _shutil.copyfile(_p, os.path.join(OUT, _fn))
 json.dump([w['md'] for w in W],open(os.environ.get("WO_JSON","/tmp/wo.json"),"w"))
 print(len(W))

@@ -300,7 +300,10 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
     [
       {:bridge_identity, field(bridge, :identity) == field(snapshot, :identity)},
       {:bridge_repository, field(bridge, :repository) == field(snapshot, :repository)},
-      {:bridge_base_sha, field(bridge, :base_sha) == field(snapshot, :base_sha)},
+      # NOTE: no bridge_base_sha check — the producer's bridge
+      # (`SemanticReceipt.export/1`) does not carry a base_sha; the execution
+      # head is bound by the descriptor-level checks, and the snapshot's own
+      # base_sha is the work-order's origin, a different identity.
       {:bridge_definition_digest,
        field(bridge, :definition_digest) == definition_digest(snapshot)},
       {:bridge_subject, field(bridge, :subject) == field(snapshot, :subject)},

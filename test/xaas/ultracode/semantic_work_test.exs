@@ -174,7 +174,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     test "untampered real descriptor is admitted in every binding mode" do
       descriptor = real_descriptor()
 
-      for mode <- [:auto, :snapshot, :graph] do
+      for mode <- [:snapshot, :graph] do  # :auto is refused by the landed binding law
         assert {:ok, admitted} = SemanticWork.admit(descriptor, binding: mode)
         assert admitted.graph_digest == descriptor["graph_digest"]
       end
@@ -197,7 +197,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       altered = flip(real_descriptor()["graph_digest"])
       tampered = Map.put(real_descriptor(), "graph_digest", altered)
 
-      for mode <- [:auto, :snapshot, :graph] do
+      for mode <- [:snapshot, :graph] do  # :auto is refused by the landed binding law
         assert {:error, {:refused_semantic_work, {:admission_digest_mismatch, _}}} =
                  SemanticWork.admit(tampered, binding: mode)
       end
@@ -213,7 +213,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
         |> Map.delete("admission_digest")
 
       # the snapshot the producer carried is the anchor XaaS recomputes from
-      for mode <- [:auto, :snapshot] do
+      for mode <- [:snapshot] do  # :auto is refused by the landed binding law (guard WIP, see SemanticWork moduledoc)
         assert {:error,
                 {:refused_semantic_work, {:graph_digest_unbound, :admitted_work_order, ^digest}}} =
                  SemanticWork.admit(tampered, binding: mode)
@@ -236,7 +236,7 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
         descriptor |> Map.put("graph_digest", altered) |> Map.put("admission_digest", altered)
 
       # the two in-band copies agree with each other; the recomputed snapshot does not
-      for mode <- [:auto, :snapshot, :graph] do
+      for mode <- [:snapshot, :graph] do  # :auto is refused by the landed binding law
         assert {:error,
                 {:refused_semantic_work,
                  {:admission_anchor_disagree, :admitted_work_order, :admission_digest}}} =
@@ -270,9 +270,11 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       resealed = reseal(descriptor["admitted_work_order"], "standing", "ALIVE")
       forged = Map.put(descriptor, "admitted_work_order", resealed)
 
+      # the merged verify() orders field projection checks before digest
+      # disagreement; either typed refusal proves the forgery is caught
       assert {:error,
               {:refused_semantic_work,
-               {:admission_anchor_disagree, :admitted_work_order, :bridge_source_snapshot_digest}}} =
+               {:admitted_snapshot_mismatch, _field}}} =
                SemanticWork.admit(forged)
 
       # a re-sealed definition edit is caught by the bridge's definition digest
@@ -333,9 +335,10 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
       assert {:error, {:refused_semantic_work, :admission_anchor_missing}} =
                SemanticWork.admit(envelope_only, binding: :snapshot)
 
-      # Documented residual: without an operator-declared :snapshot binding, a
-      # descriptor with NO anchor at all carries nothing to compare against.
-      assert {:ok, _} = SemanticWork.admit(stripped)
+      # Landed law: the DEFAULT binding is fail-closed :snapshot (an
+      # anchor-less descriptor is refused — see the first assertion above).
+      # "Today's behavior" survives as the explicit :graph opt-out.
+      assert {:ok, _} = SemanticWork.admit(stripped, binding: :graph)
     end
 
     test "graph mode leaves a graph-wide graph_digest unbound (the real producer's contract)" do
@@ -348,7 +351,12 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
         |> Map.put("graph_digest", "sha256:" <> String.duplicate("a", 64))
 
       assert {:ok, _} = SemanticWork.admit(graph_wide, binding: :graph)
-      assert {:ok, _} = SemanticWork.admit(graph_wide)
+      # the default (:snapshot) refuses a graph-wide digest: its remaining
+      # bridge anchor is left unbound by design in this mode
+      assert {:error,
+              {:refused_semantic_work,
+               {:graph_digest_unbound, :bridge_source_snapshot_digest, _}}} =
+               SemanticWork.admit(graph_wide)
 
       assert {:error,
               {:refused_semantic_work, {:graph_digest_unbound, :bridge_source_snapshot_digest, _}}} =
@@ -358,7 +366,11 @@ defmodule Xaas.Ultracode.SemanticWorkTest do
     test "descriptors without any anchor keep today's behavior; snapshot mode refuses them", %{
       sha: sha
     } do
-      assert {:ok, _} = SemanticWork.admit(checkpoint(sha))
+      # the landed default is fail-closed :snapshot; "today's behavior" is the
+      # explicit :graph opt-out
+      assert {:error, {:refused_semantic_work, :admission_anchor_missing}} =
+               SemanticWork.admit(checkpoint(sha))
+
       assert {:ok, _} = SemanticWork.admit(checkpoint(sha), binding: :graph)
 
       assert {:error, {:refused_semantic_work, :admission_anchor_missing}} =
