@@ -17,6 +17,10 @@ defmodule Xaas.Receipt.RProjectionTest do
   @provider "zcode-r-projection"
   @validator Path.expand("~/.claude/dfcm/validate_receipt.py")
 
+  if not File.regular?(@validator) do
+    @moduletag skip: "needs ~/.claude/dfcm/validate_receipt.py (the fleet R-schema validator)"
+  end
+
   @acc "https://ggen-igniter.dev/ontology/semantic-jira#r-projection-acceptance"
   @court "https://ggen-igniter.dev/ontology/semantic-jira#r-projection-court"
 
