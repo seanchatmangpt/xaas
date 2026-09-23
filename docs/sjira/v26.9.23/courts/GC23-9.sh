@@ -23,10 +23,16 @@
 #   4. the MachineExperience is admitted: machine_experience.ttl holds one
 #      sj:MachineExperience (standing CANDIDATE, authority NONE) linked from one
 #      xme:AdmittedExperience ADMITTED node carrying every ARD section 15 field;
-#      ggen_igniter's SHACL court in GGEN_IGNITER_DIR (private MIX_BUILD_PATH
-#      clone) finds it conformant under sj:MachineExperienceShape (one focus
-#      node) AND refuses a mutation of it (standing ALIVE) -- the shape judged
-#      the node; me-1's OCEL has MachineExperienceAdmitted citing the IRI;
+#      both digests recompute from the Turtle alone, by implementations
+#      independent of the router: python recomputes the experience digest
+#      (ggen_igniter's SemanticJira.digest/1 formula) and the admission digest
+#      (xaas/machine-experience-admission/v2: the admission fields AND the
+#      whole record), and ggen_igniter's own digest/1 in GGEN_IGNITER_DIR
+#      recomputes the record rebuilt from the Turtle; ggen_igniter's SHACL
+#      court (private MIX_BUILD_PATH clone) finds it conformant under
+#      sj:MachineExperienceShape (one focus node) AND refuses a mutation of it
+#      (standing ALIVE) -- the shape judged the node; me-1's OCEL has
+#      MachineExperienceAdmitted citing the IRI and the admission digest;
 #   5. both OCEL logs are valid under mix xaas.ocel_validate and read by
 #      pm4py.read_ocel2_json with the same event and object counts;
 #   6. the ratchet, measured from the two OCEL logs: me-2 has 0 LLM-provider
@@ -41,13 +47,22 @@
 #   7. live route: mix xaas.machine_experience --route over me-2's work graph
 #      and me-1's admitted graph (F3 no-LLM env) is KNOWN from the same IRI;
 #      with an LLM credential exposed it is REFUSED(llm_credential_present);
-#   8. falsifier: with the sj:MachineExperience node removed from the graph
-#      (and, separately, with its admission node removed) the same route is
-#      UNKNOWN; with the admitted predicate replaced by one SPARQL cannot
-#      evaluate the route is REFUSED(experience_predicate_unevaluable) (exit
-#      3: the router fails closed, it never reports "no experience" for one
-#      it could not judge); and the episode runner on a copy of me-2 refuses
-#      to execute: exit 4, UNKNOWN, no drive, unknown/unknown.json written.
+#   8. falsifiers, live over graphs derived from me-1's: with the whole
+#      admitted experience removed, or only its admission node, the route is
+#      UNKNOWN (exit 4); an ADMITTED node that does not verify refuses the
+#      route (exit 3, REFUSED(experience_admission_invalid) naming the check),
+#      never "no experience" and never KNOWN: the sj:MachineExperience node
+#      removed (experience_absent), the capability rewritten or the
+#      sj:workOrderDigest rewritten without recomputing the admission digest
+#      (admission_digest_mismatch), the record's subject rewritten
+#      (experience_digest_mismatch), an extra triple (admission_not_closed),
+#      and an undecodable copy of the admission BESIDE the sound one
+#      (consequence_bounds_undecodable: the sound one alone would route
+#      KNOWN); an admission re-sealed (digest recomputed by python) with a
+#      predicate SPARQL cannot evaluate is REFUSED(experience_predicate_unevaluable)
+#      (exit 3); and the episode runner on copies of me-2 refuses to execute:
+#      without the experience exit 4, UNKNOWN, no drive, unknown/unknown.json
+#      written; over the rewritten capability exit 3, REFUSED, no drive.
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
@@ -139,9 +154,59 @@ for f in ("problemClass", "applicabilityPredicate", "admittedCapability", "provi
 assert str(g.value(adm, XME.sourceExploration)) == xdigest
 capability = str(g.value(adm, XME.admittedCapability))
 assert e1["machine_experience"]["machine_experience"] == str(me)
+
+# both digests, recomputed from the Turtle alone (independent of the router)
+RECORD = {"subject": "subject", "work_order_digest": "workOrderDigest",
+          "execution_receipt_hash": "executionReceiptHash", "verification_digest": "verificationDigest",
+          "resulting_state_digest": "resultingStateDigest", "replay_identity": "replayIdentity",
+          "standing": "standing", "authority": "authorityClaim", "experience_digest": "experienceDigest"}
+ADMISSION = {"problem_class": "problemClass", "applicability_predicate": "applicabilityPredicate",
+             "admitted_capability": "admittedCapability", "provider_class": "providerClass",
+             "successful_verification": "successfulVerification", "consequence_bounds": "consequenceBounds",
+             "source_episode": "sourceEpisode", "source_order": "sourceOrder",
+             "source_exploration": "sourceExploration", "admission": "admission"}
+LISTS = {"required_evidence": "requiredEvidence", "falsifiers": "falsifier"}
+ELIDED = {"definition_digest", "work_order_digest", "transition_digest", "evidence_digest", "receipt_digest",
+          "experience_digest", "repair_digest", "finding_digest", "composition_digest"}
+digest_of = lambda text: "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+compact = lambda value, **kw: json.dumps(value, separators=(",", ":"), ensure_ascii=False, **kw)
+
+def one(graph, node, prop):
+    found = [str(o) for o in graph.objects(node, prop)]
+    assert len(found) <= 1, (node, prop, found)
+    return found[0] if found else None
+
+def record_of(graph, node):
+    rec = {k: one(graph, node, SJ[p]) for k, p in RECORD.items()}
+    rec["kind"] = "MachineExperience"
+    rec["observation_refs"] = sorted(str(o) for o in graph.objects(node, SJ.observationRef))
+    return rec
+
+def admission_of(graph, node):
+    form = {k: one(graph, node, XME[p]) for k, p in ADMISSION.items()}
+    form.update({k: sorted(set(str(o) for o in graph.objects(node, XME[p]))) for k, p in LISTS.items()})
+    return form
+
+def ggen_digest(rec):
+    pairs = sorted(([k, v] for k, v in rec.items() if k not in ELIDED), key=lambda kv: kv[0])
+    return digest_of(compact(pairs))
+
+def admission_digest(rec, form):
+    return digest_of(compact({"schema": "xaas/machine-experience-admission/v2", "experience": rec,
+                              "admission": form}, sort_keys=True))
+
+record = record_of(g, me)
+assert ggen_digest(record) == record["experience_digest"], (ggen_digest(record), record["experience_digest"])
+assert str(me).endswith("ME-" + record["experience_digest"][7:23]), me
+assert admission_digest(record, admission_of(g, adm)) == str(g.value(adm, XME.admissionDigest)), "admission digest"
+rec_json = load(ep1, "machine_experience.json")["experience"]
+assert rec_json == record, "machine_experience.json record differs from the Turtle node"
+open(f"{tmp}/record.json", "w").write(compact(record))
+
 o1 = load(ep1, "ocel.json"); o2 = load(ep2, "ocel.json")
 admitted = [e for e in o1["ocel:events"] if e["type"] == "MachineExperienceAdmitted"]
 assert len(admitted) == 1 and admitted[0]["attributes"]["machine_experience"] == str(me)
+assert admitted[0]["attributes"]["admission_digest"] == str(g.value(adm, XME.admissionDigest))
 
 # 5. OCEL: pm4py reads both standard logs, same counts as the court logs
 for ep, court in ((ep1, o1), (ep2, o2)):
@@ -171,6 +236,7 @@ r = route2["route"]
 assert route2["decision"] == "KNOWN" and r["source"] == "machine_experience", route2
 assert r["machine_experience"] == str(me) and r["capability"] == capability, r
 assert r["experience_digest"] == str(g.value(me, SJ.experienceDigest))
+assert r["admission_digest"] == str(g.value(adm, XME.admissionDigest))
 assert e2["route"] == {**e2["route"], "machine_experience": str(me)} and e2["decision"] == "KNOWN"
 cited = f"machine-experience:{me}"
 for kind in ("RouteDecided", "CapabilityResolved"):
@@ -183,18 +249,31 @@ rows = [str(x[0]) for x in og.query(str(g.value(adm, XME.applicabilityPredicate)
 assert rows == [route2["order_iri"]], f"rdflib predicate selects {rows}, route order {route2['order_iri']}"
 
 # the falsifier graphs for step 8
-no_me = rdflib.Graph(); no_me.parse(f"{ep1}/machine_experience.ttl", format="turtle")
-no_me.remove((me, None, None)); no_me.serialize(f"{tmp}/no-me.ttl", format="turtle")
-no_adm = rdflib.Graph(); no_adm.parse(f"{ep1}/machine_experience.ttl", format="turtle")
-no_adm.remove((adm, None, None)); no_adm.serialize(f"{tmp}/no-admission.ttl", format="turtle")
-promoted = rdflib.Graph(); promoted.parse(f"{ep1}/machine_experience.ttl", format="turtle")
-promoted.set((me, SJ.standing, rdflib.Literal("ALIVE"))); promoted.serialize(f"{tmp}/promoted.ttl", format="turtle")
-unevaluable = rdflib.Graph(); unevaluable.parse(f"{ep1}/machine_experience.ttl", format="turtle")
-unevaluable.set((adm, XME.applicabilityPredicate, rdflib.Literal("SELECT nonsense")))
-unevaluable.serialize(f"{tmp}/unevaluable.ttl", format="turtle")
+def derived(name, edit):
+    d = rdflib.Graph(); d.parse(f"{ep1}/machine_experience.ttl", format="turtle")
+    edit(d); d.serialize(f"{tmp}/{name}.ttl", format="turtle")
+derived("no-experience", lambda d: (d.remove((me, None, None)), d.remove((adm, None, None))))
+derived("no-admission", lambda d: d.remove((adm, None, None)))
+derived("no-me", lambda d: d.remove((me, None, None)))
+derived("promoted", lambda d: d.set((me, SJ.standing, rdflib.Literal("ALIVE"))))
+derived("edited-capability", lambda d: d.set((adm, XME.admittedCapability, rdflib.Literal("recipe:other-fix"))))
+derived("edited-work-order", lambda d: d.set((me, SJ.workOrderDigest, rdflib.Literal("sha256:" + "0" * 64))))
+derived("edited-subject", lambda d: d.set((me, SJ.subject, rdflib.Literal("seanchatmangpt/ggen_igniter@elsewhere#EP-A"))))
+derived("extra-triple", lambda d: d.add((adm, XME.note, rdflib.Literal("extra"))))
+def beside(d):
+    copy = rdflib.URIRef(str(adm) + "-copy")
+    for p, o in list(d.predicate_objects(adm)):
+        d.add((copy, p, rdflib.Literal("not json") if p == XME.consequenceBounds else o))
+derived("beside", beside)
+def sealed(d):
+    d.set((adm, XME.applicabilityPredicate, rdflib.Literal("SELECT nonsense")))
+    d.set((adm, XME.admissionDigest, rdflib.Literal(admission_digest(record_of(d, me), admission_of(d, adm)))))
+derived("sealed-unevaluable", sealed)
 open(f"{tmp}/me.iri", "w").write(str(me))
 print(f"recorded: me-1 {n1} events / {e1['step_count']} steps (LLM-provider {len(llm1)}, exploration {len(x1)}); "
       f"me-2 {n2} events / {e2['step_count']} steps (LLM-provider 0, exploration 0); route cites {me} -> {capability}")
+print(f"digests (python, from the Turtle): experience {record['experience_digest'][:19]}... admission "
+      f"{str(g.value(adm, XME.admissionDigest))[:19]}... both recompute")
 PY
 
 # 4 (live): ggen_igniter's SHACL court in GGEN_IGNITER_DIR, private build clone
@@ -235,6 +314,11 @@ shacl "$tmp/promoted.ttl" "$tmp/promoted.out"; code=$?
 [ "$code" = "1" ] || { tail -5 "$tmp/promoted.out"; refuse "anti-vacuity: the shape court admitted a MachineExperience promoted to ALIVE (exit $code)"; }
 grep -q '"conforms":false' "$tmp/promoted.out" || refuse "anti-vacuity: no conforms=false report for the promoted mutation"
 echo "shacl anti-vacuity: standing ALIVE mutation refused"
+(cd "$ggen" && env PATH="$tpath" MIX_ENV=test MIX_BUILD_PATH="$tmp/build/test" "$tmix" run --no-start \
+  "$xaas/scripts/machine_experience.exs" digest "$tmp/record.json" </dev/null) >"$tmp/digest.out" 2>&1; code=$?
+[ "$code" = "0" ] && grep -q '"ok":true' "$tmp/digest.out" ||
+  { tail -3 "$tmp/digest.out"; refuse "ggen_igniter SemanticJira.digest/1 does not recompute the committed sj:experienceDigest (exit $code)"; }
+echo "ggen digest: SemanticJira.digest/1 recomputes the committed experience digest"
 
 # 5 (live): the xaas OCEL court on both logs
 for ep in "$ep1" "$ep2"; do
@@ -262,35 +346,54 @@ code=$?
   { tail -3 "$tmp/f3.log"; refuse "F3: route with ANTHROPIC_API_KEY=x exited $code, expected REFUSED(llm_credential_present)"; }
 echo "F3: route refused with an exposed credential"
 
-# 8. falsifier: no admitted experience -> UNKNOWN, nothing executes
-for g in no-me no-admission; do
+# 8. falsifiers: no admitted experience -> UNKNOWN; an unverifiable admission -> REFUSED, never KNOWN
+route_on() {
   MIX_ENV=test sh "$env_sh" -- mix xaas.machine_experience --route --work "$ep2/work.json" \
-    --experience "$tmp/$g.ttl" >"$tmp/$g.log" 2>&1
-  code=$?
-  [ "$code" = "4" ] && tail -1 "$tmp/$g.log" | grep -q '"reason":"no_capability_no_experience"' ||
-    { tail -3 "$tmp/$g.log"; refuse "falsifier: route over the $g graph exited $code, expected 4 UNKNOWN"; }
-  echo "falsifier ($g): UNKNOWN"
-done
-MIX_ENV=test sh "$env_sh" -- mix xaas.machine_experience --route --work "$ep2/work.json" \
-  --experience "$tmp/unevaluable.ttl" >"$tmp/unevaluable.log" 2>&1
-code=$?
-[ "$code" = "3" ] && tail -1 "$tmp/unevaluable.log" | grep -q '"reason":"experience_predicate_unevaluable"' ||
-  { tail -3 "$tmp/unevaluable.log"; refuse "falsifier: route over an admitted experience with an unevaluable predicate exited $code, expected 3 REFUSED(experience_predicate_unevaluable) (fail closed, never 'no experience')"; }
-echo "falsifier (unevaluable predicate): REFUSED(experience_predicate_unevaluable)"
-mkdir -p "$tmp/eps/me-2"
-cp "$ep2/work.json" "$tmp/eps/me-2/work.json"
-: >"$tmp/eps/me-2/ledger.ndjson"
-MIX_ENV=test sh "$env_sh" -- mix xaas.machine_experience --name me-2 --ggen-igniter-dir "$ggen" \
-  --out-root "$tmp/eps" --experience "$tmp/no-me.ttl" --no-pin >"$tmp/run.log" 2>&1
-code=$?
-[ "$code" = "4" ] || { tail -3 "$tmp/run.log"; refuse "falsifier: the episode runner without the experience exited $code, expected 4 (UNKNOWN, refused to execute)"; }
-[ ! -e "$tmp/eps/me-2/drive" ] && [ ! -e "$tmp/eps/me-2/episode.json" ] || refuse "falsifier: the runner executed a drive without an admitted experience"
+    --experience "$tmp/$1.ttl" >"$tmp/$1.log" 2>&1
+}
+expect() { # graph exit reason [invalid-reason]
+  route_on "$1"; code=$?
+  tail -1 "$tmp/$1.log" | python3 -c '
+import json, sys
+r = json.loads(sys.stdin.read()); code, reason, invalid = sys.argv[1:4]
+assert r["reason"] == reason, r
+if invalid:
+    assert [i["reason"] for i in r["detail"]["invalid"]] == [invalid], r["detail"]["invalid"]
+' "$code" "$2" "${3:-}" 2>/dev/null && [ "$code" = "$4" ] ||
+    { tail -3 "$tmp/$1.log"; refuse "falsifier: route over the $1 graph exited $code, expected $4 $2 ${3:-}"; }
+  echo "falsifier ($1): exit $code $2 ${3:-}"
+}
+expect no-experience no_capability_no_experience "" 4
+expect no-admission no_capability_no_experience "" 4
+expect no-me experience_admission_invalid experience_absent 3
+expect edited-capability experience_admission_invalid admission_digest_mismatch 3
+expect edited-work-order experience_admission_invalid admission_digest_mismatch 3
+expect edited-subject experience_admission_invalid experience_digest_mismatch 3
+expect extra-triple experience_admission_invalid admission_not_closed 3
+expect beside experience_admission_invalid consequence_bounds_undecodable 3
+expect sealed-unevaluable experience_predicate_unevaluable "" 3
+runner() { # name graph
+  mkdir -p "$tmp/eps-$1/me-2"
+  cp "$ep2/work.json" "$tmp/eps-$1/me-2/work.json"
+  : >"$tmp/eps-$1/me-2/ledger.ndjson"
+  MIX_ENV=test sh "$env_sh" -- mix xaas.machine_experience --name me-2 --ggen-igniter-dir "$ggen" \
+    --out-root "$tmp/eps-$1" --experience "$tmp/$2.ttl" --no-pin >"$tmp/run-$1.log" 2>&1
+}
+runner bare no-experience; code=$?
+[ "$code" = "4" ] || { tail -3 "$tmp/run-bare.log"; refuse "falsifier: the episode runner without the experience exited $code, expected 4 (UNKNOWN, refused to execute)"; }
+[ ! -e "$tmp/eps-bare/me-2/drive" ] && [ ! -e "$tmp/eps-bare/me-2/episode.json" ] || refuse "falsifier: the runner executed a drive without an admitted experience"
+[ ! -s "$tmp/eps-bare/me-2/ledger.ndjson" ] || refuse "falsifier: the runner wrote the ledger without an admitted experience"
 python3 -c '
 import json, sys
 u = json.load(open(sys.argv[1]))
 assert u["standing"]["value"] == "UNKNOWN" and u["consequence"]["commits"] == [], u["standing"]
-' "$tmp/eps/me-2/unknown/unknown.json" || refuse "falsifier: no receipted UNKNOWN"
-echo "falsifier (runner): UNKNOWN, no drive, unknown/unknown.json receipted"
+' "$tmp/eps-bare/me-2/unknown/unknown.json" || refuse "falsifier: no receipted UNKNOWN"
+echo "falsifier (runner, no experience): UNKNOWN, no drive, unknown/unknown.json receipted"
+runner edited edited-capability; code=$?
+[ "$code" = "3" ] && tail -1 "$tmp/run-edited.log" | grep -q '"reason":"experience_admission_invalid"' ||
+  { tail -3 "$tmp/run-edited.log"; refuse "falsifier: the episode runner over an edited admission exited $code, expected 3 REFUSED(experience_admission_invalid)"; }
+[ ! -e "$tmp/eps-edited/me-2/drive" ] && [ ! -s "$tmp/eps-edited/me-2/ledger.ndjson" ] || refuse "falsifier: the runner executed over an edited admission"
+echo "falsifier (runner, edited admission): REFUSED, no drive"
 
 echo "ALIVE: GC23-9 episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 KNOWN from $me_iri with 0 LLM-provider and 0 exploration events and fewer events/steps"
 exit 0

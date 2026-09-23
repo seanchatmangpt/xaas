@@ -13,22 +13,42 @@ defmodule Xaas.Ultracode.MachineExperience do
 
     1. KNOWN from its own declared `requires_capability`, when it has one;
     2. otherwise KNOWN from ADMITTED MachineExperience in an RDF graph: an
-       `xme:AdmittedExperience` node with `xme:admission "ADMITTED"` whose
-       `xme:experience` is a present `sj:MachineExperience` node carrying its
-       `sj:experienceDigest`, whose `xme:applicabilityPredicate` (a SPARQL
+       `xme:AdmittedExperience` node with `xme:admission "ADMITTED"` that
+       VERIFIES (`admissions/1`) -- its `xme:experience` names a present
+       `sj:MachineExperience` node whose record passes admission's record
+       checks (the exact field set, CANDIDATE/NONE, sha256 digests, set-shaped
+       observation refs) and whose `sj:experienceDigest` recomputes
+       (`experience_digest/1`, ggen_igniter's `SemanticJira.digest/1`); its
+       ARD section 15 fields are complete, its capability canonical, its
+       bounds decodable; its `xme:admissionDigest` recomputes
+       (`admission_digest/2` over the admission fields AND the whole
+       experience record); and the two nodes carry exactly the triples
+       `to_turtle/2` renders from what was read (closed). A verified
+       admission applies when its `xme:applicabilityPredicate` (a SPARQL
        SELECT over the order's RDF rendering, `order_graph/1`) selects the
-       order, and whose `xme:consequenceBounds` contain the order's authority
+       order and its `xme:consequenceBounds` contain the order's authority
        ceiling, consequence class and path scope. The route names the
        experience by IRI and takes the capability from the graph's
-       `xme:admittedCapability` -- never from a literal in code or in the
-       order;
+       `xme:admittedCapability` of a verified admission -- never from a
+       literal in code or in the order, and never from an admission edited
+       after `admit/4`;
     3. otherwise UNKNOWN (`no_capability_no_experience`), or UNKNOWN
        (`ambiguous_experience`) when applicable experiences name different
        capabilities.
 
-  Removing the `sj:MachineExperience` node (or its admission) from the graph
-  turns a KNOWN route UNKNOWN: the route exists only because the admitted
-  experience does.
+  The router fails closed: an ADMITTED node that does not verify refuses the
+  route (`REFUSED(experience_admission_invalid)`, naming the node and the
+  failed check), and so does a verified admission whose predicate cannot be
+  evaluated (`REFUSED(experience_predicate_unevaluable)`). Neither is ever
+  read as "no experience": it might apply, and beside another experience
+  make the route ambiguous. Removing the whole admitted experience (both
+  nodes), or its admission node, turns a KNOWN route UNKNOWN; removing only
+  the `sj:MachineExperience` node under an ADMITTED admission refuses it.
+
+  Digest recomputation detects any edit made without recomputing the
+  digests; it is content addressing, not authority (a writer who recomputes
+  them forges a self-consistent node -- authority stays with BRCE, leases
+  and receipts).
 
   ## Manufacture (`generalize/1`, `experience_attrs/3`, `to_turtle/2`)
 
@@ -123,6 +143,22 @@ defmodule Xaas.Ultracode.MachineExperience do
   @ard_fields ~w(problem_class applicability_predicate admitted_capability provider_class
                  required_evidence falsifiers successful_verification consequence_bounds
                  source_episode)
+
+  # admission fields that are sets (0..n literals); every other one is 0..1
+  @admission_list_fields ~w(required_evidence falsifiers)
+
+  # the admission digest's input schema (v2: the admission fields AND the
+  # whole experience record, both in graph normal form)
+  @admission_schema "xaas/machine-experience-admission/v2"
+
+  # the record fields GgenIgniter.SemanticJira.digest/1 elides
+  # (drop_digest_fields/1 in ggen_igniter lib/ggen_igniter/semantic_jira.ex)
+  @ggen_elided ~w(definition_digest work_order_digest transition_digest evidence_digest
+                  receipt_digest experience_digest repair_digest finding_digest
+                  composition_digest)
+
+  @record_digest_fields ~w(work_order_digest execution_receipt_hash verification_digest
+                           resulting_state_digest experience_digest)
 
   @doc "Namespace IRIs: `%{sj:, v23:, xme:}`."
   @spec namespaces() :: %{String.t() => String.t()}
@@ -325,51 +361,364 @@ defmodule Xaas.Ultracode.MachineExperience do
   end
 
   @doc """
-  The ADMITTED experiences of `graph`, sorted by experience IRI: one map per
-  `xme:AdmittedExperience` node with `xme:admission "ADMITTED"` whose
-  `xme:experience` names a `sj:MachineExperience` node present in the graph
-  with an `sj:experienceDigest`. Keys: `"machine_experience"`,
-  `"admission"`, `"experience_digest"`, the ARD section 15 fields, and
-  `"admission_digest"`. Incomplete admissions are left out.
+  The VERIFIED ADMITTED experiences of `graph`, sorted by experience IRI
+  (`admissions(graph)["admitted"]`). Keys: `"machine_experience"`,
+  `"admission"`, `"experience_digest"`, the ARD section 15 fields
+  (`"consequence_bounds"` decoded), `"source_order"`,
+  `"source_exploration"` and `"admission_digest"`.
   """
   @spec experiences(RDF.Graph.t()) :: [map()]
-  def experiences(%RDF.Graph{} = graph) do
-    graph
-    |> subjects_of_type(@xme <> "AdmittedExperience")
-    |> Enum.flat_map(fn admission -> admitted(graph, admission) end)
-    |> Enum.sort_by(& &1["machine_experience"])
+  def experiences(%RDF.Graph{} = graph), do: admissions(graph)["admitted"]
+
+  @doc """
+  Judges every `xme:AdmittedExperience` node of `graph` (sorted by IRI) and
+  returns `%{"admitted" => [...], "invalid" => [...], "not_admitted" =>
+  [...], "without_admission" => [...]}`:
+
+    * `"not_admitted"` -- the node's `xme:admission` does not include
+      `"ADMITTED"` (`%{"admission", "admission_values"}`): never routable,
+      never ambiguous;
+    * `"admitted"` -- `xme:admission` is `"ADMITTED"` and the node verifies
+      (the experience map of `experiences/1`);
+    * `"invalid"` -- `xme:admission` includes `"ADMITTED"` but the node does
+      not verify: `%{"admission", "machine_experience", "reason", ...}` with
+      the first failed check, in this order: `admission_not_single` (the
+      admission is not exactly `"ADMITTED"`), `experience_link_not_single`,
+      `experience_absent`, `experience_field_not_single`, the record checks
+      of `admit/4` (`experience_fields_unmapped`, `experience_not_candidate`,
+      `experience_digest_malformed`, `experience_not_graph_representable`,
+      `experience_digest_mismatch`), `admission_field_not_single`,
+      `ard_field_missing`, `invalid_capability`,
+      `consequence_bounds_undecodable`, `admission_digest_mismatch`,
+      `admission_not_closed` (the two nodes' triples are not exactly those
+      `to_turtle/2` renders from what was read: an extra or retyped triple);
+    * `"without_admission"` -- `sj:MachineExperience` IRIs no
+      `xme:AdmittedExperience` node links (CANDIDATE records, never routes).
+
+  Nothing is dropped silently: every node lands in exactly one list.
+  """
+  @spec admissions(RDF.Graph.t()) :: %{String.t() => [map() | String.t()]}
+  def admissions(%RDF.Graph{} = graph) do
+    nodes = graph |> subjects_of_type(@xme <> "AdmittedExperience") |> Enum.sort_by(&to_string/1)
+    linked = nodes |> Enum.flat_map(&objects(graph, &1, @xme <> "experience")) |> MapSet.new()
+
+    judged =
+      Enum.reduce(nodes, %{"admitted" => [], "invalid" => [], "not_admitted" => []}, fn node,
+                                                                                        acc ->
+        {bucket, value} = judge(graph, node)
+        Map.update!(acc, bucket, &(&1 ++ [value]))
+      end)
+
+    without =
+      graph
+      |> subjects_of_type(@sj <> "MachineExperience")
+      |> Enum.reject(&MapSet.member?(linked, &1))
+      |> Enum.map(&to_string/1)
+      |> Enum.sort()
+
+    judged
+    |> Map.update!("admitted", &Enum.sort_by(&1, fn e -> e["machine_experience"] end))
+    |> Map.put("without_admission", without)
   end
 
-  defp admitted(graph, admission) do
-    with ["ADMITTED"] <- values(graph, admission, @xme <> "admission"),
-         [%RDF.IRI{} = me] <- objects(graph, admission, @xme <> "experience"),
-         true <- typed?(graph, me, @sj <> "MachineExperience"),
-         [digest] <- values(graph, me, @sj <> "experienceDigest"),
-         [capability] <- values(graph, admission, @xme <> "admittedCapability"),
-         true <- Regex.match?(@capability, capability),
-         [predicate] <- values(graph, admission, @xme <> "applicabilityPredicate"),
-         [bounds_json] <- values(graph, admission, @xme <> "consequenceBounds"),
-         {:ok, %{} = bounds} <- Jason.decode(bounds_json) do
-      [
-        %{
-          "machine_experience" => to_string(me),
-          "admission" => to_string(admission),
-          "experience_digest" => digest,
-          "problem_class" => single(graph, admission, "problemClass"),
-          "applicability_predicate" => predicate,
-          "admitted_capability" => capability,
-          "provider_class" => single(graph, admission, "providerClass"),
-          "required_evidence" => values(graph, admission, @xme <> "requiredEvidence"),
-          "falsifiers" => values(graph, admission, @xme <> "falsifier"),
-          "successful_verification" => single(graph, admission, "successfulVerification"),
-          "consequence_bounds" => bounds,
-          "source_episode" => single(graph, admission, "sourceEpisode"),
-          "admission_digest" => single(graph, admission, "admissionDigest")
-        }
-      ]
+  defp judge(graph, node) do
+    admission_values = values(graph, node, @xme <> "admission")
+
+    if "ADMITTED" in admission_values do
+      case verify(graph, node, admission_values) do
+        {:ok, experience} ->
+          {"admitted", experience}
+
+        {:refuse, reason, detail} ->
+          {"invalid",
+           detail
+           |> Map.merge(%{"admission" => to_string(node), "reason" => reason})
+           |> Map.put_new("machine_experience", nil)}
+      end
     else
-      _ -> []
+      {"not_admitted", %{"admission" => to_string(node), "admission_values" => admission_values}}
     end
+  end
+
+  # Re-admission from the graph: every check of admit/4 that the graph can
+  # answer, plus both digests recomputed and the nodes closed. The lazy
+  # `with` stops at the first failed check.
+  defp verify(graph, node, admission_values) do
+    with :ok <-
+           check(admission_values == ["ADMITTED"], "admission_not_single", %{
+             "admission_values" => admission_values
+           }),
+         {:ok, me} <- experience_link(graph, node),
+         {:ok, record} <- read_record(graph, me),
+         :ok <- first_refusal(record_checks(record)),
+         {:ok, admission} <- read_admission(graph, node, me),
+         :ok <- first_refusal(admission_checks(admission)),
+         :ok <-
+           check(
+             admission["admission_digest"] == admission_digest(record, admission),
+             "admission_digest_mismatch",
+             %{
+               "machine_experience" => to_string(me),
+               "recorded" => admission["admission_digest"]
+             }
+           ),
+         :ok <- closed(graph, node, me, record, admission) do
+      {:ok,
+       admission
+       |> Map.take(@ard_fields ++ ~w(source_order source_exploration admission_digest))
+       |> Map.merge(%{
+         "machine_experience" => to_string(me),
+         "admission" => to_string(node),
+         "experience_digest" => record["experience_digest"],
+         "consequence_bounds" => Jason.decode!(admission["consequence_bounds"])
+       })}
+    end
+  end
+
+  defp experience_link(graph, node) do
+    case objects(graph, node, @xme <> "experience") do
+      [%RDF.IRI{} = me] ->
+        if typed?(graph, me, @sj <> "MachineExperience"),
+          do: {:ok, me},
+          else: {:refuse, "experience_absent", %{"machine_experience" => to_string(me)}}
+
+      linked ->
+        {:refuse, "experience_link_not_single", %{"linked" => Enum.map(linked, &to_string/1)}}
+    end
+  end
+
+  # the sj:MachineExperience node as the ggen_igniter record it renders
+  defp read_record(graph, me) do
+    Enum.reduce_while(@experience_fields, {:ok, %{"kind" => "MachineExperience"}}, fn
+      {"observation_refs" = key, property}, {:ok, acc} ->
+        {:cont, {:ok, Map.put(acc, key, values(graph, me, @sj <> property))}}
+
+      {key, property}, {:ok, acc} ->
+        case values(graph, me, @sj <> property) do
+          [value] ->
+            {:cont, {:ok, Map.put(acc, key, value)}}
+
+          found ->
+            {:halt,
+             {:refuse, "experience_field_not_single",
+              %{"machine_experience" => to_string(me), "field" => key, "values" => found}}}
+        end
+    end)
+  end
+
+  # the xme:AdmittedExperience node as the admission map admit/4 returned
+  defp read_admission(graph, node, me) do
+    Enum.reduce_while(@admission_fields, {:ok, %{}}, fn {key, property}, {:ok, acc} ->
+      found = values(graph, node, @xme <> property)
+
+      cond do
+        key in @admission_list_fields ->
+          {:cont, {:ok, Map.put(acc, key, found)}}
+
+        length(found) <= 1 ->
+          {:cont, {:ok, Map.put(acc, key, List.first(found))}}
+
+        true ->
+          {:halt,
+           {:refuse, "admission_field_not_single",
+            %{"machine_experience" => to_string(me), "field" => key, "values" => found}}}
+      end
+    end)
+  end
+
+  # The two nodes carry exactly the triples to_turtle/2 renders from what
+  # was read: nothing extra (an unknown property, a second rdf:type, a typed
+  # literal where a plain one was rendered) and nothing under another IRI.
+  defp closed(graph, node, me, record, admission) do
+    rendered = record |> to_turtle(admission) |> RDF.Turtle.read_string!()
+
+    present =
+      [me, node]
+      |> Enum.flat_map(fn subject ->
+        case RDF.Graph.description(graph, subject) do
+          nil -> []
+          description -> RDF.Description.triples(description)
+        end
+      end)
+      |> MapSet.new()
+
+    expected = rendered |> RDF.Graph.triples() |> MapSet.new()
+    extra = MapSet.difference(present, expected)
+    missing = MapSet.difference(expected, present)
+
+    check(MapSet.size(extra) == 0 and MapSet.size(missing) == 0, "admission_not_closed", %{
+      "machine_experience" => to_string(me),
+      "extra" => extra |> Enum.map(&inspect/1) |> Enum.sort() |> Enum.take(5),
+      "missing" => missing |> Enum.map(&inspect/1) |> Enum.sort() |> Enum.take(5)
+    })
+  end
+
+  # -- checks shared by admit/4 (at admission) and verify/3 (at routing) ------
+
+  defp record_checks(record) do
+    keys = record |> Map.keys() |> Enum.sort()
+    expected = ["kind" | Enum.map(@experience_fields, &elem(&1, 0))] |> Enum.sort()
+
+    [
+      fn -> check(keys == expected, "experience_fields_unmapped", %{"keys" => keys}) end,
+      fn ->
+        check(
+          record["kind"] == "MachineExperience" and record["standing"] == "CANDIDATE" and
+            record["authority"] == "NONE",
+          "experience_not_candidate",
+          Map.take(record, ~w(kind standing authority))
+        )
+      end,
+      fn ->
+        check(
+          Enum.all?(
+            @record_digest_fields,
+            &Regex.match?(@digest, to_string_or_empty(record[&1]))
+          ),
+          "experience_digest_malformed",
+          Map.take(record, @record_digest_fields)
+        )
+      end,
+      fn ->
+        refs = record["observation_refs"]
+
+        check(
+          Enum.all?(Map.keys(record) -- ["observation_refs"], &nonblank?(record[&1])) and
+            is_list(refs) and refs != [] and Enum.all?(refs, &nonblank?/1) and
+            refs == refs |> Enum.uniq() |> Enum.sort(),
+          "experience_not_graph_representable",
+          %{"observation_refs" => refs}
+        )
+      end,
+      fn ->
+        computed = experience_digest(record)
+
+        check(computed == record["experience_digest"], "experience_digest_mismatch", %{
+          "recorded" => record["experience_digest"],
+          "computed" => computed
+        })
+      end
+    ]
+  end
+
+  defp admission_checks(admission) do
+    malformed =
+      Enum.reject(@ard_fields, fn field ->
+        value = admission[field]
+
+        if field in @admission_list_fields,
+          do: is_list(value) and value != [] and Enum.all?(value, &nonblank?/1),
+          else: nonblank?(value)
+      end)
+
+    [
+      fn -> check(malformed == [], "ard_field_missing", %{"missing" => malformed}) end,
+      fn ->
+        check(
+          Regex.match?(@capability, to_string_or_empty(admission["admitted_capability"])),
+          "invalid_capability",
+          %{"capability" => admission["admitted_capability"]}
+        )
+      end,
+      fn ->
+        check(
+          is_map(decode(admission["consequence_bounds"])),
+          "consequence_bounds_undecodable",
+          %{
+            "consequence_bounds" => admission["consequence_bounds"]
+          }
+        )
+      end
+    ]
+  end
+
+  defp first_refusal(checks) do
+    Enum.find_value(checks, :ok, fn condition ->
+      case condition.() do
+        :ok -> nil
+        refusal -> refusal
+      end
+    end)
+  end
+
+  # ---------------------------------------------------------------------------
+  # digests
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  The experience digest of a ggen_igniter experience record, exactly as
+  `GgenIgniter.SemanticJira.digest/1` computes it (ggen_igniter
+  lib/ggen_igniter/semantic_jira.ex): the top-level `*_digest` fields it
+  elides (`work_order_digest`, `experience_digest`, ...) dropped, every map
+  rendered as its key-sorted list of `[key, value]` pairs, `Jason.encode!/1`,
+  `"sha256:" <> hex`. ggen_igniter is not a compile-time dependency of this
+  application (xaas pins the hex release, which has no SemanticJira), so the
+  formula is bound here and qualified against the real function: `admit/4`
+  refuses a record whose digest does not recompute
+  (`experience_digest_mismatch`), the end-to-end test compares it with
+  records the real `machine_experience/1` manufactured, and the GC23-9 court
+  has ggen_igniter's own `digest/1` recompute the committed record.
+  """
+  @spec experience_digest(map()) :: String.t()
+  def experience_digest(%{} = record) do
+    record
+    |> Map.drop(@ggen_elided)
+    |> ggen_canonical()
+    |> Jason.encode!()
+    |> sha256()
+  end
+
+  defp ggen_canonical(%{} = map) when not is_struct(map) do
+    map
+    |> Enum.map(fn {key, value} -> [to_string(key), ggen_canonical(value)] end)
+    |> Enum.sort_by(&hd/1)
+  end
+
+  defp ggen_canonical(list) when is_list(list), do: Enum.map(list, &ggen_canonical/1)
+  defp ggen_canonical(value) when is_boolean(value) or is_nil(value), do: value
+  defp ggen_canonical(value) when is_atom(value), do: Atom.to_string(value)
+  defp ggen_canonical(value), do: value
+
+  @doc """
+  The admission digest (#{@admission_schema}): sha256 of the canonical JSON
+  of `%{"schema", "experience", "admission"}` -- the WHOLE experience record
+  (every field the `sj:MachineExperience` node carries, including
+  `work_order_digest`, which the experience digest elides) and the
+  admission's fields and verdict without the digest itself, both in graph
+  normal form (`admission_form/1`: set-valued fields de-duplicated and
+  sorted, blank values nil), so the digest recomputed from the rendered
+  graph equals the one `admit/4` recorded iff nothing was edited.
+  """
+  @spec admission_digest(map(), map()) :: String.t()
+  def admission_digest(experience, admission) do
+    sha256(
+      canonical_json(%{
+        "schema" => @admission_schema,
+        "experience" => experience,
+        "admission" => admission_form(admission)
+      })
+    )
+  end
+
+  @doc """
+  The admission map in graph normal form: every `xme:` admission field but
+  the digest (the ARD section 15 fields, `source_order`,
+  `source_exploration`, `admission`); set-valued fields
+  (`required_evidence`, `falsifiers`) as sorted unique lists of non-blank
+  strings, every other field its non-blank value or nil.
+  """
+  @spec admission_form(map()) :: map()
+  def admission_form(admission) do
+    @admission_fields
+    |> Enum.reject(fn {key, _} -> key == "admission_digest" end)
+    |> Map.new(fn {key, _} ->
+      value = admission[key]
+
+      if key in @admission_list_fields,
+        do:
+          {key, value |> List.wrap() |> Enum.filter(&nonblank?/1) |> Enum.uniq() |> Enum.sort()},
+        else: {key, if(nonblank?(value), do: value)}
+    end)
   end
 
   # ---------------------------------------------------------------------------
@@ -382,13 +731,19 @@ defmodule Xaas.Ultracode.MachineExperience do
   `"machine_experience"` is the experience IRI and `"capability"` its
   `xme:admittedCapability`), or `{:unknown, typed}` with standing
   `"UNKNOWN"` and reason `no_capability_no_experience` /
-  `ambiguous_experience`. `{:refused, typed}` for a declared capability
-  outside the canonical `provider:id` pattern, and
-  `REFUSED(experience_predicate_unevaluable)` (broken term `mu_on_O`) when
-  an admitted experience's applicability predicate cannot be evaluated
-  (`applicability/2`): the router fails closed rather than report "no
+  `ambiguous_experience`. `{:refused, typed}` (broken term `mu_on_O`) for a
+  declared capability outside the canonical `provider:id` pattern;
+  `REFUSED(experience_admission_invalid)` when any ADMITTED node of the
+  graph does not verify (`admissions/1`; the detail lists every such node
+  with its failed check) -- whether or not it would apply, since what an
+  unverified admission says (its predicate, bounds and capability) cannot
+  be trusted to decide that; and `REFUSED(experience_predicate_unevaluable)`
+  when a verified admission's applicability predicate cannot be evaluated
+  (`applicability/2`). The router fails closed rather than report "no
   experience" for an experience it could not judge (it might apply, and
-  with another experience make the route ambiguous).
+  with another experience make the route ambiguous). The UNKNOWN detail
+  also names the admissions that are not ADMITTED and the
+  `sj:MachineExperience` records without an admission node.
   """
   @spec route(map(), RDF.Graph.t() | nil) ::
           {:known, map()} | {:unknown, map()} | {:refused, map()}
@@ -407,11 +762,39 @@ defmodule Xaas.Ultracode.MachineExperience do
   end
 
   def route(row, graph) do
-    considered = if graph, do: experiences(graph), else: []
+    judged =
+      if graph,
+        do: admissions(graph),
+        else: %{
+          "admitted" => [],
+          "invalid" => [],
+          "not_admitted" => [],
+          "without_admission" => []
+        }
 
-    with {:ok, applicable} <- applicable(considered, row) do
-      decide(row, considered, applicable)
+    considered = judged["admitted"]
+
+    with :ok <- verified(judged, row),
+         {:ok, applicable} <- applicable(considered, row) do
+      decide(row, judged, applicable)
     end
+  end
+
+  defp verified(%{"invalid" => []}, _row), do: :ok
+
+  defp verified(%{"invalid" => invalid} = judged, row) do
+    {:refused,
+     typed(
+       "REFUSED(experience_admission_invalid)",
+       "experience_admission_invalid",
+       "mu_on_O",
+       "route",
+       %{
+         "order" => row["identity"],
+         "invalid" => invalid,
+         "experiences_considered" => Enum.map(judged["admitted"], & &1["machine_experience"])
+       }
+     )}
   end
 
   defp applicable(considered, row) do
@@ -445,12 +828,14 @@ defmodule Xaas.Ultracode.MachineExperience do
     end)
   end
 
-  defp decide(row, considered, applicable) do
+  defp decide(row, judged, applicable) do
     detail = %{
       "order" => row["identity"],
       "failure_class" => row["failure_class"],
-      "experiences_considered" => Enum.map(considered, & &1["machine_experience"]),
-      "experiences_applicable" => Enum.map(applicable, & &1["machine_experience"])
+      "experiences_considered" => Enum.map(judged["admitted"], & &1["machine_experience"]),
+      "experiences_applicable" => Enum.map(applicable, & &1["machine_experience"]),
+      "admissions_not_admitted" => Enum.map(judged["not_admitted"], & &1["admission"]),
+      "experiences_without_admission" => judged["without_admission"]
     }
 
     case applicable |> Enum.map(& &1["admitted_capability"]) |> Enum.uniq() do
@@ -590,103 +975,94 @@ defmodule Xaas.Ultracode.MachineExperience do
   @doc """
   Admission of a manufactured experience (the gate; it can refuse): the
   ggen_igniter record must be exactly the shape's field set with standing
-  CANDIDATE, authority NONE and sha256-shaped digests; every ARD section 15
-  field must be non-blank; the admitted capability must be canonical; the
-  applicability predicate must evaluate (`applicability/2`) and select its
-  own source order, and the bounds must contain it; `evidence` must show an
-  ALIVE drive whose independent court passed and whose revert falsifier
-  killed; and the experience must come from a recorded, bounded
-  exploration (PRD PR-016): `evidence["exploration"]` (`"digest"`,
-  `"budget"`, `"used"`) is bound to the fields' `source_exploration` digest
-  and its usage is within every budget dimension
-  (`Exploration.within_budget/2`) -- an over-budget exploration never
-  becomes an admitted experience. `{:ok, admission}` (the fields plus
-  `"admission" => "ADMITTED"` and `"admission_digest"`) or
-  `{:refused, typed}` (broken term `admission_vacuous`) naming the first
-  failed condition, in the order above.
+  CANDIDATE, authority NONE and sha256-shaped digests, graph-representable
+  (non-blank scalar fields; observation refs a non-empty, sorted, unique
+  list -- RDF keeps a set, so any other order could not be recomputed from
+  the graph) and its `experience_digest` must recompute
+  (`experience_digest/1`); every admission field must be a string, nil or
+  (for the set-valued ones) a list of strings; every ARD section 15 field
+  must be non-blank; the admitted capability must be canonical; the
+  consequence bounds must decode; the applicability predicate must evaluate
+  (`applicability/2`) and select its own source order, and the bounds must
+  contain it; `evidence` must show an ALIVE drive whose independent court
+  passed and whose revert falsifier killed; and the experience must come
+  from a recorded, bounded exploration (PRD PR-016): `evidence["exploration"]`
+  (`"digest"`, `"budget"`, `"used"`) is bound to the fields'
+  `source_exploration` digest and its usage is within every budget
+  dimension (`Exploration.within_budget/2`) -- an over-budget exploration
+  never becomes an admitted experience. `{:ok, admission}` (the fields in
+  graph normal form, `admission_form/1`, plus `"admission" => "ADMITTED"`
+  and `"admission_digest"`, `admission_digest/2` over it and the whole
+  record) or `{:refused, typed}` (broken term `admission_vacuous`) naming
+  the first failed condition, in the order above. The record and admission
+  checks are the ones `admissions/1` re-runs on the graph at routing time.
   """
   @spec admit(map(), map(), map(), map()) :: {:ok, map()} | {:refused, map()}
   def admit(experience, fields, row, evidence) do
-    keys = experience |> Map.keys() |> Enum.sort()
-    expected = ["kind" | Enum.map(@experience_fields, &elem(&1, 0))] |> Enum.sort()
     drive = evidence["drive"] || %{}
     verification = evidence["verification"] || %{}
 
     # Lazy: each condition runs only when every earlier one held, so a later
     # condition never evaluates inputs an earlier one already refused.
-    checks = [
-      fn -> check(keys == expected, "experience_fields_unmapped", %{"keys" => keys}) end,
-      fn ->
-        check(
-          experience["kind"] == "MachineExperience" and experience["standing"] == "CANDIDATE" and
-            experience["authority"] == "NONE",
-          "experience_not_candidate",
-          Map.take(experience, ~w(kind standing authority))
-        )
-      end,
-      fn ->
-        check(
-          Enum.all?(
-            ~w(work_order_digest execution_receipt_hash verification_digest resulting_state_digest experience_digest),
-            &Regex.match?(@digest, experience[&1] || "")
-          ),
-          "experience_digest_malformed",
-          Map.take(experience, ~w(experience_digest))
-        )
-      end,
-      fn ->
-        check(Enum.all?(@ard_fields, &nonblank_field?(fields[&1])), "ard_field_missing", %{
-          "missing" => Enum.reject(@ard_fields, &nonblank_field?(fields[&1]))
-        })
-      end,
-      fn ->
-        check(
-          Regex.match?(@capability, fields["admitted_capability"] || ""),
-          "invalid_capability",
-          %{"capability" => fields["admitted_capability"]}
-        )
-      end,
-      fn -> predicate_selects_source(fields["applicability_predicate"], row) end,
-      fn ->
-        check(
-          within_bounds?(decode(fields["consequence_bounds"]), row),
-          "bounds_exclude_source",
-          %{"order" => row["identity"]}
-        )
-      end,
-      fn ->
-        check(drive["standing"] == "ALIVE", "source_not_alive", %{"standing" => drive["standing"]})
-      end,
-      fn ->
-        check(
-          get_in(verification, ["independent", "status"]) == "pass" and
-            get_in(verification, ["revert_falsifier", "verdict"]) == "killed",
-          "source_unverified",
-          %{
-            "independent" => get_in(verification, ["independent", "status"]),
-            "revert_falsifier" => get_in(verification, ["revert_falsifier", "verdict"])
-          }
-        )
-      end,
-      fn -> bounded_exploration(fields["source_exploration"], evidence["exploration"]) end
-    ]
-
-    case Enum.find_value(checks, fn condition -> refusal(condition.()) end) do
-      nil ->
-        admission = Map.put(fields, "admission", "ADMITTED")
-
-        digest =
-          sha256(
-            canonical_json(
-              Map.put(admission, "experience_digest", experience["experience_digest"])
+    checks =
+      record_checks(experience) ++
+        [fn -> field_types(fields) end] ++
+        admission_checks(fields) ++
+        [
+          fn -> predicate_selects_source(fields["applicability_predicate"], row) end,
+          fn ->
+            check(
+              within_bounds?(decode(fields["consequence_bounds"]), row),
+              "bounds_exclude_source",
+              %{"order" => row["identity"]}
             )
-          )
+          end,
+          fn ->
+            check(drive["standing"] == "ALIVE", "source_not_alive", %{
+              "standing" => drive["standing"]
+            })
+          end,
+          fn ->
+            check(
+              get_in(verification, ["independent", "status"]) == "pass" and
+                get_in(verification, ["revert_falsifier", "verdict"]) == "killed",
+              "source_unverified",
+              %{
+                "independent" => get_in(verification, ["independent", "status"]),
+                "revert_falsifier" => get_in(verification, ["revert_falsifier", "verdict"])
+              }
+            )
+          end,
+          fn -> bounded_exploration(fields["source_exploration"], evidence["exploration"]) end
+        ]
 
-        {:ok, Map.put(admission, "admission_digest", digest)}
+    case first_refusal(checks) do
+      :ok ->
+        admission = fields |> Map.put("admission", "ADMITTED") |> admission_form()
+        {:ok, Map.put(admission, "admission_digest", admission_digest(experience, admission))}
 
-      {reason, detail} ->
+      {:refuse, reason, detail} ->
         {:refused, typed("REFUSED(#{reason})", reason, "admission_vacuous", "admit", detail)}
     end
+  end
+
+  # every admission field is what its RDF rendering can carry back: nil or a
+  # string, or (set-valued fields) a list of strings -- never a value
+  # admission_form/1 would silently drop
+  defp field_types(fields) do
+    malformed =
+      @admission_fields
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.reject(&(&1 in ~w(admission admission_digest)))
+      |> Enum.reject(fn key ->
+        value = fields[key]
+
+        if key in @admission_list_fields,
+          do: is_nil(value) or (is_list(value) and Enum.all?(value, &is_binary/1)),
+          else: is_nil(value) or is_binary(value)
+      end)
+
+    check(malformed == [], "admission_field_malformed", %{"fields" => malformed})
   end
 
   defp drop_attempts(%{} = used), do: Map.drop(used, ["attempts"])
@@ -694,9 +1070,6 @@ defmodule Xaas.Ultracode.MachineExperience do
 
   defp check(true, _reason, _detail), do: :ok
   defp check(false, reason, detail), do: {:refuse, reason, detail}
-
-  defp refusal(:ok), do: nil
-  defp refusal({:refuse, reason, detail}), do: {reason, detail}
 
   defp predicate_selects_source(predicate, row) do
     case applicability(predicate, row) do
@@ -827,10 +1200,8 @@ defmodule Xaas.Ultracode.MachineExperience do
 
   defp nonblank?(value), do: is_binary(value) and String.trim(value) != ""
 
-  defp nonblank_field?(value) when is_list(value),
-    do: value != [] and Enum.all?(value, &nonblank?/1)
-
-  defp nonblank_field?(value), do: nonblank?(value)
+  defp to_string_or_empty(value) when is_binary(value), do: value
+  defp to_string_or_empty(_value), do: ""
 
   defp typed(standing, reason, broken_term, hop, detail) do
     %{
@@ -874,13 +1245,6 @@ defmodule Xaas.Ultracode.MachineExperience do
       _other -> []
     end)
     |> Enum.sort()
-  end
-
-  defp single(graph, subject, name) do
-    case values(graph, subject, @xme <> name) do
-      [value] -> value
-      _ -> nil
-    end
   end
 
   # -- Turtle rendering -----------------------------------------------------------

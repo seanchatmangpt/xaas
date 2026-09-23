@@ -7,6 +7,13 @@
 #       writes the manufactured record (standing CANDIDATE, authority NONE,
 #       experience_digest) to <out.json>.
 #
+#   mix run --no-start /abs/scripts/machine_experience.exs digest <record.json>
+#       GgenIgniter.SemanticJira.digest/1 over the record (the experience
+#       digest machine_experience/1 computes); emits it with the record's
+#       recorded "experience_digest" and whether they are equal (exit 0
+#       equal, exit 1 not). The GC23-9 court uses it to have ggen_igniter's
+#       own function recompute the committed sj:MachineExperience node.
+#
 #   mix run --no-start /abs/scripts/machine_experience.exs validate <data.ttl> [<shapes.ttl>]
 #       GgenIgniter.SemanticJira.Shacl.validate_file/2 of the Turtle file
 #       against the pack's shapes (default: the checkout's own
@@ -44,6 +51,18 @@ case System.argv() do
       {:error, reason} ->
         emit.(1, %{"ok" => false, "reason" => inspect(reason)})
     end
+
+  ["digest", record_path] ->
+    record = record_path |> File.read!() |> Jason.decode!()
+    computed = GgenIgniter.SemanticJira.digest(record)
+    equal = computed == record["experience_digest"]
+
+    emit.(if(equal, do: 0, else: 1), %{
+      "ok" => equal,
+      "experience_digest" => computed,
+      "recorded" => record["experience_digest"],
+      "record_sha256" => sha256_file.(record_path)
+    })
 
   ["validate", data_path | rest] ->
     shapes =

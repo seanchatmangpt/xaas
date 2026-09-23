@@ -544,9 +544,14 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
       "exploration_digest" => plan["digest"]
     }
 
+    # sorted: the sj:MachineExperience node renders the refs as a set, and
+    # the experience digest ggen_igniter computes over this list must be
+    # recomputable from that set (MachineExperience.admit/4 refuses
+    # experience_not_graph_representable otherwise)
     refs =
       ~w(receipt.json receipt.r.json verification.json hops.json ocel.json)
       |> Enum.map(&Path.join(evidence["dir"], &1))
+      |> Enum.sort()
 
     routed_row = Map.put(ctx.row, "requires_capability", route["capability"])
     gctx = graph_ctx(ctx)

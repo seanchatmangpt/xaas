@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Xaas.MachineExperience do
       mix xaas.machine_experience --prepare --name N --ggen-igniter-dir DIR --base SHA --drift PATH [--failure-class C]
       mix xaas.machine_experience --route --work PATH [--order ID] [--experience TTL ...]
       mix xaas.machine_experience --name N --ggen-igniter-dir DIR [--experience TTL ...] [--exploration PATH]
-                                  [--work-root DIR] [--ggen-build-path DIR] [--no-pin]
+                                  [--work-root DIR] [--ggen-build-path DIR] [--pin-ref REF | --no-pin]
       mix xaas.machine_experience --check-env
 
   `--prepare` makes the UNKNOWN-class episode in `<out-root>/<N>/`: the
@@ -25,9 +25,10 @@ defmodule Mix.Tasks.Xaas.MachineExperience do
   exploration's candidates through the same drive, then the manufactured,
   admitted and SHACL-validated MachineExperience (Episode 1); UNKNOWN
   without an exploration -> nothing executes, `unknown/unknown.json` is the
-  receipt. The produced head is pinned as `v23/episode-<N>-receipt`
-  (`--no-pin` skips). `--out-root` defaults to
-  `docs/sjira/v26.9.23/episodes`.
+  receipt. The produced head is pinned as `v23/episode-<N>-receipt`, or as
+  `--pin-ref REF` (a regenerated episode pins a new ref: pins are
+  create-only, an existing ref is never moved); `--no-pin` skips.
+  `--out-root` defaults to `docs/sjira/v26.9.23/episodes`.
 
   Every mode first runs the no-LLM guard (`SemanticDrive.no_llm_guard/1`,
   F3): a model credential variable or a `claude`/`zcode` executable on PATH
@@ -68,7 +69,8 @@ defmodule Mix.Tasks.Xaas.MachineExperience do
     work_root: :string,
     ggen_build_path: :string,
     subject_repo: :string,
-    pin: :boolean
+    pin: :boolean,
+    pin_ref: :string
   ]
 
   @default_out_root "docs/sjira/v26.9.23/episodes"
@@ -172,7 +174,9 @@ defmodule Mix.Tasks.Xaas.MachineExperience do
           repo_path: repo,
           command: Enum.join(["mix xaas.machine_experience" | args], " "),
           pin_ref:
-            if(Keyword.get(opts, :pin, true), do: DriveEpisode.branch(opts[:name]) <> "-receipt")
+            if(Keyword.get(opts, :pin, true),
+              do: opts[:pin_ref] || DriveEpisode.branch(opts[:name]) <> "-receipt"
+            )
         )
 
       case result do

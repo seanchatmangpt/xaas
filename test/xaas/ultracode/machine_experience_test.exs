@@ -51,9 +51,11 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
 
   defp digest(label), do: MachineExperience.sha256(label)
 
-  # the exact key set GgenIgniter.SemanticJira.machine_experience/1 returns
+  # the exact key set GgenIgniter.SemanticJira.machine_experience/1 returns;
+  # its experience_digest by the same formula (MachineExperience.experience_digest/1,
+  # qualified against the real function in the end-to-end module below)
   defp experience(label \\ "x") do
-    %{
+    reseal(%{
       "kind" => "MachineExperience",
       "subject" => "seanchatmangpt/ggen_igniter@v23/episode-me-x#EP-A",
       "work_order_digest" => digest("wo-" <> label),
@@ -63,10 +65,12 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
       "resulting_state_digest" => digest("state-" <> label),
       "replay_identity" => "semantic-jira:v26.9.23:episode:me-x:EP-A",
       "standing" => "CANDIDATE",
-      "authority" => "NONE",
-      "experience_digest" => digest("experience-" <> label)
-    }
+      "authority" => "NONE"
+    })
   end
+
+  defp reseal(record),
+    do: Map.put(record, "experience_digest", MachineExperience.experience_digest(record))
 
   defp evidence(overrides \\ %{}) do
     Map.merge(
@@ -109,6 +113,11 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
   end
 
   defp admitted_ttl!(source_row \\ row(), label \\ "x", capability \\ nil) do
+    {:ok, admission} = admitted!(source_row, label, capability)
+    MachineExperience.to_turtle(experience(label), admission)
+  end
+
+  defp admitted!(source_row, label, capability) do
     ev =
       if capability,
         do: put_in(evidence(), ["drive", "provider", "capability"], capability),
@@ -121,9 +130,43 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
         "exploration_digest" => digest("exploration")
       })
 
-    {:ok, admission} = MachineExperience.admit(experience(label), fields, source_row, ev)
-    MachineExperience.to_turtle(experience(label), admission)
+    MachineExperience.admit(experience(label), fields, source_row, ev)
   end
+
+  # an admission whose digest is recomputed after `change` -- what admit/4
+  # would have recorded for those fields (a sealed, self-consistent node)
+  defp resealed_ttl!(change) do
+    {:ok, admission} = admitted!(row(), "x", nil)
+    changed = change.(admission)
+
+    MachineExperience.to_turtle(
+      experience(),
+      Map.put(
+        changed,
+        "admission_digest",
+        MachineExperience.admission_digest(experience(), changed)
+      )
+    )
+  end
+
+  defp xme(name), do: RDF.iri(MachineExperience.namespaces()["xme"] <> name)
+  defp sj(name), do: RDF.iri(MachineExperience.namespaces()["sj"] <> name)
+
+  defp delete_property(graph, subject, property) do
+    RDF.Graph.delete(
+      graph,
+      graph |> RDF.Graph.description(subject) |> RDF.Description.take([property])
+    )
+  end
+
+  defp replace_object(graph, subject, property, value) do
+    graph
+    |> delete_property(subject, property)
+    |> RDF.Graph.add({subject, property, value})
+  end
+
+  defp invalid_reasons({:refused, %{"reason" => "experience_admission_invalid"} = typed}),
+    do: Enum.map(typed["detail"]["invalid"], & &1["reason"])
 
   defp graph!(ttl) do
     {:ok, graph} = RDF.Turtle.read_string(ttl)
@@ -203,10 +246,21 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
       %{fields: fields}
     end
 
-    test "admits a verified record: every ARD section 15 field, a digest over fields + experience",
+    test "admits a verified record: every ARD section 15 field, a digest over fields + the whole record",
          %{fields: fields} do
       assert {:ok, admission} = MachineExperience.admit(experience(), fields, row(), evidence())
       assert admission["admission"] == "ADMITTED"
+
+      assert admission["admission_digest"] ==
+               MachineExperience.admission_digest(experience(), admission)
+
+      # the whole record is bound, including work_order_digest (which the
+      # experience digest itself elides)
+      refute MachineExperience.admission_digest(
+               Map.put(experience(), "work_order_digest", digest("other")),
+               admission
+             ) == admission["admission_digest"]
+
       assert admission["admitted_capability"] == "recipe:mix-format"
       assert admission["provider_class"] == "recipe"
       assert admission["problem_class"] == "format_drift"
@@ -246,6 +300,43 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
                row(),
                evidence()
              ) == "experience_digest_malformed"
+
+      # a record edited without recomputing ggen_igniter's digest
+      assert refused.(
+               Map.put(experience(), "subject", "seanchatmangpt/ggen_igniter@elsewhere#EP-A"),
+               fields,
+               row(),
+               evidence()
+             ) == "experience_digest_mismatch"
+
+      # observation refs in an order the graph's set cannot carry back (even
+      # with a digest that matches that order): not recomputable at routing
+      assert refused.(
+               reseal(
+                 Map.put(experience(), "observation_refs", [
+                   "drive/verification.json",
+                   "drive/receipt.json"
+                 ])
+               ),
+               fields,
+               row(),
+               evidence()
+             ) == "experience_not_graph_representable"
+
+      # an admission field its rendering would silently drop
+      assert refused.(
+               experience(),
+               Map.put(fields, "source_order", ["a", "b"]),
+               row(),
+               evidence()
+             ) == "admission_field_malformed"
+
+      assert refused.(
+               experience(),
+               Map.put(fields, "consequence_bounds", "not json"),
+               row(),
+               evidence()
+             ) == "consequence_bounds_undecodable"
 
       assert refused.(experience(), Map.put(fields, "falsifiers", []), row(), evidence()) ==
                "ard_field_missing"
@@ -359,12 +450,20 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
                MachineExperience.route(row(%{"requires_capability" => "Write"}))
     end
 
-    test "KNOWN from the admitted experience by IRI on a different subject; UNKNOWN once the experience or its admission is removed" do
+    test "KNOWN from the verified admitted experience by IRI on a different subject; UNKNOWN once the admission (or the whole experience) is removed" do
       ttl = admitted_ttl!()
       graph = graph!(ttl)
       [experience] = MachineExperience.experiences(graph)
       iri = experience["machine_experience"]
       assert iri == MachineExperience.iri(experience())
+
+      assert %{
+               "admitted" => [_],
+               "invalid" => [],
+               "not_admitted" => [],
+               "without_admission" => []
+             } =
+               MachineExperience.admissions(graph)
 
       episode2 =
         row(%{
@@ -378,26 +477,42 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
       assert route["admission"] == iri <> "-admission"
       assert route["capability"] == experience["admitted_capability"]
       assert route["experience_digest"] == experience()["experience_digest"]
+      assert route["admission_digest"] == experience["admission_digest"]
       refute Map.has_key?(episode2, "requires_capability")
 
       # falsifier: the route exists only because the admitted experience does
-      assert {:unknown, %{"reason" => "no_capability_no_experience"}} =
-               MachineExperience.route(episode2, without_subject(ttl, iri))
+      assert {:unknown,
+              %{
+                "reason" => "no_capability_no_experience",
+                "detail" => %{"experiences_without_admission" => [^iri]}
+              }} = MachineExperience.route(episode2, without_subject(ttl, iri <> "-admission"))
 
-      assert {:unknown, %{"reason" => "no_capability_no_experience"}} =
-               MachineExperience.route(episode2, without_subject(ttl, iri <> "-admission"))
+      assert {:unknown,
+              %{
+                "reason" => "no_capability_no_experience",
+                "detail" => %{
+                  "experiences_considered" => [],
+                  "experiences_without_admission" => []
+                }
+              }} =
+               MachineExperience.route(
+                 episode2,
+                 graph
+                 |> RDF.Graph.delete_descriptions(RDF.iri(iri))
+                 |> RDF.Graph.delete_descriptions(RDF.iri(iri <> "-admission"))
+               )
 
-      # the capability comes from the graph: rewrite it there and the route follows
-      rewritten =
-        ttl
-        |> String.replace(
-          ~s(xme:admittedCapability "recipe:mix-format"),
-          ~s(xme:admittedCapability "recipe:other-fix")
-        )
-        |> graph!()
+      # an ADMITTED admission whose experience is gone is not "no experience"
+      assert invalid_reasons(MachineExperience.route(episode2, without_subject(ttl, iri))) == [
+               "experience_absent"
+             ]
+
+      # the capability comes from the graph's admitted experience: an
+      # admission of capability recipe:other-fix routes there
+      other = graph!(admitted_ttl!(row(), "x", "recipe:other-fix"))
 
       assert {:known, %{"capability" => "recipe:other-fix", "machine_experience" => ^iri}} =
-               MachineExperience.route(episode2, rewritten)
+               MachineExperience.route(episode2, other)
 
       # a different failure class or a wider consequence stays UNKNOWN
       assert {:unknown,
@@ -408,21 +523,169 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
                MachineExperience.route(%{episode2 | "path_scope" => ["lib", "priv"]}, graph)
     end
 
-    test "an admitted experience whose predicate cannot be evaluated refuses the route (fails closed), naming it" do
+    test "an admission edited after admit/4 is refused, never routed: each edit class names its check" do
       ttl = admitted_ttl!()
       graph = graph!(ttl)
-      [experience] = MachineExperience.experiences(graph)
-      admission = RDF.iri(experience["admission"])
-      predicate = RDF.iri(MachineExperience.namespaces()["xme"] <> "applicabilityPredicate")
+      me = RDF.iri(MachineExperience.iri(experience()))
+      node = RDF.iri(MachineExperience.iri(experience()) <> "-admission")
 
+      refused = fn edited ->
+        assert {:refused,
+                %{
+                  "standing" => "REFUSED(experience_admission_invalid)",
+                  "broken_term" => "mu_on_O",
+                  "hop" => "route",
+                  "detail" => %{"invalid" => [invalid], "experiences_considered" => []}
+                }} = MachineExperience.route(row(), edited)
+
+        assert invalid["admission"] == to_string(node)
+        invalid["reason"]
+      end
+
+      # the doctrine case: the capability rewritten in the graph
+      assert refused.(
+               replace_object(
+                 graph,
+                 node,
+                 xme("admittedCapability"),
+                 RDF.literal("recipe:other-fix")
+               )
+             ) == "admission_digest_mismatch"
+
+      # the same by a text edit of the Turtle
+      assert refused.(
+               ttl
+               |> String.replace(
+                 ~s(xme:admittedCapability "recipe:mix-format"),
+                 ~s(xme:admittedCapability "recipe:other-fix")
+               )
+               |> graph!()
+             ) == "admission_digest_mismatch"
+
+      for {property, value} <- [
+            {"applicabilityPredicate", "SELECT ?order WHERE { ?order ?p ?o }"},
+            {"consequenceBounds",
+             ~s({"authority_ceiling":"DO","consequence_class":"postcondition","exclusions":[],"path_scope":["lib","test"]})},
+            {"successfulVerification", ~s({"standing":"ALIVE"})},
+            {"problemClass", "compile_error"}
+          ] do
+        assert refused.(replace_object(graph, node, xme(property), RDF.literal(value))) ==
+                 "admission_digest_mismatch",
+               property
+      end
+
+      # the experience record: a field ggen_igniter's digest covers ...
+      assert refused.(replace_object(graph, me, sj("subject"), RDF.literal("elsewhere#EP-A"))) ==
+               "experience_digest_mismatch"
+
+      assert refused.(replace_object(graph, me, sj("standing"), RDF.literal("ALIVE"))) ==
+               "experience_not_candidate"
+
+      # ... and one it elides, bound only by the admission digest
+      assert refused.(
+               replace_object(graph, me, sj("workOrderDigest"), RDF.literal(digest("other")))
+             ) == "admission_digest_mismatch"
+
+      # structure
+      assert refused.(
+               RDF.Graph.add(graph, {node, xme("admittedCapability"), RDF.literal("recipe:x")})
+             ) == "admission_field_not_single"
+
+      assert refused.(RDF.Graph.add(graph, {node, xme("note"), RDF.literal("extra")})) ==
+               "admission_not_closed"
+
+      assert refused.(
+               RDF.Graph.add(
+                 graph,
+                 {me, sj("observationRef"), RDF.literal("drive/other.json")}
+               )
+             ) == "experience_digest_mismatch"
+
+      assert refused.(RDF.Graph.add(graph, {node, xme("admission"), RDF.literal("REFUSED")})) ==
+               "admission_not_single"
+
+      assert refused.(
+               replace_object(graph, node, xme("consequenceBounds"), RDF.literal("not json"))
+             ) == "consequence_bounds_undecodable"
+
+      assert refused.(delete_property(graph, node, xme("falsifier"))) == "ard_field_missing"
+
+      # an admission node whose verdict is not ADMITTED never routes and is
+      # never "invalid": it is listed as not admitted
+      not_admitted = replace_object(graph, node, xme("admission"), RDF.literal("REFUSED"))
+
+      assert {:unknown,
+              %{
+                "reason" => "no_capability_no_experience",
+                "detail" => %{"admissions_not_admitted" => [not_admitted_node]}
+              }} = MachineExperience.route(row(), not_admitted)
+
+      assert not_admitted_node == to_string(node)
+    end
+
+    test "an unverifiable admission beside a sound one refuses the route: it is never dropped (it might apply, or make the route ambiguous)" do
+      sound = graph!(admitted_ttl!(row(), "x"))
+
+      assert {:known, %{"capability" => "recipe:mix-format"}} =
+               MachineExperience.route(row(), sound)
+
+      other_ttl = admitted_ttl!(row(), "y", "recipe:other-fix")
+      other_node = RDF.iri(MachineExperience.iri(experience("y")) <> "-admission")
+
+      # undecodable bounds: the case the prior router dropped with `else _ -> []`,
+      # leaving the sound experience to route KNOWN alone
       broken =
-        graph
-        |> RDF.Graph.delete(
-          {admission, predicate, RDF.literal(experience["applicability_predicate"])}
-        )
-        |> RDF.Graph.add({admission, predicate, RDF.literal("SELECT nonsense")})
+        other_ttl
+        |> graph!()
+        |> replace_object(other_node, xme("consequenceBounds"), RDF.literal("not json"))
 
-      assert [%{"applicability_predicate" => "SELECT nonsense"}] =
+      both = RDF.Graph.add(sound, broken)
+
+      assert %{"admitted" => [_], "invalid" => [%{"reason" => "consequence_bounds_undecodable"}]} =
+               MachineExperience.admissions(both)
+
+      assert invalid_reasons(MachineExperience.route(row(), both)) == [
+               "consequence_bounds_undecodable"
+             ]
+
+      # sound, the same pair is ambiguous -- which is what the drop hid
+      assert {:unknown, %{"reason" => "ambiguous_experience"}} =
+               MachineExperience.route(row(), RDF.Graph.add(sound, graph!(other_ttl)))
+
+      # a non-canonical capability and a missing digest are refused the same way
+      assert invalid_reasons(
+               MachineExperience.route(
+                 row(),
+                 RDF.Graph.add(
+                   sound,
+                   replace_object(
+                     graph!(other_ttl),
+                     other_node,
+                     xme("admittedCapability"),
+                     RDF.literal("Write")
+                   )
+                 )
+               )
+             ) == ["invalid_capability"]
+
+      assert invalid_reasons(
+               MachineExperience.route(
+                 row(),
+                 RDF.Graph.add(
+                   sound,
+                   delete_property(graph!(other_ttl), other_node, xme("admissionDigest"))
+                 )
+               )
+             ) == ["admission_digest_mismatch"]
+    end
+
+    test "a verified admission whose predicate cannot be evaluated refuses the route (fails closed), naming it" do
+      ttl = resealed_ttl!(&Map.put(&1, "applicability_predicate", "SELECT nonsense"))
+      broken = graph!(ttl)
+      iri = MachineExperience.iri(experience())
+
+      # sealed: the admission verifies, only its predicate is unevaluable
+      assert [%{"applicability_predicate" => "SELECT nonsense", "machine_experience" => ^iri}] =
                MachineExperience.experiences(broken)
 
       assert {:refused,
@@ -432,12 +695,10 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
                 "broken_term" => "mu_on_O",
                 "hop" => "route",
                 "detail" => %{
-                  "machine_experience" => iri,
+                  "machine_experience" => ^iri,
                   "error" => %{"kind" => "sparql_error"}
                 }
               }} = MachineExperience.route(row(), broken)
-
-      assert iri == experience["machine_experience"]
 
       # beside a sound experience the broken one still refuses: it might apply
       two = RDF.Graph.add(broken, graph!(admitted_ttl!(row(), "y")))
@@ -661,7 +922,22 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
 
       assert File.read!(broken) =~ ~s(xme:applicabilityPredicate "SELECT nonsense")
 
-      {unevaluable, 3} = task([], ["--route", "--work", work, "--experience", broken])
+      # edited without recomputing the admission digest: refused, not routed
+      {edited, 3} = task([], ["--route", "--work", work, "--experience", broken])
+      assert last_json(edited)["reason"] == "experience_admission_invalid"
+
+      assert [%{"reason" => "admission_digest_mismatch"}] =
+               last_json(edited)["detail"]["invalid"]
+
+      # sealed with the unevaluable predicate: refused as unevaluable
+      sealed = Path.join(dir, "sealed.ttl")
+
+      File.write!(
+        sealed,
+        resealed_ttl!(&Map.put(&1, "applicability_predicate", "SELECT nonsense"))
+      )
+
+      {unevaluable, 3} = task([], ["--route", "--work", work, "--experience", sealed])
       assert last_json(unevaluable)["reason"] == "experience_predicate_unevaluable"
     end
   end
@@ -904,6 +1180,22 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
     assert "machine_experience_shape" in record["shape_report"]["shapes_checked"]
     assert record["experience"]["standing"] == "CANDIDATE"
     assert record["admission"]["admission"] == "ADMITTED"
+
+    # differential: the experience digest formula bound in xaas equals what
+    # ggen_igniter's real machine_experience/1 computed for this record, and
+    # the record's refs are the sorted set the graph carries back
+    assert MachineExperience.experience_digest(record["experience"]) ==
+             record["experience"]["experience_digest"]
+
+    refs = record["experience"]["observation_refs"]
+    assert refs == Enum.sort(refs)
+
+    # the admission recorded on disk verifies from the graph alone
+    {:ok, admitted_graph} = MachineExperience.load([ttl])
+
+    assert %{"admitted" => [%{"machine_experience" => ^me_iri}], "invalid" => []} =
+             MachineExperience.admissions(admitted_graph)
+
     assert validate!(Path.join([ep1, "drive", "receipt.r.json"])) =~ "ADMITTED"
     assert pm4py_count!(Path.join(ep1, "ocel2.json")) == s1["ocel"]["events"]
 
@@ -939,23 +1231,48 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
     assert git!(ctx.subject, ["diff", "--name-only", p2["subject_sha"], head2]) == @s2
 
     # -- falsifier: the same order without the experience is UNKNOWN; nothing runs
-    {:ok, graph} = MachineExperience.load([ttl])
-    bare = Path.join(mktmp("bare"), "no-me.ttl")
+    scratch = mktmp("bare")
+    bare = Path.join(scratch, "no-experience.ttl")
 
     File.write!(
       bare,
-      graph |> RDF.Graph.delete_descriptions(RDF.iri(me_iri)) |> RDF.Turtle.write_string!()
+      admitted_graph
+      |> RDF.Graph.delete_descriptions(RDF.iri(me_iri))
+      |> RDF.Graph.delete_descriptions(RDF.iri(me_iri <> "-admission"))
+      |> RDF.Turtle.write_string!()
     )
 
     n3 = name("three")
-    ep3 = Path.join(eps, n3)
-    File.mkdir_p!(ep3)
-    File.cp!(Path.join(ep2, "work.json"), Path.join(ep3, "work.json"))
-    File.write!(Path.join(ep3, "ledger.ndjson"), "")
+    ep3 = copy_episode!(ep2, Path.join(eps, n3))
 
     assert {:unknown, %{"reason" => "no_capability_no_experience"}} = run(ctx, n3, ep3, [bare])
     refute File.exists?(Path.join(ep3, "drive"))
     assert File.read!(Path.join(ep3, "ledger.ndjson")) == ""
+
+    # -- falsifier: an admission edited after admit/4 refuses; nothing runs
+    edited = Path.join(scratch, "edited.ttl")
+
+    File.write!(
+      edited,
+      String.replace(
+        File.read!(ttl),
+        ~s(xme:admittedCapability "recipe:mix-format"),
+        ~s(xme:admittedCapability "recipe:other-fix")
+      )
+    )
+
+    n4 = name("four")
+    ep4 = copy_episode!(ep2, Path.join(eps, n4))
+
+    assert {:refused,
+            %{
+              "reason" => "experience_admission_invalid",
+              "detail" => %{"invalid" => [%{"reason" => "admission_digest_mismatch"}]}
+            }} = run(ctx, n4, ep4, [edited])
+
+    refute File.exists?(Path.join(ep4, "drive"))
+    assert read!(ep4, "route.json")["decision"] == "REFUSED"
+    assert File.read!(Path.join(ep4, "ledger.ndjson")) == ""
     assert File.ls!(ctx.root) == []
   end
 
@@ -1081,6 +1398,13 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
       drift: drift,
       out_dir: out_dir
     )
+  end
+
+  defp copy_episode!(from, to) do
+    File.mkdir_p!(to)
+    File.cp!(Path.join(from, "work.json"), Path.join(to, "work.json"))
+    File.write!(Path.join(to, "ledger.ndjson"), "")
+    to
   end
 
   defp run(ctx, name, out_dir, experience) do
