@@ -1,0 +1,13 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /private/tmp/claude-501/v23-scratch/R1a-R1-X-DIGEST/base-xaas/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+base snapshot_digest=sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697 carried=sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7
+base definition_digest=sha256:0d8bfc3c5ffe850730e5190471802b6070dd2bede3bc2c695cc683cbf70121cb bridge=sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58
+base admit: {:error,
+ {:refused_semantic_work,
+  {:admitted_snapshot_stale,
+   "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}

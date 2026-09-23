@@ -1,0 +1,671 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-DIGEST/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+15:00:07.810 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+15:00:08.489 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+15:00:08.844 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+15:00:08.938 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+15:00:08.938 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+15:00:08.954 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+15:00:08.954 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+15:00:08.968 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+15:00:08.968 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+15:00:08.997 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+15:00:08.997 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+15:00:09.017 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+15:00:09.017 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+Running ExUnit with seed: 958218, max_cases: 32
+15:00:09.023 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+15:00:09.023 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+...........................................................................................................    warning: unused require Ash.Query
+    │
+ 37 │   require Ash.Query
+    │   ~
+    │
+    └─ test/xaas/ultracode/semantic_drive_test.exs:37:3
+
+.....
+
+  1) test a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything) (Xaas.Ultracode.SemanticDriveToolchainTest)
+     test/xaas/ultracode/semantic_drive_test.exs:576
+     ** (FunctionClauseError) no function clause matching in anonymous fn/1 in Xaas.Ultracode.SemanticDriveToolchainTest."test a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything)"/1
+
+     The following arguments were given to anonymous fn/1 in Xaas.Ultracode.SemanticDriveToolchainTest."test a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything)"/1:
+
+         # 1
+         {2, {"1.20.2", ~c"28"}, Mix.SCM.Path, nil}
+
+     code: checkout("otp", fn {vsn, {elixir, _otp}, scm} ->
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:578: anonymous fn/1 in Xaas.Ultracode.SemanticDriveToolchainTest."test a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything)"/1
+       test/xaas/ultracode/semantic_drive_test.exs:622: Xaas.Ultracode.SemanticDriveToolchainTest.checkout/2
+       test/xaas/ultracode/semantic_drive_test.exs:578: (test)
+
+.....
+
+  2) test a build compiled by this node's Elixir on this ERTS resolves to that Elixir (source build_manifest), and it runs (Xaas.Ultracode.SemanticDriveToolchainTest)
+     test/xaas/ultracode/semantic_drive_test.exs:538
+     Assertion with == failed
+     code:  assert t["source"] == "build_manifest"
+     left:  "asdf"
+     right: "build_manifest"
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:542: (test)
+
+....
+
+  3) test a build compiled by an Elixir with no install falls back to the checkout's pin, recording why (Xaas.Ultracode.SemanticDriveToolchainTest)
+     test/xaas/ultracode/semantic_drive_test.exs:563
+     ** (FunctionClauseError) no function clause matching in anonymous fn/1 in Xaas.Ultracode.SemanticDriveToolchainTest."test a build compiled by an Elixir with no install falls back to the checkout's pin, recording why"/1
+
+     The following arguments were given to anonymous fn/1 in Xaas.Ultracode.SemanticDriveToolchainTest."test a build compiled by an Elixir with no install falls back to the checkout's pin, recording why"/1:
+
+         # 1
+         {2, {"1.20.2", ~c"28"}, Mix.SCM.Path, nil}
+
+     code: checkout("absent", fn {vsn, {_elixir, otp}, scm} ->
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:565: anonymous fn/1 in Xaas.Ultracode.SemanticDriveToolchainTest."test a build compiled by an Elixir with no install falls back to the checkout's pin, recording why"/1
+       test/xaas/ultracode/semantic_drive_test.exs:622: Xaas.Ultracode.SemanticDriveToolchainTest.checkout/2
+       test/xaas/ultracode/semantic_drive_test.exs:565: (test)
+
+...........................................15:00:11.735 [warning] [ultracode] epoch 731958c4-8a99-4fc8-83b1-29c4d9ee8ab8 (run 3355c5e5-94b3-4d3b-8591-cbf30dcb4c5b, cycle 0) expected_at=2026-09-23 21:59:11.528672Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+......15:00:11.760 [warning] [ultracode] epoch c3e85b53-ba89-4309-a93e-7fec624be2b6 (run 4269c0a0-146d-41bd-9e1f-d240fed52d78, cycle 0) expected_at=2026-09-23 21:59:11.747326Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+...15:00:11.780 [warning] [ultracode] epoch 513b0933-7387-41d7-9131-83d33455625f (run 2aef2bbc-3c1f-4a46-a5c6-1e02e2b8be43, cycle 0) expected_at=2026-09-23 21:59:11.759830Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+15:00:11.790 [warning] [ultracode] epoch a438c77b-2ea0-4f31-8920-cd7f37816e44 (run 2c14fdca-0dd4-4740-817c-a297fbf50663, cycle 0) expected_at=2026-09-23 21:59:11.766661Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+............./Users/sac/.cache/tmp/xaas-ocel-mix-1790200811793-13124/38ba1845-995a-42c3-8de3-faf860e9ae66.ocel.json
+...........................................................................15:00:11.975 [warning] [ultracode] undo: refusing to compensate epoch ec605723-c93e-4557-ba81-04f10abf965f -- real row is :completed, not the :running state :construct left it in (a concurrent close/refuse/re-lease moved it); compensating would clobber a settled row
+...........................................15:00:12.288 [warning] XAAS_LEASE_CLOSE head mismatch epoch=f90f719b-eb64-401e-bc11-492563c6f1a4
+.........................................15:00:19.678 [warning] XAAS_LEASE_CLOSE head mismatch epoch=f454618b-d6d0-4603-b373-10ddfd008367
+......................................................................................15:03:43.282 [warning] XAAS_LEASE_CLOSE head mismatch epoch=8221f837-cb7b-422d-81b0-8855cc0cda0f
+.................................................error: /Users/sac/.cache/tmp/profile-sense-619dec27/runs/fix-sense-d15a1d has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-7d6ebf45/runs/fix-sense-ac940b has no contracts/ directory
+...error: /Users/sac/.cache/tmp/profile-sense-d7700077/runs/fix-sense-f586e2 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-0057aeaf/runs/fix-sense-3ff780 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-a3365518/runs/fix-sense-b23945 has no contracts/ directory
+........................
+
+  4) test the live anchor through the graph side anchor/1 re-derives the recorded sJira hop from the committed work graph through mix semantic_jira.descriptor (Xaas.Ultracode.SemanticDriveAnchorTest)
+     test/xaas/ultracode/semantic_drive_anchor_test.exs:176
+     match (=) failed
+     code:  assert {:ok, anchor} =
+              SemanticDrive.anchor(
+                ggen_igniter_dir: @ggen_dir,
+                work_graph: path("work.json"),
+                order: "EP-A",
+                ggen_build_path: build
+              )
+     left:  {:ok, anchor}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "arsing file /Users/sac/.cache/tmp/anchor-35778/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                 "toolchain" => %{
+                   "build_compiler" => %{
+                     "elixir" => "1.18.4",
+                     "otp" => "27"
+                   },
+                   "elixir" => "1.18.4-otp-27",
+                   "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                   "source" => "asdf"
+                 }
+               },
+               "hop" => "sjira",
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_anchor_test.exs:178: (test)
+
+.
+
+  5) test the live anchor through the graph side a work graph whose EP-A row was edited anchors to other digests: the committed hops are refused (Xaas.Ultracode.SemanticDriveAnchorTest)
+     test/xaas/ultracode/semantic_drive_anchor_test.exs:199
+     match (=) failed
+     code:  assert {:ok, anchor} =
+              SemanticDrive.anchor(
+                ggen_igniter_dir: @ggen_dir,
+                work_graph: work,
+                order: "EP-A",
+                ggen_build_path: build
+              )
+     left:  {:ok, anchor}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "parsing file /Users/sac/.cache/tmp/anchor-9219/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                 "toolchain" => %{
+                   "build_compiler" => %{
+                     "elixir" => "1.18.4",
+                     "otp" => "27"
+                   },
+                   "elixir" => "1.18.4-otp-27",
+                   "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                   "source" => "asdf"
+                 }
+               },
+               "hop" => "sjira",
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_anchor_test.exs:217: (test)
+
+.........................................................................15:05:34.182 [warning] [ultracode-engine] reaped epoch 41ba6209-e139-46e7-bf79-4f8c191617e3 (worker ended without closing)
+...........15:05:34.405 [warning] [ultracode-engine] reaped epoch ba8c2615-d3e1-458f-8bb5-1fe373da9476 (worker ended without closing)
+..15:05:34.426 [warning] [ultracode] epoch 60d5aacc-2214-46d9-9430-4c0b81428af4 (run f6108504-9a94-48bf-af46-b1f2ed8d4e3d, cycle 0) expected_at=2026-09-23 22:04:34.417392Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.15:05:34.456 [warning] [ultracode] run 1c7289aa-9e83-41a5-aa71-ea175b92f082 stopped: refused 1 live lease(s) (reason :run_stopped)
+.15:05:34.490 [warning] [ultracode] run ba62c273-4d6d-473f-8bca-f498842cc316 stopped: refused 1 live lease(s) (reason :run_stopped)
+15:05:34.501 [warning] [ultracode] run ba62c273-4d6d-473f-8bca-f498842cc316 recovering from failed epoch 32ebe7dd-77c9-4bb8-acd9-92e9fc01e957: constructed replacement epoch cycle=1 (epoch_id=55089a87-fccf-4baf-a901-783eba8bad83)
+...........................................
+
+  6) test the drive refuses a route whose capability is not the tuple's (route_capability_mismatch) before any lease (Xaas.Ultracode.MachineExperienceEpisodeTest)
+     test/xaas/ultracode/machine_experience_test.exs:1331
+     match (=) failed
+     code:  assert {:refused,
+             %{
+               "reason" => "route_capability_mismatch",
+               "hop" => "resolve",
+               "broken_term" => "admission_vacuous",
+               "detail" => %{"capability" => "recipe:mix-format"}
+             }} =
+              SemanticDrive.drive(
+                ggen_igniter_dir: @ggen_dir,
+                work_graph: Path.join(dir, "work.json"),
+                ledger: Path.join(ep, "ledger.ndjson"),
+                order: "EP-A",
+                out_dir: dir,
+                env: clean_env(),
+                ggen_build_path: ctx.build,
+                route: %{
+                  "source" => "exploration",
+                  "capability" => "recipe:other-fix",
+                  "producer" => "test:chicago-fixture",
+                  "producer_class" => "test",
+                  "exploration_digest" => MachineExperience.sha256("x")
+                }
+              )
+     left:  {:refused,
+             %{
+               "reason" => "route_capability_mismatch",
+               "hop" => "resolve",
+               "broken_term" => "admission_vacuous",
+               "detail" => %{"capability" => "recipe:mix-format"}
+             }}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => " /Users/sac/.cache/tmp/xaas-me-all-55152718786/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                 "toolchain" => %{
+                   "build_compiler" => %{
+                     "elixir" => "1.18.4",
+                     "otp" => "27"
+                   },
+                   "elixir" => "1.18.4-otp-27",
+                   "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                   "source" => "asdf"
+                 }
+               },
+               "hop" => "sjira",
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/machine_experience_test.exs:1353: (test)
+
+
+
+  7) test episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 on another subject routes KNOWN from it with zero exploration and fewer events; without it, UNKNOWN and nothing executes (Xaas.Ultracode.MachineExperienceEpisodeTest)
+     test/xaas/ultracode/machine_experience_test.exs:1154
+     match (=) failed
+     code:  assert {:ok, s1} = run(ctx, n1, ep1, [])
+     left:  {:ok, s1}
+     right: {:unknown,
+             %{
+               "detail" => %{
+                 "attempts" => [
+                   %{
+                     "capability" => "recipe:mix-format",
+                     "dir" => "drive",
+                     "refused" => %{
+                       "broken_term" => "mu_unlawful",
+                       "detail" => %{
+                         "exit" => 1,
+                         "reason" => " /Users/sac/.cache/tmp/xaas-me-all-55152718786/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                         "toolchain" => %{
+                           "build_compiler" => %{
+                             "elixir" => "1.18.4",
+                             "otp" => "27"
+                           },
+                           "elixir" => "1.18.4-otp-27",
+                           "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                           "source" => "asdf"
+                         }
+                       },
+                       "hop" => "sjira",
+                       "reason" => "graph_side_build_broken",
+                       "standing" => "BUILD_BROKEN"
+                     },
+                     "seconds" => 1
+                   }
+                 ],
+                 "budget" => %{
+                   "candidates" => 1,
+                   "consequence_ceiling" => "CONSTRUCT",
+                   "drive_runs" => 1,
+                   "evidence_requirement" => ["drive_alive",
+                    "independent_pass", "revert_killed", "r_alive"],
+                   "time_s" => 1200
+                 },
+                 "exhausted" => "candidates_exhausted",
+                 "exploration_digest" => "sha256:9a99560e8fd70128be891d04cfa84a247a0a1f257b7c7e4a24b7042c18904673",
+                 "producer" => "test:chicago-fixture",
+                 "rejected" => [],
+                 "truncated" => [],
+                 "used" => %{
+                   "candidates" => 1,
+                   "drive_runs" => 1,
+                   "elapsed_s" => 6
+                 }
+               },
+               "hop" => "explore",
+               "reason" => "exploration_budget_exhausted",
+               "receipt" => "/Users/sac/.cache/tmp/xaas-eps-55908710283/t-me-one-55908710347/unknown.json",
+               "standing" => "UNKNOWN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/machine_experience_test.exs:1182: (test)
+
+
+
+  8) test a candidate that resolves only by overrunning time_s is exhausted, not resolved: receipted UNKNOWN naming the drive's head, no experience (Xaas.Ultracode.MachineExperienceEpisodeTest)
+     test/xaas/ultracode/machine_experience_test.exs:1295
+     match (=) failed
+     code:  assert {:unknown,
+             %{
+               "reason" => "exploration_budget_exhausted",
+               "detail" => %{
+                 "exhausted" => "time_s",
+                 "attempts" => [attempt],
+                 "used" => %{"drive_runs" => 1, "elapsed_s" => elapsed}
+               },
+               "receipt" => receipt
+             }} = run(ctx, n, ep, [])
+     left:  {:unknown,
+             %{
+               "reason" => "exploration_budget_exhausted",
+               "detail" => %{
+                 "exhausted" => "time_s",
+                 "attempts" => [attempt],
+                 "used" => %{"drive_runs" => 1, "elapsed_s" => elapsed}
+               },
+               "receipt" => receipt
+             }}
+     right: {:unknown,
+             %{
+               "detail" => %{
+                 "attempts" => [
+                   %{
+                     "capability" => "recipe:mix-format",
+                     "dir" => "drive",
+                     "refused" => %{
+                       "broken_term" => "mu_unlawful",
+                       "detail" => %{
+                         "exit" => 1,
+                         "reason" => " /Users/sac/.cache/tmp/xaas-me-all-55152718786/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                         "toolchain" => %{
+                           "build_compiler" => %{
+                             "elixir" => "1.18.4",
+                             "otp" => "27"
+                           },
+                           "elixir" => "1.18.4-otp-27",
+                           "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                           "source" => "asdf"
+                         }
+                       },
+                       "hop" => "sjira",
+                       "reason" => "graph_side_build_broken",
+                       "standing" => "BUILD_BROKEN"
+                     },
+                     "seconds" => 1
+                   }
+                 ],
+                 "budget" => %{
+                   "candidates" => 1,
+                   "consequence_ceiling" => "CONSTRUCT",
+                   "drive_runs" => 1,
+                   "evidence_requirement" => ["drive_alive",
+                    "independent_pass", "revert_killed", "r_alive"],
+                   "time_s" => 6
+                 },
+                 "exhausted" => "candidates_exhausted",
+                 "exploration_digest" => "sha256:2bf18c11ae1d451073f89af52c8c64380e4fd84b334570fee197b5e4f7913b46",
+                 "producer" => "test:chicago-fixture",
+                 "rejected" => [],
+                 "truncated" => [],
+                 "used" => %{
+                   "candidates" => 1,
+                   "drive_runs" => 1,
+                   "elapsed_s" => 6
+                 }
+               },
+               "hop" => "explore",
+               "reason" => "exploration_budget_exhausted",
+               "receipt" => "/Users/sac/.cache/tmp/xaas-eps-t-55152719362/t-me-overrun-55152719426/unknown.json",
+               "standing" => "UNKNOWN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/machine_experience_test.exs:1305: (test)
+
+
+
+  9) test an exploration whose only candidate cannot be driven exhausts its budget: receipted UNKNOWN, no experience (Xaas.Ultracode.MachineExperienceEpisodeTest)
+     test/xaas/ultracode/machine_experience_test.exs:1384
+     Assertion with == failed
+     code:  assert attempt["refused"]["reason"] == "unregistered_capability"
+     left:  "graph_side_build_broken"
+     right: "unregistered_capability"
+     stacktrace:
+       test/xaas/ultracode/machine_experience_test.exs:1399: (test)
+
+..............................
+
+ 10) test falsifiers F6: a commit on the covered path after the receipt demotes ALIVE; an out-of-scope commit does not (Xaas.Ultracode.SemanticReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:178
+     match (=) failed
+     code:  assert {:ok, demoted} = replay(ctx, subject_repo: covered)
+     left:  {:ok, demoted}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "tail" => "e /Users/sac/.cache/tmp/replay-all-57096603651/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"
+               },
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN",
+               "step" => "evidence"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:183: (test)
+
+.
+
+ 11) test falsifiers a tampered receipt is refused as evidence and its transition is unreceipted (Xaas.Ultracode.SemanticReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:212
+     match (=) failed
+     code:  assert {:ok, out} = replay(ctx, episode_dir: copy)
+     left:  {:ok, out}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "tail" => "e /Users/sac/.cache/tmp/replay-all-57096603651/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"
+               },
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN",
+               "step" => "frontier"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:218: (test)
+
+
+
+ 12) test cold replay of the recorded episode reconstructs subject, evidence, standing, completed work and frontier; the digest is the recorded one (Xaas.Ultracode.SemanticReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:72
+     match (=) failed
+     code:  assert {:ok, out} = replay(ctx)
+     left:  {:ok, out}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "tail" => "e /Users/sac/.cache/tmp/replay-all-57096603651/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"
+               },
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN",
+               "step" => "evidence"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:74: (test)
+
+.
+
+ 13) test mix xaas.replay under the no-LLM cold environment exit 0 writes canonical JSON whose digest is the recorded one; exit 4 on F5; exit 2 on bad flags (Xaas.Ultracode.SemanticReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:250
+         warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+         │
+      12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+         │                         ~
+         │
+         └─ /Users/sac/wt/v26922/v23/R1-X-DIGEST/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+     {"broken_term":"mu_unlawful","detail":{"exit":1,"tail":"e /Users/sac/.cache/tmp/replay-all-57096603651/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"},"reason":"graph_side_build_broken","standing":"BUILD_BROKEN","step":"evidence"}
+
+     code: assert code == 0, log
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:267: (test)
+
+
+
+ 14) test falsifiers F5: a deleted receipt diverges standing and frontier (typed unreceipted_transition) (Xaas.Ultracode.SemanticReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:149
+     match (=) failed
+     code:  assert {:ok, out} = replay(ctx, episode_dir: copy)
+     left:  {:ok, out}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "tail" => "e /Users/sac/.cache/tmp/replay-all-57096603651/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"
+               },
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN",
+               "step" => "frontier"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:154: (test)
+
+
+
+ 15) test cold replay of the recorded episode two independent replays are byte-identical (Xaas.Ultracode.SemanticReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:112
+     match (=) failed
+     code:  assert {:ok, first} = replay(ctx)
+     left:  {:ok, first}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "tail" => "e /Users/sac/.cache/tmp/replay-all-57096603651/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"
+               },
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN",
+               "step" => "evidence"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:113: (test)
+
+...
+
+ 16) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:107
+     match (=) failed
+     code:  assert {:ok, summary} = drive(ctx, out, pin_ref: pin)
+     left:  {:ok, summary}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "ac/.cache/tmp/xaas-drive-drive-all-57096605315/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                 "toolchain" => %{
+                   "build_compiler" => %{
+                     "elixir" => "1.18.4",
+                     "otp" => "27"
+                   },
+                   "elixir" => "1.18.4-otp-27",
+                   "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                   "source" => "asdf"
+                 }
+               },
+               "hop" => "sjira",
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:114: (test)
+
+.
+
+ 17) test an unregistered capability is REFUSED(unregistered_capability) at resolution: no Run, no ledger change (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:287
+     match (=) failed
+     code:  assert {:refused,
+             %{
+               "standing" => "REFUSED(unregistered_capability)",
+               "broken_term" => "mu_on_O",
+               "hop" => "resolve",
+               "detail" => %{"capability" => "recipe:not-registered"}
+             }} = drive(ctx, out)
+     left:  {:refused,
+             %{
+               "standing" => "REFUSED(unregistered_capability)",
+               "broken_term" => "mu_on_O",
+               "hop" => "resolve",
+               "detail" => %{"capability" => "recipe:not-registered"}
+             }}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "ac/.cache/tmp/xaas-drive-drive-all-57096605315/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                 "toolchain" => %{
+                   "build_compiler" => %{
+                     "elixir" => "1.18.4",
+                     "otp" => "27"
+                   },
+                   "elixir" => "1.18.4-otp-27",
+                   "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                   "source" => "asdf"
+                 }
+               },
+               "hop" => "sjira",
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:295: (test)
+
+
+
+ 18) test a subject with no drift is REFUSED(no_delta) by the provider: no commit, no ledger change, EP-A stays on the frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:345
+     match (=) failed
+     code:  assert {:refused,
+             %{
+               "standing" => "REFUSED(no_delta)",
+               "broken_term" => "R_missing_consequence",
+               "hop" => "provider"
+             }} = drive(ctx, out, pin_ref: pin)
+     left:  {:refused,
+             %{
+               "standing" => "REFUSED(no_delta)",
+               "broken_term" => "R_missing_consequence",
+               "hop" => "provider"
+             }}
+     right: {:refused,
+             %{
+               "broken_term" => "mu_unlawful",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "ac/.cache/tmp/xaas-drive-drive-all-57096605315/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}\n    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2\n    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2\n    lib/yaml_elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n",
+                 "toolchain" => %{
+                   "build_compiler" => %{
+                     "elixir" => "1.18.4",
+                     "otp" => "27"
+                   },
+                   "elixir" => "1.18.4-otp-27",
+                   "mix" => "/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix",
+                   "source" => "asdf"
+                 }
+               },
+               "hop" => "sjira",
+               "reason" => "graph_side_build_broken",
+               "standing" => "BUILD_BROKEN"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:353: (test)
+
+................
+
+ 19) test an absent ledger replays as the empty log (Xaas.Ultracode.SemanticCrownReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:498
+     match (=) failed
+     code:  assert {:ok, replay} =
+              SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_before.json"))
+     left:  {:ok, replay}
+     right: {:error,
+             {:frontier_failed, 1,
+              "elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"}}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:501: (test)
+
+
+
+ 20) test a directory ledger replays (File.cp! of a directory raised :eisdir) (Xaas.Ultracode.SemanticCrownReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:446
+     ** (MatchError) no match of right hand side value:
+
+         {"==> file_system\nCompiling 7 files (.ex)\nGenerated file_system app\n==> stream_data\nCompiling 3 files (.ex)\nGenerated stream_data app\n==> ymlr\nCompiling 3 files (.ex)\nGenerated ymlr app\n==> mime\nCompiling 1 file (.ex)\nGenerated mime app\n==> toml\nCompiling 10 files (.ex)\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 264 │   defp handle_token(lexer, original, doc, type, skip, _data, lines) when type in '-_' do\n     │                                                                                  ~\n     │\n     └─ lib/decoder.ex:264:82\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 371 │       {:ok, {type, _skip, _data, _lines}} when type in '-+' ->\n     │                                                        ~\n     │\n     └─ lib/decoder.ex:371:56\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 419 │           {:ok, {:alpha, _, <<c::utf8>>, _}} when c in 'eE' ->\n     │                                                        ~\n     │\n     └─ lib/decoder.ex:419:56\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 474 │       {:ok, {:alpha, _, <<c::utf8>>, _}} when c in 'eE' ->\n     │                                                    ~\n     │\n     └─ lib/decoder.ex:474:52\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 514 │       {:ok, {sign, _, _, _}} when sign in '-+' and last == ?e ->\n     │                                           ~\n     │\n     └─ lib/decoder.ex:514:43\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 518 │       {:ok, {:alpha, _, <<c::utf8>>, _}} when c in 'eE' and signal == ?. ->\n     │                                                    ~\n     │\n     └─ lib/decoder.ex:518:52\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 522 │       {:ok, {?_, skip, _, lines}} when last not in '_e.' ->\n     │                                                    ~\n     │\n     └─ lib/decoder.ex:522:52\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c sigil and fix this warning.\n     │\n 538 │       {:ok, {type, skip, data, lines}} when last in 'e.' ->\n     │                                                     ~\n     │\n     └─ lib/decoder.ex:538:53\n\n     warning: using single-quoted strings to represent charlists is deprecated.\n     Use ~c\"\" if you indeed want a charlist or use \"\" instead.\n     You may run \"mix format --migrate\" to change all single-quoted\n     strings to use the ~c " <> ...,
+          1}
+
+     code: {out, 0} =
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:452: (test)
+
+
+
+ 21) test a file ledger still replays (Xaas.Ultracode.SemanticCrownReplayTest)
+     test/xaas/ultracode/semantic_replay_test.exs:487
+     match (=) failed
+     code:  assert {:ok, replay} =
+              SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_after.json"))
+     left:  {:ok, replay}
+     right: {:error,
+             {:frontier_failed, 1,
+              "elixir/records.ex:6: (module)\ncould not compile dependency :yaml_elixir, \"mix compile\" failed. Errors may have been logged above. You can recompile this dependency with \"mix deps.compile yaml_elixir --force\", update it with \"mix deps.update yaml_elixir\" or clean it with \"mix deps.clean yaml_elixir\"\n"}}
+     stacktrace:
+       test/xaas/ultracode/semantic_replay_test.exs:491: (test)
+
+........................15:09:12.541 [warning] [ultracode] epoch 09e42a18-04c8-4552-b66e-126efc7b7ec8 (run 0e28b858-7753-49aa-8c45-871d6aa5e705, cycle 0) expected_at=2026-09-23 22:09:12.529125Z exceeded epoch_timeout_seconds=0 -> marked :missed (receipt sealed)
+.......................15:09:16.350 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790201356283-55152727938; falling back to the running node's toolchain (/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix)
+............15:09:23.792 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+...........15:09:27.744 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+........15:09:29.174 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+15:09:29.179 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+....
+Finished in 562.8 seconds (9.1s async, 553.7s sync)
+
+Result: 776/797 passed, 25 excluded
+Failed: 21 tests
