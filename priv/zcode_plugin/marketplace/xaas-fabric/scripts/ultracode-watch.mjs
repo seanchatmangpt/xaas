@@ -20,10 +20,20 @@
 //   session alive AND stale >= ULTRACODE_STALE_MINUTES (default 45) AND the last 200 lines
 //   of the session transcript carry an API-failure marker;
 //   then `ultracode-run.mjs run --dry-run --resume-from` must report live_agents_needed > 0
-//   (0 => the run is already complete: record marked completed, result.json written).
+//   and no static runtime halt (DRY_RUN_REFUSED(<code>) otherwise).
+//   Completion: only a dry-run that exits 0 with completed:true, live_agents_needed 0 and no
+//   error marks a run complete, and only after a zero-spawn replay (--run-dir
+//   <ultracodeHome>/runs/<runId>, agent command = a refusing guard) exits 0 and writes the
+//   runtime's own result.json (the raw return value). Any other n = 0 dry-run is reported
+//   DRY_RUN_ERROR(<code>) and the record stays open.
 //   Liveness = <claudeHome>/sessions/<pid>.json with the record's sessionId, kill -0 pid,
-//   and `ps -o lstart= -p pid` == procStart (guards pid reuse).
+//   and `ps -o lstart= -p pid` == procStart (guards pid reuse). A live pid whose session
+//   file has no procStart counts as alive (reuse unguarded; the side that avoids taking
+//   over a live session).
 //   Staleness = minutes since the newest mtime of journal.jsonl / agent-*.jsonl.
+//   API-failure marker = rate_limit|overloaded|usage limit|api_error, or 529/503 as a
+//   standalone number (not inside an id, a decimal, a timestamp or a JSON number field
+//   such as "durationMs":503) or right after error/status/code/http.
 //
 // Environment
 //   ULTRACODE_CLAUDE_HOME (default ~/.claude)    ULTRACODE_HOME (default ~/.zcode/ultracode)
@@ -46,10 +56,21 @@ export const START_INTERVAL = 300;
 const CLOSED = new Set(["completed", "taken_over"]);
 const TAIL_LINES = 200;
 const TAIL_BYTES = 8 * 1024 * 1024;
-// rate_limit|overloaded|usage limit|api_error, and 529/503 only as an HTTP/API status
-// (bare digits also occur in durations, timestamps and ids).
+// The contract token list rate_limit|overloaded|usage limit|529|503|api_error. 529 and 503
+// count as standalone numbers ("upstream returned 529", "HTTP/1.1 503 Service Unavailable")
+// or right after error/status/code/http ("status":503); the same digits inside a uuid, a
+// decimal/timestamp fraction (.503Z) or a JSON number field ("durationMs":503) do not count.
 export const API_FAILURE =
-  /rate_limit|overloaded|usage limit|api_error|(?:error|status|code|http)\W{0,4}(?:529|503)\b/i;
+  /rate_limit|overloaded|usage limit|api_error|(?<![\w.:+-])(?:529|503)(?![\w:-]|\.\d)|(?:error|status|code|http)\W{0,4}(?:529|503)\b/i;
+// Dry-run error codes that are static properties of script + args + journal (the live run
+// halts the same way, before any spawn). Other codes on a dry-run that still needs live
+// agents (SCRIPT_ERROR, AGENT_CAP, ...) can be artifacts of the dry-run resolving every
+// live-needed agent to null, so they do not refuse eligibility.
+export const STATIC_HALT = new Set([
+  "SCHEMA_CONTRADICTION", "SCHEMA_PREFLIGHT", "NONDETERMINISTIC_CALL", "META_NOT_LITERAL",
+  "META_MISSING", "META_INVALID", "SCRIPT_SYNTAX", "SCRIPT_PARSE", "SCRIPT_LOAD",
+  "SCRIPT_NOT_FOUND", "UNKNOWN_IMPORT", "WORKFLOW_DEPTH", "RESUME_SOURCE", "USAGE", "ARGS",
+]);
 
 // ---------------------------------------------------------------------------
 // configuration and small helpers
@@ -213,7 +234,11 @@ export function staleness(c, rec, now = Date.now()) {
       [newest, source] = [fs.statSync(recordPath(c, rec.runId)).mtimeMs, "record-mtime"];
     } catch {}
   }
-  return { minutes: newest ? Math.max(0, (now - newest) / 60000) : Infinity, source };
+  return {
+    minutes: newest ? Math.max(0, (now - newest) / 60000) : Infinity,
+    source,
+    newestMs: newest || null,
+  };
 }
 
 function tailLines(file, n = TAIL_LINES) {
@@ -287,6 +312,9 @@ function runtimeArgv(c, rec, extra) {
   return argv;
 }
 
+// The dry-run report: the last stdout JSON object carrying live_agents_needed, or, when the
+// runtime halted before replaying (static pre-flight), the last one carrying `error`.
+// Returns {n, report} (n null when only an error object was printed) or null.
 export function parseLiveAgents(stdout) {
   const text = String(stdout ?? "").trim();
   const pick = (o) =>
@@ -298,18 +326,11 @@ export function parseLiveAgents(stdout) {
       return undefined;
     }
   };
-  let obj = tryParse(text);
-  if (pick(obj) === undefined) {
-    obj = undefined;
-    for (const line of text.split("\n").reverse()) {
-      const o = tryParse(line.trim());
-      if (pick(o) !== undefined) {
-        obj = o;
-        break;
-      }
-    }
-  }
+  const cands = [tryParse(text), ...text.split("\n").reverse().map((l) => tryParse(l.trim()))];
+  const obj = cands.find((o) => pick(o) !== undefined);
   if (obj && Number.isFinite(Number(pick(obj)))) return { n: Number(pick(obj)), report: obj };
+  const errOnly = cands.find((o) => o && typeof o === "object" && o.error && typeof o.error === "object");
+  if (errOnly) return { n: null, report: errOnly };
   const m = /live_agents_needed["']?\s*[:=]\s*(\d+)/.exec(text);
   return m ? { n: Number(m[1]), report: null } : null;
 }
@@ -328,6 +349,125 @@ function dryRun(c, rec) {
     parsed: parseLiveAgents(r.stdout),
     diag: lastLine(r.stderr || r.error?.message || r.stdout),
   };
+}
+
+// Verdict over one dry-run: {kind: "eligible"|"refused"|"error"|"failed"|"complete", code, detail}.
+// A run is complete only when the runtime says so (exit 0, completed:true, no error,
+// live_agents_needed 0); the exit code and the report's error are never ignored.
+export function judgeDryRun(dr) {
+  const exitTag = `exit ${dr.exit}${dr.signal ? ` ${dr.signal}` : ""}`;
+  const rep = dr.parsed?.report ?? null;
+  const err = rep && rep.error && typeof rep.error === "object" ? rep.error : null;
+  const code = err ? String(err.code ?? "ERROR") : null;
+  const msg = err ? String(err.message ?? "").trim().split("\n")[0].slice(0, 300) : "";
+  const detail = (c) => `${c}; ${exitTag}${msg ? `: ${msg}` : ""}`;
+  if (!dr.parsed) return { kind: "failed", code: null, detail: `${exitTag}: ${dr.diag}` };
+  const n = dr.parsed.n;
+  if (n === null) return { kind: "refused", code, detail: detail(code) };
+  if (n > 0) {
+    if (code && STATIC_HALT.has(code)) return { kind: "refused", code, detail: detail(code) };
+    return { kind: "eligible", code, detail: code ? `dry-run ${detail(code)} after live-needed agents resolved null` : "" };
+  }
+  if (dr.exit === 0 && rep && rep.completed === true && !err) return { kind: "complete", code: null, detail: "" };
+  const why = code ?? (dr.exit !== 0 ? "EXIT_NONZERO" : rep?.completed === false ? "NOT_COMPLETED" : "COMPLETION_UNCONFIRMED");
+  return { kind: "error", code: why, detail: detail(why) };
+}
+
+// A replay that must spawn no agent: the runtime's agent command is pointed at this guard,
+// which records the attempt and fails, so a divergent replay costs no tokens and is visible.
+function writeReplayGuard(dir, attemptsFile) {
+  const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+  const guard = path.join(dir, "refuse-live-agent");
+  fs.writeFileSync(
+    guard,
+    [
+      "#!/bin/sh",
+      "# ultracode-watch completion guard: a completion replay must spawn no live agent.",
+      `printf '%s\\n' "refused live agent spawn during completion replay" >> ${q(attemptsFile)}`,
+      `printf '%s\\n' '{"error":"REFUSED(COMPLETION_REPLAY_LIVE_AGENT)"}'`,
+      "exit 97",
+      "",
+    ].join("\n")
+  );
+  fs.chmodSync(guard, 0o755);
+  return guard;
+}
+
+// Replay a run the dry-run reported complete into <ultracodeHome>/runs/<runId>, under the
+// .takeover lock, with zero live agents; the runtime writes its own result.json there
+// (the raw return value). The lock is released afterwards: it only serializes completion.
+export function completeByReplay(c, rec, dryReport, st, now = Date.now()) {
+  const runId = rec.runId;
+  const lock = acquireLock(c, runId, now, "complete");
+  if (!lock.acquired) return { ok: false, reason: `LOCKED(${JSON.stringify(lock.holder ?? lock.path)})` };
+  try {
+    const fresh = readJson(recordPath(c, runId));
+    if (fresh && CLOSED.has(fresh.status)) return { ok: false, reason: `ALREADY_${fresh.status.toUpperCase()}` };
+    const runDir = runDirOf(c, runId);
+    const work = workDirOf(c, runId);
+    fs.mkdirSync(work, { recursive: true });
+    fs.mkdirSync(path.dirname(runDir), { recursive: true });
+    const stamp = `${process.pid}-${now}`;
+    const attemptsFile = path.join(work, `completion-live-attempts-${stamp}.log`);
+    const guard = writeReplayGuard(work, attemptsFile);
+    const existed = isDir(runDir);
+    const argv = runtimeArgv(c, rec, ["--run-dir", runDir, "--json"]);
+    const r = spawnSync(process.execPath, argv, {
+      env: { ...c.env, ULTRACODE_AGENT_CMD: JSON.stringify(guard) },
+      encoding: "utf8",
+      timeout: c.dryRunTimeoutMs,
+      maxBuffer: 64 << 20,
+    });
+    const attempts = isFile(attemptsFile)
+      ? fs.readFileSync(attemptsFile, "utf8").split("\n").filter(Boolean).length
+      : 0;
+    const resultFile = path.join(runDir, "result.json");
+    const ok = r.status === 0 && attempts === 0 && isFile(resultFile);
+    const evidenceFile = path.join(work, "completion.json");
+    const evidence = {
+      runId,
+      at: iso(now),
+      dryRun: dryReport,
+      replay: {
+        argv: [process.execPath, ...argv],
+        agentCmd: guard,
+        exit: r.status,
+        signal: r.signal ?? null,
+        liveAgentAttempts: attempts,
+        runDir,
+        resultFile: ok ? resultFile : null,
+        stdoutTail: lastLine(r.stdout),
+        stderrTail: lastLine(r.stderr || r.error?.message),
+      },
+    };
+    if (!ok) {
+      let movedTo = null;
+      if (!existed && isDir(runDir)) {
+        // a divergent replay journal must not become a resume source for a later takeover
+        movedTo = `${runDir}.completion-replay-failed-${stamp}`;
+        fs.renameSync(runDir, movedTo);
+      }
+      evidence.replay.movedTo = movedTo;
+      writeJsonAtomic(evidenceFile, evidence);
+      const why = `exit ${r.status}${r.signal ? ` ${r.signal}` : ""}, live-agent attempts ${attempts}${isFile(resultFile) || movedTo ? "" : ", no result.json"}`;
+      updateRecord(c, runId, {
+        completionReplay: { failedAt: iso(now), why, journalMtimeMs: st.newestMs, evidence: evidenceFile },
+      });
+      return { ok: false, reason: `COMPLETION_REPLAY_FAILED(${why}; ${evidenceFile})` };
+    }
+    writeJsonAtomic(evidenceFile, evidence);
+    updateRecord(c, runId, {
+      status: "completed",
+      completedAt: iso(now),
+      completedBy: "ultracode-watch",
+      resultFile,
+      completion: { runDir, evidence: evidenceFile, dryRun: dryReport },
+      completionReplay: undefined,
+    });
+    return { ok: true, resultFile };
+  } finally {
+    releaseLock(lock);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -385,35 +525,43 @@ export function classify(c, rec, { now = Date.now() } = {}) {
     out.reason = `RUNTIME_ABSENT(${c.runtime}); ${out.reason}`;
     return out;
   }
+  const prev = rec.completionReplay;
+  if (prev && prev.journalMtimeMs != null && prev.journalMtimeMs === st.newestMs) {
+    // a completion replay already failed against this exact journal state: do not repeat it
+    out.reason = `COMPLETION_REPLAY_FAILED(previous ${prev.failedAt}: ${prev.why}; journal unchanged; ${prev.evidence}); ${out.reason}`;
+    return out;
+  }
   const dr = dryRun(c, rec);
-  if (!dr.parsed) {
-    out.reason = `DRY_RUN_FAILED(exit ${dr.exit}${dr.signal ? ` ${dr.signal}` : ""}: ${dr.diag}); ${out.reason}`;
+  const v = judgeDryRun(dr);
+  if (dr.parsed?.n != null) out.liveAgentsNeeded = dr.parsed.n;
+  if (dr.parsed?.report) out.dryRun = dr.parsed.report;
+  if (v.kind === "failed") {
+    out.reason = `DRY_RUN_FAILED(${v.detail}); ${out.reason}`;
     return out;
   }
-  out.liveAgentsNeeded = dr.parsed.n;
-  if (dr.parsed.n > 0) {
+  if (v.kind === "refused") {
+    out.reason = `DRY_RUN_REFUSED(${v.detail}); ${out.reason}`;
+    return out;
+  }
+  if (v.kind === "error") {
+    // n = 0 but the replay does not reach `return` cleanly: failed or refused, not complete
+    out.reason = `DRY_RUN_ERROR(${v.detail}); ${out.reason}`;
+    return out;
+  }
+  if (v.kind === "eligible") {
     out.eligible = true;
-    out.reason = `${out.reason}; live_agents_needed=${dr.parsed.n}`;
+    out.reason = `${out.reason}; live_agents_needed=${dr.parsed.n}${v.detail ? `; ${v.detail}` : ""}`;
     return out;
   }
-  // replay reaches `return` with zero live agents: the run is already complete
-  const resultFile = path.join(runDirOf(c, rec.runId), "result.json");
-  writeJsonAtomic(resultFile, {
-    runId: rec.runId,
-    completedBy: "ultracode-watch",
-    source: "claude-journal-replay",
-    at: iso(now),
-    result: dr.parsed.report?.result ?? null,
-    dryRun: dr.parsed.report,
-  });
-  updateRecord(c, rec.runId, {
-    status: "completed",
-    completedAt: iso(now),
-    completedBy: "ultracode-watch",
-    resultFile,
-  });
+  // v.kind === "complete": replay reaches `return` with zero live agents
+  const done = completeByReplay(c, rec, dr.parsed.report, st, now);
+  if (!done.ok) {
+    out.reason = `${done.reason}; ${out.reason}`;
+    return out;
+  }
   out.status = "completed";
-  out.reason = `COMPLETED(live_agents_needed=0 -> ${resultFile})`;
+  out.resultFile = done.resultFile;
+  out.reason = `COMPLETED(live_agents_needed=0, zero-spawn replay -> ${done.resultFile})`;
   return out;
 }
 
@@ -447,10 +595,10 @@ export function scan(c, opts = {}) {
 // takeover
 // ---------------------------------------------------------------------------
 
-export function acquireLock(c, runId, now = Date.now()) {
+export function acquireLock(c, runId, now = Date.now(), purpose = "takeover") {
   const p = lockPath(c, runId);
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  const body = { owner: "zcode", pid: process.pid, at: iso(now), host: os.hostname() };
+  const body = { owner: "zcode", pid: process.pid, at: iso(now), host: os.hostname(), purpose };
   let fd;
   try {
     fd = fs.openSync(p, "wx", 0o644); // O_CREAT|O_EXCL: exactly one creator wins
@@ -465,6 +613,17 @@ export function acquireLock(c, runId, now = Date.now()) {
     fs.closeSync(fd);
   }
   return { acquired: true, path: p, holder: body };
+}
+
+// Remove a lock this process created, and only while it still carries our body.
+function releaseLock(lock) {
+  if (!lock?.acquired) return;
+  const held = readJson(lock.path);
+  if (held && held.pid === lock.holder.pid && held.at === lock.holder.at) {
+    try {
+      fs.unlinkSync(lock.path);
+    } catch {}
+  }
 }
 
 function spawnCollect(cmd, argv, env) {
@@ -500,6 +659,12 @@ export async function takeover(c, runId) {
   if (!isFile(c.runtime)) return refuse("RUNTIME_ABSENT", c.runtime);
   const lock = acquireLock(c, runId);
   if (!lock.acquired) return refuse("LOCKED", lock.holder ?? lock.path);
+  // the record may have closed between the first read and the lock (a scan completion)
+  const rec1 = readJson(recordPath(c, runId));
+  if (rec1 && CLOSED.has(rec1.status)) {
+    releaseLock(lock);
+    return refuse(`ALREADY_${rec1.status.toUpperCase()}`, rec1.resultFile);
+  }
 
   const runDir = runDirOf(c, runId);
   const work = workDirOf(c, runId);
@@ -742,6 +907,33 @@ const first = await agent('Reply with only the token after ANSWER. ANSWER:alpha'
 const second = await agent('Reply with only the token after ANSWER. ANSWER:beta', { label: 'second', phase: 'selftest' })
 return { first, second }
 `;
+// every agent is in the journal, then the script throws: replay never reaches `return`
+const THROWAFTER_SCRIPT = `export const meta = { name: 'uc-watch-throwafter', description: 'all agents replayed, then a throw' }
+const first = await agent('Reply with only the token after ANSWER. ANSWER:alpha', { label: 'first' })
+throw new Error('script failed after its agents: ' + first)
+`;
+// a typed runtime refusal: meta is not a pure literal
+const METAVAR_SCRIPT = `const n = 'uc-watch-metavar'
+export const meta = { name: n, description: 'meta is not a pure literal' }
+const first = await agent('Reply with only the token after ANSWER. ANSWER:alpha', { label: 'first' })
+return first
+`;
+// a live-needed agent, then a contradictory schema: the runtime halts before any spawn
+const CONTRA_SCRIPT = `export const meta = { name: 'uc-watch-contra', description: 'contradictory schema after a live-needed agent' }
+const first = await agent('Reply with only the token after ANSWER. ANSWER:alpha', { label: 'first' })
+const bad = await agent('Reply with only the token after ANSWER. ANSWER:beta', { label: 'bad', schema: { type: 'object', required: ['missing'], properties: { present: { type: 'string' } }, additionalProperties: false } })
+return { first, bad }
+`;
+// complete under the dry-run's agent command, but needs one more agent under any agent
+// command naming the completion guard: forces a divergent completion replay
+const DIVERGE_SCRIPT = `export const meta = { name: 'uc-watch-diverge', description: 'diverges under the completion guard' }
+const first = await agent('Reply with only the token after ANSWER. ANSWER:alpha', { label: 'first' })
+if (String(process.env.ULTRACODE_AGENT_CMD ?? '').includes('refuse-live-agent')) {
+  const extra = await agent('Reply with only the token after ANSWER. ANSWER:gamma', { label: 'extra' })
+  return { first, extra }
+}
+return { first }
+`;
 
 function writeBackend(root, logFile) {
   const js = path.join(root, "scripted-agent-backend.mjs");
@@ -804,7 +996,7 @@ async function selftest() {
 
   // Claude-side artifacts of one launched run, exactly as SKILL.md section 1 lays them out.
   const addRun = (k, runId, o = {}) => {
-    const { sessionId, staleMin = 10, done = ["first"], status = "launched" } = o;
+    const { sessionId, staleMin = 10, done = ["first"], status = "launched", script = SELFTEST_SCRIPT } = o;
     const proj = path.join(k.ch, "projects", "-selftest-proj");
     const tdir = path.join(proj, sessionId, "subagents", "workflows", runId);
     fs.mkdirSync(tdir, { recursive: true });
@@ -822,7 +1014,7 @@ async function selftest() {
     const sdir = path.join(proj, sessionId, "workflows", "scripts");
     fs.mkdirSync(sdir, { recursive: true });
     const scriptFile = path.join(sdir, `uc-watch-selftest-${runId}.js`);
-    fs.writeFileSync(scriptFile, SELFTEST_SCRIPT);
+    fs.writeFileSync(scriptFile, script);
     const rec = {
       runId,
       scriptFile,
@@ -898,7 +1090,16 @@ async function selftest() {
       const l = sessionLiveness(k.c, "sess-live");
       assert(l.alive === true && l.pid === s.pid && l.why === "alive", `got ${JSON.stringify(l)}`);
       assert(procStartMatches(s.pid, s.procStart) === true, "procStart did not match its own lstart");
+      // documented refinement: a live pid whose session file lacks procStart counts as alive
+      const bare = await liveSession(k, "sess-noproc");
+      const f = path.join(k.ch, "sessions", `${bare.pid}.json`);
+      const j = readJson(f);
+      delete j.procStart;
+      fs.writeFileSync(f, JSON.stringify(j));
+      const b = sessionLiveness(k.c, "sess-noproc");
+      assert(b.alive === true && b.why === "alive(procStart-absent)", `got ${JSON.stringify(b)}`);
       await kill(s.child);
+      await kill(bare.child);
     }],
     ["liveness: pid reuse (procStart mismatch) is dead", false, async () => {
       const k = mkCase("reuse");
@@ -955,10 +1156,17 @@ async function selftest() {
       writeSessionTranscript(k, "sess-a2", [
         { type: "assistant", uuid: "a503b2c1-0503-4503-8503-503503503503", durationMs: 503, timestamp: "2026-09-22T22:56:55.503Z", message: "fine" },
       ]);
+      // a bare contract token (no "error"/"status" prefix) is a marker too
+      const s3 = await liveSession(k, "sess-a3");
+      writeSessionTranscript(k, "sess-a3", [{ type: "system", content: "upstream returned 529" }]);
       addRun(k, "wf_al-apifail", { sessionId: "sess-a1", staleMin: 60 });
       addRun(k, "wf_al-nomarker", { sessionId: "sess-a2", staleMin: 60 });
       addRun(k, "wf_al-progress", { sessionId: "sess-a1", staleMin: 10 });
+      addRun(k, "wf_al-bare529", { sessionId: "sess-a3", staleMin: 60 });
       const rows = scanJson(k);
+      const c3 = rows["wf_al-bare529"];
+      assert(c3.candidate === true && c3.apiFailureMarker === "529", `bare529: ${JSON.stringify(c3)}`);
+      await kill(s3.child);
       const a = rows["wf_al-apifail"];
       assert(a.candidate === true && a.session.alive === true, `apifail: ${JSON.stringify(a)}`);
       assert(a.apiFailureMarker && /SESSION_ALIVE_API_FAILURE/.test(a.reason), `apifail: ${a.reason}`);
@@ -968,6 +1176,31 @@ async function selftest() {
       assert(p.candidate === false && /SESSION_ALIVE_PROGRESSING/.test(p.reason), `progress: ${p.reason}`);
       await kill(s1.child);
       await kill(s2.child);
+    }],
+    ["marker: contract tokens count as standalone tokens; the digits inside ids/durations/timestamps do not", false, async () => {
+      const yes = [
+        "upstream returned 529",
+        "HTTP/1.1 503 Service Unavailable",
+        'API Error: 529 {"type":"error","error":{"type":"overloaded_error"}}',
+        '{"status":503}',
+        "request failed with 503.",
+        '{"type":"rate_limit_error"}',
+        "Overloaded",
+        "Claude usage limit reached",
+        '{"type":"api_error"}',
+      ];
+      const no = [
+        '{"uuid":"a503b2c1-0503-4503-8503-503503503503","durationMs":503,"timestamp":"2026-09-22T22:56:55.503Z"}',
+        '{"durationMs":5290,"port":5030,"took":"1.503s","id":"req_503abc"}',
+        "all 2 agents finished",
+      ];
+      for (const s of yes) assert(API_FAILURE.test(s), `not a marker: ${s}`);
+      for (const s of no) assert(!API_FAILURE.test(s), `false marker in: ${s} (${API_FAILURE.exec(s)?.[0]})`);
+      // through a real transcript file: the HTTP status line is found in the tail
+      const k = mkCase("marker");
+      writeSessionTranscript(k, "sess-m", [{ type: "system", content: "HTTP/1.1 503 Service Unavailable" }, ...no.map((s) => ({ s }))]);
+      const m = apiFailureMarker(k.c, "sess-m");
+      assert(m === "503", `transcript marker ${m}`);
     }],
     ["scan: completed and taken_over records are not processed", false, async () => {
       const k = mkCase("closed");
@@ -1056,16 +1289,92 @@ process.stdout.write(JSON.stringify({ acquired: r.acquired, pid: process.pid }))
       assert(!fs.existsSync(lockOf(k, "wf_ro-report")), "lock written without --auto");
       assert(record(k, "wf_ro-report").status === "launched", "record changed without --auto");
     }],
-    ["scan+runtime: complete journal -> record completed, result.json written", true, async () => {
+    ["scan+runtime: complete journal -> zero-spawn replay; result.json is the run's return value", true, async () => {
       const k = mkCase("rt-complete");
       addRun(k, "wf_rt-complete", { sessionId: "sess-rc", staleMin: 30, done: ["first", "second"] });
       const before = backendCalls().length;
       const row = scanJson(k)["wf_rt-complete"];
-      assert(row.liveAgentsNeeded === 0 && row.status === "completed", `row ${JSON.stringify(row)}`);
+      assert(row.liveAgentsNeeded === 0 && row.status === "completed" && /^COMPLETED\(/.test(row.reason), `row ${JSON.stringify(row)}`);
+      assert(row.dryRun.completed === true && !row.dryRun.error, `dry-run ${JSON.stringify(row.dryRun)}`);
       const rec = record(k, "wf_rt-complete");
-      assert(rec.status === "completed" && isFile(rec.resultFile), `record ${JSON.stringify(rec)}`);
+      assert(rec.status === "completed" && rec.completedBy === "ultracode-watch", `record ${JSON.stringify(rec)}`);
       assert(rec.resultFile === path.join(k.uh, "runs", "wf_rt-complete", "result.json"), rec.resultFile);
-      assert(backendCalls().length === before, "a dry-run spawned a live agent");
+      const result = readJson(rec.resultFile);
+      assert(
+        JSON.stringify(result) === JSON.stringify({ first: "from-claude", second: "from-claude-2" }),
+        `result.json is not the replayed return value: ${JSON.stringify(result)}`
+      );
+      const ev = readJson(rec.completion.evidence);
+      assert(ev.dryRun.completed === true && ev.replay.exit === 0 && ev.replay.liveAgentAttempts === 0, JSON.stringify(ev));
+      assert(backendCalls().length === before, "a dry-run or the completion replay spawned a live agent");
+      assert(!fs.existsSync(lockOf(k, "wf_rt-complete")), "completion lock not released");
+      const t = cli(k, "takeover", "wf_rt-complete");
+      assert(t.code === 2 && JSON.parse(t.out).code === "ALREADY_COMPLETED", `takeover after completion: ${t.out}`);
+    }],
+    ["scan+runtime: agents all replayed then the script throws -> DRY_RUN_ERROR, record stays open", true, async () => {
+      const k = mkCase("rt-throwafter");
+      addRun(k, "wf_rt-throw", { sessionId: "sess-th", staleMin: 30, done: ["first"], script: THROWAFTER_SCRIPT });
+      const before = backendCalls().length;
+      for (const pass of [1, 2]) {
+        const row = scanJson(k)["wf_rt-throw"];
+        assert(row && row.eligible === false && row.status === "launched", `pass ${pass}: ${JSON.stringify(row)}`);
+        assert(/^DRY_RUN_ERROR\(SCRIPT_ERROR; exit \d+/.test(row.reason), `pass ${pass} reason: ${row.reason}`);
+        assert(row.liveAgentsNeeded === 0 && row.dryRun.completed === false, `pass ${pass} dry-run ${JSON.stringify(row.dryRun)}`);
+      }
+      const rec = record(k, "wf_rt-throw");
+      assert(rec.status === "launched" && !rec.resultFile && !rec.completion, `record ${JSON.stringify(rec)}`);
+      assert(!fs.existsSync(path.join(k.uh, "runs", "wf_rt-throw")), "run dir written for a failed run");
+      assert(!fs.existsSync(lockOf(k, "wf_rt-throw")), "lock written by scan");
+      const t = cli(k, "takeover", "wf_rt-throw");
+      const j = JSON.parse(t.out);
+      assert(t.code === 1 && j.outcome === "failed" && j.exit !== 0, `takeover: ${t.code} ${t.out}`);
+      const after = record(k, "wf_rt-throw");
+      assert(after.status === "taken_over" && after.takeover.exit !== 0, `record after takeover ${JSON.stringify(after)}`);
+      assert(backendCalls().length === before, "a live agent was spawned for a fully journaled run");
+    }],
+    ["scan+runtime: meta not a pure literal -> typed refusal, never completed, takeover halts with zero spawns", true, async () => {
+      const k = mkCase("rt-metavar");
+      addRun(k, "wf_rt-meta", { sessionId: "sess-me", staleMin: 30, done: [], script: METAVAR_SCRIPT });
+      const before = backendCalls().length;
+      const row = scanJson(k)["wf_rt-meta"];
+      assert(row.eligible === false && /^DRY_RUN_(REFUSED|ERROR)\(META_NOT_LITERAL/.test(row.reason), `row ${JSON.stringify(row)}`);
+      assert(record(k, "wf_rt-meta").status === "launched", "record closed by scan");
+      const t = cli(k, "takeover", "wf_rt-meta");
+      assert(t.code === 1 && JSON.parse(t.out).outcome === "failed", `takeover: ${t.code} ${t.out}`);
+      assert(record(k, "wf_rt-meta").status !== "completed", "record completed");
+      assert(backendCalls().length === before, "spawned an agent for a refused script");
+    }],
+    ["scan+runtime: contradictory schema behind a live-needed agent -> DRY_RUN_REFUSED, not eligible, zero spawns", true, async () => {
+      const k = mkCase("rt-contra");
+      addRun(k, "wf_rt-contra", { sessionId: "sess-co", staleMin: 30, done: [], script: CONTRA_SCRIPT });
+      const before = backendCalls().length;
+      const row = scanJson(k)["wf_rt-contra"];
+      assert(row.eligible === false && /^DRY_RUN_REFUSED\(SCHEMA_(CONTRADICTION|PREFLIGHT)/.test(row.reason), `row ${JSON.stringify(row)}`);
+      assert(record(k, "wf_rt-contra").status === "launched" && !fs.existsSync(lockOf(k, "wf_rt-contra")), "scan changed the record");
+      const r = cli(k, "run-once", "--auto");
+      assert(r.code === 0 && JSON.parse(r.out).actions.length === 0, `run-once --auto acted: ${r.out}`);
+      assert(backendCalls().length === before, "spawned an agent for a refused script");
+    }],
+    ["scan+runtime: a completion replay needing a live agent is refused by the guard; record stays open", true, async () => {
+      const k = mkCase("rt-diverge");
+      const { jf } = addRun(k, "wf_rt-div", { sessionId: "sess-dv", staleMin: 30, done: ["first"], script: DIVERGE_SCRIPT });
+      const runs = path.join(k.uh, "runs");
+      const moved = () => fs.readdirSync(runs).filter((n) => n.startsWith("wf_rt-div.completion-replay-failed-"));
+      const before = backendCalls().length;
+      const row = scanJson(k)["wf_rt-div"];
+      assert(row.status === "launched" && row.eligible === false, `row ${JSON.stringify(row)}`);
+      assert(/^COMPLETION_REPLAY_FAILED\(exit \d+, live-agent attempts 1/.test(row.reason), `reason ${row.reason}`);
+      const rec = record(k, "wf_rt-div");
+      assert(rec.status === "launched" && rec.completionReplay?.journalMtimeMs > 0 && !rec.resultFile, JSON.stringify(rec));
+      assert(!fs.existsSync(path.join(runs, "wf_rt-div")) && moved().length === 1, `run dirs ${fs.readdirSync(runs)}`);
+      assert(!fs.existsSync(lockOf(k, "wf_rt-div")), "completion lock not released");
+      assert(backendCalls().length === before, "the guarded replay reached the agent backend");
+      const again = scanJson(k)["wf_rt-div"];
+      assert(/^COMPLETION_REPLAY_FAILED\(previous .*journal unchanged/.test(again.reason) && moved().length === 1, again.reason);
+      setMtime([jf], 29); // new journal state -> the completion is attempted again
+      const third = scanJson(k)["wf_rt-div"];
+      assert(/^COMPLETION_REPLAY_FAILED\(exit/.test(third.reason) && moved().length === 2, `${third.reason} ${moved()}`);
+      assert(backendCalls().length === before, "the guarded replay reached the agent backend");
     }],
     ["takeover+runtime: 6 concurrent takeovers past one barrier, exactly one wins and completes", true, async () => {
       const k = mkCase("rt-takeover");
