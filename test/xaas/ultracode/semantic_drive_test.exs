@@ -662,6 +662,10 @@ defmodule Xaas.Ultracode.SemanticDriveNoLlmGuardTest do
 
   alias Xaas.Ultracode.{NoLlmPolicy, SemanticDrive}
 
+  # real `mix xaas.episode` OS processes (4 in one test) on a machine shared
+  # with other executors: the 60 s ExUnit default timed one out at load ~100
+  @moduletag timeout: 600_000
+
   @root Path.expand("../../..", __DIR__)
   @policy_file Path.join(@root, "priv/no_llm/policy.json")
   @no_llm_env Path.join(@root, "docs/sjira/v26.9.23/courts/no_llm_env.sh")
