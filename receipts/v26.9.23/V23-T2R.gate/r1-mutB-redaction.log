@@ -1,0 +1,29 @@
+HEAD=19060ec7b50e10cc0ccf3ccdaeca44f4a516ab2a + mutation B-no-redaction
+
+Compiling 1 file (.ex)
+Generated xaas app
+01:46:34.527 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:46:34.909 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:46:35.176 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 404189, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+............
+
+  1) test a lease lost between steps expired during a failing step: the refusal cannot be sealed and the typed error carries only the token's fingerprint (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:423
+     Assertion with == failed
+     code:  assert redacted == "lease:sha256:" <> sha256_hex(held.lease_token)
+     left:  "ypF3IwDWLPAksfkrzwwU9i2z_EOscrEe"
+     right: "lease:sha256:025cc0e0987f425acc889648ef1a295bcd232b00d707143278120e8610524b73"
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:441: (test)
+
+.01:46:39.145 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153199101-35970; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+....
+Finished in 4.3 seconds (0.00s async, 4.3s sync)
+18 tests, 1 failure
+EXIT=2
