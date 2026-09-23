@@ -1,0 +1,13 @@
+diff --git a/lib/xaas/ultracode/semantic_replay.ex b/lib/xaas/ultracode/semantic_replay.ex
+index 1f85c7a..0e085c2 100644
+--- a/lib/xaas/ultracode/semantic_replay.ex
++++ b/lib/xaas/ultracode/semantic_replay.ex
+@@ -654,7 +654,7 @@ defmodule Xaas.Ultracode.SemanticReplay do
+   defp frontiers(ctx) do
+     committed_copy = copy_ledger(ctx.ledger_path, Path.join(ctx.work, "committed"))
+ 
+-    with {:ok, admitted} <- frontier(ctx, ctx.admitted_ledger, "frontier") do
++    with {:ok, admitted} <- frontier(ctx, committed_copy, "frontier") do
+       case frontier(ctx, committed_copy, "frontier") do
+         {:ok, committed} ->
+           {:ok, Map.merge(ctx, %{frontier: admitted, committed_frontier: committed})}

@@ -1,0 +1,9 @@
+record matches the episode-time projection: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb
+recorded: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb (subject ref v23/episode-fmt-1-receipt)
+fence: /Users/sac/.claude unreadable under the replay profile
+cold: 2 runs, digest sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb == recorded; standing {'EP-A': 'ALIVE', 'EP-B': 'UNKNOWN'}, completed ['EP-A'], eligible ['EP-B']
+F3: REFUSED(llm_credential_present), broken term mu_on_O
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+AssertionError: {'EP-A': 'ALIVE', 'EP-B': 'UNKNOWN'}
+REFUSED: GC23-10 F5: deleting the receipt did not diverge standing and frontier
