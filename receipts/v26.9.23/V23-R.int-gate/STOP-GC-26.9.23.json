@@ -1,0 +1,41 @@
+{
+  "authority": {
+    "actor": "xaas.stop_court",
+    "ceiling": "OBSERVE",
+    "grant": "NONE"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": []
+  },
+  "identity": {
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
+    "repo": "/Users/sac/wt/v26922/fri/xaas-int",
+    "subject": "GC-26.9.23/STOP",
+    "subject_sha": "86345d991c3a5f69bb3068d175a7ff8301f34bc6"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-10.sh",
+        "cwd": "/Users/sac/wt/v26922/fri/xaas-int",
+        "exit": 0,
+        "output_sha256": "6ba081b37a7bf40a334a29c092db64abd6127934dcd84b9189a6c116d104bf58",
+        "summary": "ALIVE: GC23-10 cold replay of episode fmt-1 reproduces the recorded digest twice under the no-LLM, ~/.claude-fenced env; F3, F5 and F6 witnessed"
+      },
+      {
+        "cmd": "mix xaas.stop_court --checkpoint GC-26.9.23",
+        "cwd": "/Users/sac/wt/v26922/fri/xaas-int",
+        "exit": 1,
+        "summary": "sj:stopQuery ASK over the goal graph + 1 admitted gate receipts: STOP=false"
+      }
+    ],
+    "durable_location": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/V23-R-int/stop-receipts/STOP-GC-26.9.23.json"
+  },
+  "standing": {
+    "derived_from": "sj:stopQuery of GC-26.9.23 at 86345d991c3a5f69bb3068d175a7ff8301f34bc6: 1/13 gates ALIVE; STOP=false",
+    "value": "UNKNOWN"
+  }
+}

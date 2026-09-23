@@ -1,0 +1,2 @@
+test/xaas/ultracode/semantic_replay_test.exs:14:  `courts/no_llm_env.sh`. Nothing is mocked. The database is not touched.
+test/xaas/ultracode/semantic_replay_test.exs:398:  ledgers are the regression controls. Real processes, real files; no mocks.
