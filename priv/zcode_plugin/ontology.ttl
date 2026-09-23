@@ -1,10 +1,14 @@
 @prefix zp: <http://seanchatmangpt.github.io/packs/zcode-plugin#> .
+@prefix ul: <http://seanchatmangpt.github.io/packs/ultracode-actuation-lease#> .
 
 # ZCode plugin topology for the XaaS execution fabric. Source of truth for
 # every manifest and every command/agent/skill frontmatter under
 # marketplace/. Project root: `cd priv/zcode_plugin && ggen sync run`.
-# Prose bodies and the two node scripts are the irreducible handwritten
-# residue (see HANDWRITTEN.md); everything else here is projected.
+# Manifests, hook config, frontmatter and both node scripts are rendered by the
+# packs bound in ggen.toml (packs/zcode-plugin-pack, packs/ultracode-actuation-lease-pack);
+# the gate's allowlists and the lease state-file protocol are the individuals
+# below. Prose bodies (command/agent/skill) are the irreducible handwritten
+# residue (see HANDWRITTEN.md).
 
 <urn:zp:marketplace/xaas-fabric-marketplace> a zp:Marketplace ;
     zp:marketplaceName "xaas-fabric-marketplace" ;
@@ -44,3 +48,76 @@
     zp:skillOf <urn:zp:plugin/xaas-fabric> ;
     zp:name "xaas-worker" ;
     zp:description "Operating doctrine for a leased XaaS execution worker (claim, admit, verify, close). Use when executing work claimed from the xaas-execution MCP server." .
+
+# --- Lease state-file protocol (rendered by ultracode-actuation-lease-pack;
+# --- stateDirName is also read by the PreToolUse gate) ---------------------
+
+<urn:ul:lease-protocol/xaas-fabric> a ul:LeaseStateProtocol ;
+    ul:stateDirName "xaas-fabric" ;
+    ul:scriptName "xaas-lease.mjs" ;
+    ul:installPath "marketplace/xaas-fabric/scripts/xaas-lease.mjs" ;
+    ul:conflictExitCode 65 ;
+    ul:usageExitCode 64 .
+
+# --- PreToolUse gate policy (rendered into scripts/xaas-gate.mjs by
+# --- zcode-plugin-pack). zp:order fixes the rendered order. ----------------
+
+# Tools allowed before any lease exists (read-only).
+<urn:zp:tool/pre_lease_ok/Read> a zp:AllowedTool ; zp:toolSet "pre_lease_ok" ; zp:toolName "Read" ; zp:order 1 .
+<urn:zp:tool/pre_lease_ok/Grep> a zp:AllowedTool ; zp:toolSet "pre_lease_ok" ; zp:toolName "Grep" ; zp:order 2 .
+<urn:zp:tool/pre_lease_ok/Glob> a zp:AllowedTool ; zp:toolSet "pre_lease_ok" ; zp:toolName "Glob" ; zp:order 3 .
+<urn:zp:tool/pre_lease_ok/TodoWrite> a zp:AllowedTool ; zp:toolSet "pre_lease_ok" ; zp:toolName "TodoWrite" ; zp:order 4 .
+<urn:zp:tool/pre_lease_ok/Skill> a zp:AllowedTool ; zp:toolSet "pre_lease_ok" ; zp:toolName "Skill" ; zp:order 5 .
+
+# Tools never sent to the arbiter.
+<urn:zp:tool/local_only/Skill> a zp:AllowedTool ; zp:toolSet "local_only" ; zp:toolName "Skill" ; zp:order 1 .
+
+# Write tools: need a live lease plus worktree real-path containment.
+<urn:zp:tool/write/Write> a zp:AllowedTool ; zp:toolSet "write" ; zp:toolName "Write" ; zp:order 1 .
+<urn:zp:tool/write/Edit> a zp:AllowedTool ; zp:toolSet "write" ; zp:toolName "Edit" ; zp:order 2 .
+<urn:zp:tool/write/NotebookEdit> a zp:AllowedTool ; zp:toolSet "write" ; zp:toolName "NotebookEdit" ; zp:order 3 .
+<urn:zp:tool/write/MultiEdit> a zp:AllowedTool ; zp:toolSet "write" ; zp:toolName "MultiEdit" ; zp:order 4 .
+
+# zcode tool name -> execution-server tool name.
+<urn:zp:toolmap/Agent> a zp:ToolMapping ; zp:fromTool "Agent" ; zp:toTool "Task" ; zp:order 1 .
+<urn:zp:toolmap/TaskOutput> a zp:ToolMapping ; zp:fromTool "TaskOutput" ; zp:toTool "Task" ; zp:order 2 .
+<urn:zp:toolmap/TaskStop> a zp:ToolMapping ; zp:fromTool "TaskStop" ; zp:toTool "Task" ; zp:order 3 .
+<urn:zp:toolmap/MultiEdit> a zp:ToolMapping ; zp:fromTool "MultiEdit" ; zp:toTool "Edit" ; zp:order 4 .
+<urn:zp:toolmap/NotebookEdit> a zp:ToolMapping ; zp:fromTool "NotebookEdit" ; zp:toTool "Edit" ; zp:order 5 .
+
+# Bash argv allowlist: git subcommands, then read-only helpers.
+<urn:zp:verb/git_sub/add> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "add" ; zp:order 1 .
+<urn:zp:verb/git_sub/commit> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "commit" ; zp:order 2 .
+<urn:zp:verb/git_sub/status> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "status" ; zp:order 3 .
+<urn:zp:verb/git_sub/diff> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "diff" ; zp:order 4 .
+<urn:zp:verb/git_sub/log> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "log" ; zp:order 5 .
+<urn:zp:verb/git_sub/rev-parse> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "rev-parse" ; zp:order 6 .
+<urn:zp:verb/git_sub/show> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "show" ; zp:order 7 .
+<urn:zp:verb/git_sub/ls-files> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "ls-files" ; zp:order 8 .
+<urn:zp:verb/read_helper/ls> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "ls" ; zp:order 1 .
+<urn:zp:verb/read_helper/cat> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "cat" ; zp:order 2 .
+<urn:zp:verb/read_helper/head> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "head" ; zp:order 3 .
+<urn:zp:verb/read_helper/tail> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "tail" ; zp:order 4 .
+<urn:zp:verb/read_helper/wc> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "wc" ; zp:order 5 .
+
+# git flags refused under any allowed subcommand.
+<urn:zp:gitflag/1> a zp:ForbiddenGitFlag ; zp:flag "-c" ; zp:order 1 .
+<urn:zp:gitflag/2> a zp:ForbiddenGitFlag ; zp:flag "--exec-path" ; zp:order 2 .
+<urn:zp:gitflag/3> a zp:ForbiddenGitFlag ; zp:flag "--namespace" ; zp:order 3 .
+<urn:zp:gitflag/4> a zp:ForbiddenGitFlag ; zp:flag "--no-index" ; zp:order 4 .
+<urn:zp:gitflag/5> a zp:ForbiddenGitFlag ; zp:flag "-F" ; zp:order 5 .
+<urn:zp:gitflag/6> a zp:ForbiddenGitFlag ; zp:flag "--file" ; zp:order 6 .
+<urn:zp:gitflag/7> a zp:ForbiddenGitFlag ; zp:flag "-t" ; zp:order 7 .
+<urn:zp:gitflag/8> a zp:ForbiddenGitFlag ; zp:flag "--template" ; zp:order 8 .
+
+# Credential directories under $HOME that Read/Grep/Glob never touch.
+<urn:zp:deniedpath/home/.zcode> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".zcode" ; zp:order 1 .
+<urn:zp:deniedpath/home/.ssh> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".ssh" ; zp:order 2 .
+<urn:zp:deniedpath/home/.aws> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".aws" ; zp:order 3 .
+<urn:zp:deniedpath/home/.gnupg> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".gnupg" ; zp:order 4 .
+<urn:zp:deniedpath/home/.config> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".config" ; zp:order 5 .
+<urn:zp:deniedpath/home/.claude> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".claude" ; zp:order 6 .
+<urn:zp:deniedpath/home/.docker> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".docker" ; zp:order 7 .
+<urn:zp:deniedpath/home/.kube> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".kube" ; zp:order 8 .
+<urn:zp:deniedpath/home/.netrc> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".netrc" ; zp:order 9 .
+<urn:zp:deniedpath/home/.npmrc> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".npmrc" ; zp:order 10 .

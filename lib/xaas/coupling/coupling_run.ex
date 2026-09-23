@@ -24,7 +24,7 @@ defmodule Xaas.Coupling.CouplingRun do
   runs -- those remain out of scope for this pass (see `unsupported_reason`
   on any run whose constraints go beyond box bounds).
   """
-  use Ash.Resource,
+  use Xaas.Resource,
     domain: Xaas.Coupling,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]

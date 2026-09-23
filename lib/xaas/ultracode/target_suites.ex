@@ -46,6 +46,32 @@ defmodule Xaas.Ultracode.TargetSuites do
   also gates the court-receipt declarations: a step's `receipt` must be a
   boolean, its `receipt_argv` a well-formed argv list, and the suite's
   `result_format` one of `Xaas.Ultracode.CourtReceipt.result_formats/0`.
+
+  ## The four SJ-program targets (xaas, autofde-lab, gymact, ggen-igniter)
+
+  Each gets a per-item `<alias>-dod` suite (the cheapest sound check, judged at
+  `Lease.close/4`) and an `<alias>-canonical` suite (the exhaustive check run
+  at the integration head after the serial `--no-ff` promotion). The clones
+  live at `~/xaas-worktrees/repos/<alias>` (`git clone --local`; see
+  `Xaas.Ultracode.Repos.refresh/1`). Two extra environment laws apply on top
+  of the ones above:
+
+    * **Evidence-subject identity.** The Python suites open with a `subject`
+      step that imports the package under test and refuses unless it resolved
+      INSIDE the worktree. The repos' venvs are editable installs pointing at
+      the operator's source checkout, so a green pytest run against the wrong
+      tree would be a false ALIVE; the relative `PYTHONPATH=src` makes the
+      worktree win and the `subject` step proves it did, every run.
+    * **Elixir seeds, per-run DB.** The Elixir suites take `deps/` and
+      `_build/` from an operator-owned APFS-clone seed under
+      `~/xaas-worktrees/toolchain/seeds/<alias>` (the seed is what makes a
+      git dependency resolvable under the verifier's credential-free
+      throwaway HOME, and what turns a from-scratch compile into an
+      incremental one). A missing seed only costs time: the first run that
+      passes publishes it atomically. `mix test` runs against its own
+      `MIX_TEST_PARTITION` database derived from the per-run `{tmpdir}` and
+      drops it on exit, so concurrent verifier runs never share (or litter)
+      a test database.
   """
 
   alias Xaas.Ultracode.{CourtReceipt, Verifier}
@@ -365,7 +391,275 @@ defmodule Xaas.Ultracode.TargetSuites do
       "xaas-dod" => xaasclone,
       "xaas-canonical" => xaasclone
     }
+    |> Map.merge(sj_program_suites())
   end
+
+  # ------------------------------------------------------------------
+  # SJ-program targets: xaas, autofde-lab, gymact, ggen-igniter
+  # ------------------------------------------------------------------
+
+  @seed_root "~/xaas-worktrees/toolchain/seeds"
+
+  # Seed step (Elixir suites): take `deps/` and `_build/` from the operator
+  # seed via APFS clone (`cp -c`) when the worktree has none. Never fails the
+  # suite -- a missing/partial seed only costs time (deps.get + a cold
+  # compile follow). A half-copied dir is removed so it cannot poison the run.
+  @seed_take ~S"""
+  [ -d deps ] || { [ -d "$SEED/deps" ] && { cp -cR "$SEED/deps" deps 2>/dev/null || cp -R "$SEED/deps" deps || rm -rf deps; }; }
+  [ -d _build ] || { [ -d "$SEED/_build" ] && { cp -cR "$SEED/_build" _build 2>/dev/null || cp -R "$SEED/_build" _build || rm -rf _build; }; }
+  exit 0
+  """
+
+  # Seed publish step (last step of an Elixir suite, so it only runs after
+  # everything passed): publish `deps/` + `_build/` as the seed when none
+  # exists. Copy into a private temp dir and `mv` into place, so a concurrent
+  # or interrupted publish can never leave a half-written seed visible.
+  @seed_publish ~S"""
+  [ -d "$SEED/deps" ] && exit 0
+  mkdir -p "$(dirname "$SEED")" || exit 0
+  tmp="$SEED.tmp.$$"
+  rm -rf "$tmp"
+  mkdir "$tmp" || exit 0
+  { { cp -cR deps "$tmp/deps" 2>/dev/null || cp -R deps "$tmp/deps"; } && { cp -cR _build "$tmp/_build" 2>/dev/null || cp -R _build "$tmp/_build"; }; } || { rm -rf "$tmp"; exit 0; }
+  if [ -e "$SEED" ]; then rm -rf "$tmp"; else mv "$tmp" "$SEED" || rm -rf "$tmp"; fi
+  exit 0
+  """
+
+  # `mix test` against a per-run database. `$1` is the run's `{tmpdir}`: it is
+  # unique per verifier run, so the checksum-derived partition (a valid, short
+  # Postgres identifier suffix -- `xaas_test<partition>` for xaas) never
+  # collides between concurrent runs. The DB is dropped on exit whatever the
+  # test verdict was, and the test exit code is the step's exit code.
+  @mix_test_partitioned ~S"""
+  MIX_TEST_PARTITION="v$(printf %s "$1" | cksum | cut -d' ' -f1)"
+  export MIX_TEST_PARTITION
+  shift
+  mix test "$@"
+  rc=$?
+  mix ecto.drop --quiet >/dev/null 2>&1
+  exit $rc
+  """
+
+  # Refuses unless `import <package>` resolved INSIDE the worktree under test
+  # (the venvs are editable installs pointing at the operator's source
+  # checkout -- see the moduledoc's evidence-subject law).
+  @subject_code "import importlib, os, sys; m = importlib.import_module(sys.argv[1]); " <>
+                  "p = os.path.realpath(m.__file__); w = os.path.realpath(os.getcwd()) + os.sep; " <>
+                  "print('subject', sys.argv[1], p); sys.exit(0 if p.startswith(w) else 3)"
+
+  defp sj_program_suites do
+    %{
+      # xaas itself: the Elixir/Phoenix + Ash platform. Toolchain pinned to the
+      # repo's own .tool-versions (elixir 1.20.2-otp-28 / erlang 28.5.0.2).
+      # DoD = strict compile + format gate + the narrow Reactor/actuation
+      # falsifier + the ultracode seam the loop itself runs on;
+      # canonical = the same gates plus the FULL default `mix test` at the
+      # integration head. Postgres at the config/test.exs defaults
+      # (postgres@localhost:5432) -- nothing else is passed through.
+      "xaas-dod" =>
+        elixir_suite("xaas", "1.20.2-otp-28", "28.5.0.2", 1_800_000, [
+          "test/xaas/actuation_test.exs",
+          "test/xaas/ultracode"
+        ]),
+      "xaas-canonical" => elixir_suite("xaas", "1.20.2-otp-28", "28.5.0.2", 3_600_000, []),
+
+      # ggen_igniter (Elixir library): toolchain pinned to its .tool-versions
+      # (elixir 1.18.4-otp-27 / erlang 27.2.4). Both suites run `mix test`
+      # (the repo's own default exclusions apply); DoD additionally gates on
+      # strict compile + format.
+      "ggen-igniter-dod" =>
+        elixir_suite("ggen-igniter", "1.18.4-otp-27", "27.2.4", 1_800_000, [],
+          partitioned_db: false
+        ),
+      "ggen-igniter-canonical" =>
+        elixir_suite("ggen-igniter", "1.18.4-otp-27", "27.2.4", 3_600_000, [],
+          partitioned_db: false
+        ),
+
+      # autofde-lab (Python): the repo's own venv interpreter is pinned by
+      # ABSOLUTE path (children run under a throwaway HOME). DoD = the SA2A +
+      # beam-bridge surface the Semantic Jira loop actually drives; the one
+      # test that regenerates a tracked benchmark doc is deselected (a test
+      # that rewrites tracked source cannot pass the clean-tree law).
+      # canonical = the repo's own `just test` recipe.
+      "autofde-lab-dod" =>
+        python_suite(
+          "~/autofde-lab/.venv/bin/python",
+          "autofde_lab",
+          600_000,
+          [
+            "tests/sa2a",
+            "tests/beam",
+            "--ignore=tests/sa2a/test_v26_9_17_concurrency_stress_chicago.py"
+          ]
+        ),
+      "autofde-lab-canonical" =>
+        python_suite(
+          "~/autofde-lab/.venv/bin/python",
+          "autofde_lab",
+          3_000_000,
+          [
+            "tests",
+            "-n",
+            "4",
+            "--ignore=tests/solvers/cpp",
+            "--ignore=tests/solvers/python",
+            "--ignore=tests/scheduling",
+            "--ignore=tests/ecosystem",
+            "--ignore=tests/domains",
+            "--ignore=tests/flight_planning",
+            "--ignore=tests/autofde/test_terraform_guards.py",
+            "--ignore=tests/fabric/test_dspy_mcp_planner_loop_chicago.py",
+            "--ignore=tests/fabric/test_mcp_ocel_instrumentation_chicago.py",
+            "--ignore=tests/powl/test_import_separation.py",
+            "--ignore=tests/test_self_play_dspy_advanced_planning_chicago.py",
+            "--ignore=tests/test_self_play_dspy_all_domains_chicago.py",
+            "--ignore=tests/test_self_play_dspy_turbofieldfare_chicago.py",
+            "--ignore=tests/test_chatman_wasm.py",
+            "--ignore=tests/test_import_all_submodules.py",
+            "--ignore=tests/evidence/test_level4_witness_falsifiers_chicago.py",
+            "--ignore=tests/sa2a/test_v26_9_17_concurrency_stress_chicago.py"
+          ]
+        ),
+
+      # gymact (Python): same venv-pin + subject-identity law. The venv lacks
+      # the optional gym extras, so the repo's OWN degrade contract
+      # (`GYMACT_ALLOW_DEGRADED_STANDINGS`, an exact-name allowlist that turns
+      # a missing collaborator into a NAMED, visible skip) is applied to
+      # exactly the standings observed absent -- any other standing still
+      # fails loudly.
+      "gymact-dod" =>
+        python_suite("~/gymact/.venv/bin/python", "gymact", 900_000, gymact_dod_args(),
+          env: gymact_env()
+        ),
+      "gymact-canonical" =>
+        python_suite("~/gymact/.venv/bin/python", "gymact", 3_000_000, gymact_canonical_args(),
+          env: gymact_env()
+        )
+    }
+  end
+
+  defp gymact_env do
+    %{
+      "GYMACT_ALLOW_DEGRADED_STANDINGS" =>
+        Enum.join(
+          [
+            "LOCAL_EXTRA:dspy",
+            "LOCAL_GYM:browsergym-openended",
+            "LOCAL_GYM:inspect-evals",
+            "LOCAL_GYM:kubernetes-reconciliation",
+            "LOCAL_GYM:swegym",
+            "LOCAL_GYM:terraform-plan"
+          ],
+          ","
+        )
+    }
+  end
+
+  defp gymact_dod_args, do: ["tests"]
+  defp gymact_canonical_args, do: ["tests"]
+
+  # An Elixir target suite. `tests` are extra `mix test` paths (empty = the
+  # full default suite). `:partitioned_db` (default true) runs `mix test`
+  # through the per-run-database wrapper; `false` for a library with no test
+  # database.
+  defp elixir_suite(alias_name, elixir, erlang, test_timeout_ms, tests, opts \\ []) do
+    partitioned? = Keyword.get(opts, :partitioned_db, true)
+    seed = Path.expand(Path.join(@seed_root, alias_name))
+
+    env = %{
+      "PATH" =>
+        Enum.join(
+          [
+            asdf_bin("elixir", elixir),
+            asdf_bin("erlang", erlang),
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin"
+          ],
+          ":"
+        ),
+      "LANG" => "en_US.UTF-8",
+      "MIX_ENV" => "test",
+      "MIX_ARCHIVES" => Path.expand("~/xaas-worktrees/toolchain/mix-archives"),
+      "SEED" => seed
+    }
+
+    test_step =
+      if partitioned? do
+        %{
+          id: "test",
+          timeout_ms: test_timeout_ms,
+          argv: ["/bin/sh", "-c", @mix_test_partitioned, "mix-test", "{tmpdir}"] ++ tests
+        }
+      else
+        %{id: "test", timeout_ms: test_timeout_ms, argv: ["mix", "test"] ++ tests}
+      end
+
+    %{
+      env: env,
+      max_output_bytes: 65_536,
+      toolchain: [["mix", "--version"], ["git", "--version"]],
+      steps: [
+        %{id: "seed", timeout_ms: 600_000, argv: ["/bin/sh", "-c", @seed_take, "seed"]},
+        %{id: "deps", timeout_ms: 900_000, argv: ["mix", "deps.get"]},
+        %{
+          id: "compile",
+          timeout_ms: 1_800_000,
+          argv: ["mix", "compile", "--warnings-as-errors"]
+        },
+        %{id: "format", timeout_ms: 300_000, argv: ["mix", "format", "--check-formatted"]},
+        test_step,
+        %{id: "seed_publish", timeout_ms: 600_000, argv: ["/bin/sh", "-c", @seed_publish, "seed"]}
+      ]
+    }
+  end
+
+  # A Python target suite: the repo's venv interpreter pinned by absolute
+  # path, `PYTHONPATH=src` (relative, resolved against the worktree), a
+  # subject-identity step, then pytest over `pytest_args` with the verifier's
+  # per-run `{tmpdir}` as basetemp and no cache provider.
+  defp python_suite(python, package, test_timeout_ms, pytest_args, opts \\ []) do
+    python = Path.expand(python)
+
+    env =
+      Map.merge(
+        %{
+          "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+          "LANG" => "en_US.UTF-8",
+          "PYTHONPATH" => "src"
+        },
+        Keyword.get(opts, :env, %{})
+      )
+
+    %{
+      env: env,
+      max_output_bytes: 65_536,
+      toolchain: [
+        [python, "--version"],
+        [python, "-m", "pytest", "--version"],
+        ["git", "--version"]
+      ],
+      steps: [
+        %{
+          id: "subject",
+          timeout_ms: 120_000,
+          argv: [python, "-c", @subject_code, package]
+        },
+        %{
+          id: "test",
+          timeout_ms: test_timeout_ms,
+          argv:
+            [python, "-m", "pytest"] ++
+              pytest_args ++
+              ["--basetemp", "{tmpdir}", "-p", "no:cacheprovider"]
+        }
+      ]
+    }
+  end
+
+  defp asdf_bin(tool, version), do: Path.expand("~/.asdf/installs/#{tool}/#{version}/bin")
 
   @doc """
   Registration-time admission gate for suite declarations. `:ok` when every

@@ -15,11 +15,7 @@ lib/xaas_web/controllers/execution_fabric_controller.ex | MCP JSON-RPC + hook HT
 
 lib/mix/tasks/xaas.receipts.ex | operator sealed-receipt inspection task over the authorized `:for_epoch` path | no admitted pack renders an operator receipt-read task on the Run/Epoch/Receipt seam | ultracode-actuation-lease-pack | 2026-09-17
 
-priv/zcode_plugin/templates/script-xaas-gate.mjs.tmpl | PreToolUse host gate: admit_tool call, argv Bash allowlist (GIT_SUBS, READ_HELPERS), worktree write containment, credential-dir read denylist, zcode->server tool map (2026-09-18) | no admitted pack renders a policy-enforcement hook script from admission-ontology facts; the allowlists are constants in the script, not ontology individuals | zcode-plugin-pack (lift the constants into zp:AllowedTool / zp:AllowedBashVerb / zp:DeniedPath individuals and render the script from them) | 2026-09-18
-
-priv/zcode_plugin/templates/script-xaas-lease.mjs.tmpl | client-side lease state file protocol (save/get/clear, conflict refusal) | no admitted pack expresses a lease state-file protocol | ultracode-actuation-lease-pack | 2026-09-15
-
-priv/zcode_plugin/templates/{command-xaas,agent-xaas-worker,skill-xaas-worker}.md.tmpl | worker doctrine prose bodies (frontmatter is projected from ontology.ttl) | irreducible prose: no pack models doctrine text as ontology fragments | zcode-plugin-pack doctrine fragments | 2026-09-15
+priv/zcode_plugin/packs/zcode-plugin-pack/templates/{command-xaas,agent-xaas-worker,skill-xaas-worker}.md.tmpl | worker doctrine prose bodies (frontmatter is projected from ontology.ttl) | irreducible prose: no pack models doctrine text as ontology fragments | zcode-plugin-pack doctrine fragments | 2026-09-15
 
 scripts/xaas-glm-failover-dispatcher.sh, scripts/install-glm-failover-launchd.sh | unattended failover dispatcher (poll, drain, reaper, timeout, stall alert) and its launchd installer (2026-09-18) | no admitted pack renders a provider-failover dispatcher or a launchd unit from the Run/Epoch seam | ultracode-actuation-lease-pack | 2026-09-18
 
@@ -45,7 +41,17 @@ lib/xaas/ultracode/semantic_crown.ex, lib/mix/tasks/xaas.semantic.{materialize,c
 
 priv/repo/migrations/20260920230000_add_semantic_bridge_to_ultracode_runs.exs, lib/xaas/ultracode/run.ex (`semantic_bridge`) | additive nullable jsonb column storing the descriptor bridge opaquely; hand-written like the sibling semantic-identity migration (no resource snapshot) (2026-09-20) | ash.codegen snapshot for the semantic-identity/bridge columns not generated | ultracode-actuation-lease-pack | 2026-09-20
 
+lib/xaas/ultracode/semantic_work/admission_binding.ex, lib/xaas/ultracode/semantic_work.ex (`admit/2` `binding:`), lib/mix/tasks/xaas.semantic.materialize.ex (`--binding`) | XaaS-side recomputation of the semantic work-order snapshot digest and fail-closed graph_digest binding (anchors: `admitted_work_order` snapshot, `bridge.source_snapshot_digest`, `admission_digest` envelope; modes auto/snapshot/graph) closing SJ-001 falsifier 1; the canonical digest form is mirrored by hand from `GgenIgniter.SemanticJira.digest/1` via `SemanticReceipt.digest/1` (2026-09-21) | xaas depends on ggen_igniter 26.9.12 from hex, which has no `SemanticJira`, so the admitted digest cannot be recomputed by the graph library itself; no admitted pack renders a digest-binding verifier for a graph-emitted execution descriptor; the real `semantic_jira.descriptor` emitter also sends no `admitted_work_order` yet (UNSUPPORTED, graph-side) | semantic-jira-pack (emit `admitted_work_order` and render this verifier from the descriptor ontology, then delete this module) | 2026-09-21
+
 test/xaas/ultracode/{semantic_receipt,semantic_crown}_test.exs | Chicago qualification of the exporter, court adapter, materialize task and the end-to-end crown with a refused-candidate control (2026-09-20) | no admitted gate pack for the fabric-to-graph loop | ultracode-actuation-lease-pack gates/ | 2026-09-20
+
+lib/xaas/coupling/coupling_run.ex, lib/xaas/ledger/event_log.ex, lib/xaas/operations/autofde_planner_{cache_hotset,cache_stats,candidate,catalog,match}.ex | one-line `use Xaas.Resource` adoption on seven owned Ash resources (SJ-004; supersedes the registry-test `@pending` exemption for them) | no generator adopts a base resource on existing Ash modules: UNSUPPORTED(generator-capability) | ash-resource / ontology-projection pack (ggen_igniter Ash resource generator) | 2026-09-21
+
+lib/xaas/ultracode/zcode_package.ex | `Xaas.Ultracode.ZcodePackage`: reads ~/dev/zcode-cli/package.json (name, bin.zcode contained on REAL paths via a symlink-resolving walk, engines.node floor) and measures the worker node via a deadline-bounded, process-group-reaped `--version` probe | no admitted pack expresses an external-CLI package contract reader | zcode-plugin-pack | 2026-09-21
+
+lib/xaas/ultracode/provider_health.ex | `Xaas.Ultracode.ProviderHealth`: one-call zcode provider health (`check/1` -> `{:ok, %{zcode_version, zcode_bin, node_version}}` or a typed error, `gate/1` -> `:ok | {:error, {:provider_unhealthy, reason}}`) over `ZcodePackage.verify_node/3` (`:node_version_timeout_ms`, default 5000, so the gate can never hang), for the autonomic loop to gate leases on | no admitted pack expresses an external-CLI provider health probe | zcode-plugin-pack | 2026-09-21
+
+lib/xaas/ultracode/process_group.ex | `Xaas.Ultracode.ProcessGroup`: verified group-wide TERM/poll/KILL/poll kill, extracted from `Dispatch` so `ZcodePackage`'s `--version` probe reaps a hung shim with the same mechanics (Dispatch delegates to it; `Verifier` still carries its own copy) | no admitted pack expresses OS process-group lifecycle | ultracode-actuation-lease-pack | 2026-09-21
 
 ## Paydown plan
 
@@ -74,11 +80,25 @@ test/xaas/ultracode/{semantic_receipt,semantic_crown}_test.exs | Chicago qualifi
    into the tracked `marketplace/` projection (drift-checked by
    `test/xaas/zcode_plugin/projection_test.exs`). Remaining: publish to the
    marketplace, and lift the gate's allowlist constants into the ontology.
+   Progress 2026-09-21 (SJ-003): the plugin/marketplace/MCP/hook manifests,
+   frontmatter and the PreToolUse gate script now render from a repo-local
+   path pack, `priv/zcode_plugin/packs/zcode-plugin-pack` (bound in
+   `priv/zcode_plugin/ggen.toml`, pinned by `ggen.lock`); the gate's
+   allowlists are `zp:AllowedTool` / `zp:ToolMapping` / `zp:AllowedBashVerb` /
+   `zp:ForbiddenGitFlag` / `zp:DeniedPath` individuals in `ontology.ttl`.
+   Remaining: publish the pack to ggen-marketplace (this order's path_scope
+   excludes that repo), doctrine-prose fragments, plugin-projection gates.
 3. Extract the lease kernel's invariants into `ultracode-actuation-lease-pack`
    (SHACL + Ash render targets), including the bulk_update
    extracted-filter guard as a gate, and (2026-09-17) the `actuate/2`
    registry-lookup + forced-authority-evidence shape as a second gate,
    distinct from the admit_tool construction/consequence fence gate.
+   Progress 2026-09-21 (SJ-003): the client-side lease state-file protocol
+   (`xaas-lease.mjs`) now renders from `ul:LeaseStateProtocol` facts via the
+   repo-local pack `priv/zcode_plugin/packs/ultracode-actuation-lease-pack`;
+   its `ul:stateDirName` is the same fact the gate reads. The server-side
+   kernel (`lease.ex`, controller, verifier, autonomic, worktrees, receipts,
+   crown) is NOT rendered and its rows stay Active.
 4. beam4pm integration is an ontology fact, not code: execution-provider
    observation + PlannerLease≠ActuationLease axiom in beam4pm's ontology.
 
@@ -91,6 +111,9 @@ priv/templates/zcode_plugin/hooks/post_tool_failure.mjs.eex | fixed the same nes
 priv/templates/zcode_plugin/hooks/user_prompt_submit.mjs.eex | fixed the same nested-vs-flat body mismatch (committed a11bf7a) | 2026-09-16
 priv/templates/zcode_plugin/commands/xaas.md.eex | fixed `close_candidate` key name mismatch — doc told workers to send `standing`, the controller/lease contract expects `outcome` (committed a11bf7a) | 2026-09-16
 priv/templates/zcode_plugin/.mcp.json.eex + .zcode-plugin/plugin.json.eex | MCP bearer token now sourced from ZCode `user_config`, not the session env — paydown item 1's install-path blocker no longer has an xaas-side dependency (committed 2f49261) | 2026-09-17
+
+priv/zcode_plugin/templates/script-xaas-gate.mjs.tmpl | row removed: template promoted into `packs/zcode-plugin-pack`; the tool sets, tool map, git subcommand/flag allowlists, read helpers and denied home paths are ontology individuals, and the script is rendered from them (re-sync is byte-identical to the previous hand-written projection; mutating an individual changes the rendered script). The enforcement logic itself remains hand-authored inside the pack template (pack capital, not consumer residue) | 2026-09-21
+priv/zcode_plugin/templates/script-xaas-lease.mjs.tmpl | row removed: template promoted into `packs/ultracode-actuation-lease-pack`, rendered from `ul:LeaseStateProtocol` (state dir, script name, install path, conflict/usage exit codes); the gate reads the same state-dir fact | 2026-09-21
 
 Wave-4 paydown direction (2026-09-17): the zcode-plugin-pack rows shrank
 toward pack admission (templates now contract-clean + credential-correct;
@@ -158,6 +181,12 @@ Full adversarial-review transcript: workflow run `wf_c87d7295-9a9`
 (7 agents, 3 review lenses + 4 independent verify passes, all 4 raw
 findings confirmed real on re-verification, all fixed before this ledger
 entry was written).
+
+lib/xaas/ultracode/target_suites.ex (`sj_program_suites/0` and helpers) | fabric verifier suites for the four Semantic Jira program targets (xaas, autofde-lab, gymact, ggen-igniter): pinned toolchain env, seed take/publish and per-run-DB `mix test` shell wrappers, Python subject-identity step, curated exclusions of tests that rewrite tracked files (2026-09-21) | no admitted pack renders a verifier-suite declaration (argv, env allowlist, timeouts, seed/partition wrappers) from a target-repo ontology fact | ultracode-actuation-lease-pack (verifier gate) + a target-suite pack promoted from this shape | 2026-09-21
+
+lib/xaas/ultracode/repos.ex (`refresh/1`, `refresh` entry field), lib/mix/tasks/xaas.ultracode.repos.ex (`--refresh`, `--refresh-before-sense`), lib/xaas/ultracode/sensing.ex (`profile_for/1`), lib/xaas/ultracode/autonomic.ex (`derive_items/3`, refresh-before-base_sha) | non-destructive fetch + `merge --ff-only` clone refresh and the registry-name -> declared-sensing-profile binding that lets the autonomic loop sense registered repos from their own tickets (2026-09-21) | no admitted pack renders a registry-entry field, a clone-refresh state machine, or a name-to-profile resolver on the Ultracode seam | ultracode-actuation-lease-pack + a scheduler pack promoted from this shape | 2026-09-21
+
+test/xaas/ultracode/{repos_refresh,autonomic_profile_sense,sj_program_registry}_test.exs | Chicago-style qualification of clone refresh, profile-driven sensing through `Autonomic.sense/1`, the committed dev.exs baseline for the four targets, the suite environment law and the Python subject-identity guard (2026-09-21) | no admitted gate pack for registry/suite qualification | ultracode-actuation-lease-pack gates/ | 2026-09-21
 
 (baseline established 2026-09-15; note: the first attempt at this change
 invented parallel ExecutionWorker/WorkContract/Execution resources and was

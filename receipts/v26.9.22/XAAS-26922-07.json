@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-07",
+  "base_sha": "873655c on release/v26.9.22",
+  "command": "mix test test/xaas/sjira_orders_generation_test.exs; OUT=$PWD/docs/sjira/v26.9.21 WO_JSON=/dev/null python3 docs/sjira/v26.9.21/generate.py; test -z \"$(git status --porcelain docs/sjira/v26.9.21)\"; jq -e '[.[]|select(.id==\"SJ-005\")][0].standing==\"ALIVE\"' docs/sjira/v26.9.21/index.json",
+  "exit": 0,
+  "output_excerpt": "sjira_orders_generation_test 6/6. generate.py reads standing for every order via standing/NNN.json (+ transition-log.jsonl projection in the v26.9.22 generator); regeneration is byte-identical to the committed cycle; index.json SJ-005 == ALIVE (projected, not clobbered).",
+  "standing": "ALIVE",
+  "notes": "The H1 defect (generate.py literal standings + index.json clobber that lanes read) is closed structurally. Ledgered micro-loss: 002/005 lose 3+5 lines of test-file-path continuations whose substance remains in each order's Evidence section and receipts (originals in git history).",
+  "evidence_ts": "2026-09-22T19:10Z"
+}

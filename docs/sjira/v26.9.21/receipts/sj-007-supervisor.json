@@ -1,0 +1,34 @@
+{
+  "receipt_class": "verification",
+  "order": "SJ-007",
+  "replay_identity": "sjira-v26.9.21-sj-007",
+  "author": "supervisor (fallback_claude) over zcode default-agent output",
+  "worker_kind": "mixed",
+  "zcode": {
+    "attempt_1": {"cli": "zcode 0.16.5 --prompt <text>", "exit": 1, "error": "Option '--prompt' argument is ambiguous (prompt starts with '---'); no edits", "log": "sj-007.zcode.attempt1.log"},
+    "attempt_2": {"cli": "zcode --cwd . --mode edit --json --prompt=<text> (default agent, no --agent)", "exit": 0, "elapsed": "about 19 min", "requests": 82, "provider_429_rate_limit_events": true, "produced": "ash-atlassian-ard.md, 010/011/012 orders, generate.py extension, index rows, 007 History, manufacture+verification receipts", "could_not_do": "python3, mix, git add/commit (harness returned no permission client)"}
+  },
+  "supervisor_actions": [
+    "regenerated all 12 orders from generate.py into scratch: 001-006, 008-011 and index.json byte-identical to committed; 012 differed by one line (hand-rendered section sign) and was replaced with generator output; 007 identical modulo agent-layer History",
+    "generate.py evidence corrected: SJ-011 test-directory claim (xaas-ash-core-pack/tests exists), binding line numbers, SJ-010 OSLC CM source URL observed HTTP 200 (13178 bytes, sha256 cb9514f8...); regenerated 010-012 byte-identical to generator",
+    "ARD gate-name attribution corrected (xaas-ash-core-pack vs xaas-public-ash-projection-pack filenames)",
+    "sa2a_loop.exs: optional SJ_IDS / SJ_PLAN_ID env to satisfy the bridge's 8-lane frontier cap (12 candidates was refused: 'Candidate frontier cardinality 12 exceeds maximum lanes 8')"
+  ],
+  "commands": [
+    {"cmd": "test -f docs/sjira/v26.9.21/ash-atlassian-ard.md", "cwd": "/Users/sac/xaas-worktrees/sjira/sj-007", "exit": 0},
+    {"cmd": "cd ~/ggen_igniter && WO=<wo.json from generate.py> mix run <worktree>/docs/sjira/v26.9.21/admit.exs", "exit": 0, "output": "ADMITTED SJ-001..SJ-012 (SJ-007 sha256:e54869871ae7..., SJ-010 sha256:ac3dc6fb21c9..., SJ-011 sha256:d3f9ce7559ec..., SJ-012 sha256:46bfd294c7ea...; SJ-008 digest identical to the prior session's receipt)"},
+    {"cmd": "PATH=~/autofde-lab/.venv/bin:$PATH SJ_IDS=SJ-007,SJ-010,SJ-011,SJ-012 SJ_PLAN_ID=sjira-v26.9.21-sj007 mix run --no-start sa2a_loop.exs plan", "exit": 0, "output": "ok true, plan_hash da1d266637fe8916ee0d4e0d3ecd1ba5bf341f53c35c4375166607a44c475d82, 4 allocations ADMITTED", "prior_failed_attempt": "12 candidates -> ValueError frontier cardinality 12 exceeds maximum lanes 8"},
+    {"cmd": "mix run --no-start sa2a_loop.exs admit SJ-007|SJ-010|SJ-011|SJ-012 <kernel digest>", "exit": 0, "output": "standing KNOWN, reasons CONFORMS_TO_SPEC; rec-e3e7ee4e, rec-fb70219b, rec-83342b2d, rec-fb3ae592"},
+    {"cmd": "mix compile (worktree, cloned _build)", "exit": 0, "note": "no Elixir source changed; xaas app compiled 478 files during mix run"},
+    {"cmd": "grep -n 'Mox\\b|:meck|unittest.mock|MagicMock|monkeypatch' over changed .ex/.exs/.py files", "exit": 1, "note": "no matches; zero changed files under test/ or lib/"}
+  ],
+  "not_executed": [
+    "sa2a replay (no manifest produced by the plan response)",
+    "mix test (order changes docs only; acceptance is file existence plus ARD content)",
+    "sa2a_execute (DO edge, never called)"
+  ],
+  "path_scope": "all changes under docs/sjira/** (order path_scope respected)",
+  "standing": "PARTIAL_ALIVE",
+  "standing_reason": "DoD runnable check observed exit 0 on the committed head and both acceptance items exist (ARD names ontology source and pack route; SJ-010/011/012 emitted and kernel+SA2A admitted). Content claims about ontology/pack behavior are document-level: no ggen sync, ash.gen or profile admission was executed, so the ARD's route is CONSTRUCTED, not observed running.",
+  "falsifier": "ARD proposes hand-written resources where a pack could generate them: survived on read (all resources route through xaas-public-ash-projection-pack family; AshAi wiring is the only ledgered UNSUPPORTED residue); not executed against a generator run."
+}

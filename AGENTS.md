@@ -1,3 +1,16 @@
+# Engineering Standards Root Binding
+
+> Generated adoption header. Shared engineering semantics are rooted at `seanchatmangpt/engineering-standards@5a3bb6446aeaee2255a7523d4d8cebf6042960c3`.
+
+- Repository subject: `seanchatmangpt/xaas@57c77e7a9bb510d9b10c774ebc32a1cc5b414390`
+- Ecosystem role: capability, runtime, delivery, governance, and autonomic consequence orchestration
+- Adoption manifest: `engineering-standards.json`
+- Project profile: `semantic/engineering-standards-profile.ttl`
+
+The local constitution below remains authoritative for repository-specific mechanics. It may narrow the root but may not redefine shared WorkOrder identity, authority, receipt/replay, generated-artifact sovereignty, or evidence standing. Ticket, agent, capability, plan, proof, and generated output do not acquire ambient DO authority.
+
+---
+
 # xaas Agent Operating Contract
 
 This contract governs the repository unless a deeper `AGENTS.md` narrows a subtree. Live repository evidence outranks stale prose. Nested contracts may add constraints but may not silently weaken safety, evidence, authority, replay, or publication rules.

@@ -1,0 +1,17 @@
+{
+  "standing": "PARTIAL_ALIVE",
+  "done": [
+    0,
+    2
+  ],
+  "partial": [
+    1
+  ],
+  "dod_notes": {
+    "1": "validator exists (Xaas.Telemetry.ZcodeOcelValidator) but is not yet called from OcelAshEmitter or priv/zcode_plugin because neither currently emits zcode-loop-shaped OCEL events (see Remaining gap in the order)"
+  },
+  "status_block": "002.status.md",
+  "evidence_section": "002.evidence_section.md",
+  "runnable_check": "002.runnable.md",
+  "dod_blocks_file": "002.dod_blocks.md"
+}

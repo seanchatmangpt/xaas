@@ -1,18 +1,872 @@
 [
   {
-    "id": "SJ-010",
-    "path": "SJ-010-zcode-ocel-pack-consumer.md",
+    "id": "AFDE-26922-1",
+    "path": "jira/AFDE-26922-1.md",
     "standing": "UNKNOWN",
-    "repository": "seanchatmangpt/xaas",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": []
+  },
+  {
+    "id": "AFDE-26922-10",
+    "path": "jira/AFDE-26922-10.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": []
+  },
+  {
+    "id": "AFDE-26922-11",
+    "path": "jira/AFDE-26922-11.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
     "dependencies": [
-      "zcode-cli gall-work landed on main (2026-09-22)"
+      "AFDE-26922-01"
     ]
   },
   {
-    "id": "SJ-011",
-    "path": "SJ-011-execution-mcp-audit-coverage.md",
+    "id": "AFDE-26922-2",
+    "path": "jira/AFDE-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": []
+  },
+  {
+    "id": "AFDE-26922-3",
+    "path": "jira/AFDE-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": [
+      "AFDE-26922-01",
+      "AFDE-26922-02"
+    ]
+  },
+  {
+    "id": "AFDE-26922-4",
+    "path": "jira/AFDE-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": []
+  },
+  {
+    "id": "AFDE-26922-5",
+    "path": "jira/AFDE-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": []
+  },
+  {
+    "id": "AFDE-26922-6",
+    "path": "jira/AFDE-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": [
+      "AFDE-26922-04"
+    ]
+  },
+  {
+    "id": "AFDE-26922-7",
+    "path": "jira/AFDE-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": [
+      "AFDE-26922-05"
+    ]
+  },
+  {
+    "id": "AFDE-26922-8",
+    "path": "jira/AFDE-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": [
+      "AFDE-26922-04",
+      "AFDE-26922-05",
+      "AFDE-26922-06",
+      "AFDE-26922-07"
+    ]
+  },
+  {
+    "id": "AFDE-26922-9",
+    "path": "jira/AFDE-26922-9.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/autofde-lab",
+    "dependencies": [
+      "AFDE-26922-08"
+    ]
+  },
+  {
+    "id": "ASF-26922-1",
+    "path": "jira/ASF-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "user decision on method"
+    ]
+  },
+  {
+    "id": "ASF-26922-10",
+    "path": "jira/ASF-26922-10.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-04",
+      "ASF-26922-05"
+    ]
+  },
+  {
+    "id": "ASF-26922-11",
+    "path": "jira/ASF-26922-11.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-04"
+    ]
+  },
+  {
+    "id": "ASF-26922-2",
+    "path": "jira/ASF-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-01"
+    ]
+  },
+  {
+    "id": "ASF-26922-3",
+    "path": "jira/ASF-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-01",
+      "ASF-26922-02"
+    ]
+  },
+  {
+    "id": "ASF-26922-4",
+    "path": "jira/ASF-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-03"
+    ]
+  },
+  {
+    "id": "ASF-26922-5",
+    "path": "jira/ASF-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-04"
+    ]
+  },
+  {
+    "id": "ASF-26922-6",
+    "path": "jira/ASF-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-02"
+    ]
+  },
+  {
+    "id": "ASF-26922-7",
+    "path": "jira/ASF-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-02",
+      "ASH_A2A-26922-12"
+    ]
+  },
+  {
+    "id": "ASF-26922-8",
+    "path": "jira/ASF-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "GGMKT-26922-05"
+    ]
+  },
+  {
+    "id": "ASF-26922-9",
+    "path": "jira/ASF-26922-9.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_surface",
+    "dependencies": [
+      "ASF-26922-01"
+    ]
+  },
+  {
+    "id": "ASHATL-26922-1",
+    "path": "jira/ASHATL-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_atlassian",
+    "dependencies": []
+  },
+  {
+    "id": "ASHATL-26922-2",
+    "path": "jira/ASHATL-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_atlassian",
+    "dependencies": [
+      "ASHATL-26922-01"
+    ]
+  },
+  {
+    "id": "ASHATL-26922-3",
+    "path": "jira/ASHATL-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_atlassian",
+    "dependencies": [
+      "ASHATL-26922-01",
+      "XAAS-26922-10"
+    ]
+  },
+  {
+    "id": "ASHATL-26922-4",
+    "path": "jira/ASHATL-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ash_atlassian",
+    "dependencies": [
+      "ASHATL-26922-01"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-1",
+    "path": "jira/BEAM4PM-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": []
+  },
+  {
+    "id": "BEAM4PM-26922-2",
+    "path": "jira/BEAM4PM-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-01"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-3",
+    "path": "jira/BEAM4PM-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-01",
+      "BEAM4PM-26922-02"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-4",
+    "path": "jira/BEAM4PM-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-01",
+      "GGMKT-26922-05"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-5",
+    "path": "jira/BEAM4PM-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-04"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-6",
+    "path": "jira/BEAM4PM-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-05"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-7",
+    "path": "jira/BEAM4PM-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-02",
+      "BEAM4PM-26922-04"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-8",
+    "path": "jira/BEAM4PM-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-02"
+    ]
+  },
+  {
+    "id": "BEAM4PM-26922-9",
+    "path": "jira/BEAM4PM-26922-9.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/beam4pm",
+    "dependencies": [
+      "BEAM4PM-26922-03",
+      "BEAM4PM-26922-05",
+      "push authority"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-1",
+    "path": "jira/FERROPLAN-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": []
+  },
+  {
+    "id": "FERROPLAN-26922-2",
+    "path": "jira/FERROPLAN-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": [
+      "FERROPLAN-26922-01"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-3",
+    "path": "jira/FERROPLAN-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": [
+      "FERROPLAN-26922-01"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-4",
+    "path": "jira/FERROPLAN-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": [
+      "FERROPLAN-26922-01"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-5",
+    "path": "jira/FERROPLAN-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": [
+      "FERROPLAN-26922-02"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-6",
+    "path": "jira/FERROPLAN-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": [
+      "FERROPLAN-26922-04"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-7",
+    "path": "jira/FERROPLAN-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": [
+      "FERROPLAN-26922-01"
+    ]
+  },
+  {
+    "id": "FERROPLAN-26922-8",
+    "path": "jira/FERROPLAN-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ferroplan",
+    "dependencies": []
+  },
+  {
+    "id": "GGEN-26922-1",
+    "path": "jira/GGEN-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": []
+  },
+  {
+    "id": "GGEN-26922-2",
+    "path": "jira/GGEN-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": []
+  },
+  {
+    "id": "GGEN-26922-3",
+    "path": "jira/GGEN-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": [
+      "GGEN-26922-01"
+    ]
+  },
+  {
+    "id": "GGEN-26922-4",
+    "path": "jira/GGEN-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": [
+      "GGEN-26922-01"
+    ]
+  },
+  {
+    "id": "GGEN-26922-5",
+    "path": "jira/GGEN-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": [
+      "GGEN-26922-02",
+      "GGEN-26922-03",
+      "publish authority"
+    ]
+  },
+  {
+    "id": "GGEN-26922-6",
+    "path": "jira/GGEN-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": [
+      "GGEN-26922-01",
+      "push authority"
+    ]
+  },
+  {
+    "id": "GGEN-26922-7",
+    "path": "jira/GGEN-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen",
+    "dependencies": [
+      "GGEN-26922-01"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-1",
+    "path": "jira/GGMKT-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "push authority"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-10",
+    "path": "jira/GGMKT-26922-10.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-02",
+      "GGMKT-26922-09",
+      "publish authority"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-2",
+    "path": "jira/GGMKT-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-3",
+    "path": "jira/GGMKT-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-4",
+    "path": "jira/GGMKT-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01",
+      "GGEN_IGNITER-26922-05"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-5",
+    "path": "jira/GGMKT-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-6",
+    "path": "jira/GGMKT-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-7",
+    "path": "jira/GGMKT-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01",
+      "GGMKT-26922-02"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-8",
+    "path": "jira/GGMKT-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-01",
+      "GGMKT-26922-02"
+    ]
+  },
+  {
+    "id": "GGMKT-26922-9",
+    "path": "jira/GGMKT-26922-9.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/ggen-marketplace",
+    "dependencies": [
+      "GGMKT-26922-02"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-1",
+    "path": "jira/GITVAN-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": []
+  },
+  {
+    "id": "GITVAN-26922-2",
+    "path": "jira/GITVAN-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-01"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-3",
+    "path": "jira/GITVAN-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-02",
+      "push authority"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-4",
+    "path": "jira/GITVAN-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-02"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-5",
+    "path": "jira/GITVAN-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-03",
+      "GITVAN-26922-04"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-6",
+    "path": "jira/GITVAN-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-05"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-7",
+    "path": "jira/GITVAN-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-02"
+    ]
+  },
+  {
+    "id": "GITVAN-26922-8",
+    "path": "jira/GITVAN-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gitvan",
+    "dependencies": [
+      "GITVAN-26922-03"
+    ]
+  },
+  {
+    "id": "GYMACT-26922-1",
+    "path": "jira/GYMACT-26922-1.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": [
+      "push authority"
+    ]
+  },
+  {
+    "id": "GYMACT-26922-10",
+    "path": "jira/GYMACT-26922-10.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": [
+      "GYMACT-26922-06",
+      "XAAS-26922-10"
+    ]
+  },
+  {
+    "id": "GYMACT-26922-2",
+    "path": "jira/GYMACT-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": []
+  },
+  {
+    "id": "GYMACT-26922-3",
+    "path": "jira/GYMACT-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": []
+  },
+  {
+    "id": "GYMACT-26922-4",
+    "path": "jira/GYMACT-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": [
+      "GGEN-26922-05"
+    ]
+  },
+  {
+    "id": "GYMACT-26922-5",
+    "path": "jira/GYMACT-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": []
+  },
+  {
+    "id": "GYMACT-26922-6",
+    "path": "jira/GYMACT-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": [
+      "GYMACT-26922-02",
+      "GYMACT-26922-03",
+      "GYMACT-26922-05"
+    ]
+  },
+  {
+    "id": "GYMACT-26922-7",
+    "path": "jira/GYMACT-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": [
+      "GYMACT-26922-02",
+      "GYMACT-26922-03",
+      "GYMACT-26922-04"
+    ]
+  },
+  {
+    "id": "GYMACT-26922-8",
+    "path": "jira/GYMACT-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": []
+  },
+  {
+    "id": "GYMACT-26922-9",
+    "path": "jira/GYMACT-26922-9.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/gymact",
+    "dependencies": [
+      "GYMACT-26922-08"
+    ]
+  },
+  {
+    "id": "XAAS-26922-1",
+    "path": "jira/XAAS-26922-1.md",
     "standing": "UNKNOWN",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
+  },
+  {
+    "id": "XAAS-26922-10",
+    "path": "jira/XAAS-26922-10.md",
+    "standing": "ALIVE",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-01",
+      "XAAS-26922-02"
+    ]
+  },
+  {
+    "id": "XAAS-26922-11",
+    "path": "jira/XAAS-26922-11.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-06",
+      "GGEN_IGNITER-26922-13"
+    ]
+  },
+  {
+    "id": "XAAS-26922-12",
+    "path": "jira/XAAS-26922-12.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-11",
+      "GGEN_IGNITER-26922-07"
+    ]
+  },
+  {
+    "id": "XAAS-26922-13",
+    "path": "jira/XAAS-26922-13.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "ASH_A2A-26922-12"
+    ]
+  },
+  {
+    "id": "XAAS-26922-14",
+    "path": "jira/XAAS-26922-14.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-01",
+      "XAAS-26922-12",
+      "AFDE-26922-06"
+    ]
+  },
+  {
+    "id": "XAAS-26922-15",
+    "path": "jira/XAAS-26922-15.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": []
+  },
+  {
+    "id": "XAAS-26922-16",
+    "path": "jira/XAAS-26922-16.md",
+    "standing": "BLOCKED",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-12"
+    ]
+  },
+  {
+    "id": "XAAS-26922-17",
+    "path": "jira/XAAS-26922-17.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-07",
+      "GGEN_IGNITER-26922-08"
+    ]
+  },
+  {
+    "id": "XAAS-26922-18",
+    "path": "jira/XAAS-26922-18.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-02",
+      "XAAS-26922-03",
+      "XAAS-26922-06",
+      "XAAS-26922-07",
+      "XAAS-26922-11"
+    ]
+  },
+  {
+    "id": "XAAS-26922-2",
+    "path": "jira/XAAS-26922-2.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-02"
+    ]
+  },
+  {
+    "id": "XAAS-26922-3",
+    "path": "jira/XAAS-26922-3.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-02"
+    ]
+  },
+  {
+    "id": "XAAS-26922-4",
+    "path": "jira/XAAS-26922-4.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-03"
+    ]
+  },
+  {
+    "id": "XAAS-26922-5",
+    "path": "jira/XAAS-26922-5.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-02"
+    ]
+  },
+  {
+    "id": "XAAS-26922-6",
+    "path": "jira/XAAS-26922-6.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-01",
+      "XAAS-26922-02"
+    ]
+  },
+  {
+    "id": "XAAS-26922-7",
+    "path": "jira/XAAS-26922-7.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-06"
+    ]
+  },
+  {
+    "id": "XAAS-26922-8",
+    "path": "jira/XAAS-26922-8.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-01",
+      "ASHATL-26922-01"
+    ]
+  },
+  {
+    "id": "XAAS-26922-9",
+    "path": "jira/XAAS-26922-9.md",
+    "standing": "UNKNOWN",
+    "repository": "seanchatmangpt/xaas",
+    "dependencies": [
+      "XAAS-26922-07",
+      "AFDE-26922-01",
+      "GYMACT-26922-01"
+    ]
   }
 ]

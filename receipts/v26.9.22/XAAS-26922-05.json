@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-05",
+  "base_sha": "5e61ae6 (wip) / 36751fd (zoe) on release/v26.9.22",
+  "command": "git merge --no-ff 70761b1; git merge --no-ff 495236d; mix test test/xaas/zoe test/xaas_web/a2a",
+  "exit": 0,
+  "output_excerpt": "Both merged; README add/add resolved: canonical cycle README stays, wip variant -> docs/sjira/v26.9.21/wip/README.md, ZOE variant -> docs/sjira/v26.9.21/zoe/README.md. mix test test/xaas/zoe test/xaas_web/a2a exit 0. merge-base --is-ancestor 70761b1/495236d verified against release (and main after the final ff).",
+  "standing": "ALIVE",
+  "notes": "2621-003 recheck: SJ-003's prior BUILD_BROKEN concerned bddfc43 which is merged; the merged 003 doc records the re-verification.",
+  "evidence_ts": "2026-09-22T19:00Z"
+}

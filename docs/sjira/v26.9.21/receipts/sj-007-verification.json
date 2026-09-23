@@ -1,0 +1,33 @@
+{
+  "receipt_class": "verification",
+  "order": "SJ-007",
+  "replay_identity": "sjira-v26.9.21-sj-007",
+  "session_date": "2026-09-21",
+  "commands": [
+    {"cmd": "test -f docs/sjira/v26.9.21/ash-atlassian-ard.md", "exit": 0, "note": "the order's DoD runnable check, observed exit 0, no output"},
+    {"cmd": "test -f docs/sjira/v26.9.21/{ash-atlassian-ard,010-atlassian-public-vocab-pin,011-public-ash-projection-extend,012-ash-atlassian-profile-admit}.md (as chained &&)", "exit": 0, "note": "all four deliverable files exist"},
+    {"cmd": "ls ~/ash_atlassian", "exit": "1 (within compound)", "note": "No such file or directory — blocker evidence re-verified"},
+    {"cmd": "gh repo view seanchatmangpt/ash_atlassian", "exit": "non-zero", "note": "GraphQL could not resolve to a Repository — no remote target"},
+    {"cmd": "file ~/atlassian", "exit": 0, "note": "ASCII text, 1117044 bytes"},
+    {"cmd": "grep -n 'migrating all of the atlassian' ~/atlassian", "exit": 0, "note": "1 hit at line 3491"},
+    {"cmd": "git status --short / git diff --stat", "exit": 0, "note": "changes confined to docs/sjira/v26.9.21/** (path_scope respected); 001-006/008/009 byte-untouched"}
+  ],
+  "refused": [
+    {"cmd": "python3 docs/sjira/v26.9.21/generate.py (via wrapper and -c)", "standing": "REFUSED_NO_EXECUTION_SURFACE", "note": "harness returned 'No permission client configured for Bash' for all interpreter invocations this session"},
+    {"cmd": "mix run admit.exs (kernel admission of emitted set)", "standing": "REFUSED_NO_EXECUTION_SURFACE", "note": "mix gated the same way; admission of SJ-010..012 NOT executed this session"},
+    {"cmd": "git add docs/sjira/v26.9.21/ && git commit -F <msgfile>", "standing": "REFUSED_NO_EXECUTION_SURFACE", "note": "git read ops allowed, git add/commit gated; commit message preserved at docs/sjira/v26.9.21/receipts/sj-007-commitmsg.txt with the exact commands — run verbatim from the worktree root"}
+  ],
+  "static_conformance": "Emitted frontmatter checked field-by-field against ~/ggen_igniter/lib/ggen_igniter/semantic_jira.ex: all @required keys present; repository matches @repo; base_sha is a real 40-hex SHA of ggen-marketplace main; standings in @standings; projections in @projection_types; required_receipt_classes in @receipt_classes; dependencies use requiresReceipt from @dependency_types. Static check is not execution — admission standing remains UNKNOWN until the real run.",
+  "replay": {
+    "regenerate": "python3 docs/sjira/v26.9.21/.gen-sj007.py (wraps OUT/WO_JSON env for this checkout; equivalent to OUT=<milestone-dir> WO_JSON=/tmp/sj007-wo.json python3 <milestone-dir>/generate.py)",
+    "admit": "from ~/ggen_igniter: WO=/tmp/sj007-wo.json mix run <milestone-dir>/admit.exs — expect ADMITTED lines for SJ-001..SJ-012",
+    "dod": "test -f docs/sjira/v26.9.21/ash-atlassian-ard.md"
+  },
+  "falsifiers_attempted": [
+    {"f": "ARD proposes hand-written resources where a pack could generate them", "result": "survived — ARD §4 routes every resource/attribute/enum through mix ash.gen.* via the projection family; relationships stay pack-routed (e3); AshAi wiring is the only hand-written candidate and is ledgered UNSUPPORTED (e4); scaffold via igniter generators (e5)"},
+    {"f": "emitted files diverge from the manufacturer's deterministic output", "result": "NOT EXECUTED (no python surface) — disclosed; byte-identity replay command recorded above"}
+  ],
+  "standing_delta": "SJ-007 BLOCKED -> PARTIAL_ALIVE (DoD observed green; kernel admission of the emitted set unobserved this session). SJ-010/011/012 emitted at UNKNOWN.",
+  "ratio": "0 production-surface bytes changed; all delivered bytes are ticket-layer (docs/sjira/**). 010-012 + index rows: manufactured content from generate.py, hand-rendered under sandbox refusal (attribution disclosed, replay falsifier recorded).",
+  "operator_did_not_write": "any of the verification commands' design, the conformance mapping, or the receipts."
+}

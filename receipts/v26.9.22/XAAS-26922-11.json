@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-11",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED: errc/semantic-jira-bridge (17141e2) is pinned by path to the local-only /Users/sac/ggen_igniter-wt2/log-integrity. Landing it requires a durable ggen_igniter dependency: hex ggen_igniter 26.9.22 or a pushed git ref. Awaiting GGEN_IGNITER-26922-13 (release v26.9.22 + hex publish). ~/ggen_igniter is still at f81cf54 with mix.exs 26.9.20/26.9.15 lineage and no pushed v26.9.22.",
+  "awaiting_refs": ["GGEN_IGNITER-26922-13"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}

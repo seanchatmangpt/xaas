@@ -1,0 +1,16 @@
+{
+  "standing": "PARTIAL_ALIVE",
+  "done": [
+    0,
+    2
+  ],
+  "dod_notes": {
+    "0": "re-verified live 2026-09-22, all 9 outputs `unchanged: content identical`",
+    "1": "not advanced this session (still 18); remaining zcode-plugin-scoped Active rows are honestly non-promotable this run (irreducible doctrine prose; qualification-test row needs an as-yet-uninvented `gates/` pack, out of scope for a promotion-only session)",
+    "2": "re-verified live 2026-09-22, exit 0"
+  },
+  "status_block": "003.status.md",
+  "evidence_section": "003.evidence_section.md",
+  "runnable_check": "003.runnable.md",
+  "history": "003.history.md"
+}

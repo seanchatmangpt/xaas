@@ -64,7 +64,9 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
 
   describe "bridge persistence" do
     test "the descriptor bridge is stored on the Run verbatim and never interpreted", %{sha: sha} do
-      assert {:ok, %{run: run}} = SemanticWork.materialize(descriptor(sha, "sem-pass"))
+      assert {:ok, %{run: run}} =
+               SemanticWork.materialize(descriptor(sha, "sem-pass"), binding: :graph)
+
       assert run.semantic_bridge == @bridge
 
       reread =
@@ -76,11 +78,13 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     test "a descriptor without a bridge still materializes; a non-object bridge is refused",
          %{sha: sha} do
       no_bridge = Map.delete(descriptor(sha, "sem-pass"), "bridge")
-      assert {:ok, %{run: run}} = SemanticWork.materialize(no_bridge)
+      assert {:ok, %{run: run}} = SemanticWork.materialize(no_bridge, binding: :graph)
       assert run.semantic_bridge == nil
 
       assert {:error, {:refused_semantic_work, {:invalid, :bridge}}} =
-               SemanticWork.admit(Map.put(descriptor(sha, "sem-pass"), "bridge", "not-an-object"))
+               SemanticWork.admit(Map.put(descriptor(sha, "sem-pass"), "bridge", "not-an-object"),
+                 binding: :graph
+               )
     end
   end
 
@@ -131,11 +135,13 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     test "typed refusals: unknown epoch, no bridge, not completed", %{sha: sha} do
       assert {:error, :epoch_not_found} = SemanticReceipt.export(Ecto.UUID.generate())
 
-      assert {:ok, %{epoch: open}} = SemanticWork.materialize(descriptor(sha, "sem-pass"))
+      assert {:ok, %{epoch: open}} =
+               SemanticWork.materialize(descriptor(sha, "sem-pass"), binding: :graph)
+
       assert {:error, {:epoch_not_completed, :running}} = SemanticReceipt.export(open.id)
 
       no_bridge = Map.delete(descriptor(sha, "sem-pass", "urn:t:no-bridge"), "bridge")
-      assert {:ok, %{epoch: bare}} = SemanticWork.materialize(no_bridge)
+      assert {:ok, %{epoch: bare}} = SemanticWork.materialize(no_bridge, binding: :graph)
       assert {:error, :no_semantic_bridge} = SemanticReceipt.export(bare.id)
     end
 
@@ -293,7 +299,8 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
   defp run_worker(sha, suite) do
     {:ok, %{epoch: epoch, worktree: worktree}} =
       SemanticWork.materialize(
-        descriptor(sha, suite, "urn:t:#{suite}:#{System.unique_integer([:positive])}")
+        descriptor(sha, suite, "urn:t:#{suite}:#{System.unique_integer([:positive])}"),
+        binding: :graph
       )
 
     {:ok, _claimed, token, _run} =
@@ -311,7 +318,7 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     %{
       "work_order_iri" => iri,
       "checkpoint_iri" => "urn:t:checkpoint:1",
-      "graph_digest" => "sha256:" <> String.duplicate("a", 64),
+      "graph_digest" => "sha256:" <> String.duplicate("e", 64),
       "repository_identity" => "seanchatmangpt/demo",
       "execution_repo_alias" => "demo",
       "base_sha" => sha,

@@ -4,8 +4,9 @@ defmodule Xaas.ZcodePlugin.ProjectionTest do
   @moduledoc """
   Real Chicago-style qualification of the ggen-owned ZCode plugin project
   (`priv/zcode_plugin/`): the committed projection under `marketplace/` must be
-  exactly what a real `ggen sync run` produces from `ontology.ttl` +
-  `templates/`, and the projected manifests must agree with each other.
+  exactly what a real `ggen sync run` produces from `ontology.ttl` + the
+  repo-local packs under `packs/` (zcode-plugin-pack, ultracode-actuation-lease-pack,
+  pinned by `ggen.lock`), and the projected manifests must agree with each other.
 
   The real `ggen` binary is the collaborator (run in a temp copy of the
   project, so the working tree is never rewritten). Without `ggen` on PATH the
@@ -39,7 +40,7 @@ defmodule Xaas.ZcodePlugin.ProjectionTest do
     File.mkdir_p!(tmp)
     on_exit(fn -> File.rm_rf(tmp) end)
 
-    for entry <- ["ggen.toml", "ontology.ttl", "templates"] do
+    for entry <- ["ggen.toml", "ggen.lock", "ontology.ttl", "templates", "packs"] do
       File.cp_r!(Path.join(@project, entry), Path.join(tmp, entry))
     end
 

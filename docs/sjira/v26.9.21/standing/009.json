@@ -1,0 +1,15 @@
+{
+  "standing": "ALIVE",
+  "standing_note": "verdict COMPATIBLE",
+  "done": [
+    0
+  ],
+  "dod_notes": {
+    "0": "COMPATIBLE, receipts/SJ-009.md"
+  },
+  "receipts": "009.receipts.md",
+  "status_block": "009.status.md",
+  "evidence_section": "009.evidence_section.md",
+  "runnable_check": "009.runnable.md",
+  "dod_blocks_file": "009.dod_blocks.md"
+}

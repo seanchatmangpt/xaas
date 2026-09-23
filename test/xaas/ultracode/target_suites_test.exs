@@ -59,18 +59,17 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   test "the code-declared target suites pass the registration admission gate" do
     devs = TargetSuites.devs()
 
-    # The three wave-5 suites plus FOUR durable-registry targets'
-    # `-dod` AND `-canonical` judges (2026-09-21; `spr` joined the
-    # registered set the same day, replacing its legacy aps courts per the
-    # V4/V10 mis-registration finding): Run admission validates
-    # the `-dod` name per item, and Autonomic resolves the `-canonical`
-    # name from the registry entry at the per-repo integration head -- a
-    # missing half fails tonight's multi-repo run closed. The OTHER THREE
-    # durable targets (autofde-lab, ggen-igniter, gymact) are deliberately
-    # ABSENT: their suites are red or tree-dirty under the verifier's
-    # hermetic env (see the block in TargetSuites.devs/0), so they stay
-    # visible `reserved` gaps in `mix xaas.ultracode.repos` instead of
-    # targets that close red.
+    # The three wave-5 suites plus the durable-registry targets' `-dod` AND
+    # `-canonical` judges (2026-09-21; `spr` joined the registered set the
+    # same day, replacing its legacy aps courts per the V4/V10
+    # mis-registration finding): Run admission validates the `-dod` name per
+    # item, and Autonomic resolves the `-canonical` name from the registry
+    # entry at the per-repo integration head -- a missing half fails
+    # tonight's multi-repo run closed. The t1 registration merge (2026-09-22)
+    # adds the four SJ-program targets (xaas, autofde-lab, gymact,
+    # ggen-igniter) via sj_program_suites/0, so they are declared targets
+    # now, not deliberately-absent reserved gaps.
+
     assert MapSet.new(Map.keys(devs)) ==
              MapSet.new([
                "eds-dod",
@@ -82,7 +81,13 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
                "infinite-agentic-cli-dod",
                "infinite-agentic-cli-canonical",
                "xaas-dod",
-               "xaas-canonical"
+               "xaas-canonical",
+               "autofde-lab-dod",
+               "autofde-lab-canonical",
+               "gymact-dod",
+               "gymact-canonical",
+               "ggen-igniter-dod",
+               "ggen-igniter-canonical"
              ])
 
     assert TargetSuites.validate(devs) == :ok
@@ -135,7 +140,8 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   end
 
   test "a bad timeout is refused: missing, zero, negative, non-integer, over the cap" do
-    base = %{"t" => hd(Map.values(TargetSuites.devs()))}
+    # A one-step suite (the mutation below addresses step 0 / the sole step).
+    base = %{"t" => TargetSuites.devs()["spr-dod"]}
 
     for bad <- [0, -1, "300000", 3_600_001] do
       mutated =

@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-01",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "for w in auto/t3-sa2a-execute auto/t6-ash-atlassian auto/t4-dod-trust errc/sj001-guard errc/zcode-package-verify; do git -C /Users/sac/xaas/worktrees/$w add -A; git -C /Users/sac/xaas/worktrees/$w commit -F <msg>; done; for w in ...; do git -C /Users/sac/xaas/worktrees/$w status --porcelain | wc -l; done",
+  "exit": 0,
+  "output_excerpt": "0\n0\n0\n0\n0 (dirty counts all zero after commits)",
+  "standing": "ALIVE",
+  "notes": "Preserved commits on own branches: auto/t3-sa2a-execute=525caa5 (SA2A executor, 20 files), auto/t6-ash-atlassian=6bc52b6 (ARD court, 4), auto/t4-dod-trust=241a342 (DoD trust, 17), errc2/sj001-guard=92f877d (SJ-001 guard, 10), errc2/zcode-package=1df7273 (zcode-package-verify incl. process_group.ex, 10). git fetch --all (no prune) done in W0: origin/main...main was 0/28 before push.",
+  "evidence_ts": "2026-09-22T14:55-15:00Z"
+}

@@ -242,12 +242,12 @@ receipt carries `head_verified`, (c) every wave Run's OCEL log passes steps
 ## 6. (e) Prerequisites per repo type
 
 Everything in eight-hour-run §3 holds (toolchain, Postgres, operator dirs,
-node >= 22.5, quota). Per-target additions:
+node >= 22.19.0 (zcode-cli `package.json` `engines.node`), quota). Per-target additions:
 
 - **PATH order (verified this session)**: `export
   PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"` — asdf first. asdf has
   NO node plugin on this machine (`asdf current node` -> "No such plugin"),
-  so `node` still resolves from homebrew (v26.8.1, >= 22.5) while `mix`
+  so `node` still resolves from homebrew (v26.8.1, >= 22.19.0) while `mix`
   resolves under the shims (1.20.2). One order, both constraints satisfied.
 - **Clones**: `~/xaas/worktrees/repos/<alias>`, real checkouts, on `main`
   (or any base you intend), never a bare dir, never a session worktree.
@@ -279,7 +279,13 @@ node >= 22.5, quota). Per-target additions:
     other non-zero (outside `infra_exit_codes`) = fail, timeout =
     unverifiable.
 - **Sensing profile**: each target needs an implemented profile (registry
-  gap until then). Profiles (`Xaas.Ultracode.Sensing`, IN-FLIGHT):
+  gap until then). A registry `sensing` NAME resolves to a declared profile
+  map via `Sensing.profile_for/1` (`config :xaas,
+  :ultracode_sensing_profiles`); `Autonomic.sense/1` senses through that
+  profile when the name resolves and through the per-repo backlog script
+  otherwise. A registry entry with `refresh: true` is fetched +
+  fast-forwarded (`Repos.refresh/1`, non-destructive) before `base_sha` is
+  pinned. Profiles (`Xaas.Ultracode.Sensing`):
   `todo_file` (GitHub task-list lines), `jira_dir` (ticket `## Status`
   first-words not in the closed set), `failing_tests` (run a command in
   the sensed worktree, parse failures — a non-zero suite exit is EXPECTED,

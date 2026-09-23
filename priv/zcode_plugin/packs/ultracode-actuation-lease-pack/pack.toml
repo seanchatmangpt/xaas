@@ -1,0 +1,4 @@
+[pack]
+name = "ultracode-actuation-lease-pack"
+version = "26.9.21"
+description = "Client-side lease state-file protocol for the Ultracode actuation seam (save/get/clear, live-lease conflict refusal) rendered from ul:LeaseStateProtocol facts; the state directory it names is the same fact the PreToolUse gate reads."
