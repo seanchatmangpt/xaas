@@ -1,0 +1,2 @@
+cmd: grep -rn 'unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|mock' lib/xaas/ultracode/machine_experience.ex lib/xaas/ultracode/machine_experience lib/mix/tasks/xaas.machine_experience.ex scripts/machine_experience.exs test/xaas/ultracode/machine_experience_test.exs docs/sjira/v26.9.23/courts/GC23-9.sh
+grep_exit=2 (1 = 0 matches)
