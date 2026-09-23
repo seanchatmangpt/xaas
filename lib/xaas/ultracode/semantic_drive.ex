@@ -75,8 +75,6 @@ defmodule Xaas.Ultracode.SemanticDrive do
   object by IRI, an `exploration` route to the candidate's proposer).
   """
 
-  require Ash.Query
-
   alias Xaas.Receipt.RProjection
   alias Xaas.Sa2a.Route
   alias Xaas.Ultracode.{Epoch, Receipt, RecipeWorker, Run, SemanticReceipt, SemanticWork}
