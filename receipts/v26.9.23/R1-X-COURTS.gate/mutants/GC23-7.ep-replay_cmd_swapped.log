@@ -1,0 +1,7 @@
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-COURTS/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"broken_term":"R_missing_replay","detail":{"binding":{"argv_sha256":"26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b","head":"9c5e7571c948f97f6ae08d9399f69f502d81efd4","step_id":"format","suite":"ggen-igniter-format"},"court_commands":["mix format --check-formatted"],"reason":"a replay command is not the court-recorded command","recorded":["true"]},"hop":"receipt","reason":"replay_command_unbound","standing":"REFUSED(replay_command_unbound)"}
+REFUSED: GC23-7 receipt.r.json: REFUSED(replay_command_unbound) broken_term=R_missing_replay a replay command is not the court-recorded command
+exit=1

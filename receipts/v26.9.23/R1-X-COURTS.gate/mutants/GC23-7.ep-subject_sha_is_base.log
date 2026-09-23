@@ -1,0 +1,2 @@
+REFUSED: GC23-7 receipt.r.json: REFUSED(r_subject_not_sealed_head) broken_term=R_missing_identity subject_sha=80a8a4c71b331a39771ad65d1149eb835645d17c final_head=9c5e7571c948f97f6ae08d9399f69f502d81efd4
+exit=1
