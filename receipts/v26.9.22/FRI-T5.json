@@ -1,0 +1,87 @@
+{
+  "authority": {
+    "actor": "claude-opus-5.5 workflow subagent (lane FRI-T5)",
+    "ceiling": "CONSTRUCT",
+    "grant": "user-approved plan ~/.claude/plans/i-need-you-to-iterative-sedgewick.md, lane FRI-T5 (COORDINATION.md Friday scope)"
+  },
+  "consequence": {
+    "commits": [
+      "cb4ec5ad2918b02bcfbe179becdca49d1744eba6"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "docs/sjira/v26.9.22/friday/goal.ttl",
+      "docs/sjira/v26.9.22/friday/stop.rq",
+      "lib/mix/tasks/xaas.stop_court.ex",
+      "test/mix/tasks/xaas_stop_court_test.exs"
+    ],
+    "remote_effects": []
+  },
+  "falsifiers": {
+    "note": "mutations run on the pre-commit tree whose content equals cb4ec5a; sources restored byte-identical (diff -q) after each",
+    "revert_mutations_killed": [
+      "stop.rq gate standing unconstrained -> 4 tests fail",
+      "runner marks every gate ALIVE -> 2 tests fail",
+      "runner ignores receipt identity.subject -> 1 test fails",
+      "runner ignores WorkOrder tuple_digest -> 1 test fails",
+      "runner drops the asserted-receipt guard -> 1 test fails"
+    ]
+  },
+  "identity": {
+    "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6",
+    "branch": "fri/FRI-T5",
+    "graph_hash": "sha256:e235de71c6c9130da6609a1f7469482c6c93f68194ba11cf135c86e5bdad88f9",
+    "repo": "/Users/sac/xaas",
+    "subject": "FRI-T5",
+    "subject_sha": "cb4ec5ad2918b02bcfbe179becdca49d1744eba6",
+    "tuple_digest": "sha256:e1395b48cb24b41bfe542236b269da6c002339c8679485aeb8f69886fa636744",
+    "worktree": "/Users/sac/wt/v26922/fri/FRI-T5"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "b93cbf9718a1a1cbced35334efd9609c3fc09a43bb4cde50b2cfbe1432339e0e",
+        "summary": "formatted"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "240b6f79fbff4bdfb963c4b24a43a2c41b2ee43996eb5ae6acf88cd01b4b30b4",
+        "summary": "Compiling 505 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/mix/tasks/xaas_stop_court_test.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "cd1718d3af5f3e5fdcf9f9888cdbdf349df6a32773a7f3126176daef9a8693cf",
+        "summary": "13 tests, 0 failures (0 skipped: validator and rdflib present)"
+      },
+      {
+        "cmd": "! grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.' test/mix/tasks/xaas_stop_court_test.exs lib/mix/tasks/xaas.stop_court.ex",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "summary": "Chicago mock grep: zero matches"
+      },
+      {
+        "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-FRI-0800 --only G0 --receipts-dir \"$TMPDIR/real-receipts\"; test $? -eq 1",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "bbc901f534081bbce511c5580fc22e5acf561e1682fc5713866f69e88d19b175",
+        "summary": "real goal.ttl at cb4ec5a: G0 UNKNOWN (wbpr.md still DRAFT), G1..G12 no receipt, order FRI-T5 standing=ALIVE receipt=ADMITTED digest=sha256:e1395b48...; STOP=false, court exit 1 as asserted; G0 and STOP receipts ADMITTED"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/FRI-T5.json"
+  },
+  "standing": {
+    "derived_from": "lane gate (format, forced test compile --warnings-as-errors, stop-court Chicago tests 13/0) and mock grep, all exit 0, run on a clean tree at subject_sha cb4ec5ad2918b02bcfbe179becdca49d1744eba6",
+    "value": "ALIVE"
+  },
+  "unsupported": [
+    "UNSUPPORTED(generator-capability): no admitted pack renders a stop-court runner; GgenIgniter.Native.GraphNif has no ASK form (SELECT * LIMIT 1 adapter hand-written). Ledger: HANDWRITTEN.md"
+  ]
+}
