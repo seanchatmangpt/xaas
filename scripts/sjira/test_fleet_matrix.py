@@ -345,6 +345,21 @@ class FleetMatrixTest(unittest.TestCase):
         self.assertIn(f"ALIVE: alpha head {head}", out)
 
     @unittest.skipUnless(VALIDATOR.is_file(), f"real receipt validator absent: {VALIDATOR}")
+    def test_check_standing_binds_a_relative_int_path_to_an_absolute_receipt_repo(self):
+        # Regression (found by the court-level falsifier): --int given relative to the cwd must
+        # bind a receipt whose identity.repo is the absolute path of the same checkout.
+        gamma = self.fx.repo("gamma")
+        head = self.fx.git(gamma, "rev-parse", "HEAD")
+        receipt(self.fx, "gamma", gamma, head)
+        c = classification(self.fx, [("ggen_igniter", "CriticalPath", True)], "rel.ttl")
+        code, out = self.fx.run(
+            "check-standing", "--classification", c, "--receipts-dir", self.fx.root / "receipts",
+            "--int", "ggen_igniter=gamma", "--validator", VALIDATOR,
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"ALIVE: ggen_igniter head {head}", out)
+
+    @unittest.skipUnless(VALIDATOR.is_file(), f"real receipt validator absent: {VALIDATOR}")
     def test_f6_receipt_at_a_stale_subject_no_longer_applies(self):
         alpha = self.fx.repo("alpha")
         old = self.fx.git(alpha, "rev-parse", "HEAD")

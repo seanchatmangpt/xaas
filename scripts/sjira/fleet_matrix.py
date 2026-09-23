@@ -818,8 +818,18 @@ def render_md(matrix, obs, digests):
 
 
 def receipt_names_repo(receipt_repo, name, int_path, universe_paths):
+    """A receipt names the repo by name, slug tail, its universe path or its --int checkout.
+
+    Paths are compared after realpath, so a relative --int or a /tmp -> /private/tmp alias
+    still binds (the subject identity is the SHA check that follows, not the spelling)."""
     r = receipt_repo.rstrip("/")
-    return r in {name, int_path.rstrip("/"), *universe_paths} or os.path.basename(r) == name or r.endswith("/" + name)
+    paths = {os.path.realpath(p) for p in (int_path, *universe_paths) if p}
+    return (
+        r == name
+        or os.path.basename(r) == name
+        or r.endswith("/" + name)
+        or (os.path.isabs(r) and os.path.realpath(r) in paths)
+    )
 
 
 def cmd_check_standing(a):
