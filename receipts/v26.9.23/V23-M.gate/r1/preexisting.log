@@ -1,0 +1,12 @@
+code: 04599d6604e56efb031eb19de430e1361e381d21 (V23-D merged, no V23-M); judge ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+COMPILE_EXIT=0 Compiling 2 files (.ex) Generated xaas app 
+TEST_EXIT=2
+  1) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:107
+     left:  "lib/ggen_igniter/semantic_jira/bootstrap.ex\nlib/ggen_igniter/semantic_jira/cli.ex"
+     right: "lib/ggen_igniter/semantic_jira/cli.ex"
+  2) test a subject with no drift is REFUSED(no_delta) by the provider: no commit, no ledger change, EP-A stays on the frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:345
+     left:  {:refused,
+     right: {:ok,
+9 tests, 2 failures

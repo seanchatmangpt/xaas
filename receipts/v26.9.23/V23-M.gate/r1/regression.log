@@ -1,0 +1,6 @@
+subject: d19623ed280fbdeff831676a5e86d652f8707cd3; judge /Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc; partition _v23mreg
+  1) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+  2) test a subject with no drift is REFUSED(no_delta) by the provider: no commit, no ledger change, EP-A stays on the frontier (Xaas.Ultracode.SemanticDriveTest)
+Finished in 33.6 seconds (1.5s async, 32.1s sync)
+113 tests, 2 failures
+REGRESSION_EXIT=2
