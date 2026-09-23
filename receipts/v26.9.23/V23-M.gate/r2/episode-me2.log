@@ -1,0 +1,26 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-M/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+08:14:14.696 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+08:14:15.058 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+08:14:15.340 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+08:14:15.442 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:14:15.443 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-M/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+08:14:15.458 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:14:15.458 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-M/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+08:14:15.474 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:14:15.474 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-M/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+08:14:15.484 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:14:15.484 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-M/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+08:14:15.491 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:14:15.491 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-M/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+08:14:15.494 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:14:15.494 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-M/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+{"checkpoint":"https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23","decision":"KNOWN","drive":{"dir":"docs/sjira/v26.9.23/episodes/me-2/drive","head":"1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3","provider":{"capability":"recipe:mix-format","executor":"recipe-worker","provider":"recipe"},"standing":"ALIVE","tuple_digest":"sha256:487af9b1b85fc03bcb06be33877679634182ff99b5308269a333d3244b7c7ba8"},"episode":"me-2","exploration":null,"failure_class":"format_drift","finished_at":"2026-09-23T15:14:24.184152Z","machine_experience":null,"no_llm_guard":"passed","ocel":{"by_class":{"ActuationCompleted":1,"ActuationStarted":1,"CapabilityResolved":1,"FrontierChanged":1,"LeaseAcquired":1,"ReceiptSealed":1,"RouteDecided":1,"StandingChanged":1,"VerificationCompleted":3,"WorkOrderCreated":1},"equivalent":true,"events":12,"exploration_events":0,"llm_provider_events":0,"objects":12},"order":"EP-A","route":{"admission":"https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434-admission","admission_digest":"sha256:7d69cb3ec1875e4b93303c2e18a1a99229698dd65a7721df094f50b8400aafd1","capability":"recipe:mix-format","experience_digest":"sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222","experiences_applicable":["https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"],"experiences_considered":["https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"],"machine_experience":"https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434","order":"EP-A","predicate_sha256":"sha256:3e6523a47a725da300771eee7c06e0487ab22da181db885b01bd54b0414c73d0","problem_class":"format_drift","provider_class":"recipe","source":"machine_experience"},"schema":"xaas/machine-experience-episode/v1","standing":"ALIVE","started_at":"2026-09-23T15:14:15.503103Z","step_count":16,"steps":["guard","route","drive:guard","drive:frontier_before","drive:order","drive:resolve","drive:sa2a","drive:descriptor","drive:contract","drive:materialize","drive:actuate","drive:seal","drive:verify","drive:project","drive:reconcile","drive:frontier_after"]}

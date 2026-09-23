@@ -1,0 +1,41 @@
+subject: d9939a63f1bb222b199f7cd56c14a4cf391ba53a porcelain=[?? receipts/v26.9.23/V23-M.gate/r2/ ]
+judge: /Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+df: 49 GB free
+== mix format --check-formatted
+FORMAT_EXIT=0
+== MIX_ENV=test mix compile --force --warnings-as-errors
+Compiling 516 files (.ex)
+Generated xaas app
+COMPILE_EXIT=0
+== mix test test/xaas/ultracode/machine_experience_test.exs
+Finished in 47.4 seconds (5.5s async, 41.8s sync)
+25 tests, 0 failures
+TEST_EXIT=0
+== sh docs/sjira/v26.9.23/courts/GC23-9.sh
+validator: ADMITTED /Users/sac/wt/v26922/v23/V23-M/docs/sjira/v26.9.23/episodes/me-1/unknown/unknown.json
+validator: ADMITTED /Users/sac/wt/v26922/v23/V23-M/docs/sjira/v26.9.23/episodes/me-1/drive/receipt.r.json
+validator: ADMITTED /Users/sac/wt/v26922/v23/V23-M/docs/sjira/v26.9.23/episodes/me-2/drive/receipt.r.json
+recorded: me-1 15 events / 20 steps (LLM-provider 3, exploration 2); me-2 12 events / 16 steps (LLM-provider 0, exploration 0); route cites https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 -> recipe:mix-format
+digests (python, from the Turtle): experience sha256:0a15fe7a53ed... admission sha256:7d69cb3ec187... both recompute
+shacl: conforms, machine_experience_shape, focus nodes 1, shapes sha256:42572fa36075
+shacl anti-vacuity: standing ALIVE mutation refused
+ggen digest: SemanticJira.digest/1 recomputes the committed experience digest
+ocel_validate me-1: /Users/sac/wt/v26922/v23/V23-M/docs/sjira/v26.9.23/episodes/me-1/ocel.json: valid (15 events, 13 objects)
+ocel_validate me-2: /Users/sac/wt/v26922/v23/V23-M/docs/sjira/v26.9.23/episodes/me-2/ocel.json: valid (12 events, 12 objects)
+live route: KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434
+F3: route refused with an exposed credential
+falsifier (no-experience): exit 4 no_capability_no_experience 
+falsifier (no-admission): exit 4 no_capability_no_experience 
+falsifier (no-me): exit 3 experience_admission_invalid experience_absent
+falsifier (edited-capability): exit 3 experience_admission_invalid admission_digest_mismatch
+falsifier (edited-work-order): exit 3 experience_admission_invalid admission_digest_mismatch
+falsifier (edited-subject): exit 3 experience_admission_invalid experience_digest_mismatch
+falsifier (extra-triple): exit 3 experience_admission_invalid admission_not_closed
+falsifier (beside): exit 3 experience_admission_invalid consequence_bounds_undecodable
+falsifier (sealed-unevaluable): exit 3 experience_predicate_unevaluable 
+falsifier (runner, no experience): UNKNOWN, no drive, unknown/unknown.json receipted
+falsifier (runner, edited admission): REFUSED, no drive
+ALIVE: GC23-9 episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 with 0 LLM-provider and 0 exploration events and fewer events/steps
+COURT_EXIT=0
+final porcelain=[?? receipts/v26.9.23/V23-M.gate/r2/ ]
+GATE_EXIT=0

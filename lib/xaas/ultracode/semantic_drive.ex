@@ -65,7 +65,14 @@ defmodule Xaas.Ultracode.SemanticDrive do
   (`"test"`), `:ggen_build_path` (a private `MIX_BUILD_PATH` for the graph
   side, default the checkout's own), `:ggen_timeout_s` (900), `:pin_ref`
   (a branch name that keeps the produced head reachable after the epoch
-  worktree is removed), `:sa2a_script`, `:scratch`.
+  worktree is removed), `:sa2a_script`, `:scratch`, `:route` (the routing
+  provenance of the order's capability, `Xaas.Ultracode.MachineExperience`,
+  lane V23-M: `%{"source" => "requires_capability" | "exploration" |
+  "machine_experience", "capability" => ..., ...}`; when given, the resolve
+  step refuses `REFUSED(route_capability_mismatch)` unless the route names
+  the tuple's capability, and records the route on `CapabilityResolved`: a
+  `machine_experience` route relates the event to its `MachineExperience`
+  object by IRI, an `exploration` route to the candidate's proposer).
   """
 
   require Ash.Query
@@ -104,6 +111,21 @@ defmodule Xaas.Ultracode.SemanticDrive do
   @doc "The recorded hops, in route order (ARD section 8)."
   @spec hops() :: [String.t()]
   def hops, do: @hops
+
+  @doc "The drive's steps, in order (one OCEL-observed closed-loop pass)."
+  @spec steps() :: [atom()]
+  def steps, do: @steps
+
+  @doc """
+  Runs one graph-side `mix` task (or `mix run <script>`) the way the drive
+  does: in `ctx.ggen_dir`, under `ctx.toolchain` (`graph_toolchain/2`) with
+  `MIX_ENV` = `ctx.mix_env` and `MIX_BUILD_PATH` = `ctx.ggen_build_path`,
+  stdin `/dev/null`, output to a file under `ctx.scratch`, a hard
+  `ctx.timeout_s` deadline, every model-credential variable unset. Returns
+  `{exit, last JSON line of the output (or nil), output}`.
+  """
+  @spec graph_side(map(), String.t(), [String.t()]) :: {integer(), map() | nil, String.t()}
+  def graph_side(ctx, task, args), do: ggen(ctx, task, args)
 
   @doc "The environment-variable prefixes (and exact names) the no-LLM guard refuses."
   @spec llm_variables() :: %{prefixes: [String.t()], names: [String.t()]}
@@ -419,6 +441,7 @@ defmodule Xaas.Ultracode.SemanticDrive do
       ggen_build_path: Keyword.get(opts, :ggen_build_path),
       timeout_s: Keyword.get(opts, :ggen_timeout_s, 900),
       pin_ref: Keyword.get(opts, :pin_ref),
+      route: Keyword.get(opts, :route),
       sa2a_script:
         Keyword.get(opts, :sa2a_script) ||
           Path.join(File.cwd!(), "scripts/sa2a_route_task.exs"),
@@ -714,8 +737,10 @@ defmodule Xaas.Ultracode.SemanticDrive do
 
     with {:ok, {provider, recipe_id}} <- resolve(tuple),
          :ok <- deterministic_provider(provider, ctx.provider),
-         {:ok, recipe} <- registered_recipe(tuple["capability"]) do
+         {:ok, recipe} <- registered_recipe(tuple["capability"]),
+         :ok <- route_capability(ctx.route, tuple["capability"]) do
       capability = tuple["capability"]
+      {route_attributes, route_relationships, ctx} = route_provenance(ctx, ctx.route)
 
       ctx =
         ctx
@@ -730,11 +755,15 @@ defmodule Xaas.Ultracode.SemanticDrive do
           "executor" => @executor,
           "deterministic" => true
         })
-        |> event("CapabilityResolved", %{"capability" => capability, "provider" => provider}, [
-          {wo(ctx.order_id), "work-order"},
-          {"capability:" <> capability, "capability"},
-          {"provider:" <> @executor, "provider"}
-        ])
+        |> event(
+          "CapabilityResolved",
+          Map.merge(%{"capability" => capability, "provider" => provider}, route_attributes),
+          [
+            {wo(ctx.order_id), "work-order"},
+            {"capability:" <> capability, "capability"},
+            {"provider:" <> @executor, "provider"}
+          ] ++ route_relationships
+        )
 
       {:ok, ctx}
     end
@@ -1555,6 +1584,8 @@ defmodule Xaas.Ultracode.SemanticDrive do
       "finished_at" => DateTime.to_iso8601(now())
     }
 
+    summary = if ctx.route, do: Map.put(summary, "route", ctx.route), else: summary
+
     ctx =
       ctx
       |> artifact("hops.json", hops_document(ctx))
@@ -1670,6 +1701,63 @@ defmodule Xaas.Ultracode.SemanticDrive do
          )}
     end
   end
+
+  # The routing provenance (lane V23-M) must name exactly the capability the
+  # tuple carries: a route that says one capability while the order executes
+  # another would make the route evidence say nothing about what executed.
+  defp route_capability(nil, _capability), do: :ok
+  defp route_capability(%{"capability" => capability}, capability), do: :ok
+
+  defp route_capability(route, capability) do
+    {:refused,
+     typed(
+       "REFUSED(route_capability_mismatch)",
+       "route_capability_mismatch",
+       "admission_vacuous",
+       "resolve",
+       %{"route" => route, "capability" => capability}
+     )}
+  end
+
+  defp route_provenance(ctx, nil), do: {%{}, [], ctx}
+
+  defp route_provenance(ctx, %{"source" => "machine_experience"} = route) do
+    iri = Map.fetch!(route, "machine_experience")
+    id = "machine-experience:" <> iri
+
+    ctx =
+      object(ctx, id, "MachineExperience", %{
+        "iri" => iri,
+        "experience_digest" => route["experience_digest"],
+        "admission" => route["admission"],
+        "problem_class" => route["problem_class"]
+      })
+
+    {%{"route_source" => "machine_experience", "machine_experience" => iri},
+     [{id, "machine-experience"}], ctx}
+  end
+
+  defp route_provenance(ctx, %{"source" => "exploration"} = route) do
+    producer = Map.fetch!(route, "producer")
+    id = "provider:" <> producer
+
+    ctx =
+      object(ctx, id, "Provider", %{
+        "provider" => producer,
+        "provider_class" => route["producer_class"],
+        "deterministic" => false,
+        "role" => "exploration candidate proposer"
+      })
+
+    {%{
+       "route_source" => "exploration",
+       "exploration_digest" => route["exploration_digest"],
+       "candidate_producer" => producer
+     }, [{id, "proposer"}], ctx}
+  end
+
+  defp route_provenance(ctx, %{"source" => source}),
+    do: {%{"route_source" => source}, [], ctx}
 
   defp deterministic_provider(provider, provider), do: :ok
 
