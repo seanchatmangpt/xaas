@@ -28,10 +28,13 @@
   },
   "consequence": {
     "commits": [
-      "9b31db8f5e6f84e34d6a758fde068f7533a30fee"
+      "9b31db8f5e6f84e34d6a758fde068f7533a30fee",
+      "c47e2f574d1d88df44972bdbe96058b93884ce11"
     ],
     "commit_notes": {
-      "9b31db8": "ci(authority): publish-image and deploy run only on workflow_dispatch from refs/heads/main with inputs.expected_head_sha == github.sha and a reason; in-job byte-exact admission (typed REFUSED, exit 64); publication + deployment receipt artifacts; HANDWRITTEN row; evidence harnesses"
+      "9b31db8": "ci(authority): publish-image and deploy run only on workflow_dispatch from refs/heads/main with inputs.expected_head_sha == github.sha and a reason; in-job byte-exact admission (typed REFUSED, exit 64); publication + deployment receipt artifacts; HANDWRITTEN row; evidence harnesses",
+      "c47e2f5": "receipt(R1-X-FENCE): fleet-R receipt + gate logs (tree change under receipts/ only)",
+      "repair-r1": "the commit carrying this receipt revision (child of c47e2f5; a commit cannot name its own hash): adds standing.broken_term + the round-1 lane gate rerun log; receipts/ only, ci_cd.yaml and HANDWRITTEN.md unchanged"
     },
     "files_changed": [
       ".github/workflows/ci_cd.yaml",
@@ -40,7 +43,7 @@
       "receipts/v26.9.23/R1-X-FENCE.gate/fence_eval.py",
       "receipts/v26.9.23/R1-X-FENCE.gate/steps_eval.py"
     ],
-    "files_changed_basis": "git diff --name-only e999e62 9b31db8; the receipt commit adds receipts/v26.9.23/R1-X-FENCE.json and the receipts/v26.9.23/R1-X-FENCE.gate/*.log files",
+    "files_changed_basis": "git diff --name-only e999e62 9b31db8; c47e2f5 adds receipts/v26.9.23/R1-X-FENCE.json and the receipts/v26.9.23/R1-X-FENCE.gate/*.log files; repair round 1 changes receipts/v26.9.23/R1-X-FENCE.json and adds receipts/v26.9.23/R1-X-FENCE.gate/lane-gate.r1-c47e2f5.log",
     "remote_effects": [],
     "defect_classification": "subject defect (authority): at e999e62 .github/workflows/ci_cd.yaml publish-image (GHCR push) and deploy (swarm deploy with GH_PAT/AWS/AGE/SSH secrets) had `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`, so the v26.9.23 release PR merge would publish and deploy with no operator act and no receipt",
     "diff_scope": "conserve.py over the YAML parse: top-level keys, push/pull_request triggers and the 8 other jobs identical; publish-image/deploy keep every base step in order and every non-step key; added: on.workflow_dispatch.inputs {expected_head_sha, reason} (optional, default ''), the two job `if:`s, per job an admission step (id admit) + receipt step + upload step, step ids build/deploy on the existing actuation steps",
@@ -104,11 +107,21 @@
         "summary": "xaas lane gate prefix step 1: no unformatted-file lines (log is the fresh dev deps compile the formatter plugins trigger; only pre-existing dependency warnings e.g. deps/ex4pm/mix.exs Application.get_env)",
         "output_sha256": "957a7f162e1b84c820594a197bf7037aaceb210e03fb2992c19a873f0e62e8d3",
         "log": "receipts/v26.9.23/R1-X-FENCE.gate/format.log"
+      },
+      {
+        "cmd": "python3 -c \"import yaml,sys; d=yaml.safe_load(open('.github/workflows/ci_cd.yaml')); [print(j, d['jobs'][j].get('if')) for j in ('publish-image','deploy')]\" && sh -c '! grep -nE \"^    if: github.event_name == .push. && github.ref == .refs/heads/main.$\" .github/workflows/ci_cd.yaml'",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-FENCE @ c47e2f574d1d88df44972bdbe96058b93884ce11 (repair round 1; ci_cd.yaml blob 3ff1c5b22190dc2f9991c3429b5cbe26268fa0ac == the 9b31db8 blob)",
+        "exit": 0,
+        "summary": "repair round 1 rerun of the lane gate: output byte-identical to lane-gate.log at the subject (cmp exit 0); both `if`s = workflow_dispatch && refs/heads/main && inputs.expected_head_sha == github.sha && inputs.reason != ''; push-to-main line absent",
+        "output_sha256": "7a1ff5b8846b136a50f6594dd4cf863837445dc70801ae4bc89d4082326e28f3",
+        "log": "receipts/v26.9.23/R1-X-FENCE.gate/lane-gate.r1-c47e2f5.log"
       }
     ]
   },
   "standing": {
     "value": "PARTIAL_ALIVE",
+    "broken_term": "mu_unlawful",
+    "broken_term_why": "PARTIAL_ALIVE, not ALIVE, because one xaas lane gate prefix replay step exits non-zero: PATH=<1.20.2-otp-28 pin> MIX_ENV=test mix compile --force --warnings-as-errors => 1 at the subject 9b31db8 (compile.log, BUILD_BROKEN component: unused require Ash.Query, lib/xaas/ultracode/semantic_drive.ex:78:3). Term chosen to match the fleet evidence receipt for the same base subject (/Users/sac/wt/v26922/v26923/receipts/fleet/xaas-e999e62b63c680517b9a562cef877d8b09b0cfdd.json: PARTIAL_ALIVE + broken_term mu_unlawful for a replay step that exited non-zero). Classification: PRE-EXISTING (identical failure at base e999e62 under the same pin, compile.base-e999e62.log; git diff --stat e999e62 9b31db8 over lib config mix.exs mix.lock priv test .formatter.exs is empty); this lane removed no admitted capability (conserve.py exit 0). Owner of the repair: lane R1-X-PIN (wave-R1a.json). The fence components carry no broken term: ALIVE on 9b31db8.",
     "components": {
       "fence (lane gate, act, admission/receipt steps, conservation, actionlint)": "ALIVE",
       "xaas lane gate prefix": "format ALIVE; MIX_ENV=test compile --force --warnings-as-errors BUILD_BROKEN, PRE-EXISTING at base e999e62 under the pin (lib/xaas/ultracode/semantic_drive.ex:78 unused require Ash.Query); compile inputs lib/ config/ mix.exs mix.lock priv/ test/ are byte-identical between base and subject (git diff --stat empty); not the named defect (release-defect rule), owner lane R1-X-PIN (full suites under the .tool-versions pins)"
@@ -175,6 +188,19 @@
     "concurrency": "workflow-level concurrency group xaas-ci-${{ github.event.pull_request.number || github.ref }} with cancel-in-progress: true is shared by an operator dispatch and pushes on refs/heads/main, so a push during a dispatch cancels it; the receipt steps run under always() (which runs on cancellation), but a cancellable actuation is successor work (GC-26.9.24): changing workflow-level concurrency is outside the named defect",
     "receipt_job_text": "the unchanged receipt job writes the literal \"publication\": \"not_attempted_by_candidate_court\"; on an operator dispatch run the publication receipt is the xaas-publish-<sha> artifact (successor: derive that field)",
     "deploy_verification": "the swarm deploy path has no post-deploy health check, so deployment receipts are PARTIAL_ALIVE at best (fly_deploy.yaml verifies its hosted path); successor",
-    "generator": "HANDWRITTEN row: github-actions-pack gha: instance graph for ci_cd.yaml (successor)"
-  }
+    "generator": "HANDWRITTEN row: github-actions-pack gha: instance graph for ci_cd.yaml (successor)",
+    "whitespace_reason": "DOCTRINE non-blocking note (b): a reason of only whitespace passes both the job `if` (inputs.reason != '') and the bash admission (test -n); the operator still has to name the exact head sha, so no push/PR context reaches either job. Tightening to a non-blank reason is successor work (GC-26.9.24): the release-defect rule freezes the fenced subject",
+    "registry_skip": "DOCTRINE non-blocking note (a): steps_eval.py prints SKIPPED and exits 0 when the registry is unreachable; the recorded steps_eval.log run executed the ALIVE registry case. Successor: make the skip a distinct exit"
+  },
+  "repair_rounds": [
+    {
+      "round": 1,
+      "verdicts_answered": {
+        "GATE": "pass (no change)",
+        "REVERT-MUTATION": "pass (no change)",
+        "DOCTRINE": "refuted, broken_term R_missing_standing: standing.value PARTIAL_ALIVE without standing.broken_term. Answered: standing.broken_term = mu_unlawful + broken_term_why, the fix the court named; no code change (the court: 'No other change is needed')"
+      },
+      "subject_unchanged": "git diff --quiet 9b31db8 HEAD -- .github/workflows/ci_cd.yaml HANDWRITTEN.md => 0; git hash-object of the worktree ci_cd.yaml == git rev-parse 9b31db8:.github/workflows/ci_cd.yaml == 3ff1c5b22190dc2f9991c3429b5cbe26268fa0ac"
+    }
+  ]
 }
