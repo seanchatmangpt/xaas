@@ -2,42 +2,48 @@
  "identity": {
   "subject": "V23-M",
   "repo": "/Users/sac/xaas",
-  "subject_sha": "d19623ed280fbdeff831676a5e86d652f8707cd3",
+  "subject_sha": "0ddb308f21d930f757cdae78c196cbd3dfb63a04",
   "base_sha": "04599d6604e56efb031eb19de430e1361e381d21",
   "branch": "v23/V23-M",
   "worktree": "/Users/sac/wt/v26922/v23/V23-M",
   "work_order": "v23:WO-V23-M",
   "tuple_digest": "sha256:10199e1d08495cc7bcb4423e76cabd9878375f7e695dfe5e8603201c3818fa02",
-  "tuple_digest_observed": "GGEN_IGNITER_DIR=ggen_igniter-int (3937a4f) MIX_TEST_PARTITION=_v23m MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-9 at d19623ed280fbdeff831676a5e86d652f8707cd3 printed `order V23-M ... digest=sha256:10199e1d08495cc7bcb4423e76cabd9878375f7e695dfe5e8603201c3818fa02` (equal to DRIVER.md; goal.ttl unchanged) -- receipts/v26.9.23/V23-M.gate/r1/stop-court.log",
+  "tuple_digest_observed": "GGEN_IGNITER_DIR=ggen_igniter-int (3937a4f) MIX_TEST_PARTITION=_v23m MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-9 at 0ddb308f21d930f757cdae78c196cbd3dfb63a04 printed `order V23-M ... digest=sha256:10199e1d08495cc7bcb4423e76cabd9878375f7e695dfe5e8603201c3818fa02` (equal to DRIVER.md; goal.ttl unchanged) -- receipts/v26.9.23/V23-M.gate/r2/stop-court.log",
   "graph_side": {
    "judge": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
    "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
    "build": "private APFS clone of the judge's _build/test (compiled by Elixir 1.19.5 / OTP 28; SemanticDrive.graph_toolchain/2 source build_manifest); the judge's tree and build were never written",
    "episode_base": "c90c17b878d96e14a008c1de498555bc97515937 (recorded in docs/sjira/v26.9.23/episodes/me-1/prepare.json; the committed episodes' subject base, format-clean under ggen_igniter's pinned Elixir 1.18.4)",
    "episode_subjects": {
-    "me-1 (S1)": "v23/episode-me-1 = 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f (drift in lib/ggen_igniter/semantic_jira/reconciler.ex); receipt head v23/episode-me-1-receipt = bd84b3e",
-    "me-2 (S2)": "v23/episode-me-2 = 36605534141aa44429586d3e15e8ff159f3d5bc8 (drift in lib/ggen_igniter/semantic_jira/transition_log.ex); receipt head v23/episode-me-2-receipt = 48ae4ad"
+    "me-1 (S1)": "v23/episode-me-1 = 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f (drift in lib/ggen_igniter/semantic_jira/reconciler.ex); receipt head v23/episode-me-1-r2-receipt = 77df082 (repair 2; the earlier v23/episode-me-1-receipt = bd84b3e is kept)",
+    "me-2 (S2)": "v23/episode-me-2 = 36605534141aa44429586d3e15e8ff159f3d5bc8 (drift in lib/ggen_igniter/semantic_jira/transition_log.ex); receipt head v23/episode-me-2-r2-receipt = 1bbbdcf (repair 2; the earlier v23/episode-me-2-receipt = 48ae4ad is kept)"
    },
-   "judge_history": "episodes produced and first gate run against c90c17b; repair-1 gate, stop court, e2e tests and episode replay run against 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc (V23-B merged into ggen_igniter-int by another executor at 07:12)"
+   "judge_history": "episodes first produced and gated against c90c17b; repair 1 and repair 2 (gates, stop court, e2e tests, episode regeneration and replay) run against 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc"
   },
   "prd_ard": "PRD PR-014, PR-015, PR-016; ARD section 13 (OCEL classes/objects), section 15 (MachineExperience); section 12 GC23-9; goal.ttl v23:GC23-9, v23:WO-V23-M",
-  "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+  "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
  },
  "authority": {
   "ceiling": "CONSTRUCT",
-  "grant": "wave B1b lane V23-M (/Users/sac/wt/v26922/v26923/DRIVER.md gate map GC23-9; COORDINATION.md v26.9.23 scope; goal.ttl v23:WO-V23-M). No push, no integrate, no remote effect. Local refs created in /Users/sac/ggen_igniter as the episode contract requires: v23/episode-me-1, v23/episode-me-1-receipt, v23/episode-me-2, v23/episode-me-2-receipt.",
+  "grant": "wave B1b lane V23-M (/Users/sac/wt/v26922/v26923/DRIVER.md gate map GC23-9; COORDINATION.md v26.9.23 scope; goal.ttl v23:WO-V23-M). No push, no integrate, no remote effect. Local refs created in /Users/sac/ggen_igniter as the episode contract requires (create-only, none moved): v23/episode-me-1, v23/episode-me-1-receipt, v23/episode-me-2, v23/episode-me-2-receipt, and in repair 2 v23/episode-me-1-r2-receipt, v23/episode-me-2-r2-receipt.",
   "actor": "claude-opus-5-5 workflow subagent (lane V23-M); the executed product path ran under the F3 no-LLM env"
  },
  "consequence": {
   "commits": [
    "a2d60a0a23cb39691fa561124ae6d0a7d88c4387",
    "14116b18b99b6436960615f53b795312201811d3",
-   "d19623ed280fbdeff831676a5e86d652f8707cd3"
+   "d19623ed280fbdeff831676a5e86d652f8707cd3",
+   "ffbbee05ebe6e1ecd3b46dc1bcc8188ec4e381ee",
+   "d9939a63f1bb222b199f7cd56c14a4cf391ba53a",
+   "0ddb308f21d930f757cdae78c196cbd3dfb63a04"
   ],
   "commit_notes": {
    "a2d60a0": "MachineExperience router/generalization/admission (machine_experience.ex), Exploration budget, Episode runner, mix xaas.machine_experience, scripts/machine_experience.exs (ggen_igniter side), SemanticDrive :route/steps/graph_side, Ocel extension classes + from_court_form, GC23-9 court, Chicago tests, HANDWRITTEN rows",
    "14116b1": "episode artifacts me-1 (unknown/, exploration.json, drive/, machine_experience.ttl/.json, ocel, episode.json) and me-2 (route.json, drive/, ocel, episode.json), produced by real runs of the code of a2d60a0",
-   "d19623e": "repair 1 (answers B1b doc1 admission_vacuous + mut1 survivors): typed MachineExperience.applicability/2 (route REFUSED(experience_predicate_unevaluable), admit REFUSED(predicate_unevaluable)); Exploration.within_budget/2 metered after every candidate drive; admit/4 binds the source exploration by digest and budget; computed OCEL equivalence; typed drive_ocel_unreadable; unknown.json names driven heads; tests for B4, B9, the time_s overrun; e2e subject base = the recorded episode base; GC23-9 court falsifier for an unevaluable predicate; HANDWRITTEN rows"
+   "d19623e": "repair 1 (answers B1b doc1 admission_vacuous + mut1 survivors): typed MachineExperience.applicability/2 (route REFUSED(experience_predicate_unevaluable), admit REFUSED(predicate_unevaluable)); Exploration.within_budget/2 metered after every candidate drive; admit/4 binds the source exploration by digest and budget; computed OCEL equivalence; typed drive_ocel_unreadable; unknown.json names driven heads; tests for B4, B9, the time_s overrun; e2e subject base = the recorded episode base; GC23-9 court falsifier for an unevaluable predicate; HANDWRITTEN rows",
+   "ffbbee0": "repair 2 (answers B1b doc2 DOCTRINE admission_vacuous): route/2 re-admits every ADMITTED node from the graph (admissions/1: admit/4's record checks, sj:experienceDigest recomputed by ggen_igniter's digest/1 formula, xme:admissionDigest v2 over the ARD fields AND the whole record, both nodes closed over their rendering); an unverifiable ADMITTED node refuses the route REFUSED(experience_admission_invalid) naming the check, never dropped; admit/4 gains experience_not_graph_representable / experience_digest_mismatch / admission_field_malformed / consequence_bounds_undecodable; runner sorts refs; --pin-ref; scripts digest subcommand; GC23-9 court recomputes both digests (python + ggen_igniter) and runs 9 live route falsifiers + 2 runner falsifiers; tests per edit class",
+   "d9939a6": "episodes me-1/me-2 regenerated by mix xaas.machine_experience with the code of ffbbee0 under no_llm_env.sh (ME-0a15fe7a53ed4434, admission digest v2 sha256:7d69cb3e...); earlier episodes (ME-d8e720a599d3c7e2) stay in history at 14116b1",
+   "0ddb308": "repair 2 test: an unknown IRI FILTER function evaluates false in SPARQL.ex, so admit/4 refuses it (predicate_excludes_source) -- witnesses the B1b gate-lens observation left UNVERIFIED"
   },
   "files_changed": [
    "HANDWRITTEN.md",
@@ -107,19 +113,51 @@
    "receipts/v26.9.23/V23-M.gate/episode-me2.log",
    "receipts/v26.9.23/V23-M.gate/gate.log",
    "receipts/v26.9.23/V23-M.gate/mockgrep.log",
+   "receipts/v26.9.23/V23-M.gate/r1/GC23-9.json",
+   "receipts/v26.9.23/V23-M.gate/r1/STOP-GC-26.9.23.json",
+   "receipts/v26.9.23/V23-M.gate/r1/checks.pre.log",
+   "receipts/v26.9.23/V23-M.gate/r1/gate.log",
+   "receipts/v26.9.23/V23-M.gate/r1/gate.sh",
+   "receipts/v26.9.23/V23-M.gate/r1/mutate.py",
+   "receipts/v26.9.23/V23-M.gate/r1/mutations.log",
+   "receipts/v26.9.23/V23-M.gate/r1/preexisting.log",
+   "receipts/v26.9.23/V23-M.gate/r1/regression.log",
+   "receipts/v26.9.23/V23-M.gate/r1/replay.log",
+   "receipts/v26.9.23/V23-M.gate/r1/replay.sh",
+   "receipts/v26.9.23/V23-M.gate/r1/stop-court.log",
+   "receipts/v26.9.23/V23-M.gate/r2/GC23-9.json",
+   "receipts/v26.9.23/V23-M.gate/r2/STOP-GC-26.9.23.json",
+   "receipts/v26.9.23/V23-M.gate/r2/checks.log",
+   "receipts/v26.9.23/V23-M.gate/r2/episode-me1-explore.log",
+   "receipts/v26.9.23/V23-M.gate/r2/episode-me1-unknown.log",
+   "receipts/v26.9.23/V23-M.gate/r2/episode-me2.log",
+   "receipts/v26.9.23/V23-M.gate/r2/gate-d9939a6.log",
+   "receipts/v26.9.23/V23-M.gate/r2/gate.log",
+   "receipts/v26.9.23/V23-M.gate/r2/gate.sh",
+   "receipts/v26.9.23/V23-M.gate/r2/mutate-names.py",
+   "receipts/v26.9.23/V23-M.gate/r2/mutate.py",
+   "receipts/v26.9.23/V23-M.gate/r2/mutations-names.log",
+   "receipts/v26.9.23/V23-M.gate/r2/mutations.log",
+   "receipts/v26.9.23/V23-M.gate/r2/regen.log",
+   "receipts/v26.9.23/V23-M.gate/r2/regen.sh",
+   "receipts/v26.9.23/V23-M.gate/r2/regression.log",
+   "receipts/v26.9.23/V23-M.gate/r2/replay.log",
+   "receipts/v26.9.23/V23-M.gate/r2/replay.sh",
+   "receipts/v26.9.23/V23-M.gate/r2/stop-court-d9939a6.log",
+   "receipts/v26.9.23/V23-M.gate/r2/stop-court.log",
    "receipts/v26.9.23/V23-M.gate/regression.log",
    "receipts/v26.9.23/V23-M.gate/stop-court.log",
    "receipts/v26.9.23/V23-M.json",
    "scripts/machine_experience.exs",
    "test/xaas/ultracode/machine_experience_test.exs"
   ],
-  "files_changed_basis": "git diff --name-only 04599d6 d19623e (72 files: the code/episode commits a2d60a0, 14116b1, the first receipt commit bf4957c (receipts/v26.9.23/V23-M.json, V23-M.gate/*) and repair 1 d19623e); the repair-1 receipt commit adds receipts/v26.9.23/V23-M.gate/r1/** and updates receipts/v26.9.23/V23-M.json",
+  "files_changed_basis": "git diff --name-only 04599d6 0ddb308 (code, episodes, the earlier receipt commits' receipts/v26.9.23/V23-M.gate/**) plus this receipt and the repair-2 logs receipts/v26.9.23/V23-M.gate/r2/** added by the receipt commit",
   "remote_effects": [],
   "path_scope_note": "goal.ttl v23:WO-V23-M sj:pathScope covers lib/xaas/ultracode/, test/xaas/ultracode/, courts/GC23-9.sh and this receipt. Outside it, required by the task: the episode artifacts docs/sjira/v26.9.23/episodes/me-1/** and me-2/** (the task names episodes/me-1/exploration.json), lib/mix/tasks/xaas.machine_experience.ex (the runner CLI, same pattern as V23-D's lib/mix/tasks/xaas.episode.ex), scripts/machine_experience.exs (the ggen_igniter-side script, same pattern as scripts/sa2a_route_task.exs) and HANDWRITTEN.md rows.",
-  "reserved_files_untouched": "semantic_crown.ex, recipe_worker.ex, engine.ex, court_receipt.ex, target_suites.ex, semantic_receipt.ex, lib/xaas/sa2a/route.ex, xaas.stop_court.ex, docs/sjira/v26.9.22/friday/**, goal.ttl, prd-ard.md unchanged (git diff 04599d6 HEAD -- those paths: empty); ggen_igniter untouched except the four local episode refs",
+  "reserved_files_untouched": "semantic_crown.ex, recipe_worker.ex, engine.ex, court_receipt.ex, target_suites.ex, semantic_receipt.ex, lib/xaas/sa2a/route.ex, xaas.stop_court.ex, docs/sjira/v26.9.22/friday/**, goal.ttl, prd-ard.md unchanged (git diff 04599d6 HEAD -- those paths: empty, receipts/v26.9.23/V23-M.gate/r2/checks.log); ggen_igniter untouched except the six local create-only episode refs",
   "generated_vs_handwritten": {
    "generated": [
-    "docs/sjira/v26.9.23/episodes/me-1/** and me-2/** (by mix xaas.machine_experience: prepare + run; the MachineExperience record by ggen_igniter SemanticJira.machine_experience/1)"
+    "docs/sjira/v26.9.23/episodes/me-1/** and me-2/** (by mix xaas.machine_experience: prepare + run; the MachineExperience record by ggen_igniter SemanticJira.machine_experience/1; regenerated in repair 2 at d9939a6 with the code of ffbbee0)"
    ],
    "handwritten": [
     "lib/xaas/ultracode/machine_experience.ex",
@@ -135,11 +173,11 @@
    "llm_candidate": [
     "docs/sjira/v26.9.23/episodes/me-1/exploration.json (the one-time exploration, producer llm:claude-opus-5-5@B1b/V23-M; a candidate, admitted only through the no-LLM drive + independent court + revert falsifier)"
    ],
-   "ledger": "HANDWRITTEN.md: 3 rows (repair 1 updated their element text), UNSUPPORTED(generator-capability) (326 ggen-marketplace packs checked: experience-projection-pack = MX projections of capabilities, sa2a-bridge-pack = autofde-lab MachineExperienceCompiler port edge, dfcm-explore-* = candidate-space ontologies; none renders an applicability router, admission gate or exploration budget; semantic-jira-pack has no ARD section 15 properties)"
+   "ledger": "HANDWRITTEN.md: 3 rows (repair 1 and repair 2 updated their element text), UNSUPPORTED(generator-capability) (326 ggen-marketplace packs checked: experience-projection-pack = MX projections of capabilities, sa2a-bridge-pack = autofde-lab MachineExperienceCompiler port edge, dfcm-explore-* = candidate-space ontologies; none renders an applicability router, admission gate, admission verifier or exploration budget; semantic-jira-pack has no ARD section 15 properties and no shape for the admission node; ggen_igniter's SemanticJira.digest/1 is not reachable from xaas at compile time (xaas pins the hex release, which has no SemanticJira), so its formula is bound in MachineExperience.experience_digest/1 and qualified against the real function by admit/4, the e2e test and the GC23-9 court)"
   }
  },
  "replay": {
-  "durable_location": "receipts/v26.9.23/V23-M.gate/ (+ r1/ for repair 1) + docs/sjira/v26.9.23/episodes/me-1/ + docs/sjira/v26.9.23/episodes/me-2/",
+  "durable_location": "receipts/v26.9.23/V23-M.gate/ (+ r1/ for repair 1, r2/ for repair 2) + docs/sjira/v26.9.23/episodes/me-1/ + docs/sjira/v26.9.23/episodes/me-2/",
   "commands": [
    {
     "cmd": "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/machine_experience_test.exs && sh docs/sjira/v26.9.23/courts/GC23-9.sh  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23m XAAS_DIR=/Users/sac/wt/v26922/v23/V23-M)",
@@ -167,7 +205,7 @@
    },
    {
     "cmd": "MIX_ENV=test MIX_TEST_PARTITION=_v23m sh docs/sjira/v26.9.23/courts/no_llm_env.sh -- mix xaas.machine_experience --name me-1 --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --ggen-build-path <private clone> --work-root <scratch>   (with docs/sjira/v26.9.23/episodes/me-1/exploration.json present)",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ a2d60a0",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ a2d60a0 (episodes superseded by the repair-2 regeneration at d9939a6 below)",
     "exit": 0,
     "summary": "episode 1: route UNKNOWN -> exploration admitted (budget used: 1/2 drive runs, 1/2 candidates, 22/1800 s) -> recipe:mix-format through the no-LLM drive ALIVE (independent pass, revert killed) -> ggen_igniter machine_experience/1 + SHACL (sj:MachineExperienceShape, 1 focus node) -> admitted https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2; OCEL 15 events (3 LLM-provider, 2 exploration, 1 MachineExperienceAdmitted), 20 steps",
     "output_sha256": "d001f41ecd592dee00ffc292e8cccad0ea6be080f66753ad9cd58a3851214771",
@@ -175,7 +213,7 @@
    },
    {
     "cmd": "MIX_ENV=test MIX_TEST_PARTITION=_v23m sh docs/sjira/v26.9.23/courts/no_llm_env.sh -- mix xaas.machine_experience --name me-2 --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --ggen-build-path <private clone> --work-root <scratch> --experience docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ a2d60a0",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ a2d60a0 (episodes superseded by the repair-2 regeneration at d9939a6 below)",
     "exit": 0,
     "summary": "episode 2 (different subject, same failure class, no capability): route KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2 (capability from xme:admittedCapability), no exploration artifact, drive ALIVE; OCEL 12 events (0 LLM-provider, 0 exploration), 16 steps",
     "output_sha256": "4691a8e11637208565737e68f3ec9bcb71b22613995a7259d35fbbdbec914a14",
@@ -183,7 +221,7 @@
    },
    {
     "cmd": "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/machine_experience_test.exs && sh docs/sjira/v26.9.23/courts/GC23-9.sh  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23m, XAAS_DIR=/Users/sac/wt/v26922/v23/V23-M)",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e (superseded by the repair-2 runs at 0ddb308 below)",
     "exit": 0,
     "summary": "LANE GATE on the committed subject d19623e against the judge ggen_igniter-int 3937a4f: format 0; compile --force --warnings-as-errors 0 (Compiling 516 files, Generated xaas app); 23 tests, 0 failures, 0 skipped (19 unit/CLI incl. typed applicability, unevaluable route refusal, exploration-budget admission, within_budget/2, runner-level F3 guard; 4 end-to-end: two-episode ratchet, time_s overrun -> UNKNOWN, route_capability_mismatch, budget exhaustion); GC23-9 court exit 0 ALIVE incl. the new unevaluable-predicate falsifier",
     "output_sha256": "8ff5bcc43ad228759543120254faa80a24fa9357320f56a08a3fcefc90e06dfe",
@@ -191,7 +229,7 @@
    },
    {
     "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-9 --receipts-dir <scratch>  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23m); python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-M.gate/r1/GC23-9.json receipts/v26.9.23/V23-M.gate/r1/STOP-GC-26.9.23.json",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e (superseded by the repair-2 runs at 0ddb308 below)",
     "exit": 0,
     "summary": "compound exit = the validator's (0): GC23-9 row ALIVE, exit 0, 17.3 s, gate receipt ADMITTED; order V23-M digest sha256:10199e1d... = DRIVER.md; the stop court process itself exits 1 because STOP=false with only GC23-9 run (recorded under observations) -- the expected checkpoint verdict, not a gate failure; both copied receipts ADMITTED",
     "output_sha256": "7b4a84fb30f9b91a82b7bf729fdfdbd1561994f292386aa1ca24ad9752f68668",
@@ -199,7 +237,7 @@
    },
    {
     "cmd": "python3 mutate.py (scratch worktree of d19623e with an APFS clone of _build/test, MIX_TEST_PARTITION=_v23mr1mut; each mutant applied, compiled, the named tests run, then restored with git checkout)",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e (superseded by the repair-2 runs at 0ddb308 below)",
     "exit": 0,
     "summary": "revert-mutation of the repair: R1 applicability swallows the SPARQL error -> 4 tests fail + court REFUSED (exit 1); R2b post-drive meter ignores time -> overrun e2e fails; R3b admission ignores exploration time -> admission test fails; R2bR3b both (the doctrine scenario) -> overrun e2e fails; R4 (=mut1 B4) route_capability unchecked -> mismatch e2e fails; R5 (=mut1 B9) runner guard blind -> runner F3 test fails; R6 unknown.json hides driven heads -> overrun e2e fails; R2/R3/R2R3 blunt forms fail compile (--warnings-as-errors) and tests; R7 equivalence asserted true: the compile gate refuses it (the type checker flags the dead divergence clause under --warnings-as-errors) but the tests pass 23/23 -- survives at test level (see notes); after each mutant the tree was restored and recompiled clean; scratch DB partitions dropped, scratch worktree removed",
     "output_sha256": "171dc90e3121aec0f6da047ec87d7ba7782d2662c54cd696fe2a7d0c2192e6b2",
@@ -207,7 +245,7 @@
    },
    {
     "cmd": "sh replay.sh: no_llm_env.sh -- mix xaas.machine_experience --prepare (me-1, me-2; --subject-repo <scratch clone of /Users/sac/ggen_igniter> --base c90c17b878d96e14a008c1de498555bc97515937) then --name me-1 (without, then with the committed exploration.json) and --name me-2 --experience <replayed me-1 TTL>, all --no-pin --out-root <scratch>; --route over the COMMITTED me-1 graph",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e (superseded by the repair-2 runs at 0ddb308 below)",
     "exit": 0,
     "summary": "the repaired code reproduces the committed episodes against the judge: drift commits 92d0a43/3660553 equal, work.json byte-identical; me-1 without exploration exit 4 UNKNOWN (0 experiences considered); me-1 with exploration exit 0 ALIVE, 20 steps, 15 events, same by_class counts, 3 LLM-provider / 2 exploration events, equivalent true, used 1 drive / 21 s of 1800; me-2 exit 0 KNOWN from the replayed ME, 16 steps, 12 events, 0 LLM-provider / 0 exploration; the committed me-1 graph still routes me-2 KNOWN; the four episode refs in /Users/sac/ggen_igniter unchanged",
     "output_sha256": "f3c345e728967c754a0571a96dadc3016a085ba73ee3be5a745d34beca1e881f",
@@ -215,11 +253,59 @@
    },
    {
     "cmd": "python3 ~/.claude/dfcm/validate_receipt.py on r1/GC23-9.json and r1/STOP-GC-26.9.23.json; grep -rnE mock patterns over the lane test/lib/script/court + semantic_drive(.ex, /ocel.ex); git diff --name-only 04599d6 HEAD -- reserved files, goal.ttl, prd-ard.md; shasum prd-ard.md; ggen_igniter episode refs; df",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e (superseded by the repair-2 runs at 0ddb308 below)",
     "exit": 0,
     "summary": "both gate/stop receipts ADMITTED; 0 mock matches; reserved files, goal.ttl, prd-ard.md unchanged (prd-ard sha256 7c8797b2... 39386 bytes); episode refs unchanged (92d0a43 / bd84b3e / 3660553 / 48ae4ad); 50 GB free",
     "output_sha256": "e6cced6368f08bff320dc4c3cece69acdbff71d0154ce769bf0817ecb0e47f7c",
     "log": "receipts/v26.9.23/V23-M.gate/r1/checks.pre.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/V23-M.gate/r2/gate.sh: mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/machine_experience_test.exs && sh docs/sjira/v26.9.23/courts/GC23-9.sh  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23m), XAAS_DIR=/Users/sac/wt/v26922/v23/V23-M",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ 0ddb308",
+    "exit": 0,
+    "summary": "LANE GATE on the committed subject 0ddb308 against the judge ggen_igniter-int 3937a4f: format 0; compile --force --warnings-as-errors 0 (Compiling 516 files, Generated xaas app); 25 tests, 0 failures, 0 skipped (21 unit/CLI incl. every routing-time edit class refused with its named check, an unverifiable admission beside a sound one refused, a sealed unevaluable predicate refused, the new admission refusals, the unknown-FILTER-function admission refusal; 4 end-to-end incl. the xaas experience digest equal to the real machine_experience/1 digest and the runner refusing an edited admission); GC23-9 court exit 0 ALIVE with both digests recomputed (python + ggen_igniter digest/1), SHACL + anti-vacuity, and 9 route + 2 runner falsifiers firing",
+    "output_sha256": "90e7b6aa83098f9fd92f8655fbdae1984ecad0f98657471f1b844d506b0ad528",
+    "log": "receipts/v26.9.23/V23-M.gate/r2/gate.log"
+   },
+   {
+    "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-9 --receipts-dir <scratch>  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23m); python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-M.gate/r2/GC23-9.json receipts/v26.9.23/V23-M.gate/r2/STOP-GC-26.9.23.json",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ 0ddb308",
+    "exit": 0,
+    "summary": "compound exit = the validator's (0): GC23-9 row ALIVE, exit 0, 41.7 s, gate receipt ADMITTED (subject_sha 0ddb308); order V23-M digest sha256:10199e1d... = DRIVER.md; the stop court process itself exits 1 because STOP=false with only GC23-9 run (recorded under observations); both copied receipts ADMITTED",
+    "output_sha256": "d2ccf0861be9e92e77fc8bd7553d4aeb21ac9b7a8423fb9430dc4dfe1b76f519",
+    "log": "receipts/v26.9.23/V23-M.gate/r2/stop-court.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/V23-M.gate/r2/regen.sh: no_llm_env.sh -- mix xaas.machine_experience --name me-1 (exploration.json set aside, then restored), --name me-1, --name me-2 --experience docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl; all --ggen-igniter-dir ggen_igniter-int --ggen-build-path <private clone> --work-root <scratch> --pin-ref v23/episode-me-{1,2}-r2-receipt, out-root = the committed episode dirs (their generated files removed first; work.json, prepare.json, exploration.json kept)",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ 835925d + the working tree whose code was then committed unchanged as ffbbee0 (episodes committed as d9939a6)",
+    "exit": 0,
+    "summary": "me-1 before exploration exit 4 UNKNOWN(no_capability_no_experience), 0 considered; me-1 with exploration exit 0 ALIVE, 20 steps, 15 events, admitted https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 (sorted refs, admission digest v2); me-2 exit 0 KNOWN from it, 16 steps, 12 events; new create-only refs v23/episode-me-1-r2-receipt = 77df082, v23/episode-me-2-r2-receipt = 1bbbdcf; earlier refs unchanged",
+    "output_sha256": "47b425de98f3a8968b3d7c09aa2ffaa0c55665cc298ccdca41335997a6b51f0d",
+    "log": "receipts/v26.9.23/V23-M.gate/r2/regen.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/V23-M.gate/r2/replay.sh: prepare (me-1, me-2; scratch clone of /Users/sac/ggen_igniter, recorded base c90c17b) then --name me-1 (without, then with the committed exploration.json) and --name me-2 --experience <replayed me-1 TTL>, all --no-pin --out-root <scratch>; --route over the replayed and the COMMITTED me-1 graph",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d9939a6",
+    "exit": 0,
+    "summary": "the committed code reproduces the committed episodes: drift commits 92d0a43/3660553 equal, work.json byte-identical; me-1 without exploration exit 4 UNKNOWN; me-1 with exploration ALIVE, 20 steps, 15 events, same by_class, equivalent true; me-2 KNOWN, 16 steps, 12 events, 0 LLM-provider / 0 exploration; replayed and committed records both have sorted refs; the admissions differ only in successful_verification (the drive head, a wall-clock commit) and the digest; me-2 routes KNOWN over the replayed AND the committed graph; episode refs unchanged by the replay",
+    "output_sha256": "9b873d2e759aa4702f8053515f3ca5e0d74230b3f5fd10b36c396f1d9362553f",
+    "log": "receipts/v26.9.23/V23-M.gate/r2/replay.log"
+   },
+   {
+    "cmd": "python3 receipts/v26.9.23/V23-M.gate/r2/mutate.py (scratch worktree of d9939a6 with APFS clones of deps and _build/test, MIX_TEST_PARTITION=_v23mr2mut; per mutant: compile --warnings-as-errors, the lane test file, the GC23-9 court; restored with git checkout) + python3 receipts/v26.9.23/V23-M.gate/r2/mutate-names.py (same mutants, test file only, failing test names)",
+    "cwd": "scratch worktree of /Users/sac/xaas @ d9939a6 (removed)",
+    "exit": 0,
+    "summary": "8/8 repair-2 mutants killed (compile --warnings-as-errors 0 for all, so the tests and the court do the killing): M1 route skips the admission digest -- 4 tests (CLI, edit classes, beside, e2e runner) + court (the edited-capability graph is still refused, but as admission_not_closed via the rendered label, not admission_digest_mismatch -> court REFUSED); M2 skips the experience digest -- 2 tests (admission, edit classes) + court (edited-subject refused as admission_digest_mismatch, not experience_digest_mismatch); M3 invalid admissions ignored = the REFUTE-2 drop -- 5 tests + court (no-me routes exit 4 instead of 3); M4 closure skipped -- 1 test + court (extra-triple routes KNOWN, exit 0); M5 admission digest binds only the experience digest (v1-like) -- 2 tests + court (live route over the committed graph refused); M6 refs order unchecked -- 1 test (admission); M7 runner leaves refs unsorted -- e2e (the real record is refused at admission); M8 ggen digest formula drift -- 2 tests (edit classes, e2e differential) + court (live route refused); restored compile 0, porcelain 0. The mutants ran against d9939a6; 0ddb308 only adds a test",
+    "output_sha256": "c2c90da2d1e7682dda801900bc26291d98e6797ce16a174bd82e82d4f3906e2d",
+    "log": "receipts/v26.9.23/V23-M.gate/r2/mutations.log"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py on receipts/v26.9.23/V23-M.gate/r2/GC23-9.json and STOP-GC-26.9.23.json; grep -rn mock patterns over the lane test/lib/script/court + semantic_drive(.ex, /ocel.ex); git diff --stat 04599d6 HEAD -- reserved files, goal.ttl, prd-ard.md; shasum prd-ard.md; ggen_igniter episode refs; df",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ 0ddb308",
+    "exit": 0,
+    "summary": "both gate/stop receipts ADMITTED; 0 mock matches (grep exit 1); reserved files, goal.ttl, prd-ard.md unchanged (prd-ard sha256 7c8797b2... 39386 bytes); refs: v23/episode-me-1 92d0a43, -receipt bd84b3e, -r2-receipt 77df082, v23/episode-me-2 3660553, -receipt 48ae4ad, -r2-receipt 1bbbdcf",
+    "output_sha256": "885c52cdce205111dd61e02192cd061f5c10f87d8ec57eba22d6eb3c4971778c",
+    "log": "receipts/v26.9.23/V23-M.gate/r2/checks.log"
    }
   ],
   "witnesses": [
@@ -254,16 +340,18 @@
  },
  "standing": {
   "value": "ALIVE",
-  "derived_from": "observed runs on the exact committed subject d19623ed280fbdeff831676a5e86d652f8707cd3 against the judge GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f89ecf2b7fa12068406377c05ec1a1b8fc): lane gate exit 0 (format 0, compile --force --warnings-as-errors 0, 23 tests 0 failures 0 skipped, GC23-9 court ALIVE); the real stop court maps GC23-9 ALIVE with an ADMITTED gate receipt; repair mutants R1, R2b, R3b, R2bR3b, R4, R5, R6 killed; episode replay with this code reproduces me-1/me-2. The committed episodes me-1/me-2 were produced by the code of a2d60a0 (under the F3 no-LLM env) and are reproduced by d19623e (replay.log). Regression 113 tests: 2 PRE-EXISTING failures in V23-D's semantic_drive_test against the moved judge (not in the lane gate; identical at base 04599d6). Order tuple digest = DRIVER.md V23-M digest."
+  "derived_from": "observed runs on the exact committed subject 0ddb308f21d930f757cdae78c196cbd3dfb63a04 against the judge GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f89ecf2b7fa12068406377c05ec1a1b8fc): lane gate exit 0 (format 0, compile --force --warnings-as-errors 0, 25 tests 0 failures 0 skipped, GC23-9 court ALIVE); the real stop court maps GC23-9 ALIVE with an ADMITTED gate receipt at this subject; repair-2 mutants M1..M8 killed (at d9939a6, whose code equals this subject's); the committed episodes me-1/me-2 were regenerated with the code of ffbbee0 (= this subject's lib/scripts/court) and are reproduced by it (replay.log). Regression 113 tests: 2 PRE-EXISTING failures in V23-D's semantic_drive_test (lines 107, 345; identical at base 04599d6, r1/preexisting.log) -- not in the lane gate. Order tuple digest = DRIVER.md V23-M digest."
  },
  "falsifiers": {
   "GC23-9 (goal.ttl)": "Episode 2 requires an LLM to rediscover the route, takes at least as many steps as Episode 1, or routes from a literal, and the court still exits 0 -- witnessed refused: M1 (literal capability), M2 (exploration in ep2), M5 (LLM provider in ep2 OCEL), M6 (not fewer steps), M3 (route not citing the experience)",
-  "PR-014 route-from-experience": "removing the sj:MachineExperience node (or its admission node) from the graph makes me-2 route UNKNOWN and the runner refuse to execute (exit 4, no drive, unknown/unknown.json) -- witnessed live in the GC23-9 court and in the e2e test; router code mutation M8 -> court REFUSED",
+  "PR-014 route-from-experience": "removing the whole admitted experience (both nodes), or its admission node, makes me-2 route UNKNOWN (exit 4) and the runner refuse to execute (exit 4, no drive, unknown/unknown.json); removing only the sj:MachineExperience node under an ADMITTED admission refuses the route (exit 3, experience_absent) -- witnessed live in the GC23-9 court and in tests; mutant M3 (invalid admissions ignored) makes no-me exit 4 and is killed by the court and 5 tests",
   "PR-016 budget": "an exploration without an explicit budget is REFUSED(exploration_inadmissible); the budget is metered before each candidate drive (next/2) AND after it (within_budget/2): a candidate that resolves only by overrunning time_s is the receipted UNKNOWN(exploration_budget_exhausted, exhausted time_s) naming the drive's head, no experience (e2e test, real drive with a 6 s budget of which the proposal used 5 s; mutants R2b, R2bR3b, R6 killed); admit/4 refuses exploration_unrecorded / exploration_unbound / exploration_over_budget (tests; R3b killed); a candidate that cannot be driven exhausts the budget (e2e); the court refuses an over-budget committed episode (M4)",
   "ARD section 15 admission": "the admission gate refuses a non-CANDIDATE record, unmapped fields, malformed digests, a missing ARD field, a non-canonical capability, a predicate or bounds that exclude the source order, a non-ALIVE source or an unkilled revert falsifier (tests); ggen_igniter's SHACL court refuses the record promoted to ALIVE (court)",
   "F3 on the ratchet path": "mix xaas.machine_experience --route with ANTHROPIC_API_KEY=x -> exit 3 REFUSED(llm_credential_present) (court + test); Episode.run/1 itself refuses a credential variable or a claude binary on PATH before reading or writing anything (test; mut1 B9 / R5 killed)",
-  "applicability predicate (doctrine repair)": "an admitted experience whose predicate SPARQL.ex cannot evaluate makes the route REFUSED(experience_predicate_unevaluable), exit 3 -- alone and beside a sound experience -- never UNKNOWN(no_capability_no_experience); admission reports REFUSED(predicate_unevaluable), not predicate_excludes_source (tests + GC23-9 court falsifier; mutant R1 killed by 4 tests and the court)",
-  "route provenance (mut1 B4)": "SemanticDrive refuses REFUSED(route_capability_mismatch) at resolve, before any lease, when the route names a capability other than the tuple's: e2e test, ledger unchanged, no epoch worktree (R4 killed)"
+  "applicability predicate (doctrine repair)": "a SEALED admission whose predicate SPARQL.ex cannot evaluate makes the route REFUSED(experience_predicate_unevaluable), exit 3 -- alone and beside a sound experience (tests; court: python-resealed graph, which also shows python's v2 admission digest equals the router's); admission reports REFUSED(predicate_unevaluable); an unknown IRI FILTER function evaluates false and admission refuses it as predicate_excludes_source (test)",
+  "route provenance (mut1 B4)": "SemanticDrive refuses REFUSED(route_capability_mismatch) at resolve, before any lease, when the route names a capability other than the tuple's: e2e test, ledger unchanged, no epoch worktree (R4 killed)",
+  "admission verification (doctrine repair 2)": "an ADMITTED node edited after admit/4 never routes: capability / predicate / bounds / verification / problem class / sj:workOrderDigest rewritten -> admission_digest_mismatch; record subject -> experience_digest_mismatch; record standing ALIVE -> experience_not_candidate; second capability value -> admission_field_not_single; extra triple -> admission_not_closed; verdict ADMITTED+REFUSED -> admission_not_single; falsifiers removed -> ard_field_missing; undecodable bounds -> consequence_bounds_undecodable (tests); live in the court: no-me, edited capability, edited work-order digest, edited subject, extra triple, undecodable copy BESIDE the sound admission -> exit 3 with the named check, runner over the edited graph -> exit 3, no drive; mutants M1, M2, M4, M5, M8 killed",
+  "experience digest bound to ggen_igniter (repair 2)": "the xaas formula (experience_digest/1) differs from ggen_igniter's SemanticJira.digest/1 on a real record -> admit/4 refuses experience_digest_mismatch, the e2e differential assertion fails and the court's live route over the committed graph is refused; the court additionally has python and ggen_igniter's own digest/1 recompute the committed record (mutant M8 killed by 2 tests and the court)"
  },
  "notes": [
   "ARD section 15 fields vs the FRI-T1 shape: ggen_igniter's SemanticJira.machine_experience/1 manufactures (subject, work_order_digest, execution_receipt_hash, observation_refs, verification_digest, resulting_state_digest, replay_identity, standing CANDIDATE, authority NONE, experience_digest), and sj:MachineExperienceShape is sh:closed over exactly those. The ARD section 15 fields (problem_class ... source_episode) therefore ride on a linked xme:AdmittedExperience node (xme: = https://xaas.dev/ontology/machine-experience#), not on the sj:MachineExperience node; the shape judges the sj: node (focus_node_count 1) and the router requires both. The ME's sj:standing stays CANDIDATE as the shape demands; admission is the xme:admission ADMITTED fact written only after the xaas gate and the SHACL court pass.",
@@ -273,7 +361,15 @@
   "OCEL: ARD section 13 names a minimum class set; RouteDecided, ExplorationStarted and ExplorationCompleted are declared as extension classes only in the MachineExperience episode logs (fmt-1 renders byte-identically).",
   "Repair 1 answers: (doc1-a) applies?/2 swallowed errors -> applicability/2 typed, callers refuse (route fails closed); (doc1-b) time budget unchecked after the drive -> within_budget/2 in the runner + exploration binding in admit/4, e2e overrun test; (doc1-c) episode.json ocel.equivalent now computed by Ocel.equivalent?/2 and a divergence is REFUSED(ocel_forms_diverge); (doc1-d) path scope: goal.ttl stays stable (not editable by this lane); the out-of-scope files remain as disclosed in consequence.path_scope_note; (mut1 B4, B9) witnessed by new tests; (mut1 line-712) the e2e subject base is the committed episodes' recorded base; (gate) the superseded stop-court entry's output_sha256 now hashes stop-court.log.",
   "Repair mutant R7 (episode.json equivalence asserted true) is refused only by the lane gate's compile step (the Elixir type checker reports the divergence clause unreachable under --warnings-as-errors); no test makes court_form/2 and standard_form/2 diverge, since both render the same observations, so the ocel_forms_diverge branch has no witnessed refusal at test level. The value written is now the computed one (the committed episodes' equivalence was independently recomputed True by the doctrine court; replay.log shows equivalent true).",
-  "ggen_igniter-int 3937a4f format drift (found by this repair, owned elsewhere): lib/ggen_igniter/semantic_jira/bootstrap.ex is unformatted under ggen_igniter's .tool-versions Elixir 1.18.4-otp-27 (mix format --check-formatted exit 1, line 245) and clean under 1.19.5. It breaks any episode whose subject base is the int HEAD (V23-D's semantic_drive_test 2 failures; V23-M's e2e before this repair). Not editable from this lane (another executor's worktree); successor item below."
+  "ggen_igniter-int 3937a4f format drift (found by this repair, owned elsewhere): lib/ggen_igniter/semantic_jira/bootstrap.ex is unformatted under ggen_igniter's .tool-versions Elixir 1.18.4-otp-27 (mix format --check-formatted exit 1, line 245) and clean under 1.19.5. It breaks any episode whose subject base is the int HEAD (V23-D's semantic_drive_test 2 failures; V23-M's e2e before this repair). Not editable from this lane (another executor's worktree); successor item below.",
+  "Repair 2 answers B1b doc2 (DOCTRINE, admission_vacuous): REFUTE 1 -- route/2 now routes only from an admission that re-verifies from the graph (MachineExperience.admissions/1): admit/4's record checks, sj:experienceDigest recomputed, xme:admissionDigest recomputed (v2 binds the ARD fields AND the whole record, including sj:workOrderDigest which ggen_igniter's digest elides), both nodes closed over their rendering; the former test 'rewrite the capability and the route follows' now asserts REFUSED(experience_admission_invalid, admission_digest_mismatch), and 'the capability comes from the graph' is shown by an admission of recipe:other-fix made through admit/4. REFUTE 2 -- `else _ -> []` is gone: every node lands in admitted / invalid / not_admitted; any invalid ADMITTED node refuses the route, including beside a sound one naming another capability (the drop's KNOWN).",
+  "Why the episodes were regenerated (d9939a6): the committed repair-1 graph cannot verify -- its admission digest was v1 and its record's observation refs were in an order RDF's set cannot carry back, so ggen_igniter's experience digest is not recomputable from the Turtle (a probe of the repaired router on it: experience_digest_mismatch, computed sha256:639462e1... vs recorded sha256:d8e720a5...). The runner now sorts the refs and admit/4 refuses unsorted ones. New receipt heads are pinned under new create-only refs; nothing earlier was moved or deleted (history 14116b1; refs bd84b3e, 48ae4ad).",
+  "Scope of the digests (stated in the moduledoc): recomputation detects any edit made without recomputing the digests; a writer who recomputes them forges a self-consistent node -- content addressing, not authority. Authority stays with BRCE, leases and receipts; the GC23-9 court's python-resealed falsifier is exactly such a self-consistent node, and it still cannot route KNOWN with an unevaluable predicate.",
+  "Route-time SHACL: the router re-runs the record constraints the pack's sj:MachineExperienceShape states (CANDIDATE, NONE, sha256 digests, exact field set, closed node) in xaas; the real SHACL court runs in the GC23-9 court (ggen_igniter via GGEN_IGNITER_DIR), since ggen_igniter's SemanticJira is not a compile-time dependency of xaas.",
+  "Repair 2 answers B1b doc2 (DOCTRINE, admission_vacuous): REFUTE 1 -- route/2 now routes only from an admission that re-verifies from the graph (MachineExperience.admissions/1): admit/4's record checks, sj:experienceDigest recomputed, xme:admissionDigest recomputed (v2 binds the ARD fields AND the whole record, including sj:workOrderDigest which ggen_igniter's digest elides), both nodes closed over their rendering; the former test 'rewrite the capability and the route follows' now asserts REFUSED(experience_admission_invalid, admission_digest_mismatch), and 'the capability comes from the graph' is shown by an admission of recipe:other-fix made through admit/4. REFUTE 2 -- `else _ -> []` is gone: every node lands in admitted / invalid / not_admitted; any invalid ADMITTED node refuses the route, including beside a sound one naming another capability (the drop's KNOWN).",
+  "Why the episodes were regenerated (d9939a6): the committed repair-1 graph cannot verify -- its admission digest was v1 and its record's observation refs were in an order RDF's set cannot carry back, so ggen_igniter's experience digest is not recomputable from the Turtle (a probe of the repaired router on it: experience_digest_mismatch, computed sha256:639462e1... vs recorded sha256:d8e720a5...). The runner now sorts the refs and admit/4 refuses unsorted ones. New receipt heads are pinned under new create-only refs; nothing earlier was moved or deleted (history 14116b1; refs bd84b3e, 48ae4ad).",
+  "Scope of the digests (stated in the moduledoc): recomputation detects any edit made without recomputing the digests; a writer who recomputes them forges a self-consistent node -- content addressing, not authority. Authority stays with BRCE, leases and receipts; the GC23-9 court's python-resealed falsifier is exactly such a self-consistent node, and it still cannot route KNOWN with an unevaluable predicate.",
+  "Route-time SHACL: the router re-runs the record constraints the pack's sj:MachineExperienceShape states (CANDIDATE, NONE, sha256 digests, exact field set, closed node) in xaas; the real SHACL court runs in the GC23-9 court (ggen_igniter via GGEN_IGNITER_DIR), since ggen_igniter's SemanticJira is not a compile-time dependency of xaas."
  ],
  "successor": {
   "checkpoint": "v23:GC-26.9.24",
@@ -283,10 +379,36 @@
    "ggen-ecosystem-ocel-pack: admit the extension event classes (RouteDecided, ExplorationStarted, ExplorationCompleted)",
    "SemanticDrive.Episode.prepare/1: take the lane name for the drift commit message",
    "ggen_igniter (V23-B owner / integrator): mix format bootstrap.ex under the pinned Elixir 1.18.4 in ggen_igniter-int (drift at 3937a4f); then V23-D's semantic_drive_test passes against the int HEAD again",
-   "Episode.prepare/1: refuse a subject base that is not format-clean under the target's pinned toolchain (typed REFUSED(base_not_clean)), so a drift episode's consequence is exactly its drift file by admission, not by base choice"
+   "Episode.prepare/1: refuse a subject base that is not format-clean under the target's pinned toolchain (typed REFUSED(base_not_clean)), so a drift episode's consequence is exactly its drift file by admission, not by base choice",
+   "semantic-jira-pack: a closed shape for the admission node (xme: fields) so SHACL judges it too, and ggen_igniter's SemanticJira published to hex so xaas calls digest/1 instead of binding its formula (retires MachineExperience.experience_digest/1)",
+   "ggen_igniter SemanticJira.digest/1 elides work_order_digest from the experience digest (drop_digest_fields); the xaas admission digest v2 binds it -- decide in the pack whether the experience digest should"
   ]
  },
  "observations": [
+  {
+   "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-9 --receipts-dir <scratch>  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23m)",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-M @ 0ddb308",
+   "exit": 1,
+   "summary": "STOP_COURT_EXIT=1: STOP(GC-26.9.23)=false because only GC23-9 ran; GC23-9 ALIVE exit 0 ADMITTED; STOP receipt ADMITTED",
+   "output_sha256": "d2ccf0861be9e92e77fc8bd7553d4aeb21ac9b7a8423fb9430dc4dfe1b76f519",
+   "log": "receipts/v26.9.23/V23-M.gate/r2/stop-court.log"
+  },
+  {
+   "cmd": "mix test test/xaas/ultracode/semantic_drive_test.exs test/xaas/sa2a/route_test.exs test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/ocel_conformance_test.exs  (env GGEN_IGNITER_DIR=ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23mreg)",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d9939a6",
+   "exit": 2,
+   "summary": "regression: 113 tests, 2 failures, both V23-D's semantic_drive_test (lines 107 and 345), PRE-EXISTING (identical at base 04599d6: r1/preexisting.log; repair 2 does not touch semantic_drive*); 111 pass",
+   "output_sha256": "fd0bd4209f02882e535c5777893aa5dcbd8cdf41932b7f47bcad4a324b21ae33",
+   "log": "receipts/v26.9.23/V23-M.gate/r2/regression.log"
+  },
+  {
+   "cmd": "sh receipts/v26.9.23/V23-M.gate/r2/gate.sh at d9939a6 and the stop court at d9939a6 (before the test-only commit 0ddb308)",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d9939a6",
+   "exit": 0,
+   "summary": "gate exit 0 (25 tests 0 failures, court ALIVE); stop court GC23-9 ALIVE exit 0 ADMITTED (process exit 1, STOP=false)",
+   "output_sha256": "75a529e4dd7caf935c58901cb0d144072bdcc2382fd2a8a5d8c07600bdb47f8d",
+   "log": "receipts/v26.9.23/V23-M.gate/r2/gate-d9939a6.log"
+  },
   {
    "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-9 --receipts-dir <scratch>  (env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (3937a4f), LLM variables unset, MIX_TEST_PARTITION=_v23m)",
    "cwd": "/Users/sac/wt/v26922/v23/V23-M @ d19623e",
