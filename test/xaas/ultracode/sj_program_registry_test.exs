@@ -49,7 +49,7 @@ defmodule Xaas.Ultracode.SjProgramRegistryTest do
       assert %{path: path, sensing: sensing, suite: suite, canonical_suite: canonical} =
                entry = Map.fetch!(repos, alias_name)
 
-      assert path == Path.expand("~/xaas-worktrees/repos/#{alias_name}")
+      assert path == Path.expand("~/xaas/worktrees/repos/#{alias_name}")  # current worktree-root convention (moved from ~/xaas-worktrees)
       assert entry.refresh == true
       assert suite == "#{alias_name}-dod"
       assert canonical == "#{alias_name}-canonical"

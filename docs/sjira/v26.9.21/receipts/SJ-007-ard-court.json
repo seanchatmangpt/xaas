@@ -1,0 +1,150 @@
+{
+  "ard": {
+    "path": "/Users/sac/wt/v26922/xaas/int/docs/sjira/v26.9.21/ash-atlassian-ard.md",
+    "sha256": "262900eeb815da7c9e3c8d32aa5b2c4600b9efec3200643be250081df03d6acc"
+  },
+  "checks": [
+    {
+      "details": [
+        "7 required sections present"
+      ],
+      "id": "ARD-001",
+      "name": "required sections",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "manifest parsed"
+      ],
+      "id": "ARD-002",
+      "name": "machine manifest parses",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "/Users/sac/ash_atlassian/ontology/atlassian-profile.ttl: 6 node shapes"
+      ],
+      "id": "ARD-003",
+      "name": "ontology source named, resolvable, parsed",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "4 public ontologies pinned and matching"
+      ],
+      "id": "ARD-004",
+      "name": "public ontologies exist, parse, match pinned sha256",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "6 resources match 6 node shapes"
+      ],
+      "id": "ARD-005",
+      "name": "resources equal ontology node shapes and target classes",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "every class and path resolves in a pinned public ontology"
+      ],
+      "id": "ARD-006",
+      "name": "every target class and property path is a declared public term",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "no local class or property declared"
+      ],
+      "id": "ARD-007",
+      "name": "ontology declares no local class or property",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "6 resources routed through /Users/sac/ash_atlassian/ggen.toml"
+      ],
+      "id": "ARD-008",
+      "name": "every resource has a generator route",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "9 lib files all generated or declared; 7 residue entries carry UNSUPPORTED"
+      ],
+      "id": "ARD-009",
+      "name": "hand-written residue carries UNSUPPORTED(generator-capability)",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "8 falsifiers"
+      ],
+      "id": "ARD-010",
+      "name": "falsifiers present, complete, unique",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "6 non-goals"
+      ],
+      "id": "ARD-011",
+      "name": "non-goals stated",
+      "status": "pass"
+    },
+    {
+      "details": [
+        "no tripwire fired"
+      ],
+      "id": "ARD-012",
+      "name": "supersession tripwires",
+      "status": "pass"
+    }
+  ],
+  "counts": {
+    "fail": 0,
+    "pass": 12
+  },
+  "court_version": "1",
+  "generated_at": "2026-09-23T01:42:33Z",
+  "order": "SJ-007",
+  "receipt_sha256": "a61763294d370460b371b8e71ddb7ec7003575817e32e5aece728ae2ba4ff64d",
+  "schema": "xaas.sjira.ard-court-receipt/v1",
+  "subjects": {
+    "construction_script": {
+      "path": "/Users/sac/ash_atlassian/ash-atlassian-GENERATED.sh",
+      "sha256": "8690b635928a052638008071bc64964b9f7d1c8684c6426247325d25a59c22b3"
+    },
+    "ggen_manifest": {
+      "path": "/Users/sac/ash_atlassian/ggen.toml",
+      "sha256": "eefcc2e9f8ffbc221e2f4e3a873a7da82d3b09ccc52de83797243aa451681fe7"
+    },
+    "ontology_source": {
+      "path": "/Users/sac/ash_atlassian/ontology/atlassian-profile.ttl",
+      "sha256": "b04ba006799bb91c1a072c30cdf774c908b6034d568236779d2c627810b23571"
+    },
+    "public_ontologies": [
+      {
+        "name": "schema-org",
+        "path": "/Users/sac/ggen-marketplace/ontologies/public/schema-org.ttl",
+        "pinned_sha256": "7784da44bfa147e7c5e3f6eb710cb6e314077e885f3ff28cf954a8c734ee2086"
+      },
+      {
+        "name": "foaf",
+        "path": "/Users/sac/ggen-marketplace/ontologies/public/foaf.ttl",
+        "pinned_sha256": "4db5eee6f999817846b7d71ab16eac627b13c8dba7b5b9747215c33fa80aa4ec"
+      },
+      {
+        "name": "dcterms",
+        "path": "/Users/sac/ggen-marketplace/ontologies/public/dublin-core-terms.ttl",
+        "pinned_sha256": "77ac5110ef369facc765038073cc38396f5211b781a22f42e3ea66254dd8a510"
+      },
+      {
+        "name": "p-plan",
+        "path": "/Users/sac/ggen-marketplace/ontologies/public/xaas-profile-batch-1/p-plan.owl",
+        "pinned_sha256": "b426b2b8471f41a337256d3248fc0f595be8bc83e3969ac27c1dc51f689c5b32"
+      }
+    ]
+  },
+  "verdict": "ACCEPTED"
+}

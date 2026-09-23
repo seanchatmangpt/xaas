@@ -208,7 +208,13 @@ defmodule Xaas.Ultracode.ReposRefreshTest do
     assert entry.refresh
     assert entry.canonical_suite == "durable-canonical"
     # A registered-but-unimplemented suite is a visible gap, never a refusal.
-    assert Repos.gaps(entry) == [:suite_not_registered, :canonical_suite_not_registered]
+    # the ERRC sensing law (ba76798) adds the profile-registration gap for a
+    # sensing name that maps to no implemented profile
+    assert Repos.gaps(entry) == [
+             :suite_not_registered,
+             :canonical_suite_not_registered,
+             :sensing_profile_not_registered
+           ]
 
     assert {:ok, %{status: :current}} = Repos.refresh("durable")
   end
