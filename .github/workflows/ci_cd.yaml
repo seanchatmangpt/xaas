@@ -235,7 +235,10 @@ jobs:
 
   production:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Clean-state prod compile: sparql's generated .erl parser (~5 min) and
+    # ggen_igniter's Rustler NIF in release mode (oxigraph + RocksDB C++) do
+    # not fit in 12 minutes on a hosted runner.
+    timeout-minutes: 45
     name: Exact-head production compile court
     env:
       MIX_ENV: prod
@@ -273,7 +276,8 @@ jobs:
 
   image-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Same clean prod dependency graph as `production`, plus assets and release.
+    timeout-minutes: 60
     needs: [ci, production, asyncapi, workbench]
     name: Build container without publication
     permissions:
