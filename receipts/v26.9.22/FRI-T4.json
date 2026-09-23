@@ -1,0 +1,125 @@
+{
+  "lane": "FRI-T4",
+  "gate": "G5 SA2A conservation (GC-FRI-0800)",
+  "identity": {
+    "subject": "FRI-T4",
+    "repo": "seanchatmangpt/xaas",
+    "subject_sha": "fe6327c7598e1e87f90ea34a39386b9aace02f2d",
+    "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6",
+    "graph_hash": "sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "NONE (local commits on branch fri/FRI-T4 only; no push, merge, publish or registry write)",
+    "actor": "claude-opus-5-5 workflow subagent, lane FRI-T4"
+  },
+  "consequence": {
+    "commits": [
+      "fe6327c7598e1e87f90ea34a39386b9aace02f2d"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "lib/xaas/sa2a/route.ex",
+      "scripts/gen_sa2a_route_fixture.exs",
+      "test/fixtures/sa2a_route/sa2a_task.json",
+      "test/fixtures/sa2a_route/sa2a_task.provenance.json",
+      "test/fixtures/sa2a_route/work_order.json",
+      "test/xaas/sa2a/route_test.exs",
+      "receipts/v26.9.22/FRI-T4.json"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "git worktree add -b fri/FRI-T4 /Users/sac/wt/v26922/fri/FRI-T4 friday/gc-fri-0800",
+        "cwd": "/Users/sac/xaas",
+        "exit": 0,
+        "summary": "HEAD is now at 0d57147 (base_sha)"
+      },
+      {
+        "cmd": "MIX_DEPS_PATH=<scratch>/gi_mix/deps MIX_BUILD_PATH=<scratch>/gi_mix/_build/dev mix run -e 'Code.eval_file(\"/Users/sac/wt/v26922/fri/FRI-T4/scripts/gen_sa2a_route_fixture.exs\")'",
+        "cwd": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+        "exit": 0,
+        "summary": "real GgenIgniter.SemanticJira.admit_work_order/1 + SemanticA2A.task_from_work_order/2 at ggen_igniter 5984ec480c2318e86aa621da5f496e5e014b0fac wrote sa2a_task.json; work_order_digest=sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e; ggen_igniter-int tracked tree left clean"
+      },
+      {
+        "cmd": "(same generator command, second run) && shasum -a 256 test/fixtures/sa2a_route/sa2a_task.json test/fixtures/sa2a_route/sa2a_task.provenance.json",
+        "cwd": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+        "exit": 0,
+        "summary": "BYTE_IDENTICAL_REPLAY: sa2a_task.json 82461b96df166c7b9ff3856bfa50e4512717bcddec917b0566f36f314a2ed4fc before and after",
+        "output_sha256": "82461b96df166c7b9ff3856bfa50e4512717bcddec917b0566f36f314a2ed4fc"
+      },
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "FORMAT_EXIT=0 (tree content identical to subject_sha)",
+        "output_sha256": "32eb44346e0057e3634cd4d26aa2fcbfa5bf459e7a92e02803c20b7d0dc770ee"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "Compiling 505 files (.ex); Generated xaas app; COMPILE_EXIT=0",
+        "output_sha256": "7a9cbcb4c88e12c61411d15b84f929535e392ce06b39ee2e162b2ebc7cdb2380"
+      },
+      {
+        "cmd": "mix test test/xaas/sa2a/route_test.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "56 tests, 0 failures (conservation, 21 mutation-table cases, 21 drop-table cases, python3 cross-implementation digest, resolve/refusal)",
+        "output_sha256": "68f3f21450003d5374a13ba066af03f1cf7d004d5d88b70d32811c87517cc25d"
+      },
+      {
+        "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" test/xaas/sa2a/route_test.exs lib/xaas/sa2a/route.ex scripts/gen_sa2a_route_fixture.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "grep found no matches (exit 1), negated to exit 0: no test doubles in touched files"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/FRI-T4.json on branch fri/FRI-T4 (seanchatmangpt/xaas)"
+  },
+  "falsifiers_exercised": [
+    {
+      "mutation": "falsifier M1: Route.digest/1 made to omit \"postcondition\", then mix test test/xaas/sa2a/route_test.exs (route.ex restored byte-identical after)",
+      "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+      "observed_exit": 2,
+      "expected": "non-zero (court must fail)",
+      "summary": "56 tests, 4 failures: python3 digest cross-check + postcondition mutated at order/task/epoch hops"
+    },
+    {
+      "mutation": "falsifier M2: Route.conserve/3 digest-equality check replaced by `true`, then mix test test/xaas/sa2a/route_test.exs (route.ex restored byte-identical after)",
+      "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+      "observed_exit": 2,
+      "expected": "non-zero (court must fail)",
+      "summary": "56 tests, 24 failures"
+    }
+  ],
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "lane gate (format check, forced warnings-as-errors test compile, route_test.exs 56/0) exit 0 on the tree of subject_sha fe6327c7598e1e87f90ea34a39386b9aace02f2d; falsifiers M1/M2 make the same court fail. Scope: the FRI-T4 lane subject only. G5 gate standing stays UNKNOWN until integration: T1 SHACL admission of the tuple fields, T2's registry entry merged, and a stop-court run on the integrated head."
+  },
+  "tuple_digest": {
+    "fixture": "test/fixtures/sa2a_route/work_order.json",
+    "digest": "sha256:0f61c8058edf3e8e077109277b949fb8e87c1e8028ecb7963c1ce98b8ac5119a",
+    "computed_by": "python3 json.dumps(sort_keys=True, separators=(',', ':'), ensure_ascii=False) + sha256, independent of Route.digest/1 (equality asserted in route_test.exs)"
+  },
+  "generated_vs_handwritten": {
+    "generated": [
+      "test/fixtures/sa2a_route/sa2a_task.json (real GgenIgniter.SemanticA2A.task_from_work_order/2 run)",
+      "test/fixtures/sa2a_route/sa2a_task.provenance.json"
+    ],
+    "handwritten": [
+      "lib/xaas/sa2a/route.ex -- HANDWRITTEN.md row, UNSUPPORTED(generator-capability): no generator renders per-representation field maps or the canonical-JSON tuple digest from the sj: vocabulary contract",
+      "scripts/gen_sa2a_route_fixture.exs camelCase tuple package -- task_from_work_order/2 has no tuple projection (same HANDWRITTEN.md row)",
+      "test/xaas/sa2a/route_test.exs",
+      "test/fixtures/sa2a_route/work_order.json (input data: wo.json row shape + GC-FRI-0800 tuple fields)"
+    ]
+  },
+  "interfaces": {
+    "sa2a_tuple_carrier": "SA2A task input data part with data.schema = \"semantic-jira/route-tuple/v1\" and data.tuple = {subject, postcondition, requiresCapability, evidenceCeiling, authorityCeiling, consequenceClass, exclusions}",
+    "epoch_tuple_carrier": "SemanticWork descriptor bridge {subject, postcondition, evidence_ceiling, authority_ceiling, consequence_class, exclusions}; capability = top-level descriptor `capability` (T2 sj:capabilityId) or bridge `requires_capability`; both present must agree",
+    "registry_shapes_resolved": "map keyed by full capability id (T2 config shape \"recipe:mix-format\" => %{env:, steps:}), key = bare recipe id, or list entries with capability_id; recipe id = entry :id if present else the id after \"recipe:\""
+  }
+}
