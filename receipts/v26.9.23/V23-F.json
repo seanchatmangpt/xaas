@@ -1,0 +1,202 @@
+{
+  "authority": {
+    "actor": "claude-opus-5.5 workflow subagent (lane V23-F)",
+    "ceiling": "CONSTRUCT",
+    "grant": "operator directive 'run ultracode loops overnight until v26.9.23 is complete for all of my projects' via /Users/sac/wt/v26922/v26923/DRIVER.md, wave B0 lane V23-F (lanes/wave-B0.json)"
+  },
+  "consequence": {
+    "commits": [
+      "fb0cff683104873e6c8210a70e921ecb5fdfd5b6",
+      "5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "docs/sjira/v26.9.23/courts/GC23-11.sh",
+      "docs/sjira/v26.9.23/fleet/classification.ttl",
+      "docs/sjira/v26.9.23/fleet/matrix.md",
+      "docs/sjira/v26.9.23/fleet/matrix.ttl",
+      "docs/sjira/v26.9.23/fleet/observations.json",
+      "docs/sjira/v26.9.23/fleet/universe.json",
+      "docs/sjira/v26.9.23/fleet/vocabulary.ttl",
+      "docs/sjira/v26.9.23/prd-ard.md",
+      "scripts/sjira/fleet_matrix.py",
+      "scripts/sjira/test_fleet_matrix.py"
+    ],
+    "remote_effects": []
+  },
+  "external_effects": [
+    "git fetch --all --tags --no-prune --no-recurse-submodules (gc.auto=0, maintenance.auto=false) in the 20 local fleet checkouts named by fleet/universe.json: remote-tracking refs and tags only, nothing forced, no prune",
+    "ggen: fetch exit 1, 36 tag updates refused as 'would clobber existing tag' from origin and upstream (left as found)",
+    "remo: fetch exit 128, https://github.com/seanchatmangpt/remo.git not found",
+    "read-only: gh repo view / gh pr list / git ls-remote; git --no-optional-locks status (no index refresh)"
+  ],
+  "falsifiers": {
+    "chicago_mock_grep": {
+      "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\" scripts/sjira/",
+      "exit": 1,
+      "matches": 0
+    },
+    "court_level": [
+      "C1 (ARD F7) clone at fb0cff6 with the remo classification deleted -> GC23-11.sh prints REFUSED(unclassified): universe repository remo, exit 1",
+      "C2a clone + tiny ggen_igniter repo + scratch ALIVE receipts at both exact heads (validator ADMITTED) -> GC23-11.sh exit 0 ALIVE (court is not vacuous-UNKNOWN); first attempt exposed the relative --int binding defect fixed in 5aba8d0",
+      "C2b (ARD F6) one commit on the xaas clone after the receipt -> REFUSED(stale_subject) for xaas, GC23-11.sh exit 3 UNKNOWN"
+    ],
+    "note": "mutations applied to scratch copies of scripts/sjira/{fleet_matrix,test_fleet_matrix}.py; court falsifiers run on git clone --shared copies of the lane in the session scratchpad; lane worktree untouched",
+    "revert_mutations_killed": [
+      "r1 product script absent (tests only) -> 13 of 13 tests fail (run before the regression test was added)",
+      "M1 unclassified check removed -> test_f7_unclassified_repository_fails_the_fleet_checkpoint + emit test fail",
+      "M2 stale subject accepted -> test_f6_receipt_at_a_stale_subject_no_longer_applies fails",
+      "M3 duplicate check removed -> test_duplicate_classification_is_refused fails",
+      "M4 emit stamps time_ns -> emit determinism test fails",
+      "M5 required-iff-CriticalPath check removed -> test_required_flag_and_successor_target_are_checked fails",
+      "M6 court-reference guard removed -> test_court_executing_a_nonrequired_repository_is_refused fails",
+      "M7 validator verdict ignored -> test_check_standing_refuses_a_receipt_the_validator_does_not_admit fails",
+      "M8 realpath binding reverted -> test_check_standing_binds_a_relative_int_path_to_an_absolute_receipt_repo fails",
+      "M9 dirty count forced to 0 -> test_observe_records_exact_git_state_without_touching_the_checkout fails"
+    ]
+  },
+  "fleet": {
+    "classification": {
+      "blocked": {
+        "ggen-ecosystem": "autonomic-crown LFS smudge failure at main 21a8deee (gh runs 35824027486, 35801445133)"
+      },
+      "counts": {
+        "Blocked": 1,
+        "CriticalPath": 2,
+        "Refused": 3,
+        "Successor": 14,
+        "Unsupported": 1
+      },
+      "critical_path": [
+        "xaas",
+        "ggen_igniter"
+      ],
+      "not_required_with_reason": {
+        "ash_a2a": "no GC23 court executes the checkout; xaas links hex 26.9.12 (mix.lock checksum) inside the xaas subject",
+        "autofde-lab": "no GC23 court executes it at this base; bridge executable + target suites only; court-reference guard re-opens if V23-M's GC23-9 court names it"
+      },
+      "path": "docs/sjira/v26.9.23/fleet/classification.ttl",
+      "refused": [
+        "remo",
+        "turbo-fieldfare",
+        "unjucks"
+      ],
+      "unsupported": {
+        "chatman-ecosystem": "no remote; published HEAD c59596f5 absent locally"
+      }
+    },
+    "matrix": {
+      "md": "docs/sjira/v26.9.23/fleet/matrix.md",
+      "md_sha256": "800b44b1fe416ba63d9a340865700e9e95e1b6db35d34bac60fa750ebb008b28",
+      "ttl": "docs/sjira/v26.9.23/fleet/matrix.ttl",
+      "ttl_sha256": "fc30cfe036021d365a7ac1b32d616dcbc0da98671ece7513435b75b63220c99e"
+    },
+    "observations": {
+      "fetch_failed": [
+        "ggen (36 tag clobbers refused)",
+        "remo (remote not found)"
+      ],
+      "no_local_checkout": [
+        "engineering-standards (gh repo view exit 0, PUBLIC, main; ls-remote HEAD 610944c4)"
+      ],
+      "observed_at": "2026-09-23T06:40:42Z",
+      "path": "docs/sjira/v26.9.23/fleet/observations.json",
+      "sha256": "7ccdadd5a1ce2fbfa60bcd1d2627d9f2768b1ec8706d451c614b3029826dc817"
+    },
+    "universe": {
+      "path": "docs/sjira/v26.9.23/fleet/universe.json",
+      "repositories": 21,
+      "sha256": "29bd4c7e1d2b65ecadccab20adfe8b5553fb4e20a8d5ae36926edf225425c6fa",
+      "sources": {
+        "ard-4": 10,
+        "fleet.ttl": 16,
+        "survey.json": 19
+      }
+    },
+    "vocabulary": "docs/sjira/v26.9.23/fleet/vocabulary.ttl (goal-graph-local; pack lacks fleet terms)"
+  },
+  "gc23_11": {
+    "court": "sh docs/sjira/v26.9.23/courts/GC23-11.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-F",
+    "exit": 3,
+    "exit_mapping": "REFUSED_EXIT=1 (classification violation), UNKNOWN_EXIT=3 (standing not established); stop court on friday/gc-fri-0800 maps 0->ALIVE, non-zero->UNKNOWN. Align UNKNOWN_EXIT with any distinct code V23-P lands (same path, merged at integration).",
+    "output_sha256": "f41bc566ca31bfa55b97bd1ab48b80bdf74af17b7b9c8b1787019f55122858e9",
+    "reason": "check-classification OK (F7 holds); check-standing: xaas and ggen_igniter have no validator-ADMITTED ALIVE receipt at their exact heads. Expected until release (V23-Q): such a receipt must live outside its subject (a commit cannot carry a receipt of itself), e.g. GC23_FLEET_RECEIPTS_DIR=/Users/sac/wt/v26922/v26923/receipts/fleet.",
+    "standing": "UNKNOWN"
+  },
+  "generated_vs_handwritten": {
+    "generated": [
+      "docs/sjira/v26.9.23/fleet/matrix.ttl",
+      "docs/sjira/v26.9.23/fleet/matrix.md",
+      "docs/sjira/v26.9.23/fleet/universe.json",
+      "docs/sjira/v26.9.23/fleet/observations.json"
+    ],
+    "handwritten": [
+      "scripts/sjira/fleet_matrix.py",
+      "scripts/sjira/test_fleet_matrix.py",
+      "docs/sjira/v26.9.23/courts/GC23-11.sh",
+      "docs/sjira/v26.9.23/fleet/classification.ttl (judgement over observations)",
+      "docs/sjira/v26.9.23/fleet/vocabulary.ttl"
+    ],
+    "ledger": "HANDWRITTEN.md Active row: UNSUPPORTED(generator-capability); checked repo-as-found-pack, repo-reconciliation-pack, github-controloutcome-observation-pack, semantic-jira-pack on friday/gc-fri-0800; GGEN_IGNITER-26922-15 fleet observer is uncommitted in another executor's worktree"
+  },
+  "identity": {
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "branch": "v23/V23-F",
+    "checkpoint": "GC-26.9.23",
+    "gate": "GC23-11",
+    "graph_hash": "sha256:d9e99f074ef2a8c994119681d9359ea1778e68333cc8da94b6b1c0aa44873636",
+    "graph_hash_of": "docs/sjira/v26.9.23/fleet/classification.ttl",
+    "prose": "docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 (39386 bytes, byte copy)",
+    "repo": "/Users/sac/xaas",
+    "subject": "V23-F",
+    "subject_sha": "5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c",
+    "worktree": "/Users/sac/wt/v26922/v23/V23-F"
+  },
+  "llm_on_product_path": "none: no LLM, model API or zcode binary is invoked by fleet_matrix.py or GC23-11.sh; classification.ttl was authored by this lane from observations (a CONSTRUCT candidate admitted by check-classification)",
+  "replay": {
+    "commands": [
+      {
+        "cmd": "python3 -m unittest discover -s scripts/sjira -p 'test_fleet*.py' -v && python3 scripts/sjira/fleet_matrix.py check-classification --classification docs/sjira/v26.9.23/fleet/classification.ttl --universe docs/sjira/v26.9.23/fleet/universe.json",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-F",
+        "exit": 0,
+        "output_sha256": "8837dc4e6631c4738089aeff6e829b18f46a9a6a6f47152ba2cc03e16981b7f6",
+        "summary": "lane gate: Ran 14 tests OK; check-classification OK 21 repositories classified exactly once (Blocked=1, CriticalPath=2, Refused=3, Successor=14, Unsupported=1)"
+      },
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-F",
+        "exit": 0,
+        "output_sha256": "c991c1dba001b996b15efaf2ed934770687c14cbcf3dc8b5735b6fba38efe767",
+        "summary": "xaas lane gate prefix (deps/_build APFS-cloned from fri/xaas-int; 0 Elixir files changed by this lane)"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-F",
+        "exit": 0,
+        "output_sha256": "d33bcc8fb33d2770da39eb474ee8fcbccc63508e78f8361df6b8222dd8f7f984",
+        "summary": "Compiling 506 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "python3 scripts/sjira/fleet_matrix.py emit --classification docs/sjira/v26.9.23/fleet/classification.ttl --observations docs/sjira/v26.9.23/fleet/observations.json --out-ttl <scratch>/matrix.ttl --out-md <scratch>/matrix.md && cmp <scratch>/matrix.ttl docs/sjira/v26.9.23/fleet/matrix.ttl && cmp <scratch>/matrix.md docs/sjira/v26.9.23/fleet/matrix.md",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-F",
+        "exit": 0,
+        "summary": "committed matrix baseline reproduces byte-identically from the committed inputs"
+      }
+    ],
+    "durable_location": "receipts/v26.9.23/V23-F.json + receipts/v26.9.23/V23-F.gate/*.log (git-tracked)"
+  },
+  "standing": {
+    "derived_from": "lane V23-F deliverables: the four replay commands exited 0 at 5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c in /Users/sac/wt/v26922/v23/V23-F (lane gate = wave-B0.json V23-F gate). This is lane standing, not GC23-11 gate standing (see gc23_11).",
+    "value": "ALIVE"
+  },
+  "unresolved": [
+    "exit-code alignment with V23-P's stop-court runner (GC23-11.sh path is shared; integrate stage merges both sides)",
+    "docs/sjira/v26.9.23/prd-ard.md is also added byte-identically by V23-P/V23-X (identical add/add)",
+    "HANDWRITTEN.md row inserted at the top of Active to avoid colliding with end-of-section appends",
+    "CriticalPath exact-head receipts must be produced out-of-subject at release (V23-Q); catalog composition C21",
+    "open-ontologies is absent from fleet.ttl/survey.json (found via ARD section 4 + local checkout): regenerate the fleet registry in the successor",
+    "admit fleet vocabulary + classification shape into semantic-jira-pack; retire observe/emit once GGEN_IGNITER-26922-15 lands (GC-26.9.24)",
+    "court-reference guard is lexical (paths, ~/name, $HOME/name, NAME_DIR); a court reaching a repo only through a PATH executable is not detected"
+  ]
+}

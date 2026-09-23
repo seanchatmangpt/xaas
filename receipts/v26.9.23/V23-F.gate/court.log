@@ -1,0 +1,11 @@
+check-classification: OK 21 repositories classified exactly once (Blocked=1, CriticalPath=2, Refused=3, Successor=14, Unsupported=1)
+observe: 21 repositories, 2 subjects, fetch failed: none -> /Users/sac/.cache/tmp/gc23-11.vMafy4/observations.json
+emit: 21 rows -> /Users/sac/.cache/tmp/gc23-11.vMafy4/matrix.ttl, /Users/sac/.cache/tmp/gc23-11.vMafy4/matrix.md
+GC23-11 matrix: 13b32c10e4994263c23203ac96f2e62c146c07f629c74426d1f6e738e202e63c (scratch; baseline committed in fleet/matrix.ttl)
+note: receipts dir /Users/sac/wt/v26922/v23/V23-F/receipts/v26.9.23 absent
+note: receipts dir /Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23 absent
+note: receipts dir /Users/sac/wt/v26922/v26923/receipts/fleet absent
+UNKNOWN: ggen_igniter has no admitted ALIVE receipt at exact head 5984ec480c2318e86aa621da5f496e5e014b0fac (0 receipts name it)
+UNKNOWN: xaas has no admitted ALIVE receipt at exact head 5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c (0 receipts name it)
+check-standing: NOT ALIVE (2 of 2 CriticalPath repositories lack exact-head standing)
+UNKNOWN: GC23-11 CriticalPath repositories lack exact-head standing (check-standing exit 1)

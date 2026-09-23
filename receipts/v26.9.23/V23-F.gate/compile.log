@@ -1,0 +1,10 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-F/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 506 files (.ex)
+Generated xaas app
+MIX_ENV=test mix compile --force --warnings-as-errors  72.87s user 17.35s system 180% cpu 50.064 total
