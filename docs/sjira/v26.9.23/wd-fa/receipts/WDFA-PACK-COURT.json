@@ -1,0 +1,81 @@
+{
+  "identity": {
+    "subject": "ggen-marketplace:wd-failure-analysis-pack@420bc91e",
+    "repo": "/Users/sac/ggen-marketplace",
+    "subject_sha": "420bc91e7c1e291be73ab749b7e443252bc7bab8",
+    "base_sha": "b40615468d26d16571794a5f37ea0f0d316e7290",
+    "subject_tree": "0c8d3254e871e6b42e124697782418fc4d53bffc",
+    "subject_note": "merge commit of seanchatmangpt/ggen-marketplace PR 474 (head ef2631d4a49876daacc352ca6a2736d55ba0e13a)",
+    "runner": {
+      "repo": "/Users/sac/xaas",
+      "commit": "757be458cf14395b27f90eea5c5f6513dcb9c400",
+      "path": "docs/sjira/v26.9.23/wd-fa/probes/rdflib_gate_runner.py",
+      "sha256": "sha256:b67b97c9e62422103dbf3bbc5e26e6a2e22483acc5b6d9df6a9f8b0ab1a0e7cf"
+    }
+  },
+  "authority": {
+    "ceiling": "OBSERVE",
+    "grant": "NONE (git archive of a public commit into the lane scratch dir; ggen sync renders into that copy only)",
+    "actor": "claude-opus-5-5 lane V23-W (wave B1c, v26.9.23), workflow subagent"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": [],
+    "note": "no marketplace change; the runner lives in xaas at 757be458cf14395b27f90eea5c5f6513dcb9c400"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "rm -rf /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt && mkdir -p /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt && git -C /Users/sac/ggen-marketplace archive 420bc91e7c1e291be73ab749b7e443252bc7bab8 packs/semantic-gate-witness-court-pack packs/wd-failure-analysis-pack scripts/check_gate_witness_courts.py | tar -x -C /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt && git -C /Users/sac/ggen-marketplace rev-parse 420bc91e7c1e291be73ab749b7e443252bc7bab8^{tree}",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "exact subject archive: 0c8d3254e871e6b42e124697782418fc4d53bffc",
+        "output_sha256": "a21174f0c4759de2c6b569438af48c59aa311840cd80be8f7e637887d225f15f"
+      },
+      {
+        "cmd": "ggen sync >/dev/null 2>&1 && shasum -a 256 generated/semantic_gate_witness_court.py | cut -c1-64",
+        "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt/packs/semantic-gate-witness-court-pack",
+        "exit": 0,
+        "summary": "ggen renders the witness court from semantic-gate-witness-court-pack: 8b2e188358b209b2c98bccc61de3e9a0b6962de38012ca47ced8630d32d3792b",
+        "output_sha256": "28feb94a8a2bb3fc0b9f3a69bc3532a8dcd67f81ffc47a93829e6cd2dc5cd679"
+      },
+      {
+        "cmd": "env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 python3 scripts/check_gate_witness_courts.py --packs packs",
+        "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt",
+        "exit": 0,
+        "summary": "structural qualification (marketplace scripts/check_gate_witness_courts.py): {\"configured_pack_count\":1,\"courts\":[{\"case_count\":5,\"pack\":\"wd-failure-analysis-pack\",\"require_fail\":true,\"require_pass\":true,\"schema\":\"ggen.semantic-gate-witness-court/1\",\"standing\":\"ALIVE\"}],\"schema\":\"ggen.marketplace.gate-witness-courts/1\",\"standing\":\"ALIVE\"}",
+        "output_sha256": "f6eaa94d14c2d83c9e73fe8782c9dc865944cc0e3ff570d2d87027d8489694e7"
+      },
+      {
+        "cmd": "env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 python3 /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt/packs/semantic-gate-witness-court-pack/generated/semantic_gate_witness_court.py packs/wd-failure-analysis-pack --runner 'python3 /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/probes/rdflib_gate_runner.py {gate} {witness} {expectation}' --receipt /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-pack-1.json >/dev/null && python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d[\"standing\"], \"gates\", d[\"gate_count\"], \"pass\", d[\"pass_witness_count\"], \"fail\", d[\"fail_witness_count\"], \"executions\", sum(len(c[\"executions\"]) for c in d[\"cases\"]), \"errors\", len(d[\"errors\"]))' /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-pack-1.json",
+        "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt",
+        "exit": 0,
+        "summary": "semantic court run 1: 5 gates x pass/fail witnesses via the rdflib runner: ALIVE gates 5 pass 5 fail 5 executions 10 errors 0",
+        "output_sha256": "c1dd10df2f2fc1352f70258e5dc6a7b667c30c466b5db62a5dc46eb5097df6cb"
+      },
+      {
+        "cmd": "env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 python3 /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt/packs/semantic-gate-witness-court-pack/generated/semantic_gate_witness_court.py packs/wd-failure-analysis-pack --runner 'python3 /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/probes/rdflib_gate_runner.py {gate} {witness} {expectation}' --receipt /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-pack-2.json >/dev/null && cmp /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-pack-1.json /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-pack-2.json && shasum -a 256 /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-pack-1.json | cut -c1-64 && echo REPLAY_IDENTICAL",
+        "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-mkt",
+        "exit": 0,
+        "summary": "semantic court run 2 byte-identical to run 1: REPLAY_IDENTICAL",
+        "output_sha256": "9a7eb4e5d271668738db0aa04dd60c2e37aaf7211aabd5c271d1945de8a7287b"
+      }
+    ],
+    "durable_location": "xaas 757be458cf14395b27f90eea5c5f6513dcb9c400:docs/sjira/v26.9.23/wd-fa/probes/rdflib_gate_runner.py + ggen-marketplace 420bc91e (public)"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed on the exact subject 420bc91e: ggen 26.9.18 renders semantic_gate_witness_court.py from semantic-gate-witness-court-pack; the structural qualifier and the semantic court (5 gates, 5 pass + 5 fail witnesses, 10 runner executions, 0 errors) are ALIVE, twice byte-identical (sha256:cdbe655a...)."
+  },
+  "falsifier_runs": [
+    {
+      "mutation": "copy of the pack whose pass witness for 050_novel_is_unknown is the fail witness (a zero-candidate case typed KNOWN)",
+      "court_exit": 1,
+      "observed": "REFUSED runner_refusal 050_novel_is_unknown expectation pass (exit 1)"
+    }
+  ],
+  "limits": [
+    "Witness graphs are the pack's own fixtures; no Western Digital case data. The PR 474 body calls the change docs/work graph only and its courts PLANNED; this receipt observes the gates and witnesses the merged tree actually contains."
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "identity": {
+    "subject": "autofde-lab:wd_fa-kernel@eb93405c",
+    "repo": "/Users/sac/autofde-lab",
+    "subject_sha": "eb93405cab20dd9dfa7b3742caa6e1997be51269",
+    "base_sha": "e329a6c516eac1342e6256bdb280043d511bafc9",
+    "subject_tree": "28dbca20e7f0a3de752ea31d2634a156d7adfd91",
+    "subject_note": "merge commit of seanchatmangpt/autofde-lab PR 170 (head a78d774225ff9692d5e54e464b981f26693d5f2b)",
+    "probe": {
+      "repo": "/Users/sac/xaas",
+      "commit": "757be458cf14395b27f90eea5c5f6513dcb9c400",
+      "path": "docs/sjira/v26.9.23/wd-fa/probes/wd_fa_kernel_probe.py",
+      "sha256": "sha256:3ed452d4227b976755ee58cdbd87349e483505a20882904ef63468598cbac97a"
+    }
+  },
+  "authority": {
+    "ceiling": "OBSERVE",
+    "grant": "NONE (git archive of a public commit into the lane scratch dir; read-only)",
+    "actor": "claude-opus-5-5 lane V23-W (wave B1c, v26.9.23), workflow subagent"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": [],
+    "note": "no autofde-lab change; the probe lives in xaas at 757be458cf14395b27f90eea5c5f6513dcb9c400"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "rm -rf /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde && mkdir -p /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde && git -C /Users/sac/autofde-lab archive eb93405cab20dd9dfa7b3742caa6e1997be51269 src tests pyproject.toml | tar -x -C /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde && git -C /Users/sac/autofde-lab rev-parse eb93405cab20dd9dfa7b3742caa6e1997be51269^{tree}",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "exact subject archive: 28dbca20e7f0a3de752ea31d2634a156d7adfd91",
+        "output_sha256": "786c13d564970fd0605081830744b4c3e989e815bbcefbcfbd7a713160028ad9"
+      },
+      {
+        "cmd": "env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 python3 docs/sjira/v26.9.23/wd-fa/probes/wd_fa_kernel_probe.py --src /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde/src --out /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-kernel-1.json 2>/dev/null",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "kernel probe run 1 (no-LLM env: env -i, fresh HOME): PROBE OK: 10/10 checks; out sha256:626c26089cc195f2a627f49e1d07f281428bbf48260c9a07bd4d1dae54b65e2c",
+        "output_sha256": "f2b5648279ce421f471a1c6c1c2979d65110bad755952f9d8a16f2bfd50366f9"
+      },
+      {
+        "cmd": "env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 python3 docs/sjira/v26.9.23/wd-fa/probes/wd_fa_kernel_probe.py --src /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde/src --out /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-kernel-2.json 2>/dev/null | tail -1 && cmp /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-kernel-1.json /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-kernel-2.json && shasum -a 256 /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-kernel-1.json | cut -c1-64 && echo REPLAY_IDENTICAL",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "kernel probe run 2 byte-identical to run 1: REPLAY_IDENTICAL",
+        "output_sha256": "e75d8498c048f2b2467001a62a6b843603d0fe00dff92bc73191ed2531d721a6"
+      },
+      {
+        "cmd": "env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 PYTHONPATH=src python3 -c 'import sys; sys.modules[\"wrapt\"] = None; import pytest; sys.exit(pytest.main([\"-p\", \"no:cacheprovider\", \"-q\", \"-W\", \"ignore::DeprecationWarning\", \"tests/wd_fa/test_wd_fa_court.py\", \"-k\", \"ocel or pm4py or normalized or fastapi\", \"-c\", \"/dev/null\", \"--rootdir=.\"]))' 2>&1 | tail -1",
+        "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde",
+        "exit": 0,
+        "summary": "PR 170 court tests that need no TPOT, unmodified (wrapt blocked as in wd-fa-court.yml): 4 passed, 10 deselected, 1 warning in 2.69s",
+        "output_sha256": "1238e272dd51603099c9925b2dc44960ec26c08541f0a470fcda9a607bbca3c3"
+      }
+    ],
+    "durable_location": "xaas 757be458cf14395b27f90eea5c5f6513dcb9c400:docs/sjira/v26.9.23/wd-fa/probes/wd_fa_kernel_probe.py + autofde-lab eb93405c (public)"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed on the exact subject eb93405c (git archive, tree 28dbca20): wd_fa_kernel_probe.py 10/10 checks K1..K10 twice, byte-identical output sha256:626c2608...; the 4 PR 170 court tests that need no TPOT pass unmodified (4 passed, 10 deselected). Scope: the deterministic kernel with candidate_model=None; the TPOT-ranked tests were not run here."
+  },
+  "falsifier_runs": [
+    {
+      "mutation": "copy of the subject with triage's no-applicable-rule branch returning ALIVE and issue_receipt's producer==verifier guard disabled",
+      "cmd": "rm -rf /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde-mut && cp -R /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde-mut && sed -i '' '/no admitted known failure mode survives/,+0!s/standing=Standing.UNKNOWN,/standing=Standing.ALIVE,/' /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde-mut/src/autofde_lab/wd_fa/triage.py && sed -i '' 's/    if producer_id == verifier_id:/    if False:/' /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde-mut/src/autofde_lab/wd_fa/receipts.py && git diff --no-index --stat /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde/src /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde-mut/src | tail -1; env -i PATH=/opt/homebrew/bin:/usr/bin:/bin HOME=$(mktemp -d) PYTHONUSERBASE=/Users/sac/Library/Python/3.14 python3 docs/sjira/v26.9.23/wd-fa/probes/wd_fa_kernel_probe.py --src /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-autofde-mut/src --out /private/tmp/claude-501/v23-scratch/B1c-V23-W/replay-kernel-mut.json 2>/dev/null | grep -E 'FAILED'",
+      "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+      "probe_exit": 1,
+      "observed": "PROBE FAILED: 6/10 checks (K4, K5, K7, K10 FAILED); out sha256:084dae515e868dfcc81775ab4ec5e43332a16813328cea54ac578913206d4725"
+    }
+  ],
+  "limits": [
+    "TPOT 1.1.0 is not installed on this host: 10 of the 14 PR 170 court tests use the TPOT candidate_model fixture and were not executed here; the full court (incl. TPOT, OCEL/POWL, Next.js, Playwright) ran in CI: WD FA exact-head court run 35797506789 = success at PR head a78d7742 (publicly observable, not re-executed here).",
+    "pm4py 2.7.22.1 here vs 2.7.23 pinned in wd-fa-court.yml; Python 3.14 here vs 3.12 in CI.",
+    "All fixtures are synthetic (SYNTH-FA-*, MODE-A/B/C/X); no Western Digital data was used or is claimed."
+  ]
+}
