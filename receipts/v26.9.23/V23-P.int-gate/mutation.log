@@ -1,0 +1,8 @@
+# mutation: GC23-11.sh machinery-absent tail 'exit 75' -> 'exit 3'; mix test test/sjira/v26_9_23_goal_test.exs:359
+  1) test each gate's UNKNOWN stub names a lane whose order's path scope covers that court script (Xaas.Sjira.V26923GoalTest)
+     Assertion with =~ failed
+     code:  assert body =~ ~r/^exit #{StopCourt.unknown_exit()}$/m
+       test/sjira/v26_9_23_goal_test.exs:369: anonymous fn/3 in Xaas.Sjira.V26923GoalTest."test each gate's UNKNOWN stub names a lane whose order's path scope covers that court script"/1
+1 test, 1 failure (16 excluded)
+# restored
+unmutated: 1 test, 0 failures (16 excluded)
