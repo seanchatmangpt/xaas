@@ -5,20 +5,20 @@
   "worktree": "/Users/sac/wt/v26922/v23/V23-L",
   "branch": "v23/V23-L",
   "base_ref": "friday/gc-fri-0800",
-  "subject_sha": "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+  "subject_sha": "74c37f1f971d4e6accaaeb6c024a11f8e330b855",
   "base_sha": "3b1d1843d12c1402d2e465749dd96e951e149c3b",
-  "base_sha_note": "merge-base of v23/V23-L with friday/gc-fri-0800 = 3b1d184 (friday unchanged at receipt time)",
+  "base_sha_note": "merge-base of v23/V23-L with friday/gc-fri-0800 = 3b1d184; friday/gc-fri-0800 has since moved to 2a6d014 (V23-M merged); git merge-tree HEAD friday/gc-fri-0800 is clean and the combined tree passes the lane gate (r2/comb-*.log)",
   "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
   "graph_hash_of": "xaas docs/sjira/v26.9.23/goal.ttl bytes at the subject (unchanged by this lane)",
   "work_order_note": "no GC-26.9.23 WorkOrder exists for lane V23-L (goal.ttl declares none; C0 wave task); this receipt carries no identity.work_order and no identity.tuple_digest and is never linked by the stop court",
   "ggen_igniter_dir": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
   "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
-  "repair_round": 1,
-  "prior_receipt": "round 0 receipt (PARTIAL_ALIVE at fc0b3a2) is preserved in git at 5aff6e5 / 6936ca2 (receipts/v26.9.23/V23-L.json) with its evidence in receipts/v26.9.23/V23-L.gate/*.log"
+  "repair_round": 2,
+  "prior_receipt": "round 0 (PARTIAL_ALIVE at fc0b3a2) at 5aff6e5/6936ca2 and round 1 (ALIVE at 6c00816) at 75c6907, both preserved in git (receipts/v26.9.23/V23-L.json) with evidence in receipts/v26.9.23/V23-L.gate/{*.log,r1/}"
  },
  "authority": {
   "ceiling": "CONSTRUCT",
-  "grant": "wave C0 (wf_71400bee-3c9) lane task V23-L repair 1 under DRIVER.md authority (local branch commits only; no push, no merge)",
+  "grant": "wave C0 (wf_71400bee-3c9) lane task V23-L repair 2 under DRIVER.md authority (local branch commits only; no push, no merge)",
   "actor": "claude-opus-5-5 lane agent V23-L"
  },
  "consequence": {
@@ -27,7 +27,9 @@
    "5aff6e5fbf7df2b35dbcfdd2710d26c7ceccf02f",
    "6936ca26f816abfc0cad14f2a60f606db8c61d71",
    "6163d2c15d3d39e61d2f1127930a2d2ff3efb596",
-   "6c00816f9c628a9f2543b3d43de16a456f2ccfee"
+   "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+   "75c69072dfd62aa0602911eedacdf07fad6e8b67",
+   "74c37f1f971d4e6accaaeb6c024a11f8e330b855"
   ],
   "files_changed": [
    "lib/mix/tasks/xaas.stop_court.ex",
@@ -37,92 +39,80 @@
   ],
   "files_changed_this_round": [
    "lib/mix/tasks/xaas.stop_court.ex",
-   "test/mix/tasks/xaas_stop_court_test.exs",
-   "test/sjira/v26_9_23_goal_test.exs"
+   "test/sjira/v26_9_23_goal_test.exs",
+   "HANDWRITTEN.md"
   ],
   "remote_effects": [],
   "receipt_files": [
    "receipts/v26.9.23/V23-L.json",
-   "receipts/v26.9.23/V23-L.gate/r1/*"
+   "receipts/v26.9.23/V23-L.gate/r1/*",
+   "receipts/v26.9.23/V23-L.gate/r2/*"
   ],
-  "generated_vs_handwritten": "handwritten residue; the existing HANDWRITTEN.md row covers the stop court (UNSUPPORTED(generator-capability): no pack renders the stop court or its checkpoint registry from sj:GoalCheckpoint); round 1 adds no new module"
+  "generated_vs_handwritten": "handwritten residue; the V23-L HANDWRITTEN.md row (UNSUPPORTED(generator-capability): no pack renders the stop court or its checkpoint registry from sj:GoalCheckpoint) now names the typed receipt-dir probe; round 2 adds no new module"
  },
  "replay": {
   "commands": [
    {
-    "cmd": "noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix format --check-formatted  # at 6c00816, clean tree",
+    "cmd": "nollm.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix format --check-formatted  # at 74c37f1, clean tree",
     "cwd": "/Users/sac/wt/v26922/v23/V23-L",
     "exit": 0,
     "summary": "clean",
     "output_sha256": "d18196d5a72ba10ab2319350dce011936c1b2b3546dbab1f50ccbe10c413608d"
    },
    {
-    "cmd": "noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) MIX_ENV=test mix compile --force --warnings-as-errors  # at 6c00816",
+    "cmd": "nollm.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) MIX_ENV=test mix compile --force --warnings-as-errors  # at 74c37f1",
     "cwd": "/Users/sac/wt/v26922/v23/V23-L",
     "exit": 0,
     "summary": "Compiling 514 files (.ex); Generated xaas app",
     "output_sha256": "cfd4ed5b225824b554b28ebd5043d9dffed83e733030f5b674cd647c1d00d681"
    },
    {
-    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs  # at 6c00816",
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int nollm.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs  # at 74c37f1",
     "cwd": "/Users/sac/wt/v26922/v23/V23-L",
     "exit": 0,
-    "summary": "39 tests, 0 failures: the lane gate is green on the exact subject (round 1: 38 tests, 1 pre-existing failure)",
-    "output_sha256": "c309644b8c69a1c72de0ff0c47e8ebf616fa83393f8995eb39664340ab23d321"
+    "summary": "40 tests, 0 failures (round 1: 39; +1 typed receipt-dir probe test)",
+    "output_sha256": "6c03e1bcbe1c91895272a1e551a3d13aa5cc4bc573a52770c4512260827c306e"
    },
    {
-    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-L.gate/r1/STOP-GC-26.9.23.json receipts/v26.9.23/V23-L.gate/r1/GC23-0.json",
+    "cmd": "nollm.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) sh receipts/v26.9.23/V23-L.gate/r2/court-check.sh <scratch>/cc  # at 74c37f1: the real stop court; exit 0 iff it ran (exit 1, STOP=false) and V23-B, V23-C are ADMITTED ALIVE from the ggen_igniter dir, linked and committed_at_head=true, and both court receipts validate",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+    "exit": 0,
+    "summary": "V23-B and V23-C linked from ggen_igniter-int@3937a4f; STOP and GC23-0 receipts ADMITTED",
+    "output_sha256": "2d3f3a4d5b92315a48b01a127a2682aa8667041e4371394e621db6a1571787a7"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-L.gate/r2/STOP-GC-26.9.23.json receipts/v26.9.23/V23-L.gate/r2/GC23-0.json",
     "cwd": "/Users/sac/wt/v26922/v23/V23-L",
     "exit": 0,
     "summary": "ADMITTED x2"
    },
    {
-    "cmd": "noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) sh receipts/v26.9.23/V23-L.gate/r1/court-check.sh <scratch>/court-check  # at 6c00816: runs the real stop court and exits 0 iff it ran (exit 1, STOP=false) and V23-B, V23-C are ADMITTED ALIVE from the ggen_igniter dir, linked and committed_at_head=true in the STOP receipt, and both court receipts validate",
-    "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+    "cmd": "nollm.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test <the two gate files>  # scratch worktree 74c37f1 + git merge --no-commit friday/gc-fri-0800 (2a6d014, clean); merge aborted and worktree removed after",
+    "cwd": "<scratch>/comb",
     "exit": 0,
-    "summary": "V23-B and V23-C linked from ggen_igniter-int; STOP and GC23-0 receipts ADMITTED",
-    "output_sha256": "1a312aa6918355941a1c6f062c92df1ae6e14fb2bfc39ecba40e29b3b512c544"
-   },
-   {
-    "cmd": "noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix format --check-formatted  # scratch 93b54e2 = 6c00816 + V23-K f7dcab3 (resolved)",
-    "cwd": "<scratch>/combined2",
-    "exit": 0,
-    "summary": "clean",
-    "output_sha256": "e9119d24110d2614d0e4a3e68ed0c1b1be5082bce67f503e6d5b4c19bf9085a0"
-   },
-   {
-    "cmd": "noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) MIX_ENV=test mix compile --force --warnings-as-errors  # scratch 93b54e2",
-    "cwd": "<scratch>/combined2",
-    "exit": 0,
-    "summary": "Generated xaas app",
-    "output_sha256": "8baffbc1666f4be323da2bd75e6acc6a8a3035d3d519ab631183d18550a1671a"
-   },
-   {
-    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix test <the two gate files>  # scratch 93b54e2",
-    "cwd": "<scratch>/combined2",
-    "exit": 0,
-    "summary": "44 tests, 0 failures: the documented resolution keeps the gate green once V23-K lands",
-    "output_sha256": "2a86652a4e7d00e2632144d00ff0cdb9351bce67fdfccbd58222204ba2adb01e"
+    "summary": "fmt 0, compile 0, 40 tests 0 failures on the combined tree",
+    "output_sha256": "7dee5f8df2079bf0c8a9f709b07f62b361b4f9c8d30bd0f5a8a99b90754c1832"
    },
    {
     "cmd": "sh -c '! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" lib/mix/tasks/xaas.stop_court.ex test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs'",
     "cwd": "/Users/sac/wt/v26922/v23/V23-L",
     "exit": 0,
-    "summary": "no matches (grep itself exits 1; r1/mock-grep.log is empty)",
+    "summary": "no matches (r2/mock-grep.log empty)",
     "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
    },
    {
-    "cmd": "git merge-tree --write-tree 6c00816 friday/gc-fri-0800",
+    "cmd": "git merge-tree --write-tree --name-only 74c37f1 friday/gc-fri-0800",
     "cwd": "/Users/sac/wt/v26922/v23/V23-L",
     "exit": 0,
-    "summary": "clean (friday/gc-fri-0800 still 3b1d184)"
+    "summary": "clean (friday/gc-fri-0800 at 2a6d014)",
+    "output_sha256": "a1c1c2f4bef983b3fe1ada2aa08a78d6296e602d991e3e61b58b8e359791971f"
    }
   ],
-  "durable_location": "receipts/v26.9.23/V23-L.gate/r1 (tracked in git)"
+  "durable_location": "receipts/v26.9.23/V23-L.gate/r2 (tracked in git; r1 and round-0 evidence kept)"
  },
  "standing": {
   "value": "ALIVE",
-  "derived_from": "lane gate at the exact subject 6c00816f9c628a9f2543b3d43de16a456f2ccfee (clean tree, LLM variables unset): mix format --check-formatted exit 0; MIX_ENV=test mix compile --force --warnings-as-errors exit 0; mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs exit 0 (39 tests, 0 failures). Lane behaviour observed on the same subject: the real stop court links V23-B and V23-C from GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc (round 0 base implementation: receipt=MISSING)."
+  "derived_from": "lane gate at the exact subject 74c37f1f971d4e6accaaeb6c024a11f8e330b855 (clean tree, LLM variables unset): mix format --check-formatted exit 0; MIX_ENV=test mix compile --force --warnings-as-errors exit 0; mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs exit 0 (40 tests, 0 failures). Lane behaviour observed on the same subject: the real stop court links V23-B and V23-C from GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc, and every order_receipt_dirs entry carries a typed probe (repo_head or repo_head_why)."
  },
  "order_table": [
   {
@@ -133,6 +123,7 @@
    "origin": "ggen_igniter",
    "dir": "/Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23",
    "repo_head": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   },
@@ -144,6 +135,7 @@
    "origin": "ggen_igniter",
    "dir": "/Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23",
    "repo_head": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   },
@@ -154,7 +146,8 @@
    "tuple_digest": "sha256:3d3b9cf4ea96e6498d1d5c1a0c490fb8fd67f7cd68cf210eb889dd5b92801d58",
    "origin": "repo",
    "dir": "/Users/sac/wt/v26922/v23/V23-L/receipts/v26.9.23",
-   "repo_head": "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+   "repo_head": "74c37f1f971d4e6accaaeb6c024a11f8e330b855",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   },
@@ -165,7 +158,8 @@
    "tuple_digest": "sha256:ad837c0282c6d3b4e645298aba9b3c505d242fd5b37b976bb95c8897d7cfbae8",
    "origin": "repo",
    "dir": "/Users/sac/wt/v26922/v23/V23-L/receipts/v26.9.23",
-   "repo_head": "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+   "repo_head": "74c37f1f971d4e6accaaeb6c024a11f8e330b855",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   },
@@ -177,6 +171,7 @@
    "origin": null,
    "dir": null,
    "repo_head": null,
+   "repo_head_why": null,
    "committed_at_head": null,
    "committed_at_head_why": null
   },
@@ -188,6 +183,7 @@
    "origin": null,
    "dir": null,
    "repo_head": null,
+   "repo_head_why": null,
    "committed_at_head": null,
    "committed_at_head_why": null
   },
@@ -198,7 +194,8 @@
    "tuple_digest": "sha256:b2e94ab651a9298b944fdda688d93779c3d261dfce998cb8a3b31756374a99e8",
    "origin": "repo",
    "dir": "/Users/sac/wt/v26922/v23/V23-L/receipts/v26.9.23",
-   "repo_head": "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+   "repo_head": "74c37f1f971d4e6accaaeb6c024a11f8e330b855",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   },
@@ -210,6 +207,7 @@
    "origin": null,
    "dir": null,
    "repo_head": null,
+   "repo_head_why": null,
    "committed_at_head": null,
    "committed_at_head_why": null
   },
@@ -220,7 +218,8 @@
    "tuple_digest": "sha256:01861be76e742250e796228de64e8dde326ed035812f8532743c930d55520cc3",
    "origin": "repo",
    "dir": "/Users/sac/wt/v26922/v23/V23-L/receipts/v26.9.23",
-   "repo_head": "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+   "repo_head": "74c37f1f971d4e6accaaeb6c024a11f8e330b855",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   },
@@ -231,92 +230,76 @@
    "tuple_digest": "sha256:145ec391eed5183aabd9766fe31a7c538b4de8431435adb92ce6f0ff350e1ebc",
    "origin": "repo",
    "dir": "/Users/sac/wt/v26922/v23/V23-L/receipts/v26.9.23",
-   "repo_head": "6c00816f9c628a9f2543b3d43de16a456f2ccfee",
+   "repo_head": "74c37f1f971d4e6accaaeb6c024a11f8e330b855",
+   "repo_head_why": null,
    "committed_at_head": true,
    "committed_at_head_why": null
   }
  ],
  "falsifier_runs": [
   {
-   "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 --receipts-dir <scratch>/real-court  # at 6c00816; operator HOME (the validator reads ~/.claude/dfcm/receipt.schema.json via Path.home())",
+   "cmd": "git show 75c6907:lib/mix/tasks/xaas.stop_court.ex > lib/mix/tasks/xaas.stop_court.ex && GGEN_IGNITER_DIR=ggen_igniter-int nollm.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) mix test <the two gate files>  # at 74c37f1 tests; restored, git diff --quiet HEAD exit 0",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+   "exit": 2,
+   "summary": "40 tests, 3 failures: the typed-probe test (behaviour) + the registry and second-dir tests (repo_head_why key absent)",
+   "output_sha256": "047c683322a1042d6ee7dfcc98a6254557339dec6a75d537bf72fc1c497f8ac0"
+  },
+  {
+   "cmd": "mutant fold-false: commit_state(%{probe: :git_failed}) -> {false, why}; mix test test/sjira/v26_9_23_goal_test.exs:1185  # restored after",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+   "exit": 2,
+   "summary": "1 test, 1 failure: committed_at_head false, expected nil (corrupt-HEAD dir)",
+   "output_sha256": "6cbbfb3b94722424ea296e81f825879eee7eea9d699fdd2db8d62dede1a9ed3c"
+  },
+  {
+   "cmd": "mutant no-holder: every rev-parse --show-toplevel failure read as :no_checkout (the .git-ancestor guard dropped); mix test ...:1185  # restored after",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+   "exit": 2,
+   "summary": "1 test, 1 failure: corrupt-HEAD checkout printed \"(no git checkout)\"",
+   "output_sha256": "0ecf4c66a35e8b06d9ed77545297f08190a5c712edc5d3a9104af16652bd29a4"
+  },
+  {
+   "cmd": "mutant sha1-only: HEAD matched against the 40-hex @sha; mix test ...:1185  # restored after",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+   "exit": 2,
+   "summary": "1 test, 1 failure: SHA-256 checkout reported git failed {:not_an_object_id, <64 hex>}",
+   "output_sha256": "8ef079a9ac902400b31e39d461ce8d72b189f78b72efd47ab69babcf11bc3069"
+  },
+  {
+   "cmd": "mutant no-unborn: the proven-unborn branch reported as :git_failed; mix test ...:1185  # restored after",
+   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+   "exit": 2,
+   "summary": "1 test, 1 failure: unborn checkout printed git failed instead of \"unborn: HEAD refs/heads/main has no commit (unborn branch)\"",
+   "output_sha256": "45c8d02f49e4a7ea45fd1a2d5528d3a8d02c4c318a7f2666027bbb4de0a0d7e9"
+  },
+  {
+   "cmd": "git merge-tree --write-tree --name-only 74c37f1 v23/V23-K",
    "cwd": "/Users/sac/wt/v26922/v23/V23-L",
    "exit": 1,
-   "summary": "STOP=false (12 gates not run; GC23-0 UNKNOWN exit 75); 7/10 orders linked: V23-B and V23-C ADMITTED ALIVE from=ggen_igniter:/Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23@3937a4f89ecf2b7fa12068406377c05ec1a1b8fc committed_at_head=true; V23-H, V23-M, V23-Q MISSING (no receipt in either repo)",
-   "output_sha256": "f13a31cd01ad78b2dfd716915d2afbd9638387e10b994554c6d533670cd38c4f"
-  },
-  {
-   "cmd": "git show 6936ca2:lib/mix/tasks/xaas.stop_court.ex > lib/mix/tasks/xaas.stop_court.ex && mix test <the two gate files>  # at 6163d2c tests; file restored, git diff --quiet HEAD exit 0",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 2,
-   "summary": "39 tests, 4 failures: the 3 strengthened/new assertions (committed_at_head_why, first-override-dir link, typed commit test) + the then pre-existing goal_test.exs:359",
-   "output_sha256": "82c96d1d386ae17a36e809b35f9ab354349a2fc6b1f6f7d885867fd11df97dc2"
-  },
-  {
-   "cmd": "mutant fold-into-false ({:error, reason} -> {false, ...} in commit_state/2) && mix test test/sjira/v26_9_23_goal_test.exs:<committed_at_head typed test>  # restored after",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 2,
-   "summary": "1 test, 1 failure: committed_at_head false, expected nil (the git failure is not folded into false)",
-   "output_sha256": "c91ebad28d1d017165f5c7e6e126b9e7896cfbbea7f90b553bdb6db571d95e77"
-  },
-  {
-   "cmd": "mutant last-value-only (repeated --order-receipts-dir collapsed with Enum.take(-1)) && mix test test/sjira/v26_9_23_goal_test.exs:<repeatable override test>  # restored after",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 2,
-   "summary": "1 test, 1 failure: the first override dir is not read",
-   "output_sha256": "2eefaf0efab7e95f44b34d2b7d140e1203ba8b559068c6620bf9635fa2b678d6"
-  },
-  {
-   "cmd": "GC23-4.sh replaced by a V23-P stub && mix test test/sjira/v26_9_23_goal_test.exs:<stub-ownership test>  # restored after",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 2,
-   "summary": "1 test, 1 failure: still stubbed: [1, 2, 3, 4, 9, 12]",
-   "output_sha256": "e78af33fb4d1195ba132ea8fbeefc6d1f927a1080d4bc7456957ccb68796f48d"
-  },
-  {
-   "cmd": "GC23-9.sh stub names V23-B (not the owner) && mix test test/sjira/v26_9_23_goal_test.exs:<stub-ownership test>  # restored after",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 2,
-   "summary": "1 test, 1 failure: V23-B does not own docs/sjira/v26.9.23/courts/GC23-9.sh",
-   "output_sha256": "c8fe8e92f685a2b8394c7c3e3ac67d25140f11fae97dadef54d95f68a44a3476"
-  },
-  {
-   "cmd": "git merge-tree --write-tree --name-only 6c00816 v23/V23-K",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 1,
-   "summary": "one conflict: test/sjira/v26_9_23_goal_test.exs, a single hunk (this lane's final comment + assertion vs V23-K f7dcab3's); HANDWRITTEN.md auto-merges",
-   "output_sha256": "2bc78eb76d2dde4a8ac86edc86a4bebaecc4cba7415cf746af6b6ca5ec17c2e4"
-  },
-  {
-   "cmd": "git worktree add --detach <scratch>/combined2 6c00816 && git merge --no-commit v23/V23-K; hunk resolved to V23-K's side (python, only the conflict block); commit on the detached scratch HEAD (no ref)",
-   "cwd": "<scratch>/combined2",
-   "exit": 1,
-   "summary": "merge exit 1 = the expected single conflict; resolved tree committed as scratch 93b54e2, worktree removed after",
-   "output_sha256": "d3ea79c3a83e8561bf4ff54aaac541eeaabdb3c11332041263a2a7ad72a399fa"
-  },
-  {
-   "cmd": "git show 3b1d184:lib/mix/tasks/xaas.stop_court.ex > lib/mix/tasks/xaas.stop_court.ex && noLLM.sh (unsets every ANTHROPIC_*/CLAUDE_*/OPENAI_*/ZAI_*/Z_AI_*/GLM_*/ZCODE_* variable) sh receipts/v26.9.23/V23-L.gate/r1/court-check.sh <scratch>/court-check-base  # restored after (git diff --quiet HEAD -- lib exit 0)",
-   "cwd": "/Users/sac/wt/v26922/v23/V23-L",
-   "exit": 1,
-   "summary": "court-check refuses the base implementation: V23-B not linked from ggen_igniter (the check is not vacuous)",
-   "output_sha256": "9fcf8fe95318d16a41b0cdab57feb3e4f65224c953097c8e84b3afb5ea70c28a"
+   "summary": "one conflict: test/sjira/v26_9_23_goal_test.exs, the same single hunk as round 1 (stub guard); HANDWRITTEN.md auto-merges",
+   "output_sha256": "52d37491db23b5e68ce3cc576c2b5b2ee00783dce1ddb4f30562a9a285488d67"
   }
  ],
- "falsifier_runs_note": "anti-vacuity and merge-probe runs whose non-zero exit IS the evidence (a mutant killed = its test fails; merge-tree exit 1 = the one expected conflict; the raw stop court exits 1 = ran, STOP=false). They are kept out of replay.commands, which holds only the commands that justify the ALIVE standing, all exit 0.",
+ "falsifier_runs_note": "runs whose non-zero exit IS the evidence (a mutant killed = its test fails; merge-tree exit 1 = the one expected conflict). The round-1 falsifier runs (last-value-only, fold-into-false on commit_state, stub mutants, base-impl court-check) are preserved in the round-1 receipt at 75c6907 and r1/*.log.",
  "court_answers": [
   {
+   "lens": "DOCTRINE",
+   "round": 2,
+   "verdict": "refuted",
+   "broken_term": "R_missing_identity",
+   "answer": "fixed by commit 74c37f1: checkout/1 no longer ends in `else _ -> {nil, nil}`. It returns a typed probe (:ok | :absent | :no_checkout | :unborn | :git_failed) with repo_head_why; :no_checkout requires both a git failure and no `.git` in any ancestor (filesystem observation), :unborn requires symbolic-ref + show-ref exit 1, anything else keeps the typed git failure; git toplevel is cross-checked by inode against the nearest `.git` holder. committed_at_head for a :git_failed dir is null + the git failure, never false. The three named scenarios are covered by real-git tests: unborn HEAD (false + the unborn reason), corrupt .git/HEAD and a dir inside .git (null + the rev-parse failure), SHA-256 object format (64-hex repo_head, committed_at_head true). Dubious ownership reaches the same :git_failed branch (a `.git` exists, git refuses) but is not exercised: it needs a different file owner, which a test cannot create without root. Four mutants kill the new test (r2/mut-*.log)."
+  },
+  {
    "lens": "GATE",
-   "verdict_round0": "refuted",
-   "answer": "fixed by commit 6c00816: the only failing test (goal_test.exs:359, pre-existing since 3b1d184, caused by V23-R's inline GC23-10 guard vs V23-P's bare-`exit 75` reading) now uses V23-K f7dcab3's test body, with V23-K's own claim (GC23-0 .. GC23-3 real) replaced by the claim true at 3b1d184 (GC23-0, 4..8, 10, 11 are real courts). V23-K is neither qualified nor merged (B1b build agent silent since 14:43Z, no child process at 15:30Z), so merging v23/V23-K into this lane was rejected: it would integrate unadmitted work. Gate at 6c00816: 39 tests, 0 failures."
+   "round": 2,
+   "verdict": "pass",
+   "answer": "observation carried for Integrate: the V23-K conflict hunk should keep both guards rather than take V23-K's side only, i.e. the union `&(&1 > 3 and &1 not in [4, 5, 6, 7, 8, 10, 11])`, plus 9 once the integrated tree has V23-M's real GC23-9 (friday/gc-fri-0800 2a6d014 does), so a regression of GC23-10/GC23-11 to a stub stays caught. Not applied here: this lane tree does not contain V23-K or V23-M."
   },
   {
    "lens": "REVERT-MUTATION",
-   "verdict_round0": "pass",
-   "answer": "weakness addressed (commit 6163d2c): the repeatable-override test now links from the FIRST given dir (a last-value-only mutant fails it) and the GC-FRI-0800 test runs its behaviour before the registry-key assertion; a new typed committed_at_head test fails under a fold-into-false mutant."
-  },
-  {
-   "lens": "DOCTRINE",
-   "verdict_round0": "pass",
-   "answer": "minor point answered (commit 6163d2c): committed_at_head is typed true | false + reason | null + git failure (committed_at_head_why); `git ls-tree` replaces `rev-parse --verify --quiet HEAD:./name`, which exits 1 silently both for a missing path and for an unreadable HEAD tree (probed). The receipt standing is now ALIVE, so no standing.broken_term applies."
+   "round": 2,
+   "verdict": "pass",
+   "answer": "no change required. Round 2 did not rerun the base (3b1d184) revert; the closer revert to the round-1 implementation (75c6907 stop_court.ex under the round-2 tests) fails 3 of 40 tests, one of them the new typed-probe test on behaviour (r2/mut-prev-impl.log)."
   }
  ],
  "falsifiers": [
@@ -347,13 +330,26 @@
   {
    "claim": "GC-FRI-0800 behaviour unchanged",
    "falsifier": "test 'GC-FRI-0800 keeps one order-receipts dir' (a receipt only under GGEN_IGNITER_DIR/receipts/v26.9.22 stays MISSING) + the pre-existing FRI stop-court tests pass"
+  },
+  {
+   "claim": "a git failure on the receipt-dir probe is never recorded as no git checkout / committed_at_head false",
+   "falsifier": "goal_test:1185 corrupt .git/HEAD and dir-inside-.git cases; mutants fold-false and no-holder each fail it (r2/mut-fold-false.log, r2/mut-no-holder.log)"
+  },
+  {
+   "claim": "an unborn HEAD is recorded as unborn with its branch, not as no checkout",
+   "falsifier": "goal_test:1185 unborn case; mutant no-unborn fails it (r2/mut-no-unborn.log)"
+  },
+  {
+   "claim": "a SHA-256 HEAD is a HEAD",
+   "falsifier": "goal_test:1185 --object-format=sha256 case; mutant sha1-only fails it (r2/mut-sha1-only.log)"
   }
  ],
  "notes": [
-  "Merge overlap with v23/V23-K (measured, git merge-tree): exactly one conflict hunk in test/sjira/v26_9_23_goal_test.exs, the final comment + assertion of the stub-ownership test. Resolution: take V23-K's side of that hunk only (never the whole file: this lane appends its own tests to the same file). Qualified: scratch 93b54e2 (6c00816 + V23-K f7dcab3, resolved) passes the lane gate, 44 tests, 0 failures.",
-  "Real stop court with a fresh HOME exits 2 {:validator_unavailable, <HOME>/.claude/dfcm/validate_receipt.py}, and with --validator given the validator itself exits on Path.home()/.claude/dfcm/receipt.schema.json; the runner therefore runs with the operator HOME and LLM variables unset (as in round 0 and the driver ticks). Court scripts apply the F3 fresh HOME themselves (courts/no_llm_env.sh).",
+  "No v26.9.23 WorkOrder exists for lane V23-L (goal.ttl declares none; wave C0 task): this receipt carries no identity.work_order and no identity.tuple_digest and is never linked by the stop court.",
+  "Pre-existing, same class, not changed by this lane: ggen_igniter_sha/1 (from FRI-T5/V23-P, present at 3b1d184) also ends in `else _ -> nil` and records a null ggen_igniter HEAD in gate receipts without a reason. Left for the stop-court owner; this lane's task surface is the order-receipt dirs.",
+  "Real stop court with a fresh HOME exits 2 {:validator_unavailable, <HOME>/.claude/dfcm/validate_receipt.py} (round 1 observation, unchanged): the runner runs with the operator HOME and LLM variables unset; court scripts apply the F3 fresh HOME themselves.",
   "No LLM, network model API or zcode binary on any executed product path; the court and tests run only git, sh, the python3 validator and the oxigraph NIF.",
-  "Not pushed, not merged; integration into friday/gc-fri-0800 is the Integrate stage's step (git merge-tree 6c00816 friday/gc-fri-0800: clean).",
-  "Observation for the driver: V23-K's B1b build agent (agent-a6030a575b7ba3ed1) last wrote its transcript at 14:43:22Z and no V23-K court process was running at 15:30Z (DRIVER.md stall rule: >40 min, no child)."
- ]
+  "Not pushed, not merged; integration into friday/gc-fri-0800 is the Integrate stage (merge-tree clean against 2a6d014)."
+ ],
+ "order_table_note": "from r2/STOP-GC-26.9.23.json (real stop court at 74c37f1, --only GC23-0, STOP=false): 7/10 linked; V23-B and V23-C from ggen_igniter-int receipts/v26.9.23@3937a4f; V23-H, V23-Q MISSING (no receipt in either repo); V23-M MISSING in this lane tree (its receipt landed on friday/gc-fri-0800 after this lane's base). order_receipt_dirs: repo /Users/sac/wt/v26922/v23/V23-L/receipts/v26.9.23 repo_head=74c37f1f971d4e6accaaeb6c024a11f8e330b855 repo_head_why=None; ggen_igniter /Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23 repo_head=3937a4f89ecf2b7fa12068406377c05ec1a1b8fc repo_head_why=None"
 }
