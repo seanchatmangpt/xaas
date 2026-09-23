@@ -318,7 +318,7 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     %{
       "work_order_iri" => iri,
       "checkpoint_iri" => "urn:t:checkpoint:1",
-      "graph_digest" => "sha256:" <> String.duplicate("a", 64),
+      "graph_digest" => "sha256:" <> String.duplicate("e", 64),
       "repository_identity" => "seanchatmangpt/demo",
       "execution_repo_alias" => "demo",
       "base_sha" => sha,

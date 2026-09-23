@@ -155,9 +155,12 @@ defmodule Xaas.Ultracode.SemanticWork do
     * `bridge.source_snapshot_digest`: the real bridge's per-work-order
       snapshot digest, a second anchor that must agree with the first;
     * option `binding:`, declared by the TRUSTED caller and never by the
-      descriptor. `:snapshot` (the DEFAULT, fail-closed) requires
-      `graph_digest` to equal the snapshot digest plus at least one in-band
-      anchor (`:admission_anchor_missing` otherwise). `:graph` is the
+      descriptor. The DEFAULT (no `binding:` option) is verify-when-present:
+      a carried snapshot is fully checked (self-consistent, anchor-agreeing,
+      fields the snapshot determines) and an anchor-less descriptor keeps
+      today's behavior with the graph digest unbound. `:snapshot` forces the
+      graph digest to bind to the admission anchors (this is what the
+      materialize boundary pins); `:graph` is the
       explicit opt-out for a producer whose `graph_digest` is graph-wide (the
       digest the real `Descriptor.build/4` emits over every definition
       digest): `graph_digest` is then bound only by a pin. There is no
@@ -256,7 +259,9 @@ defmodule Xaas.Ultracode.SemanticWork do
           {:ok, %{run: Run.t(), epoch: Epoch.t(), worktree: String.t(), wave: map()}}
           | {:error, term()}
   def materialize(input, opts \\ []) do
-    with {:ok, descriptor} <- admit(input, opts),
+    # the materialize boundary is strict: unless the trusted caller pinned a
+    # mode, the descriptor's graph digest must bind to its admission anchors
+    with {:ok, descriptor} <- admit(input, Keyword.put_new(opts, :binding, :snapshot)),
          name <- worktree_name(descriptor),
          {:ok, worktree} <-
            Worktrees.provision(descriptor.execution_repo_alias, descriptor.base_sha, name) do

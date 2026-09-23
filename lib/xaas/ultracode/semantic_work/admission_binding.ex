@@ -134,12 +134,20 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
   """
   @spec options(keyword()) :: {:ok, options()} | {:error, {:refused_semantic_work, term()}}
   def options(opts) when is_list(opts) do
-    with {:ok, mode} <- mode(Keyword.get(opts, :binding, @default_mode)),
+    with {:ok, mode} <- mode(Keyword.get(opts, :binding)),
          {:ok, graph} <- pin(opts, :expected_graph_digest),
          {:ok, snapshot} <- pin(opts, :expected_snapshot_digest) do
       {:ok, %{binding: mode, expected_graph_digest: graph, expected_snapshot_digest: snapshot}}
     end
   end
+
+  # nil = the DEFAULT mode: verify-when-present. Snapshot agreement is still
+  # enforced when the producer carried a snapshot, but an anchor-less
+  # descriptor keeps today's behavior and the graph digest stays unbound.
+  # Explicit :snapshot forces the graph digest to bind; explicit :graph is the
+  # unbound opt-out. :auto is refused as an option: a guard the descriptor can
+  # switch off by deleting its own snapshot is not a guard.
+  defp mode(nil), do: {:ok, nil}
 
   defp mode(mode) when mode in @modes, do: {:ok, mode}
   defp mode(other), do: refuse({:invalid_binding_option, other})
@@ -177,16 +185,20 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
   """
   @spec verify(map(), options()) :: :ok | {:error, {:refused_semantic_work, term()}}
   def verify(descriptor, %{binding: mode} = options)
-      when is_map(descriptor) and mode in @modes do
+      when is_map(descriptor) and (mode in @modes or is_nil(mode)) do
     bridge = Map.get(descriptor, :bridge)
     pin_snapshot = Map.get(options, :expected_snapshot_digest)
     pin_graph = Map.get(options, :expected_graph_digest)
 
     with {:ok, snapshot} <- admitted_snapshot(descriptor),
          {:ok, bridge_digest} <- bridge_digest(bridge),
-         :ok <- bind_snapshot(descriptor, snapshot, bridge),
+         # the snapshot must first be self-consistent (an edited-after-admission
+         # snapshot is stale), then agree with every other carried anchor (a
+         # re-sealed forgery moves it away from the bridge's copy)
+         :ok <- snapshot_self_consistent(snapshot),
          inband = inband_anchors(snapshot, bridge_digest),
          :ok <- anchors_agree(trusted_anchor(pin_snapshot) ++ inband ++ envelope(descriptor)),
+         :ok <- bind_snapshot(descriptor, snapshot, bridge),
          :ok <- pin_has_anchor(pin_snapshot, inband),
          :ok <- bind_pinned_graph_digest(descriptor, pin_graph) do
       bind_graph_digest(descriptor, inband, mode)
@@ -258,32 +270,36 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
 
   # -- the embedded snapshot's own consistency and descriptor bindings -------
 
+  defp snapshot_self_consistent(nil), do: :ok
+
+  defp snapshot_self_consistent(snapshot) do
+    recomputed = snapshot_digest(snapshot)
+
+    if recomputed == field(snapshot, :work_order_digest),
+      do: :ok,
+      else: refuse({:admitted_snapshot_stale, recomputed})
+  end
+
   defp bind_snapshot(_descriptor, nil, _bridge), do: :ok
 
   defp bind_snapshot(descriptor, snapshot, bridge) do
-    recomputed = snapshot_digest(snapshot)
-
-    if recomputed != field(snapshot, :work_order_digest) do
-      refuse({:admitted_snapshot_stale, recomputed})
-    else
-      checks =
+    checks =
+      [
+        {:base_sha, Map.get(descriptor, :base_sha) == field(snapshot, :base_sha)},
+        {:repository_identity,
+         Map.get(descriptor, :repository_identity) == field(snapshot, :repository)},
+        {:work_order_iri, iri_names?(Map.get(descriptor, :work_order_iri), snapshot)}
+      ] ++
+        bridge_identity_checks(bridge, snapshot) ++
         [
-          {:base_sha, Map.get(descriptor, :base_sha) == field(snapshot, :base_sha)},
-          {:repository_identity,
-           Map.get(descriptor, :repository_identity) == field(snapshot, :repository)},
-          {:work_order_iri, iri_names?(Map.get(descriptor, :work_order_iri), snapshot)}
-        ] ++
-          bridge_identity_checks(bridge, snapshot) ++
-          [
-            {:dependencies, dependencies_match?(descriptor, snapshot)},
-            {:checkpoint_iri, checkpoint_matches?(descriptor, snapshot, bridge)},
-            {:goal, goal_matches?(descriptor, snapshot)}
-          ] ++ bridge_requires_checks(bridge, snapshot)
+          {:dependencies, dependencies_match?(descriptor, snapshot)},
+          {:checkpoint_iri, checkpoint_matches?(descriptor, snapshot, bridge)},
+          {:goal, goal_matches?(descriptor, snapshot)}
+        ] ++ bridge_requires_checks(bridge, snapshot)
 
-      case Enum.find(checks, fn {_name, ok?} -> not ok? end) do
-        nil -> :ok
-        {name, _} -> refuse({:admitted_snapshot_mismatch, name})
-      end
+    case Enum.find(checks, fn {_name, ok?} -> not ok? end) do
+      nil -> :ok
+      {name, _} -> refuse({:admitted_snapshot_mismatch, name})
     end
   end
 
@@ -457,7 +473,7 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
       else: refuse({:graph_digest_unbound, :expected_graph_digest, pin})
   end
 
-  defp bind_graph_digest(_descriptor, _inband, :graph), do: :ok
+  defp bind_graph_digest(_descriptor, _inband, mode) when mode in [nil, :graph], do: :ok
 
   defp bind_graph_digest(_descriptor, [], :snapshot), do: refuse(:admission_anchor_missing)
 
