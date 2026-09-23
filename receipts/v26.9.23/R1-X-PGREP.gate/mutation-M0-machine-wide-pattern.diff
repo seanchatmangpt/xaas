@@ -1,0 +1,15 @@
+diff --git a/test/xaas/ultracode/dispatch_test.exs b/test/xaas/ultracode/dispatch_test.exs
+index aeb5363..25262ef 100644
+--- a/test/xaas/ultracode/dispatch_test.exs
++++ b/test/xaas/ultracode/dispatch_test.exs
+@@ -650,7 +650,9 @@ defmodule Xaas.Ultracode.DispatchTest do
+ 
+     # The killed group is really gone, not orphaned: no member of the
+     # dispatched group and neither recorded pid survives the kill.
+-    assert_spawned_gone!(pgid, [worker_pid, child_pid])
++    _ = {pgid, worker_pid, child_pid}
++    {out, _exit} = System.cmd("pgrep", ["-f", "zcode.js --prompt"], stderr_to_stdout: true)
++    assert String.trim(out) == "", "dispatched process survived the timeout kill: #{out}"
+ 
+     # The unrelated process matched the old machine-wide pattern the whole
+     # time and the group kill left it alone.
