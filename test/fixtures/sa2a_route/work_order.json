@@ -1,0 +1,62 @@
+{
+  "identity": "FRI-G5-FMT-S1",
+  "title": "Repair mix format drift in ggen_igniter (Friday reference KNOWN class, subject S1)",
+  "description": "Route fixture for G5 SA2A conservation: the Friday reference KNOWN class (mix format drift repair in ggen_igniter) as one sJira work-order row in the wo.json shape plus the GC-FRI-0800 tuple fields. Acceptance: `cd <ggen_igniter checkout at the candidate head> && mix format --check-formatted` exits 0.",
+  "subject": "seanchatmangpt/ggen_igniter@friday/gc-fri-0800#FRI-G5-FMT-S1",
+  "repository": "seanchatmangpt/ggen_igniter",
+  "base_sha": "5984ec480c2318e86aa621da5f496e5e014b0fac",
+  "standing": "UNKNOWN",
+  "evidence_ceiling": "EXECUTED_VERIFIED",
+  "authority_ceiling": "CONSTRUCT",
+  "authority_requirement": "NONE",
+  "promotion_rule": "FRI-G5-FMT-S1 leaves UNKNOWN only through a TransitionLog event whose receipt binds candidateSha and subjectSha on seanchatmangpt/ggen_igniter friday/gc-fri-0800 descended from 5984ec480c2318e86aa621da5f496e5e014b0fac: the court must observe `mix format --check-formatted` exit 0 at that head and exit non-zero when the recipe commit is reverted.",
+  "replay_identity": "semantic-jira:v26.9.22:FRI-G5-FMT-S1",
+  "required_courts": [
+    "court-fri-g5-fmt-s1"
+  ],
+  "required_evidence": [
+    "postcondition-evidence",
+    "receipt-evidence",
+    "replay-evidence"
+  ],
+  "acceptance": [
+    "`mix format --check-formatted` exits 0 at the recorded candidate head of seanchatmangpt/ggen_igniter friday/gc-fri-0800; that head is the receipt subjectSha."
+  ],
+  "falsifiers": [
+    "Refutes FRI-G5-FMT-S1: after reverting only the recipe commit on the court head, `mix format --check-formatted` still exits 0, so the check does not observe this order's consequence."
+  ],
+  "projections": [
+    "jira",
+    "sa2a",
+    "worker",
+    "verification",
+    "receipt",
+    "replay"
+  ],
+  "dependencies": [],
+  "path_scope": [
+    ".formatter.exs",
+    "config",
+    "lib",
+    "mix.exs",
+    "test"
+  ],
+  "required_receipt_classes": [
+    "actuation",
+    "verification",
+    "postcondition",
+    "replay"
+  ],
+  "next_action": "Resolve capability recipe:mix-format through the construction-recipe registry and run the recipe worker on a fresh exact-SHA worktree.",
+  "next_checkpoint": "GC-FRI-0800",
+  "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+  "requires_capability": "recipe:mix-format",
+  "evidence_horizon": "exact-head court run of `mix format --check-formatted` on the candidate SHA",
+  "exclusions": [
+    "no LLM provider on the KNOWN path",
+    "no file outside path_scope changes",
+    "no push, merge or publish"
+  ],
+  "consequence_class": "postcondition",
+  "successor_policy": "a format drift the recipe cannot repair is typed UNSUPPORTED and handed to successor GC-026923"
+}

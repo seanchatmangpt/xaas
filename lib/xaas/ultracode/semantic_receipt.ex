@@ -23,8 +23,13 @@ defmodule Xaas.Ultracode.SemanticReceipt do
   encoded as compact JSON.
 
   Court-specific observations come from an adapter keyed by the Run's
-  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`). Suites
-  without an adapter export only step statuses.
+  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`). A suite
+  without an adapter whose sealed court receipt was PRODUCED by the fabric
+  (`Xaas.Ultracode.CourtReceipt.produce/6` -- it always carries a
+  `"binding"`) passes its IRI-keyed `acceptance_results` /
+  `falsifier_results` / `court_results` and the `binding` through verbatim:
+  those verdicts are already in the consumer's vocabulary. Any other suite
+  exports only step statuses.
   """
 
   alias Xaas.Ultracode.{Epoch, Receipt, Run}
@@ -34,12 +39,26 @@ defmodule Xaas.Ultracode.SemanticReceipt do
 
   @spec export(String.t()) :: {:ok, map()} | {:error, term()}
   def export(epoch_id) when is_binary(epoch_id) do
+    with {:ok, export, _sealed_verifier} <- sealed(epoch_id), do: {:ok, export}
+  end
+
+  @doc """
+  Re-reads what the fabric sealed for `epoch_id`: `{:ok, export, verifier}`
+  where `export` is exactly `export/1`'s map and `verifier` is the closing
+  receipt's raw `"fabric_verifier"` evidence (every step with its observed
+  `"exit"`), or `nil` when the close ran no verifier. A caller holding an
+  export can compare its `receipt_digest` with this re-export to prove the
+  fabric sealed it: the digest itself is unkeyed, so it proves integrity,
+  never provenance.
+  """
+  @spec sealed(String.t()) :: {:ok, map(), map() | nil} | {:error, term()}
+  def sealed(epoch_id) when is_binary(epoch_id) do
     with {:ok, epoch} <- fetch(Epoch, epoch_id, :epoch_not_found),
          {:ok, run} <- fetch(Run, epoch.run_id, :run_not_found),
          {:ok, bridge} <- bridge(run),
          :ok <- completed(epoch),
          {:ok, closing} <- closing_receipt(epoch) do
-      {:ok, build(epoch, run, closing, bridge)}
+      {:ok, build(epoch, run, closing, bridge), closing.evidence["fabric_verifier"]}
     end
   end
 
@@ -115,12 +134,18 @@ defmodule Xaas.Ultracode.SemanticReceipt do
     end
   end
 
+  @passthrough_keys ~w(acceptance_results falsifier_results court_results binding)
+
   defp observed(suite, court_receipt, bridge) do
-    with adapter when not is_nil(adapter) <- Map.get(@adapters, suite),
-         %{} = court <- court_receipt do
-      adapter.observe(court, get_in(bridge, ["requires"]) || %{})
-    else
-      _ -> nil
+    case {Map.get(@adapters, suite), court_receipt} do
+      {nil, %{"binding" => %{}} = produced} ->
+        Map.take(produced, @passthrough_keys)
+
+      {adapter, %{} = court} when not is_nil(adapter) ->
+        adapter.observe(court, get_in(bridge, ["requires"]) || %{})
+
+      _ ->
+        nil
     end
   end
 

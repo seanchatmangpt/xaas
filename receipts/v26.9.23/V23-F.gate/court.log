@@ -1,0 +1,11 @@
+check-classification: OK 21 repositories classified exactly once (Blocked=1, CriticalPath=2, Refused=3, Successor=14, Unsupported=1)
+observe: 21 repositories, 2 subjects, fetch failed: none -> /Users/sac/.cache/tmp/gc23-11.DeEleg/observations.json
+emit: 21 rows -> /Users/sac/.cache/tmp/gc23-11.DeEleg/matrix.ttl, /Users/sac/.cache/tmp/gc23-11.DeEleg/matrix.md
+GC23-11 matrix: 810d75b8b6e071fd4194a028a0323995368be191606d8e3dc686b5af19d80995 (scratch; baseline committed in fleet/matrix.ttl)
+note: receipts dir /Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23 absent
+note: receipts dir /Users/sac/wt/v26922/v26923/receipts/fleet absent
+UNKNOWN: ggen_igniter has no admitted ALIVE receipt at exact head 5984ec480c2318e86aa621da5f496e5e014b0fac (0 receipts name it; 0 unreadable receipts bind no repository)
+REFUSED(stale_subject): /Users/sac/wt/v26922/v23/V23-F/receipts/v26.9.23/V23-F.json ALIVE at 5aba8d022ff527b14ce0a4b0ce47a956cf77eb6c but xaas head is 6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012 (ARD F6)
+UNKNOWN: xaas has no admitted ALIVE receipt at exact head 6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012 (1 receipts name it; 0 unreadable receipts bind no repository)
+check-standing: NOT ALIVE (2 of 2 CriticalPath repositories lack exact-head standing; receipts: 1 read, 0 unreadable, 0 not R)
+UNKNOWN: GC23-11 CriticalPath repositories lack exact-head standing (check-standing exit 1)

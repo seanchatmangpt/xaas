@@ -1,0 +1,40 @@
+# STOP(GC-FRI-0800). True iff (1) GC-FRI-0800 has at least one child gate,
+# (2) every child gate (sj:checkpointOf GC-FRI-0800) has a gate receipt with
+# standing ALIVE, and (3) every WorkOrder with sj:checkpointOf GC-FRI-0800 is
+# typed Successor (sj:boundaryClass sj:Successor) or has a receipt whose
+# standing is terminal: ALIVE, BLOCKED, UNSUPPORTED or REFUSED. UNKNOWN,
+# PARTIAL_ALIVE, BUILD_BROKEN or no receipt at all keeps STOP false.
+# Receipts enter the graph only through mix xaas.stop_court, which projects
+# receipts ADMITTED by validate_receipt.py as sj:Receipt nodes; goal.ttl
+# itself may not assert any receipt. This text is byte-equal (trimmed) to the
+# sj:stopQuery of GC-FRI-0800 in goal.ttl; the court refuses to run on drift.
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+ASK {
+  ?gc a sj:GoalCheckpoint ;
+      dcterms:identifier "GC-FRI-0800" .
+  FILTER EXISTS {
+    ?anyGate a sj:GoalCheckpoint ;
+             sj:checkpointOf ?gc .
+  }
+  FILTER NOT EXISTS {
+    ?gate a sj:GoalCheckpoint ;
+          sj:checkpointOf ?gc .
+    FILTER NOT EXISTS {
+      ?gate sj:receipt ?gateReceipt .
+      ?gateReceipt a sj:Receipt ;
+                   sj:standing "ALIVE" .
+    }
+  }
+  FILTER NOT EXISTS {
+    ?order a sj:WorkOrder ;
+           sj:checkpointOf ?gc .
+    FILTER NOT EXISTS { ?order sj:boundaryClass sj:Successor . }
+    FILTER NOT EXISTS {
+      ?order sj:receipt ?orderReceipt .
+      ?orderReceipt a sj:Receipt ;
+                    sj:standing ?standing .
+      FILTER(?standing = "ALIVE" || STRSTARTS(?standing, "BLOCKED") || STRSTARTS(?standing, "UNSUPPORTED") || STRSTARTS(?standing, "REFUSED"))
+    }
+  }
+}

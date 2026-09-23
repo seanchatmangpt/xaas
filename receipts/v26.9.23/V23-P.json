@@ -1,0 +1,247 @@
+{
+  "identity": {
+    "subject": "V23-P",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "66b52e74dd975d336ef66818b52676af08004f5d",
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
+    "tuple_digest": "sha256:b2e94ab651a9298b944fdda688d93779c3d261dfce998cb8a3b31756374a99e8",
+    "branch": "v23/V23-P",
+    "worktree": "/Users/sac/wt/v26922/v23/V23-P",
+    "work_order": "v23:WO-V23-P (docs/sjira/v26.9.23/goal.ttl), sj:checkpointOf v23:GC23-0, sj:nextCheckpoint v23:GC23-3",
+    "tuple_digest_witnesses": [
+      "mix xaas.stop_court --checkpoint GC-26.9.23 at 11a24fb printed order V23-P digest=sha256:b2e94ab6...a99e8 (receipts/v26.9.23/V23-P.gate/stop_court_R0.log)",
+      "independent recompute: rdflib parse of goal.ttl at HEAD + python json.dumps(sort_keys, compact, exclusions sorted) -> the same digest"
+    ]
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "wave B0 lane V23-P (/Users/sac/wt/v26922/v26923/DRIVER.md gate map; /Users/sac/wt/v26922/COORDINATION.md v26.9.23 scope; operator directive 2026-09-22 23:25 PT)",
+    "actor": "claude-opus-5.5 workflow subagent (lane V23-P)"
+  },
+  "consequence": {
+    "commits": [
+      "11a24fba65c90b5c146cdd16d2328c64c647731c",
+      "66b52e74dd975d336ef66818b52676af08004f5d"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "docs/sjira/v26.9.23/prd-ard.md",
+      "docs/sjira/v26.9.23/goal.ttl",
+      "docs/sjira/v26.9.23/stop.rq",
+      "docs/sjira/v26.9.23/courts/GC23-0.sh",
+      "docs/sjira/v26.9.23/courts/GC23-1.sh",
+      "docs/sjira/v26.9.23/courts/GC23-2.sh",
+      "docs/sjira/v26.9.23/courts/GC23-3.sh",
+      "docs/sjira/v26.9.23/courts/GC23-4.sh",
+      "docs/sjira/v26.9.23/courts/GC23-5.sh",
+      "docs/sjira/v26.9.23/courts/GC23-6.sh",
+      "docs/sjira/v26.9.23/courts/GC23-7.sh",
+      "docs/sjira/v26.9.23/courts/GC23-8.sh",
+      "docs/sjira/v26.9.23/courts/GC23-9.sh",
+      "docs/sjira/v26.9.23/courts/GC23-10.sh",
+      "docs/sjira/v26.9.23/courts/GC23-11.sh",
+      "docs/sjira/v26.9.23/courts/GC23-12.sh",
+      "docs/sjira/v26.9.23/courts/check_scripts.sh",
+      "docs/sjira/v26.9.23/receipts/GC23-0.json .. GC23-12.json, STOP-GC-26.9.23.json (R_0)",
+      "lib/mix/tasks/xaas.stop_court.ex",
+      "test/sjira/v26_9_23_goal_test.exs",
+      "receipts/v26.9.23/V23-P.gate/*.log",
+      "receipts/v26.9.23/V23-P.json"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+        "exit": 0,
+        "summary": "formatted (at 66b52e7, porcelain 0)",
+        "output_sha256": "a3c1691e49e477327cc533970006ac246c32477d54d1b4155324b842f47d487e"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+        "exit": 0,
+        "summary": "Compiling 506 files (.ex); Generated xaas app (only warning: deps/ex4pm/mix.exs Application.get_env, pre-existing, dependency)",
+        "output_sha256": "07ecc8d28cd9abd418b85b04c9fde738469f567435fc1183e22150b5ceddde57"
+      },
+      {
+        "cmd": "mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+        "exit": 0,
+        "summary": "31 tests, 0 failures (seed 663106; 14 pre-existing FRI-T5 stop-court tests + 17 new V23-P tests; 0 skipped: validator and rdflib 7.6.0 present)",
+        "output_sha256": "872a2f272e7800c419b76dfc6d93e565baa44cfcbe93556260ce5f019802aefb"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/check_scripts.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+        "exit": 0,
+        "summary": "OK: 13 court scripts GC23-0..GC23-12 exist, are sh -n clean, and goal.ttl points each gate at its own script (awk + rdflib parse agree)",
+        "output_sha256": "428f9d12f0973a89d146e4d3a4456f6b2a9bc8683ecd15e98be0d076c7135ab2"
+      },
+      {
+        "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" test/sjira/v26_9_23_goal_test.exs test/mix/tasks/xaas_stop_court_test.exs lib/mix/tasks/xaas.stop_court.ex docs/sjira/v26.9.23/courts/",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+        "exit": 0,
+        "summary": "Chicago mock grep: zero matches",
+        "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "cmd": "python3 ~/.claude/dfcm/validate_receipt.py docs/sjira/v26.9.23/receipts/*.json",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+        "exit": 0,
+        "summary": "14/14 ADMITTED (13 R_0 gate receipts + STOP receipt)",
+        "output_sha256": "ff0edb1de14a1c718a5b81c3a857d7b90ebb0b657914fc06bd062caa9cb550ff"
+      }
+    ],
+    "durable_location": "receipts/v26.9.23/V23-P.json",
+    "logs": "receipts/v26.9.23/V23-P.gate/"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "the V23-P lane gate (format, compile --force --warnings-as-errors, the stop-court + goal tests, check_scripts.sh) plus the mock grep and the R_0 re-validation, all exit 0 at subject 66b52e7 with a clean tree; ALIVE is the lane order V23-P only, not any GC23 gate (all 13 gates are UNKNOWN in R_0)"
+  },
+  "observations": {
+    "stop_court_R0": {
+      "cmd": "mix xaas.stop_court --checkpoint GC-26.9.23",
+      "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+      "subject_sha": "11a24fba65c90b5c146cdd16d2328c64c647731c",
+      "exit": 1,
+      "log": "receipts/v26.9.23/V23-P.gate/stop_court_R0.log",
+      "output_sha256": "559cb69f93e708c0f0e933928173797347ced35b58b7998b28c209dd743564e4",
+      "summary": "exit 1 is the expected STOP=false verdict: GC23-0..GC23-12 each exit 75 (machinery_absent) -> UNKNOWN, 13 gate receipts + STOP receipt ADMITTED, 10 required lane orders MISSING a receipt; court env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (5984ec4) XAAS_DIR=<worktree>; committed as R_0 in 66b52e7"
+    },
+    "gate_to_machinery_lane": {
+      "GC23-0": "V23-C (source half checked now: prose committed + sha256 pinned)",
+      "GC23-1": "V23-B",
+      "GC23-2": "V23-C",
+      "GC23-3": "V23-C",
+      "GC23-4": "V23-D",
+      "GC23-5": "V23-D",
+      "GC23-6": "V23-D",
+      "GC23-7": "V23-D",
+      "GC23-8": "V23-D",
+      "GC23-9": "V23-M",
+      "GC23-10": "V23-R",
+      "GC23-11": "V23-F",
+      "GC23-12": "V23-H"
+    },
+    "anticipatory_shacl_admission": {
+      "cmd": "python3 (rdflib 7.6.0 + pyshacl 0.31.0): goal.ttl + docs/sjira/v26.9.22/friday/goal.ttl + ggen_igniter fri/FRI-T1@8007340 priv/ggen/semantic-jira-pack/ontology.ttl validated against its shapes/work-order.shacl.ttl",
+      "exit": 0,
+      "log": "receipts/v26.9.23/V23-P.gate/pyshacl.log",
+      "output_sha256": "f9558cd061fc495c7dbc70a3a6dc978c7e769de2349d433b987618eb7d6cf238",
+      "summary": "conforms=True; dropping sj:postcondition / requiresCapability / evidenceHorizon / consequenceClass / successorPolicy from WO-V23-C -> conforms=False each; without the Friday predecessor graph -> conforms=False (sj:successorOf fri:GC-FRI-0800 sh:class; observed in an earlier interactive run on the same goal.ttl bytes, not recorded in pyshacl.log); not the production GgenIgniter.SemanticJira.Shacl court (lane V23-C owns that), an independent SHACL engine only",
+      "shapes_sha256": "42572fa36075b8267f1c73e4c72618034c75f50600de5620991378833a7a9d3b",
+      "ontology_sha256": "e09420230964c300f10fba8f2518914b12fb2381c26472aa19de3bdd31cf8dc0"
+    },
+    "order_receipt_link_check": {
+      "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 --receipts-dir <scratch>",
+      "cwd": "/Users/sac/wt/v26922/v23/V23-P",
+      "exit": 1,
+      "summary": "with this receipt in the working tree at 66b52e7: 'order V23-P standing=ALIVE receipt=ADMITTED digest=sha256:b2e94ab6...a99e8', STOP=false (expected; gates UNKNOWN): the lane receipt re-enters the stop court as the WO-V23-P order receipt (R_t -> O*_{t+1})"
+    }
+  },
+  "falsifiers": {
+    "note": "anti-vacuity mutation court run in the lane worktree at 11a24fb: each mutation applied with sed, both test files run (31 tests), then restored with git checkout HEAD -- <files> and git status --porcelain = 0 verified after every mutation (receipts/v26.9.23/V23-P.gate/mutations.log, sha256 595a84a38384afcbcc9e6aaaa176872c6b3497655fe8080d264dc1fddbcdb298)",
+    "revert_mutations_killed": [
+      "m1 goal.ttl: WO-V23-C loses sj:postcondition -> 2 failures (tuple-complete lane orders; registry/required orders tuple-complete)",
+      "m2 goal.ttl + stop.rq consistently: sj:checkpointOf+ -> sj:checkpointOf (direct orders only) -> 2 failures (oxigraph vs rdflib transitive ASK; real stop.rq transitive order holds STOP open)",
+      "m3 stop court: order closure reverted to direct children of the root -> 2 failures",
+      "m4 stop court: court env not exported -> 1 failure (XAAS_DIR/GGEN_IGNITER_DIR env court)",
+      "m5 GC23-5.sh names lane V23-Q instead of V23-D -> 1 failure (stub lane owns its court script)",
+      "m6 stop court: exit 75 mapped to court_failed -> 3 failures (exit-code contract; registry; real subprocess)",
+      "m7 prd-ard.md one byte changed -> 2 failures (prose pin; real subprocess: GC23-0 court REFUSED drift, exit 1 not 75)",
+      "m8 registry: GC-26.9.23 graph mis-wired to the Friday goal -> 2 failures (registry; real subprocess)"
+    ]
+  },
+  "discovered": [
+    "FRI-T1 repair 0337a6a makes sj:exclusion 0..n in the pack shapes, while mix xaas.stop_court refuses to link an order with no exclusion ({:incomplete, \"exclusions\"}) and PRD section 6.5 lists exclusions in the mandatory WorkOrder tuple: a WorkOrder without exclusions is admitted by the shapes but can never close. Candidate GC23-3 / F1 falsifier for lane V23-C (routes to v23:GC-26.9.24 unless V23-C adopts it).",
+    "Admission of goal.ttl needs the predecessor docs/sjira/v26.9.22/friday/goal.ttl in the data graph (sj:successorOf fri:GC-FRI-0800 is sh:class sj:GoalCheckpoint); the GC23-3 court (V23-C) should merge it, as the goal.ttl header states.",
+    "friday/gc-fri-0800 advanced to db55543 (FRI-T3 merge) after this lane branched at bd1efb1; FRI-T3 touches none of this lane's paths.",
+    "V23-X also commits docs/sjira/v26.9.23/prd-ard.md (byte-identical, clean merge expected); V23-F may create docs/sjira/v26.9.23/courts/GC23-11.sh on its own base (add/add at integrate: keep V23-F's real court body, it replaces this stub by contract).",
+    "Disk: the volume reached ENOSPC during this lane (df reported 0 GB free shortly before 00:06 PT 2026-09-23; Bash tool output files failed with ENOSPC; 2-3 GB free afterwards without any action by this lane). oclnr snapshot thin --bytes 20GB exited 0 with 0 local snapshots present (nothing to thin); oclnr emergency dry-run lists 14.06 GB of regenerable caches including ~/.cache (7.95 GB, which holds TMPDIR ~/.cache/tmp used by running test suites); not run (--yes is outside this lane's authority and would clear other executors' tmp). Operator edge."
+  ],
+  "integration": {
+    "target_branch": "friday/gc-fri-0800",
+    "worktree": "/Users/sac/wt/v26922/fri/xaas-int",
+    "lock": "/Users/sac/wt/v26922/fri/xaas-int.merge.lock (owner claude:B0:V23-P)",
+    "merged_ref": "v23/V23-P",
+    "merged_sha": "e2a87664358a53589c1d4648c826d5e8982f4c26",
+    "pre_merge_head": "ab8f2f6670ef3abf3ce02b6ba020f602ae1c3ef5",
+    "merge_cmd": "git merge --no-ff v23/V23-P -F <msgfile>",
+    "merge_commit": "940f2a1db5daebb4db59b847327e5f650aef2763",
+    "merge_note": "merge-base bd1efb1; docs/sjira/v26.9.23/prd-ard.md identical on both sides (sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212); HANDWRITTEN.md auto-merged (V23-P row added after the FRI-T5 row, V23-F/V23-X/FRI-T3 rows kept)",
+    "conflicts": [
+      {
+        "path": "docs/sjira/v26.9.23/courts/GC23-11.sh",
+        "kind": "add/add: int side = V23-F real bounded-fleet court (mode 100644, UNKNOWN_EXIT=3); lane side = V23-P stub (echo 'UNKNOWN: GC23-11 machinery lands in lane V23-F'; exit 75; mode 100755)",
+        "resolution": "kept both: V23-F court body verbatim (whitespace-insensitive diff of the court body vs the int side exit 0) wrapped as gc23_11_court, run when scripts/sjira/fleet_matrix.py, fleet/classification.ttl and fleet/universe.json exist; V23-P stub tail kept as the machinery-absent path (exit 75 = stop court unknown_exit/machinery_absent), as V23-F's header asked; ran-but-not-ALIVE paths keep UNKNOWN_EXIT=3 / REFUSED_EXIT=1 (runner outcome court_failed, standing UNKNOWN); mode 100755 like the 12 sibling courts"
+      }
+    ],
+    "lane_gate": [
+      {
+        "cmd": "mix format --check-formatted",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-P.int-gate/format.log",
+        "output_sha256": "sha256:8f1c65f9bdd102cb8cfdd13a71f75d0c82ca72ff20d318776752e02ffe4a7907"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-P.int-gate/compile.log",
+        "output_sha256": "sha256:469993b5389531b8e5d26618248b52b0474c2ac4ef62616babaf09a3721895a9",
+        "summary": "Compiling 507 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-P.int-gate/test.log",
+        "output_sha256": "sha256:e5c75183f487cb32d0b0b2fdcc381af06acb3b5c9ecf210ff854503075977d91",
+        "summary": "31 tests, 0 failures"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/check_scripts.sh",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-P.int-gate/check_scripts.log",
+        "output_sha256": "sha256:428f9d12f0973a89d146e4d3a4456f6b2a9bc8683ecd15e98be0d076c7135ab2",
+        "summary": "OK: 13 court scripts GC23-0..GC23-12; rdflib parse agrees"
+      }
+    ],
+    "conflict_witnesses": [
+      {
+        "cmd": "python3 scripts/sjira/test_fleet_matrix.py",
+        "exit": 0,
+        "log": "receipts/v26.9.23/V23-P.int-gate/fleet_matrix_tests.log",
+        "output_sha256": "sha256:2d673614afb0aa4b008660819c8580b2a1bad9a2d05e0cb946e7b9c7559b600f",
+        "summary": "Ran 21 tests OK (V23-F typed exit mapping 0/1/3 unchanged)"
+      },
+      {
+        "cmd": "XAAS_DIR=<empty tmp dir> sh docs/sjira/v26.9.23/courts/GC23-11.sh",
+        "exit": 75,
+        "log": "receipts/v26.9.23/V23-P.int-gate/gc23_11_machinery_absent.log",
+        "output_sha256": "sha256:3b18032ea7ff64212e73c2f30ee7379a1c972db2eabf82ac9db175a2657e6601",
+        "summary": "UNKNOWN: GC23-11 machinery lands in lane V23-F"
+      },
+      {
+        "cmd": "mutation: GC23-11.sh tail 'exit 75' -> 'exit 3'; mix test test/sjira/v26_9_23_goal_test.exs:359; restored",
+        "exit": 2,
+        "log": "receipts/v26.9.23/V23-P.int-gate/mutation.log",
+        "output_sha256": "sha256:e8db07b4639340968887059dfc61d4d327ea9e2839c091a66a037332e39e0545",
+        "summary": "mutated: 1 test, 1 failure (assert body =~ ~r/^exit 75$/m); unmutated: 1 test, 0 failures"
+      },
+      {
+        "cmd": "grep -n -E 'unittest.mock|Mock\\(|MagicMock|patch\\(|monkeypatch|Mox|:meck|mock\\(' test/sjira/v26_9_23_goal_test.exs test/mix/tasks/xaas_stop_court_test.exs scripts/sjira/test_fleet_matrix.py",
+        "exit": 1,
+        "log": "receipts/v26.9.23/V23-P.int-gate/mockgrep.log",
+        "output_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "summary": "0 matches"
+      }
+    ],
+    "subject_sha_of_gate": "940f2a1db5daebb4db59b847327e5f650aef2763",
+    "gate_standing_claimed": false,
+    "note": "integration does not widen the lane standing scope: ALIVE is lane order V23-P only; all 13 GC23 gates stay UNKNOWN until their machinery lanes land and the stop court runs"
+  }
+}

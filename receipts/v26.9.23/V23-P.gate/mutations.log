@@ -1,0 +1,41 @@
+ docs/sjira/v26.9.23/goal.ttl | 1 -
+ 1 file changed, 1 deletion(-)
+== m1_goal_drop_postcondition exit=2 31 tests, 2 failures porcelain_after_restore=0
+1) test one tuple-complete WorkOrder per DRIVER.md lane, under the gate it serves (Xaas.Sjira.V26923GoalTest)
+2) test the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete (Xaas.Sjira.V26923GoalTest)
+ docs/sjira/v26.9.23/goal.ttl | 2 +-
+ docs/sjira/v26.9.23/stop.rq  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+== m2_stoprq_direct_orders_only exit=2 31 tests, 2 failures porcelain_after_restore=0
+1) test the oxigraph SELECT-existence answer equals rdflib's native ASK on the real stop.rq (transitive orders) (Xaas.Sjira.V26923GoalTest)
+2) test real stop.rq: a WorkOrder under a gate (checkpointOf+) holds STOP open until its bound receipt; a successor-bucket order never does (Xaas.Sjir
+ lib/mix/tasks/xaas.stop_court.ex | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+== m3_court_direct_orders_only exit=2 31 tests, 2 failures porcelain_after_restore=0
+1) test real stop.rq: a WorkOrder under a gate (checkpointOf+) holds STOP open until its bound receipt; a successor-bucket order never does (Xaas.Sjir
+2) test the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete (Xaas.Sjira.V26923GoalTest)
+ lib/mix/tasks/xaas.stop_court.ex | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+== m4_court_env_not_exported exit=2 31 tests, 1 failure porcelain_after_restore=0
+1) test court env: XAAS_DIR is the repository under judgement, GGEN_IGNITER_DIR follows --ggen-igniter-dir (Xaas.Sjira.V26923GoalTest)
+ docs/sjira/v26.9.23/courts/GC23-5.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+== m5_stub_names_wrong_lane exit=2 31 tests, 1 failure porcelain_after_restore=0
+1) test each gate's UNKNOWN stub names a lane whose order's path scope covers that court script (Xaas.Sjira.V26923GoalTest)
+ lib/mix/tasks/xaas.stop_court.ex | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+== m6_exit75_not_machinery_absent exit=2 31 tests, 3 failures porcelain_after_restore=0
+1) test the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete (Xaas.Sjira.V26923GoalTest)
+2) test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 (real subprocess): ADMITTED UNKNOWN receipt, STOP=false (Xaas.Sjira.V26923GoalTest)
+3) test court exit-code contract: 0 passed/ALIVE, 75 machinery_absent/UNKNOWN, other court_failed/UNKNOWN (Xaas.Sjira.V26923GoalTest)
+ docs/sjira/v26.9.23/prd-ard.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+== m7_prose_one_byte exit=2 31 tests, 2 failures porcelain_after_restore=0
+1) test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 (real subprocess): ADMITTED UNKNOWN receipt, STOP=false (Xaas.Sjira.V26923GoalTest)
+2) test prd-ard.md is the accepted prose, byte-identical (sha256 and length pinned) (Xaas.Sjira.V26923GoalTest)
+ lib/mix/tasks/xaas.stop_court.ex | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+== m8_registry_miswired exit=2 31 tests, 2 failures porcelain_after_restore=0
+1) test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 (real subprocess): ADMITTED UNKNOWN receipt, STOP=false (Xaas.Sjira.V26923GoalTest)
+2) test the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete (Xaas.Sjira.V26923GoalTest)
+== done
