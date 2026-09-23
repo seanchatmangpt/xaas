@@ -19,6 +19,8 @@ MUTS = {
     "m5 check skips sourceText comparison": ('if text_lit is not None and span != str(text_lit):', 'if False:'),
     "m6 emit keeps input order": ('resolved.sort(key=lambda c: (c["start"], c["kind"], c["end"], c["local"]))', 'pass'),
     "m7 check accepts any kind": ('if kind is not None and (not isinstance(kind, Literal) or str(kind) not in KINDS):', 'if False:'),
+    "m8 summary drops not-required candidates": ('not_required += 1', 'pass'),
+    "m9 summary counts each requiredBy target at most once": ('targets[local] = targets.get(local, 0) + 1', 'targets[local] = 1'),
 }
 code, tail, fails = suite()
 print(f"baseline: exit={code} {tail}")

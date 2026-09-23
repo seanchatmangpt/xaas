@@ -11,6 +11,8 @@ Pipeline for `../prd-ard.md` (accepted prose, byte-identical, sha256:7c8797b2...
 3. **check (deterministic)**: `prose_spans.py check --source ... --candidates prd-ard.ttl --require-gates 13
    [--extract <json>]` re-verifies digest, span bytes, IRI, kind, boundary class, standing UNKNOWN and that
    every gate GC23-0..12 has a candidate; `--extract` also refuses hand edits (re-emit must be byte-equal).
+   `--summary <json>` writes the verified tally (kinds, per-target `sj:requiredBy` counts including the root
+   `GC-26.9.23`, not-required count, `required + not_required = candidates`); receipts copy counts from it.
 4. **admit (not here)**: candidates stay `sj:candidateStanding "UNKNOWN"`; admission into O* is ggen_igniter
    `compile_prose` (lane V23-C). Never edit `prd-ard.ttl` by hand: edit the JSON and re-emit.
 

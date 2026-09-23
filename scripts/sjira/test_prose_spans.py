@@ -275,6 +275,49 @@ class ProseSpansTest(unittest.TestCase):
         self.assertEqual(self.check().returncode, 0, "statement is not span-bound; only re-emit sees it")
         self.assert_refused(self.check("--extract", str(self.extract)), "projection_drift")
 
+    # ── check --summary: receipt numbers come from the checked artifact ─────
+
+    def summary(self, *extra: str) -> tuple[subprocess.CompletedProcess, dict]:
+        path = self.dir / "summary.json"
+        result = self.check("--summary", str(path), *extra)
+        return result, json.loads(path.read_text(encoding="utf-8"))
+
+    def test_summary_tallies_verified_candidates(self) -> None:
+        self.emitted()
+        result, summary = self.summary()
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(summary["check"], "OK")
+        self.assertEqual(summary["candidates"], 4)
+        self.assertEqual(summary["verified"], 4)
+        self.assertEqual(summary["kinds"], {"Falsifier": 1, "Invariant": 1, "Postcondition": 2})
+        self.assertEqual(summary["required_by"], {"GC23-0": 1, "GC23-1": 2})
+        self.assertEqual((summary["required"], summary["not_required"], summary["multi_required"]), (3, 1, 0))
+        self.assertEqual(summary["candidates_sha256"], "sha256:" + hashlib.sha256(self.ttl.read_bytes()).hexdigest())
+        self.assertIn(
+            "TALLY: required 3 + not_required 1 = 4 (multi_required 0); requiredBy GC23-0=1 GC23-1=2", result.stdout
+        )
+        # A candidate required by the gate and by the root counts once per target, once in `required`.
+        items = [dict(EXTRACT[0], required_by=["GC23-0", "GC-26.9.23"]), *EXTRACT[1:]]
+        self.assertEqual(self.emit(extract=self.write_extract(items)).returncode, 0)
+        result, summary = self.summary()
+        self.assertEqual(summary["required_by"], {"GC-26.9.23": 1, "GC23-0": 1, "GC23-1": 2})
+        self.assertEqual((summary["required"], summary["not_required"], summary["multi_required"]), (3, 1, 1))
+        # Summary bytes are a pure function of the checked inputs.
+        first = (self.dir / "summary.json").read_bytes()
+        self.summary()
+        self.assertEqual(first, (self.dir / "summary.json").read_bytes())
+
+    def test_summary_of_a_refused_graph_says_failed(self) -> None:
+        text = self.emitted()
+        self.ttl.write_text(
+            text.replace('sj:propositionKind "Falsifier"', 'sj:propositionKind "Wish"', 1), encoding="utf-8"
+        )
+        result, summary = self.summary()
+        self.assert_refused(result, "kind_invalid")
+        self.assertEqual((summary["check"], summary["candidates"], summary["verified"]), ("FAILED", 4, 3))
+        self.assertEqual(summary["required_by"], {"GC23-0": 1, "GC23-1": 1})
+        self.assertGreater(summary["refusals"], 0)
+
     # ── the committed v26.9.23 artifacts ───────────────────────────────────
 
     def test_committed_prd_ard_candidates_verify_and_reproject(self) -> None:
@@ -314,6 +357,22 @@ class ProseSpansTest(unittest.TestCase):
         )
         self.assertEqual(emitted.returncode, 0, emitted.stdout)
         self.assertEqual(out.read_bytes(), ttl.read_bytes())
+        # The tally agrees with a count taken straight from the extraction JSON (the receipt's
+        # extraction numbers are copied from this summary, never typed).
+        summary_path = self.dir / "prd-ard.summary.json"
+        tallied = run("check", "--source", str(source), "--candidates", str(ttl), "--summary", str(summary_path))
+        self.assertEqual(tallied.returncode, 0, tallied.stdout)
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        items = json.loads(extract.read_text(encoding="utf-8"))
+        targets: dict[str, int] = {}
+        for item in items:
+            rb = item.get("required_by")
+            for t in [rb] if isinstance(rb, str) else rb or []:
+                targets[t] = targets.get(t, 0) + 1
+        self.assertEqual(summary["required_by"], targets)
+        self.assertEqual(summary["not_required"], sum(1 for i in items if not i.get("required_by")))
+        self.assertEqual(summary["required"] + summary["not_required"], summary["candidates"])
+        self.assertEqual(summary["candidates"], len(items))
 
 
 if __name__ == "__main__":

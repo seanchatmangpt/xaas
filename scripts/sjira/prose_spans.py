@@ -10,7 +10,7 @@ every candidate carries sj:candidateStanding "UNKNOWN"; admission is
 ggen_igniter compile_prose (lane V23-C).
 
   emit  --source <md> --extract <json> --out <ttl> --source-path <repo-rel> --extracted-by <id>
-  check --source <md> --candidates <ttl> [--require-gates N] [--extract <json>]
+  check --source <md> --candidates <ttl> [--require-gates N] [--extract <json>] [--summary <json>]
 
 Extraction item: {kind, statement, quote, occurrence?, required_by?,
 boundary_class, hints?}. `quote` must occur in the source; if it occurs more
@@ -20,6 +20,10 @@ postcondition, requiresCapability, evidenceHorizon, exclusion,
 consequenceClass, successorPolicy (literal tuple hints) and acceptance,
 falsifier (text carried as sj:AcceptanceCriterion / sj:Falsifier nodes with
 dcterms:description, the pack's existing properties for those meanings).
+
+`check --summary` writes a tally of the verified candidates (kinds, per-target
+sj:requiredBy counts, not-required count) as sorted JSON, so a receipt copies
+its numbers from the checked artifact instead of retyping them.
 
 Exit codes: 0 all checks hold; 1 one or more refusals (each printed as
 "REFUSED <subject>: <code>: <detail>"); 2 usage error. Output is a pure
@@ -400,8 +404,11 @@ def verify_turtle(
     namespace: str,
     refusals: Refusals,
     label: str,
-) -> tuple[dict[str, list[str]], int]:
-    """Re-verify every candidate against the source bytes. Returns (gate -> valid candidates, n)."""
+) -> tuple[dict[str, list[str]], int, dict[str, tuple[str, list[str]]]]:
+    """Re-verify every candidate against the source bytes.
+
+    Returns (gate -> valid candidates, n, valid candidate -> (kind, sorted requiredBy targets)).
+    """
     from rdflib import Graph, Literal, URIRef
     from rdflib.namespace import RDF
 
@@ -410,7 +417,7 @@ def verify_turtle(
         graph.parse(data=text, format="turtle")
     except Exception as exc:  # rdflib raises several parser exception types
         refusals.add(label, "candidates_unparseable", f"{type(exc).__name__}: {short(str(exc), 160)}")
-        return {}, 0
+        return {}, 0, {}
 
     def sj(name: str) -> URIRef:
         return URIRef(SJ + name)
@@ -424,6 +431,7 @@ def verify_turtle(
     if not subjects:
         refusals.add(label, "no_candidates", "no sj:Proposition in the candidates graph")
     covered: dict[str, list[str]] = {}
+    verified: dict[str, tuple[str, list[str]]] = {}
     children: set = set()
     resolved_source = Path(source_arg).resolve().as_posix()
 
@@ -524,6 +532,7 @@ def verify_turtle(
                 if not isinstance(v, Literal) or not str(v).strip():
                     refusals.add(name, "hints_invalid", f"sj:{key} must be non-empty text")
         if len(refusals.items) == before:
+            verified[name] = (str(kind), sorted(gates))
             for g in gates:
                 covered.setdefault(g, []).append(name)
 
@@ -531,7 +540,33 @@ def verify_turtle(
     for s in sorted({s for s in graph.subjects(None, None)}, key=str):
         if s not in candidates and s not in children:
             refusals.add(str(s), "stray_subject", "not a candidate nor a candidate's hint node")
-    return covered, len(subjects)
+    return covered, len(subjects), verified
+
+
+def tally(verified: dict[str, tuple[str, list[str]]], namespace: str) -> dict:
+    """Counts over verified candidates; every candidate lands in exactly one of required / not_required."""
+    kinds: dict[str, int] = {}
+    targets: dict[str, int] = {}
+    required = not_required = multi_required = 0
+    for kind, gates in verified.values():
+        kinds[kind] = kinds.get(kind, 0) + 1
+        if not gates:
+            not_required += 1
+            continue
+        required += 1
+        if len(gates) > 1:
+            multi_required += 1
+        for g in gates:
+            local = g[len(namespace) :] if g.startswith(namespace) else g
+            targets[local] = targets.get(local, 0) + 1
+    return {
+        "kinds": kinds,
+        "multi_required": multi_required,
+        "not_required": not_required,
+        "required": required,
+        "required_by": targets,
+        "verified": len(verified),
+    }
 
 
 def cmd_check(args: argparse.Namespace) -> int:
@@ -543,9 +578,9 @@ def cmd_check(args: argparse.Namespace) -> int:
         text = candidates_bytes.decode("utf-8")
     except UnicodeDecodeError as exc:
         refusals.add(args.candidates, "candidates_unparseable", str(exc))
-    covered, count = ({}, 0)
+    covered, count, verified = ({}, 0, {})
     if text is not None:
-        covered, count = verify_turtle(text, source, args.source, args.namespace, refusals, args.candidates)
+        covered, count, verified = verify_turtle(text, source, args.source, args.namespace, refusals, args.candidates)
     gates = [f"{args.gate_prefix}{i}" for i in range(args.require_gates or 0)]
     for gate in gates:
         if not covered.get(args.namespace + gate):
@@ -584,15 +619,32 @@ def cmd_check(args: argparse.Namespace) -> int:
                     "projection_drift",
                     f"re-emit from {args.extract} differs from the candidates bytes",
                 )
+    counts = tally(verified, args.namespace)
+    if args.summary:
+        summary = dict(
+            counts,
+            candidates=count,
+            candidates_sha256=source_digest(candidates_bytes),
+            check="FAILED" if refusals else "OK",
+            refusals=len(refusals.items),
+            require_gates=args.require_gates or 0,
+            source_sha256=source_digest(source),
+        )
+        out = Path(args.summary)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(summary, sort_keys=True, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if refusals:
         sys.stdout.write(refusals.render())
         sys.stdout.write(f"CHECK FAILED: {len(refusals.items)} refusal(s) over {count} candidates\n")
         return 1
-    tally = " ".join(f"{g}={len(covered.get(args.namespace + g, []))}" for g in gates)
+    gate_tally = " ".join(f"{g}={len(covered.get(args.namespace + g, []))}" for g in gates)
+    targets = " ".join(f"{t}={n}" for t, n in sorted(counts["required_by"].items()))
     sys.stdout.write(
         f"CHECK OK: {count} candidates bound to {args.source} {source_digest(source)}"
-        + (f"; gates {tally}" if gates else "")
+        + (f"; gates {gate_tally}" if gates else "")
         + "\n"
+        + f"TALLY: required {counts['required']} + not_required {counts['not_required']} = {count}"
+        + f" (multi_required {counts['multi_required']}); requiredBy {targets or '-'}\n"
     )
     return 0
 
@@ -615,6 +667,7 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--require-gates", type=int, default=0, help="require gates <prefix>0..N-1 covered")
             p.add_argument("--gate-prefix", default=DEFAULT_GATE_PREFIX, help="gate local-name prefix")
             p.add_argument("--extract", help="also re-emit from this extraction and require identical bytes")
+            p.add_argument("--summary", help="write the verified-candidate tally (sorted JSON) to this path")
     args = parser.parse_args(argv)
     return cmd_emit(args) if args.command == "emit" else cmd_check(args)
 
