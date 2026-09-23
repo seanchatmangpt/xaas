@@ -112,13 +112,40 @@
         "cwd": "/Users/sac/wt/v26922/v23/V23-L",
         "exit": 1,
         "summary": "no matches (Chicago: real tmp git repos, real validator, real oxigraph NIF)"
+      },
+      {
+        "cmd": "git merge-tree --write-tree 5aff6e5 v23/V23-K",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-L",
+        "exit": 0,
+        "summary": "clean merge, tree a4c2ca4a8819ee0f05c0dd2b4251e87580b2fbbd (V23-K f7dcab3)"
+      },
+      {
+        "cmd": "mix format --check-formatted  # scratch detached worktree at unreferenced merge commit edd2d50 (5aff6e5 + V23-K f7dcab3)",
+        "cwd": "/private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K",
+        "exit": 0,
+        "summary": "clean",
+        "output_sha256": "8cf3669303effab887cc519bfda0b03caae55e0a29e2119d556863b192f1f823"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors  # at edd2d50",
+        "cwd": "/private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K",
+        "exit": 0,
+        "summary": "Compiling 514 files (.ex); Generated xaas app",
+        "output_sha256": "bf2da87c9f41e47a2712cf4c78508e61db698b3e8a7870f5596e24e4a25fdde2"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs  # at edd2d50",
+        "cwd": "/private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K",
+        "exit": 0,
+        "summary": "43 tests, 0 failures: with V23-K's test fix the lane gate is green on the combined tree",
+        "output_sha256": "5026249176adc3a3d780a27ab18b2159e2de3ea626df3f4dc5b0225f180ac48e"
       }
     ],
     "durable_location": "receipts/v26.9.23/V23-L.json (evidence: receipts/v26.9.23/V23-L.gate/)"
   },
   "standing": {
     "value": "PARTIAL_ALIVE",
-    "derived_from": "lane gate at fc0b3a2fab57f7df45c52a1812befeafcbe5ea4a: mix format --check-formatted exit 0; MIX_ENV=test mix compile --force --warnings-as-errors exit 0; mix test (2 files) exit 2 with exactly 1 failure, the pre-existing 'each gate's UNKNOWN stub names a lane whose order's path scope covers that court script' reproduced at base 3b1d1843d12c1402d2e465749dd96e951e149c3b before any change (31 tests, 1 failure) and fixed on v23/V23-K f7dcab3 (not merged into friday/gc-fri-0800 at receipt time); the same files with that one test excluded: 37 tests, 0 failures. The lane's behaviour is observed at the exact subject: the real stop court links V23-B and V23-C from GGEN_IGNITER_DIR (ggen_igniter-int 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc) where the base implementation printed MISSING. PARTIAL only because the lane gate command as written does not exit 0 until V23-K's test fix lands."
+    "derived_from": "lane gate at fc0b3a2fab57f7df45c52a1812befeafcbe5ea4a: mix format --check-formatted exit 0; MIX_ENV=test mix compile --force --warnings-as-errors exit 0; mix test (2 files) exit 2 with exactly 1 failure, the pre-existing 'each gate's UNKNOWN stub names a lane whose order's path scope covers that court script' reproduced at base 3b1d1843d12c1402d2e465749dd96e951e149c3b before any change (31 tests, 1 failure) and fixed on v23/V23-K f7dcab3 (not merged into friday/gc-fri-0800 at receipt time); the same files with that one test excluded: 37 tests, 0 failures. The lane's behaviour is observed at the exact subject: the real stop court links V23-B and V23-C from GGEN_IGNITER_DIR (ggen_igniter-int 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc) where the base implementation printed MISSING. PARTIAL only because the lane gate command as written does not exit 0 until V23-K's test fix lands. Combined-tree qualification (not this subject): the unreferenced merge commit edd2d50 = this branch + v23/V23-K f7dcab3 (git merge-tree clean) passes the full lane gate (format 0, compile 0, 43 tests 0 failures)."
   },
   "order_table": [
     {
@@ -254,6 +281,7 @@
     "STOP receipt gains a 'stop' section (order-receipt dirs with git toplevel+HEAD; per order dir, repo HEAD, committed_at_head, found_in, refusal); order lines print from=<origin>:<dir>@<head>. Additive: existing substrings and receipt fields unchanged.",
     "Conflict handling is order-scoped: REFUSED(duplicate_order_receipt) with broken term R_missing_identity keeps the order open (STOP=false) while every other gate and order is still judged; the court exit stays 1, not 2.",
     "No LLM, network model API or zcode binary on any executed product path; the court and tests run only git, sh, python3 validator and the oxigraph NIF.",
-    "Not pushed, not merged; integration into friday/gc-fri-0800 is the Integrate stage's step. Expected merge overlap with v23/V23-K: both touch test/sjira/v26_9_23_goal_test.exs and HANDWRITTEN.md in disjoint regions (V23-L appends a new section at the file end and a ledger row after the V23-P stop-court row)."
+    "Not pushed, not merged; integration into friday/gc-fri-0800 is the Integrate stage's step. Expected merge overlap with v23/V23-K: both touch test/sjira/v26_9_23_goal_test.exs and HANDWRITTEN.md in disjoint regions (V23-L appends a new section at the file end and a ledger row after the V23-P stop-court row).",
+    "Combined-tree run: a scratch detached worktree at edd2d50 (commit object only, no ref), removed after the run; evidence merge-K-*.log in receipts/v26.9.23/V23-L.gate/."
   ]
 }

@@ -1,0 +1,32 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+07:58:53.295 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+07:58:59.065 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+07:58:59.351 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+07:58:59.422 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+07:58:59.422 [warning] PromEx.DashboardUploader failed to upload /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+07:58:59.436 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+07:58:59.436 [warning] PromEx.DashboardUploader failed to upload /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+07:58:59.450 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+07:58:59.450 [warning] PromEx.DashboardUploader failed to upload /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Running ExUnit with seed: 441353, max_cases: 32
+07:58:59.458 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+07:58:59.458 [warning] PromEx.DashboardUploader failed to upload /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+07:58:59.467 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+07:58:59.467 [warning] PromEx.DashboardUploader failed to upload /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+07:58:59.470 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+07:58:59.470 [warning] PromEx.DashboardUploader failed to upload /private/tmp/claude-501/v23-scratch/C0-V23-L/merge-K/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+...........................................
+Finished in 83.7 seconds (0.00s async, 83.7s sync)
+43 tests, 0 failures
+test exit=0
