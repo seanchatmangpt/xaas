@@ -23,8 +23,13 @@ defmodule Xaas.Ultracode.SemanticReceipt do
   encoded as compact JSON.
 
   Court-specific observations come from an adapter keyed by the Run's
-  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`). Suites
-  without an adapter export only step statuses.
+  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`). A suite
+  without an adapter whose sealed court receipt was PRODUCED by the fabric
+  (`Xaas.Ultracode.CourtReceipt.produce/6` -- it always carries a
+  `"binding"`) passes its IRI-keyed `acceptance_results` /
+  `falsifier_results` / `court_results` and the `binding` through verbatim:
+  those verdicts are already in the consumer's vocabulary. Any other suite
+  exports only step statuses.
   """
 
   alias Xaas.Ultracode.{Epoch, Receipt, Run}
@@ -115,12 +120,18 @@ defmodule Xaas.Ultracode.SemanticReceipt do
     end
   end
 
+  @passthrough_keys ~w(acceptance_results falsifier_results court_results binding)
+
   defp observed(suite, court_receipt, bridge) do
-    with adapter when not is_nil(adapter) <- Map.get(@adapters, suite),
-         %{} = court <- court_receipt do
-      adapter.observe(court, get_in(bridge, ["requires"]) || %{})
-    else
-      _ -> nil
+    case {Map.get(@adapters, suite), court_receipt} do
+      {nil, %{"binding" => %{}} = produced} ->
+        Map.take(produced, @passthrough_keys)
+
+      {adapter, %{} = court} when not is_nil(adapter) ->
+        adapter.observe(court, get_in(bridge, ["requires"]) || %{})
+
+      _ ->
+        nil
     end
   end
 
