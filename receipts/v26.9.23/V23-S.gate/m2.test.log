@@ -1,0 +1,112 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-S/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+11:21:04.521 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+11:21:08.595 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+11:21:14.032 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+11:21:15.850 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:21:15.850 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+11:21:15.934 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:21:15.934 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+11:21:16.018 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:21:16.018 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+11:21:16.073 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:21:16.073 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+11:21:16.129 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:21:16.129 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+11:21:16.219 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:21:16.219 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 313274, max_cases: 32
+Excluding tags: [:test]
+Including tags: [location: {"test/sjira/v26_9_23_goal_test.exs", 1682}, location: {"test/sjira/v26_9_23_goal_test.exs", 1710}, location: {"test/sjira/v26_9_23_goal_test.exs", 1737}, location: {"test/sjira/v26_9_23_goal_test.exs", 1769}, location: {"test/sjira/v26_9_23_goal_test.exs", 1808}, location: {"test/sjira/v26_9_23_goal_test.exs", 1886}]
+
+      warning: Mix.Tasks.Xaas.StopCourt.episode_counters/2 is undefined or private
+      │
+ 1683 │     counters = StopCourt.episode_counters(@episodes, ["fmt-1", "me-2"])
+      │                          ~
+      │
+      └─ test/sjira/v26_9_23_goal_test.exs:1683:26: Xaas.Sjira.V26923GoalTest."test release counters over the committed episodes: 0 LLM-provider events on the KNOWN reference path, 0 unreceipted actuations; the detector fires on me-1"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1704:30: Xaas.Sjira.V26923GoalTest."test release counters over the committed episodes: 0 LLM-provider events on the KNOWN reference path, 0 unreceipted actuations; the detector fires on me-1"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1715:26: Xaas.Sjira.V26923GoalTest."test one LLM-provider event injected into a tmp known-reference episode gives LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=1 (the GC23-9 court's measure agrees)"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1732:26: Xaas.Sjira.V26923GoalTest."test one LLM-provider event injected into a tmp known-reference episode gives LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=1 (the GC23-9 court's measure agrees)"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1742:26: Xaas.Sjira.V26923GoalTest."test an unreadable known-reference OCEL makes the counters null with the reason, never 0"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1752:26: Xaas.Sjira.V26923GoalTest."test an unreadable known-reference OCEL makes the counters null with the reason, never 0"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1759:26: Xaas.Sjira.V26923GoalTest."test an unreadable known-reference OCEL makes the counters null with the reason, never 0"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1764:22: Xaas.Sjira.V26923GoalTest."test an unreadable known-reference OCEL makes the counters null with the reason, never 0"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1790:26: Xaas.Sjira.V26923GoalTest."test a ledger actuation whose StandingChanged names no sealed receipt counts as UNRECEIPTED_ACTUATION; an unparseable ledger line is null"/1
+      └─ test/sjira/v26_9_23_goal_test.exs:1797:26: Xaas.Sjira.V26923GoalTest."test a ledger actuation whose StandingChanged names no sealed receipt counts as UNRECEIPTED_ACTUATION; an unparseable ledger line is null"/1
+
+
+
+  1) test an unreadable known-reference OCEL makes the counters null with the reason, never 0 (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1737
+     ** (UndefinedFunctionError) function Mix.Tasks.Xaas.StopCourt.episode_counters/2 is undefined or private
+     code: counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+     stacktrace:
+       (xaas 26.9.22) Mix.Tasks.Xaas.StopCourt.episode_counters("/Users/sac/.cache/tmp/v23s_unreadable_5", ["fmt-1", "me-2"])
+       test/sjira/v26_9_23_goal_test.exs:1742: (test)
+
+
+
+  2) test release counters over the committed episodes: 0 LLM-provider events on the KNOWN reference path, 0 unreceipted actuations; the detector fires on me-1 (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1682
+     ** (UndefinedFunctionError) function Mix.Tasks.Xaas.StopCourt.episode_counters/2 is undefined or private
+     code: counters = StopCourt.episode_counters(@episodes, ["fmt-1", "me-2"])
+     stacktrace:
+       (xaas 26.9.22) Mix.Tasks.Xaas.StopCourt.episode_counters("/Users/sac/wt/v26922/v23/V23-S/docs/sjira/v26.9.23/episodes", ["fmt-1", "me-2"])
+       test/sjira/v26_9_23_goal_test.exs:1683: (test)
+
+
+
+  3) test the real GC23-11 gate receipt binds the committed court script, the repository slug and the toolchain; the STOP counters are derived from the real episodes and fleet (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1886
+     Assertion with == failed
+     code:  assert gate["identity"]["repo"] == expected_repo
+     left:  "/Users/sac/wt/v26922/v23/V23-S"
+     right: "seanchatmangpt/xaas"
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:1917: (test)
+
+
+
+  4) test the STOP receipt derives the counters from the repository under judgement: absent sources null, an injected LLM event 1, an unclassified universe repository 1 (F7) (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1808
+     Assertion with =~ failed
+     code:  assert out =~
+              "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=null REQUIRED_LLM_KNOWN=null" <>
+                " REQUIRED_UNKNOWN=1 UNCLASSIFIED_REQUIRED_WORK=null UNRECEIPTED_ACTUATION=null"
+     left:  "stop court GC-26.9.23 at 8e69160d814bd6da9ca4f04daa56b858f7cbcf16\ngraph /Users/sac/.cache/tmp/v23_fixture_68/goal/goal.ttl\ncourt env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int XAAS_DIR=/Users/sac/.cache/tmp/v23_fixture_68\norder receipts option /Users/sac/.cache/tmp/v23_fixture_68/order-receipts (absent)\nGATE   BOUNDARY   STANDING       EXIT         SECS    RECEIPT            SOURCE\nGA     Core       ALIVE          0            0.0     ADMITTED           ran\norder WO-A standing=NONE receipt=MISSING digest=sha256:8b6a15c0635ecb1a0e01249287ac77ac4d24e7656be97be50d5519ccaf1551a4 unlinked=:missing\nstop receipt /Users/sac/.cache/tmp/v23_fixture_68/gate-receipts/STOP-GC-26.9.23.json ADMITTED\nSTOP=false\n"
+     right: "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=null REQUIRED_LLM_KNOWN=null REQUIRED_UNKNOWN=1 UNCLASSIFIED_REQUIRED_WORK=null UNRECEIPTED_ACTUATION=null"
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:1814: (test)
+
+
+
+  5) test one LLM-provider event injected into a tmp known-reference episode gives LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=1 (the GC23-9 court's measure agrees) (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1710
+     ** (UndefinedFunctionError) function Mix.Tasks.Xaas.StopCourt.episode_counters/2 is undefined or private
+     code: counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+     stacktrace:
+       (xaas 26.9.22) Mix.Tasks.Xaas.StopCourt.episode_counters("/Users/sac/.cache/tmp/v23s_llm_132", ["fmt-1", "me-2"])
+       test/sjira/v26_9_23_goal_test.exs:1715: (test)
+
+
+
+  6) test a ledger actuation whose StandingChanged names no sealed receipt counts as UNRECEIPTED_ACTUATION; an unparseable ledger line is null (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1769
+     ** (UndefinedFunctionError) function Mix.Tasks.Xaas.StopCourt.episode_counters/2 is undefined or private
+     code: counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+     stacktrace:
+       (xaas 26.9.22) Mix.Tasks.Xaas.StopCourt.episode_counters("/Users/sac/.cache/tmp/v23s_actuation_196", ["fmt-1", "me-2"])
+       test/sjira/v26_9_23_goal_test.exs:1790: (test)
+
+
+Finished in 10.9 seconds (0.00s async, 10.9s sync)
+6 tests, 6 failures (31 excluded)
