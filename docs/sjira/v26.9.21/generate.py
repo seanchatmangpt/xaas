@@ -93,26 +93,57 @@ wo(12,"ash-atlassian-profile-admit","Admit the ash_atlassian SHACL application p
  "cd ~/ggen-marketplace && ggen sync && grep -q 'ash.gen.resource' packs/xaas-public-ash-projection-pack/xaas-public-ash-GENERATED.sh && grep -q 'AshAtlassian' packs/xaas-public-ash-projection-pack/xaas-public-ash-GENERATED.sh",["packs/xaas-public-ash-projection-pack/**","packs/xaas-ash-core-pack/**"],deps=(10,11),proj=("jira","ard","verification","receipt"),courts=["tests"]),
 ]
 def observed(w):
-    """Overlay observed standing/ticks/receipts for one order. ALIVE requires every DoD item ticked and a receipts file."""
+    """Overlay observed standing/ticks/notes/sections for one order. ALIVE requires every DoD item ticked and a receipts file."""
     p=os.path.join(STANDING,f"{w['n']:03d}.json")
     if not os.path.exists(p):
-        return dict(done=[],note=None,suffix="",receipts="")
+        return dict(done=[],partial=[],notes={},note=None,suffix="",receipts="",evidence_section="",runnable_check="",before_falsifiers="",history="",status_block="",dod_blocks={})
     o=json.load(open(p))
     n=len(w['md']['acceptance'])
     done=sorted(set(o.get("done",[])))
-    assert all(isinstance(i,int) and 0<=i<n for i in done), f"{p}: done index outside acceptance[0..{n})"
-    receipts=open(os.path.join(STANDING,o["receipts"])).read() if o.get("receipts") else ""
+    partial=sorted(set(o.get("partial",[])))
+    notes={int(k):v for k,v in o.get("dod_notes",{}).items()}
+    dod_blocks={int(k):v for k,v in json.load(open(os.path.join(STANDING,o["dod_blocks_file"]))).items()} if o.get("dod_blocks_file") else {}
+    assert all(isinstance(i,int) and 0<=i<n for i in done+partial), f"{p}: index outside acceptance[0..{n})"
+    assert not (set(done) & set(partial)), f"{p}: item both done and partial"
+    assert set(notes) <= set(range(n)), f"{p}: dod_notes index outside acceptance"
+    rd=lambda k: open(os.path.join(STANDING,o[k])).read() if o.get(k) else ""
+    receipts=rd("receipts"); evidence_section=rd("evidence_section"); runnable_check=rd("runnable_check"); before_falsifiers=rd("before_falsifiers")
+    history=rd("history"); status_block=rd("status_block")
     if o["standing"]=="ALIVE":
         assert len(done)==n, f"{p}: ALIVE with {n-len(done)} unticked DoD item(s)"
+        assert not partial, f"{p}: ALIVE with partial DoD item(s)"
         assert receipts.startswith("## Receipts"), f"{p}: ALIVE without a receipts section"
     w['md']['standing']=o["standing"]
-    return dict(done=done,note=o.get("standing_note"),suffix=o.get("repository_suffix",""),receipts=receipts)
+    return dict(done=done,partial=partial,notes=notes,note=o.get("standing_note"),suffix=o.get("repository_suffix",""),receipts=receipts,evidence_section=evidence_section,runnable_check=runnable_check,before_falsifiers=before_falsifiers,history=history,status_block=status_block,dod_blocks=dod_blocks)
 idx=[]
 for w in W:
     fn=f"{w['n']:03d}-{w['slug']}.md"
     ov=observed(w)
     m=w['md']
-    body=f"---\n{json.dumps(m,indent=2)}\n---\n\n# {m['identity']}: {m['title']}\n\n- **Standing**: {m['standing']}{' ('+ov['note']+')' if ov['note'] else ''}\n\n## Status\n{m['standing']}\n- **Repository**: {m['repository']} @ `{m['base_sha'][:7]}`{ov['suffix']}\n\n## Description\n{m['description']}\n\n## Evidence\n"+"".join(f"- {e}\n" for e in w['evidence'])+"\n## Definition of done\n"+"".join(f"- [{'x' if i in ov['done'] else ' '}] {a}\n" for i,a in enumerate(m['acceptance']))+f"\nRunnable check:\n\n```sh\n{w['dod']}\n```\n\n## Falsifiers\n"+"".join(f"- {f}\n" for f in m['falsifiers'])+("\n"+ov['receipts'] if ov['receipts'] else "")
+    if ov['status_block']:
+        status_body = ov['status_block'].rstrip() + "\n"
+    else:
+        status_body = m['standing'] + "\n- **Repository**: " + m['repository'] + " @ `" + m['base_sha'][:7] + "`" + ov['suffix'] + "\n"
+    evidence_bullets = ov['evidence_section'] if ov['evidence_section'] else "".join(f"- {e}\n" for e in w['evidence'])
+    before_falsifiers = ov['before_falsifiers']
+    def dod_line(i, a):
+        if i in ov['dod_blocks']:
+            return ov['dod_blocks'][i] + "\n"
+        tick = 'x' if i in ov['done'] else '~' if i in ov['partial'] else ' '
+        return f"- [{tick}] {a}{' -- ' + ov['notes'][i] if i in ov['notes'] else ''}\n"
+    dod_lines = "".join(dod_line(i, a) for i, a in enumerate(m['acceptance']))
+    runnable = ov['runnable_check'] if ov['runnable_check'] else f"\nRunnable check:\n\n```sh\n{w['dod']}\n```\n\n"
+    body = (f"---\n{json.dumps(m,indent=2)}\n---\n\n# {m['identity']}: {m['title']}\n\n"
+        f"- **Standing**: {m['standing']}{' ('+ov['note']+')' if ov['note'] else ''}\n\n"
+        f"## Status\n{status_body}\n"
+        f"## Description\n{m['description']}\n\n"
+        + evidence_bullets
+        + "\n## Definition of done\n" + dod_lines
+        + runnable
+        + (before_falsifiers + "\n" if before_falsifiers else "")
+        + "## Falsifiers\n" + "".join(f"- {f}\n" for f in m['falsifiers'])
+        + ("\n" + ov['history'] if ov['history'] else "")
+        + ("\n" + ov['receipts'] if ov['receipts'] else ""))
     open(f"{OUT}/{fn}","w").write(body)
     idx.append(dict(id=m['identity'],path=fn,standing=m['standing'],repository=m['repository'],dependencies=[d['upstream'] for d in m['dependencies']]))
 json.dump(idx,open(f"{OUT}/index.json","w"),indent=2)

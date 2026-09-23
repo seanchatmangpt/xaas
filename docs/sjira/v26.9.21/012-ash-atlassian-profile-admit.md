@@ -65,7 +65,6 @@ UNKNOWN
 ## Description
 Admit the ARD section 4 SHACL application profile over the SJ-010-pinned public classes (oslc_cm:ChangeRequest, doap:Project, sioc:Space, sioc:Post, schema:Comment, foaf:Person) into the family's designated profile surface: six NodeShapes targeting public classes, datatype property shapes per the ARD section 4 table, enum-valued oslc_cm:status/oslc_cm:priority via the SJ-011 enum projection. Gates 010/020 green; ggen sync renders mix ash.gen.* commands with AshAtlassian.* modules from the consumer-namespace fact.
 
-## Evidence
 - ARD §4 lists six public target classes with datatype paths (docs/sjira/v26.9.21/ash-atlassian-ard.md)
 - xaas-ash-core-pack/profiles/public-shapes.ttl is empty on purpose awaiting admitted public mappings
 

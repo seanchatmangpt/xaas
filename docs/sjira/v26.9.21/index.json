@@ -9,7 +9,7 @@
   {
     "id": "SJ-002",
     "path": "002-zcode-ocel-pack-consumer.md",
-    "standing": "UNSUPPORTED",
+    "standing": "PARTIAL_ALIVE",
     "repository": "seanchatmangpt/xaas",
     "dependencies": [
       "SJ-001"

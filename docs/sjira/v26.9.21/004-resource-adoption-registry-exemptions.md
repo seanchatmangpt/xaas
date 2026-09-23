@@ -59,7 +59,6 @@ ALIVE
 ## Description
 test/xaas/semantics/registry_test.exs carries a disclosed `@pending` exemption list (CouplingRun, EventLog, AutofdePlannerCacheHotset/CacheStats/Candidate/Catalog/Match; plus library-generated RevokeNonce and *.Version). Migrate the seven owned resources to `use Xaas.Resource` (base_resources) and shrink the list to library-generated only.
 
-## Evidence
 - commit on main: 'exempt library-generated resources in registry test'
 - `Xaas.Resource` is the configured base_resources entry in config/config.exs
 

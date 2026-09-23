@@ -61,7 +61,6 @@ PARTIAL_ALIVE
 ## Description
 docs/ecosystem-standing.md names none of SA2A, XaaS, zcode, ggen_igniter, Semantic Jira. Add rows using the standing vocabulary, each with a reproducible command (sa2a bridge: `pytest tests/beam/` = 4 passed; SJ-001/SJ-002 standings from this directory).
 
-## Evidence
 - autofde-lab/docs/2026-09-21-zero-human-factory-standing.md
 
 ## Definition of done

@@ -48,7 +48,7 @@
 
 # SJ-005: Reconcile the two ZOE event simulations
 
-- **Standing**: ALIVE
+- **Standing**: ALIVE (subject already merged in worktree sjira/sj-005 (commit d95eed2, prior session) and re-verified for real in this session on the worktree)
 
 ## Status
 ALIVE — subject already merged in worktree `sjira/sj-005` (commit `d95eed2`,
@@ -83,7 +83,6 @@ Two independent implementations landed from parallel branches: Xaas.Zoe.EventSim
 ## Definition of done
 - [x] single Xaas.Zoe.EventSimulation module
 - [x] both test files' assertions pass against it (test/xaas/zoe/*, test/xaas_web/a2a/zoe_event_simulation_agent_test.exs)
-
 Runnable check (run from the `sjira/sj-005` worktree, not
 `~/xaas` main checkout — the ticket's original `cd ~/xaas` invocation hits an
 unrelated pre-existing `bcrypt_elixir`/Elixir-1.19.5 dep-compile break in the
@@ -110,7 +109,6 @@ cd /Users/sac/xaas/worktrees/sjira/sj-005 && mix format --check-formatted \
   test/xaas_web/a2a/zoe_event_simulation_agent_test.exs
 # => EXIT: 0 (formatted)
 ```
-
 ## Generation vs hand-written
 No ggen pack, RDF ontology, or SPARQL template under `priv/packs/`,
 `priv/ggen_igniter/`, or any other `priv/*` ontology dir targets ZOE event
@@ -128,8 +126,9 @@ session's contribution is real re-verification only, no new hand-written
 code.
 
 ## Falsifiers
-- either suite loses an assertion during the merge — not observed: 21/21
-  tests pass (`test/xaas/zoe/event_simulation_test.exs`,
-  `test/xaas/zoe/event_simulation_zoe_test.exs`,
-  `test/xaas_web/a2a/zoe_event_simulation_agent_test.exs` plus sibling a2a
-  tests in the same run)
+- either suite loses an assertion during the merge
+
+## Receipts
+
+- receipts/sa2a-admit-SJ-005.json — SA2A admit receipt for the promoted order
+- evidence bullets above carry the observed test exits (test/xaas/zoe, test/xaas_web/a2a)

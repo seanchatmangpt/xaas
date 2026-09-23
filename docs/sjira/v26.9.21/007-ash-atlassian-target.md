@@ -53,7 +53,6 @@ PARTIAL_ALIVE
 ## Description
 The whitepaper's Atlassian -> ash_atlassian migration has no target: ~/ash_atlassian does not exist and ~/atlassian is an empty stub. BLOCKED:NO_TARGET_PACKAGE. Deliverable is a scoped ARD (resources, ontology source, generator route via ggen-marketplace) so the blocker becomes a buildable order.
 
-## Evidence
 - `ls ~/ash_atlassian` -> No such file or directory
 - `ls ~/atlassian` -> one stub entry (verified 2026-09-21)
 

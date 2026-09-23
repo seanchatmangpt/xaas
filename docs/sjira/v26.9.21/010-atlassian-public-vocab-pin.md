@@ -53,7 +53,6 @@ UNKNOWN
 ## Description
 SJ-007's ARD (docs/sjira/v26.9.21/ash-atlassian-ard.md section 5) needs OSLC CM and SIOC pinned before any ash_atlassian profile shape can be admitted: batch 1 pinned oslc automation/config/rm only and sioc is absent. Pin both under ontologies/public/xaas-profile-batch-2/ following the batch-1 MANIFEST discipline: real retrieval (HTTP 200), bytes verified as RDF, SHA-256, publisher, and disclosed failures for anything not obtained.
 
-## Evidence
 - ontologies/public/xaas-profile-batch-1/ pins oslc automation/config/rm but no cm (verified 2026-09-21)
 - no sioc vocabulary file under ontologies/public/ (verified 2026-09-21)
 - OSLC CM vocab source observed: https://raw.githubusercontent.com/oasis-tcs/oslc-domains/master/cm/change-mgt-vocab.ttl (HTTP 200, 13178 bytes, sha256 cb9514f87955a997a01548ae407dfb9a751f8828ae29054d09cf0dcb235feeb9 at 2026-09-21; SJ-010 must recompute, not copy)

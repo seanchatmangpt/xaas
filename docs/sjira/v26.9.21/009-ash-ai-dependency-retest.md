@@ -78,12 +78,16 @@ The probe branch's tip is preserved at tag archive/probe-ash-ai-dependency-retes
 ## Definition of done
 - [x] a receipt states COMPATIBLE or the exact failing dependency edge — COMPATIBLE,
       `docs/sjira/v26.9.21/receipts/SJ-009.md`
-
 Runnable check:
 
 ```sh
 cd <worktree> && mix deps.get && mix compile && mix test
 ```
-
 ## Falsifiers
 - result reported without running deps.get + compile + test
+
+## Receipts
+
+- receipts/SJ-009.md — ash_ai retest receipt (COMPATIBLE on current deps)
+- receipts/SJ-009.verification-manifest.json
+- receipts/sa2a-replay-SJ-009.json

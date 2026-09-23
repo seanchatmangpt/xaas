@@ -58,7 +58,6 @@ UNKNOWN
 ## Description
 The public-ash projection family (xaas-public-ash-projection-pack + xaas-ash-core-pack) hard-binds module/domain to Xaas.Public (queries/ash-gen-commands.rq BIND lines), projects no sh:in enums, and fails closed on all object properties. Extend the family per ARD section 6 failed edges e1-e3: consumer-declared namespace derivation as a ggen.toml generation fact (never RDF vocabulary), sh:in-constrained string shapes rendered through mix ash.gen.enum, and object-property -> relationship projection admitted only behind an explicit profile fact (fail-closed default unchanged). Add pack tests (pytest, ash-revops-structural-factory-pack pattern).
 
-## Evidence
 - both packs' queries/ash-gen-commands.rq BIND CONCAT("Xaas.Public.") and domain "Xaas.Public" (projection pack line 17, core pack line 15; verified 2026-09-21)
 - gates/060_object_property_projection_pending.rq exists; pack README keeps relationship projection fail-closed
 - xaas-public-ash-projection-pack has no tests/ directory; xaas-ash-core-pack/tests holds only test_public_projection_adapter.py (verified 2026-09-21)
