@@ -1,0 +1,5 @@
+HEAD=7fec9d883580984ef8ac623c210b9985652d4398 GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/V23-D-gi (bc8ea06d7fa4e249283f2b8fcd00fef5128b4151)
+recorded: EP-A left (sha256:000000000000 -> sha256:41c2dd0faf87), EP-B entered
+live: frontier_before and frontier_after recomputed identically from the ledger
+ALIVE: GC23-8 closed frontier on episode fmt-1 (EP-A left ALIVE, EP-B entered, recomputed live)
+COURT_EXIT=0

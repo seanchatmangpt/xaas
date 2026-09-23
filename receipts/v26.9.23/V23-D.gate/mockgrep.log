@@ -1,0 +1,2 @@
+! git diff --name-only b3f85b3 HEAD -- lib test scripts | xargs grep -n <mock patterns>  (HEAD 7fec9d883580984ef8ac623c210b9985652d4398)
+GREP_EXIT=1

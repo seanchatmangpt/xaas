@@ -1,0 +1,8 @@
+HEAD=7fec9d883580984ef8ac623c210b9985652d4398 GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (52798a00a7c36314ba6bb65249626ea50f6763a3)
+route_test: 74 tests, 0 failures
+hops: 5 hops, tuple sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174, request sha256:33524064eb6f519f4c3b2bdd8b17d32b596808278775e09777a79f5a59aa3620, carriers re-derived
+verify-hops: {"hops":"/Users/sac/wt/v26922/v23/V23-D/docs/sjira/v26.9.23/episodes/fmt-1/hops.json","request_digest":"sha256:33524064eb6f519f4c3b2bdd8b17d32b596808278775e09777a79f5a59aa3620","standing":"ALIVE","tuple_digest":"sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174"}
+F2 f2-underneath: {"broken_term":"admission_vacuous","detail":{"digest":"digest","recomputed":"sha256:1ee6c0fc8d115e496ee5f33ed17571fd86955180d13353c542e63de06b091128","recorded":"sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174"},"hop":"sa2a","reason":"tuple_digest_mismatch","standing":"REFUSED(tuple_digest_mismatch)"}
+F2 f2-forged: {"broken_term":"admission_vacuous","detail":{"carrier":"tuple","expected":"sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174","field":"postcondition","observed":"sha256:4e91c6530f46d224dd637a683f61122158ec9d32b14de981e8cffe4ecf8b14df"},"hop":"provider","reason":"tuple_digest_mismatch","standing":"REFUSED(tuple_digest_mismatch)"}
+ALIVE: GC23-4 SA2A conservation witnessed on episode fmt-1 (5 equal hop digests, F2 refused)
+COURT_EXIT=0
