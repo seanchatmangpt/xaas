@@ -2,24 +2,54 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   @shortdoc "Stop court for a GoalCheckpoint: run gate courts, write R receipts, ASK STOP (exit 0 = STOP)"
 
   @moduledoc """
-  Stop court for a Semantic Jira `sj:GoalCheckpoint` (GC-FRI-0800, the Friday
-  2026-09-25 08:00 PT checkpoint).
+  Stop court for a Semantic Jira `sj:GoalCheckpoint`: GC-FRI-0800 (the Friday
+  2026-09-25 08:00 PT checkpoint) and GC-26.9.23 (the v26.9.23 release
+  checkpoint, PRD section 13 / ARD section 19).
 
-      mix xaas.stop_court --checkpoint GC-FRI-0800
+      mix xaas.stop_court --checkpoint GC-26.9.23
       mix xaas.stop_court --checkpoint GC-FRI-0800 --only G6
       mix xaas.stop_court --checkpoint GC-FRI-0800 --graph PATH \\
-        --receipts-dir PATH --order-receipts-dir PATH --timeout SECONDS
+        --receipts-dir PATH --order-receipts-dir PATH --timeout SECONDS \\
+        --ggen-igniter-dir PATH
+
+  Per-checkpoint defaults come from a registry (`checkpoints/0`), not from
+  Friday-only constants:
+
+    * `GC-FRI-0800` -> `docs/sjira/v26.9.22/friday/goal.ttl`, gate receipts in
+      `docs/sjira/v26.9.22/friday/receipts`, order receipts in
+      `receipts/v26.9.22`, `GGEN_IGNITER_DIR` default `~/ggen_igniter` (the
+      fallback its court commands already name);
+    * `GC-26.9.23` -> `docs/sjira/v26.9.23/goal.ttl`, gate receipts in
+      `docs/sjira/v26.9.23/receipts`, order receipts in `receipts/v26.9.23`,
+      `GGEN_IGNITER_DIR` default `/Users/sac/wt/v26922/fri/ggen_igniter-int`.
+
+  An explicit option always wins. A checkpoint outside the registry needs
+  `--graph`, `--receipts-dir` and `--order-receipts-dir`.
 
   For each gate (a `sj:GoalCheckpoint` with `sj:checkpointOf` the named root)
   it runs the gate's `sj:courtCommand` with `/bin/sh -c` from the repository
   root, in its own process group, under a deadline (`--timeout`, default 900
-  seconds; the whole group is killed on timeout). It writes one R-schema gate
-  receipt per gate to `<receipts-dir>/<gate>.json`
-  (`~/.claude/dfcm/receipt.schema.json`: identity, authority, consequence,
-  replay, standing). A gate's standing is `ALIVE` when its court command
-  exited 0 and `UNKNOWN` otherwise (a failing or missing court witnesses
-  nothing). `--only` (repeatable or comma-separated) runs just those gates;
-  every other gate is judged by the receipt already on disk.
+  seconds; the whole group is killed on timeout). The court's environment
+  carries `XAAS_DIR` (the repository root under judgement) and
+  `GGEN_IGNITER_DIR` (`--ggen-igniter-dir`, else the caller's
+  `GGEN_IGNITER_DIR`, else the registry default); both, and the
+  ggen_igniter HEAD when that directory is a git checkout, are recorded in
+  the gate receipt. It writes one R-schema gate receipt per gate to
+  `<receipts-dir>/<gate>.json` (`~/.claude/dfcm/receipt.schema.json`:
+  identity, authority, consequence, replay, standing). A gate's standing is
+  `ALIVE` when its court command exited 0 and `UNKNOWN` otherwise (a failing
+  or missing court witnesses nothing). Court exit-code contract, recorded as
+  `gate.outcome`:
+
+    * `0` -> `passed` (standing `ALIVE`);
+    * `75` (`unknown_exit/0`, sysexits EX_TEMPFAIL) -> `machinery_absent`: the
+      court printed `UNKNOWN: <gate> machinery lands in lane <LANE>`
+      (standing `UNKNOWN`);
+    * `124` after the deadline -> `timeout` (standing `UNKNOWN`);
+    * anything else -> `court_failed` (standing `UNKNOWN`).
+
+  `--only` (repeatable or comma-separated) runs just those gates; every other
+  gate is judged by the receipt already on disk.
 
   STOP is the root's `sj:stopQuery`, a SPARQL ASK, evaluated over the goal
   graph plus one `sj:Receipt` node per receipt that
@@ -27,7 +57,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
     * gate receipts are linked only when `identity.subject` is
       `<checkpoint>/<gate>`;
-    * each `sj:WorkOrder` with `sj:checkpointOf` the root is read from
+    * each `sj:WorkOrder` under the root (`sj:checkpointOf+`: on the root
+      itself or on one of its gates, transitively) is read from
       `<order-receipts-dir>/<identifier>.json` and linked only when its tuple
       is complete and `identity.tuple_digest` equals the order's tuple digest
       (`"sha256:" <> hex(sha256(canonical JSON))` over `subject`,
@@ -70,10 +101,34 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   @dcterms_identifier "http://purl.org/dc/terms/identifier"
   @rdf_type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 
-  @default_graph "docs/sjira/v26.9.22/friday/goal.ttl"
-  @default_receipts_dir "docs/sjira/v26.9.22/friday/receipts"
-  @default_order_receipts_dir "receipts/v26.9.22"
+  # Per-checkpoint defaults (paths relative to the repository root). The goal
+  # graph stays the authority for gates and court commands; this registry only
+  # says where each checkpoint's graph and receipts live.
+  @checkpoints %{
+    "GC-FRI-0800" => %{
+      graph: "docs/sjira/v26.9.22/friday/goal.ttl",
+      receipts_dir: "docs/sjira/v26.9.22/friday/receipts",
+      order_receipts_dir: "receipts/v26.9.22",
+      ggen_igniter_dir: "~/ggen_igniter"
+    },
+    "GC-26.9.23" => %{
+      graph: "docs/sjira/v26.9.23/goal.ttl",
+      receipts_dir: "docs/sjira/v26.9.23/receipts",
+      order_receipts_dir: "receipts/v26.9.23",
+      ggen_igniter_dir: "/Users/sac/wt/v26922/fri/ggen_igniter-int"
+    }
+  }
+  @path_options [
+    graph: "--graph",
+    receipts_dir: "--receipts-dir",
+    order_receipts_dir: "--order-receipts-dir"
+  ]
   @default_timeout_s 900
+
+  # Court exit-code contract: 0 passed (ALIVE); @unknown_exit = the gate's
+  # machinery has not landed (UNKNOWN); @timeout_exit = deadline (UNKNOWN);
+  # anything else = the court ran and witnessed nothing (UNKNOWN).
+  @unknown_exit 75
 
   @perl "/usr/bin/perl"
   @wrapper "setpgrp(0,0); alarm(shift @ARGV); exec @ARGV or exit 127;"
@@ -94,7 +149,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     timeout: :integer,
     repo: :string,
     stop_query: :string,
-    validator: :string
+    validator: :string,
+    ggen_igniter_dir: :string
   ]
 
   @impl Mix.Task
@@ -130,8 +186,9 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   def court(args) do
     with {:ok, opts} <- parse(args),
          {:ok, repo} <- repo_root(opts[:repo]),
+         {:ok, paths} <- paths(opts),
          {:ok, validator} <- validator(opts[:validator]),
-         graph_path = abs(opts[:graph] || @default_graph, repo),
+         graph_path = abs(paths.graph, repo),
          {:ok, bytes} <- read(graph_path),
          {:ok, graph} <- turtle(bytes, graph_path),
          :ok <- no_asserted_receipts(graph),
@@ -140,16 +197,20 @@ defmodule Mix.Tasks.Xaas.StopCourt do
          {:ok, gates} <- gates(graph, root),
          {:ok, selected} <- select(gates, only(opts)),
          {:ok, subject_sha} <- git(repo, ["rev-parse", "HEAD"]) do
+      court_env = court_env(repo, paths.ggen_igniter_dir)
+
       ctx = %{
         checkpoint: opts[:checkpoint],
         repo: repo,
         subject_sha: subject_sha,
         base_sha: base_sha(root, subject_sha),
         graph_hash: "sha256:" <> sha256_hex(bytes),
-        receipts_dir: abs(opts[:receipts_dir] || @default_receipts_dir, repo),
-        order_receipts_dir: abs(opts[:order_receipts_dir] || @default_order_receipts_dir, repo),
+        receipts_dir: abs(paths.receipts_dir, repo),
+        order_receipts_dir: abs(paths.order_receipts_dir, repo),
         timeout_ms: (opts[:timeout] || @default_timeout_s) * 1000,
-        validator: validator
+        validator: validator,
+        court_env: court_env,
+        ggen_igniter_sha: ggen_igniter_sha(court_env)
       }
 
       File.mkdir_p!(ctx.receipts_dir)
@@ -179,6 +240,9 @@ defmodule Mix.Tasks.Xaas.StopCourt do
              checkpoint: ctx.checkpoint,
              repo: repo,
              subject_sha: subject_sha,
+             court_env: court_env,
+             receipts_dir: ctx.receipts_dir,
+             order_receipts_dir: ctx.order_receipts_dir,
              graph: graph_path,
              gates: gates,
              orders: orders,
@@ -190,6 +254,18 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       end
     end
   end
+
+  @doc """
+  The checkpoint registry: checkpoint identifier -> default `:graph`,
+  `:receipts_dir`, `:order_receipts_dir` (relative to the repository root) and
+  `:ggen_igniter_dir` (exported to court commands as `GGEN_IGNITER_DIR`).
+  """
+  @spec checkpoints() :: %{String.t() => %{atom() => String.t()}}
+  def checkpoints, do: @checkpoints
+
+  @doc "The court exit code that means the gate's machinery has not landed (standing UNKNOWN)."
+  @spec unknown_exit() :: 75
+  def unknown_exit, do: @unknown_exit
 
   @doc """
   The contract tuple digest: `"sha256:" <> hex(sha256(canonical JSON))` over
@@ -238,6 +314,49 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         {:error, {:invalid_arguments, rest ++ Enum.map(invalid, &elem(&1, 0))}}
     end
   end
+
+  # Explicit options win; a registered checkpoint fills the rest; an
+  # unregistered checkpoint must name every path.
+  defp paths(opts) do
+    defaults = Map.get(@checkpoints, opts[:checkpoint], %{})
+
+    resolved =
+      Map.new(@path_options, fn {key, _flag} -> {key, present(opts[key]) || defaults[key]} end)
+
+    case for({key, flag} <- @path_options, resolved[key] == nil, do: flag) do
+      [] ->
+        ggen_igniter_dir =
+          present(opts[:ggen_igniter_dir]) || present(System.get_env("GGEN_IGNITER_DIR")) ||
+            defaults[:ggen_igniter_dir]
+
+        {:ok, Map.put(resolved, :ggen_igniter_dir, ggen_igniter_dir)}
+
+      missing ->
+        {:error, {:unregistered_checkpoint, opts[:checkpoint], missing}}
+    end
+  end
+
+  defp present(value) when is_binary(value) and value != "", do: value
+  defp present(_value), do: nil
+
+  # XAAS_DIR is always the repository root under judgement (the receipts'
+  # subject_sha is its HEAD); GGEN_IGNITER_DIR is exported only when known.
+  defp court_env(repo, nil), do: %{"XAAS_DIR" => repo}
+
+  defp court_env(repo, ggen_igniter_dir),
+    do: %{"XAAS_DIR" => repo, "GGEN_IGNITER_DIR" => Path.expand(ggen_igniter_dir)}
+
+  defp ggen_igniter_sha(%{"GGEN_IGNITER_DIR" => dir}) do
+    with true <- File.dir?(dir),
+         {:ok, sha} <- git(dir, ["rev-parse", "HEAD"]),
+         true <- Regex.match?(@sha, sha) do
+      sha
+    else
+      _ -> nil
+    end
+  end
+
+  defp ggen_igniter_sha(_env), do: nil
 
   defp only(opts) do
     opts
@@ -378,10 +497,15 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     end
   end
 
+  # Every WorkOrder with `sj:checkpointOf+` the root: on the root itself or on
+  # one of its gates, transitively (the same set the stop query's
+  # `?order sj:checkpointOf+ ?gc` ranges over).
   defp orders(graph, root, ctx) do
+    under = checkpoint_closure(graph, root.subject)
+
     graph
     |> typed(@sj <> "WorkOrder")
-    |> Enum.filter(&(root.subject in values(&1, "checkpointOf")))
+    |> Enum.filter(fn desc -> Enum.any?(values(desc, "checkpointOf"), &(&1 in under)) end)
     |> Enum.map(fn desc ->
       id = identifier(desc) || to_string(desc.subject)
 
@@ -394,6 +518,25 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       }
     end)
     |> Enum.sort_by(&natural(&1.id))
+  end
+
+  # The root plus every node that reaches it over sj:checkpointOf edges.
+  defp checkpoint_closure(graph, root_iri) do
+    checkpoint_of = RDF.iri(@sj <> "checkpointOf")
+
+    edges =
+      for {s, p, o} <- RDF.Graph.triples(graph), p == checkpoint_of, do: {s, o}
+
+    grow(MapSet.new([root_iri]), edges)
+  end
+
+  defp grow(set, edges) do
+    next =
+      Enum.reduce(edges, set, fn {child, parent}, acc ->
+        if MapSet.member?(acc, parent), do: MapSet.put(acc, child), else: acc
+      end)
+
+    if MapSet.size(next) == MapSet.size(set), do: set, else: grow(next, edges)
   end
 
   defp order_tuple(graph, desc) do
@@ -491,10 +634,14 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
   defp run_gate(gate, ctx) do
     started = System.monotonic_time(:millisecond)
-    {status, exit_code, digest, tail} = shell(gate.command, ctx.repo, ctx.timeout_ms)
+
+    {status, exit_code, digest, tail} =
+      shell(gate.command, ctx.repo, ctx.timeout_ms, ctx.court_env)
+
     duration_ms = System.monotonic_time(:millisecond) - started
 
     standing = if status == :exited and exit_code == 0, do: "ALIVE", else: "UNKNOWN"
+    outcome = outcome(status, exit_code)
     path = gate_receipt_path(gate, ctx)
 
     summary =
@@ -529,8 +676,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         "value" => standing,
         "derived_from" =>
           "court command of #{ctx.checkpoint}/#{gate.id} exited #{exit_code}" <>
-            if(status == :timeout, do: " (timeout)", else: "") <>
-            " at #{ctx.subject_sha}; ALIVE iff exit 0"
+            " (#{outcome}) at #{ctx.subject_sha}; ALIVE iff exit 0"
       },
       "gate" => %{
         "checkpoint" => ctx.checkpoint,
@@ -538,21 +684,40 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         "boundary_class" => gate.boundary,
         "duration_ms" => duration_ms,
         "timeout_ms" => ctx.timeout_ms,
-        "timed_out" => status == :timeout
+        "timed_out" => status == :timeout,
+        "outcome" => outcome,
+        "env" => ctx.court_env,
+        "ggen_igniter_sha" => ctx.ggen_igniter_sha
       }
     }
 
     File.write!(path, Jason.encode!(receipt, pretty: true) <> "\n")
-    %{exit: exit_code, duration_ms: duration_ms, timed_out: status == :timeout}
+
+    %{
+      exit: exit_code,
+      duration_ms: duration_ms,
+      timed_out: status == :timeout,
+      outcome: outcome
+    }
   end
+
+  defp outcome(:timeout, _exit_code), do: "timeout"
+  defp outcome(:exited, 0), do: "passed"
+  defp outcome(:exited, @unknown_exit), do: "machinery_absent"
+  defp outcome(:exited, _exit_code), do: "court_failed"
 
   defp gate_receipt_path(gate, ctx), do: Path.join(ctx.receipts_dir, gate.id <> ".json")
 
   # `/bin/sh -c command` in its own process group (perl setpgrp wrapper, the
   # same one Xaas.Ultracode.ZcodePackage uses), under a deadline; the group is
-  # reaped on every exit path.
-  defp shell(command, cwd, timeout_ms) do
+  # reaped on every exit path. MIX_ENV is unset; court_env (XAAS_DIR,
+  # GGEN_IGNITER_DIR) is exported.
+  defp shell(command, cwd, timeout_ms, court_env) do
     alarm_s = div(timeout_ms + 999, 1000) + @alarm_grace_s
+
+    env =
+      [{~c"MIX_ENV", false}] ++
+        Enum.map(court_env, fn {key, value} -> {to_charlist(key), to_charlist(value)} end)
 
     port =
       Port.open({:spawn_executable, @perl}, [
@@ -561,7 +726,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         :stderr_to_stdout,
         :hide,
         {:cd, to_charlist(cwd)},
-        {:env, [{~c"MIX_ENV", false}]},
+        {:env, env},
         {:args, ["-e", @wrapper, Integer.to_string(alarm_s), "/bin/sh", "-c", command]}
       ])
 
@@ -800,6 +965,11 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     shell = Mix.shell()
     shell.info("stop court #{report.checkpoint} at #{report.subject_sha}")
     shell.info("graph #{report.graph}")
+
+    shell.info(
+      "court env " <>
+        (report.court_env |> Enum.sort() |> Enum.map_join(" ", fn {k, v} -> "#{k}=#{v}" end))
+    )
 
     shell.info(row(["GATE", "BOUNDARY", "STANDING", "EXIT", "SECS", "RECEIPT", "SOURCE"]))
 
