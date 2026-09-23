@@ -1,0 +1,82 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/fri/FRI-T2/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 3 files (.ex)
+Generated xaas app
+00:51:13.461 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+00:51:14.440 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+00:51:15.010 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+00:51:15.156 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:51:15.156 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+00:51:15.176 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:51:15.176 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+00:51:15.195 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:51:15.196 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+00:51:15.212 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:51:15.212 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+00:51:15.228 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:51:15.228 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+Running ExUnit with seed: 185412, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+00:51:15.236 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:51:15.236 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+........
+
+  1) test provider allowlist a malformed allowlist is logged with the bad value and surfaced as a typed config error, never an empty pool (Xaas.Ultracode.EngineTest)
+     test/xaas/ultracode/engine_test.exs:741
+     Assertion with == failed
+     code:  assert Engine.fill(worker: &claim_close_worker/2) == invalid
+     left:  []
+     right: {:error, {:invalid_config, :ultracode_engine_providers}}
+     stacktrace:
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:121: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:83: ExUnit.CaptureLog.capture_log/2
+       test/xaas/ultracode/engine_test.exs:753: anonymous fn/3 in Xaas.Ultracode.EngineTest."test provider allowlist a malformed allowlist is logged with the bad value and surfaced as a typed config error, never an empty pool"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/engine_test.exs:746: (test)
+
+00:51:16.768 [warning] [ultracode] run 06c0ad92-50e5-40d7-8b5c-7e662ef8672b stopped: refused 1 live lease(s) (reason :run_stopped)
+...00:51:17.032 [warning] [ultracode] run 406d2267-aebc-47e1-8e12-3fc84a544b23 stopped: refused 1 live lease(s) (reason :run_stopped)
+00:51:17.077 [warning] [ultracode] run 406d2267-aebc-47e1-8e12-3fc84a544b23 recovering from failed epoch 25067f4c-93f0-4f80-b177-ea6fbd8b3d78: constructed replacement epoch cycle=1 (epoch_id=7724ea7f-e74f-4857-9919-731066e21a59)
+..00:51:17.126 [warning] [ultracode] epoch 817ab192-d3e4-4727-92d1-c1c09854830a (run bfc35b37-857c-49e4-ab4b-a14446b2e0f9, cycle 0) expected_at=2026-09-23 07:50:17.092225Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.00:51:17.147 [warning] [ultracode-engine] reaped epoch bc16f325-50cd-45f0-9073-daf636fcd1c4 (worker ended without closing)
+..00:51:17.168 [warning] [ultracode-engine] reaped epoch e140d4de-1fd4-4e35-8cc4-f986caa110df (worker ended without closing)
+..........
+
+  2) test SemanticWork and Run.capability_id carry the canonical capabilityId pattern source (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:441
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:invalid, :capability}}} =
+              SemanticWork.admit(Map.put(descriptor(), "capability", "recipe:x\n"))
+     left:  {:error, {:refused_semantic_work, {:invalid, :capability}}}
+     right: {:ok,
+             %{
+               dependencies: [],
+               provider: "recipe",
+               work_order_iri: "urn:sj:wo:fri-t2-format",
+               checkpoint_iri: "urn:sj:checkpoint:GC-FRI-0800",
+               graph_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+               repository_identity: "seanchatmangpt/ggen_igniter",
+               execution_repo_alias: "ggen_igniter",
+               base_sha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+               goal: "mix format drift repair",
+               verifier_suite: "recipe-format-court",
+               execution_policy: :continuous_epoch_run,
+               court_map: nil,
+               capability: "recipe:x\n"
+             }}
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:463: (test)
+
+....00:51:21.911 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790149881805-10754; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+....
+Finished in 7.3 seconds (0.00s async, 7.3s sync)
+36 tests, 2 failures

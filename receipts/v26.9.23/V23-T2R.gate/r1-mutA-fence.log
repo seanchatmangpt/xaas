@@ -1,0 +1,34 @@
+HEAD=19060ec7b50e10cc0ccf3ccdaeca44f4a516ab2a + mutation A-fence-vacuous
+
+Compiling 1 file (.ex)
+Generated xaas app
+01:46:17.940 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:46:18.340 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:46:18.664 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 837391, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.........
+
+  1) test a lease lost between steps lost AFTER the last renew, while the delta is being staged: the fenced ref update refuses; HEAD, branch and the worktree's index untouched (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:362
+     match (=) failed
+     code:  assert {:error, {:lease_lost, {:no_lease, redacted}}} = Task.await(task, 60000)
+     left:  {:error, {:lease_lost, {:no_lease, redacted}}}
+     right: {:error,
+             {:no_lease,
+              "lease:sha256:ae731b7a03ff2f146e547d393047feaab13f2922eb3288de4ef305cf785cdae7"}}
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:394: anonymous fn/2 in Xaas.Ultracode.RecipeWorkerTest."test a lease lost between steps lost AFTER the last renew, while the delta is being staged: the fenced ref update refuses; HEAD, branch and the worktree's index untouched"/1
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:121: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:83: ExUnit.CaptureLog.capture_log/2
+       test/xaas/ultracode/recipe_worker_test.exs:392: (test)
+
+01:46:21.968 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153181913-36354; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+........
+Finished in 5.2 seconds (0.00s async, 5.2s sync)
+18 tests, 1 failure
+EXIT=2

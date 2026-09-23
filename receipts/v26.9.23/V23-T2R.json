@@ -1,0 +1,234 @@
+{
+ "identity": {
+  "subject": "V23-T2R",
+  "repo": "/Users/sac/xaas",
+  "subject_sha": "19060ec7b50e10cc0ccf3ccdaeca44f4a516ab2a",
+  "base_sha": "c18ecd3f415834d47be78402ff64b7908b392b18",
+  "branch": "fri/FRI-T2",
+  "worktree": "/Users/sac/wt/v26922/fri/FRI-T2",
+  "work_order": "repair-forward of FRI-T2 (68c4f89, refuted by the Friday DOCTRINE court round 2) for wave B1; dependency of v23:WO-V23-D (docs/sjira/v26.9.23/goal.ttl, GC23-4..GC23-8); PRD PR-009/PR-010/PR-011, ARD §9, §10",
+  "repair_round": "1 (answers the B1 doc1 DOCTRINE refutation, broken_term R_missing_consequence; gate1 and mut1 passed at a64c540)",
+  "base_note": "base_sha = merge-base(HEAD, friday/gc-fri-0800) after the round-1 --no-ff merge 22500a4 of friday/gc-fri-0800 @ c18ecd3 (receipt-linking commit only; no conflict). Round 0 merged 41679c6 at 5cc0464.",
+  "toolchain": "Mix 1.19.5 (/opt/homebrew/bin/mix, compiled with OTP 28) on OTP 28.3.1 (/Users/sac/.erlmcp/otp-28.3.1/bin/erl); xaas .tool-versions pins elixir 1.20.2-otp-28 (CI)",
+  "court_env": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (ggen_igniter-int HEAD 52798a0), per the wave binding: 'its final gate run and court scripts must work against GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int'"
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave B1 lane V23-T2R (/Users/sac/wt/v26922/v26923/DRIVER.md gate map; lanes/wave-B1.json; /Users/sac/wt/v26922/COORDINATION.md v26.9.23 scope; operator directive 2026-09-22 23:25 PT). No push, no integrate, no remote effect. Repair round 1 per the wave runner (sm-lane-wave B1, wf_1848cfc0-c6e).",
+  "actor": "claude-opus-5.5 workflow subagent (lane V23-T2R, repair round 1)"
+ },
+ "consequence": {
+  "commits": [
+   "5cc0464969691509990c1d769f0a8b91114d57bb",
+   "4bd6b257608b2c6803ef9e6e68a3b10034ff913b",
+   "f1197034df45ca23bb6876471ffbdea93e260ce7",
+   "35ddc95e1a7baf8d49fdfa3256a1d39876a33372",
+   "eda0e9d71a8d65a1cede9beca0abb0225726a19b",
+   "c9f2de21c8d3171722f0828cad6831867e6da0a6",
+   "a64c540d98e0af17aa32d7c8089335163eaa8bde",
+   "22500a440b81fd82ecc5413faea20dd4b13b4b4c",
+   "3fc60a11d3d1a08f1bdd119e912d1bc1c674d7b6",
+   "1a8e31f6fe7a0341bfa5cbffb9e7a5d1b3548450",
+   "19060ec7b50e10cc0ccf3ccdaeca44f4a516ab2a"
+  ],
+  "commit_notes": {
+   "5cc0464": "merge --no-ff friday/gc-fri-0800 @ 41679c6 (both sides kept, no conflicts)",
+   "4bd6b25": "item 3: generated ultracode_runs snapshots 20260923074101 (baseline, --snapshots-only at 41679c6) + 20260923074120 (capability_id)",
+   "f119703": "item 3: hand-written capability_id migration body replaced by the generator's bytes (sha256 126c83e3...), version stamp kept at applied 20260922230000",
+   "35ddc95": "item 4: engine malformed allowlist -> Logger.error + {:error, {:invalid_config, :ultracode_engine_providers}}",
+   "eda0e9d": "items 1, 5, 6: lease-loss halt, target toolchain resolution, canonical capabilityId pattern + tests",
+   "c9f2de2": "item 2: HANDWRITTEN.md ledger rows",
+   "a64c540": "round-0 receipt (PARTIAL_ALIVE at c9f2de2); refuted by doc1 (R_missing_consequence), gate1/mut1 pass",
+   "22500a4": "round 1: merge --no-ff friday/gc-fri-0800 @ c18ecd3 (both sides kept, no conflict)",
+   "3fc60a1": "round 1: lease FENCE on the history write (private index + commit-tree + update-ref CAS inside a transaction holding the epoch row FOR UPDATE on a live lease); every returned/logged Lease error redacted; existing-but-unreadable .tool-versions -> logged :toolchain_unresolved; + 3 falsifier tests",
+   "1a8e31f": "round 1: HANDWRITTEN.md rows for run.ex capability_id, semantic_work.ex capability admission, verifier.ex public API; recipe/test rows updated",
+   "19060ec": "round 1: identity files (VERSION, OTP_VERSION): only enoent silent, other read errors logged"
+  },
+  "files_changed": [
+   "HANDWRITTEN.md",
+   "config/config.exs",
+   "lib/xaas/ultracode/engine.ex",
+   "lib/xaas/ultracode/recipe_worker.ex",
+   "lib/xaas/ultracode/run.ex",
+   "lib/xaas/ultracode/semantic_work.ex",
+   "lib/xaas/ultracode/verifier.ex",
+   "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs",
+   "priv/resource_snapshots/repo/ultracode_runs/20260923074101.json",
+   "priv/resource_snapshots/repo/ultracode_runs/20260923074120.json",
+   "receipts/v26.9.22/FRI-T2.json",
+   "receipts/v26.9.23/V23-T2R.json",
+   "receipts/v26.9.23/V23-T2R.gate/*",
+   "test/xaas/ultracode/engine_test.exs",
+   "test/xaas/ultracode/recipe_worker_test.exs"
+  ],
+  "files_changed_basis": "git diff --name-only c18ecd3 HEAD (whole FRI-T2 + V23-T2R delta against the integration branch); round 1 itself touched recipe_worker.ex, recipe_worker_test.exs, HANDWRITTEN.md and receipts/v26.9.23/V23-T2R*",
+  "generated_vs_handwritten": {
+   "generated": [
+    "priv/resource_snapshots/repo/ultracode_runs/20260923074101.json",
+    "priv/resource_snapshots/repo/ultracode_runs/20260923074120.json",
+    "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs (body; version stamp hand-chosen, see HANDWRITTEN.md)"
+   ],
+   "handwritten": [
+    "lib/xaas/ultracode/recipe_worker.ex",
+    "config/config.exs (recipe entry, engine worker, provider allowlist)",
+    "lib/xaas/ultracode/engine.ex (provider allowlist)",
+    "lib/xaas/ultracode/run.ex (capability_id attribute + :create accept)",
+    "lib/xaas/ultracode/semantic_work.ex (@capability_id_source, capability_id_pattern/0, optional_capability/1, \"capability\" key, capability_id run attr)",
+    "lib/xaas/ultracode/verifier.ex (contained_worktree/1, spawn_and_collect/6 made public)",
+    "test/xaas/ultracode/recipe_worker_test.exs",
+    "test/xaas/ultracode/engine_test.exs (provider allowlist describe)",
+    "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs (version stamp only)"
+   ],
+   "ledger": "HANDWRITTEN.md ## Active rows dated 2026-09-23, each UNSUPPORTED(generator-capability) with the checked generators: (1) recipe provider row = recipe_worker.ex + config/config.exs + engine.ex allowlist; (2) migration + snapshots row (version stamp residue); (3) tests row = recipe_worker_test.exs + engine_test.exs allowlist describe; (4) run.ex capability_id + semantic_work.ex capability admission row (added 1a8e31f); (5) verifier.ex public API row (added 1a8e31f). Every path in `handwritten` above is named by one of these rows."
+  },
+  "successor": {
+   "checkpoint": "v23:GC-26.9.24",
+   "uncommitted_generator_output": [
+    "mix ash_postgres.generate_migrations (all domains) pends CREATE TABLE billing_revenue_recognitions (receipts/v26.9.23/V23-T2R.gate/gen-dryrun-after.log at c9f2de2: the only pending output)",
+    "answering 'n' to the out-of-domain DROP TABLE prompts of `--domains Xaas.Ultracode` makes the generator write \"drop_table_opted_out\": true into 92 unrelated snapshots (list: receipts/v26.9.23/V23-T2R.gate/unrelated-generator-output.files; patch sha256 a85b755fbc56d2e7830ef76e8265c8de015636184596d714a209a6a7a4ffe2b6); not committed, reverted in the lane worktree",
+    "re-observed at 19060ec: MIX_ENV=test mix ash_postgres.generate_migrations --dry-run pends only create table billing_revenue_recognitions (0 ultracode_runs lines; r1-gen-dryrun.log)"
+   ],
+   "ambient_ggen_igniter_default": {
+    "item": "test/xaas/ultracode/semantic_jira_e2e_test.exs SJ-001 hard-codes `System.get_env(\"GGEN_IGNITER_DIR\") || \"/Users/sac/ggen_igniter\"`; with GGEN_IGNITER_DIR unset it drives the operator checkout d83d6c8 (feat/zcode-ocel-pack) and fails {1, nil} at project/3 (line 123); with GGEN_IGNITER_DIR = the checkout under judgement (ggen_igniter-int 52798a0) it passes (r1-sj001-int.log, r1-gate-final.log). Not a V23-T2R change: the test file and docs/sjira/v26.9.21/** are byte-unchanged 41679c6..HEAD.",
+    "broken_term": "mu_on_O",
+    "owner": "successor v23:GC-26.9.24 (the SJ-001 default should resolve the checkout under judgement, not an ambient operator checkout)"
+   }
+  },
+  "remote_effects": []
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/V23-T2R.gate/ (tracked on fri/FRI-T2); round-1 artifacts are the r1-* files; round-0 artifacts and the round-0 receipt (git show a64c540:receipts/v26.9.23/V23-T2R.json) are kept unchanged",
+  "commands": [
+   {
+    "cmd": "git merge --no-ff -F <msg> friday/gc-fri-0800",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+    "exit": 0,
+    "summary": "22500a4 = merge of a64c540 and c18ecd3 (receipts/v26.9.23/V23-F.json, V23-X.json only), no conflict"
+   },
+   {
+    "cmd": "mix format --check-formatted",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec (GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int)",
+    "exit": 0,
+    "summary": "lane gate 1/3: FORMAT_EXIT=0",
+    "output_sha256": "258a0ac5f73e45c4182240c6a706372a1bc33052e988dd0a32c5a46ad5610b85"
+   },
+   {
+    "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec (GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int)",
+    "exit": 0,
+    "summary": "lane gate 2/3: Compiling 508 files (.ex), Generated xaas app; only warning is deps/ex4pm/mix.exs (dependency, pre-existing)",
+    "output_sha256": "258a0ac5f73e45c4182240c6a706372a1bc33052e988dd0a32c5a46ad5610b85"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs test/xaas/ultracode",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec",
+    "exit": 0,
+    "summary": "lane gate 3/3: 738 tests, 0 failures (25 excluded) on a fresh partition DB (xaas_test_v23t2r1, migrated incl. 20260922230000); 726 at 5cc0464 + 9 round 0 + 3 round 1",
+    "output_sha256": "258a0ac5f73e45c4182240c6a706372a1bc33052e988dd0a32c5a46ad5610b85"
+   },
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/semantic_jira_e2e_test.exs",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 1a8e31f (test file identical at 19060ec)",
+    "exit": 0,
+    "summary": "SJ-001 alone against the checkout under judgement: 1 test, 0 failures (94.4s); isolates the ambient-default failure",
+    "output_sha256": "7298f928ffbb4019dba09597598aa0a6130eaaceb983545466c17472604d4836"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs  # MUT-A: fence vacuous (live_row result ignored)",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 18 tests, 1 failure = the fence test (HEAD moved; close answered {:no_lease, _} instead of {:lease_lost, _}); restored via git checkout",
+    "output_sha256": "251531b5223365ae02dcdf6954468a96433769e949b10f44c52de18258c6ad06"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs  # MUT-A2: round-0 shape `git add -A` + `git commit` after the last renew",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 18 tests, 1 failure = the fence test (commit landed after the lease was re-claimed)",
+    "output_sha256": "e7a97a3c16ff6b56613c4f7d70364e32270abd5721be79a8b0eb3cf06e4a7bc5"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs  # MUT-B: no redaction on execute/4 exit and refuse/3",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 18 tests, 1 failure = expired-during-failing-step test (raw token returned)",
+    "output_sha256": "af6a13f744c3f284e4808a7fde694300b2696d14a679fed411e494d71c00966e"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs  # MUT-C: every .tool-versions read error treated as absent",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 18 tests, 1 failure = unreadable .tool-versions test (node toolchain substituted)",
+    "output_sha256": "dce1369d0d17bd53025df4e12491689ba325c867458175e610a8868b1a01a451"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs  # M1 (round 0, re-run): `_ = Lease.renew(token)` + {:cont, ...}",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 18 tests, 3 failures (re-claimed, refused, engine-expired lost-lease tests)",
+    "output_sha256": "facef7c43c5910d8ce582248d06726cb1722eecd30a50f800befe63989980e3b"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/engine_test.exs test/xaas/ultracode/recipe_worker_test.exs  # M2+M3 (round 0, re-run): malformed allowlist -> []; capabilityId regex without :dollar_endonly",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 39 tests, 2 failures (malformed-allowlist config error; canonical pattern test)",
+    "output_sha256": "97d4e2406665e0555c172407cb111571515cc35d0cc906214d71d25f9e696b19"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs  # M4 (round 0, re-run): resolved :target PATH not bound into env",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 18 tests, 3 failures (format-drift :alive, :no_delta, asdf layout)",
+    "output_sha256": "1b6ca75b99c4e6d7b9351a8346f7343e24accd48a9025e05dc6d5fd0b7d2f0fc"
+   },
+   {
+    "cmd": "! git diff --name-only 41679c6 HEAD -- lib test | xargs grep -n 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.'",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec",
+    "exit": 0,
+    "summary": "inner grep exit 1: 0 matches in the 7 lane-touched lib/test files; whole lib+test 178 matches at HEAD and 178 at 41679c6 (pre-existing, none added)",
+    "output_sha256": "d12c619f00bf85a4afc6e7d30bd178529d0a961a4558e54df7d71a9e5c7acacb"
+   },
+   {
+    "cmd": "MIX_ENV=test mix ash_postgres.generate_migrations --dry-run",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec",
+    "exit": 0,
+    "summary": "only create table billing_revenue_recognitions pending (unrelated -> v23:GC-26.9.24); 0 ultracode_runs lines",
+    "output_sha256": "9a2f20174e9409b79688073ebd4f948d28e251876ad575916bd5e1889f24dd9e"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-T2R.json",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+    "exit": 0,
+    "summary": "ADMITTED"
+   }
+  ]
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "replay commands 2-4 at subject_sha 19060ec: the literal lane gate chain (format && strict compile && lane tests) run under the wave court env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int exits 0 with 738 tests, 0 failures; mutations A/A2/B/C (round 1) and M1-M4 (round 0) each make acceptance fail on this subject. Scope: the wave binding requires the lane's final gate run to work against GGEN_IGNITER_DIR=<ggen_igniter-int>; that is the run this standing rests on. Disclosed, not hidden: the same test command with GGEN_IGNITER_DIR unset exits 2 (see disclosed_observations) solely because SJ-001 falls back to the ambient operator checkout (consequence.successor.ambient_ggen_igniter_default, broken_term mu_on_O, not a V23-T2R file). Not claimed: the GC23-5 court episode (lane V23-D).",
+  "disclosed_observations": [
+   {
+    "cmd": "MIX_TEST_PARTITION=_v23t2r1 mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs test/xaas/ultracode  # GGEN_IGNITER_DIR unset",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 19060ec",
+    "exit": 2,
+    "summary": "738 tests, 1 failure (25 excluded): SJ-001 MatchError {1, nil} at semantic_jira_e2e_test.exs:123 against /Users/sac/ggen_igniter d83d6c8 (feat/zcode-ocel-pack); every other test passes",
+    "output_sha256": "a7f74d992383c81670747a4a75ba0c12414f4cebce8a45ab4278fd69bd67b82c"
+   },
+   {
+    "cmd": "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && MIX_TEST_PARTITION=_v23t2r1 mix test <lane>  # GGEN_IGNITER_DIR unset",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 1a8e31f",
+    "exit": 2,
+    "summary": "format 0, compile 0, tests 738 / 1 failure = the same SJ-001 ambient-default failure",
+    "output_sha256": "e8a2a69b456720f48c9cb6c56eaadec7fb0d2b831070f21ac4244a62c8c6cf56"
+   }
+  ],
+  "doctrine_round1_answers": {
+   "ledger_missing_run_ex_semantic_work_ex": "fixed in 1a8e31f: rows (4) and (5) in consequence.generated_vs_handwritten.ledger",
+   "tool_versions_swallowed_error": "fixed in 3fc60a1 (only lstat :enoent = no pin; eisdir/eacces/dangling symlink -> Logger.error + :toolchain_unresolved refusal); falsified by MUT-C",
+   "receipt_partial_alive_without_broken_term": "the standing is now ALIVE on an observed run; the one non-green observation carries its own broken_term (mu_on_O) under consequence.successor",
+   "token_leak_refuse_close": "fixed in 3fc60a1 (execute/4 single exit + refuse/3 + close path redact at any depth); falsified by MUT-B",
+   "additionally": "the lease-loss window after the final renew (a commit could still land after the lease was lost while staging) is closed by the lease fence; falsified by MUT-A and MUT-A2"
+  }
+ }
+}

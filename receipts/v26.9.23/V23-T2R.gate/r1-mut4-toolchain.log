@@ -1,0 +1,64 @@
+
+Compiling 3 files (.ex)
+Generated xaas app
+01:45:57.045 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:45:57.664 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:45:58.144 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 467213, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.01:45:59.079 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153158984-2820; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+....
+
+  1) test an already-formatted subject is refused :no_delta with no commit (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:193
+     Assertion with == failed
+     code:  assert receipt.evidence["refusal_reason"] == "no_delta"
+     left:  "recipe_step_failed"
+     right: "no_delta"
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:208: (test)
+
+
+
+  2) test a target .tool-versions resolves through the asdf install layout and the recipe runs that toolchain (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:466
+     Assertion with == failed
+     code:  assert File.read!(Path.join(worktree, "drift.ex")) == @formatted
+     left:  "defmodule Drift do\n  def add(  a,b ),do:   a+b\nend\n"
+     right: "defmodule Drift do\n  def add(a, b), do: a + b\nend\n"
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:496: (test)
+
+.......
+
+  3) test a format-drift epoch is committed and closed :alive by recipe-worker through the engine, and a ready zcode epoch is left untouched (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:115
+     match (=) failed
+     code:  assert [%{provider: "recipe", dispatched: [%{epoch_id: epoch_id, status: :done} = slot]}] = reports
+     left:  [%{provider: "recipe", dispatched: [%{epoch_id: epoch_id, status: :done} = slot]}]
+     right: [
+              %{
+                provider: "recipe",
+                capacity: nil,
+                in_flight_before: 0,
+                dispatched: [
+                  %{
+                    status: :refused,
+                    epoch_id: "5bf3e510-d24e-468f-a1b4-293f2fabb341",
+                    receipt_id: "7e6f4d72-50c3-4f6b-8734-b5cff8808ab3"
+                  }
+                ],
+                free_slots: 16
+              }
+            ]
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:127: (test)
+
+...
+Finished in 3.4 seconds (0.00s async, 3.4s sync)
+18 tests, 3 failures
+EXIT=2
