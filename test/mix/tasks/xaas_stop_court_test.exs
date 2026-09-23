@@ -644,4 +644,252 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     assert report.stop == false
     assert Enum.count(report.gates, & &1.ran) == 1
   end
+
+  # ------------------------------------------------------------------ release evidence (lane V23-S)
+
+  # Operator release sequence step 3 (receipts bind subject, graph, verifier
+  # and toolchain identity and the replay command) and step 5 (derived
+  # counters); ARD sections 12 and 27. Every expected value is recomputed here
+  # from the real files, the real VM and a real python3 process.
+
+  @runner_source Path.expand("../../../lib/mix/tasks/xaas.stop_court.ex", __DIR__)
+  @schema Path.expand("~/.claude/dfcm/receipt.schema.json")
+
+  defp sha256(bytes), do: "sha256:" <> Base.encode16(:crypto.hash(:sha256, bytes), case: :lower)
+
+  defp commit_all(repo, message) do
+    {_, 0} = System.cmd("git", ["-C", repo, "add", "-A"])
+
+    {_, 0} =
+      System.cmd("git", [
+        "-C",
+        repo,
+        "-c",
+        "user.email=court@example.org",
+        "-c",
+        "user.name=court",
+        "commit",
+        "-q",
+        "-m",
+        message
+      ])
+
+    head(repo)
+  end
+
+  # G1's court is a committed script file, G2's an inline command.
+  defp script_repo do
+    repo = repo()
+    File.mkdir_p!(Path.join(repo, "courts"))
+    File.write!(Path.join(repo, "courts/G1.sh"), "echo 'G1 court ran'\n")
+    write_goal(repo, [{"G1", "sh courts/G1.sh"}, {"G2", "true"}])
+    commit_all(repo, "courts")
+    repo
+  end
+
+  defp without_env(name) do
+    previous = System.get_env(name)
+    System.delete_env(name)
+    on_exit(fn -> if previous, do: System.put_env(name, previous) end)
+  end
+
+  test "a gate receipt binds the GitHub slug, verifier and toolchain identities and a replay invocation that reproduces it" do
+    repo = script_repo()
+    top = toplevel(repo)
+
+    {_, 0} =
+      System.cmd("git", [
+        "-C",
+        repo,
+        "remote",
+        "add",
+        "origin",
+        "https://github.com/seanchatmangpt/xaas.git"
+      ])
+
+    without_env("GC23_FLEET_RECEIPTS_DIR")
+
+    assert {0, _out} = court(repo)
+    assert {0, vout} = validate([receipt(repo, "G1")])
+    assert vout =~ "ADMITTED"
+    g1 = read_json(receipt(repo, "G1"))
+
+    assert %{
+             "repo" => "seanchatmangpt/xaas",
+             "worktree" => ^top,
+             "repo_source" => "git remote origin (github.com)",
+             "subject" => "GC-FRI-0800/G1"
+           } = g1["identity"]
+
+    assert g1["identity"]["subject_sha"] == head(repo)
+
+    verifier = g1["verifier"]
+    assert verifier["runner"] == "mix xaas.stop_court"
+    assert verifier["runner_source"] == "lib/mix/tasks/xaas.stop_court.ex"
+    assert verifier["runner_source_sha256"] == sha256(File.read!(@runner_source))
+    assert verifier["court_command"] == "sh courts/G1.sh"
+    assert verifier["court_command_sha256"] == sha256("sh courts/G1.sh")
+    assert verifier["court_script"] == "courts/G1.sh"
+    assert verifier["court_script_sha256"] == sha256(File.read!(Path.join(repo, "courts/G1.sh")))
+    assert verifier["court_script_at_subject"] == true
+    assert verifier["court_script_why"] == nil
+    assert verifier["validator"] == @validator
+    assert verifier["validator_sha256"] == sha256(File.read!(@validator))
+    assert verifier["schema"] == @schema
+    assert verifier["schema_sha256"] == sha256(File.read!(@schema))
+    assert verifier["stop_query_sha256"] == sha256(String.trim(@contract_stop_rq))
+
+    {python, 0} = System.cmd("python3", ["--version"], stderr_to_stdout: true)
+
+    assert g1["toolchain"] == %{
+             "elixir" => System.version(),
+             "otp_release" => List.to_string(:erlang.system_info(:otp_release)),
+             "erts_version" => List.to_string(:erlang.system_info(:version)),
+             "python3" => String.trim(python),
+             "python3_path" => System.find_executable("python3")
+           }
+
+    assert [%{"cmd" => "sh courts/G1.sh", "exit" => 0, "invocation" => invocation} = first] =
+             g1["replay"]["commands"]
+
+    assert invocation["cwd"] == File.cwd!()
+
+    {named, others} =
+      Map.split(invocation["env"], ~w(MIX_ENV GGEN_IGNITER_DIR GC23_FLEET_RECEIPTS_DIR))
+
+    assert named == %{
+             "MIX_ENV" => "test",
+             "GGEN_IGNITER_DIR" => g1["gate"]["env"]["GGEN_IGNITER_DIR"],
+             "GC23_FLEET_RECEIPTS_DIR" => nil
+           }
+
+    # Any other recorded variable is the caller's own GC23_*/DFCM_* value.
+    for {name, value} <- others do
+      assert String.starts_with?(name, "GC23_") or String.starts_with?(name, "DFCM_")
+      assert System.get_env(name) == value
+    end
+
+    assert ["mix", "xaas.stop_court", "--checkpoint", "GC-FRI-0800" | rest] = invocation["argv"]
+    assert Enum.take(rest, -2) == ["--only", "G1"]
+    assert invocation["shell"] =~ "&& env -u GC23_FLEET_RECEIPTS_DIR "
+    assert invocation["shell"] =~ " GGEN_IGNITER_DIR=#{g1["gate"]["env"]["GGEN_IGNITER_DIR"]} "
+
+    assert invocation["shell"] =~
+             " MIX_ENV=test mix xaas.stop_court --checkpoint GC-FRI-0800 --repo "
+
+    assert String.ends_with?(invocation["shell"], " --only G1")
+
+    # The recorded argv reproduces the receipt: same identities, same output digest.
+    code = make_ref()
+    capture_io(fn -> send(self(), {code, StopCourt.cli(Enum.drop(invocation["argv"], 2))}) end)
+    assert_received {^code, 0}
+    again = read_json(receipt(repo, "G1"))
+    assert again["identity"] == g1["identity"]
+    assert again["verifier"] == g1["verifier"]
+    assert again["toolchain"] == g1["toolchain"]
+
+    assert [%{"output_sha256" => digest, "invocation" => ^invocation}] =
+             again["replay"]["commands"]
+
+    assert digest == first["output_sha256"]
+
+    # The STOP receipt: same identity and toolchain; its court is the runner itself.
+    stop_path = Path.join(repo, "gate-receipts/STOP-GC-FRI-0800.json")
+    assert {0, _} = validate([stop_path])
+    stop = read_json(stop_path)
+    assert stop["identity"]["repo"] == "seanchatmangpt/xaas"
+    assert stop["identity"]["worktree"] == top
+    assert stop["toolchain"] == g1["toolchain"]
+    assert stop["verifier"]["court_command"] == "mix xaas.stop_court --checkpoint GC-FRI-0800"
+    assert stop["verifier"]["court_script"] == "lib/mix/tasks/xaas.stop_court.ex"
+    assert stop["verifier"]["court_script_sha256"] == sha256(File.read!(@runner_source))
+    assert stop["verifier"]["stop_query_sha256"] == verifier["stop_query_sha256"]
+    stop_invocation = List.last(stop["replay"]["commands"])["invocation"]
+    assert stop_invocation["argv"] == invocation["argv"]
+  end
+
+  test "a court script edited after the run changes court_script_sha256; at_subject stays false until the edit is committed" do
+    repo = script_repo()
+    script = Path.join(repo, "courts/G1.sh")
+
+    assert {0, _} = court(repo)
+    before = read_json(receipt(repo, "G1"))["verifier"]
+    assert before["court_script_sha256"] == sha256(File.read!(script))
+    assert before["court_script_at_subject"] == true
+
+    File.write!(script, File.read!(script) <> "echo 'edited after the run'\n")
+    assert {0, _} = court(repo)
+    edited_receipt = read_json(receipt(repo, "G1"))
+    edited = edited_receipt["verifier"]
+    refute edited["court_script_sha256"] == before["court_script_sha256"]
+    assert edited["court_script_sha256"] == sha256(File.read!(script))
+    assert edited["court_script_at_subject"] == false
+
+    assert edited["court_script_at_subject_why"] ==
+             "the bytes differ from the blob at courts/G1.sh in #{head(repo)}"
+
+    assert [%{"summary" => "edited after the run"}] = edited_receipt["replay"]["commands"]
+    assert {0, _} = validate([receipt(repo, "G1")])
+
+    commit_all(repo, "edit the G1 court")
+    assert {0, _} = court(repo)
+    committed = read_json(receipt(repo, "G1"))["verifier"]
+    assert committed["court_script_sha256"] == edited["court_script_sha256"]
+    assert committed["court_script_at_subject"] == true
+    assert committed["court_script_at_subject_why"] == nil
+  end
+
+  test "an inline court names no script; without a github.com remote identity.repo stays the worktree; GC-FRI-0800 derives REQUIRED_UNKNOWN only" do
+    repo = repo()
+    top = toplevel(repo)
+    write_goal(repo, [{"G1", "true"}, {"G2", "false"}], order_ttl())
+
+    assert {1, out} = court(repo)
+
+    assert out =~
+             "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=null REQUIRED_LLM_KNOWN=null" <>
+               " REQUIRED_UNKNOWN=2 UNCLASSIFIED_REQUIRED_WORK=null UNRECEIPTED_ACTUATION=null"
+
+    g1 = read_json(receipt(repo, "G1"))
+    assert g1["identity"]["repo"] == top
+    assert g1["identity"]["worktree"] == top
+
+    assert g1["identity"]["repo_source"] ==
+             "no github.com remote: identity.repo is the worktree path"
+
+    assert g1["verifier"]["court_script"] == nil
+    assert g1["verifier"]["court_script_sha256"] == nil
+    assert g1["verifier"]["court_script_at_subject"] == nil
+    assert g1["verifier"]["court_script_why"] =~ "inline"
+    assert g1["verifier"]["court_command_sha256"] == sha256("true")
+
+    stop_path = Path.join(repo, "gate-receipts/STOP-GC-FRI-0800.json")
+    counters = read_json(stop_path)["release_counters"]
+    assert counters["REQUIRED_UNKNOWN"]["value"] == 2
+
+    assert counters["REQUIRED_UNKNOWN"]["items"] == [
+             "gate G2: UNKNOWN",
+             "order WO-1: no linked receipt (MISSING)"
+           ]
+
+    for name <-
+          ~w(REQUIRED_LLM_KNOWN LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH UNRECEIPTED_ACTUATION) do
+      assert counters[name]["value"] == nil
+      assert counters[name]["why"] == "checkpoint GC-FRI-0800 registers no episodes directory"
+    end
+
+    assert counters["UNCLASSIFIED_REQUIRED_WORK"]["value"] == nil
+
+    assert counters["UNCLASSIFIED_REQUIRED_WORK"]["why"] ==
+             "checkpoint GC-FRI-0800 registers no fleet classification check (GC23-11)"
+
+    # REQUIRED_UNKNOWN is derived from the run: a bound order receipt removes WO-1.
+    write_order_receipt(repo, python_digest(@wo1_tuple))
+    assert {1, _} = court(repo)
+    assert {0, _} = validate([stop_path])
+
+    assert read_json(stop_path)["release_counters"]["REQUIRED_UNKNOWN"]["items"] == [
+             "gate G2: UNKNOWN"
+           ]
+  end
 end
