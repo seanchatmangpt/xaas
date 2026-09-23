@@ -877,7 +877,14 @@ defmodule Xaas.Sjira.V26923GoalTest do
   defp put_order_receipt(dir, id, digest, standing, note) do
     File.mkdir_p!(dir)
     {top, 0} = System.cmd("git", ["-C", dir, "rev-parse", "--show-toplevel"])
-    top = String.trim(top)
+    put_subject_receipt(dir, String.trim(top), id, digest, standing, note)
+  end
+
+  # The same receipt stored in `dir` (any directory: a checkout, or not) with
+  # its identity bound to the HEAD of the SHA-1 checkout `top` (the R schema
+  # requires a 40-hex subject_sha; the storing repository is provenance only).
+  defp put_subject_receipt(dir, top, id, digest, standing, note) do
+    File.mkdir_p!(dir)
     sha = head(top)
     path = Path.join(dir, "#{id}.json")
 
@@ -942,13 +949,15 @@ defmodule Xaas.Sjira.V26923GoalTest do
                "dir" => Path.join(repo, "receipts/v26.9.23"),
                "origin" => "repo",
                "repo" => nil,
-               "repo_head" => nil
+               "repo_head" => nil,
+               "repo_head_why" => "directory absent"
              },
              %{
                "dir" => Path.join(ggen, "receipts/v26.9.23"),
                "origin" => "ggen_igniter",
                "repo" => ggen,
-               "repo_head" => head(ggen)
+               "repo_head" => head(ggen),
+               "repo_head_why" => nil
              }
            ]
   end
@@ -988,6 +997,7 @@ defmodule Xaas.Sjira.V26923GoalTest do
              "origin" => "ggen_igniter",
              "repo" => ggen,
              "repo_head" => receipt_head,
+             "repo_head_why" => nil,
              "committed_at_head" => true,
              "committed_at_head_why" => nil
            }
@@ -1170,5 +1180,99 @@ defmodule Xaas.Sjira.V26923GoalTest do
     assert orders["WO-A"]["committed_at_head"] == nil
     assert orders["WO-A"]["committed_at_head_why"] =~ ":git_failed"
     assert orders["WO-A"]["committed_at_head_why"] =~ "ls-tree"
+  end
+
+  test "the receipt-dir probe is typed: unborn HEAD, a checkout git cannot read, and SHA-256 HEADs are never 'no git checkout'" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    digest = python_digest(@wo_a_tuple)
+
+    # Unborn: a checkout whose branch has no commit. Provably not committed at
+    # HEAD (false), and the reason names the unborn branch.
+    unborn = tmp_dir("v23l_unborn")
+    {_, 0} = System.cmd("git", ["init", "-q", "-b", "main", unborn])
+    {top, 0} = System.cmd("git", ["-C", unborn, "rev-parse", "--show-toplevel"])
+    unborn = String.trim(top)
+    unborn_dir = Path.join(unborn, "receipts")
+    put_subject_receipt(unborn_dir, repo, "WO-A", digest, "ALIVE", "unborn copy")
+    why = "HEAD refs/heads/main has no commit (unborn branch)"
+
+    {code, out} = registry_court(repo, ggen, ["--order-receipts-dir", unborn_dir])
+    assert code == 0, out
+    assert out =~ "order receipts option #{unborn_dir} (#{unborn} @ unborn: #{why})"
+    assert out =~ "from=option:#{unborn_dir}@-"
+    {stop, orders} = stop_orders(repo)
+
+    assert [%{"repo" => ^unborn, "repo_head" => nil, "repo_head_why" => ^why}] =
+             stop["stop"]["order_receipt_dirs"]
+
+    assert %{
+             "linked" => true,
+             "repo" => ^unborn,
+             "repo_head" => nil,
+             "repo_head_why" => ^why,
+             "committed_at_head" => false,
+             "committed_at_head_why" => ^why
+           } = orders["WO-A"]
+
+    # A checkout git refuses to read (corrupt .git/HEAD: git no longer
+    # recognises it, although the `.git` is there) and a directory inside
+    # `.git` (not a work tree): the git failure is recorded, committed_at_head
+    # is null, never "no git checkout" / false.
+    corrupt = ggen_checkout()
+    corrupt_dir = Path.join(corrupt, "receipts")
+    put_subject_receipt(corrupt_dir, repo, "WO-A", digest, "ALIVE", "corrupt copy")
+    commit!(corrupt, "WO-A receipt")
+    File.write!(Path.join(corrupt, ".git/HEAD"), "not a ref\n")
+    inside_git = Path.join(ggen, ".git/receipts")
+    put_subject_receipt(inside_git, repo, "WO-A", digest, "ALIVE", "inside .git copy")
+
+    for {dir, failure} <- [
+          {corrupt_dir,
+           ~r/\{:git_failed, \["rev-parse", "--show-toplevel"\], 128, "fatal: |:toplevel_mismatch/},
+          {inside_git, ~r/\{:git_failed, \["rev-parse", "--show-toplevel"\], 128, "fatal: /}
+        ] do
+      {code, out} = registry_court(repo, ggen, ["--order-receipts-dir", dir])
+      assert code == 0, out
+      assert out =~ "order receipts option #{dir} ("
+      assert out =~ " git failed: "
+      refute out =~ "no git checkout"
+      {stop, orders} = stop_orders(repo)
+      [probe] = stop["stop"]["order_receipt_dirs"]
+      assert probe["repo_head"] == nil
+      assert probe["repo_head_why"] =~ failure
+      wo = orders["WO-A"]
+      assert wo["linked"] == true
+      assert wo["repo_head"] == nil
+      assert wo["committed_at_head"] == nil
+      assert wo["committed_at_head_why"] == probe["repo_head_why"]
+    end
+
+    # SHA-256 object format: a 64-hex HEAD is a HEAD, and the committed blob
+    # compares equal (hash-object and ls-tree speak the repository's format).
+    s256 = tmp_dir("v23l_sha256")
+    {_, 0} = System.cmd("git", ["init", "-q", "--object-format=sha256", s256])
+    {top, 0} = System.cmd("git", ["-C", s256, "rev-parse", "--show-toplevel"])
+    s256 = String.trim(top)
+    s256_dir = Path.join(s256, "receipts")
+    put_subject_receipt(s256_dir, repo, "WO-A", digest, "ALIVE", "sha256 copy")
+    s256_head = commit!(s256, "WO-A receipt")
+    assert s256_head =~ ~r/\A[0-9a-f]{64}\z/
+
+    {code, out} = registry_court(repo, ggen, ["--order-receipts-dir", s256_dir])
+    assert code == 0, out
+    assert out =~ "order receipts option #{s256_dir} (#{s256} @ #{s256_head})"
+    assert out =~ "from=option:#{s256_dir}@#{s256_head}"
+    {_stop, orders} = stop_orders(repo)
+
+    assert %{
+             "linked" => true,
+             "repo" => ^s256,
+             "repo_head" => ^s256_head,
+             "repo_head_why" => nil,
+             "committed_at_head" => true,
+             "committed_at_head_why" => nil
+           } = orders["WO-A"]
   end
 end

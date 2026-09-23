@@ -94,10 +94,13 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   `ALIVE` iff STOP, `UNKNOWN` otherwise), prints the per-gate table, one line
   per order and `STOP=true|false`. The STOP receipt's `stop` section lists
   the order-receipts directories (with the git toplevel and HEAD of the
-  repository holding each) and, per order, the directory and repository HEAD
-  its receipt came from, whether those receipt bytes are the blob committed
-  at that HEAD (`true`, `false` with the reason, or `null` with the git
-  failure), every path it was found at, and the refusal if any.
+  repository holding each, SHA-1 or SHA-256; when the HEAD is `null`,
+  `repo_head_why` says why: directory absent, no git checkout, unborn HEAD,
+  or the git failure, never a git failure reported as "no git checkout") and,
+  per order, the directory and repository HEAD its receipt came from, whether
+  those receipt bytes are the blob committed at that HEAD (`true`, `false`
+  with the reason, or `null` with the git failure), every path it was found
+  at, and the refusal if any.
 
   Exit codes: `0` STOP=true, `1` STOP=false, `2` the court could not run
   (bad arguments, unreadable graph, unknown checkpoint, asserted receipts,
@@ -157,6 +160,9 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   @tail_bytes 4096
 
   @sha ~r/\A[0-9a-f]{40}\z/
+  # A commit id in either object format (SHA-1, SHA-256): the HEAD of a
+  # repository that holds order receipts is provenance, not a receipt subject.
+  @object_id ~r/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/
   @ask ~r/\A((?:\s*(?:#[^\n]*(?:\n|\z)|(?:PREFIX|BASE)\b[^\n]*(?:\n|\z)))*\s*)ASK\b/i
   @tuple_fields ~w(subject postcondition capability evidence_ceiling authority_ceiling consequence_class exclusions)
 
@@ -373,10 +379,9 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   defp present(_value), do: nil
 
   # The ordered order-receipts directories, absolute and de-duplicated, each
-  # with the git toplevel and HEAD of the repository that holds it (nil when
-  # the directory is absent or not in a git checkout). A `{:ggen_igniter, _}`
-  # entry resolves against the same GGEN_IGNITER_DIR the court env exports and
-  # is dropped when none is known.
+  # with the typed probe of the repository that holds it (`checkout/1`). A
+  # `{:ggen_igniter, _}` entry resolves against the same GGEN_IGNITER_DIR the
+  # court env exports and is dropped when none is known.
   defp order_receipts_dirs(paths, repo) do
     paths.order_receipts_dirs
     |> Enum.flat_map(fn
@@ -393,20 +398,92 @@ defmodule Mix.Tasks.Xaas.StopCourt do
         end
     end)
     |> Enum.uniq_by(fn {_origin, dir} -> dir end)
-    |> Enum.map(fn {origin, dir} ->
-      {root, head} = checkout(dir)
-      %{dir: dir, origin: origin, repo: root, head: head}
-    end)
+    |> Enum.map(fn {origin, dir} -> Map.merge(%{dir: dir, origin: origin}, checkout(dir)) end)
   end
 
+  # The repository holding an order-receipts dir, typed; a git failure is
+  # never reported as "no git checkout" (`probe`, `repo` toplevel, `head`
+  # object id, `why` = the reason `head` is nil):
+  #
+  #   * `:ok`          - toplevel and HEAD commit id (SHA-1, or SHA-256 in a
+  #                      `--object-format=sha256` repository);
+  #   * `:absent`      - the directory does not exist;
+  #   * `:no_checkout` - git finds no repository AND no ancestor of the
+  #                      directory holds a `.git` entry (an independent
+  #                      filesystem observation, not a parse of git's message);
+  #   * `:unborn`      - a checkout whose HEAD branch has no commit (proven:
+  #                      `symbolic-ref` names the branch, `show-ref` exits 1);
+  #   * `:git_failed`  - git could not answer although a `.git` is there
+  #                      (dubious ownership, corrupt HEAD, not a work tree, git
+  #                      missing), or git's toplevel is not the directory that
+  #                      holds the nearest `.git` (a skipped nested repository).
   defp checkout(dir) do
-    with true <- File.dir?(dir),
-         {:ok, root} <- git(dir, ["rev-parse", "--show-toplevel"]),
-         {:ok, head} <- git(dir, ["rev-parse", "HEAD"]),
-         true <- Regex.match?(@sha, head) do
-      {root, head}
+    if File.dir?(dir),
+      do: probe_checkout(dir, git_holder(dir)),
+      else: probe(:absent, "directory absent")
+  end
+
+  defp probe_checkout(dir, holder) do
+    case git(dir, ["rev-parse", "--show-toplevel"]) do
+      {:ok, root} ->
+        case same_dir(root, holder) do
+          :same -> probe_head(dir, root)
+          mismatch -> probe(:git_failed, inspect(mismatch), root)
+        end
+
+      {:error, {:git_failed, _args, _code, _out}} when holder == nil ->
+        probe(:no_checkout, "no git checkout holds the receipt dir")
+
+      {:error, reason} ->
+        probe(:git_failed, inspect(reason))
+    end
+  end
+
+  defp probe_head(dir, root) do
+    case git(dir, ["rev-parse", "--verify", "HEAD"]) do
+      {:ok, head} ->
+        if Regex.match?(@object_id, head),
+          do: %{probe: :ok, repo: root, head: head, why: nil},
+          else: probe(:git_failed, inspect({:not_an_object_id, head}), root)
+
+      {:error, reason} ->
+        # Unborn only when proven; otherwise the original git failure stands.
+        with {:ok, ref} <- git(dir, ["symbolic-ref", "--quiet", "HEAD"]),
+             {:error, {:git_failed, _args, 1, ""}} <-
+               git(dir, ["show-ref", "--verify", "--quiet", ref]) do
+          probe(:unborn, "HEAD #{ref} has no commit (unborn branch)", root)
+        else
+          _not_proven -> probe(:git_failed, inspect(reason), root)
+        end
+    end
+  end
+
+  defp probe(kind, why, root \\ nil), do: %{probe: kind, repo: root, head: nil, why: why}
+
+  # The nearest ancestor (or the directory itself) holding a `.git` entry (a
+  # directory, or the file of a linked worktree / submodule).
+  defp git_holder(dir) do
+    dir |> Path.expand() |> ancestors() |> Enum.find(&File.exists?(Path.join(&1, ".git")))
+  end
+
+  defp ancestors(path) do
+    case Path.dirname(path) do
+      ^path -> [path]
+      parent -> [path | ancestors(parent)]
+    end
+  end
+
+  # Same directory by inode (git prints the resolved path: /private/var for /var).
+  defp same_dir(root, nil), do: {:toplevel_mismatch, root, nil}
+
+  defp same_dir(root, holder) do
+    with {:ok, a} <- File.stat(root),
+         {:ok, b} <- File.stat(holder) do
+      if {a.major_device, a.inode} == {b.major_device, b.inode},
+        do: :same,
+        else: {:toplevel_mismatch, root, holder}
     else
-      _ -> {nil, nil}
+      {:error, posix} -> {:stat_failed, root, holder, posix}
     end
   end
 
@@ -1084,8 +1161,15 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     path
   end
 
-  defp dir_json(dir),
-    do: %{"dir" => dir.dir, "origin" => dir.origin, "repo" => dir.repo, "repo_head" => dir.head}
+  defp dir_json(dir) do
+    %{
+      "dir" => dir.dir,
+      "origin" => dir.origin,
+      "repo" => dir.repo,
+      "repo_head" => dir.head,
+      "repo_head_why" => dir.why
+    }
+  end
 
   # Per order: where its receipt came from (dir + the HEAD of the repository
   # holding it, and whether those bytes are the blob committed at that HEAD),
@@ -1107,6 +1191,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       "origin" => source && source.origin,
       "repo" => source && source.repo,
       "repo_head" => source && source.head,
+      "repo_head_why" => source && source.why,
       "committed_at_head" => nil,
       "committed_at_head_why" => nil
     }
@@ -1121,13 +1206,14 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
   # Whether the receipt bytes are exactly the blob at HEAD in the repository
   # holding them, typed three ways: `true`; `false` with the reason (no git
-  # checkout, no blob at that path in HEAD, different bytes); `null` with the
-  # git failure when git could not answer, e.g. an unreadable HEAD tree (never
-  # folded into `false`). `ls-tree` is used rather than `rev-parse --verify
-  # --quiet HEAD:./name`, which exits 1 silently for both "no such path" and
-  # "tree object missing". Both git calls run in the receipt's own directory
-  # (paths relative to it), so a symlinked path (macOS /var -> /private/var)
-  # cannot mis-relativize.
+  # checkout, an unborn HEAD, no blob at that path in HEAD, different bytes);
+  # `null` with the git failure when git could not answer, e.g. a directory
+  # probe git refused (`:git_failed`) or an unreadable HEAD tree (never folded
+  # into `false`). `ls-tree` is used rather than `rev-parse --verify --quiet
+  # HEAD:./name`, which exits 1 silently for both "no such path" and "tree
+  # object missing". Both git calls run in the receipt's own directory (paths
+  # relative to it), so a symlinked path (macOS /var -> /private/var) cannot
+  # mis-relativize.
   defp commit_json(_path, nil), do: %{}
 
   defp commit_json(path, source) do
@@ -1135,9 +1221,13 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     %{"committed_at_head" => state, "committed_at_head_why" => why}
   end
 
-  defp commit_state(_path, %{repo: nil}), do: {false, "no git checkout holds the receipt dir"}
+  defp commit_state(_path, %{probe: :git_failed, why: why}), do: {nil, why}
 
-  defp commit_state(path, _source) do
+  defp commit_state(_path, %{probe: probe, why: why})
+       when probe in [:no_checkout, :unborn, :absent],
+       do: {false, why}
+
+  defp commit_state(path, %{probe: :ok}) do
     dir = Path.dirname(path)
     name = Path.basename(path)
 
@@ -1166,10 +1256,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
     )
 
     Enum.each(report.order_receipts_dirs, fn dir ->
-      shell.info(
-        "order receipts #{dir.origin} #{dir.dir}" <>
-          if(dir.head, do: " (#{dir.repo} @ #{dir.head})", else: " (no git checkout)")
-      )
+      shell.info("order receipts #{dir.origin} #{dir.dir}" <> dir_label(dir))
     end)
 
     shell.info(row(["GATE", "BOUNDARY", "STANDING", "EXIT", "SECS", "RECEIPT", "SOURCE"]))
@@ -1217,6 +1304,12 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
     shell.info("STOP=#{report.stop}")
   end
+
+  defp dir_label(%{probe: :ok} = dir), do: " (#{dir.repo} @ #{dir.head})"
+  defp dir_label(%{probe: :no_checkout}), do: " (no git checkout)"
+  defp dir_label(%{probe: :absent}), do: " (absent)"
+  defp dir_label(%{probe: :unborn} = dir), do: " (#{dir.repo} @ unborn: #{dir.why})"
+  defp dir_label(%{probe: :git_failed} = dir), do: " (#{dir.repo || "-"} git failed: #{dir.why})"
 
   defp receipt_exit(%{"replay" => %{"commands" => [%{"exit" => exit_code} | _]}}),
     do: to_string(exit_code)
