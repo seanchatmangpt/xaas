@@ -55,6 +55,8 @@ lib/xaas/ultracode/provider_health.ex | `Xaas.Ultracode.ProviderHealth`: one-cal
 
 lib/xaas/ultracode/process_group.ex | `Xaas.Ultracode.ProcessGroup`: verified group-wide TERM/poll/KILL/poll kill, extracted from `Dispatch` so `ZcodePackage`'s `--version` probe reaps a hung shim with the same mechanics (Dispatch delegates to it; `Verifier` still carries its own copy) | no admitted pack expresses OS process-group lifecycle | ultracode-actuation-lease-pack | 2026-09-21
 
+lib/mix/tasks/xaas.stop_court.ex, test/mix/tasks/xaas_stop_court_test.exs | `mix xaas.stop_court` (FRI-T5, GC-FRI-0800): reads a `sj:GoalCheckpoint` goal graph (docs/sjira/v26.9.22/friday/goal.ttl), runs each gate's `sj:courtCommand` in its own process group under a deadline, writes one R-schema gate receipt per gate, projects validator-ADMITTED receipts (gate subject / WorkOrder tuple digest bound) into `sj:Receipt` nodes and evaluates the root's `sj:stopQuery` (stop.rq) through the dep-tree oxigraph NIF as its SELECT-existence equivalent (the NIF answers SELECT only, no ASK form), plus its Chicago qualification (2026-09-22) | UNSUPPORTED(generator-capability): no admitted pack renders a stop-court runner from the GoalCheckpoint vocabulary, and `GgenIgniter.Native.GraphNif` has no ASK/boolean result form, so the ASK -> SELECT * LIMIT 1 adapter is hand-written | semantic-jira-pack (render the stop court from sj:GoalCheckpoint/sj:courtCommand/sj:stopQuery; add a boolean ASK result to ggen_graph_nif, then delete the adapter) | 2026-09-22
+
 ## Paydown plan
 
 1. Qualify the rendered plugin against ZCode 3.11.2 live (hook event names,

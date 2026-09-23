@@ -1,0 +1,99 @@
+{
+  "authority": {
+    "actor": "claude-opus-5.5 workflow subagent (lane FRI-T5)",
+    "ceiling": "CONSTRUCT",
+    "grant": "user-approved plan ~/.claude/plans/i-need-you-to-iterative-sedgewick.md, lane FRI-T5 (COORDINATION.md Friday scope)"
+  },
+  "consequence": {
+    "commits": [
+      "cb4ec5ad2918b02bcfbe179becdca49d1744eba6",
+      "5b287ecc654b2eacdc630d79888a338269db48ad"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "docs/sjira/v26.9.22/friday/goal.ttl",
+      "docs/sjira/v26.9.22/friday/stop.rq",
+      "lib/mix/tasks/xaas.stop_court.ex",
+      "test/mix/tasks/xaas_stop_court_test.exs"
+    ],
+    "remote_effects": []
+  },
+  "falsifiers": {
+    "note": "mutations run in a scratch clone (git clone --shared at 5b287ec, APFS-cloned _build/deps; baseline 14 tests, 0 failures); lane worktree untouched; each mutation restored with git checkout HEAD -- . and git status --porcelain empty",
+    "repair": "52d8896 REVERT-MUTATION caveat: r1 failures were all fixture File.CopyError/File.Error; 5b287ec pins the STOP contract query in the test (@contract_stop_rq, byte-equal to stop.rq) so r1 now fails on the missing runner",
+    "revert_mutations_killed": [
+      "r1 every non-test file reset to base 0d57147 (runner, stop.rq, goal.ttl, receipt removed; HANDWRITTEN.md at base) -> 14 tests, 14 failures: 13 UndefinedFunctionError on Mix.Tasks.Xaas.StopCourt.{cli,court,ask_as_select,tuple_digest}, 1 assertion (pin test: stop.rq missing); 0 File.CopyError/File.Error",
+      "r2 stop.rq and goal.ttl removed, runner kept -> 2 failures (pin test, real goal.ttl test); the 12 runner tests read no file outside test/",
+      "m1a stop.rq gate standing unconstrained -> 2 tests fail (pin test, real goal.ttl drift refusal)",
+      "m1b stop.rq and goal.ttl sj:stopQuery both unconstrained (consistent) -> 1 test fails (pin test)",
+      "m2 runner marks every gate ALIVE -> 2 tests fail",
+      "m3 runner ignores receipt identity.subject -> 1 test fails",
+      "m4 runner ignores WorkOrder tuple_digest -> 1 test fails",
+      "m5 runner drops the asserted-receipt guard -> 1 test fails"
+    ]
+  },
+  "identity": {
+    "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6",
+    "branch": "fri/FRI-T5",
+    "graph_hash": "sha256:e235de71c6c9130da6609a1f7469482c6c93f68194ba11cf135c86e5bdad88f9",
+    "repo": "/Users/sac/xaas",
+    "subject": "FRI-T5",
+    "subject_sha": "5b287ecc654b2eacdc630d79888a338269db48ad",
+    "tuple_digest": "sha256:e1395b48cb24b41bfe542236b269da6c002339c8679485aeb8f69886fa636744",
+    "worktree": "/Users/sac/wt/v26922/fri/FRI-T5"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "b93cbf9718a1a1cbced35334efd9609c3fc09a43bb4cde50b2cfbe1432339e0e",
+        "summary": "formatted"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "240b6f79fbff4bdfb963c4b24a43a2c41b2ee43996eb5ae6acf88cd01b4b30b4",
+        "summary": "Compiling 505 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/mix/tasks/xaas_stop_court_test.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "6d997cf92bf5b852b5155283be42e05ce0390818d2eef5872eb56bdae6528446",
+        "summary": "14 tests, 0 failures (0 skipped: validator and rdflib present)"
+      },
+      {
+        "cmd": "! grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.' test/mix/tasks/xaas_stop_court_test.exs lib/mix/tasks/xaas.stop_court.ex",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "summary": "Chicago mock grep: zero matches"
+      },
+      {
+        "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-FRI-0800 --only G0 --receipts-dir \"$TMPDIR/real-receipts\"; test $? -eq 1",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T5",
+        "exit": 0,
+        "output_sha256": "ba73fd25517dbca5a72e9e469acac836b0e3c261b2040202da544e5a580fadb2",
+        "summary": "real goal.ttl at 5b287ec: G0 UNKNOWN (wbpr.md still DRAFT), G1..G12 no receipt, order FRI-T5 standing=ALIVE receipt=ADMITTED digest=sha256:e1395b48...; STOP=false, court exit 1 as asserted; G0 and STOP receipts ADMITTED"
+      },
+      {
+        "cmd": "python3 mutate.py <scratch>/mut1 (r1, r2, m1a, m1b, m2..m5)",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/t5r",
+        "exit": 0,
+        "output_sha256": "d9bc9b4e33ebf7427170187381b57f40860bae227279fd68b755d418f0b942b8",
+        "summary": "every mutation killed; r1 failures attributed to the missing runner (13 UndefinedFunctionError) plus the pin test"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/FRI-T5.json"
+  },
+  "standing": {
+    "derived_from": "lane gate (format, forced test compile --warnings-as-errors, stop-court Chicago tests 14/0) and mock grep, all exit 0, run on a clean tree at subject_sha 5b287ecc654b2eacdc630d79888a338269db48ad; revert mutations r1/r2/m1a/m1b/m2-m5 all killed",
+    "value": "ALIVE"
+  },
+  "unsupported": [
+    "UNSUPPORTED(generator-capability): no admitted pack renders a stop-court runner; GgenIgniter.Native.GraphNif has no ASK form (SELECT * LIMIT 1 adapter hand-written). Ledger: HANDWRITTEN.md"
+  ]
+}
