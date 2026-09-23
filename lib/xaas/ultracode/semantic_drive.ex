@@ -811,23 +811,28 @@ defmodule Xaas.Ultracode.SemanticDrive do
        recipe provider's (`RecipeWorker.toolchain/1`); Mix then compiles
        into `build_path`.
 
-  Either way the ERTS is the running node's: pairing an Elixir with a
-  different ERTS than the build's forces a full dependency rebuild whose
-  rebar-compiled beams the older ERTS cannot read. The identity records
-  which source won, the manifest read and the compiler it names.
+  The ERTS is the one the build was compiled on: the running node's when
+  its OTP release is the manifest's, else an `<asdf>/installs/erlang/<v>`
+  install of that OTP release (the checkout's `.tool-versions` erlang pin
+  first, then the rest in order); only when none exists is it the running
+  node's. Pairing an Elixir with a different ERTS than the build's forces a
+  full dependency rebuild whose rebar-compiled beams an older ERTS cannot
+  read (observed: ggen_igniter-int `_build/test` rebuilt under its
+  1.18.4-otp-27 pin, judged from an OTP 28 xaas node, rebuilt every
+  dependency and failed on yaml_elixir). The identity records which source
+  won, the manifest read, the compiler it names and the ERTS used.
   `<asdf>` = `config :xaas, :ultracode_asdf_data_dir`, else
   `$ASDF_DATA_DIR`, else `~/.asdf`.
   """
   @spec graph_toolchain(String.t(), String.t()) :: {:ok, map()} | {:refused, map()}
   def graph_toolchain(dir, build_path) when is_binary(dir) and is_binary(build_path) do
-    erts_bin = Path.join(to_string(:code.root_dir()), "bin")
-    otp = to_string(:erlang.system_info(:otp_release))
     manifest = build_manifest(dir, build_path)
+    {erts_bin, otp, erts_source} = build_erts(dir, manifest)
 
     erts = %{
       "erl" => Path.join(erts_bin, "erl"),
       "erlang" => otp,
-      "erts" => "running node (#{erts_bin})"
+      "erts" => erts_source
     }
 
     case built_toolchain(manifest, otp) do
@@ -871,6 +876,44 @@ defmodule Xaas.Ultracode.SemanticDrive do
   defp graph_path(mix, erts_bin),
     do: [Path.dirname(mix), erts_bin, "/usr/bin", "/bin"] |> Enum.uniq() |> Enum.join(":")
 
+  # The ERTS the build under judgement was compiled on (see graph_toolchain/2):
+  # {bin dir, OTP release, identity}. Falls back to the running node's.
+  defp build_erts(dir, manifest) do
+    node_bin = Path.join(to_string(:code.root_dir()), "bin")
+    node_otp = to_string(:erlang.system_info(:otp_release))
+    node = {node_bin, node_otp, "running node (#{node_bin})"}
+
+    case manifest.compiler do
+      %{"otp" => otp} when otp != node_otp ->
+        root = Path.join([asdf_data_dir(), "installs", "erlang"])
+
+        pinned =
+          case File.read(Path.join(dir, ".tool-versions")) do
+            {:ok, body} ->
+              for line <- String.split(body, "\n"),
+                  [tool, vsn | _] <- [String.split(line)],
+                  tool == "erlang",
+                  do: Path.join(root, vsn)
+
+            _ ->
+              []
+          end
+
+        (pinned ++ Enum.sort(Path.wildcard(Path.join(root, "*"))))
+        |> Enum.find(fn install ->
+          File.dir?(Path.join([install, "releases", otp])) and
+            executable?(Path.join([install, "bin", "erl"]))
+        end)
+        |> case do
+          nil -> node
+          install -> {Path.join(install, "bin"), otp, "build_manifest OTP #{otp} (#{install})"}
+        end
+
+      _ ->
+        node
+    end
+  end
+
   defp build_manifest(dir, build_path) do
     app =
       case File.read(Path.join(dir, "mix.exs")) do
@@ -909,7 +952,9 @@ defmodule Xaas.Ultracode.SemanticDrive do
     do: {:unavailable, "no readable build manifest at #{inspect(path)}"}
 
   defp built_toolchain(%{compiler: %{"otp" => built}}, otp) when built != otp,
-    do: {:unavailable, "the build was compiled on OTP #{built}; the running ERTS is OTP #{otp}"}
+    do:
+      {:unavailable,
+       "the build was compiled on OTP #{built}; no ERTS of that release is installed, the running ERTS is OTP #{otp}"}
 
   defp built_toolchain(%{compiler: %{"elixir" => elixir}}, otp) do
     own = Path.expand("../../bin/mix", to_string(:code.lib_dir(:elixir)))
@@ -919,7 +964,10 @@ defmodule Xaas.Ultracode.SemanticDrive do
     # OTP an install was built for: any `<vsn>-otp-<n>` install on this
     # ERTS reproduces it (the exact-OTP one first, then the rest in order).
     candidates =
-      if(System.version() == elixir, do: [own], else: []) ++
+      if(System.version() == elixir and otp == to_string(:erlang.system_info(:otp_release)),
+        do: [own],
+        else: []
+      ) ++
         [
           Path.join([asdf, "#{elixir}-otp-#{otp}", "bin", "mix"]),
           Path.join([asdf, elixir, "bin", "mix"])

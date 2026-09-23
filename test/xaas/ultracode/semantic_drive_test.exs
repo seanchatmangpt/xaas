@@ -585,6 +585,64 @@ defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
     assert_runs(t)
   end
 
+  # A real asdf Erlang install whose OTP release differs from this node's,
+  # with a real `<vsn>-otp-<release>` Elixir install for it (e.g. the
+  # ggen_igniter pin 1.18.4-otp-27 judged from an OTP 28 xaas node).
+  @asdf Path.expand(System.get_env("ASDF_DATA_DIR") || "~/.asdf")
+  @node_otp to_string(:erlang.system_info(:otp_release))
+  @foreign (for erl <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/erlang/*/releases/*"))),
+                otp = Path.basename(erl),
+                otp != @node_otp,
+                File.exists?(Path.join([Path.dirname(Path.dirname(erl)), "bin", "erl"])),
+                ex <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/elixir/*-otp-#{otp}"))),
+                File.exists?(Path.join([ex, "bin", "mix"])) do
+              {Path.dirname(Path.dirname(erl)), otp,
+               ex |> Path.basename() |> String.split("-otp-") |> hd()}
+            end)
+           |> List.last()
+
+  @tag skip:
+         if(@foreign == nil,
+           do: "no asdf Erlang install of another OTP release with a matching Elixir install"
+         )
+  test "a build compiled on another OTP release runs under an installed ERTS of that release (source build_manifest)" do
+    {install, otp, elixir} = @foreign
+
+    # The manifest in the shape the pinned Mix (1.18/1.19) writes, as in the
+    # real ggen_igniter-int `_build/test`: {1, {"1.18.4", ~c"27"}, Mix.SCM.Path}.
+    {dir, build} =
+      checkout("foreign", fn real -> {1, {elixir, String.to_charlist(otp)}, elem(real, 2)} end)
+
+    assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+    assert t["source"] == "build_manifest"
+    assert t["elixir"] == elixir
+    assert t["erlang"] == otp
+    assert t["erl"] == Path.join([install, "bin", "erl"])
+    assert t["erts"] =~ "build_manifest OTP #{otp}"
+
+    # A fresh MIX_HOME (durable configuration, as the courts pass it): the
+    # ambient archives belong to the node's Elixir, not the resolved one.
+    mix_home = Path.join(dir, "mix_home")
+    File.mkdir_p!(mix_home)
+
+    {out, 0} =
+      System.cmd(t["mix"], ["--version"],
+        env: [{"PATH", t["path"]}, {"MIX_ENV", "test"}, {"MIX_HOME", mix_home}],
+        stderr_to_stdout: true
+      )
+
+    assert out =~ "Mix #{elixir}"
+
+    {out, 0} =
+      System.cmd(
+        t["erl"],
+        ["-noshell", "-eval", "io:format(\"~s\", [erlang:system_info(otp_release)]), halt()."],
+        env: [{"PATH", t["path"]}]
+      )
+
+    assert out == otp
+  end
+
   test "no build at all falls back to the pin" do
     {dir, _build} = checkout("none", & &1)
     empty = Path.join(dir, "_build/elsewhere")
