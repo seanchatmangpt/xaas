@@ -28,14 +28,23 @@ defmodule Xaas.Zoe.PrivateMeetingInferenceTest do
   end
 
   test "decoder produces a private candidate with no DO authority and no raw generated notes" do
-    generated = Jason.encode!(%{
-      "observations" => [
-        %{"requirement_id" => "roles_and_ownership", "status" => "SATISFIED", "note" => "drop me"},
-        %{"requirement_id" => "systems_and_access", "status" => "PARTIAL", "note" => "drop me too"}
-      ],
-      "novel_observations" => [%{"kind" => "NEW_REQUIRED_CAPABILITY", "note" => "discard"}],
-      "process_metrics" => %{"unnecessary_minutes" => 4}
-    })
+    generated =
+      Jason.encode!(%{
+        "observations" => [
+          %{
+            "requirement_id" => "roles_and_ownership",
+            "status" => "SATISFIED",
+            "note" => "drop me"
+          },
+          %{
+            "requirement_id" => "systems_and_access",
+            "status" => "PARTIAL",
+            "note" => "drop me too"
+          }
+        ],
+        "novel_observations" => [%{"kind" => "NEW_REQUIRED_CAPABILITY", "note" => "discard"}],
+        "process_metrics" => %{"unnecessary_minutes" => 4}
+      })
 
     transcript = "synthetic staff-only transcript"
 
@@ -55,7 +64,7 @@ defmodule Xaas.Zoe.PrivateMeetingInferenceTest do
     assert candidate["process_metrics"]["unnecessary_minutes"] == 4
 
     assert Enum.all?(candidate["observations"], fn observation ->
-             (Map.keys(observation) |> Enum.sort()) ==
+             Map.keys(observation) |> Enum.sort() ==
                ["evidence_ref", "requirement_id", "status"]
            end)
 
@@ -66,16 +75,18 @@ defmodule Xaas.Zoe.PrivateMeetingInferenceTest do
   end
 
   test "decoder refuses unknown requirement ids and unsupported statuses" do
-    unknown = Jason.encode!(%{
-      "observations" => [%{"requirement_id" => "invented", "status" => "SATISFIED"}]
-    })
+    unknown =
+      Jason.encode!(%{
+        "observations" => [%{"requirement_id" => "invented", "status" => "SATISFIED"}]
+      })
 
     assert {:error, %{code: :unknown_requirement_id}} =
              PrivateMeetingInference.decode_output(unknown, ["roles_and_ownership"], @digest, "t")
 
-    invalid = Jason.encode!(%{
-      "observations" => [%{"requirement_id" => "roles_and_ownership", "status" => "ADMITTED"}]
-    })
+    invalid =
+      Jason.encode!(%{
+        "observations" => [%{"requirement_id" => "roles_and_ownership", "status" => "ADMITTED"}]
+      })
 
     assert {:error, %{code: :invalid_requirement_status}} =
              PrivateMeetingInference.decode_output(invalid, ["roles_and_ownership"], @digest, "t")
@@ -113,6 +124,7 @@ defmodule Xaas.Zoe.PrivateMeetingInferenceTest do
         System.tmp_dir!(),
         "zoe-private-model-manifest-#{System.unique_integer([:positive])}"
       )
+
     File.mkdir_p!(dir)
     on_exit(fn -> File.rm_rf!(dir) end)
 

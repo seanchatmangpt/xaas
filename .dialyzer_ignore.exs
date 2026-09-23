@@ -34,5 +34,5 @@
   {"lib/xaas/ultracode/ocel/validator.ex", :guard_fail_pat},
   {"lib/xaas/ultracode/ocel_conformance.ex", :pattern_match_cov},
   {"lib/xaas/ultracode/wave_loop.ex", :pattern_match_cov},
-  {"lib/xaas/ultracode/wave_loop.ex", :pattern_match},
+  {"lib/xaas/ultracode/wave_loop.ex", :pattern_match}
 ]

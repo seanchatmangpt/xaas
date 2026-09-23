@@ -149,6 +149,7 @@ defmodule Xaas.Ultracode.Sensing do
   """
   @spec registered?(term()) :: boolean()
   def registered?(name), do: match?({:ok, _}, profile(name))
+
   @doc """
   Raw registry binding lookup (`t1` stream): `{:ok, profile}` when `name` is
   declared under `config :xaas, :ultracode_sensing_profiles`, else `:error`.
@@ -164,7 +165,6 @@ defmodule Xaas.Ultracode.Sensing do
   end
 
   def profile_for(_name), do: :error
-
 
   @doc """
   Senses a REGISTERED repo alias at an exact `base_sha`: provisions a detached

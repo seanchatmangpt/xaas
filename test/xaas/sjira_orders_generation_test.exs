@@ -60,7 +60,9 @@ defmodule Xaas.SjiraOrdersGenerationTest do
     assert {_out, 0} = generate(out, Path.join(@dir, "standing"))
 
     files = order_files()
-    assert length(files) == 14, "expected the thirteen cycle orders plus index.json, got #{inspect(files)}"
+
+    assert length(files) == 14,
+           "expected the thirteen cycle orders plus index.json, got #{inspect(files)}"
 
     assert diverged(@dir, out) == [],
            "generated output was hand-edited. Put observed standing/ticks/receipts in " <>
@@ -132,7 +134,8 @@ defmodule Xaas.SjiraOrdersGenerationTest do
     for file <- order_files(), do: File.cp!(Path.join(@dir, file), Path.join(copy, file))
     assert diverged(copy, out) == []
 
-    order = "003-handwritten-paydown-zcode-plugin.md"  # a PARTIAL_ALIVE order still has an unticked box
+    # a PARTIAL_ALIVE order still has an unticked box
+    order = "003-handwritten-paydown-zcode-plugin.md"
     path = Path.join(copy, order)
     File.write!(path, String.replace(File.read!(path), "- [ ] ", "- [x] ", global: false))
 

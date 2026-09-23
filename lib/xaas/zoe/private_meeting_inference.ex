@@ -145,7 +145,10 @@ defmodule Xaas.Zoe.PrivateMeetingInference do
         |> Enum.with_index(1)
         |> Enum.map(fn {observation, index} ->
           observation
-          |> Map.put("id", "novel:#{sha256({transcript_digest, index, observation}) |> binary_part(0, 24)}")
+          |> Map.put(
+            "id",
+            "novel:#{sha256({transcript_digest, index, observation}) |> binary_part(0, 24)}"
+          )
           |> Map.put("evidence_ref", "sha256:#{transcript_digest}#novel:#{index}")
         end)
 
@@ -325,11 +328,17 @@ defmodule Xaas.Zoe.PrivateMeetingInference do
     ids = Enum.map(requirements, &Map.get(&1, "id", Map.get(&1, :id)))
 
     cond do
-      ids == [] -> refusal(:requirements_required, "empty")
+      ids == [] ->
+        refusal(:requirements_required, "empty")
+
       Enum.any?(ids, &(not is_binary(&1) or not Regex.match?(@requirement_id, &1))) ->
         refusal(:invalid_requirement_id, inspect(ids))
-      length(ids) != length(Enum.uniq(ids)) -> refusal(:duplicate_requirement_id, inspect(ids))
-      true -> {:ok, ids}
+
+      length(ids) != length(Enum.uniq(ids)) ->
+        refusal(:duplicate_requirement_id, inspect(ids))
+
+      true ->
+        {:ok, ids}
     end
   end
 
@@ -365,7 +374,10 @@ defmodule Xaas.Zoe.PrivateMeetingInference do
   end
 
   defp generated_text(%{results: [%{text: text} | _]}) when is_binary(text), do: {:ok, text}
-  defp generated_text(%{"results" => [%{"text" => text} | _]}) when is_binary(text), do: {:ok, text}
+
+  defp generated_text(%{"results" => [%{"text" => text} | _]}) when is_binary(text),
+    do: {:ok, text}
+
   defp generated_text(other), do: refusal(:unexpected_bumblebee_output, inspect(other))
 
   defp extract_json(text) do
