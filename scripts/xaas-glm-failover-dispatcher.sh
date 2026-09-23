@@ -69,6 +69,49 @@ done
 
 mkdir -p "$STATE_DIR"
 
+# The zcode CLI's own package.json is the contract (Xaas.Ultracode.ZcodePackage
+# is the Elixir mirror of this check): name must be zcode-app-cli, the launcher
+# is bin.zcode, and the running node must satisfy engines.node (">=X.Y.Z").
+# Nothing here hard-codes the launcher path or the Node floor.
+zcode_package_preflight() {
+  local out
+  out="$(node -e '
+    const fs = require("fs"), path = require("path");
+    const fail = (msg) => { console.error(msg); process.exit(2); };
+    const dir = process.argv[1], file = path.join(dir, "package.json");
+    let raw, pkg;
+    try { raw = fs.readFileSync(file, "utf8"); }
+    catch (e) { fail("cli_unavailable: cannot read " + file + " (" + e.code + ")"); }
+    try { pkg = JSON.parse(raw); }
+    catch (e) { fail("zcode_package_invalid: " + file + " is not valid JSON"); }
+    if (pkg === null || typeof pkg !== "object" || Array.isArray(pkg)) fail("zcode_package_invalid: " + file + " is not a JSON object");
+    if (pkg.name !== "zcode-app-cli") fail("wrong package name: " + pkg.name);
+    const bin = pkg.bin && pkg.bin.zcode;
+    if (typeof bin !== "string" || bin === "") fail("package.json has no bin.zcode");
+    const script = path.resolve(dir, bin);
+    if (!script.startsWith(path.resolve(dir) + path.sep)) fail("launcher escapes CLI dir: " + script);
+    let realScript, realDir;
+    try { realScript = fs.realpathSync(script); realDir = fs.realpathSync(dir); }
+    catch (e) { fail("cli_unavailable: launcher missing or not a regular file: " + script); }
+    if (!realScript.startsWith(realDir + path.sep)) fail("launcher escapes CLI dir: " + script + " -> " + realScript);
+    let regular = false;
+    try { regular = fs.statSync(realScript).isFile(); } catch (e) { regular = false; }
+    if (!regular) fail("cli_unavailable: launcher missing or not a regular file: " + script);
+    const range = pkg.engines && pkg.engines.node;
+    const m = typeof range === "string" ? /^>=\s*(\d+)\.(\d+)\.(\d+)$/.exec(range.trim()) : null;
+    if (!m) fail("unsupported engines.node: " + range);
+    // QUALIFIER FIX: drop a prerelease suffix ("22.19.0-nightly...") like the Elixir side does;
+    // otherwise the patch component is NaN and compares neither greater nor lesser (silent pass).
+    const have = process.versions.node.split("-")[0].split(".").map(Number), need = m.slice(1).map(Number);
+    for (let i = 0; i < 3; i++) { if (have[i] > need[i]) break; if (have[i] < need[i]) fail("node " + process.versions.node + " < engines.node " + range); }
+    console.log("ZCODE_BIN=" + bin);
+  ' "$ZCODE_CLI_DIR" 2>&1)" || { log "zcode package preflight FAILED: ${out}"; return 1; }
+  # QUALIFIER FIX: stderr is merged into $out (for the refusal message), so a warning from a
+  # node preload (NODE_OPTIONS=--require) must not become part of the launcher path.
+  ZCODE_BIN="$(printf '%s\n' "$out" | sed -n 's/^ZCODE_BIN=//p' | tail -n 1)"
+  [ -n "$ZCODE_BIN" ] || { log "zcode package preflight FAILED: no launcher reported: ${out}"; return 1; }
+}
+
 log() {
   printf '%s [xaas-glm-failover] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1"
 }
@@ -199,7 +242,7 @@ dispatch_one_epoch() {
           }) + "\n", { mode: 0o600 });
         ' "$leasefile" || exit 127
 
-      run_with_timeout node bin/zcode.js gall-work --lease "$leasefile"
+      run_with_timeout node "$ZCODE_BIN" gall-work --lease "$leasefile"
       rc=$?
       rm -f "$leasefile"
       exit "$rc"
@@ -207,7 +250,7 @@ dispatch_one_epoch() {
 
     # Compatibility path for Runs created before semantic checkpoint identity
     # became canonical. New semantic Runs never use this prompt projection.
-    run_with_timeout node bin/zcode.js \
+    run_with_timeout node "$ZCODE_BIN" \
       --prompt "/xaas Call claim_next with provider_worker_id exactly \"${worker_id}\" and epoch_id exactly \"${epoch_id}\"; do not use any other values." \
       --cwd "$cwd_real" --json
   ) > "$logfile" 2>&1
@@ -270,6 +313,8 @@ EOF
   return 0
 }
 
+zcode_package_preflight || exit 127
+
 if [ -n "$DIRECT_EPOCH" ]; then
   case "$DIRECT_EPOCH" in
     [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*-*-*-*) ;;
@@ -302,6 +347,6 @@ if [ "$ONCE" -eq 1 ]; then
 fi
 
 while true; do
-  run_once_pass
+  zcode_package_preflight && run_once_pass
   sleep "$POLL_INTERVAL"
 done

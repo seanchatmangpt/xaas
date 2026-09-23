@@ -242,12 +242,12 @@ receipt carries `head_verified`, (c) every wave Run's OCEL log passes steps
 ## 6. (e) Prerequisites per repo type
 
 Everything in eight-hour-run §3 holds (toolchain, Postgres, operator dirs,
-node >= 22.5, quota). Per-target additions:
+node >= 22.19.0 (zcode-cli `package.json` `engines.node`), quota). Per-target additions:
 
 - **PATH order (verified this session)**: `export
   PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"` — asdf first. asdf has
   NO node plugin on this machine (`asdf current node` -> "No such plugin"),
-  so `node` still resolves from homebrew (v26.8.1, >= 22.5) while `mix`
+  so `node` still resolves from homebrew (v26.8.1, >= 22.19.0) while `mix`
   resolves under the shims (1.20.2). One order, both constraints satisfied.
 - **Clones**: `~/xaas/worktrees/repos/<alias>`, real checkouts, on `main`
   (or any base you intend), never a bare dir, never a session worktree.

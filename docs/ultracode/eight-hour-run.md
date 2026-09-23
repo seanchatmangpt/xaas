@@ -119,7 +119,7 @@ refusal (`{:campaign_already_running, id}`), never a silent overlap.
   `~/xaas/worktrees/repos/aps` (the sensed repo),
   `~/xaas/worktrees/runs` (provisioned epoch worktrees),
   `~/xaas/worktrees/tickets` (tickets, campaign ledgers, wave receipts).
-- **zcode CLI + a Node ≥ 22.5 for the worker** (`node:sqlite` is required by
+- **zcode CLI + a Node ≥ 22.19.0 (`engines.node` in `~/dev/zcode-cli/package.json`, the contract xaas reads; earlier guidance said ≥ 22.5, which `node:sqlite` alone allowed) for the worker** (`node:sqlite` is required by
   `bin/zcode.js`): `ZCODE_CLI_DIR` defaults to `/Users/sac/dev/zcode-cli`;
   the dispatcher inherits your PATH, so **a PATH whose first `node` is
   v20 (e.g. `/usr/local/bin/node`) kills every worker instantly** with

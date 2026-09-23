@@ -17,7 +17,7 @@ defmodule Xaas.Ultracode.DispatchTest do
   alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Receipt, Run}
 
   @provider "zcode-dispatch-test"
-  @sh "/bin/sh"
+  @sh Path.expand("../../support/fake-node.sh", __DIR__)
 
   @git_env [
     {"GIT_AUTHOR_NAME", "dispatch-test"},
@@ -156,13 +156,13 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.descriptor == nil
   end
 
-  test "plan refuses a CLI directory that does not hold bin/zcode.js" do
+  test "plan refuses a CLI directory that does not hold package.json" do
     {:ok, _run, epoch} = create_running_epoch!()
 
     assert {:error, {:cli_unavailable, path}} =
              Dispatch.plan(epoch.id, cli_dir: "/nonexistent-dispatch-cli", node_path: @sh)
 
-    assert path == "/nonexistent-dispatch-cli/bin/zcode.js"
+    assert path == "/nonexistent-dispatch-cli/package.json"
   end
 
   test "plan passes a registered repo's toolchain_env pin into the worker env; the plain string registry shape stays inherit-only",
@@ -241,6 +241,32 @@ defmodule Xaas.Ultracode.DispatchTest do
              Dispatch.plan(epoch.id, cli_dir: cli_dir, node_path: "/nonexistent-node-xyz")
   end
 
+  test "plan is bounded by :node_version_timeout_ms when node --version hangs", %{
+    worktree: worktree,
+    base: base
+  } do
+    {_run, epoch} = create_epoch!(worktree)
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    # Real executable whose --version never returns (5s, so an orphan expires
+    # by itself if the bound were ever broken).
+    hang = Path.join(base, "hang-node.sh")
+    File.write!(hang, "#!/bin/sh\nexec sleep 5\n")
+    File.chmod!(hang, 0o755)
+
+    started = System.monotonic_time(:millisecond)
+
+    assert {:error, {:node_version_unreadable, ^hang, "timeout after 400ms"}} =
+             Dispatch.plan(epoch.id,
+               provider: @provider,
+               cli_dir: cli_dir,
+               node_path: hang,
+               node_version_timeout_ms: 400
+             )
+
+    assert System.monotonic_time(:millisecond) - started < 3_000
+  end
+
   test "plan resolves node from PATH when no :node_path is given (the documented default)" do
     # Permanent guard for the 2026-09-20 campaign falsifier: an unset
     # :node_path used to hard-refuse every launch {:node_unavailable,
@@ -253,8 +279,19 @@ defmodule Xaas.Ultracode.DispatchTest do
         # No node on PATH: the fail-closed refusal is the lawful outcome.
         assert {:error, {:node_unavailable, "node"}} = Dispatch.plan(epoch.id, cli_dir: cli_dir)
 
-      _node ->
-        assert {:ok, _plan} = Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir)
+      node ->
+        # The PATH lookup must resolve (never `node_unavailable`). Whether the
+        # resolved node then satisfies the CLI's engines.node floor is a
+        # property of the machine's PATH, not of this guard: a v20 node first
+        # on PATH is the typed, measured `node_too_old` refusal (observed
+        # falsifier: PATH=/usr/local/bin:$PATH with node v20.13.0).
+        case Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir) do
+          {:ok, _plan} ->
+            :ok
+
+          {:error, {:node_too_old, ^node, found, ">=22.19.0"}} ->
+            assert found =~ ~r/\A\d+\.\d+\.\d+\z/
+        end
     end
   end
 
@@ -1142,6 +1179,17 @@ defmodule Xaas.Ultracode.DispatchTest do
     path = Path.join([dir, "bin", "zcode.js"])
     File.write!(path, script)
     File.chmod!(path, 0o755)
+
+    File.write!(
+      Path.join(dir, "package.json"),
+      Jason.encode!(%{
+        "name" => "zcode-app-cli",
+        "version" => "0.0.0-test",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=22.19.0"}
+      })
+    )
+
     dir
   end
 

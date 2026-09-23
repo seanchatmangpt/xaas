@@ -47,6 +47,12 @@ test/xaas/ultracode/{semantic_receipt,semantic_crown}_test.exs | Chicago qualifi
 
 lib/xaas/coupling/coupling_run.ex, lib/xaas/ledger/event_log.ex, lib/xaas/operations/autofde_planner_{cache_hotset,cache_stats,candidate,catalog,match}.ex | one-line `use Xaas.Resource` adoption on seven owned Ash resources (SJ-004; supersedes the registry-test `@pending` exemption for them) | no generator adopts a base resource on existing Ash modules: UNSUPPORTED(generator-capability) | ash-resource / ontology-projection pack (ggen_igniter Ash resource generator) | 2026-09-21
 
+lib/xaas/ultracode/zcode_package.ex | `Xaas.Ultracode.ZcodePackage`: reads ~/dev/zcode-cli/package.json (name, bin.zcode contained on REAL paths via a symlink-resolving walk, engines.node floor) and measures the worker node via a deadline-bounded, process-group-reaped `--version` probe | no admitted pack expresses an external-CLI package contract reader | zcode-plugin-pack | 2026-09-21
+
+lib/xaas/ultracode/provider_health.ex | `Xaas.Ultracode.ProviderHealth`: one-call zcode provider health (`check/1` -> `{:ok, %{zcode_version, zcode_bin, node_version}}` or a typed error, `gate/1` -> `:ok | {:error, {:provider_unhealthy, reason}}`) over `ZcodePackage.verify_node/3` (`:node_version_timeout_ms`, default 5000, so the gate can never hang), for the autonomic loop to gate leases on | no admitted pack expresses an external-CLI provider health probe | zcode-plugin-pack | 2026-09-21
+
+lib/xaas/ultracode/process_group.ex | `Xaas.Ultracode.ProcessGroup`: verified group-wide TERM/poll/KILL/poll kill, extracted from `Dispatch` so `ZcodePackage`'s `--version` probe reaps a hung shim with the same mechanics (Dispatch delegates to it; `Verifier` still carries its own copy) | no admitted pack expresses OS process-group lifecycle | ultracode-actuation-lease-pack | 2026-09-21
+
 ## Paydown plan
 
 1. Qualify the rendered plugin against ZCode 3.11.2 live (hook event names,
