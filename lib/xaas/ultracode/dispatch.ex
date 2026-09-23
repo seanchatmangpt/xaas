@@ -583,6 +583,8 @@ defmodule Xaas.Ultracode.Dispatch do
   # semantic here: the run keeps the generic prompt path, and a semantically
   # broken identity is the run factory's defect, not this boundary's to
   # guess around.
+  @spec semantic_descriptor(term(), term(), term()) ::
+          {:ok, %{required(String.t()) => term()}} | :none
   defp semantic_descriptor(%Epoch{run: %Run{} = run, id: epoch_id}, worker_id, worktree) do
     fields = %{
       "work_order_iri" => run.work_order_iri,
@@ -655,7 +657,6 @@ defmodule Xaas.Ultracode.Dispatch do
     host =
       case :inet.gethostname() do
         {:ok, full} -> full |> List.to_string() |> String.split(".") |> hd()
-        _ -> "unknown"
       end
 
     "zcode-dispatch-#{host}-#{String.slice(epoch_id, 0, 8)}-#{:os.getpid() |> List.to_string()}"
@@ -813,7 +814,6 @@ defmodule Xaas.Ultracode.Dispatch do
   end
 
   defp io_log(log, data) when is_pid(log), do: IO.binwrite(log, data)
-  defp io_log(nil, _data), do: :ok
 
   defp sealed_receipts(epoch_id) do
     Receipt

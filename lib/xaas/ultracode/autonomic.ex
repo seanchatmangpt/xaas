@@ -435,6 +435,9 @@ defmodule Xaas.Ultracode.Autonomic do
           {:error, script_reason} ->
             profile_fallback(ctx, repo_alias, path, sensing_name, script_reason)
         end
+      after
+        Worktrees.cleanup(repo_alias, path)
+      end
     end
   end
 

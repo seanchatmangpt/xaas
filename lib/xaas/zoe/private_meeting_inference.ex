@@ -443,14 +443,16 @@ defmodule Xaas.Zoe.PrivateMeetingInference do
   defp sha256(value), do: value |> :erlang.term_to_binary([:deterministic]) |> sha256()
 
   defp sha256_file(path) do
-    context = :crypto.hash_init(:sha256)
+    File.open!(path, [:read, :binary], fn device ->
+      context = :crypto.hash_init(:sha256)
 
-    context =
-      path
-      |> File.stream!([], 1_048_576)
-      |> Enum.reduce(context, fn chunk, acc -> :crypto.hash_update(acc, chunk) end)
+      context =
+        device
+        |> IO.binstream(1_048_576)
+        |> Enum.reduce(context, fn chunk, acc -> :crypto.hash_update(acc, chunk) end)
 
-    context |> :crypto.hash_final() |> Base.encode16(case: :lower)
+      context |> :crypto.hash_final() |> Base.encode16(case: :lower)
+    end)
   end
 
   defp refusal(code, detail), do: {:error, %{code: code, detail: detail}}
