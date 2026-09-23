@@ -1,0 +1,7 @@
+llm_vars_in_court_env=0
+no claude/zcode on court PATH
+GC23-0 source: docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 (byte-identical to the accepted prose)
+spans: CHECK OK: 241 candidates bound to docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212; gates GC23-0=24 GC23-1
+admitted 241/241 candidates (215 required, 26 not required); 13/13 gates covered; 110 work orders; propositions.ttl sha256:00eb6e9e180b7eaacb1cca20a29b47fd862337b88dc7e547d12ec6d2a5023492; orders.ttl sha256:c572d56cb525de7a08a614e8c082c24dc95c1670e5fcd38f1ddfc09083bd8d09
+ALIVE: GC23-0 accepted prose + complete admitted semantic projection (compile_prose --check byte-identical, no LLM)
+no_llm_env.sh ... -- sh docs/sjira/v26.9.23/courts/GC23-0.sh => 0 (30 s)
