@@ -8,6 +8,8 @@ remotes are local bare repositories and gh is never reached (no GitHub slug in t
 
 import json
 import os
+import shutil
+import site
 import subprocess
 import sys
 import tempfile
@@ -16,6 +18,7 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent / "fleet_matrix.py"
 VALIDATOR = Path.home() / ".claude/dfcm/validate_receipt.py"
+COURT = SCRIPT.parents[2] / "docs/sjira/v26.9.23/courts/GC23-11.sh"
 SJ = "https://ggen-igniter.dev/ontology/semantic-jira#"
 V23 = "https://ggen-igniter.dev/sjira/v26.9.23#"
 
@@ -404,6 +407,143 @@ class FleetMatrixTest(unittest.TestCase):
         code, out = self._standing(alpha)
         self.assertEqual(code, 1, out)
         self.assertIn("REFUSED(not_admitted)", out)
+
+
+    @unittest.skipUnless(VALIDATOR.is_file(), f"real receipt validator absent: {VALIDATOR}")
+    def test_check_standing_reports_unreadable_and_non_r_receipts_instead_of_dropping_them(self):
+        # Doctrine court (repair 1): a receipt that cannot be read must be typed and counted,
+        # never skipped silently; it can lower standing, never raise it.
+        alpha = self.fx.repo("alpha")
+        head = self.fx.git(alpha, "rev-parse", "HEAD")
+        broken = self.fx.write("receipts/broken.json", '{"identity": {"repo": ')
+        not_r = self.fx.write("receipts/list.json", "[]\n")
+        a_dir = self.fx.root / "receipts/dir.json"  # a directory matching *.json: read raises OSError
+        a_dir.mkdir()
+        code, out = self._standing(alpha)
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"REFUSED(unreadable_receipt): {broken}: JSONDecodeError", out)
+        self.assertIn(f"REFUSED(unreadable_receipt): {a_dir}: IsADirectoryError", out)
+        self.assertIn(f"IGNORED(not_r_receipt): {not_r} has no identity object", out)
+        self.assertIn("(0 receipts name it; 2 unreadable receipts bind no repository)", out)
+        self.assertIn("receipts: 0 read, 2 unreadable, 1 not R", out)
+        receipt(self.fx, "alpha", alpha, head)
+        code, out = self._standing(alpha)
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"ALIVE: alpha head {head}", out)
+        self.assertIn(f"REFUSED(unreadable_receipt): {broken}", out)
+        self.assertIn("receipts: 1 read, 2 unreadable, 1 not R", out)
+
+    def test_an_internal_error_exits_cannot_run_not_refused(self):
+        # Exit 1 is reserved for explicit refusals; a crash must not read as an F7 refusal.
+        fx = self.fx
+        u = fx.write("universe.json", "[]\n")  # valid JSON, wrong shape: load_universe crashes
+        c = classification(fx, [("alpha", "CriticalPath", True)])
+        code, out = fx.run("check-classification", "--classification", c, "--universe", u)
+        self.assertEqual(code, 2, out)
+        self.assertIn("Traceback", out)
+        self.assertIn("check-classification: CANNOT RUN: internal error", out)
+        self.assertNotIn("REFUSED", out)
+
+    # ── GC23-11.sh court: typed exit mapping ────────────────────────────────
+
+    def _court_tree(self, universe_text=None, rows=None):
+        """A real xaas-shaped checkout holding the real script and court (symlinks), plus a
+        real ggen_igniter checkout; returns (xaas, ggen_igniter)."""
+        fx = self.fx
+        xaas, gi = fx.repo("xaas"), fx.repo("ggen_igniter")
+        (xaas / "scripts/sjira").mkdir(parents=True)
+        os.symlink(SCRIPT, xaas / "scripts/sjira/fleet_matrix.py")
+        courts = xaas / "docs/sjira/v26.9.23/courts"
+        courts.mkdir(parents=True)
+        os.symlink(COURT, courts / "GC23-11.sh")
+        fleet = xaas / "docs/sjira/v26.9.23/fleet"
+        fleet.mkdir(parents=True)
+        if universe_text is None:
+            universe_text = json.dumps(
+                {"schema": "xaas.fleet.universe/v1", "repositories": [
+                    {"name": "gamma", "path": None, "github": None, "default_remote": None},
+                    {"name": "ggen_igniter", "path": str(gi), "github": None, "default_remote": "origin"},
+                    {"name": "xaas", "path": str(xaas), "github": None, "default_remote": "origin"},
+                ]}, indent=2, sort_keys=True) + "\n"
+        (fleet / "universe.json").write_text(universe_text)
+        if rows is None:
+            rows = [("gamma", "Successor", False), ("ggen_igniter", "CriticalPath", True), ("xaas", "CriticalPath", True)]
+        shutil.copy(classification(fx, rows, "court-classification.ttl"), fleet / "classification.ttl")
+        return xaas, gi
+
+    def _court(self, xaas, gi, **env):
+        run_env = dict(
+            self.fx.env,
+            XAAS_DIR=str(xaas),
+            GGEN_IGNITER_DIR=str(gi),
+            GC23_FLEET_RECEIPTS_DIR=str(self.fx.root / "fleet-receipts"),
+            TMPDIR=str(self.fx.root),
+        )
+        run_env.update(env)
+        cp = subprocess.run(
+            ["sh", str(COURT)], cwd=xaas, env=run_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
+        lines = [ln.strip() for ln in cp.stdout.splitlines() if ln.strip()]
+        return cp.returncode, (lines[-1] if lines else ""), cp.stdout
+
+    def test_court_reports_a_classification_that_cannot_run_as_unknown_not_refused(self):
+        xaas, gi = self._court_tree(universe_text='{"repositories": [')
+        code, last, out = self._court(xaas, gi)
+        self.assertEqual(code, 3, out)
+        self.assertEqual(last, "UNKNOWN: GC23-11 check-classification could not run (exit 2)", out)
+        self.assertNotIn("REFUSED: GC23-11", out)
+
+    def test_court_refuses_an_unclassified_repository_ard_f7(self):
+        xaas, gi = self._court_tree(rows=[("ggen_igniter", "CriticalPath", True), ("xaas", "CriticalPath", True)])
+        code, last, out = self._court(xaas, gi)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(last, "REFUSED: GC23-11 fleet classification (ARD F7) check-classification exit 1", out)
+        self.assertIn("REFUSED(unclassified): universe repository gamma", out)
+
+    def test_court_reports_check_standing_that_cannot_run_as_unknown(self):
+        xaas, gi = self._court_tree()
+        nohome = self.fx.root / "nohome"  # a host without ~/.claude/dfcm/validate_receipt.py
+        nohome.mkdir()
+        # keep the interpreter's user site (where rdflib may live) while HOME moves
+        code, last, out = self._court(xaas, gi, HOME=str(nohome), PYTHONUSERBASE=site.getuserbase())
+        self.assertEqual(code, 3, out)
+        self.assertEqual(last, "UNKNOWN: GC23-11 check-standing could not run (exit 2)", out)
+        self.assertIn("check-standing: CANNOT RUN: validator", out)
+
+    def test_court_reports_absent_rdflib_as_unknown_not_an_f7_refusal(self):
+        # The doctrine court's example: rdflib absent used to crash with exit 1 and read as
+        # "REFUSED ... (ARD F7)". Hide the user site; skip visibly if rdflib is installed
+        # system-wide (then this host cannot lose it without uninstalling).
+        env = dict(self.fx.env, PYTHONNOUSERSITE="1")
+        probe = subprocess.run(["python3", "-c", "import rdflib"], env=env, capture_output=True)
+        if probe.returncode == 0:
+            self.skipTest("rdflib is importable without the user site; cannot make it absent here")
+        xaas, gi = self._court_tree()
+        code, last, out = self._court(xaas, gi, PYTHONNOUSERSITE="1")
+        self.assertEqual(code, 3, out)
+        self.assertEqual(last, "UNKNOWN: GC23-11 check-classification could not run (exit 2)", out)
+        self.assertIn("check-classification: CANNOT RUN: rdflib not importable", out)
+        self.assertNotIn("Traceback", out)
+        self.assertNotIn("REFUSED", out)
+
+    @unittest.skipUnless(VALIDATOR.is_file(), f"real receipt validator absent: {VALIDATOR}")
+    def test_court_is_unknown_without_exact_head_receipts_and_alive_with_them(self):
+        xaas, gi = self._court_tree()
+        code, last, out = self._court(xaas, gi)
+        self.assertEqual(code, 3, out)
+        self.assertEqual(
+            last, "UNKNOWN: GC23-11 CriticalPath repositories lack exact-head standing (check-standing exit 1)", out
+        )
+        rdir = self.fx.root / "fleet-receipts"
+        for name, repo in (("xaas", xaas), ("ggen_igniter", gi)):
+            p = receipt(self.fx, f"court-{name}", repo, self.fx.git(repo, "rev-parse", "HEAD"))
+            rdir.mkdir(exist_ok=True)
+            shutil.move(str(p), rdir / p.name)
+        (rdir / "corrupt.json").write_text("{")
+        code, last, out = self._court(xaas, gi)
+        self.assertEqual(code, 0, out)
+        self.assertTrue(last.startswith("ALIVE: GC23-11"), out)
+        self.assertIn(f"REFUSED(unreadable_receipt): {rdir / 'corrupt.json'}", out)
 
 
 if __name__ == "__main__":

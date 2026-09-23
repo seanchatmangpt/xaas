@@ -26,7 +26,9 @@ Subcommands (deterministic; stdlib + rdflib; no LLM, no model API):
             Exit 0 only when every CriticalPath repo has a validator-ADMITTED ALIVE R receipt
             whose identity.subject_sha equals the exact HEAD of its --int checkout (ARD F6).
 
-Exit codes: 0 holds, 1 refused / not holding, 2 cannot run (bad arguments or inputs).
+Exit codes: 0 holds, 1 refused / not holding (only from an explicit refusal), 2 cannot run
+(bad arguments, unreadable inputs, absent validator, or an internal error with its traceback).
+Unreadable receipt files are reported as REFUSED(unreadable_receipt), never skipped silently.
 """
 
 import argparse
@@ -37,6 +39,7 @@ import os
 import re
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 SJ = "https://ggen-igniter.dev/ontology/semantic-jira#"
@@ -123,6 +126,15 @@ def slug_from_url(url):
     return f"{m.group(1)}/{m.group(2)}" if m else None
 
 
+def require_rdflib():
+    """rdflib absent is "cannot run" (exit 2), never a refusal."""
+    try:
+        import rdflib
+    except ImportError as exc:
+        raise CannotRun(f"rdflib not importable by {sys.executable}: {exc}") from exc
+    return rdflib
+
+
 def parse_kv(pairs, flag):
     out = {}
     for item in pairs or []:
@@ -141,7 +153,7 @@ def parse_kv(pairs, flag):
 
 
 def fleet_ttl_rows(path):
-    import rdflib
+    rdflib = require_rdflib()
 
     g = rdflib.Graph()
     try:
@@ -537,7 +549,7 @@ def cmd_observe(a):
 
 
 def load_classification(path):
-    import rdflib
+    rdflib = require_rdflib()
 
     g = rdflib.Graph()
     try:
@@ -832,6 +844,33 @@ def receipt_names_repo(receipt_repo, name, int_path, universe_paths):
     )
 
 
+def load_receipts(dirs):
+    """Reads every *.json under each receipts dir; nothing is dropped silently.
+
+    Returns (receipts, unreadable, not_r): R receipts as (path, doc); files that could not be
+    read or parsed, each printed as REFUSED(unreadable_receipt) with its exception (it cannot
+    be evidence for any repository, so it can only lower standing, never raise it); and JSON
+    files without an identity object, each printed as IGNORED(not_r_receipt)."""
+    receipts, unreadable, not_r = [], [], []
+    for d in dirs:
+        if not Path(d).is_dir():
+            print(f"note: receipts dir {d} absent")
+            continue
+        for p in sorted(Path(d).glob("*.json")):
+            try:
+                r = json.loads(p.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                print(f"REFUSED(unreadable_receipt): {p}: {type(exc).__name__}: {exc}")
+                unreadable.append(str(p))
+                continue
+            if isinstance(r, dict) and isinstance(r.get("identity"), dict):
+                receipts.append((str(p), r))
+            else:
+                print(f"IGNORED(not_r_receipt): {p} has no identity object")
+                not_r.append(str(p))
+    return receipts, unreadable, not_r
+
+
 def cmd_check_standing(a):
     rows = load_classification(a.classification)
     ints = parse_kv(a.int, "--int")
@@ -849,18 +888,7 @@ def cmd_check_standing(a):
     validator = a.validator or DEFAULT_VALIDATOR
     if not Path(validator).is_file():
         raise CannotRun(f"validator {validator} not found")
-    receipts = []
-    for d in a.receipts_dir or []:
-        if not Path(d).is_dir():
-            print(f"note: receipts dir {d} absent")
-            continue
-        for p in sorted(Path(d).glob("*.json")):
-            try:
-                r = json.loads(p.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                continue
-            if isinstance(r, dict) and isinstance(r.get("identity"), dict):
-                receipts.append((str(p), r))
+    receipts, unreadable, not_r = load_receipts(a.receipts_dir or [])
     failures = 0
     for name in critical:
         if name not in ints:
@@ -891,12 +919,19 @@ def cmd_check_standing(a):
         if alive_exact:
             print(f"ALIVE: {name} head {head} <- {alive_exact[0]}")
         else:
-            print(f"UNKNOWN: {name} has no admitted ALIVE receipt at exact head {head} ({len(cands)} receipts name it)")
+            print(
+                f"UNKNOWN: {name} has no admitted ALIVE receipt at exact head {head} "
+                f"({len(cands)} receipts name it; {len(unreadable)} unreadable receipts bind no repository)"
+            )
             failures += 1
+    tally = f"receipts: {len(receipts)} read, {len(unreadable)} unreadable, {len(not_r)} not R"
     if failures:
-        print(f"check-standing: NOT ALIVE ({failures} of {len(critical)} CriticalPath repositories lack exact-head standing)")
+        print(
+            f"check-standing: NOT ALIVE ({failures} of {len(critical)} CriticalPath repositories lack "
+            f"exact-head standing; {tally})"
+        )
         return 1
-    print(f"check-standing: ALIVE ({len(critical)} CriticalPath repositories at exact heads)")
+    print(f"check-standing: ALIVE ({len(critical)} CriticalPath repositories at exact heads; {tally})")
     return 0
 
 
@@ -958,6 +993,12 @@ def main(argv=None):
         return handlers[a.cmd](a)
     except CannotRun as exc:
         print(f"{a.cmd}: CANNOT RUN: {exc}", file=sys.stderr)
+        return 2
+    except Exception:
+        # An uncaught exception would exit 1, the REFUSED code; a crash is "cannot run" (2),
+        # printed with its traceback, so exit 1 only ever comes from an explicit refusal.
+        traceback.print_exc()
+        print(f"{a.cmd}: CANNOT RUN: internal error (traceback above)", file=sys.stderr)
         return 2
 
 

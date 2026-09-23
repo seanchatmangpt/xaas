@@ -19,9 +19,14 @@
 # this checkpoint (subject GC-26.9.23/*) are excluded: they are what is being computed.
 #
 # Exit codes. The stop court (lib/mix/tasks/xaas.stop_court.ex on friday/gc-fri-0800)
-# maps exit 0 -> ALIVE and every other exit -> UNKNOWN. REFUSED_EXIT / UNKNOWN_EXIT are the
-# two non-zero codes this court distinguishes; if lane V23-P lands a distinct UNKNOWN code
-# in the runner, align UNKNOWN_EXIT with it at integration (same path, both sides merged).
+# maps exit 0 -> ALIVE and every other exit -> UNKNOWN, and keeps the court's last output
+# line as the gate summary. REFUSED_EXIT / UNKNOWN_EXIT are the two non-zero codes this
+# court distinguishes; if lane V23-P lands a distinct UNKNOWN code in the runner, align
+# UNKNOWN_EXIT with it at integration (same path, both sides merged).
+# fleet_matrix.py exits 0 holds, 1 refused (explicit refusal only), 2 cannot run. Only a 1
+# from check-classification or emit is a REFUSED verdict; any other non-zero exit (2, 127
+# python absent, a signal) means the step could not run and is reported UNKNOWN, never
+# REFUSED: a run that could not execute has observed nothing to refuse.
 REFUSED_EXIT=1
 UNKNOWN_EXIT=3
 
@@ -43,9 +48,12 @@ python3 "$FM" check-classification \
   --courts-dir "$XAAS_DIR/docs/sjira/v26.9.23/courts" \
   --expect-critical xaas --expect-critical ggen_igniter
 rc=$?
-if [ $rc -ne 0 ]; then
+if [ $rc -eq 1 ]; then
   echo "REFUSED: GC23-11 fleet classification (ARD F7) check-classification exit $rc"
   exit $REFUSED_EXIT
+elif [ $rc -ne 0 ]; then
+  echo "UNKNOWN: GC23-11 check-classification could not run (exit $rc)"
+  exit $UNKNOWN_EXIT
 fi
 
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/gc23-11.XXXXXX") || { echo "UNKNOWN: GC23-11 no scratch dir"; exit $UNKNOWN_EXIT; }
@@ -54,14 +62,19 @@ trap 'rm -rf "$scratch"' EXIT INT TERM
 python3 "$FM" observe --universe "$FLEET/universe.json" --out "$scratch/observations.json" \
   --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --no-network \
   --int xaas="$XAAS_DIR" --int ggen_igniter="$GGEN_IGNITER_DIR" || {
-  echo "UNKNOWN: GC23-11 observe could not run"
+  echo "UNKNOWN: GC23-11 observe could not run (exit $?)"
   exit $UNKNOWN_EXIT
 }
 python3 "$FM" emit --classification "$FLEET/classification.ttl" --observations "$scratch/observations.json" \
-  --out-ttl "$scratch/matrix.ttl" --out-md "$scratch/matrix.md" || {
+  --out-ttl "$scratch/matrix.ttl" --out-md "$scratch/matrix.md"
+rc=$?
+if [ $rc -eq 1 ]; then
   echo "REFUSED: GC23-11 matrix emit refused (classification does not cover the observed fleet)"
   exit $REFUSED_EXIT
-}
+elif [ $rc -ne 0 ]; then
+  echo "UNKNOWN: GC23-11 matrix emit could not run (exit $rc)"
+  exit $UNKNOWN_EXIT
+fi
 echo "GC23-11 matrix: $(shasum -a 256 "$scratch/matrix.ttl" | cut -d' ' -f1) (scratch; baseline committed in fleet/matrix.ttl)"
 
 python3 "$FM" check-standing --classification "$FLEET/classification.ttl" --universe "$FLEET/universe.json" \
@@ -71,8 +84,11 @@ python3 "$FM" check-standing --classification "$FLEET/classification.ttl" --univ
   --exclude-subject-prefix "GC-26.9.23/" \
   --int xaas="$XAAS_DIR" --int ggen_igniter="$GGEN_IGNITER_DIR"
 rc=$?
-if [ $rc -ne 0 ]; then
+if [ $rc -eq 1 ]; then
   echo "UNKNOWN: GC23-11 CriticalPath repositories lack exact-head standing (check-standing exit $rc)"
+  exit $UNKNOWN_EXIT
+elif [ $rc -ne 0 ]; then
+  echo "UNKNOWN: GC23-11 check-standing could not run (exit $rc)"
   exit $UNKNOWN_EXIT
 fi
 echo "ALIVE: GC23-11 every universe repository classified once; every CriticalPath repository ALIVE at its exact head"
