@@ -731,9 +731,21 @@ defmodule Xaas.Ultracode.RecipeWorker do
     release = to_string(:erlang.system_info(:otp_release))
     file = Path.join([to_string(:code.root_dir()), "releases", release, "OTP_VERSION"])
 
+    # An install without `OTP_VERSION` identifies by its major release; any
+    # other read error is logged, the identity degrading visibly.
     case File.read(file) do
-      {:ok, version} -> String.trim(version)
-      {:error, _} -> release
+      {:ok, version} ->
+        String.trim(version)
+
+      {:error, :enoent} ->
+        release
+
+      {:error, reason} ->
+        Logger.warning(
+          "[recipe-worker] #{file} unreadable (#{inspect(reason)}); recording OTP release #{release}"
+        )
+
+        release
     end
   end
 
@@ -741,9 +753,18 @@ defmodule Xaas.Ultracode.RecipeWorker do
   # carry it; a package-manager install may not -> nil, and `node_elixir`
   # still names the running node's version).
   defp version_file(mix) do
-    case File.read(Path.join([mix |> Path.dirname() |> Path.dirname(), "VERSION"])) do
-      {:ok, version} -> String.trim(version)
-      {:error, _} -> nil
+    file = Path.join([mix |> Path.dirname() |> Path.dirname(), "VERSION"])
+
+    case File.read(file) do
+      {:ok, version} ->
+        String.trim(version)
+
+      {:error, :enoent} ->
+        nil
+
+      {:error, reason} ->
+        Logger.warning("[recipe-worker] #{file} unreadable (#{inspect(reason)}); elixir: nil")
+        nil
     end
   end
 
