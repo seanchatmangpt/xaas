@@ -1,0 +1,57 @@
+## decoy pid 33173 started 2026-09-23T21:18:03Z
+## decoy visible to pgrep -f 'zcode.js --prompt' before: yes
+  PID  PGID COMMAND
+33173 33166 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## pgrep -fl 'zcode.js --prompt' before:
+33173 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## HEAD c614b9a54bd466444290c2c6eeebf114fadc9028 porcelain=[ M test/xaas/ultracode/dispatch_test.exs ]
+## cmd: elixir --version | tail -1 && mix test test/xaas/ultracode/dispatch_test.exs:600
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+14:18:04.747 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+14:18:05.121 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+14:18:05.416 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+14:18:05.503 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:18:05.503 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+14:18:05.515 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:18:05.515 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+14:18:05.528 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:18:05.528 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Running ExUnit with seed: 520586, max_cases: 32
+14:18:05.536 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:18:05.536 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+14:18:05.545 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:18:05.545 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+14:18:05.548 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:18:05.548 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+
+
+  1) test the hard timeout kills the whole process group and reports :timeout (Xaas.Ultracode.DispatchTest)
+     test/xaas/ultracode/dispatch_test.exs:600
+     dispatched process survived the timeout kill: group 33288 members [], recorded pids alive [33290]
+     code: assert_spawned_gone!(pgid, [worker_pid, child_pid])
+     stacktrace:
+       test/xaas/ultracode/dispatch_test.exs:653: (test)
+
+
+Finished in 8.8 seconds (0.00s async, 8.8s sync)
+
+Result: 0/1 passed, 31 excluded
+Failed: 1 test
+## exit 2
+## decoy 33173 alive and visible to pgrep -f 'zcode.js --prompt' at end: yes
+## pgrep -fl 'zcode.js --prompt' after:
+33173 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## decoy stopped 2026-09-23T21:18:14Z
