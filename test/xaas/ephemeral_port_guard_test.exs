@@ -3,7 +3,8 @@ defmodule Xaas.EphemeralPortGuardTest do
   Guard for a flake class found in `Xaas.ActuationOcelUndoTest` (SJ-009): real test listeners
   bound a hash-derived port (`42_777 + :erlang.phash2(self(), 500)`), so two listeners (another
   test, a concurrent `mix test`, a lingering socket) could land on the same port and the
-  second `listen` failed with `:eaddrinuse`. The fix is port `0`, reading the OS-assigned
+  second `listen` failed with `:eaddrinuse`. A fixed base plus any offset
+  (`21_000 + rem(run_tag, 4000)`) has the same failure mode. The fix is port `0`, reading the OS-assigned
   port back (`ThousandIsland.listener_info/1`, `:ranch.get_port/1`, `:inet.port/1`).
 
   The first test exhibits the failure mode with real sockets. The second is a source lint over
@@ -26,7 +27,7 @@ defmodule Xaas.EphemeralPortGuardTest do
     :ok = :gen_tcp.close(second)
   end
 
-  test "no test derives a listener port from :erlang.phash2" do
+  test "no test derives a listener port from a fixed base or :erlang.phash2" do
     offenders =
       "test/**/*.{ex,exs}"
       |> Path.wildcard()
@@ -42,8 +43,8 @@ defmodule Xaas.EphemeralPortGuardTest do
     assert offenders == []
   end
 
-  # A port-named binding computed from :erlang.phash2.
+  # A port-named binding computed as a numeric base plus an offset, or from :erlang.phash2.
   defp hashed_port?(line) do
-    Regex.match?(~r/\w*port\w*\s*=.*:erlang\.phash2/, line)
+    Regex.match?(~r/\w*port\w*\s*=\s*(\d[\d_]*\s*\+|.*:erlang\.phash2)/, line)
   end
 end
