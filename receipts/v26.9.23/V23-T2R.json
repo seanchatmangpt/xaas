@@ -1,0 +1,202 @@
+{
+ "identity": {
+  "subject": "V23-T2R",
+  "repo": "/Users/sac/xaas",
+  "subject_sha": "c9f2de21c8d3171722f0828cad6831867e6da0a6",
+  "base_sha": "41679c6eed7ea43e8b40833ae9d8bbb1ca2042a0",
+  "branch": "fri/FRI-T2",
+  "worktree": "/Users/sac/wt/v26922/fri/FRI-T2",
+  "work_order": "repair-forward of FRI-T2 (68c4f89, refuted by the Friday DOCTRINE court round 2) for wave B1; dependency of v23:WO-V23-D (docs/sjira/v26.9.23/goal.ttl, GC23-4..GC23-8); PRD PR-009/PR-010/PR-011, ARD \u00a79, \u00a710",
+  "base_note": "base_sha = merge-base(HEAD, friday/gc-fri-0800) after the lane's --no-ff merge 5cc0464 of friday/gc-fri-0800 @ 41679c6 (pre-merge merge-base was 0d57147). friday/gc-fri-0800 has since moved to c18ecd3 (receipts/v26.9.23/V23-F.json, V23-X.json only); git merge-tree HEAD c18ecd3 exits 0 (no conflict).",
+  "toolchain": "mix/elixir 1.19.5 (/opt/homebrew/bin/mix) on OTP 28.3.1 (/Users/sac/.erlmcp/otp-28.3.1), the toolchain the worktree _build was compiled with; xaas .tool-versions pins elixir 1.20.2-otp-28 (CI)"
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave B1 lane V23-T2R (/Users/sac/wt/v26922/v26923/DRIVER.md gate map; lanes/wave-B1.json; /Users/sac/wt/v26922/COORDINATION.md v26.9.23 scope; operator directive 2026-09-22 23:25 PT). No push, no integrate, no remote effect.",
+  "actor": "claude-opus-5.5 workflow subagent (lane V23-T2R)"
+ },
+ "consequence": {
+  "commits": [
+   "5cc0464969691509990c1d769f0a8b91114d57bb",
+   "4bd6b257608b2c6803ef9e6e68a3b10034ff913b",
+   "f1197034df45ca23bb6876471ffbdea93e260ce7",
+   "35ddc95e1a7baf8d49fdfa3256a1d39876a33372",
+   "eda0e9d71a8d65a1cede9beca0abb0225726a19b",
+   "c9f2de21c8d3171722f0828cad6831867e6da0a6"
+  ],
+  "commit_notes": {
+   "5cc0464": "merge --no-ff friday/gc-fri-0800 @ 41679c6 (both sides kept, no conflicts)",
+   "4bd6b25": "item 3: generated ultracode_runs snapshots 20260923074101 (baseline, --snapshots-only at 41679c6) + 20260923074120 (capability_id)",
+   "f119703": "item 3: hand-written capability_id migration body replaced by the generator's bytes (sha256 126c83e3...), version stamp kept at applied 20260922230000",
+   "35ddc95": "item 4: engine malformed allowlist -> Logger.error + {:error, {:invalid_config, :ultracode_engine_providers}}",
+   "eda0e9d": "items 1, 5, 6: lease-loss halt, target toolchain resolution, canonical capabilityId pattern + tests",
+   "c9f2de2": "item 2: HANDWRITTEN.md ledger rows"
+  },
+  "files_changed": [
+   "config/config.exs",
+   "lib/xaas/ultracode/recipe_worker.ex",
+   "lib/xaas/ultracode/engine.ex",
+   "lib/xaas/ultracode/semantic_work.ex",
+   "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs",
+   "priv/resource_snapshots/repo/ultracode_runs/20260923074101.json",
+   "priv/resource_snapshots/repo/ultracode_runs/20260923074120.json",
+   "test/xaas/ultracode/recipe_worker_test.exs",
+   "test/xaas/ultracode/engine_test.exs",
+   "HANDWRITTEN.md",
+   "receipts/v26.9.23/V23-T2R.gate/*",
+   "receipts/v26.9.23/V23-T2R.json"
+  ],
+  "generated_vs_handwritten": {
+   "generated": [
+    "priv/resource_snapshots/repo/ultracode_runs/20260923074101.json",
+    "priv/resource_snapshots/repo/ultracode_runs/20260923074120.json",
+    "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs (body; version stamp hand-chosen, see HANDWRITTEN.md)"
+   ],
+   "handwritten": [
+    "lib/xaas/ultracode/recipe_worker.ex",
+    "lib/xaas/ultracode/engine.ex (allowlist)",
+    "lib/xaas/ultracode/semantic_work.ex (capability_id_pattern)",
+    "config/config.exs (recipe entry)",
+    "test/xaas/ultracode/recipe_worker_test.exs",
+    "test/xaas/ultracode/engine_test.exs"
+   ],
+   "ledger": "HANDWRITTEN.md rows dated 2026-09-23 (UNSUPPORTED(generator-capability)): recipe provider, capability_id migration version stamp, tests"
+  },
+  "successor": {
+   "checkpoint": "v23:GC-26.9.24",
+   "uncommitted_generator_output": [
+    "mix ash_postgres.generate_migrations (all domains) pends CREATE TABLE billing_revenue_recognitions (receipts/v26.9.23/V23-T2R.gate/gen-dryrun-after.log at c9f2de2: the only pending output)",
+    "answering 'n' to the out-of-domain DROP TABLE prompts of `--domains Xaas.Ultracode` makes the generator write \"drop_table_opted_out\": true into 92 unrelated snapshots (list: receipts/v26.9.23/V23-T2R.gate/unrelated-generator-output.files; patch sha256 a85b755fbc56d2e7830ef76e8265c8de015636184596d714a209a6a7a4ffe2b6); not committed, reverted in the lane worktree"
+   ],
+   "pre_existing_failure": "test/xaas/ultracode/semantic_jira_e2e_test.exs:106 SJ-001 ({1, nil} from project/3): the test drives the operator checkout GGEN_IGNITER_DIR default /Users/sac/ggen_igniter (currently d83d6c8, branch feat/zcode-ocel-pack); fails identically at the merge base 5cc0464 before any lane change (baseline-ultracode.log) and at c9f2de2 (gate.log)"
+  },
+  "remote_effects": []
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/V23-T2R.gate/ (tracked on fri/FRI-T2)",
+  "commands": [
+   {
+    "cmd": "git merge --no-ff friday/gc-fri-0800 -F <msg>",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+    "exit": 0,
+    "summary": "5cc0464, 37 friday commits merged, no conflicts"
+   },
+   {
+    "cmd": "MIX_TEST_PARTITION=_v23t2rbase mix test test/xaas/ultracode",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1-V23-T2R/base (scratch clone, removed after the lane) @ 5cc0464",
+    "exit": 2,
+    "summary": "BASELINE before any lane change: 726 tests, 1 failure (25 excluded): SJ-001 semantic_jira_e2e_test:106 (pre-existing, external /Users/sac/ggen_igniter)",
+    "output_sha256": "ee8d14a7c4f85f18e94638d06744facaac0e9ce549ac9f1abc8e29d5fdb3903f"
+   },
+   {
+    "cmd": "mix ash_postgres.generate_migrations --dry-run",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ 5cc0464",
+    "exit": 0,
+    "summary": "pending: create billing_revenue_recognitions; alter ultracode_runs add court_map, semantic_bridge, capability_id",
+    "output_sha256": "0f3485b5e135d9d74e2901addfa79f41af24632d23479801b47c8eb41aba1897"
+   },
+   {
+    "cmd": "mix ash_postgres.generate_migrations --dry-run --domains Xaas.Ultracode",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1-V23-T2R/base (scratch clone, removed after the lane) @ 41679c6",
+    "exit": 0,
+    "summary": "friday state: pending exactly court_map + semantic_bridge (both have hand-written migrations 20260919083000/20260920230000)",
+    "output_sha256": "d4e73b067ef807b3fb56b636909594a3233cc7cab489903d99719619858a1004"
+   },
+   {
+    "cmd": "mix ash_postgres.generate_migrations --snapshots-only --domains Xaas.Ultracode < /dev/null",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1-V23-T2R/base (scratch clone, removed after the lane) @ 41679c6",
+    "exit": 0,
+    "summary": "created priv/resource_snapshots/repo/ultracode_runs/20260923074101.json (sha256 bb1608e7...), no migration, no other file",
+    "output_sha256": "74e707f223f61d14c824012f5a512f7ca6454ab6282efbd425495f997c3f06d1"
+   },
+   {
+    "cmd": "yes n | mix ash_postgres.generate_migrations --domains Xaas.Ultracode --name add_capability_id_to_ultracode_runs",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+    "exit": 0,
+    "summary": "created migrations/20260923074119_add_capability_id_to_ultracode_runs.exs (sha256 126c83e3..., up/down add/remove :capability_id :text) + snapshot 20260923074120.json; 92 unrelated drop_table_opted_out snapshot edits preserved as a patch and reverted",
+    "output_sha256": "e0527ffb302e23ef96fb028bc64858fe896c2c05f291a14abb712d70d5819f2b"
+   },
+   {
+    "cmd": "MIX_TEST_PARTITION=_v23t2r mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 (tree = eda0e9d content)",
+    "exit": 0,
+    "summary": "36 tests, 0 failures on a FRESH partition DB: ecto.migrate applied the generated 20260922230000 body (schema_migrations inserted_at 2026-09-23 07:50:02, capability_id text)",
+    "output_sha256": "b6d2928d5feb6540ad087e8bc8cd8698ca51b042c4e833648a1570ee3b5f4b34"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r mix test test/xaas/ultracode/recipe_worker_test.exs --only describe:\"a lease lost between steps\"  # M1: reinstate `_ = Lease.renew(token)` + {:cont, ...}",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ eda0e9d + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 3 tests, 3 failures (re-claimed: no {:lease_lost, _}; refused: no {:lease_lost, _}; engine-expired: step2 ran); restored via git checkout",
+    "output_sha256": "8debdfed960c312ae280c0b65559590492c3f0205176fe61e1fcf579d352448c"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r mix test test/xaas/ultracode/engine_test.exs test/xaas/ultracode/recipe_worker_test.exs  # M2: malformed allowlist -> [] ; M3: SemanticWork pattern without :dollar_endonly",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ eda0e9d + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 36 tests, 2 failures (malformed-allowlist config error test; canonical capabilityId newline refusal); restored",
+    "output_sha256": "5f9a12e12f4147e03eb30d527fce9e28174cb08f564b4d9ea0f1ad686fdafc9a"
+   },
+   {
+    "cmd": "! MIX_TEST_PARTITION=_v23t2r mix test test/xaas/ultracode/recipe_worker_test.exs  # M4: bind_toolchain never binds :target (no resolved PATH)",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ eda0e9d + mutation",
+    "exit": 0,
+    "summary": "falsifier held (inner exit 2): 15 tests, 3 failures (engine format-drift :alive, :no_delta, asdf-layout recipe); restored",
+    "output_sha256": "da3f8ea259d239e897c2518b97763231291ca76bac9bb4a06b4b813a687bf231"
+   },
+   {
+    "cmd": "mix ash_postgres.generate_migrations --dry-run",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ c9f2de2",
+    "exit": 0,
+    "summary": "only pending output: create billing_revenue_recognitions (unrelated -> v23:GC-26.9.24); ultracode_runs clean",
+    "output_sha256": "9cfbd3f6a2dc819960f0dc89524fab2b38f960d7868ac13e6e71a1f1e2548929"
+   },
+   {
+    "cmd": "grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.' <5 touched lib/test files>",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+    "exit": 1,
+    "summary": "0 matches in touched files; whole test/+lib/: 178 matches at c9f2de2 and 178 at 41679c6 (pre-existing, none introduced)",
+    "output_sha256": "4bf4fca02e6eeaf7f1c510b82c756e7f8a3c567a230bae1094b254adc774f38b"
+   },
+   {
+    "cmd": "mix format --check-formatted",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ c9f2de2",
+    "exit": 0,
+    "summary": "lane gate 1/3 (FORMAT_EXIT=0 in gate.log)",
+    "output_sha256": "3de1fcd7e78357b459c3a8afd728573474383f9c386b305e2d027034f6ac63de"
+   },
+   {
+    "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ c9f2de2",
+    "exit": 0,
+    "summary": "lane gate 2/3: Compiling 508 files (.ex), Generated xaas app (only warning: deps/ex4pm/mix.exs, dependency, pre-existing)",
+    "output_sha256": "3de1fcd7e78357b459c3a8afd728573474383f9c386b305e2d027034f6ac63de"
+   },
+   {
+    "cmd": "mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs test/xaas/ultracode",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ c9f2de2 (shared xaas_test)",
+    "exit": 2,
+    "summary": "lane gate 3/3: 735 tests, 1 failure (25 excluded), 104.3s: the single failure is the PRE-EXISTING SJ-001 (identical MatchError {1, nil} at baseline 5cc0464); 0 new failures; +9 tests vs baseline 726",
+    "output_sha256": "3de1fcd7e78357b459c3a8afd728573474383f9c386b305e2d027034f6ac63de"
+   },
+   {
+    "cmd": "mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2 @ c9f2de2 (shared xaas_test)",
+    "exit": 0,
+    "summary": "36 tests, 0 failures (seed 911288): every lane deliverable test on the committed subject",
+    "output_sha256": "9008535ca6d6bec2a80b075d031a50167dbdc7b5561871c5570e6e449cf12252"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-T2R.json",
+    "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+    "exit": 0,
+    "summary": "ADMITTED"
+   }
+  ]
+ },
+ "standing": {
+  "value": "PARTIAL_ALIVE",
+  "derived_from": "At subject_sha c9f2de2: every V23-T2R deliverable (items 1-6) is observed passing -- lane-scope files recipe_worker_test + engine_test 36/36 exit 0 on the committed head; format 0; strict compile 0; revert mutations M1-M4 each made acceptance fail; generator dry-run shows ultracode_runs clean. PARTIAL (not ALIVE) because the literal lane gate chain exits 2 on its third command: the single failure is the PRE-EXISTING SJ-001 e2e test (semantic_jira_e2e_test.exs:106), which drives the operator checkout /Users/sac/ggen_igniter (d83d6c8, feat/zcode-ocel-pack) outside this lane's subject and fails identically at the baseline 5cc0464 before any lane change (0 new failures, 726 -> 735 tests). The validator refuses ALIVE with a non-zero replay exit; that verdict is kept. Not claimed: the GC23-5 court episode (lane V23-D).",
+  "pre_existing_failure_term": "mu_on_O (the e2e test consumes an unadmitted external checkout by default path instead of GGEN_IGNITER_DIR under judgement); successor v23:GC-26.9.24"
+ }
+}
