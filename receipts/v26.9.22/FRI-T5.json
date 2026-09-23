@@ -42,6 +42,53 @@
     "tuple_digest": "sha256:e1395b48cb24b41bfe542236b269da6c002339c8679485aeb8f69886fa636744",
     "worktree": "/Users/sac/wt/v26922/fri/FRI-T5"
   },
+  "integration": {
+    "chicago_mock_grep": {
+      "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\|:meck\\|Mimic\" lib/mix/tasks/xaas.stop_court.ex test/mix/tasks/xaas_stop_court_test.exs",
+      "exit": 1,
+      "matches": 0
+    },
+    "conflicts": [],
+    "lane_gate": [
+      {
+        "cmd": "mix format --check-formatted",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T5.int-gate/format.log",
+        "output_sha256": "sha256:8f1c65f9bdd102cb8cfdd13a71f75d0c82ca72ff20d318776752e02ffe4a7907"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T5.int-gate/compile.log",
+        "output_sha256": "sha256:4d67c3355807ce647bb113d8397646ff8191be37b7c105d2470d1231d2153207",
+        "summary": "Compiling 506 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "MIX_ENV=test mix test test/mix/tasks/xaas_stop_court_test.exs",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T5.int-gate/test.log",
+        "output_sha256": "sha256:7b9ed3d16b43266388bfdc96e1bd7eb550e19060c59da7dc1c52201cb22511fc",
+        "summary": "14 tests, 0 failures (seed 294427; 0 skipped: validator and rdflib 7.6.0 present)"
+      }
+    ],
+    "lock": "/Users/sac/wt/v26922/xaas/.merge.lock (owner claude:FRI-T5-integrate)",
+    "merge_cmd": "git merge --no-ff fri/FRI-T5 -F <msgfile>",
+    "merge_commit": "8aba61b52cab36951927780375545380d3124305",
+    "merge_note": "merge-base 0d57147; HANDWRITTEN.md changed on both sides (FRI-T4 route row, FRI-T5 stop-court row) in disjoint hunks, auto-merged by ort, both rows present in the merge tree",
+    "merged_ref": "fri/FRI-T5",
+    "merged_sha": "684d28788f18ccf6ea534dcc31676d1f4b96e35c",
+    "pre_merge_head": "f8bca07e7f398c2045eac7175d6f96293c0aaf63",
+    "provisioning": "existing deps/ and _build/test in the int worktree; mix.exs and mix.lock unchanged by the merge",
+    "stop_court_observation": {
+      "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-FRI-0800 --only G0 --receipts-dir <scratch>",
+      "exit": 1,
+      "log": "receipts/v26.9.22/FRI-T5.int-gate/stop_court.log",
+      "output_sha256": "sha256:cd030e4d9915e29d4e1fe8719ac51b19f8cb559e50d2ce229b1cb911896697f1",
+      "summary": "at 8aba61b: G0 UNKNOWN (ran, receipt ADMITTED), G1..G12 NONE (no receipt on disk); order FRI-T5 standing=ALIVE receipt=ADMITTED; STOP receipt ADMITTED; STOP=false (exit 1 is the expected not-stopped verdict)"
+    },
+    "target_branch": "friday/gc-fri-0800",
+    "worktree": "/Users/sac/wt/v26922/fri/xaas-int"
+  },
   "replay": {
     "commands": [
       {
