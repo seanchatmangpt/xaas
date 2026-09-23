@@ -7,4 +7,3 @@
 
 Compiling 506 files (.ex)
 Generated xaas app
-MIX_ENV=test mix compile --force --warnings-as-errors  76.78s user 15.30s system 73% cpu 2:06.06 total

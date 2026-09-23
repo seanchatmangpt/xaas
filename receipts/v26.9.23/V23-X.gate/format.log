@@ -5,4 +5,3 @@
     │
     └─ /Users/sac/wt/v26922/v23/V23-X/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
 
-mix format --check-formatted  2.15s user 1.46s system 47% cpu 7.558 total

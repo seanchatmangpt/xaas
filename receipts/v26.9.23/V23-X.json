@@ -1,13 +1,15 @@
 {
   "authority": {
-    "actor": "claude-opus-5-5 workflow subagent (wave B0, lane V23-X)",
+    "actor": "claude-opus-5-5 workflow subagent (wave B0 lane V23-X; repair round 1)",
     "ceiling": "CONSTRUCT",
-    "grant": "DRIVER.md v26.9.23 overnight driver (operator directive 2026-09-22 23:25 PT) + wave-B0 lane spec; lane worktree only, no integration, no push"
+    "grant": "DRIVER.md v26.9.23 overnight driver (operator directive 2026-09-22 23:25 PT) + wave-B0 lane spec; lane worktree only, no integration, no push; repair round 1 task (answer court verdicts, fix with new commits)"
   },
   "consequence": {
     "commits": [
       "41fb86e",
-      "6dfe2a6"
+      "6dfe2a6",
+      "f76085d",
+      "2244d8e"
     ],
     "files_changed": [
       "HANDWRITTEN.md",
@@ -18,9 +20,18 @@
       "scripts/sjira/prose_spans.py",
       "scripts/sjira/test_prose_spans.py",
       "receipts/v26.9.23/V23-X.json",
-      "receipts/v26.9.23/V23-X.gate/{format,compile,lane_gate,mutate}.log, mutate.py"
+      "receipts/v26.9.23/V23-X.gate/{format,compile,lane_gate,mutate,summary}.log, mutate.py, derive_extraction.py, prd-ard.summary.json"
     ],
     "remote_effects": []
+  },
+  "disk": {
+    "actions": [
+      "oclnr snapshot thin --bytes 20GB => 0, Thinned 0 snapshots",
+      "oclnr plan build (5 stale v26.9.22 scratch roots, --ignore-recent-hours 1) -> approve -> delete execute --yes => 0, 8 items (_build, cargo target) freed 3.37 GB measured, volume delta 1.89 GB; receipts /private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23x-r1/oclnr-delete.receipt{,.r,.affidavit}.json (affidavit ACCEPTED)",
+      "oclnr plan build (20 stale v26.9.22 scratch roots) -> approve -> delete execute --yes => 0, 19 reversible build-artifact dirs, volume delta 1.20 GB (APFS clones share blocks); receipts /private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23x-r1/oclnr-delete-2.receipt{,.r,.affidavit}.json"
+    ],
+    "note": "oclnr receipts live in the session scratchpad (not durable): R_missing_replay for the disk actions only; the lane receipt does not depend on them",
+    "observed": "df -g /Users/sac: 1 GB free at start, then 0 GB (ENOSPC on a tool output); shared with other executors"
   },
   "extraction": {
     "candidates": 241,
@@ -58,21 +69,27 @@
       "Transition": 16,
       "Trigger": 2
     },
+    "multi_required": 0,
+    "not_required": 26,
     "note": "V23-P's goal.ttl task text maps F8 to the root successor policy; this lane's task text maps F8 to GC23-12, followed here. Admission (V23-C) reconciles.",
-    "root_required": "12 candidates carry sj:requiredBy <v23:GC-26.9.23> (PRD §13 stop condition, §27 REQUIRED_UNKNOWN / STOP counters, ARD §19, §28); 26 carry no sj:requiredBy (non-required: §10 non-goals, WD reference flow, migration notes)"
+    "root_required": "15 candidates carry sj:requiredBy <v23:GC-26.9.23> (PRD §13 stop condition, §27 REQUIRED_UNKNOWN / STOP counters, ARD §19, §28); 26 carry no sj:requiredBy (non-required: §10 non-goals, WD reference flow, migration notes); 200 gate memberships; multi_required 0; required 215 + not_required 26 = 241",
+    "summary": "receipts/v26.9.23/V23-X.gate/prd-ard.summary.json sha256:cb225d556535f44c6cd0848d00f863b1307d3d02c72b2750c5e130bb6a431f1d (prose_spans.py check --summary; counts copied by receipts/v26.9.23/V23-X.gate/derive_extraction.py)"
   },
   "falsifiers": {
-    "in_suite": "one source byte, one sourceText, one offset, one kind, one boundary class, candidateStanding ALIVE, a stray triple, an unknown predicate, a statement edit (with --extract), deleting the only GC23-0 candidate: each check exits 1 naming the defect; a 2-occurrence quote without occurrence is refused by emit and nothing is written",
+    "in_suite": "one source byte, one sourceText, one offset, one kind, one boundary class, candidateStanding ALIVE, a stray triple, an unknown predicate, a statement edit (with --extract), deleting the only GC23-0 candidate: each check exits 1 naming the defect; a 2-occurrence quote without occurrence is refused by emit and nothing is written; check --summary tallies only verified candidates (a refused graph summarizes check FAILED) and the committed summary's per-target counts equal a recount from prd-ard.extract.json",
     "real_artifact": "committed prd-ard.ttl minus the 6 GC23-12 candidates (and their hint nodes) -> check --require-gates 13 exit 1: REFUSED ...#GC23-12: gate_uncovered",
+    "receipt_derivation": "derive_extraction.py in a scratch copy with the committed summary tampered to GC-26.9.23=12 (the refuted typed value) => exit 1 'fresh check --summary (exit 0) does not reproduce the committed summary'; check FAILED/refusals=1 => exit 1; zeroed candidates_sha256 => exit 1; required+not_required != candidates => exit 1; untampered copy => exit 0 DERIVED root=15",
     "revert_mutations_killed": [
-      "r1 scripts/sjira/prose_spans.py removed (base bd1efb1 has no scripts/sjira) -> 13/13 tests fail",
+      "r1 scripts/sjira/prose_spans.py removed (base bd1efb1 has no scripts/sjira) -> 15/15 tests fail",
       "m1 check skips source sha256 comparison -> test_one_source_byte_mutated_is_refused fails",
       "m2 check skips gate coverage -> test_deleting_only_candidate_for_required_gate_is_refused fails",
       "m3 emit takes first match when a quote is ambiguous -> test_quote_with_two_occurrences_needs_an_index fails",
       "m4 check skips IRI recomputation -> kind-swap and offset tests fail",
       "m5 check skips sourceText comparison -> offset, source-byte and sourceText tests fail",
       "m6 emit keeps input order instead of (start, kind) -> order-independence test fails",
-      "m7 check accepts any kind -> kind test fails"
+      "m7 check accepts any kind -> kind test and refused-graph summary test fail",
+      "m8 summary drops not-required candidates -> test_summary_tallies_verified_candidates, committed-artifact test fail",
+      "m9 summary counts each requiredBy target at most once (the refuted 12-vs-15 class) -> test_summary_tallies_verified_candidates, committed-artifact test fail"
     ]
   },
   "identity": {
@@ -84,7 +101,7 @@
     "repo": "/Users/sac/xaas",
     "source": "docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 (39386 bytes, byte-identical to /Users/sac/wt/v26922/v26923/prd-ard.md)",
     "subject": "V23-X",
-    "subject_sha": "6dfe2a6687c6864f0ba6b84a7c9b314840d229dc",
+    "subject_sha": "2244d8e18d368841fc6b0a3a892cb729b7729bd0",
     "worktree": "/Users/sac/wt/v26922/v23/V23-X"
   },
   "llm_edges": [
@@ -96,28 +113,59 @@
       "standing_of_output": "UNKNOWN (candidates; every sj:Proposition carries sj:candidateStanding \"UNKNOWN\" and sj:extractedBy naming this edge)"
     }
   ],
+  "repair": {
+    "answered": [
+      {
+        "broken_term": "mu_on_O",
+        "claim": "extraction.root_required said 12 candidates carry sj:requiredBy v23:GC-26.9.23",
+        "disposition": "refutation correct; count corrected and the edge fixed: prose_spans.py check --summary writes the verified tally, derive_extraction.py copies receipt counts from it and refuses unless check OK, both sha256 bindings hold and required + not_required = candidates; mutation m9 (target counted at most once, the refuted error class) is killed by the committed-artifact test that recounts from the extraction JSON",
+        "lens": "GATE",
+        "observed": "15 (independent rdflib parse at 2244d8e: propositions=241 root=15 none=26 multi=0 required=215)",
+        "verdict": "refuted"
+      },
+      {
+        "disposition": "no change required; re-run at 2244d8e with m8, m9 added: all killed",
+        "lens": "REVERT-MUTATION",
+        "verdict": "pass"
+      }
+    ],
+    "round": 1
+  },
   "replay": {
     "commands": [
       {
         "cmd": "python3 -m unittest discover -s scripts/sjira -p 'test_*.py' -v && python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/prd-ard.md --candidates docs/sjira/v26.9.23/candidates/prd-ard.ttl --require-gates 13",
         "cwd": "/Users/sac/wt/v26922/v23/V23-X",
         "exit": 0,
-        "output_sha256": "3160a468262f66637ca441e600900dc7fec212cae401861359e823659571635c",
-        "summary": "lane gate at 6dfe2a6 (clean tree): Ran 13 tests OK; CHECK OK: 241 candidates bound to prd-ard.md sha256:7c8797b2...; gates GC23-0=24 .. GC23-12=6. Log: receipts/v26.9.23/V23-X.gate/lane_gate.log"
+        "output_sha256": "9366eea46c3c24525716f2f4615b0e708e0e6a25af481c7f9dcdd845cb6945d9",
+        "summary": "lane gate at 2244d8e (clean tree): Ran 15 tests OK; CHECK OK: 241 candidates bound to prd-ard.md sha256:7c8797b2...; gates GC23-0=24 .. GC23-12=6; TALLY: required 215 + not_required 26 = 241 (multi_required 0); requiredBy GC-26.9.23=15. Log: receipts/v26.9.23/V23-X.gate/lane_gate.log"
+      },
+      {
+        "cmd": "python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/prd-ard.md --candidates docs/sjira/v26.9.23/candidates/prd-ard.ttl --require-gates 13 --extract docs/sjira/v26.9.23/candidates/prd-ard.extract.json --summary receipts/v26.9.23/V23-X.gate/prd-ard.summary.json",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-X",
+        "exit": 0,
+        "output_sha256": "eff072921da7869ed139221da5406e0006ccc9ffc8d8e17f4a829f56d5a5d545",
+        "summary": "CHECK OK incl. byte-equal re-projection; summary sha256:cb225d556535f44c6cd0848d00f863b1307d3d02c72b2750c5e130bb6a431f1d. Log: receipts/v26.9.23/V23-X.gate/summary.log"
+      },
+      {
+        "cmd": "python3 receipts/v26.9.23/V23-X.gate/derive_extraction.py",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-X",
+        "exit": 0,
+        "summary": "re-runs check --summary over the committed source+candidates and requires byte-equal reproduction, check OK, sha256 bindings and the partition, then copies extraction.{candidates,kinds,gate_coverage,root_required,not_required,multi_required}: DERIVED: candidates=241 root=15 not_required=26 gates=200 multi=0"
       },
       {
         "cmd": "mix format --check-formatted",
         "cwd": "/Users/sac/wt/v26922/v23/V23-X",
         "exit": 0,
-        "output_sha256": "59293bf86c950788d0ee1b2cfc33263d537689f71294d6e3e143afd86490dce2",
-        "summary": "xaas gate prefix; formatted (deps/_build APFS-cloned from fri/xaas-int, same mix.lock, Elixir 1.19.5/OTP 28). Log: receipts/v26.9.23/V23-X.gate/format.log"
+        "output_sha256": "709177ce65bedba5f43965cfbd2927cf64480982b1d407df6c0251c2ad44b08d",
+        "summary": "xaas gate prefix at 2244d8e; formatted (only the pre-existing ex4pm dependency mix.exs Application.get_env notice). Log: receipts/v26.9.23/V23-X.gate/format.log"
       },
       {
         "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
         "cwd": "/Users/sac/wt/v26922/v23/V23-X",
         "exit": 0,
-        "output_sha256": "e47c70c130d3bbe8fa2cdc894a4d1c66d9a29c4a6b6d3be268c992032dede5bb",
-        "summary": "Compiling 506 files (.ex); Generated xaas app (the Application.get_env notice is printed while evaluating a dependency's mix.exs, pre-existing). Log: receipts/v26.9.23/V23-X.gate/compile.log"
+        "output_sha256": "bcc4e1c6e9cef7444400874c001597c22ae24cc3fa0d2254b124a3271ac4c89d",
+        "summary": "at 2244d8e: Compiling 506 files (.ex); Generated xaas app (dependency mix.exs notice pre-existing). Log: receipts/v26.9.23/V23-X.gate/compile.log"
       },
       {
         "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\" scripts/sjira/",
@@ -126,35 +174,35 @@
         "summary": "Chicago mock grep: zero matches"
       },
       {
-        "cmd": "ruff check --line-length 120 scripts/sjira/ && ruff format --line-length 120 --check scripts/sjira/",
+        "cmd": "ruff check --line-length 120 scripts/sjira/ receipts/v26.9.23/V23-X.gate/derive_extraction.py && ruff format --line-length 120 --check <same>",
         "cwd": "/Users/sac/wt/v26922/v23/V23-X",
         "exit": 0,
-        "summary": "All checks passed; 2 files already formatted"
+        "summary": "All checks passed; 3 files already formatted"
       },
       {
-        "cmd": "python3 receipts/v26.9.23/V23-X.gate/mutate.py <git clone --shared of 6dfe2a6>",
-        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23x",
+        "cmd": "python3 receipts/v26.9.23/V23-X.gate/mutate.py <git clone --shared, sparse scripts/sjira docs/sjira/v26.9.23 receipts/v26.9.23, at 2244d8e>",
+        "cwd": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23x-r1",
         "exit": 0,
-        "output_sha256": "76d845c663a1b0f10594966541beeb3c54855309bfa04cb11a6e819ece14ffe6",
-        "summary": "baseline 13 OK; m1..m7 and r1 each make the suite fail; clone restored clean. Log: receipts/v26.9.23/V23-X.gate/mutate.log"
+        "output_sha256": "b8d108e43ba12edd304faabcafac286b1b551adf825d36e672a780121e12b88f",
+        "summary": "baseline 15 OK; m1..m9 and r1 each make the suite fail (r1: 15/15); clone restored clean. Log: receipts/v26.9.23/V23-X.gate/mutate.log"
       },
       {
-        "cmd": "prose_spans.py emit (x2 to scratch) && cmp det1.ttl det2.ttl && cmp det1.ttl docs/sjira/v26.9.23/candidates/prd-ard.ttl",
+        "cmd": "prose_spans.py emit x2 to scratch + check --summary x2; cmp det1 det2; cmp det1 committed prd-ard.ttl; cmp sum1 sum2; cmp sum1 committed prd-ard.summary.json",
         "cwd": "/Users/sac/wt/v26922/v23/V23-X",
         "exit": 0,
-        "summary": "determinism: two emits and the committed TTL are byte-identical"
+        "summary": "determinism: emits and committed TTL byte-identical (sha256:0a3a2a7f...fb57b); summaries byte-identical (sha256:cb225d55...a431f1d)"
       },
       {
-        "cmd": "rdflib parse of prd-ard.ttl + raw byte slicing, independent of prose_spans.py",
+        "cmd": "rdflib parse of prd-ard.ttl, independent of prose_spans.py: count distinct sj:Proposition with sj:requiredBy v23:GC-26.9.23 / none / >1",
         "cwd": "/Users/sac/wt/v26922/v23/V23-X",
         "exit": 0,
-        "summary": "2890 triples, 241 propositions, 0 bad (span bytes == sourceText, digest, IRI recomputation, UNKNOWN), 13 gates + root covered"
+        "summary": "propositions=241 root=15 none=26 multi=0 required=215 (agrees with the court's count)"
       }
     ],
     "durable_location": "receipts/v26.9.23/V23-X.json"
   },
   "standing": {
-    "derived_from": "lane gate (13 unittest cases OK + check --require-gates 13 exit 0), mix format --check-formatted exit 0, MIX_ENV=test mix compile --force --warnings-as-errors exit 0, ruff clean and mock grep zero matches, all run on a clean tree at subject_sha 6dfe2a6687c6864f0ba6b84a7c9b314840d229dc; revert mutations r1, m1..m7 killed. Scope: the lane deliverable (binder + committed candidates). GC23-0 gate standing is not asserted here: candidates are UNKNOWN until V23-C admission.",
+    "derived_from": "lane gate (15 unittest cases OK + check --require-gates 13 exit 0), check --summary exit 0, mix format --check-formatted exit 0, MIX_ENV=test mix compile --force --warnings-as-errors exit 0, ruff clean and mock grep zero matches, all run at subject_sha 2244d8e18d368841fc6b0a3a892cb729b7729bd0 (subject files clean; only receipts/v26.9.23/V23-X.gate outputs written); revert mutations r1, m1..m9 killed; extraction counts derived from the checked summary, not typed. Scope: the lane deliverable (binder + committed candidates + tally). GC23-0 gate standing is not asserted here: candidates are UNKNOWN until V23-C admission.",
     "value": "ALIVE"
   },
   "unsupported": [
