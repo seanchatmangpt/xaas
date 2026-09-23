@@ -205,12 +205,13 @@ defmodule Xaas.Ultracode.EngineTest do
 
   test "a started provider run cycles two epochs to :completed via ticks + engine fills, zero manual epoch creation" do
     subject = exact_subject!()
+    provider = unique_provider()
 
     run =
       Run
       |> Ash.Changeset.for_create(
         :create,
-        %{goal: "engine continuous run", provider: unique_provider(), max_cycles: 2},
+        %{goal: "engine continuous run", provider: provider, max_cycles: 2},
         authorize?: false
       )
       |> Ash.create!()
@@ -225,7 +226,11 @@ defmodule Xaas.Ultracode.EngineTest do
     # then constructs the successor epoch (:expected) and, at the end of
     # the loop below, lands the Run at max_cycles -- zero manual epoch
     # construction anywhere in this test.
-    report = Engine.cycle(worker: &claim_close_worker/2, pool_capacity: 5)
+    # Directed at this provider: undirected discovery is allowlist-scoped
+    # (default ["recipe"]), see the provider-allowlist tests below.
+    report =
+      Engine.cycle(worker: &claim_close_worker/2, pool_capacity: 5, providers: [provider])
+
     assert report.tick_health in [:healthy, :stale]
 
     [fill] = report.fill
@@ -256,7 +261,9 @@ defmodule Xaas.Ultracode.EngineTest do
     # cycle's advance lands the Run at max_cycles.
     {:ok, _} = Reactor.run(Xaas.Ultracode.Reactor)
 
-    report_2 = Engine.cycle(worker: &claim_close_worker/2, pool_capacity: 5)
+    report_2 =
+      Engine.cycle(worker: &claim_close_worker/2, pool_capacity: 5, providers: [provider])
+
     [%{dispatched: dispatched_2}] = report_2.fill
     assert [%{status: :done}] = dispatched_2
 
@@ -655,6 +662,61 @@ defmodule Xaas.Ultracode.EngineTest do
              completed
              |> Ash.Changeset.for_update(:resume, %{}, authorize?: false)
              |> Ash.update()
+  end
+
+  # ------------------------------------------------------------------
+  # the provider allowlist scopes undirected discovery
+  # ------------------------------------------------------------------
+
+  describe "provider allowlist" do
+    setup do
+      original = Application.get_env(:xaas, :ultracode_engine_providers)
+
+      on_exit(fn ->
+        if is_nil(original),
+          do: Application.delete_env(:xaas, :ultracode_engine_providers),
+          else: Application.put_env(:xaas, :ultracode_engine_providers, original)
+      end)
+
+      :ok
+    end
+
+    test "the configured default is the deterministic recipe provider only" do
+      assert Engine.provider_allowlist() == ["recipe"]
+    end
+
+    test "an undirected fill never discovers a non-allowlisted provider's ready epoch" do
+      provider = unique_provider()
+      {_run, epoch} = running_run_and_epoch(provider)
+
+      assert Engine.fill(worker: &claim_close_worker/2) == []
+
+      untouched = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+      assert untouched.state == :running
+      assert is_nil(untouched.lease_token)
+
+      # Allowlisting the provider is the only change -- the same undirected
+      # fill now discovers and closes it.
+      Application.put_env(:xaas, :ultracode_engine_providers, [provider])
+
+      assert [%{provider: ^provider, dispatched: [%{status: :done}]}] =
+               Engine.fill(worker: &claim_close_worker/2)
+    end
+
+    test ":all restores unrestricted discovery; a malformed allowlist fails closed" do
+      provider = unique_provider()
+      {_run, _epoch} = running_run_and_epoch(provider)
+
+      Application.put_env(:xaas, :ultracode_engine_providers, [:not_a_string])
+      assert Engine.provider_allowlist() == []
+      assert Engine.fill(worker: &ghost_worker/2) == []
+
+      Application.put_env(:xaas, :ultracode_engine_providers, :all)
+      assert Engine.provider_allowlist() == :all
+
+      assert [%{provider: ^provider, dispatched: [%{status: :rate_limited}]}] =
+               Engine.fill(worker: fn _epoch, _ctx -> :rate_limited end)
+    end
   end
 
   # ------------------------------------------------------------------

@@ -18,6 +18,9 @@ defmodule Xaas.Ultracode.SemanticWork do
   @digest ~r/^sha256:[0-9a-f]{64}$/
   @repo_identity ~r/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
   @repo_alias ~r/^[A-Za-z0-9_.-]{1,128}$/
+  # `sj:capabilityId` shape (e.g. "recipe:mix-format"); same law as
+  # `Run.capability_id`'s constraint.
+  @capability_id ~r/^[a-z0-9][a-z0-9_.-]*:[a-z0-9][a-z0-9_.:-]*$/
   @execution_policies [:continuous_epoch_run, :autonomic_wave_attempt]
 
   @required ~w(
@@ -51,7 +54,8 @@ defmodule Xaas.Ultracode.SemanticWork do
     "court_map" => :court_map,
     "admission_digest" => :admission_digest,
     "admitted_work_order" => :admitted_work_order,
-    "bridge" => :bridge
+    "bridge" => :bridge,
+    "capability" => :capability
   }
 
   @dependency_keys %{
@@ -211,6 +215,7 @@ defmodule Xaas.Ultracode.SemanticWork do
          :ok <- require_string(descriptor, :provider),
          :ok <- require_string(descriptor, :verifier_suite),
          :ok <- optional_bridge(descriptor),
+         :ok <- optional_capability(descriptor),
          :ok <- AdmissionBinding.verify(descriptor, binding),
          {:ok, policy} <- admit_execution_policy(descriptor.execution_policy),
          {:ok, dependencies} <- admit_dependencies(descriptor.dependencies),
@@ -377,7 +382,8 @@ defmodule Xaas.Ultracode.SemanticWork do
       dependency_evidence: dependency_evidence(descriptor.dependencies),
       court_map: Map.get(descriptor, :court_map),
       base_sha: descriptor.base_sha,
-      semantic_bridge: Map.get(descriptor, :bridge)
+      semantic_bridge: Map.get(descriptor, :bridge),
+      capability_id: Map.get(descriptor, :capability)
     }
 
     Run
@@ -474,6 +480,24 @@ defmodule Xaas.Ultracode.SemanticWork do
       nil -> :ok
       %{} = bridge when not is_struct(bridge) -> :ok
       _ -> {:error, {:refused_semantic_work, {:invalid, :bridge}}}
+    end
+  end
+
+  # Optional `capability` (the work order's `sj:capabilityId`): absent = no
+  # deterministic recipe; present = a NAME the recipe registry resolves at
+  # claim time (`Xaas.Ultracode.RecipeWorker`), never a command.
+  defp optional_capability(map) do
+    case Map.get(map, :capability) do
+      nil ->
+        :ok
+
+      value when is_binary(value) and byte_size(value) <= 128 ->
+        if Regex.match?(@capability_id, value),
+          do: :ok,
+          else: {:error, {:refused_semantic_work, {:invalid, :capability}}}
+
+      _ ->
+        {:error, {:refused_semantic_work, {:invalid, :capability}}}
     end
   end
 
