@@ -362,6 +362,22 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
                evidence()
              ) == "predicate_unevaluable"
 
+      # an unknown FILTER function SPARQL.ex evaluates as false (error-as-false):
+      # the predicate does not select its own source, so it is never admitted
+      unknown_fn = """
+      PREFIX sj: <#{MachineExperience.namespaces()["sj"]}>
+      SELECT ?order WHERE { ?order a sj:WorkOrder . FILTER(<https://example.org/no-such-fn>(?order)) }
+      """
+
+      assert {:ok, false} = MachineExperience.applicability(unknown_fn, row())
+
+      assert refused.(
+               experience(),
+               Map.put(fields, "applicability_predicate", unknown_fn),
+               row(),
+               evidence()
+             ) == "predicate_excludes_source"
+
       assert refused.(
                experience(),
                fields,
