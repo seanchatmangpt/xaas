@@ -1,48 +1,57 @@
 # HTTP API Surface Reference
 
-Complete, current enumeration of xaas's real HTTP surface: every mounted router, every
-resource with a real `json_api do routes do ... end end` block, the real auth gate, and the
-two plain-JSON controller endpoints. Verified by reading `lib/xaas_web/router.ex`,
-`lib/xaas_web/api_router.ex`, `lib/xaas_web/internal_api_router.ex`, and grepping
-`lib/xaas/**/*.ex` for `json_api do` on 2026-08-20.
+Complete, current enumeration of xaas's real HTTP surface: every mounted router scope,
+every resource with a real `json_api do routes do ... end end` block, the real auth gates,
+and the plain-JSON controller endpoints. Originally verified 2026-08-20; fully re-verified
+against `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
+`lib/xaas_web/internal_api_router.ex`, and grep sweeps over `lib/xaas/**/*.ex`
+(`base("/`, route verbs, `routes do`) on 2026-09-22.
 
 ## Router topology
 
-`lib/xaas_web/router.ex` defines three real scopes:
+`lib/xaas_web/router.ex` (re-verified 2026-09-22) defines these scopes:
 
-```elixir
-scope "/", XaasWeb do
-  pipe_through :browser
-  get "/", PageController, :home
-end
+- **Browser** (`pipe_through :browser`): `GET /` (`PageController.home`) and the
+  `GET /next-read` Next Read LiveView.
+- **`/webhooks`** (`:api` only — deliberately NOT behind the internal-api token, because
+  Stripe is the caller and cannot supply it): `POST /webhooks/stripe`, authenticated by
+  Stripe-signature verification inside `XaasWeb.StripeWebhookController`.
+- **`/internal-api` controller scope** (`[:api, :require_internal_api_token]`, registered
+  *before* the catch-all forward): `capability_liveness_regressions`, `ocel_summary`,
+  `prometheus/query`, `health`, `rpc/run`, `rpc/validate`, `execution/hooks/:event`,
+  `execution/mcp`, `execution/runs`, `execution/epochs/:epoch_id/receipts`.
+- **`/mcp`** (`[:api, :require_internal_api_token, :resolve_org_actor,
+  :audit_mcp_tool_call]`): generated `XaasWeb.McpScope.mount()` forwarding to
+  `AshAi.Mcp.Router` — read-only Library tools, one audit row per request.
+- **`/a2a`** (`[:api, :require_internal_api_token]`): `forward /zoe-event` to
+  `XaasWeb.A2A.ZoeEventPlug` (registered before the catch-all), then `forward /` to
+  `A2A.Plug` with `XaasWeb.A2A.NextReadUserAgent`.
+- **`/api/workbench`** (`[:api, :require_internal_api_token]`, before the `/api` forward):
+  `GET /ggen/health` and `POST /ggen` — the CONSTRUCT-only GGen workbench forward to a
+  private Fly worker; no shell or cloud actuation authority.
+- **`/internal-api/sparql`** (`[:api, :require_internal_api_token]`, before the forward):
+  reverse proxy to the Ontop R2RML SPARQL endpoint (`XaasWeb.OntopProxyPlug`).
+- **`forward /internal-api`** → `XaasWeb.InternalApiRouter`
+  (`[:internal_api, :require_internal_api_token, :set_internal_api_system_actor]`).
+- **`forward /api`** → `XaasWeb.ApiRouter`
+  (`[:internal_api, :require_internal_api_token, :resolve_org_actor,
+  :set_internal_api_system_actor]`).
+- **Dev-only** (`Application.compile_env(:xaas, :dev_routes)`): LiveDashboard
+  `/dev/dashboard`, Swoosh mailbox `/dev/mailbox`, the autofde-lab LiveView
+  `/dev/dashboards/autofde-lab`, and AshAdmin `/admin`.
 
-scope "/internal-api", XaasWeb do
-  pipe_through [:api, :require_internal_api_token]
-  get "/capability_liveness_regressions", CapabilityRegressionsController, :index
-  get "/ocel_summary", OcelSummaryController, :index
-end
+Three ordering facts about these scopes are load-bearing:
 
-scope "/" do
-  pipe_through [:internal_api, :require_internal_api_token]
-  forward "/internal-api", XaasWeb.InternalApiRouter
-  forward "/api", XaasWeb.ApiRouter
-end
-```
-
-Two real facts about this ordering, both load-bearing:
-
-1. The two plain-JSON controller routes under `/internal-api` are registered **before**
-   `forward "/internal-api"`. A Phoenix `forward` matches every sub-path under its prefix, so
-   declaring it first would have shadowed the controller routes (confirmed by a real 404 from
-   `AshJsonApi.Router`'s own `no_route_found` before the router was reordered).
+1. Every plain-JSON controller route under `/internal-api` (including the execution-fabric
+   and SPARQL routes) is registered **before** `forward "/internal-api"`. A Phoenix
+   `forward` matches every sub-path under its prefix, so declaring it first would have
+   shadowed them (confirmed by a real 404 from `AshJsonApi.Router`'s own `no_route_found`
+   before the router was reordered).
 2. Both `/internal-api` and `/api` are gated by the same `require_internal_api_token`
    pipeline. This plug did not exist on either prefix originally — added after an adversarial
    review found both real-200'd for any anonymous client.
-
-`AshAdmin.Router` is mounted at `/admin` and `Phoenix.LiveDashboard` at `/dev/dashboard`, both
-gated by `Application.compile_env(:xaas, :dev_routes)` (dev-only; no auth plug is added for
-either, per the router's own comment, since production exposure was deliberately out of scope
-for this session).
+3. `/a2a/zoe-event` is registered before the `/a2a` catch-all forward for the same
+   shadowing reason.
 
 ## Auth: `XaasWeb.Plugs.RequireInternalApiToken`
 
@@ -58,6 +67,22 @@ forwards).
   matches via `Plug.Crypto.secure_compare/2` (constant-time comparison). Missing header, wrong
   scheme, or a mismatched token all return `401` with
   `{"error": "unauthorized", "detail": "missing or invalid Bearer token"}`.
+- For org-carrying DB tokens the plug also attaches `conn.assigns[:current_org]`, which the
+  execution-fabric `runs`/`receipts` endpoints use for org scoping (a legacy shared-token or
+  org-less caller is refused with a typed 403 on the org-scoped surfaces).
+
+Two more pipelines compose after the token gate (both defined in `router.ex`):
+
+- `:set_internal_api_system_actor` (`XaasWeb.Plugs.SetInternalApiSystemActor`, XAAS-2602) —
+  supplies the real system-authority actor (`Xaas.SystemAuthority.new(:internal_api)`) for
+  the SERVICE-BOUNDARY resources whose mutations are guarded by
+  `Xaas.Checks.SystemActor`. Mounted on both AshJsonApi forwards; runs *after* the Bearer
+  check and never overrides an already-resolved org actor.
+- `:audit_mcp_tool_call` (`XaasWeb.Plugs.AuditMcpToolCall`) — writes one real
+  `Xaas.Operations.AuditLogEntry` row per `/mcp` HTTP request so unscoped Library reads are
+  observable. Mounted on `/mcp` only, deliberately not on `/api` or `/internal-api`.
+  Known asymmetry (open work order): this audit covers `/mcp` but NOT
+  `/internal-api/execution/mcp`.
 
 Example real request:
 
@@ -68,26 +93,45 @@ curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
 
 ## `/api` — `XaasWeb.ApiRouter`
 
-`lib/xaas_web/api_router.ex` mounts `AshJsonApi.Router` for 6 domains:
-`Xaas.Accounts`, `Xaas.Billing`, `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Operations`,
-`Xaas.Platform`. Mounting a domain does not itself expose anything — only resources that
-declare their own `json_api do routes do ... end end` block are actually reachable. Per the
-router's own moduledoc, 56 of 69 real resources have that block (real-recounted 2026-08-21,
-thirteenth ERRC pass, via `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l`; the prior
-"44 of 49" figure was stale on both the numerator and the denominator — 49 was the real
-resource-surface total before the domain set grew to 69). The claim that follows was also
-stale and is corrected here: **44 of those 56 now declare a real mutation route** (`post
-:create`, `patch :approve`, or `patch :update`, not just `get :read`/`index :read`) —
-real-recounted via the same sweep, matching the per-resource maker-checker mutation-route work
-this session's own history landed (see
-`docs/claude/diataxis/explanation/errc-innovation-grid.md`'s Sixth-pass update onward). Only
-the remaining 12 of the 56 are still read-only. `docs/ASH-MIGRATION-PLAN.md` Phase 5 item 2 (a
-real customer-facing mutation surface) is accordingly **substantially addressed**, not fully
-resolved — the 5 deliberately-unwired sensitive resources (`Ledger.Balance`/`Account`/
-`Transfer`, `Accounts.User`/`Token`) still have zero route regardless of mutation status, by
-the same deliberate design this doc's own "Deliberately unwired" section documents below.
+`lib/xaas_web/api_router.ex` mounts `AshJsonApi.Router` for 7 domains:
+`Xaas.Accounts`, `Xaas.Billing`, `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Marketplace`,
+`Xaas.Operations`, `Xaas.Platform` — of the 13 domains configured in `config/config.exs`
+(Library, Coupling, Generation, Ocel, TemporalMemory, and Ultracode are not mounted here;
+Library is served through the `/mcp` tools instead). Mounting a domain does not itself
+expose anything — only resources that declare their own
+`json_api do routes do ... end end` block are actually reachable.
+
+Recounted 2026-09-22 by the same grep method this doc has used before
+(`grep -rln 'base("/'` + route-verb sweeps over `lib/xaas/**/*.ex`):
+
+- **62** resources repo-wide declare a real `base(...)` path: **56 on `/api`**, **1 on
+  `/internal-api`** (`capability_liveness_receipts`), and **5 Library resources whose routes
+  are declared but whose domain is not mounted in either AshJsonApi router** (reachable via
+  `/mcp` tools and AshAdmin, not raw JSON:API).
+- **45 of the 56 `/api` resources expose a real mutation route** (`post(...)`,
+  `patch(...)`, or `delete(...)` beyond `get`/`index`; routes use paren-call style). The
+  remaining 11 are read-only. `docs/ASH-MIGRATION-PLAN.md` Phase 5 item 2 (a real
+  customer-facing mutation surface) is accordingly **substantially addressed**, not fully
+  resolved — the deliberately-unwired sensitive resources (`Ledger.Balance`/`Account`/
+  `Transfer`, `Accounts.User`/`Token`) still have zero route regardless of mutation status,
+  by the same deliberate design this doc's own "Deliberately unwired" section documents
+  below.
+- Mutation verbs now go beyond the original `post(:create)`/`patch(:approve)`/
+  `patch(:update)` pattern — e.g. `post(:issue)`/`patch(:revoke)` on
+  `Xaas.Governance.AuditExportToken`, `patch(:remediate)` on
+  `Xaas.Governance.PentestFinding`, `patch(:record_attempt)` on
+  `Xaas.Platform.WebhookDelivery`, and `delete(:destroy)` on Platform resources.
 
 ### Wired resources (real `base` path, real domain, both routed under `/api`)
+
+Accounts (`lib/xaas/accounts/`):
+
+| Base path | Resource module |
+|---|---|
+| `/orgs` | `Xaas.Accounts.Org` (`get`/`index`/`post(:create)`/`patch(:update)`) |
+
+`Accounts.User` and `Accounts.Token` remain deliberately unwired (see below); `Org` is the
+one Accounts resource with a real public surface.
 
 Billing (`lib/xaas/billing/`):
 
@@ -99,6 +143,14 @@ Billing (`lib/xaas/billing/`):
 | `/approval_quota_override` | `Xaas.Billing.ApprovalQuotaOverride` |
 | `/approval_sla_credit_apply` | `Xaas.Billing.ApprovalSlaCreditApply` |
 | `/approval_tier_downgrade` | `Xaas.Billing.ApprovalTierDowngrade` |
+| `/billing_subscriptions` | `Xaas.Billing.Subscription` |
+
+Marketplace (`lib/xaas/marketplace/`):
+
+| Base path | Resource module |
+|---|---|
+| `/marketplace_providers` | `Xaas.Marketplace.Provider` (`get`/`index`/`post(:create)`/`patch(:update)`; `:status` is not accepted by the public update — lifecycle goes through the receipted actuation path) |
+| `/approval_provider_status_change` | `Xaas.Marketplace.ApprovalProviderStatusChange` (`post(:create)`/`patch(:approve)`) |
 
 Governance (`lib/xaas/governance/`):
 
@@ -127,7 +179,10 @@ Governance (`lib/xaas/governance/`):
 | `/approval_sso_role_mapping_update` | `Xaas.Governance.ApprovalSsoRoleMappingUpdate` |
 | `/approval_subprocessor_registry_update` | `Xaas.Governance.ApprovalSubprocessorRegistryUpdate` |
 | `/approval_vendor_offboarding_attestation_issue` | `Xaas.Governance.ApprovalVendorOffboardingAttestationIssue` |
+| `/audit_export_tokens` | `Xaas.Governance.AuditExportToken` (`post(:issue)`/`patch(:revoke)`) |
 | `/data_destruction_certificate_issue` | `Xaas.Governance.DataDestructionCertificateIssue` |
+| `/freeze_window` | `Xaas.Governance.FreezeWindow` |
+| `/pentest_findings` | `Xaas.Governance.PentestFinding` (`post(:create)`/`patch(:remediate)`) |
 
 Operations (`lib/xaas/operations/`, mounted via `/api` — separate from the `/internal-api`
 routes below):
@@ -136,9 +191,12 @@ routes below):
 |---|---|
 | `/approval_castle_verb_schedule` | `Xaas.Operations.ApprovalCastleVerbSchedule` |
 | `/approval_k8s_fault_remediate_suggest` | `Xaas.Operations.ApprovalK8sFaultRemediateSuggest` |
+| `/audit_log_entries` | `Xaas.Operations.AuditLogEntry` (read-only) |
 | `/castle_verb_fortune5_requirements` | `Xaas.Operations.CastleVerbFortune5Requirements` |
 | `/castle_verb_inventory_components` | `Xaas.Operations.CastleVerbInventoryComponents` |
 | `/castle_verb_inventory_goals` | `Xaas.Operations.CastleVerbInventoryGoals` |
+| `/incidents` | `Xaas.Operations.Incident` (`post(:create)`/`patch(:update)`) |
+| `/project_measurement` | `Xaas.Operations.ProjectMeasure.Measurement` (one GET-only observation route, per the ApiRouter moduledoc) |
 | `/route_castle_deploy` | `Xaas.Operations.RouteCastleDeploy` |
 | `/route_castle_run` | `Xaas.Operations.RouteCastleRun` |
 | `/route_castle_schedule` | `Xaas.Operations.RouteCastleSchedule` |
@@ -153,25 +211,39 @@ Platform (`lib/xaas/platform/`):
 | `/route_projects` | `Xaas.Platform.RouteProjects` |
 | `/route_projects_backups` | `Xaas.Platform.RouteProjectsBackups` |
 | `/route_secrets` | `Xaas.Platform.RouteSecrets` |
+| `/webhooks` | `Xaas.Platform.Webhook` (outbound webhooks; `post(:create)`/`delete(:destroy)`) |
+| `/webhook_deliveries` | `Xaas.Platform.WebhookDelivery` (`post(:create)`/`patch(:record_attempt)`) |
 
-Every one of the above (except `Xaas.Billing.ApprovalPricingOverride` and
-`Xaas.Governance.ApprovalBackupRetentionChange`, see below) has exactly the same real shape,
-e.g.:
+Library (`lib/xaas/library/`) also declares five real `base(...)` routes — `/library/books`,
+`/library/checkouts`, `/library/holds`, `/library/curations`,
+`/library/recommendation_logs`, all read-only — but **`Xaas.Library` is not mounted in
+`XaasWeb.ApiRouter` (or the internal router)**, so these are not reachable as raw JSON:API
+today; the Library surface is served through the `/mcp` tools, the `/next-read` LiveView,
+and AshAdmin.
+
+The wired resources share the same DSL shape, though the route sets now vary per resource
+(paren-call style throughout, re-verified 2026-09-22). Read-only resources (e.g.
+`Xaas.Platform.RouteProjects`):
 
 ```elixir
 json_api do
   type "..."
 
   routes do
-    base "/..."
-    get :read
-    index :read
+    base("/route_projects")
+    get(:read)
+    index(:read)
   end
 end
 ```
 
-So each resource is real-reachable at `GET /api/<base>` (index) and `GET /api/<base>/:id` (get),
-both requiring the `Authorization: Bearer` header above.
+The maker-checker approval cluster (23 Governance + 6 Billing + 2 Operations + 1
+Marketplace `Approval*` resources) uses `get(:read)`/`index(:read)`/`post(:create)`/
+`patch(:approve)`; the remaining wired resources add verbs matching their own semantics
+(`delete(:destroy)`, `patch(:update)`, `patch(:revoke)`, `patch(:remediate)`,
+`patch(:record_attempt)`, `post(:issue)`). Every resource above is real-reachable at
+`GET /api/<base>` (index) and `GET /api/<base>/:id` (get), both requiring the
+`Authorization: Bearer` header above.
 
 ### First real mutation route (issue #20): `Xaas.Billing.ApprovalPricingOverride`
 
@@ -332,9 +404,9 @@ Each follows the same real shape as `ApprovalBackupRetentionChange`/`ApprovalPri
 distinct-from-requester), real Chicago-style HTTP tests
 (`test/xaas_web/controllers/approval_{dr_failover,cmek_key_binding,dsar_erasure}_controller_test.exs`).
 
-### Deliberately unwired (5 resources, no `json_api` block at all)
+### Deliberately unwired (6 resources, no `json_api` block at all)
 
-Per `lib/xaas_web/api_router.ex`'s own moduledoc, these 5 have **no** `routes do` block —
+Per `lib/xaas_web/api_router.ex`'s own moduledoc, these have **no** `routes do` block —
 mounting `Xaas.Accounts` and `Xaas.Ledger` in the router above does not expose them:
 
 - `Xaas.Ledger.Balance` (`lib/xaas/ledger/balance.ex`)
@@ -342,6 +414,7 @@ mounting `Xaas.Accounts` and `Xaas.Ledger` in the router above does not expose t
 - `Xaas.Ledger.Transfer` (`lib/xaas/ledger/transfer.ex`)
 - `Xaas.Accounts.User` (`lib/xaas/accounts/user.ex`)
 - `Xaas.Accounts.Token` (`lib/xaas/accounts/token.ex`) — holds cloaked `extra_data`
+- `Xaas.Accounts.Token.RevokeNonce` (`lib/xaas/accounts/token/revoke_nonce.ex`) — token-revocation bookkeeping, same PII-adjacent design decision
 
 Reasoning stated in the router moduledoc: the ledger resources are real double-entry financial
 data needing a real access-control design (whose balance can whom see?) before any open read is
@@ -378,8 +451,9 @@ ingested MAPE-K receipt rows (see `lib/xaas/operations/capability_liveness_recei
 
 ## Plain-JSON controller endpoints (not `AshJsonApi`, not the JSON:API envelope)
 
-Both are registered directly on `XaasWeb.Router` under `/internal-api`, ahead of the
-`AshJsonApi.Router` forward, and both require the same `Authorization: Bearer` header.
+These are registered directly on `XaasWeb.Router` under `/internal-api`, ahead of the
+`AshJsonApi.Router` forward (for the shadowing reason documented above), and all require the
+same `Authorization: Bearer` header.
 
 ### `GET /internal-api/capability_liveness_regressions`
 
@@ -430,16 +504,72 @@ controller surfaces).
 Both fields are computed by reading the real file at
 `Xaas.Telemetry.OcelAshEmitter.log_path/0` — no mocked file I/O, per the test's own moduledoc.
 
+### `GET /internal-api/prometheus/query`, `GET /internal-api/health`, `POST /internal-api/rpc/run`, `POST /internal-api/rpc/validate`
+
+`PrometheusQueryController`, `HealthController`, and `AshTypescriptRpcController` — same
+token gate, registered ahead of the catch-all forward. The `rpc/*` pair is the
+AshTypescript RPC surface for the four domains declaring `AshTypescript.Rpc`
+(`Xaas.Accounts`, `Xaas.Billing`, `Xaas.Marketplace`, `Xaas.Operations`).
+
+## Execution fabric endpoints
+
+All under `/internal-api/execution/`, behind the token gate, backed by
+`Xaas.Ultracode.*` (`lib/xaas_web/controllers/execution_fabric_controller.ex`):
+
+- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with seven verbs:
+  `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`,
+  `refuse`, `actuate`. `actuate` is the only way a provider worker crosses into the admitted
+  `Xaas.Actuation.run/4` DO kernel (via `Xaas.Ultracode.Lease.actuate/2`) — a wholly
+  separate, narrower surface from `admit_tool`'s construction/consequence fence.
+- `POST /internal-api/execution/hooks/:event` — plain-JSON PreToolUse hook surface for the
+  generated provider plugin.
+- `POST /internal-api/execution/runs` — org-scoped run submission: requires the request to
+  have authenticated via an org-carrying `InternalApiToken` (`conn.assigns[:current_org]`);
+  legacy shared-token or org-less callers get a typed 403, never a silently org-less Run.
+- `GET /internal-api/execution/epochs/:epoch_id/receipts` — the lawful read path onto
+  `Xaas.Ultracode.Receipt` (org-scoped for org-carrying tokens).
+
+`/internal-api/sparql` (same scope, before the forward) reverse-proxies to the Ontop R2RML
+SPARQL endpoint via `XaasWeb.OntopProxyPlug`.
+
+## Other HTTP surfaces
+
+- **`POST /webhooks/stripe`** — public inbound Stripe receiver, deliberately not behind the
+  internal-api token (Stripe cannot supply it); authenticity is Stripe-signature
+  verification inside the controller.
+- **`/mcp`** — Ash AI MCP server (generated `XaasWeb.McpScope` — tool list, protocol
+  version, and otp_app come from `priv/ggen_igniter/mcp_a2a/xaas-surface.ttl`; regenerate
+  through that pack, do not hand-edit) exposing read-only Library tools
+  (`:list_books`, `:books_by_grade_band`, `:active_curations_for_grade`), one
+  `AuditLogEntry` row written per request by `XaasWeb.Plugs.AuditMcpToolCall`. Note: the
+  `:resolve_org_actor` plug in this pipeline is a real no-op for `/mcp` paths (its
+  tenant path-allowlist only matches `/api/...`); the actual read gate is the resources'
+  `authorize_if always()` read policies — see the router's own corrected comment.
+- **`/a2a`** — Agent-to-Agent server: `POST /a2a/zoe-event` (the ZOE event-simulation
+  agent, authority-free SA2A-shaped trace) and `POST /a2a/` (the Next Read multi-persona
+  agent). Both token-gated.
+- **`GET /api/workbench/ggen/health`, `POST /api/workbench/ggen`** — CONSTRUCT-only GGen
+  workbench forward to a private Fly worker; ordinary authenticated JSON, not JSON:API.
+- **Browser surface** — `GET /` and the `GET /next-read` LiveView (public, browser
+  pipeline). Dev-only routes (`/dev/dashboard`, `/dev/mailbox`,
+  `/dev/dashboards/autofde-lab`, `/admin`) mount only under
+  `Application.compile_env(:xaas, :dev_routes)`.
+
 ## See Also
 
 - `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
   `lib/xaas_web/internal_api_router.ex` — the three real router files this doc documents
-- `lib/xaas_web/plugs/require_internal_api_token.ex` — the real auth plug
+- `lib/xaas_web/plugs/require_internal_api_token.ex`,
+  `lib/xaas_web/plugs/set_internal_api_system_actor.ex`,
+  `lib/xaas_web/plugs/audit_mcp_tool_call.ex` — the real auth/actor/audit plugs
+- `lib/xaas_web/controllers/execution_fabric_controller.ex`, `lib/xaas/ultracode/lease.ex` —
+  the real execution-fabric surface and its lease-gated actuation kernel
 - `lib/xaas/operations/capability_liveness_receipt.ex`,
   `lib/xaas/operations/capability_liveness_regressions.ex`,
   `lib/mix/tasks/xaas.ingest_capability_receipts.ex` — the real MAPE-K loop backing
   `/internal-api/capability_liveness_receipts` and `/internal-api/capability_liveness_regressions`
 - `lib/xaas/telemetry/ocel_ash_emitter.ex` — the real OCEL v2 emitter backing `/internal-api/ocel_summary`
+- `priv/ggen_igniter/mcp_a2a/xaas-surface.ttl` → `XaasWeb.McpScope` — the generated `/mcp` scope
 - `docs/ASH-MIGRATION-PLAN.md` — Phase 5 item 2, the still-open decision on a real
   customer-facing mutation surface
 - `test/xaas_web/controllers/capability_regressions_controller_test.exs`,
