@@ -1,0 +1,81 @@
+2026-09-23T19:46:45.968139Z  INFO ggen.cli{command=sync run version="26.9.18"}:pipeline.emit{operation.name="pipeline.emit" operation.type="pipeline" pipeline.stage="emit" pipeline.duration_ms=0 pipeline.files_generated=0}: ggen_engine::sync: close time.busy=663µs time.idle=1.67ms
+2026-09-23T19:46:45.968183Z  INFO ggen.cli{command=sync run version="26.9.18"}:pipeline.generate{operation.name="pipeline.generate" operation.type="pipeline" pipeline.stage="generate" pipeline.duration_ms=5}: ggen_engine::sync: close time.busy=5.35ms time.idle=2.39ms
+2026-09-23T19:46:45.968191Z  INFO ggen.cli{command=sync run version="26.9.18"}:pipeline.validate{operation.name="pipeline.validate" operation.type="pipeline" pipeline.stage="validate" pipeline.duration_ms=0}: ggen_engine::sync: close time.busy=18.9µs time.idle=8.08ms
+2026-09-23T19:46:45.968196Z  INFO ggen.cli{command=sync run version="26.9.18"}:pipeline.extract{operation.name="pipeline.extract" operation.type="pipeline" pipeline.stage="extract" pipeline.duration_ms=0}: ggen_engine::sync: close time.busy=250ns time.idle=8.10ms
+2026-09-23T19:46:45.968239Z  INFO ggen.cli{command=sync run version="26.9.18"}:pipeline.load{operation.name="pipeline.load" operation.type="pipeline" pipeline.stage="load" pipeline.duration_ms=2}: ggen_engine::sync: close time.busy=2.54ms time.idle=8.15ms
+{
+  "written": [],
+  "skipped": [
+    [
+      "marketplace/xaas-fabric/scripts/xaas-lease.mjs",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/agents/xaas-worker.md",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/commands/xaas.md",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/hooks/hooks.json",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/.claude-plugin/marketplace.json",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/.mcp.json",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/.zcode-plugin/plugin.json",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/scripts/xaas-gate.mjs",
+      "unchanged: content identical"
+    ],
+    [
+      "marketplace/xaas-fabric/skills/xaas-worker/SKILL.md",
+      "unchanged: content identical"
+    ]
+  ],
+  "graph_hash_hex": "116403899f51b9f8abed3dba948f901ab94f5d956d681b70dc8b7e857697a4ae",
+  "decisions": {
+    "marketplace/.claude-plugin/marketplace.json": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/.mcp.json": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/.zcode-plugin/plugin.json": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/agents/xaas-worker.md": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/commands/xaas.md": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/hooks/hooks.json": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/scripts/xaas-gate.mjs": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/scripts/xaas-lease.mjs": "skipped: unchanged: content identical",
+    "marketplace/xaas-fabric/skills/xaas-worker/SKILL.md": "skipped: unchanged: content identical"
+  },
+  "packs": {
+    "ultracode_actuation_lease": "01085142c6dbfbc23b79d70448d5203ad3842364c19d6a3457b1df008c1ba610",
+    "zcode_plugin": "ee49a36734a6771ba45875fb1badbf2c544031a0308039caf54933b4e52277ad"
+  },
+  "closure": {
+    "actuator": "ggen@26.9.18",
+    "ggen.toml": "c03d8454fc929b7eceac280bae681a59ee537dfa8b940b87d3c34d055eb39b71",
+    "ontology.ttl": "b055103c43b082bbc6c16cc0576bbd1b91f437a06a2c59f7f79378032efe2685",
+    "packs/ultracode-actuation-lease-pack/ontology.ttl": "17a64c7b9192d1ff95a2c6d01fb99f22fcf4557c6f0fed35522697bf8ac4e755",
+    "packs/ultracode-actuation-lease-pack/templates/script-lease.mjs.tmpl": "49aa77d95b5be2b7102b4811f80e6d4bb1ccb38766d0b71a57592a60eab6e44d",
+    "packs/zcode-plugin-pack/ontology.ttl": "d94ab6b235b2f5cb722926084d71baacc90df2684b69fd1576ed55196c593d01",
+    "packs/zcode-plugin-pack/templates/agent-xaas-worker.md.tmpl": "31f2db63ac63930f589e878e77bad5701efb1e79cc149de71676645d53f6f6c7",
+    "packs/zcode-plugin-pack/templates/command-xaas.md.tmpl": "667692719dc7c09dd8bd51d72d8d1aea4072eb3b8de9d857e0c88184b5d5750a",
+    "packs/zcode-plugin-pack/templates/hooks.json.tmpl": "f21757918a1d90d527c421a9bf9e106f46f71ba5cedc8e754ccbc14426a449bb",
+    "packs/zcode-plugin-pack/templates/marketplace.json.tmpl": "39cc75c034d1b5aac5ce91d4b466c267d2dcd267ef935cc84ec549784e8a92e2",
+    "packs/zcode-plugin-pack/templates/mcp.json.tmpl": "459b5ae1afd51edf4ad6c6835beda297b77ee993f9a2ab2645519dc1da8b8529",
+    "packs/zcode-plugin-pack/templates/plugin.json.tmpl": "4d31efd8f90ff5b29d4e385bfcb63568f4e999cc22bb9154e2bd2bb9cd2118a6",
+    "packs/zcode-plugin-pack/templates/script-xaas-gate.mjs.tmpl": "1f115767e494952708dae6fd43665a6b3d4d61f8fc72230aaffab8a3ba981d89",
+    "packs/zcode-plugin-pack/templates/skill-xaas-worker.md.tmpl": "cb870d562dd822a5b662e9c98d35c998afd78ae3c1f906c2ea128424097a1559",
+    "policy:frontmatter-projection-limits": "max_query_rows=4096;max_outputs=8192;             max_total_rendered_bytes=67108864;             max_output_bytes=10485760",
+    "project": "xaas-zcode-plugin"
+  }
+}
+2026-09-23T19:46:45.968322Z  INFO ggen.cli{command=sync run version="26.9.18"}: ggen_cli_lib: close time.busy=11.4ms time.idle=2.63µs

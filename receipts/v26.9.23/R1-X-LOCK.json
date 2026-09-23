@@ -1,0 +1,162 @@
+{
+ "identity": {
+  "subject": "R1-X-LOCK",
+  "repo": "/Users/sac/xaas",
+  "repo_slug": "seanchatmangpt/xaas",
+  "subject_sha": "27cbcbe2d98962e4c4fe4bcf617fe900434b122e",
+  "base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+  "branch": "v23/R1-X-LOCK",
+  "worktree": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+  "work_order": null,
+  "tuple_digest": null,
+  "tuple_digest_why": "no goal.ttl order for lane R1-X-LOCK (grep 'WO-R1\\|R1-X' docs/sjira/v26.9.23/goal.ttl exit 1): release-defect repair lane; the receipt is not linked by the stop court",
+  "defect": "F1 (release qualification /Users/sac/wt/v26922/v26923/receipts/fleet/xaas-e999e62b63c680517b9a562cef877d8b09b0cfdd.json failures[0])",
+  "prd_ard": "ARD section 22 (generated artifacts are not manually edited where a generator owns them), ARD section 5.5 (deterministic projection), PRD PR-013 (Replay), PRD section 13 (Release Stop Condition); operator release closure procedure (DRIVER.md): only the named defect changes"
+ },
+ "authority": {
+  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-LOCK, wave R1a)",
+  "ceiling": "CONSTRUCT",
+  "grant": "operator release closure procedure via /Users/sac/wt/v26922/v26923/DRIVER.md (12:50 PT repair wave R1a = wf_7a7c7064-905, lanes/wave-R1a.json, F1 R1-X-LOCK)"
+ },
+ "consequence": {
+  "commits": [
+   "27cbcbe2d98962e4c4fe4bcf617fe900434b122e"
+  ],
+  "files_changed": [
+   "priv/zcode_plugin/ggen.lock"
+  ],
+  "receipt_files": [
+   "receipts/v26.9.23/R1-X-LOCK.json",
+   "receipts/v26.9.23/R1-X-LOCK.gate/"
+  ],
+  "remote_effects": [],
+  "generated_vs_handwritten": "ggen.lock is generator output (ggen 26.9.18 `ggen sync run` after deleting the lock, the FM-PACK-008 remediation); zero hand-written product lines; no HANDWRITTEN.md row needed",
+  "projection_change": "none: the re-rendered marketplace/ tree is byte-identical to the committed one (diff -r exit 0), because 068c1d2 already committed the projection of the edited template"
+ },
+ "toolchain": {
+  "elixir": "Elixir 1.20.2 (compiled with Erlang/OTP 28)",
+  "erts": "16.4.0.2",
+  "elixir_bin": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir",
+  "mix_bin": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix",
+  "tool_versions_pin": {
+   "elixir": "1.20.2-otp-28",
+   "erlang": "28.5.0.2"
+  },
+  "tool_versions_pin_used": true,
+  "build": "fresh _build/test compiled under the pin in this worktree (only _build/dev pre-existed; deps/ APFS-cloned, mix.lock identical to xaas-int)",
+  "ggen": "ggen 26.9.18",
+  "ggen_path": "/Users/sac/.local/bin/ggen -> /opt/homebrew/bin/ggen -> /opt/homebrew/Cellar/ggen/26.9.18/bin/ggen (first on PATH; the binary System.find_executable(\"ggen\") resolves in projection_test.exs)",
+  "ggen_sha256": "357cfd4e595c6f8a8341ab95088b8e4e70acee58663c3daf065cc0824d6f5a26",
+  "validator": "python3 3.14.3, jsonschema 4.23.0",
+  "log": "receipts/v26.9.23/R1-X-LOCK.gate/toolchain.log"
+ },
+ "root_cause": {
+  "classification": "generator drift, pre-existing on origin/main (merge-composition drift)",
+  "chain": [
+   "191e7d5 (release lineage) renamed priv/zcode_plugin/templates/plugin.json.tmpl -> packs/zcode-plugin-pack/templates/plugin.json.tmpl (100% rename) and wrote ggen.lock pinning zcode_plugin at blake3:9a96572b...",
+   "3a0a8a2 (main lineage) edited the old path templates/plugin.json.tmpl and marketplace plugin.json: \"sensitive\": false -> true",
+   "068c1d2 (merge main c2a7ea9 into release/v26.9.22) applied 3a0a8a2's edit to the renamed pack template via rename detection; the pack now hashes to blake3:ee49a367... but ggen.lock was not regenerated",
+   "origin/main carries the stale lock (git show origin/main:priv/zcode_plugin/ggen.lock -> 9a96572b...; 068c1d2 is an ancestor of origin/main)"
+  ],
+  "sha256": {
+   "base_lock": "61ce9c9ef8a870bf78cf9a193a26e243fc4655d4109de97702c0a3a7622dea5b",
+   "relocked_lock": "508605ec931b053ad80b2c359a3bb8deaf307bc35d7474303f9e3c977b43735d",
+   "pack_template_plugin.json.tmpl": "8a7790e23372d8316e0ed27b23fc252d111672df16cb4f564023f122b94e414c",
+   "projection_plugin.json": "860a08d460b27a9abc0e2ca964b7a76b2024b9f8b054bed423174b42389db6dc"
+  }
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/R1-X-LOCK.gate/ (tracked in git on branch v23/R1-X-LOCK)",
+  "commands": [
+   {
+    "cmd": "git archive e999e62 priv/zcode_plugin | tar -x -C base && (cd base/priv/zcode_plugin && ggen sync run)",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-LOCK",
+    "exit": 1,
+    "summary": "base subject reproduces F1: [FM-PACK-008] zcode_plugin lock blake3:9a96572b... vs on-disk blake3:ee49a367...",
+    "output_sha256": "6b3f2ec88a2664109c5072492f576ed112e8459f9b61ac18e4beec1e2edd4544",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/base-sync.log",
+    "role": "failure reproduction on base (not the subject)"
+   },
+   {
+    "cmd": "git archive e999e62 priv/zcode_plugin | tar -x -C relock && (cd relock/priv/zcode_plugin && rm ggen.lock && ggen sync run)",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-LOCK",
+    "exit": 0,
+    "summary": "independent re-lock: cmp ggen.lock vs committed 27cbcbe lock -> identical; diff -r marketplace vs committed -> identical; diff -rq base vs relock -> only ggen.lock plus ignored caches .ggen/ .ggen-v2/",
+    "output_sha256": "afd92423ab5319d0871bafd98f55b5a027ed3bca00e8545fa50c933be0d781d6",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync.log"
+   },
+   {
+    "cmd": "(cd relock/priv/zcode_plugin && ggen sync run)",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-LOCK",
+    "exit": 0,
+    "summary": "second sync against the fresh lock exits 0; lock unchanged (cmp identical, sha256 508605ec...)",
+    "output_sha256": "55bfaa90c8d6176315671fabe9e6013070acda0a732cb2f411f5f0c647ed80ec",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync2.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/zcode_plugin'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 1,
+    "summary": "LANE GATE at 27cbcbe (clean tree): format 0; compile --force --warnings-as-errors FAILS on `warning: unused require Ash.Query` lib/xaas/ultracode/semantic_drive.ex:78 under Elixir 1.20.2; mix test not reached. PRE-EXISTING: git diff --name-only e999e62 27cbcbe = priv/zcode_plugin/ggen.lock only, so compile inputs are byte-identical to the base; the release qualification ran under ambient 1.19.5 (tool_versions_pin_used false), which does not emit this warning",
+    "output_sha256": "cc7f2ca929b1ba694407d1b937e4b44e0cf211db2064f8307e426bf55e4bfbdf",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/gate-27cbcbe.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix test test/xaas/zcode_plugin'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 0,
+    "summary": "at 27cbcbe under the pin: 33 passed (0 skipped: ggen on PATH, so projection_test.exs:31 executed)",
+    "output_sha256": "e426882406d062e10b04fd5e142d7a2e278cb3b90d21abcd99de835433baa6d8",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/test-zcode-27cbcbe.log"
+   },
+   {
+    "cmd": "git show e999e62:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix test test/xaas/zcode_plugin/projection_test.exs; git show 27cbcbe:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 2,
+    "summary": "REVERT-MUTATION (lock reverted to base): 2/3 passed, projection_test MatchError on {_out, 0} = ggen sync run with FM-PACK-008; lock restored, git status --porcelain empty afterwards",
+    "output_sha256": "920a004c4d6ab4cbe212ff2d0f06d9324b360aa1a901722d90b19b5cd492a421",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/mutation-revert-lock.log",
+    "role": "falsifier (expected non-zero)"
+   },
+   {
+    "cmd": "apply probe-unused-require.diff (delete `require Ash.Query` + blank line, semantic_drive.ex:78-79) && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/zcode_plugin'; restore semantic_drive.ex from 27cbcbe",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 0,
+    "summary": "COMPOSITION PROBE (not committed): with the unused require removed the full lane gate exits 0, 33 passed; the only remaining warnings are deps/ex4pm/mix.exs Application.get_env (dependency, pre-existing). File restored, tree clean",
+    "output_sha256": "1b8a9c4105b18d33e9154a3e4f34cebdb21a988e7c9fcd334d067e3d142f654d",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/probe-gate-composed.log",
+    "role": "probe"
+   },
+   {
+    "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\|:meck\\|Mimic\" test/xaas/zcode_plugin/",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 1,
+    "summary": "0 matches (Chicago: real ggen binary, real temp dir)",
+    "role": "falsifier (expected exit 1 = no match)"
+   }
+  ]
+ },
+ "standing": {
+  "value": "PARTIAL_ALIVE",
+  "derived_from": "at exact subject 27cbcbe under the .tool-versions pin: F1 closed (mix test test/xaas/zcode_plugin 33 passed incl. projection_test.exs:31; independent scratch re-lock byte-identical to the committed lock; revert-mutation of the lock makes projection_test fail with FM-PACK-008). Not ALIVE: the lane gate exits 1 at compile --warnings-as-errors on a pre-existing pinned-toolchain warning (semantic_drive.ex:78 unused require Ash.Query) outside this lane's diff; with that line removed (probe) the same gate exits 0",
+  "broken_term": "admission_vacuous",
+  "broken_term_scope": "the pre-existing gate break, not F1: e999e62 was admitted by gates run under ambient Elixir 1.19.5 instead of the .tool-versions pin 1.20.2, so compile --warnings-as-errors never refused semantic_drive.ex:78",
+  "gate_failure_classification": "pre-existing (toolchain pin), not subject defect",
+  "dependency": "the unused-require removal is in progress in lane R1-X-COURTS (uncommitted diff to lib/xaas/ultracode/semantic_drive.ex observed read-only in /Users/sac/wt/v26922/v23/R1-X-COURTS, removes `require Ash.Query`); also scan candidate SCAN-CE23-5-XA-unused-require. The lane gate is expected to pass on the int head once R1-X-COURTS (or any fix of that line) merges before or with R1-X-LOCK"
+ },
+ "falsifiers": {
+  "F1_reproduction": "base e999e62 `ggen sync run` exit 1 FM-PACK-008 (base-sync.log)",
+  "revert_mutation": "lock reverted to e999e62 -> projection_test.exs fails (exit 2); acceptance is not vacuous",
+  "determinism": "two independent ggen runs from the base inputs yield the committed lock byte-for-byte (sha256 508605ec...), and a rerun against the fresh lock is a no-op",
+  "chicago_mock_grep": {
+   "at": "27cbcbe2d98962e4c4fe4bcf617fe900434b122e",
+   "exit": 1,
+   "matches": 0
+  },
+  "llm_on_path": "none: ggen and mix only; no model API on any executed path"
+ },
+ "open": [
+  "Lane gate compile step depends on removal of the unused `require Ash.Query` (semantic_drive.ex:78), owned by R1-X-COURTS / SCAN-CE23-5-XA-unused-require; re-run the lane gate on the int head after both merge",
+  "Guard candidate (successor, not done here): a pre-merge check that runs `ggen sync run` in priv/zcode_plugin (as projection_test does) on merge commits touching packs/, so a rename-detected edit cannot leave the lock stale"
+ ]
+}
