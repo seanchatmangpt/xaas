@@ -28,25 +28,47 @@ defmodule Xaas.Ultracode.RecipeWorker do
        A non-zero exit, timeout, or spawn error refuses the lease
        (`:recipe_step_failed`) with the step evidence.
     4. DELTA -- `git status --porcelain` empty: the recipe changed nothing,
-       `Lease.refuse(token, :no_delta)`. Otherwise the delta is committed
-       (message via file, recipe-worker identity) and the lease is closed
-       `:alive` at the new head with evidence `recipe`, `argv_sha256`,
-       `executor: "recipe-worker"`. `Lease.close/4` then applies the
-       fabric's own court: head verification plus the Run's registered
-       verifier suite -- the worker's `:alive` is a claim, never standing.
+       `Lease.refuse(token, :no_delta)`. Otherwise the delta is staged into
+       a PRIVATE index (`GIT_INDEX_FILE` under the epoch's tmp dir; the
+       worktree's own index is not written), turned into a commit object
+       with `git commit-tree` (message via file, recipe-worker identity, no
+       target hook runs), and published by the FENCED ref update below.
+       The lease is then closed `:alive` at the new head with evidence
+       `recipe`, `argv_sha256`, `executor: "recipe-worker"`.
+       `Lease.close/4` applies the fabric's own court: head verification
+       plus the Run's registered verifier suite -- the worker's `:alive` is
+       a claim, never standing.
 
   ## The lease is the only write authority
 
-  Between steps (and after the last one, before `git add`) the worker
+  Between steps (and after the last one, before any staging) the worker
   renews its lease. A renew error means the lease is lost -- expired,
   closed or refused by someone else, or re-claimed by another owner -- and
-  the recipe HALTS there: no further step, no `git add`, no commit. The
-  worker returns `{:error, {:lease_lost, reason}}` (the lease token is
-  redacted to its sha256 fingerprint in `reason`), refuses the lease when
-  the token is still bound to it (so the slot and a `:refused` receipt are
-  sealed), and otherwise leaves the epoch to the engine's reaper or to its
-  new owner. The step output stays uncommitted in the worktree; it is only
-  read (`git status`) and named in the log.
+  the recipe HALTS there: no further step, no staging, no commit.
+
+  The one history write -- moving `HEAD` to the recipe's commit -- is
+  fenced by the lease row itself: `git update-ref HEAD <commit> <base_head>`
+  (a compare-and-swap on the base head) runs inside a `Xaas.Repo`
+  transaction that holds the epoch row `FOR UPDATE` and only while that
+  row still binds this token, is `:running` and is not past
+  `lease_expires_at`. Every competing lease write (claim, renew, close,
+  refuse) is a row-level `UPDATE` on the same row, so it waits for the
+  fence; a lease lost at any moment before the fence -- including after
+  the last renew, while the delta is being staged -- leaves `HEAD`, the
+  branch and the worktree's index untouched (the unreferenced commit
+  object is only named as `unreferenced_commit`).
+
+  On a loss the worker returns `{:error, {:lease_lost, reason}}`, refuses
+  the lease when the token is still bound to it (so the slot and a
+  `:refused` receipt are sealed), and otherwise leaves the epoch to the
+  engine's reaper or to its new owner. The step output stays uncommitted in
+  the worktree; it is only read (`git status`) and named in the log.
+
+  The lease token never leaves this worker: every `{:error, reason}` it
+  returns and every log line it writes carries the token only as its
+  sha256 fingerprint (`"lease:sha256:<hex>"`), including the `Lease` errors
+  that embed the raw token (`{:lease_expired, token}`, `{:no_lease, token}`,
+  `{:lease_stale, token}`) on the refuse and close paths.
 
   ## The toolchain is resolved from the target, never pinned to a host
 
@@ -59,7 +81,11 @@ defmodule Xaas.Ultracode.RecipeWorker do
   plus the node's own ERTS `bin`. Such a recipe may not pin `PATH` in its
   env (admission refuses it). The resolved identity is recorded as
   `toolchain` in the closing (or refusing) lease evidence; an unresolvable
-  toolchain refuses the lease `:toolchain_unresolved`.
+  toolchain refuses the lease `:toolchain_unresolved`. Only an ABSENT
+  `.tool-versions` (no directory entry at all) means "no pin": a pin file
+  that exists but cannot be read (`eacces`, `eisdir`, a dangling symlink,
+  ...) is logged and refused `:toolchain_unresolved`, never silently
+  replaced by the running node's toolchain.
 
   No LLM, no network, no credential is on this path: the only executables
   are the recipe argv lists an operator registered in config.
@@ -67,7 +93,9 @@ defmodule Xaas.Ultracode.RecipeWorker do
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, Lease, Run, TargetSuites, Verifier}
+  import Ecto.Query, only: [from: 2]
+
+  alias Xaas.Ultracode.{DurationBudget, Epoch, Lease, Run, TargetSuites, Verifier}
 
   @executor "recipe-worker"
   @default_provider "recipe"
@@ -152,15 +180,17 @@ defmodule Xaas.Ultracode.RecipeWorker do
   `$ASDF_DATA_DIR`, else `~/.asdf`. Returns the JSON-safe identity map
   (`source`, `elixir`, `erlang`, `mix`, `erl`, `path`, `tool_versions`,
   `pin_satisfied`) whose `"path"` becomes the recipe's `PATH`, or
-  `{:error, {:toolchain_unresolved, why}}`.
+  `{:error, {:toolchain_unresolved, why}}` -- also when
+  `<worktree>/.tool-versions` exists but cannot be read (logged; only an
+  absent file falls through to step 2).
   """
   @spec toolchain(String.t()) :: {:ok, map()} | {:error, {:toolchain_unresolved, String.t()}}
   def toolchain(worktree) when is_binary(worktree) do
-    {pins, digest} = tool_versions(worktree)
-
-    case asdf_toolchain(pins) do
-      {:ok, identity} -> {:ok, Map.merge(identity, pin_identity(pins, digest, true))}
-      :unavailable -> node_toolchain(pins, digest)
+    with {:ok, pins, digest} <- tool_versions(worktree) do
+      case asdf_toolchain(pins) do
+        {:ok, identity} -> {:ok, Map.merge(identity, pin_identity(pins, digest, true))}
+        :unavailable -> node_toolchain(pins, digest)
+      end
     end
   end
 
@@ -233,20 +263,28 @@ defmodule Xaas.Ultracode.RecipeWorker do
       "executor" => @executor
     }
 
-    with {:ok, worktree} <- contained(leased.worktree),
-         {:ok, base_head} <- git_head(worktree),
-         :ok <- clean_before(worktree),
-         {:ok, recipe, toolchain} <- bind_toolchain(recipe, worktree) do
-      base = base |> Map.put("base_head", base_head) |> Map.put("toolchain", toolchain)
-      tmp = make_tmp(leased.id)
+    result =
+      with {:ok, worktree} <- contained(leased.worktree),
+           {:ok, base_head} <- git_head(worktree),
+           :ok <- clean_before(worktree),
+           {:ok, recipe, toolchain} <- bind_toolchain(recipe, worktree) do
+        base = base |> Map.put("base_head", base_head) |> Map.put("toolchain", toolchain)
+        tmp = make_tmp(leased.id)
 
-      try do
-        run_and_settle(token, worktree, tmp, recipe, base)
-      after
-        File.rm_rf(tmp)
+        try do
+          run_and_settle(token, worktree, tmp, recipe, base)
+        after
+          File.rm_rf(tmp)
+        end
+      else
+        {:refuse, reason, evidence} -> refuse(token, reason, Map.merge(base, evidence))
       end
-    else
-      {:refuse, reason, evidence} -> refuse(token, reason, Map.merge(base, evidence))
+
+    # The single exit for everything after the claim: no error carries the
+    # raw token (see the moduledoc).
+    case result do
+      {:error, error} -> {:error, redact(error, token)}
+      other -> other
     end
   end
 
@@ -324,18 +362,31 @@ defmodule Xaas.Ultracode.RecipeWorker do
     Logger.error(
       "[recipe-worker] lease lost before commit: recipe=#{evidence["recipe"]} " <>
         "lease=#{fingerprint(token)} reason=#{inspect(reason)} refuse=#{refusal} " <>
-        "uncommitted=#{inspect(uncommitted)}"
+        "uncommitted=#{inspect(uncommitted)} " <>
+        "unreferenced_commit=#{evidence["unreferenced_commit"] || "none"}"
     )
 
     {:error, {:lease_lost, reason}}
   end
 
   # The lease token is the only capability: it never leaves this worker in a
-  # return value or a log line, only its sha256 fingerprint does.
-  defp redact(token, token), do: "lease:sha256:" <> fingerprint(token)
+  # return value or a log line, only its sha256 fingerprint does. Applied to
+  # every error `execute/4` returns and to every logged Lease error, at any
+  # depth: tuples, lists, maps and structs (Ash errors), and binaries that
+  # merely contain the token.
+  defp redact(binary, token) when is_binary(binary) do
+    if String.contains?(binary, token),
+      do: String.replace(binary, token, "lease:sha256:" <> fingerprint(token)),
+      else: binary
+  end
 
   defp redact(tuple, token) when is_tuple(tuple),
     do: tuple |> Tuple.to_list() |> Enum.map(&redact(&1, token)) |> List.to_tuple()
+
+  # Cons-cell recursion: also safe on an improper list's tail.
+  defp redact([head | tail], token), do: [redact(head, token) | redact(tail, token)]
+
+  defp redact(map, token) when is_map(map), do: :maps.map(fn _k, v -> redact(v, token) end, map)
 
   defp redact(other, _token), do: other
 
@@ -359,23 +410,142 @@ defmodule Xaas.Ultracode.RecipeWorker do
     }
   end
 
+  # Stage + commit object off to the side, publish under the lease fence,
+  # then close (see the moduledoc, "The lease is the only write authority").
   defp commit_and_close(token, worktree, tmp, evidence) do
     message_file = Path.join(tmp, "COMMIT_MSG")
     File.write!(message_file, commit_message(evidence))
+    base_head = evidence["base_head"]
 
-    with {_, 0} <- git(worktree, ["add", "-A"]),
-         {_, 0} <- git(worktree, ["commit", "-q", "-F", message_file]),
+    with {:ok, commit} <- candidate_commit(worktree, tmp, message_file, base_head),
+         :ok <- fenced_ref_update(token, worktree, commit, base_head),
          {:ok, head} <- git_head(worktree) do
+      evidence = sync_index(worktree, evidence)
+
       case Lease.close(token, head, :alive, evidence) do
-        {:ok, _epoch, _receipt} -> :ok
-        {:error, reason} -> {:error, reason}
+        {:ok, _epoch, _receipt} ->
+          :ok
+
+        {:error, error} ->
+          # The commit was published under a live, locked lease; the close
+          # itself lost (e.g. the lease expired after the fence). Typed and
+          # logged -- the engine's reaper settles the epoch.
+          error = redact(error, token)
+
+          Logger.error(
+            "[recipe-worker] close after fenced commit failed: recipe=#{evidence["recipe"]} " <>
+              "lease=#{fingerprint(token)} head=#{head} error=#{inspect(error)}"
+          )
+
+          {:error, error}
       end
     else
-      {out, code} when is_integer(code) ->
-        refuse(token, :commit_failed, Map.put(evidence, "git", "#{code}: #{out}"))
+      {:lease_lost, reason, commit} ->
+        lease_lost(token, worktree, reason, Map.put(evidence, "unreferenced_commit", commit))
 
       {:refuse, reason, extra} ->
         refuse(token, reason, Map.merge(evidence, extra))
+    end
+  end
+
+  # The delta as a commit object whose parent is `base_head`, built through a
+  # private index so nothing the worktree's own index or refs see changes
+  # until the fence publishes it. `commit-tree` runs no hook of the target.
+  defp candidate_commit(worktree, tmp, message_file, base_head) do
+    index = [{"GIT_INDEX_FILE", Path.join(tmp, "index")}]
+
+    with {_, 0} <- git(worktree, ["read-tree", base_head], index),
+         {_, 0} <- git(worktree, ["add", "-A"], index),
+         {tree, 0} <- git(worktree, ["write-tree"], index),
+         {:ok, tree} <- object_id(tree),
+         {commit, 0} <-
+           git(worktree, ["commit-tree", tree, "-p", base_head, "-F", message_file]),
+         {:ok, commit} <- object_id(commit) do
+      {:ok, commit}
+    else
+      {out, code} when is_integer(code) ->
+        {:refuse, :commit_failed, %{"git" => "#{code}: #{out}"}}
+
+      {:error, {:not_an_object_id, out}} ->
+        {:refuse, :commit_failed, %{"git" => "unexpected git output: #{out}"}}
+    end
+  end
+
+  defp object_id(out) do
+    id = String.trim(out)
+
+    if Regex.match?(~r/\A[0-9a-f]{40}(?:[0-9a-f]{24})?\z/, id),
+      do: {:ok, id},
+      else: {:error, {:not_an_object_id, out}}
+  end
+
+  # THE FENCE: `HEAD` moves (compare-and-swap on `base_head`) only inside a
+  # transaction holding the epoch row `FOR UPDATE` while that row still
+  # binds `token`, is `:running` and is not past `lease_expires_at` -- the
+  # same liveness `Lease.renew/1` proves, on the same clock
+  # (`DurationBudget.now/0`), but held across the write instead of checked
+  # before it.
+  defp fenced_ref_update(token, worktree, commit, base_head) do
+    fenced =
+      Xaas.Repo.transaction(fn ->
+        row = Xaas.Repo.one(from(e in Epoch, where: e.lease_token == ^token, lock: "FOR UPDATE"))
+
+        with :ok <- live_row(row, token),
+             {_, 0} <-
+               git(worktree, [
+                 "update-ref",
+                 "-m",
+                 "recipe-worker: fenced commit",
+                 "HEAD",
+                 commit,
+                 base_head
+               ]) do
+          :ok
+        else
+          {:lost, reason} -> Xaas.Repo.rollback({:lost, reason})
+          {out, code} -> Xaas.Repo.rollback({:ref_update_failed, "#{code}: #{out}"})
+        end
+      end)
+
+    case fenced do
+      {:ok, :ok} ->
+        :ok
+
+      {:error, {:lost, reason}} ->
+        {:lease_lost, redact(reason, token), commit}
+
+      {:error, {:ref_update_failed, git_out}} ->
+        {:refuse, :ref_update_failed, %{"git" => git_out, "unreferenced_commit" => commit}}
+
+      {:error, other} ->
+        {:refuse, :fence_failed,
+         %{"fence" => inspect(redact(other, token)), "unreferenced_commit" => commit}}
+    end
+  end
+
+  defp live_row(nil, token), do: {:lost, {:no_lease, token}}
+
+  defp live_row(%Epoch{state: :running, lease_expires_at: %DateTime{} = expires_at}, token) do
+    if DateTime.compare(expires_at, DurationBudget.now()) == :lt,
+      do: {:lost, {:lease_expired, token}},
+      else: :ok
+  end
+
+  defp live_row(%Epoch{state: :running}, token), do: {:lost, {:lease_expired, token}}
+  defp live_row(%Epoch{state: state}, _token), do: {:lost, {:lease_not_live, state}}
+
+  # After the fenced publish the worktree's own index still holds the base
+  # tree; `read-tree HEAD` makes it the published tree (index only, the
+  # working tree is not touched) and `update-index --refresh` restores the
+  # stat cache. (`read-tree -m HEAD` refuses here: the changed paths are not
+  # up to date with the old index.) A failure is recorded, not hidden: the
+  # history write already happened under the lease.
+  defp sync_index(worktree, evidence) do
+    with {_, 0} <- git(worktree, ["read-tree", "HEAD"]),
+         {_, 0} <- git(worktree, ["update-index", "-q", "--refresh"]) do
+      evidence
+    else
+      {out, code} -> Map.put(evidence, "index_sync", "#{code}: #{out}")
     end
   end
 
@@ -389,10 +559,23 @@ defmodule Xaas.Ultracode.RecipeWorker do
     """
   end
 
+  # A refusal that cannot be sealed (the lease was lost meanwhile) is typed
+  # and logged, with the token redacted: `Lease.refuse/3` embeds it in
+  # `{:lease_expired, token}` / `{:no_lease, token}`.
   defp refuse(token, reason, evidence) do
     case Lease.refuse(token, reason, evidence) do
-      {:ok, _epoch, _receipt} -> :ok
-      {:error, error} -> {:error, error}
+      {:ok, _epoch, _receipt} ->
+        :ok
+
+      {:error, error} ->
+        error = redact(error, token)
+
+        Logger.error(
+          "[recipe-worker] refusal #{reason} not sealed: recipe=#{evidence["recipe"]} " <>
+            "lease=#{fingerprint(token)} error=#{inspect(error)}"
+        )
+
+        {:error, error}
     end
   end
 
@@ -416,8 +599,15 @@ defmodule Xaas.Ultracode.RecipeWorker do
   # Toolchain resolution (`toolchain/1`)
   # ------------------------------------------------------------------
 
+  # `{:ok, pins, digest}`; `{:ok, %{}, nil}` ONLY when the target has no
+  # `.tool-versions` entry at all. An entry that exists but cannot be read
+  # (eacces, eisdir, eloop, a dangling symlink's enoent, ...) is a typed
+  # `{:error, {:toolchain_unresolved, why}}`, logged -- never read as "no
+  # pin", which would silently substitute the running node's toolchain.
   defp tool_versions(worktree) do
-    case File.read(Path.join(worktree, ".tool-versions")) do
+    path = Path.join(worktree, ".tool-versions")
+
+    case File.read(path) do
       {:ok, bytes} ->
         pins =
           bytes
@@ -431,11 +621,27 @@ defmodule Xaas.Ultracode.RecipeWorker do
               acc
           end)
 
-        {pins, "sha256:" <> (:crypto.hash(:sha256, bytes) |> Base.encode16(case: :lower))}
+        {:ok, pins, "sha256:" <> (:crypto.hash(:sha256, bytes) |> Base.encode16(case: :lower))}
 
-      {:error, _absent} ->
-        {%{}, nil}
+      {:error, :enoent} ->
+        case File.lstat(path) do
+          {:error, :enoent} -> {:ok, %{}, nil}
+          _entry_exists -> unreadable_pins(path, :enoent)
+        end
+
+      {:error, reason} ->
+        unreadable_pins(path, reason)
     end
+  end
+
+  defp unreadable_pins(path, reason) do
+    why = "target .tool-versions exists but is unreadable (#{inspect(reason)}): #{path}"
+
+    Logger.error(
+      "[recipe-worker] #{why}; refusing instead of substituting the running node's toolchain"
+    )
+
+    {:error, {:toolchain_unresolved, why}}
   end
 
   defp asdf_toolchain(%{"elixir" => elixir} = pins) do
@@ -585,8 +791,8 @@ defmodule Xaas.Ultracode.RecipeWorker do
     end
   end
 
-  defp git(worktree, args) do
-    System.cmd("git", ["-C", worktree | args], env: @git_identity, stderr_to_stdout: true)
+  defp git(worktree, args, env \\ []) do
+    System.cmd("git", ["-C", worktree | args], env: @git_identity ++ env, stderr_to_stdout: true)
   end
 
   defp make_tmp(epoch_id) do

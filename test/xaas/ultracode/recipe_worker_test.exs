@@ -17,7 +17,10 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
   between the steps (expired through the Epoch `:renew_lease` action and
   re-claimed through `Lease.claim_next/3`, or refused through
   `Lease.refuse/3`) and then proves no second step, no staging and no
-  commit happened. No mocks.
+  commit happened. The fence falsifier pauses the worker INSIDE its real
+  `git add` (a real git clean filter configured in the subject repo that
+  blocks on a signal file), i.e. after the last renew, and re-claims the
+  lease there: the fenced ref update must refuse. No mocks.
   """
 
   use ExUnit.Case, async: false
@@ -33,6 +36,8 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
   @capability "recipe:mix-format"
   @court "recipe-format-court"
   @probe "recipe:lease-probe"
+  @stage_probe "recipe:stage-probe"
+  @failing_probe "recipe:failing-probe"
 
   # The canonical `capabilityId` value space of the v26.9.23 wave contract
   # (DRIVER.md / B1 context), pinned as a source string.
@@ -259,7 +264,9 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
       signals = mktmp("signals")
 
       Application.put_env(:xaas, :ultracode_construction_recipes, %{
-        @probe => probe_recipe(signals)
+        @probe => probe_recipe(signals),
+        @stage_probe => stage_probe_recipe(),
+        @failing_probe => failing_probe_recipe(signals)
       })
 
       worktree = git_repo(root, @formatted)
@@ -351,6 +358,99 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
       assert receipt.outcome == :refused
       assert receipt.evidence["reap_reason"] == "worker_ended_without_closing"
     end
+
+    test "lost AFTER the last renew, while the delta is being staged: the fenced ref update refuses; HEAD, branch and the worktree's index untouched",
+         %{root: root, signals: signals} do
+      # The subject's own git runs a real clean filter on `edited.txt` that
+      # signals and blocks: the worker is paused inside its `git add`, after
+      # its last successful renew.
+      worktree = git_repo(root, @formatted, %{".gitattributes" => "edited.txt filter=hold\n"})
+
+      git!(worktree, [
+        "config",
+        "filter.hold.clean",
+        "touch '#{signals}/staging'; while [ ! -f '#{signals}/go' ]; do sleep 0.05; done; cat"
+      ])
+
+      base_head = git!(worktree, ["rev-parse", "HEAD"])
+      branch = git!(worktree, ["symbolic-ref", "HEAD"])
+
+      {_run, epoch} = running_epoch("recipe", @stage_probe, worktree)
+      task = Task.async(fn -> RecipeWorker.run(epoch, %{provider: "recipe"}) end)
+
+      held = await_signal(signals, "staging", epoch)
+      assert held.leased_to == "recipe-worker"
+
+      expire_lease!(held)
+
+      assert {:ok, _stolen, other_token, _run} =
+               Lease.claim_next("recipe", "other-worker", epoch_id: epoch.id)
+
+      # Released inside the capture: every line the worker logs after the
+      # pause is observed.
+      log =
+        capture_log(fn ->
+          release(signals)
+          assert {:error, {:lease_lost, {:no_lease, redacted}}} = Task.await(task, 60_000)
+          send(self(), {:redacted, redacted})
+        end)
+
+      assert_received {:redacted, redacted}
+      assert redacted == "lease:sha256:" <> sha256_hex(held.lease_token)
+      refute log =~ held.lease_token
+      assert log =~ "lease lost before commit"
+
+      # The commit object was built off to the side and never published.
+      assert [_, unreferenced] = Regex.run(~r/unreferenced_commit=([0-9a-f]{40})/, log)
+      assert git!(worktree, ["cat-file", "-t", unreferenced]) == "commit"
+      assert git!(worktree, ["rev-parse", "#{unreferenced}^"]) == base_head
+      refute unreferenced == base_head
+
+      assert git!(worktree, ["rev-parse", "HEAD"]) == base_head
+      assert git!(worktree, ["symbolic-ref", "HEAD"]) == branch
+      assert git!(worktree, ["rev-parse", branch]) == base_head
+      assert git!(worktree, ["rev-list", "--count", "HEAD"]) == "1"
+      assert git!(worktree, ["diff", "--cached", "--name-only"]) == ""
+      assert git!(worktree, ["status", "--porcelain"]) == "?? edited.txt"
+
+      now = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+      assert now.state == :running
+      assert now.leased_to == "other-worker"
+      assert now.lease_token == other_token
+      assert receipts_for(epoch.id) == []
+    end
+
+    test "expired during a failing step: the refusal cannot be sealed and the typed error carries only the token's fingerprint",
+         %{signals: signals, worktree: worktree, base_head: base_head} do
+      {_run, epoch} = running_epoch("recipe", @failing_probe, worktree)
+      task = Task.async(fn -> RecipeWorker.run(epoch, %{provider: "recipe"}) end)
+
+      held = await_first_step(signals, epoch)
+      expire_lease!(held)
+
+      log =
+        capture_log(fn ->
+          release(signals)
+          assert {:error, {:lease_expired, redacted}} = Task.await(task, 60_000)
+          send(self(), {:redacted, redacted})
+        end)
+
+      assert_received {:redacted, redacted}
+      # `Lease.refuse/3` answers `{:lease_expired, raw_token}`; the worker
+      # returns and logs only the fingerprint.
+      assert redacted == "lease:sha256:" <> sha256_hex(held.lease_token)
+      refute log =~ held.lease_token
+      assert log =~ "refusal recipe_step_failed not sealed"
+
+      assert git!(worktree, ["rev-parse", "HEAD"]) == base_head
+      assert git!(worktree, ["diff", "--cached", "--name-only"]) == ""
+      assert receipts_for(epoch.id) == []
+
+      # Nothing was sealed: the expired lease is left to the engine's reaper.
+      now = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+      assert now.state == :running
+      assert now.lease_token == held.lease_token
+    end
   end
 
   # ------------------------------------------------------------------
@@ -410,6 +510,48 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
     assert resolved["path"] == node["path"]
     assert resolved["pin_satisfied"] == false
     assert resolved["tool_versions"]["elixir"] == "0.0.0-absent"
+  end
+
+  test "a target .tool-versions that exists but cannot be read is a logged :toolchain_unresolved refusal, never a silent node fallback",
+       %{root: root} do
+    # `.tool-versions` is a directory in the committed subject: `File.read`
+    # answers `:eisdir`, which is not "no pin".
+    worktree = git_repo(root, @drifted, %{".tool-versions/pins" => "elixir 1.18.4\n"})
+    base_head = git!(worktree, ["rev-parse", "HEAD"])
+
+    log =
+      capture_log(fn ->
+        assert {:error, {:toolchain_unresolved, why}} = RecipeWorker.toolchain(worktree)
+        send(self(), {:why, why})
+      end)
+
+    assert_received {:why, why}
+    assert why =~ "unreadable (:eisdir)"
+    assert log =~ "refusing instead of substituting the running node's toolchain"
+
+    {_run, epoch} = running_epoch("recipe", @capability, worktree)
+    capture_log(fn -> assert :ok = RecipeWorker.run(epoch, %{provider: "recipe"}) end)
+
+    assert [receipt] = receipts_for(epoch.id)
+    assert receipt.outcome == :refused
+    assert receipt.evidence["refusal_reason"] == "toolchain_unresolved"
+    assert receipt.evidence["toolchain"]["error"] =~ "unreadable (:eisdir)"
+    refute Map.has_key?(receipt.evidence, "steps")
+    assert git!(worktree, ["rev-parse", "HEAD"]) == base_head
+    assert File.read!(Path.join(worktree, "drift.ex")) == @drifted
+
+    # A dangling symlink is an entry that names nothing: also not "no pin".
+    dangling = mktmp("dangling-pins")
+    File.ln_s!("no-such-pin-file", Path.join(dangling, ".tool-versions"))
+
+    capture_log(fn ->
+      assert {:error, {:toolchain_unresolved, why}} = RecipeWorker.toolchain(dangling)
+      assert why =~ "unreadable (:enoent)"
+    end)
+
+    # Only a truly absent file falls through to the running node.
+    assert {:ok, %{"source" => "node", "tool_versions" => nil}} =
+             RecipeWorker.toolchain(mktmp("no-pins"))
   end
 
   test "a recipe that pins PATH next to elixir_toolchain: :target, or names another source, is refused before any claim" do
@@ -502,19 +644,49 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
     }
   end
 
+  # One real `sh` step that leaves an untracked file; the pause point is
+  # the subject repo's own clean filter (see the fence falsifier).
+  defp stage_probe_recipe do
+    %{
+      env: %{"PATH" => "/usr/bin:/bin"},
+      steps: [%{id: "edit", argv: ["sh", "-c", "echo edited > edited.txt"], timeout_ms: 10_000}]
+    }
+  end
+
+  # The first step edits, signals, blocks until released, then FAILS.
+  defp failing_probe_recipe(signals) do
+    %{
+      env: %{"PATH" => "/usr/bin:/bin"},
+      steps: [
+        %{
+          id: "edit-then-fail",
+          argv: [
+            "sh",
+            "-c",
+            "echo edited > edited.txt && touch '#{signals}/step1' && " <>
+              "while [ ! -f '#{signals}/go' ]; do sleep 0.05; done; exit 3"
+          ],
+          timeout_ms: 60_000
+        }
+      ]
+    }
+  end
+
   # Waits for the first step's signal and returns the epoch with the
   # worker's live lease as the database holds it.
-  defp await_first_step(signals, epoch, waited \\ 0) do
+  defp await_first_step(signals, epoch), do: await_signal(signals, "step1", epoch)
+
+  defp await_signal(signals, name, epoch, waited \\ 0) do
     cond do
-      File.exists?(Path.join(signals, "step1")) ->
+      File.exists?(Path.join(signals, name)) ->
         Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
 
       waited > 30_000 ->
-        flunk("the recipe's first step never signalled")
+        flunk("the recipe never signalled #{name}")
 
       true ->
         Process.sleep(20)
-        await_first_step(signals, epoch, waited + 20)
+        await_signal(signals, name, epoch, waited + 20)
     end
   end
 
@@ -624,7 +796,13 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
     File.mkdir_p!(dir)
     File.write!(Path.join(dir, ".formatter.exs"), ~s([inputs: ["*.ex"]]\n))
     File.write!(Path.join(dir, "drift.ex"), source)
-    Enum.each(extra, fn {name, bytes} -> File.write!(Path.join(dir, name), bytes) end)
+
+    Enum.each(extra, fn {name, bytes} ->
+      path = Path.join(dir, name)
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, bytes)
+    end)
+
     git!(dir, ["init", "--quiet"])
     git!(dir, ["add", "-A"])
     git!(dir, ["commit", "--quiet", "-m", "subject"])
