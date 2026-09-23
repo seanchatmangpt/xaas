@@ -18,9 +18,12 @@ defmodule Xaas.Ultracode.SemanticWork do
   @digest ~r/^sha256:[0-9a-f]{64}$/
   @repo_identity ~r/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
   @repo_alias ~r/^[A-Za-z0-9_.-]{1,128}$/
-  # `sj:capabilityId` shape (e.g. "recipe:mix-format"); same law as
-  # `Run.capability_id`'s constraint.
-  @capability_id ~r/^[a-z0-9][a-z0-9_.-]*:[a-z0-9][a-z0-9_.:-]*$/
+  # The canonical `sj:capabilityId` pattern (e.g. "recipe:mix-format") --
+  # byte-identical source to `Run.capability_id`'s `match` constraint and the
+  # v26.9.23 wave contract. Compiled `:dollar_endonly` so `$` means end of
+  # string as in the SHACL/XSD reading of the same pattern: PCRE's default
+  # `$` also matches before a trailing newline ("recipe:x\n").
+  @capability_id_source "^[a-z0-9][a-z0-9_.-]*:[a-z0-9][a-z0-9_.:-]*$"
   @execution_policies [:continuous_epoch_run, :autonomic_wave_attempt]
 
   @required ~w(
@@ -483,6 +486,14 @@ defmodule Xaas.Ultracode.SemanticWork do
     end
   end
 
+  @doc """
+  The compiled canonical `sj:capabilityId` pattern the optional `capability`
+  descriptor field is admitted against (source
+  `#{@capability_id_source}`, `:dollar_endonly`).
+  """
+  @spec capability_id_pattern() :: Regex.t()
+  def capability_id_pattern, do: Regex.compile!(@capability_id_source, [:dollar_endonly])
+
   # Optional `capability` (the work order's `sj:capabilityId`): absent = no
   # deterministic recipe; present = a NAME the recipe registry resolves at
   # claim time (`Xaas.Ultracode.RecipeWorker`), never a command.
@@ -492,7 +503,7 @@ defmodule Xaas.Ultracode.SemanticWork do
         :ok
 
       value when is_binary(value) and byte_size(value) <= 128 ->
-        if Regex.match?(@capability_id, value),
+        if Regex.match?(capability_id_pattern(), value),
           do: :ok,
           else: {:error, {:refused_semantic_work, {:invalid, :capability}}}
 

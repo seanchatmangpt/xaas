@@ -281,28 +281,19 @@ config :xaas, :ultracode_engine_providers, ["recipe"]
 # (`env -i` with ONLY this env, throwaway HOME/TMPDIR). Names only: a
 # capability absent here is refused before any claim.
 #
-# "recipe:mix-format" -- the Friday reference KNOWN class (GC-FRI-0800 G6):
-# `mix format` drift repair. Toolchain pinned to the reference subject's
-# `.tool-versions` (ggen_igniter: elixir 1.18.4-otp-27 / erlang 27.2.4) by
-# absolute asdf install dir, because a throwaway HOME defeats asdf shims and
-# the formatter's output is Elixir-version dependent.
+# "recipe:mix-format" -- the Friday reference KNOWN class (GC-FRI-0800 G6,
+# GC23-5): `mix format` drift repair. The formatter's output is
+# Elixir-version dependent, so the toolchain is the TARGET's:
+# `elixir_toolchain: :target` makes `RecipeWorker.toolchain/1` resolve PATH
+# per epoch from the target worktree's `.tool-versions` through the asdf
+# install layout (absolute install dirs, because a throwaway HOME defeats
+# asdf shims), else from the running node's `mix` + ERTS -- never a
+# host-specific pin here (xaas CI runs setup-beam from .tool-versions, not
+# asdf). The resolved identity lands in the lease evidence as `toolchain`.
 config :xaas, :ultracode_construction_recipes, %{
   "recipe:mix-format" => %{
-    env: %{
-      "PATH" =>
-        Enum.join(
-          [
-            Path.expand("~/.asdf/installs/elixir/1.18.4-otp-27/bin"),
-            Path.expand("~/.asdf/installs/erlang/27.2.4/bin"),
-            "/opt/homebrew/bin",
-            "/usr/local/bin",
-            "/usr/bin",
-            "/bin"
-          ],
-          ":"
-        ),
-      "LANG" => "en_US.UTF-8"
-    },
+    elixir_toolchain: :target,
+    env: %{"LANG" => "en_US.UTF-8"},
     steps: [%{id: "format", argv: ["mix", "format"], timeout_ms: 300_000}]
   }
 }
