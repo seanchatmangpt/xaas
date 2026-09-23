@@ -15,11 +15,7 @@ lib/xaas_web/controllers/execution_fabric_controller.ex | MCP JSON-RPC + hook HT
 
 lib/mix/tasks/xaas.receipts.ex | operator sealed-receipt inspection task over the authorized `:for_epoch` path | no admitted pack renders an operator receipt-read task on the Run/Epoch/Receipt seam | ultracode-actuation-lease-pack | 2026-09-17
 
-priv/zcode_plugin/templates/script-xaas-gate.mjs.tmpl | PreToolUse host gate: admit_tool call, argv Bash allowlist (GIT_SUBS, READ_HELPERS), worktree write containment, credential-dir read denylist, zcode->server tool map (2026-09-18) | no admitted pack renders a policy-enforcement hook script from admission-ontology facts; the allowlists are constants in the script, not ontology individuals | zcode-plugin-pack (lift the constants into zp:AllowedTool / zp:AllowedBashVerb / zp:DeniedPath individuals and render the script from them) | 2026-09-18
-
-priv/zcode_plugin/templates/script-xaas-lease.mjs.tmpl | client-side lease state file protocol (save/get/clear, conflict refusal) | no admitted pack expresses a lease state-file protocol | ultracode-actuation-lease-pack | 2026-09-15
-
-priv/zcode_plugin/templates/{command-xaas,agent-xaas-worker,skill-xaas-worker}.md.tmpl | worker doctrine prose bodies (frontmatter is projected from ontology.ttl) | irreducible prose: no pack models doctrine text as ontology fragments | zcode-plugin-pack doctrine fragments | 2026-09-15
+priv/zcode_plugin/packs/zcode-plugin-pack/templates/{command-xaas,agent-xaas-worker,skill-xaas-worker}.md.tmpl | worker doctrine prose bodies (frontmatter is projected from ontology.ttl) | irreducible prose: no pack models doctrine text as ontology fragments | zcode-plugin-pack doctrine fragments | 2026-09-15
 
 scripts/xaas-glm-failover-dispatcher.sh, scripts/install-glm-failover-launchd.sh | unattended failover dispatcher (poll, drain, reaper, timeout, stall alert) and its launchd installer (2026-09-18) | no admitted pack renders a provider-failover dispatcher or a launchd unit from the Run/Epoch seam | ultracode-actuation-lease-pack | 2026-09-18
 
@@ -78,11 +74,25 @@ lib/xaas/coupling/coupling_run.ex, lib/xaas/ledger/event_log.ex, lib/xaas/operat
    into the tracked `marketplace/` projection (drift-checked by
    `test/xaas/zcode_plugin/projection_test.exs`). Remaining: publish to the
    marketplace, and lift the gate's allowlist constants into the ontology.
+   Progress 2026-09-21 (SJ-003): the plugin/marketplace/MCP/hook manifests,
+   frontmatter and the PreToolUse gate script now render from a repo-local
+   path pack, `priv/zcode_plugin/packs/zcode-plugin-pack` (bound in
+   `priv/zcode_plugin/ggen.toml`, pinned by `ggen.lock`); the gate's
+   allowlists are `zp:AllowedTool` / `zp:ToolMapping` / `zp:AllowedBashVerb` /
+   `zp:ForbiddenGitFlag` / `zp:DeniedPath` individuals in `ontology.ttl`.
+   Remaining: publish the pack to ggen-marketplace (this order's path_scope
+   excludes that repo), doctrine-prose fragments, plugin-projection gates.
 3. Extract the lease kernel's invariants into `ultracode-actuation-lease-pack`
    (SHACL + Ash render targets), including the bulk_update
    extracted-filter guard as a gate, and (2026-09-17) the `actuate/2`
    registry-lookup + forced-authority-evidence shape as a second gate,
    distinct from the admit_tool construction/consequence fence gate.
+   Progress 2026-09-21 (SJ-003): the client-side lease state-file protocol
+   (`xaas-lease.mjs`) now renders from `ul:LeaseStateProtocol` facts via the
+   repo-local pack `priv/zcode_plugin/packs/ultracode-actuation-lease-pack`;
+   its `ul:stateDirName` is the same fact the gate reads. The server-side
+   kernel (`lease.ex`, controller, verifier, autonomic, worktrees, receipts,
+   crown) is NOT rendered and its rows stay Active.
 4. beam4pm integration is an ontology fact, not code: execution-provider
    observation + PlannerLease≠ActuationLease axiom in beam4pm's ontology.
 
@@ -95,6 +105,9 @@ priv/templates/zcode_plugin/hooks/post_tool_failure.mjs.eex | fixed the same nes
 priv/templates/zcode_plugin/hooks/user_prompt_submit.mjs.eex | fixed the same nested-vs-flat body mismatch (committed a11bf7a) | 2026-09-16
 priv/templates/zcode_plugin/commands/xaas.md.eex | fixed `close_candidate` key name mismatch — doc told workers to send `standing`, the controller/lease contract expects `outcome` (committed a11bf7a) | 2026-09-16
 priv/templates/zcode_plugin/.mcp.json.eex + .zcode-plugin/plugin.json.eex | MCP bearer token now sourced from ZCode `user_config`, not the session env — paydown item 1's install-path blocker no longer has an xaas-side dependency (committed 2f49261) | 2026-09-17
+
+priv/zcode_plugin/templates/script-xaas-gate.mjs.tmpl | row removed: template promoted into `packs/zcode-plugin-pack`; the tool sets, tool map, git subcommand/flag allowlists, read helpers and denied home paths are ontology individuals, and the script is rendered from them (re-sync is byte-identical to the previous hand-written projection; mutating an individual changes the rendered script). The enforcement logic itself remains hand-authored inside the pack template (pack capital, not consumer residue) | 2026-09-21
+priv/zcode_plugin/templates/script-xaas-lease.mjs.tmpl | row removed: template promoted into `packs/ultracode-actuation-lease-pack`, rendered from `ul:LeaseStateProtocol` (state dir, script name, install path, conflict/usage exit codes); the gate reads the same state-dir fact | 2026-09-21
 
 Wave-4 paydown direction (2026-09-17): the zcode-plugin-pack rows shrank
 toward pack admission (templates now contract-clean + credential-correct;

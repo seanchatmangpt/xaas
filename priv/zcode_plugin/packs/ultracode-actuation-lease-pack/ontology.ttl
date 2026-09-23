@@ -1,0 +1,17 @@
+@prefix ul:   <http://seanchatmangpt.github.io/packs/ultracode-actuation-lease#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+
+# ultracode-actuation-lease-pack vocabulary (client-side edge of the lease
+# protocol). The server-side lease kernel (Xaas.Ultracode.Lease) is NOT rendered
+# by this pack; see HANDWRITTEN.md.
+
+ul:LeaseStateProtocol a owl:Class ;
+    rdfs:label "Client-side lease state-file protocol" ;
+    rdfs:comment "A lease is persisted per worktree cwd at <tmpdir>/<stateDirName>/<sha256(cwd)>.json. save refuses to clobber a still-live lease carrying a different lease_token (conflictExitCode) unless --force; a bad subcommand exits usageExitCode. Any reader of that file (e.g. a PreToolUse gate) MUST take stateDirName from the same individual." .
+
+ul:stateDirName a owl:DatatypeProperty .
+ul:scriptName a owl:DatatypeProperty .
+ul:installPath a owl:DatatypeProperty .
+ul:conflictExitCode a owl:DatatypeProperty .
+ul:usageExitCode a owl:DatatypeProperty .

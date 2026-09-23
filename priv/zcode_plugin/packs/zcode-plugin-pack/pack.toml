@@ -1,0 +1,4 @@
+[pack]
+name = "zcode-plugin-pack"
+version = "26.9.21"
+description = "ZCode plugin projection: marketplace/plugin/MCP/hook manifests, command/agent/skill frontmatter and the PreToolUse admission gate script rendered from zp: ontology facts (allowed tools, allowed bash verbs, forbidden git flags, denied home paths)."
