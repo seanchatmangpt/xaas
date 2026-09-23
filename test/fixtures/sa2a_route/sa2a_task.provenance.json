@@ -1,0 +1,10 @@
+{
+  "admission": "GgenIgniter.SemanticJira.admit_work_order/1",
+  "generator": "scripts/gen_sa2a_route_fixture.exs",
+  "ggen_igniter_dir": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+  "ggen_igniter_head": "5984ec480c2318e86aa621da5f496e5e014b0fac",
+  "ggen_igniter_tracked_clean": true,
+  "input": "test/fixtures/sa2a_route/work_order.json",
+  "producer": "GgenIgniter.SemanticA2A.task_from_work_order/2",
+  "work_order_digest": "sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e"
+}
