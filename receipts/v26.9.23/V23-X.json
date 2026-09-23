@@ -102,7 +102,12 @@
     "source": "docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 (39386 bytes, byte-identical to /Users/sac/wt/v26922/v26923/prd-ard.md)",
     "subject": "V23-X",
     "subject_sha": "2244d8e18d368841fc6b0a3a892cb729b7729bd0",
-    "worktree": "/Users/sac/wt/v26922/v23/V23-X"
+    "worktree": "/Users/sac/wt/v26922/v23/V23-X",
+    "tuple_digest": "sha256:145ec391eed5183aabd9766fe31a7c538b4de8431435adb92ce6f0ff350e1ebc",
+    "work_order": "v23:WO-V23-X (docs/sjira/v26.9.23/goal.ttl)",
+    "tuple_digest_witnesses": [
+      "mix xaas.stop_court --checkpoint GC-26.9.23 at xaas-int 41679c6 (driver tick 00:35 PT) printed order V23-X digest=sha256:145ec391eed5183aabd9766fe31a7c538b4de8431435adb92ce6f0ff350e1ebc and reported this receipt ADMITTED-UNLINKED (:tuple_digest_mismatch) because the lane receipt predates the order digest; linked post hoc by the driver, no other field changed"
+    ]
   },
   "llm_edges": [
     {

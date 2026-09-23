@@ -157,7 +157,12 @@
     "repo": "/Users/sac/xaas",
     "subject": "V23-F",
     "subject_sha": "6f4f2804ea59c5c4f12326e3ac1bf3b71df6c012",
-    "worktree": "/Users/sac/wt/v26922/v23/V23-F"
+    "worktree": "/Users/sac/wt/v26922/v23/V23-F",
+    "tuple_digest": "sha256:ad837c0282c6d3b4e645298aba9b3c505d242fd5b37b976bb95c8897d7cfbae8",
+    "work_order": "v23:WO-V23-F (docs/sjira/v26.9.23/goal.ttl)",
+    "tuple_digest_witnesses": [
+      "mix xaas.stop_court --checkpoint GC-26.9.23 at xaas-int 41679c6 (driver tick 00:35 PT) printed order V23-F digest=sha256:ad837c0282c6d3b4e645298aba9b3c505d242fd5b37b976bb95c8897d7cfbae8 and reported this receipt ADMITTED-UNLINKED (:tuple_digest_mismatch) because the lane receipt predates the order digest; linked post hoc by the driver, no other field changed"
+    ]
   },
   "llm_on_product_path": "none: no LLM, model API or zcode binary is invoked by fleet_matrix.py or GC23-11.sh; classification.ttl was authored by this lane from observations (a CONSTRUCT candidate admitted by check-classification)",
   "repair_1": {
