@@ -75,12 +75,10 @@ defmodule Xaas.Ultracode.SemanticDrive do
   object by IRI, an `exploration` route to the candidate's proposer).
   """
 
-  require Ash.Query
-
   alias Xaas.Receipt.RProjection
   alias Xaas.Sa2a.Route
   alias Xaas.Ultracode.{Epoch, Receipt, RecipeWorker, Run, SemanticReceipt, SemanticWork}
-  alias Xaas.Ultracode.{Verifier, Worktrees}
+  alias Xaas.Ultracode.{NoLlmPolicy, Verifier, Worktrees}
   alias Xaas.Ultracode.SemanticDrive.Ocel
 
   @hops ~w(sjira sa2a xaas provider receipt)
@@ -93,10 +91,6 @@ defmodule Xaas.Ultracode.SemanticDrive do
   @suite "ggen-igniter-format"
   @repo_alias "ggen_igniter"
   @checkpoint "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23"
-
-  @llm_prefixes ~w(ANTHROPIC_ CLAUDE_ OPENAI_ ZAI_ Z_AI_ GLM_ ZCODE_)
-  @llm_names ~w(CLAUDECODE)
-  @llm_binaries ~w(zcode claude)
 
   @steps ~w(guard frontier_before order resolve sa2a descriptor contract materialize actuate
             seal verify project reconcile frontier_after)a
@@ -121,52 +115,63 @@ defmodule Xaas.Ultracode.SemanticDrive do
   does: in `ctx.ggen_dir`, under `ctx.toolchain` (`graph_toolchain/2`) with
   `MIX_ENV` = `ctx.mix_env` and `MIX_BUILD_PATH` = `ctx.ggen_build_path`,
   stdin `/dev/null`, output to a file under `ctx.scratch`, a hard
-  `ctx.timeout_s` deadline, every model-credential variable unset. Returns
+  `ctx.timeout_s` deadline, every variable the no-LLM policy does not admit
+  unset (`Xaas.Ultracode.NoLlmPolicy.unset_unadmitted/1`). Returns
   `{exit, last JSON line of the output (or nil), output}`.
   """
   @spec graph_side(map(), String.t(), [String.t()]) :: {integer(), map() | nil, String.t()}
   def graph_side(ctx, task, args), do: ggen(ctx, task, args)
 
-  @doc "The environment-variable prefixes (and exact names) the no-LLM guard refuses."
+  @doc """
+  The environment-variable prefixes and exact names the no-LLM policy
+  reports as model credentials (`Xaas.Ultracode.NoLlmPolicy.llm_variables/0`,
+  compiled from `priv/no_llm/policy.json`). Reporting vocabulary only: the
+  guard refuses every non-admitted name, claimed or not.
+  """
   @spec llm_variables() :: %{prefixes: [String.t()], names: [String.t()]}
-  def llm_variables, do: %{prefixes: @llm_prefixes, names: @llm_names}
+  def llm_variables, do: NoLlmPolicy.llm_variables()
+
+  @doc """
+  The admitted projection of `env` (`Xaas.Ultracode.NoLlmPolicy.admitted_environment/1`):
+  the environment a caller whose own process runs under an operator shell
+  hands the guard.
+  """
+  @spec no_llm_environment(map()) :: map()
+  def no_llm_environment(env \\ System.get_env()) when is_map(env),
+    do: NoLlmPolicy.admitted_environment(env)
 
   # ---------------------------------------------------------------------------
   # the no-LLM guard (F3)
   # ---------------------------------------------------------------------------
 
   @doc """
-  The no-LLM guard: `:ok`, or `REFUSED(llm_credential_present)` (broken
-  term `mu_on_O`) when `env` names any variable with a prefix in
-  `llm_variables/0` (or `CLAUDECODE`), or when an executable named `zcode`
-  or `claude` sits in any `PATH` directory. Only variable NAMES and binary
-  paths are reported, never values.
+  The no-LLM guard, fail closed (lane R1-X-GUARD; `Xaas.Ultracode.NoLlmPolicy`
+  over `priv/no_llm/policy.json`, the data `courts/no_llm_env.sh` builds the
+  court environment from). `:ok` only when every variable NAME of `env` is
+  admitted by the policy and no `PATH` directory holds a provider binary;
+  otherwise `{:refused, typed}` with broken term `mu_on_O` at hop `"guard"`:
+
+    * `REFUSED(llm_credential_present)` -- a variable a provider claims
+      (`ANTHROPIC_*`, `CLAUDE_*`/`CLAUDECODE`, `OPENAI_*`, `GEMINI_*`,
+      `MISTRAL_*`, `GROQ_*`, `OPENROUTER_*`, `DEEPSEEK_*`, `XAI_*`,
+      `COHERE_*`, `TOGETHER_*`, `FIREWORKS_*`, `PERPLEXITY_*`,
+      `AZURE_OPENAI_*`, Bedrock/AWS credentials, `OLLAMA_*`, `ZAI_*`/`GLM_*`,
+      `ZCODE_*`, ...) or a provider executable on `PATH` (`claude`, `zcode`,
+      `codex`, `gemini`, `ollama`, `llm`, `aider`, ...);
+    * `REFUSED(unadmitted_environment)` -- any other non-admitted variable.
+
+  `detail` = `%{"variables", "binaries", "providers", "unadmitted"}`: names,
+  paths and provider ids only, never values.
   """
   @spec no_llm_guard(map()) :: :ok | {:refused, map()}
   def no_llm_guard(env \\ System.get_env()) when is_map(env) do
-    variables = env |> Map.keys() |> Enum.filter(&llm_variable?/1) |> Enum.sort()
-    binaries = llm_binaries(Map.get(env, "PATH") || "")
+    case NoLlmPolicy.judge(env) do
+      :ok ->
+        :ok
 
-    if variables == [] and binaries == [] do
-      :ok
-    else
-      {:refused,
-       typed("REFUSED(llm_credential_present)", "llm_credential_present", "mu_on_O", "guard", %{
-         "variables" => variables,
-         "binaries" => binaries
-       })}
+      {:refused, reason, detail} ->
+        {:refused, typed("REFUSED(#{reason})", reason, "mu_on_O", "guard", detail)}
     end
-  end
-
-  defp llm_variable?(name),
-    do: name in @llm_names or Enum.any?(@llm_prefixes, &String.starts_with?(name, &1))
-
-  defp llm_binaries(path) do
-    for dir <- String.split(path, ":", trim: true),
-        binary <- @llm_binaries,
-        file = Path.join(dir, binary),
-        executable?(file),
-        do: file
   end
 
   defp executable?(file) do
@@ -587,6 +592,14 @@ defmodule Xaas.Ultracode.SemanticDrive do
     end
   end
 
+  # compile.elixir_scm is {vsn, {elixir, otp}, scm} up to Elixir 1.19 and
+  # {vsn, {elixir, otp}, scm, extra} from 1.20 on (the xaas .tool-versions
+  # pin, 1.20.2-otp-28): the compiler identity is element 1 of either shape.
+  defp manifest_compiler(term) when is_tuple(term) and tuple_size(term) in [3, 4],
+    do: elem(term, 1)
+
+  defp manifest_compiler(_), do: nil
+
   defp graph_path(mix, erts_bin),
     do: [Path.dirname(mix), erts_bin, "/usr/bin", "/bin"] |> Enum.uniq() |> Enum.join(":")
 
@@ -608,8 +621,8 @@ defmodule Xaas.Ultracode.SemanticDrive do
     compiler =
       with path when is_binary(path) <- path,
            {:ok, bytes} <- File.read(path),
-           {_vsn, {elixir, otp}, _scm} when is_binary(elixir) and is_list(otp) <-
-             safe_term(bytes) do
+           {elixir, otp} when is_binary(elixir) and is_list(otp) <-
+             manifest_compiler(safe_term(bytes)) do
         %{"elixir" => elixir, "otp" => to_string(otp)}
       else
         _ -> nil
@@ -2107,13 +2120,11 @@ defmodule Xaas.Ultracode.SemanticDrive do
     )
   end
 
-  # Every child process of the drive runs with the model-credential variables
-  # of the calling environment UNSET, whatever that environment holds: no
-  # credential reaches the graph side or git even when the guard was handed a
-  # narrower environment than the process's own.
-  defp llm_unset do
-    for {name, _value} <- System.get_env(), llm_variable?(name), do: {name, nil}
-  end
+  # Every child process of the drive runs with every variable the no-LLM
+  # policy does not admit UNSET, whatever the calling environment holds: no
+  # credential (and no unadmitted variable) reaches the graph side or git even
+  # when the guard was handed a narrower environment than the process's own.
+  defp llm_unset, do: NoLlmPolicy.unset_unadmitted(System.get_env())
 
   # The graph side is its own project with its own toolchain pin: run it
   # through the toolchain its `.tool-versions` resolves to (absolute install

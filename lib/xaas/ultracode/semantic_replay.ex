@@ -62,7 +62,8 @@ defmodule Xaas.Ultracode.SemanticReplay do
   log's projection sit in the envelope beside the state.
 
   `{:refused, typed}` when the replay cannot run: the no-LLM guard (F3,
-  `REFUSED(llm_credential_present)`, `mu_on_O`), a missing work graph or
+  `REFUSED(llm_credential_present)` or `REFUSED(unadmitted_environment)`,
+  `mu_on_O`), a missing work graph or
   subject ref, or a graph side that does not build (`BUILD_BROKEN`).
 
   Options: `:episode_dir` (required), `:ggen_igniter_dir` (required),

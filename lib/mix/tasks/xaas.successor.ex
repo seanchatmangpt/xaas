@@ -20,9 +20,11 @@ defmodule Mix.Tasks.Xaas.Successor do
   `OUT` (default `DIR/intake`). `--check` recomputes into a private
   directory and compares byte for byte with `OUT` instead of writing.
 
-  The no-LLM guard runs first: a model credential variable or a
-  `claude`/`zcode` executable on PATH is `REFUSED(llm_credential_present)`
-  (broken term `mu_on_O`).
+  The no-LLM guard runs first and fails closed (`SemanticDrive.no_llm_guard/1`
+  over `priv/no_llm/policy.json`): a provider-claimed variable or a provider
+  executable on PATH is `REFUSED(llm_credential_present)`, any other variable
+  the policy does not admit `REFUSED(unadmitted_environment)` (broken term
+  `mu_on_O`).
 
   ## Exit codes
 

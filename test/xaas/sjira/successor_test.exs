@@ -41,26 +41,12 @@ defmodule Xaas.Sjira.SuccessorTest do
   end
 
   # The environment the in-process intake's no-LLM guard judges: this test
-  # process's own environment minus every model-credential variable and every
-  # PATH directory holding a `claude`/`zcode` executable (the graph-side OS
-  # processes additionally run with those variables unset and the resolved
-  # toolchain PATH, `SemanticDrive.graph_side/3`).
-  defp no_llm_env do
-    llm = Xaas.Ultracode.SemanticDrive.llm_variables()
-
-    path =
-      (System.get_env("PATH") || "")
-      |> String.split(":", trim: true)
-      |> Enum.reject(fn dir -> Enum.any?(~w(claude zcode), &File.exists?(Path.join(dir, &1))) end)
-      |> Enum.join(":")
-
-    System.get_env()
-    |> Enum.reject(fn {name, _} ->
-      name in llm.names or Enum.any?(llm.prefixes, &String.starts_with?(name, &1))
-    end)
-    |> Map.new()
-    |> Map.put("PATH", path)
-  end
+  # process's own environment projected onto the fail-closed no-LLM policy
+  # (priv/no_llm/policy.json: admitted names only, every PATH directory
+  # holding a provider binary dropped; `SemanticDrive.no_llm_environment/1`).
+  # The graph-side OS processes additionally run with every unadmitted
+  # variable unset and the resolved toolchain PATH (`SemanticDrive.graph_side/3`).
+  defp no_llm_env, do: Xaas.Ultracode.SemanticDrive.no_llm_environment(System.get_env())
 
   defp git(dir, args) do
     System.cmd(
