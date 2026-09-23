@@ -1,0 +1,131 @@
+## decoy pid 17287 started 2026-09-23T20:33:12Z
+## pgrep -fl 'zcode.js --prompt' before:
+17287 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## HEAD d7a230d0ed0fc1507c368fb43d837fccc87db4ee porcelain=[]
+## cmd: mix test test/xaas/ultracode/dispatch_test.exs:600 --repeat-until-failure 10
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+    warning: unused require Ash.Query
+    │
+ 78 │   require Ash.Query
+    │   ~
+    │
+    └─ lib/xaas/ultracode/semantic_drive.ex:78:3
+
+13:33:20.600 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:33:21.568 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:33:22.274 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:33:22.379 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:33:22.379 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:33:22.392 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:33:22.392 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:33:22.404 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:33:22.404 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:33:22.413 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:33:22.413 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+13:33:22.422 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:33:22.422 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+13:33:22.425 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:33:22.425 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 831002, max_cases: 32, remaining_runs: 10
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 3.6 seconds (0.00s async, 3.6s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 512723, max_cases: 32, remaining_runs: 9
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.4 seconds (0.00s async, 2.4s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 969367, max_cases: 32, remaining_runs: 8
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.3 seconds (0.00s async, 2.3s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 363790, max_cases: 32, remaining_runs: 7
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.4 seconds (0.00s async, 2.4s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 874079, max_cases: 32, remaining_runs: 6
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.3 seconds (0.00s async, 2.3s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 190399, max_cases: 32, remaining_runs: 5
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.3 seconds (0.00s async, 2.3s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 558342, max_cases: 32, remaining_runs: 4
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.2 seconds (0.00s async, 2.2s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 841581, max_cases: 32, remaining_runs: 3
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.4 seconds (0.00s async, 2.4s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 299923, max_cases: 32, remaining_runs: 2
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.4 seconds (0.00s async, 2.4s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 749753, max_cases: 32, remaining_runs: 1
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.3 seconds (0.00s async, 2.3s sync)
+
+Result: 1 passed, 31 excluded
+Running ExUnit with seed: 107318, max_cases: 32, remaining_runs: 0
+Excluding tags: [:test]
+Including tags: [location: {"test/xaas/ultracode/dispatch_test.exs", 600}]
+
+.
+Finished in 2.3 seconds (0.00s async, 2.3s sync)
+
+Result: 1 passed, 31 excluded
+## exit 0
+## decoy 17287 alive at end: yes
+## pgrep -fl 'zcode.js --prompt' after:
+17287 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## decoy stopped 2026-09-23T20:33:50Z

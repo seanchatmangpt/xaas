@@ -1,0 +1,4 @@
+20c20
+< /bin/bash -c 'exec -a "node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy" /bin/sleep 1500' &
+---
+> /bin/bash -c 'exec -a "node bin/other.js /xaas R1-X-PGREP-invisible-decoy" /bin/sleep 1500' &

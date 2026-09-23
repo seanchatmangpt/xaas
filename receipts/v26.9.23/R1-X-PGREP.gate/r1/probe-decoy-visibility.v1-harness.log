@@ -1,0 +1,14 @@
+## decoy pid 24191 started 2026-09-23T21:12:59Z
+## pgrep -fl 'zcode.js --prompt' before:
+24191 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## HEAD c614b9a54bd466444290c2c6eeebf114fadc9028 porcelain=[]
+## cmd: echo inner:; pgrep -fl "zcode.js --prompt"; echo "inner pgrep exit $?"; ps -axo pid,command | grep -c "zcode.js --prompt"
+inner:
+24191 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+inner pgrep exit 0
+5
+## exit 0
+## decoy 24191 alive at end: yes
+## pgrep -fl 'zcode.js --prompt' after:
+24191 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## decoy stopped 2026-09-23T21:12:59Z
