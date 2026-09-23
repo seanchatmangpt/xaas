@@ -1633,4 +1633,326 @@ defmodule Xaas.Sjira.V26923GoalTest do
              "committed_at_head_why" => nil
            } = orders["WO-A"]
   end
+
+  # ------------------------------------------------------------------ release counters (lane V23-S)
+
+  # ARD section 27 counters in the STOP receipt, derived from observed
+  # evidence (operator release sequence step 5). The LLM-provider detector is
+  # cross-checked against the GC23-9 court's own `measure`, cut from
+  # courts/GC23-9.sh and run by a real python3 process.
+
+  @episodes Path.join(@dir, "episodes")
+  @terminal ~r/\A(?:ALIVE\z|BLOCKED|UNSUPPORTED|REFUSED)/
+
+  defp gc23_9_measure(ocel_paths) do
+    court = File.read!(Path.join(@dir, "courts/GC23-9.sh"))
+    [_, measure] = Regex.run(~r/\n(def measure\(o\):\n.*?\n    return llm, explore\n)/s, court)
+    [_, words] = Regex.run(~r/\nLLM = (\([^)\n]*\))\n/, court)
+
+    script =
+      "import json, sys\nLLM = #{words}\n" <>
+        measure <>
+        "print(json.dumps([len(measure(json.load(open(p)))[0]) for p in sys.argv[1:]]))\n"
+
+    {out, 0} = System.cmd("python3", ["-c", script | ocel_paths])
+    Jason.decode!(out)
+  end
+
+  # Copies of the committed episodes' OCEL logs and ledgers in a tmp dir.
+  defp episodes_copy(into, names) do
+    for name <- names, file <- ~w(ocel.json ledger.ndjson) do
+      File.mkdir_p!(Path.join(into, name))
+      File.cp!(Path.join([@episodes, name, file]), Path.join([into, name, file]))
+    end
+
+    into
+  end
+
+  # Appends one copy of the log's CapabilityResolved event with `attrs` merged.
+  defp inject_event(ocel_path, id, attrs) do
+    ocel = ocel_path |> File.read!() |> Jason.decode!()
+    [template | _] = Enum.filter(ocel["ocel:events"], &(&1["type"] == "CapabilityResolved"))
+
+    event =
+      template |> Map.put("id", id) |> Map.update!("attributes", &Map.merge(&1, attrs))
+
+    File.write!(ocel_path, Jason.encode!(Map.update!(ocel, "ocel:events", &(&1 ++ [event]))))
+  end
+
+  test "release counters over the committed episodes: 0 LLM-provider events on the KNOWN reference path, 0 unreceipted actuations; the detector fires on me-1" do
+    counters = StopCourt.episode_counters(@episodes, ["fmt-1", "me-2"])
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["value"] == 0
+    assert counters["REQUIRED_LLM_KNOWN"]["value"] == 0
+    assert counters["UNRECEIPTED_ACTUATION"]["value"] == 0
+
+    per = counters["UNRECEIPTED_ACTUATION"]["episodes"]
+    assert Map.keys(per) == ["fmt-1", "me-1", "me-2"]
+    assert Enum.all?(Map.values(per), &(&1["actuations"] >= 1 and &1["unreceipted"] == []))
+
+    known = for name <- ~w(fmt-1 me-2), do: Path.join([@episodes, name, "ocel.json"])
+    assert gc23_9_measure(known) == [0, 0]
+
+    for {name, path} <- Enum.zip(~w(fmt-1 me-2), known) do
+      entry = counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["episodes"][name]
+      assert entry["ocel"] == path
+      assert entry["ocel_sha256"] == sha256_of(path)
+    end
+
+    # Anti-vacuity: me-1 (UNKNOWN -> LLM exploration) read as a KNOWN-path episode.
+    [me1] = gc23_9_measure([Path.join(@episodes, "me-1/ocel.json")])
+    assert me1 > 0
+    me1_counters = StopCourt.episode_counters(@episodes, ["me-1"])
+    assert me1_counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["value"] == me1
+    assert me1_counters["REQUIRED_LLM_KNOWN"]["value"] == 1
+    assert me1_counters["REQUIRED_LLM_KNOWN"]["items"] == ["me-1"]
+  end
+
+  test "one LLM-provider event injected into a tmp known-reference episode gives LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=1 (the GC23-9 court's measure agrees)" do
+    dir = episodes_copy(tmp_dir("v23s_llm"), ~w(fmt-1 me-2))
+    me2 = Path.join(dir, "me-2/ocel.json")
+    inject_event(me2, "e999-injected", %{"provider" => "llm:claude-opus-5-5@fixture"})
+
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["value"] == 1
+
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["episodes"]["me-2"][
+             "llm_provider_events"
+           ] == ["e999-injected"]
+
+    assert counters["REQUIRED_LLM_KNOWN"]["value"] == 1
+    assert counters["REQUIRED_LLM_KNOWN"]["items"] == ["me-2"]
+    assert counters["UNRECEIPTED_ACTUATION"]["value"] == 0
+    assert gc23_9_measure([Path.join(dir, "fmt-1/ocel.json"), me2]) == [0, 1]
+
+    # The GC23-5 rule counts too: an LLM executor only GC23-5's witness 2 reads.
+    dir5 = episodes_copy(tmp_dir("v23s_llm5"), ~w(fmt-1 me-2))
+    fmt1 = Path.join(dir5, "fmt-1/ocel.json")
+    inject_event(fmt1, "e998-executor", %{"executor" => "zcode-cli"})
+    assert gc23_9_measure([fmt1]) == [0]
+    counters = StopCourt.episode_counters(dir5, ["fmt-1", "me-2"])
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["value"] == 1
+    assert counters["REQUIRED_LLM_KNOWN"]["items"] == ["fmt-1"]
+  end
+
+  test "an unreadable known-reference OCEL makes the counters null with the reason, never 0" do
+    dir = episodes_copy(tmp_dir("v23s_unreadable"), ~w(fmt-1 me-2))
+    me2 = Path.join(dir, "me-2/ocel.json")
+    File.write!(me2, ~s({"ocel:events": [))
+
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+
+    for name <-
+          ~w(LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH REQUIRED_LLM_KNOWN UNRECEIPTED_ACTUATION) do
+      assert counters[name]["value"] == nil, name
+      assert counters[name]["why"] =~ "#{me2} is not JSON", name
+      assert is_binary(counters[name]["source"]) and is_binary(counters[name]["rule"])
+    end
+
+    File.write!(me2, ~s({"events": []}))
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["value"] == nil
+
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["why"] ==
+             "#{me2} is not an OCEL log (no ocel:events/ocel:objects lists)"
+
+    File.rm!(me2)
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+
+    assert counters["REQUIRED_LLM_KNOWN"]["why"] ==
+             "#{me2} unreadable: no such file or directory"
+
+    assert StopCourt.episode_counters(Path.join(dir, "absent"), ["fmt-1"])[
+             "UNRECEIPTED_ACTUATION"
+           ]["why"] =~ "unreadable: no such file or directory"
+  end
+
+  test "a ledger actuation whose StandingChanged names no sealed receipt counts as UNRECEIPTED_ACTUATION; an unparseable ledger line is null" do
+    dir = episodes_copy(tmp_dir("v23s_actuation"), ~w(fmt-1 me-2))
+    fmt1 = Path.join(dir, "fmt-1/ocel.json")
+    ocel = fmt1 |> File.read!() |> Jason.decode!()
+
+    File.write!(
+      fmt1,
+      Jason.encode!(
+        Map.update!(
+          ocel,
+          "ocel:events",
+          &Enum.reject(&1, fn e -> e["type"] == "ReceiptSealed" end)
+        )
+      )
+    )
+
+    [ledger] =
+      Path.join(dir, "fmt-1/ledger.ndjson") |> File.read!() |> String.split("\n", trim: true)
+
+    digest = Jason.decode!(ledger)["event_digest"]
+
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+    assert counters["UNRECEIPTED_ACTUATION"]["value"] == 1
+    assert [unreceipted] = counters["UNRECEIPTED_ACTUATION"]["episodes"]["fmt-1"]["unreceipted"]
+    assert Jason.decode!(unreceipted)["event_digest"] == digest
+    assert counters["UNRECEIPTED_ACTUATION"]["episodes"]["me-2"]["unreceipted"] == []
+
+    File.write!(Path.join(dir, "me-2/ledger.ndjson"), "not json\n")
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+    assert counters["UNRECEIPTED_ACTUATION"]["value"] == nil
+
+    assert counters["UNRECEIPTED_ACTUATION"]["why"] ==
+             "#{dir}/me-2/ledger.ndjson line 1 is not a JSON object"
+  end
+
+  unless @rdflib do
+    @tag skip: "needs python3 rdflib for fleet_matrix.py check-classification"
+  end
+
+  test "the STOP receipt derives the counters from the repository under judgement: absent sources null, an injected LLM event 1, an unclassified universe repository 1 (F7)" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+
+    {1, out} = fixture_court(repo)
+
+    assert out =~
+             "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=null REQUIRED_LLM_KNOWN=null" <>
+               " REQUIRED_UNKNOWN=1 UNCLASSIFIED_REQUIRED_WORK=null UNRECEIPTED_ACTUATION=null"
+
+    stop_path = Path.join(repo, "gate-receipts/STOP-GC-26.9.23.json")
+    counters = (stop_path |> File.read!() |> Jason.decode!())["release_counters"]
+    assert counters["REQUIRED_UNKNOWN"]["items"] == ["order WO-A: no linked receipt (MISSING)"]
+
+    assert counters["UNCLASSIFIED_REQUIRED_WORK"]["why"] ==
+             "scripts/sjira/fleet_matrix.py absent in #{repo}"
+
+    assert counters["UNRECEIPTED_ACTUATION"]["why"] ==
+             "#{repo}/docs/sjira/v26.9.23/episodes unreadable: no such file or directory"
+
+    # The repository's own episodes (one injected LLM-provider event) and fleet.
+    episodes = episodes_copy(Path.join(repo, "docs/sjira/v26.9.23/episodes"), ~w(fmt-1 me-2))
+
+    inject_event(Path.join(episodes, "me-2/ocel.json"), "e999-injected", %{"producer" => "claude"})
+
+    for rel <-
+          ~w(scripts/sjira/fleet_matrix.py docs/sjira/v26.9.23/fleet/classification.ttl docs/sjira/v26.9.23/fleet/universe.json) ++
+            (Path.wildcard(Path.join(@dir, "courts/*.sh"))
+             |> Enum.map(&Path.relative_to(&1, @repo))) do
+      File.mkdir_p!(Path.dirname(Path.join(repo, rel)))
+      File.cp!(Path.join(@repo, rel), Path.join(repo, rel))
+    end
+
+    {1, out} = fixture_court(repo)
+
+    assert out =~
+             "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=1 REQUIRED_LLM_KNOWN=1" <>
+               " REQUIRED_UNKNOWN=1 UNCLASSIFIED_REQUIRED_WORK=0 UNRECEIPTED_ACTUATION=0"
+
+    assert {0, _} = validate([stop_path])
+
+    unclassified =
+      (stop_path
+       |> File.read!()
+       |> Jason.decode!())["release_counters"]["UNCLASSIFIED_REQUIRED_WORK"]
+
+    assert unclassified["exit"] == 0
+    assert unclassified["summary"] =~ "check-classification: OK"
+
+    assert unclassified["source"] =~
+             "GC23-11 court step 1 (docs/sjira/v26.9.23/courts/GC23-11.sh " <>
+               sha256_of(Path.join(repo, "docs/sjira/v26.9.23/courts/GC23-11.sh"))
+
+    # F7: a universe repository without a classification.
+    universe = Path.join(repo, "docs/sjira/v26.9.23/fleet/universe.json")
+    u = universe |> File.read!() |> Jason.decode!()
+
+    File.write!(
+      universe,
+      Jason.encode!(Map.update!(u, "repositories", &(&1 ++ [%{"name" => "zz-unclassified"}])))
+    )
+
+    {1, out} = fixture_court(repo)
+    assert out =~ "UNCLASSIFIED_REQUIRED_WORK=1 "
+
+    unclassified =
+      (stop_path
+       |> File.read!()
+       |> Jason.decode!())["release_counters"]["UNCLASSIFIED_REQUIRED_WORK"]
+
+    assert unclassified["exit"] == 1
+
+    assert unclassified["items"] == [
+             "REFUSED(unclassified): universe repository zz-unclassified has no classification (ARD F7)"
+           ]
+  end
+
+  @tag timeout: 600_000
+  test "the real GC23-11 gate receipt binds the committed court script, the repository slug and the toolchain; the STOP counters are derived from the real episodes and fleet" do
+    receipts = tmp_dir("v23s_real")
+
+    {:ok, report} =
+      StopCourt.court([
+        "--checkpoint",
+        "GC-26.9.23",
+        "--receipts-dir",
+        receipts,
+        "--only",
+        "GC23-11"
+      ])
+
+    gate_path = Path.join(receipts, "GC23-11.json")
+    stop_path = Path.join(receipts, "STOP-GC-26.9.23.json")
+    assert {0, vout} = validate([gate_path, stop_path])
+    assert vout =~ "ADMITTED #{gate_path}"
+    gate = gate_path |> File.read!() |> Jason.decode!()
+
+    expected_repo =
+      case System.cmd("git", ["-C", @repo, "remote", "get-url", "origin"], stderr_to_stdout: true) do
+        {url, 0} ->
+          case Regex.run(~r{github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?\s*\z}, url) do
+            [_, owner, name] -> owner <> "/" <> name
+            nil -> @repo
+          end
+
+        _ ->
+          @repo
+      end
+
+    assert gate["identity"]["repo"] == expected_repo
+    assert gate["identity"]["worktree"] == @repo
+    script = Path.join(@dir, "courts/GC23-11.sh")
+    assert gate["verifier"]["court_script"] == "docs/sjira/v26.9.23/courts/GC23-11.sh"
+    assert gate["verifier"]["court_script_sha256"] == sha256_of(script)
+
+    {_, clean} =
+      System.cmd("git", [
+        "-C",
+        @repo,
+        "diff",
+        "--quiet",
+        "HEAD",
+        "--",
+        "docs/sjira/v26.9.23/courts/GC23-11.sh"
+      ])
+
+    assert gate["verifier"]["court_script_at_subject"] == (clean == 0)
+    assert gate["verifier"]["stop_query_sha256"] =~ ~r/\Asha256:[0-9a-f]{64}\z/
+    assert gate["toolchain"]["elixir"] == System.version()
+
+    assert [%{"invocation" => %{"argv" => argv}}] = gate["replay"]["commands"]
+    assert Enum.take(argv, -2) == ["--only", "GC23-11"]
+
+    counters = report.release_counters
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["value"] == 0
+    assert counters["REQUIRED_LLM_KNOWN"]["value"] == 0
+    assert counters["UNRECEIPTED_ACTUATION"]["value"] == 0
+    assert counters["UNCLASSIFIED_REQUIRED_WORK"]["value"] == 0
+
+    # REQUIRED_UNKNOWN recomputed from the report's judged gates and orders.
+    open =
+      Enum.count(report.gates, &(not (is_binary(&1.standing) and &1.standing =~ @terminal))) +
+        Enum.count(
+          report.orders,
+          &(not &1.successor? and not (is_binary(&1.standing) and &1.standing =~ @terminal))
+        )
+
+    assert counters["REQUIRED_UNKNOWN"]["value"] == open
+    assert (stop_path |> File.read!() |> Jason.decode!())["release_counters"] == counters
+  end
 end
