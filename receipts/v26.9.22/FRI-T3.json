@@ -137,5 +137,60 @@
       "replay command 4 placeholder replaced with the explicit file list",
       "gate G7 next to ALIVE disambiguated: gate_standing_claimed=false + gate_open_terms"
     ]
+  },
+  "integration": {
+    "target_branch": "friday/gc-fri-0800",
+    "worktree": "/Users/sac/wt/v26922/fri/xaas-int",
+    "lock": "/Users/sac/wt/v26922/fri/xaas-int.merge.lock (owner claude FRI-T3 integrate)",
+    "merged_ref": "fri/FRI-T3",
+    "merged_sha": "e10b92d9946c52a1d39494573cc6077a3aee8ef4",
+    "pre_merge_head": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "merge_cmd": "git merge --no-ff fri/FRI-T3 -F <msgfile>",
+    "merge_commit": "db555439a6d9b0c4ac60bc056b8fa9cffb353835",
+    "merge_note": "merge-base 0d57147; git merge-tree --write-tree exit 0 before the merge; ort auto-merged HANDWRITTEN.md (FRI-T3 ledger rows added alongside the FRI-T4/FRI-T5 rows already on the int branch); no conflict hunks",
+    "conflicts": [],
+    "provisioning": "existing deps/ and _build/test in the int worktree; mix.exs and mix.lock unchanged by the merge",
+    "lane_gate": [
+      {
+        "cmd": "mix format --check-formatted",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T3.int-gate/format.log",
+        "output_sha256": "sha256:8f1c65f9bdd102cb8cfdd13a71f75d0c82ca72ff20d318776752e02ffe4a7907"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T3.int-gate/compile.log",
+        "output_sha256": "sha256:469993b5389531b8e5d26618248b52b0474c2ac4ef62616babaf09a3721895a9",
+        "summary": "Compiling 507 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/xaas/ultracode/court_receipt_test.exs test/xaas/ultracode/semantic_receipt_test.exs test/xaas/receipt/r_projection_test.exs",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T3.int-gate/test.log",
+        "output_sha256": "sha256:f4e1aa66ea7cb320722133c3e46a891dc3f28bdaa716bc90c4a9e8dbbe880296",
+        "summary": "53 tests, 0 failures (seed 207430)"
+      }
+    ],
+    "extra_checks": [
+      {
+        "cmd": "mix test test/xaas/ultracode/target_suites_test.exs",
+        "exit": 0,
+        "summary": "6 tests, 0 failures (touched by the merge; not in the lane gate)"
+      }
+    ],
+    "chicago_mock_grep": {
+      "cmd": "grep -rnE \"Mox|mock|Mock\\(|:meck|patch\\(\" test/xaas/ultracode/court_receipt_test.exs test/xaas/ultracode/semantic_receipt_test.exs test/xaas/receipt/r_projection_test.exs test/xaas/ultracode/target_suites_test.exs",
+      "matches": 1,
+      "note": "sole match is target_suites_test.exs:7 moduledoc text 'no mocks, real subprocesses, real git'; zero mock usage"
+    },
+    "stop_court_observation": {
+      "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-FRI-0800 --only G7 --receipts-dir <scratch>",
+      "exit": 1,
+      "log": "receipts/v26.9.22/FRI-T3.int-gate/stop_court.log",
+      "summary": "at db55543: G7 ALIVE (court command = the three lane suites, exit 0, 41.6s, gate receipt validate_receipt.py ADMITTED, sha256:26579610e7d67c1be69f53070a7903ff7c2d34f4bf34c09b58784c3f3619e9d6, kept in scratch, not committed); G0..G6,G8..G12 NONE (no receipt on disk); STOP=false (exit 1 is the expected not-stopped verdict)",
+      "gate_standing_note": "G7 court exit 0 is observed, but gate_standing_claimed stays false: gate_open_terms (live-episode R projection, OCEL export, revert-commit falsifier against the live court) are unchanged by this integration",
+      "output_sha256": "sha256:a470ddd7d01b42af60a7b488de8a8ddd3d300265358312a28a0c42e4e77ab469"
+    }
   }
 }
