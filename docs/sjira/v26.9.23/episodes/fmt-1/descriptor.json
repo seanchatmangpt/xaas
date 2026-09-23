@@ -1,0 +1,53 @@
+{
+  "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+  "bridge": {
+    "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+    "definition_digest": "sha256:9e7833aea62a843e884e0fe2e0ca4cf13c5e61d8b40ab9b1b4050704c6bcab44",
+    "evidence_ceiling": "repository-local",
+    "identity": "EP-A",
+    "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "replay_identity": "semantic-jira:v26.9.23:episode:fmt-1:EP-A",
+    "repository": "seanchatmangpt/ggen_igniter",
+    "requires": {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check"
+      ],
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+      ],
+      "evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-fmt-1-format-check"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent"
+      ]
+    },
+    "source_snapshot_digest": "sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c",
+    "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A"
+  },
+  "checkpoint_iri": "urn:semantic-jira:checkpoint:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "court_map": {
+    "acceptance": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check": {
+        "test": "format"
+      }
+    },
+    "courts": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+    ],
+    "falsifiers": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent": {
+        "test": "format"
+      }
+    }
+  },
+  "dependencies": [],
+  "execution_policy": "autonomic_wave_attempt",
+  "execution_repo_alias": "ggen_igniter",
+  "goal": "EP-A: Repair the deterministic mix format drift of episode fmt-1\n\nThe reference KNOWN class (format-drift repair) on subject v23/episode-fmt-1: the drift commit 80a8a4c71b331a39771ad65d1149eb835645d17c changes lib/ggen_igniter/semantic_jira/cli.ex; the recipe provider restores `mix format --check-formatted` with no model on the path.\n\nAcceptance:\n- https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check\n\nFalsifiers:\n- https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent\n\nPath scope:\n- .formatter.exs\n- config\n- lib\n- mix.exs\n- test",
+  "graph_digest": "sha256:43ce5f52ad2fa41515e00f0d0d0c38d06a8221e5fea9614d0a20e742e3989863",
+  "provider": "recipe",
+  "repository_identity": "seanchatmangpt/ggen_igniter",
+  "verifier_suite": "ggen-igniter-format",
+  "work_order_iri": "urn:semantic-jira:work-order:EP-A"
+}

@@ -1,0 +1,954 @@
+{
+  "eventTypes": [
+    {
+      "attributes": [
+        {
+          "name": "source",
+          "type": "string"
+        },
+        {
+          "name": "standing",
+          "type": "string"
+        }
+      ],
+      "name": "WorkOrderCreated"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        }
+      ],
+      "name": "CapabilityResolved"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "type": "string"
+        },
+        {
+          "name": "leased_to",
+          "type": "string"
+        }
+      ],
+      "name": "LeaseAcquired"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        }
+      ],
+      "name": "ActuationStarted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "type": "string"
+        },
+        {
+          "name": "final_head",
+          "type": "string"
+        },
+        {
+          "name": "steps",
+          "type": "string"
+        }
+      ],
+      "name": "ActuationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "type": "string"
+        },
+        {
+          "name": "head",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "suite",
+          "type": "string"
+        },
+        {
+          "name": "verdict",
+          "type": "string"
+        }
+      ],
+      "name": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "outcome",
+          "type": "string"
+        },
+        {
+          "name": "receipt_digest",
+          "type": "string"
+        }
+      ],
+      "name": "ReceiptSealed"
+    },
+    {
+      "attributes": [
+        {
+          "name": "event_digest",
+          "type": "string"
+        },
+        {
+          "name": "from",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "to",
+          "type": "string"
+        }
+      ],
+      "name": "StandingChanged"
+    },
+    {
+      "attributes": [
+        {
+          "name": "eligible_after",
+          "type": "string"
+        },
+        {
+          "name": "eligible_before",
+          "type": "string"
+        },
+        {
+          "name": "entered",
+          "type": "string"
+        },
+        {
+          "name": "ledger_tail",
+          "type": "string"
+        },
+        {
+          "name": "left",
+          "type": "string"
+        }
+      ],
+      "name": "FrontierChanged"
+    },
+    {
+      "attributes": [],
+      "name": "MachineExperienceAdmitted"
+    }
+  ],
+  "events": [
+    {
+      "attributes": [
+        {
+          "name": "source",
+          "value": "work_graph"
+        },
+        {
+          "name": "standing",
+          "value": "UNKNOWN"
+        }
+      ],
+      "id": "e001-WorkOrderCreated",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "subject:seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+          "qualifier": "subject"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        },
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T09:48:52.734999Z",
+      "type": "WorkOrderCreated"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "provider",
+          "value": "recipe"
+        }
+      ],
+      "id": "e002-CapabilityResolved",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        }
+      ],
+      "time": "2026-09-23T09:48:52.738444Z",
+      "type": "CapabilityResolved"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "value": "eed260ac-acc8-4c70-8284-57555bd271da"
+        },
+        {
+          "name": "provider",
+          "value": "recipe"
+        }
+      ],
+      "id": "e003-ActuationStarted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T09:48:54.742290Z",
+      "type": "ActuationStarted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "value": "eed260ac-acc8-4c70-8284-57555bd271da"
+        },
+        {
+          "name": "leased_to",
+          "value": "recipe-worker"
+        }
+      ],
+      "id": "e004-LeaseAcquired",
+      "relationships": [
+        {
+          "objectId": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        }
+      ],
+      "time": "2026-09-23T09:48:54.794892Z",
+      "type": "LeaseAcquired"
+    },
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "value": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4"
+        },
+        {
+          "name": "final_head",
+          "value": "9c5e7571c948f97f6ae08d9399f69f502d81efd4"
+        },
+        {
+          "name": "steps",
+          "value": "[\"format:0\"]"
+        }
+      ],
+      "id": "e005-ActuationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T09:48:56.962651Z",
+      "type": "ActuationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "value": "fabric"
+        },
+        {
+          "name": "head",
+          "value": "9c5e7571c948f97f6ae08d9399f69f502d81efd4"
+        },
+        {
+          "name": "status",
+          "value": "pass"
+        },
+        {
+          "name": "suite",
+          "value": "ggen-igniter-format"
+        }
+      ],
+      "id": "e006-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T09:48:56.963647Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "outcome",
+          "value": "alive"
+        },
+        {
+          "name": "receipt_digest",
+          "value": "sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1"
+        }
+      ],
+      "id": "e007-ReceiptSealed",
+      "relationships": [
+        {
+          "objectId": "receipt:fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        },
+        {
+          "objectId": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+          "qualifier": "lease"
+        }
+      ],
+      "time": "2026-09-23T09:48:56.996986Z",
+      "type": "ReceiptSealed"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "value": "independent"
+        },
+        {
+          "name": "head",
+          "value": "9c5e7571c948f97f6ae08d9399f69f502d81efd4"
+        },
+        {
+          "name": "status",
+          "value": "pass"
+        },
+        {
+          "name": "suite",
+          "value": "ggen-igniter-format"
+        }
+      ],
+      "id": "e008-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T09:48:58.475039Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "value": "revert-falsifier"
+        },
+        {
+          "name": "head",
+          "value": "27ea6b64078e0be6257777948964ed2f1fbb709b"
+        },
+        {
+          "name": "status",
+          "value": "fail"
+        },
+        {
+          "name": "suite",
+          "value": "ggen-igniter-format"
+        },
+        {
+          "name": "verdict",
+          "value": "killed"
+        }
+      ],
+      "id": "e009-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+          "qualifier": "reverted"
+        }
+      ],
+      "time": "2026-09-23T09:48:59.339180Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "event_digest",
+          "value": "sha256:41c2dd0faf87393a70d35aadabe043cabebb6c90e09545f0ff4250c18644648e"
+        },
+        {
+          "name": "from",
+          "value": "UNKNOWN"
+        },
+        {
+          "name": "status",
+          "value": "applied"
+        },
+        {
+          "name": "to",
+          "value": "ALIVE"
+        }
+      ],
+      "id": "e010-StandingChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "receipt:fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T09:49:00.650017Z",
+      "type": "StandingChanged"
+    },
+    {
+      "attributes": [
+        {
+          "name": "eligible_after",
+          "value": "[\"EP-B\"]"
+        },
+        {
+          "name": "eligible_before",
+          "value": "[\"EP-A\"]"
+        },
+        {
+          "name": "entered",
+          "value": "[\"EP-B\"]"
+        },
+        {
+          "name": "ledger_tail",
+          "value": "sha256:41c2dd0faf87393a70d35aadabe043cabebb6c90e09545f0ff4250c18644648e"
+        },
+        {
+          "name": "left",
+          "value": "[\"EP-A\"]"
+        }
+      ],
+      "id": "e011-FrontierChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "left"
+        },
+        {
+          "objectId": "workorder:EP-B",
+          "qualifier": "entered"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T09:49:01.262089Z",
+      "type": "FrontierChanged"
+    }
+  ],
+  "objectTypes": [
+    {
+      "attributes": [
+        {
+          "name": "iri",
+          "type": "string"
+        }
+      ],
+      "name": "GoalCheckpoint"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "identity",
+          "type": "string"
+        },
+        {
+          "name": "standing",
+          "type": "string"
+        }
+      ],
+      "name": "WorkOrder"
+    },
+    {
+      "attributes": [
+        {
+          "name": "base_sha",
+          "type": "string"
+        },
+        {
+          "name": "subject",
+          "type": "string"
+        }
+      ],
+      "name": "Subject"
+    },
+    {
+      "attributes": [
+        {
+          "name": "deterministic",
+          "type": "string"
+        },
+        {
+          "name": "executor",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        }
+      ],
+      "name": "Provider"
+    },
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "type": "string"
+        },
+        {
+          "name": "capability_id",
+          "type": "string"
+        },
+        {
+          "name": "recipe_id",
+          "type": "string"
+        }
+      ],
+      "name": "Capability"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "type": "string"
+        },
+        {
+          "name": "leased_to",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        }
+      ],
+      "name": "Lease"
+    },
+    {
+      "attributes": [
+        {
+          "name": "head_verified",
+          "type": "string"
+        },
+        {
+          "name": "outcome",
+          "type": "string"
+        },
+        {
+          "name": "receipt_digest",
+          "type": "string"
+        },
+        {
+          "name": "receipt_id",
+          "type": "string"
+        }
+      ],
+      "name": "Receipt"
+    },
+    {
+      "attributes": [
+        {
+          "name": "identity",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ],
+      "name": "Repository"
+    },
+    {
+      "attributes": [
+        {
+          "name": "author",
+          "type": "string"
+        },
+        {
+          "name": "parent",
+          "type": "string"
+        },
+        {
+          "name": "role",
+          "type": "string"
+        },
+        {
+          "name": "sha",
+          "type": "string"
+        }
+      ],
+      "name": "Commit"
+    },
+    {
+      "attributes": [],
+      "name": "MachineExperience"
+    }
+  ],
+  "objects": [
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4"
+        },
+        {
+          "name": "capability_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "recipe_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "mix-format"
+        }
+      ],
+      "id": "capability:recipe:mix-format",
+      "relationships": [],
+      "type": "Capability"
+    },
+    {
+      "attributes": [
+        {
+          "name": "iri",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23"
+        }
+      ],
+      "id": "checkpoint:GC-26.9.23",
+      "relationships": [],
+      "type": "GoalCheckpoint"
+    },
+    {
+      "attributes": [
+        {
+          "name": "role",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "episode subject"
+        },
+        {
+          "name": "sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "80a8a4c71b331a39771ad65d1149eb835645d17c"
+        }
+      ],
+      "id": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+      "relationships": [
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": [
+        {
+          "name": "author",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "parent",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "80a8a4c71b331a39771ad65d1149eb835645d17c"
+        },
+        {
+          "name": "sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "9c5e7571c948f97f6ae08d9399f69f502d81efd4"
+        }
+      ],
+      "id": "commit:9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+      "relationships": [
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "parent"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "eed260ac-acc8-4c70-8284-57555bd271da"
+        },
+        {
+          "name": "leased_to",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "provider",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe"
+        }
+      ],
+      "id": "lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da",
+      "relationships": [],
+      "type": "Lease"
+    },
+    {
+      "attributes": [
+        {
+          "name": "deterministic",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "true"
+        },
+        {
+          "name": "executor",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "provider",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe"
+        }
+      ],
+      "id": "provider:recipe-worker",
+      "relationships": [],
+      "type": "Provider"
+    },
+    {
+      "attributes": [
+        {
+          "name": "head_verified",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "true"
+        },
+        {
+          "name": "outcome",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "alive"
+        },
+        {
+          "name": "receipt_digest",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1"
+        },
+        {
+          "name": "receipt_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "fa8694c3-ce5a-4fb1-8634-2c2969f23c1d"
+        }
+      ],
+      "id": "receipt:fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+      "relationships": [],
+      "type": "Receipt"
+    },
+    {
+      "attributes": [
+        {
+          "name": "identity",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "seanchatmangpt/ggen_igniter"
+        },
+        {
+          "name": "path",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "/Users/sac/ggen_igniter"
+        }
+      ],
+      "id": "repository:seanchatmangpt/ggen_igniter",
+      "relationships": [],
+      "type": "Repository"
+    },
+    {
+      "attributes": [
+        {
+          "name": "base_sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "80a8a4c71b331a39771ad65d1149eb835645d17c"
+        },
+        {
+          "name": "subject",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A"
+        }
+      ],
+      "id": "subject:seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+      "relationships": [
+        {
+          "objectId": "commit:80a8a4c71b331a39771ad65d1149eb835645d17c",
+          "qualifier": "base"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Subject"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "identity",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "EP-A"
+        },
+        {
+          "name": "standing",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "UNKNOWN"
+        }
+      ],
+      "id": "workorder:EP-A",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "type": "WorkOrder"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "identity",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "EP-B"
+        },
+        {
+          "name": "standing",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "UNKNOWN"
+        }
+      ],
+      "id": "workorder:EP-B",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "requiresReceipt"
+        }
+      ],
+      "type": "WorkOrder"
+    }
+  ]
+}

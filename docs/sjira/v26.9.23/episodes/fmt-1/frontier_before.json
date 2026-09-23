@@ -1,0 +1,42 @@
+{
+  "blocked": [
+    {
+      "dependencies": [
+        {
+          "required_standing": "ALIVE",
+          "type": "requiresReceipt",
+          "upstream": "EP-A"
+        }
+      ],
+      "identity": "EP-B",
+      "reason": "dependencies_unsatisfied"
+    }
+  ],
+  "eligible": [
+    {
+      "authority": "NONE",
+      "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+      "candidate_sha": null,
+      "definition_digest": "sha256:9e7833aea62a843e884e0fe2e0ca4cf13c5e61d8b40ab9b1b4050704c6bcab44",
+      "identity": "EP-A",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "repository": "seanchatmangpt/ggen_igniter",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+      "title": "Repair the deterministic mix format drift of episode fmt-1",
+      "work_order_digest": "sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c"
+    }
+  ],
+  "events": 0,
+  "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "standings": {
+    "EP-A": "UNKNOWN",
+    "EP-B": "UNKNOWN"
+  },
+  "status": "ok"
+}
