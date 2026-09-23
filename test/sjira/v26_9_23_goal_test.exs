@@ -728,6 +728,60 @@ defmodule Xaas.Sjira.V26923GoalTest do
     end
   end
 
+  # gi_mix.sh judges GGEN_IGNITER_DIR read-only: mix compiles into a private
+  # clone of its _build/test (MIX_BUILD_PATH), removed on exit. A real mix
+  # project in a tmp dir stands in for ggen_igniter (real compile, real sh).
+  test "courts/gi_mix.sh runs mix in GGEN_IGNITER_DIR against a private build copy and writes nothing there" do
+    project = tmp_dir("v23_gi_mix_probe")
+    File.mkdir_p!(Path.join(project, "lib"))
+    File.mkdir_p!(Path.join(project, "_build/test"))
+    File.write!(Path.join(project, "_build/test/marker"), "judged build\n")
+
+    File.write!(Path.join(project, "mix.exs"), """
+    defmodule GiMixProbe.MixProject do
+      use Mix.Project
+      def project, do: [app: :gi_mix_probe, version: "0.1.0", deps: []]
+    end
+    """)
+
+    File.write!(Path.join(project, "lib/gi_mix_probe.ex"), """
+    defmodule GiMixProbe do
+      def hello, do: :world
+    end
+    """)
+
+    private_root = tmp_dir("v23_gi_mix_tmp")
+
+    {out, code} =
+      System.cmd(
+        "sh",
+        [
+          Path.join(@dir, "courts/gi_mix.sh"),
+          "run",
+          "--no-start",
+          "-e",
+          ~S|IO.puts("BUILD_PATH=" <> Mix.Project.build_path() <> " HELLO=#{GiMixProbe.hello()}")|
+        ],
+        stderr_to_stdout: true,
+        env: [
+          {"GGEN_IGNITER_DIR", project},
+          {"TMPDIR", private_root},
+          {"MIX_ENV", nil},
+          {"GI_MIX_ENV", nil}
+        ]
+      )
+
+    assert code == 0, out
+    assert [_, build_path] = Regex.run(~r/^BUILD_PATH=(\S+) HELLO=world$/m, out)
+    assert String.starts_with?(build_path, private_root), build_path
+    assert build_path =~ ~r{/gi-mix-build\.[^/]+/test$}
+    # the judged checkout's _build is untouched; the private copy is gone
+    assert File.ls!(Path.join(project, "_build")) == ["test"]
+    assert File.ls!(Path.join(project, "_build/test")) == ["marker"]
+    assert File.read!(Path.join(project, "_build/test/marker")) == "judged build\n"
+    refute File.exists?(Path.dirname(build_path))
+  end
+
   @tag timeout: 600_000
   test "GC23-0 (real sh + ggen_igniter compile_prose --check) refuses a hand-edited compiled/orders.ttl" do
     repo =
