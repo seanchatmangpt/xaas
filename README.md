@@ -15,7 +15,7 @@ Historical evidence that no longer describes the supported system lives under [`
 
 ## Current capability snapshot
 
-Observed source and Chicago-style tests on `main@e856800a7341b617dcac345d769546387ecb2670` establish these current contracts:
+Observed source and Chicago-style tests on `main@2d229c272c3a02dcb8e75ff600ea0a4edc058d71` establish these current contracts:
 
 - `Xaas.Semantics.Registry` maps every `Xaas.Resource` projection onto admitted public namespaces and computes a deterministic SHA-256 projection identity.
 - `Xaas.Actuation.run/4` requires a non-empty `:idempotency_key` and drives `admit -> do -> receipt` through `Xaas.Actuation.Reactor` synchronously inside the participating Ash data-layer transaction.
@@ -57,6 +57,6 @@ and security management in the simulation, so the incident subject is never
 the router. The internal-token-gated A2A surface is
 `/a2a/zoe-event`.
 
-The evidence ceiling is deliberately `SIMULATION_ONLY`. This PR does not
+The evidence ceiling is deliberately `SIMULATION_ONLY`. This document does not
 claim an `AshA2A.CommandBus` production DO, a provider write, deployment, or
 runtime standing promotion.
