@@ -3,11 +3,18 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
   Chicago-style qualification of `mix xaas.stop_court`: real git repositories in
   tmp, real `/bin/sh` court commands in their own process groups, the real
   `~/.claude/dfcm/validate_receipt.py` (a real `python3` process) and the real
-  oxigraph NIF evaluating the REAL `docs/sjira/v26.9.22/friday/stop.rq`. No mocks,
-  no stubs. Independent witnesses are real too: receipts are re-validated by a
-  separate validator run, the tuple digest is recomputed by Python's
-  `json.dumps`, and the ASK -> SELECT rewrite is compared against rdflib's native
-  ASK (named skip when rdflib is absent).
+  oxigraph NIF evaluating the STOP contract query. No mocks, no stubs.
+  Independent witnesses are real too: receipts are re-validated by a separate
+  validator run, the tuple digest is recomputed by Python's `json.dumps`, and the
+  ASK -> SELECT rewrite is compared against rdflib's native ASK (named skip when
+  rdflib is absent).
+
+  The contract query is pinned in this file (`@contract_stop_rq`) and the fixture
+  goal graphs are built from it, so the runner tests depend on no file outside
+  `test/`: with the runner absent they fail on the runner itself, not on fixture
+  setup. Two tests tie the pin to the real artifacts: the real `stop.rq` must be
+  byte-equal (trimmed) to the pin, and the real `goal.ttl` court run must accept
+  its root `sj:stopQuery` against that `stop.rq` (the court refuses drift).
   """
   use ExUnit.Case, async: false
 
@@ -28,13 +35,58 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
 
   @q3 ~s(""")
 
+  # STOP(GC-FRI-0800) contract: byte-equal (trimmed) to docs/sjira/v26.9.22/friday/stop.rq,
+  # enforced by "the real stop.rq is the pinned STOP contract" below.
+  @contract_stop_rq ~S"""
+  # STOP(GC-FRI-0800). True iff (1) GC-FRI-0800 has at least one child gate,
+  # (2) every child gate (sj:checkpointOf GC-FRI-0800) has a gate receipt with
+  # standing ALIVE, and (3) every WorkOrder with sj:checkpointOf GC-FRI-0800 is
+  # typed Successor (sj:boundaryClass sj:Successor) or has a receipt whose
+  # standing is terminal: ALIVE, BLOCKED, UNSUPPORTED or REFUSED. UNKNOWN,
+  # PARTIAL_ALIVE, BUILD_BROKEN or no receipt at all keeps STOP false.
+  # Receipts enter the graph only through mix xaas.stop_court, which projects
+  # receipts ADMITTED by validate_receipt.py as sj:Receipt nodes; goal.ttl
+  # itself may not assert any receipt. This text is byte-equal (trimmed) to the
+  # sj:stopQuery of GC-FRI-0800 in goal.ttl; the court refuses to run on drift.
+  PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+  PREFIX dcterms: <http://purl.org/dc/terms/>
+  ASK {
+    ?gc a sj:GoalCheckpoint ;
+        dcterms:identifier "GC-FRI-0800" .
+    FILTER EXISTS {
+      ?anyGate a sj:GoalCheckpoint ;
+               sj:checkpointOf ?gc .
+    }
+    FILTER NOT EXISTS {
+      ?gate a sj:GoalCheckpoint ;
+            sj:checkpointOf ?gc .
+      FILTER NOT EXISTS {
+        ?gate sj:receipt ?gateReceipt .
+        ?gateReceipt a sj:Receipt ;
+                     sj:standing "ALIVE" .
+      }
+    }
+    FILTER NOT EXISTS {
+      ?order a sj:WorkOrder ;
+             sj:checkpointOf ?gc .
+      FILTER NOT EXISTS { ?order sj:boundaryClass sj:Successor . }
+      FILTER NOT EXISTS {
+        ?order sj:receipt ?orderReceipt .
+        ?orderReceipt a sj:Receipt ;
+                      sj:standing ?standing .
+        FILTER(?standing = "ALIVE" || STRSTARTS(?standing, "BLOCKED") || STRSTARTS(?standing, "UNSUPPORTED") || STRSTARTS(?standing, "REFUSED"))
+      }
+    }
+  }
+  """
+
   # ------------------------------------------------------------------ fixture
 
   defp repo do
     dir = Path.join(System.tmp_dir!(), "stop_court_#{System.unique_integer([:positive])}")
     on_exit(fn -> File.rm_rf(dir) end)
     File.mkdir_p!(Path.join(dir, "goal"))
-    File.cp!(@stop_rq, Path.join(dir, "goal/stop.rq"))
+    File.write!(Path.join(dir, "goal/stop.rq"), @contract_stop_rq)
 
     {_, 0} = System.cmd("git", ["init", "-q", dir])
 
@@ -62,7 +114,7 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
   end
 
   defp write_goal(repo, gates, extra \\ "") do
-    stop = @stop_rq |> File.read!() |> String.trim()
+    stop = String.trim(@contract_stop_rq)
 
     gate_ttl =
       Enum.map_join(gates, "\n", fn {id, command} ->
@@ -398,7 +450,7 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
   # ------------------------------------------------------------------ query engine
 
   test "ask_as_select keeps the prologue and turns only the ASK keyword into SELECT *" do
-    {:ok, select} = StopCourt.ask_as_select(File.read!(@stop_rq))
+    {:ok, select} = StopCourt.ask_as_select(@contract_stop_rq)
     assert select =~ ~r/^PREFIX sj: <https:\/\/ggen-igniter\.dev\/ontology\/semantic-jira#>$/m
     assert select =~ ~r/^SELECT \* \{$/m
     refute select =~ ~r/^ASK\b/m
@@ -410,8 +462,8 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     @tag skip: "needs python3 rdflib for the independent ASK"
   end
 
-  test "the oxigraph SELECT-existence answer equals rdflib's native ASK on the real stop.rq" do
-    query = File.read!(@stop_rq)
+  test "the oxigraph SELECT-existence answer equals rdflib's native ASK on the contract query" do
+    query = @contract_stop_rq
     {:ok, select} = StopCourt.ask_as_select(query)
 
     base = """
@@ -450,6 +502,11 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
   end
 
   # ------------------------------------------------------------------ the real goal graph
+
+  test "the real stop.rq is the pinned STOP contract (byte-equal, trimmed)" do
+    assert File.regular?(@stop_rq), "missing #{@stop_rq}"
+    assert String.trim(File.read!(@stop_rq)) == String.trim(@contract_stop_rq)
+  end
 
   test "the real goal.ttl: 13 gates G0..G12, stop.rq in sync, FRI-T5 tuple-complete, STOP=false" do
     receipts =
