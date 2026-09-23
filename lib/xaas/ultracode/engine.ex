@@ -55,6 +55,13 @@ defmodule Xaas.Ultracode.Engine do
   then reaping that declined epoch as a refusal. An explicit `:worker` opt
   is the caller's own choice and applies to whatever providers it names.
 
+  A malformed allowlist is a configuration error, never a silent empty
+  pool: `provider_allowlist/0` logs the bad value (`Logger.error`) and
+  returns `{:error, {:invalid_config, :ultracode_engine_providers}}`; an
+  undirected `fill/1` returns that error instead of a report list, and a
+  directed fill that would use the configured worker reports it as the
+  provider's `:outcome` and dispatches nothing.
+
   ## Settling is concurrency-correct
 
   A slot's worker may lose its directed claim to a concurrent engine or an
@@ -121,15 +128,17 @@ defmodule Xaas.Ultracode.Engine do
   dispatched concurrently (one task per free slot) and settled
   individually -- see the moduledoc for the settlement semantics.
   """
-  @spec fill(keyword()) :: [map()]
+  @spec fill(keyword()) :: [map()] | {:error, {:invalid_config, :ultracode_engine_providers}}
   def fill(opts \\ []) do
-    opts
-    |> providers()
-    |> Enum.map(&fill_provider(&1, opts))
+    case providers(opts) do
+      {:error, _invalid} = error -> error
+      providers -> Enum.map(providers, &fill_provider(&1, opts))
+    end
   end
 
   # Directed (`:providers` list or a single `:provider`) wins; otherwise the
-  # allowlisted providers that have ready work.
+  # allowlisted providers that have ready work (or the allowlist's typed
+  # configuration error).
   defp providers(opts) do
     cond do
       Keyword.has_key?(opts, :providers) -> Keyword.fetch!(opts, :providers)
@@ -142,25 +151,39 @@ defmodule Xaas.Ultracode.Engine do
   The providers whose pools the engine fills on its own and whose epochs the
   CONFIGURED worker may be handed: `config :xaas, :ultracode_engine_providers`
   (a list of provider ids, or `:all`). Unset = `["recipe"]` (the deterministic
-  recipe provider only). A malformed value fails closed to `[]`.
+  recipe provider only). A malformed value (anything else, or a list with a
+  non-string element) is logged with the bad value and returned as
+  `{:error, {:invalid_config, :ultracode_engine_providers}}` -- never
+  coerced to an empty allowlist that would read as "no ready work".
   """
-  @spec provider_allowlist() :: [String.t()] | :all
+  @spec provider_allowlist() ::
+          [String.t()] | :all | {:error, {:invalid_config, :ultracode_engine_providers}}
   def provider_allowlist do
     case Application.get_env(:xaas, :ultracode_engine_providers, @default_providers) do
       :all ->
         :all
 
       list when is_list(list) ->
-        if Enum.all?(list, &is_binary/1), do: list, else: []
+        if Enum.all?(list, &is_binary/1), do: list, else: invalid_allowlist(list)
 
-      _malformed ->
-        []
+      malformed ->
+        invalid_allowlist(malformed)
     end
+  end
+
+  defp invalid_allowlist(value) do
+    Logger.error(
+      "[ultracode-engine] invalid config :ultracode_engine_providers: #{inspect(value)} " <>
+        "(expected a list of provider id strings or :all); the engine fills nothing on its own"
+    )
+
+    {:error, {:invalid_config, :ultracode_engine_providers}}
   end
 
   defp allowlisted?(provider) do
     case provider_allowlist() do
       :all -> true
+      {:error, _invalid} = error -> error
       list -> provider in list
     end
   end
@@ -348,11 +371,16 @@ defmodule Xaas.Ultracode.Engine do
   defp resolve_worker(opts, provider) do
     case Keyword.get(opts, :worker) do
       nil ->
-        if allowlisted?(provider) do
-          to_worker(Application.get_env(:xaas, :ultracode_engine_worker)) ||
-            {:skip, :no_worker_configured}
-        else
-          {:skip, :provider_not_allowlisted}
+        case allowlisted?(provider) do
+          true ->
+            to_worker(Application.get_env(:xaas, :ultracode_engine_worker)) ||
+              {:skip, :no_worker_configured}
+
+          false ->
+            {:skip, :provider_not_allowlisted}
+
+          {:error, invalid} ->
+            {:skip, invalid}
         end
 
       explicit ->
@@ -382,6 +410,7 @@ defmodule Xaas.Ultracode.Engine do
 
     case provider_allowlist() do
       :all -> Xaas.Repo.all(query)
+      {:error, _invalid} = error -> error
       [] -> []
       allowed -> query |> where_provider_in(allowed) |> Xaas.Repo.all()
     end

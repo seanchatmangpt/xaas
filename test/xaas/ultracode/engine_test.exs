@@ -38,6 +38,8 @@ defmodule Xaas.Ultracode.EngineTest do
 
   require Ash.Query
 
+  import ExUnit.CaptureLog
+
   @moduletag :ultracode
 
   alias Xaas.Ultracode.{Engine, Epoch, Lease, MissedEpochs, Receipt, Run, TickHealth}
@@ -724,15 +726,9 @@ defmodule Xaas.Ultracode.EngineTest do
                Engine.fill(worker: &claim_close_worker/2)
     end
 
-    test ":all restores unrestricted discovery; a malformed allowlist fails closed" do
+    test ":all restores unrestricted discovery" do
       provider = unique_provider()
       {_run, _epoch} = running_run_and_epoch(provider)
-
-      # Behavioral assertions precede the accessor checks (see the default
-      # test above): the fill result is what a revert must break.
-      Application.put_env(:xaas, :ultracode_engine_providers, [:not_a_string])
-      assert Engine.fill(worker: &ghost_worker/2) == []
-      assert Engine.provider_allowlist() == []
 
       Application.put_env(:xaas, :ultracode_engine_providers, :all)
 
@@ -740,6 +736,47 @@ defmodule Xaas.Ultracode.EngineTest do
                Engine.fill(worker: fn _epoch, _ctx -> :rate_limited end)
 
       assert Engine.provider_allowlist() == :all
+    end
+
+    test "a malformed allowlist is logged with the bad value and surfaced as a typed config error, never an empty pool" do
+      provider = unique_provider()
+      {_run, epoch} = running_run_and_epoch(provider)
+      invalid = {:error, {:invalid_config, :ultracode_engine_providers}}
+
+      for bad <- [[:not_a_string], [provider, 42], "recipe", %{"recipe" => true}] do
+        Application.put_env(:xaas, :ultracode_engine_providers, bad)
+
+        # Behavior first: the undirected fill (the cron path) reports the
+        # error instead of `[]` ("no ready work"), and the bad value is in
+        # the error log.
+        log =
+          capture_log([level: :error], fn ->
+            assert Engine.fill(worker: &claim_close_worker/2) == invalid
+          end)
+
+        assert log =~ "invalid config :ultracode_engine_providers"
+        assert log =~ inspect(bad)
+
+        # A directed fill that would use the CONFIGURED worker carries the
+        # same error as its outcome and dispatches nothing.
+        capture_log(fn ->
+          assert [
+                   %{
+                     provider: ^provider,
+                     dispatched: [],
+                     outcome: {:invalid_config, :ultracode_engine_providers}
+                   }
+                 ] =
+                   Engine.fill(providers: [provider])
+
+          assert Engine.provider_allowlist() == invalid
+          assert Engine.cycle().fill == invalid
+        end)
+      end
+
+      untouched = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+      assert untouched.state == :running
+      assert is_nil(untouched.lease_token)
     end
   end
 
