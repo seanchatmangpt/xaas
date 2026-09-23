@@ -1,0 +1,35 @@
+{
+  "decided_at": "2026-09-23T13:57:25.753698Z",
+  "decision": "KNOWN",
+  "declared_capability": null,
+  "episode": "me-2",
+  "experience_sources": [
+    {
+      "path": "docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl",
+      "sha256": "sha256:ef68cc70953aa3e11406ef51b44e9f14f0f3aed79614fb4f3729e7b66afbbdb3"
+    }
+  ],
+  "failure_class": "format_drift",
+  "order": "EP-A",
+  "order_iri": "https://ggen-igniter.dev/sjira/v26.9.23#order-0b937e9ef9edc1a7",
+  "order_turtle_sha256": "sha256:111b8976b3546ada7381f7eecb44a377b195eb964c878fb5c515f0470fcc7ecf",
+  "route": {
+    "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
+    "admission_digest": "sha256:e042b7e74bed7507925e7fbab14b5681e0583ce41cfd9a34f62811f190771c56",
+    "capability": "recipe:mix-format",
+    "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+    "experiences_applicable": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+    ],
+    "experiences_considered": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+    ],
+    "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+    "order": "EP-A",
+    "predicate_sha256": "sha256:3e6523a47a725da300771eee7c06e0487ab22da181db885b01bd54b0414c73d0",
+    "problem_class": "format_drift",
+    "provider_class": "recipe",
+    "source": "machine_experience"
+  },
+  "schema": "xaas/machine-experience-route/v1"
+}

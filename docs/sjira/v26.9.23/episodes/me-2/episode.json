@@ -1,0 +1,87 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23",
+  "decision": "KNOWN",
+  "drive": {
+    "dir": "docs/sjira/v26.9.23/episodes/me-2/drive",
+    "head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+    "provider": {
+      "capability": "recipe:mix-format",
+      "executor": "recipe-worker",
+      "provider": "recipe"
+    },
+    "standing": "ALIVE",
+    "tuple_digest": "sha256:487af9b1b85fc03bcb06be33877679634182ff99b5308269a333d3244b7c7ba8"
+  },
+  "episode": "me-2",
+  "experience_sources": [
+    {
+      "path": "docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl",
+      "sha256": "sha256:ef68cc70953aa3e11406ef51b44e9f14f0f3aed79614fb4f3729e7b66afbbdb3"
+    }
+  ],
+  "exploration": null,
+  "failure_class": "format_drift",
+  "finished_at": "2026-09-23T13:57:34.101185Z",
+  "machine_experience": null,
+  "no_llm_guard": "passed",
+  "ocel": {
+    "by_class": {
+      "ActuationCompleted": 1,
+      "ActuationStarted": 1,
+      "CapabilityResolved": 1,
+      "FrontierChanged": 1,
+      "LeaseAcquired": 1,
+      "ReceiptSealed": 1,
+      "RouteDecided": 1,
+      "StandingChanged": 1,
+      "VerificationCompleted": 3,
+      "WorkOrderCreated": 1
+    },
+    "equivalent": true,
+    "events": 12,
+    "exploration_events": 0,
+    "llm_provider_events": 0,
+    "objects": 12
+  },
+  "order": "EP-A",
+  "route": {
+    "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
+    "admission_digest": "sha256:e042b7e74bed7507925e7fbab14b5681e0583ce41cfd9a34f62811f190771c56",
+    "capability": "recipe:mix-format",
+    "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+    "experiences_applicable": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+    ],
+    "experiences_considered": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2"
+    ],
+    "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+    "order": "EP-A",
+    "predicate_sha256": "sha256:3e6523a47a725da300771eee7c06e0487ab22da181db885b01bd54b0414c73d0",
+    "problem_class": "format_drift",
+    "provider_class": "recipe",
+    "source": "machine_experience"
+  },
+  "schema": "xaas/machine-experience-episode/v1",
+  "standing": "ALIVE",
+  "started_at": "2026-09-23T13:57:25.717721Z",
+  "step_count": 16,
+  "steps": [
+    "guard",
+    "route",
+    "drive:guard",
+    "drive:frontier_before",
+    "drive:order",
+    "drive:resolve",
+    "drive:sa2a",
+    "drive:descriptor",
+    "drive:contract",
+    "drive:materialize",
+    "drive:actuate",
+    "drive:seal",
+    "drive:verify",
+    "drive:project",
+    "drive:reconcile",
+    "drive:frontier_after"
+  ]
+}

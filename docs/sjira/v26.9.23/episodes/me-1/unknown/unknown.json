@@ -1,0 +1,53 @@
+{
+  "authority": {
+    "actor": "xaas-machine-experience-router",
+    "ceiling": "CONSTRUCT",
+    "grant": "NONE (routing only: nothing executed)"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": []
+  },
+  "identity": {
+    "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+    "failure_class": "format_drift",
+    "repo": "/Users/sac/ggen_igniter",
+    "subject": "episode me-1 EP-A",
+    "subject_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+    "work_order": "EP-A"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "mix xaas.machine_experience --name me-1 --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --ggen-build-path /private/tmp/claude-501/v23-scratch/B1b-V23-M/build-ep/test --work-root /private/tmp/claude-501/v23-scratch/B1b-V23-M/work-root",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-M",
+        "exit": 4,
+        "summary": "UNKNOWN(no_capability_no_experience)"
+      }
+    ],
+    "durable_location": "docs/sjira/v26.9.23/episodes/me-1/unknown/unknown.json"
+  },
+  "standing": {
+    "derived_from": "route no_capability_no_experience of order EP-A at subject 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f (route.json)",
+    "reason": "no_capability_no_experience",
+    "value": "UNKNOWN"
+  },
+  "steps": [
+    "guard",
+    "route"
+  ],
+  "unknown": {
+    "detail": {
+      "experiences_applicable": [],
+      "experiences_considered": [],
+      "exploration": "absent: docs/sjira/v26.9.23/episodes/me-1/exploration.json",
+      "failure_class": "format_drift",
+      "order": "EP-A"
+    },
+    "hop": "route",
+    "next": "bounded exploration (PRD PR-016) or an admitted MachineExperience",
+    "reason": "no_capability_no_experience",
+    "standing": "UNKNOWN"
+  }
+}

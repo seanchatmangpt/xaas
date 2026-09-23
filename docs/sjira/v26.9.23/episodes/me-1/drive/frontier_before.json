@@ -1,0 +1,42 @@
+{
+  "blocked": [
+    {
+      "dependencies": [
+        {
+          "required_standing": "ALIVE",
+          "type": "requiresReceipt",
+          "upstream": "EP-A"
+        }
+      ],
+      "identity": "EP-B",
+      "reason": "dependencies_unsatisfied"
+    }
+  ],
+  "eligible": [
+    {
+      "authority": "NONE",
+      "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+      "candidate_sha": null,
+      "definition_digest": "sha256:7db51e16c6fc481bff19bb0c83b4aa76e9c2282cf97802a7876b0ac9cb255301",
+      "identity": "EP-A",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "repository": "seanchatmangpt/ggen_igniter",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+      "title": "EP-A of MachineExperience episode me-1: repair the format_drift of lib/ggen_igniter/semantic_jira/reconciler.ex",
+      "work_order_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb"
+    }
+  ],
+  "events": 0,
+  "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "standings": {
+    "EP-A": "UNKNOWN",
+    "EP-B": "UNKNOWN"
+  },
+  "status": "ok"
+}

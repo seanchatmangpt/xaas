@@ -1,0 +1,76 @@
+{
+  "admission": {
+    "admission": "ADMITTED",
+    "admission_digest": "sha256:e042b7e74bed7507925e7fbab14b5681e0583ce41cfd9a34f62811f190771c56",
+    "admitted_capability": "recipe:mix-format",
+    "applicability_predicate": "PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>\nPREFIX xme: <https://xaas.dev/ontology/machine-experience#>\nSELECT ?order WHERE {\n  ?order a sj:WorkOrder ;\n    xme:failureClass \"format_drift\" ;\n    sj:repository \"seanchatmangpt/ggen_igniter\" ;\n    sj:consequenceClass \"postcondition\" ;\n    sj:authorityCeiling \"CONSTRUCT\" .\n  OPTIONAL { ?order sj:requiresCapability ?declared . }\n  FILTER(!BOUND(?declared))\n}\n",
+    "consequence_bounds": "{\"authority_ceiling\":\"CONSTRUCT\",\"consequence_class\":\"postcondition\",\"exclusions\":[\"no LLM provider on the KNOWN path\",\"no file outside path_scope changes\",\"no push, merge or publish\"],\"path_scope\":[\".formatter.exs\",\"config\",\"lib\",\"mix.exs\",\"test\"]}",
+    "falsifiers": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent",
+      "revert falsifier: the ggen-igniter-format court must fail with the provider's commit reverted"
+    ],
+    "problem_class": "format_drift",
+    "provider_class": "recipe",
+    "required_evidence": [
+      "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+      "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-me-1-format-check"
+    ],
+    "source_episode": "me-1",
+    "source_exploration": "sha256:1a8da3ee1734c0cb0244f4d27e15d3de95754fbf3fee174c25805b0e8aa07267",
+    "source_order": "semantic-jira:v26.9.23:episode:me-1:EP-A",
+    "successful_verification": "{\"head\":\"bd84b3e1af5c49fcd9243b531c57800b0a4a05ce\",\"independent\":\"pass\",\"receipt_digest\":\"sha256:717b2b89600d4569f697d243179191abf4055b139bf4d284cb5a45362f483aec\",\"revert_falsifier\":\"killed\",\"standing\":\"ALIVE\",\"suite\":\"ggen-igniter-format\"}"
+  },
+  "admission_node": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
+  "experience": {
+    "authority": "NONE",
+    "execution_receipt_hash": "sha256:717b2b89600d4569f697d243179191abf4055b139bf4d284cb5a45362f483aec",
+    "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+    "kind": "MachineExperience",
+    "observation_refs": [
+      "docs/sjira/v26.9.23/episodes/me-1/drive/receipt.json",
+      "docs/sjira/v26.9.23/episodes/me-1/drive/receipt.r.json",
+      "docs/sjira/v26.9.23/episodes/me-1/drive/verification.json",
+      "docs/sjira/v26.9.23/episodes/me-1/drive/hops.json",
+      "docs/sjira/v26.9.23/episodes/me-1/drive/ocel.json"
+    ],
+    "replay_identity": "semantic-jira:v26.9.23:episode:me-1:EP-A",
+    "resulting_state_digest": "sha256:d5605e8acd904193aa08416cc4fef754892e0ecc6f575dc46b6b261f298eafef",
+    "standing": "CANDIDATE",
+    "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+    "verification_digest": "sha256:e4db5aca0a97a2d7350ed8fd6da2e6db3790e369da519837d37788a964e6e9a5",
+    "work_order_digest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb"
+  },
+  "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+  "schema": "xaas/machine-experience-record/v1",
+  "shape_report": {
+    "conforms": true,
+    "data_sha256": "sha256:ef68cc70953aa3e11406ef51b44e9f14f0f3aed79614fb4f3729e7b66afbbdb3",
+    "focus_node_count": 1,
+    "shapes": "/Users/sac/wt/v26922/fri/ggen_igniter-int/priv/ggen/semantic-jira-pack/shapes/work-order.shacl.ttl",
+    "shapes_checked": [
+      "standing_transition_shape",
+      "goal_checkpoint_shape",
+      "skill_shape",
+      "receipt_shape",
+      "task_state_shape",
+      "prediction_shape",
+      "boundary_class_value_shape",
+      "lease_request_shape",
+      "checkpoint_shape",
+      "dependency_edge_shape",
+      "state_mapping_shape",
+      "friday_work_order_shape",
+      "machine_experience_shape",
+      "projection_authority_shape",
+      "capability_shape",
+      "process_finding_shape",
+      "generator_capability_shape",
+      "global_integrity_shape",
+      "work_order_shape"
+    ],
+    "shapes_sha256": "sha256:42572fa36075b8267f1c73e4c72618034c75f50600de5620991378833a7a9d3b",
+    "violations": []
+  },
+  "ttl": "docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl",
+  "ttl_sha256": "sha256:ef68cc70953aa3e11406ef51b44e9f14f0f3aed79614fb4f3729e7b66afbbdb3"
+}

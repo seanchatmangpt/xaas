@@ -1,0 +1,35 @@
+{
+  "blocked": [
+    {
+      "identity": "EP-A",
+      "reason": "standing=ALIVE"
+    }
+  ],
+  "eligible": [
+    {
+      "authority": "NONE",
+      "base_sha": "36605534141aa44429586d3e15e8ff159f3d5bc8",
+      "candidate_sha": null,
+      "definition_digest": "sha256:ccf59d68c9bb5979db3017e9ea9284420586f9cda679cd37c835a65342e33f73",
+      "identity": "EP-B",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "repository": "seanchatmangpt/ggen_igniter",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-2#EP-B",
+      "title": "EP-B of MachineExperience episode me-2: repair the format_drift of lib/ggen_igniter/semantic_jira/transition_log.ex",
+      "work_order_digest": "sha256:d46c9072e45c0d8b166eb321298fd911a3578d0b3b8a5b4107444f151a73a87e"
+    }
+  ],
+  "events": 1,
+  "ledger_tail": "sha256:902072f3fbe74d9b25f7f797698373d477bad93769cc4a129fb3c20274bcd88f",
+  "standings": {
+    "EP-A": "ALIVE",
+    "EP-B": "UNKNOWN"
+  },
+  "status": "ok"
+}

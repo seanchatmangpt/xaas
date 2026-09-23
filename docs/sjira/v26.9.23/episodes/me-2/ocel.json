@@ -1,0 +1,491 @@
+{
+  "ocel:eventTypes": [
+    "WorkOrderCreated",
+    "CapabilityResolved",
+    "LeaseAcquired",
+    "ActuationStarted",
+    "ActuationCompleted",
+    "VerificationCompleted",
+    "ReceiptSealed",
+    "StandingChanged",
+    "FrontierChanged",
+    "MachineExperienceAdmitted",
+    "RouteDecided",
+    "ExplorationStarted",
+    "ExplorationCompleted"
+  ],
+  "ocel:events": [
+    {
+      "attributes": {
+        "capability": "recipe:mix-format",
+        "decision": "KNOWN",
+        "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+        "failure_class": "format_drift",
+        "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+        "source": "machine_experience"
+      },
+      "id": "e001-RouteDecided",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+          "qualifier": "machine-experience"
+        }
+      ],
+      "time": "2026-09-23T13:57:25.753698Z",
+      "type": "RouteDecided"
+    },
+    {
+      "attributes": {
+        "source": "work_graph",
+        "standing": "UNKNOWN"
+      },
+      "id": "e002-WorkOrderCreated",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "subject:seanchatmangpt/ggen_igniter@v23/episode-me-2#EP-A",
+          "qualifier": "subject"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        },
+        {
+          "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T13:57:26.415300Z",
+      "type": "WorkOrderCreated"
+    },
+    {
+      "attributes": {
+        "capability": "recipe:mix-format",
+        "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+        "provider": "recipe",
+        "route_source": "machine_experience"
+      },
+      "id": "e003-CapabilityResolved",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+          "qualifier": "machine-experience"
+        }
+      ],
+      "time": "2026-09-23T13:57:26.419002Z",
+      "type": "CapabilityResolved"
+    },
+    {
+      "attributes": {
+        "epoch_id": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+        "provider": "recipe"
+      },
+      "id": "e004-ActuationStarted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T13:57:28.211949Z",
+      "type": "ActuationStarted"
+    },
+    {
+      "attributes": {
+        "epoch_id": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+        "leased_to": "recipe-worker"
+      },
+      "id": "e005-LeaseAcquired",
+      "relationships": [
+        {
+          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        }
+      ],
+      "time": "2026-09-23T13:57:28.265721Z",
+      "type": "LeaseAcquired"
+    },
+    {
+      "attributes": {
+        "argv_sha256": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4",
+        "final_head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+        "steps": "[\"format:0\"]"
+      },
+      "id": "e006-ActuationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T13:57:30.146930Z",
+      "type": "ActuationCompleted"
+    },
+    {
+      "attributes": {
+        "court": "fabric",
+        "head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+        "status": "pass",
+        "suite": "ggen-igniter-format"
+      },
+      "id": "e007-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T13:57:30.147889Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": {
+        "outcome": "alive",
+        "receipt_digest": "sha256:f92f8bad5ebbb86f4a73ce16da19aa2f24a0ccfbfd62ca92b73871607c9b6911"
+      },
+      "id": "e008-ReceiptSealed",
+      "relationships": [
+        {
+          "objectId": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "qualifier": "head"
+        },
+        {
+          "objectId": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+          "qualifier": "lease"
+        }
+      ],
+      "time": "2026-09-23T13:57:30.177360Z",
+      "type": "ReceiptSealed"
+    },
+    {
+      "attributes": {
+        "court": "independent",
+        "head": "48ae4ad82613f808868330a2bc313f6ae0feee5f",
+        "status": "pass",
+        "suite": "ggen-igniter-format"
+      },
+      "id": "e009-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T13:57:31.347420Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": {
+        "court": "revert-falsifier",
+        "head": "672289c85944206bb4a6698c1ff8b4922e4cf958",
+        "status": "fail",
+        "suite": "ggen-igniter-format",
+        "verdict": "killed"
+      },
+      "id": "e010-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+          "qualifier": "reverted"
+        }
+      ],
+      "time": "2026-09-23T13:57:32.182057Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": {
+        "event_digest": "sha256:902072f3fbe74d9b25f7f797698373d477bad93769cc4a129fb3c20274bcd88f",
+        "from": "UNKNOWN",
+        "status": "applied",
+        "to": "ALIVE"
+      },
+      "id": "e011-StandingChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T13:57:33.419286Z",
+      "type": "StandingChanged"
+    },
+    {
+      "attributes": {
+        "eligible_after": "[\"EP-B\"]",
+        "eligible_before": "[\"EP-A\"]",
+        "entered": "[\"EP-B\"]",
+        "ledger_tail": "sha256:902072f3fbe74d9b25f7f797698373d477bad93769cc4a129fb3c20274bcd88f",
+        "left": "[\"EP-A\"]"
+      },
+      "id": "e012-FrontierChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "left"
+        },
+        {
+          "objectId": "workorder:EP-B",
+          "qualifier": "entered"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T13:57:33.987144Z",
+      "type": "FrontierChanged"
+    }
+  ],
+  "ocel:objectTypes": [
+    "GoalCheckpoint",
+    "WorkOrder",
+    "Subject",
+    "Provider",
+    "Capability",
+    "Lease",
+    "Receipt",
+    "Repository",
+    "Commit",
+    "MachineExperience"
+  ],
+  "ocel:objects": [
+    {
+      "attributes": {
+        "argv_sha256": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4",
+        "capability_id": "recipe:mix-format",
+        "recipe_id": "mix-format"
+      },
+      "id": "capability:recipe:mix-format",
+      "relationships": [],
+      "type": "Capability"
+    },
+    {
+      "attributes": {
+        "iri": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23"
+      },
+      "id": "checkpoint:GC-26.9.23",
+      "relationships": [],
+      "type": "GoalCheckpoint"
+    },
+    {
+      "attributes": {
+        "role": "episode subject",
+        "sha": "36605534141aa44429586d3e15e8ff159f3d5bc8"
+      },
+      "id": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+      "relationships": [
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": {
+        "author": "recipe-worker",
+        "parent": "36605534141aa44429586d3e15e8ff159f3d5bc8",
+        "sha": "48ae4ad82613f808868330a2bc313f6ae0feee5f"
+      },
+      "id": "commit:48ae4ad82613f808868330a2bc313f6ae0feee5f",
+      "relationships": [
+        {
+          "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+          "qualifier": "parent"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": {
+        "epoch_id": "8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+        "leased_to": "recipe-worker",
+        "provider": "recipe"
+      },
+      "id": "lease:epoch:8aaa7abe-9ff0-48ea-bacb-96b41aabe8b1",
+      "relationships": [],
+      "type": "Lease"
+    },
+    {
+      "attributes": {
+        "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
+        "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+        "iri": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+        "problem_class": "format_drift"
+      },
+      "id": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+      "relationships": [],
+      "type": "MachineExperience"
+    },
+    {
+      "attributes": {
+        "deterministic": "true",
+        "executor": "recipe-worker",
+        "provider": "recipe"
+      },
+      "id": "provider:recipe-worker",
+      "relationships": [],
+      "type": "Provider"
+    },
+    {
+      "attributes": {
+        "head_verified": "true",
+        "outcome": "alive",
+        "receipt_digest": "sha256:f92f8bad5ebbb86f4a73ce16da19aa2f24a0ccfbfd62ca92b73871607c9b6911",
+        "receipt_id": "f9369f76-9b98-462f-925e-62b653f839f6"
+      },
+      "id": "receipt:f9369f76-9b98-462f-925e-62b653f839f6",
+      "relationships": [],
+      "type": "Receipt"
+    },
+    {
+      "attributes": {
+        "identity": "seanchatmangpt/ggen_igniter",
+        "path": "/Users/sac/ggen_igniter"
+      },
+      "id": "repository:seanchatmangpt/ggen_igniter",
+      "relationships": [],
+      "type": "Repository"
+    },
+    {
+      "attributes": {
+        "base_sha": "36605534141aa44429586d3e15e8ff159f3d5bc8",
+        "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-2#EP-A"
+      },
+      "id": "subject:seanchatmangpt/ggen_igniter@v23/episode-me-2#EP-A",
+      "relationships": [
+        {
+          "objectId": "commit:36605534141aa44429586d3e15e8ff159f3d5bc8",
+          "qualifier": "base"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Subject"
+    },
+    {
+      "attributes": {
+        "capability": "recipe:mix-format",
+        "failure_class": "format_drift",
+        "identity": "EP-A",
+        "standing": "UNKNOWN"
+      },
+      "id": "workorder:EP-A",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "type": "WorkOrder"
+    },
+    {
+      "attributes": {
+        "capability": "",
+        "identity": "EP-B",
+        "standing": "UNKNOWN"
+      },
+      "id": "workorder:EP-B",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "requiresReceipt"
+        }
+      ],
+      "type": "WorkOrder"
+    }
+  ]
+}

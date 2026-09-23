@@ -1,0 +1,122 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23",
+  "decision": "UNKNOWN",
+  "drive": {
+    "dir": "docs/sjira/v26.9.23/episodes/me-1/drive",
+    "head": "bd84b3e1af5c49fcd9243b531c57800b0a4a05ce",
+    "provider": {
+      "capability": "recipe:mix-format",
+      "executor": "recipe-worker",
+      "provider": "recipe"
+    },
+    "standing": "ALIVE",
+    "tuple_digest": "sha256:c18dde9d7d3e5b3de40c74087d60b08fd5ca375625899a6ca1096d64cb558602"
+  },
+  "episode": "me-1",
+  "experience_sources": [],
+  "exploration": {
+    "budget": {
+      "candidates": 2,
+      "consequence_ceiling": "CONSTRUCT",
+      "drive_runs": 2,
+      "evidence_requirement": [
+        "drive_alive",
+        "independent_pass",
+        "revert_killed",
+        "r_alive"
+      ],
+      "time_s": 1800
+    },
+    "digest": "sha256:1a8da3ee1734c0cb0244f4d27e15d3de95754fbf3fee174c25805b0e8aa07267",
+    "producer": "llm:claude-opus-5-5@B1b/V23-M",
+    "producer_class": "llm",
+    "rejected": [],
+    "truncated": [],
+    "used": {
+      "attempts": [
+        {
+          "capability": "recipe:mix-format",
+          "dir": "drive",
+          "evidence": [
+            "drive_alive",
+            "independent_pass",
+            "revert_killed",
+            "r_alive"
+          ],
+          "seconds": 11
+        }
+      ],
+      "candidates": 1,
+      "drive_runs": 1,
+      "elapsed_s": 22
+    }
+  },
+  "failure_class": "format_drift",
+  "finished_at": "2026-09-23T13:57:16.304742Z",
+  "machine_experience": {
+    "admission_digest": "sha256:e042b7e74bed7507925e7fbab14b5681e0583ce41cfd9a34f62811f190771c56",
+    "admission_node": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission",
+    "experience_digest": "sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81",
+    "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2",
+    "ttl": "docs/sjira/v26.9.23/episodes/me-1/machine_experience.ttl",
+    "ttl_sha256": "sha256:ef68cc70953aa3e11406ef51b44e9f14f0f3aed79614fb4f3729e7b66afbbdb3"
+  },
+  "no_llm_guard": "passed",
+  "ocel": {
+    "by_class": {
+      "ActuationCompleted": 1,
+      "ActuationStarted": 1,
+      "CapabilityResolved": 1,
+      "ExplorationCompleted": 1,
+      "ExplorationStarted": 1,
+      "FrontierChanged": 1,
+      "LeaseAcquired": 1,
+      "MachineExperienceAdmitted": 1,
+      "ReceiptSealed": 1,
+      "RouteDecided": 1,
+      "StandingChanged": 1,
+      "VerificationCompleted": 3,
+      "WorkOrderCreated": 1
+    },
+    "equivalent": true,
+    "events": 15,
+    "exploration_events": 2,
+    "llm_provider_events": 3,
+    "objects": 13
+  },
+  "order": "EP-A",
+  "route": {
+    "capability": "recipe:mix-format",
+    "exploration_digest": "sha256:1a8da3ee1734c0cb0244f4d27e15d3de95754fbf3fee174c25805b0e8aa07267",
+    "order": "EP-A",
+    "producer": "llm:claude-opus-5-5@B1b/V23-M",
+    "producer_class": "llm",
+    "source": "exploration"
+  },
+  "schema": "xaas/machine-experience-episode/v1",
+  "standing": "ALIVE",
+  "started_at": "2026-09-23T13:57:04.055719Z",
+  "step_count": 20,
+  "steps": [
+    "guard",
+    "route",
+    "explore",
+    "drive:guard",
+    "drive:frontier_before",
+    "drive:order",
+    "drive:resolve",
+    "drive:sa2a",
+    "drive:descriptor",
+    "drive:contract",
+    "drive:materialize",
+    "drive:actuate",
+    "drive:seal",
+    "drive:verify",
+    "drive:project",
+    "drive:reconcile",
+    "drive:frontier_after",
+    "manufacture",
+    "admit",
+    "validate"
+  ]
+}
