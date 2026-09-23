@@ -1,0 +1,78 @@
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 521 files (.ex)
+Compiling lib/mix/tasks/xaas.autonomic.controls.ex (it's taking more than 10s)
+Generated xaas app
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+13:57:49.545 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:57:50.163 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:57:50.556 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:57:50.678 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:57:50.678 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:57:50.700 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:57:50.700 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:57:50.727 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:57:50.727 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Running ExUnit with seed: 713346, max_cases: 32
+13:57:50.736 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:57:50.736 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+13:57:50.747 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:57:50.747 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+13:57:50.750 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:57:50.750 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+    warning: incompatible types given to Path.join/2:
+
+        Path.join(nil, "_build/test")
+
+    given types:
+
+        -nil-, binary()
+
+    but expected one of:
+
+        binary() or empty_list() or non_empty_list(term(), term()), term()
+
+    type warning found at:
+    │
+ 68 │     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
+    │                                             ~
+    │
+    └─ test/xaas/ultracode/semantic_drive_test.exs:68:45: Xaas.Ultracode.SemanticDriveTest.__ex_unit_setup_all_0/1
+
+....*****.........
+Finished in 13.5 seconds (2.7s async, 10.8s sync)
+
+Result: 13 passed, 5 skipped
+executor recipe-worker; OCEL 11 events, 0 LLM-provider events/objects
+control: {"no_llm_guard":"passed","standing":"ALIVE"}
+F3: {"broken_term":"mu_on_O","detail":{"binaries":[],"providers":["anthropic"],"unadmitted":[],"variables":["ANTHROPIC_API_KEY"]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}
+F3: GEMINI_API_KEY exposed -> {"broken_term":"mu_on_O","detail":{"binaries":[],"providers":["google-gemini"],"unadmitted":[],"variables":["GEMINI_API_KEY"]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}
+F3: XAAS_GC23_5_UNLISTED exposed -> {"broken_term":"mu_on_O","detail":{"binaries":[],"providers":[],"unadmitted":["XAAS_GC23_5_UNLISTED"],"variables":[]},"hop":"guard","reason":"unadmitted_environment","standing":"REFUSED(unadmitted_environment)"}
+ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused: ANTHROPIC, GEMINI, unlisted variable)
+LANE_GATE exit=0

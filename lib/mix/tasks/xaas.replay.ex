@@ -19,10 +19,11 @@ defmodule Mix.Tasks.Xaas.Replay do
   "graph_side", "committed"}`, `digest` = sha256 of the canonical JSON of
   `state`.
 
-  The no-LLM guard (F3) runs first, before anything is read: any
-  `ANTHROPIC_*`, `CLAUDE_*`, `CLAUDECODE`, `OPENAI_*`, `ZAI_*`, `Z_AI_*`,
-  `GLM_*`, `ZCODE_*` variable or a `zcode` / `claude` executable on `PATH`
-  is `REFUSED(llm_credential_present)` (broken term `mu_on_O`). The task
+  The no-LLM guard (F3) runs first, before anything is read, and fails
+  closed (`SemanticDrive.no_llm_guard/1` over `priv/no_llm/policy.json`): a
+  provider-claimed variable or a provider executable on `PATH` is
+  `REFUSED(llm_credential_present)`, any other variable the policy does not
+  admit `REFUSED(unadmitted_environment)` (broken term `mu_on_O`). The task
   never starts the application and needs no database.
 
   ## Exit codes

@@ -1,0 +1,8 @@
+record matches the episode-time projection: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb
+recorded: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb (subject ref v23/episode-fmt-1-receipt)
+fence: /Users/sac/.claude unreadable under the replay profile
+cold: 2 runs, digest sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb == recorded; standing {'EP-A': 'ALIVE', 'EP-B': 'UNKNOWN'}, completed ['EP-A'], eligible ['EP-B']
+F3: REFUSED(llm_credential_present), broken term mu_on_O
+F5: EP-A ALIVE -> UNKNOWN, eligible ['EP-A'], typed [('unreceipted_transition', 'R_missing_replay', 'EP-A')]
+F6: covered commit -> EP-A UNKNOWN typed [('subject_changed', 'R_missing_identity', 'EP-A')]; control (docs/ only) -> EP-A ALIVE, frontier as recorded
+ALIVE: GC23-10 cold replay of episode fmt-1 reproduces the recorded digest twice under the no-LLM, ~/.claude-fenced env; F3, F5 and F6 witnessed

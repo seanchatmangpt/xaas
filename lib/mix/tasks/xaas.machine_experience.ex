@@ -31,8 +31,10 @@ defmodule Mix.Tasks.Xaas.MachineExperience do
   `--out-root` defaults to `docs/sjira/v26.9.23/episodes`.
 
   Every mode first runs the no-LLM guard (`SemanticDrive.no_llm_guard/1`,
-  F3): a model credential variable or a `claude`/`zcode` executable on PATH
-  is `REFUSED(llm_credential_present)`.
+  F3, fail closed over `priv/no_llm/policy.json`): a provider-claimed
+  variable or a provider executable on PATH is
+  `REFUSED(llm_credential_present)`, any other variable the policy does not
+  admit `REFUSED(unadmitted_environment)`.
 
   Persistence, runtime registration (repo alias `ggen_igniter`, epoch
   worktree root, the `ggen-igniter-format` court suite) and the sandbox

@@ -63,11 +63,13 @@ defmodule Mix.Tasks.Xaas.Episode do
   Every mode except `--verify-hops`, `--verify-receipt` and
   `--graph-toolchain` first runs
   `Xaas.Ultracode.SemanticDrive.no_llm_guard/1` over the process
-  environment, BEFORE the application starts: any `ANTHROPIC_*`,
-  `CLAUDE_*`, `CLAUDECODE`, `OPENAI_*`, `ZAI_*`, `Z_AI_*`, `GLM_*`,
-  `ZCODE_*` variable, or a `zcode` / `claude` executable on `PATH`, is
-  `REFUSED(llm_credential_present)` (broken term `mu_on_O`). `--check-env`
-  runs only the guard.
+  environment, BEFORE the application starts, and fails closed over
+  `priv/no_llm/policy.json`: a provider-claimed variable (`ANTHROPIC_*`,
+  `GEMINI_*`, `OPENROUTER_*`, ...) or a provider executable on `PATH`
+  (`claude`, `zcode`, `gemini`, `codex`, `ollama`, ...) is
+  `REFUSED(llm_credential_present)`, any other variable the policy does not
+  admit `REFUSED(unadmitted_environment)` (broken term `mu_on_O`).
+  `--check-env` runs only the guard.
 
   ## Persistence
 

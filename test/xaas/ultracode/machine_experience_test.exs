@@ -1460,13 +1460,10 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
     )
   end
 
+  # The environment the guard is handed: this process's own environment
+  # projected onto the fail-closed no-LLM policy (priv/no_llm/policy.json).
   defp clean_env do
-    System.get_env()
-    |> Enum.reject(fn {name, _} ->
-      name == "CLAUDECODE" or
-        Enum.any?(SemanticDrive.llm_variables().prefixes, &String.starts_with?(name, &1))
-    end)
-    |> Map.new()
+    SemanticDrive.no_llm_environment(System.get_env())
     |> Map.put("PATH", "/usr/bin:/bin")
   end
 
