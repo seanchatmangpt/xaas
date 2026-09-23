@@ -1,0 +1,1687 @@
+[
+  {
+    "kind": "Invariant",
+    "statement": "After a future is semantically admitted, no LLM acts as its execution engine.",
+    "quote": "Once that future has been semantically admitted, the LLM is no longer the execution engine.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Every UNKNOWN execution is bounded by explicit cost, evidence and consequence limits.",
+    "quote": "UNKNOWN execution must always be bounded by explicit cost, evidence and consequence limits.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "A KNOWN path that repeatedly requires an LLM is classified as a product defect.",
+    "quote": "A KNOWN path that repeatedly requires an LLM is a product defect.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Completion of a checkpoint is defined only from an accepted finite future-state specification.",
+    "quote": "Completion is defined from an accepted finite future-state specification.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Work stops when the propositions required by the accepted GoalCheckpoint are satisfied.",
+    "quote": "Work stops when the propositions required by the accepted GoalCheckpoint are satisfied.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Successor",
+    "statement": "Improvements beyond the accepted GoalCheckpoint become successor goals.",
+    "quote": "Additional improvements become successor goals.",
+    "required_by": "GC23-12",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "The system does not depend on inferring arbitrary semantics from arbitrary programs.",
+    "quote": "The system shall not depend on inferring arbitrary semantics from arbitrary programs.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Every irreducible handwritten implementation carries an explicit contract, observed consequences and bounded verification.",
+    "quote": "Irreducible handwritten implementations require explicit contracts, observed consequences and bounded verification.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "The v26.9.22 baseline observed that no prose-to-semantics compiler exists.",
+    "quote": "no prose→semantics compiler exists.",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Every KNOWN operation of the product lifecycle executes without an LLM.",
+    "quote": "8. Execute every KNOWN operation without an LLM.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "The Semantic Author defines an intended future through Vision, WBPR, requirements prose, case study, policy or testimony.",
+    "quote": "## 5.1 Semantic Author\n\nDefines an intended future through:",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Role",
+    "statement": "The Semantic Author supplies intent and does not supply implementation.",
+    "quote": "The author supplies intent, not implementation.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Actor",
+    "statement": "The Semantic Admission System converts candidate meaning into admitted meaning.",
+    "quote": "## 5.2 Semantic Admission System\n\nConverts candidate meaning into admitted meaning.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Actor",
+    "statement": "sJira owns semantic obligations as the canonical work and evidence control plane.",
+    "quote": "## 5.3 sJira\n\nOwns semantic obligations.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Jira, Markdown, dashboards and issue trackers are projections of sJira, not its source.",
+    "quote": "Jira, Markdown, dashboards and traditional issue trackers are projections.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Actor",
+    "statement": "SA2A resolves semantic capability requirements to compatible providers.",
+    "quote": "## 5.4 SA2A\n\nResolves semantic capability requirements to compatible providers.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "SA2A holds no execution authority.",
+    "quote": "SA2A itself has no execution authority.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "XaaS owns runtime realization: allocation, provider binding, lease, resource limits, consequence envelope and execution lifecycle.",
+    "quote": "## 5.5 XaaS\n\nOwns runtime realization:",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "BRCE/CommandBus owns the sole lawful DO path.",
+    "quote": "## 5.6 BRCE / CommandBus\n\nOwns the sole lawful DO path.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Every consequential actuation is receipted.",
+    "quote": "There shall be zero unreceipted consequential actuation.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Provider selection is governed by capability-contract satisfaction, not provider identity.",
+    "quote": "Provider identity is secondary to capability-contract satisfaction.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "The Independent Verifier observes postconditions independently of the executor's claim.",
+    "quote": "## 5.8 Independent Verifier\n\nObserves postconditions independently of the executor's claim.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Actor",
+    "statement": "MachineExperience converts successfully resolved UNKNOWN episodes into reusable KNOWN topology.",
+    "quote": "## 5.9 MachineExperience\n\nConverts successfully resolved UNKNOWN episodes into reusable KNOWN topology.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Object",
+    "statement": "A Vision states long-horizon invariants and direction.",
+    "quote": "## 6.1 Vision\n\nLong-horizon invariants and direction.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "A Vision is not a finite release plan.",
+    "quote": "A Vision is not itself a finite release plan.",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A WBPR describes what is observably true when a specific goal is complete.",
+    "quote": "A WBPR shall describe what is observably true when a specific goal is complete.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A SemanticProposition is an admitted proposition extracted from future-state prose.",
+    "quote": "An admitted proposition extracted from future-state prose.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A GoalCheckpoint is a finite semantic completion boundary with subject, desired state, required propositions, acceptance, falsifiers, exclusions, evidence, ceilings, replay and successor policy.",
+    "quote": "## 6.4 GoalCheckpoint\n\nA finite semantic completion boundary.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A WorkOrder carries the minimum tuple identity, exact subject, current state, target postcondition, dependencies, required capability, authority ceiling, consequence class, evidence horizon, acceptance predicate, falsifier, exclusions and successor policy.",
+    "quote": "WorkOrder {\n  identity\n  exact_subject\n  current_state\n  target_postcondition\n  dependencies\n  required_capability\n  authority_ceiling\n  consequence_class\n  evidence_horizon\n  acceptance_predicate\n  falsifier\n  exclusions\n  successor_policy\n}",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A Capability is a semantic contract independent of provider implementation.",
+    "quote": "A semantic contract independent of provider implementation.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Object",
+    "statement": "A Receipt carries the identity, authority, consequence, replay and standing dimensions.",
+    "quote": "Required receipt dimensions:\n\n```text\nidentity\nauthority\nconsequence\nreplay\nstanding\n```",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A MachineExperience is an admitted reusable result derived from one or more verified episodes.",
+    "quote": "An admitted reusable result derived from one or more verified episodes.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-001: the system accepts a Vision/WBPR or equivalent narrative describing a previously nonexistent system.",
+    "quote": "The system shall accept a Vision/WBPR or equivalent narrative describing a previously nonexistent system.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-001: the original prose is preserved.",
+    "quote": "The original prose shall be preserved.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-001: the prose never becomes executable authority.",
+    "quote": "The prose itself shall not become executable authority.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-002: the system extracts candidate entities, roles, states, transitions, capabilities, triggers, obligations, dependencies, invariants, exclusions, evidence, authority, postconditions, falsifiers, metrics and successor goals.",
+    "quote": "The system shall extract candidate:\n\n* entities;\n* roles;\n* states;\n* transitions;\n* capabilities;\n* triggers;\n* obligations;\n* dependencies;\n* invariants;\n* exclusions;\n* evidence;\n* authority;\n* postconditions;\n* falsifiers;\n* metrics;\n* successor goals.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Authority",
+    "statement": "PR-002: LLM extraction of candidates is permitted because the source semantics are initially UNKNOWN.",
+    "quote": "LLM extraction is permitted because the source semantics are initially UNKNOWN.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-003: an LLM emitting a candidate proposition never makes it canonical.",
+    "quote": "Candidate propositions shall not become canonical merely because an LLM emitted them.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-003: admission validates ontology shape, subject identity, vocabulary, required predicates, contradictions, exclusions and evidence semantics.",
+    "quote": "Admission shall validate:\n\n* ontology shape;\n* subject identity;\n* vocabulary;\n* required predicates;\n* contradictions;\n* exclusions;\n* evidence semantics.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-003: after admission the RDF graph is canonical.",
+    "quote": "After admission, the RDF graph becomes canonical.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-004: only the finite delta required by the active GoalCheckpoint becomes required work.",
+    "quote": "Only the finite delta required by the active GoalCheckpoint shall become required work.",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-005: sJira natively represents GoalCheckpoints, parent and successor checkpoints, WorkOrders, checkpoint boundaries, stop queries, required evidence and exclusion semantics.",
+    "quote": "sJira shall natively represent:\n\n* GoalCheckpoint;\n* parent/successor checkpoints;\n* WorkOrders;\n* checkpoint boundaries;\n* stop queries;\n* required evidence;\n* exclusion semantics.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-006: sJira derives frontier eligibility.",
+    "quote": "sJira shall derive frontier eligibility.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-006: standing is never an authoritative stored literal.",
+    "quote": "Standing shall not be an authoritative stored literal.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Trigger",
+    "statement": "PR-006: a change to an exact subject covered by previous evidence invalidates the derived standing that evidence supported.",
+    "quote": "Changes to an exact subject covered by previous evidence shall invalidate derived standing as required.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "State",
+    "statement": "PR-007: the system distinguishes the standings UNKNOWN, PARTIAL_ALIVE, ALIVE, BLOCKED, BUILD_BROKEN, UNSUPPORTED and REFUSED(reason).",
+    "quote": "The system shall distinguish:\n\n```text\nUNKNOWN\nPARTIAL_ALIVE\nALIVE\nBLOCKED\nBUILD_BROKEN\nUNSUPPORTED\nREFUSED(reason)\n```",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-007: an UNKNOWN candidate is not admitted.",
+    "quote": "`UNKNOWN != ADMITTED`.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-007: UNSUPPORTED is a different classification from REFUSED.",
+    "quote": "`UNSUPPORTED != REFUSED`.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-007: execution is not verification.",
+    "quote": "`executed != verified`.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-008: a WorkOrder routed through SA2A preserves subject, postcondition, required capability, authority ceiling, consequence class, evidence horizon and exclusions.",
+    "quote": "An sJira WorkOrder routed through SA2A shall preserve at minimum:\n\n```text\nsubject\npostcondition\nrequired capability\nauthority ceiling\nconsequence class\nevidence horizon\nexclusions\n```",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-008: loss or mutation of a required semantic field refuses execution.",
+    "quote": "Loss or mutation of a required semantic field shall refuse execution.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-009: at least one reference WorkOrder class runs end-to-end with no LLM credentials, binary, provider, fallback or conversational state.",
+    "quote": "At least one reference WorkOrder class shall run end-to-end with:\n\n* no LLM credentials;\n* no LLM binary/provider;\n* no LLM fallback;\n* no conversational state.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-009: the reference executor is a deterministic capability provider.",
+    "quote": "The executor shall be a deterministic capability provider.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-010: all consequential execution routes through XaaS and BRCE/CommandBus.",
+    "quote": "All consequential execution shall route through XaaS → BRCE/CommandBus.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "PR-010: hooks may communicate intent but never manufacture authority.",
+    "quote": "Hooks shall never manufacture authority.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-011: a successful command execution alone does not satisfy a WorkOrder.",
+    "quote": "Successful command execution shall not itself satisfy a WorkOrder.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-011: WorkOrder completion requires an observed consequence, independent postcondition verification, falsifier evaluation, a receipt, an OCEL observation and a derived standing update.",
+    "quote": "Completion requires:\n\n* required consequence observed;\n* independent postcondition verification;\n* falsifier evaluation;\n* receipt creation;\n* OCEL observation;\n* derived standing update.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-012: a verified receipt re-enters admitted state.",
+    "quote": "A verified receipt shall re-enter admitted state.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Dependency",
+    "statement": "PR-012: an upstream WorkOrder completion deterministically closes itself, unlocks eligible dependents and preserves ineligible dependents.",
+    "quote": "An upstream WorkOrder completion shall deterministically:\n\n* close itself;\n* unlock eligible dependents;\n* preserve ineligible dependents.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-013: an independent cold process reconstructs subject identity, evidence, standing, completed work and current frontier from canonical artifacts without the conversational transcript.",
+    "quote": "An independent cold process shall reconstruct:\n\n* subject identity;\n* evidence;\n* standing;\n* completed work;\n* current frontier;\n\nfrom canonical artifacts without access to the original conversational transcript.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-014: a verified UNKNOWN episode can create admitted MachineExperience.",
+    "quote": "A verified UNKNOWN episode may create admitted MachineExperience.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-014: an equivalent future episode routes as KNOWN when the MachineExperience applicability predicate holds.",
+    "quote": "An equivalent future episode shall route as KNOWN when the MachineExperience applicability predicate holds.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "PR-014: Episode 2 requires less semantic exploration than Episode 1.",
+    "quote": "Episode 2 shall require less semantic exploration than Episode 1.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-015: a repeated LLM invocation for the same admitted semantic transformation is classified as a missing deterministic mechanism.",
+    "quote": "If the system invokes an LLM repeatedly for the same admitted semantic transformation, the product shall classify the missing deterministic mechanism as a gap.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-016: every UNKNOWN episode has an explicit time budget, compute budget, candidate budget, consequence ceiling and evidence requirement.",
+    "quote": "UNKNOWN episodes shall have explicit:\n\n* time budget;\n* compute budget;\n* candidate budget;\n* consequence ceiling;\n* evidence requirement.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "State",
+    "statement": "PR-016: budget exhaustion is a valid receipted terminal outcome with standing UNKNOWN.",
+    "quote": "Budget exhaustion is a valid receipted terminal outcome:",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-016: an exhausted UNKNOWN budget never silently becomes success or failure.",
+    "quote": "It shall not silently become success or failure.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-017: each active GoalCheckpoint exposes a deterministic STOP predicate.",
+    "quote": "Each active GoalCheckpoint shall expose a deterministic STOP predicate.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "PR-017: a goal is complete when required postconditions are observed, dependencies have adequate standing, falsifiers do not fire, receipts validate, replay passes, no hidden LLM or human edge remains and all remaining work is typed.",
+    "quote": "A goal is complete when:\n\n1. its required postconditions are observed;\n2. required dependencies have adequate standing;\n3. falsifiers do not fire;\n4. required receipts validate;\n5. replay requirements pass;\n6. no required hidden LLM/human edge remains;\n7. all remaining work is typed as successor, blocked, unsupported or refused.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "PR-017: a newly discovered improvement reopens a completed checkpoint only if it falsifies an accepted proposition.",
+    "quote": "Newly discovered improvements shall not reopen a completed checkpoint unless they falsify an accepted proposition.",
+    "required_by": "GC23-12",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "A clean process reconstructs the canonical ontology, exact subjects, capabilities, authority rules, evidence, receipts, active GoalCheckpoint and sJira frontier.",
+    "quote": "A clean process shall reconstruct:\n\n* canonical ontology;\n* current exact subjects/SHAs;\n* capabilities;\n* authority rules;\n* evidence;\n* receipts;\n* active GoalCheckpoint;\n* sJira frontier.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Bootstrap requires no prior chat state.",
+    "quote": "No prior chat state may be required.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Two clean independent bootstrap reconstructions produce semantically identical state.",
+    "quote": "Two clean independent reconstructions produce semantically identical state.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Transition",
+    "statement": "The first mile transforms new future-state prose into candidate semantics, admitted semantics, a finite delta and WorkOrders.",
+    "quote": "new future-state prose\n→ candidate semantics\n→ admitted semantics\n→ finite delta\n→ WorkOrders",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Every required WorkOrder contains the complete semantic tuple and no executable obligation exists only in prose.",
+    "quote": "Every required WorkOrder contains the complete semantic tuple and no executable obligation exists only in prose.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Capability",
+    "statement": "KNOWN work executes with the optimal existing formalism: planners, solvers, SPARQL/SHACL, rules, OCEL, generators or state machines.",
+    "quote": "KNOWN work shall execute using the optimal existing formalism:",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "The last mile closes actuation, observation, verification, receipt, OCEL, derived standing and successor frontier.",
+    "quote": "actuation\n→ observation\n→ verification\n→ receipt\n→ OCEL\n→ derived standing\n→ successor frontier",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Transition",
+    "statement": "The greenfield flow runs Vision/WBPR through extraction, admission, GoalCheckpoint, delta, sJira, SA2A, XaaS, deterministic implementation, receipt and replay.",
+    "quote": "Vision/WBPR\n→ semantic extraction\n→ admission\n→ GoalCheckpoint\n→ delta\n→ sJira\n→ SA2A\n→ XaaS\n→ deterministic implementation\n→ receipt\n→ replay",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "The WD first-mile reference distinguishes SUPPLIED, PUBLICLY_OBSERVABLE, ARCHITECTURAL_INFERENCE and WD_DEPENDENT_UNKNOWN evidence.",
+    "quote": "SUPPLIED\nPUBLICLY_OBSERVABLE\nARCHITECTURAL_INFERENCE\nWD_DEPENDENT_UNKNOWN",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Unsupplied internal WD facts remain typed UNKNOWN and are never manufactured.",
+    "quote": "Internal WD facts that have not been supplied shall remain typed UNKNOWN rather than being manufactured.",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Capability",
+    "statement": "The Semantic Manufacturing system expresses and executes its own bounded KNOWN development WorkOrders through sJira, SA2A and XaaS.",
+    "quote": "The Semantic Manufacturing system shall use sJira/SA2A/XaaS to express and execute its own bounded development WorkOrders where the semantics are already KNOWN.",
+    "required_by": "GC23-12",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require solving arbitrary program semantics.",
+    "quote": "solving arbitrary program semantics",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require arbitrary termination proofs.",
+    "quote": "arbitrary termination proofs",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require exhaustive improvement of every repository.",
+    "quote": "exhaustive improvement of every repository",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require zero UNKNOWN globally.",
+    "quote": "zero UNKNOWN globally",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require replacing every handwritten implementation.",
+    "quote": "replacing every handwritten implementation",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require fully autonomous production deployment.",
+    "quote": "fully autonomous production deployment",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require live WD integration.",
+    "quote": "live WD integration",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require live Planning Center actuation.",
+    "quote": "live Planning Center actuation",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require arbitrary agent-to-agent conversation.",
+    "quote": "arbitrary agent-to-agent conversation",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require universal Claude/ZCode workflow takeover.",
+    "quote": "universal Claude/ZCode workflow takeover",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require merging, publishing or deploying every successor item.",
+    "quote": "merging/publishing/deploying every successor item",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "v26.9.23 does not require making every repository ALIVE.",
+    "quote": "making every repository ALIVE",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Every required GoalCheckpoint proposition is mapped to canonical semantics.",
+    "quote": "100% of required GoalCheckpoint propositions mapped to canonical semantics.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Metric",
+    "statement": "No required executable obligation exists only in prose.",
+    "quote": "0 required executable obligations existing only in prose.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Metric",
+    "statement": "No mandatory WorkOrder tuple field is missing.",
+    "quote": "0 missing mandatory WorkOrder tuple fields.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Metric",
+    "statement": "At least one complete KNOWN episode runs with zero LLM participation.",
+    "quote": "≥1 complete KNOWN episode with zero LLM participation.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The count of unreceipted actuations is zero.",
+    "quote": "0 unreceipted actuation.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The count of SA2A tuple-conservation losses is zero.",
+    "quote": "0 SA2A tuple-conservation losses.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Every v26.9.23 critical-path receipt is schema-valid.",
+    "quote": "100% v26.9.23 critical-path receipts schema-valid.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Every critical-path standing is recomputable.",
+    "quote": "100% critical-path standing recomputable.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Cold replay produces identical semantic standing.",
+    "quote": "Cold replay produces identical semantic standing.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Episode 1 turns an UNKNOWN into admitted MachineExperience.",
+    "quote": "Episode 1 UNKNOWN → admitted MachineExperience.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "An equivalent Episode 2 routes KNOWN.",
+    "quote": "Equivalent Episode 2 routes KNOWN.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Episode 2 uses zero semantic LLM inference.",
+    "quote": "Episode 2 uses zero semantic LLM inference.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The STOP query returns true for the v26.9.23 GoalCheckpoint.",
+    "quote": "STOP query returns true for the v26.9.23 GoalCheckpoint.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "Every non-required remaining item is classified.",
+    "quote": "Every non-required remaining item is classified.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-0: an accepted Vision/WBPR exists and has a complete admitted semantic projection.",
+    "quote": "### GC23-0 — Future Semantics\n\nAccepted Vision/WBPR exists and has a complete admitted semantic projection.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-1: the system reconstructs its own bounded state without chat or session context.",
+    "quote": "### GC23-1 — Cold Bootstrap\n\nThe system reconstructs its own bounded state without chat/session context.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-2: accepted prose compiles into a finite sJira delta.",
+    "quote": "### GC23-2 — First-Mile Compiler\n\nAccepted prose compiles into a finite sJira delta.",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-3: every required WorkOrder carries the full semantic tuple.",
+    "quote": "### GC23-3 — Finite Work Graph\n\nEvery required WorkOrder carries the full semantic tuple.",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile",
+    "hints": {
+      "falsifier": "F1: delete a mandatory WorkOrder field; expected REFUSED."
+    }
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-4: work meaning is preserved through provider resolution.",
+    "quote": "### GC23-4 — SA2A Conservation\n\nWork meaning is preserved through provider resolution.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core",
+    "hints": {
+      "falsifier": "F2: mutate the SA2A tuple digest; expected REFUSED(tuple_digest_mismatch)."
+    }
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-5: a KNOWN WorkOrder executes with authorization and zero LLM involvement.",
+    "quote": "### GC23-5 — Authorized No-LLM Execution\n\nA KNOWN WorkOrder executes with zero LLM involvement.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core",
+    "hints": {
+      "falsifier": "F3: expose LLM credentials during the KNOWN no-LLM court; expected a typed court failure or refusal."
+    }
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-6: independent observation proves the required postcondition.",
+    "quote": "### GC23-6 — Consequence\n\nIndependent observation proves the required postcondition.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile",
+    "hints": {
+      "falsifier": "F4: remove the required consequence; expected the WorkOrder remains non-ALIVE."
+    }
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-7: the episode produces conformant durable receipt and OCEL evidence.",
+    "quote": "### GC23-7 — Receipt / OCEL\n\nThe episode produces conformant durable evidence.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-8: the receipt changes derived sJira standing and frontier.",
+    "quote": "### GC23-8 — Closed Frontier\n\nThe receipt changes derived sJira standing/frontier.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-9: a resolved UNKNOWN becomes a reusable KNOWN path.",
+    "quote": "### GC23-9 — MachineExperience\n\nA resolved UNKNOWN becomes a reusable KNOWN path.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-10: independent reconstruction reaches the same standing.",
+    "quote": "### GC23-10 — Cold Replay\n\nIndependent reconstruction reaches the same standing.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap",
+    "hints": {
+      "falsifier": [
+        "F5: delete a receipt during cold replay; expected standing/frontier divergence.",
+        "F6: change the covered subject after its receipt; expected the previous ALIVE standing no longer applies."
+      ]
+    }
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-11: every repo relevant to the checkpoint has exact-subject standing or an explicit non-required classification.",
+    "quote": "### GC23-11 — Bounded Fleet\n\nEvery repo relevant to the checkpoint has exact-subject standing or an explicit non-required classification.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core",
+    "hints": {
+      "falsifier": "F7: introduce an unclassified required repository; expected the fleet checkpoint fails."
+    }
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "GC23-12: a new bounded improvement can originate as accepted prose and enter the same pipeline without a bespoke backlog.",
+    "quote": "### GC23-12 — Semantic Self-Hosting\n\nA new bounded improvement to this architecture can itself originate as accepted prose and enter the same pipeline without manually manufacturing a bespoke backlog.",
+    "required_by": "GC23-12",
+    "boundary_class": "Core",
+    "hints": {
+      "falsifier": "F8: turn a newly discovered improvement into required current work without falsifying an active proposition; expected routing to the successor GoalCheckpoint."
+    }
+  },
+  {
+    "kind": "Metric",
+    "statement": "STOP for v26.9.23 is the conjunction of gates GC23-0 through GC23-12.",
+    "quote": "STOP_{26.9.23}\n=\n\\bigwedge_{i=0}^{12} GC23_i",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The set of required UNKNOWN items is empty at STOP.",
+    "quote": "RequiredUnknown = \\varnothing",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The set of required LLM edges on KNOWN paths is empty at STOP.",
+    "quote": "RequiredLLM_{KNOWN} = \\varnothing",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "At STOP every remaining frontier item is Successor, Blocked, Unsupported or Refused.",
+    "quote": "RemainingFrontier\n\\subseteq\nSuccessor\n\\cup\nBlocked\n\\cup\nUnsupported\n\\cup\nRefused",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Successor",
+    "statement": "Capability beyond the v26.9.23 STOP predicate is v26.9.24+ work.",
+    "quote": "Additional capability becomes v26.9.24+ work.",
+    "boundary_class": "Successor"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Autonomy exists only when the receipt or consequence re-enters admitted state and changes the next frontier.",
+    "quote": "Autonomy exists only when the receipt/consequence re-enters admitted state and changes the next frontier.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "AR-001: RDF/TTL is the canonical semantic graph.",
+    "quote": "## AR-001\n\nRDF/TTL is the canonical semantic graph.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "AR-002: Markdown, Jira issues, dashboards, WBPR renderings, PRD, ARD, README, generated code and compatibility APIs are projections that never silently become semantic authority.",
+    "quote": "## AR-002\n\nThe following are projections:\n\n* Markdown;\n* Jira issues;\n* dashboards;\n* WBPR rendering;\n* PRD;\n* ARD;\n* README;\n* generated code;\n* compatibility APIs.\n\nA projection shall not silently become semantic authority.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "AR-003: originating prose is preserved as provenance and its extracted propositions become executable only after admission.",
+    "quote": "## AR-003\n\nThe prose that originates a system is preserved as provenance.\n\nIts extracted propositions become executable only after admission.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Actor",
+    "statement": "engineering-standards owns global engineering doctrine, architectural invariants, semantic protocol conformance expectations and the repository adoption contract.",
+    "quote": "## engineering-standards\n\nOwns:\n\n* global engineering doctrine;\n* architectural invariants;\n* semantic protocol conformance expectations;\n* repository adoption contract.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "engineering-standards never becomes runtime state.",
+    "quote": "It shall not become runtime state.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "ggen owns deterministic semantic manufacture.",
+    "quote": "## ggen\n\nOwns deterministic semantic manufacture.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "ggen provides graph/query-to-artifact generation, portable receipts, generation determinism, source/projection integrity and semantic pack execution.",
+    "quote": "Responsibilities:\n\n* graph/query → generated artifact;\n* portable receipt support;\n* generation determinism;\n* source/projection integrity;\n* semantic pack execution.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "ggen-marketplace owns reusable manufacturing knowledge.",
+    "quote": "## ggen-marketplace\n\nOwns reusable manufacturing knowledge:",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "ggen-marketplace provides ontology, SA2A bridge, receipt-chain, OCEL, domain projection and semantic verification packs.",
+    "quote": "* ontology packs;\n* SA2A bridge packs;\n* receipt-chain packs;\n* OCEL packs;\n* domain-specific projections;\n* semantic verification packs.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "A repeated implementation pattern moves into ggen-marketplace instead of remaining LLM knowledge.",
+    "quote": "A repeated implementation pattern should move here rather than remain LLM knowledge.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "ggen_igniter owns Elixir-side semantic manufacture and the sJira implementation.",
+    "quote": "## ggen_igniter\n\nOwns Elixir-side semantic manufacture and sJira implementation.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "ggen_igniter provides the sJira ontology, SHACL shapes, GoalCheckpoint, WorkOrder graph, frontier computation, prose candidate integration, semantic delta, XaaS descriptors, replay checks and TransitionLog.",
+    "quote": "* sJira ontology;\n* SHACL shapes;\n* GoalCheckpoint;\n* WorkOrder graph;\n* frontier computation;\n* prose semantic candidate integration;\n* semantic delta;\n* XaaS descriptor manufacture;\n* replay checks;\n* TransitionLog.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "ggen_igniter integrates prose semantic candidates into the admitted graph.",
+    "quote": "prose semantic candidate integration",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Actor",
+    "statement": "ash_a2a owns semantic capability typing.",
+    "quote": "## ash_a2a\n\nOwns semantic capability typing.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "ash_a2a provides Capability, applicability, provider semantics, MachineExperience integration, KNOWN/UNKNOWN routing and zero-inference-on-KNOWN courts.",
+    "quote": "* Capability;\n* applicability;\n* provider semantics;\n* MachineExperience integration;\n* KNOWN/UNKNOWN route semantics;\n* zero-inference-on-KNOWN courts.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "SA2A is transport and capability semantics and never authority.",
+    "quote": "SA2A is transport/capability semantics, not authority.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "xaas owns execution realization.",
+    "quote": "## xaas\n\nOwns execution realization.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "xaas provides the provider registry, resource binding, leases, authorization envelope, deterministic RecipeWorker, BRCE integration, court execution, consequence receipts, OCEL egress and stop-court execution.",
+    "quote": "* provider registry;\n* resource binding;\n* leases;\n* authorization envelope;\n* deterministic RecipeWorker;\n* BRCE integration;\n* court execution;\n* consequence receipts;\n* OCEL egress;\n* stop-court execution.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "autofde-lab owns learning and qualification experiments.",
+    "quote": "## autofde-lab\n\nOwns learning and qualification experiments.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Capability",
+    "statement": "autofde-lab provides two-episode MachineExperience courts.",
+    "quote": "two-episode MachineExperience courts",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "zcode-cli owns bounded worker CLI behavior where required.",
+    "quote": "## zcode-cli\n\nOwns bounded worker CLI behavior where required.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "ZCode is an executor implementation and not the architecture.",
+    "quote": "ZCode is an executor implementation, not the architecture.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "The v26.9.23 KNOWN reference path does not depend on ZCode.",
+    "quote": "The v26.9.23 KNOWN reference path must not depend on ZCode.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "ggen-ecosystem owns cross-repository composition and qualification.",
+    "quote": "## ggen-ecosystem\n\nOwns cross-repository composition and qualification.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "ggen-ecosystem validates ecosystem compatibility and invents no independent semantic state.",
+    "quote": "It shall validate ecosystem compatibility rather than invent independent semantic state.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Actor",
+    "statement": "open-ontologies may supply candidate extraction and ontology-scaffolding primitives for the UNKNOWN prose-to-semantics edge.",
+    "quote": "## open-ontologies\n\nMay supply candidate extraction and ontology-scaffolding primitives for the UNKNOWN prose→semantics edge.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Admission remains separate from candidate extraction.",
+    "quote": "Admission remains separate.",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Capability",
+    "statement": "The candidate extractor produces the sixteen proposition kinds Actor through Successor.",
+    "quote": "Candidate extractor produces:\n\n```text\nActor\nObject\nRole\nState\nTransition\nCapability\nTrigger\nDependency\nInvariant\nExclusion\nEvidence\nAuthority\nPostcondition\nFalsifier\nMetric\nSuccessor\n```",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Every extracted candidate starts with standing UNKNOWN and provenance equal to its exact source span.",
+    "quote": "All extracted content initially has:\n\n```text\nstanding = UNKNOWN\nprovenance = exact source span\n```",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Only admitted candidate semantics become O*.",
+    "quote": "Only admitted candidate semantics become \\(O^*\\).",
+    "required_by": "GC23-0",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Transition",
+    "statement": "Admitted RDF projects deterministically into a semantic delta and then a WorkOrder graph.",
+    "quote": "admitted RDF\n→ deterministic semantic delta\n→ deterministic WorkOrder graph",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "An accepted graph revision is never interpreted by an LLM a second time.",
+    "quote": "No second LLM interpretation is allowed for the same accepted graph revision.",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "The sJira ontology contains GoalCheckpoint, WorkOrder, Checkpoint, MachineExperience, CapabilityRequirement, EvidenceRequirement, Exclusion and Falsifier classes.",
+    "quote": "sj:GoalCheckpoint\nsj:WorkOrder\nsj:Checkpoint\nsj:MachineExperience\nsj:CapabilityRequirement\nsj:EvidenceRequirement\nsj:Exclusion\nsj:Falsifier",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A WorkOrder requires the predicates subject, postcondition, dependsOn, requiresCapability, authorityCeiling, consequenceClass, evidenceHorizon, acceptancePredicate, falsifier, exclusion and successorPolicy.",
+    "quote": "Required WorkOrder predicates:\n\n```text\nsj:subject\nsj:postcondition\nsj:dependsOn\nsj:requiresCapability\nsj:authorityCeiling\nsj:consequenceClass\nsj:evidenceHorizon\nsj:acceptancePredicate\nsj:falsifier\nsj:exclusion\nsj:successorPolicy\n```",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Object",
+    "statement": "A GoalCheckpoint uses the predicates checkpointOf, requiredProposition, boundaryClass, stopQuery and successorCheckpoint.",
+    "quote": "GoalCheckpoint predicates:\n\n```text\nsj:checkpointOf\nsj:requiredProposition\nsj:boundaryClass\nsj:stopQuery\nsj:successorCheckpoint\n```",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Standing is computed, never trusted from a stored status.",
+    "quote": "Standing shall be computed.",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Trigger",
+    "statement": "A change to a covered subject can regress its standing.",
+    "quote": "If a covered subject changes, standing may regress.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "State",
+    "statement": "Derived standing takes one of UNKNOWN, PARTIAL_ALIVE, ALIVE, BLOCKED, BUILD_BROKEN, UNSUPPORTED, REFUSED(reason) or SUCCESSOR.",
+    "quote": "State classes:\n\n```text\nUNKNOWN\nPARTIAL_ALIVE\nALIVE\nBLOCKED\nBUILD_BROKEN\nUNSUPPORTED\nREFUSED(reason)\nSUCCESSOR\n```",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Capability",
+    "statement": "A SemanticExecutionRequest conserves work order, subject, postcondition, capability, evidence horizon, authority ceiling, consequence class, exclusions and graph digest.",
+    "quote": "SemanticExecutionRequest {\n  work_order\n  subject\n  postcondition\n  capability\n  evidence_horizon\n  authority_ceiling\n  consequence_class\n  exclusions\n  graph_digest\n}",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "A digest is computed over the semantic contract.",
+    "quote": "A digest shall be computed over the semantic contract.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "The semantic contract digest is checked at the sJira, SA2A, XaaS, provider and receipt hops.",
+    "quote": "sJira\n→ SA2A\n→ XaaS\n→ provider\n→ receipt",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Mutation or loss of a required SA2A field refuses execution.",
+    "quote": "Mutation or loss of a required field refuses execution.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Provider selection prefers a deterministic admitted provider when one exists.",
+    "quote": "Provider selection shall prefer a deterministic admitted provider when one exists.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "An LLM never outranks an equivalent deterministic provider for KNOWN work.",
+    "quote": "An LLM shall not outrank an equivalent deterministic provider for KNOWN work.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Object",
+    "statement": "A Recipe describes recipe id, applicability, invocation, working subject, precondition, expected delta, verification suite and consequence class.",
+    "quote": "A Recipe describes:\n\n```text\nrecipe_id\napplicability\nargv / invocation\nworking_subject\nprecondition\nexpected_delta\nverification_suite\nconsequence_class\n```",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from claim to subject validation.",
+    "quote": "claim\n→ validate subject",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from subject validation to semantic digest validation.",
+    "quote": "→ validate subject\n→ validate semantic digest",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from semantic digest validation to lease acquisition.",
+    "quote": "→ validate semantic digest\n→ acquire lease",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from lease acquisition to a BRCE-authorized invocation.",
+    "quote": "→ acquire lease\n→ run BRCE-authorized invocation",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from the BRCE-authorized invocation to observing its result.",
+    "quote": "→ run BRCE-authorized invocation\n→ observe result",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from observing the result to invoking the independent verifier.",
+    "quote": "→ observe result\n→ invoke independent verifier",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from independent verification to producing a receipt.",
+    "quote": "→ invoke independent verifier\n→ produce receipt",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Transition",
+    "statement": "RecipeWorker moves from the receipt to closing or refusing the WorkOrder.",
+    "quote": "→ produce receipt\n→ close/refuse",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "RecipeWorker performs no semantic inference.",
+    "quote": "The worker has no semantic inference responsibility.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "No model, planner, proof or hook independently creates actuation authority.",
+    "quote": "No model, planner, proof or hook can independently create actuation authority.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Every v26.9.23 critical-path receipt uses one schema.",
+    "quote": "Every v26.9.23 critical-path receipt shall use one schema.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "A critical-path receipt records subject identity, producer identity, authority, precondition evidence, consequence, postcondition evidence, verification, replay, standing and event identity.",
+    "quote": "subject_identity\nproducer_identity\nauthority\nprecondition_evidence\nconsequence\npostcondition_evidence\nverification\nreplay\nstanding\ntimestamp/event identity",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Old flat receipts count as v26.9.23 proof only through a validated adapter into the current schema.",
+    "quote": "They do not count as v26.9.23 proof unless projected into the current schema by a validated adapter.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "Execution observations are OCEL 2 events of at least ten classes from WorkOrderCreated to MachineExperienceAdmitted.",
+    "quote": "Minimum event classes:\n\n```text\nWorkOrderCreated\nCapabilityResolved\nLeaseAcquired\nActuationStarted\nActuationCompleted\nVerificationCompleted\nReceiptSealed\nStandingChanged\nFrontierChanged\nMachineExperienceAdmitted\n```",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "OCEL records observation and never manufactures authority.",
+    "quote": "OCEL records observation.\n\nIt does not manufacture authority.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Transition",
+    "statement": "The closed loop runs WorkOrder through descriptor, capability resolution, materialization, lease, RecipeWorker, BRCE, verifier, receipt, OCEL, sJira.xaas_receipt and reconciliation to frontier.",
+    "quote": "WorkOrder\n→ descriptor\n→ capability resolution\n→ materialization\n→ lease\n→ RecipeWorker\n→ BRCE\n→ verifier\n→ receipt\n→ OCEL\n→ sJira.xaas_receipt\n→ reconciliation\n→ frontier",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "The completed order leaves the frontier.",
+    "quote": "1. the completed order leaves the frontier;",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Eligible dependent work enters the frontier.",
+    "quote": "2. eligible dependent work enters;",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Ineligible work remains fenced from the frontier.",
+    "quote": "3. ineligible work remains fenced;",
+    "required_by": "GC23-8",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Replay reaches the same semantic state.",
+    "quote": "4. replay reaches the same semantic state.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Object",
+    "statement": "MachineExperience records problem class, applicability predicate, admitted capability, provider class, required evidence, falsifiers, successful verification, consequence bounds and source episode.",
+    "quote": "problem_class\napplicability_predicate\nadmitted_capability\nprovider_class\nrequired_evidence\nfalsifiers\nsuccessful_verification\nconsequence_bounds\nsource_episode",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "Episode 1 moves from UNKNOWN through exploration and a verified result to MachineExperience.",
+    "quote": "UNKNOWN\n→ exploration\n→ verified result\n→ MachineExperience",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Transition",
+    "statement": "Episode 2 moves from a new subject through an applicability match to a KNOWN deterministic route.",
+    "quote": "new subject\n→ applicability match\n→ KNOWN\n→ deterministic route",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "The Episode-2 court fails if an LLM is required to rediscover the route.",
+    "quote": "The Episode-2 court shall fail if an LLM is required to rediscover the route.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Cold bootstrap receives only durable system artifacts.",
+    "quote": "Cold bootstrap receives only durable system artifacts.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Exclusion",
+    "statement": "Bootstrap never depends on Claude or ZCode transcripts, conversation memory, unstored plans or operator recollection.",
+    "quote": "Forbidden dependencies:\n\n* Claude transcript;\n* ZCode transcript;\n* conversation memory;\n* unstored plan;\n* operator recollection.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Two independent bootstrap runs are semantically identical.",
+    "quote": "Two independent bootstrap runs shall be semantically identical.",
+    "required_by": "GC23-1",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Authority",
+    "statement": "The only permitted LLM edge lies before semantic admission and only for genuinely novel meaning.",
+    "quote": "The only permitted LLM edge is before semantic admission when meaning is genuinely novel.",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Once the graph is admitted, replay of graph-to-WorkOrder manufacture is deterministic.",
+    "quote": "Once the graph is admitted, replay of graph→WorkOrder manufacture is deterministic.",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "A command exit status of 0 is insufficient to close a WorkOrder.",
+    "quote": "command exit 0\n```\n\nis insufficient.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Only world delta, independent observation, postcondition verdict, falsifier result, receipt, OCEL and derived standing together close a WorkOrder.",
+    "quote": "Only that combination can close a WorkOrder.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "The stop-court runner outputs checkpoint, subject, court, standing, receipt and falsifier per child court.",
+    "quote": "Output:\n\n```text\ncheckpoint\nsubject\ncourt\nstanding\nreceipt\nfalsifier\n```",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "The final SPARQL stop query returns true iff all required gates satisfy their semantic predicates.",
+    "quote": "The final SPARQL stop query returns true iff all required gates satisfy their semantic predicates.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "No LLM participates in the stop calculation.",
+    "quote": "No LLM participates in the stop calculation.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Failures are typed and no generic failed state exists.",
+    "quote": "No generic “failed” state.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "State",
+    "statement": "Typed failure states include REFUSED, BLOCKED, UNSUPPORTED, BUILD_BROKEN and UNKNOWN with a reason.",
+    "quote": "REFUSED(authority_missing)\nREFUSED(admission_vacuous)\nREFUSED(tuple_digest_mismatch)\nREFUSED(exclusion_violated)\nBLOCKED(dependency)\nBLOCKED(external_answer)\nUNSUPPORTED(provider_capability)\nBUILD_BROKEN(toolchain)\nUNKNOWN(novel_semantics)",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "A failed edge updates topology rather than failing the whole graph.",
+    "quote": "A failed edge updates topology.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "Credentials are not semantic authority.",
+    "quote": "Credentials are not semantic authority.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "Authority explicitly binds actor or provider, subject, capability, consequence class and horizon.",
+    "quote": "actor/provider\nsubject\ncapability\nconsequence class\nhorizon",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "No SA2A request escalates its own authority.",
+    "quote": "No SA2A request may escalate its own authority.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Authority",
+    "statement": "A passing build never grants a generated artifact deployment or publish authority.",
+    "quote": "No generated artifact may inherit deployment/publish authority merely because its build passed.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Generator-owned artifacts are never manually edited.",
+    "quote": "Generated artifacts shall not be manually edited where a generator owns them.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "Handwritten residue records HANDWRITTEN, a reason, the generator-capability gap and verification.",
+    "quote": "HANDWRITTEN\nreason\ngenerator-capability gap\nverification",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "LLM planning is only a fallback for semantic UNKNOWN.",
+    "quote": "LLM planning is only a fallback for semantic UNKNOWN.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Migration preserves history and does not rewrite it to conform to v26.9.23.",
+    "quote": "Do not rewrite history to conform to v26.9.23.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Dependency",
+    "statement": "GC-FRI-0800 results are predecessor evidence for v26.9.23.",
+    "quote": "Treat GC-FRI-0800 results as predecessor evidence.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "RecipeWorker and at least one recipe have landed.",
+    "quote": "Land RecipeWorker and at least one recipe.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "Tuple digest conservation holds across hops.",
+    "quote": "Add tuple digest conservation across hops.",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "New critical-path receipts conform to the schema.",
+    "quote": "Require new critical-path receipts to conform.",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "The prose to candidate semantics to admission to delta path has landed.",
+    "quote": "Land prose→candidate semantics→admission→delta.",
+    "required_by": "GC23-2",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "UNKNOWN to MachineExperience to KNOWN has been demonstrated.",
+    "quote": "Demonstrate UNKNOWN→MachineExperience→KNOWN.",
+    "required_by": "GC23-9",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Postcondition",
+    "statement": "The architecture manufactures its next bounded GoalCheckpoint.",
+    "quote": "Use the resulting architecture to manufacture its next bounded GoalCheckpoint.",
+    "required_by": "GC23-12",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "A failing command is rerun only with a new hypothesis or repair.",
+    "quote": "No unchanged failing command is rerun without a new hypothesis or repair.",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F1: deleting a mandatory WorkOrder field is REFUSED.",
+    "quote": "### F1\n\nDelete a mandatory WorkOrder field.\n\nExpected:\n\n```text\nREFUSED\n```",
+    "required_by": "GC23-3",
+    "boundary_class": "FirstMile"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F2: mutating the SA2A tuple digest is REFUSED(tuple_digest_mismatch).",
+    "quote": "### F2\n\nMutate SA2A tuple digest.\n\nExpected:\n\n```text\nREFUSED(tuple_digest_mismatch)\n```",
+    "required_by": "GC23-4",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F3: exposing LLM credentials during the KNOWN no-LLM court yields a typed court failure or refusal.",
+    "quote": "### F3\n\nExpose LLM credentials during the KNOWN no-LLM court.\n\nExpected:\n\ntyped court failure/refusal.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F4: removing the required consequence leaves the WorkOrder non-ALIVE.",
+    "quote": "### F4\n\nRemove required consequence.\n\nExpected:\n\nWorkOrder remains non-ALIVE.",
+    "required_by": "GC23-6",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F5: deleting a receipt during cold replay makes standing and frontier diverge.",
+    "quote": "### F5\n\nDelete receipt during cold replay.\n\nExpected:\n\nstanding/frontier divergence.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F6: changing a covered subject after its receipt stops the previous ALIVE standing from applying.",
+    "quote": "### F6\n\nChange covered subject after receipt.\n\nExpected:\n\nprevious ALIVE standing no longer automatically applies.",
+    "required_by": "GC23-10",
+    "boundary_class": "Bootstrap"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F7: introducing an unclassified required repository fails the fleet checkpoint.",
+    "quote": "### F7\n\nIntroduce an unclassified required repository.\n\nExpected:\n\nfleet checkpoint fails.",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Falsifier",
+    "statement": "F8: newly discovered improvement that falsifies no active proposition routes to the successor GoalCheckpoint.",
+    "quote": "### F8\n\nAttempt to turn newly discovered improvement into required current work without falsifying an active proposition.\n\nExpected:\n\nroute to successor GoalCheckpoint.",
+    "required_by": "GC23-12",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Evidence",
+    "statement": "The release receipt includes checkpoint, graph digest, subject identities, repo SHAs, ontology and schema digests, toolchain and provider registry identity, gate receipts, replay result, frontier classifications, KNOWN-path LLM count and standing.",
+    "quote": "The final v26.9.23 release receipt shall include:\n\n```text\nexact checkpoint\nexact graph digest\nexact subject identities\nrepo SHAs\ncanonical ontology digest\nschema digest\ntoolchain identity\nprovider registry identity\ngate receipts\nreplay result\nremaining frontier classifications\nLLM invocation count on KNOWN reference path\nstanding\n```",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The KNOWN reference path records zero LLM invocations.",
+    "quote": "LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH = 0",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The release records zero unreceipted actuations.",
+    "quote": "UNRECEIPTED_ACTUATION = 0",
+    "required_by": "GC23-7",
+    "boundary_class": "LastMile"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The release records zero required UNKNOWN items.",
+    "quote": "REQUIRED_UNKNOWN = 0",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The release records zero unclassified required work items.",
+    "quote": "UNCLASSIFIED_REQUIRED_WORK = 0",
+    "required_by": "GC23-11",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Metric",
+    "statement": "The release receipt records STOP = true.",
+    "quote": "STOP = true",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "v26.9.23 is ALIVE only if its exact release checkpoint executes and its STOP receipt is reproducible.",
+    "quote": "v26.9.23 is **ALIVE** only if its exact release checkpoint executes and its STOP receipt is reproducible.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "Documentation, merged code, green CI alone, a plan or an unvalidated named receipt never constitute ALIVE.",
+    "quote": "Documentation completeness is not ALIVE.\n\nMerged code is not ALIVE.\n\nGreen CI alone is not ALIVE.\n\nA plan is not ALIVE.\n\nA named receipt without validated contents is not ALIVE.",
+    "required_by": "GC-26.9.23",
+    "boundary_class": "Core"
+  },
+  {
+    "kind": "Invariant",
+    "statement": "The demonstrated KNOWN path has zero LLM dependence.",
+    "quote": "with zero LLM dependence on the demonstrated KNOWN path.",
+    "required_by": "GC23-5",
+    "boundary_class": "Core"
+  }
+]
