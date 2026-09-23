@@ -1,0 +1,5 @@
+candidates: CHECK OK: 18 candidates bound to docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1; gates GC24-0=2 GC24-1=1 GC24-2=7 GC24-3=2
+     └─ lib/faker/string.ex:143:16
+    (elixir 1.20.2) lib/kernel/parallel_compiler.ex:548: anonymous fn/5 in Kernel.ParallelCompiler.spawn_workers/8
+could not compile dependency :faker, "mix compile" failed. Errors may have been logged above. You can recompile this dependency with "mix deps.compile faker --force", update it with "mix deps.update faker" or clean it with "mix deps.clean faker"
+REFUSED: GC23-12 compile_prose --check exited 1

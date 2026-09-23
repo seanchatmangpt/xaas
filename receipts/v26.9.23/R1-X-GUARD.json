@@ -1,0 +1,202 @@
+{
+  "identity": {
+    "subject": "R1-X-GUARD",
+    "repo": "/Users/sac/xaas",
+    "repo_slug": "seanchatmangpt/xaas",
+    "subject_sha": "795153d6ab26c5caf0195a0ceae5c943f5a07c7f",
+    "base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+    "branch": "v23/R1-X-GUARD",
+    "worktree": "/Users/sac/wt/v26922/v23/R1-X-GUARD",
+    "work_order": null,
+    "tuple_digest": null,
+    "tuple_digest_why": "release defect repair lane of wave R1a; goal.ttl declares no v23:WO-R1-X-GUARD order (grep R1- docs/sjira/v26.9.23/goal.ttl: empty), so the stop court does not link this receipt",
+    "prd_ard": "PRD PR-009 (no LLM credentials, no LLM binary/provider, no LLM fallback), PR-010; ARD section 10, section 26 F3 ('Expose LLM credentials during the KNOWN no-LLM court. Expected: typed court failure/refusal'); PRD section 12 GC23-5; goal.ttl v23:GC23-5",
+    "defect": "driver-verified: Xaas.Ultracode.SemanticDrive.no_llm_guard(%{\"GEMINI_API_KEY\"=>\"x\",\"OPENROUTER_API_KEY\"=>\"y\",\"PATH\"=>\"/usr/bin\"}) returned :ok (hard-coded denylist @llm_prefixes ANTHROPIC_ CLAUDE_ OPENAI_ ZAI_ Z_AI_ GLM_ ZCODE_, @llm_binaries zcode claude); reproduced on this subject by mutation M2 (the base denylist restored as data + fail-closed branch off) -> ':ok'",
+    "defect_classification": "subject defect (GC23-5 / F3 falsified as stated)",
+    "toolchain": {
+      "xaas_pin": "elixir 1.20.2-otp-28 (/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin), Erlang/OTP 28 erts-16.4.0.2 (/Users/sac/.asdf/installs/erlang/28.5.0.2/bin); fresh _build (only deps/ APFS-cloned from fri/xaas-int, mix.lock identical); every mix command of the lane gate ran under this pin",
+      "ambient_for_graph_side_courts": "GC23-0/1/2/3 were also run with the ambient PATH (/opt/homebrew/bin/mix = Elixir 1.19.5, erl /Users/sac/.erlmcp/otp-28.3.1) because under the xaas pin the ggen_igniter side (gi_mix.sh / bootstrap_court.sh use the caller's mix) fails to compile dep :faker -- identically with the BASE no_llm_env.sh + gi_mix.sh (base-gi_mix-pin.log)",
+      "python": "/opt/homebrew/bin/python3 -> Python 3.14.3 (Cellar framework)"
+    }
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "wave R1a lane R1-X-GUARD (/Users/sac/wt/v26922/v26923/DRIVER.md 12:50 PT; lanes/wave-R1a.json; COORDINATION.md v26.9.23 scope). Own worktree only; no push, no integrate, no remote effect.",
+    "actor": "claude-opus-5.5 workflow subagent (lane R1-X-GUARD)"
+  },
+  "consequence": {
+    "commits": [
+      "795153d6ab26c5caf0195a0ceae5c943f5a07c7f"
+    ],
+    "commit_notes": {
+      "795153d": "fail-closed no-LLM guard: allowlist + 27-provider vocabulary as data (priv/no_llm/policy.json), NoLlmPolicy compiled from it, no_llm_env.sh built from it (symlink-resolved PATH), GC23-5 F3 extended (GEMINI, unlisted variable), Chicago tests; toolchain-pin prerequisites (unused require Ash.Query, 1.20 compile.elixir_scm 4-tuple)"
+    },
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "docs/sjira/v26.9.23/courts/GC23-5.sh",
+      "docs/sjira/v26.9.23/courts/no_llm_env.sh",
+      "lib/mix/tasks/xaas.episode.ex",
+      "lib/mix/tasks/xaas.machine_experience.ex",
+      "lib/mix/tasks/xaas.replay.ex",
+      "lib/mix/tasks/xaas.successor.ex",
+      "lib/xaas/ultracode/no_llm_policy.ex",
+      "lib/xaas/ultracode/semantic_drive.ex",
+      "lib/xaas/ultracode/semantic_replay.ex",
+      "priv/no_llm/policy.json",
+      "test/xaas/sjira/successor_test.exs",
+      "test/xaas/ultracode/machine_experience_test.exs",
+      "test/xaas/ultracode/semantic_drive_test.exs"
+    ],
+    "files_changed_basis": "git diff --name-only e999e62 795153d (14 files, 828 insertions, 144 deletions); the receipt commit adds receipts/v26.9.23/R1-X-GUARD.json and receipts/v26.9.23/R1-X-GUARD.gate/**",
+    "data_digests": {
+      "priv/no_llm/policy.json": "sha256:eae09e0bb258e11adf636e1f0a51707683a651c5a924076f0de01d7ce2a99942",
+      "docs/sjira/v26.9.23/courts/no_llm_env.sh": "sha256:0d480efa10f51d582cea51852f95203433f23c4aaafc67b0c1fe70f01d3f5b2c",
+      "docs/sjira/v26.9.23/courts/GC23-5.sh": "sha256:8a36db40a7fb7e0055361ddb97f14b7324e5e4c00f572cf9394c87d7e6877184"
+    },
+    "law": "the permitted no-LLM court environment is an ALLOWLIST of 37 variable names by origin (builder HOME PATH; caller_or_default MIX_HOME HEX_HOME ASDF_DATA_DIR LANG; caller_if_set MIX_ENV MIX_TEST_PARTITION DEV_DB_USERNAME DEV_DB_PASSWORD DEV_DB_HOSTNAME DEV_DB_PORT; court_assignment TMPDIR; launcher BINDIR EMU PROGNAME ROOTDIR PWD SHLVL __CF_USER_TEXT_ENCODING ASDF_INSTALL_PATH ASDF_INSTALL_TYPE ASDF_INSTALL_VERSION MIX_ARCHIVES -- measured with env -i under the pinned and the asdf-shim toolchains; drive MIX_BUILD_PATH ASDF_ELIXIR_VERSION ASDF_ERLANG_VERSION GIT_AUTHOR_* GIT_COMMITTER_* GIT_CONFIG_NOSYSTEM GIT_INDEX_FILE GIT_TERMINAL_PROMPT STATE_DIR); any other name -> REFUSED(llm_credential_present) when one of 27 providers claims it (or a provider CLI binary is on PATH), else REFUSED(unadmitted_environment); broken_term mu_on_O; names, paths and provider ids only",
+    "one_source": "priv/no_llm/policy.json is read by NoLlmPolicy at compile time (@external_resource; malformed data raises CompileError) and by no_llm_env.sh at run time (python3 -I); the test 'no_llm_env.sh and the guard agree' runs the real builder and hands its output to the guard",
+    "court_path_leak_closed": "the base no_llm_env.sh put the directories of git/python3 (/opt/homebrew/bin) on the court PATH, which hold codex, gemini, litellm, ollama and openai executables; the new builder resolves symlinks (Cellar dirs) and refuses (exit 75) any PATH dir holding a provider binary, system dirs included; mutation M3 (base builder) makes the real guard refuse the control run naming those five binaries",
+    "remote_effects": [],
+    "reserved_files": "none of the Friday-reserved files (recipe_worker, engine, court_receipt, target_suites, semantic_receipt, semantic_crown, sa2a/route.ex, xaas.stop_court.ex, docs/sjira/v26.9.22/friday/**) and none of goal.ttl, stop.rq, prd-ard.md, episodes/** changed (git diff e999e62 795153d -- those paths: empty)",
+    "generated_vs_handwritten": {
+      "generated": [],
+      "data": [
+        "priv/no_llm/policy.json (the canonical data; the module and the sh builder are its projections)"
+      ],
+      "handwritten": [
+        "lib/xaas/ultracode/no_llm_policy.ex (compile-time projection of the data + judge/admitted_environment/unset_unadmitted)",
+        "lib/xaas/ultracode/semantic_drive.ex (no_llm_guard/1 and no_llm_environment/1 delegate; drive children unset every unadmitted variable; manifest_compiler/1 for the 1.20 compile.elixir_scm shape; unused require removed)",
+        "docs/sjira/v26.9.23/courts/no_llm_env.sh, docs/sjira/v26.9.23/courts/GC23-5.sh",
+        "test/xaas/ultracode/semantic_drive_test.exs (SemanticDriveNoLlmGuardTest: 9 tests; 2 SemanticDriveToolchainTest transforms shape-agnostic; unused require removed)",
+        "test/xaas/sjira/successor_test.exs, test/xaas/ultracode/machine_experience_test.exs (clean env = the admitted projection)"
+      ],
+      "ledger": "HANDWRITTEN.md row 'lib/xaas/ultracode/no_llm_policy.ex, priv/no_llm/policy.json, ...': UNSUPPORTED(generator-capability) -- 326 ggen-marketplace packs: 0 files match no_llm/no-llm/llm_credential/NoLlm (allowlist hits are tool/permission allowlists); xaas ggen.toml renders only the CASTLE bridge pack; owner: a no-LLM execution-environment pack"
+    }
+  },
+  "replay": {
+    "durable_location": "receipts/v26.9.23/R1-X-GUARD.gate/ (lane gate log, court logs pin + ambient, dependent-suite logs, mutation logs + diffs, probes)",
+    "commands": [
+      {
+        "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/semantic_drive_test.exs && GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-5.sh'",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD @ 795153d (clean tree)",
+        "exit": 0,
+        "summary": "the exact lane gate: Elixir 1.20.2 (compiled with Erlang/OTP 28); format clean; Compiling 521 files (.ex), Generated xaas app (warnings-as-errors); 13 passed, 5 skipped (SemanticDriveTest skips without GGEN_IGNITER_DIR); GC23-5 ALIVE: control passed, F3 ANTHROPIC_API_KEY -> REFUSED(llm_credential_present) providers [anthropic], GEMINI_API_KEY -> REFUSED(llm_credential_present) providers [google-gemini], XAAS_GC23_5_UNLISTED -> REFUSED(unadmitted_environment)",
+        "output_sha256": "2609f2745172f74a8d88e91d82b8f045152801f353a216dc9aa31aba8e87d0d5",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/lane-gate.log"
+      },
+      {
+        "cmd": "MIX_ENV=test GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/sjira/successor_test.exs test/xaas/ultracode/machine_experience_test.exs test/xaas/ultracode/semantic_replay_test.exs",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (working tree byte-identical to 795153d: no edit between this run and the commit), xaas pin",
+        "exit": 0,
+        "summary": "46 passed in 298.0 s: the three suites whose in-process env helpers now hand the guard the admitted projection (successor intake F3, machine-experience runner F3 + real --route subprocesses under no_llm_env.sh, cold replay under no_llm_env.sh)",
+        "output_sha256": "cefe33fbf20530058c2fb27057732dd0e9370476e2d0bbc444d175ec665ed348",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/dependents-with-ggen.log"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-9.sh; ... GC23-10.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (byte-identical to 795153d), xaas pin",
+        "exit": 0,
+        "summary": "conservation over the other no_llm_env.sh consumers: GC23-9 ALIVE (69 s; live --route KNOWN + F3 under the new builder), GC23-10 ALIVE (71 s; two cold replays under sandbox-exec + no_llm_env.sh, F3/F5/F6)",
+        "output_sha256": "84f7f64b69262e57bfb41e5d1831307694564fc44c00351f7a5473f5f7727e6f",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/court-GC23-9.pin.log (GC23-10: court-GC23-10.pin.log sha256:6ba081b37a7bf40a334a29c092db64abd6127934dcd84b9189a6c116d104bf58)"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-{2,3,1,0}.sh (ambient PATH)",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (GC23-0 at 795153d; GC23-1/2/3 byte-identical to it)",
+        "exit": 0,
+        "summary": "GC23-2 ALIVE (80 s), GC23-3 ALIVE (49 s), GC23-1 ALIVE (143 s; F3 by the ggen_igniter helper), GC23-0 ALIVE (38 s; 241/241 candidates admitted) -- the ggen_igniter-side courts accept the new builder's symlink-resolved PATH",
+        "output_sha256": "a19df5f3256a6bd0e333e3efc66dd4ccd3b89601e15bf4ce1f6f589e8b14e925",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/court-GC23-2.ambient.log (GC23-3 8b6a4a3b..., GC23-1 8a579db5..., GC23-0 00c25ae7...)"
+      },
+      {
+        "cmd": "MIX_ENV=test sh docs/sjira/v26.9.23/courts/no_llm_env.sh TMPDIR=<scratch>/ -- mix xaas.successor --dir docs/sjira/v26.9.23/successor --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --check",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD @ 795153d, xaas pin",
+        "exit": 0,
+        "summary": "GC23-12 step 4 by hand (the court itself stops earlier under the pin, see witnesses): the court_assignment TMPDIR is admitted; 7 orders, 7 eligible, first WO-14958CC7712C739E UNSUPPORTED(provider_capability), outputs recompute byte-identically",
+        "output_sha256": "8b3adabe7de0d59345077a295a8b3418386c7acda42d3bd49641436784dfc28c",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/gc23-12-step4-intake.pin.log"
+      },
+      {
+        "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" test/xaas/ultracode/semantic_drive_test.exs test/xaas/sjira/successor_test.exs test/xaas/ultracode/machine_experience_test.exs lib/xaas/ultracode/no_llm_policy.ex lib/xaas/ultracode/semantic_drive.ex",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD @ 795153d",
+        "exit": 0,
+        "summary": "no matches (grep exit 1, negated 0): Chicago-only -- real executables in tmp PATH dirs, the real no_llm_env.sh in sh, real mix xaas.episode --check-env subprocesses, real /usr/bin/env children"
+      }
+    ]
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed runs on the exact committed subject 795153d6ab26c5caf0195a0ceae5c943f5a07c7f under the xaas .tool-versions pin: the lane gate exit 0 (format, compile --force --warnings-as-errors, semantic_drive_test.exs 13 passed / 5 skipped, GC23-5 ALIVE with the GEMINI and unlisted-variable F3 steps); the three revert-mutations M1/M2/M3 each make new tests fail (2, 6, 2) and the matching GC23-5 probe exit 0 where the court requires 3; the dependent suites and the other no_llm_env.sh courts pass (GC23-1/2/3 under the ambient toolchain, see witnesses for the pin-only graph-side edge)"
+  },
+  "falsifiers": {
+    "F3_non_anthropic": "GEMINI_API_KEY (and every prefix/name of the 27 providers, table-driven from priv/no_llm/policy.json: >= 40 rows) exposed -> REFUSED(llm_credential_present) naming the provider; a refusal that encodes the value fails the test",
+    "fail_closed": "an arbitrary unlisted variable (XAAS_R1_GUARD_UNLISTED_TOKEN, XAAS_R1_UNLISTED, XAAS_GC23_5_UNLISTED) -> REFUSED(unadmitted_environment); M1 (that branch -> :ok) makes 2 tests fail and the GC23-5 step-6 probe exit 0",
+    "denylist_regression": "M2 = M1 + the base 7-prefix/2-binary denylist restored as data: SemanticDrive.no_llm_guard(%{GEMINI_API_KEY, OPENROUTER_API_KEY, PATH}) = :ok (the driver's defect, reproduced), 6 tests fail, the GC23-5 step-5 probe (GEMINI) exits 0",
+    "builder_guard_disagreement": "M3 = base no_llm_env.sh: the built environment is refused by the guard (PATH holds /opt/homebrew/bin/{codex,gemini,litellm,ollama,openai}), 2 tests fail, the GC23-5 control probe exits 3",
+    "provider_binary": "every provider CLI binary of the data as a real executable in a tmp PATH dir -> REFUSED(llm_credential_present) naming the path and provider; the same file without the x bit -> :ok",
+    "malformed_policy": "an unknown origin, a bad name, an admitted name some provider claims, a duplicate provider id or a provider claiming nothing raises CompileError (compile-time law in NoLlmPolicy; not mutation-tested in this lane)"
+  },
+  "witnesses": {
+    "note": "runs whose non-zero exit is the expected observation, or a classified pre-existing failure; kept out of replay.commands (the validator requires all exit 0 for ALIVE)",
+    "commands": [
+      {
+        "cmd": "M1: no_llm_policy.ex 'unadmitted != [] -> {:refused, \"unadmitted_environment\", detail}' -> ':ok'; MIX_ENV=test mix test test/xaas/ultracode/semantic_drive_test.exs; sh no_llm_env.sh XAAS_GC23_5_UNLISTED=x -- mix xaas.episode --check-env",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (795153d + mut-M1M2.diff first hunk; restored and cmp-verified)",
+        "exit": 2,
+        "summary": "11/13 passed: 'an arbitrary variable no provider claims ...' and 'the real task under the F3 court environment ...' fail; the court step-6 probe exits 0 {\"no_llm_guard\":\"passed\"} where GC23-5 requires 3",
+        "output_sha256": "831fa152e861f91f753af890c5aa6414a5fa734f9622d191e267a03462673cdc",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/mut-M1.log, mut-M1-court6-probe.log"
+      },
+      {
+        "cmd": "M2: M1 + priv/no_llm/policy.json providers = the base denylist (anthropic ANTHROPIC_, claude-code CLAUDE_/CLAUDECODE/claude, openai OPENAI_, zai-glm ZAI_/Z_AI_/GLM_, zcode ZCODE_/zcode); mix test ...; mix run -e no_llm_guard(driver env); sh no_llm_env.sh GEMINI_API_KEY=x -- mix xaas.episode --check-env",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (795153d + mut-M1M2.diff; restored and cmp-verified)",
+        "exit": 2,
+        "summary": "7/13 passed (driver-verified defect, provider table, unlisted variable, data-on-disk, builder agreement, real task fail); no_llm_guard(%{GEMINI_API_KEY, OPENROUTER_API_KEY, PATH}) printed :ok; the court step-5 probe exits 0 where GC23-5 requires 3",
+        "output_sha256": "e61b989f435427f859b329ab49a9b18fc72b33d19b2a6a2b3556f2260b8c0011",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/mut-M2.log, mut-M2-court5-probe.log, mut-M1M2.diff"
+      },
+      {
+        "cmd": "M3: git show e999e62:docs/sjira/v26.9.23/courts/no_llm_env.sh > docs/sjira/v26.9.23/courts/no_llm_env.sh; mix test ...; sh no_llm_env.sh -- mix xaas.episode --check-env",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (795153d + mut-M3.diff; restored and cmp-verified)",
+        "exit": 2,
+        "summary": "11/13 passed (builder agreement, real task fail); the control probe exits 3 REFUSED(llm_credential_present) binaries [/opt/homebrew/bin/codex, gemini, litellm, ollama, openai] -- the base court PATH leaked five LLM CLIs",
+        "output_sha256": "58b9f5312ca9bb0c3a47d7c05082ed188c555332b13079af14d7d6b72678046c",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/mut-M3.log, mut-M3-control-probe.log, mut-M3.diff"
+      },
+      {
+        "cmd": "MIX_ENV=test GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode/semantic_drive_test.exs",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD (pre-format working tree: whitespace-only difference to 795153d), xaas pin",
+        "exit": 2,
+        "summary": "16/18 passed; the 2 failures (EP-A drive diff also contains lib/ggen_igniter/semantic_jira/bootstrap.ex; no-drift subject not REFUSED(no_delta)) are PRE-EXISTING: release qualification failures[2] and [3] of receipts/fleet/xaas-e999e62b.json (ggen_igniter-int 3937a4f bootstrap.ex unformatted under its 1.18.4 pin; owner lane R1-GI-FMT). The guard passed and the drive ran all hops with the drive's children stripped to the admitted names (no_llm_guard passed, frontier EP-A left / EP-B entered)",
+        "output_sha256": "4be8aad80e9f37ecccca1c71dec1bd1d7e7d7078b0ebeb98a1d7c840734b62d1",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/drive-with-ggen.log"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-{2,3,1,12}.sh under the xaas pin PATH",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD",
+        "exit": 1,
+        "summary": "GC23-2 'fresh compile 1 exited 1', GC23-3 'goal.ttl is not admitted under the pack shapes', GC23-1 'bootstrap_court.sh exited 1', GC23-12 'compile_prose --check exited 1': each is the ggen_igniter side compiled by the caller's mix = Elixir 1.20.2 -> 'could not compile dependency :faker'. Classification: environment/pre-existing (toolchain pin edge, not this lane): the BASE no_llm_env.sh + gi_mix.sh under the same PATH fail identically (base-gi_mix-pin.log, exit 1, same faker error); under the ambient toolchain GC23-0/1/2/3 are ALIVE with the new builder (replay.commands). Owner: R1-GI-PIN / R1-X-PIN (courts must run each repo under its own .tool-versions pin)",
+        "output_sha256": "803cc299dbe04f90ee31d5aa5cad6f37af79d07e158f13070706a44b744f7db2",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/court-GC23-{1,2,3,12}.pin.log, base-gi_mix-pin.log"
+      },
+      {
+        "cmd": "MIX_ENV=test sh docs/sjira/v26.9.23/courts/no_llm_env.sh GEMINI_API_KEY=x -- mix xaas.successor --dir docs/sjira/v26.9.23/successor --ggen-igniter-dir /Users/sac/wt/v26922/fri/ggen_igniter-int --check",
+        "cwd": "/Users/sac/wt/v26922/v23/R1-X-GUARD @ 795153d, xaas pin",
+        "exit": 3,
+        "summary": "GC23-12 step 5 with a non-Anthropic credential: REFUSED(llm_credential_present) providers [google-gemini] variables [GEMINI_API_KEY], hop guard, broken_term mu_on_O",
+        "output_sha256": "de00892ff59c3912c1c69bfe690f5449d3a67ef80f2a9b6bbf4f024b5b604a45",
+        "log": "receipts/v26.9.23/R1-X-GUARD.gate/gc23-12-step5-f3-gemini.pin.log"
+      }
+    ]
+  },
+  "pre_existing_repaired_as_gate_prerequisites": {
+    "classification": "pre-existing under the .tool-versions pin (environment: toolchain); absent from the release evidence, which ran the ambient Elixir 1.19.5",
+    "unused_require": "lib/xaas/ultracode/semantic_drive.ex 'require Ash.Query' (only Ash.Query.for_read/3, a function, is used) -> 'warning: unused require Ash.Query' under 1.20.2 fails MIX_ENV=test mix compile --force --warnings-as-errors; removed (and in the test module)",
+    "manifest_shape": "graph_toolchain/2 matched compile.elixir_scm as {vsn, {elixir, otp}, scm}; Elixir 1.20 writes {2, {\"1.20.2\", ~c\"28\"}, Mix.SCM.Path, nil} -> 3 SemanticDriveToolchainTest failures (source asdf instead of build_manifest; FunctionClauseError in the transforms); manifest_compiler/1 reads element 1 of the 3- or 4-tuple, the test transforms use elem/put_elem"
+  },
+  "open": {
+    "ggen_igniter_helper_denylist": "ggen_igniter scripts/sjira/bootstrap_court.sh (GC23-1) keeps its own denylist (LLM_PREFIXES 7, LLM_BINARIES claude zcode codex gemini); it runs under this no_llm_env.sh (which strips every non-policy variable) but does not read priv/no_llm/policy.json. Converging it on the data file is ggen_igniter work (outside this xaas lane).",
+    "drive_children_env": "the drive's child processes now inherit only admitted names (unset_unadmitted/1); observed working for git + graph-side mix in the drive test and the dependent suites; RecipeWorker (reserved file) was not changed and builds its own step environments",
+    "court_toolchain": "GC23-1/2/3/12 need the caller's mix to compile ggen_igniter; under the xaas pin they fail before any guard runs (witnesses). Pinned per-repo court toolchains are R1-X-PIN / R1-GI-PIN scope."
+  }
+}

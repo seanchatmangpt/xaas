@@ -1,0 +1,4 @@
+     └─ lib/faker/string.ex:143:16
+    (elixir 1.20.2) lib/kernel/parallel_compiler.ex:548: anonymous fn/5 in Kernel.ParallelCompiler.spawn_workers/8
+could not compile dependency :faker, "mix compile" failed. Errors may have been logged above. You can recompile this dependency with "mix deps.compile faker --force", update it with "mix deps.update faker" or clean it with "mix deps.clean faker"
+REFUSED: GC23-2 fresh compile 1 exited 1

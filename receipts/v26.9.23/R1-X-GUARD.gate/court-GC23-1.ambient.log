@@ -1,0 +1,5 @@
+F3: helper with ANTHROPIC_API_KEY=x refused REFUSED(llm_credential_present), broken_term mu_on_O
+run1: STATE_DIGEST sha256:ed54534a25a02a0d2db7df532d5f27372c95cc5a58ad7e2c6faabb191300b020 ORDERS 12 (critical_path 10) FRONTIER blocked=5 eligible=5 settled=2 SUBJECTS 21 RECEIPTS 15 
+run2: STATE_DIGEST sha256:ed54534a25a02a0d2db7df532d5f27372c95cc5a58ad7e2c6faabb191300b020 ORDERS 12 (critical_path 10) FRONTIER blocked=5 eligible=5 settled=2 SUBJECTS 21 RECEIPTS 15 
+OK: GC23-1 two cold bootstrap runs byte-identical (sha256:ed54534a25a02a0d2db7df532d5f27372c95cc5a58ad7e2c6faabb191300b020); critical-path orders reconstructed: V23-B V23-C V23-D V23-F V23-H V23-M V23-P V23-Q V23-R V23-X 
+ALIVE: GC23-1 two cold no-LLM reconstructions from durable artifacts are byte-identical; F3 refused
