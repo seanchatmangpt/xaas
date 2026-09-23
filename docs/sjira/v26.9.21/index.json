@@ -2,7 +2,7 @@
   {
     "id": "SJ-001",
     "path": "001-xaas-semantic-jira-e2e.md",
-    "standing": "PARTIAL_ALIVE",
+    "standing": "ALIVE",
     "repository": "seanchatmangpt/xaas",
     "dependencies": []
   },
