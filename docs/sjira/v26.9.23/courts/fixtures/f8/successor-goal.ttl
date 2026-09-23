@@ -1,0 +1,33 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v23: <https://ggen-igniter.dev/sjira/v26.9.23#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# F8 fixture (GC23-2 court, lane V23-K; ARD section 26 F8, PRD PR-017): the
+# successor GoalCheckpoint v23:GC-26.9.24 of docs/sjira/v26.9.23/goal.ttl seen
+# as the root of its own first-mile compile. The discovered-improvement prose
+# (discovered.md) is admissible only here: its digest is pinned on this root,
+# while goal.ttl pins the accepted prose on v23:GC-26.9.23, so the compiler
+# refuses the same prose against GC-26.9.23 (provenance_mismatch) and places
+# its WorkOrder under this successor (sj:checkpointOf v23:GC24-F8, whose
+# sj:checkpointOf is v23:GC-26.9.24). v23:GC24-F8 is a fixture gate that exists
+# only in this file; the court merges this graph with goal.ttl in a temp dir
+# and never writes it into the governing graph.
+
+v23:GC-26.9.24 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-26.9.24" ;
+    rdfs:label "GC-26.9.24 successor of GC-26.9.23 (F8 fixture root)" ;
+    dcterms:source "docs/sjira/v26.9.23/courts/fixtures/f8/discovered.md" ;
+    sj:sourceSha256 "sha256:257164f33f8abebfc7534f3199a815f6dc340eb66f160b23b6ec8dabb1110fde" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:successorOf v23:GC-26.9.23 ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+
+v23:GC24-F8 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC24-F8" ;
+    rdfs:label "GC24-F8 F8 fixture gate of GC-26.9.24" ;
+    dcterms:description "Receives the discovered-improvement proposition of the F8 fixture." ;
+    sj:checkpointOf v23:GC-26.9.24 ;
+    sj:boundaryClass sj:Successor .
