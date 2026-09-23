@@ -453,10 +453,6 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
   end
 
   test "GC-FRI-0800 keeps one order-receipts dir: a receipt only under GGEN_IGNITER_DIR/receipts/v26.9.22 stays MISSING" do
-    assert StopCourt.checkpoints()["GC-FRI-0800"].order_receipts_dirs == [
-             {:repo, "receipts/v26.9.22"}
-           ]
-
     repo = repo()
     top = toplevel(repo)
     write_goal(repo, [{"G1", "true"}], order_ttl())
@@ -498,6 +494,11 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     assert code == 0, out
     assert out =~ "order WO-1 standing=ALIVE receipt=ADMITTED digest=#{digest}"
     assert out =~ "from=repo:#{top}/receipts/v26.9.22@#{head(repo)}"
+
+    # The behaviour above is the preservation claim; the registry entry is its source.
+    assert StopCourt.checkpoints()["GC-FRI-0800"].order_receipts_dirs == [
+             {:repo, "receipts/v26.9.22"}
+           ]
   end
 
   # ------------------------------------------------------------------ refusals (exit 2)

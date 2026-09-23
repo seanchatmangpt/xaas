@@ -96,7 +96,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
   the order-receipts directories (with the git toplevel and HEAD of the
   repository holding each) and, per order, the directory and repository HEAD
   its receipt came from, whether those receipt bytes are the blob committed
-  at that HEAD, every path it was found at, and the refusal if any.
+  at that HEAD (`true`, `false` with the reason, or `null` with the git
+  failure), every path it was found at, and the refusal if any.
 
   Exit codes: `0` STOP=true, `1` STOP=false, `2` the court could not run
   (bad arguments, unreadable graph, unknown checkpoint, asserted receipts,
@@ -1106,8 +1107,10 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       "origin" => source && source.origin,
       "repo" => source && source.repo,
       "repo_head" => source && source.head,
-      "committed_at_head" => source && committed_at_head?(order.receipt_path, source)
+      "committed_at_head" => nil,
+      "committed_at_head_why" => nil
     }
+    |> Map.merge(commit_json(order.receipt_path, source))
     |> Map.merge(refusal_json(order.why_unlinked))
   end
 
@@ -1116,20 +1119,37 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
   defp refusal_json(_why), do: %{}
 
-  # The receipt bytes are exactly the blob at HEAD in the repository holding
-  # them. Both git calls run in the receipt's own directory (`HEAD:./name`),
-  # so a symlinked path (macOS /var -> /private/var) cannot mis-relativize.
-  defp committed_at_head?(_path, %{repo: nil}), do: false
+  # Whether the receipt bytes are exactly the blob at HEAD in the repository
+  # holding them, typed three ways: `true`; `false` with the reason (no git
+  # checkout, no blob at that path in HEAD, different bytes); `null` with the
+  # git failure when git could not answer, e.g. an unreadable HEAD tree (never
+  # folded into `false`). `ls-tree` is used rather than `rev-parse --verify
+  # --quiet HEAD:./name`, which exits 1 silently for both "no such path" and
+  # "tree object missing". Both git calls run in the receipt's own directory
+  # (paths relative to it), so a symlinked path (macOS /var -> /private/var)
+  # cannot mis-relativize.
+  defp commit_json(_path, nil), do: %{}
 
-  defp committed_at_head?(path, _dir) do
+  defp commit_json(path, source) do
+    {state, why} = commit_state(path, source)
+    %{"committed_at_head" => state, "committed_at_head_why" => why}
+  end
+
+  defp commit_state(_path, %{repo: nil}), do: {false, "no git checkout holds the receipt dir"}
+
+  defp commit_state(path, _source) do
     dir = Path.dirname(path)
     name = Path.basename(path)
 
-    with {:ok, blob} <- git(dir, ["rev-parse", "--verify", "--quiet", "HEAD:./" <> name]),
+    with {:ok, listing} <- git(dir, ["ls-tree", "HEAD", "--", name]),
          {:ok, hashed} <- git(dir, ["hash-object", "--", name]) do
-      blob == hashed
+      case Regex.run(~r/^\d+ blob ([0-9a-f]{40,64})\t/, listing) do
+        [_, ^hashed] -> {true, nil}
+        [_, _other] -> {false, "receipt bytes differ from the blob at HEAD"}
+        nil -> {false, "HEAD has no blob at this path"}
+      end
     else
-      _ -> false
+      {:error, reason} -> {nil, inspect(reason)}
     end
   end
 

@@ -964,7 +964,8 @@ defmodule Xaas.Sjira.V26923GoalTest do
              "origin" => "ggen_igniter",
              "repo" => ggen,
              "repo_head" => receipt_head,
-             "committed_at_head" => true
+             "committed_at_head" => true,
+             "committed_at_head_why" => nil
            }
 
     # The same dir, bytes no longer the blob at HEAD: still linked, recorded uncommitted.
@@ -973,6 +974,7 @@ defmodule Xaas.Sjira.V26923GoalTest do
     {_stop, orders} = stop_orders(repo)
     assert orders["WO-A"]["linked"] == true
     assert orders["WO-A"]["committed_at_head"] == false
+    assert orders["WO-A"]["committed_at_head_why"] == "receipt bytes differ from the blob at HEAD"
   end
 
   test "an order receipt missing from every dir stays MISSING (STOP=false)" do
@@ -1063,17 +1065,26 @@ defmodule Xaas.Sjira.V26923GoalTest do
     put_order_receipt(Path.join(ggen, "receipts/v26.9.23"), "WO-A", digest, "ALIVE", "ggen copy")
     more = ["--order-receipts-dir", first, "--order-receipts-dir", second]
 
-    {:ok, report} = StopCourt.court(registry_args(repo, ggen, more))
-
-    assert Enum.map(report.order_receipts_dirs, &{&1.origin, &1.dir}) == [
-             {"option", first},
-             {"option", second}
-           ]
-
     {code, out} = registry_court(repo, ggen, more)
     assert code == 1
     assert out =~ "order WO-A standing=NONE receipt=MISSING digest=#{digest}"
+    assert out =~ "order receipts option #{first} "
+    assert out =~ "order receipts option #{second} "
+    refute out =~ "order receipts ggen_igniter"
 
+    # Only in the first of the repeated dirs: every given dir is read, in
+    # order (the option is not collapsed to its last value).
+    path = put_order_receipt(first, "WO-A", digest, "ALIVE", "first copy")
+    {code, out} = registry_court(repo, ggen, more)
+    assert code == 0, out
+    assert out =~ "from=option:#{first}@#{head(repo)}"
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["found_in"] == [path]
+    assert orders["WO-A"]["committed_at_head"] == false
+    assert orders["WO-A"]["committed_at_head_why"] == "HEAD has no blob at this path"
+
+    # Only in the second: linked from there.
+    File.rm!(path)
     path = put_order_receipt(second, "WO-A", digest, "ALIVE", "second copy")
     {code, out} = registry_court(repo, ggen, more)
     assert code == 0, out
@@ -1081,5 +1092,59 @@ defmodule Xaas.Sjira.V26923GoalTest do
     {_stop, orders} = stop_orders(repo)
     assert orders["WO-A"]["found_in"] == [path]
     assert orders["WO-A"]["repo"] == repo
+
+    {:ok, report} = StopCourt.court(registry_args(repo, ggen, more))
+
+    assert Enum.map(report.order_receipts_dirs, &{&1.origin, &1.dir}) == [
+             {"option", first},
+             {"option", second}
+           ]
+  end
+
+  test "committed_at_head is typed: false with the reason, or null with the git failure (never folded into false)" do
+    repo = fixture_repo()
+    write_fixture(repo, [{"GA", "true"}])
+    ggen = ggen_checkout()
+    digest = python_digest(@wo_a_tuple)
+
+    # A git checkout whose HEAD tree object is gone: HEAD resolves, the tree
+    # cannot be read (`rev-parse --verify --quiet HEAD:./x` would exit 1 here,
+    # the same as for a missing path).
+    broken = ggen_checkout()
+    broken_dir = Path.join(broken, "receipts")
+    committed = put_order_receipt(broken_dir, "WO-A", digest, "ALIVE", "committed copy")
+    commit!(broken, "WO-A receipt")
+    {tree, 0} = System.cmd("git", ["-C", broken, "rev-parse", "HEAD^{tree}"])
+    <<fan::binary-size(2), rest::binary>> = String.trim(tree)
+    File.rm!(Path.join([broken, ".git", "objects", fan, rest]))
+
+    # A directory outside any git checkout.
+    plain = tmp_dir("v23l_plain")
+
+    assert {_, code} =
+             System.cmd("git", ["-C", plain, "rev-parse", "--show-toplevel"],
+               stderr_to_stdout: true
+             )
+
+    assert code != 0
+    File.cp!(committed, Path.join(plain, "WO-A.json"))
+
+    {code, out} = registry_court(repo, ggen, ["--order-receipts-dir", plain])
+    assert code == 0, out
+    assert out =~ "order receipts option #{plain} (no git checkout)"
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["linked"] == true
+    assert orders["WO-A"]["repo"] == nil
+    assert orders["WO-A"]["committed_at_head"] == false
+    assert orders["WO-A"]["committed_at_head_why"] == "no git checkout holds the receipt dir"
+
+    {code, out} = registry_court(repo, ggen, ["--order-receipts-dir", broken_dir])
+    assert code == 0, out
+    {_stop, orders} = stop_orders(repo)
+    assert orders["WO-A"]["linked"] == true
+    assert orders["WO-A"]["repo"] == broken
+    assert orders["WO-A"]["committed_at_head"] == nil
+    assert orders["WO-A"]["committed_at_head_why"] =~ ":git_failed"
+    assert orders["WO-A"]["committed_at_head_why"] =~ "ls-tree"
   end
 end
