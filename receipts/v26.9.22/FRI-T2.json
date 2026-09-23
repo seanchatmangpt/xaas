@@ -1,0 +1,118 @@
+{
+  "identity": {
+    "subject": "FRI-T2 (GC-FRI-0800 G6 xaas side: deterministic recipe provider + engine provider allowlist)",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "1db4eb16d2937c6bf55a00f531080c2671276c13",
+    "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "workflow lane FRI-T2 under the approved Friday plan (~/.claude/plans/i-need-you-to-iterative-sedgewick.md); own worktree + branch only; no push, no merge",
+    "actor": "claude-code subagent (lane FRI-T2)"
+  },
+  "consequence": {
+    "commits": [
+      "1db4eb16d2937c6bf55a00f531080c2671276c13"
+    ],
+    "files_changed": [
+      "config/config.exs",
+      "lib/xaas/ultracode/engine.ex",
+      "lib/xaas/ultracode/recipe_worker.ex",
+      "lib/xaas/ultracode/run.ex",
+      "lib/xaas/ultracode/semantic_work.ex",
+      "lib/xaas/ultracode/verifier.ex",
+      "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs",
+      "test/xaas/ultracode/engine_test.exs",
+      "test/xaas/ultracode/recipe_worker_test.exs",
+      "receipts/v26.9.22/FRI-T2.json"
+    ],
+    "remote_effects": [
+      "shared local Postgres xaas_test: migration 20260922230000 (additive nullable ultracode_runs.capability_id) applied by the mix test alias"
+    ]
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "at HEAD 1db4eb1, clean tree",
+        "output_sha256": "018db565809eb1770bfe557bde2892220b123518d3e3beabb00c3fbe9b31d642"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "Compiling 505 files (.ex); Generated xaas app",
+        "output_sha256": "a2377984c661cbda54de0cf3a077cb0cb405bf77579ba537e5d0f80f7c2c2b60"
+      },
+      {
+        "cmd": "mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "27 tests, 0 failures (seed 456152)",
+        "output_sha256": "226677b08451561420b5f91152288e2802ef91dd1aa6d7a7208c6ea696a108ca"
+      },
+      {
+        "cmd": "mix test test/xaas/ultracode",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "719 tests, 0 failures (25 excluded), 649.8s; working tree byte-identical to 1db4eb1 (run immediately before the commit, no edits between)",
+        "output_sha256": "b3421be5c176844a319c70076027d2f2c8050989894c5bf288c7b3fa1a365b6b"
+      },
+      {
+        "cmd": "! grep -rn 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.' <9 touched files>",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "0 matches in touched files; 178 pre-existing whole-tree matches (test/xaas_web controller tests, Phoenix patch(conn, ...)), not introduced here"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs test/xaas/ultracode/engine_test.exs  # under mutation M1: engine allowlist disabled in ready_providers/resolve_worker",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "falsifier held: suite failed (27 tests, 4 failures: recipe zcode-untouched, directed non-allowlisted, 2 engine allowlist tests); engine.ex restored byte-identical from backup"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs  # under mutation M2: RecipeWorker closes at base head without committing",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "falsifier held: 7 tests, 1 failure (format-drift test: head == base_head); restored"
+      },
+      {
+        "cmd": "! mix test test/xaas/ultracode/recipe_worker_test.exs  # under mutation M3: RecipeWorker claims before resolving the recipe",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T2",
+        "exit": 0,
+        "summary": "falsifier held: 7 tests, 2 failures (unregistered + inadmissible no-claim tests); restored (cmp identical)"
+      }
+    ],
+    "durable_location": "xaas branch fri/FRI-T2 receipts/v26.9.22/FRI-T2.json"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "lane gate (format check, forced strict compile, recipe_worker_test + engine_test 27/27) re-run at subject_sha 1db4eb1 on a clean tree; ultracode dir 719/719 on the identical tree; three revert-mutations each made acceptance fail. Scope: the FRI-T2 deliverables only. The G6 gate court (credential-free env episode on a ggen_igniter subject, OCEL zero LLM provider events) is not run here: UNKNOWN until the T9 episode."
+  },
+  "handwritten": [
+    {
+      "path": "lib/xaas/ultracode/recipe_worker.ex",
+      "status": "UNSUPPORTED(generator-capability)",
+      "reason": "no ggen pack/template or Ash/Igniter generator emits Ultracode engine workers (lease-protocol clients); irreducible runtime logic"
+    },
+    {
+      "path": "priv/repo/migrations/20260922230000_add_capability_id_to_ultracode_runs.exs",
+      "status": "UNSUPPORTED(generator-capability)",
+      "reason": "mix ash_postgres.generate_migrations --check reports 3 pre-existing pending codegen files unrelated to this lane; running the generator would co-emit them. Follows the repo's hand-written additive-migration precedent (add_court_map, add_semantic_bridge); resource snapshot left to the next full codegen pass"
+    },
+    {
+      "path": "lib/xaas/ultracode/{engine,verifier,run,semantic_work}.ex, config/config.exs, tests",
+      "status": "UNSUPPORTED(generator-capability)",
+      "reason": "edits to hand-authored runtime modules and config; no generator owns these surfaces"
+    }
+  ],
+  "falsifiers": [
+    "an undirected Engine.fill hands a ready zcode epoch to the configured worker (M1 exercised)",
+    "RecipeWorker closes :alive without a commit (M2 exercised)",
+    "an unregistered or inadmissible recipe binds a lease row (M3 exercised)",
+    "fabric court mix format --check-formatted fails at the recipe-worker head (asserted pass in the drift test)"
+  ],
+  "notes": "Capability carried as new nullable Run.capability_id (descriptor key 'capability', sj:capabilityId shape) because Run/Epoch had no capability field and semantic_bridge is documented opaque to XaaS. Engine fill/1 now honors a single :provider opt (existing engine tests passed it; it was silently ignored). Recipe toolchain pinned to ggen_igniter .tool-versions (elixir 1.18.4-otp-27, erlang 27.2.4) via absolute asdf dirs; test asserts the pinned mix exists. deps/_build were APFS-cloned from /Users/sac/wt/v26922/xaas/int (same mix.lock); deps recompiled once (10m10s) on first test compile."
+}
