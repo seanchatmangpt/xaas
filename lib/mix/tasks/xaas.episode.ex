@@ -9,6 +9,7 @@ defmodule Mix.Tasks.Xaas.Episode do
       mix xaas.episode --name N --ggen-igniter-dir DIR [--work-root DIR] [--ggen-build-path DIR] [--no-pin]
       mix xaas.episode --check-env
       mix xaas.episode --verify-hops PATH
+      mix xaas.episode --graph-toolchain --ggen-igniter-dir DIR [--ggen-build-path DIR]
 
   `--prepare` creates branch `v23/episode-<N>` in the ggen_igniter
   repository of `DIR` at `SHA` with ONE deterministic format-drift commit
@@ -29,9 +30,16 @@ defmodule Mix.Tasks.Xaas.Episode do
   episode subject when it is not the repository of `DIR` (the graph-side
   tooling checkout), e.g. a scratch clone.
 
+  `--graph-toolchain` prints the toolchain the drive would run the graph
+  side with (`Xaas.Ultracode.SemanticDrive.graph_toolchain/2`: the Elixir
+  that compiled `--ggen-build-path`, default `DIR/_build/test`, else the
+  `.tool-versions` pin) as one JSON line, so the GC23-8 court's live
+  frontier recompute uses the same resolution as the drive. It resolves
+  paths only; nothing is executed.
+
   ## The no-LLM guard (F3)
 
-  Every mode except `--verify-hops` first runs
+  Every mode except `--verify-hops` and `--graph-toolchain` first runs
   `Xaas.Ultracode.SemanticDrive.no_llm_guard/1` over the process
   environment, BEFORE the application starts: any `ANTHROPIC_*`,
   `CLAUDE_*`, `CLAUDECODE`, `OPENAI_*`, `ZAI_*`, `Z_AI_*`, `GLM_*`,
@@ -78,6 +86,7 @@ defmodule Mix.Tasks.Xaas.Episode do
     pin: :boolean,
     check_env: :boolean,
     verify_hops: :string,
+    graph_toolchain: :boolean,
     order: :string,
     subject_repo: :string
   ]
@@ -96,6 +105,9 @@ defmodule Mix.Tasks.Xaas.Episode do
 
       opts[:verify_hops] ->
         verify_hops(opts[:verify_hops])
+
+      opts[:graph_toolchain] ->
+        graph_toolchain(opts)
 
       true ->
         case SemanticDrive.no_llm_guard(System.get_env()) do
@@ -133,6 +145,22 @@ defmodule Mix.Tasks.Xaas.Episode do
       end
     else
       error -> usage("--verify-hops #{path}: #{inspect(error)}")
+    end
+  end
+
+  defp graph_toolchain(opts) do
+    case opts[:ggen_igniter_dir] do
+      nil ->
+        usage("--graph-toolchain needs --ggen-igniter-dir")
+
+      dir ->
+        dir = Path.expand(dir)
+        build = Path.expand(opts[:ggen_build_path] || Path.join([dir, "_build", "test"]))
+
+        case SemanticDrive.graph_toolchain(dir, build) do
+          {:ok, toolchain} -> emit(0, Map.put(toolchain, "standing", "RESOLVED"))
+          {:refused, typed} -> refuse(typed)
+        end
     end
   end
 

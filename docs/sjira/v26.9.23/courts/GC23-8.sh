@@ -15,13 +15,18 @@
 #      that checkout's build is written) over the committed work graph
 #      reproduces frontier_before from an empty ledger and frontier_after
 #      from the committed ledger (eligible, blocked, standings, events,
-#      ledger_tail).
+#      ledger_tail). The graph-side toolchain is the drive's own resolution
+#      (`mix xaas.episode --graph-toolchain`: the Elixir that compiled the
+#      build under judgement, else the .tool-versions pin), so the court
+#      and the drive cannot judge one checkout with two compilers. A graph
+#      side that does not compile under it is UNKNOWN (the court cannot
+#      witness), never a refusal of the frontier.
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
 ggen=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}
 ep=${GC23_EPISODE_DIR:-$xaas/docs/sjira/v26.9.23/episodes/fmt-1}
-asdf=${ASDF_DATA_DIR:-$HOME/.asdf}
+cd "$xaas" || { echo "UNKNOWN: GC23-8 XAAS_DIR $xaas unreadable"; exit 75; }
 
 for f in work.json ledger.ndjson frontier_before.json frontier_after.json; do
   [ -f "$ep/$f" ] || { echo "UNKNOWN: GC23-8 episode fmt-1 has no $f (episode not driven)"; exit 75; }
@@ -56,23 +61,50 @@ PY
   echo "UNKNOWN: GC23-8 live recompute needs mix semantic_jira.frontier in GGEN_IGNITER_DIR $ggen (the restored mix semantic_jira.* surface, FRI-T6 via lane V23-T6R, not merged there)"
   exit 75
 }
-elixir=$(awk '$1 == "elixir" { print $2 }' "$ggen/.tool-versions" 2>/dev/null)
-ebin="$asdf/installs/elixir/$elixir/bin"
-erl=$(command -v erl) || { echo "UNKNOWN: GC23-8 no erl on PATH"; exit 75; }
-[ -x "$ebin/mix" ] || { echo "UNKNOWN: GC23-8 pinned elixir $elixir not installed under $asdf"; exit 75; }
 mkdir -p "$tmp/build"
 if [ -d "$ggen/_build/test" ]; then cp -cRp "$ggen/_build/test" "$tmp/build/test" 2>/dev/null || cp -Rp "$ggen/_build/test" "$tmp/build/test"; fi
 cp "$ep/work.json" "$tmp/work.json"
 cp "$ep/ledger.ndjson" "$tmp/ledger.ndjson"
 : >"$tmp/empty.ndjson"
 
+MIX_ENV=test mix xaas.episode --graph-toolchain --ggen-igniter-dir "$ggen" \
+  --ggen-build-path "$tmp/build/test" >"$tmp/toolchain.log" 2>&1 || {
+  tail -5 "$tmp/toolchain.log"
+  echo "UNKNOWN: GC23-8 no graph-side toolchain resolves for $ggen"
+  exit 75
+}
+python3 - "$tmp/toolchain.log" "$tmp" <<'PY' || { echo "UNKNOWN: GC23-8 unreadable graph-side toolchain"; exit 75; }
+import json, sys
+log, tmp = sys.argv[1], sys.argv[2]
+for line in reversed(open(log).read().splitlines()):
+    line = line.strip()
+    if line.startswith("{"):
+        t = json.loads(line)
+        break
+else:
+    raise SystemExit("no toolchain JSON")
+for name, value in (("mix", t["mix"]), ("path", t["path"]), ("what", f"{t['source']} elixir {t['elixir']}")):
+    open(f"{tmp}/toolchain.{name}", "w").write(value)
+PY
+tmix=$(cat "$tmp/toolchain.mix")
+tpath=$(cat "$tmp/toolchain.path")
+echo "graph-side toolchain: $(cat "$tmp/toolchain.what") ($tmix)"
+
 frontier() {
-  (cd "$ggen" && env PATH="$ebin:$(dirname "$erl"):/usr/bin:/bin" MIX_ENV=test \
-    MIX_BUILD_PATH="$tmp/build/test" "$ebin/mix" semantic_jira.frontier \
+  (cd "$ggen" && env PATH="$tpath" MIX_ENV=test \
+    MIX_BUILD_PATH="$tmp/build/test" "$tmix" semantic_jira.frontier \
     --work-orders "$tmp/work.json" --ledger "$1" </dev/null) >"$2" 2>&1
 }
-frontier "$tmp/empty.ndjson" "$tmp/before.out" || { tail -20 "$tmp/before.out"; refuse "live frontier (empty ledger) failed"; }
-frontier "$tmp/ledger.ndjson" "$tmp/after.out" || { tail -20 "$tmp/after.out"; refuse "live frontier (committed ledger) failed"; }
+failed() {
+  tail -20 "$1"
+  if grep -q -e '== Compilation error' -e 'could not compile dependency' "$1"; then
+    echo "UNKNOWN: GC23-8 the graph side in $ggen does not compile under the resolved toolchain (BUILD_BROKEN; the court cannot witness)"
+    exit 75
+  fi
+  refuse "$2"
+}
+frontier "$tmp/empty.ndjson" "$tmp/before.out" || failed "$tmp/before.out" "live frontier (empty ledger) failed"
+frontier "$tmp/ledger.ndjson" "$tmp/after.out" || failed "$tmp/after.out" "live frontier (committed ledger) failed"
 
 python3 - "$ep" "$tmp" <<'PY' || refuse "the live recompute disagrees with the recorded frontier"
 import json, sys

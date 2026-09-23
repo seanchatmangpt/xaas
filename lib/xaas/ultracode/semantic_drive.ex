@@ -444,7 +444,11 @@ defmodule Xaas.Ultracode.SemanticDrive do
            context_check(Verifier.registered?(suite), "verifier_suite_unregistered", %{
              "suite" => suite
            }),
-         {:ok, toolchain} <- ggen_toolchain(ggen_dir) do
+         {:ok, toolchain} <-
+           graph_toolchain(
+             ggen_dir,
+             base.ggen_build_path || Path.join([ggen_dir, "_build", base.mix_env])
+           ) do
       {:ok,
        Map.merge(base, %{
          repo_path: Keyword.get(opts, :repo_path) || entry.path,
@@ -479,31 +483,153 @@ defmodule Xaas.Ultracode.SemanticDrive do
     end
   end
 
-  # The graph side's Elixir is the one its `.tool-versions` pins (resolved
-  # like the recipe provider's, `RecipeWorker.toolchain/1`); its ERTS is the
-  # running node's. That is how this fleet's graph checkouts are compiled
-  # (the asdf elixir shim on the caller's OTP, see the SemanticCrown `mix_bin`
-  # convention): pairing the pinned Elixir with a different ERTS than the
-  # build's forces a full dependency rebuild whose rebar-compiled beams the
-  # older ERTS cannot read. The identity recorded says exactly which ERTS ran.
-  defp ggen_toolchain(dir) do
-    case RecipeWorker.toolchain(dir) do
-      {:ok, %{"mix" => mix} = identity} ->
-        erts_bin = Path.join(to_string(:code.root_dir()), "bin")
-        path = [Path.dirname(mix), erts_bin, "/usr/bin", "/bin"] |> Enum.uniq() |> Enum.join(":")
+  @doc """
+  The toolchain that runs the graph side: the ggen_igniter checkout `dir`
+  whose compiled build is `build_path` (`MIX_BUILD_PATH` semantics: the build
+  directory itself, e.g. `<dir>/_build/test` or a private APFS clone of it).
 
+  Resolution order:
+
+    1. **the compiler of the build under judgement.** Mix records it in
+       `<build_path>/lib/<app>/.mix/compile.elixir_scm` as
+       `{elixir_version, otp_release}`. When the running node's ERTS has that
+       OTP release and an Elixir of exactly that version is installed -- the
+       running node's own, else `<asdf>/installs/elixir/<vsn>-otp-<otp>`, else
+       `<asdf>/installs/elixir/<vsn>` -- that Elixir runs the graph side: Mix
+       finds the build current, recompiles nothing and writes nothing
+       (`"source" => "build_manifest"`). A checkout compiled by a different
+       Elixir than its `.tool-versions` pin (observed: ggen_igniter-int
+       `_build/test` by 1.19.5/OTP 28 while the pin is 1.18.4-otp-27) is
+       judged as built, instead of being rebuilt from scratch under the pin
+       (which recompiles every dependency and the rustler NIF, and needs a
+       Rust toolchain the no-LLM court PATH does not carry).
+    2. otherwise the checkout's `.tool-versions` pin, resolved like the
+       recipe provider's (`RecipeWorker.toolchain/1`); Mix then compiles
+       into `build_path`.
+
+  Either way the ERTS is the running node's: pairing an Elixir with a
+  different ERTS than the build's forces a full dependency rebuild whose
+  rebar-compiled beams the older ERTS cannot read. The identity records
+  which source won, the manifest read and the compiler it names.
+  `<asdf>` = `config :xaas, :ultracode_asdf_data_dir`, else
+  `$ASDF_DATA_DIR`, else `~/.asdf`.
+  """
+  @spec graph_toolchain(String.t(), String.t()) :: {:ok, map()} | {:refused, map()}
+  def graph_toolchain(dir, build_path) when is_binary(dir) and is_binary(build_path) do
+    erts_bin = Path.join(to_string(:code.root_dir()), "bin")
+    otp = to_string(:erlang.system_info(:otp_release))
+    manifest = build_manifest(dir, build_path)
+
+    erts = %{
+      "erl" => Path.join(erts_bin, "erl"),
+      "erlang" => otp,
+      "erts" => "running node (#{erts_bin})"
+    }
+
+    case built_toolchain(manifest, otp) do
+      {:ok, elixir, mix} ->
         {:ok,
-         Map.merge(identity, %{
-           "path" => path,
-           "erl" => Path.join(erts_bin, "erl"),
-           "erlang" => to_string(:erlang.system_info(:otp_release)),
-           "erts" => "running node (#{erts_bin})"
+         Map.merge(erts, %{
+           "source" => "build_manifest",
+           "elixir" => elixir,
+           "mix" => mix,
+           "path" => graph_path(mix, erts_bin),
+           "build_manifest" => manifest.path,
+           "build_compiler" => manifest.compiler
          })}
 
-      {:error, {:toolchain_unresolved, why}} ->
-        {:refused,
-         typed("BUILD_BROKEN", "toolchain_unresolved", "mu_unlawful", "context", %{"why" => why})}
+      {:unavailable, why} ->
+        pinned_toolchain(dir, erts, erts_bin, manifest, why)
     end
+  end
+
+  defp pinned_toolchain(dir, erts, erts_bin, manifest, why) do
+    case RecipeWorker.toolchain(dir) do
+      {:ok, %{"mix" => mix} = identity} ->
+        {:ok,
+         identity
+         |> Map.merge(erts)
+         |> Map.merge(%{
+           "path" => graph_path(mix, erts_bin),
+           "build_manifest" => manifest.path,
+           "build_compiler" => manifest.compiler,
+           "build_manifest_unused" => why
+         })}
+
+      {:error, {:toolchain_unresolved, reason}} ->
+        {:refused,
+         typed("BUILD_BROKEN", "toolchain_unresolved", "mu_unlawful", "context", %{
+           "why" => reason
+         })}
+    end
+  end
+
+  defp graph_path(mix, erts_bin),
+    do: [Path.dirname(mix), erts_bin, "/usr/bin", "/bin"] |> Enum.uniq() |> Enum.join(":")
+
+  defp build_manifest(dir, build_path) do
+    app =
+      case File.read(Path.join(dir, "mix.exs")) do
+        {:ok, body} ->
+          case Regex.run(~r/\bapp:\s*:([a-z][a-z0-9_]*)/, body) do
+            [_, app] -> app
+            _ -> nil
+          end
+
+        _ ->
+          nil
+      end
+
+    path = app && Path.join([build_path, "lib", app, ".mix", "compile.elixir_scm"])
+
+    compiler =
+      with path when is_binary(path) <- path,
+           {:ok, bytes} <- File.read(path),
+           {_vsn, {elixir, otp}, _scm} when is_binary(elixir) and is_list(otp) <-
+             safe_term(bytes) do
+        %{"elixir" => elixir, "otp" => to_string(otp)}
+      else
+        _ -> nil
+      end
+
+    %{path: path, compiler: compiler}
+  end
+
+  defp safe_term(bytes) do
+    :erlang.binary_to_term(bytes, [:safe])
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp built_toolchain(%{compiler: nil, path: path}, _otp),
+    do: {:unavailable, "no readable build manifest at #{inspect(path)}"}
+
+  defp built_toolchain(%{compiler: %{"otp" => built}}, otp) when built != otp,
+    do: {:unavailable, "the build was compiled on OTP #{built}; the running ERTS is OTP #{otp}"}
+
+  defp built_toolchain(%{compiler: %{"elixir" => elixir}}, otp) do
+    own = Path.expand("../../bin/mix", to_string(:code.lib_dir(:elixir)))
+    asdf = Path.join([asdf_data_dir(), "installs", "elixir"])
+
+    # The manifest names the Elixir version and the ERTS it ran on, not the
+    # OTP an install was built for: any `<vsn>-otp-<n>` install on this
+    # ERTS reproduces it (the exact-OTP one first, then the rest in order).
+    candidates =
+      if(System.version() == elixir, do: [own], else: []) ++
+        [
+          Path.join([asdf, "#{elixir}-otp-#{otp}", "bin", "mix"]),
+          Path.join([asdf, elixir, "bin", "mix"])
+        ] ++ Enum.sort(Path.wildcard(Path.join([asdf, "#{elixir}-otp-*", "bin", "mix"])))
+
+    case Enum.find(candidates, &executable?/1) do
+      nil -> {:unavailable, "no Elixir #{elixir} install among #{inspect(candidates)}"}
+      mix -> {:ok, elixir, mix}
+    end
+  end
+
+  defp asdf_data_dir do
+    Application.get_env(:xaas, :ultracode_asdf_data_dir) || System.get_env("ASDF_DATA_DIR") ||
+      Path.expand("~/.asdf")
   end
 
   # -- steps --------------------------------------------------------------------
@@ -1422,7 +1548,8 @@ defmodule Xaas.Ultracode.SemanticDrive do
       "graph_side" => %{
         "ggen_igniter_dir" => ctx.ggen_dir,
         "ggen_igniter_sha" => ctx.ggen_sha,
-        "toolchain" => Map.take(ctx.toolchain, ~w(source elixir erlang erts mix))
+        "toolchain" =>
+          Map.take(ctx.toolchain, ~w(source elixir erlang erts mix build_manifest build_compiler))
       },
       "started_at" => DateTime.to_iso8601(ctx.started_at),
       "finished_at" => DateTime.to_iso8601(now())
@@ -1494,13 +1621,36 @@ defmodule Xaas.Ultracode.SemanticDrive do
         {:ok, frontier}
 
       {code, json, out} ->
-        {:refused,
-         typed("REFUSED(frontier_refused)", "frontier_refused", "R_missing_standing", "sjira", %{
-           "exit" => code,
-           "reason" => brief(json, out)
-         })}
+        if build_broken?(code, out) do
+          # The graph side never ran: its checkout does not compile under
+          # the resolved toolchain (e.g. a rustler NIF rebuild with no cargo
+          # on the graph-side PATH). An environment verdict, not a frontier.
+          {:refused,
+           typed("BUILD_BROKEN", "graph_side_build_broken", "mu_unlawful", "sjira", %{
+             "exit" => code,
+             "toolchain" => Map.take(ctx.toolchain, ~w(source elixir mix build_compiler)),
+             "reason" => brief(json, out)
+           })}
+        else
+          {:refused,
+           typed(
+             "REFUSED(frontier_refused)",
+             "frontier_refused",
+             "R_missing_standing",
+             "sjira",
+             %{
+               "exit" => code,
+               "reason" => brief(json, out)
+             }
+           )}
+        end
     end
   end
+
+  defp build_broken?(0, _out), do: false
+
+  defp build_broken?(_code, out),
+    do: String.contains?(out, ["== Compilation error", "could not compile dependency"])
 
   defp resolve(tuple) do
     case Route.resolve(tuple) do

@@ -513,3 +513,123 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
     String.trim(out)
   end
 end
+
+defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
+  @moduledoc """
+  Chicago qualification of `Xaas.Ultracode.SemanticDrive.graph_toolchain/2`,
+  the graph-side toolchain resolution shared by the drive and the GC23-8
+  court (`mix xaas.episode --graph-toolchain`). Needs no ggen_igniter
+  checkout, so it never skips:
+
+    * the build-manifest branch reads the REAL manifest the real Mix wrote
+      for this very test run (`_build/test/lib/xaas/.mix/compile.elixir_scm`)
+      and runs the resolved `mix` as a real subprocess on the resolved PATH;
+    * the fallback branches read manifests in Mix's own term format (the
+      real manifest decoded, one field changed, re-encoded) in real tmp
+      build dirs, and a real `mix --version` subprocess.
+  """
+
+  use ExUnit.Case, async: true
+
+  alias Xaas.Ultracode.SemanticDrive
+
+  @xaas_root Path.expand("../../..", __DIR__)
+
+  test "a build compiled by this node's Elixir on this ERTS resolves to that Elixir (source build_manifest), and it runs" do
+    build = Mix.Project.build_path()
+    assert {:ok, t} = SemanticDrive.graph_toolchain(@xaas_root, build)
+
+    assert t["source"] == "build_manifest"
+    assert t["elixir"] == System.version()
+
+    assert t["build_compiler"] == %{
+             "elixir" => System.version(),
+             "otp" => to_string(:erlang.system_info(:otp_release))
+           }
+
+    assert t["build_manifest"] == Path.join([build, "lib", "xaas", ".mix", "compile.elixir_scm"])
+    assert t["erlang"] == to_string(:erlang.system_info(:otp_release))
+    assert String.starts_with?(t["path"], Path.dirname(t["mix"]) <> ":")
+
+    {out, 0} =
+      System.cmd(t["mix"], ["--version"],
+        env: [{"PATH", t["path"]}, {"MIX_ENV", "test"}],
+        stderr_to_stdout: true
+      )
+
+    assert out =~ "Mix #{System.version()}"
+  end
+
+  test "a build compiled by an Elixir with no install falls back to the checkout's pin, recording why" do
+    {dir, build} =
+      checkout("absent", fn {vsn, {_elixir, otp}, scm} ->
+        {vsn, {"0.0.0-absent", otp}, scm}
+      end)
+
+    assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+    refute t["source"] == "build_manifest"
+    assert t["build_compiler"]["elixir"] == "0.0.0-absent"
+    assert t["build_manifest_unused"] =~ "no Elixir 0.0.0-absent install"
+    assert_runs(t)
+  end
+
+  test "a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything)" do
+    {dir, build} =
+      checkout("otp", fn {vsn, {elixir, _otp}, scm} ->
+        {vsn, {elixir, ~c"1"}, scm}
+      end)
+
+    assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+    refute t["source"] == "build_manifest"
+    assert t["build_manifest_unused"] =~ "compiled on OTP 1"
+    assert_runs(t)
+  end
+
+  test "no build at all falls back to the pin" do
+    {dir, _build} = checkout("none", & &1)
+    empty = Path.join(dir, "_build/elsewhere")
+
+    assert {:ok, t} = SemanticDrive.graph_toolchain(dir, empty)
+    refute t["source"] == "build_manifest"
+    assert t["build_compiler"] == nil
+    assert t["build_manifest_unused"] =~ "no readable build manifest"
+    assert_runs(t)
+  end
+
+  # A tmp checkout (mix.exs naming app :demo_graph, no .tool-versions) with
+  # a build dir whose manifest is the REAL xaas manifest, transformed.
+  defp checkout(label, transform) do
+    dir =
+      Path.join(System.tmp_dir!(), "xaas-graph-tc-#{label}-#{System.unique_integer([:positive])}")
+
+    on_exit(fn -> File.rm_rf(dir) end)
+    File.mkdir_p!(dir)
+
+    File.write!(
+      Path.join(dir, "mix.exs"),
+      "defmodule Demo.MixProject do\n  def project, do: [app: :demo_graph]\nend\n"
+    )
+
+    real =
+      [Mix.Project.build_path(), "lib", "xaas", ".mix", "compile.elixir_scm"]
+      |> Path.join()
+      |> File.read!()
+      |> :erlang.binary_to_term()
+
+    build = Path.join(dir, "_build/test")
+    manifest = Path.join([build, "lib", "demo_graph", ".mix", "compile.elixir_scm"])
+    File.mkdir_p!(Path.dirname(manifest))
+    File.write!(manifest, :erlang.term_to_binary(transform.(real)))
+    {dir, build}
+  end
+
+  defp assert_runs(t) do
+    {out, 0} =
+      System.cmd(t["mix"], ["--version"],
+        env: [{"PATH", t["path"]}, {"MIX_ENV", "test"}],
+        stderr_to_stdout: true
+      )
+
+    assert out =~ "Mix "
+  end
+end
