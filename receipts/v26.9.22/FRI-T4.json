@@ -166,5 +166,68 @@
   },
   "exclusions": [
     "AshA2A.Gall.Capability does not type sj:capabilityId: closed vocabulary Read..Merge, decode(\"recipe:mix-format\") == :error (ash_a2a 26.9.21); not shipped by the pinned ash_a2a 26.9.12"
-  ]
+  ],
+  "integration": {
+    "target_branch": "friday/gc-fri-0800",
+    "worktree": "/Users/sac/wt/v26922/fri/xaas-int",
+    "pre_merge_head": "0d57147fc410444f2bf4608242e42075e2fea7c6",
+    "merged_ref": "fri/FRI-T4",
+    "merged_sha": "b822231ffadb902771842934bd00946abc28e91a",
+    "merge_commit": "243ab48dc2049df59a24d3b06f74bbe89416b6c7",
+    "merge_cmd": "git merge --no-ff fri/FRI-T4 -F <msgfile>",
+    "conflicts": [],
+    "merge_note": "merge-base == pre_merge_head; merge commit tree == b822231 tree; no conflicts",
+    "lock": "/Users/sac/wt/v26922/xaas/.merge.lock (owner claude:FRI-T4-integrate)",
+    "provisioning": "deps/ and _build/{dev,test} APFS-cloned (cp -cR) from /Users/sac/wt/v26922/fri/FRI-T4 (mix.lock and mix.exs byte-identical); mix deps.get exit 0",
+    "lane_gate": [
+      {
+        "cmd": "mix format --check-formatted",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T4.int-gate/format.log",
+        "output_sha256": "sha256:8f1c65f9bdd102cb8cfdd13a71f75d0c82ca72ff20d318776752e02ffe4a7907"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T4.int-gate/compile.log",
+        "output_sha256": "sha256:47f4dc2124ae7f8415b28be956acafde1e799a2aedf0b8e284708fde763f6d24",
+        "summary": "Compiling 505 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/xaas/sa2a/route_test.exs",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T4.int-gate/test.log",
+        "output_sha256": "sha256:9d4dad53634e67220bcf564ca1497b8bb5a23959f29e1955fe3ee142ca15ff32",
+        "summary": "74 tests, 0 failures (seed 553929)"
+      }
+    ],
+    "chicago_mock_grep": {
+      "cmd": "grep -rn \"unittest.mock|Mock(|MagicMock|patch(|monkeypatch|Mox|:meck|Mimic|Mock.\" test/xaas/sa2a/route_test.exs lib/xaas/sa2a/route.ex",
+      "exit": 1,
+      "matches": 0
+    },
+    "widened_run": {
+      "cmd": "mix test test/xaas/sa2a/route_test.exs test/xaas/ultracode --seed 0",
+      "exit": 2,
+      "log": "receipts/v26.9.22/FRI-T4.int-gate/test-wide.log",
+      "output_sha256": "sha256:2a991a96188b04243805e107c286ddc2507f99235e823a16a8e48682743cb3fe",
+      "summary": "783 tests, 2 failures (25 excluded); outside the lane gate",
+      "failures": [
+        {
+          "test": "test/xaas/ultracode/dispatch_test.exs:899 (process-group deadline kills spawned child)",
+          "classification": "PRE-EXISTING timing flake (not merge-introduced)",
+          "evidence": "passes in isolated rerun (rerun2.log: 2 tests, 1 failure — only the e2e test fails); merge diff under lib/ is only the new module lib/xaas/sa2a/route.ex"
+        },
+        {
+          "test": "test/xaas/ultracode/semantic_jira_e2e_test.exs:106 (SJ-001 admit->materialize->receipt->replay)",
+          "classification": "ENVIRONMENTAL (not merge-introduced)",
+          "evidence": "fails at project/3 ({1, nil}): the graph-side subprocess runs cd /Users/sac/ggen_igniter (external operator checkout, HEAD d83d6c8), whose priv/ is mode drw------- with ctime 2026-09-22 23:05:19 PDT — changed during this run and after the lane run that recorded 783/0; the hop does not read the xaas tree beyond unchanged docs/sjira/v26.9.21 front matter",
+          "unverified": "base-tree (0d57147) rerun of this test not executed; a reproduction of the subprocess in /Users/sac/ggen_igniter was denied by permission policy"
+        }
+      ],
+      "rerun_log": "receipts/v26.9.22/FRI-T4.int-gate/rerun2.log",
+      "rerun_output_sha256": "sha256:9002ae8709ebcfbd20f30f77f40ddc3a889c751fc002cc80f7d46723939d10d7"
+    },
+    "standing": "ALIVE (lane subject integrated; lane gate exit 0 on merge_commit tree). G5 gate standing unchanged: UNKNOWN until T1 SHACL admission, T2 registry entry, and a stop-court run on the integrated head."
+  }
 }
