@@ -3,8 +3,9 @@ defmodule Xaas.Receipt.RProjectionTest do
   Chicago-style: a real sealed receipt (real Postgres sandbox, real git repo
   and worktree, real lease, the real fabric verifier running a real
   `exit_status` court step), exported by the real `SemanticReceipt.export/1`,
-  written to disk, projected, and ADMITTED or REFUSED by the REAL fleet
-  validator (`python3 ~/.claude/dfcm/validate_receipt.py`) -- never by a
+  written to disk, projected (the seal re-read from the same real fabric),
+  and ADMITTED or REFUSED by the REAL fleet validator
+  (`python3 ~/.claude/dfcm/validate_receipt.py`) -- never by a
   re-implementation of its schema.
   """
 
@@ -130,8 +131,10 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert {:ok, r_path, r} = RProjection.write(native_path, repo: repo)
     assert r["standing"]["value"] == "BUILD_BROKEN"
     assert r["standing"]["broken_term"] == "mu_unlawful"
-    assert [%{"exit" => -1, "summary" => summary}] = r["replay"]["commands"]
-    assert summary =~ "status=fail"
+    # The exit is the verifier's observed exit from the sealed closing
+    # evidence (`test -f` of a missing file exits 1), not derived from status.
+    assert [%{"exit" => 1, "summary" => summary}] = r["replay"]["commands"]
+    assert summary == "r-fail/court: status=fail"
     assert r["court"]["acceptance_results"] == %{@acc => false}
 
     assert {out, 0} = validate(r_path)
@@ -156,6 +159,65 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert {:ok, r} = RProjection.project(forged, repo: repo)
     assert r["standing"]["value"] == "REFUSED(receipt_digest_mismatch)"
     assert r["standing"]["broken_term"] == "R_missing_identity"
+  end
+
+  test "a native receipt with its digest stripped is refused, never defaulted to sealed",
+       %{sha: sha, base: base, repo: repo} do
+    {native_path, _head} = sealed_native(sha, base, "r-fail")
+    sealed = native_path |> File.read!() |> Jason.decode!()
+
+    # The DOCTRINE-court path: a build_broken close with `receipt_digest`
+    # deleted, then edited to claim ALIVE with a passing verifier step.
+    stripped =
+      sealed
+      |> Map.delete("receipt_digest")
+      |> Map.put("outcome", "alive")
+      |> put_in(["fabric_verifier", "status"], "pass")
+      |> put_in(["fabric_verifier", "steps"], [%{"id" => "court", "status" => "pass"}])
+
+    stripped_path = Path.join(base, "stripped.json")
+    File.write!(stripped_path, Jason.encode!(stripped))
+
+    assert {:ok, r_path, r} = RProjection.write(stripped_path, repo: repo)
+    assert r["standing"]["value"] == "REFUSED(receipt_digest_absent)"
+    assert r["standing"]["broken_term"] == "R_missing_identity"
+    assert r["standing"]["derived_from"] =~ "unsealed: receipt_digest_absent"
+
+    # No exit is manufactured from the forged status.
+    assert [%{"exit" => -1, "summary" => summary}] = r["replay"]["commands"]
+    assert summary =~ "exit not observed"
+
+    # Still a well-formed R: the real validator admits the REFUSED record.
+    assert {out, 0} = validate(r_path)
+    assert out =~ "ADMITTED " <> r_path
+  end
+
+  test "a forged receipt whose digest the forger recomputed is refused: the fabric never sealed it",
+       %{sha: sha, base: base, repo: repo} do
+    {native_path, _head} = sealed_native(sha, base, "r-fail")
+    sealed = native_path |> File.read!() |> Jason.decode!()
+
+    forged =
+      sealed
+      |> Map.put("outcome", "alive")
+      |> put_in(["fabric_verifier", "status"], "pass")
+      |> put_in(["fabric_verifier", "steps"], [%{"id" => "court", "status" => "pass"}])
+
+    # The digest is unkeyed: a forger can make it recompute.
+    reforged = Map.put(forged, "receipt_digest", SemanticReceipt.receipt_digest(forged))
+    assert SemanticReceipt.receipt_digest(reforged) == reforged["receipt_digest"]
+
+    assert {:ok, r} = RProjection.project(reforged, repo: repo)
+    assert r["standing"]["value"] == "REFUSED(receipt_not_fabric_sealed)"
+    assert r["standing"]["broken_term"] == "R_missing_identity"
+    assert [%{"exit" => -1}] = r["replay"]["commands"]
+
+    # Same forgery pointed at an epoch the fabric does not hold.
+    elsewhere = Map.put(forged, "epoch_id", Ecto.UUID.generate())
+    elsewhere = Map.put(elsewhere, "receipt_digest", SemanticReceipt.receipt_digest(elsewhere))
+
+    assert {:ok, %{"standing" => %{"value" => "REFUSED(receipt_not_fabric_sealed)"}}} =
+             RProjection.project(elsewhere, repo: repo)
   end
 
   test "non-map native input and unreadable paths are typed refusals", %{base: base} do

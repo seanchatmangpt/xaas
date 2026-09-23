@@ -39,12 +39,26 @@ defmodule Xaas.Ultracode.SemanticReceipt do
 
   @spec export(String.t()) :: {:ok, map()} | {:error, term()}
   def export(epoch_id) when is_binary(epoch_id) do
+    with {:ok, export, _sealed_verifier} <- sealed(epoch_id), do: {:ok, export}
+  end
+
+  @doc """
+  Re-reads what the fabric sealed for `epoch_id`: `{:ok, export, verifier}`
+  where `export` is exactly `export/1`'s map and `verifier` is the closing
+  receipt's raw `"fabric_verifier"` evidence (every step with its observed
+  `"exit"`), or `nil` when the close ran no verifier. A caller holding an
+  export can compare its `receipt_digest` with this re-export to prove the
+  fabric sealed it: the digest itself is unkeyed, so it proves integrity,
+  never provenance.
+  """
+  @spec sealed(String.t()) :: {:ok, map(), map() | nil} | {:error, term()}
+  def sealed(epoch_id) when is_binary(epoch_id) do
     with {:ok, epoch} <- fetch(Epoch, epoch_id, :epoch_not_found),
          {:ok, run} <- fetch(Run, epoch.run_id, :run_not_found),
          {:ok, bridge} <- bridge(run),
          :ok <- completed(epoch),
          {:ok, closing} <- closing_receipt(epoch) do
-      {:ok, build(epoch, run, closing, bridge)}
+      {:ok, build(epoch, run, closing, bridge), closing.evidence["fabric_verifier"]}
     end
   end
 

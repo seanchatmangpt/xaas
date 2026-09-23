@@ -11,13 +11,25 @@ defmodule Xaas.Receipt.RProjection do
       standing    {value, derived_from, broken_term when BLOCKED/BUILD_BROKEN/REFUSED}
 
   `write/2` reads the native receipt JSON and writes `<stem>.r.json` next to
-  it. The native receipt is either the semantic export
-  (`Xaas.Ultracode.SemanticReceipt.export/1`, `mix xaas.semantic.receipt`) or
-  a lease-close evidence map carrying `"fabric_verifier"` (full steps, suite
-  and head). Nothing is promoted: every field comes from what the fabric
-  sealed, from the real repository (`git rev-list` / `git diff`), or from an
-  explicit option; a field the fabric did not observe is omitted and the
-  standing says which R term it breaks.
+  it. The native receipt is the semantic export
+  (`Xaas.Ultracode.SemanticReceipt.export/1`, `mix xaas.semantic.receipt`).
+  Nothing is promoted: every field comes from what the fabric sealed, from
+  the real repository (`git rev-list` / `git diff`), or from an explicit
+  option; a field the fabric did not observe is omitted and the standing
+  says which R term it breaks.
+
+  ## Seal
+
+  The export's `receipt_digest` is an unkeyed sha256, so it proves the
+  content was not altered after digesting -- never that the fabric sealed
+  it (anyone can recompute it). A native receipt is therefore *sealed* only
+  when (1) it carries a digest, (2) that digest recomputes over its own
+  content, and (3) the fabric's own re-export of the same epoch
+  (`Xaas.Ultracode.SemanticReceipt.sealed/1`, read from `Xaas.Repo`) carries
+  the same digest. Every check fails closed: an absent digest, a mismatch,
+  an epoch the fabric does not hold, or a re-export that differs is a typed
+  REFUSED standing, never a default pass. A lease-close evidence map (no
+  digest, no epoch) is refused the same way.
 
   ## Field sources
 
@@ -37,20 +49,23 @@ defmodule Xaas.Receipt.RProjection do
     * replay -- one command per verifier step (court-alias rows that name a
       required court IRI are not commands). `cmd` is the registered suite
       step's argv (shell-quoted) when the suite is known, else a
-      `xaas-verifier <suite>:<step>` label. `exit` is the step's observed
-      exit; a semantic export carries only statuses, so `"pass"` projects to
-      0 (the verifier's law: pass iff exit 0) and any other status to -1
-      with the summary saying the exit was not observed.
+      `xaas-verifier <suite>:<step>` label. For a sealed receipt the steps
+      and their `exit` codes are read from the fabric's sealed closing
+      evidence (the verifier's observed exit, never derived from a status).
+      A step with no observed exit (timeout, spawn error) and every step of
+      an unsealed receipt projects `exit` -1 with the summary saying the
+      exit was not observed.
     * standing -- `ALIVE` only for outcome `alive` with `head_verified`, a
       passing verifier and every replay exit 0; `PARTIAL_ALIVE` for
       `partial_alive`; `BUILD_BROKEN` (`mu_unlawful`) for `build_broken`;
       `BLOCKED:<reason>` (`mu_on_O`) for `blocked`; otherwise `UNKNOWN`.
       Refusals come first: an incomplete identity is
-      `REFUSED(R_missing_identity)`, a digest that does not recompute is
-      `REFUSED(receipt_digest_mismatch)` (`R_missing_identity`), no lease
-      grant is `REFUSED(R_missing_authority)`, no replay step is
-      `REFUSED(R_missing_replay)`, an `alive` claim without its witnesses
-      is `REFUSED(alive_unwitnessed)` (`admission_vacuous`).
+      `REFUSED(R_missing_identity)`, no lease grant is
+      `REFUSED(R_missing_authority)`, an unsealed receipt (see Seal) is
+      `REFUSED(receipt_digest_absent)`, `REFUSED(receipt_digest_mismatch)` or
+      `REFUSED(receipt_not_fabric_sealed)` (all `R_missing_identity`), no
+      replay step is `REFUSED(R_missing_replay)`, an `alive` claim without
+      its witnesses is `REFUSED(alive_unwitnessed)` (`admission_vacuous`).
   """
 
   alias Xaas.Ultracode.{SemanticReceipt, TargetSuites}
@@ -98,7 +113,8 @@ defmodule Xaas.Receipt.RProjection do
     authority = authority(native, opts)
     suite = opts[:suite] || verifier["suite"] || get_in(court, ["binding", "suite"])
     cwd = opts[:cwd] || repo_path || identity["repo"] || "."
-    commands = commands(verifier, bridge, suite, cwd, opts)
+    seal = seal(native)
+    commands = commands(seal, verifier, bridge, suite, cwd, opts)
 
     replay =
       compact(%{"commands" => commands, "durable_location" => opts[:durable_location]})
@@ -109,7 +125,7 @@ defmodule Xaas.Receipt.RProjection do
         "authority" => authority,
         "consequence" => consequence(repo_path, identity),
         "replay" => replay,
-        "standing" => standing(native, verifier, identity, authority, commands),
+        "standing" => standing(native, seal, verifier, identity, authority, commands),
         "native" => native_provenance(native),
         "court" => court_projection(court)
       })
@@ -205,14 +221,23 @@ defmodule Xaas.Receipt.RProjection do
 
   # -- replay ---------------------------------------------------------------
 
-  defp commands(verifier, bridge, suite, cwd, opts) do
+  # Sealed: the steps (with their observed exits) come from the fabric's
+  # sealed closing evidence. Unsealed: the native's steps, and no exit is
+  # taken from them -- the standing is REFUSED either way.
+  defp commands(seal, verifier, bridge, suite, cwd, opts) do
     aliases = MapSet.new(List.wrap(get_in(bridge, ["requires", "courts"])))
     declared = suite_steps(suite, opts)
 
-    for %{"id" => id} = step <- List.wrap(verifier["steps"]),
+    steps =
+      case seal do
+        {:sealed, sealed_verifier} -> sealed_verifier["steps"]
+        {:refused, _reason} -> verifier["steps"]
+      end
+
+    for %{"id" => id} = step <- List.wrap(steps),
         is_binary(id),
         not MapSet.member?(aliases, id) do
-      {exit_code, observed?} = step_exit(step)
+      {exit_code, observed?} = step_exit(seal, step)
 
       %{
         "cmd" => step_cmd(declared, suite, id),
@@ -245,9 +270,8 @@ defmodule Xaas.Receipt.RProjection do
     end
   end
 
-  defp step_exit(%{"exit" => code}) when is_integer(code), do: {code, true}
-  defp step_exit(%{"status" => "pass"}), do: {0, false}
-  defp step_exit(_), do: {-1, false}
+  defp step_exit({:sealed, _}, %{"exit" => code}) when is_integer(code), do: {code, true}
+  defp step_exit(_seal, _step), do: {-1, false}
 
   defp step_summary(suite, id, status, true),
     do: "#{suite || "unknown-suite"}/#{id}: status=#{status}"
@@ -255,7 +279,7 @@ defmodule Xaas.Receipt.RProjection do
   defp step_summary(suite, id, status, false),
     do:
       "#{suite || "unknown-suite"}/#{id}: status=#{status} " <>
-        "(exit not in the native receipt; projected from the verifier status)"
+        "(exit not observed in fabric-sealed verifier evidence)"
 
   defp shell_quote(arg) do
     if arg =~ ~r/\A[A-Za-z0-9_@%+=:,.\/{}-]+\z/,
@@ -265,24 +289,25 @@ defmodule Xaas.Receipt.RProjection do
 
   # -- standing -------------------------------------------------------------
 
-  defp standing(native, verifier, identity, authority, commands) do
+  defp standing(native, seal, verifier, identity, authority, commands) do
     status = verifier["status"]
     outcome = native["outcome"]
 
     derived =
-      "xaas sealed receipt #{native["receipt_id"] || "?"} (outcome=#{outcome || "?"}, " <>
-        "head_verified=#{inspect(native["head_verified"])}, verifier=#{status || "none"}) " <>
-        "at #{identity["subject_sha"] || "?"}; replay: #{length(commands)} verifier step(s)"
+      "xaas receipt #{native["receipt_id"] || "?"} (#{seal_label(seal)}, " <>
+        "outcome=#{outcome || "?"}, head_verified=#{inspect(native["head_verified"])}, " <>
+        "verifier=#{status || "none"}) at #{identity["subject_sha"] || "?"}; " <>
+        "replay: #{length(commands)} verifier step(s)"
 
     cond do
       not identity_complete?(identity) ->
         refused("R_missing_identity", "R_missing_identity", derived)
 
-      not digest_recomputes?(native) ->
-        refused("receipt_digest_mismatch", "R_missing_identity", derived)
-
       authority["grant"] == "NONE" ->
         refused("R_missing_authority", "R_missing_authority", derived)
+
+      match?({:refused, _}, seal) ->
+        refused(elem(seal, 1), "R_missing_identity", derived)
 
       commands == [] ->
         refused("R_missing_replay", "R_missing_replay", derived)
@@ -318,12 +343,34 @@ defmodule Xaas.Receipt.RProjection do
   defp refused(reason, term, derived),
     do: %{"value" => "REFUSED(#{reason})", "derived_from" => derived, "broken_term" => term}
 
-  # A semantic export carries its own digest; one that does not recompute
-  # was altered after sealing. Lease evidence maps carry none.
-  defp digest_recomputes?(%{"receipt_digest" => digest} = native) when is_binary(digest),
-    do: SemanticReceipt.receipt_digest(native) == digest
+  # See the moduledoc's Seal section: integrity (the digest recomputes over
+  # the native content) AND provenance (the fabric's re-export of the same
+  # epoch carries the same digest). No branch defaults to sealed.
+  defp seal(%{"receipt_digest" => digest} = native) when is_binary(digest) do
+    if SemanticReceipt.receipt_digest(native) == digest,
+      do: fabric_seal(native["epoch_id"], digest),
+      else: {:refused, "receipt_digest_mismatch"}
+  end
 
-  defp digest_recomputes?(_native), do: true
+  defp seal(_native), do: {:refused, "receipt_digest_absent"}
+
+  defp fabric_seal(epoch_id, digest) when is_binary(epoch_id) and epoch_id != "" do
+    case SemanticReceipt.sealed(epoch_id) do
+      {:ok, %{"receipt_digest" => ^digest}, sealed_verifier} ->
+        {:sealed, map_or_empty(sealed_verifier)}
+
+      {:ok, _differs, _sealed_verifier} ->
+        {:refused, "receipt_not_fabric_sealed"}
+
+      {:error, _unsealed} ->
+        {:refused, "receipt_not_fabric_sealed"}
+    end
+  end
+
+  defp fabric_seal(_epoch_id, _digest), do: {:refused, "receipt_not_fabric_sealed"}
+
+  defp seal_label({:sealed, _}), do: "fabric-sealed"
+  defp seal_label({:refused, reason}), do: "unsealed: " <> reason
 
   # -- provenance -----------------------------------------------------------
 
