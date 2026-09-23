@@ -535,10 +535,9 @@ defmodule Xaas.Ultracode.MachineExperience do
     present =
       [me, node]
       |> Enum.flat_map(fn subject ->
-        case RDF.Graph.description(graph, subject) do
-          nil -> []
-          description -> RDF.Description.triples(description)
-        end
+        # RDF.Graph.description/2 returns an empty description (never nil)
+        # for an absent subject, whose triples are [].
+        graph |> RDF.Graph.description(subject) |> RDF.Description.triples()
       end)
       |> MapSet.new()
 
@@ -1231,10 +1230,10 @@ defmodule Xaas.Ultracode.MachineExperience do
   end
 
   defp objects(graph, subject, property) do
-    case RDF.Graph.description(graph, subject) do
-      nil -> []
-      description -> description |> RDF.Description.get(RDF.iri(property), []) |> Enum.sort()
-    end
+    graph
+    |> RDF.Graph.description(subject)
+    |> RDF.Description.get(RDF.iri(property), [])
+    |> Enum.sort()
   end
 
   defp values(graph, subject, property) do
