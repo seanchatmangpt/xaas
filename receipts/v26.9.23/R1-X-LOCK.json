@@ -3,24 +3,34 @@
   "subject": "R1-X-LOCK",
   "repo": "/Users/sac/xaas",
   "repo_slug": "seanchatmangpt/xaas",
-  "subject_sha": "27cbcbe2d98962e4c4fe4bcf617fe900434b122e",
-  "base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+  "subject_sha": "38c614b1533c0342042877ec6d13612957a21b6e",
+  "base_sha": "c561d9fe160932f02cfbbe1d1061dff8c7f8eb9c",
   "branch": "v23/R1-X-LOCK",
   "worktree": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
   "work_order": null,
   "tuple_digest": null,
   "tuple_digest_why": "no goal.ttl order for lane R1-X-LOCK (grep 'WO-R1\\|R1-X' docs/sjira/v26.9.23/goal.ttl exit 1): release-defect repair lane; the receipt is not linked by the stop court",
   "defect": "F1 (release qualification /Users/sac/wt/v26922/v26923/receipts/fleet/xaas-e999e62b63c680517b9a562cef877d8b09b0cfdd.json failures[0])",
-  "prd_ard": "ARD section 22 (generated artifacts are not manually edited where a generator owns them), ARD section 5.5 (deterministic projection), PRD PR-013 (Replay), PRD section 13 (Release Stop Condition); operator release closure procedure (DRIVER.md): only the named defect changes"
+  "prd_ard": "ARD section 22 (generated artifacts are not manually edited where a generator owns them), ARD section 5.5 (deterministic projection), PRD PR-013 (Replay), PRD section 13 (Release Stop Condition); operator release closure procedure (DRIVER.md): only the named defect changes; R1c continuation (wave R1c wf_18c25526-098): merge forward only, no other change",
+  "base_sha_why": "merge-base(38c614b, friday/gc-fri-0800) = c561d9f after the R1c merge-forward; lane diff c561d9f..38c614b = priv/zcode_plugin/ggen.lock + receipts/v26.9.23/R1-X-LOCK.* only. Pre-merge fork base (orientation merge-base) and frozen release subject where F1 was found: e999e62b63c680517b9a562cef877d8b09b0cfdd",
+  "fork_base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+  "fix_commit": "27cbcbe2d98962e4c4fe4bcf617fe900434b122e",
+  "merge_commit": "38c614b1533c0342042877ec6d13612957a21b6e",
+  "merged_parents": [
+   "fa0d88c467e824d088778c1fa414148a0ab64185",
+   "c561d9fe160932f02cfbbe1d1061dff8c7f8eb9c"
+  ]
  },
  "authority": {
-  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-LOCK, wave R1a)",
+  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-LOCK, waves R1a and R1c)",
   "ceiling": "CONSTRUCT",
-  "grant": "operator release closure procedure via /Users/sac/wt/v26922/v26923/DRIVER.md (12:50 PT repair wave R1a = wf_7a7c7064-905, lanes/wave-R1a.json, F1 R1-X-LOCK)"
+  "grant": "operator release closure procedure via /Users/sac/wt/v26922/v26923/DRIVER.md (12:50 PT repair wave R1a = wf_7a7c7064-905, lanes/wave-R1a.json, F1 R1-X-LOCK; 17:17 PT continuation wave R1c = wf_18c25526-098)"
  },
  "consequence": {
   "commits": [
-   "27cbcbe2d98962e4c4fe4bcf617fe900434b122e"
+   "27cbcbe2d98962e4c4fe4bcf617fe900434b122e",
+   "fa0d88c467e824d088778c1fa414148a0ab64185",
+   "38c614b1533c0342042877ec6d13612957a21b6e"
   ],
   "files_changed": [
    "priv/zcode_plugin/ggen.lock"
@@ -31,7 +41,10 @@
   ],
   "remote_effects": [],
   "generated_vs_handwritten": "ggen.lock is generator output (ggen 26.9.18 `ggen sync run` after deleting the lock, the FM-PACK-008 remediation); zero hand-written product lines; no HANDWRITTEN.md row needed",
-  "projection_change": "none: the re-rendered marketplace/ tree is byte-identical to the committed one (diff -r exit 0), because 068c1d2 already committed the projection of the edited template"
+  "projection_change": "none: the re-rendered marketplace/ tree is byte-identical to the committed one (diff -r exit 0), because 068c1d2 already committed the projection of the edited template",
+  "commits_why": "27cbcbe = F1 fix (generator-only re-lock); fa0d88c = R1a receipt; 38c614b = R1c merge --no-ff of friday/gc-fri-0800 (c561d9f) into v23/R1-X-LOCK, no conflicts, brings c614b9a (removal of the unused require Ash.Query at semantic_drive.ex:78); the R1c receipt commit that follows 38c614b touches receipts/v26.9.23/R1-X-LOCK.* only",
+  "files_changed_scope": "lane-owned product diff vs friday/gc-fri-0800 (git diff --name-only c561d9f 38c614b minus receipts/v26.9.23/R1-X-LOCK.*); the 31 non-receipt paths in fa0d88c..38c614b are friday/gc-fri-0800 content already integrated there (R1-X-COURTS, -DIGEST, -FENCE, -GUARD, -PGREP), not authored by this lane",
+  "residue": "none (HANDWRITTEN.md unchanged by this lane)"
  },
  "toolchain": {
   "elixir": "Elixir 1.20.2 (compiled with Erlang/OTP 28)",
@@ -43,12 +56,12 @@
    "erlang": "28.5.0.2"
   },
   "tool_versions_pin_used": true,
-  "build": "fresh _build/test compiled under the pin in this worktree (only _build/dev pre-existed; deps/ APFS-cloned, mix.lock identical to xaas-int)",
+  "build": "R1c: _build/test recompiled with --force under the pin at 38c614b in this worktree (deps/ unchanged; mix.lock identical fa0d88c..38c614b)",
   "ggen": "ggen 26.9.18",
   "ggen_path": "/Users/sac/.local/bin/ggen -> /opt/homebrew/bin/ggen -> /opt/homebrew/Cellar/ggen/26.9.18/bin/ggen (first on PATH; the binary System.find_executable(\"ggen\") resolves in projection_test.exs)",
   "ggen_sha256": "357cfd4e595c6f8a8341ab95088b8e4e70acee58663c3daf065cc0824d6f5a26",
   "validator": "python3 3.14.3, jsonschema 4.23.0",
-  "log": "receipts/v26.9.23/R1-X-LOCK.gate/toolchain.log"
+  "log": "receipts/v26.9.23/R1-X-LOCK.gate/toolchain-38c614b.log (R1c); receipts/v26.9.23/R1-X-LOCK.gate/toolchain.log (R1a)"
  },
  "root_cause": {
   "classification": "generator drift, pre-existing on origin/main (merge-composition drift)",
@@ -66,8 +79,139 @@
   }
  },
  "replay": {
-  "durable_location": "receipts/v26.9.23/R1-X-LOCK.gate/ (tracked in git on branch v23/R1-X-LOCK)",
+  "durable_location": "receipts/v26.9.23/R1-X-LOCK.gate/ (tracked in git on branch v23/R1-X-LOCK; R1c logs suffixed -38c614b)",
   "commands": [
+   {
+    "cmd": "git merge --no-ff friday/gc-fri-0800 -F receipts/v26.9.23/R1-X-LOCK.gate/merge-38c614b.msg.txt",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 0,
+    "round": "R1c",
+    "summary": "merge forward (no rebase, no -X): 'Merge made by the ort strategy', no conflicts; HEAD 38c614b, parents fa0d88c + c561d9f; git status --porcelain empty",
+    "role": "construct"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/zcode_plugin'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 0,
+    "round": "R1c",
+    "summary": "LANE GATE at committed 38c614b (clean tree before and after): Elixir 1.20.2 (OTP 28, erts 16.4.0.2); format 0; compile --force --warnings-as-errors 0 (only deps/ex4pm/mix.exs Application.get_env warnings, dependency, non-fatal); mix test test/xaas/zcode_plugin: 33 passed, 0 skipped (ggen on PATH, projection_test.exs:31 executed)",
+    "output_sha256": "344d3496466ae161026de3eeecca3c4c7a703e7106a7581bc8e55faa1603218c",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/gate-38c614b.log",
+    "role": "lane gate"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.sh /Users/sac/wt/v26922/v23/R1-X-LOCK /private/tmp/claude-501/v23-scratch/R1c-R1-X-LOCK/fals",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 0,
+    "round": "R1c",
+    "summary": "falsifier harness at 38c614b (exit 0 iff every falsifier fires as expected): FA frozen e999e62 `ggen sync run` inner_exit=1 FM-PACK-008 fired; FB revert-mutation lock->e999e62 bytes, projection_test.exs inner_exit=2 FM-PACK-008 fired, lock restored sha256 508605ec..., product tree clean; FC independent ggen 26.9.18 re-lock sync=0 cmp_lock=0 diff_projection=0 resync=0 cmp_lock2=0 held; FD mock grep inner_exit=1 (0 matches) held; RESULT fail=0",
+    "output_sha256": "bb412821ee19d5bdbb98bf9d53ee8bef5030b043d0fdaccd42405917a5e0899a",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.log",
+    "inner_logs": [
+     "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.fa.log",
+     "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.fb.log",
+     "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.fc.log",
+     "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.fc2.log",
+     "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.fc.diff"
+    ],
+    "role": "falsifiers (inner exits asserted by the harness)"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/R1-X-LOCK.json",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 0,
+    "round": "R1c",
+    "summary": "ADMITTED",
+    "role": "receipt admission"
+   }
+  ]
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "R1c at exact committed subject 38c614b under the .tool-versions pin (Elixir 1.20.2-otp-28 / erts 16.4.0.2): lane gate exit 0 (format 0, compile --force --warnings-as-errors 0, mix test test/xaas/zcode_plugin 33 passed 0 skipped; gate-38c614b.log); falsifier harness exit 0 (falsifiers-r1c.log): revert-mutation of ggen.lock to e999e62 bytes makes projection_test.exs fail with FM-PACK-008 (inner exit 2), so acceptance is not vacuous; independent ggen 26.9.18 `ggen sync run` re-lock from the 38c614b inputs reproduces the committed lock and projection byte-for-byte and is idempotent; 0 mock matches; the harness itself refuses a dirty product tree (exit 91, falsifiers-r1c.refusal-probe.log)",
+  "gate_failure_classification": "none at 38c614b; the R1a gate break (unused require Ash.Query, semantic_drive.ex:78) was pre-existing (toolchain pin) and is closed by c614b9a, merged in via friday/gc-fri-0800 c561d9f",
+  "scope": "F1 only (zcode_plugin pack content hash vs ggen.lock). ALIVE holds while priv/zcode_plugin/** and test/xaas/zcode_plugin/** are unchanged from 38c614b; the receipt commit on top of 38c614b touches receipts/ only"
+ },
+ "falsifiers": {
+  "F1_reproduction": "base e999e62 `ggen sync run` exit 1 FM-PACK-008 (base-sync.log)",
+  "revert_mutation": "R1c at 38c614b: lock reverted to e999e62 bytes -> projection_test.exs fails with FM-PACK-008 (exit 2, mutation-revert-lock-38c614b.log); R1a at 27cbcbe: same (exit 2, mutation-revert-lock.log)",
+  "determinism": "R1c: independent ggen 26.9.18 re-lock from the 38c614b inputs yields the committed lock byte-for-byte (sha256 508605ec...) and a rerun is a no-op; R1a: same from e999e62 inputs",
+  "chicago_mock_grep": {
+   "at": "38c614b1533c0342042877ec6d13612957a21b6e",
+   "exit": 1,
+   "matches": 0
+  },
+  "llm_on_path": "none: ggen and mix only; no model API on any executed path"
+ },
+ "open": [
+  "Guard candidate (successor, not done here): a pre-merge check that runs `ggen sync run` in priv/zcode_plugin (as projection_test does) on merge commits touching packs/, so a rename-detected edit cannot leave the lock stale"
+ ],
+ "closed": [
+  "R1a open item 'lane gate compile step depends on removal of the unused require Ash.Query': closed by merging friday/gc-fri-0800 c561d9f (contains c614b9a); R1c lane gate exit 0 at 38c614b"
+ ],
+ "witnesses": {
+  "why": "individual runs whose raw exit is non-zero by design (falsifiers, refusal probe) and the R1a history at 27cbcbe; the validator admits ALIVE only when every replay.commands exit is 0, so expected-non-zero runs are asserted through the harness row and kept here verbatim",
+  "r1c_individual_runs_at_38c614b": [
+   {
+    "cmd": "git show e999e62:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix test test/xaas/zcode_plugin/projection_test.exs; git show 38c614b:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 2,
+    "round": "R1c",
+    "summary": "REVERT-MUTATION at 38c614b (lock bytes restored to e999e62, sha256 61ce9c9e...): 2/3 passed, projection_test.exs:47 MatchError on {_out, 0} = ggen sync run with [FM-PACK-008] zcode_plugin lock blake3:9a96572b... vs on-disk blake3:ee49a367...; lock restored (sha256 508605ec...), git status --porcelain empty afterwards",
+    "output_sha256": "923f66e5e2df4e7d7537507a4684aa8dc32edaa7530cccca0dafdd0f5db73129",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/mutation-revert-lock-38c614b.log",
+    "role": "falsifier (expected non-zero)"
+   },
+   {
+    "cmd": "git archive e999e62 priv/zcode_plugin | tar -x -C base && (cd base/priv/zcode_plugin && ggen sync run)",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1c-R1-X-LOCK",
+    "exit": 1,
+    "round": "R1c",
+    "summary": "F1 reproduction on the frozen subject e999e62: [FM-PACK-008] zcode_plugin lock blake3:9a96572b... vs on-disk blake3:ee49a367...",
+    "output_sha256": "e2ee5a1673a925ce7af326f41e7295bc0cde292782dd5ec9eba27a55fd7e61d5",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/base-sync-e999e62.r1c.log",
+    "role": "failure reproduction on base (not the subject)"
+   },
+   {
+    "cmd": "git archive 38c614b priv/zcode_plugin | tar -x -C relock && (cd relock/priv/zcode_plugin && rm ggen.lock && ggen sync run) && cmp relock/priv/zcode_plugin/ggen.lock /Users/sac/wt/v26922/v23/R1-X-LOCK/priv/zcode_plugin/ggen.lock && diff -r relock/priv/zcode_plugin/marketplace /Users/sac/wt/v26922/v23/R1-X-LOCK/priv/zcode_plugin/marketplace",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1c-R1-X-LOCK",
+    "exit": 0,
+    "round": "R1c",
+    "summary": "generation path (ggen 26.9.18 `ggen sync run`, the invocation projection_test.exs uses): independent re-lock from the 38c614b inputs is byte-identical to the committed lock (cmp 0) and the rendered marketplace/ equals the committed projection (diff -r 0)",
+    "output_sha256": "8de31e6d442a4542178b95fd31773393d16c5d9f8d6ee558d33a2e9102480fbf",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync-38c614b.log",
+    "role": "determinism"
+   },
+   {
+    "cmd": "(cd relock/priv/zcode_plugin && ggen sync run) && cmp relock/priv/zcode_plugin/ggen.lock /Users/sac/wt/v26922/v23/R1-X-LOCK/priv/zcode_plugin/ggen.lock",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1c-R1-X-LOCK",
+    "exit": 0,
+    "round": "R1c",
+    "summary": "second sync against the fresh lock exits 0; lock unchanged (cmp 0, sha256 508605ec...)",
+    "output_sha256": "68dfb67befb769a791060a3a9622396226695d67a8578be5a2e557d6721e4b3a",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync2-38c614b.log",
+    "role": "idempotence"
+   },
+   {
+    "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\|:meck\\|Mimic\" test/xaas/zcode_plugin/",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 1,
+    "round": "R1c",
+    "summary": "0 matches at 38c614b (Chicago: real ggen binary, real temp dir)",
+    "role": "falsifier (expected exit 1 = no match)"
+   },
+   {
+    "cmd": "echo '# probe' >> priv/zcode_plugin/ggen.lock && sh receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.sh /Users/sac/wt/v26922/v23/R1-X-LOCK /private/tmp/claude-501/v23-scratch/R1c-R1-X-LOCK/fals-probe; git show HEAD:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
+    "exit": 91,
+    "round": "R1c",
+    "summary": "harness anti-vacuity: with a dirty product tree the harness refuses (exit 91 'REFUSED: product tree (outside receipts/) is not clean'); lock restored, product tree clean afterwards",
+    "output_sha256": "63ff8d01013937545c6160b41a070916dbcd9a579a2f7fe4276963c4ff4b2254",
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/falsifiers-r1c.refusal-probe.log",
+    "role": "harness refusal witness (expected non-zero)"
+   }
+  ],
+  "r1a_history_at_27cbcbe": [
    {
     "cmd": "git archive e999e62 priv/zcode_plugin | tar -x -C base && (cd base/priv/zcode_plugin && ggen sync run)",
     "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-LOCK",
@@ -75,7 +219,8 @@
     "summary": "base subject reproduces F1: [FM-PACK-008] zcode_plugin lock blake3:9a96572b... vs on-disk blake3:ee49a367...",
     "output_sha256": "6b3f2ec88a2664109c5072492f576ed112e8459f9b61ac18e4beec1e2edd4544",
     "log": "receipts/v26.9.23/R1-X-LOCK.gate/base-sync.log",
-    "role": "failure reproduction on base (not the subject)"
+    "role": "failure reproduction on base (not the subject)",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "git archive e999e62 priv/zcode_plugin | tar -x -C relock && (cd relock/priv/zcode_plugin && rm ggen.lock && ggen sync run)",
@@ -83,7 +228,8 @@
     "exit": 0,
     "summary": "independent re-lock: cmp ggen.lock vs committed 27cbcbe lock -> identical; diff -r marketplace vs committed -> identical; diff -rq base vs relock -> only ggen.lock plus ignored caches .ggen/ .ggen-v2/",
     "output_sha256": "afd92423ab5319d0871bafd98f55b5a027ed3bca00e8545fa50c933be0d781d6",
-    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync.log"
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync.log",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "(cd relock/priv/zcode_plugin && ggen sync run)",
@@ -91,7 +237,8 @@
     "exit": 0,
     "summary": "second sync against the fresh lock exits 0; lock unchanged (cmp identical, sha256 508605ec...)",
     "output_sha256": "55bfaa90c8d6176315671fabe9e6013070acda0a732cb2f411f5f0c647ed80ec",
-    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync2.log"
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/relock-sync2.log",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/zcode_plugin'",
@@ -99,7 +246,8 @@
     "exit": 1,
     "summary": "LANE GATE at 27cbcbe (clean tree): format 0; compile --force --warnings-as-errors FAILS on `warning: unused require Ash.Query` lib/xaas/ultracode/semantic_drive.ex:78 under Elixir 1.20.2; mix test not reached. PRE-EXISTING: git diff --name-only e999e62 27cbcbe = priv/zcode_plugin/ggen.lock only, so compile inputs are byte-identical to the base; the release qualification ran under ambient 1.19.5 (tool_versions_pin_used false), which does not emit this warning",
     "output_sha256": "cc7f2ca929b1ba694407d1b937e4b44e0cf211db2064f8307e426bf55e4bfbdf",
-    "log": "receipts/v26.9.23/R1-X-LOCK.gate/gate-27cbcbe.log"
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/gate-27cbcbe.log",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix test test/xaas/zcode_plugin'",
@@ -107,7 +255,8 @@
     "exit": 0,
     "summary": "at 27cbcbe under the pin: 33 passed (0 skipped: ggen on PATH, so projection_test.exs:31 executed)",
     "output_sha256": "e426882406d062e10b04fd5e142d7a2e278cb3b90d21abcd99de835433baa6d8",
-    "log": "receipts/v26.9.23/R1-X-LOCK.gate/test-zcode-27cbcbe.log"
+    "log": "receipts/v26.9.23/R1-X-LOCK.gate/test-zcode-27cbcbe.log",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "git show e999e62:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix test test/xaas/zcode_plugin/projection_test.exs; git show 27cbcbe:priv/zcode_plugin/ggen.lock > priv/zcode_plugin/ggen.lock",
@@ -116,7 +265,8 @@
     "summary": "REVERT-MUTATION (lock reverted to base): 2/3 passed, projection_test MatchError on {_out, 0} = ggen sync run with FM-PACK-008; lock restored, git status --porcelain empty afterwards",
     "output_sha256": "920a004c4d6ab4cbe212ff2d0f06d9324b360aa1a901722d90b19b5cd492a421",
     "log": "receipts/v26.9.23/R1-X-LOCK.gate/mutation-revert-lock.log",
-    "role": "falsifier (expected non-zero)"
+    "role": "falsifier (expected non-zero)",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "apply probe-unused-require.diff (delete `require Ash.Query` + blank line, semantic_drive.ex:78-79) && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/zcode_plugin'; restore semantic_drive.ex from 27cbcbe",
@@ -125,38 +275,17 @@
     "summary": "COMPOSITION PROBE (not committed): with the unused require removed the full lane gate exits 0, 33 passed; the only remaining warnings are deps/ex4pm/mix.exs Application.get_env (dependency, pre-existing). File restored, tree clean",
     "output_sha256": "1b8a9c4105b18d33e9154a3e4f34cebdb21a988e7c9fcd334d067e3d142f654d",
     "log": "receipts/v26.9.23/R1-X-LOCK.gate/probe-gate-composed.log",
-    "role": "probe"
+    "role": "probe",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    },
    {
     "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\|:meck\\|Mimic\" test/xaas/zcode_plugin/",
     "cwd": "/Users/sac/wt/v26922/v23/R1-X-LOCK",
     "exit": 1,
     "summary": "0 matches (Chicago: real ggen binary, real temp dir)",
-    "role": "falsifier (expected exit 1 = no match)"
+    "role": "falsifier (expected exit 1 = no match)",
+    "round": "R1a (subject 27cbcbe / base e999e62; superseded by the R1c rows for standing)"
    }
   ]
- },
- "standing": {
-  "value": "PARTIAL_ALIVE",
-  "derived_from": "at exact subject 27cbcbe under the .tool-versions pin: F1 closed (mix test test/xaas/zcode_plugin 33 passed incl. projection_test.exs:31; independent scratch re-lock byte-identical to the committed lock; revert-mutation of the lock makes projection_test fail with FM-PACK-008). Not ALIVE: the lane gate exits 1 at compile --warnings-as-errors on a pre-existing pinned-toolchain warning (semantic_drive.ex:78 unused require Ash.Query) outside this lane's diff; with that line removed (probe) the same gate exits 0",
-  "broken_term": "admission_vacuous",
-  "broken_term_scope": "the pre-existing gate break, not F1: e999e62 was admitted by gates run under ambient Elixir 1.19.5 instead of the .tool-versions pin 1.20.2, so compile --warnings-as-errors never refused semantic_drive.ex:78",
-  "gate_failure_classification": "pre-existing (toolchain pin), not subject defect",
-  "dependency": "the unused-require removal is in progress in lane R1-X-COURTS (uncommitted diff to lib/xaas/ultracode/semantic_drive.ex observed read-only in /Users/sac/wt/v26922/v23/R1-X-COURTS, removes `require Ash.Query`); also scan candidate SCAN-CE23-5-XA-unused-require. The lane gate is expected to pass on the int head once R1-X-COURTS (or any fix of that line) merges before or with R1-X-LOCK"
- },
- "falsifiers": {
-  "F1_reproduction": "base e999e62 `ggen sync run` exit 1 FM-PACK-008 (base-sync.log)",
-  "revert_mutation": "lock reverted to e999e62 -> projection_test.exs fails (exit 2); acceptance is not vacuous",
-  "determinism": "two independent ggen runs from the base inputs yield the committed lock byte-for-byte (sha256 508605ec...), and a rerun against the fresh lock is a no-op",
-  "chicago_mock_grep": {
-   "at": "27cbcbe2d98962e4c4fe4bcf617fe900434b122e",
-   "exit": 1,
-   "matches": 0
-  },
-  "llm_on_path": "none: ggen and mix only; no model API on any executed path"
- },
- "open": [
-  "Lane gate compile step depends on removal of the unused `require Ash.Query` (semantic_drive.ex:78), owned by R1-X-COURTS / SCAN-CE23-5-XA-unused-require; re-run the lane gate on the int head after both merge",
-  "Guard candidate (successor, not done here): a pre-merge check that runs `ggen sync run` in priv/zcode_plugin (as projection_test does) on merge commits touching packs/, so a rename-detected edit cannot leave the lock stale"
- ]
+ }
 }
