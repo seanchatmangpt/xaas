@@ -1,0 +1,47 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-LOCK/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+17:16:45.140 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+17:16:45.528 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+17:16:45.822 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+17:16:45.888 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+17:16:45.888 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+17:16:45.901 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+17:16:45.901 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+17:16:45.914 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+17:16:45.914 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Running ExUnit with seed: 904986, max_cases: 32
+17:16:45.921 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+17:16:45.921 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+17:16:45.931 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+17:16:45.931 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+17:16:45.934 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+17:16:45.934 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+.
+
+  1) test the committed projection is exactly what ggen sync renders from the ontology (Xaas.ZcodePlugin.ProjectionTest)
+     test/xaas/zcode_plugin/projection_test.exs:31
+     ** (MatchError) no match of right hand side value:
+
+         {"2026-09-24T00:16:45.988871Z  INFO ggen.cli{command=sync run version=\"26.9.18\"}:pipeline.load{operation.name=\"pipeline.load\" operation.type=\"pipeline\" pipeline.stage=\"load\"}: ggen_engine::sync: close time.busy=648µs time.idle=917ns\n2026-09-24T00:16:45.988904Z  INFO ggen.cli{command=sync run version=\"26.9.18\"}: ggen_cli_lib: close time.busy=1.31ms time.idle=3.42µs\nERROR: CLI execution failed: Command execution failed: validation error: [FM-PACK-008] pack `zcode_plugin` (source `path:packs/zcode-plugin-pack`) content hash mismatch: ggen.lock has `blake3:9a96572b470b547e447cc5d5bd028865e3f6f5903ee9603ff9af4af45526d150` but the pack on disk hashes to `blake3:ee49a36734a6771ba45875fb1badbf2c544031a0308039caf54933b4e52277ad`. Remediation: restore the pack, or delete ggen.lock to intentionally re-lock.\n",
+          1}
+
+     code: {_out, 0} = System.cmd("ggen", ["sync", "run"], cd: tmp, stderr_to_stdout: true)
+     stacktrace:
+       test/xaas/zcode_plugin/projection_test.exs:47: (test)
+
+.
+Finished in 0.07 seconds (0.07s async, 0.00s sync)
+
+Result: 2/3 passed
+Failed: 1 test
+MUTATION_EXIT=2
