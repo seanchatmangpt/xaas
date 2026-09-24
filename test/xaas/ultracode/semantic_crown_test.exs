@@ -27,7 +27,7 @@ defmodule Xaas.Ultracode.SemanticCrownTest do
   @moduletag timeout: 1_800_000
 
   @source Path.expand("~/xaas/worktrees/repos/aps")
-  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || "/Users/sac/wt/gi-bridge"
+  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter")
   @bundle Path.expand(
             "docs/ultracode/wave-v26.9.17-receipts/aps-autonomic-dod/aps-autonomic-3e46cf.bundle"
           )
