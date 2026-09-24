@@ -310,6 +310,36 @@ I would use different refresh behavior for different evidence classes:
 
 If an upstream source is unavailable, stale or partially parsed, the case does not get "completed" by model inference. Its standing narrows to PARTIAL or UNKNOWN and the missing evidence is surfaced.
 
+### Storage shape
+
+I would keep storage responsibilities explicit rather than put every concern into one database:
+
+| Store / index | What it owns | What it does not own |
+|---|---|---|
+| Source system or governed raw object store | Original PPT, image, plot, spreadsheet and versioned source artifact | Root-cause interpretation |
+| Relational operational store | Case identity, drive/build relations, provenance, ACL metadata, work state, dispositions | Approximate semantic similarity as authority |
+| Vector / lexical indexes | Derived retrieval indexes keyed by source/content identity | Canonical truth or authorization |
+| Semantic/graph projection | Typed object relations and applicability links | Independent copy of source evidence |
+| Receipt / audit store | Append-only subject, evidence, verifier and outcome bindings | Mutable working notes |
+
+The vector index is therefore disposable and rebuildable. Losing it degrades retrieval; it does not erase the evidence record.
+
+### Cost, latency and scale envelope
+
+The dominant cost risk is the fifteen-plus-year multimodal backfill, not the final prompt. I would control it with:
+
+- content hashing so unchanged artifacts are never reprocessed accidentally;
+- tiered extraction: cheap metadata/text extraction first, expensive image/plot interpretation only where the artifact type requires it;
+- bounded reprocessing when extractor/model versions change;
+- offline precomputation of embeddings, candidate metadata and image observations;
+- query-time retrieval over a small evidence packet rather than replaying the corpus into a model;
+- purpose-built structured tools to avoid repeated broad data-lake scans;
+- per-stage telemetry for pages/images processed, model tokens, retrieval fan-out, latency and cost per triage.
+
+At scale, likely pressure points are multimodal extraction throughput, duplicate/ambiguous identities, vector-index growth, high-cardinality graph joins and expensive structured queries. I would partition by stable domain keys, make ingestion idempotent, use queues/backpressure, cache immutable derived artifacts by digest and keep hot active-case state separate from cold historical source material.
+
+I would not quote a credible dollar figure until WD supplies corpus size, image density, query volume, approved model/runtime pricing and retention requirements. In week one I would measure those variables and publish a cost model with one-time backfill cost separated from steady-state cost per case.
+
 ### Images, plots and waveforms
 
 The system should preserve both the original artifact and derived machine-readable observations.
@@ -351,6 +381,18 @@ For a new failed drive:
 8. **Construct the next action.** Produce the smallest useful diagnostic step and its owner.
 9. **Require engineer disposition** for consequential closure.
 10. **Verify and learn.** Verified outcomes may become MachineExperience for future replay.
+
+### What is precomputed versus query-time?
+
+**Precomputed/offline:** document normalization, OCR, image/plot observations, embeddings, source digests, stable object identities where determinable, prior-case indexes, known-issue metadata and deterministic applicability definitions.
+
+**Query-time:** exact drive/build reconstruction, current structured facts, ACL-filtered retrieval, candidate ranking, admission against current evidence, next-action construction and engineer-facing explanation.
+
+This keeps expensive corpus work out of the interactive path while ensuring current drive facts are not frozen into stale summaries.
+
+### Feedback without adding another engineer workflow
+
+The default feedback mechanism should be the engineer's existing disposition/closure event, not a second AI-specific form. The system should capture the case outcome, selected root cause/known issue, diagnostic action and relevant evidence identities from that existing transition. It should request additional annotation only when the existing disposition is insufficient to manufacture safe reusable prior art. A verified closure may produce MachineExperience; an unverified candidate may not.
 
 ### Why a curated semantic layer instead of unrestricted text-to-SQL?
 
