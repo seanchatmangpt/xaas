@@ -1,0 +1,98 @@
+@prefix pres: <https://ggen.dev/ns/presentation#> .
+@prefix wddeck: <urn:wd:case-study-2:deck:> .
+
+wddeck:slide-13 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-13" ;
+  pres:order 13 ;
+  pres:layout "bullets" ;
+  pres:audience "internal" ;
+  pres:kicker "PRESENTER PREP" ;
+  pres:title "Appendix: ideal hiring feedback to earn" ;
+  pres:footer "internal prep / do not present unless asked" ;
+  pres:notes "This is not for the main presentation. It is the interviewer-lens target. The ideal feedback is not \"cool demo\"; it is that you are the person who can own ambiguous agentic solution delivery end-to-end while preserving evidence, governance and measurable delivery. That matches their evaluation rubric: system design depth, data/context engineering, tradeoff reasoning, security/governance, evaluation rigor, pragmatism and communication." .
+
+wddeck:slide-13-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-13 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "“He understood this as a production quality system, not a prompt-engineering exercise.”" ;
+  pres:tone "stone" .
+
+wddeck:slide-13-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-13 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "“He separated retrieval, ranking, admission, authority and measurement.”" ;
+  pres:tone "stone" .
+
+wddeck:slide-13-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-13 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "“He was explicit about assumptions and asked the right questions without blocking progress.”" ;
+  pres:tone "stone" .
+
+wddeck:slide-13-block-04 a pres:Block ;
+  pres:lockOf wddeck:slide-13 ;
+  pres:order 4 ;
+  pres:role "bullet" ;
+  pres:body "“He could ship a 30-day slice while preserving security, provenance and evaluation rigor.”" ;
+  pres:tone "stone" .
+
+wddeck:slide-13-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-13 ;
+  pres:order 5 ;
+  pres:role "bullet" ;
+  pres:body "“He did not overclaim the prototype; he used it to make the architecture falsifiable.”" ;
+  pres:tone "stone" .
+
+wddeck:slide-13-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-13 ;
+  pres:order 6 ;
+  pres:role "conclusion" ;
+  pres:body "Hiring conclusion you want: strong FDE signal — ambiguous problem, executable architecture, sober evidence boundaries, credible delivery path." ;
+  pres:tone "stone" .
+
+wddeck:slide-14 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-14" ;
+  pres:order 14 ;
+  pres:layout "three_part" ;
+  pres:audience "internal" ;
+  pres:kicker "PRESENTER PREP" ;
+  pres:title "Appendix: reading the reschedule signal" ;
+  pres:footer "internal prep / process signal only" ;
+  pres:notes "Your read is useful but should stay bounded. A reschedule is better than a cancellation because it preserves the meeting and implies stakeholder time is still being coordinated. The lack of a canned answer to the three questions can be read as a positive process signal: they may prefer to discuss them live with the right people. But do not convert it into certainty. In the interview, do not say \"you did not just use ChatGPT.\" Instead, say: I sent those questions because the prompt explicitly values the questions, and I continued with reversible assumptions so we can adjust the architecture to the real workflow." .
+
+wddeck:slide-14-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-14 ;
+  pres:order 1 ;
+  pres:role "part" ;
+  pres:title "Observed signal" ;
+  pres:body "They rescheduled because someone needed to reschedule; they did not simply cancel or send a generic written response." ;
+  pres:tone "stone" .
+
+wddeck:slide-14-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-14 ;
+  pres:order 2 ;
+  pres:role "part" ;
+  pres:title "Reasonable read" ;
+  pres:body "Modestly positive: the live session still matters, and the questions likely remain part of the conversation rather than being disposed of with canned text." ;
+  pres:tone "stone" .
+
+wddeck:slide-14-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-14 ;
+  pres:order 3 ;
+  pres:role "part" ;
+  pres:title "Boundary" ;
+  pres:body "Not outcome evidence. Treat it as a cue to prepare for a serious discussion, not as proof of intent to hire." ;
+  pres:tone "stone" .
+
+wddeck:slide-14-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-14 ;
+  pres:order 4 ;
+  pres:role "conclusion" ;
+  pres:body "In the interview: treat the reschedule as process evidence only; keep the architectural assumptions explicit and reversible." ;
+  pres:tone "stone" .
+

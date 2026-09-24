@@ -10,6 +10,32 @@ For the September 25 written response requested by WD, start with:
 
 That document is the self-contained 5–8 page-equivalent proposal mapped to WD's requested sections. The remaining files are supporting architecture, implementation, evaluation and evidence artifacts.
 
+## Presentation manufacture
+
+The presentation is a generated projection of canonical RDF under `presentation/`; the `.pptx` is not hand-maintained source.
+
+```text
+presentation/*.ttl
+→ ggen-marketplace pptx-presentation-pack @ 69e7f6b256158dc0ad4dd5af7e5807279de6bba2
+→ ggen_igniter
+→ deck.json + renderer fragments
+→ deterministic render.mjs assembly
+→ PptxGenJS 4.0.1
+→ PPTX + speaker notes
+→ OOXML verification receipt
+```
+
+The Typer CLI lives in `tools/wd_deck/`:
+
+```bash
+python -m pip install -e tools/wd_deck
+wd-deck bootstrap
+wd-deck render --pack-dir ../ggen-marketplace/packs/pptx-presentation-pack --audience all
+wd-deck render --pack-dir ../ggen-marketplace/packs/pptx-presentation-pack --audience interview
+```
+
+`all` manufactures 14 slides including two internal presenter-prep slides. `interview` manufactures the 12-slide live-session projection. Generation remains repository-local evidence; it does not establish WD acceptance or external standing.
+
 The implementation is deliberately modeled as a **closed quality operating loop**, not a RAG chatbot:
 
 ```

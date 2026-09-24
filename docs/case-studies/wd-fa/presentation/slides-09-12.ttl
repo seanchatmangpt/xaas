@@ -1,0 +1,220 @@
+@prefix pres: <https://ggen.dev/ns/presentation#> .
+@prefix wddeck: <urn:wd:case-study-2:deck:> .
+
+wddeck:slide-09 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-09" ;
+  pres:order 9 ;
+  pres:layout "chain" ;
+  pres:audience "interview" ;
+  pres:title "Security and governance are first-class design constraints" ;
+  pres:notes "Tie directly to WD's rubric. ACL propagation, IP handling and auditability are not a final deployment checklist. They are part of the state machine. If a derived artifact combines multiple restricted sources, use the most restrictive applicable policy until WD defines a declassification rule. Every candidate and recommendation should be replayable from subject identity, source versions, tool/model versions and admission rules." .
+
+wddeck:slide-09-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "Source ACL" ;
+  pres:tone "blue" .
+
+wddeck:slide-09-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Derived evidence" ;
+  pres:tone "gold" .
+
+wddeck:slide-09-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "Recommendation" ;
+  pres:tone "stone" .
+
+wddeck:slide-09-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 4 ;
+  pres:role "stage" ;
+  pres:title "Engineer disposition" ;
+  pres:tone "green" .
+
+wddeck:slide-09-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 5 ;
+  pres:role "line" ;
+  pres:body "Authorization before retrieval, not retrieve-then-redact." ;
+  pres:tone "stone" .
+
+wddeck:slide-09-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 6 ;
+  pres:role "line" ;
+  pres:body "Every recommendation replayable from source versions, model/tool versions and admission rules." ;
+  pres:tone "stone" .
+
+wddeck:slide-09-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 7 ;
+  pres:role "line" ;
+  pres:body "Phase-one authority: SELECT + CONSTRUCT only. Consequence stays human-gated." ;
+  pres:tone "stone" .
+
+wddeck:slide-09-block-08 a pres:Block ;
+  pres:blockOf wddeck:slide-09 ;
+  pres:order 8 ;
+  pres:role "callout" ;
+  pres:body "Security is not a later hardening pass; it is part of the evidence model." ;
+  pres:tone "stone" .
+
+wddeck:slide-10 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-10" ;
+  pres:order 10 ;
+  pres:layout "stages" ;
+  pres:audience "interview" ;
+  pres:title "Evaluation: prove trust before claiming MTTR" ;
+  pres:notes "Make this very sober. Start with offline controls, especially false-KNOWN negative controls. Then shadow evaluation against historical or parallel cases. Only after that does a bounded pilot measure MTTR and repeated work. Say: false-KNOWN is the trust metric. MTTR is the business metric. Both matter, but one prevents the system from being dangerous and the other proves business value." .
+
+wddeck:slide-10-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-10 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "Offline court" ;
+  pres:body "positive · partial · novel · misleading-similarity · tamper" ;
+  pres:tone "blue" .
+
+wddeck:slide-10-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-10 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Shadow evaluation" ;
+  pres:body "compare with current FA process, no automatic consequence" ;
+  pres:tone "gold" .
+
+wddeck:slide-10-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-10 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "Bounded pilot" ;
+  pres:body "measured value with human-gated production-adjacent workflow" ;
+  pres:tone "green" .
+
+wddeck:slide-10-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-10 ;
+  pres:order 4 ;
+  pres:role "guardrail" ;
+  pres:title "Critical guardrail: false-KNOWN" ;
+  pres:tone "red" .
+
+wddeck:slide-10-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-10 ;
+  pres:order 5 ;
+  pres:role "metrics" ;
+  pres:title "Business metrics: MTTR · time to action · engineer touches · repeated work avoided" ;
+  pres:tone "stone" .
+
+wddeck:slide-10-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-10 ;
+  pres:order 6 ;
+  pres:role "callout" ;
+  pres:body "A lower MTTR after rollout is not automatically causal proof. Define baseline and comparison before claiming improvement." ;
+  pres:tone "stone" .
+
+wddeck:slide-11 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-11" ;
+  pres:order 11 ;
+  pres:layout "timeline" ;
+  pres:audience "interview" ;
+  pres:title "30 / 60 / 90 delivery plan" ;
+  pres:notes "This is the pragmatism slide. In 30 days: one failure family, evidence reconstruction, known/partial/unknown triage and offline/shadow proof. In 60: authorized real sources and shadow comparison. In 90: bounded pilot with human-gated consequence. State clearly what you would cut: broad corpus coverage, polished dashboards, fine-tuning experiments. Do not cut provenance, negative controls, ACLs, human authority or baseline measurement." .
+
+wddeck:slide-11-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-11 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "0–30\nBounded vertical slice" ;
+  pres:body "One failure family, source map, sample corpus, structured join, triage packet." ;
+  pres:tone "blue" .
+
+wddeck:slide-11-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-11 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "31–60\nReal-source shadow" ;
+  pres:body "Authorized connectors, ACL propagation, disposition capture, evaluation dashboard." ;
+  pres:tone "gold" .
+
+wddeck:slide-11-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-11 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "61–90\nBounded pilot" ;
+  pres:body "Human-gated workflow, MachineExperience admission, process-delta review." ;
+  pres:tone "green" .
+
+wddeck:slide-11-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-11 ;
+  pres:order 4 ;
+  pres:role "callout" ;
+  pres:body "Cut broad corpus coverage, polish and autonomy before cutting provenance, negative controls or human authority." ;
+  pres:tone "stone" .
+
+wddeck:slide-12 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-12" ;
+  pres:order 12 ;
+  pres:layout "flow" ;
+  pres:audience "interview" ;
+  pres:title "Close: the long-term compounding loop" ;
+  pres:notes "Close with the compounding value: if the system helps one case become verified prior art, future applicable cases get cheaper and safer. The first decision I would ask for is not autonomy. It is a bounded shadow slice with representative data, an agreed ground-truth policy, and a measured baseline. Then stop and invite questions." .
+
+wddeck:slide-12-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "UNKNOWN" ;
+  pres:tone "red" .
+
+wddeck:slide-12-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Bounded\ninvestigation" ;
+  pres:tone "gold" .
+
+wddeck:slide-12-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "Verified\ndisposition" ;
+  pres:tone "green" .
+
+wddeck:slide-12-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 4 ;
+  pres:role "stage" ;
+  pres:title "Machine\nExperience" ;
+  pres:tone "blue" .
+
+wddeck:slide-12-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 5 ;
+  pres:role "stage" ;
+  pres:title "Future case\nKNOWN" ;
+  pres:tone "green" .
+
+wddeck:slide-12-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 6 ;
+  pres:role "callout" ;
+  pres:body "The system gets better because verified engineering work becomes reusable prior art — not because the model is allowed to guess harder." ;
+  pres:tone "stone" .
+
+wddeck:slide-12-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-12 ;
+  pres:order 7 ;
+  pres:role "decision" ;
+  pres:body "My proposed first decision: authorize a bounded shadow slice, not production actuation." ;
+  pres:tone "stone" .
+

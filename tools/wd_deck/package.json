@@ -1,0 +1,9 @@
+{
+  "name": "xaas-wd-deck-runtime",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinned rendering runtime for the WD Case Study 2 presentation",
+  "dependencies": {
+    "pptxgenjs": "4.0.1"
+  }
+}

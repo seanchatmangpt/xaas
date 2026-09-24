@@ -1,0 +1,252 @@
+@prefix pres: <https://ggen.dev/ns/presentation#> .
+@prefix wddeck: <urn:wd:case-study-2:deck:> .
+
+wddeck:slide-01 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-01" ;
+  pres:order 1 ;
+  pres:layout "hero_flow" ;
+  pres:audience "interview" ;
+  pres:kicker "Western Digital Case Study 2" ;
+  pres:title "HDD Failure Analysis\nAI Agent" ;
+  pres:subtitle "A governed quality loop — not a chatbot in front of a vector database." ;
+  pres:footer "Sean Chatman · September 2026" ;
+  pres:notes "Open with the frame: this is a 20-minute design walk-through. The answer is not \"use an LLM\"; the answer is an operating loop that makes prior failure-analysis work reusable while keeping engineering authority explicit. Say: I chose Case Study 2 and interpreted the ask as engineering judgment under incomplete information. I asked clarifying questions, continued in parallel, and kept assumptions explicit." .
+
+wddeck:slide-01-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-01 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "OBSERVE" ;
+  pres:tone "blue" .
+
+wddeck:slide-01-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-01 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "ADMIT" ;
+  pres:tone "green" .
+
+wddeck:slide-01-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-01 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "WORK" ;
+  pres:tone "gold" .
+
+wddeck:slide-01-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-01 ;
+  pres:order 4 ;
+  pres:role "stage" ;
+  pres:title "VERIFY" ;
+  pres:tone "red" .
+
+wddeck:slide-01-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-01 ;
+  pres:order 5 ;
+  pres:role "stage" ;
+  pres:title "LEARN" ;
+  pres:tone "stone" .
+
+wddeck:slide-02 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-02" ;
+  pres:order 2 ;
+  pres:layout "agenda" ;
+  pres:audience "interview" ;
+  pres:title "What I will prove in 20 minutes" ;
+  pres:notes "Say this slide as a contract: I will not spend the time narrating every document. I will make the selection function clear. First, the bottleneck. Second, the architecture. Third, the safety/trust boundary. Fourth, the delivery plan. Emphasize the evidence ceiling: the prototype is useful because it makes the architecture falsifiable, but code is optional and does not substitute for design narrative." .
+
+wddeck:slide-02-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-02 ;
+  pres:order 1 ;
+  pres:role "step" ;
+  pres:title "1\nFrame the real bottleneck" ;
+  pres:tone "blue" .
+
+wddeck:slide-02-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-02 ;
+  pres:order 2 ;
+  pres:role "step" ;
+  pres:title "2\nShow the governed architecture" ;
+  pres:tone "green" .
+
+wddeck:slide-02-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-02 ;
+  pres:order 3 ;
+  pres:role "step" ;
+  pres:title "3\nSeparate ranking from authority" ;
+  pres:tone "gold" .
+
+wddeck:slide-02-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-02 ;
+  pres:order 4 ;
+  pres:role "step" ;
+  pres:title "4\nDefine measurable delivery" ;
+  pres:tone "stone" .
+
+wddeck:slide-02-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-02 ;
+  pres:order 5 ;
+  pres:role "callout" ;
+  pres:body "Success is not a persuasive demo. Success is a system that tells the engineer what is known, what is missing, what is novel, and what action is justified next." ;
+  pres:tone "stone" .
+
+wddeck:slide-02-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-02 ;
+  pres:order 6 ;
+  pres:role "boundary" ;
+  pres:body "Main evidence boundary: repository-local proposal + prototype fixtures, not WD production proof." ;
+  pres:tone "red" .
+
+wddeck:slide-03 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-03" ;
+  pres:order 3 ;
+  pres:layout "source_chain" ;
+  pres:audience "interview" ;
+  pres:title "The problem is repeated context reconstruction" ;
+  pres:notes "Use WD's own problem framing: the evidence is fragmented across prior FA reports, image-heavy presentations, Confluence, Excel and structured build data. The workflow cost is not only search latency. It is repeated human reconstruction of the failed drive's context. So the agent's value is not \"answer generation\"; it is retiring repeated investigation steps. This is where MTTR and corrective-action quality become measurable." .
+
+wddeck:slide-03-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 1 ;
+  pres:role "source" ;
+  pres:title "Historical FA\nPowerPoint" ;
+  pres:tone "blue" .
+
+wddeck:slide-03-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 2 ;
+  pres:role "source" ;
+  pres:title "Images / SEM\nplots / waveforms" ;
+  pres:tone "blue" .
+
+wddeck:slide-03-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 3 ;
+  pres:role "source" ;
+  pres:title "Confluence\nknown issues" ;
+  pres:tone "blue" .
+
+wddeck:slide-03-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 4 ;
+  pres:role "source" ;
+  pres:title "Excel\ntrackers" ;
+  pres:tone "blue" .
+
+wddeck:slide-03-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 5 ;
+  pres:role "source" ;
+  pres:title "Data lake\nbuild facts" ;
+  pres:tone "blue" .
+
+wddeck:slide-03-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 6 ;
+  pres:role "source" ;
+  pres:title "Engineer\njudgment" ;
+  pres:tone "green" .
+
+wddeck:slide-03-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 7 ;
+  pres:role "center" ;
+  pres:title "Reconstruct context\nbefore deciding the next action" ;
+  pres:tone "gold" .
+
+wddeck:slide-03-block-08 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 8 ;
+  pres:role "outcome" ;
+  pres:title "Slow MTTR + repeated investigative work + weaker corrective actions" ;
+  pres:tone "red" .
+
+wddeck:slide-03-block-09 a pres:Block ;
+  pres:blockOf wddeck:slide-03 ;
+  pres:order 9 ;
+  pres:role "callout" ;
+  pres:body "The first product promise: start the engineer at judgment, not at document archaeology." ;
+  pres:tone "stone" .
+
+wddeck:slide-04 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-04" ;
+  pres:order 4 ;
+  pres:layout "triad" ;
+  pres:audience "interview" ;
+  pres:title "Core design rule: candidate ≠ admission ≠ authority" ;
+  pres:notes "This is the most important slide. Say it slowly. A model can nominate plausible failure modes, but plausibility is not engineering knowledge. Admission needs required evidence and applicability constraints. Authority remains with the engineer for consequential disposition. This prevents the system from turning a confident-looking nearest neighbor into a false root cause." .
+
+wddeck:slide-04-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "Candidate" ;
+  pres:tone "blue" .
+
+wddeck:slide-04-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Admission" ;
+  pres:tone "gold" .
+
+wddeck:slide-04-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "Authority" ;
+  pres:tone "green" .
+
+wddeck:slide-04-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 4 ;
+  pres:role "detail" ;
+  pres:body "Model / retrieval may nominate" ;
+  pres:tone "stone" .
+
+wddeck:slide-04-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 5 ;
+  pres:role "detail" ;
+  pres:body "Evidence + applicability decide" ;
+  pres:tone "stone" .
+
+wddeck:slide-04-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 6 ;
+  pres:role "detail" ;
+  pres:body "Engineer owns consequence" ;
+  pres:tone "stone" .
+
+wddeck:slide-04-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 7 ;
+  pres:role "callout" ;
+  pres:body "Similarity can rank a prior case. Similarity cannot make it true." ;
+  pres:tone "stone" .
+
+wddeck:slide-04-block-08 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 8 ;
+  pres:role "status" ;
+  pres:title "KNOWN" ;
+  pres:tone "green" .
+
+wddeck:slide-04-block-09 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 9 ;
+  pres:role "status" ;
+  pres:title "PARTIAL" ;
+  pres:tone "gold" .
+
+wddeck:slide-04-block-10 a pres:Block ;
+  pres:blockOf wddeck:slide-04 ;
+  pres:order 10 ;
+  pres:role "status" ;
+  pres:title "UNKNOWN" ;
+  pres:tone "red" .
+
