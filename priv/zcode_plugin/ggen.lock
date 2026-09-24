@@ -6,4 +6,4 @@ content_hash = "blake3:01085142c6dbfbc23b79d70448d5203ad3842364c19d6a3457b1df008
 
 [packs.zcode_plugin]
 source = "path:packs/zcode-plugin-pack"
-content_hash = "blake3:9a96572b470b547e447cc5d5bd028865e3f6f5903ee9603ff9af4af45526d150"
+content_hash = "blake3:ee49a36734a6771ba45875fb1badbf2c544031a0308039caf54933b4e52277ad"
