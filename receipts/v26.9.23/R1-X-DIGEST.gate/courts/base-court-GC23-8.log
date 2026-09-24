@@ -1,0 +1,23 @@
+recorded: EP-A left (sha256:000000000000 -> sha256:41c2dd0faf87), EP-B entered
+graph-side toolchain: asdf elixir 1.18.4-otp-27 (/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix)
+Compiling 16 files (.ex)
+Generated flame app
+==> ex_ast
+Compiling 36 files (.ex)
+Generated ex_ast app
+==> jcs
+Compiling 1 file (.ex)
+Generated jcs app
+==> xema
+Compiling 19 files (.ex)
+Generated xema app
+==> yaml_elixir
+Compiling 6 files (.ex)
+
+== Compilation error in file lib/yaml_elixir/records.ex ==
+** (RuntimeError) error parsing file /Users/sac/.cache/tmp/gc23-8.0A4Kbl/build/test/lib/yamerl/include/internal/yamerl_constr.hrl, got: {:error, :enoent}
+    (elixir 1.18.4) lib/record/extractor.ex:84: Record.Extractor.read_file/2
+    (elixir 1.18.4) lib/record/extractor.ex:50: Record.Extractor.extract_record/2
+    lib/yaml_elixir/records.ex:6: (module)
+could not compile dependency :yaml_elixir, "mix compile" failed. Errors may have been logged above. You can recompile this dependency with "mix deps.compile yaml_elixir --force", update it with "mix deps.update yaml_elixir" or clean it with "mix deps.clean yaml_elixir"
+UNKNOWN: GC23-8 the graph side in /Users/sac/wt/v26922/fri/ggen_igniter-int does not compile under the resolved toolchain (BUILD_BROKEN; the court cannot witness)

@@ -1,0 +1,6 @@
+executor recipe-worker; OCEL 11 events, 0 LLM-provider events/objects
+control: {"no_llm_guard":"passed","standing":"ALIVE"}
+F3: {"broken_term":"mu_on_O","detail":{"binaries":[],"providers":["anthropic"],"unadmitted":[],"variables":["ANTHROPIC_API_KEY"]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}
+F3: GEMINI_API_KEY exposed -> {"broken_term":"mu_on_O","detail":{"binaries":[],"providers":["google-gemini"],"unadmitted":[],"variables":["GEMINI_API_KEY"]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}
+F3: XAAS_GC23_5_UNLISTED exposed -> {"broken_term":"mu_on_O","detail":{"binaries":[],"providers":[],"unadmitted":["XAAS_GC23_5_UNLISTED"],"variables":[]},"hop":"guard","reason":"unadmitted_environment","standing":"REFUSED(unadmitted_environment)"}
+ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused: ANTHROPIC, GEMINI, unlisted variable)

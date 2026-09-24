@@ -45,7 +45,7 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
 
   use ExUnit.Case, async: false
 
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt, SemanticReceipt}
+  alias Xaas.Ultracode.{Epoch, Lease, Receipt, RecipeWorker, SemanticReceipt}
   alias Xaas.Ultracode.SemanticWork.AdmissionBinding
 
   @moduletag timeout: 1_200_000
@@ -54,6 +54,15 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
   @sjira_dir Path.join([@project_root, "docs", "sjira", "v26.9.21"])
   @order_path Path.join(@sjira_dir, "001-xaas-semantic-jira-e2e.md")
   @script Path.join(@sjira_dir, "e2e_project.exs")
+  # the committed current-form descriptor fixture the SemanticWork tests attack;
+  # produced only by RUNNING the projection (scripts/sj001_descriptor_fixture.exs)
+  @fixture Path.join([
+             @project_root,
+             "test",
+             "fixtures",
+             "semantic_work",
+             "sj-001-descriptor.json"
+           ])
   @ggen_dir System.get_env("GGEN_IGNITER_DIR") || "/Users/sac/ggen_igniter"
   @semantic_jira Path.join([@ggen_dir, "lib", "ggen_igniter", "semantic_jira.ex"])
 
@@ -126,7 +135,8 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
              "ok" => true,
              "identity" => "SJ-001",
              "work_order_digest" => digest,
-             "definition_digest" => definition
+             "definition_digest" => definition,
+             "digest_form" => "sjira-digest/2" = form
            } = admit
 
     assert digest =~ ~r/\Asha256:[0-9a-f]{64}\z/
@@ -134,6 +144,13 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
 
     descriptor = descriptor_path |> File.read!() |> Jason.decode!()
 
+    # the committed fixture IS this producer's output, byte for byte (it is never
+    # hand-edited; regenerate with scripts/sj001_descriptor_fixture.exs)
+    assert File.read!(descriptor_path) == File.read!(@fixture),
+           "#{@fixture} is not the current projection; regenerate it by running " <>
+             "GGEN_IGNITER_DIR=#{@ggen_dir} mix run --no-start scripts/sj001_descriptor_fixture.exs"
+
+    assert descriptor["digest_form"] == form
     assert descriptor["graph_digest"] == digest
     assert descriptor["admission_digest"] == digest
     assert descriptor["base_sha"] == order["base_sha"]
@@ -144,9 +161,14 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
     assert descriptor["bridge"]["source_snapshot_digest"] == digest
     assert descriptor["admitted_work_order"]["work_order_digest"] == digest
 
-    # XaaS recomputes the admitted digest itself and reproduces the graph's
-    assert AdmissionBinding.snapshot_digest(descriptor["admitted_work_order"]) == digest
-    assert AdmissionBinding.definition_digest(descriptor["admitted_work_order"]) == definition
+    # XaaS recomputes the admitted digests itself, under the declared form, and
+    # reproduces the graph's (the snapshot embeds the definition digest)
+    assert AdmissionBinding.snapshot_digest(descriptor["admitted_work_order"], form) == digest
+
+    assert AdmissionBinding.definition_digest(descriptor["admitted_work_order"], form) ==
+             definition
+
+    assert descriptor["admitted_work_order"]["definition_digest"] == definition
     assert descriptor["bridge"]["requires"]["courts"] == order["required_courts"]
 
     # -- materialize through the real mix task ----------------------------------
@@ -333,10 +355,12 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
 
   # -- graph side ----------------------------------------------------------------
 
-  # Same mechanics as SemanticCrown's ggen/3: run through the asdf shim from
-  # the graph checkout's own directory, no inherited version override, output
-  # to a file, stdin /dev/null, perl alarm deadline.
+  # Same mechanics as SemanticCrown's ggen/3: run from the graph checkout's own
+  # directory under the graph toolchain (`graph_toolchain/0`), no inherited
+  # version override, output to a file, stdin /dev/null, perl alarm deadline.
   defp project(wo_path, out_path, extra_env) do
+    toolchain = graph_toolchain()
+
     out_file =
       Path.join(System.tmp_dir!(), "sj001-ggen-#{System.unique_integer([:positive])}.out")
 
@@ -354,7 +378,7 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
           "-e",
           "alarm shift; exec @ARGV or exit 127",
           "900",
-          mix_bin(),
+          toolchain["mix"],
           "run",
           @script
         ],
@@ -362,6 +386,7 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
         env:
           [
             {"MIX_ENV", "test"},
+            {"PATH", toolchain["path"] <> ":/usr/bin:/bin"},
             {"MIX_BUILD_PATH", Process.get(:sj001_graph_build)},
             {"ASDF_ELIXIR_VERSION", nil},
             {"ASDF_ERLANG_VERSION", nil},
@@ -375,10 +400,17 @@ defmodule Xaas.Ultracode.SemanticJiraE2ETest do
     {code, last_json(out)}
   end
 
-  # The toolchain on PATH is the one that built the graph checkout's `_build`;
-  # the asdf shim resolves the graph repo's `.tool-versions` pin instead (a
-  # different OTP), which recompiles the whole graph tree cold on every run.
-  defp mix_bin, do: System.find_executable("mix") || flunk("mix not on PATH")
+  # The graph side runs under the GRAPH checkout's `.tool-versions` pin, Elixir
+  # and Erlang (`RecipeWorker.toolchain/1`), never under this node's (the xaas
+  # pin): the release builds the graph's `_build/test` under its own pin, and the
+  # graph's dependencies do not compile under the xaas pin (observed at
+  # ggen_igniter-int 3ed6a7a under Elixir 1.20.2: faker's string.ex SyntaxError).
+  defp graph_toolchain do
+    case RecipeWorker.toolchain(@ggen_dir) do
+      {:ok, toolchain} -> toolchain
+      {:error, reason} -> flunk("graph toolchain unresolved: #{inspect(reason)}")
+    end
+  end
 
   # The graph process compiles into a private APFS clone of the graph
   # checkout's `_build/test`, so this proof never writes into a build directory

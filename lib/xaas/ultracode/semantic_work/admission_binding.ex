@@ -86,13 +86,47 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
   `{:invalid_binding_option, value}`, `{:invalid_expected_digest, key}`,
   `{:admitted_snapshot_stale, recomputed}`, `{:admitted_snapshot_mismatch, field}`,
   `{:admission_anchor_disagree, source_a, source_b}`,
-  `{:graph_digest_unbound, anchor_source, expected}`, `:admission_anchor_missing`.
+  `{:graph_digest_unbound, anchor_source, expected}`, `:admission_anchor_missing`,
+  `:digest_form_undeclared`, `{:unknown_digest_form, value}`,
+  `{:digest_form_mismatch, form, :definition_digest}`,
+  `{:admitted_definition_stale, recomputed}`.
 
   The digest is the graph side's canonical form
   (`GgenIgniter.SemanticJira.digest/1`): digest-carrying top-level fields
   dropped, every map a key-sorted list of `[key, value]` pairs, compact JSON,
   SHA-256. XaaS already mirrors that form for receipt digests
   (`Xaas.Ultracode.SemanticReceipt.digest/1`); this module reuses it.
+
+  ## Digest forms (the versioned producer contract)
+
+  WHICH fields the two snapshot digests cover is a property of the producer
+  version, so it is an explicit, versioned part of the contract: a descriptor
+  that carries `admitted_work_order` MUST declare `digest_form`, and XaaS
+  computes and checks exactly that form (`digest_forms/0`). It is never
+  inferred from the snapshot's shape, and an undeclared form is refused
+  (`:digest_form_undeclared`), not defaulted.
+
+    * `"sjira-digest/2"` -- `GgenIgniter.SemanticJira` since ggen_igniter
+      33c8e86 (FRI-T6): the admitted snapshot EMBEDS `definition_digest`; the
+      snapshot digest drops it with the other digest fields; the definition
+      digest is taken over the CLOSED 18-field `@definition_fields` whitelist
+      (`Map.take`). The embedded `definition_digest` must equal the recomputed
+      one. Every producer that emits a snapshot today declares this form
+      (`docs/sjira/v26.9.21/e2e_project.exs`).
+    * `"sjira-digest/1"` -- the producer before 33c8e86: no embedded
+      `definition_digest`; the definition digest is the snapshot minus
+      `standing`, `dimensions` and its digest fields. Kept verifiable ONLY for
+      committed historical artifacts that declare it (the v26.9.21 SJ-001
+      evidence descriptor).
+
+  A snapshot whose shape is not its declared form's (an embedded
+  `definition_digest` under `/1`, none or a malformed one under `/2`) is
+  refused as `{:digest_form_mismatch, form, :definition_digest}` before any
+  digest is recomputed; a carried `work_order_digest` the declared form does
+  not reproduce is `{:admitted_snapshot_stale, recomputed}`; under `/2` an
+  embedded `definition_digest` the form does not reproduce (the snapshot digest
+  cannot see it: it drops the field) is `{:admitted_definition_stale,
+  recomputed}`; an unknown form is `{:unknown_digest_form, value}`.
   """
 
   alias Xaas.Ultracode.SemanticReceipt
@@ -105,13 +139,33 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
   @checkpoint_prefix "urn:semantic-jira:checkpoint:"
   @checkpoint_suffix ~r/\A:[A-Za-z0-9._:-]+\z/
 
-  # Top-level fields the graph side never feeds into a digest
-  # (GgenIgniter.SemanticJira.drop_digest_fields/1).
-  @digest_fields ~w(work_order_digest transition_digest evidence_digest receipt_digest
-                    experience_digest repair_digest finding_digest composition_digest)
-  # Extra fields dropped for the stable definition identity
-  # (GgenIgniter.SemanticJira.definition_digest/1).
-  @definition_fields ~w(standing dimensions)
+  # The versioned digest forms of the admitted-snapshot producer
+  # (GgenIgniter.SemanticJira). `snapshot_drop`: the top-level fields its
+  # `digest/1` never feeds into a digest (`drop_digest_fields/1`);
+  # `definition`: how its definition digest selects the snapshot's fields;
+  # `embeds_definition_digest`: whether `admit_work_order/1` puts the
+  # definition digest into the admitted snapshot itself.
+  @legacy_digest_fields ~w(work_order_digest transition_digest evidence_digest receipt_digest
+                           experience_digest repair_digest finding_digest composition_digest)
+  @digest_forms %{
+    # ggen_igniter before 33c8e86: `definition_digest/1` =
+    # digest(Map.drop(admitted, ~w(standing dimensions work_order_digest)))
+    "sjira-digest/1" => %{
+      snapshot_drop: @legacy_digest_fields,
+      definition: {:drop, @legacy_digest_fields ++ ~w(standing dimensions)},
+      embeds_definition_digest: false
+    },
+    # ggen_igniter 33c8e86 (FRI-T6) and later: `@definition_fields` +
+    # `definition_digest_of/1` = admitted |> Map.take(@definition_fields) |> digest()
+    "sjira-digest/2" => %{
+      snapshot_drop: ["definition_digest" | @legacy_digest_fields],
+      definition: {:take, ~w(identity title description subject repository base_sha
+            evidence_ceiling authority_requirement promotion_rule replay_identity
+            dependencies required_courts required_evidence required_receipt_classes
+            acceptance falsifiers projections path_scope)},
+      embeds_definition_digest: true
+    }
+  }
 
   @type mode :: :snapshot | :graph
   @type options :: %{
@@ -162,21 +216,32 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
     end
   end
 
+  @doc "The declared digest forms XaaS computes (see \"Digest forms\")."
+  @spec digest_forms() :: [String.t()]
+  def digest_forms, do: @digest_forms |> Map.keys() |> Enum.sort()
+
   @doc """
-  The work-order snapshot digest XaaS recomputes from an admitted snapshot map.
+  The work-order snapshot digest XaaS recomputes from an admitted snapshot map
+  under the declared digest `form` (one of `digest_forms/0`).
   """
-  @spec snapshot_digest(map()) :: String.t()
-  def snapshot_digest(snapshot) when is_map(snapshot) do
-    snapshot |> drop(@digest_fields) |> SemanticReceipt.digest()
+  @spec snapshot_digest(map(), String.t()) :: String.t()
+  def snapshot_digest(snapshot, form) when is_map(snapshot) and is_map_key(@digest_forms, form) do
+    snapshot |> drop(@digest_forms[form].snapshot_drop) |> SemanticReceipt.digest()
   end
 
   @doc """
   The stable definition digest XaaS recomputes from an admitted snapshot map
-  (the snapshot minus `standing`, `dimensions` and its digest fields).
+  under the declared digest `form`: `"sjira-digest/2"` takes the closed
+  definition whitelist, `"sjira-digest/1"` drops `standing`, `dimensions` and
+  the digest fields.
   """
-  @spec definition_digest(map()) :: String.t()
-  def definition_digest(snapshot) when is_map(snapshot) do
-    snapshot |> drop(@digest_fields ++ @definition_fields) |> SemanticReceipt.digest()
+  @spec definition_digest(map(), String.t()) :: String.t()
+  def definition_digest(snapshot, form)
+      when is_map(snapshot) and is_map_key(@digest_forms, form) do
+    case @digest_forms[form].definition do
+      {:take, fields} -> snapshot |> take(fields) |> SemanticReceipt.digest()
+      {:drop, fields} -> snapshot |> drop(fields) |> SemanticReceipt.digest()
+    end
   end
 
   @doc """
@@ -191,14 +256,18 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
     pin_graph = Map.get(options, :expected_graph_digest)
 
     with {:ok, snapshot} <- admitted_snapshot(descriptor),
+         {:ok, form} <- digest_form(descriptor, snapshot),
          {:ok, bridge_digest} <- bridge_digest(bridge),
-         # the snapshot must first be self-consistent (an edited-after-admission
-         # snapshot is stale), then agree with every other carried anchor (a
-         # re-sealed forgery moves it away from the bridge's copy)
-         :ok <- snapshot_self_consistent(snapshot),
-         inband = inband_anchors(snapshot, bridge_digest),
+         # the snapshot must first be self-consistent under its declared form
+         # (an edited-after-admission snapshot is stale), then agree with every
+         # other carried anchor (a re-sealed forgery moves it away from the
+         # bridge's copy)
+         :ok <- snapshot_has_form_shape(snapshot, form),
+         :ok <- snapshot_self_consistent(snapshot, form),
+         inband = inband_anchors(snapshot, form, bridge_digest),
          :ok <- anchors_agree(trusted_anchor(pin_snapshot) ++ inband ++ envelope(descriptor)),
-         :ok <- bind_snapshot(descriptor, snapshot, bridge),
+         :ok <- definition_self_consistent(snapshot, form),
+         :ok <- bind_snapshot(descriptor, snapshot, form, bridge),
          :ok <- pin_has_anchor(pin_snapshot, inband),
          :ok <- bind_pinned_graph_digest(descriptor, pin_graph) do
       bind_graph_digest(descriptor, inband, mode)
@@ -236,9 +305,21 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
 
   defp bridge_digest(_none), do: {:ok, nil}
 
-  defp inband_anchors(snapshot, bridge_digest) do
+  # The producer declares its digest form; XaaS never infers it. Without a
+  # carried snapshot nothing is recomputed, but a declared form must still be
+  # one XaaS knows.
+  defp digest_form(descriptor, snapshot) do
+    case {Map.get(descriptor, :digest_form), snapshot} do
+      {nil, nil} -> {:ok, nil}
+      {nil, _snapshot} -> refuse(:digest_form_undeclared)
+      {form, _snapshot} when is_map_key(@digest_forms, form) -> {:ok, form}
+      {other, _snapshot} -> refuse({:unknown_digest_form, other})
+    end
+  end
+
+  defp inband_anchors(snapshot, form, bridge_digest) do
     [
-      {:admitted_work_order, snapshot && snapshot_digest(snapshot)},
+      {:admitted_work_order, snapshot && snapshot_digest(snapshot, form)},
       {:bridge_source_snapshot_digest, bridge_digest}
     ]
     |> Enum.reject(fn {_source, digest} -> is_nil(digest) end)
@@ -270,19 +351,51 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
 
   # -- the embedded snapshot's own consistency and descriptor bindings -------
 
-  defp snapshot_self_consistent(nil), do: :ok
+  defp snapshot_self_consistent(nil, _form), do: :ok
 
-  defp snapshot_self_consistent(snapshot) do
-    recomputed = snapshot_digest(snapshot)
+  defp snapshot_self_consistent(snapshot, form) do
+    recomputed = snapshot_digest(snapshot, form)
 
     if recomputed == field(snapshot, :work_order_digest),
       do: :ok,
       else: refuse({:admitted_snapshot_stale, recomputed})
   end
 
-  defp bind_snapshot(_descriptor, nil, _bridge), do: :ok
+  # The declared form fixes the snapshot's shape: a producer form that embeds
+  # the definition digest carries a well-formed one, a form that never did
+  # carries none. Checked before any digest is recomputed, so a descriptor
+  # relabelled with the other form is refused as exactly that.
+  defp snapshot_has_form_shape(nil, _form), do: :ok
 
-  defp bind_snapshot(descriptor, snapshot, bridge) do
+  defp snapshot_has_form_shape(snapshot, form) do
+    ok? =
+      if @digest_forms[form].embeds_definition_digest,
+        do: valid_digest?(field(snapshot, :definition_digest)),
+        else: not has_field?(snapshot, :definition_digest)
+
+    if ok?, do: :ok, else: refuse({:digest_form_mismatch, form, :definition_digest})
+  end
+
+  # Under an embedding form the definition digest is dropped from the snapshot
+  # digest, so the snapshot digest cannot see it: it is recomputed on its own.
+  # An embedded digest edited after admission is stale like the snapshot.
+  defp definition_self_consistent(nil, _form), do: :ok
+
+  defp definition_self_consistent(snapshot, form) do
+    if @digest_forms[form].embeds_definition_digest do
+      recomputed = definition_digest(snapshot, form)
+
+      if recomputed == field(snapshot, :definition_digest),
+        do: :ok,
+        else: refuse({:admitted_definition_stale, recomputed})
+    else
+      :ok
+    end
+  end
+
+  defp bind_snapshot(_descriptor, nil, _form, _bridge), do: :ok
+
+  defp bind_snapshot(descriptor, snapshot, form, bridge) do
     checks =
       [
         {:base_sha, Map.get(descriptor, :base_sha) == field(snapshot, :base_sha)},
@@ -290,7 +403,7 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
          Map.get(descriptor, :repository_identity) == field(snapshot, :repository)},
         {:work_order_iri, iri_names?(Map.get(descriptor, :work_order_iri), snapshot)}
       ] ++
-        bridge_identity_checks(bridge, snapshot) ++
+        bridge_identity_checks(bridge, snapshot, form) ++
         [
           {:dependencies, dependencies_match?(descriptor, snapshot)},
           {:checkpoint_iri, checkpoint_matches?(descriptor, snapshot, bridge)},
@@ -312,7 +425,7 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
   # a deleted key is a mismatch (the tamperer's cheapest move), not a pass. A
   # wholly absent bridge is the producer's choice (no receipt export exists
   # without it: `SemanticReceipt.export/1` answers `:no_semantic_bridge`).
-  defp bridge_identity_checks(%{} = bridge, snapshot) when not is_struct(bridge) do
+  defp bridge_identity_checks(%{} = bridge, snapshot, form) when not is_struct(bridge) do
     [
       {:bridge_identity, field(bridge, :identity) == field(snapshot, :identity)},
       {:bridge_repository, field(bridge, :repository) == field(snapshot, :repository)},
@@ -321,7 +434,7 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
       # head is bound by the descriptor-level checks, and the snapshot's own
       # base_sha is the work-order's origin, a different identity.
       {:bridge_definition_digest,
-       field(bridge, :definition_digest) == definition_digest(snapshot)},
+       field(bridge, :definition_digest) == definition_digest(snapshot, form)},
       {:bridge_subject, field(bridge, :subject) == field(snapshot, :subject)},
       {:bridge_evidence_ceiling,
        agrees?(field(bridge, :evidence_ceiling), field(snapshot, :evidence_ceiling))},
@@ -330,7 +443,7 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
     ]
   end
 
-  defp bridge_identity_checks(_none, _snapshot), do: []
+  defp bridge_identity_checks(_none, _snapshot, _form), do: []
 
   # `requires` is what `SemanticReceipt.export/1` reads its required courts from
   # and what suite adapters receive: exactly the snapshot's three lists, no more.
@@ -492,8 +605,15 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
     end
   end
 
+  defp has_field?(map, key) when is_atom(key),
+    do: Map.has_key?(map, Atom.to_string(key)) or Map.has_key?(map, key)
+
   defp drop(map, string_keys) do
     Map.reject(map, fn {key, _value} -> to_string(key) in string_keys end)
+  end
+
+  defp take(map, string_keys) do
+    Map.filter(map, fn {key, _value} -> to_string(key) in string_keys end)
   end
 
   defp valid_digest?(value), do: is_binary(value) and Regex.match?(@digest, value)

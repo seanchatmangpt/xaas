@@ -16,7 +16,14 @@
 #      no-LLM environment (courts/no_llm_env.sh) passes the guard;
 #   4. F3: the same episode rerun with ANTHROPIC_API_KEY=x exposed is refused
 #      REFUSED(llm_credential_present), broken term mu_on_O -- by the guard,
-#      not by any later refusal.
+#      not by any later refusal;
+#   5. F3 beyond Anthropic (lane R1-X-GUARD): the rerun with GEMINI_API_KEY set
+#      is refused the same way, naming provider google-gemini (the guard was a
+#      hard-coded denylist that admitted it);
+#   6. fail closed: the rerun with a variable no provider claims
+#      (XAAS_GC23_5_UNLISTED) is refused REFUSED(unadmitted_environment),
+#      broken term mu_on_O -- the policy priv/no_llm/policy.json is an
+#      allowlist, and no_llm_env.sh builds the environment from the same file.
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
@@ -34,9 +41,10 @@ refuse() { echo "REFUSED: GC23-5 $*"; exit 1; }
 env_sh="$xaas/docs/sjira/v26.9.23/courts/no_llm_env.sh"
 
 # 1 + 2. executor and OCEL
-python3 - "$ep" <<'PY' || refuse "executor is not the deterministic provider, or the OCEL names an LLM provider"
+python3 - "$ep" "$xaas/priv/no_llm/policy.json" <<'PY' || refuse "executor is not the deterministic provider, or the OCEL names an LLM provider"
 import json, sys
 ep = sys.argv[1]
+policy = json.load(open(sys.argv[2], encoding="utf-8"))
 load = lambda n: json.load(open(f"{ep}/{n}", encoding="utf-8"))
 r = load("receipt.r.json")
 assert r["authority"]["actor"] == "recipe-worker", r["authority"]
@@ -46,7 +54,10 @@ drive = load("drive.json")
 assert drive["provider"] == {"provider": "recipe", "executor": "recipe-worker",
                              "capability": "recipe:mix-format"}, drive["provider"]
 assert drive["no_llm_guard"] == "passed"
-llm = ("zcode", "claude", "anthropic", "openai", "glm", "zai")
+# every provider id and CLI binary of the no-LLM policy data, plus the
+# historical words
+llm = {"zcode", "claude", "anthropic", "openai", "glm", "zai"} | {
+    w for p in policy["providers"] for w in [p["id"], *p["binaries"]]}
 ocel = load("ocel.json")
 providers = [o for o in ocel["ocel:objects"] if o["type"] == "Provider"]
 assert [o["id"] for o in providers] == ["provider:recipe-worker"], providers
@@ -89,5 +100,28 @@ assert r["detail"]["variables"] == ["ANTHROPIC_API_KEY"], r
 ' || refuse "F3: refusal is not REFUSED(llm_credential_present) at the guard"
 echo "F3: $(tail -1 "$tmp/f3.log")"
 
-echo "ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused)"
+# 5 + 6. F3 beyond Anthropic, and fail closed on a variable no provider claims:
+# rerun NAME=value STANDING FIELD PROVIDER -- the same episode rerun, refused
+# by the guard with exit 3, naming NAME (never its value) under detail.FIELD
+rerun() {
+  MIX_ENV=test sh "$env_sh" "$1=gc23-5-exposed-value" -- \
+    mix xaas.episode --name fmt-1 --ggen-igniter-dir "$ggen" >"$tmp/$1.log" 2>&1
+  code=$?
+  [ "$code" = "3" ] || { tail -3 "$tmp/$1.log"; refuse "episode rerun with $1 exposed exited $code, expected 3"; }
+  tail -1 "$tmp/$1.log" | python3 -c '
+import json, sys
+name, standing, field, provider = sys.argv[1:5]
+r = json.loads(sys.stdin.read())
+assert r["standing"] == standing, r
+assert r["broken_term"] == "mu_on_O" and r["hop"] == "guard", r
+assert r["detail"][field] == [name], r
+assert provider == "-" or provider in r["detail"]["providers"], r
+assert "gc23-5-exposed-value" not in json.dumps(r), "a refusal names variables, never values"
+' "$1" "$2" "$3" "$4" || refuse "$1 exposed: refusal is not $2 at the guard naming $1"
+  echo "F3: $1 exposed -> $(tail -1 "$tmp/$1.log")"
+}
+rerun GEMINI_API_KEY "REFUSED(llm_credential_present)" variables google-gemini
+rerun XAAS_GC23_5_UNLISTED "REFUSED(unadmitted_environment)" unadmitted -
+
+echo "ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused: ANTHROPIC, GEMINI, unlisted variable)"
 exit 0

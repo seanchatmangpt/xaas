@@ -1,0 +1,6 @@
+M2: consistency/2 laws bypassed
+R: ADMITTED consistent: EP-A at 9c5e7571c948f97f6ae08d9399f69f502d81efd4, commits 0, files [] within ['.formatter.exs', 'config', 'lib', 'mix.exs', 'test'], replay `unchecked`
+validator: ADMITTED /Users/sac/wt/v26922/v23/R1-X-COURTS/docs/sjira/v26.9.23/episodes/fmt-1/receipt.r.json
+court_acceptance_false_but_alive consequence_commit_not_subject files_changed_outside_scope replay_cmd_swapped native_digest_forged subject_sha_is_base
+REFUSED: GC23-7 anti-vacuity: mutant court_acceptance_false_but_alive escaped the R laws (ADMITTED consistent: EP-A at 9c5e7571c948f97f6ae08d9399f69f502d81efd4, commits 0, files [] within ['.formatter.exs', 'config', 'lib', 'mix.exs', 'test'], replay `unchecked`)
+court_exit=1

@@ -34,8 +34,6 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
 
   use ExUnit.Case, async: false
 
-  require Ash.Query
-
   alias Xaas.Ultracode.{Ocel.Validator, Run, SemanticDrive}
   alias Xaas.Ultracode.SemanticDrive.Episode
 
@@ -332,7 +330,13 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
     assert {:refused, %{"reason" => "llm_credential_present", "detail" => detail}} =
              SemanticDrive.no_llm_guard(%{"PATH" => "#{bin}:/usr/bin:/bin"})
 
-    assert detail == %{"variables" => [], "binaries" => [claude]}
+    assert detail == %{
+             "variables" => [],
+             "binaries" => [claude],
+             "providers" => ["claude-code"],
+             "unadmitted" => []
+           }
+
     assert :ok = SemanticDrive.no_llm_guard(%{"PATH" => "/usr/bin:/bin", "HOME" => bin})
 
     # the real task under the F3 court environment: clean passes, exposed refuses
@@ -448,15 +452,12 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
   end
 
   # The guard judges the environment it is handed: the test process runs
-  # under the operator's shell (which may hold model credentials), so the
-  # drive is handed a real clean environment -- the one the F3 court builds.
+  # under the operator's shell (which may hold model credentials and any
+  # number of unadmitted variables), so the drive is handed this process's
+  # environment projected onto the fail-closed no-LLM policy -- the names the
+  # F3 court builds (priv/no_llm/policy.json).
   defp clean_env do
-    System.get_env()
-    |> Enum.reject(fn {name, _} ->
-      name == "CLAUDECODE" or
-        Enum.any?(SemanticDrive.llm_variables().prefixes, &String.starts_with?(name, &1))
-    end)
-    |> Map.new()
+    SemanticDrive.no_llm_environment(System.get_env())
     |> Map.put("PATH", "/usr/bin:/bin")
   end
 
@@ -562,8 +563,9 @@ defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
 
   test "a build compiled by an Elixir with no install falls back to the checkout's pin, recording why" do
     {dir, build} =
-      checkout("absent", fn {vsn, {_elixir, otp}, scm} ->
-        {vsn, {"0.0.0-absent", otp}, scm}
+      checkout("absent", fn manifest ->
+        {_elixir, otp} = elem(manifest, 1)
+        put_elem(manifest, 1, {"0.0.0-absent", otp})
       end)
 
     assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
@@ -575,14 +577,73 @@ defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
 
   test "a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything)" do
     {dir, build} =
-      checkout("otp", fn {vsn, {elixir, _otp}, scm} ->
-        {vsn, {elixir, ~c"1"}, scm}
+      checkout("otp", fn manifest ->
+        {elixir, _otp} = elem(manifest, 1)
+        put_elem(manifest, 1, {elixir, ~c"1"})
       end)
 
     assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
     refute t["source"] == "build_manifest"
     assert t["build_manifest_unused"] =~ "compiled on OTP 1"
     assert_runs(t)
+  end
+
+  # A real asdf Erlang install whose OTP release differs from this node's,
+  # with a real `<vsn>-otp-<release>` Elixir install for it (e.g. the
+  # ggen_igniter pin 1.18.4-otp-27 judged from an OTP 28 xaas node).
+  @asdf Path.expand(System.get_env("ASDF_DATA_DIR") || "~/.asdf")
+  @node_otp to_string(:erlang.system_info(:otp_release))
+  @foreign (for erl <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/erlang/*/releases/*"))),
+                otp = Path.basename(erl),
+                otp != @node_otp,
+                File.exists?(Path.join([Path.dirname(Path.dirname(erl)), "bin", "erl"])),
+                ex <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/elixir/*-otp-#{otp}"))),
+                File.exists?(Path.join([ex, "bin", "mix"])) do
+              {Path.dirname(Path.dirname(erl)), otp,
+               ex |> Path.basename() |> String.split("-otp-") |> hd()}
+            end)
+           |> List.last()
+
+  @tag skip:
+         if(@foreign == nil,
+           do: "no asdf Erlang install of another OTP release with a matching Elixir install"
+         )
+  test "a build compiled on another OTP release runs under an installed ERTS of that release (source build_manifest)" do
+    {install, otp, elixir} = @foreign
+
+    # The manifest in the shape the pinned Mix (1.18/1.19) writes, as in the
+    # real ggen_igniter-int `_build/test`: {1, {"1.18.4", ~c"27"}, Mix.SCM.Path}.
+    {dir, build} =
+      checkout("foreign", fn real -> {1, {elixir, String.to_charlist(otp)}, elem(real, 2)} end)
+
+    assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+    assert t["source"] == "build_manifest"
+    assert t["elixir"] == elixir
+    assert t["erlang"] == otp
+    assert t["erl"] == Path.join([install, "bin", "erl"])
+    assert t["erts"] =~ "build_manifest OTP #{otp}"
+
+    # A fresh MIX_HOME (durable configuration, as the courts pass it): the
+    # ambient archives belong to the node's Elixir, not the resolved one.
+    mix_home = Path.join(dir, "mix_home")
+    File.mkdir_p!(mix_home)
+
+    {out, 0} =
+      System.cmd(t["mix"], ["--version"],
+        env: [{"PATH", t["path"]}, {"MIX_ENV", "test"}, {"MIX_HOME", mix_home}],
+        stderr_to_stdout: true
+      )
+
+    assert out =~ "Mix #{elixir}"
+
+    {out, 0} =
+      System.cmd(
+        t["erl"],
+        ["-noshell", "-eval", "io:format(\"~s\", [erlang:system_info(otp_release)]), halt()."],
+        env: [{"PATH", t["path"]}]
+      )
+
+    assert out == otp
   end
 
   test "no build at all falls back to the pin" do
@@ -631,5 +692,290 @@ defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
       )
 
     assert out =~ "Mix "
+  end
+end
+
+defmodule Xaas.Ultracode.SemanticDriveNoLlmGuardTest do
+  @moduledoc """
+  Chicago qualification of the fail-closed no-LLM guard (lane R1-X-GUARD;
+  GC-26.9.23 GC23-5, PRD PR-009, ARD F3): `SemanticDrive.no_llm_guard/1`
+  over `Xaas.Ultracode.NoLlmPolicy`, compiled from the policy DATA
+  `priv/no_llm/policy.json` that `docs/sjira/v26.9.23/courts/no_llm_env.sh`
+  also builds the court environment from.
+
+  Driver-verified defect this module falsifies: the guard was a hard-coded
+  denylist, so `%{"GEMINI_API_KEY" => "x", "OPENROUTER_API_KEY" => "y",
+  "PATH" => "/usr/bin"}` returned `:ok` while `ANTHROPIC_API_KEY` was
+  refused.
+
+  Every collaborator is real: the provider table is read from the data file
+  on disk by this test (not from the module under test), provider binaries
+  are real executables in tmp PATH dirs, the builder is the real
+  `no_llm_env.sh` in a real `sh` process, and the task is a real
+  `mix xaas.episode --check-env` OS process under it. No database, no
+  graph-side checkout: this module never skips.
+  """
+
+  use ExUnit.Case, async: false
+
+  alias Xaas.Ultracode.{NoLlmPolicy, SemanticDrive}
+
+  # real `mix xaas.episode` OS processes (4 in one test) on a machine shared
+  # with other executors: the 60 s ExUnit default timed one out at load ~100
+  @moduletag timeout: 600_000
+
+  @root Path.expand("../../..", __DIR__)
+  @policy_file Path.join(@root, "priv/no_llm/policy.json")
+  @no_llm_env Path.join(@root, "docs/sjira/v26.9.23/courts/no_llm_env.sh")
+  @secret "r1-x-guard-secret-value-9f2c"
+
+  defp data, do: @policy_file |> File.read!() |> Jason.decode!()
+
+  defp admitted_env do
+    data()["environment"]
+    |> Map.new(&{&1["name"], "v"})
+    |> Map.put("PATH", "/usr/bin:/bin")
+  end
+
+  defp refused!(env) do
+    assert {:refused, typed} = SemanticDrive.no_llm_guard(env)
+    assert typed["broken_term"] == "mu_on_O"
+    assert typed["hop"] == "guard"
+    assert typed["standing"] == "REFUSED(#{typed["reason"]})"
+    refute Jason.encode!(typed) =~ @secret, "a refusal must name variables, never values"
+    typed
+  end
+
+  defp tmp_dir(label) do
+    dir = Path.join(System.tmp_dir!(), "no-llm-#{label}-#{System.unique_integer([:positive])}")
+    File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf(dir) end)
+    dir
+  end
+
+  defp parse_env(out) do
+    out
+    |> String.split("\n", trim: true)
+    |> Map.new(fn line ->
+      [name, value] = String.split(line, "=", parts: 2)
+      {name, value}
+    end)
+  end
+
+  defp builder(assignments, command, caller_env \\ []) do
+    System.cmd("sh", [@no_llm_env | assignments] ++ ["--" | command],
+      env: caller_env,
+      stderr_to_stdout: true,
+      cd: @root
+    )
+  end
+
+  test "the guard is compiled from the policy data on disk" do
+    assert NoLlmPolicy.path() == @policy_file
+    assert NoLlmPolicy.policy() == data()
+
+    assert NoLlmPolicy.admitted() ==
+             data()["environment"] |> Enum.map(& &1["name"]) |> Enum.sort()
+
+    assert length(data()["providers"]) >= 18
+  end
+
+  test "the driver-verified defect: GEMINI_API_KEY and OPENROUTER_API_KEY are refused like ANTHROPIC_API_KEY" do
+    typed =
+      refused!(%{
+        "GEMINI_API_KEY" => @secret,
+        "OPENROUTER_API_KEY" => @secret,
+        "PATH" => "/usr/bin"
+      })
+
+    assert typed["standing"] == "REFUSED(llm_credential_present)"
+
+    assert typed["detail"] == %{
+             "variables" => ["GEMINI_API_KEY", "OPENROUTER_API_KEY"],
+             "binaries" => [],
+             "providers" => ["google-gemini", "openrouter"],
+             "unadmitted" => []
+           }
+
+    anthropic = refused!(%{"ANTHROPIC_API_KEY" => @secret, "PATH" => "/usr/bin:/bin"})
+    assert anthropic["standing"] == "REFUSED(llm_credential_present)"
+    assert anthropic["detail"]["variables"] == ["ANTHROPIC_API_KEY"]
+    assert anthropic["detail"]["providers"] == ["anthropic"]
+  end
+
+  test "every provider variable of the data file is refused REFUSED(llm_credential_present), naming the provider" do
+    rows =
+      for provider <- data()["providers"],
+          variable <-
+            Enum.map(provider["prefixes"], &(&1 <> "R1_GUARD_PROBE")) ++ provider["names"],
+          do: {provider["id"], variable}
+
+    assert length(rows) >= 40
+
+    for {id, variable} <- rows do
+      typed = refused!(Map.put(admitted_env(), variable, @secret))
+      assert typed["standing"] == "REFUSED(llm_credential_present)", variable
+      assert typed["detail"]["variables"] == [variable]
+      assert id in typed["detail"]["providers"], inspect({id, variable, typed["detail"]})
+      assert typed["detail"]["unadmitted"] == []
+    end
+  end
+
+  test "every provider binary of the data file on PATH is refused, naming the provider" do
+    dir = tmp_dir("bin")
+
+    for provider <- data()["providers"], binary <- provider["binaries"] do
+      file = Path.join(dir, binary)
+      File.write!(file, "#!/bin/sh\nexit 0\n")
+
+      # not executable: no refusal (the check is on executables, not names)
+      File.chmod!(file, 0o644)
+
+      assert :ok =
+               SemanticDrive.no_llm_guard(
+                 Map.put(admitted_env(), "PATH", dir <> ":/usr/bin:/bin")
+               )
+
+      File.chmod!(file, 0o755)
+      typed = refused!(Map.put(admitted_env(), "PATH", dir <> ":/usr/bin:/bin"))
+      assert typed["standing"] == "REFUSED(llm_credential_present)", binary
+      assert typed["detail"]["binaries"] == [file]
+      assert provider["id"] in typed["detail"]["providers"], inspect({binary, typed["detail"]})
+      File.rm!(file)
+    end
+  end
+
+  test "an arbitrary variable no provider claims is refused REFUSED(unadmitted_environment)" do
+    typed = refused!(Map.put(admitted_env(), "XAAS_R1_GUARD_UNLISTED_TOKEN", @secret))
+    assert typed["standing"] == "REFUSED(unadmitted_environment)"
+
+    assert typed["detail"] == %{
+             "variables" => [],
+             "binaries" => [],
+             "providers" => [],
+             "unadmitted" => ["XAAS_R1_GUARD_UNLISTED_TOKEN"]
+           }
+
+    # a provider variable beside it: the credential standing wins, both named
+    mixed =
+      refused!(
+        admitted_env()
+        |> Map.put("XAAS_R1_GUARD_UNLISTED_TOKEN", @secret)
+        |> Map.put("MISTRAL_API_KEY", @secret)
+      )
+
+    assert mixed["standing"] == "REFUSED(llm_credential_present)"
+    assert mixed["detail"]["variables"] == ["MISTRAL_API_KEY"]
+    assert mixed["detail"]["unadmitted"] == ["XAAS_R1_GUARD_UNLISTED_TOKEN"]
+  end
+
+  test "the allowlisted environment passes; the admitted projection of this process's environment passes" do
+    assert :ok = SemanticDrive.no_llm_guard(admitted_env())
+    assert :ok = SemanticDrive.no_llm_guard(%{})
+
+    projected =
+      SemanticDrive.no_llm_environment(Map.put(System.get_env(), "GROQ_API_KEY", @secret))
+
+    assert :ok = SemanticDrive.no_llm_guard(projected)
+    assert Map.keys(projected) -- NoLlmPolicy.admitted() == []
+  end
+
+  test "unset_unadmitted/1: a real child process inherits only admitted names" do
+    caller =
+      Map.merge(System.get_env(), %{"GEMINI_API_KEY" => @secret, "XAAS_R1_UNLISTED" => "1"})
+
+    unset = NoLlmPolicy.unset_unadmitted(caller)
+    assert {"GEMINI_API_KEY", nil} in unset
+    assert {"XAAS_R1_UNLISTED", nil} in unset
+    refute Enum.any?(unset, fn {name, _} -> name in NoLlmPolicy.admitted() end)
+
+    {out, 0} =
+      System.cmd("/usr/bin/env", [],
+        env: [{"GEMINI_API_KEY", @secret}, {"XAAS_R1_UNLISTED", "1"}] ++ unset
+      )
+
+    assert Map.keys(parse_env(out)) -- NoLlmPolicy.admitted() == []
+  end
+
+  test "no_llm_env.sh and the guard agree: the built environment passes, a caller credential does not survive, an assignment is refused" do
+    caller =
+      for e <- data()["environment"], e["origin"] == "caller_if_set", do: {e["name"], "set"}
+
+    {out, 0} =
+      builder([], ["/usr/bin/env"], caller ++ [{"GEMINI_API_KEY", @secret}, {"CLAUDECODE", "1"}])
+
+    built = parse_env(out)
+    assert :ok = SemanticDrive.no_llm_guard(built)
+    refute Map.has_key?(built, "GEMINI_API_KEY")
+    refute Map.has_key?(built, "CLAUDECODE")
+
+    for {name, _} <- caller, do: assert(built[name] == "set", name)
+
+    for e <- data()["environment"],
+        e["origin"] in ["builder", "caller_or_default"],
+        do: assert(Map.has_key?(built, e["name"]), e["name"])
+
+    # every PATH directory is free of every provider binary of the data file
+    for dir <- String.split(built["PATH"], ":"),
+        provider <- data()["providers"],
+        binary <- provider["binaries"],
+        do: refute(File.exists?(Path.join(dir, binary)), Path.join(dir, binary))
+
+    {out, 0} = builder(["GEMINI_API_KEY=x"], ["/usr/bin/env"])
+    exposed = refused!(parse_env(out))
+    assert exposed["standing"] == "REFUSED(llm_credential_present)"
+    assert exposed["detail"]["variables"] == ["GEMINI_API_KEY"]
+
+    # a PATH directory holding a provider binary makes the builder refuse (UNKNOWN, 75)
+    dir = tmp_dir("dirty")
+
+    for tool <- ~w(git python3),
+        do: File.ln_s!(System.find_executable(tool), Path.join(dir, tool))
+
+    File.write!(Path.join(dir, "ollama"), "#!/bin/sh\nexit 0\n")
+    File.chmod!(Path.join(dir, "ollama"), 0o755)
+    # resolved through symlinks, git/python3 live elsewhere: the dirty dir never reaches PATH
+    {out, 0} = builder([], ["/usr/bin/env"], [{"PATH", dir <> ":" <> System.get_env("PATH")}])
+    refute parse_env(out)["PATH"] =~ dir
+    # a real tool file IN the dirty dir: refused
+    File.rm!(Path.join(dir, "git"))
+    File.cp!(System.find_executable("git") |> resolve(), Path.join(dir, "git"))
+    File.chmod!(Path.join(dir, "git"), 0o755)
+    {out, 75} = builder([], ["/usr/bin/env"], [{"PATH", dir <> ":" <> System.get_env("PATH")}])
+    assert out =~ "UNKNOWN: no_llm_env: #{resolve_dir(dir)} holds ollama"
+  end
+
+  test "the real task under the F3 court environment: clean passes; GEMINI_API_KEY, ANTHROPIC_API_KEY and an unlisted variable are refused (exit 3)" do
+    task = ["mix", "xaas.episode", "--check-env"]
+    mix_env = [{"MIX_ENV", "test"}]
+
+    {clean, 0} = builder([], task, mix_env)
+    assert clean =~ ~s("no_llm_guard":"passed")
+
+    for {assignment, standing, field, name} <- [
+          {"GEMINI_API_KEY=x", "REFUSED(llm_credential_present)", "variables", "GEMINI_API_KEY"},
+          {"ANTHROPIC_API_KEY=x", "REFUSED(llm_credential_present)", "variables",
+           "ANTHROPIC_API_KEY"},
+          {"XAAS_R1_UNLISTED=x", "REFUSED(unadmitted_environment)", "unadmitted",
+           "XAAS_R1_UNLISTED"}
+        ] do
+      {out, 3} = builder([assignment], task, mix_env)
+      typed = out |> String.split("\n", trim: true) |> List.last() |> Jason.decode!()
+      assert typed["standing"] == standing, out
+      assert typed["broken_term"] == "mu_on_O"
+      assert typed["detail"][field] == [name]
+    end
+  end
+
+  defp resolve(file) do
+    case File.read_link(file) do
+      {:ok, link} -> file |> Path.dirname() |> Path.join(link) |> Path.expand() |> resolve()
+      {:error, _} -> file
+    end
+  end
+
+  defp resolve_dir(dir) do
+    {out, 0} = System.cmd("sh", ["-c", "cd \"$1\" && pwd -P", "sh", dir])
+    String.trim(out)
   end
 end

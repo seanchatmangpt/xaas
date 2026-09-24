@@ -93,6 +93,7 @@
   },
   "checkpoint_iri": "urn:semantic-jira:checkpoint:SJ-001@sha256:4e0458934ec42dcc4953107d1fde191cc2ab2cb27f33fcf0804a30bfa6b91dda",
   "dependencies": [],
+  "digest_form": "sjira-digest/1",
   "execution_policy": "autonomic_wave_attempt",
   "execution_repo_alias": "sj001",
   "goal": "xaas consumes a real Semantic Jira WorkOrder end to end: xaas already shells to `mix semantic_jira.*` (semantic_crown.ex, mix xaas.semantic.materialize/receipt), but no committed proof shows an admitted WorkOrder from this directory flowing admit -> materialize -> receipt -> replay. Produce that proof.",

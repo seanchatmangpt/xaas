@@ -10,6 +10,22 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    # Registry publication (publish-image) and deployment (deploy) are operator
+    # actuations, never a consequence of a push or merge to main: they run only
+    # on a dispatch from refs/heads/main whose expected_head_sha equals the
+    # dispatched github.sha and which states a reason (the receipted pattern of
+    # fly_deploy.yaml). A dispatch without these inputs runs CI only.
+    inputs:
+      expected_head_sha:
+        description: Exact main commit SHA the operator admits for image publication and deployment (empty = CI only)
+        required: false
+        default: ""
+        type: string
+      reason:
+        description: Operator reason for this publication/deployment actuation (required with expected_head_sha)
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: xaas-ci-${{ github.event.pull_request.number || github.ref }}
@@ -305,7 +321,7 @@ jobs:
             OTP_VERSION=${{ env.ERLANG_VERSION }}
 
   publish-image:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [ci, production, asyncapi, workbench]
@@ -316,6 +332,18 @@ jobs:
     outputs:
       unique_docker_tag: ${{ steps.get-unique-docker-tag.outputs.sha_tag }}
     steps:
+      - name: Admit operator publication authority
+        id: admit
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          ACTUATION_REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch" || { echo "REFUSED[NOT_OPERATOR_DISPATCH]: $GITHUB_EVENT_NAME" >&2; exit 64; }
+          test "$GITHUB_REF" = "refs/heads/main" || { echo "REFUSED[NOT_MAIN]: $GITHUB_REF" >&2; exit 64; }
+          test "$EXPECTED_HEAD_SHA" = "$GITHUB_SHA" || { echo "REFUSED[HEAD_MOVED]: expected $EXPECTED_HEAD_SHA, observed $GITHUB_SHA" >&2; exit 64; }
+          test -n "$ACTUATION_REASON" || { echo "REFUSED[REASON_MISSING]" >&2; exit 64; }
+
       - name: Checkout admitted main SHA
         uses: actions/checkout@v7
         with:
@@ -348,6 +376,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - name: Build and publish admitted main image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -366,6 +395,78 @@ jobs:
         run: |-
           IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep 'sha' | tr '\n' ' ' | awk '{print $1}')
           echo "sha_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Manufacture publication receipt
+        if: always() && steps.admit.outcome == 'success'
+        env:
+          ACTUATION_REASON: ${{ inputs.reason }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          UNIQUE_TAG: ${{ steps.get-unique-docker-tag.outputs.sha_tag }}
+        run: |
+          set -euo pipefail
+          # Independent consequence check: the registry must serve the pushed digest.
+          REGISTRY_DIGEST=unobserved
+          if [ -n "$UNIQUE_TAG" ] && docker buildx imagetools inspect --raw "$UNIQUE_TAG" > registry-manifest.raw; then
+            REGISTRY_DIGEST="sha256:$(sha256sum registry-manifest.raw | cut -d' ' -f1)"
+          fi
+          export REGISTRY_DIGEST
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          executed = os.environ["BUILD_OUTCOME"] not in ("", "skipped")
+          verified = (
+              os.environ["BUILD_OUTCOME"] == "success"
+              and os.environ["IMAGE_DIGEST"].startswith("sha256:")
+              and os.environ["REGISTRY_DIGEST"] == os.environ["IMAGE_DIGEST"]
+          )
+          receipt = {
+              "protocol": "xaas.image-publish.v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "head_sha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "event_name": os.environ["GITHUB_EVENT_NAME"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "actor": os.environ["GITHUB_ACTOR"],
+              "reason": os.environ["ACTUATION_REASON"],
+              "build_outcome": os.environ["BUILD_OUTCOME"],
+              "image_tags": sorted(t for t in os.environ["IMAGE_TAGS"].split() if t),
+              "image_digest": os.environ["IMAGE_DIGEST"],
+              "registry_digest": os.environ["REGISTRY_DIGEST"],
+              "unique_tag": os.environ["UNIQUE_TAG"],
+              "observed_at": datetime.now(timezone.utc).isoformat(),
+              "executed": executed,
+              "verified": verified,
+              "standing": "ALIVE" if verified else "UNKNOWN",
+          }
+          canonical = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_sha256"] = hashlib.sha256(canonical).hexdigest()
+          Path("publish-receipt.json").write_text(
+              json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+          cat publish-receipt.json
+          {
+            echo '## Image publication receipt'
+            echo '```json'
+            cat publish-receipt.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve publication receipt
+        if: always() && steps.admit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: xaas-publish-${{ github.sha }}
+          path: publish-receipt.json
+          if-no-files-found: error
+          retention-days: 90
 
   receipt:
     if: always()
@@ -406,18 +507,31 @@ jobs:
           retention-days: 14
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: publish-image
     name: Deploy application
     steps:
+      - name: Admit operator deployment authority
+        id: admit
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          ACTUATION_REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch" || { echo "REFUSED[NOT_OPERATOR_DISPATCH]: $GITHUB_EVENT_NAME" >&2; exit 64; }
+          test "$GITHUB_REF" = "refs/heads/main" || { echo "REFUSED[NOT_MAIN]: $GITHUB_REF" >&2; exit 64; }
+          test "$EXPECTED_HEAD_SHA" = "$GITHUB_SHA" || { echo "REFUSED[HEAD_MOVED]: expected $EXPECTED_HEAD_SHA, observed $GITHUB_SHA" >&2; exit 64; }
+          test -n "$ACTUATION_REASON" || { echo "REFUSED[REASON_MISSING]" >&2; exit 64; }
+
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - uses: ./.github/actions/deploy
+      - id: deploy
+        uses: ./.github/actions/deploy
         with:
           github_user: ${{ github.repository_owner }}
           gh_pat: ${{ secrets.GH_PAT }}
@@ -426,3 +540,59 @@ jobs:
           age_key: ${{ secrets.AGE_KEY }}
           ssh_private_key: ${{ secrets.PRIVATE_KEY }}
           image_tag: ${{ needs.publish-image.outputs.unique_docker_tag }}
+
+      - name: Manufacture deployment receipt
+        if: always() && steps.admit.outcome == 'success'
+        env:
+          ACTUATION_REASON: ${{ inputs.reason }}
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          IMAGE_TAG: ${{ needs.publish-image.outputs.unique_docker_tag }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          receipt = {
+              "protocol": "xaas.swarm-deploy.v1",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "head_sha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "event_name": os.environ["GITHUB_EVENT_NAME"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "actor": os.environ["GITHUB_ACTOR"],
+              "reason": os.environ["ACTUATION_REASON"],
+              "deploy_outcome": os.environ["DEPLOY_OUTCOME"],
+              "image_tag": os.environ["IMAGE_TAG"],
+              "observed_at": datetime.now(timezone.utc).isoformat(),
+              "executed": os.environ["DEPLOY_OUTCOME"] not in ("", "skipped"),
+              # scripts/deploy.sh exit status only: this path has no post-deploy health check.
+              "verified": False,
+              "standing": "PARTIAL_ALIVE" if os.environ["DEPLOY_OUTCOME"] == "success" else "UNKNOWN",
+          }
+          canonical = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+          receipt["receipt_sha256"] = hashlib.sha256(canonical).hexdigest()
+          Path("deploy-receipt.json").write_text(
+              json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+          cat deploy-receipt.json
+          {
+            echo '## Deployment receipt'
+            echo '```json'
+            cat deploy-receipt.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve deployment receipt
+        if: always() && steps.admit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: xaas-deploy-${{ github.sha }}
+          path: deploy-receipt.json
+          if-no-files-found: error
+          retention-days: 90

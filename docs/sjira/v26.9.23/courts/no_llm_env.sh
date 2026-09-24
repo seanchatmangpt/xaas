@@ -1,24 +1,32 @@
 #!/bin/sh
-# The F3 no-LLM court environment (GC-26.9.23; PRD PR-009; lane V23-D).
+# The F3 no-LLM court environment (GC-26.9.23; PRD PR-009; ARD F3; lanes V23-D,
+# R1-X-GUARD).
 #
 #   sh docs/sjira/v26.9.23/courts/no_llm_env.sh [NAME=value ...] -- command [args ...]
 #
-# Runs the command under `env -i` with ONLY:
+# ONE source: the policy data priv/no_llm/policy.json of this checkout (the same
+# file Xaas.Ultracode.SemanticDrive.no_llm_guard/1 is compiled from). Runs the
+# command under `env -i` with ONLY:
 #   HOME           a fresh mktemp dir (removed afterwards);
-#   PATH           the directories of the caller's mix, erl, git and python3,
-#                  plus /usr/bin:/bin -- and refuses (exit 75, UNKNOWN) when
-#                  any of them holds a `claude` or `zcode` executable;
-#   MIX_HOME, HEX_HOME, ASDF_DATA_DIR
-#                  durable toolchain configuration (not credentials), from
-#                  the caller's values or their ~ defaults;
-#   MIX_ENV, MIX_TEST_PARTITION, DEV_DB_USERNAME, DEV_DB_PASSWORD,
-#   DEV_DB_HOSTNAME, DEV_DB_PORT, LANG
-#                  passed through when set (the database URL parts are
-#                  durable configuration of the local test database);
-#   NAME=value     each assignment given before `--`.
-# No ANTHROPIC_*, CLAUDE_*, CLAUDECODE, OPENAI_*, ZAI_*, Z_AI_*, GLM_* or
-# ZCODE_* variable survives unless named explicitly before `--` (the F3
-# court does exactly that to prove the guard refuses it).
+#   PATH           the RESOLVED (symlink-free) directories of the policy's
+#                  path_tools (mix, erl, git, python3) plus its system_path
+#                  (/usr/bin:/bin) -- and refuses (exit 75, UNKNOWN) when any
+#                  of them holds an executable named by a provider's binaries
+#                  (claude, zcode, codex, gemini, ollama, llm, aider, ...).
+#                  Resolving symlinks keeps a shared bin dir such as
+#                  /opt/homebrew/bin (git, python3 next to gemini, codex,
+#                  ollama, openai) off the court PATH;
+#   the policy's caller_or_default entries (MIX_HOME, HEX_HOME, ASDF_DATA_DIR,
+#                  LANG): the caller's value, else the default;
+#   the policy's caller_if_set entries (MIX_ENV, MIX_TEST_PARTITION,
+#                  DEV_DB_USERNAME, DEV_DB_PASSWORD, DEV_DB_HOSTNAME,
+#                  DEV_DB_PORT): passed through when set;
+#   NAME=value     each assignment given before `--` (a court uses this to
+#                  expose a credential on purpose, e.g. ANTHROPIC_API_KEY=x or
+#                  GEMINI_API_KEY=x for F3; the guard refuses it).
+# Nothing else of the caller's environment survives. The guard admits exactly
+# the policy's environment names; anything else in the process is refused
+# REFUSED(llm_credential_present) or REFUSED(unadmitted_environment).
 set -u
 
 extra=""
@@ -32,40 +40,107 @@ done
 [ "${1:-}" = "--" ] || { echo "no_llm_env: missing -- before the command" >&2; exit 2; }
 shift
 
-path=""
-for tool in mix erl git python3; do
-  bin=$(command -v "$tool" 2>/dev/null) || { echo "UNKNOWN: no_llm_env: $tool not on PATH"; exit 75; }
-  dir=$(dirname "$bin")
-  for llm in claude zcode; do
-    if [ -x "$dir/$llm" ]; then
-      echo "UNKNOWN: no_llm_env: $dir holds $llm; cannot build a no-LLM PATH"
+here=$(cd "$(dirname "$0")" && pwd -P) || { echo "UNKNOWN: no_llm_env: cannot locate itself"; exit 75; }
+policy="$here/../../../../priv/no_llm/policy.json"
+[ -r "$policy" ] || { echo "UNKNOWN: no_llm_env: no policy data at $policy"; exit 75; }
+py=$(command -v python3 2>/dev/null) || { echo "UNKNOWN: no_llm_env: python3 not on PATH"; exit 75; }
+
+# The policy as shell-safe lines: tool NAME | sys DIR | binary NAME |
+# default NAME VALUE | pass NAME. Names and values are validated here, so the
+# eval below only ever sees [A-Za-z_][A-Za-z0-9_]* variable names.
+spec=$("$py" -I - "$policy" <<'PY'
+import json, re, sys
+p = json.load(open(sys.argv[1], encoding="utf-8"))
+assert p["schema"] == "xaas/no-llm-policy/v1", p.get("schema")
+name = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+binary = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+word = re.compile(r"^[A-Za-z0-9_./~+-]+$")
+for t in p["path_tools"]:
+    assert binary.match(t), t
+    print("tool", t)
+for d in p["system_path"]:
+    assert d.startswith("/") and word.match(d), d
+    print("sys", d)
+for b in sorted({b for pr in p["providers"] for b in pr["binaries"]}):
+    assert binary.match(b), b
+    print("binary", b)
+for e in p["environment"]:
+    assert name.match(e["name"]), e
+    if e["origin"] == "caller_or_default":
+        assert word.match(e["default"]), e
+        print("default", e["name"], e["default"])
+    elif e["origin"] == "caller_if_set":
+        print("pass", e["name"])
+PY
+) || { echo "UNKNOWN: no_llm_env: unreadable policy data $policy"; exit 75; }
+
+binaries=$(printf '%s\n' "$spec" | sed -n 's/^binary //p')
+
+# resolve FILE: follow symlinks to the real file (relative links resolved
+# against the link's own directory), print its physical directory.
+resolve_dir() {
+  target=$1
+  hops=0
+  while [ -L "$target" ] && [ "$hops" -lt 40 ]; do
+    link=$(readlink "$target")
+    case "$link" in
+      /*) target=$link ;;
+      *) target=$(dirname "$target")/$link ;;
+    esac
+    hops=$((hops + 1))
+  done
+  (cd "$(dirname "$target")" && pwd -P)
+}
+
+holds_provider_binary() {
+  for llm in $binaries; do
+    if [ -x "$1/$llm" ]; then
+      echo "UNKNOWN: no_llm_env: $1 holds $llm; cannot build a no-LLM PATH"
       exit 75
     fi
   done
+}
+
+path=""
+for tool in $(printf '%s\n' "$spec" | sed -n 's/^tool //p'); do
+  bin=$(command -v "$tool" 2>/dev/null) || { echo "UNKNOWN: no_llm_env: $tool not on PATH"; exit 75; }
+  dir=$(resolve_dir "$bin") || { echo "UNKNOWN: no_llm_env: cannot resolve $bin"; exit 75; }
+  holds_provider_binary "$dir"
   case ":$path:" in
     *":$dir:"*) ;;
     *) path="${path:+$path:}$dir" ;;
   esac
 done
-path="$path:/usr/bin:/bin"
+for dir in $(printf '%s\n' "$spec" | sed -n 's/^sys //p'); do
+  holds_provider_binary "$dir"
+  case ":$path:" in
+    *":$dir:"*) ;;
+    *) path="${path:+$path:}$dir" ;;
+  esac
+done
 
 home=$(mktemp -d "${TMPDIR:-/tmp}/no-llm-home.XXXXXX")
 trap 'rm -rf "$home"' EXIT INT TERM
 
-set -- env -i \
-  "HOME=$home" \
-  "PATH=$path" \
-  "MIX_HOME=${MIX_HOME:-$HOME/.mix}" \
-  "HEX_HOME=${HEX_HOME:-$HOME/.hex}" \
-  "ASDF_DATA_DIR=${ASDF_DATA_DIR:-$HOME/.asdf}" \
-  "LANG=${LANG:-en_US.UTF-8}" \
-  ${MIX_ENV:+"MIX_ENV=$MIX_ENV"} \
-  ${MIX_TEST_PARTITION:+"MIX_TEST_PARTITION=$MIX_TEST_PARTITION"} \
-  ${DEV_DB_USERNAME:+"DEV_DB_USERNAME=$DEV_DB_USERNAME"} \
-  ${DEV_DB_PASSWORD:+"DEV_DB_PASSWORD=$DEV_DB_PASSWORD"} \
-  ${DEV_DB_HOSTNAME:+"DEV_DB_HOSTNAME=$DEV_DB_HOSTNAME"} \
-  ${DEV_DB_PORT:+"DEV_DB_PORT=$DEV_DB_PORT"} \
-  $extra \
-  "$@"
+# The command, then (prepended, so every NAME=value assignment given before
+# `--` comes later on the env line and wins) the policy's configuration.
+# shellcheck disable=SC2086
+set -- $extra "$@"
+while read -r kind var value; do
+  case "$kind" in
+    default)
+      eval "current=\${$var:-}"
+      case "$value" in "~/"*) value="$HOME/${value#\~/}" ;; esac
+      set -- "$var=${current:-$value}" "$@"
+      ;;
+    pass)
+      eval "current=\${$var:-}"
+      [ -n "$current" ] && set -- "$var=$current" "$@"
+      ;;
+  esac
+done <<EOF
+$spec
+EOF
 
+set -- env -i "HOME=$home" "PATH=$path" "$@"
 "$@"

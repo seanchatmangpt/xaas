@@ -40,7 +40,12 @@ defmodule Xaas.Ultracode.SemanticDrive do
   `admission_vacuous`) the moment one hop's digest differs from the sJira
   digest. `verify_hops/1` replays that law over a recorded `hops.json`:
   each hop's digest must recompute from its recorded tuple AND equal every
-  other hop's digest.
+  other hop's digest. That law is internal consistency only: a `hops.json`
+  forged consistently at every hop satisfies it. `verify_hops/2` anchors
+  hop 0 to the admitted order: `anchor/1` re-derives the sJira-hop tuple
+  and request digests from the committed work graph through the graph
+  side's own `mix semantic_jira.descriptor` (the admitted snapshot digest is
+  the graph_digest), and every recorded hop must equal that anchor.
 
   ## Typed outcomes
 
@@ -75,12 +80,10 @@ defmodule Xaas.Ultracode.SemanticDrive do
   object by IRI, an `exploration` route to the candidate's proposer).
   """
 
-  require Ash.Query
-
   alias Xaas.Receipt.RProjection
   alias Xaas.Sa2a.Route
   alias Xaas.Ultracode.{Epoch, Receipt, RecipeWorker, Run, SemanticReceipt, SemanticWork}
-  alias Xaas.Ultracode.{Verifier, Worktrees}
+  alias Xaas.Ultracode.{NoLlmPolicy, Verifier, Worktrees}
   alias Xaas.Ultracode.SemanticDrive.Ocel
 
   @hops ~w(sjira sa2a xaas provider receipt)
@@ -93,10 +96,6 @@ defmodule Xaas.Ultracode.SemanticDrive do
   @suite "ggen-igniter-format"
   @repo_alias "ggen_igniter"
   @checkpoint "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23"
-
-  @llm_prefixes ~w(ANTHROPIC_ CLAUDE_ OPENAI_ ZAI_ Z_AI_ GLM_ ZCODE_)
-  @llm_names ~w(CLAUDECODE)
-  @llm_binaries ~w(zcode claude)
 
   @steps ~w(guard frontier_before order resolve sa2a descriptor contract materialize actuate
             seal verify project reconcile frontier_after)a
@@ -121,52 +120,63 @@ defmodule Xaas.Ultracode.SemanticDrive do
   does: in `ctx.ggen_dir`, under `ctx.toolchain` (`graph_toolchain/2`) with
   `MIX_ENV` = `ctx.mix_env` and `MIX_BUILD_PATH` = `ctx.ggen_build_path`,
   stdin `/dev/null`, output to a file under `ctx.scratch`, a hard
-  `ctx.timeout_s` deadline, every model-credential variable unset. Returns
+  `ctx.timeout_s` deadline, every variable the no-LLM policy does not admit
+  unset (`Xaas.Ultracode.NoLlmPolicy.unset_unadmitted/1`). Returns
   `{exit, last JSON line of the output (or nil), output}`.
   """
   @spec graph_side(map(), String.t(), [String.t()]) :: {integer(), map() | nil, String.t()}
   def graph_side(ctx, task, args), do: ggen(ctx, task, args)
 
-  @doc "The environment-variable prefixes (and exact names) the no-LLM guard refuses."
+  @doc """
+  The environment-variable prefixes and exact names the no-LLM policy
+  reports as model credentials (`Xaas.Ultracode.NoLlmPolicy.llm_variables/0`,
+  compiled from `priv/no_llm/policy.json`). Reporting vocabulary only: the
+  guard refuses every non-admitted name, claimed or not.
+  """
   @spec llm_variables() :: %{prefixes: [String.t()], names: [String.t()]}
-  def llm_variables, do: %{prefixes: @llm_prefixes, names: @llm_names}
+  def llm_variables, do: NoLlmPolicy.llm_variables()
+
+  @doc """
+  The admitted projection of `env` (`Xaas.Ultracode.NoLlmPolicy.admitted_environment/1`):
+  the environment a caller whose own process runs under an operator shell
+  hands the guard.
+  """
+  @spec no_llm_environment(map()) :: map()
+  def no_llm_environment(env \\ System.get_env()) when is_map(env),
+    do: NoLlmPolicy.admitted_environment(env)
 
   # ---------------------------------------------------------------------------
   # the no-LLM guard (F3)
   # ---------------------------------------------------------------------------
 
   @doc """
-  The no-LLM guard: `:ok`, or `REFUSED(llm_credential_present)` (broken
-  term `mu_on_O`) when `env` names any variable with a prefix in
-  `llm_variables/0` (or `CLAUDECODE`), or when an executable named `zcode`
-  or `claude` sits in any `PATH` directory. Only variable NAMES and binary
-  paths are reported, never values.
+  The no-LLM guard, fail closed (lane R1-X-GUARD; `Xaas.Ultracode.NoLlmPolicy`
+  over `priv/no_llm/policy.json`, the data `courts/no_llm_env.sh` builds the
+  court environment from). `:ok` only when every variable NAME of `env` is
+  admitted by the policy and no `PATH` directory holds a provider binary;
+  otherwise `{:refused, typed}` with broken term `mu_on_O` at hop `"guard"`:
+
+    * `REFUSED(llm_credential_present)` -- a variable a provider claims
+      (`ANTHROPIC_*`, `CLAUDE_*`/`CLAUDECODE`, `OPENAI_*`, `GEMINI_*`,
+      `MISTRAL_*`, `GROQ_*`, `OPENROUTER_*`, `DEEPSEEK_*`, `XAI_*`,
+      `COHERE_*`, `TOGETHER_*`, `FIREWORKS_*`, `PERPLEXITY_*`,
+      `AZURE_OPENAI_*`, Bedrock/AWS credentials, `OLLAMA_*`, `ZAI_*`/`GLM_*`,
+      `ZCODE_*`, ...) or a provider executable on `PATH` (`claude`, `zcode`,
+      `codex`, `gemini`, `ollama`, `llm`, `aider`, ...);
+    * `REFUSED(unadmitted_environment)` -- any other non-admitted variable.
+
+  `detail` = `%{"variables", "binaries", "providers", "unadmitted"}`: names,
+  paths and provider ids only, never values.
   """
   @spec no_llm_guard(map()) :: :ok | {:refused, map()}
   def no_llm_guard(env \\ System.get_env()) when is_map(env) do
-    variables = env |> Map.keys() |> Enum.filter(&llm_variable?/1) |> Enum.sort()
-    binaries = llm_binaries(Map.get(env, "PATH") || "")
+    case NoLlmPolicy.judge(env) do
+      :ok ->
+        :ok
 
-    if variables == [] and binaries == [] do
-      :ok
-    else
-      {:refused,
-       typed("REFUSED(llm_credential_present)", "llm_credential_present", "mu_on_O", "guard", %{
-         "variables" => variables,
-         "binaries" => binaries
-       })}
+      {:refused, reason, detail} ->
+        {:refused, typed("REFUSED(#{reason})", reason, "mu_on_O", "guard", detail)}
     end
-  end
-
-  defp llm_variable?(name),
-    do: name in @llm_names or Enum.any?(@llm_prefixes, &String.starts_with?(name, &1))
-
-  defp llm_binaries(path) do
-    for dir <- String.split(path, ":", trim: true),
-        binary <- @llm_binaries,
-        file = Path.join(dir, binary),
-        executable?(file),
-        do: file
   end
 
   defp executable?(file) do
@@ -235,6 +245,284 @@ defmodule Xaas.Ultracode.SemanticDrive do
     do:
       {:refused,
        typed("REFUSED(hops_incomplete)", "hops_incomplete", "admission_vacuous", "replay", %{})}
+
+  @doc """
+  `verify_hops/1` AND the hop-0 anchor (ARD section 8: the digest is checked
+  sJira -> SA2A -> XaaS -> provider -> receipt, starting from the admitted
+  order, not from whatever the recording says hop 0 carried). `anchor` is
+  `anchor/1` / `anchor_from/2` output: every recorded hop's tuple digest must
+  equal the anchor's `tuple_digest` and every request digest its
+  `request_digest`, else `REFUSED(tuple_digest_mismatch)`
+  (`admission_vacuous`, hop `sjira`, detail `"anchor" =>
+  "admitted_work_graph"` with the carrier and the first differing field).
+  A hops document forged consistently at every hop passes `verify_hops/1`
+  and is refused here. `{:ok, %{"tuple_digest", "request_digest",
+  "anchor"}}` on success.
+  """
+  @spec verify_hops(map(), map()) :: {:ok, map()} | {:refused, map()}
+  def verify_hops(
+        doc,
+        %{"tuple_digest" => tuple_digest, "request_digest" => request_digest} = anchor
+      )
+      when is_binary(tuple_digest) and is_binary(request_digest) do
+    with {:ok, digests} <- verify_hops(doc),
+         :ok <- anchored(doc, "tuple", digests["tuple_digest"], anchor, Route.fields()),
+         :ok <- anchored(doc, "request", digests["request_digest"], anchor, @request_fields) do
+      {:ok,
+       Map.put(
+         digests,
+         "anchor",
+         Map.take(anchor, ~w(work_order tuple_digest request_digest graph_digest source))
+       )}
+    end
+  end
+
+  def verify_hops(_doc, _anchor),
+    do:
+      {:refused,
+       typed("REFUSED(hops_unanchored)", "hops_unanchored", "admission_vacuous", "sjira", %{
+         "reason" => "no anchor derived from the admitted work graph"
+       })}
+
+  defp anchored(%{"hops" => [first | _]}, key, recorded, anchor, fields) do
+    {digest_key, expected} =
+      if key == "tuple",
+        do: {"tuple_digest", anchor["tuple_digest"]},
+        else: {"request_digest", anchor["request_digest"]}
+
+    if recorded == expected do
+      :ok
+    else
+      mismatch("sjira", %{
+        "anchor" => "admitted_work_graph",
+        "carrier" => key,
+        "digest" => digest_key,
+        "expected" => expected,
+        "observed" => recorded,
+        "field" => Enum.find(fields, &(anchor[key][&1] != first[key][&1]))
+      })
+    end
+  end
+
+  @doc """
+  The hop-0 anchor of `row` (one work-graph row) admitted under
+  `graph_digest` (the graph side's admitted snapshot digest of that row):
+  the `Xaas.Sa2a.Route` tuple of the row and the ARD section 8
+  `SemanticExecutionRequest` (`work_order` = the row's identity,
+  `evidence_horizon` = the row's, `graph_digest`), each with its digest --
+  exactly what the drive records at the sJira hop. Pure; `anchor/1` runs the
+  graph side for `graph_digest`. `REFUSED(tuple_incomplete)` /
+  `REFUSED(tuple_digest_mismatch)` when the row cannot carry a full tuple.
+  """
+  @spec anchor_from(map(), String.t()) :: {:ok, map()} | {:refused, map()}
+  def anchor_from(%{} = row, graph_digest) do
+    with {:ok, tuple} <- hop_tuple(:order, row, "sjira"),
+         {:ok, request} <-
+           well_formed(
+             request(row["identity"], tuple, row["evidence_horizon"], graph_digest),
+             @request_fields,
+             "sjira",
+             "request"
+           ) do
+      {:ok,
+       %{
+         "work_order" => row["identity"],
+         "tuple" => tuple,
+         "tuple_digest" => Route.digest(tuple),
+         "request" => request,
+         "request_digest" => request_digest(request),
+         "graph_digest" => graph_digest
+       }}
+    end
+  end
+
+  @doc """
+  Derives the hop-0 anchor of order `:order` from the committed work graph
+  `:work_graph` through the graph side (`:ggen_igniter_dir`): one real
+  `mix semantic_jira.descriptor` OS process (the drive's own descriptor
+  path: `--work-orders <work graph> --ledger <a fresh empty ledger>
+  --identity <order> --alias <row repository>=<:repo_alias>
+  --verifier-suite <:suite> --provider <:provider>`, plus the graph's court
+  map for the order), run exactly like the drive's graph side
+  (`graph_side/3`: `graph_toolchain/2`, `MIX_BUILD_PATH` =
+  `:ggen_build_path`, stdin `/dev/null`, a hard deadline, every
+  model-credential variable unset). The empty ledger is the pre-drive state
+  (`Episode.prepare/1` writes a fresh ledger). The descriptor's bridge must
+  name the order (identity, subject, base_sha, evidence_ceiling of the row)
+  and carry an admitted `source_snapshot_digest`, which becomes the
+  anchor's `graph_digest` (`anchor_from/2`).
+
+  Options: `:ggen_igniter_dir`, `:work_graph`, `:order` (required);
+  `:ggen_build_path` (default `<dir>/_build/<mix_env>`; pass a private clone
+  so the judged checkout's build is never written), `:mix_env` (`"test"`),
+  `:ggen_timeout_s` (900), `:repo_alias` (`"ggen_igniter"`), `:suite`
+  (`"ggen-igniter-format"`), `:provider` (`"recipe"`), `:scratch`.
+
+  Refusals: `BUILD_BROKEN` (`graph_side_build_broken`, `mu_unlawful`) when
+  the graph side does not compile under the resolved toolchain (the anchor
+  cannot be witnessed), `REFUSED(descriptor_refused)` (`mu_on_O`),
+  `REFUSED(anchor_descriptor_mismatch)` (`admission_vacuous`) when the
+  descriptor does not name the row, plus the work-graph refusals of the
+  drive (`work_graph_unreadable`, `work_graph_invalid`,
+  `order_not_in_work_graph`).
+  """
+  @spec anchor(keyword()) :: {:ok, map()} | {:refused, map()}
+  def anchor(opts) do
+    dir = Keyword.fetch!(opts, :ggen_igniter_dir)
+    work_graph = Keyword.fetch!(opts, :work_graph)
+    order = Keyword.fetch!(opts, :order)
+    mix_env = Keyword.get(opts, :mix_env, "test")
+    build = Keyword.get(opts, :ggen_build_path) || Path.join([dir, "_build", mix_env])
+    own_scratch = is_nil(opts[:scratch])
+    scratch = opts[:scratch] || make_scratch()
+
+    try do
+      with {:ok, bytes} <- read_bytes(work_graph),
+           {:ok, graph} <- read_json(work_graph, "work_graph_unreadable", "sjira"),
+           {:ok, rows} <- work_orders(graph),
+           {:ok, row} <- find_order(rows, order),
+           {:ok, toolchain} <- graph_toolchain(dir, build) do
+        ctx = %{
+          ggen_dir: dir,
+          scratch: scratch,
+          mix_env: mix_env,
+          toolchain: toolchain,
+          ggen_build_path: build,
+          timeout_s: Keyword.get(opts, :ggen_timeout_s, 900)
+        }
+
+        source = %{
+          "work_graph" => work_graph,
+          "work_graph_sha256" =>
+            "sha256:" <> (:crypto.hash(:sha256, bytes) |> Base.encode16(case: :lower)),
+          "process" => "mix semantic_jira.descriptor (empty ledger)",
+          "ggen_igniter_dir" => dir,
+          "ggen_igniter_sha" => git_head(dir),
+          "toolchain" => Map.take(toolchain, ~w(source elixir erlang mix build_compiler))
+        }
+
+        with {:ok, descriptor} <- anchor_descriptor(ctx, work_graph, graph, row, opts),
+             {:ok, graph_digest} <- anchor_bridge(descriptor, row, opts),
+             {:ok, anchor} <- anchor_from(row, graph_digest) do
+          {:ok, Map.put(anchor, "source", source)}
+        end
+      end
+    after
+      if own_scratch, do: File.rm_rf(scratch)
+    end
+  end
+
+  defp read_bytes(path) do
+    case File.read(path) do
+      {:ok, bytes} ->
+        {:ok, bytes}
+
+      {:error, reason} ->
+        {:refused,
+         typed("REFUSED(work_graph_unreadable)", "work_graph_unreadable", "mu_on_O", "sjira", %{
+           "path" => path,
+           "error" => inspect(reason)
+         })}
+    end
+  end
+
+  defp anchor_descriptor(ctx, work_graph, graph, row, opts) do
+    order = row["identity"]
+    ledger = Path.join(ctx.scratch, "anchor-ledger.ndjson")
+    out = Path.join(ctx.scratch, "anchor-descriptor.json")
+    File.write!(ledger, "")
+
+    court_map_args =
+      case get_in(graph, ["court_maps", order]) do
+        %{} = map ->
+          path = Path.join(ctx.scratch, "anchor-court-map.json")
+          File.write!(path, Jason.encode!(map))
+          ["--court-map", path]
+
+        _ ->
+          []
+      end
+
+    args =
+      [
+        "--work-orders",
+        work_graph,
+        "--ledger",
+        ledger,
+        "--identity",
+        order,
+        "--alias",
+        "#{row["repository"]}=#{Keyword.get(opts, :repo_alias, @repo_alias)}",
+        "--verifier-suite",
+        Keyword.get(opts, :suite, @suite),
+        "--provider",
+        Keyword.get(opts, :provider, @provider),
+        "--out",
+        out
+      ] ++ court_map_args
+
+    case ggen(ctx, "semantic_jira.descriptor", args) do
+      {0, _json, _out} ->
+        read_json(out, "descriptor_unreadable", "sjira")
+
+      {code, json, text} ->
+        if build_broken?(code, text) do
+          {:refused,
+           typed("BUILD_BROKEN", "graph_side_build_broken", "mu_unlawful", "sjira", %{
+             "exit" => code,
+             "toolchain" => Map.take(ctx.toolchain, ~w(source elixir mix build_compiler)),
+             "reason" => brief(json, text)
+           })}
+        else
+          {:refused,
+           typed("REFUSED(descriptor_refused)", "descriptor_refused", "mu_on_O", "sjira", %{
+             "exit" => code,
+             "reason" => brief(json, text)
+           })}
+        end
+    end
+  end
+
+  defp anchor_bridge(descriptor, row, opts) do
+    bridge = descriptor["bridge"] || %{}
+    digest = bridge["source_snapshot_digest"]
+
+    expected = %{
+      "identity" => row["identity"],
+      "subject" => row["subject"],
+      "base_sha" => row["base_sha"],
+      "evidence_ceiling" => row["evidence_ceiling"]
+    }
+
+    differs =
+      Enum.find(Map.keys(expected) |> Enum.sort(), &(bridge[&1] != expected[&1])) ||
+        if(descriptor["provider"] != Keyword.get(opts, :provider, @provider), do: "provider")
+
+    cond do
+      differs ->
+        {:refused,
+         typed(
+           "REFUSED(anchor_descriptor_mismatch)",
+           "anchor_descriptor_mismatch",
+           "admission_vacuous",
+           "sjira",
+           %{"field" => differs, "order" => row["identity"]}
+         )}
+
+      not (is_binary(digest) and Regex.match?(~r/\Asha256:[0-9a-f]{64}\z/, digest)) ->
+        {:refused,
+         typed(
+           "REFUSED(anchor_descriptor_mismatch)",
+           "anchor_descriptor_mismatch",
+           "admission_vacuous",
+           "sjira",
+           %{"field" => "source_snapshot_digest", "order" => row["identity"]}
+         )}
+
+      true ->
+        {:ok, digest}
+    end
+  end
 
   defp hop_names(names) do
     if names == @hops,
@@ -530,23 +818,28 @@ defmodule Xaas.Ultracode.SemanticDrive do
        recipe provider's (`RecipeWorker.toolchain/1`); Mix then compiles
        into `build_path`.
 
-  Either way the ERTS is the running node's: pairing an Elixir with a
-  different ERTS than the build's forces a full dependency rebuild whose
-  rebar-compiled beams the older ERTS cannot read. The identity records
-  which source won, the manifest read and the compiler it names.
+  The ERTS is the one the build was compiled on: the running node's when
+  its OTP release is the manifest's, else an `<asdf>/installs/erlang/<v>`
+  install of that OTP release (the checkout's `.tool-versions` erlang pin
+  first, then the rest in order); only when none exists is it the running
+  node's. Pairing an Elixir with a different ERTS than the build's forces a
+  full dependency rebuild whose rebar-compiled beams an older ERTS cannot
+  read (observed: ggen_igniter-int `_build/test` rebuilt under its
+  1.18.4-otp-27 pin, judged from an OTP 28 xaas node, rebuilt every
+  dependency and failed on yaml_elixir). The identity records which source
+  won, the manifest read, the compiler it names and the ERTS used.
   `<asdf>` = `config :xaas, :ultracode_asdf_data_dir`, else
   `$ASDF_DATA_DIR`, else `~/.asdf`.
   """
   @spec graph_toolchain(String.t(), String.t()) :: {:ok, map()} | {:refused, map()}
   def graph_toolchain(dir, build_path) when is_binary(dir) and is_binary(build_path) do
-    erts_bin = Path.join(to_string(:code.root_dir()), "bin")
-    otp = to_string(:erlang.system_info(:otp_release))
     manifest = build_manifest(dir, build_path)
+    {erts_bin, otp, erts_source} = build_erts(dir, manifest)
 
     erts = %{
       "erl" => Path.join(erts_bin, "erl"),
       "erlang" => otp,
-      "erts" => "running node (#{erts_bin})"
+      "erts" => erts_source
     }
 
     case built_toolchain(manifest, otp) do
@@ -587,8 +880,54 @@ defmodule Xaas.Ultracode.SemanticDrive do
     end
   end
 
+  # compile.elixir_scm is {vsn, {elixir, otp}, scm} up to Elixir 1.19 and
+  # {vsn, {elixir, otp}, scm, extra} from 1.20 on (the xaas .tool-versions
+  # pin, 1.20.2-otp-28): the compiler identity is element 1 of either shape.
+  defp manifest_compiler(term) when is_tuple(term) and tuple_size(term) in [3, 4],
+    do: elem(term, 1)
+
+  defp manifest_compiler(_), do: nil
+
   defp graph_path(mix, erts_bin),
     do: [Path.dirname(mix), erts_bin, "/usr/bin", "/bin"] |> Enum.uniq() |> Enum.join(":")
+
+  # The ERTS the build under judgement was compiled on (see graph_toolchain/2):
+  # {bin dir, OTP release, identity}. Falls back to the running node's.
+  defp build_erts(dir, manifest) do
+    node_bin = Path.join(to_string(:code.root_dir()), "bin")
+    node_otp = to_string(:erlang.system_info(:otp_release))
+    node = {node_bin, node_otp, "running node (#{node_bin})"}
+
+    case manifest.compiler do
+      %{"otp" => otp} when otp != node_otp ->
+        root = Path.join([asdf_data_dir(), "installs", "erlang"])
+
+        pinned =
+          case File.read(Path.join(dir, ".tool-versions")) do
+            {:ok, body} ->
+              for line <- String.split(body, "\n"),
+                  [tool, vsn | _] <- [String.split(line)],
+                  tool == "erlang",
+                  do: Path.join(root, vsn)
+
+            _ ->
+              []
+          end
+
+        (pinned ++ Enum.sort(Path.wildcard(Path.join(root, "*"))))
+        |> Enum.find(fn install ->
+          File.dir?(Path.join([install, "releases", otp])) and
+            executable?(Path.join([install, "bin", "erl"]))
+        end)
+        |> case do
+          nil -> node
+          install -> {Path.join(install, "bin"), otp, "build_manifest OTP #{otp} (#{install})"}
+        end
+
+      _ ->
+        node
+    end
+  end
 
   defp build_manifest(dir, build_path) do
     app =
@@ -608,8 +947,8 @@ defmodule Xaas.Ultracode.SemanticDrive do
     compiler =
       with path when is_binary(path) <- path,
            {:ok, bytes} <- File.read(path),
-           {_vsn, {elixir, otp}, _scm} when is_binary(elixir) and is_list(otp) <-
-             safe_term(bytes) do
+           {elixir, otp} when is_binary(elixir) and is_list(otp) <-
+             manifest_compiler(safe_term(bytes)) do
         %{"elixir" => elixir, "otp" => to_string(otp)}
       else
         _ -> nil
@@ -628,7 +967,9 @@ defmodule Xaas.Ultracode.SemanticDrive do
     do: {:unavailable, "no readable build manifest at #{inspect(path)}"}
 
   defp built_toolchain(%{compiler: %{"otp" => built}}, otp) when built != otp,
-    do: {:unavailable, "the build was compiled on OTP #{built}; the running ERTS is OTP #{otp}"}
+    do:
+      {:unavailable,
+       "the build was compiled on OTP #{built}; no ERTS of that release is installed, the running ERTS is OTP #{otp}"}
 
   defp built_toolchain(%{compiler: %{"elixir" => elixir}}, otp) do
     own = Path.expand("../../bin/mix", to_string(:code.lib_dir(:elixir)))
@@ -638,7 +979,10 @@ defmodule Xaas.Ultracode.SemanticDrive do
     # OTP an install was built for: any `<vsn>-otp-<n>` install on this
     # ERTS reproduces it (the exact-OTP one first, then the rest in order).
     candidates =
-      if(System.version() == elixir, do: [own], else: []) ++
+      if(System.version() == elixir and otp == to_string(:erlang.system_info(:otp_release)),
+        do: [own],
+        else: []
+      ) ++
         [
           Path.join([asdf, "#{elixir}-otp-#{otp}", "bin", "mix"]),
           Path.join([asdf, elixir, "bin", "mix"])
@@ -2107,13 +2451,11 @@ defmodule Xaas.Ultracode.SemanticDrive do
     )
   end
 
-  # Every child process of the drive runs with the model-credential variables
-  # of the calling environment UNSET, whatever that environment holds: no
-  # credential reaches the graph side or git even when the guard was handed a
-  # narrower environment than the process's own.
-  defp llm_unset do
-    for {name, _value} <- System.get_env(), llm_variable?(name), do: {name, nil}
-  end
+  # Every child process of the drive runs with every variable the no-LLM
+  # policy does not admit UNSET, whatever the calling environment holds: no
+  # credential (and no unadmitted variable) reaches the graph side or git even
+  # when the guard was handed a narrower environment than the process's own.
+  defp llm_unset, do: NoLlmPolicy.unset_unadmitted(System.get_env())
 
   # The graph side is its own project with its own toolchain pin: run it
   # through the toolchain its `.tool-versions` resolves to (absolute install

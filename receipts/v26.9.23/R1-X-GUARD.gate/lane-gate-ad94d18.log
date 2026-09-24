@@ -1,0 +1,99 @@
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 521 files (.ex)
+Compiling lib/mix/tasks/xaas.autonomic.controls.ex (it's taking more than 10s)
+Generated xaas app
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+13:55:30.960 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:55:31.674 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:55:32.146 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:55:32.280 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:55:32.280 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:55:32.295 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:55:32.295 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:55:32.313 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:55:32.313 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:55:32.324 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:55:32.324 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 307599, max_cases: 32
+13:55:32.335 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:55:32.335 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+13:55:32.341 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:55:32.341 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+    warning: incompatible types given to Path.join/2:
+
+        Path.join(nil, "_build/test")
+
+    given types:
+
+        -nil-, binary()
+
+    but expected one of:
+
+        binary() or empty_list() or non_empty_list(term(), term()), term()
+
+    type warning found at:
+    │
+ 68 │     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
+    │                                             ~
+    │
+    └─ test/xaas/ultracode/semantic_drive_test.exs:68:45: Xaas.Ultracode.SemanticDriveTest.__ex_unit_setup_all_0/1
+
+....*****......
+
+  1) test the real task under the F3 court environment: clean passes; GEMINI_API_KEY, ANTHROPIC_API_KEY and an unlisted variable are refused (exit 3) (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:886
+     ** (ExUnit.TimeoutError) test timed out after 60000ms. You can change the timeout:
+
+       1. per test by setting "@tag timeout: x" (accepts :infinity)
+       2. per test module by setting "@moduletag timeout: x" (accepts :infinity)
+       3. globally via "ExUnit.start(timeout: x)" configuration
+       4. by running "mix test --timeout x" which sets timeout
+       5. or by running "mix test --trace" which sets timeout to infinity
+          (useful when using IEx.pry/0)
+
+     where "x" is the timeout given as integer in milliseconds (defaults to 60_000).
+
+     code: for {assignment, standing, field, name} <- [
+     stacktrace:
+       (elixir 1.20.2) lib/system.ex:1169: System.do_port_byte/3
+       (elixir 1.20.2) lib/system.ex:1158: System.do_cmd/3
+       test/xaas/ultracode/semantic_drive_test.exs:900: anonymous fn/2 in Xaas.Ultracode.SemanticDriveNoLlmGuardTest."test the real task under the F3 court environment: clean passes; GEMINI_API_KEY, ANTHROPIC_API_KEY and an unlisted variable are refused (exit 3)"/1
+       (elixir 1.20.2) lib/enum.ex:2622: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/semantic_drive_test.exs:893: (test)
+       (ex_unit 1.20.2) lib/ex_unit/runner.ex:533: ExUnit.Runner.exec_test/2
+       (stdlib 7.3) timer.erl:599: :timer.tc/2
+       (ex_unit 1.20.2) lib/ex_unit/runner.ex:455: anonymous fn/6 in ExUnit.Runner.spawn_test_monitor/4
+
+..
+Finished in 70.8 seconds (3.0s async, 67.8s sync)
+
+Result: 12/13 passed, 5 skipped
+Failed: 1 test
+LANE_GATE exit=2

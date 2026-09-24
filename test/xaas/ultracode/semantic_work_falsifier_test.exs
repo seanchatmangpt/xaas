@@ -18,7 +18,10 @@ defmodule Xaas.Ultracode.SemanticWorkFalsifierTest do
   receipt (`SemanticReceipt.export/1` reads `bridge.requires.courts`).
 
   The fixture is the committed byte-for-byte output of the real graph-side
-  projection, the same one `semantic_work_test.exs` attacks.
+  projection (`docs/sjira/v26.9.21/e2e_project.exs`, digest form
+  `"sjira-digest/2"`), produced only by running it
+  (`scripts/sj001_descriptor_fixture.exs`; the SJ-001 e2e test asserts its
+  fresh projection equals it), the same one `semantic_work_test.exs` attacks.
   """
 
   use ExUnit.Case, async: true
@@ -26,7 +29,7 @@ defmodule Xaas.Ultracode.SemanticWorkFalsifierTest do
   alias Xaas.Ultracode.SemanticWork
 
   @real_descriptor Path.expand(
-                     "../../../docs/sjira/v26.9.21/receipts/sj-001/evidence/descriptor.json",
+                     "../../fixtures/semantic_work/sj-001-descriptor.json",
                      __DIR__
                    )
   @external_resource @real_descriptor

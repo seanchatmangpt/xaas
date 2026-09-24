@@ -1,0 +1,20 @@
+admit | publish-image | push main                      | exit=64 | 'REFUSED[NOT_OPERATOR_DISPATCH]: push' | OK
+admit | publish-image | dispatch feat/x                | exit=64 | 'REFUSED[NOT_MAIN]: refs/heads/feat/x' | OK
+admit | publish-image | dispatch main, other sha       | exit=64 | 'REFUSED[HEAD_MOVED]: expected 000000000000000000000000000000' | OK
+admit | publish-image | dispatch main, uppercased sha  | exit=64 | 'REFUSED[HEAD_MOVED]: expected 49695D722FB684FD3A34A34D7E1252' | OK
+admit | publish-image | dispatch main, empty reason    | exit=64 | 'REFUSED[REASON_MISSING]' | OK
+admit | publish-image | dispatch main, admitted        | exit=0 | '' | OK
+admit | deploy        | push main                      | exit=64 | 'REFUSED[NOT_OPERATOR_DISPATCH]: push' | OK
+admit | deploy        | dispatch feat/x                | exit=64 | 'REFUSED[NOT_MAIN]: refs/heads/feat/x' | OK
+admit | deploy        | dispatch main, other sha       | exit=64 | 'REFUSED[HEAD_MOVED]: expected 000000000000000000000000000000' | OK
+admit | deploy        | dispatch main, uppercased sha  | exit=64 | 'REFUSED[HEAD_MOVED]: expected 49695D722FB684FD3A34A34D7E1252' | OK
+admit | deploy        | dispatch main, empty reason    | exit=64 | 'REFUSED[REASON_MISSING]' | OK
+admit | deploy        | dispatch main, admitted        | exit=0 | '' | OK
+receipt | publish-image | exit=0 | {"executed": true, "registry_digest": "unobserved", "standing": "UNKNOWN", "verified": false} | receipt_sha256 recomputes | OK
+receipt | publish-image | exit=0 | {"executed": true, "standing": "UNKNOWN", "verified": false} | receipt_sha256 recomputes | OK
+receipt | publish-image | exit=0 | {"executed": true, "registry_digest": "sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc", "standing": "ALIVE", "verified": true} | receipt_sha256 recomputes | OK
+receipt | publish-image | exit=0 | {"executed": true, "registry_digest": "sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc", "standing": "UNKNOWN", "verified": false} | receipt_sha256 recomputes | OK
+receipt | deploy        | exit=0 | {"executed": true, "standing": "PARTIAL_ALIVE", "verified": false} | receipt_sha256 recomputes | OK
+receipt | deploy        | exit=0 | {"executed": true, "standing": "UNKNOWN", "verified": false} | receipt_sha256 recomputes | OK
+receipt | deploy        | exit=0 | {"executed": false, "standing": "UNKNOWN", "verified": false} | receipt_sha256 recomputes | OK
+STEPS HOLD

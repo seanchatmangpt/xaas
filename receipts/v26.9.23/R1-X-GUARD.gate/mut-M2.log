@@ -1,0 +1,126 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+13:51:06.260 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:51:06.804 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:51:07.240 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:51:07.336 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:07.336 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:51:07.351 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:07.351 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:51:07.364 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:07.364 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:51:07.373 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:07.373 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 356112, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+13:51:07.384 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:07.384 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+13:51:07.387 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:07.387 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+    warning: incompatible types given to Path.join/2:
+
+        Path.join(nil, "_build/test")
+
+    given types:
+
+        -nil-, binary()
+
+    but expected one of:
+
+        binary() or empty_list() or non_empty_list(term(), term()), term()
+
+    type warning found at:
+    │
+ 68 │     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
+    │                                             ~
+    │
+    └─ test/xaas/ultracode/semantic_drive_test.exs:68:45: Xaas.Ultracode.SemanticDriveTest.__ex_unit_setup_all_0/1
+
+....*****.
+
+  1) test every provider variable of the data file is refused REFUSED(llm_credential_present), naming the provider (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:744
+     Assertion with >= failed
+     code:  assert length(rows) >= 40
+     left:  8
+     right: 40
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:751: (test)
+
+.
+
+  2) test an arbitrary variable no provider claims is refused REFUSED(unadmitted_environment) (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:786
+     match (=) failed
+     code:  assert {:refused, typed} = SemanticDrive.no_llm_guard(env)
+     left:  {:refused, typed}
+     right: :ok
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:679: Xaas.Ultracode.SemanticDriveNoLlmGuardTest.refused!/1
+       test/xaas/ultracode/semantic_drive_test.exs:787: (test)
+
+
+
+  3) test the driver-verified defect: GEMINI_API_KEY and OPENROUTER_API_KEY are refused like ANTHROPIC_API_KEY (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:721
+     match (=) failed
+     code:  assert {:refused, typed} = SemanticDrive.no_llm_guard(env)
+     left:  {:refused, typed}
+     right: :ok
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:679: Xaas.Ultracode.SemanticDriveNoLlmGuardTest.refused!/1
+       test/xaas/ultracode/semantic_drive_test.exs:723: (test)
+
+.
+
+  4) test the guard is compiled from the policy data on disk (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:711
+     Assertion with >= failed
+     code:  assert length(data()["providers"]) >= 18
+     left:  5
+     right: 18
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:718: (test)
+
+
+
+  5) test no_llm_env.sh and the guard agree: the built environment passes, a caller credential does not survive, an assignment is refused (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:838
+     match (=) failed
+     code:  assert {:refused, typed} = SemanticDrive.no_llm_guard(env)
+     left:  {:refused, typed}
+     right: :ok
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:679: Xaas.Ultracode.SemanticDriveNoLlmGuardTest.refused!/1
+       test/xaas/ultracode/semantic_drive_test.exs:863: (test)
+
+
+
+  6) test the real task under the F3 court environment: clean passes; GEMINI_API_KEY, ANTHROPIC_API_KEY and an unlisted variable are refused (exit 3) (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:886
+     ** (MatchError) no match of right hand side value:
+
+         {"    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead\n    │\n 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do\n    │                         ~\n    │\n    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)\n\n{\"no_llm_guard\":\"passed\",\"standing\":\"ALIVE\"}\n",
+          0}
+
+     code: for {assignment, standing, field, name} <- [
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:900: anonymous fn/2 in Xaas.Ultracode.SemanticDriveNoLlmGuardTest."test the real task under the F3 court environment: clean passes; GEMINI_API_KEY, ANTHROPIC_API_KEY and an unlisted variable are refused (exit 3)"/1
+       (elixir 1.20.2) lib/enum.ex:2622: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/semantic_drive_test.exs:893: (test)
+
+
+Finished in 3.8 seconds (1.6s async, 2.2s sync)
+
+Result: 7/13 passed, 5 skipped
+Failed: 6 tests

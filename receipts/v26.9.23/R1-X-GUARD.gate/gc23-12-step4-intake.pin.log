@@ -1,0 +1,8 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"capability":"recipe:ggen-sync","check":"outputs recompute byte-identically","checkpoint":"https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.24","eligible":7,"first":"WO-14958CC7712C739E","items":{"UNSUPPORTED(provider_capability)":7},"reason":"provider_capability","standing":"UNSUPPORTED(provider_capability)","work_orders":7}

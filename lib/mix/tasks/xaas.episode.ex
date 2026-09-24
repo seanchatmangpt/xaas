@@ -8,7 +8,8 @@ defmodule Mix.Tasks.Xaas.Episode do
       mix xaas.episode --name N --ggen-igniter-dir DIR --prepare --base SHA --drift PATH
       mix xaas.episode --name N --ggen-igniter-dir DIR [--work-root DIR] [--ggen-build-path DIR] [--no-pin]
       mix xaas.episode --check-env
-      mix xaas.episode --verify-hops PATH
+      mix xaas.episode --verify-hops PATH --anchor-work-graph WORK --ggen-igniter-dir DIR [--ggen-build-path DIR] [--order ID]
+      mix xaas.episode --verify-receipt EP_DIR --ggen-igniter-dir DIR [--order ID]
       mix xaas.episode --graph-toolchain --ggen-igniter-dir DIR [--ggen-build-path DIR]
 
   `--prepare` creates branch `v23/episode-<N>` in the ggen_igniter
@@ -30,6 +31,26 @@ defmodule Mix.Tasks.Xaas.Episode do
   episode subject when it is not the repository of `DIR` (the graph-side
   tooling checkout), e.g. a scratch clone.
 
+  `--verify-hops` replays the ARD section 8 digest law over a recorded
+  `hops.json` ANCHORED at the admitted order (lane R1-X-COURTS): the hop-0
+  anchor is re-derived from the committed work graph `--anchor-work-graph`
+  through the graph side's `mix semantic_jira.descriptor` in
+  `--ggen-igniter-dir` (`Xaas.Ultracode.SemanticDrive.anchor/1`; pass a
+  private `--ggen-build-path` clone so the judged build is never written),
+  and every hop must equal it (`SemanticDrive.verify_hops/2`). `--order`
+  defaults to the document's `work_order`. Without `--anchor-work-graph`
+  the replay is `REFUSED(hops_unanchored)`: internal agreement alone admits
+  a document forged consistently at every hop.
+
+  `--verify-receipt` judges the episode's R projection
+  (`EP_DIR/receipt.r.json`) against the order it claims
+  (`EP_DIR/work.json`, order `--order`, default `EP_DIR/drive.json`'s
+  `order`) and the subject repository `--ggen-igniter-dir`
+  (`Xaas.Receipt.RProjection.consistency/2`): ALIVE needs every acceptance
+  true, the consequence commits inside `base_sha..subject_sha`, the changed
+  files inside the order's `path_scope`, and every replay command equal to
+  the command the court binding recorded.
+
   `--graph-toolchain` prints the toolchain the drive would run the graph
   side with (`Xaas.Ultracode.SemanticDrive.graph_toolchain/2`: the Elixir
   that compiled `--ggen-build-path`, default `DIR/_build/test`, else the
@@ -39,13 +60,16 @@ defmodule Mix.Tasks.Xaas.Episode do
 
   ## The no-LLM guard (F3)
 
-  Every mode except `--verify-hops` and `--graph-toolchain` first runs
+  Every mode except `--verify-hops`, `--verify-receipt` and
+  `--graph-toolchain` first runs
   `Xaas.Ultracode.SemanticDrive.no_llm_guard/1` over the process
-  environment, BEFORE the application starts: any `ANTHROPIC_*`,
-  `CLAUDE_*`, `CLAUDECODE`, `OPENAI_*`, `ZAI_*`, `Z_AI_*`, `GLM_*`,
-  `ZCODE_*` variable, or a `zcode` / `claude` executable on `PATH`, is
-  `REFUSED(llm_credential_present)` (broken term `mu_on_O`). `--check-env`
-  runs only the guard.
+  environment, BEFORE the application starts, and fails closed over
+  `priv/no_llm/policy.json`: a provider-claimed variable (`ANTHROPIC_*`,
+  `GEMINI_*`, `OPENROUTER_*`, ...) or a provider executable on `PATH`
+  (`claude`, `zcode`, `gemini`, `codex`, `ollama`, ...) is
+  `REFUSED(llm_credential_present)`, any other variable the policy does not
+  admit `REFUSED(unadmitted_environment)` (broken term `mu_on_O`).
+  `--check-env` runs only the guard.
 
   ## Persistence
 
@@ -71,6 +95,7 @@ defmodule Mix.Tasks.Xaas.Episode do
 
   use Mix.Task
 
+  alias Xaas.Receipt.RProjection
   alias Xaas.Ultracode.{SemanticDrive, TargetSuites, Verifier}
   alias Xaas.Ultracode.SemanticDrive.Episode
 
@@ -86,6 +111,8 @@ defmodule Mix.Tasks.Xaas.Episode do
     pin: :boolean,
     check_env: :boolean,
     verify_hops: :string,
+    anchor_work_graph: :string,
+    verify_receipt: :string,
     graph_toolchain: :boolean,
     order: :string,
     subject_repo: :string
@@ -104,7 +131,10 @@ defmodule Mix.Tasks.Xaas.Episode do
         usage("unknown arguments: #{inspect(invalid ++ rest)}")
 
       opts[:verify_hops] ->
-        verify_hops(opts[:verify_hops])
+        verify_hops(opts[:verify_hops], opts)
+
+      opts[:verify_receipt] ->
+        verify_receipt(opts[:verify_receipt], opts)
 
       opts[:graph_toolchain] ->
         graph_toolchain(opts)
@@ -133,18 +163,90 @@ defmodule Mix.Tasks.Xaas.Episode do
     end
   end
 
-  defp verify_hops(path) do
+  defp verify_hops(path, opts) do
     with {:ok, body} <- File.read(path),
          {:ok, hops} <- Jason.decode(body) do
-      case SemanticDrive.verify_hops(hops) do
-        {:ok, digests} ->
-          emit(0, Map.merge(digests, %{"standing" => "ALIVE", "hops" => path}))
+      # the internal law first (no graph-side process for a document that
+      # already disagrees with itself), then the admitted-order anchor
+      with {:ok, _internal} <- SemanticDrive.verify_hops(hops),
+           {:ok, anchor} <- hops_anchor(hops, opts),
+           {:ok, digests} <- SemanticDrive.verify_hops(hops, anchor) do
+        emit(0, Map.merge(digests, %{"standing" => "ALIVE", "hops" => path}))
+      else
+        {:refused, typed} -> refuse(typed)
+      end
+    else
+      error -> usage("--verify-hops #{path}: #{inspect(error)}")
+    end
+  end
+
+  defp hops_anchor(hops, opts) do
+    case {opts[:anchor_work_graph], opts[:ggen_igniter_dir]} do
+      {work, dir} when is_binary(work) and is_binary(dir) ->
+        dir = Path.expand(dir)
+
+        SemanticDrive.anchor(
+          ggen_igniter_dir: dir,
+          work_graph: Path.expand(work),
+          order: opts[:order] || (is_map(hops) && hops["work_order"]) || "EP-A",
+          ggen_build_path: opts[:ggen_build_path] && Path.expand(opts[:ggen_build_path])
+        )
+
+      {nil, _dir} ->
+        {:refused,
+         %{
+           "standing" => "REFUSED(hops_unanchored)",
+           "reason" => "hops_unanchored",
+           "broken_term" => "admission_vacuous",
+           "hop" => "sjira",
+           "detail" => %{
+             "reason" =>
+               "--verify-hops needs --anchor-work-graph and --ggen-igniter-dir: hop agreement without the admitted-order anchor admits a consistent all-hop forgery"
+           }
+         }}
+
+      {_work, nil} ->
+        usage("--anchor-work-graph needs --ggen-igniter-dir")
+    end
+  end
+
+  defp verify_receipt(dir, opts) do
+    with repo when is_binary(repo) <- opts[:ggen_igniter_dir],
+         {:ok, r} <- read_json(Path.join(dir, "receipt.r.json")),
+         {:ok, graph} <- read_json(Path.join(dir, "work.json")) do
+      order_id = opts[:order] || episode_order(dir)
+      rows = if is_map(graph), do: graph["work_orders"] || [], else: graph
+      row = Enum.find(List.wrap(rows), &(is_map(&1) and &1["identity"] == order_id))
+
+      case RProjection.consistency(r,
+             order: row || %{"identity" => order_id},
+             repo: Path.expand(repo)
+           ) do
+        {:ok, facts} ->
+          emit(0, Map.merge(facts, %{"receipt" => Path.join(dir, "receipt.r.json")}))
 
         {:refused, typed} ->
           refuse(typed)
       end
     else
-      error -> usage("--verify-hops #{path}: #{inspect(error)}")
+      nil -> usage("--verify-receipt needs --ggen-igniter-dir (the subject repository)")
+      {:error, why} -> usage("--verify-receipt #{dir}: #{inspect(why)}")
+    end
+  end
+
+  defp episode_order(dir) do
+    case read_json(Path.join(dir, "drive.json")) do
+      {:ok, %{"order" => order}} when is_binary(order) -> order
+      _ -> "EP-A"
+    end
+  end
+
+  defp read_json(path) do
+    with {:ok, body} <- File.read(path),
+         {:ok, json} <- Jason.decode(body) do
+      {:ok, json}
+    else
+      {:error, reason} -> {:error, {path, reason}}
     end
   end
 

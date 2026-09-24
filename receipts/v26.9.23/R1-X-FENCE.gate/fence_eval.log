@@ -1,0 +1,20 @@
+condition publish-image: "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"
+condition deploy: "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"
+github.sha (derived repo HEAD): 87072086b97795affab6ce817ba55ef3788cdadf
+act exit=0 | push main                                     | publish-image | SKIP
+act exit=0 | push main                                     | deploy        | SKIP
+act exit=0 | push feat/x                                   | publish-image | SKIP
+act exit=0 | push feat/x                                   | deploy        | SKIP
+act exit=0 | pull_request -> main                          | publish-image | SKIP
+act exit=0 | pull_request -> main                          | deploy        | SKIP
+act exit=0 | dispatch main, no inputs                      | publish-image | SKIP
+act exit=0 | dispatch main, no inputs                      | deploy        | SKIP
+act exit=0 | dispatch main, expected=HEAD, reason          | publish-image | RUN
+act exit=0 | dispatch main, expected=HEAD, reason          | deploy        | RUN
+act exit=0 | dispatch main, expected=other sha, reason     | publish-image | SKIP
+act exit=0 | dispatch main, expected=other sha, reason     | deploy        | SKIP
+act exit=0 | dispatch main, expected=HEAD, empty reason    | publish-image | SKIP
+act exit=0 | dispatch main, expected=HEAD, empty reason    | deploy        | SKIP
+act exit=0 | dispatch feat/x, expected=HEAD, reason        | publish-image | SKIP
+act exit=0 | dispatch feat/x, expected=HEAD, reason        | deploy        | SKIP
+FENCE HOLDS
