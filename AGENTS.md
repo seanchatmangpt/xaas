@@ -46,7 +46,7 @@ Never silently move the admitted base. Use a purpose branch, intentional commit,
 
 ## Repository-local law — xaas
 
-The live project instruction surface identifies `xaas` as a BEAM/Phoenix/Ash platform with a seven-domain architecture and explicit platform substitutions documented under `docs/`. `CLAUDE.md` and the referenced Diataxis architecture/reference files are required doctrine, not optional reading.
+The live project instruction surface identifies `xaas` as a BEAM/Phoenix/Ash platform whose authoritative domain set is the `ash_domains` list in `config/config.exs` (13 Ash domains as of 2026-09-22 — do not freeze the count here; the config is the source) with explicit platform substitutions documented under `docs/`. `CLAUDE.md` and the referenced Diataxis architecture/reference files are required doctrine, not optional reading.
 
 Testing is Chicago-style: real Postgres through the repository's Ecto sandbox, real Ash actions, and real HTTP requests. Do not introduce interaction-mocking libraries for owned collaborators. Re-run the repository's documented mock-pattern audit after relevant changes.
 

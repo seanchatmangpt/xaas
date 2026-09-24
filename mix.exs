@@ -129,9 +129,15 @@ defmodule Xaas.MixProject do
       # over hand-rolled/non-Ash equivalents, e.g. Petal's plain
       # Ecto-based auth-adjacent components).
       {:petal_components, "~> 2.0"},
-      {:ash_authentication_phoenix, "~> 2.17"},
+      # Security floor: 2.17.4 fixes EEF-CVE-2026-86533 (CRITICAL, revoked session
+      # accepted) and EEF-CVE-2026-81632 (HIGH) reported by `mix deps.get`.
+      {:ash_authentication_phoenix, "~> 2.17 and >= 2.17.4"},
       {:bcrypt_elixir, "~> 3.0"},
-      {:ash_authentication, "~> 4.0"},
+      # Security floor: 4.15.0 fixes the 15 EEF-CVE-2026-* advisories `mix deps.get`
+      # reports against 4.14.2 (5 CRITICAL: OAuth2 account takeover, remember-me
+      # session replacement, magic-link replay, unenforced require_confirmed_with,
+      # unchecked revoked-session jti).
+      {:ash_authentication, "~> 4.15"},
       {:picosat_elixir, "~> 0.2"},
       # Real Phoenix.LiveViewTest HTML-parsing dependency (element/render
       # assertions in XaasWeb.AutofdeLab.StatusLiveTest need it).
@@ -191,7 +197,7 @@ defmodule Xaas.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # XaasWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, "~> 26.9.12"},
+      {:ggen_igniter, "~> 26.9.15"},
       {:faker, "~> 0.18", only: [:dev, :test]},
       # Real dependency on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a
