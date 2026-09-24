@@ -23,7 +23,7 @@ DEFAULT_BUILD = REPO_ROOT / "tmp/wd-deck"
 DEFAULT_OUT = DEFAULT_BUILD / "wd_case_study_2_presentation_notes.pptx"
 PACK_NAME = "pptx-presentation-pack"
 MARKETPLACE_REPO = "seanchatmangpt/ggen-marketplace"
-MARKETPLACE_COMMIT = "51d4703620715b91f1fee39b0a7b2b2fe739952b"
+MARKETPLACE_COMMIT = "76774bbaf83ec92e6e52b81ceb6a165b00de8b93"
 PPTXGENJS_VERSION = "4.0.1"
 RENDER_PARTS = tuple(f"render.part{i}.mjs.eex" for i in range(4))
 
