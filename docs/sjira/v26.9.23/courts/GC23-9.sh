@@ -66,7 +66,7 @@
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
-ggen=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}
+ggen=${GGEN_IGNITER_DIR:-$(cd "${XAAS_DIR:-$(pwd)}/.." && pwd)/ggen_igniter}
 eps=${GC23_EPISODES_DIR:-$xaas/docs/sjira/v26.9.23/episodes}
 validator=${DFCM_VALIDATOR:-$HOME/.claude/dfcm/validate_receipt.py}
 ep1=$eps/me-1

@@ -22,7 +22,7 @@
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
-ggen=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}
+ggen=${GGEN_IGNITER_DIR:-$(cd "${XAAS_DIR:-$(pwd)}/.." && pwd)/ggen_igniter}
 ep=${GC23_EPISODE_DIR:-$xaas/docs/sjira/v26.9.23/episodes/fmt-1}
 asdf=${ASDF_DATA_DIR:-$HOME/.asdf}
 

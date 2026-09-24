@@ -20,7 +20,7 @@ defmodule Xaas.Sjira.SuccessorTest do
   @dir Path.join(@repo, "docs/sjira/v26.9.23/successor")
   @courts Path.join(@repo, "docs/sjira/v26.9.23/courts")
   @prose_rel "docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md"
-  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || "/Users/sac/wt/v26922/fri/ggen_igniter-int"
+  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter")
   @ggen_ready File.regular?(Path.join(@ggen_dir, "lib/mix/tasks/semantic_jira.descriptor.ex")) and
                 File.regular?(
                   Path.join(@ggen_dir, "lib/ggen_igniter/semantic_jira/bootstrap/graph.ex")

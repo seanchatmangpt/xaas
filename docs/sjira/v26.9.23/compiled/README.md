@@ -5,7 +5,7 @@
 (lane V23-C); never edit them. Lane V23-K produced them at ggen_igniter-int 3937a4f with:
 
 ```sh
-GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int \
+GGEN_IGNITER_DIR=$HOME/ggen_igniter \
   sh docs/sjira/v26.9.23/courts/gi_mix.sh semantic_jira.compile_prose \
   --source "$PWD/docs/sjira/v26.9.23/prd-ard.md" \
   --candidates "$PWD/docs/sjira/v26.9.23/candidates/prd-ard.ttl" \

@@ -33,7 +33,7 @@
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
-gi=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}
+gi=${GGEN_IGNITER_DIR:-$(cd "${XAAS_DIR:-$(pwd)}/.." && pwd)/ggen_igniter}
 
 if [ ! -f "$gi/mix.exs" ]; then
   echo "UNKNOWN: gi_mix: GGEN_IGNITER_DIR $gi is not a mix project"

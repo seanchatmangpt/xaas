@@ -8,9 +8,9 @@
 # (sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-11.sh"; goal.ttl v23:GC23-11).
 #   XAAS_DIR          xaas checkout under judgement (default: cwd)
 #   GGEN_IGNITER_DIR  ggen_igniter checkout under judgement
-#                     (default: /Users/sac/wt/v26922/fri/ggen_igniter-int)
+#                     (default: the sibling canonical checkout <xaas>/../ggen_igniter)
 #   GC23_FLEET_RECEIPTS_DIR  out-of-subject receipts (a commit cannot carry a receipt of
-#                     itself; default: /Users/sac/wt/v26922/v26923/receipts/fleet)
+#                     itself; default: ${XDG_STATE_HOME:-$HOME/.local/state}/sjira/receipts/fleet)
 #
 # Steps: (1) check-classification (F7 + court-reference guard) -> REFUSED on violation;
 # (2) observe (local, no network: nothing fetched during a court run) + emit the matrix
@@ -33,8 +33,8 @@ UNKNOWN_EXIT=3
 
 set -u
 XAAS_DIR=${XAAS_DIR:-$(pwd)}
-GGEN_IGNITER_DIR=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}
-GC23_FLEET_RECEIPTS_DIR=${GC23_FLEET_RECEIPTS_DIR:-/Users/sac/wt/v26922/v26923/receipts/fleet}
+GGEN_IGNITER_DIR=${GGEN_IGNITER_DIR:-$(cd "${XAAS_DIR:-$(pwd)}/.." && pwd)/ggen_igniter}
+GC23_FLEET_RECEIPTS_DIR=${GC23_FLEET_RECEIPTS_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/sjira/receipts/fleet}
 FLEET="$XAAS_DIR/docs/sjira/v26.9.23/fleet"
 FM="$XAAS_DIR/scripts/sjira/fleet_matrix.py"
 

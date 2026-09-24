@@ -50,7 +50,7 @@
 set -u
 
 xaas=${XAAS_DIR:-$(pwd)}
-gi=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}
+gi=${GGEN_IGNITER_DIR:-$(cd "${XAAS_DIR:-$(pwd)}/.." && pwd)/ggen_igniter}
 GGEN_IGNITER_DIR=$gi
 export GGEN_IGNITER_DIR
 cd "$xaas" || { echo "UNKNOWN: GC23-2 XAAS_DIR $xaas unreadable"; exit 75; }

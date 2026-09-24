@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       `receipts/v26.9.23` (the xaas repository under judgement), then
       `$GGEN_IGNITER_DIR/receipts/v26.9.23` (the other critical-path
       repository, resolved with the same precedence as the court env below),
-      `GGEN_IGNITER_DIR` default `/Users/sac/wt/v26922/fri/ggen_igniter-int`.
+      `GGEN_IGNITER_DIR` default `~/ggen_igniter` (the canonical checkout).
 
   An explicit option always wins; `--order-receipts-dir` is repeatable and,
   when given, replaces the registry's list (in the given order). A
@@ -202,7 +202,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       graph: "docs/sjira/v26.9.23/goal.ttl",
       receipts_dir: "docs/sjira/v26.9.23/receipts",
       order_receipts_dirs: [{:repo, "receipts/v26.9.23"}, {:ggen_igniter, "receipts/v26.9.23"}],
-      ggen_igniter_dir: "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+      ggen_igniter_dir: "~/ggen_igniter",
       # Release counters (lane V23-S, ARD section 27): the episodes whose
       # OCEL/ledger the counters read, and the GC23-11 court's step 1 argv
       # (docs/sjira/v26.9.23/courts/GC23-11.sh, relative to the repository).

@@ -24,7 +24,7 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
   @episode Path.join(@root, "docs/sjira/v26.9.23/episodes/fmt-1")
   @projector Path.join(@root, "docs/sjira/v26.9.23/courts/replay_project.py")
   @no_llm_env Path.join(@root, "docs/sjira/v26.9.23/courts/no_llm_env.sh")
-  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || "/Users/sac/wt/v26922/fri/ggen_igniter-int"
+  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter")
   @ref "v23/episode-fmt-1-receipt"
   @clean_env %{"PATH" => "/usr/bin:/bin"}
 
@@ -406,7 +406,7 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
 
   @root Path.expand("../../..", __DIR__)
   @episode Path.join(@root, "docs/sjira/v26.9.23/episodes/fmt-1")
-  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || "/Users/sac/wt/v26922/fri/ggen_igniter-int"
+  @ggen_dir System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter")
 
   @moduletag skip:
                if(File.regular?(Path.join(@ggen_dir, "lib/mix/tasks/semantic_jira.reconcile.ex")),

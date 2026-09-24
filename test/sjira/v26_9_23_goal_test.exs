@@ -22,7 +22,6 @@ defmodule Xaas.Sjira.V26923GoalTest do
   @stop_rq Path.join(@dir, "stop.rq")
   @prose Path.join(@dir, "prd-ard.md")
   @friday_goal Path.join(@repo, "docs/sjira/v26.9.22/friday/goal.ttl")
-  @accepted_prose "/Users/sac/wt/v26922/v26923/prd-ard.md"
   @validator Path.expand("~/.claude/dfcm/validate_receipt.py")
 
   @prose_sha256 "7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212"
@@ -139,10 +138,6 @@ defmodule Xaas.Sjira.V26923GoalTest do
     bytes = prose()
     assert byte_size(bytes) == @prose_bytes
     assert Base.encode16(:crypto.hash(:sha256, bytes), case: :lower) == @prose_sha256
-
-    if File.regular?(@accepted_prose) do
-      assert File.read!(@accepted_prose) == bytes
-    end
   end
 
   # ------------------------------------------------------------------ goal.ttl structure

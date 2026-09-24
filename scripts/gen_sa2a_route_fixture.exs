@@ -7,8 +7,8 @@
 # Run from a ggen_igniter checkout that has GgenIgniter.SemanticA2A compiled
 # (the Friday integration worktree), e.g.:
 #
-#   cd /Users/sac/wt/v26922/fri/ggen_igniter-int && \
-#     mix run -e 'Code.eval_file("/Users/sac/wt/v26922/fri/FRI-T4/scripts/gen_sa2a_route_fixture.exs")'
+#   cd ~/ggen_igniter && \
+#     mix run -e 'Code.eval_file(Path.expand("~/xaas/scripts/gen_sa2a_route_fixture.exs"))'
 #
 # MIX_DEPS_PATH / MIX_BUILD_PATH may point outside that checkout so the run
 # writes nothing into it. The fixture directory is resolved from this script's
