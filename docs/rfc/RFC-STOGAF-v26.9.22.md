@@ -1,6 +1,6 @@
 # Semantic TOGAF v26.9.22 RFC
 
-**Status:** Draft  
+**Status:** FINAL_SPEC — closed for v26.9.24  
 **Working name:** Semantic TOGAF / STOGAF  
 **Compatibility:** TOGAF-compatible semantic execution profile  
 **Normative scope:** Chatman ecosystem architecture state, work, evidence, projections, governance, and learning  
@@ -495,3 +495,12 @@ reusable experience
 ```
 
 The architecture exists once in admitted state and is projected many times.
+
+
+## 26. v26.9.24 closure
+
+This specification is complete for the v26.9.24 semantic release boundary.
+
+The WD Case Study 2 reference episode remains bounded by its observed evidence: repository-local fixture standing, `SELECT_CONSTRUCT_ONLY` authority, and `ENGINEER_DISPOSITION_REQUIRED` for consequential decisions. ST-7 ACTUATED and higher are not implied by specification closure.
+
+The implementation falsifier remains executable: malformed RDF, failed SHACL/SPARQL admission, broken generated projections, missing exact-source bindings, or an attempt to bypass the human authority gate prevents promotion.
