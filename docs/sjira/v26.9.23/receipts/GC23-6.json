@@ -12,38 +12,87 @@
   "gate": {
     "boundary_class": "LastMile",
     "checkpoint": "GC-26.9.23",
-    "duration_ms": 24,
+    "duration_ms": 2653,
     "env": {
-      "GGEN_IGNITER_DIR": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
-      "XAAS_DIR": "/Users/sac/wt/v26922/v23/V23-P"
+      "GGEN_IGNITER_DIR": "/Users/sac/ggen_igniter",
+      "XAAS_DIR": "/Users/sac/xaas"
     },
     "gate": "GC23-6",
-    "ggen_igniter_sha": "5984ec480c2318e86aa621da5f496e5e014b0fac",
-    "outcome": "machinery_absent",
+    "ggen_igniter_sha": "6e7834ee68b6617b7f11ac48b1e9fc2651fc448d",
+    "outcome": "passed",
     "timed_out": false,
     "timeout_ms": 900000
   },
   "identity": {
     "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
     "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
-    "repo": "/Users/sac/wt/v26922/v23/V23-P",
+    "repo": "seanchatmangpt/xaas",
+    "repo_source": "git remote origin (github.com)",
     "subject": "GC-26.9.23/GC23-6",
-    "subject_sha": "11a24fba65c90b5c146cdd16d2328c64c647731c"
+    "subject_sha": "cb3991282f73727f008f478da7f29ab487ac57c3",
+    "worktree": "/Users/sac/xaas"
   },
   "replay": {
     "commands": [
       {
         "cmd": "sh docs/sjira/v26.9.23/courts/GC23-6.sh",
-        "cwd": "/Users/sac/wt/v26922/v23/V23-P",
-        "exit": 75,
-        "output_sha256": "493fd767260c20fb94bf8e088f0c702bf43bbc7c8acf9924d86154de96fdae16",
-        "summary": "UNKNOWN: GC23-6 machinery lands in lane V23-D"
+        "cwd": "/Users/sac/xaas",
+        "exit": 0,
+        "invocation": {
+          "argv": [
+            "mix",
+            "xaas.stop_court",
+            "--checkpoint",
+            "GC-26.9.23",
+            "--receipts-dir",
+            "/Users/sac/.claude/migration/v26923-single-repo/release/int-stop-pre",
+            "--only",
+            "GC23-6"
+          ],
+          "cwd": "/Users/sac/xaas",
+          "env": {
+            "GC23_FLEET_RECEIPTS_DIR": "/Users/sac/.local/state/sjira/receipts/fleet",
+            "GGEN_IGNITER_DIR": "/Users/sac/ggen_igniter",
+            "MIX_ENV": "test"
+          },
+          "shell": "cd /Users/sac/xaas && env GC23_FLEET_RECEIPTS_DIR=/Users/sac/.local/state/sjira/receipts/fleet GGEN_IGNITER_DIR=/Users/sac/ggen_igniter MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --receipts-dir /Users/sac/.claude/migration/v26923-single-repo/release/int-stop-pre --only GC23-6"
+        },
+        "output_sha256": "2f6221026d7ec629dd6c4dcc66df620dbabc0975fb661bb5e878bdc45c45e0a5",
+        "summary": "ALIVE: GC23-6 consequence independently observed at 9c5e7571c948f97f6ae08d9399f69f502d81efd4; F4 revert falsifier killed"
       }
     ],
-    "durable_location": "docs/sjira/v26.9.23/receipts/GC23-6.json"
+    "durable_location": "/Users/sac/.claude/migration/v26923-single-repo/release/int-stop-pre/GC23-6.json"
   },
   "standing": {
-    "derived_from": "court command of GC-26.9.23/GC23-6 exited 75 (machinery_absent) at 11a24fba65c90b5c146cdd16d2328c64c647731c; ALIVE iff exit 0",
-    "value": "UNKNOWN"
+    "derived_from": "court command of GC-26.9.23/GC23-6 exited 0 (passed) at cb3991282f73727f008f478da7f29ab487ac57c3; ALIVE iff exit 0, BLOCKED iff exit 77 with a typed BLOCKED(<reason>) (broken_term <term>) line",
+    "value": "ALIVE"
+  },
+  "toolchain": {
+    "elixir": "1.20.2",
+    "erts_version": "16.4.0.2",
+    "otp_release": "28",
+    "python3": "Python 3.14.3",
+    "python3_path": "/opt/homebrew/bin/python3"
+  },
+  "verifier": {
+    "court_command": "sh docs/sjira/v26.9.23/courts/GC23-6.sh",
+    "court_command_sha256": "sha256:fa465e2e06bdb6d9d2e0308664cc47f1ea02f3d3815ec2244ac62a3de9e4acec",
+    "court_script": "docs/sjira/v26.9.23/courts/GC23-6.sh",
+    "court_script_at_subject": true,
+    "court_script_at_subject_why": null,
+    "court_script_sha256": "sha256:38e322316b361c0c3c23a15e9a22de9b6373b7974fd4f5e00b7c0198112f970f",
+    "court_script_why": null,
+    "runner": "mix xaas.stop_court",
+    "runner_source": "lib/mix/tasks/xaas.stop_court.ex",
+    "runner_source_at_subject": true,
+    "runner_source_at_subject_why": null,
+    "runner_source_sha256": "sha256:6d64dd32cb06c325c877d7a6ff295a6cb029c8654c03b176180d89d53a076ae8",
+    "schema": "/Users/sac/.claude/dfcm/receipt.schema.json",
+    "schema_sha256": "sha256:c19451fafb55dce681f149d88afe00987be0b4daa6a97651d4bfad2aaf2a6d74",
+    "schema_why": null,
+    "stop_query_sha256": "sha256:77f7156957a337d31942ed612f70bb3514e77daa0978d6221a69e41efe1ba619",
+    "validator": "/Users/sac/.claude/dfcm/validate_receipt.py",
+    "validator_sha256": "sha256:bc703c76837d369788ff50858547eab98d01d38ce467469f8b9a8214e9f55e2c",
+    "validator_why": null
   }
 }
