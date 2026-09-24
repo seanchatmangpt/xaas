@@ -803,7 +803,11 @@ defmodule Xaas.Ultracode.SemanticDrive do
 
     1. **the compiler of the build under judgement.** Mix records it in
        `<build_path>/lib/<app>/.mix/compile.elixir_scm` as
-       `{elixir_version, otp_release}`. When the running node's ERTS has that
+       `{elixir_version, otp_release}`, in one of the two declared manifest
+       shapes (vsn 1 `{1, compiler, scm}` up to Elixir 1.19, vsn 2
+       `{2, compiler, scm, lock}` from 1.20); any other shape is
+       `REFUSED(build_manifest_shape)`, recorded as `build_manifest_unused`,
+       and step 2 applies. When the running node's ERTS has that
        OTP release and an Elixir of exactly that version is installed -- the
        running node's own, else `<asdf>/installs/elixir/<vsn>-otp-<otp>`, else
        `<asdf>/installs/elixir/<vsn>` -- that Elixir runs the graph side: Mix
@@ -880,13 +884,30 @@ defmodule Xaas.Ultracode.SemanticDrive do
     end
   end
 
-  # compile.elixir_scm is {vsn, {elixir, otp}, scm} up to Elixir 1.19 and
-  # {vsn, {elixir, otp}, scm, extra} from 1.20 on (the xaas .tool-versions
-  # pin, 1.20.2-otp-28): the compiler identity is element 1 of either shape.
-  defp manifest_compiler(term) when is_tuple(term) and tuple_size(term) in [3, 4],
-    do: elem(term, 1)
+  # Mix's compile.elixir_scm (Mix.Dep.ElixirSCM, `@manifest_vsn`) has two
+  # declared shapes: vsn 1 up to Elixir 1.19, {1, {elixir, otp}, scm}, and
+  # vsn 2 from 1.20 on (the xaas .tool-versions pin, 1.20.2-otp-28), which
+  # adds the dependency lock: {2, {elixir, otp}, scm, lock}. Only those two
+  # are read; any other term is refused by name, never read by position.
+  defp manifest_compiler({1, {elixir, otp}, _scm}) when is_binary(elixir) and is_list(otp),
+    do: {:ok, %{"elixir" => elixir, "otp" => to_string(otp)}}
 
-  defp manifest_compiler(_), do: nil
+  defp manifest_compiler({2, {elixir, otp}, _scm, _lock})
+       when is_binary(elixir) and is_list(otp),
+       do: {:ok, %{"elixir" => elixir, "otp" => to_string(otp)}}
+
+  defp manifest_compiler(term) when is_tuple(term) and tuple_size(term) > 0,
+    do:
+      {:refused,
+       "an undeclared shape (#{tuple_size(term)}-tuple, vsn #{inspect(elem(term, 0), limit: 3)})"}
+
+  defp manifest_compiler(_term), do: {:refused, "an undeclared shape (not a tuple)"}
+
+  defp manifest_refusal(path, shape) do
+    "REFUSED(build_manifest_shape): #{path} is #{shape}; the declared shapes are " <>
+      "vsn 1 {1, {elixir, otp}, scm} (Elixir <= 1.19) and " <>
+      "vsn 2 {2, {elixir, otp}, scm, lock} (Elixir 1.20)"
+  end
 
   defp graph_path(mix, erts_bin),
     do: [Path.dirname(mix), erts_bin, "/usr/bin", "/bin"] |> Enum.uniq() |> Enum.join(":")
@@ -944,24 +965,30 @@ defmodule Xaas.Ultracode.SemanticDrive do
 
     path = app && Path.join([build_path, "lib", app, ".mix", "compile.elixir_scm"])
 
-    compiler =
+    {compiler, refusal} =
       with path when is_binary(path) <- path,
-           {:ok, bytes} <- File.read(path),
-           {elixir, otp} when is_binary(elixir) and is_list(otp) <-
-             manifest_compiler(safe_term(bytes)) do
-        %{"elixir" => elixir, "otp" => to_string(otp)}
+           {:ok, bytes} <- File.read(path) do
+        with {:ok, term} <- safe_term(bytes),
+             {:ok, compiler} <- manifest_compiler(term) do
+          {compiler, nil}
+        else
+          {:refused, shape} -> {nil, manifest_refusal(path, shape)}
+        end
       else
-        _ -> nil
+        _ -> {nil, nil}
       end
 
-    %{path: path, compiler: compiler}
+    %{path: path, compiler: compiler, refusal: refusal}
   end
 
   defp safe_term(bytes) do
-    :erlang.binary_to_term(bytes, [:safe])
+    {:ok, :erlang.binary_to_term(bytes, [:safe])}
   rescue
-    ArgumentError -> nil
+    ArgumentError -> {:refused, "not a decodable Erlang term"}
   end
+
+  defp built_toolchain(%{refusal: refusal}, _otp) when is_binary(refusal),
+    do: {:unavailable, refusal}
 
   defp built_toolchain(%{compiler: nil, path: path}, _otp),
     do: {:unavailable, "no readable build manifest at #{inspect(path)}"}

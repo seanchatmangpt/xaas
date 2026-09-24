@@ -576,7 +576,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
           "docs/sjira/v26.9.23/courts",
           "docs/sjira/v26.9.23/fleet/universe.json",
           "docs/sjira/v26.9.22/friday/goal.ttl",
-          "scripts/sjira/prose_spans.py"
+          "scripts/sjira/prose_spans.py",
+          # courts/no_llm_env.sh builds the F3 environment from this policy
+          # data (R1-X-GUARD), four directories above the court scripts.
+          "priv/no_llm/policy.json"
         ] do
       target = Path.join(dir, rel)
       File.mkdir_p!(Path.dirname(target))
@@ -606,11 +609,24 @@ defmodule Xaas.Sjira.V26923GoalTest do
   end
 
   # The court as the stop court runs it: /bin/sh from the xaas root, MIX_ENV unset.
+  # A court copy outside an xaas checkout (court_repo/1) cannot resolve the
+  # graph-side toolchain itself, so its courts/gi_mix.sh keeps the caller's
+  # PATH: put first on it the toolchain the in-tree gi_mix.sh resolves
+  # (`SemanticDrive.graph_toolchain/2`, the real resolution, not a copy).
   defp run_court(repo, gate, ggen) do
+    path =
+      case Xaas.Ultracode.SemanticDrive.graph_toolchain(ggen, Path.join([ggen, "_build", "test"])) do
+        {:ok, %{"mix" => mix, "erl" => erl}} ->
+          Enum.join([Path.dirname(mix), Path.dirname(erl), System.get_env("PATH")], ":")
+
+        {:refused, _} ->
+          System.get_env("PATH")
+      end
+
     System.cmd("sh", [Path.join(repo, "docs/sjira/v26.9.23/courts/#{gate}.sh")],
       cd: repo,
       stderr_to_stdout: true,
-      env: [{"XAAS_DIR", repo}, {"GGEN_IGNITER_DIR", ggen}, {"MIX_ENV", nil}]
+      env: [{"XAAS_DIR", repo}, {"GGEN_IGNITER_DIR", ggen}, {"MIX_ENV", nil}, {"PATH", path}]
     )
   end
 

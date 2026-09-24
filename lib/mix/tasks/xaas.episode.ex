@@ -188,7 +188,8 @@ defmodule Mix.Tasks.Xaas.Episode do
         SemanticDrive.anchor(
           ggen_igniter_dir: dir,
           work_graph: Path.expand(work),
-          order: opts[:order] || (is_map(hops) && hops["work_order"]) || "EP-A",
+          # hops is the map SemanticDrive.verify_hops/1 already admitted
+          order: opts[:order] || hops["work_order"] || "EP-A",
           ggen_build_path: opts[:ggen_build_path] && Path.expand(opts[:ggen_build_path])
         )
 
