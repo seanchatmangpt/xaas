@@ -132,6 +132,13 @@ defmodule Xaas.Sjira.SuccessorTest do
 
   # ------------------------------------------------------------------ successor_law.py
 
+  # successor_law.py reads the goal graph with rdflib; a runner whose python3
+  # lacks it (CI: ubuntu-latest system python) skips by name, as
+  # xaas_stop_court_test and v26_9_23_goal_test do.
+  @rdflib (python = System.find_executable("python3")) &&
+            elem(System.cmd(python, ["-c", "import rdflib"], stderr_to_stdout: true), 1) == 0
+
+  @tag skip: if(@rdflib, do: false, else: "successor_law.py needs python3 with rdflib")
   test "successor_law.py admits the committed successor and refuses a smuggled WorkOrder (real python3)" do
     law = Path.join(@courts, "successor_law.py")
     {out, code} = System.cmd("python3", [law, "--xaas", @repo], stderr_to_stdout: true)

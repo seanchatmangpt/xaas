@@ -1,0 +1,12 @@
+restored:  lib/xaas/ultracode/semantic_drive.ex (tree clean)
+Excluding tags: [:test, :stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+  1) test both declared manifest shapes are read: vsn 1 {1, compiler, scm} and vsn 2 {2, compiler, scm, lock} (Xaas.Ultracode.SemanticDriveToolchainTest)
+  2) test a build compiled by an Elixir with no install falls back to the checkout's pin, recording why (Xaas.Ultracode.SemanticDriveToolchainTest)
+  3) test an undeclared manifest shape is REFUSED(build_manifest_shape), never read by position; the pin applies (Xaas.Ultracode.SemanticDriveToolchainTest)
+  4) test a build compiled on another OTP release falls back to the pin (an ERTS switch recompiles everything) (Xaas.Ultracode.SemanticDriveToolchainTest)
+  5) test a build compiled by this node's Elixir on this ERTS resolves to that Elixir (source build_manifest), and it runs (Xaas.Ultracode.SemanticDriveToolchainTest)
+Result: 2/7 passed, 14 excluded
+inner_exit=2
+FALSIFIER manifest-vsn1: fired as expected
+sh $G/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN $L/fals $n  3.85s user 4.27s system 161% cpu 5.035 total
+exit=0

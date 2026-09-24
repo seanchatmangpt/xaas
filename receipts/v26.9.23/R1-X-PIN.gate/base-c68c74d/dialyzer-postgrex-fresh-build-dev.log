@@ -1,0 +1,37 @@
+Wed Sep 23 17:50:42 PDT 2026
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+warning: "xref: [exclude: ...]" in your mix.exs file is deprecated, instead use: "elixirc_options: [no_warn_undefined: ...]"
+  (mix 1.20.2) lib/mix/tasks/compile.elixir.ex:243: Mix.Tasks.Compile.Elixir.xref_exclude_opts/2
+  (mix 1.20.2) lib/mix/tasks/compile.elixir.ex:142: Mix.Tasks.Compile.Elixir.run/1
+  (mix 1.20.2) lib/mix/task.ex:502: anonymous fn/3 in Mix.Task.run_task/5
+  (mix 1.20.2) lib/mix/task.compiler.ex:299: Mix.Task.Compiler.run_compiler/2
+  (mix 1.20.2) lib/mix/task.compiler.ex:287: Mix.Task.Compiler.run/4
+  (mix 1.20.2) lib/mix/tasks/compile.all.ex:75: Mix.Tasks.Compile.All.do_run/2
+
+==> postgrex
+Compiling 70 files (.ex)
+warning: cannot infer signatures from :db_connection because it is not loaded
+
+warning: cannot infer signatures from :decimal because it is not loaded
+
+warning: cannot infer signatures from :jason because it is not loaded
+
+warning: cannot infer signatures from :table because it is not loaded
+
+warning: cannot infer signatures from :telemetry because it is not loaded
+
+
+== Compilation error in file lib/postgrex/parameters.ex ==
+** (ArgumentError) could not load module DBConnection.Query due to reason :unavailable
+    (elixir 1.20.2) lib/protocol.ex:336: Protocol.assert_protocol!/2
+    lib/postgrex/parameters.ex:73: (file)
+    (elixir 1.20.2) lib/kernel/parallel_compiler.ex:548: anonymous fn/5 in Kernel.ParallelCompiler.spawn_workers/8
+could not compile dependency :postgrex, "mix compile" failed. Errors may have been logged above. You can recompile this dependency with "mix deps.compile postgrex --force", update it with "mix deps.update postgrex" or clean it with "mix deps.clean postgrex"
+env MIX_ENV=dev mix deps.compile --force postgrex  1.83s user 1.95s system 443% cpu 0.854 total
+exit=1

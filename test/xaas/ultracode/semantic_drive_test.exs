@@ -646,6 +646,57 @@ defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
     assert out == otp
   end
 
+  # Mix.Dep.ElixirSCM `@manifest_vsn`: 1 up to Elixir 1.19, 2 from 1.20 (the
+  # xaas pin). The real manifest's compiler and scm, re-encoded in each shape.
+  test "both declared manifest shapes are read: vsn 1 {1, compiler, scm} and vsn 2 {2, compiler, scm, lock}" do
+    node = %{
+      "elixir" => System.version(),
+      "otp" => to_string(:erlang.system_info(:otp_release))
+    }
+
+    for {label, shape} <- [
+          {"vsn1", fn real -> {1, elem(real, 1), elem(real, 2)} end},
+          {"vsn2", fn real -> {2, elem(real, 1), elem(real, 2), nil} end}
+        ] do
+      {dir, build} = checkout(label, shape)
+
+      assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+      assert {label, t["source"]} == {label, "build_manifest"}
+      assert t["build_compiler"] == node
+      refute Map.has_key?(t, "build_manifest_unused")
+    end
+  end
+
+  test "an undeclared manifest shape is REFUSED(build_manifest_shape), never read by position; the pin applies" do
+    for {label, shape, named} <- [
+          {"vsn3", fn real -> {3, elem(real, 1), elem(real, 2), nil} end, "4-tuple, vsn 3"},
+          {"vsn1-lock", fn real -> {1, elem(real, 1), elem(real, 2), nil} end, "4-tuple, vsn 1"},
+          {"vsn2-nolock", fn real -> {2, elem(real, 1), elem(real, 2)} end, "3-tuple, vsn 2"},
+          {"bare", fn real -> elem(real, 1) end, "2-tuple"}
+        ] do
+      {dir, build} = checkout(label, shape)
+
+      assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+      refute t["source"] == "build_manifest"
+      assert t["build_compiler"] == nil
+      assert t["build_manifest_unused"] =~ "REFUSED(build_manifest_shape)"
+      assert t["build_manifest_unused"] =~ named
+      assert_runs(t)
+    end
+
+    {dir, build} = checkout("garbage", & &1)
+
+    File.write!(
+      Path.join([build, "lib", "demo_graph", ".mix", "compile.elixir_scm"]),
+      "not a term"
+    )
+
+    assert {:ok, t} = SemanticDrive.graph_toolchain(dir, build)
+    refute t["source"] == "build_manifest"
+    assert t["build_manifest_unused"] =~ "REFUSED(build_manifest_shape)"
+    assert t["build_manifest_unused"] =~ "not a decodable Erlang term"
+  end
+
   test "no build at all falls back to the pin" do
     {dir, _build} = checkout("none", & &1)
     empty = Path.join(dir, "_build/elsewhere")

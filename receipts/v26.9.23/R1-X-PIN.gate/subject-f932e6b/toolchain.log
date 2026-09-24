@@ -1,0 +1,20 @@
+subject f932e6b76b859dd27cb95c4d5085c50ccec84507
+PATH prefix: /Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix
+/Users/sac/.asdf/installs/erlang/28.5.0.2/bin/erl
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+erts 16.4.0.2 otp 28
+elixir 1.20.2-otp-28
+erlang 28.5.0.2
+_build/test manifest {2,{<<"1.20.2">>,"28"},'Elixir.Mix.SCM.Path',nil}
+_build/dev manifest {2,{<<"1.20.2">>,"28"},'Elixir.Mix.SCM.Path',nil}
+ggen_igniter-int: d6a6e5bd8de1da426ddc26130edfa45bbaf24f61
+ggen_igniter-int _build/test manifest {1,
+                                       {<<"1.18.4">>,"27"},
+                                       'Elixir.Mix.SCM.Path'}
+Python 3.14.3
+jsonschema 4.23.0
+/dev/disk3s5       926  867        27    97% 18962007 283511040    6%   /System/Volumes/Data

@@ -1,0 +1,5 @@
+publish-image: if = "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"
+publish-image: conjunct github.ref == 'refs/heads/main' is false for ref refs/heads/v23/R1-X-PIN
+deploy: if = "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"
+deploy: conjunct github.ref == 'refs/heads/main' is false for ref refs/heads/v23/R1-X-PIN
+sha 60972f8e9757a4e4bd45ef265781518d5ccdebdf ref refs/heads/v23/R1-X-PIN: FENCE HOLDS FOR THIS DISPATCH

@@ -1,0 +1,11 @@
+restored:  test/xaas/receipt/r_projection_test.exs (tree clean)
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+Result: 3/8 passed
+inner_exit=2
+FALSIFIER rproj-guard: fired as expected
+sh $G/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN $L/fals $n  3.57s user 5.16s system 99% cpu 8.818 total
+exit=0

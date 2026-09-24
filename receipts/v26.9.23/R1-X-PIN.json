@@ -1,0 +1,521 @@
+{
+ "identity": {
+  "subject": "R1-X-PIN",
+  "repo": "/Users/sac/xaas",
+  "repo_slug": "seanchatmangpt/xaas",
+  "subject_sha": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+  "base_sha": "c68c74dcf4e405e4382d34d51288763afc5939b0",
+  "branch": "v23/R1-X-PIN",
+  "worktree": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+  "work_order": null,
+  "tuple_digest": null,
+  "tuple_digest_why": "no goal.ttl order for lane R1-X-PIN (grep -c 'WO-R1\\|R1-X' docs/sjira/v26.9.23/goal.ttl -> 0, exit 1): release-defect repair lane; the receipt is not linked by the stop court",
+  "base_sha_why": "merge-base(v23/R1-X-PIN, friday/gc-fri-0800) = c68c74d (R1-X-LOCK merged; GUARD b7b3794, COURTS c14a25c, FENCE 6f59676, PGREP 1f12617, DIGEST 3717a7b, LOCK 1e2c373 all ancestors, git merge-base --is-ancestor exit 0 each)",
+  "commits_on_subject": [
+   "60972f8e9757a4e4bd45ef265781518d5ccdebdf",
+   "3ea1cfc305f2f3aeb5f80b4d5a00e994eb8106a0",
+   "f932e6b76b859dd27cb95c4d5085c50ccec84507"
+  ],
+  "graph_checkout": {
+   "GGEN_IGNITER_DIR": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+   "sha_at_subject_runs": "d6a6e5bd8de1da426ddc26130edfa45bbaf24f61",
+   "sha_at_base_run": "3ed6a7afc51fcfc652cfa72f75680d7fa1543bc8"
+  },
+  "prd_ard": "PRD section 12 GC23-11 (exact-subject standing), PR-013 (replay); ARD section 14 (graph-side toolchain), section 20 (failure semantics), section 22 (generated vs handwritten), section 25 (verification ladder); chatman-ce23.md CE23-5 (green exact-head CI: ci_cd.yaml job ci); operator release closure procedure (DRIVER.md): release defect repair on the frozen subject, merges before REL-A3"
+ },
+ "authority": {
+  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-PIN, wave R1c wf_18c25526-098)",
+  "ceiling": "CONSTRUCT",
+  "grant": "operator release closure procedure via /Users/sac/wt/v26922/v26923/DRIVER.md (17:17 PT R1c = wf_18c25526-098; lanes/wave-R1c.json); hosted CI dispatch and branch push allowed by the wave task after the R1-X-FENCE YAML proof; DRIVER Authority: push branches (never force)"
+ },
+ "consequence": {
+  "commits": [
+   "60972f8e9757a4e4bd45ef265781518d5ccdebdf",
+   "3ea1cfc305f2f3aeb5f80b4d5a00e994eb8106a0",
+   "f932e6b76b859dd27cb95c4d5085c50ccec84507"
+  ],
+  "files_changed": [
+   "HANDWRITTEN.md",
+   "docs/sjira/v26.9.23/courts/gi_mix.sh",
+   "lib/mix/tasks/xaas.episode.ex",
+   "lib/xaas/ultracode/machine_experience.ex",
+   "lib/xaas/ultracode/semantic_drive.ex",
+   "test/sjira/v26_9_23_goal_test.exs",
+   "test/xaas/actuation_ocel_undo_test.exs",
+   "test/xaas/receipt/r_projection_test.exs",
+   "test/xaas/sjira/successor_test.exs",
+   "test/xaas/ultracode/court_receipt_test.exs",
+   "test/xaas/ultracode/semantic_drive_test.exs",
+   "test/xaas/ultracode/semantic_receipt_test.exs"
+  ],
+  "files_changed_scope": "git diff --name-only c68c74d f932e6b (lane product diff; the receipt commit on top touches receipts/v26.9.23/R1-X-PIN.* only)",
+  "receipt_files": [
+   "receipts/v26.9.23/R1-X-PIN.json",
+   "receipts/v26.9.23/R1-X-PIN.gate/"
+  ],
+  "remote_effects": [
+   "git push origin v23/R1-X-PIN (new branch, never forced): 60972f8, then fast-forward to f932e6b",
+   "gh workflow run ci_cd.yaml --ref v23/R1-X-PIN: run 35941961752 at 60972f8 (conclusion failure), run 35943406033 at f932e6b (job ci success; run cancelled by job production); publish-image and deploy skipped in both (fence proven before each dispatch)"
+  ],
+  "generated_vs_handwritten": "no generator owns any touched file (machine_experience.ex, semantic_drive.ex, xaas.episode.ex, gi_mix.sh and the tests are hand-written, already ledgered); HANDWRITTEN.md: one Active note row (append-only) + one Shrunk row (machine_experience.ex -8/+5)",
+  "residue": "semantic_drive.ex +manifest shape table/refusal (~30 lines), gi_mix.sh +toolchain resolution (~40 lines incl. comment), test guards; UNSUPPORTED(generator-capability) per the HANDWRITTEN.md note row"
+ },
+ "toolchain": {
+  "elixir": "Elixir 1.20.2 (compiled with Erlang/OTP 28)",
+  "erts": "16.4.0.2",
+  "elixir_bin": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir",
+  "mix_bin": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix",
+  "tool_versions_pin": {
+   "elixir": "1.20.2-otp-28",
+   "erlang": "28.5.0.2"
+  },
+  "tool_versions_pin_used": true,
+  "build": "fresh _build/test and _build/dev compiled under the pin in this worktree (deps/ APFS-cloned from fri/xaas-int, mix.lock identical); manifests {2, {\"1.20.2\", \"28\"}, Mix.SCM.Path, nil}",
+  "dialyzer_plt": "priv/plts copied (cp -c) from the scan's OTP 28 PLT as a cache; dialyzer rebuilt it for this tree on the first run",
+  "hosted": "setup-beam Elixir 1.20.2 / OTP 28 (erts 16.4.0.2), ubuntu-latest",
+  "validator": "python3 3.14.3, jsonschema 4.23.0",
+  "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/toolchain.log"
+ },
+ "classification": [
+  {
+   "failure": "dialyzer pattern_match machine_experience.ex:539 (closed/5) and :1235 (objects/3)",
+   "class": "subject defect",
+   "origin": "V23-M (a2d60a0/d19623e/ffbbee0); absent on origin/main",
+   "repair": "direct pipes over RDF.Graph.description/2 (rdf 3.0.1 specs Description.t(); Description.new(subject) when absent), behavior unchanged",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "dialyzer guard_fail xaas.episode.ex:191 hops_anchor/2 `is_map(hops) &&`",
+   "class": "subject defect",
+   "origin": "R1-X-COURTS a4c2924 (not in the scan's e999e62 count)",
+   "repair": "drop the dead guard: hops is the map SemanticDrive.verify_hops/1 already admitted",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "V26923GoalTest GC23-0 stop-court subprocess + GC23-12 registry (compile_prose --check exited 1 under the pin)",
+   "class": "subject defect (court helper), exposed by the pinned environment",
+   "origin": "courts/gi_mix.sh (V23-K) used the caller's mix; ggen_igniter-int _build/test is compiled by its own 1.18.4-otp-27 pin since R1-GI-FMT/R1-GI-PIN",
+   "repair": "gi_mix.sh resolves the drive's graph-side toolchain (`mix xaas.episode --graph-toolchain`, as GC23-8/GC23-9); this is R2-X-TOOLCHAIN item (2) for gi_mix.sh -- bootstrap_court.sh/GC23-1, cargo policy data and typed BUILD_BROKEN exits remain R2-X-TOOLCHAIN's",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "V26923GoalTest GC23-0 / GC23-3 court-copy fixtures ('no_llm_env: no policy data')",
+   "class": "subject defect (test fixture)",
+   "origin": "R1-X-GUARD 795153d made no_llm_env.sh read priv/no_llm/policy.json; court_repo/1 did not copy it",
+   "repair": "court_repo/1 copies priv/no_llm/policy.json; run_court/3 puts the resolved graph-side toolchain first on PATH for court copies",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "ActuationOcelUndoTest :eaddrinuse",
+   "class": "pre-existing (environment-triggered flake)",
+   "origin": "hash-derived port 42_777 + phash2(self(), 500) on a host shared with other mix test runs",
+   "repair": "port 0 + ThousandIsland.listener_info/1, as ocel_envelope_avatars_test.exs since 58f37af",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "scan candidate: SemanticDrive.build_manifest/2 vsn-1-only match",
+   "class": "subject defect, partly closed before this lane",
+   "origin": "d5b8daf (R1-X-COURTS integrate) already read vsn 2 but as element 1 of ANY 3-/4-tuple",
+   "repair": "exactly the two declared Mix.Dep.ElixirSCM shapes are read; any other term (incl. undecodable bytes) is REFUSED(build_manifest_shape) in build_manifest_unused, then the pin applies",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "scan candidate: r_projection_test.exs without an absent-validator guard",
+   "class": "environment (hosted runner has no fleet validator)",
+   "origin": "RProjection tests call ~/.claude/dfcm/validate_receipt.py",
+   "repair": "per-test @needs_validator guard on the 5 validate/1 tests (the scan's verified patch, applied byte-identically)",
+   "commit": "60972f8e9757a4e4bd45ef265781518d5ccdebdf"
+  },
+  {
+   "failure": "hosted job ci: court_receipt_test.exs:306 (and the same coupling in semantic_receipt_test / successor_law.py)",
+   "class": "environment (host-coupled real courts), subject defect in the tests",
+   "origin": "FRI-T3 2393308, V23-H eecc5fe",
+   "repair": "cherry-pick -x of the r2 pre-flight candidate f7dde47 (named skips probing the real precondition), re-verified host vs CI-like",
+   "commit": "3ea1cfc305f2f3aeb5f80b4d5a00e994eb8106a0"
+  },
+  {
+   "failure": "gate B first command on a fresh _build/dev (postgrex deps not compiled)",
+   "class": "environment",
+   "origin": "fresh _build/dev",
+   "repair": "none (the gate runs on a tree whose dev deps exist; every later run exit 0)"
+  },
+  {
+   "failure": "hosted job production cancelled (timeout-minutes 12, C++ NIF compile)",
+   "class": "pre-existing / infrastructure",
+   "origin": "pre-existing on main (scan R2-X-PROD-TIMEOUT)",
+   "repair": "none here: owned by R2-X-PROD-TIMEOUT (and R2-X-IMAGE-CARGO for image-check)"
+  }
+ ],
+ "results": {
+  "full_suite_run_1": "seed 879900: 1895 passed, 76 excluded, 0 failures (gate A, exit 0)",
+  "full_suite_run_2": "seed 684346: 1895 passed, 76 excluded, 0 failures (exit 0)",
+  "dialyzer_summary": "Total errors: 29, Skipped: 29, Unnecessary Skips: 0 -- done (passed successfully) (base c68c74d: Total errors: 32, Skipped: 29, exit 2)",
+  "empty_home_clause": "Result: 3 passed, 5 skipped",
+  "hosted_job_ci": "success at f932e6b: 1796 passed, 99 skipped, 76 excluded; dialyzer 29/29 passed"
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/R1-X-PIN.gate/ (tracked in git on branch v23/R1-X-PIN; hosted job logs gzip -n)",
+  "commands": [
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "lane gate part A (full suite run 1)",
+    "summary": "Elixir 1.20.2 (OTP 28, erts 16.4.0.2); format 0; compile --force --warnings-as-errors 0; full suite seed 879900: Result: 1895 passed, 76 excluded (0 failures) in 455.3 s; tree clean before and after",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/gateA-suite-run1.log",
+    "output_sha256": "c8e9e0581b4056134e19c7ea5c639bbbd4cf8a23bfc6c1882665a15f605d5d0d"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'MIX_ENV=dev mix deps.compile --force postgrex && MIX_ENV=dev mix dialyzer --format github'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "lane gate part B (dialyzer, ci_cd.yaml job ci step)",
+    "summary": "postgrex recompiled in-tree (ignore entry matches); 'Total errors: 29, Skipped: 29, Unnecessary Skips: 0', 'done (passed successfully)'; no .dialyzer_ignore.exs change",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/gateB-dialyzer.log",
+    "output_sha256": "c48680d468e0045c2547d6ce84ce101a1d0124c2da8d470dce2eca6b4903528f"
+   },
+   {
+    "cmd": "T=$(mktemp -d) && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH env HOME=$T MIX_HOME=/Users/sac/.mix HEX_HOME=/Users/sac/.hex MIX_ENV=test mix test test/xaas/receipt/r_projection_test.exs > $T/rp.log 2>&1; tail -5 $T/rp.log; grep -Eq '8 tests, 0 failures, 5 skipped|Result: 3 passed, 5 skipped' $T/rp.log",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "lane gate part C (empty-HOME r_projection clause)",
+    "summary": "HOME = a fresh mktemp dir (no ~/.claude/dfcm/validate_receipt.py): 'Result: 3 passed, 5 skipped' -- the 5 validator-calling tests skip by name, the 3 fabric-only refusal tests run",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/gateC.log",
+    "output_sha256": "29a8e2f3a6efb23bb4c219456d03a4c470ae0a1795ec3e9893d2c163db309630"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "full suite run 2 (order dependence)",
+    "summary": "second full run, fresh seed 684346: Result: 1895 passed, 76 excluded (0 failures) in 733.1 s; tree clean before and after",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/suite-run2.log",
+    "output_sha256": "8bdd8c7efb89024d4379ec75d2f083ef2cc6086910cd4ab98ce4d2fb7c4cb934"
+   },
+   {
+    "cmd": "sh -c '! grep -n \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" <the 7 lane-touched test files + 3 lane-touched lib files>'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "Chicago mock grep (xaas CLAUDE.md pattern) over lane-changed files",
+    "summary": "0 matches in the changed test/lib files; the whole-tree grep (subject-f932e6b/mockgrep-tree.log) has 178 pre-existing matches: 172 HTTP `patch(` verbs and 6 comment/string literals, none in a lane-changed file",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/mockgrep-changed-inverted.log",
+    "output_sha256": "24435714bea5508011a6ef7cb325b26bccfee41d50d690475a2b74be2101a3cb"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals nil-clauses",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "restoring the two `nil -> []` clauses + `is_map(hops) &&`: dialyzer inner exit 2, 'Total errors: 32, Skipped: 29', pattern_match at machine_experience.ex:539 and :1235, guard_fail at xaas.episode.ex:191; restored, tree clean",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-nil-clauses.log",
+    "output_sha256": "5f74db1eb97c032f665f51ff44b7efb7361e48df0042133a221a41685f5cac17",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-nil-clauses.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals rproj-guard",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "removing the 5 `@tag skip: @needs_validator`: empty-HOME clause inner exit 2, 'Result: 3/8 passed' (5 failures \"can't open file .../validate_receipt.py\"); restored, tree clean",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-rproj-guard.log",
+    "output_sha256": "7c9296b581b1ee61e62de46bcfc5a2d40607df4b2fa816c1cbfaad003e9abe4c",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-rproj-guard.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals manifest-vsn1",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "manifest reader matching only {_vsn, compiler, _scm} (the scan's vsn-1-only shape): inner exit 2, 2/7 passed; fails 'a build compiled by this node's Elixir on this ERTS resolves to that Elixir (source build_manifest)' and 'both declared manifest shapes are read' (the 1.20.2 manifest is {2, {\"1.20.2\", ~c\"28\"}, Mix.SCM.Path, nil})",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-manifest-vsn1.log",
+    "output_sha256": "94ba0604fecec0fb3a091541dc7a3d9643f826a59a40c8975d8e60b561f06339",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-manifest-vsn1.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals manifest-any",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "manifest reader of c68c74d (element 1 of any 3-/4-tuple): inner exit 2, 6/7 passed; fails 'an undeclared manifest shape is REFUSED(build_manifest_shape)' (a vsn-3 4-tuple is read by position)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-manifest-any.log",
+    "output_sha256": "49ba60c8c0065ab02108964e54e16d0b87ba259c5b31f5a7f866e2b1ceaad47f",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-manifest-any.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals gi-mix",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "gi_mix.sh of c68c74d (caller's mix): GC23-0 court under the xaas pin inner exit 1 -- 'could not compile dependency :faker' then 'REFUSED: GC23-0 compile_prose --check exited 1'; restored, tree clean",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-gi-mix.log",
+    "output_sha256": "c633a7399a365bf57e05c2358d9540964118d39a3ad8dff5dc2ffa28e8baece0",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-gi-mix.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals court-policy",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "court_repo/1 without priv/no_llm/policy.json: the GC23-0 and GC23-3 court-copy tests inner exit 2, 0/2 passed, 'UNKNOWN: no_llm_env: no policy data at .../priv/no_llm/policy.json'",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-court-policy.log",
+    "output_sha256": "e524d678f34a53b81cbede5795d27a221df7bebac7d39104529760cdf9864411",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-court-policy.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals port-hash",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "undo OCEL test of c68c74d (hash-derived port) with every port 42777..43276 held by a real listener (500 held): inner exit 2, 3x ':eaddrinuse', 0/3 passed; restored",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-port-hash.log",
+    "output_sha256": "7e892b365eb27371084089be7727f137dcc16cfb1e53edb00631fe997d92d645",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-port-hash.inner.log"
+   },
+   {
+    "cmd": "sh receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN /private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals port-held-committed",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "revert-mutation falsifier (harness exit 0 iff the mutated check failed the expected way and the tree is restored clean)",
+    "summary": "the committed test (port 0) under the same 500 held ports: inner exit 0, 'Result: 3 passed'",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-port-held-committed.log",
+    "output_sha256": "824d1909655b63c140af03c20328e395d200b567a5707f39dd5390f7563b00f8",
+    "inner_log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-port-held-committed.inner.log"
+   },
+   {
+    "cmd": "python3 receipts/v26.9.23/R1-X-PIN.gate/dispatch_fence.py $PWD f932e6b76b859dd27cb95c4d5085c50ccec84507 refs/heads/v23/R1-X-PIN && gh workflow run ci_cd.yaml --repo seanchatmangpt/xaas --ref v23/R1-X-PIN",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "R1-X-FENCE-gated hosted dispatch (remote effect)",
+    "summary": "YAML parse of ci_cd.yaml at the pushed SHA: publish-image and deploy `if:` are pure && conjunctions containing github.ref == 'refs/heads/main', false for refs/heads/v23/R1-X-PIN -> FENCE HOLDS; anti-vacuity: the same proof for refs/heads/main refuses (exit 1, subject-60972f8/dispatch_fence-60972f8-main-refusal.log). Dispatched run 35943406033 (headSha f932e6b, event workflow_dispatch): publish-image and deploy skipped",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/dispatch_fence-f932e6b.log",
+    "output_sha256": "d6e9ec6c7bb4d388e4d86112c62fcfb91b337f637369e1df0f723a32055e9f1a"
+   },
+   {
+    "cmd": "gh run view 35943406033 --repo seanchatmangpt/xaas --json databaseId,headSha,headBranch,event,status,conclusion,createdAt,updatedAt,url,jobs",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "hosted exact-head CI observation (CE23-5, job ci)",
+    "summary": "job 'Exact-head test court' (ci_cd.yaml job ci) = success at headSha f932e6b: Elixir 1.20.2 / OTP 28 erts 16.4.0.2, format, compile --force --warnings-as-errors, `mix test --max-failures 1 --trace` 'Result: 1796 passed, 99 skipped, 76 excluded', dialyzer 'Total errors: 29, Skipped: 29, Unnecessary Skips: 0' 'done (passed successfully)', deps.unlock --check-unused; run conclusion cancelled only because job production ('Exact-head production compile court', timeout-minutes 12, cancelled mid C++ NIF compile) -- owned by R2-X-PROD-TIMEOUT, not this lane",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/hosted/run-35943406033.json",
+    "output_sha256": "0fcda3f2a9b669e203dc4baf009a8aa80c81ececacde789c635fb0fc7663bafc",
+    "job_log": "receipts/v26.9.23/R1-X-PIN.gate/hosted/run-35943406033-job-107456040537-test-court.log.gz"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/R1-X-PIN.json",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "round": "final",
+    "role": "receipt admission",
+    "summary": "ADMITTED"
+   }
+  ]
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "exact committed subject f932e6b under the .tool-versions pin: lane gate A/B/C exit 0 (full suite 1895 passed 0 failures, dialyzer 29/29 passed, empty-HOME clause 3 passed 5 skipped) + second full run exit 0 (1895 passed) + 8 revert-mutation falsifiers firing (dialyzer exit 2 at :539/:1235/:191; 5 empty-HOME failures; manifest mutants fail the named pinned tests; GC23-0 REFUSED with the old gi_mix.sh; court copies UNKNOWN without the policy data; :eaddrinuse with the hash port) + hosted exact-head job ci success at f932e6b",
+  "scope": "GC23-11 exact-head qualification of xaas and CE23-5 job ci under the pin. ALIVE holds while the lane-touched paths are unchanged from f932e6b. Not in scope and not claimed: the hosted run's overall conclusion (job production cancelled by timeout: R2-X-PROD-TIMEOUT; image-check: R2-X-IMAGE-CARGO), GC23-1/bootstrap_court.sh toolchain and cargo policy (R2-X-TOOLCHAIN)",
+  "gate_failure_classification": "see classification; none open at f932e6b"
+ },
+ "falsifiers": {
+  "revert_mutations": [
+   "restoring the two `nil -> []` clauses + `is_map(hops) &&`: dialyzer inner exit 2, 'Total errors: 32, Skipped: 29', pattern_match at machine_experience.ex:539 and :1235, guard_fail at xaas.episode.ex:191; restored, tree clean",
+   "removing the 5 `@tag skip: @needs_validator`: empty-HOME clause inner exit 2, 'Result: 3/8 passed' (5 failures \"can't open file .../validate_receipt.py\"); restored, tree clean",
+   "manifest reader matching only {_vsn, compiler, _scm} (the scan's vsn-1-only shape): inner exit 2, 2/7 passed; fails 'a build compiled by this node's Elixir on this ERTS resolves to that Elixir (source build_manifest)' and 'both declared manifest shapes are read' (the 1.20.2 manifest is {2, {\"1.20.2\", ~c\"28\"}, Mix.SCM.Path, nil})",
+   "manifest reader of c68c74d (element 1 of any 3-/4-tuple): inner exit 2, 6/7 passed; fails 'an undeclared manifest shape is REFUSED(build_manifest_shape)' (a vsn-3 4-tuple is read by position)",
+   "gi_mix.sh of c68c74d (caller's mix): GC23-0 court under the xaas pin inner exit 1 -- 'could not compile dependency :faker' then 'REFUSED: GC23-0 compile_prose --check exited 1'; restored, tree clean",
+   "court_repo/1 without priv/no_llm/policy.json: the GC23-0 and GC23-3 court-copy tests inner exit 2, 0/2 passed, 'UNKNOWN: no_llm_env: no policy data at .../priv/no_llm/policy.json'",
+   "undo OCEL test of c68c74d (hash-derived port) with every port 42777..43276 held by a real listener (500 held): inner exit 2, 3x ':eaddrinuse', 0/3 passed; restored",
+   "the committed test (port 0) under the same 500 held ports: inner exit 0, 'Result: 3 passed'"
+  ],
+  "chicago_mock_grep": {
+   "at": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+   "changed_files_matches": 0,
+   "tree_matches_preexisting": 178
+  },
+  "llm_on_path": "none: mix, git, python3, gh only; no model API on any executed path"
+ },
+ "open": [
+  "R2-X-TOOLCHAIN: gi_mix.sh half of item (2) landed here with the prescribed resolution; bootstrap_court.sh/GC23-1, cargo as policy data and typed BUILD_BROKEN exits (a graph-side compile failure still maps to the caller's REFUSED) remain",
+  "R2-X-DIALYZER (pre-flight c410623): superseded -- this lane closes the same two machine_experience clauses and the xaas.episode guard",
+  "successor candidates: the same hash-derived port pattern in test/xaas/telemetry/ocel_forwarder_test.exs:48 and test/xaas/platform/deliver_webhook_test.exs:92 (not reported by any pinned run here); S24-CI-VALIDATOR-VENDOR for the 5 guarded r_projection tests"
+ ],
+ "witnesses": {
+  "why": "runs whose raw exit is non-zero by design or that bound another subject (base, first lane head, falsifier inner checks); the validator admits ALIVE only when every replay.commands exit is 0",
+  "runs": [
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "c68c74dcf4e405e4382d34d51288763afc5939b0",
+    "role": "pinned full suite at the lane base (what the pinned run reported)",
+    "summary": "seed 7528, 'Result: 1888/1893 passed, 76 excluded / Failed: 5 tests' (graph checkout ggen_igniter-int 3ed6a7a): ActuationOcelUndoTest :eaddrinuse; V26923GoalTest GC23-0 subprocess (GC23-0 not ALIVE), registry (GC23-12 'REFUSED: GC23-12 compile_prose --check exited 1'), GC23-0 and GC23-3 court copies ('no_llm_env: no policy data')",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/base-c68c74d/suite-full.log",
+    "output_sha256": "1eb291e5dbae50b442116b705fea02da48a2f7be79950d57c6087f56c5221163"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "subject": "c68c74dcf4e405e4382d34d51288763afc5939b0",
+    "role": "fresh _build/test under the pin at the base (deps APFS-cloned from xaas-int, mix.lock identical)",
+    "summary": "8m15s fresh compile of every dependency and 521 xaas files, exit 0 (the unused require Ash.Query was already gone via c614b9a)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/base-c68c74d/compile-test-warnings-as-errors.log",
+    "output_sha256": "dddf6af5f6cb20dc36fef29ecec00d618a74fee96b13dd4ed7faeedd0184528a"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=dev mix deps.compile --force postgrex",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 1,
+    "subject": "c68c74dcf4e405e4382d34d51288763afc5939b0",
+    "role": "environment: the gate's first dialyzer command on a FRESH _build/dev",
+    "summary": "postgrex cannot compile before its own deps exist in _build/dev ('cannot infer signatures from :db_connection ... Compilation error in file lib/postgrex/parameters.ex'); after one `mix dialyzer` compiled the dev deps the same command exits 0 (every later gate B run). Environment, not subject",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/base-c68c74d/dialyzer-postgrex-fresh-build-dev.log",
+    "output_sha256": "a0f63db5c136954f6a581b4446ff9794ff9c618ce1721d32309b1d4eca989085"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=dev mix dialyzer --format github",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "c68c74dcf4e405e4382d34d51288763afc5939b0",
+    "role": "pinned dialyzer at the base",
+    "summary": "'Total errors: 32, Skipped: 29, Unnecessary Skips: 0': guard_fail xaas.episode.ex:191, pattern_match machine_experience.ex:539 and :1235 (the scan's e999e62 count was 31; the :191 guard_fail entered with a4c2924)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/base-c68c74d/dialyzer.log",
+    "output_sha256": "8b8d695641de02dc76ddd472648569cc9ce94f722e7a19535fee06a16702cf40"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH env XAAS_DIR=$PWD GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV= sh docs/sjira/v26.9.23/courts/GC23-0.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 1,
+    "subject": "c68c74dcf4e405e4382d34d51288763afc5939b0",
+    "role": "root cause of the two V26923GoalTest court failures",
+    "summary": "gi_mix.sh ran ggen_igniter's compile_prose with the caller's mix (1.20.2) against ggen_igniter-int _build/test compiled by 1.18.4/OTP 27 ({1, {\"1.18.4\", \"27\"}, Mix.SCM.Path}): full recompile, 'could not compile dependency :faker', 'REFUSED: GC23-0 compile_prose --check exited 1'. With the lane's gi_mix.sh the same court is 'ALIVE: GC23-0' (wip-uncommitted/gc23-0-direct-wip.log)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/base-c68c74d/gc23-0-court-under-pin.log",
+    "output_sha256": "6d4e31897b03c5f7623a830c396e22b3c1ecddccf0f126feffe2b20d7149e699"
+   },
+   {
+    "cmd": "gh workflow run ci_cd.yaml --repo seanchatmangpt/xaas --ref v23/R1-X-PIN  (run 35941961752)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 1,
+    "subject": "60972f8e9757a4e4bd45ef265781518d5ccdebdf",
+    "role": "hosted exact-head CI at the first lane head 60972f8",
+    "summary": "job ci failed at test/xaas/ultracode/court_receipt_test.exs:306 (REAL ggen-igniter-format court: acceptance false, the suite's asdf 1.18.4-otp-27 mix is absent on setup-beam) under --max-failures 1 -> host-coupled named skips cherry-picked (3ea1cfc from r2 pre-flight f7dde47); production cancelled (timeout); publish/deploy skipped",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/hosted/run-35941961752.json",
+    "output_sha256": "b3f4d2b4bd569751ea0a5ed1f2ffac0ed98282d3d9e64d0ab767c58eabd5f073",
+    "job_log": "receipts/v26.9.23/R1-X-PIN.gate/hosted/run-35941961752-job-107451584054-test-court.log.gz"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH [+ gate A/B/C and suite run 2] at 60972f8",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "subject": "60972f8e9757a4e4bd45ef265781518d5ccdebdf",
+    "role": "the same lane gate at the first lane head (superseded by the final subject)",
+    "summary": "gate A seed 960554 1895 passed; gate B 29/29 passed; gate C 3 passed 5 skipped; suite run 2 seed 614709 1895 passed",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-60972f8/gateA-suite-run1.log",
+    "output_sha256": "2ef8792a771b7c20710b28ba6190f9a569c09e6f4c77737adc3a09f803ce6150"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH [host] mix test successor_test court_receipt_test semantic_receipt_test; env -i HOME=<fresh> PATH=<pin>:/usr/bin:/bin GGEN_IGNITER_DIR=<absent> mix test --trace <same>",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 0,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507",
+    "role": "named-skip verification (host vs CI-like environment)",
+    "summary": "host: 'Result: 53 passed'; CI-like (fresh HOME, no asdf/Homebrew on PATH, no ggen_igniter checkout): 'Result: 48 passed, 5 skipped' (the 2 REAL ggen-igniter-format courts, successor_law.py, the 2 ggen_igniter-checkout tests)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/subject-f932e6b/hostskip-cilike.log",
+    "output_sha256": "cea8388beb703dc98399ed1bb83b450524b55b4e272f938dd679ec19084b64a1"
+   },
+   {
+    "cmd": "(inner check of falsifier nil-clauses)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation nil-clauses",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-nil-clauses.inner.log",
+    "output_sha256": "0db909cba084d8caff140e5dcb848f55b08168bca45c6c919405b47e89d2a154"
+   },
+   {
+    "cmd": "(inner check of falsifier rproj-guard)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation rproj-guard",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-rproj-guard.inner.log",
+    "output_sha256": "1bee0b67b79124371c58b2ac1c81ea2c2f61d15ed9d338bd3509354028e80e1b"
+   },
+   {
+    "cmd": "(inner check of falsifier manifest-vsn1)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation manifest-vsn1",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-manifest-vsn1.inner.log",
+    "output_sha256": "5bf312dd9c0949b0160aa51f2e05f9485a9dba7e4f88efdc0a1aba6c298b617c"
+   },
+   {
+    "cmd": "(inner check of falsifier manifest-any)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation manifest-any",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-manifest-any.inner.log",
+    "output_sha256": "20d3674e498cf747e11cc09ccb4bbf48597e2f51dcd0c59f16b4310ec97aaf4d"
+   },
+   {
+    "cmd": "(inner check of falsifier gi-mix)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 1,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation gi-mix",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-gi-mix.inner.log",
+    "output_sha256": "6d4e31897b03c5f7623a830c396e22b3c1ecddccf0f126feffe2b20d7149e699"
+   },
+   {
+    "cmd": "(inner check of falsifier court-policy)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation court-policy",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-court-policy.inner.log",
+    "output_sha256": "7fe084945e064d2c89ed249d388b8cadae52f383757529902213d9f64c164b49"
+   },
+   {
+    "cmd": "(inner check of falsifier port-hash)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PIN",
+    "exit": 2,
+    "subject": "f932e6b76b859dd27cb95c4d5085c50ccec84507 + mutation port-hash",
+    "role": "falsifier inner run (expected non-zero)",
+    "log": "receipts/v26.9.23/R1-X-PIN.gate/falsifiers/falsify-port-hash.inner.log",
+    "output_sha256": "6b73f57c0e583564882a28990eede11d731c3414077855c3156aef9bfe285398"
+   }
+  ]
+ }
+}

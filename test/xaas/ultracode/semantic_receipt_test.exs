@@ -192,6 +192,30 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
       assert export["receipt_digest"] == SemanticReceipt.receipt_digest(export)
     end
 
+    # The registered ggen-igniter-format suite pins the graph side's own
+    # toolchain by absolute PATH (asdf installs under ~/.asdf). A runner where
+    # that PATH does not yield a working `mix` (CI: setup-beam, no asdf) cannot
+    # execute the real court, so the test is skipped by name -- never faked.
+    @format_toolchain (case System.cmd(
+                              "/usr/bin/env",
+                              [
+                                "-i",
+                                "HOME=" <> System.tmp_dir!(),
+                                "PATH=" <> TargetSuites.devs()["ggen-igniter-format"].env["PATH"],
+                                "mix",
+                                "--version"
+                              ],
+                              stderr_to_stdout: true
+                            ) do
+                         {_, 0} -> true
+                         _ -> false
+                       end)
+    @tag skip:
+           if(@format_toolchain,
+             do: false,
+             else:
+               "ggen-igniter-format toolchain absent: no working mix on the suite's pinned PATH"
+           )
     @tag timeout: 600_000
     test "REAL ggen-igniter-format court: formatted commit passes, unformatted is refuted",
          %{sha: sha} do
