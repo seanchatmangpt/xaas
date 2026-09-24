@@ -3,7 +3,7 @@
 #
 # Implements the mechanism described (previously as doc-only convention) in
 # .claude/workflow-lock-guard.md:21-27 — a real acquire/release/check helper
-# backed by /Users/sac/xaas/.claude/.workflow-compile.lock, with PID liveness
+# backed by .claude/.workflow-compile.lock next to this script, with PID liveness
 # checking (stale locks from a dead process are reclaimed) and a trap-based
 # release so a script that dies mid-stage doesn't leave a stuck lock forever.
 #
@@ -21,7 +21,10 @@
 
 set -u
 
-WORKFLOW_LOCK_FILE="${WORKFLOW_LOCK_FILE:-/Users/sac/xaas/.claude/.workflow-compile.lock}"
+# Default next to this script (<repo>/.claude/), so the path holds on any host
+# and checkout location; the previous hard-coded /Users/sac/xaas path made
+# acquire spin forever wherever that directory does not exist.
+WORKFLOW_LOCK_FILE="${WORKFLOW_LOCK_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.workflow-compile.lock}"
 
 # Returns 0 (true) if the given PID is a live process, 1 otherwise.
 workflow_lock_pid_alive() {
@@ -76,6 +79,12 @@ workflow_lock_acquire() {
     if ( set -o noclobber; echo "$$:$(date +%s):${label}" > "$WORKFLOW_LOCK_FILE" ) 2>/dev/null; then
       trap 'workflow_lock_release' EXIT INT TERM
       return 0
+    fi
+    # A failed create with no lock file present is not a lost race (missing
+    # directory, no permission): refuse instead of retrying forever.
+    if [[ ! -e "$WORKFLOW_LOCK_FILE" ]]; then
+      echo "workflow_lock_acquire: cannot create ${WORKFLOW_LOCK_FILE}" >&2
+      return 1
     fi
     # Lost the race; loop and re-check.
     sleep 0.2

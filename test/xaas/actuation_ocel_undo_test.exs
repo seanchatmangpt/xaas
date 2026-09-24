@@ -56,10 +56,14 @@ defmodule Xaas.ActuationOcelUndoTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     Process.register(self(), :actuation_ocel_undo_test)
 
-    port = 42_777 + :erlang.phash2(self(), 500)
-
-    {:ok, server_pid} = Bandit.start_link(plug: CapturingPlug, port: port, ip: {127, 0, 0, 1})
+    # OS-assigned ephemeral port (bind to port 0, then read back the real
+    # bound port via ThousandIsland.listener_info/1) instead of a
+    # hash-derived port, which can collide with another listener and raise
+    # :eaddrinuse (SJ-009; same fix as ocel_envelope_avatars_test.exs).
+    {:ok, server_pid} = Bandit.start_link(plug: CapturingPlug, port: 0, ip: {127, 0, 0, 1})
     Process.unlink(server_pid)
+
+    {:ok, {_address, port}} = ThousandIsland.listener_info(server_pid)
 
     previous_url = Application.get_env(:xaas, :ex4pm_ocel_ingest_url)
 
