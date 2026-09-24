@@ -1,0 +1,20 @@
+{
+    "base": "bc8ea06d7fa4e249283f2b8fcd00fef5128b4151",
+    "branch": "v23/episode-fmt-1",
+    "drift": {
+        "kind": "defmodule_spacing",
+        "path": "lib/ggen_igniter/semantic_jira/cli.ex"
+    },
+    "ledger": "docs/sjira/v26.9.23/episodes/fmt-1/ledger.ndjson",
+    "name": "fmt-1",
+    "orders": [
+        "EP-A",
+        "EP-B"
+    ],
+    "repo": "/Users/sac/ggen_igniter",
+    "repository": "seanchatmangpt/ggen_igniter",
+    "schema": "xaas/semantic-drive-episode/v1",
+    "standing": "PREPARED",
+    "subject_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+    "work_graph": "docs/sjira/v26.9.23/episodes/fmt-1/work.json"
+}

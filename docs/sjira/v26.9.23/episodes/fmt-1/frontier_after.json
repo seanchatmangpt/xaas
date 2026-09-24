@@ -1,0 +1,35 @@
+{
+  "blocked": [
+    {
+      "identity": "EP-A",
+      "reason": "standing=ALIVE"
+    }
+  ],
+  "eligible": [
+    {
+      "authority": "NONE",
+      "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+      "candidate_sha": null,
+      "definition_digest": "sha256:d7ce3bf78d861d87f3149007cd1af3579593ea83926724b691d873645719ea31",
+      "identity": "EP-B",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "repository": "seanchatmangpt/ggen_igniter",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-B",
+      "title": "Dependent order of episode fmt-1: eligible only after EP-A is ALIVE",
+      "work_order_digest": "sha256:71660044ca2341c5c09f3ecae4701b4a3f2fc9626014efb6cd1c5e63eed46ac7"
+    }
+  ],
+  "events": 1,
+  "ledger_tail": "sha256:41c2dd0faf87393a70d35aadabe043cabebb6c90e09545f0ff4250c18644648e",
+  "standings": {
+    "EP-A": "ALIVE",
+    "EP-B": "UNKNOWN"
+  },
+  "status": "ok"
+}

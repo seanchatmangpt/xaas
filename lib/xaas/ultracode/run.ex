@@ -407,7 +407,8 @@ defmodule Xaas.Ultracode.Run do
         :dependency_evidence,
         :court_map,
         :base_sha,
-        :semantic_bridge
+        :semantic_bridge,
+        :capability_id
       ])
 
       # `:allow_global`: called both from the customer-facing controller
@@ -993,6 +994,18 @@ defmodule Xaas.Ultracode.Run do
     attribute :semantic_bridge, :map do
       allow_nil?(true)
       public?(true)
+    end
+
+    # The work order's required capability id (`sj:requiresCapability` ->
+    # `sj:capabilityId`, e.g. "recipe:mix-format"), carried from the
+    # execution descriptor. A NAME only: `Xaas.Ultracode.RecipeWorker`
+    # resolves it against the operator registry
+    # (`config :xaas, :ultracode_construction_recipes`) and refuses anything
+    # unregistered before claiming. nil = no deterministic recipe.
+    attribute :capability_id, :string do
+      allow_nil?(true)
+      public?(true)
+      constraints(max_length: 128, match: ~r/^[a-z0-9][a-z0-9_.-]*:[a-z0-9][a-z0-9_.:-]*$/)
     end
 
     # Real, disclosed, schema-only seam -- see this module's own moduledoc

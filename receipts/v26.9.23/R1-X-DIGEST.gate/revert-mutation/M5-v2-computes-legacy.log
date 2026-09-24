@@ -1,0 +1,200 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-DIGEST/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+14:46:55.588 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+14:46:56.042 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+14:46:56.525 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+14:46:56.737 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:56.739 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+14:46:56.760 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:56.760 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+14:46:56.801 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:56.801 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+14:46:56.825 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:56.825 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+14:46:56.890 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:56.890 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+Running ExUnit with seed: 756680, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+14:46:56.912 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:56.912 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+
+
+  1) test bridge fields the snapshot determines bridge.requires (acceptance / courts / falsifiers) is the snapshot's (Xaas.Ultracode.SemanticWorkFalsifierTest)
+     test/xaas/ultracode/semantic_work_falsifier_test.exs:44
+     match (=) failed
+     code:  assert {:ok, _} = SemanticWork.admit(descriptor, binding: mode)
+     left:  {:ok, _}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_falsifier_test.exs:57: anonymous fn/3 in Xaas.Ultracode.SemanticWorkFalsifierTest."test bridge fields the snapshot determines bridge.requires (acceptance / courts / falsifiers) is the snapshot's"/1
+       (elixir 1.20.2) lib/enum.ex:2622: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/semantic_work_falsifier_test.exs:56: (test)
+
+
+
+  2) test descriptor fields the snapshot determines dependency edges cannot be injected when the admitted snapshot has none (Xaas.Ultracode.SemanticWorkFalsifierTest)
+     test/xaas/ultracode/semantic_work_falsifier_test.exs:85
+     match (=) failed
+     code:  assert {:ok, _} = SemanticWork.admit(descriptor, binding: :snapshot)
+     left:  {:ok, _}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_falsifier_test.exs:91: (test)
+
+
+
+  3) test bridge fields the snapshot determines bridge.subject is the snapshot's (Xaas.Ultracode.SemanticWorkFalsifierTest)
+     test/xaas/ultracode/semantic_work_falsifier_test.exs:69
+     match (=) failed
+     code:  assert {:ok, _} = SemanticWork.admit(descriptor, binding: :snapshot)
+     left:  {:ok, _}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_falsifier_test.exs:73: (test)
+
+...
+
+  4) test digest binding (falsifier: digest altered after admission) descriptor fields must be the snapshot's (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:301
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:admitted_snapshot_mismatch, :base_sha}}} =
+              SemanticWork.admit(Map.put(descriptor, "base_sha", other_sha))
+     left:  {:error, {:refused_semantic_work, {:admitted_snapshot_mismatch, :base_sha}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:306: (test)
+
+..
+
+  5) test digest binding (falsifier: digest altered after admission) XaaS recomputes exactly the digests the real graph admission produced (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:187
+     Assertion with == failed
+     code:  assert AdmissionBinding.snapshot_digest(snapshot, form) == snapshot["work_order_digest"]
+     left:  "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"
+     right: "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7"
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:194: (test)
+
+..
+
+  6) test digest binding (falsifier: digest altered after admission) materialize refuses a tampered descriptor before any worktree or Run exists (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:401
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:graph_digest_unbound, :admitted_work_order, _}}} =
+              SemanticWork.materialize(tampered, binding: :snapshot)
+     left:  {:error, {:refused_semantic_work, {:graph_digest_unbound, :admitted_work_order, _}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:409: (test)
+
+.
+
+  7) test digest binding (falsifier: digest altered after admission) probe C: graph_digest and envelope altered consistently -> refused (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:241
+     match (=) failed
+     code:  assert {:error,
+             {:refused_semantic_work, {:admission_anchor_disagree, :admitted_work_order, :admission_digest}}} =
+              SemanticWork.admit(tampered, binding: mode)
+     left:  {:error,
+             {:refused_semantic_work, {:admission_anchor_disagree, :admitted_work_order, :admission_digest}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:251: anonymous fn/3 in Xaas.Ultracode.SemanticWorkTest."test digest binding (falsifier: digest altered after admission) probe C: graph_digest and envelope altered consistently -> refused"/1
+       (elixir 1.20.2) lib/enum.ex:2622: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/semantic_work_test.exs:250: (test)
+
+.
+
+  8) test digest form (versioned producer contract) an embedded definition digest altered after admission is refused as stale (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:495
+     Assertion with == failed
+     code:  assert AdmissionBinding.snapshot_digest(altered["admitted_work_order"], "sjira-digest/2") ==
+              descriptor["graph_digest"]
+     left:  "sha256:6fe9864ecfeaa5adb3013f0b92417e7b20bc75169fb95b862a1f67ee8b0b63dd"
+     right: "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7"
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:503: (test)
+
+...
+
+  9) test digest form (versioned producer contract) a descriptor whose declared form mismatches its digests is refused, typed (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:446
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:admitted_definition_stale, recomputed}}} =
+              SemanticWork.admit(faked, binding: :snapshot)
+     left:  {:error, {:refused_semantic_work, {:admitted_definition_stale, recomputed}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:4b6b88be4700b5cc44d124b47f812a38dc7fe98aab69447df637165de6260ed6"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:477: (test)
+
+....
+
+ 10) test digest binding (falsifier: digest altered after admission) probe B: graph_digest altered, envelope OMITTED -> refused, not accepted (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:215
+     match (=) failed
+     The following variables were pinned:
+       digest = "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7"
+     code:  assert {:error, {:refused_semantic_work, {:graph_digest_unbound, :admitted_work_order, ^digest}}} =
+              SemanticWork.admit(tampered, binding: mode)
+     left:  {:error, {:refused_semantic_work, {:graph_digest_unbound, :admitted_work_order, ^digest}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:227: anonymous fn/4 in Xaas.Ultracode.SemanticWorkTest."test digest binding (falsifier: digest altered after admission) probe B: graph_digest altered, envelope OMITTED -> refused, not accepted"/1
+       (elixir 1.20.2) lib/enum.ex:2622: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/semantic_work_test.exs:226: (test)
+
+.....
+
+ 11) test digest binding (falsifier: digest altered after admission) untampered real descriptor is admitted in every binding mode (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:175
+     match (=) failed
+     code:  assert {:ok, admitted} = SemanticWork.admit(descriptor, binding: mode)
+     left:  {:ok, admitted}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:180: anonymous fn/3 in Xaas.Ultracode.SemanticWorkTest."test digest binding (falsifier: digest altered after admission) untampered real descriptor is admitted in every binding mode"/1
+       (elixir 1.20.2) lib/enum.ex:2622: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/semantic_work_test.exs:179: (test)
+
+..
+Finished in 4.0 seconds (0.2s async, 3.7s sync)
+
+Result: 23/34 passed
+Failed: 11 tests

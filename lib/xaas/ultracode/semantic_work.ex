@@ -18,6 +18,12 @@ defmodule Xaas.Ultracode.SemanticWork do
   @digest ~r/^sha256:[0-9a-f]{64}$/
   @repo_identity ~r/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
   @repo_alias ~r/^[A-Za-z0-9_.-]{1,128}$/
+  # The canonical `sj:capabilityId` pattern (e.g. "recipe:mix-format") --
+  # byte-identical source to `Run.capability_id`'s `match` constraint and the
+  # v26.9.23 wave contract. Compiled `:dollar_endonly` so `$` means end of
+  # string as in the SHACL/XSD reading of the same pattern: PCRE's default
+  # `$` also matches before a trailing newline ("recipe:x\n").
+  @capability_id_source "^[a-z0-9][a-z0-9_.-]*:[a-z0-9][a-z0-9_.:-]*$"
   @execution_policies [:continuous_epoch_run, :autonomic_wave_attempt]
 
   @required ~w(
@@ -51,7 +57,9 @@ defmodule Xaas.Ultracode.SemanticWork do
     "court_map" => :court_map,
     "admission_digest" => :admission_digest,
     "admitted_work_order" => :admitted_work_order,
-    "bridge" => :bridge
+    "digest_form" => :digest_form,
+    "bridge" => :bridge,
+    "capability" => :capability
   }
 
   @dependency_keys %{
@@ -113,6 +121,7 @@ defmodule Xaas.Ultracode.SemanticWork do
     | `graph_digest`         | `"sha256:" <> 64 lowercase hex`              | `@digest` regex           |
     | `admission_digest`     | optional; valid digest AND equal to `graph_digest` when present | `optional_admission_digest/1` |
     | `admitted_work_order`  | optional; admitted snapshot, digest recomputed by XaaS | `AdmissionBinding.verify/2` |
+    | `digest_form`          | required with `admitted_work_order`: the producer's declared digest form (`"sjira-digest/2"`; `"sjira-digest/1"` only on historical artifacts) | `AdmissionBinding.verify/2` |
     | `repository_identity`  | `"owner/repo"` (`[A-Za-z0-9_.-]+/...`)       | `@repo_identity` regex    |
     | `execution_repo_alias` | 1-128 of `[A-Za-z0-9_.-]` (Worktrees key)    | `@repo_alias` regex       |
     | `base_sha`             | exactly 40 lowercase hex (a git SHA)         | `@sha` regex              |
@@ -147,7 +156,9 @@ defmodule Xaas.Ultracode.SemanticWork do
 
     * optional `"admitted_work_order"`: the producer's admitted snapshot
       (the exact map `GgenIgniter.SemanticJira.admit_work_order/1`
-      returned). XaaS recomputes its digest from its own content; a stale
+      returned), with the producer's declared `"digest_form"` (the versioned
+      digest contract; undeclared or unknown is refused, never inferred).
+      XaaS recomputes its digests from its own content under that form; a stale
       digest, or a descriptor `base_sha` / `repository_identity` /
       `work_order_iri` / `goal` / `checkpoint_iri` / `dependencies` / bridge
       field (incl. `bridge.subject` and `bridge.requires`) that is not the
@@ -211,6 +222,7 @@ defmodule Xaas.Ultracode.SemanticWork do
          :ok <- require_string(descriptor, :provider),
          :ok <- require_string(descriptor, :verifier_suite),
          :ok <- optional_bridge(descriptor),
+         :ok <- optional_capability(descriptor),
          :ok <- AdmissionBinding.verify(descriptor, binding),
          {:ok, policy} <- admit_execution_policy(descriptor.execution_policy),
          {:ok, dependencies} <- admit_dependencies(descriptor.dependencies),
@@ -377,7 +389,8 @@ defmodule Xaas.Ultracode.SemanticWork do
       dependency_evidence: dependency_evidence(descriptor.dependencies),
       court_map: Map.get(descriptor, :court_map),
       base_sha: descriptor.base_sha,
-      semantic_bridge: Map.get(descriptor, :bridge)
+      semantic_bridge: Map.get(descriptor, :bridge),
+      capability_id: Map.get(descriptor, :capability)
     }
 
     Run
@@ -474,6 +487,32 @@ defmodule Xaas.Ultracode.SemanticWork do
       nil -> :ok
       %{} = bridge when not is_struct(bridge) -> :ok
       _ -> {:error, {:refused_semantic_work, {:invalid, :bridge}}}
+    end
+  end
+
+  @doc """
+  The compiled canonical `sj:capabilityId` pattern the optional `capability`
+  descriptor field is admitted against (source
+  `#{@capability_id_source}`, `:dollar_endonly`).
+  """
+  @spec capability_id_pattern() :: Regex.t()
+  def capability_id_pattern, do: Regex.compile!(@capability_id_source, [:dollar_endonly])
+
+  # Optional `capability` (the work order's `sj:capabilityId`): absent = no
+  # deterministic recipe; present = a NAME the recipe registry resolves at
+  # claim time (`Xaas.Ultracode.RecipeWorker`), never a command.
+  defp optional_capability(map) do
+    case Map.get(map, :capability) do
+      nil ->
+        :ok
+
+      value when is_binary(value) and byte_size(value) <= 128 ->
+        if Regex.match?(capability_id_pattern(), value),
+          do: :ok,
+          else: {:error, {:refused_semantic_work, {:invalid, :capability}}}
+
+      _ ->
+        {:error, {:refused_semantic_work, {:invalid, :capability}}}
     end
   end
 

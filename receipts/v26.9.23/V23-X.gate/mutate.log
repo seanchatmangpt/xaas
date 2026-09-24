@@ -1,0 +1,12 @@
+baseline: exit=0 Ran 15 tests in 8.594s OK
+m1 check skips source sha256 comparison: exit=1 Ran 15 tests in 8.166s FAILED (failures=1) killed_by=['test_one_source_byte_mutated_is_refused']
+m2 check skips gate coverage: exit=1 Ran 15 tests in 8.638s FAILED (failures=1) killed_by=['test_deleting_only_candidate_for_required_gate_is_refused']
+m3 emit takes first match when ambiguous: exit=1 Ran 15 tests in 7.531s FAILED (failures=1) killed_by=['test_quote_with_two_occurrences_needs_an_index']
+m4 check skips IRI recomputation: exit=1 Ran 15 tests in 11.422s FAILED (failures=2) killed_by=['test_one_kind_mutated_is_refused', 'test_one_offset_mutated_is_refused']
+m5 check skips sourceText comparison: exit=1 Ran 15 tests in 8.135s FAILED (failures=3) killed_by=['test_one_offset_mutated_is_refused', 'test_one_source_byte_mutated_is_refused', 'test_one_source_text_mutated_is_refused']
+m6 emit keeps input order: exit=1 Ran 15 tests in 7.860s FAILED (failures=1) killed_by=['test_emit_is_byte_identical_and_order_independent']
+m7 check accepts any kind: exit=1 Ran 15 tests in 7.531s FAILED (failures=2) killed_by=['test_one_kind_mutated_is_refused', 'test_summary_of_a_refused_graph_says_failed']
+m8 summary drops not-required candidates: exit=1 Ran 15 tests in 20.062s FAILED (failures=2) killed_by=['test_committed_prd_ard_candidates_verify_and_reproject', 'test_summary_tallies_verified_candidates']
+m9 summary counts each requiredBy target at most once: exit=1 Ran 15 tests in 9.151s FAILED (failures=2) killed_by=['test_committed_prd_ard_candidates_verify_and_reproject', 'test_summary_tallies_verified_candidates']
+r1 prose_spans.py removed (revert to base, where scripts/sjira/ does not exist): exit=1 Ran 15 tests in 0.797s FAILED (failures=15) failing=15
+restored: clean

@@ -1,0 +1,151 @@
+{
+ "identity": {
+  "subject": "V23-H",
+  "repo": "/Users/sac/xaas",
+  "subject_sha": "eecc5fe955f40e5dce40657dc1349c483944b59a",
+  "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+  "branch": "v23/V23-H",
+  "worktree": "/Users/sac/wt/v26922/v23/V23-H",
+  "work_order": "v23:WO-V23-H",
+  "tuple_digest": "sha256:9f666dd9c31ca278923c55898c57e49ecf59700b9c3987fe7c3cb2e3512ee845",
+  "tuple_digest_observed": "GGEN_IGNITER_DIR=ggen_igniter-int (3937a4f) MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-12 --receipts-dir <lane scratch> at eecc5fe955f40e5dce40657dc1349c483944b59a printed `order V23-H standing=NONE receipt=MISSING digest=sha256:9f666dd9c31ca278923c55898c57e49ecf59700b9c3987fe7c3cb2e3512ee845` (equal to DRIVER.md; goal.ttl unchanged) -- receipts/v26.9.23/V23-H.gate/stop-court.log",
+  "graph_side": {
+   "judge": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+   "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+   "build": "private APFS clones of the judge's _build/test (courts/gi_mix.sh for compile_prose; Xaas.Sjira.Successor for the intake via SemanticDrive.graph_toolchain/2); the judge's tree and build were never written; no ggen_igniter code was added (no lane-owned ggen_igniter worktree)"
+  },
+  "successor": {
+   "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.24",
+   "known_class": "ggen projection-drift repair (capability recipe:ggen-sync; verifier ggen sync --check / generated-file diff; exclusions: no registry publish, no network beyond ggen pack fetch)",
+   "prose": "docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1 (49 lines, headed 'DRAFT — awaiting operator acceptance')",
+   "llm_edge": "docs/sjira/v26.9.23/successor/candidates.extract.json sha256:0692a14b53e20b5f7f8e1a952c28bd8ac723ddc417d839c78927c8a195641650 -- 18 extraction items written by the lane agent (llm:claude-opus-5-5@wave-B1c/V23-H), recorded as raw O; every later step is deterministic",
+   "candidates": "docs/sjira/v26.9.23/successor/candidates.ttl sha256:c70894c3264ea0dbb6695270d99f8783479a88b18657553378d4079c05bbb1f0 (prose_spans.py emit; check --require-gates 4 --gate-prefix GC24- --extract: 18 verified, required 12 + not required 6)",
+   "goal": "docs/sjira/v26.9.23/successor/goal.ttl sha256:8a5b1b76e5697b88d06507fdf44fb88a7920c75185caf4761cecd40cb2ee1585 (root v23:GC-26.9.24 + gates GC24-0..GC24-3; 0 sj:WorkOrder)",
+   "compiled": {
+    "propositions.ttl": "sha256:9eb7efc7cb2dfa504c2931ef494cc9f5bd9c2eeb532ed595d6271c311ff9122e",
+    "orders.ttl": "sha256:91357028bc558ac0b9ed6f1f013ef14027b2d72f3c8128bfe2065b618c68100a",
+    "summary": "ADMITTED 18 propositions; DELTA 7 required Postcondition/Invariant/Falsifier -> 7 WorkOrders (all capability recipe:ggen-sync)"
+   },
+   "intake": {
+    "resolution.json": "sha256:2c6691761abdf8e10e4d3c1e7d3ec1d5f27bf5b8a154558abfdb93fe76405f3b",
+    "first_eligible": "WO-14958CC7712C739E (GC24-3, capability recipe:ggen-sync)",
+    "descriptor": "mix semantic_jira.descriptor --provider recipe -> provider recipe, verifier_suite ggen-sync-check (registered: false), execution_repo_alias xaas",
+    "route": "Xaas.Sa2a.Route.resolve/1 -> {:refused, :unregistered_capability} -> typed successor item UNSUPPORTED(provider_capability); registry names only recipe:mix-format",
+    "items": "7 eligible orders, 7 x UNSUPPORTED(provider_capability)"
+   }
+  },
+  "prd_ard": "PRD section 12 GC23-12, section 6.2 WBPR, PR-001..PR-005, PR-017; ARD sections 5.2-5.5, 9, 24 M9; goal.ttl v23:GC23-12, v23:WO-V23-H"
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave B1c lane V23-H (/Users/sac/wt/v26922/v26923/DRIVER.md gate map GC23-12; COORDINATION.md v26.9.23 scope; goal.ttl v23:WO-V23-H). No push, no integrate, no remote effect; no ggen_igniter ref created. The successor prose is NOT accepted: docs/sjira/v26.9.23/successor/ACCEPTED is the operator's act alone and was not created in the lane worktree.",
+  "actor": "claude-opus-5-5 workflow subagent (lane V23-H); the executed product path (prose_spans, compile_prose, the intake, the court) ran under the F3 no-LLM env"
+ },
+ "consequence": {
+  "commits": [
+   "eecc5fe955f40e5dce40657dc1349c483944b59a"
+  ],
+  "files_changed": [
+   "HANDWRITTEN.md",
+   "docs/sjira/v26.9.23/courts/GC23-12.sh",
+   "docs/sjira/v26.9.23/courts/successor_acceptance.sh",
+   "docs/sjira/v26.9.23/courts/successor_law.py",
+   "docs/sjira/v26.9.23/successor/candidates.extract.json",
+   "docs/sjira/v26.9.23/successor/candidates.ttl",
+   "docs/sjira/v26.9.23/successor/compiled/orders.ttl",
+   "docs/sjira/v26.9.23/successor/compiled/propositions.ttl",
+   "docs/sjira/v26.9.23/successor/goal.ttl",
+   "docs/sjira/v26.9.23/successor/intake/descriptor.json",
+   "docs/sjira/v26.9.23/successor/intake/frontier.json",
+   "docs/sjira/v26.9.23/successor/intake/resolution.json",
+   "docs/sjira/v26.9.23/successor/intake/work.json",
+   "docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md",
+   "lib/mix/tasks/xaas.stop_court.ex",
+   "lib/mix/tasks/xaas.successor.ex",
+   "lib/xaas/sjira/successor.ex",
+   "scripts/successor_work_graph.exs",
+   "test/sjira/v26_9_23_goal_test.exs",
+   "test/xaas/sjira/successor_test.exs"
+  ],
+  "remote_effects": [],
+  "stop_court_extension": "mix xaas.stop_court exit 77 (blocked_exit/0): a court whose last line is BLOCKED(<reason>): ... (broken_term <term>) yields gate standing BLOCKED:<reason> + standing.broken_term; an untyped/mistyped 77 is court_failed/UNKNOWN (goal test fixture GA/GB/GC)"
+ },
+ "replay": {
+  "commands": [
+   {
+    "cmd": "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/sjira/v26_9_23_goal_test.exs && sh docs/sjira/v26.9.23/courts/GC23-12.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-H",
+    "exit": 77,
+    "summary": "lane gate at eecc5fe955f40e5dce40657dc1349c483944b59a: format 0; compile --force --warnings-as-errors 0 (520 files); goal test 31 tests, 0 failures; GC23-12 court exit 77 = BLOCKED(operator_acceptance) (broken_term R_missing_authority) with witnesses 0-6 holding",
+    "output_sha256": "74e0c6b8eaba8081ec422aeadf662dbf40dbfcf601972e62474d4f7463ed8f51"
+   },
+   {
+    "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-12 --receipts-dir <lane scratch>",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-H",
+    "exit": 1,
+    "summary": "GC23-12 BLOCKED:operator_acceptance exit 77, gate receipt ADMITTED (standing.broken_term R_missing_authority, outcome blocked); STOP=false; order V23-H digest sha256:9f666dd9...ee845 (receipt missing before this commit)",
+    "output_sha256": "f81b51e78d607e6ab8590ebed7f07f884b049a274e2153fe5e5eb7040301fa13"
+   },
+   {
+    "cmd": "mix test test/mix/tasks/xaas_stop_court_test.exs test/xaas/sjira/successor_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-H",
+    "exit": 0,
+    "summary": "24 tests, 0 failures (16 stop court + 8 successor: classify typing, tuple refusals, F3 guard, successor_law.py admit/refuse, successor_acceptance.sh over real tmp git repos, Successor.check byte-identical recompute, output_drift refusal)",
+    "output_sha256": "126d8b746286ade45cfe26fe7ec6f8e607d0661931315b764bc672b7f0473fd2"
+   },
+   {
+    "cmd": "scratch git clone --shared of v23/V23-H + hand-authored sj:WorkOrder appended to successor/goal.ttl, committed; XAAS_DIR=<clone> sh docs/sjira/v26.9.23/courts/GC23-12.sh",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-H/mut",
+    "exit": 1,
+    "summary": "REFUSED: compile_prose --check output_drift (the goal digest moved)",
+    "output_sha256": "63e1a319d6adf7fd9885ad06a0b4b83612dd04ffab3b45f9b52d321d69925028"
+   },
+   {
+    "cmd": "same clone, compile_prose re-run over the mutated goal and committed; GC23-12.sh",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-H/mut",
+    "exit": 1,
+    "summary": "REFUSED: GC23-12 L1 hand-authored WorkOrder in the successor goal graph",
+    "output_sha256": "399a30a7f8700a363f70ecf821bec1aadf71f2a9fdfb5d0b82e65eb7a7b40b75"
+   },
+   {
+    "cmd": "scratch clone + git revert of eecc5fe955f40e5dce40657dc1349c483944b59a; GC23-12.sh",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-H/rev",
+    "exit": 75,
+    "summary": "revert-mutation: UNKNOWN: GC23-12 machinery lands in lane V23-H (the stub)",
+    "output_sha256": "49dc39c49e473ec27e5aba76913f15bec6235f094d084590c1194e89bb2afec7"
+   },
+   {
+    "cmd": "scratch clone + simulated operator commit of successor/ACCEPTED naming sha256:b1d3d24f...390dc1 (never pushed, clone removed); GC23-12.sh",
+    "cwd": "/private/tmp/claude-501/v23-scratch/B1c-V23-H/acc",
+    "exit": 0,
+    "summary": "ALIVE path witnessed: ACCEPTED -> ALIVE: GC23-12 accepted successor prose enters the same pipeline",
+    "output_sha256": "04695a1b51cf0b26debbbc3a4cf886b0907dd22f44bbda025aeb99296833b0e3"
+   },
+   {
+    "cmd": "grep -rn 'unittest.mock|Mock(|MagicMock|patch(|monkeypatch|Mox\\b|:meck|meck.' <V23-H tests, lib, scripts, courts>",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-H",
+    "exit": 1,
+    "summary": "0 matches (Chicago: no mocks)",
+    "output_sha256": "7809a52ae186bbcc6933dc51fb1ccaca6ad2429c31caff2ef8f478831b78f182"
+   }
+  ],
+  "durable_location": "receipts/v26.9.23/V23-H.gate/"
+ },
+ "standing": {
+  "value": "BLOCKED:operator_acceptance",
+  "derived_from": "replay[0] at eecc5fe955f40e5dce40657dc1349c483944b59a: the lane gate prefix and goal test exit 0 and the GC23-12 court exits 77 with every witness holding (candidates re-emit byte-equal, compile_prose --check byte-identical, successor law L1-L9 + 2 mutations refused, intake --check byte-identical with UNSUPPORTED(provider_capability) typed items, F3 refused); the order's postcondition 'the GC23-12 court exits 0' needs the operator-acceptance edge, witnessed closable by replay[6] (ALIVE in a scratch clone with a simulated ACCEPTED)",
+  "broken_term": "R_missing_authority"
+ },
+ "operator_edge": {
+  "edge": "operator acceptance of the GC-26.9.24 successor prose",
+  "action": "the operator reviews docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md and commits docs/sjira/v26.9.23/successor/ACCEPTED containing sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1",
+  "effect": "GC23-12.sh exits 0 (ALIVE); until then BLOCKED(operator_acceptance), broken_term R_missing_authority, stop-court gate standing BLOCKED:operator_acceptance",
+  "court": "docs/sjira/v26.9.23/courts/successor_acceptance.sh (committed, unmodified ACCEPTED naming the committed prose digest; stale/uncommitted/edited -> BLOCKED)"
+ },
+ "observations": [
+  "goal.ttl v23:WO-V23-H sj:pathScope names docs/sjira/v26.9.24/ while the lane task directed docs/sjira/v26.9.23/successor/; the lane also touched lib/, scripts/, test/, HANDWRITTEN.md and lib/mix/tasks/xaas.stop_court.ex (all listed in consequence.files_changed). goal.ttl was not edited (its digest pins the GC23 compiled projection); pathScope is not in the tuple digest. Successor-typed alignment item for goal.ttl's owner.",
+  "GC23-12 falsifier reading: goal.ttl itself places one order under v23:GC-26.9.24 (v23:WO-V23-W, a GC-26.9.23 lane order typed sj:boundaryClass sj:Successor, the PRD 9.2 reference flow). The court lists it as predecessor inventory (law L8: lane order V23-*, typed Successor, under no GC24 gate) and does not count it as GC-26.9.24 delta; the GC-26.9.24 graph (successor/goal.ttl + compiled) holds 0 hand-authored orders. If the operator reads the falsifier as covering predecessor inventory, WO-V23-W must move out of GC-26.9.24 in goal.ttl.",
+  "docs/sjira/v26.9.23/receipts/GC23-12.json (committed gate receipt) still records the V23-P stub run (UNKNOWN/machinery_absent); it is rewritten by the driver's stop-court tick after integration.",
+  "successor/goal.ttl root carries no sj:boundaryClass (the compiler root law prose/root.rq excludes Successor-classed roots) and no sj:stopQuery; goal.ttl keeps GC-26.9.24's ASK { FILTER(false) } until acceptance."
+ ]
+}

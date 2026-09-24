@@ -1,0 +1,77 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/fri/FRI-T2/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+Generated xaas app
+00:50:55.372 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+00:50:56.491 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+00:50:58.241 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+00:50:58.496 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:58.496 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+00:50:58.518 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:58.518 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+00:50:58.539 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:58.539 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+00:50:58.554 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:58.554 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+00:50:58.567 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:58.567 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+00:50:58.580 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:58.580 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 539828, max_cases: 32
+Excluding tags: [:test, :stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+Including tags: [describe: "a lease lost between steps"]
+
+
+
+  1) test a lease lost between steps re-claimed by another owner after expiry: typed :lease_lost, no second step, nothing staged or committed, the new owner's lease intact (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:269
+     match (=) failed
+     code:  assert {:error, {:lease_lost, {:no_lease, redacted}}} = Task.await(task, 60000)
+     left:  {:error, {:lease_lost, {:no_lease, redacted}}}
+     right: {:error, {:no_lease, "g36gLaNw1OkHNx7mdcdeqkx0oLe7CrUg"}}
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:289: anonymous fn/1 in Xaas.Ultracode.RecipeWorkerTest."test a lease lost between steps re-claimed by another owner after expiry: typed :lease_lost, no second step, nothing staged or committed, the new owner's lease intact"/1
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:121: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:83: ExUnit.CaptureLog.capture_log/2
+       test/xaas/ultracode/recipe_worker_test.exs:288: (test)
+
+
+
+  2) test a lease lost between steps expired mid-recipe under the engine: the worker stops uncommitted and the engine reaps the epoch with a refused receipt (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:328
+     Expected false or nil, got true
+     code: refute File.exists?(Path.join(signals, "step2"))
+     arguments:
+
+         # 1
+         "/Users/sac/.cache/tmp/xaas-recipe-test-signals-1790149860627-13061/step2"
+
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:536: Xaas.Ultracode.RecipeWorkerTest.assert_no_write_after_loss/3
+       test/xaas/ultracode/recipe_worker_test.exs:346: (test)
+
+
+
+  3) test a lease lost between steps refused by another party through Lease.refuse/3: typed :lease_lost, no commit, only that party's receipt (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:308
+     match (=) failed
+     code:  assert {:error, {:lease_lost, {:lease_not_live, :failed}}} = Task.await(task, 60000)
+     left:  {:error, {:lease_lost, {:lease_not_live, :failed}}}
+     right: {:error, {:lease_not_live, :failed}}
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:318: anonymous fn/1 in Xaas.Ultracode.RecipeWorkerTest."test a lease lost between steps refused by another party through Lease.refuse/3: typed :lease_lost, no commit, only that party's receipt"/1
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:121: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:83: ExUnit.CaptureLog.capture_log/2
+       test/xaas/ultracode/recipe_worker_test.exs:317: (test)
+
+
+Finished in 3.0 seconds (0.00s async, 3.0s sync)
+3 tests, 3 failures (12 excluded)

@@ -1,0 +1,8 @@
+restored:  lib/xaas/ultracode/semantic_drive.ex (tree clean)
+Excluding tags: [:test, :stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+  1) test an undeclared manifest shape is REFUSED(build_manifest_shape), never read by position; the pin applies (Xaas.Ultracode.SemanticDriveToolchainTest)
+Result: 6/7 passed, 14 excluded
+inner_exit=2
+FALSIFIER manifest-any: fired as expected
+sh $G/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN $L/fals $n  3.91s user 4.33s system 133% cpu 6.159 total
+exit=0

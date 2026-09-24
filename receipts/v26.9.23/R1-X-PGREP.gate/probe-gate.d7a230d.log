@@ -1,0 +1,68 @@
+## decoy pid 13756 started 2026-09-23T20:31:41Z
+## pgrep -fl 'zcode.js --prompt' before:
+13756 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## HEAD d7a230d0ed0fc1507c368fb43d837fccc87db4ee porcelain=[ M lib/xaas/ultracode/semantic_drive.ex ]
+## cmd: elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 520 files (.ex)
+Compiling lib/mix/tasks/xaas.autonomic.controls.ex (it's taking more than 10s)
+Compiling lib/xaas/library/changes/fulfill_next_hold.ex (it's taking more than 10s)
+Compiling lib/mix/tasks/xaas.ultracode.learn.ex (it's taking more than 10s)
+Generated xaas app
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+13:32:50.025 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:32:50.959 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:32:51.522 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:32:51.711 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:32:51.712 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:32:51.729 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:32:51.729 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:32:51.746 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:32:51.746 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:32:51.763 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:32:51.764 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 733862, max_cases: 32
+13:32:51.776 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+13:32:51.776 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+
+13:32:51.783 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:32:51.783 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+13:32:53.053 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+.......13:32:57.150 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+13:32:57.154 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+..........13:33:01.210 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+...............
+Finished in 14.3 seconds (0.00s async, 14.3s sync)
+
+Result: 32 passed
+## exit 0
+## decoy 13756 alive at end: yes
+## pgrep -fl 'zcode.js --prompt' after:
+13756 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## decoy stopped 2026-09-23T20:33:06Z

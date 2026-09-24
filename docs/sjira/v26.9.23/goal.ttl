@@ -1,0 +1,978 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v23: <https://ggen-igniter.dev/sjira/v26.9.23#> .
+@prefix fri: <https://ggen-igniter.dev/sjira/v26.9.22/friday#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# GC-26.9.23: the governing object of the v26.9.23 Semantic Manufacturing
+# release (lane V23-P). Source prose: docs/sjira/v26.9.23/prd-ard.md, the
+# operator-accepted PRD + ARD pair, committed byte-identical
+# (sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212,
+# 39386 bytes). Section ids cited below (PR-0xx, AR-0xx, PRD/ARD section n)
+# refer to that file. Driver: /Users/sac/wt/v26922/v26923/DRIVER.md.
+#
+# Vocabulary: the semantic-jira-pack sj: namespace (ggen_igniter
+# priv/ggen/semantic-jira-pack/ontology.ttl) including the Friday
+# GoalCheckpoint contract (sj:GoalCheckpoint, sj:checkpointOf,
+# sj:boundaryClass, sj:courtCommand, sj:stopQuery, sj:successorOf and the
+# WorkOrder tuple sj:postcondition / sj:requiresCapability /
+# sj:evidenceHorizon / sj:exclusion / sj:consequenceClass /
+# sj:successorPolicy, lane FRI-T1). ARD section 6 names the acceptance
+# predicate sj:acceptancePredicate; this graph uses the pack's existing
+# sj:acceptance -> sj:AcceptanceCriterion for that meaning. The root also
+# carries sj:successorCheckpoint (ARD section 6 GoalCheckpoint predicate, the
+# inverse of sj:successorOf), sj:sourceSha256 (PVOCAB) and the section 6.4
+# GoalCheckpoint fields the pack already names.
+#
+# Admission (GC23-3, lane V23-C): this graph merged with the pack ontology
+# and with its predecessor docs/sjira/v26.9.22/friday/goal.ttl (which defines
+# the fri: nodes referenced here: fri:GC-FRI-0800, fri:GC-026923, fri:G0 ..
+# fri:G12), validated by GgenIgniter.SemanticJira.Shacl against
+# shapes/work-order.shacl.ttl. WorkOrders are closed shapes there, so they
+# carry no rdfs:comment/rdfs:seeAlso; cross-links live on gates.
+#
+# Law of this graph (unchanged from GC-FRI-0800):
+# - It never asserts a receipt, and the stop court ignores every sj:standing
+#   written here: standing is observed, never declared. The only sj:standing
+#   literals are the "UNKNOWN" placeholders the closed pack WorkOrder shape
+#   requires. `mix xaas.stop_court --checkpoint GC-26.9.23` runs each gate's
+#   sj:courtCommand from the xaas repository root, writes one R-schema gate
+#   receipt per gate (docs/sjira/v26.9.23/receipts/<gate>.json), reads each
+#   WorkOrder's receipt from receipts/v26.9.23/<identifier>.json (linked only
+#   when identity.tuple_digest equals the order's tuple digest), projects the
+#   receipts ADMITTED by validate_receipt.py into sj:Receipt nodes and
+#   evaluates GC-26.9.23's sj:stopQuery (= stop.rq) over this graph plus those
+#   nodes. Exit 0 only when STOP=true.
+# - Every gate's court is exactly "sh docs/sjira/v26.9.23/courts/GC23-<n>.sh"
+#   run from the xaas root with XAAS_DIR (xaas checkout under judgement) and
+#   GGEN_IGNITER_DIR (ggen_igniter checkout under judgement) in its env. A
+#   court whose machinery has not landed prints
+#   "UNKNOWN: <gate> machinery lands in lane <LANE>" and exits 75 (the stop
+#   court's machinery-absent code; standing UNKNOWN). Machinery lanes replace
+#   their gate's script body; this graph stays stable.
+# - Discovered work that falsifies no GC23 proposition routes to the
+#   successor v23:GC-26.9.24 (ARD section 26 F8) and cannot hold this
+#   checkpoint open (PR-017).
+
+# -- Root and successor bucket ------------------------------------------------
+
+v23:GC-26.9.23 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-26.9.23" ;
+    rdfs:label "GC-26.9.23 Semantic Manufacturing v26.9.23 release stop" ;
+    dcterms:description "STOP_26.9.23 = GC23-0 ∧ GC23-1 ∧ … ∧ GC23-12 (the conjunction of GC23_i for i = 0 … 12), with RequiredUnknown = ∅, RequiredLLM_KNOWN = ∅, and RemainingFrontier ⊆ Successor ∪ Blocked ∪ Unsupported ∪ Refused. When this predicate is true, v26.9.23 is complete. Additional capability becomes v26.9.24+ work. (PRD section 13)" ;
+    dcterms:source "docs/sjira/v26.9.23/prd-ard.md" ;
+    sj:sourceSha256 "sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:successorOf fri:GC-FRI-0800 ;
+    sj:successorCheckpoint v23:GC-26.9.24 ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:requiresEvidence sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.9.23:GC-26.9.23" ;
+    sj:exclusion "Not required by v26.9.23 (PRD section 10 non-goal): solving arbitrary program semantics.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): arbitrary termination proofs.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): exhaustive improvement of every repository.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): zero UNKNOWN globally.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): replacing every handwritten implementation.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): fully autonomous production deployment.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): live WD integration.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): live Planning Center actuation.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): arbitrary agent-to-agent conversation.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): universal Claude/ZCode workflow takeover.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): merging/publishing/deploying every successor item.",
+        "Not required by v26.9.23 (PRD section 10 non-goal): making every repository ALIVE." ;
+    sj:successorPolicy "F8 (ARD section 26): discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24. A newly discovered improvement never reopens GC-26.9.23 unless it falsifies an accepted proposition (PR-017)." ;
+    sj:acceptance v23:GC-26.9.23-acceptance ;
+    sj:falsifier v23:GC-26.9.23-falsifier-F8, v23:GC-26.9.23-falsifier-vacuous-stop ;
+    sj:courtCommand "mix xaas.stop_court --checkpoint GC-26.9.23" ;
+    sj:stopQuery """# STOP(GC-26.9.23), PRD section 13 / ARD section 19. True iff
+# (1) GC-26.9.23 has at least one child gate,
+# (2) every child gate (sj:checkpointOf GC-26.9.23, i.e. GC23-0 .. GC23-12)
+#     has a gate receipt with standing ALIVE, and
+# (3) every WorkOrder under GC-26.9.23 (sj:checkpointOf+ : on the root itself
+#     or on one of its gates) is typed Successor (sj:boundaryClass
+#     sj:Successor) or has a receipt whose standing is terminal: ALIVE,
+#     BLOCKED, UNSUPPORTED or REFUSED. UNKNOWN, PARTIAL_ALIVE, BUILD_BROKEN or
+#     no receipt at all keeps STOP false.
+# RequiredUnknown = empty and RequiredLLM_KNOWN = empty are carried by the
+# gates (a gate is ALIVE only when its court exits 0); RemainingFrontier within
+# Successor/Blocked/Unsupported/Refused is clause (3). Receipts enter the graph
+# only through mix xaas.stop_court, which projects receipts ADMITTED by
+# validate_receipt.py as sj:Receipt nodes; goal.ttl itself may not assert any
+# receipt. No LLM participates in the stop calculation. This text is
+# byte-equal (trimmed) to the sj:stopQuery of GC-26.9.23 in goal.ttl; the
+# court refuses to run on drift.
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+ASK {
+  ?gc a sj:GoalCheckpoint ;
+      dcterms:identifier "GC-26.9.23" .
+  FILTER EXISTS {
+    ?anyGate a sj:GoalCheckpoint ;
+             sj:checkpointOf ?gc .
+  }
+  FILTER NOT EXISTS {
+    ?gate a sj:GoalCheckpoint ;
+          sj:checkpointOf ?gc .
+    FILTER NOT EXISTS {
+      ?gate sj:receipt ?gateReceipt .
+      ?gateReceipt a sj:Receipt ;
+                   sj:standing "ALIVE" .
+    }
+  }
+  FILTER NOT EXISTS {
+    ?order a sj:WorkOrder ;
+           sj:checkpointOf+ ?gc .
+    FILTER NOT EXISTS { ?order sj:boundaryClass sj:Successor . }
+    FILTER NOT EXISTS {
+      ?order sj:receipt ?orderReceipt .
+      ?orderReceipt a sj:Receipt ;
+                    sj:standing ?standing .
+      FILTER(?standing = "ALIVE" || STRSTARTS(?standing, "BLOCKED") || STRSTARTS(?standing, "UNSUPPORTED") || STRSTARTS(?standing, "REFUSED"))
+    }
+  }
+}""" .
+v23:GC-26.9.23-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC-26.9.23 acceptance" ;
+    dcterms:description "The stop query returns true for GC-26.9.23 (PRD section 11 Completion, ARD section 19) and the release receipt (ARD section 27) reproduces LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH = 0, UNRECEIPTED_ACTUATION = 0, REQUIRED_UNKNOWN = 0, UNCLASSIFIED_REQUIRED_WORK = 0 and STOP = true at exact repo SHAs; every non-required remaining item is classified." .
+v23:GC-26.9.23-falsifier-F8 a sj:Falsifier ;
+    rdfs:label "F8 successor routing" ;
+    dcterms:description "F8 (ARD section 26): an attempt to turn a newly discovered improvement into required current work without falsifying an active GC23 proposition is not routed to the successor GoalCheckpoint v23:GC-26.9.24." .
+v23:GC-26.9.23-falsifier-vacuous-stop a sj:Falsifier ;
+    rdfs:label "GC-26.9.23 vacuous stop" ;
+    dcterms:description "STOP=true is printed, or the stop court exits 0, while some GC23 gate has no ADMITTED gate receipt with standing ALIVE, or some required WorkOrder under GC-26.9.23 has no terminal ADMITTED receipt bound to its tuple digest." .
+
+v23:GC-26.9.24 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-26.9.24" ;
+    rdfs:label "GC-26.9.24 successor of GC-26.9.23" ;
+    dcterms:description "Successor goal that receives every item typed out of GC-26.9.23: the PRD section 10 non-goals, the 176 synthesized v26.9.22 orders, the ZCode lanes, the ultracode takeover runtime, the ggen-ecosystem crown laws, the WD FA reference first-mile flow (PRD section 9.2, lane V23-W; the Friday G12 deliverable), and every item of fri:GC-026923, which folds into it. Its stop predicate is not compiled yet: STOP is false by construction until its accepted successor prose enters through the GC23-12 pipeline." ;
+    sj:successorOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Successor ;
+    rdfs:seeAlso fri:GC-026923, fri:G12 ;
+    sj:stopQuery """PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+# GC-26.9.24 has no accepted prose yet: STOP is false by construction.
+ASK { FILTER(false) }""" .
+
+# -- Gates GC23-0 .. GC23-12 (PRD section 12; falsifiers ARD section 26) -----
+
+v23:GC23-0 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-0" ;
+    rdfs:label "GC23-0 Future Semantics" ;
+    dcterms:description "Accepted Vision/WBPR exists and has a complete admitted semantic projection." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:exclusion "The accepted prose is provenance, never executable authority; its propositions execute only after admission (PR-001, AR-003)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-0.sh" ;
+    sj:acceptance v23:GC23-0-acceptance ;
+    sj:falsifier v23:GC23-0-falsifier ;
+    rdfs:seeAlso fri:G0, fri:G1 .
+v23:GC23-0-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-0 acceptance" ;
+    dcterms:description "docs/sjira/v26.9.23/prd-ard.md is committed byte-identical to the accepted prose (sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212); every gate GC23-0 .. GC23-12 has at least one candidate proposition whose sj:sourceText equals its source span (prose_spans.py check --require-gates 13, lane V23-X); the admission court (lane V23-C) admits the candidates and leaves no executable obligation only in prose (PR-002, PR-003, ARD section 5)." .
+v23:GC23-0-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-0 falsifier" ;
+    dcterms:description "One byte of prd-ard.md changes, or a required GC23 gate has no admitted proposition bound to an exact source span, and the GC23-0 court still exits 0." .
+
+v23:GC23-1 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-1" ;
+    rdfs:label "GC23-1 Cold Bootstrap" ;
+    dcterms:description "The system reconstructs its own bounded state without chat/session context." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Bootstrap ;
+    sj:exclusion "No Claude transcript, ZCode transcript, conversation memory, unstored plan or operator recollection is a bootstrap input (ARD section 16)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-1.sh" ;
+    sj:acceptance v23:GC23-1-acceptance ;
+    sj:falsifier v23:GC23-1-falsifier ;
+    rdfs:seeAlso fri:G2 .
+v23:GC23-1-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-1 acceptance" ;
+    dcterms:description "Two clean independent reconstructions (env -i, fresh HOME) from durable artifacts only (git refs, canonical RDF, schema, receipts, OCEL/TransitionLog, provider registry, explicit configuration, authority rules) produce semantically identical state: current subjects and identities, capabilities, the active GoalCheckpoint, standing, frontier and BLOCKED/UNSUPPORTED/REFUSED state (PRD section 8.1, ARD section 16)." .
+v23:GC23-1-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-1 falsifier" ;
+    dcterms:description "The two cold reconstructions differ, or a reconstruction reads a transcript, conversation memory or ~/.claude, and the GC23-1 court still exits 0." .
+
+v23:GC23-2 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-2" ;
+    rdfs:label "GC23-2 First-Mile Compiler" ;
+    dcterms:description "Accepted prose compiles into a finite sJira delta." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:exclusion "No second LLM interpretation of the same accepted graph revision; the only LLM edge is candidate extraction before admission (ARD sections 5.5 and 17)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-2.sh" ;
+    sj:acceptance v23:GC23-2-acceptance ;
+    sj:falsifier v23:GC23-2-falsifier ;
+    rdfs:seeAlso fri:G3 .
+v23:GC23-2-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-2 acceptance" ;
+    dcterms:description "Admitted RDF -> deterministic semantic delta -> deterministic WorkOrder graph (PR-004, ARD section 5.5): the manufacture replays twice byte-identical with no LLM credential or provider reachable, and only the finite delta required by GC-26.9.23 becomes required work." .
+v23:GC23-2-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-2 falsifier" ;
+    dcterms:description "Two replays of the admitted graph -> WorkOrder manufacture differ, or a replay reaches an LLM provider, and the GC23-2 court still exits 0." .
+
+v23:GC23-3 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-3" ;
+    rdfs:label "GC23-3 Finite Work Graph" ;
+    dcterms:description "Every required WorkOrder carries the full semantic tuple." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-3.sh" ;
+    sj:acceptance v23:GC23-3-acceptance ;
+    sj:falsifier v23:GC23-3-falsifier-F1 ;
+    rdfs:seeAlso fri:G4 .
+v23:GC23-3-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-3 acceptance" ;
+    dcterms:description "SHACL admission of this goal graph (merged with the semantic-jira-pack ontology and shapes) conforms, and every required WorkOrder carries identity, exact subject, postcondition, dependencies, required capability, authority ceiling, consequence class, evidence horizon, acceptance, falsifier, exclusions and successor policy (PRD section 6.5, ARD section 6)." .
+v23:GC23-3-falsifier-F1 a sj:Falsifier ;
+    rdfs:label "F1 missing tuple field" ;
+    dcterms:description "F1 (ARD section 26): delete a mandatory WorkOrder field; expected REFUSED. The gate is falsified when the shapes court admits a required WorkOrder with one mandatory tuple field deleted." .
+
+v23:GC23-4 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-4" ;
+    rdfs:label "GC23-4 SA2A Conservation" ;
+    dcterms:description "Work meaning is preserved through provider resolution." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Core ;
+    sj:exclusion "SA2A carries no execution authority and no SA2A request may escalate its own authority (PRD section 5.4, ARD section 21)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-4.sh" ;
+    sj:acceptance v23:GC23-4-acceptance ;
+    sj:falsifier v23:GC23-4-falsifier-F2 ;
+    rdfs:seeAlso fri:G5 .
+v23:GC23-4-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-4 acceptance" ;
+    dcterms:description "The SemanticExecutionRequest digest over work_order, subject, postcondition, capability, evidence_horizon, authority_ceiling, consequence_class, exclusions and graph_digest is equal at sJira -> SA2A -> XaaS -> provider -> receipt on a live episode (PR-008, ARD section 8)." .
+v23:GC23-4-falsifier-F2 a sj:Falsifier ;
+    rdfs:label "F2 tuple digest mutation" ;
+    dcterms:description "F2 (ARD section 26): mutate the SA2A tuple digest; expected REFUSED(tuple_digest_mismatch). The gate is falsified when a digest mutated at any hop is admitted." .
+
+v23:GC23-5 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-5" ;
+    rdfs:label "GC23-5 Authorized No-LLM Execution" ;
+    dcterms:description "A KNOWN WorkOrder executes with zero LLM involvement." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Core ;
+    sj:exclusion "No LLM credential, binary, provider, fallback or conversational state is reachable on the KNOWN reference path, and it does not depend on ZCode (PR-009, ARD section 4)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-5.sh" ;
+    sj:acceptance v23:GC23-5-acceptance ;
+    sj:falsifier v23:GC23-5-falsifier-F3 ;
+    rdfs:seeAlso fri:G6 .
+v23:GC23-5-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-5 acceptance" ;
+    dcterms:description "A reference KNOWN WorkOrder runs end to end through XaaS -> BRCE/CommandBus with a deterministic capability provider (RecipeWorker) and zero LLM participation; the receipt's executor is the deterministic provider and the OCEL carries zero LLM provider events (PR-009, PR-010, ARD section 10)." .
+v23:GC23-5-falsifier-F3 a sj:Falsifier ;
+    rdfs:label "F3 LLM credentials exposed" ;
+    dcterms:description "F3 (ARD section 26): expose LLM credentials during the KNOWN no-LLM court; expected a typed court failure/refusal. The gate is falsified when the court passes with an LLM credential or zcode binary reachable." .
+
+v23:GC23-6 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-6" ;
+    rdfs:label "GC23-6 Consequence" ;
+    dcterms:description "Independent observation proves the required postcondition." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:exclusion "Command exit 0 alone never satisfies a WorkOrder (PR-011, ARD section 18)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-6.sh" ;
+    sj:acceptance v23:GC23-6-acceptance ;
+    sj:falsifier v23:GC23-6-falsifier-F4 ;
+    rdfs:seeAlso fri:G7 .
+v23:GC23-6-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-6 acceptance" ;
+    dcterms:description "The required world delta is observed by an independent verifier (not the executor's claim), the postcondition verdict and falsifier result are recorded, and reverting the consequence makes the court fail (PR-011, ARD section 18)." .
+v23:GC23-6-falsifier-F4 a sj:Falsifier ;
+    rdfs:label "F4 consequence removed" ;
+    dcterms:description "F4 (ARD section 26): remove the required consequence; expected the WorkOrder remains non-ALIVE. The gate is falsified when the WorkOrder reaches ALIVE without its consequence." .
+
+v23:GC23-7 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-7" ;
+    rdfs:label "GC23-7 Receipt / OCEL" ;
+    dcterms:description "The episode produces conformant durable evidence." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:exclusion "Historical flat receipts do not count as v26.9.23 proof unless projected into the current schema by a validated adapter (ARD section 12)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-7.sh" ;
+    sj:acceptance v23:GC23-7-acceptance ;
+    sj:falsifier v23:GC23-7-falsifier ;
+    rdfs:seeAlso fri:G7 .
+v23:GC23-7-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-7 acceptance" ;
+    dcterms:description "Every critical-path receipt of the episode validates against the one R schema (validate_receipt.py ADMITTED), and its OCEL 2 events include WorkOrderCreated, CapabilityResolved, LeaseAcquired, ActuationStarted, ActuationCompleted, VerificationCompleted, ReceiptSealed, StandingChanged and FrontierChanged (ARD sections 12 and 13)." .
+v23:GC23-7-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-7 falsifier" ;
+    dcterms:description "A critical-path receipt that validate_receipt.py refuses, or an actuation with no OCEL event, still passes the GC23-7 court." .
+
+v23:GC23-8 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-8" ;
+    rdfs:label "GC23-8 Closed Frontier" ;
+    dcterms:description "The receipt changes derived sJira standing/frontier." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:exclusion "Standing is never an authoritative stored literal; it is derived from receipts (PR-006, ARD section 7)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-8.sh" ;
+    sj:acceptance v23:GC23-8-acceptance ;
+    sj:falsifier v23:GC23-8-falsifier ;
+    rdfs:seeAlso fri:G8 .
+v23:GC23-8-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-8 acceptance" ;
+    dcterms:description "A before/after frontier diff recorded in the TransitionLog shows the completed order leaving the frontier, its eligible dependent entering, and ineligible dependents staying fenced (PR-012, ARD section 14)." .
+v23:GC23-8-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-8 falsifier" ;
+    dcterms:description "The executed order stays on the frontier, its eligible dependent does not enter, or an ineligible dependent enters, and the GC23-8 court still exits 0." .
+
+v23:GC23-9 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-9" ;
+    rdfs:label "GC23-9 MachineExperience" ;
+    dcterms:description "A resolved UNKNOWN becomes a reusable KNOWN path." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Core ;
+    sj:exclusion "Episode 2 never routes from a literal; only from the admitted MachineExperience (ARD section 15)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-9.sh" ;
+    sj:acceptance v23:GC23-9-acceptance ;
+    sj:falsifier v23:GC23-9-falsifier ;
+    rdfs:seeAlso fri:G9 .
+v23:GC23-9-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-9 acceptance" ;
+    dcterms:description "Episode 1 (UNKNOWN, bounded exploration) yields admitted MachineExperience; an equivalent Episode 2 on a different subject routes KNOWN through its applicability predicate with zero semantic LLM inference and fewer steps, both measured from OCEL (PR-014, ARD section 15)." .
+v23:GC23-9-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-9 falsifier" ;
+    dcterms:description "Episode 2 requires an LLM to rediscover the route, takes at least as many steps as Episode 1, or routes from a literal, and the GC23-9 court still exits 0." .
+
+v23:GC23-10 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-10" ;
+    rdfs:label "GC23-10 Cold Replay" ;
+    dcterms:description "Independent reconstruction reaches the same standing." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Bootstrap ;
+    sj:exclusion "No transcript access during replay (PR-013)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-10.sh" ;
+    sj:acceptance v23:GC23-10-acceptance ;
+    sj:falsifier v23:GC23-10-falsifier-F5, v23:GC23-10-falsifier-F6 ;
+    rdfs:seeAlso fri:G10 .
+v23:GC23-10-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-10 acceptance" ;
+    dcterms:description "An independent cold process (env -i, fresh HOME, no transcript) reconstructs subject identity, evidence, standing, completed work and the current frontier from canonical artifacts, byte-identical across two runs (PR-013)." .
+v23:GC23-10-falsifier-F5 a sj:Falsifier ;
+    rdfs:label "F5 receipt deleted during replay" ;
+    dcterms:description "F5 (ARD section 26): delete a receipt during cold replay; expected standing/frontier divergence. The gate is falsified when the replay does not diverge." .
+v23:GC23-10-falsifier-F6 a sj:Falsifier ;
+    rdfs:label "F6 covered subject changed" ;
+    dcterms:description "F6 (ARD section 26): change the covered subject after the receipt; expected the previous ALIVE standing no longer automatically applies. The gate is falsified when it still applies." .
+
+v23:GC23-11 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-11" ;
+    rdfs:label "GC23-11 Bounded Fleet" ;
+    dcterms:description "Every repo relevant to the checkpoint has exact-subject standing or an explicit non-required classification." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Core ;
+    sj:exclusion "Making every repository ALIVE is a non-goal (PRD section 10)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-11.sh" ;
+    sj:acceptance v23:GC23-11-acceptance ;
+    sj:falsifier v23:GC23-11-falsifier-F7 ;
+    rdfs:seeAlso fri:G11 .
+v23:GC23-11-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-11 acceptance" ;
+    dcterms:description "Every repository of the declared fleet universe has exactly one classification (CriticalPath, Successor, Blocked, Unsupported or Refused) with its exact SHA and evidence, and every required (CriticalPath) repository has an ALIVE receipt at its exact head." .
+v23:GC23-11-falsifier-F7 a sj:Falsifier ;
+    rdfs:label "F7 unclassified required repository" ;
+    dcterms:description "F7 (ARD section 26): introduce an unclassified required repository; expected the fleet checkpoint fails. The gate is falsified when it does not." .
+
+v23:GC23-12 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC23-12" ;
+    rdfs:label "GC23-12 Semantic Self-Hosting" ;
+    dcterms:description "A new bounded improvement to this architecture can itself originate as accepted prose and enter the same pipeline without manually manufacturing a bespoke backlog." ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:boundaryClass sj:Core ;
+    sj:exclusion "No bespoke hand-manufactured backlog for the successor checkpoint (ARD section 24 M9)." ;
+    sj:courtCommand "sh docs/sjira/v26.9.23/courts/GC23-12.sh" ;
+    sj:acceptance v23:GC23-12-acceptance ;
+    sj:falsifier v23:GC23-12-falsifier .
+v23:GC23-12-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC23-12 acceptance" ;
+    dcterms:description "Accepted successor prose for GC-26.9.24 passes through the same prose -> candidates -> admission -> delta -> WorkOrder pipeline (lanes V23-X, V23-C) and yields its WorkOrders with no hand-authored backlog (ARD section 24 M9)." .
+v23:GC23-12-falsifier a sj:Falsifier ;
+    rdfs:label "GC23-12 falsifier" ;
+    dcterms:description "A GC-26.9.24 WorkOrder exists that no admitted proposition of accepted successor prose produced, and the GC23-12 court still exits 0." .
+
+# -- Lane capabilities ----------------------------------------------------------
+
+v23:cap-construct-xaas-lane a sj:Capability ;
+    rdfs:label "Construct: xaas v26.9.23 lane" ;
+    dcterms:description "Bounded construction inside one xaas lane worktree (branch v23/<LANE>) with Chicago tests; naming the capability grants no authority." ;
+    sj:capabilityId "construct:xaas-lane" .
+v23:cap-construct-ggen_igniter-lane a sj:Capability ;
+    rdfs:label "Construct: ggen_igniter v26.9.23 lane" ;
+    dcterms:description "Bounded construction inside one ggen_igniter lane worktree (branch v23/<LANE>) with Chicago tests; naming the capability grants no authority." ;
+    sj:capabilityId "construct:ggen_igniter-lane" .
+
+# -- Lane work orders (one per DRIVER.md gate-map lane; tuple-complete) --------
+# Tuple digest (stop court): subject, postcondition, capability
+# (sj:capabilityId), evidence_ceiling (sj:evidenceCeiling), authority_ceiling,
+# consequence_class, exclusions (sorted). sj:evidenceHorizon carries the same
+# value as sj:evidenceCeiling. Dependencies on Friday lanes (FRI-T*) are not
+# orders of this graph; they are named in the order's dcterms:description.
+
+v23:WO-V23-P a sj:WorkOrder ;
+    rdfs:label "V23-P GC-26.9.23 governing object" ;
+    dcterms:identifier "V23-P" ;
+    dcterms:title "GC-26.9.23 governing object: accepted prose, goal graph, stop query, gate courts" ;
+    dcterms:description "Commit the accepted prose byte-identical (docs/sjira/v26.9.23/prd-ard.md), author goal.ttl (root GC-26.9.23, gates GC23-0 .. GC23-12, successor bucket GC-26.9.24, one tuple-complete WorkOrder per v26.9.23 lane) and stop.rq, the 13 gate court scripts with check_scripts.sh, and the per-checkpoint registry and court env in mix xaas.stop_court; observe the baseline R_0 with the full stop court. Serves GC23-0 (source) and GC23-3 (graph)." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.23-governing-object" ;
+    sj:pathScope "docs/sjira/v26.9.23/prd-ard.md", "docs/sjira/v26.9.23/goal.ttl", "docs/sjira/v26.9.23/stop.rq",
+        "docs/sjira/v26.9.23/courts/", "docs/sjira/v26.9.23/receipts/", "lib/mix/tasks/xaas.stop_court.ex",
+        "test/mix/tasks/xaas_stop_court_test.exs", "test/sjira/v26_9_23_goal_test.exs",
+        "receipts/v26.9.23/V23-P.json", "HANDWRITTEN.md" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-P.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-P" ;
+    sj:requiresCourt v23:court-V23-P ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "manufacture", "verification" ;
+    sj:acceptance v23:acceptance-V23-P ;
+    sj:falsifier v23:falsifier-V23-P ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-P ;
+    sj:nextCheckpoint v23:GC23-3 ;
+    sj:checkpointOf v23:GC23-0 ;
+    sj:postcondition "mix xaas.stop_court --checkpoint GC-26.9.23 resolves docs/sjira/v26.9.23/{goal.ttl,receipts} and receipts/v26.9.23 from its checkpoint registry, runs the 13 GC23 court scripts and writes 13 gate receipts ADMITTED by validate_receipt.py with STOP=false; prd-ard.md is byte-identical to the accepted prose; every lane WorkOrder of goal.ttl carries the full tuple." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "The goal graph never asserts a receipt, and its sj:standing literals are never read.",
+        "The accepted prose is committed byte-identical and never edited." ;
+    sj:consequenceClass "manufacture" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:court-V23-P a sj:Court ;
+    rdfs:label "V23-P lane gate" ;
+    dcterms:description "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs && sh docs/sjira/v26.9.23/courts/check_scripts.sh, exit 0 at the exact subject." .
+v23:acceptance-V23-P a sj:AcceptanceCriterion ;
+    rdfs:label "V23-P acceptance" ;
+    dcterms:description "Chicago tests over the real goal.ttl, stop.rq and court scripts pass on the committed head: 13 gates with their court commands and boundary classes, every lane order tuple-complete, and mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 run as a real subprocess writes an ADMITTED UNKNOWN gate receipt and exits non-zero." .
+v23:falsifier-V23-P a sj:Falsifier ;
+    rdfs:label "V23-P falsifier" ;
+    dcterms:description "A lane order loses a tuple field, a gate's court command stops pointing at its script, or stop.rq drifts from the root's sj:stopQuery, and the lane gate still exits 0." .
+v23:action-V23-P a sj:Action ;
+    rdfs:label "Run the V23-P lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-P.json bound to this order's tuple digest." .
+
+v23:WO-V23-X a sj:WorkOrder ;
+    rdfs:label "V23-X GC23-0 candidate semantics" ;
+    dcterms:identifier "V23-X" ;
+    dcterms:title "GC23-0 candidate semantics from the accepted prose (the only LLM edge)" ;
+    dcterms:description "Deterministic prose_spans.py (emit/check) binding PVOCAB candidate propositions to exact UTF-8 byte spans of the accepted prose, the recorded LLM extraction JSON (raw O) and its deterministic Turtle projection (PR-002, ARD sections 5.2 and 5.3)." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.23-prose-candidates" ;
+    sj:pathScope "scripts/sjira/prose_spans.py", "scripts/sjira/test_prose_spans.py",
+        "docs/sjira/v26.9.23/candidates/", "docs/sjira/v26.9.23/prd-ard.md",
+        "receipts/v26.9.23/V23-X.json", "HANDWRITTEN.md" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-X.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-X" ;
+    sj:requiresCourt v23:court-V23-X ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "projection", "verification" ;
+    sj:acceptance v23:acceptance-V23-X ;
+    sj:falsifier v23:falsifier-V23-X ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-X ;
+    sj:nextCheckpoint v23:GC23-0 ;
+    sj:checkpointOf v23:GC23-0 ;
+    sj:postcondition "python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/prd-ard.md --candidates docs/sjira/v26.9.23/candidates/prd-ard.ttl --require-gates 13 exits 0: every candidate span re-verifies against the accepted prose bytes and every gate GC23-0 .. GC23-12 has at least one sj:requiredBy candidate." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "The LLM edge is candidate extraction from prose only, recorded in sj:extractedBy; candidates stay sj:candidateStanding UNKNOWN and are never admitted by this order (PR-002, PR-003)." ;
+    sj:consequenceClass "projection" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:court-V23-X a sj:Court ;
+    rdfs:label "V23-X lane gate" ;
+    dcterms:description "python3 -m unittest discover -s scripts/sjira -p 'test_*.py' -v && python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/prd-ard.md --candidates docs/sjira/v26.9.23/candidates/prd-ard.ttl --require-gates 13, exit 0 at the exact subject." .
+v23:acceptance-V23-X a sj:AcceptanceCriterion ;
+    rdfs:label "V23-X acceptance" ;
+    dcterms:description "emit is byte-identical for identical input, and check refuses a one-byte mutation of the source, of one sourceText, of one offset or of one kind, and the deletion of the only candidate of a required gate." .
+v23:falsifier-V23-X a sj:Falsifier ;
+    rdfs:label "V23-X falsifier" ;
+    dcterms:description "A candidate whose sourceText differs from the prose bytes at its span, or a gate without a required candidate, passes check." .
+v23:action-V23-X a sj:Action ;
+    rdfs:label "Run the V23-X lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-X.json bound to this order's tuple digest." .
+
+v23:WO-V23-F a sj:WorkOrder ;
+    rdfs:label "V23-F GC23-11 bounded fleet" ;
+    dcterms:identifier "V23-F" ;
+    dcterms:title "GC23-11 bounded fleet: declared universe, classification and standing matrix" ;
+    dcterms:description "Declare the finite fleet universe, classify every repository (CriticalPath, Successor, Blocked, Unsupported, Refused) from real git observation, emit a deterministic matrix, and land the GC23-11 court (check-classification + check-standing)." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.23-fleet-matrix" ;
+    sj:pathScope "scripts/sjira/fleet_matrix.py", "scripts/sjira/test_fleet_matrix.py",
+        "docs/sjira/v26.9.23/fleet/", "docs/sjira/v26.9.23/courts/GC23-11.sh",
+        "receipts/v26.9.23/V23-F.json", "HANDWRITTEN.md" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-F.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-F" ;
+    sj:requiresCourt v23:court-V23-F ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "verification" ;
+    sj:acceptance v23:acceptance-V23-F ;
+    sj:falsifier v23:falsifier-V23-F ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-F ;
+    sj:nextCheckpoint v23:GC23-11 ;
+    sj:checkpointOf v23:GC23-11 ;
+    sj:postcondition "python3 scripts/sjira/fleet_matrix.py check-classification exits 0 on docs/sjira/v26.9.23/fleet/{classification.ttl,universe.json}: every universe repository has exactly one classification; courts/GC23-11.sh runs observe, emit, check-classification and check-standing." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "Fleet repositories are observed only (fetch --no-prune, rev-parse, status); none is modified.",
+        "Making every repository ALIVE is a non-goal (PRD section 10)." ;
+    sj:consequenceClass "verification" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:court-V23-F a sj:Court ;
+    rdfs:label "V23-F lane gate" ;
+    dcterms:description "python3 -m unittest discover -s scripts/sjira -p 'test_fleet*.py' -v && python3 scripts/sjira/fleet_matrix.py check-classification --classification docs/sjira/v26.9.23/fleet/classification.ttl --universe docs/sjira/v26.9.23/fleet/universe.json, exit 0 at the exact subject." .
+v23:acceptance-V23-F a sj:AcceptanceCriterion ;
+    rdfs:label "V23-F acceptance" ;
+    dcterms:description "An unclassified repository added to a temp universe makes check-classification exit 1 naming it (F7); a duplicate classification is refused; emit is byte-identical for identical inputs; check-standing refuses a receipt at a stale SHA." .
+v23:falsifier-V23-F a sj:Falsifier ;
+    rdfs:label "V23-F falsifier" ;
+    dcterms:description "A universe repository without exactly one classification passes check-classification." .
+v23:action-V23-F a sj:Action ;
+    rdfs:label "Run the V23-F lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-F.json bound to this order's tuple digest." .
+
+v23:WO-V23-C a sj:WorkOrder ;
+    rdfs:label "V23-C admission and finite delta" ;
+    dcterms:identifier "V23-C" ;
+    dcterms:title "GC23-0/2/3 admission: candidates -> admitted semantics -> finite WorkOrder delta, and the GC23-3 shapes court" ;
+    dcterms:description "Admit the V23-X candidates through SHACL in ggen_igniter mix semantic_jira.compile_prose, manufacture the deterministic delta and WorkOrder graph, and land the GC23-0, GC23-2 and GC23-3 courts. Depends on V23-X (in this graph) and on Friday lane FRI-T1 (G4 GoalCheckpoint vocabulary and shapes)." ;
+    sj:repository "seanchatmangpt/ggen_igniter" ;
+    sj:baseSha "5984ec480c2318e86aa621da5f496e5e014b0fac" ;
+    sj:subject "ggen_igniter:semantic-jira-prose-admission" ;
+    sj:pathScope "lib/ggen_igniter/semantic_jira/prose.ex", "lib/mix/tasks/semantic_jira.compile_prose.ex",
+        "priv/ggen/semantic-jira-pack/", "test/",
+        "xaas:docs/sjira/v26.9.23/courts/GC23-0.sh", "xaas:docs/sjira/v26.9.23/courts/GC23-2.sh",
+        "xaas:docs/sjira/v26.9.23/courts/GC23-3.sh", "receipts/v26.9.23/V23-C.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-C.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-C" ;
+    sj:requiresCourt v23:court-V23-C ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "manufacture", "verification" ;
+    sj:acceptance v23:acceptance-V23-C ;
+    sj:falsifier v23:falsifier-V23-C ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-C ;
+    sj:nextCheckpoint v23:GC23-3 ;
+    sj:checkpointOf v23:GC23-2 ;
+    sj:dependsOn v23:dep-V23-C-on-V23-X ;
+    sj:postcondition "mix semantic_jira.compile_prose admits the V23-X candidates through Shacl.validate and replays admitted TTL -> WorkOrders twice byte-identical with no LLM reachable; the GC23-3 court validates docs/sjira/v26.9.23/goal.ttl with the pack shapes and refuses a WorkOrder with one mandatory tuple field deleted (F1)." ;
+    sj:requiresCapability v23:cap-construct-ggen_igniter-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "No second LLM interpretation of an admitted graph revision (ARD section 5.5)." ;
+    sj:consequenceClass "manufacture" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:dep-V23-C-on-V23-X a sj:DependencyEdge ;
+    rdfs:label "V23-C admits the V23-X candidate projection" ;
+    sj:dependencyType "requiresProjection" ;
+    sj:upstreamWorkOrder v23:WO-V23-X .
+v23:court-V23-C a sj:Court ;
+    rdfs:label "V23-C lane gate" ;
+    dcterms:description "The ggen_igniter lane gate (format, compile --warnings-as-errors, the compile_prose and goal-checkpoint Chicago tests) plus sh docs/sjira/v26.9.23/courts/GC23-3.sh from the xaas root, exit 0 at the exact subjects." .
+v23:acceptance-V23-C a sj:AcceptanceCriterion ;
+    rdfs:label "V23-C acceptance" ;
+    dcterms:description "Admission refuses an invalid candidate, the admitted TTL -> WorkOrder replay is byte-identical twice with LLM credentials unset, and deleting one mandatory tuple field of a goal.ttl order makes the GC23-3 court exit non-zero." .
+v23:falsifier-V23-C a sj:Falsifier ;
+    rdfs:label "V23-C falsifier" ;
+    dcterms:description "A candidate enters the admitted graph without SHACL admission, the two replays differ, or F1 (a deleted tuple field) is admitted." .
+v23:action-V23-C a sj:Action ;
+    rdfs:label "Run the V23-C lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-C.json bound to this order's tuple digest." .
+
+v23:WO-V23-B a sj:WorkOrder ;
+    rdfs:label "V23-B GC23-1 cold bootstrap" ;
+    dcterms:identifier "V23-B" ;
+    dcterms:title "GC23-1 cold bootstrap: two identical reconstructions from durable artifacts" ;
+    dcterms:description "mix semantic_jira.bootstrap reconstructs subjects/SHAs, capabilities, authority rules, receipts, the active GoalCheckpoint GC-26.9.23 and the sJira frontier from durable artifacts only, and the GC23-1 court compares two cold runs. Depends on Friday lanes FRI-T1 and FRI-T6." ;
+    sj:repository "seanchatmangpt/ggen_igniter" ;
+    sj:baseSha "5984ec480c2318e86aa621da5f496e5e014b0fac" ;
+    sj:subject "ggen_igniter:semantic-jira-cold-bootstrap" ;
+    sj:pathScope "lib/mix/tasks/semantic_jira.bootstrap.ex", "lib/ggen_igniter/semantic_jira/", "test/",
+        "xaas:docs/sjira/v26.9.23/courts/GC23-1.sh", "receipts/v26.9.23/V23-B.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-B.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-B" ;
+    sj:requiresCourt v23:court-V23-B ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "manufacture", "verification" ;
+    sj:acceptance v23:acceptance-V23-B ;
+    sj:falsifier v23:falsifier-V23-B ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-B ;
+    sj:nextCheckpoint v23:GC23-1 ;
+    sj:checkpointOf v23:GC23-1 ;
+    sj:postcondition "Two runs of mix semantic_jira.bootstrap under env -i with a fresh HOME produce byte-identical non-empty output that reconstructs subjects/SHAs, capabilities, authority rules, receipts, the active GoalCheckpoint GC-26.9.23 and the sJira frontier." ;
+    sj:requiresCapability v23:cap-construct-ggen_igniter-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "No Claude/ZCode transcript, conversation memory or ~/.claude is a bootstrap input (ARD section 16)." ;
+    sj:consequenceClass "manufacture" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:court-V23-B a sj:Court ;
+    rdfs:label "V23-B lane gate" ;
+    dcterms:description "The ggen_igniter lane gate plus sh docs/sjira/v26.9.23/courts/GC23-1.sh from the xaas root, exit 0 at the exact subjects." .
+v23:acceptance-V23-B a sj:AcceptanceCriterion ;
+    rdfs:label "V23-B acceptance" ;
+    dcterms:description "Two cold reconstructions are byte-identical and every critical-path frontier item of GC-26.9.23 is reconstructed." .
+v23:falsifier-V23-B a sj:Falsifier ;
+    rdfs:label "V23-B falsifier" ;
+    dcterms:description "The two cold runs differ, a critical-path frontier item is missing, or a run reads a transcript, and the court still exits 0." .
+v23:action-V23-B a sj:Action ;
+    rdfs:label "Run the V23-B lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-B.json bound to this order's tuple digest." .
+
+v23:WO-V23-D a sj:WorkOrder ;
+    rdfs:label "V23-D GC23-4..8 live KNOWN episode" ;
+    dcterms:identifier "V23-D" ;
+    dcterms:title "GC23-4..8 live KNOWN episode: hop digests, no-LLM execution, independent consequence, R/OCEL evidence, closed frontier" ;
+    dcterms:description "One reference KNOWN WorkOrder driven sJira -> SA2A -> XaaS -> BRCE -> RecipeWorker -> verifier -> receipt -> OCEL -> reconcile -> frontier, with live tuple digests at every hop and the GC23-4 .. GC23-8 courts. Depends on Friday lanes FRI-T2, FRI-T3, FRI-T4 and FRI-T6." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.23-known-episode" ;
+    sj:pathScope "lib/xaas/sa2a/", "lib/xaas/ultracode/", "lib/mix/tasks/", "test/xaas/",
+        "docs/sjira/v26.9.23/courts/GC23-4.sh", "docs/sjira/v26.9.23/courts/GC23-5.sh",
+        "docs/sjira/v26.9.23/courts/GC23-6.sh", "docs/sjira/v26.9.23/courts/GC23-7.sh",
+        "docs/sjira/v26.9.23/courts/GC23-8.sh", "receipts/v26.9.23/V23-D.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-D.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-D" ;
+    sj:requiresCourt v23:court-V23-D ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "actuation", "verification" ;
+    sj:acceptance v23:acceptance-V23-D ;
+    sj:falsifier v23:falsifier-V23-D ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-D ;
+    sj:nextCheckpoint v23:GC23-8 ;
+    sj:checkpointOf v23:GC23-5 ;
+    sj:postcondition "One reference KNOWN WorkOrder executes through XaaS -> BRCE with a deterministic RecipeWorker: equal tuple digests at every hop, zero LLM credentials/binaries/providers, an independent verifier observing the postcondition, an ADMITTED R-projection with OCEL events, and a TransitionLog frontier diff in which the order leaves and its dependent enters; courts GC23-4 .. GC23-8 exit 0." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "Command exit 0 alone never closes the episode's WorkOrder (ARD section 18)." ;
+    sj:consequenceClass "actuation" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:court-V23-D a sj:Court ;
+    rdfs:label "V23-D lane gate" ;
+    dcterms:description "The xaas lane gate prefix plus the episode tests and sh docs/sjira/v26.9.23/courts/GC23-4.sh .. GC23-8.sh, exit 0 at the exact subject." .
+v23:acceptance-V23-D a sj:AcceptanceCriterion ;
+    rdfs:label "V23-D acceptance" ;
+    dcterms:description "F2 (digest mutation refused), F3 (exposed LLM credential refused) and F4 (removed consequence stays non-ALIVE) are each witnessed on the live episode." .
+v23:falsifier-V23-D a sj:Falsifier ;
+    rdfs:label "V23-D falsifier" ;
+    dcterms:description "Any of F2, F3 or F4 is admitted, or the order stays on the frontier after its receipt, and a GC23-4 .. GC23-8 court still exits 0." .
+v23:action-V23-D a sj:Action ;
+    rdfs:label "Run the V23-D lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-D.json bound to this order's tuple digest." .
+
+v23:WO-V23-R a sj:WorkOrder ;
+    rdfs:label "V23-R GC23-10 cold replay" ;
+    dcterms:identifier "V23-R" ;
+    dcterms:title "GC23-10 cold replay with the F5 and F6 falsifiers" ;
+    dcterms:description "Directory-aware cold replay of the committed ledger (receipts + TransitionLog) under env -i, byte-identical across two runs, with the F5 (receipt deleted) and F6 (covered subject changed) falsifiers; lands the GC23-10 court." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.23-cold-replay" ;
+    sj:pathScope "lib/xaas/ultracode/semantic_crown.ex", "lib/mix/tasks/", "test/xaas/",
+        "docs/sjira/v26.9.23/ledger/", "docs/sjira/v26.9.23/courts/GC23-10.sh", "receipts/v26.9.23/V23-R.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-R.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-R" ;
+    sj:requiresCourt v23:court-V23-R ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "replay", "verification" ;
+    sj:acceptance v23:acceptance-V23-R ;
+    sj:falsifier v23:falsifier-V23-R ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-R ;
+    sj:nextCheckpoint v23:GC23-10 ;
+    sj:checkpointOf v23:GC23-10 ;
+    sj:dependsOn v23:dep-V23-R-on-V23-D ;
+    sj:postcondition "Two env -i cold replays of the committed ledger recompute identical standing and frontier; deleting one receipt makes the replay diverge (F5) and changing a covered subject after its receipt withdraws its ALIVE standing (F6); the GC23-10 court exits 0." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "No transcript access during replay (PR-013)." ;
+    sj:consequenceClass "replay" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:dep-V23-R-on-V23-D a sj:DependencyEdge ;
+    rdfs:label "V23-R replays the V23-D episode receipts" ;
+    sj:dependencyType "requiresReceipt" ;
+    sj:upstreamWorkOrder v23:WO-V23-D .
+v23:court-V23-R a sj:Court ;
+    rdfs:label "V23-R lane gate" ;
+    dcterms:description "The xaas lane gate prefix plus the replay tests and sh docs/sjira/v26.9.23/courts/GC23-10.sh, exit 0 at the exact subject." .
+v23:acceptance-V23-R a sj:AcceptanceCriterion ;
+    rdfs:label "V23-R acceptance" ;
+    dcterms:description "Two cold replays are byte-identical, F5 makes them diverge, and F6 withdraws the covered ALIVE standing." .
+v23:falsifier-V23-R a sj:Falsifier ;
+    rdfs:label "V23-R falsifier" ;
+    dcterms:description "A deleted receipt or a changed covered subject leaves the replayed standing unchanged, and the GC23-10 court still exits 0." .
+v23:action-V23-R a sj:Action ;
+    rdfs:label "Run the V23-R lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-R.json bound to this order's tuple digest." .
+
+v23:WO-V23-M a sj:WorkOrder ;
+    rdfs:label "V23-M GC23-9 MachineExperience ratchet" ;
+    dcterms:identifier "V23-M" ;
+    dcterms:title "GC23-9 MachineExperience ratchet: episode 2 routes KNOWN" ;
+    dcterms:description "Episode 1 resolves an UNKNOWN class by bounded exploration into admitted MachineExperience; episode 2 on a different subject routes KNOWN from it with fewer steps and zero LLM; lands the GC23-9 court." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.23-learning-ratchet" ;
+    sj:pathScope "lib/xaas/ultracode/", "test/xaas/ultracode/",
+        "docs/sjira/v26.9.23/courts/GC23-9.sh", "receipts/v26.9.23/V23-M.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-M.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-M" ;
+    sj:requiresCourt v23:court-V23-M ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "manufacture", "verification" ;
+    sj:acceptance v23:acceptance-V23-M ;
+    sj:falsifier v23:falsifier-V23-M ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-M ;
+    sj:nextCheckpoint v23:GC23-9 ;
+    sj:checkpointOf v23:GC23-9 ;
+    sj:dependsOn v23:dep-V23-M-on-V23-D ;
+    sj:postcondition "Episode 1 (UNKNOWN, bounded) yields an admitted MachineExperience; episode 2 on a different subject routes KNOWN from it with 0 LLM invocations and fewer OCEL steps than episode 1; the GC23-9 court exits 0." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "Episode 2 routes only from the admitted MachineExperience, never from a literal (ARD section 15)." ;
+    sj:consequenceClass "manufacture" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:dep-V23-M-on-V23-D a sj:DependencyEdge ;
+    rdfs:label "V23-M routes episode 2 through the V23-D deterministic runtime" ;
+    sj:dependencyType "requiresRuntime" ;
+    sj:upstreamWorkOrder v23:WO-V23-D .
+v23:court-V23-M a sj:Court ;
+    rdfs:label "V23-M lane gate" ;
+    dcterms:description "The xaas lane gate prefix plus the two-episode tests and sh docs/sjira/v26.9.23/courts/GC23-9.sh, exit 0 at the exact subject." .
+v23:acceptance-V23-M a sj:AcceptanceCriterion ;
+    rdfs:label "V23-M acceptance" ;
+    dcterms:description "The two-episode court measures from OCEL: episode 2 has 0 LLM invocations and fewer steps than episode 1, and its route came from the admitted MachineExperience." .
+v23:falsifier-V23-M a sj:Falsifier ;
+    rdfs:label "V23-M falsifier" ;
+    dcterms:description "Episode 2 invokes an LLM, takes at least as many steps as episode 1, or routes from a literal, and the court still exits 0." .
+v23:action-V23-M a sj:Action ;
+    rdfs:label "Run the V23-M lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-M.json bound to this order's tuple digest." .
+
+v23:WO-V23-H a sj:WorkOrder ;
+    rdfs:label "V23-H GC23-12 semantic self-hosting" ;
+    dcterms:identifier "V23-H" ;
+    dcterms:title "GC23-12 semantic self-hosting: GC-26.9.24 successor prose through the same pipeline" ;
+    dcterms:description "Accepted successor prose for GC-26.9.24 enters through prose_spans (V23-X) and compile_prose admission and delta (V23-C) and manufactures its WorkOrders with no hand-authored backlog; lands the GC23-12 court." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:gc-26.9.24-successor-prose-pipeline" ;
+    sj:pathScope "docs/sjira/v26.9.24/", "docs/sjira/v26.9.23/courts/GC23-12.sh", "receipts/v26.9.23/V23-H.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-H.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-H" ;
+    sj:requiresCourt v23:court-V23-H ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "projection", "verification" ;
+    sj:acceptance v23:acceptance-V23-H ;
+    sj:falsifier v23:falsifier-V23-H ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-H ;
+    sj:nextCheckpoint v23:GC23-12 ;
+    sj:checkpointOf v23:GC23-12 ;
+    sj:dependsOn v23:dep-V23-H-on-V23-C, v23:dep-V23-H-on-V23-X ;
+    sj:postcondition "Accepted successor prose for GC-26.9.24 passes prose_spans emit/check and compile_prose admission and delta, and yields the GC-26.9.24 WorkOrders with no hand-authored backlog; the GC23-12 court exits 0." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "No bespoke hand-manufactured backlog for GC-26.9.24 (PRD section 12, GC23-12)." ;
+    sj:consequenceClass "projection" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:dep-V23-H-on-V23-C a sj:DependencyEdge ;
+    rdfs:label "V23-H compiles successor prose with the V23-C admission capability" ;
+    sj:dependencyType "requiresCapability" ;
+    sj:upstreamWorkOrder v23:WO-V23-C .
+v23:dep-V23-H-on-V23-X a sj:DependencyEdge ;
+    rdfs:label "V23-H binds successor prose spans with the V23-X capability" ;
+    sj:dependencyType "requiresCapability" ;
+    sj:upstreamWorkOrder v23:WO-V23-X .
+v23:court-V23-H a sj:Court ;
+    rdfs:label "V23-H lane gate" ;
+    dcterms:description "The xaas lane gate prefix plus sh docs/sjira/v26.9.23/courts/GC23-12.sh, exit 0 at the exact subject." .
+v23:acceptance-V23-H a sj:AcceptanceCriterion ;
+    rdfs:label "V23-H acceptance" ;
+    dcterms:description "Every GC-26.9.24 WorkOrder traces to an admitted proposition of accepted successor prose; none is hand-authored." .
+v23:falsifier-V23-H a sj:Falsifier ;
+    rdfs:label "V23-H falsifier" ;
+    dcterms:description "A GC-26.9.24 WorkOrder without an admitted source proposition passes the GC23-12 court." .
+v23:action-V23-H a sj:Action ;
+    rdfs:label "Run the V23-H lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-H.json bound to this order's tuple digest." .
+
+v23:WO-V23-W a sj:WorkOrder ;
+    rdfs:label "V23-W PRD 9.2 WD FA reference flow" ;
+    dcterms:identifier "V23-W" ;
+    dcterms:title "PRD section 9.2 reference flow: WD FA first-mile scenario and claims ledger (successor, non-required)" ;
+    dcterms:description "Compile the WD Case Study 2 prose through the first-mile pipeline and classify every claim SUPPLIED, PUBLICLY_OBSERVABLE, ARCHITECTURAL_INFERENCE or WD_DEPENDENT_UNKNOWN (PRD section 9.2; the Friday G12 deliverable). A reference flow, not a GC23 gate: typed Successor under GC-26.9.24, so it cannot hold GC-26.9.23 open." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas:wd-fa-first-mile-reference" ;
+    sj:pathScope "docs/sjira/v26.9.23/wd-fa/", "receipts/v26.9.23/V23-W.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-W.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-W" ;
+    sj:requiresCourt v23:court-V23-W ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "projection", "verification" ;
+    sj:acceptance v23:acceptance-V23-W ;
+    sj:falsifier v23:falsifier-V23-W ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-W ;
+    sj:nextCheckpoint v23:GC-26.9.24 ;
+    sj:checkpointOf v23:GC-26.9.24 ;
+    sj:boundaryClass sj:Successor ;
+    sj:dependsOn v23:dep-V23-W-on-V23-C ;
+    sj:postcondition "The WD Case Study 2 prose compiles through the first-mile pipeline and every claim-bearing sentence carries exactly one class of SUPPLIED, PUBLICLY_OBSERVABLE, ARCHITECTURAL_INFERENCE or WD_DEPENDENT_UNKNOWN; unsupplied WD-internal facts stay typed UNKNOWN." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "Live WD integration is a non-goal (PRD section 10); WD-internal facts are never manufactured (PRD section 9.2)." ;
+    sj:consequenceClass "projection" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:dep-V23-W-on-V23-C a sj:DependencyEdge ;
+    rdfs:label "V23-W compiles the WD FA prose with the V23-C admission capability" ;
+    sj:dependencyType "requiresCapability" ;
+    sj:upstreamWorkOrder v23:WO-V23-C .
+v23:court-V23-W a sj:Court ;
+    rdfs:label "V23-W lane gate" ;
+    dcterms:description "The xaas lane gate prefix plus the WD FA claims-ledger court, exit 0 at the exact subject." .
+v23:acceptance-V23-W a sj:AcceptanceCriterion ;
+    rdfs:label "V23-W acceptance" ;
+    dcterms:description "The claims ledger links every claim-bearing sentence to one class, and every observed-proof claim has an ADMITTED receipt." .
+v23:falsifier-V23-W a sj:Falsifier ;
+    rdfs:label "V23-W falsifier" ;
+    dcterms:description "A claim-bearing sentence has no class, or a WD-internal fact that was never supplied is classified as anything but WD_DEPENDENT_UNKNOWN." .
+v23:action-V23-W a sj:Action ;
+    rdfs:label "Run the V23-W lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.23/V23-W.json bound to this order's tuple digest." .
+
+v23:WO-V23-Q a sj:WorkOrder ;
+    rdfs:label "V23-Q v26.9.23 release" ;
+    dcterms:identifier "V23-Q" ;
+    dcterms:title "v26.9.23 release: stop court on the integration head, PR to main, exact-head CI, release receipt" ;
+    dcterms:description "Run mix xaas.stop_court --checkpoint GC-26.9.23 on the integration heads, open and merge the release PRs on green exact-head CI (operator-approved authority in DRIVER.md), and write the ARD section 27 release receipt." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "bd1efb165f625e3505953b2c242196838d4311b6" ;
+    sj:subject "xaas+ggen_igniter:release-v26.9.23" ;
+    sj:pathScope "docs/sjira/v26.9.23/receipts/", "docs/sjira/v26.9.23/release-receipt.json",
+        "receipts/v26.9.23/V23-Q.json" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.23/V23-Q.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is a shape placeholder the stop court never reads." ;
+    sj:replayIdentity "semantic-jira:v26.9.23:V23-Q" ;
+    sj:requiresCourt v23:court-V23-Q ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "publication", "verification" ;
+    sj:acceptance v23:acceptance-V23-Q ;
+    sj:falsifier v23:falsifier-V23-Q ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction v23:action-V23-Q ;
+    sj:nextCheckpoint v23:GC-26.9.23 ;
+    sj:checkpointOf v23:GC-26.9.23 ;
+    sj:dependsOn v23:dep-V23-Q-on-V23-P, v23:dep-V23-Q-on-V23-X, v23:dep-V23-Q-on-V23-F,
+        v23:dep-V23-Q-on-V23-C, v23:dep-V23-Q-on-V23-B, v23:dep-V23-Q-on-V23-D,
+        v23:dep-V23-Q-on-V23-R, v23:dep-V23-Q-on-V23-M, v23:dep-V23-Q-on-V23-H ;
+    sj:postcondition "mix xaas.stop_court --checkpoint GC-26.9.23 on the integration head reports every GC23 gate ALIVE, and the release receipt (ARD section 27) records LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH = 0, UNRECEIPTED_ACTUATION = 0, REQUIRED_UNKNOWN = 0, UNCLASSIFIED_REQUIRED_WORK = 0 and STOP = true at exact repo SHAs with main CI green on those heads." ;
+    sj:requiresCapability v23:cap-construct-xaas-lane ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM, network model API or zcode binary on any executed product path.",
+        "No edit outside the lane worktree and this order's sj:pathScope; never another executor's worktree.",
+        "No registry publish (hex, crates, GHCR, Homebrew) and no deployment (PRD section 10: fully autonomous production deployment is a non-goal).",
+        "Never rebase, force-push, reset --hard or merge with -X ours/theirs." ;
+    sj:consequenceClass "publication" ;
+    sj:successorPolicy "discovered work that falsifies no GC23 proposition -> v23:GC-26.9.24" .
+v23:dep-V23-Q-on-V23-P a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-P receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-P .
+v23:dep-V23-Q-on-V23-X a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-X receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-X .
+v23:dep-V23-Q-on-V23-F a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-F receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-F .
+v23:dep-V23-Q-on-V23-C a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-C receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-C .
+v23:dep-V23-Q-on-V23-B a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-B receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-B .
+v23:dep-V23-Q-on-V23-D a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-D receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-D .
+v23:dep-V23-Q-on-V23-R a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-R receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-R .
+v23:dep-V23-Q-on-V23-M a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-M receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-M .
+v23:dep-V23-Q-on-V23-H a sj:DependencyEdge ; rdfs:label "V23-Q requires the V23-H receipt" ;
+    sj:dependencyType "requiresReceipt" ; sj:upstreamWorkOrder v23:WO-V23-H .
+v23:court-V23-Q a sj:Court ;
+    rdfs:label "V23-Q release court" ;
+    dcterms:description "mix xaas.stop_court --checkpoint GC-26.9.23 on the integration heads with GGEN_IGNITER_DIR set, then exact-head CI on the merged main SHAs; exit 0 and conclusion success." .
+v23:acceptance-V23-Q a sj:AcceptanceCriterion ;
+    rdfs:label "V23-Q acceptance" ;
+    dcterms:description "All 13 GC23 gate receipts are ADMITTED and ALIVE at the integration heads, the release receipt validates, and main CI is green on the merged SHAs." .
+v23:falsifier-V23-Q a sj:Falsifier ;
+    rdfs:label "V23-Q falsifier" ;
+    dcterms:description "The release receipt claims STOP = true while a GC23 gate receipt is missing, not ADMITTED or not ALIVE at the released SHA." .
+v23:action-V23-Q a sj:Action ;
+    rdfs:label "Run the V23-Q release court" ;
+    dcterms:description "Run the release court and write receipts/v26.9.23/V23-Q.json bound to this order's tuple digest." .

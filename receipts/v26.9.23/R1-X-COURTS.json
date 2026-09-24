@@ -1,0 +1,250 @@
+{
+ "identity": {
+  "subject": "R1-X-COURTS",
+  "repo": "/Users/sac/xaas",
+  "repo_slug": "seanchatmangpt/xaas",
+  "subject_sha": "a4c2924e3ea7e1cdb8beb0e08c543b6ee373427e",
+  "base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+  "branch": "v23/R1-X-COURTS",
+  "worktree": "/Users/sac/wt/v26922/v23/R1-X-COURTS",
+  "work_order": null,
+  "tuple_digest": null,
+  "tuple_digest_why": "no goal.ttl order for repair lane R1-X-COURTS (wave R1a release defect repair); the receipt is not linked by the stop court",
+  "prd_ard": "PRD section 12 GC23-4 (SA2A Conservation) and GC23-7 (Receipt / OCEL), PR-008, PR-011; ARD section 8 (SA2A Contract: digest checked sJira -> SA2A -> XaaS -> provider -> receipt), section 12 (Receipt Architecture), section 26 F2",
+  "toolchain": {
+   "xaas": "Elixir 1.20.2 / Erlang/OTP 28 (erts-16.4.0.2), the .tool-versions pin, fresh _build/test in the lane worktree (deps/ APFS-cloned from fri/xaas-int, mix.lock identical)",
+   "graph_side": "ggen_igniter-int 3937a4f _build/test compiled by Elixir 1.19.5; resolved by SemanticDrive.graph_toolchain/2 (source build_manifest, running ERTS OTP 28) -- the drive's own resolution, unchanged"
+  }
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave R1a lane R1-X-COURTS (/Users/sac/wt/v26922/v26923/DRIVER.md 12:50 PT entry, lanes/wave-R1a.json; COORDINATION.md v26.9.23 scope): release defect repair on the frozen subject friday/gc-fri-0800 e999e62 -- only the named defect (GC23-4 / GC23-7 court anti-vacuity). No push, no integrate, no remote effect.",
+  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-COURTS)"
+ },
+ "consequence": {
+  "commits": [
+   "a4c2924e3ea7e1cdb8beb0e08c543b6ee373427e"
+  ],
+  "commit_notes": {
+   "a4c2924": "GC23-4 hop-0 anchor (SemanticDrive.anchor/1, anchor_from/2, verify_hops/2; mix xaas.episode --verify-hops --anchor-work-graph; unanchored = REFUSED(hops_unanchored)); GC23-7 R consistency law (RProjection.consistency/2; mix xaas.episode --verify-receipt; Verifier.argv_digest/1 public); both courts rewritten with built-in anti-vacuity (F2 all-hop forgery; six receipt mutants); 21 Chicago tests; HANDWRITTEN row"
+  },
+  "files_changed": [
+   "HANDWRITTEN.md",
+   "docs/sjira/v26.9.23/courts/GC23-4.sh",
+   "docs/sjira/v26.9.23/courts/GC23-7.sh",
+   "lib/mix/tasks/xaas.episode.ex",
+   "lib/xaas/receipt/r_projection.ex",
+   "lib/xaas/ultracode/semantic_drive.ex",
+   "lib/xaas/ultracode/verifier.ex",
+   "test/xaas/receipt/r_projection_consistency_test.exs",
+   "test/xaas/ultracode/semantic_drive_anchor_test.exs"
+  ],
+  "files_changed_basis": "git diff --name-only e999e62 a4c2924; the receipt commit adds receipts/v26.9.23/R1-X-COURTS.json and receipts/v26.9.23/R1-X-COURTS.gate/**",
+  "remote_effects": [],
+  "reserved_files": "none of the Friday-reserved files (recipe_worker, engine, court_receipt, target_suites, semantic_receipt, semantic_crown, route.ex, stop_court.ex, docs/sjira/v26.9.22/friday/**) and none of goal.ttl, stop.rq, prd-ard.md, the fmt-1 episode artifacts; the court bodies GC23-4.sh / GC23-7.sh keep their path and exit contract (0 ALIVE, 75 UNKNOWN, 1 refused)",
+  "generated_vs_handwritten": {
+   "generated": [],
+   "handwritten": [
+    "HANDWRITTEN.md",
+    "docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "lib/mix/tasks/xaas.episode.ex",
+    "lib/xaas/receipt/r_projection.ex",
+    "lib/xaas/ultracode/semantic_drive.ex",
+    "lib/xaas/ultracode/verifier.ex",
+    "test/xaas/receipt/r_projection_consistency_test.exs",
+    "test/xaas/ultracode/semantic_drive_anchor_test.exs"
+   ],
+   "ledger": "HANDWRITTEN.md row 'lib/xaas/ultracode/semantic_drive.ex (anchor/1, anchor_from/2, verify_hops/2), lib/xaas/receipt/r_projection.ex (consistency/2), ...': UNSUPPORTED(generator-capability) -- receipt-provenance-unification-pack renders a field-shape validator, gate-vacuity-court-pack observes gates/*.rq; no pack renders a cross-field receipt/order/git law or a work-graph digest anchor; owners semantic-jira-pack (emit the ARD section 8 request digest in the descriptor bridge) + receipt-provenance-unification-pack"
+  }
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/R1-X-COURTS.gate/ (lane gate logs on the committed subject, mutant-episode court logs + their generator, revert-mutation logs, pre-existing semantic_drive_test logs at head and at base)",
+  "commands": [
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH elixir --version",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 1/5: Elixir 1.20.2 (compiled with Erlang/OTP 28), the xaas .tool-versions pin",
+    "output_sha256": "e01409d82d1b32d0aa55005f1f82431eb52e40e9c042de4940fd155d1de5d75b",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/gate.elixir-version.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix format --check-formatted",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 2/5: formatted (log holds only the pre-existing deps/ex4pm mix.exs Application.get_env warning)",
+    "output_sha256": "36ef2d26cba636f225470e9bdbb279f2f8311070304409086e4e59a5c5b4ca2e",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/gate.format.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 3/5: Compiling 520 files (.ex), Generated xaas app; no xaas warning (the pre-existing `unused require Ash.Query` in semantic_drive.ex, an error under the 1.20.2 pin, is removed by this lane)",
+    "output_sha256": "57aedd130485f5819de474f0c04319ea7a7db0b0856b68f232c2a899d50daa53",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/gate.compile.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 4/5: ALIVE -- route_test 74 passed; anchor EP-A tuple af87dbf1.. request 33524064.. graph a6d7832e.. derived through ggen_igniter 3937a4f `mix semantic_jira.descriptor` (= ledger + sealed receipt snapshot digest); 5 hops equal the anchor; F2 f2-underneath, f2-forged, f2-allforged all REFUSED(tuple_digest_mismatch), the all-hop forgery by anchor=admitted_work_graph",
+    "output_sha256": "a7bc04fd67ca624429007923904d6cf76d442ce81e2639af7401dc4c1373460a",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/gate.court-GC23-4.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 5/5: ALIVE -- fmt-1 receipt.r.json ADMITTED by validate_receipt.py, bound to the sealed receipt, CONSISTENT with EP-A (1 commit in base..subject, lib/ggen_igniter/semantic_jira/cli.ex within sj:pathScope, replay `mix format --check-formatted` = the declaration hashing to the bound argv_sha256 26fd0160..); 6 built-in receipt mutants REFUSED typed; ocel_validate valid (11 events, 11 objects); pm4py equivalent, 9 GC23-7 classes reached",
+    "output_sha256": "4fea17c0356ca4d81707a0ae3c4d453097cae797aa5bc78e385e586f0b55179a",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/gate.court-GC23-7.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test mix test test/xaas/ultracode/semantic_drive_anchor_test.exs test/xaas/receipt/r_projection_consistency_test.exs test/xaas/receipt/r_projection_test.exs test/xaas/ultracode/verifier_test.exs test/xaas/ultracode/court_receipt_test.exs test/xaas/sa2a/route_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "Result: 159 passed (21 new Chicago tests: 8 anchor incl. 2 live graph-side descriptor runs, 13 R consistency incl. 2 on the committed fmt-1 artifacts against GGEN_IGNITER_DIR; 138 pre-existing in the touched modules' suites)",
+    "output_sha256": "f6c5667aff94fd3f5d761aa3a10e24f6ad3a61c4fca1191c319d3584d97ac587",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/tests.related.log"
+   },
+   {
+    "cmd": "! python3 receipts/v26.9.23/R1-X-COURTS.gate/mutants/mkmutants.py docs/sjira/v26.9.23/episodes/fmt-1 <scratch>/eps && GC23_EPISODE_DIR=<scratch>/eps/ep-allforged PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- the MSA all-hop forgery (hops.json postcondition forged + both digests rewritten at all 5 hops; forged tuple digest 05ab1274.. = the MSA p3 hops-allforged digest) -> court exit 1, REFUSED(tuple_digest_mismatch) broken_term=admission_vacuous hop=sjira anchor=admitted_work_graph field=postcondition",
+    "output_sha256": "8abe9692c0d6f0e12521b0c29a497b80e2b7e28b63d217b533181fc524c988f3",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-4.ep-allforged.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-court_acceptance_false_but_alive PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- MSA receipt mutant court_acceptance_false_but_alive -> court exit 1, REFUSED(alive_acceptance_false) broken_term=admission_vacuous",
+    "output_sha256": "607ae649a6ea809327e3d8a085949319b51e4a2682110ca24f032e595deea53d",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-court_acceptance_false_but_alive.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-consequence_commit_not_subject PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- MSA receipt mutant consequence_commit_not_subject -> court exit 1, REFUSED(consequence_not_subject) broken_term=R_missing_consequence",
+    "output_sha256": "85cd57be961cd95ebf5dc2db3630607ad545944c394870276f520b37f224aee0",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-consequence_commit_not_subject.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-files_changed_outside_scope PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- MSA receipt mutant files_changed_outside_scope -> court exit 1, REFUSED(consequence_outside_path_scope) broken_term=R_missing_authority",
+    "output_sha256": "3cc8ef2fc59b4ca814e3a34cb66c0a12be68c7f6f73a734ae8f821bd934862d7",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-files_changed_outside_scope.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-replay_cmd_swapped PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- MSA receipt mutant replay_cmd_swapped -> court exit 1, REFUSED(replay_command_unbound) broken_term=R_missing_replay",
+    "output_sha256": "2f4dafbce56e0d1819adaf3eade6ad9b9de5380887929ca6bc2fc7e04937435b",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-replay_cmd_swapped.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-native_digest_forged PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- MSA receipt mutant native_digest_forged -> court exit 1, REFUSED(r_native_unbound) broken_term=R_missing_identity",
+    "output_sha256": "3efaf47ad0c940d23ffce2eb47c118d77b0a2871a31b142dd13e0da9a82886a1",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-native_digest_forged.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-subject_sha_is_base PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- MSA receipt mutant subject_sha_is_base -> court exit 1, REFUSED(r_subject_not_sealed_head) broken_term=R_missing_identity",
+    "output_sha256": "e7842d256ad9300c93512a8518ffa0e3386d0ebf4064abd0ed912ffda0aeefbe",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-subject_sha_is_base.log"
+   },
+   {
+    "cmd": "GC23_EPISODE_DIR=<scratch>/eps/ep-actor_llm PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "MSA mutant actor_llm is not a GC23-7 property: GC23-7 ALIVE (expected); it is GC23-5's (next command)",
+    "output_sha256": "7c3f02dc8ae2bc8ca6de2c3bd5b46fdf2d025f06a9f4e31a3ba47179e2b37796",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-7.ep-actor_llm.log"
+   },
+   {
+    "cmd": "! GC23_EPISODE_DIR=<scratch>/eps/ep-actor_llm PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-5.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- actor_llm -> GC23-5 exit 1 (authority.actor != recipe-worker): all 7 MSA court-owned receipt mutants are now refused by a court (4 escaped every court at e999e62)",
+    "output_sha256": "c6bd02dbc0a19beb0b64fbe5829784b8ef82403bda7c2435610eb753d6f6287e",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/mutants/GC23-5.ep-actor_llm.log"
+   },
+   {
+    "cmd": "! revert-mutation M1: SemanticDrive.verify_hops/2 with both anchored/5 checks removed, then the GC23-4 court",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- court killed: `REFUSED: GC23-4 F2 f2-allforged: verify-hops exited 0, expected 3 (refused)` -- the court's built-in all-hop F2 detects a vacuous anchor (run on the working tree whose unmutated semantic_drive.ex sha256 e06502615e1852aa.. = the committed blob; restored after)",
+    "output_sha256": "de5f55548748a14bfa8b6df85ef7527502078590cbae94263142f40ec213bb26",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/revert-mutation/M1-anchor-removed.GC23-4.log"
+   },
+   {
+    "cmd": "! revert-mutation M2: RProjection.consistency/2 with all five laws bypassed, then the GC23-7 court",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "inverted: the command itself exited 1 (log exit=1) -- court killed: `REFUSED: GC23-7 anti-vacuity: mutant court_acceptance_false_but_alive escaped the R laws` (unmutated r_projection.ex sha256 73dca755f1473efc.. = the committed blob; restored after)",
+    "output_sha256": "902730644ad5c521773ab5e113e58f6b9695da3436328b2ad4fb462d42b8ecd6",
+    "log": "receipts/v26.9.23/R1-X-COURTS.gate/revert-mutation/M2-consistency-bypassed.GC23-7.log"
+   },
+   {
+    "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" test/xaas/ultracode/semantic_drive_anchor_test.exs test/xaas/receipt/r_projection_consistency_test.exs lib/xaas/receipt/r_projection.ex lib/xaas/ultracode/semantic_drive.ex lib/mix/tasks/xaas.episode.ex",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "no match (grep itself exit 1, inverted 0): no mock, patch or meck in the new tests or touched engines"
+   },
+   {
+    "cmd": "sh docs/sjira/v26.9.23/courts/check_scripts.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+    "exit": 0,
+    "summary": "OK: 13 court scripts GC23-0..GC23-12 exist, are sh -n clean, goal.ttl (rdflib parse agrees) points each gate at its own script"
+   }
+  ]
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "lane gate (elixir --version, mix format --check-formatted, MIX_ENV=test mix compile --force --warnings-as-errors, GC23-4.sh, GC23-7.sh with GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int) observed exit 0 x5 on the committed subject a4c2924e3ea7e1cdb8beb0e08c543b6ee373427e under the .tool-versions pin; both courts ALIVE on the real fmt-1 artifacts; the MSA all-hop forgery and all 7 court-owned receipt mutants refused, typed, by a court; revert-mutations M1/M2 kill the courts"
+ },
+ "observations_not_in_standing": [
+  {
+   "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test mix test test/xaas/ultracode/semantic_drive_test.exs  # at the lane head",
+   "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+   "exit": 2,
+   "summary": "Result: 4/9 passed, 5 failed -- PRE-EXISTING, identical set at base e999e62 (next command): 3 SemanticDriveToolchainTest (Elixir 1.20 writes a 4-tuple compile.elixir_scm manifest {2, {vsn, otp}, scm, nil}; the tests and build_manifest/2 expect the 3-tuple -> toolchain-pin exposure, graph_toolchain untouched here) + 2 SemanticDriveTest episode tests (the recipe's mix format also rewrites lib/ggen_igniter/semantic_jira/bootstrap.ex at ggen_igniter-int 3937a4f -> release defect F3/F4, lane R1-GI-FMT)",
+   "output_sha256": "bbdf223407e3475196d9bf20b0bb684b088653615bd374a8efc4dafbebf0c9d9",
+   "log": "receipts/v26.9.23/R1-X-COURTS.gate/preexisting.semantic_drive_test.at-head.log"
+  },
+  {
+   "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test mix test test/xaas/ultracode/semantic_drive_test.exs  # detached scratch worktree at e999e62",
+   "cwd": "/Users/sac/wt/v26922/v23/R1-X-COURTS @ a4c2924 (clean tree)",
+   "exit": 2,
+   "summary": "Result: 4/9 passed, the same 5 tests failed at the frozen base: pre-existing, not introduced by this lane",
+   "output_sha256": "365d752b595be6da335bf9b8ed3eff041c7fc9b293c66b28bd588101dcd8a739",
+   "log": "receipts/v26.9.23/R1-X-COURTS.gate/preexisting.semantic_drive_test.at-e999e62.log"
+  }
+ ],
+ "classification": {
+  "defect": "subject defect (court anti-vacuity): GC23-4 admitted a consistently forged hops.json (nothing anchored hop 0 to the admitted order); GC23-7 admitted 4 internally inconsistent R projections (acceptance false under ALIVE, commit not the subject, files outside sj:pathScope, replay command `true`) -- CE23-12 MSA p3",
+  "found_while_repairing": [
+   "pre-existing, toolchain-pin exposure (fixed here, in-lane surface): GC23-4.sh grepped ExUnit's '<n> tests, 0 failures'; Elixir 1.20.2 prints 'Result: <n> passed', so the court refused a clean route_test under the pin",
+   "pre-existing, toolchain-pin exposure (fixed here, one line): `require Ash.Query` unused in semantic_drive.ex at e999e62 -> warning = error under --warnings-as-errors with 1.20.2",
+   "pre-existing, NOT fixed (outside this lane): semantic_drive_test.exs 5 failures, identical at e999e62 and at this head -- 3 toolchain tests (Elixir 1.20 compile.elixir_scm 4-tuple vs the 3-tuple build_manifest/2 parses; lane R1-X-PIN territory) + 2 episode tests (ggen_igniter-int 3937a4f format drift in bootstrap.ex under the recipe; defect F3/F4, lane R1-GI-FMT)",
+   "observation (successor candidate, no change): Verifier.argv_digest/1 JSON-encodes atom-keyed step maps, whose key order is the VM's atom order (OTP 26+), not alphabetical -- the recorded 26fd0160.. is the (id, argv, timeout_ms) order; it reproduces on this OTP 28 VM, so the consistency law binds, but the digest is serialization-order dependent"
+  ]
+ },
+ "falsifiers": {
+  "GC23-4": "a hops.json forged consistently at every hop (or under another admitted snapshot) is ALIVE under GC23-4 -> refuted by the gate run (f2-allforged REFUSED) and by mutants/GC23-4.ep-allforged.log",
+  "GC23-7": "an R projection that says ALIVE with acceptance false / a non-subject commit / an out-of-scope file / a trivial replay command is ALIVE under GC23-7 -> refuted by the 6 built-in mutants and the 6 mutant-episode court runs",
+  "anti_vacuity": "the courts stay ALIVE with the new laws removed -> refuted by revert-mutation M1 and M2 (both courts exit 1)"
+ }
+}

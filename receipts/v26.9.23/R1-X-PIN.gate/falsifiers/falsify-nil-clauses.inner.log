@@ -1,0 +1,95 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+warning: "xref: [exclude: ...]" in your mix.exs file is deprecated, instead use: "elixirc_options: [no_warn_undefined: ...]"
+  (mix 1.20.2) lib/mix/tasks/compile.elixir.ex:243: Mix.Tasks.Compile.Elixir.xref_exclude_opts/2
+  (mix 1.20.2) lib/mix/tasks/compile.elixir.ex:142: Mix.Tasks.Compile.Elixir.run/1
+  (mix 1.20.2) lib/mix/task.ex:502: anonymous fn/3 in Mix.Task.run_task/5
+  (mix 1.20.2) lib/mix/task.compiler.ex:299: Mix.Task.Compiler.run_compiler/2
+  (mix 1.20.2) lib/mix/task.compiler.ex:287: Mix.Task.Compiler.run/4
+  (mix 1.20.2) lib/mix/tasks/compile.all.ex:75: Mix.Tasks.Compile.All.do_run/2
+
+==> postgrex
+Compiling 70 files (.ex)
+Generated postgrex app
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 516 files (.ex)
+Finding suitable PLTs
+Checking PLT...
+[:a2a, :abnf_parsec, :absinthe, :absinthe_plug, :ash, :ash_a2a, :ash_admin, :ash_ai, :ash_archival, :ash_authentication, :ash_authentication_phoenix, :ash_cloak, :ash_double_entry, :ash_events, :ash_graphql, :ash_iam, :ash_json_api, :ash_money, :ash_oban, :ash_onetime, :ash_paper_trail, :ash_phoenix, :ash_postgres, :ash_r2rml, :ash_rate_limiter, :ash_sql, :ash_state_machine, :ash_typescript, :asn1, :assent, :aws_signature, :axon, :bandit, :bcrypt_elixir, :benchee, :broadway, :bumblebee, :cachex, :castore, :certifi, :cinder, :cloak, :comeonin, :compiler, :complex, :content_type, :conv_case, :cowboy, :cowboy_telemetry, :cowlib, :crux, :crypto, :db_connection, :decimal, :deep_merge, :dns_cluster, :dotenvy, :ecto, :ecto_sql, :eex, :elixir, :esbuild, :eternal, :ets, :ex4pm, :ex_ast, :ex_aws, :ex_hash_ring, :ex_money, :ex_money_sql, :ex_unit, :exla, :explorer, :expo, :faker, :file_system, :finch, :gen_stage, :gen_state_machine, :gettext, :ggen_igniter, :glob_ex, :hackney, :hammer, :heroicons, :hpax, :idna, :igniter, :inets, :iterex, :jason, :jcs, :joken, :jose, :json_ld, :json_xema, :jsv, :jumper, :kernel, :localize, :localize_sql, :logger, :makeup, :makeup_elixir, :metrics, :mime, :mimerl, :mint, :mix, :mnesia, :multigraph, :nimble_csv, :nimble_options, :nimble_parsec, :nimble_pool, :nx, :nx_image, :nx_signal, :oban, :octo_fetch, :open_api_spex, :opentelemetry_api, :opentelemetry_ash, :opentelemetry_process_propagator, :owl, :parse_trans, :petal_components, :phoenix, :phoenix_ecto, :phoenix_html, :phoenix_html_helpers, :phoenix_live_dashboard, :phoenix_live_reload, :phoenix_live_view, :phoenix_pubsub, :phoenix_template, :phoenix_view, :phx_new, :picosat_elixir, :plug, :plug_cowboy, :plug_crypto, :polaris, :postgrex, :prom_ex, :protocol_ex, :public_key, :ranch, :rdf, :rdf_xml, :reactor, :req, :req_llm, :rewrite, :runtime_tools, :rustler, :rustler_precompiled, :safetensors, :saxy, :server_sent_events, :sleeplocks, :slugify, :sourceror, :spark, :sparql, :sparql_client, :spitfire, :splode, :ssl, :ssl_verify_fun, :statistex, :stdlib, :stream_data, :stripity_stripe, :sweet_xml, :swoosh, :syntax_tools, :table, :table_rex, :tailwind, :telemetry, :telemetry_metrics, :telemetry_metrics_prometheus_core, :telemetry_poller, :tesla, :text_diff, :texture, :thousand_island, :tokenizers, :toml, :unicode_util_compat, :uniq, :unpickler, :unsafe, :unzip, :uri_query, :wasmex, :websock, :websock_adapter, :websockex, ...]
+PLT is up to date!
+ignore_warnings: .dialyzer_ignore.exs
+
+Starting Dialyzer
+[
+  check_plt: false,
+  init_plt: ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/priv/plts/project.plt",
+  files: [~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.XaasWeb.Plugs.ResolveOrgActor.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Xaas.AwsRepo.FixtureAdapter.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Xaas.Autofde.StatusParser.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Inspect.Xaas.Governance.ApprovalSourceEscrowSnapshot.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Xaas.Operations.CapabilityLivenessReceipt.Workers.CheckRegressions.beam",
+   ...],
+  ...
+]
+Total errors: 32, Skipped: 29, Unnecessary Skips: 0
+done in 0m35.77s
+::warning file=lib/mix/tasks/xaas.episode.ex,line=191,title=guard_fail::The guard clause can never succeed.
+::warning file=lib/xaas/ultracode/machine_experience.ex,line=539,col=15,title=pattern_match::The pattern can never match the type %RDF.Description{
+  :predications => %{
+    %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()} => %{
+      {{_, map(), _} | %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()},
+       %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()}, _}
+      | %{
+          :__struct__ => RDF.BlankNode | RDF.IRI | RDF.Literal,
+          :literal => struct(),
+          :value => binary()
+        } => nil
+    }
+  },
+  :subject =>
+    {{_, _, _} | %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()},
+     %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()},
+     {_, map(), _}
+     | %{
+         :__struct__ => RDF.BlankNode | RDF.IRI | RDF.Literal,
+         :literal => struct(),
+         :value => binary()
+       }}
+    | %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()}
+}.
+::warning file=lib/xaas/ultracode/machine_experience.ex,line=1235,col=11,title=pattern_match::The pattern can never match the type %RDF.Description{
+  :predications => %{
+    %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()} => %{
+      {{_, map(), _} | %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()},
+       %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()}, _}
+      | %{
+          :__struct__ => RDF.BlankNode | RDF.IRI | RDF.Literal,
+          :literal => struct(),
+          :value => binary()
+        } => nil
+    }
+  },
+  :subject =>
+    {{_, _, _} | %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()},
+     %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()},
+     {_, map(), _}
+     | %{
+         :__struct__ => RDF.BlankNode | RDF.IRI | RDF.Literal,
+         :literal => struct(),
+         :value => binary()
+       }}
+    | %{:__struct__ => RDF.BlankNode | RDF.IRI, :value => binary()}
+}.
+done (warnings were emitted)
+Halting VM with exit status 2

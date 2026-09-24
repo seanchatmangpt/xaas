@@ -1,0 +1,7 @@
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-COURTS/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"broken_term":"R_missing_authority","detail":{"outside":["mix.lock","priv/secret.key"],"path_scope":[".formatter.exs","config","lib","mix.exs","test"]},"hop":"receipt","reason":"consequence_outside_path_scope","standing":"REFUSED(consequence_outside_path_scope)"}
+REFUSED: GC23-7 receipt.r.json: REFUSED(consequence_outside_path_scope) broken_term=R_missing_authority
+exit=1

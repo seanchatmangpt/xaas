@@ -1,0 +1,18 @@
+candidates: CHECK OK: 18 candidates bound to docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1; gates GC24-0=2 GC24-1=1 GC24-2=7 GC24-3=2
+compile: DELTA: 7 required Postcondition/Invariant/Falsifier, 0 witnessed ALIVE (0 ALIVE receipts read), 7 work orders; CHECK: docs/sjira/v26.9.23/successor/compiled outputs recompute byte-identically
+L1 successor goal: root GC-26.9.24 (successorOf GC-26.9.23), 4 gates, 0 WorkOrders, 0 receipts
+L2 goal.ttl: GC-26.9.23 sj:successorCheckpoint GC-26.9.24
+L3 prose docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1: 49 lines, headed DRAFT, pinned by the root
+L4 admission: 18 propositions = 18 emitted candidates, all bound to the prose
+L5 compiler output: 7 WorkOrders = 7 required Postcondition/Invariant/Falsifier propositions, each IRI = WO-sha256(subject)[:16]
+L6 full tuple on 7 orders; tuple digests recomputed (json.dumps)
+L7 placement: 7 orders under GC-26.9.24, 0 under GC-26.9.23
+L8 predecessor inventory (GC-26.9.23 lane orders typed Successor, not GC-26.9.24 delta): V23-W
+L9 intake: frontier 7 eligible; first WO-14958CC7712C739E (recipe:ggen-sync) -> descriptor provider recipe -> Route.resolve -> UNSUPPORTED(provider_capability); items {"UNSUPPORTED(provider_capability)": 7}
+mutations: smuggled goal WorkOrder refused (L1); forged order WO-0000000000000000 refused (L5)
+intake: 7 orders, 7 eligible; first WO-14958CC7712C739E (recipe:ggen-sync) -> UNSUPPORTED(provider_capability) (provider_capability); outputs recompute byte-identically
+F3: intake with ANTHROPIC_API_KEY=x refused REFUSED(llm_credential_present), broken_term mu_on_O
+acceptance probe: stale digest -> BLOCKED; committed digest -> ACCEPTED
+ACCEPTED: GC23-12 successor prose sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1 accepted by the operator (docs/sjira/v26.9.23/successor/ACCEPTED committed at 13db6366586e55e488e3ffa5886139bb440e41a1)
+ALIVE: GC23-12 accepted successor prose sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1 enters the same pipeline: compiled orders only, full tuple, non-empty frontier, typed successor items
+acc_court_exit=0

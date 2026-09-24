@@ -1,0 +1,7 @@
+HEAD=7fec9d883580984ef8ac623c210b9985652d4398 GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/V23-D-gi (bc8ea06d7fa4e249283f2b8fcd00fef5128b4151)
+check at receipt head 9c5e7571c948f97f6ae08d9399f69f502d81efd4: exit 0
+F4 revert falsifier at c72e7be6e5a728fe21b49d1327f2c3d331e67eb5: exit 1 (killed)
+episode subject 80a8a4c71b331a39771ad65d1149eb835645d17c: exit 1 (drift observed)
+verification.json: independent pass, revert falsifier killed
+ALIVE: GC23-6 consequence independently observed at 9c5e7571c948f97f6ae08d9399f69f502d81efd4; F4 revert falsifier killed
+COURT_EXIT=0

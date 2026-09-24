@@ -1,0 +1,14 @@
+diff --git a/lib/xaas/ultracode/semantic_crown.ex b/lib/xaas/ultracode/semantic_crown.ex
+index cbe4822..fc47aa9 100644
+--- a/lib/xaas/ultracode/semantic_crown.ex
++++ b/lib/xaas/ultracode/semantic_crown.ex
+@@ -529,8 +529,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
+     dest = Path.join(dir, Path.basename(source))
+ 
+     cond do
+-      File.dir?(source) -> File.cp_r!(source, dest)
+-      File.regular?(source) -> File.cp!(source, dest)
++      File.exists?(source) -> File.cp!(source, dest)
+       true -> :absent
+     end
+ 

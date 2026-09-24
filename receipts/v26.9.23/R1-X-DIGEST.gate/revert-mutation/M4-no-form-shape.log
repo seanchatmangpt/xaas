@@ -1,0 +1,64 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-DIGEST/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+14:46:48.624 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+14:46:49.136 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+14:46:49.492 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+14:46:49.573 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:49.574 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+14:46:49.591 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:49.591 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+14:46:49.605 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:49.605 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Running ExUnit with seed: 591188, max_cases: 32
+14:46:49.614 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:49.614 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+14:46:49.623 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:49.623 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+14:46:49.628 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:49.628 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+....
+
+  1) test digest form (versioned producer contract) an embedded definition digest altered after admission is refused as stale (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:495
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:digest_form_mismatch, "sjira-digest/2", :definition_digest}}} =
+              SemanticWork.admit(malformed)
+     left:  {:error, {:refused_semantic_work, {:digest_form_mismatch, "sjira-digest/2", :definition_digest}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_definition_stale,
+               "sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:512: (test)
+
+..............
+
+  2) test digest form (versioned producer contract) a descriptor whose declared form mismatches its digests is refused, typed (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:446
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:digest_form_mismatch, "sjira-digest/1", :definition_digest}}} =
+              SemanticWork.admit(Map.put(current, "digest_form", "sjira-digest/1"), binding: :snapshot)
+     left:  {:error, {:refused_semantic_work, {:digest_form_mismatch, "sjira-digest/1", :definition_digest}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_stale,
+               "sha256:5a8d6d3039ad548c966e5e38024274b1cfdeaa7febea7d79cbd63c9954588697"}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:451: (test)
+
+..............
+Finished in 3.3 seconds (0.2s async, 3.1s sync)
+
+Result: 32/34 passed
+Failed: 2 tests

@@ -1,0 +1,17 @@
+top-level 'permissions': identical
+top-level 'env': identical
+top-level 'name': identical
+top-level 'concurrency': identical
+on (push/pull_request): identical; workflow_dispatch: None -> inputs ['expected_head_sha', 'reason']
+jobs (order preserved, none deleted): ['deps-test', 'autonomic-wave-contract', 'ci', 'asyncapi', 'workbench', 'production', 'image-check', 'publish-image', 'receipt', 'deploy']
+job deps-test: identical
+job autonomic-wave-contract: identical
+job ci: identical
+job asyncapi: identical
+job workbench: identical
+job production: identical
+job image-check: identical
+job publish-image: non-step keys identical; if "github.event_name == 'push' && github.ref == 'refs/heads/main'" -> "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"; base steps preserved in order (ignoring added ids): True; ids added to base steps: ['Build and publish admitted main image id=build']; steps added: ['Admit operator publication authority', 'Manufacture publication receipt', 'Preserve publication receipt']
+job receipt: identical
+job deploy: non-step keys identical; if "github.event_name == 'push' && github.ref == 'refs/heads/main'" -> "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"; base steps preserved in order (ignoring added ids): True; ids added to base steps: ['./.github/actions/deploy id=deploy']; steps added: ['Admit operator deployment authority', 'Manufacture deployment receipt', 'Preserve deployment receipt']
+CONSERVED

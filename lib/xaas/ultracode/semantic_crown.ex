@@ -28,7 +28,9 @@ defmodule Xaas.Ultracode.SemanticCrown do
   Options: `:ggen_igniter_dir` (required), `:mix_env` ("test"), `:repo`
   ("aps"), `:provider`, `:suite`, `:items` (two APS backlog item ids: the first
   is observed, the second is seeded and depends on the first), `:base_sha`,
-  `:work_dir`, `:mix_bin`, `:ggen_timeout_s`, `:worker` (2-arity, same protocol as `Autonomic`), `:max_attempts`,
+  `:work_dir`, `:mix_bin`, `:ggen_timeout_s`, `:ggen_build_path` (a private
+  `MIX_BUILD_PATH` for the graph side), `:ggen_path` (the graph side's
+  `PATH`), `:worker` (2-arity, same protocol as `Autonomic`), `:max_attempts`,
   `:rate_retries`, `:rate_backoff_ms`, `:controls` (`%{transport: :local}` or
   `%{transport: :http, endpoint: url, token: token}`), `:project_root`.
   """
@@ -146,6 +148,8 @@ defmodule Xaas.Ultracode.SemanticCrown do
            mix_env: Keyword.get(opts, :mix_env, "test"),
            mix_bin: Keyword.get(opts, :mix_bin) || mix_bin(),
            ggen_timeout_s: Keyword.get(opts, :ggen_timeout_s, 900),
+           ggen_build_path: Keyword.get(opts, :ggen_build_path),
+           ggen_path: Keyword.get(opts, :ggen_path),
            work_dir: work_dir,
            item_ids: items,
            controls: Keyword.get(opts, :controls),
@@ -477,18 +481,37 @@ defmodule Xaas.Ultracode.SemanticCrown do
     end
   end
 
-  defp replay(ctx, live) do
+  @doc """
+  Replays the crown's standing from the work orders and the standing ledger
+  alone, in a fresh `<work_dir>/replay` directory and a fresh graph-side OS
+  process (`mix semantic_jira.frontier`), and compares it with `live` (the
+  frontier the loop ended on) over `eligible`, `blocked`, `standings`,
+  `events` and `ledger_tail` (GC-26.9.23 GC23-10; PRD PR-013).
+
+  Directory-aware (V23-R): the ledger is whatever
+  `GgenIgniter.SemanticJira.TransitionLog.kind/1` resolves -- a DIRECTORY
+  ledger (one immutable `<seq>-<event_digest>.json` file per event) or an
+  ndjson FILE ledger -- and the copy preserves that kind and the ledger's
+  basename (a directory is copied recursively). `File.cp!/2` of a directory
+  ledger raised `File.CopyError` (`:eisdir`), so a crown whose ledger is a
+  directory could not replay at all. A ledger that does not exist is
+  replayed as the empty log of the same name. The work-orders path is copied
+  the same way.
+
+  `ctx` needs `:work_dir`, `:work_orders_path`, `:ledger_path`, `:ggen_dir`,
+  `:mix_env`, `:mix_bin` and `:ggen_timeout_s`; `:ggen_build_path` (a private
+  `MIX_BUILD_PATH`) and `:ggen_path` (the graph side's `PATH`) are optional.
+  """
+  @spec replay(map(), map()) :: {:ok, map()} | {:error, term()}
+  def replay(ctx, live) do
     dir = Path.join(ctx.work_dir, "replay")
     File.rm_rf!(dir)
     File.mkdir_p!(dir)
-    File.cp!(ctx.work_orders_path, Path.join(dir, "work-orders.json"))
+    work_orders = copy_into(ctx.work_orders_path, dir)
+    ledger = copy_into(ctx.ledger_path, dir)
+    replay_ctx = %{ctx | work_orders_path: work_orders}
 
-    if File.exists?(ctx.ledger_path),
-      do: File.cp!(ctx.ledger_path, Path.join(dir, "standing-ledger.ndjson"))
-
-    replay_ctx = %{ctx | work_orders_path: Path.join(dir, "work-orders.json")}
-
-    with {:ok, replayed} <- frontier(replay_ctx, Path.join(dir, "standing-ledger.ndjson")) do
+    with {:ok, replayed} <- frontier(replay_ctx, ledger) do
       keys = ~w(eligible blocked standings events ledger_tail)
 
       {:ok,
@@ -498,6 +521,20 @@ defmodule Xaas.Ultracode.SemanticCrown do
          "ledger_tail" => replayed["ledger_tail"]
        }}
     end
+  end
+
+  # Copies `source` (a file, a directory, or nothing) to `<dir>/<basename>`
+  # and returns the destination path, which keeps the source's ledger kind.
+  defp copy_into(source, dir) do
+    dest = Path.join(dir, Path.basename(source))
+
+    cond do
+      File.dir?(source) -> File.cp_r!(source, dest)
+      File.regular?(source) -> File.cp!(source, dest)
+      true -> :absent
+    end
+
+    dest
   end
 
   # -- negative control -------------------------------------------------------------
@@ -788,16 +825,25 @@ defmodule Xaas.Ultracode.SemanticCrown do
           task | args
         ],
         cd: ctx.ggen_dir,
-        env: [
-          {"MIX_ENV", ctx.mix_env},
-          {"ASDF_ELIXIR_VERSION", nil},
-          {"ASDF_ERLANG_VERSION", nil}
-        ]
+        env:
+          [
+            {"MIX_ENV", ctx.mix_env},
+            {"ASDF_ELIXIR_VERSION", nil},
+            {"ASDF_ERLANG_VERSION", nil}
+          ] ++ optional_env(ctx)
       )
 
     out = File.read!(out_file)
     File.rm(out_file)
     {code, last_json(out), out}
+  end
+
+  # A private build directory and a resolved toolchain PATH, when the caller
+  # pins them (`:ggen_build_path`, `:ggen_path`): the graph side then never
+  # writes into the checkout's own `_build`.
+  defp optional_env(ctx) do
+    [{"MIX_BUILD_PATH", Map.get(ctx, :ggen_build_path)}, {"PATH", Map.get(ctx, :ggen_path)}]
+    |> Enum.reject(fn {_name, value} -> is_nil(value) end)
   end
 
   defp last_json(out) do

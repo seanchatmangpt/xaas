@@ -41,6 +41,27 @@ defmodule Xaas.Ultracode.Engine do
   concern; tests supply scripted protocol clients (real `Lease` calls,
   no mocks), exactly like `Xaas.Ultracode.AutonomicTest` does.
 
+  ## The provider allowlist (which pools the engine may fill by itself)
+
+  Undirected fills (no `:providers`/`:provider` opt -- the AshOban cron
+  path) only discover ready work for providers in
+  `config :xaas, :ultracode_engine_providers` (default `["recipe"]`;
+  `:all` restores unrestricted discovery). The CONFIGURED worker likewise
+  serves only allowlisted providers: a directed fill of a provider outside
+  the allowlist with no explicit `:worker` reports
+  `:provider_not_allowlisted` and dispatches nothing. This is what keeps
+  the deterministic `Xaas.Ultracode.RecipeWorker` (wired for "recipe") from
+  ever being handed a zcode epoch it would decline -- and the engine from
+  then reaping that declined epoch as a refusal. An explicit `:worker` opt
+  is the caller's own choice and applies to whatever providers it names.
+
+  A malformed allowlist is a configuration error, never a silent empty
+  pool: `provider_allowlist/0` logs the bad value (`Logger.error`) and
+  returns `{:error, {:invalid_config, :ultracode_engine_providers}}`; an
+  undirected `fill/1` returns that error instead of a report list, and a
+  directed fill that would use the configured worker reports it as the
+  provider's `:outcome` and dispatches nothing.
+
   ## Settling is concurrency-correct
 
   A slot's worker may lose its directed claim to a concurrent engine or an
@@ -71,6 +92,10 @@ defmodule Xaas.Ultracode.Engine do
   # production always runs bounded (5), so this only exists so a
   # misconfigured-nil-capacity engine cannot spawn an unbounded task storm.
   @unbounded_fill_batch 16
+
+  # Providers the engine fills on its own by default: the deterministic
+  # recipe provider only (see `provider_allowlist/0`).
+  @default_providers ["recipe"]
 
   @doc """
   One full engine turn: reap -> fill -> advance -> health. Real Ash/Reactor
@@ -103,25 +128,78 @@ defmodule Xaas.Ultracode.Engine do
   dispatched concurrently (one task per free slot) and settled
   individually -- see the moduledoc for the settlement semantics.
   """
-  @spec fill(keyword()) :: [map()]
+  @spec fill(keyword()) :: [map()] | {:error, {:invalid_config, :ultracode_engine_providers}}
   def fill(opts \\ []) do
-    opts
-    |> Keyword.get_lazy(:providers, &ready_providers/0)
-    |> Enum.map(&fill_provider(&1, opts))
+    case providers(opts) do
+      {:error, _invalid} = error -> error
+      providers -> Enum.map(providers, &fill_provider(&1, opts))
+    end
+  end
+
+  # Directed (`:providers` list or a single `:provider`) wins; otherwise the
+  # allowlisted providers that have ready work (or the allowlist's typed
+  # configuration error).
+  defp providers(opts) do
+    cond do
+      Keyword.has_key?(opts, :providers) -> Keyword.fetch!(opts, :providers)
+      is_binary(opts[:provider]) -> [opts[:provider]]
+      true -> ready_providers()
+    end
+  end
+
+  @doc """
+  The providers whose pools the engine fills on its own and whose epochs the
+  CONFIGURED worker may be handed: `config :xaas, :ultracode_engine_providers`
+  (a list of provider ids, or `:all`). Unset = `["recipe"]` (the deterministic
+  recipe provider only). A malformed value (anything else, or a list with a
+  non-string element) is logged with the bad value and returned as
+  `{:error, {:invalid_config, :ultracode_engine_providers}}` -- never
+  coerced to an empty allowlist that would read as "no ready work".
+  """
+  @spec provider_allowlist() ::
+          [String.t()] | :all | {:error, {:invalid_config, :ultracode_engine_providers}}
+  def provider_allowlist do
+    case Application.get_env(:xaas, :ultracode_engine_providers, @default_providers) do
+      :all ->
+        :all
+
+      list when is_list(list) ->
+        if Enum.all?(list, &is_binary/1), do: list, else: invalid_allowlist(list)
+
+      malformed ->
+        invalid_allowlist(malformed)
+    end
+  end
+
+  defp invalid_allowlist(value) do
+    Logger.error(
+      "[ultracode-engine] invalid config :ultracode_engine_providers: #{inspect(value)} " <>
+        "(expected a list of provider id strings or :all); the engine fills nothing on its own"
+    )
+
+    {:error, {:invalid_config, :ultracode_engine_providers}}
+  end
+
+  defp allowlisted?(provider) do
+    case provider_allowlist() do
+      :all -> true
+      {:error, _invalid} = error -> error
+      list -> provider in list
+    end
   end
 
   defp fill_provider(provider, opts) do
     capacity = Keyword.get(opts, :pool_capacity, Lease.pool_capacity(provider))
     in_flight_before = Lease.live_leases(provider)
 
-    case resolve_worker(opts) do
-      nil ->
+    case resolve_worker(opts, provider) do
+      {:skip, outcome} ->
         %{
           provider: provider,
           capacity: capacity,
           in_flight_before: in_flight_before,
           dispatched: [],
-          outcome: :no_worker_configured
+          outcome: outcome
         }
 
       worker ->
@@ -286,36 +364,60 @@ defmodule Xaas.Ultracode.Engine do
     |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
   end
 
-  # The worker seam: `:worker` opt wins, then `config :xaas,
-  # :ultracode_engine_worker` ({Mod, :fun} or a 2-arity fun), then nil
-  # (observe-only engine: reap/advance/health still run, no dispatch).
-  defp resolve_worker(opts) do
-    case Keyword.get(opts, :worker) || Application.get_env(:xaas, :ultracode_engine_worker) do
-      {mod, fun} when is_atom(mod) and is_atom(fun) ->
-        fn epoch, ctx -> apply(mod, fun, [epoch, ctx]) end
+  # The worker seam: `:worker` opt wins (for any provider it is aimed at),
+  # then `config :xaas, :ultracode_engine_worker` ({Mod, :fun} or a 2-arity
+  # fun) -- but ONLY for allowlisted providers -- then nothing (observe-only
+  # engine: reap/advance/health still run, no dispatch).
+  defp resolve_worker(opts, provider) do
+    case Keyword.get(opts, :worker) do
+      nil ->
+        case allowlisted?(provider) do
+          true ->
+            to_worker(Application.get_env(:xaas, :ultracode_engine_worker)) ||
+              {:skip, :no_worker_configured}
 
-      fun when is_function(fun, 2) ->
-        fun
+          false ->
+            {:skip, :provider_not_allowlisted}
 
-      _other ->
-        nil
+          {:error, invalid} ->
+            {:skip, invalid}
+        end
+
+      explicit ->
+        to_worker(explicit) || {:skip, :no_worker_configured}
     end
   end
+
+  defp to_worker({mod, fun}) when is_atom(mod) and is_atom(fun),
+    do: fn epoch, ctx -> apply(mod, fun, [epoch, ctx]) end
+
+  defp to_worker(fun) when is_function(fun, 2), do: fun
+  defp to_worker(_other), do: nil
 
   defp ready_providers do
     now = DateTime.utc_now()
 
-    from(e in Epoch,
-      join: r in Run,
-      on: e.run_id == r.id,
-      where:
-        e.state == :running and (is_nil(e.lease_token) or e.lease_expires_at < ^now) and
-          not is_nil(r.provider),
-      distinct: true,
-      select: r.provider
-    )
-    |> Xaas.Repo.all()
+    query =
+      from(e in Epoch,
+        join: r in Run,
+        on: e.run_id == r.id,
+        where:
+          e.state == :running and (is_nil(e.lease_token) or e.lease_expires_at < ^now) and
+            not is_nil(r.provider),
+        distinct: true,
+        select: r.provider
+      )
+
+    case provider_allowlist() do
+      :all -> Xaas.Repo.all(query)
+      {:error, _invalid} = error -> error
+      [] -> []
+      allowed -> query |> where_provider_in(allowed) |> Xaas.Repo.all()
+    end
   end
+
+  defp where_provider_in(query, allowed),
+    do: from([_e, r] in query, where: r.provider in ^allowed)
 
   defp ready_epochs(_provider, limit) when limit <= 0, do: []
 

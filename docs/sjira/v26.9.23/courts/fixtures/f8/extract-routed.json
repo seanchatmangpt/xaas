@@ -1,0 +1,9 @@
+[
+  {
+    "kind": "Postcondition",
+    "statement": "The stop court writes its per-gate table as one JSON document next to the text table.",
+    "quote": "The stop court also writes its per-gate table as one JSON document next to the text table.",
+    "required_by": "GC24-F8",
+    "boundary_class": "Successor"
+  }
+]

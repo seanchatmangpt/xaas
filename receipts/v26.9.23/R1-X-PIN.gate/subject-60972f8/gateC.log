@@ -1,0 +1,7 @@
+60972f8e9757a4e4bd45ef265781518d5ccdebdf
+18:21:56.191 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+*****...
+Finished in 1.0 seconds (0.00s async, 1.0s sync)
+
+Result: 3 passed, 5 skipped
+gateC_exit=0

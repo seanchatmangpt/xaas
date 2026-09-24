@@ -1,0 +1,7 @@
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-COURTS/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"broken_term":"R_missing_consequence","detail":{"recorded":["80a8a4c71b331a39771ad65d1149eb835645d17c"],"subject_commits":["9c5e7571c948f97f6ae08d9399f69f502d81efd4"]},"hop":"receipt","reason":"consequence_not_subject","standing":"REFUSED(consequence_not_subject)"}
+REFUSED: GC23-7 receipt.r.json: REFUSED(consequence_not_subject) broken_term=R_missing_consequence
+exit=1

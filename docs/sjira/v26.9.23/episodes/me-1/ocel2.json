@@ -1,0 +1,1347 @@
+{
+  "eventTypes": [
+    {
+      "attributes": [
+        {
+          "name": "source",
+          "type": "string"
+        },
+        {
+          "name": "standing",
+          "type": "string"
+        }
+      ],
+      "name": "WorkOrderCreated"
+    },
+    {
+      "attributes": [
+        {
+          "name": "candidate_producer",
+          "type": "string"
+        },
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "exploration_digest",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        },
+        {
+          "name": "route_source",
+          "type": "string"
+        }
+      ],
+      "name": "CapabilityResolved"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "type": "string"
+        },
+        {
+          "name": "leased_to",
+          "type": "string"
+        }
+      ],
+      "name": "LeaseAcquired"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        }
+      ],
+      "name": "ActuationStarted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "type": "string"
+        },
+        {
+          "name": "final_head",
+          "type": "string"
+        },
+        {
+          "name": "steps",
+          "type": "string"
+        }
+      ],
+      "name": "ActuationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "type": "string"
+        },
+        {
+          "name": "head",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "suite",
+          "type": "string"
+        },
+        {
+          "name": "verdict",
+          "type": "string"
+        }
+      ],
+      "name": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "outcome",
+          "type": "string"
+        },
+        {
+          "name": "receipt_digest",
+          "type": "string"
+        }
+      ],
+      "name": "ReceiptSealed"
+    },
+    {
+      "attributes": [
+        {
+          "name": "event_digest",
+          "type": "string"
+        },
+        {
+          "name": "from",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "to",
+          "type": "string"
+        }
+      ],
+      "name": "StandingChanged"
+    },
+    {
+      "attributes": [
+        {
+          "name": "eligible_after",
+          "type": "string"
+        },
+        {
+          "name": "eligible_before",
+          "type": "string"
+        },
+        {
+          "name": "entered",
+          "type": "string"
+        },
+        {
+          "name": "ledger_tail",
+          "type": "string"
+        },
+        {
+          "name": "left",
+          "type": "string"
+        }
+      ],
+      "name": "FrontierChanged"
+    },
+    {
+      "attributes": [
+        {
+          "name": "admission_digest",
+          "type": "string"
+        },
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "experience_digest",
+          "type": "string"
+        },
+        {
+          "name": "machine_experience",
+          "type": "string"
+        },
+        {
+          "name": "problem_class",
+          "type": "string"
+        },
+        {
+          "name": "shape",
+          "type": "string"
+        }
+      ],
+      "name": "MachineExperienceAdmitted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "decision",
+          "type": "string"
+        },
+        {
+          "name": "experiences_considered",
+          "type": "string"
+        },
+        {
+          "name": "failure_class",
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "RouteDecided"
+    },
+    {
+      "attributes": [
+        {
+          "name": "budget",
+          "type": "string"
+        },
+        {
+          "name": "problem_class",
+          "type": "string"
+        },
+        {
+          "name": "producer",
+          "type": "string"
+        }
+      ],
+      "name": "ExplorationStarted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "candidates",
+          "type": "string"
+        },
+        {
+          "name": "elapsed_s",
+          "type": "string"
+        },
+        {
+          "name": "exploration_digest",
+          "type": "string"
+        },
+        {
+          "name": "outcome",
+          "type": "string"
+        },
+        {
+          "name": "producer",
+          "type": "string"
+        }
+      ],
+      "name": "ExplorationCompleted"
+    }
+  ],
+  "events": [
+    {
+      "attributes": [
+        {
+          "name": "budget",
+          "value": "{\"candidates\":2,\"consequence_ceiling\":\"CONSTRUCT\",\"drive_runs\":2,\"evidence_requirement\":[\"drive_alive\",\"independent_pass\",\"revert_killed\",\"r_alive\"],\"time_s\":1800}"
+        },
+        {
+          "name": "problem_class",
+          "value": "format_drift"
+        },
+        {
+          "name": "producer",
+          "value": "llm:claude-opus-5-5@B1b/V23-M"
+        }
+      ],
+      "id": "e001-ExplorationStarted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:llm:claude-opus-5-5@B1b/V23-M",
+          "qualifier": "proposer"
+        }
+      ],
+      "time": "2026-09-23T13:56:44Z",
+      "type": "ExplorationStarted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "candidates",
+          "value": "[\"recipe:mix-format\"]"
+        },
+        {
+          "name": "elapsed_s",
+          "value": "11"
+        },
+        {
+          "name": "exploration_digest",
+          "value": "sha256:1a8da3ee1734c0cb0244f4d27e15d3de95754fbf3fee174c25805b0e8aa07267"
+        },
+        {
+          "name": "outcome",
+          "value": "CANDIDATE"
+        },
+        {
+          "name": "producer",
+          "value": "llm:claude-opus-5-5@B1b/V23-M"
+        }
+      ],
+      "id": "e002-ExplorationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:llm:claude-opus-5-5@B1b/V23-M",
+          "qualifier": "proposer"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "candidate"
+        }
+      ],
+      "time": "2026-09-23T13:56:55Z",
+      "type": "ExplorationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "decision",
+          "value": "UNKNOWN"
+        },
+        {
+          "name": "experiences_considered",
+          "value": "0"
+        },
+        {
+          "name": "failure_class",
+          "value": "format_drift"
+        },
+        {
+          "name": "reason",
+          "value": "no_capability_no_experience"
+        }
+      ],
+      "id": "e003-RouteDecided",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        }
+      ],
+      "time": "2026-09-23T15:14:03.067051Z",
+      "type": "RouteDecided"
+    },
+    {
+      "attributes": [
+        {
+          "name": "source",
+          "value": "work_graph"
+        },
+        {
+          "name": "standing",
+          "value": "UNKNOWN"
+        }
+      ],
+      "id": "e004-WorkOrderCreated",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "subject:seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+          "qualifier": "subject"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        },
+        {
+          "objectId": "commit:92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T15:14:03.708928Z",
+      "type": "WorkOrderCreated"
+    },
+    {
+      "attributes": [
+        {
+          "name": "candidate_producer",
+          "value": "llm:claude-opus-5-5@B1b/V23-M"
+        },
+        {
+          "name": "capability",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "exploration_digest",
+          "value": "sha256:1a8da3ee1734c0cb0244f4d27e15d3de95754fbf3fee174c25805b0e8aa07267"
+        },
+        {
+          "name": "provider",
+          "value": "recipe"
+        },
+        {
+          "name": "route_source",
+          "value": "exploration"
+        }
+      ],
+      "id": "e005-CapabilityResolved",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "provider:llm:claude-opus-5-5@B1b/V23-M",
+          "qualifier": "proposer"
+        }
+      ],
+      "time": "2026-09-23T15:14:03.714889Z",
+      "type": "CapabilityResolved"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "value": "8ba5e6bf-db46-4a64-9a00-95f46658954a"
+        },
+        {
+          "name": "provider",
+          "value": "recipe"
+        }
+      ],
+      "id": "e006-ActuationStarted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        },
+        {
+          "objectId": "commit:92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+          "qualifier": "base"
+        }
+      ],
+      "time": "2026-09-23T15:14:05.655020Z",
+      "type": "ActuationStarted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "value": "8ba5e6bf-db46-4a64-9a00-95f46658954a"
+        },
+        {
+          "name": "leased_to",
+          "value": "recipe-worker"
+        }
+      ],
+      "id": "e007-LeaseAcquired",
+      "relationships": [
+        {
+          "objectId": "lease:epoch:8ba5e6bf-db46-4a64-9a00-95f46658954a",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        }
+      ],
+      "time": "2026-09-23T15:14:05.707769Z",
+      "type": "LeaseAcquired"
+    },
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "value": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4"
+        },
+        {
+          "name": "final_head",
+          "value": "77df08277fa3fa1aa535265fd92029e604890944"
+        },
+        {
+          "name": "steps",
+          "value": "[\"format:0\"]"
+        }
+      ],
+      "id": "e008-ActuationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "provider:recipe-worker",
+          "qualifier": "provider"
+        },
+        {
+          "objectId": "lease:epoch:8ba5e6bf-db46-4a64-9a00-95f46658954a",
+          "qualifier": "lease"
+        },
+        {
+          "objectId": "commit:77df08277fa3fa1aa535265fd92029e604890944",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T15:14:07.803646Z",
+      "type": "ActuationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "value": "fabric"
+        },
+        {
+          "name": "head",
+          "value": "77df08277fa3fa1aa535265fd92029e604890944"
+        },
+        {
+          "name": "status",
+          "value": "pass"
+        },
+        {
+          "name": "suite",
+          "value": "ggen-igniter-format"
+        }
+      ],
+      "id": "e009-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:77df08277fa3fa1aa535265fd92029e604890944",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T15:14:07.804603Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "outcome",
+          "value": "alive"
+        },
+        {
+          "name": "receipt_digest",
+          "value": "sha256:c1dbbbfc2fd9030e24180cae819782f29af56a926c5f9f0f61ded87e7ed062d6"
+        }
+      ],
+      "id": "e010-ReceiptSealed",
+      "relationships": [
+        {
+          "objectId": "receipt:3bc80b38-932a-4f5a-a9eb-376f6acd3497",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:77df08277fa3fa1aa535265fd92029e604890944",
+          "qualifier": "head"
+        },
+        {
+          "objectId": "lease:epoch:8ba5e6bf-db46-4a64-9a00-95f46658954a",
+          "qualifier": "lease"
+        }
+      ],
+      "time": "2026-09-23T15:14:07.835865Z",
+      "type": "ReceiptSealed"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "value": "independent"
+        },
+        {
+          "name": "head",
+          "value": "77df08277fa3fa1aa535265fd92029e604890944"
+        },
+        {
+          "name": "status",
+          "value": "pass"
+        },
+        {
+          "name": "suite",
+          "value": "ggen-igniter-format"
+        }
+      ],
+      "id": "e011-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:77df08277fa3fa1aa535265fd92029e604890944",
+          "qualifier": "head"
+        }
+      ],
+      "time": "2026-09-23T15:14:08.971144Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "court",
+          "value": "revert-falsifier"
+        },
+        {
+          "name": "head",
+          "value": "5c2f39a0014cf16650984c176f4aba55f18bc8d3"
+        },
+        {
+          "name": "status",
+          "value": "fail"
+        },
+        {
+          "name": "suite",
+          "value": "ggen-igniter-format"
+        },
+        {
+          "name": "verdict",
+          "value": "killed"
+        }
+      ],
+      "id": "e012-VerificationCompleted",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "commit:77df08277fa3fa1aa535265fd92029e604890944",
+          "qualifier": "reverted"
+        }
+      ],
+      "time": "2026-09-23T15:14:09.966289Z",
+      "type": "VerificationCompleted"
+    },
+    {
+      "attributes": [
+        {
+          "name": "event_digest",
+          "value": "sha256:88ed4c04814aef7fe6c418a6b5e3f77ebe8bace20f2e512ae5c905a325326ab5"
+        },
+        {
+          "name": "from",
+          "value": "UNKNOWN"
+        },
+        {
+          "name": "status",
+          "value": "applied"
+        },
+        {
+          "name": "to",
+          "value": "ALIVE"
+        }
+      ],
+      "id": "e013-StandingChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "receipt:3bc80b38-932a-4f5a-a9eb-376f6acd3497",
+          "qualifier": "receipt"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T15:14:11.301020Z",
+      "type": "StandingChanged"
+    },
+    {
+      "attributes": [
+        {
+          "name": "eligible_after",
+          "value": "[\"EP-B\"]"
+        },
+        {
+          "name": "eligible_before",
+          "value": "[\"EP-A\"]"
+        },
+        {
+          "name": "entered",
+          "value": "[\"EP-B\"]"
+        },
+        {
+          "name": "ledger_tail",
+          "value": "sha256:88ed4c04814aef7fe6c418a6b5e3f77ebe8bace20f2e512ae5c905a325326ab5"
+        },
+        {
+          "name": "left",
+          "value": "[\"EP-A\"]"
+        }
+      ],
+      "id": "e014-FrontierChanged",
+      "relationships": [
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "left"
+        },
+        {
+          "objectId": "workorder:EP-B",
+          "qualifier": "entered"
+        },
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "time": "2026-09-23T15:14:11.910579Z",
+      "type": "FrontierChanged"
+    },
+    {
+      "attributes": [
+        {
+          "name": "admission_digest",
+          "value": "sha256:7d69cb3ec1875e4b93303c2e18a1a99229698dd65a7721df094f50b8400aafd1"
+        },
+        {
+          "name": "capability",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "experience_digest",
+          "value": "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222"
+        },
+        {
+          "name": "machine_experience",
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
+        },
+        {
+          "name": "problem_class",
+          "value": "format_drift"
+        },
+        {
+          "name": "shape",
+          "value": "conforms"
+        }
+      ],
+      "id": "e015-MachineExperienceAdmitted",
+      "relationships": [
+        {
+          "objectId": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
+          "qualifier": "machine-experience"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "work-order"
+        },
+        {
+          "objectId": "receipt:3bc80b38-932a-4f5a-a9eb-376f6acd3497",
+          "qualifier": "source-receipt"
+        },
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "capability"
+        }
+      ],
+      "time": "2026-09-23T15:14:13.358182Z",
+      "type": "MachineExperienceAdmitted"
+    }
+  ],
+  "objectTypes": [
+    {
+      "attributes": [
+        {
+          "name": "iri",
+          "type": "string"
+        }
+      ],
+      "name": "GoalCheckpoint"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "type": "string"
+        },
+        {
+          "name": "failure_class",
+          "type": "string"
+        },
+        {
+          "name": "identity",
+          "type": "string"
+        },
+        {
+          "name": "standing",
+          "type": "string"
+        }
+      ],
+      "name": "WorkOrder"
+    },
+    {
+      "attributes": [
+        {
+          "name": "base_sha",
+          "type": "string"
+        },
+        {
+          "name": "subject",
+          "type": "string"
+        }
+      ],
+      "name": "Subject"
+    },
+    {
+      "attributes": [
+        {
+          "name": "deterministic",
+          "type": "string"
+        },
+        {
+          "name": "executor",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        },
+        {
+          "name": "provider_class",
+          "type": "string"
+        },
+        {
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "Provider"
+    },
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "type": "string"
+        },
+        {
+          "name": "capability_id",
+          "type": "string"
+        },
+        {
+          "name": "recipe_id",
+          "type": "string"
+        },
+        {
+          "name": "standing",
+          "type": "string"
+        }
+      ],
+      "name": "Capability"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "type": "string"
+        },
+        {
+          "name": "leased_to",
+          "type": "string"
+        },
+        {
+          "name": "provider",
+          "type": "string"
+        }
+      ],
+      "name": "Lease"
+    },
+    {
+      "attributes": [
+        {
+          "name": "head_verified",
+          "type": "string"
+        },
+        {
+          "name": "outcome",
+          "type": "string"
+        },
+        {
+          "name": "receipt_digest",
+          "type": "string"
+        },
+        {
+          "name": "receipt_id",
+          "type": "string"
+        }
+      ],
+      "name": "Receipt"
+    },
+    {
+      "attributes": [
+        {
+          "name": "identity",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ],
+      "name": "Repository"
+    },
+    {
+      "attributes": [
+        {
+          "name": "author",
+          "type": "string"
+        },
+        {
+          "name": "parent",
+          "type": "string"
+        },
+        {
+          "name": "role",
+          "type": "string"
+        },
+        {
+          "name": "sha",
+          "type": "string"
+        }
+      ],
+      "name": "Commit"
+    },
+    {
+      "attributes": [
+        {
+          "name": "admission",
+          "type": "string"
+        },
+        {
+          "name": "admission_digest",
+          "type": "string"
+        },
+        {
+          "name": "authority",
+          "type": "string"
+        },
+        {
+          "name": "experience_digest",
+          "type": "string"
+        },
+        {
+          "name": "iri",
+          "type": "string"
+        },
+        {
+          "name": "problem_class",
+          "type": "string"
+        },
+        {
+          "name": "standing",
+          "type": "string"
+        }
+      ],
+      "name": "MachineExperience"
+    }
+  ],
+  "objects": [
+    {
+      "attributes": [
+        {
+          "name": "argv_sha256",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "7c1ad864ca7349d4e60c48432dc77dfdec22b1aec47ceac213c62d38737f10f4"
+        },
+        {
+          "name": "capability_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "recipe_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "mix-format"
+        },
+        {
+          "name": "standing",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "CANDIDATE"
+        }
+      ],
+      "id": "capability:recipe:mix-format",
+      "relationships": [],
+      "type": "Capability"
+    },
+    {
+      "attributes": [
+        {
+          "name": "iri",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23"
+        }
+      ],
+      "id": "checkpoint:GC-26.9.23",
+      "relationships": [],
+      "type": "GoalCheckpoint"
+    },
+    {
+      "attributes": [
+        {
+          "name": "author",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "parent",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f"
+        },
+        {
+          "name": "sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "77df08277fa3fa1aa535265fd92029e604890944"
+        }
+      ],
+      "id": "commit:77df08277fa3fa1aa535265fd92029e604890944",
+      "relationships": [
+        {
+          "objectId": "commit:92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+          "qualifier": "parent"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": [
+        {
+          "name": "role",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "episode subject"
+        },
+        {
+          "name": "sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f"
+        }
+      ],
+      "id": "commit:92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+      "relationships": [
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Commit"
+    },
+    {
+      "attributes": [
+        {
+          "name": "epoch_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "8ba5e6bf-db46-4a64-9a00-95f46658954a"
+        },
+        {
+          "name": "leased_to",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "provider",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe"
+        }
+      ],
+      "id": "lease:epoch:8ba5e6bf-db46-4a64-9a00-95f46658954a",
+      "relationships": [],
+      "type": "Lease"
+    },
+    {
+      "attributes": [
+        {
+          "name": "admission",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "ADMITTED"
+        },
+        {
+          "name": "admission_digest",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "sha256:7d69cb3ec1875e4b93303c2e18a1a99229698dd65a7721df094f50b8400aafd1"
+        },
+        {
+          "name": "authority",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "NONE"
+        },
+        {
+          "name": "experience_digest",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222"
+        },
+        {
+          "name": "iri",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
+        },
+        {
+          "name": "problem_class",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "format_drift"
+        },
+        {
+          "name": "standing",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "CANDIDATE"
+        }
+      ],
+      "id": "machine-experience:https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
+      "relationships": [
+        {
+          "objectId": "capability:recipe:mix-format",
+          "qualifier": "admitted-capability"
+        }
+      ],
+      "type": "MachineExperience"
+    },
+    {
+      "attributes": [
+        {
+          "name": "deterministic",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "false"
+        },
+        {
+          "name": "provider",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "llm:claude-opus-5-5@B1b/V23-M"
+        },
+        {
+          "name": "provider_class",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "llm"
+        },
+        {
+          "name": "role",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "exploration candidate proposer"
+        }
+      ],
+      "id": "provider:llm:claude-opus-5-5@B1b/V23-M",
+      "relationships": [],
+      "type": "Provider"
+    },
+    {
+      "attributes": [
+        {
+          "name": "deterministic",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "true"
+        },
+        {
+          "name": "executor",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe-worker"
+        },
+        {
+          "name": "provider",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe"
+        }
+      ],
+      "id": "provider:recipe-worker",
+      "relationships": [],
+      "type": "Provider"
+    },
+    {
+      "attributes": [
+        {
+          "name": "head_verified",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "true"
+        },
+        {
+          "name": "outcome",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "alive"
+        },
+        {
+          "name": "receipt_digest",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "sha256:c1dbbbfc2fd9030e24180cae819782f29af56a926c5f9f0f61ded87e7ed062d6"
+        },
+        {
+          "name": "receipt_id",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "3bc80b38-932a-4f5a-a9eb-376f6acd3497"
+        }
+      ],
+      "id": "receipt:3bc80b38-932a-4f5a-a9eb-376f6acd3497",
+      "relationships": [],
+      "type": "Receipt"
+    },
+    {
+      "attributes": [
+        {
+          "name": "identity",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "seanchatmangpt/ggen_igniter"
+        },
+        {
+          "name": "path",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "/Users/sac/ggen_igniter"
+        }
+      ],
+      "id": "repository:seanchatmangpt/ggen_igniter",
+      "relationships": [],
+      "type": "Repository"
+    },
+    {
+      "attributes": [
+        {
+          "name": "base_sha",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f"
+        },
+        {
+          "name": "subject",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A"
+        }
+      ],
+      "id": "subject:seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+      "relationships": [
+        {
+          "objectId": "commit:92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+          "qualifier": "base"
+        },
+        {
+          "objectId": "repository:seanchatmangpt/ggen_igniter",
+          "qualifier": "repository"
+        }
+      ],
+      "type": "Subject"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "recipe:mix-format"
+        },
+        {
+          "name": "failure_class",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "format_drift"
+        },
+        {
+          "name": "identity",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "EP-A"
+        },
+        {
+          "name": "standing",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "UNKNOWN"
+        }
+      ],
+      "id": "workorder:EP-A",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        }
+      ],
+      "type": "WorkOrder"
+    },
+    {
+      "attributes": [
+        {
+          "name": "capability",
+          "time": "1970-01-01T00:00:00Z",
+          "value": ""
+        },
+        {
+          "name": "identity",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "EP-B"
+        },
+        {
+          "name": "standing",
+          "time": "1970-01-01T00:00:00Z",
+          "value": "UNKNOWN"
+        }
+      ],
+      "id": "workorder:EP-B",
+      "relationships": [
+        {
+          "objectId": "checkpoint:GC-26.9.23",
+          "qualifier": "checkpoint"
+        },
+        {
+          "objectId": "workorder:EP-A",
+          "qualifier": "requiresReceipt"
+        }
+      ],
+      "type": "WorkOrder"
+    }
+  ]
+}

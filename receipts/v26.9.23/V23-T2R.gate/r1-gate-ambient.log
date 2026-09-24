@@ -1,0 +1,59 @@
+GGEN_IGNITER_DIR=<unset> HEAD=19060ec7b50e10cc0ccf3ccdaeca44f4a516ab2a ambient ggen_igniter=d83d6c809dcfaad23d64ea1142c5a8640d2a9337 feat/zcode-ocel-pack
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/fri/FRI-T2/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+01:43:40.887 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:43:41.284 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:43:41.576 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 672654, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+....................................................................................................................................................................................................01:43:44.041 [warning] [ultracode] epoch 9cde0cd4-93a1-4c99-b2f6-f0d15bb52d1d (run 4349ca16-75bc-44b9-a9b4-be4bdd9e65ee, cycle 0) expected_at=2026-09-23 08:42:43.728332Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.01:43:44.048 [warning] [ultracode] epoch 95f49796-5505-4049-bd2d-18278072a64f (run ebce2589-1b18-4a35-b89c-b23c37abf729, cycle 0) expected_at=2026-09-23 08:42:43.732561Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+......01:43:44.077 [warning] [ultracode] epoch 9a5e81df-b3be-4e6b-965f-944376dd7238 (run 456c649d-33c7-464d-9ea3-41d13d8e6159, cycle 0) expected_at=2026-09-23 08:42:44.069450Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.01:43:44.079 [warning] [ultracode] undo: refusing to compensate epoch 9a8bdfdd-37d4-4fd7-b0bd-5bd0e2489c69 -- real row is :completed, not the :running state :construct left it in (a concurrent close/refuse/re-lease moved it); compensating would clobber a settled row
+.........01:43:44.112 [warning] [ultracode] epoch 60697a12-bc5c-4275-8beb-4c9bfd445359 (run d240f2d4-c790-4e5a-8068-558c54477204, cycle 0) expected_at=2026-09-23 08:42:44.100529Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+...................................................................../Users/sac/.cache/tmp/xaas-ocel-mix-1790153024334-5062/e683aaef-5a5b-416d-87d9-2d79627e2c99.ocel.json
+.01:43:44.364 [warning] XAAS_LEASE_CLOSE head mismatch epoch=fe35d91f-847e-42b9-827a-4320f03e85ab
+.....................................error: /Users/sac/.cache/tmp/profile-sense-25757b12/runs/fix-sense-9e9248 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-4212ec5c/runs/fix-sense-fa708b has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-5c4348a3/runs/fix-sense-f43f43 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-401190a4/runs/fix-sense-8abca9 has no contracts/ directory
+..error: /Users/sac/.cache/tmp/profile-sense-76ac46b7/runs/fix-sense-301f80 has no contracts/ directory
+......01:43:50.226 [warning] XAAS_LEASE_CLOSE head mismatch epoch=aa169b25-a4e6-44c3-b2b4-47f1f05f2069
+...........................................................................................................................................................01:44:06.491 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153046423-18498; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+........................................................................
+
+  1) test SJ-001 flows admit -> materialize -> receipt -> replay; both falsifiers are refused (Xaas.Ultracode.SemanticJiraE2ETest)
+     test/xaas/ultracode/semantic_jira_e2e_test.exs:106
+     ** (MatchError) no match of right hand side value:
+
+         {1, nil}
+
+     code: {0, admit} = project(wo, descriptor_path, [])
+     stacktrace:
+       test/xaas/ultracode/semantic_jira_e2e_test.exs:123: (test)
+
+......................................01:44:56.012 [warning] [ultracode] epoch 5853b63e-7551-4f69-b9d2-c850965ba968 (run 76150745-e964-4195-a282-4a00508c7fe8, cycle 0) expected_at=2026-09-23 08:44:56.004909Z exceeded epoch_timeout_seconds=0 -> marked :missed (receipt sealed)
+.....................01:45:00.151 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+01:45:00.154 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+......01:45:02.859 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+...01:45:03.133 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+...................................................01:45:11.587 [warning] [ultracode] epoch 322d7569-2e92-4c26-baaa-c2963b39cc7e (run 8e439e13-b557-44d0-a2ac-87d8d2f6cffb, cycle 0) expected_at=2026-09-23 08:44:11.579493Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+..01:45:11.658 [warning] [ultracode] run ff0dfe61-9a2f-4a1d-872c-4cbc96b7c9fd stopped: refused 1 live lease(s) (reason :run_stopped)
+01:45:11.668 [warning] [ultracode] run ff0dfe61-9a2f-4a1d-872c-4cbc96b7c9fd recovering from failed epoch d88d9d19-5739-4501-b479-cc09fd77ee5c: constructed replacement epoch cycle=1 (epoch_id=ed73e134-fa1e-4866-aa0a-0bb7a68741d6)
+......01:45:11.782 [warning] [ultracode] run 2d94dddf-ff95-4199-946d-18230e548cb3 stopped: refused 1 live lease(s) (reason :run_stopped)
+..01:45:11.796 [warning] [ultracode-engine] reaped epoch d4292035-12c9-4752-ac73-49780776d683 (worker ended without closing)
+..01:45:11.804 [warning] [ultracode-engine] reaped epoch 36827a89-efd5-4ea2-b544-824b8529924d (worker ended without closing)
+.....01:45:12.219 [warning] XAAS_LEASE_CLOSE head mismatch epoch=e2c27917-9b75-463f-b150-127510c6c1bb
+...........................................
+Finished in 96.7 seconds (5.1s async, 91.5s sync)
+738 tests, 1 failure (25 excluded)
+TEST_EXIT=2

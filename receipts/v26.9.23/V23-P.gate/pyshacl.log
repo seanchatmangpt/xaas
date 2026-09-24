@@ -1,0 +1,7 @@
+goal.ttl + friday goal.ttl + FRI-T1 pack ontology, FRI-T1 shapes: conforms = True
+F1 mutation: WO-V23-C without sj:postcondition: conforms = False
+F1 mutation: WO-V23-C without sj:requiresCapability: conforms = False
+F1 mutation: WO-V23-C without sj:evidenceHorizon: conforms = False
+F1 mutation: WO-V23-C without sj:consequenceClass: conforms = False
+F1 mutation: WO-V23-C without sj:successorPolicy: conforms = False
+WO-V23-C without sj:exclusion: conforms = True (FRI-T1 repair 0337a6a makes sj:exclusion 0..n; the stop court tuple still requires >= 1)

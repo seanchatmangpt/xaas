@@ -476,6 +476,13 @@ defmodule Xaas.Ultracode.TargetSuites do
           partitioned_db: false
         ),
 
+      # The Friday reference KNOWN class (GC-FRI-0800 G6/G7): `mix format`
+      # drift repair. The court IS the postcondition -- one receipt step,
+      # `mix format --check-formatted` (no deps, no compile, no network),
+      # judged by its exit status (`result_format: "exit_status"`): a work
+      # order's acceptance IRI maps to `%{"test" => "format"}`.
+      "ggen-igniter-format" => elixir_format_suite("ggen-igniter", "1.18.4-otp-27", "27.2.4"),
+
       # autofde-lab (Python): the repo's own venv interpreter is pinned by
       # ABSOLUTE path (children run under a throwaway HOME). DoD = the SA2A +
       # beam-bridge surface the Semantic Jira loop actually drives; the one
@@ -565,26 +572,7 @@ defmodule Xaas.Ultracode.TargetSuites do
   # database.
   defp elixir_suite(alias_name, elixir, erlang, test_timeout_ms, tests, opts \\ []) do
     partitioned? = Keyword.get(opts, :partitioned_db, true)
-    seed = Path.expand(Path.join(@seed_root, alias_name))
-
-    env = %{
-      "PATH" =>
-        Enum.join(
-          [
-            asdf_bin("elixir", elixir),
-            asdf_bin("erlang", erlang),
-            "/opt/homebrew/bin",
-            "/usr/local/bin",
-            "/usr/bin",
-            "/bin"
-          ],
-          ":"
-        ),
-      "LANG" => "en_US.UTF-8",
-      "MIX_ENV" => "test",
-      "MIX_ARCHIVES" => Path.expand("~/xaas-worktrees/toolchain/mix-archives"),
-      "SEED" => seed
-    }
+    env = elixir_env(alias_name, elixir, erlang)
 
     test_step =
       if partitioned? do
@@ -613,6 +601,48 @@ defmodule Xaas.Ultracode.TargetSuites do
         test_step,
         %{id: "seed_publish", timeout_ms: 600_000, argv: ["/bin/sh", "-c", @seed_publish, "seed"]}
       ]
+    }
+  end
+
+  # An Elixir format-court suite: the same pinned env as `elixir_suite/6`,
+  # one receipt step whose exit status is the verdict.
+  defp elixir_format_suite(alias_name, elixir, erlang) do
+    %{
+      env: elixir_env(alias_name, elixir, erlang),
+      max_output_bytes: 65_536,
+      result_format: "exit_status",
+      toolchain: [["mix", "--version"], ["git", "--version"]],
+      steps: [
+        %{
+          id: "format",
+          timeout_ms: 300_000,
+          receipt: true,
+          argv: ["mix", "format", "--check-formatted"]
+        }
+      ]
+    }
+  end
+
+  defp elixir_env(alias_name, elixir, erlang) do
+    seed = Path.expand(Path.join(@seed_root, alias_name))
+
+    %{
+      "PATH" =>
+        Enum.join(
+          [
+            asdf_bin("elixir", elixir),
+            asdf_bin("erlang", erlang),
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin"
+          ],
+          ":"
+        ),
+      "LANG" => "en_US.UTF-8",
+      "MIX_ENV" => "test",
+      "MIX_ARCHIVES" => Path.expand("~/xaas-worktrees/toolchain/mix-archives"),
+      "SEED" => seed
     }
   end
 

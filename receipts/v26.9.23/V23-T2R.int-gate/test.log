@@ -1,0 +1,58 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/fri/xaas-int/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+02:01:54.891 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+02:01:55.454 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+02:01:55.743 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+02:01:55.819 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+02:01:55.819 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/xaas-int/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+02:01:55.832 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+02:01:55.832 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/xaas-int/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+02:01:55.846 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+02:01:55.846 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/xaas-int/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+02:01:55.860 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+02:01:55.860 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/xaas-int/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 834873, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+02:01:55.871 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+02:01:55.871 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/xaas-int/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+02:01:55.876 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+02:01:55.876 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/xaas-int/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+............................................................................................................................................................................................................02:01:57.289 [warning] [ultracode] epoch 1dfdde45-a98e-4b66-b12d-bf53e47607c0 (run 529d90b8-0f3b-4ef6-87a2-3a3280648f0e, cycle 0) expected_at=2026-09-23 09:00:57.059432Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+...02:01:57.295 [warning] [ultracode] epoch 338cabc2-5aa0-4f2a-b2ba-89ffc2984f55 (run 0208587c-cb6c-4fed-8e4a-16447be0dfec, cycle 0) expected_at=2026-09-23 09:00:57.065324Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+..........02:01:57.319 [warning] [ultracode] epoch 000359c3-0c25-4741-ba9b-02787c6f53af (run ab19df7b-76c8-4505-8a53-6ace00b47d7b, cycle 0) expected_at=2026-09-23 09:00:57.312355Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.02:01:57.325 [warning] [ultracode] undo: refusing to compensate epoch eee6719c-a4a4-4855-870f-fc9ac5ffe10d -- real row is :completed, not the :running state :construct left it in (a concurrent close/refuse/re-lease moved it); compensating would clobber a settled row
+.......02:01:57.355 [warning] [ultracode] epoch 119b48a2-7f6b-425f-a740-9f0d3e193957 (run bcb1c72d-d0b4-4f36-b382-e2e1dc69d36c, cycle 0) expected_at=2026-09-23 09:00:57.345763Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+..................................................../Users/sac/.cache/tmp/xaas-ocel-mix-1790154117537-4680/34de8927-a09b-4845-9ccb-bf77a981eb91.ocel.json
+.................................02:01:57.832 [warning] XAAS_LEASE_CLOSE head mismatch epoch=b33857d3-85f4-4e3f-9a61-a59df529a7a3
+.....................error: /Users/sac/.cache/tmp/profile-sense-244de6d6/runs/fix-sense-7121fc has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-3ab1e415/runs/fix-sense-9b6374 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-88f9abf3/runs/fix-sense-913aab has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-8075136a/runs/fix-sense-81cd11 has no contracts/ directory
+...error: /Users/sac/.cache/tmp/profile-sense-fe7caca0/runs/fix-sense-424713 has no contracts/ directory
+......................................................................................02:04:06.040 [warning] XAAS_LEASE_CLOSE head mismatch epoch=e94fb2e5-6c46-45e1-ae97-785ec89b6430
+..................................................................................02:04:13.478 [warning] XAAS_LEASE_CLOSE head mismatch epoch=5fe77658-ad8b-4931-b7f8-ff03be93fcca
+...................................02:04:20.235 [warning] [ultracode] epoch aef2b63c-14a0-4c03-bc7f-e9ba8e3e1266 (run 980ae662-68e4-485d-878a-33c8ad447fde, cycle 0) expected_at=2026-09-23 09:04:20.209113Z exceeded epoch_timeout_seconds=0 -> marked :missed (receipt sealed)
+.............................................................................................02:05:03.383 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790154303307-52907883462; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+........................................................02:05:15.694 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+.02:05:16.202 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+02:05:16.207 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+..........................02:05:29.011 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+.....02:05:29.128 [warning] [ultracode] run 8c705af6-dde3-4b03-bdd1-cba0a721a96d stopped: refused 1 live lease(s) (reason :run_stopped)
+.....02:05:29.241 [warning] [ultracode] run 18d8ae57-c7db-41cf-8b4a-95c4676b190f stopped: refused 1 live lease(s) (reason :run_stopped)
+02:05:29.253 [warning] [ultracode] run 18d8ae57-c7db-41cf-8b4a-95c4676b190f recovering from failed epoch 97ea5815-4739-43fb-8257-9a72be48f645: constructed replacement epoch cycle=1 (epoch_id=4fa414dd-b98f-4d26-b0de-ada1f9736244)
+...02:05:29.356 [warning] [ultracode] epoch 86bb58c3-a693-4569-825b-647e46890ecc (run 9ac66019-7a82-49f9-aca7-ccfd3168df72, cycle 0) expected_at=2026-09-23 09:04:29.343007Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+...02:05:29.407 [warning] [ultracode-engine] reaped epoch 1398ed7d-59ea-4380-8775-44587d767876 (worker ended without closing)
+..02:05:29.430 [warning] [ultracode-engine] reaped epoch 6077c1c4-a636-49b3-8d22-eb5d2b17e283 (worker ended without closing)
+....
+Finished in 213.6 seconds (4.6s async, 209.0s sync)
+738 tests, 0 failures (25 excluded)
+TEST_EXIT=0

@@ -1,0 +1,41 @@
+{
+  "authority": {
+    "actor": "xaas.stop_court",
+    "ceiling": "OBSERVE",
+    "grant": "NONE"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": []
+  },
+  "identity": {
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
+    "repo": "/Users/sac/wt/v26922/v23/V23-M",
+    "subject": "GC-26.9.23/STOP",
+    "subject_sha": "0ddb308f21d930f757cdae78c196cbd3dfb63a04"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-9.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-M",
+        "exit": 0,
+        "output_sha256": "89f1fa470b253a3ab7b900973b2528ef4557a4ea9666a56a329f680ea7591825",
+        "summary": "ALIVE: GC23-9 episode 1 UNKNOWN -> bounded exploration -> admitted MachineExperience; episode 2 KNOWN from https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434 with 0 LLM-provider and 0 explora"
+      },
+      {
+        "cmd": "mix xaas.stop_court --checkpoint GC-26.9.23",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-M",
+        "exit": 1,
+        "summary": "sj:stopQuery ASK over the goal graph + 1 admitted gate receipts: STOP=false"
+      }
+    ],
+    "durable_location": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23m-r2/stop-receipts/STOP-GC-26.9.23.json"
+  },
+  "standing": {
+    "derived_from": "sj:stopQuery of GC-26.9.23 at 0ddb308f21d930f757cdae78c196cbd3dfb63a04: 1/13 gates ALIVE; STOP=false",
+    "value": "UNKNOWN"
+  }
+}

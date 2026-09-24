@@ -1,0 +1,9 @@
+restored:  lib/xaas/ultracode/machine_experience.ex lib/mix/tasks/xaas.episode.ex (tree clean)
+Total errors: 32, Skipped: 29, Unnecessary Skips: 0
+::warning file=lib/mix/tasks/xaas.episode.ex,line=191,title=guard_fail::The guard clause can never succeed.
+::warning file=lib/xaas/ultracode/machine_experience.ex,line=539,col=15,title=pattern_match::The pattern can never match the type %RDF.Description{
+::warning file=lib/xaas/ultracode/machine_experience.ex,line=1235,col=11,title=pattern_match::The pattern can never match the type %RDF.Description{
+inner_exit=2
+FALSIFIER nil-clauses: fired as expected
+sh $G/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN $L/fals nil-clauses  173.20s user 30.74s system 328% cpu 1:01.99 total
+exit=0

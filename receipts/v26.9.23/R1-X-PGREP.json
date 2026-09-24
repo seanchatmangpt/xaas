@@ -1,0 +1,438 @@
+{
+ "identity": {
+  "subject": "R1-X-PGREP",
+  "repo": "/Users/sac/xaas",
+  "repo_slug": "seanchatmangpt/xaas",
+  "subject_sha": "c614b9a54bd466444290c2c6eeebf114fadc9028",
+  "base_sha": "e999e62b63c680517b9a562cef877d8b09b0cfdd",
+  "base_sha_why": "git merge-base v23/R1-X-PGREP friday/gc-fri-0800 = e999e62 (the frozen release subject whose qualification found F5)",
+  "branch": "v23/R1-X-PGREP",
+  "worktree": "/Users/sac/wt/v26922/v23/R1-X-PGREP",
+  "lane": "R1-X-PGREP (wave R1a, release defect repair F5; repair round 1)",
+  "defect": "F5: test/xaas/ultracode/dispatch_test.exs:600 survivor check was a machine-wide `pgrep -f \"zcode.js --prompt\"`; at e999e62 it reported 14 pids of unrelated live ZCode dispatches (release qualification /Users/sac/wt/v26922/v26923/receipts/fleet/xaas-e999e62b63c680517b9a562cef877d8b09b0cfdd.json failure 5, test.log lines 1024-1043)",
+  "prd_ard": "PRD section 13 (release stop condition), GC23-11 (bounded fleet: exact-subject standing), ARD section 25 (verification ladder: multi-repo exact-head qualification), ARD section 26 (required falsifiers, anti-vacuity), PR-013 (replay)",
+  "mix_lock_sha256": "9d8343c16444361b29cc422fc3d70f659d824767bc47229ddacf4fb407f3161b",
+  "deps_build_provenance": "deps/ and _build/test present from the prior run of this lane (mix.lock byte-identical to /Users/sac/wt/v26922/fri/xaas-int); _build/test deps compiled under Elixir 1.20.2 (compile.elixir_scm records 1.20.2); every run below recompiled the project under the pin (compile --force)",
+  "repair_round": {
+   "round": 1,
+   "court_verdicts_answered": {
+    "GATE": "refuted, admission_vacuous: the verbatim lane gate exited 1 at b8fe52f on the pre-existing `unused require Ash.Query` (semantic_drive.ex:78) under the pin. Accepted as correct and repaired by c614b9a. The gate now exits 0 at c614b9a.",
+    "REVERT-MUTATION": "pass: no change needed. The round-1 falsifiers were re-run at c614b9a (base reproduction, M0, M1, M2)"
+   },
+   "round0_subject_sha": "fcd4a56cb4965ba35d2f48367c8e203c4e07c725",
+   "round0_receipt_commit": "b8fe52f92d24de8e478588a4ec33ebc492352406"
+  },
+  "int_head_at_repair": {
+   "branch": "friday/gc-fri-0800",
+   "sha": "246460c256175c1641dda9480bcb95e54f5dc890",
+   "note": "while round 1 ran, int moved from e999e62 to 246460c (merge of v23/R1-X-COURTS c14a25c). That merge already deletes the same 2 lines. The lane base stays e999e62, and this lane merges cleanly into 246460c (see merge-tree.c614b9a.log and compose-gate)"
+  }
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave R1a lane R1-X-PGREP (workflow computed task; /Users/sac/wt/v26922/v26923/DRIVER.md 12:50 PT R1a entry; operator release sequence 'release defect repair': only the named defect may change). Own worktree only; no push, no integrate, no remote effect.",
+  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-PGREP)"
+ },
+ "consequence": {
+  "commits": [
+   "d7a230d0ed0fc1507c368fb43d837fccc87db4ee",
+   "fcd4a56cb4965ba35d2f48367c8e203c4e07c725",
+   "c614b9a54bd466444290c2c6eeebf114fadc9028"
+  ],
+  "commit_notes": {
+   "d7a230d": "test(dispatch): survivor check scoped to the pids + process group the dispatched worker records at spawn; a real unrelated `zcode.js --prompt` process runs for the whole test (test-only diff, 108+/7-)",
+   "fcd4a56": "docs(handwritten): ledger row for the hand-written test residue (UNSUPPORTED(generator-capability))",
+   "c614b9a": "fix(semantic_drive): delete `require Ash.Query` + its blank line (semantic_drive.ex:78-79). The hunk is byte-identical to R1-X-COURTS a4c2924 (merged to int as 246460c) and to R1-X-GUARD b7b3794. Blob 3e7ed75 is the same as the lane probe's. It removes the pre-existing compile --warnings-as-errors failure under the pin"
+  },
+  "files_changed": [
+   "test/xaas/ultracode/dispatch_test.exs",
+   "HANDWRITTEN.md",
+   "lib/xaas/ultracode/semantic_drive.ex"
+  ],
+  "files_changed_basis": "git diff --name-only e999e62 c614b9a. The receipt commits add only receipts/v26.9.23/R1-X-PGREP.json and receipts/v26.9.23/R1-X-PGREP.gate/** (round 1 under .gate/r1/)",
+  "remote_effects": [],
+  "local_effects": [
+   "local Postgres xaas_test (mix test alias ecto.create/ecto.migrate --quiet)",
+   "transient decoy processes (bash exec -a ... sleep 1500) started and stopped by with-decoy.sh around each run",
+   "mutation runs edited test/xaas/ultracode/dispatch_test.exs or lib/xaas/ultracode/dispatch.ex in the lane worktree and restored them from HEAD (git status --porcelain empty after each restore, logged); survivors left by M1 (pid 5860 `sleep 60`) and M2 (group 7703: 7708 sh, 7709 sleep) were killed after the runs",
+   "scratch: /private/tmp/claude-501/v23-scratch/R1a-R1-X-PGREP (logs, message files, harness; no clones)",
+   "round 1: mutations applied in the lane worktree and restored with `git checkout -- <file>` (porcelain empty after each restore, logged). Survivors left by M1 (33290 `sleep 60`) and M2 (group 34147: 34150 sh, 34151 sleep) were killed, and `pgrep -g 34147` afterwards returned exit 1 (group empty). The same cleanup was done for the superseded runs (28868; group 29341)",
+   "round 1 scratch: /private/tmp/claude-501/v23-scratch/R1a-R1-X-PGREP/r1. A detached composition worktree int-compose at 246460c got `git merge --no-ff --no-commit v23/R1-X-PGREP` and APFS-cloned deps/ and _build/test. It was then merge-aborted and removed (`git worktree list` shows no int-compose)"
+  ],
+  "reserved_files": "none touched (Friday-reserved xaas files: recipe_worker/engine/court_receipt/target_suites/semantic_receipt/semantic_crown/route/stop_court and docs/sjira/v26.9.22/friday/**; goal.ttl, courts, prd-ard.md untouched)",
+  "generated_vs_handwritten": {
+   "generated": [],
+   "handwritten": [
+    "test/xaas/ultracode/dispatch_test.exs (assert_spawned_gone!/3, os_pid_alive?/1, start_unrelated_zcode_prompt!/0, await_pattern_match!/2, the :600 test body)"
+   ],
+   "ledger": "HANDWRITTEN.md row 'test/xaas/ultracode/dispatch_test.exs (... survivor check ...)': UNSUPPORTED(generator-capability) -- 326 ggen-marketplace packs checked; agent-fleet-isolation-pack (worktree/cache sharing) and chicago-tdd-tools-pack (Rust CLI boundary tests) are nearest and do not render ExUnit process-lifecycle qualification; intended owner ultracode-actuation-lease-pack gates/",
+   "round1": "c614b9a is a 2-line deletion and adds no hand-written residue. semantic_drive.ex is already in the HANDWRITTEN.md V23-D row, so no new ledger row is needed"
+  },
+  "change": {
+   "old": "Process.sleep(2_500); pgrep -f \"zcode.js --prompt\" must be empty (machine-wide)",
+   "new": "the fake zcode.js records `$$ $(ps -o pgid= -p $$) $!` (worker pid, its process group = the perl wrapper's setpgrp group that ProcessGroup.kill targets, child pid) to SPAWNED_FILE at spawn; after the timeout, polled 25 x 200 ms: `pgrep -g <pgid>` empty AND kill -0 fails for both recorded pids; falsifier guard refuses a pass when nothing was recorded; a real unrelated `/bin/sh <tmp>/bin/zcode.js --prompt /xaas unrelated-live-dispatch` (port-held, blocks on stdin) is awaited visible to the old pattern before dispatch and asserted alive and still matched at the end"
+  },
+  "conservation": "c614b9a only deletes a `require` that the pinned compiler reports as unused. `Ash.Query.for_read/3` (the file's one remaining Ash.Query use) is a remote function call, not a macro, so no capability is removed. The F5 test repair (d7a230d) is unchanged: git diff fcd4a56 c614b9a -- test/ is empty"
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/R1-X-PGREP.gate/r1/ (round 1 at c614b9a: gate logs, v2 decoy harness, base reproduction, mutations, flake bound, composition with the int head, merge-tree, toolchain, harness refusal witness, superseded runs) and receipts/v26.9.23/R1-X-PGREP.gate/ (round 0 at fcd4a56/d7a230d)",
+  "commands": [
+   {
+    "cmd": "receipts/v26.9.23/R1-X-PGREP.gate/r1/with-decoy-v2.sh (starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`; runs the command only once `pgrep -f 'zcode.js --prompt'` returns the decoy pid, else exits 98; exits 97 unless the decoy is still alive and visible after the command; runs the command under the pin) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "LANE GATE (verbatim) at the exact subject with an external unrelated `zcode.js --prompt` process alive and visible before and after: Elixir 1.20.2/OTP 28, format 0, compile --force --warnings-as-errors 0 (Generated xaas app; the only compile warnings are in deps/ex4pm/mix.exs), Result: 32 passed",
+    "output_sha256": "5e41630b3b5bf176cc2a81d283712e68e0ce4a2817555a0f9a0e84adf45bc1fd",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/gate.c614b9a.decoy-v2.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs' (no external decoy; pgrep before = [])",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "LANE GATE (verbatim) at the exact subject, no decoy: format 0, compile 0, Result: 32 passed",
+    "output_sha256": "ee2a400b5389f099f04fa2bf42eff87dde25233c381b4aca3baecf4d44b0a02d",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/gate.c614b9a.nodecoy.log"
+   },
+   {
+    "cmd": "receipts/v26.9.23/R1-X-PGREP.gate/r1/with-decoy-v2.sh (starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`; runs the command only once `pgrep -f 'zcode.js --prompt'` returns the decoy pid, else exits 98; exits 97 unless the decoy is still alive and visible after the command; runs the command under the pin) + mix test test/xaas/ultracode/dispatch_test.exs:600 --repeat-until-failure 10",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "flake bound: 11 x 'Result: 1 passed, 31 excluded' (first run + 10 repeats), decoy alive and visible at end",
+    "output_sha256": "351b5770c7dfe2c554814a37f7b67d4730e71da4d20d8fd6cb34e0b0b2de56e8",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/repeat-600x10.c614b9a.decoy.log"
+   },
+   {
+    "cmd": "git -C /Users/sac/xaas worktree add --detach <scratch>/int-compose 246460c && cp -cR deps _build/test into it && git merge --no-ff --no-commit v23/R1-X-PGREP && with-decoy-v2 (cd = <scratch>/int-compose, compose-harness.diff) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs'",
+    "cwd": "<scratch>/int-compose = friday/gc-fri-0800 246460c + uncommitted merge of v23/R1-X-PGREP c614b9a",
+    "exit": 0,
+    "summary": "COMPOSITION with the current int head: the merge is automatic, and semantic_drive.ex auto-merges because both sides make the identical deletion. Verbatim gate with the decoy: format 0, compile 0 (deps recompiled for the new absolute path, deps-only warnings, no project warnings), Result: 32 passed",
+    "output_sha256": "248a34ca0069100faf4278ea15fbf8c491301bd605e75a9de3ef9468f55e0064",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/compose-gate.246460c+c614b9a.log"
+   },
+   {
+    "cmd": "for b in v23/R1-X-COURTS v23/R1-X-GUARD v23/R1-X-FENCE v23/R1-X-LOCK friday/gc-fri-0800; do git merge-tree --write-tree --name-only c614b9a $b; done",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "all 5 trial merges exit 0 (no conflicts), including both branches that make the same semantic_drive.ex deletion",
+    "output_sha256": "8399994e000e8c04dc8ad7ea7706f10fa077fe9dc7dfc0e4788c382e80f1def9",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/merge-tree.c614b9a.log"
+   },
+   {
+    "cmd": "! grep -rnE \"unittest\\.mock|Mock\\(|MagicMock|(^|[^A-Za-z_.])patch\\(|monkeypatch|Mox\\b|:meck|meck\\.\" test/xaas/ultracode/dispatch_test.exs test/support/fake-node.sh && ! grep -nwE 'unittest\\.mock|Mock|MagicMock|patch|monkeypatch|Mox|meck' test/xaas/ultracode/dispatch_test.exs test/support/fake-node.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "no matches for either pattern (each grep exits 1, so the negated command exits 0). The test uses real Postgres, real OS subprocesses, a real process-group kill and real pgrep/kill -0"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/R1-X-PGREP.json",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP",
+    "exit": 0,
+    "summary": "ADMITTED"
+   }
+  ]
+ },
+ "toolchain": {
+  "elixir": "Elixir 1.20.2 (compiled with Erlang/OTP 28)",
+  "erts": "16.4.0.2",
+  "elixir_bin": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir",
+  "mix_bin": "/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix",
+  "erl_bin": "/Users/sac/.asdf/installs/erlang/28.5.0.2/bin/erl",
+  "tool_versions_pin": {
+   "elixir": "1.20.2-otp-28",
+   "erlang": "28.5.0.2"
+  },
+  "tool_versions_pin_used": true,
+  "os": "macOS 26.2 (25C56)",
+  "pgrep": "/usr/bin/pgrep (BSD; -g pgrp and -f supported)",
+  "postgres_client": "psql (PostgreSQL) 14.19 (Homebrew)",
+  "validator": "python3 3.14.3, jsonschema 4.23.0",
+  "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/toolchain.c614b9a.log",
+  "round1_verified": "elixir --version under the pin: Elixir 1.20.2 (compiled with Erlang/OTP 28), otp_release 28 erts 16.4.0.2. mix.lock sha256 9d8343c1 matches fri/xaas-int. git 2.51.2",
+  "decoy_harness_sha256": "f279ef12b13c2db96e6b78a54483e5e9741f5e44de0d9938cd314be7ac5ad984"
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "replay.commands[0] and [1]: the verbatim lane gate at the exact subject c614b9a54bd466444290c2c6eeebf114fadc9028 (clean tree) under the .tool-versions pin exits 0 both with and without an external unrelated `zcode.js --prompt` process alive (32 passed; compile --warnings-as-errors 0). F5 is closed: under the same decoy the e999e62 test fails exactly on the decoy pid (witness). The fixed test fails when its own child escapes the group (M1), when the product leaves the group alive (M2), and when the machine-wide pattern is restored (M0). All four were re-run at c614b9a. The composition with int head 246460c also passes (replay.commands[3])",
+  "scope": "dispatch_test.exs (the lane gate). This is not a full-suite claim; the full suite under the pin belongs to R1-X-PIN"
+ },
+ "classification": {
+  "F5": "pre-existing, environment-dependent test (test isolation defect in the subject's test, not the product): the product's group kill was correct at e999e62; the assertion observed the host",
+  "gate_compile": "pre-existing (toolchain pin): repaired in round 1 by c614b9a with the same 2-line deletion R1-X-COURTS landed. e999e62 was admitted by gates run under ambient Elixir 1.19.5, so the pinned compile --warnings-as-errors never refused it (broken_term admission_vacuous, located in the base's admission, not in this lane)"
+ },
+ "falsifiers": {
+  "subject": "c614b9a54bd466444290c2c6eeebf114fadc9028",
+  "base_reproduction": {
+   "cmd": "git show e999e62:test/xaas/ultracode/dispatch_test.exs > test/xaas/ultracode/dispatch_test.exs && receipts/v26.9.23/R1-X-PGREP.gate/r1/with-decoy-v2.sh (starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`; runs the command only once `pgrep -f 'zcode.js --prompt'` returns the decoy pid, else exits 98; exits 97 unless the decoy is still alive and visible after the command; runs the command under the pin) + mix test test/xaas/ultracode/dispatch_test.exs:600 (then `git checkout -- <file>`, porcelain empty)",
+   "exit": 2,
+   "observed": "dispatched process survived the timeout kill: 32957. 32957 is the external decoy pid, so F5 reproduces",
+   "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/base-reproduction.e999e62-test.c614b9a.log",
+   "output_sha256": "c30e14c7f00cd59b3f032ee4ebbf1a81002a2c6f6a3780a7e4475fa4b45dfd38"
+  },
+  "M0_machine_wide_pattern": {
+   "mutation": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M0-machine-wide-pattern.diff (NO external decoy; pgrep before = [])",
+   "exit": 2,
+   "observed": "survivor 28225 reported. It was the only process matching the pattern during the run (no external match before), i.e. the test's own start_unrelated_zcode_prompt!/0 process, so reverting to the machine-wide pattern fails even on a quiet host",
+   "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/mutation-M0.c614b9a.log",
+   "output_sha256": "5c15a8734076b5723110cec9cedf4409a0f84fadacfeff535bb754e3d459ff72"
+  },
+  "M1_own_child_left_alive": {
+   "mutation": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M1-own-child-escapes.diff (decoy alive and visible)",
+   "exit": 2,
+   "observed": "dispatched process survived the timeout kill: group 33288 members [], recorded pids alive [33290]",
+   "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/mutation-M1.c614b9a.log",
+   "output_sha256": "ff203d45932b0e869d92c27278f4169ced92ab4244eba9b1e6e4890ca2d7a776"
+  },
+  "M2_product_leaves_group_alive": {
+   "mutation": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M2-product-no-group-kill.diff (decoy alive and visible)",
+   "exit": 2,
+   "observed": "group 34147 members [\"34150\", \"34151\"], recorded pids alive [34150, 34151]",
+   "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/mutation-M2.c614b9a.log",
+   "output_sha256": "f8bf5b20baa30f44af63097cfb0359d14691f97dbb97151dacc33bd0b8866901"
+  },
+  "gate_prerequisite_removed": {
+   "note": "the unused-require removal is load-bearing for the gate: without it, the same verbatim gate exits 1 at compile (round-0 logs gate.fcd4a56.log and gate.d7a230d.log, which have identical test and product bytes apart from this deletion)",
+   "log": "receipts/v26.9.23/R1-X-PGREP.gate/gate.fcd4a56.log",
+   "output_sha256": "2db49bd17879f98645596a7151cfce9ea736864cbe79f8dd6b9e37abbf12bcbc"
+  },
+  "decoy_harness_refusal": {
+   "mutation": "receipts/v26.9.23/R1-X-PGREP.gate/r1/harness-mutant-invisible.diff (the decoy argv no longer matches the old pattern)",
+   "exit": 98,
+   "observed": "'decoy visible ... before: no' then 'REFUSED: decoy not visible to the old pattern; command not run'. The command never ran (no COMMAND-RAN output line), so the decoy precondition gate has a witnessed refusal",
+   "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/harness-refusal.log",
+   "output_sha256": "f13932574cc1a35e76527808cc796bf3e237a4d99d5ec2649c1b75014817a481"
+  },
+  "pgid_reuse_residual": "the group check reads `pgrep -g <pgid>` up to ~5 s after the kill; a new unrelated process group reusing that exact pgid inside that window would false-red (never false-green); not observed",
+  "round0": {
+   "base_reproduction": {
+    "cmd": "git show e999e62:test/xaas/ultracode/dispatch_test.exs > test/... && with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + mix test test/xaas/ultracode/dispatch_test.exs:600 (then restored from HEAD, porcelain empty)",
+    "exit": 2,
+    "observed": "dispatched process survived the timeout kill: 3617 -- 3617 is the external decoy pid; F5 reproduced",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/base-reproduction.e999e62.decoy.log",
+    "output_sha256": "f608b8252e69a87a14a23f57dabd5354e20bf20ee83442f9c59fd45d4d17c95e"
+   },
+   "M0_machine_wide_pattern": {
+    "mutation": "in the fixed test, assert_spawned_gone!/2 replaced by the old machine-wide pgrep assertion (mutation-M0-machine-wide-pattern.diff); NO external decoy (pgrep before = [])",
+    "exit": 2,
+    "observed": "survivor 9572 reported -- the only process matching the pattern during the run; inferred to be the test's own start_unrelated_zcode_prompt!/0 process (no external match before, the dispatched group was killed); the regression is caught deterministically without host activity",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M0.log",
+    "output_sha256": "d6b8629a09571102f17b8e148b843b6a1130b6aeaba8968bed3c06549f6f695c"
+   },
+   "M1_own_child_left_alive": {
+    "mutation": "the worker's recorded child escapes the dispatched group: `perl -e 'setpgrp(0,0); exec @ARGV' sleep 60 &` (mutation-M1-own-child-escapes.diff), external decoy alive",
+    "exit": 2,
+    "observed": "dispatched process survived the timeout kill: group 5856 members [], recorded pids alive [5860] -- caught by the recorded-pid check (the old pattern could not see it: its cmdline is `sleep 60`)",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M1.log",
+    "output_sha256": "582b3947c6076e29cca6bde3764ce0cad9fbbd260cef1cb35f5e059c47173796"
+   },
+   "M2_product_leaves_group_alive": {
+    "mutation": "lib/xaas/ultracode/dispatch.ex `defp kill_group(_os_pid), do: :ok` (mutation-M2-product-no-group-kill.diff), external decoy alive",
+    "exit": 2,
+    "observed": "group 7703 members [7708, 7709], recorded pids alive [7708, 7709]",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M2.log",
+    "output_sha256": "b84f87e46ae5cf2f773c05cd4afcadd761eb32191d65ab47374d271d1a82fe7c"
+   },
+   "flake_bound": {
+    "cmd": "with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + mix test test/xaas/ultracode/dispatch_test.exs:600 --repeat-until-failure 10",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md)",
+    "exit": 0,
+    "observed": "10 consecutive passes at load average ~55-75 with the external decoy alive",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/repeat-600x10.d7a230d.decoy.log",
+    "output_sha256": "b93a22efbb1394c40c7f5f514fdb277f28b4c8081284dd2602035bbf4752e163"
+   },
+   "pgid_reuse_residual": "the group check reads `pgrep -g <pgid>` up to ~5 s after the kill; a new unrelated process group reusing that exact pgid inside that window would false-red (never false-green); not observed"
+  }
+ },
+ "witnesses": {
+  "note": "round-1 runs whose non-zero exit is the expected observation, plus the v1-harness gate run and the superseded runs. Round-0 replay entries and witnesses are preserved under round0 (including the exit-1 gate at fcd4a56 that the GATE court refuted)",
+  "commands": [
+   {
+    "cmd": "base reproduction (falsifiers.base_reproduction)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree) + e999e62 test file",
+    "exit": 2,
+    "summary": "F5 reproduced on the decoy pid 32957",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/base-reproduction.e999e62-test.c614b9a.log",
+    "output_sha256": "c30e14c7f00cd59b3f032ee4ebbf1a81002a2c6f6a3780a7e4475fa4b45dfd38"
+   },
+   {
+    "cmd": "M0 (falsifiers)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree) + mutation",
+    "exit": 2,
+    "summary": "survivor 28225 (the test's own unrelated process)",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/mutation-M0.c614b9a.log",
+    "output_sha256": "5c15a8734076b5723110cec9cedf4409a0f84fadacfeff535bb754e3d459ff72"
+   },
+   {
+    "cmd": "M1 (falsifiers)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree) + mutation",
+    "exit": 2,
+    "summary": "recorded child 33290 alive -> fail",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/mutation-M1.c614b9a.log",
+    "output_sha256": "ff203d45932b0e869d92c27278f4169ced92ab4244eba9b1e6e4890ca2d7a776"
+   },
+   {
+    "cmd": "M2 (falsifiers)",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree) + mutation",
+    "exit": 2,
+    "summary": "group 34147 members alive -> fail",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/mutation-M2.c614b9a.log",
+    "output_sha256": "f8bf5b20baa30f44af63097cfb0359d14691f97dbb97151dacc33bd0b8866901"
+   },
+   {
+    "cmd": "harness-mutant-invisible.sh <log> 'echo COMMAND-RAN'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 98,
+    "summary": "decoy precondition refused, command not run",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/harness-refusal.log",
+    "output_sha256": "f13932574cc1a35e76527808cc796bf3e237a4d99d5ec2649c1b75014817a481"
+   },
+   {
+    "cmd": "receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh (round-0 v1 harness, logs pgrep only) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "the first round-1 gate run at the subject: 32 passed, decoy 20961 listed by pgrep before and after",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/gate.c614b9a.decoy-v1.log",
+    "output_sha256": "1bc70eba07dea0f51af2ace90e86ceaba32f3dc77e9e6f1c782bb1b1152f29fc"
+   },
+   {
+    "cmd": "receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh <log> 'pgrep -fl \"zcode.js --prompt\"; ...'",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ c614b9a (clean tree)",
+    "exit": 0,
+    "summary": "the decoy is visible to pgrep inside the harness command (probe)",
+    "log": "receipts/v26.9.23/R1-X-PGREP.gate/r1/probe-decoy-visibility.v1-harness.log",
+    "output_sha256": "1c2d515d5b34aefed698138e377806586807118b0b943db8b2e4daba09e67b34"
+   }
+  ],
+  "superseded": {
+   "note": "round-1 runs made with an earlier with-decoy-v2.sh. It differs from the committed harness only in 3 header comment lines, and that text wrongly described an anomaly in the v1 run; the v1 log shows none (superseded/harness-comment-only.diff). All of these runs were repeated with the committed bytes, and the results are the same",
+   "logs": {
+    "superseded/base-reproduction.e999e62-test.c614b9a.log": "2b2ce9723ac669473c5513d9473f43a7169b9d9689113817b5eee7ad2feb2a28",
+    "superseded/gate.c614b9a.v2.log": "f45462895b2e1be01e2fe2a0f749e3f85a221cf46b22919344c03b7cd124c34c",
+    "superseded/mutation-M1.c614b9a.log": "63785cf896d86f175efffc10764b5bdcbe078275784ce6b4be21c421e9bd3b8e",
+    "superseded/mutation-M2.c614b9a.log": "664a5b6a22f00ac115438667cacaca0c04edb69db8f1d125ba970a5a3a484802",
+    "superseded/repeat-600x10.c614b9a.decoy.log": "86ab8a07e008adda0e5f33f32527d6a17f5ee5d571529b1178cbe1e21f657b5f"
+   }
+  },
+  "round0": {
+   "replay_commands": [
+    {
+     "cmd": "with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs'",
+     "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ fcd4a56 (clean tree)",
+     "exit": 1,
+     "summary": "LANE GATE (verbatim) at fcd4a56 with an external unrelated `zcode.js --prompt` process alive: elixir 1.20.2/OTP 28 ok; format --check-formatted 0; compile --force --warnings-as-errors FAILS on `warning: unused require Ash.Query` lib/xaas/ultracode/semantic_drive.ex:78 (pre-existing under the pin, outside this lane's diff); mix test not reached",
+     "output_sha256": "2db49bd17879f98645596a7151cfce9ea736864cbe79f8dd6b9e37abbf12bcbc",
+     "log": "receipts/v26.9.23/R1-X-PGREP.gate/gate.fcd4a56.log"
+    },
+    {
+     "cmd": "with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix test test/xaas/ultracode/dispatch_test.exs'",
+     "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ fcd4a56 (clean tree)",
+     "exit": 0,
+     "summary": "lane gate step 3 at fcd4a56 with the external decoy alive (pid 25031 alive at end): Result: 32 passed (incl. :600)",
+     "output_sha256": "233cc5cdae4513163ec77e90f6103c94ca24c8c37105919e1854715e07fa7cd1",
+     "log": "receipts/v26.9.23/R1-X-PGREP.gate/test.fcd4a56.decoy.log"
+    },
+    {
+     "cmd": "git apply probe-unused-require.diff (delete `require Ash.Query` + blank line, semantic_drive.ex:78-79) && with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs' (then semantic_drive.ex restored from HEAD, porcelain empty)",
+     "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ fcd4a56 + uncommitted probe",
+     "exit": 0,
+     "summary": "COMPOSITION PROBE (not committed): with the pre-existing pinned-toolchain warning removed, the full verbatim lane gate exits 0: format 0, compile --force --warnings-as-errors 0 (Generated xaas app; no project warnings), dispatch_test 32 passed with the external decoy alive",
+     "output_sha256": "4f2caa26493afd31930c80aacbc0c1cafd6e855a8b54ce2804b4344fb1a47e01",
+     "log": "receipts/v26.9.23/R1-X-PGREP.gate/probe-gate.fcd4a56.log"
+    },
+    {
+     "cmd": "! grep -rnE \"unittest\\.mock|Mock\\(|MagicMock|(^|[^A-Za-z_.])patch\\(|monkeypatch|Mox\\b|:meck|meck\\.\" test/xaas/ultracode/dispatch_test.exs test/support/fake-node.sh",
+     "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ fcd4a56 (clean tree)",
+     "exit": 0,
+     "summary": "no matches (grep exit 1, negated 0). The unbounded pattern `patch(` matches only `Dispatch.dispatch(` call sites (substring), no mocking: real Postgres, real OS subprocesses, real process-group kill, real pgrep/kill -0"
+    },
+    {
+     "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/R1-X-PGREP.json",
+     "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP",
+     "exit": 0,
+     "summary": "ADMITTED"
+    }
+   ],
+   "witnesses": {
+    "note": "runs whose non-zero exit is the expected observation (base reproduction, mutations) and the same gate/test runs at the fix commit d7a230d; kept out of replay.commands",
+    "commands": [
+     {
+      "cmd": "with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs'",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md)",
+      "exit": 1,
+      "summary": "verbatim gate at d7a230d: format 0, compile --warnings-as-errors fails on semantic_drive.ex:78 (same pre-existing warning)",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/gate.d7a230d.log",
+      "output_sha256": "0daac4adf1fc44af4eda3d0dcc3611a2e0a71b82943c2c44bb97bb5ecfa7cae9"
+     },
+     {
+      "cmd": "with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + mix test test/xaas/ultracode/dispatch_test.exs",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md)",
+      "exit": 0,
+      "summary": "32 passed, external decoy alive at end",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/test.d7a230d.decoy.log",
+      "output_sha256": "3d3ce4653d0d47dc3836ead82c5be5ff236e01d4d9c73b1d4def19ec41c60386"
+     },
+     {
+      "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix test test/xaas/ultracode/dispatch_test.exs (no external decoy; pgrep before/after = [])",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md)",
+      "exit": 0,
+      "summary": "32 passed in 25.6 s",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/test.d7a230d.nodecoy.log",
+      "output_sha256": "e86db1c35b6f45bb7d73f4c62d7fc02e3526fc757e63fd987b01f59cae5cc962"
+     },
+     {
+      "cmd": "probe-unused-require.diff + with-decoy.sh (receipts/v26.9.23/R1-X-PGREP.gate/with-decoy.sh: starts `/bin/bash -c 'exec -a \"node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy\" /bin/sleep 1500'`, logs `pgrep -fl 'zcode.js --prompt'` before/after, runs the command under the pin, stops the decoy) + PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH sh -c 'elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs'",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md) + uncommitted probe",
+      "exit": 0,
+      "summary": "composition probe at d7a230d: full gate exit 0, 32 passed",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/probe-gate.d7a230d.log",
+      "output_sha256": "343199b1ca882b53947da082844f7f5a868328f962d66f1d9661a80150fe4ada"
+     },
+     {
+      "cmd": "base reproduction (see falsifiers.base_reproduction)",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP (test = e999e62 content, product = d7a230d = e999e62 product)",
+      "exit": 2,
+      "summary": "F5 reproduced on the decoy pid",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/base-reproduction.e999e62.decoy.log",
+      "output_sha256": "f608b8252e69a87a14a23f57dabd5354e20bf20ee83442f9c59fd45d4d17c95e"
+     },
+     {
+      "cmd": "M0 (see falsifiers)",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md) + mutation",
+      "exit": 2,
+      "summary": "fails deterministically on the test's own unrelated process",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M0.log",
+      "output_sha256": "d6b8629a09571102f17b8e148b843b6a1130b6aeaba8968bed3c06549f6f695c"
+     },
+     {
+      "cmd": "M1 (see falsifiers)",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md) + mutation",
+      "exit": 2,
+      "summary": "recorded child alive -> fail",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M1.log",
+      "output_sha256": "582b3947c6076e29cca6bde3764ce0cad9fbbd260cef1cb35f5e059c47173796"
+     },
+     {
+      "cmd": "M2 (see falsifiers)",
+      "cwd": "/Users/sac/wt/v26922/v23/R1-X-PGREP @ d7a230d (clean tree; test+product bytes identical to fcd4a56: git diff --name-only d7a230d fcd4a56 = HANDWRITTEN.md) + mutation",
+      "exit": 2,
+      "summary": "group members alive -> fail",
+      "log": "receipts/v26.9.23/R1-X-PGREP.gate/mutation-M2.log",
+      "output_sha256": "b84f87e46ae5cf2f773c05cd4afcadd761eb32191d65ab47374d271d1a82fe7c"
+     }
+    ]
+   },
+   "standing": {
+    "value": "PARTIAL_ALIVE",
+    "derived_from": "at exact subject fcd4a56 under the .tool-versions pin: F5 closed -- dispatch_test.exs 32 passed with an unrelated `zcode.js --prompt` process alive (external decoy) in addition to the test's own unrelated process; the base test (e999e62) under the same condition fails exactly on the decoy pid; mutations M0 (machine-wide pattern restored, no external decoy), M1 (the test's own child escapes the group) and M2 (Dispatch group kill disabled) each make :600 fail. Not ALIVE: the verbatim lane gate exits 1 at compile --warnings-as-errors on the pre-existing pinned-toolchain warning semantic_drive.ex:78 (unused require Ash.Query), outside this lane's diff; with that line removed (probe) the same gate exits 0.",
+    "broken_term": "admission_vacuous",
+    "broken_term_scope": "the pre-existing gate break, not F5: e999e62 was admitted by gates run under ambient Elixir 1.19.5 instead of the .tool-versions pin 1.20.2, so compile --warnings-as-errors never refused semantic_drive.ex:78",
+    "gate_failure_classification": "pre-existing (toolchain pin), not a subject defect of this lane",
+    "dependency": "the unused-require removal is owned by lane R1-X-PIN (wave R1a, named as known candidate; `after` includes R1-X-PGREP) and is also in progress in R1-X-COURTS (read-only `git -C /Users/sac/wt/v26922/v23/R1-X-COURTS diff -- lib/xaas/ultracode/semantic_drive.ex` at ~2026-09-23T20:39Z shows `-  require Ash.Query`, uncommitted on e999e62); the lane gate is expected to pass on the int head once either merges"
+   }
+  }
+ },
+ "llm_on_path": "none: mix, sh, perl, pgrep, kill only; no model API, no zcode/claude binary on any executed path (the `zcode.js` files are the test's own shell scripts)",
+ "open": [
+  "Integrate: merge v23/R1-X-PGREP into friday/gc-fri-0800 (now 246460c). The merge is automatic, and the composition gate passes (replay.commands[3])",
+  "HANDWRITTEN.md: sibling lanes R1-X-COURTS/R1-X-GUARD/R1-X-FENCE insert rows directly under '## Active'; this lane's row is in a disjoint hunk (merge-tree exit 0 against all of them)"
+ ]
+}

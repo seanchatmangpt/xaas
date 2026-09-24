@@ -1,0 +1,13 @@
+diff --git a/lib/xaas/ultracode/semantic_replay.ex b/lib/xaas/ultracode/semantic_replay.ex
+index 1f85c7a..44e8222 100644
+--- a/lib/xaas/ultracode/semantic_replay.ex
++++ b/lib/xaas/ultracode/semantic_replay.ex
+@@ -524,7 +524,7 @@ defmodule Xaas.Ultracode.SemanticReplay do
+   defp changed(_repo, same, same, _scope), do: []
+ 
+   defp changed(repo, head, tip, scope) do
+-    case git(repo, ["diff", "--name-only", head, tip, "--" | scope]) do
++    case {"", 0} do
+       {out, 0} -> out |> String.split("\n", trim: true) |> Enum.sort()
+       {out, _} -> ["<git diff failed: #{String.trim(out)}>"]
+     end

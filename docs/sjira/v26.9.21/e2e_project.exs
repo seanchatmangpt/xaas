@@ -27,6 +27,15 @@
 #                trusting any digest string (Xaas.Ultracode.SemanticWork.
 #                AdmissionBinding); with the envelope omitted or altered
 #                consistently, a tamper is still refused.
+#   4. declare   the descriptor declares the producer's digest form
+#                (`digest_form`, the versioned contract XaaS recomputes under;
+#                AdmissionBinding "Digest forms"). This driver emits
+#                "sjira-digest/2" (ggen_igniter 33c8e86+: the admitted snapshot
+#                embeds definition_digest, taken over the closed definition
+#                whitelist) and REFUSES emission when the graph side it runs on
+#                does not compute that form (the embedded definition digest is
+#                absent or differs from definition_digest/1) -- the form is
+#                checked where it is produced, never inferred downstream.
 #
 # Dependencies: this driver has no receipt ledger, so a work order with
 # non-empty dependencies is refused (upstream receipt evidence would have to
@@ -38,6 +47,8 @@ alias_name = System.get_env("ALIAS") || "sj001"
 suite = System.get_env("VERIFIER_SUITE") || "sjira-e2e"
 suffix = System.get_env("CHECKPOINT_SUFFIX") || ""
 expected = System.get_env("EXPECTED_DIGEST")
+# The digest contract this driver emits (AdmissionBinding "Digest forms").
+digest_form = "sjira-digest/2"
 
 refuse = fn stage, reason, extra ->
   IO.puts(Jason.encode!(Map.merge(%{"ok" => false, "stage" => stage, "reason" => reason}, extra)))
@@ -66,6 +77,14 @@ case GgenIgniter.SemanticJira.admit_work_order(work_order) do
       true ->
         {:ok, definition} = GgenIgniter.SemanticJira.definition_digest(work_order)
 
+        if admitted["definition_digest"] != definition do
+          refuse.("digest_form", "producer_does_not_compute_declared_form", %{
+            "declared" => digest_form,
+            "embedded_definition_digest" => admitted["definition_digest"],
+            "definition_digest" => definition
+          })
+        end
+
         descriptor = %{
           "work_order_iri" => "urn:semantic-jira:work-order:" <> admitted["identity"],
           "checkpoint_iri" =>
@@ -73,6 +92,7 @@ case GgenIgniter.SemanticJira.admit_work_order(work_order) do
           "graph_digest" => digest,
           "admission_digest" => digest,
           "admitted_work_order" => admitted,
+          "digest_form" => digest_form,
           "repository_identity" => admitted["repository"],
           "execution_repo_alias" => alias_name,
           "base_sha" => admitted["base_sha"],
@@ -103,6 +123,7 @@ case GgenIgniter.SemanticJira.admit_work_order(work_order) do
             "identity" => admitted["identity"],
             "work_order_digest" => digest,
             "definition_digest" => definition,
+            "digest_form" => digest_form,
             "descriptor" => out_path
           })
         )

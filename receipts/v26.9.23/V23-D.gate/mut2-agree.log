@@ -1,0 +1,40 @@
+MUT-2 verify_hops cross-hop agreement ignored (HEAD 7fec9d8 + mutation)
+ lib/xaas/ultracode/semantic_drive.ex | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+Generated xaas app
+02:59:04.146 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+02:59:04.874 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+02:59:05.231 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 353172, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+..
+
+  1) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:107
+     match (=) failed
+     code:  assert {:refused, %{"reason" => "tuple_digest_mismatch", "hop" => "provider", "detail" => detail}} =
+              SemanticDrive.verify_hops(forged)
+     left:  {:refused, %{"reason" => "tuple_digest_mismatch", "hop" => "provider", "detail" => detail}}
+     right: {:ok,
+             %{
+               "request_digest" => "sha256:ce5ced850c8b671de515615529fe5510a2f2297417aa6b7c00ef3bfabc7fbf41",
+               "tuple_digest" => "sha256:d3f1ad3d48311d104566d19cfcb069bfdee47f12b9c58701b1b9d69ba9208906"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:180: (test)
+
+..
+Finished in 21.5 seconds (0.00s async, 21.5s sync)
+5 tests, 1 failure

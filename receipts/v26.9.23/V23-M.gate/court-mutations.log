@@ -1,0 +1,29 @@
+M1-literal-capability: exit=1 :: REFUSED: GC23-9 the recorded episodes do not witness the ratchet
+M2-exploration-in-ep2: exit=1 :: REFUSED: GC23-9 the recorded episodes do not witness the ratchet
+M3-route-not-the-experience: exit=1 :: REFUSED: GC23-9 the recorded episodes do not witness the ratchet
+M4-over-budget: exit=1 :: REFUSED: GC23-9 the recorded episodes do not witness the ratchet
+M5-llm-provider-in-ep2: exit=1 :: REFUSED: GC23-9 the recorded episodes do not witness the ratchet
+M6-ep2-not-fewer-steps: exit=1 :: REFUSED: GC23-9 the recorded episodes do not witness the ratchet
+M7-court-reverted-to-V23-P-stub: exit=75 :: UNKNOWN: GC23-9 machinery lands in lane V23-M
+--- the assertion each mutation tripped (python AssertionError line of the court log) ---
+M1-literal-capability: AssertionError: /private/tmp/claude-501/v23-scratch/B1b-V23-M/mut/M1-literal-capability/me-2: an order declares a capability
+M2-exploration-in-ep2: AssertionError: me-2 has an exploration artifact
+M3-route-not-the-experience: AssertionError: {'admission': 'https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2-admission', 'admission_digest': 'sha256:e042b7e74bed7507925e7fbab14b5681e0583ce41cfd9a34f62811f190771c56', 'capability': 'recipe:mix-format', 'experience_digest': 'sha256:d8e720a599d3c7e2fefdf42b9fcb4072a896a3b7707eb1b1c828cee0ef1f0a81', 'experiences_applicable': ['https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2'], 'experiences_considered': ['https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2'], 'machine_experience': 'https://ggen-igniter.dev/sjira/v26.9.23#ME-0000000000000000', 'order': 'EP-A', 'predicate_sha256': 'sha256:3e6523a47a725da300771eee7c06e0487ab22da181db885b01bd54b0414c73d0', 'problem_class': 'format_drift', 'provider_class': 'recipe', 'source': 'machine_experience'}
+M4-over-budget: AssertionError: {'attempts': [{'capability': 'recipe:mix-format', 'dir': 'drive', 'evidence': ['drive_alive', 'independent_pass', 'revert_killed', 'r_alive'], 'seconds': 11}], 'candidates': 1, 'drive_runs': 3, 'elapsed_s': 22}
+M5-llm-provider-in-ep2: AssertionError: me-2 LLM-provider events ['e003-CapabilityResolved', 'e004-ActuationStarted', 'e005-LeaseAcquired', 'e006-ActuationCompleted'], exploration events []
+M6-ep2-not-fewer-steps: AssertionError: (20, 20)
+M8-router-ignores-experience (code revert-mutation at /private/tmp/claude-501/v23-scratch/B1b-V23-M/mut-wt): exit=1 :: REFUSED: GC23-9 live route over the admitted graph exited 4, expected 0 (KNOWN)
+M8 diff:
+diff --git a/lib/xaas/ultracode/machine_experience.ex b/lib/xaas/ultracode/machine_experience.ex
+index bda33fd..0a9e8c4 100644
+--- a/lib/xaas/ultracode/machine_experience.ex
++++ b/lib/xaas/ultracode/machine_experience.ex
+@@ -369,7 +369,7 @@ defmodule Xaas.Ultracode.MachineExperience do
+   end
+ 
+   def route(row, graph) do
+-    considered = if graph, do: experiences(graph), else: []
++    considered = if graph, do: [], else: []
+ 
+     applicable =
+       Enum.filter(considered, fn experience ->

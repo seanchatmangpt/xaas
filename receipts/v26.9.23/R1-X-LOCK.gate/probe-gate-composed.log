@@ -1,0 +1,54 @@
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-LOCK/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-LOCK/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 520 files (.ex)
+Compiling lib/mix/tasks/xaas.ultracode.learn.ex (it's taking more than 10s)
+Compiling lib/mix/tasks/xaas.autonomic.controls.ex (it's taking more than 10s)
+Generated xaas app
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-LOCK/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+13:17:53.410 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:17:55.214 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:17:56.569 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:17:56.881 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:17:56.881 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:17:56.916 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:17:56.916 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:17:56.938 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:17:56.938 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:17:56.949 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:17:56.949 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+13:17:56.959 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:17:56.959 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+13:17:56.964 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:17:56.964 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-LOCK/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 604882, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.................................
+Finished in 12.0 seconds (1.7s async, 10.3s sync)
+
+Result: 33 passed
+probe gate exit=0

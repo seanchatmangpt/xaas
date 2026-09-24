@@ -1,0 +1,146 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-DIGEST/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+14:46:39.838 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+14:46:40.631 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+14:46:41.536 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+14:46:41.758 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:41.758 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+14:46:41.773 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:41.773 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+14:46:41.790 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:41.790 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+14:46:41.807 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:41.807 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+14:46:41.822 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:41.822 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+Running ExUnit with seed: 787801, max_cases: 32
+14:46:41.831 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+14:46:41.831 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-DIGEST/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.........................
+
+  1) test digest form (versioned producer contract) an embedded definition digest altered after admission is refused as stale (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:495
+     match (=) failed
+     The following variables were pinned:
+       embedded = "sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58"
+     code:  assert {:error, {:refused_semantic_work, {:admitted_definition_stale, ^embedded}}} =
+              SemanticWork.admit(altered, binding: :snapshot)
+     left:  {:error, {:refused_semantic_work, {:admitted_definition_stale, ^embedded}}}
+     right: {:ok,
+             %{
+               bridge: %{
+                 "definition_digest" => "sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58",
+                 "identity" => "SJ-001",
+                 "repository" => "seanchatmangpt/xaas",
+                 "requires" => %{
+                   "acceptance" => ["one SJ-00x work order from this dir is admitted by GgenIgniter.SemanticJira.admit_work_order/1",
+                    "`mix xaas.semantic.materialize` accepts it and `mix xaas.semantic.receipt` seals a receipt",
+                    "replay of the receipt reproduces the same digest"],
+                   "courts" => ["compile", "tests",
+                    "chicago_no_mocks"],
+                   "falsifiers" => ["materialize accepts a WorkOrder whose digest was altered after admission",
+                    "receipt seals without the required courts passing"]
+                 },
+                 "source_snapshot_digest" => "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+                 "subject" => "xaas-semantic-jira-e2e"
+               },
+               dependencies: [],
+               provider: "zcode",
+               digest_form: "sjira-digest/2",
+               admitted_work_order: %{
+                 "acceptance" => ["one SJ-00x work order from this dir is admitted by GgenIgniter.SemanticJira.admit_work_order/1",
+                  "`mix xaas.semantic.materialize` accepts it and `mix xaas.semantic.receipt` seals a receipt",
+                  "replay of the receipt reproduces the same digest"],
+                 "admitted" => true,
+                 "authority" => "NONE",
+                 "authority_requirement" => "NONE",
+                 "base_sha" => "8e72cfcb85bd901ad067589295598eb7580a1442",
+                 "candidate_sha" => nil,
+                 "definition_digest" => "sha256:00cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58",
+                 "dependencies" => [],
+                 "description" => "xaas already shells to `mix semantic_jira.*` (semantic_crown.ex, mix xaas.semantic.materialize/receipt), but no committed proof shows an admitted WorkOrder from this directory flowing admit -> materialize -> receipt -> replay. Produce that proof.",
+                 "dimensions" => %{
+                   "admitted" => false,
+                   "changed" => false,
+                   "constructed" => false,
+                   "deployed" => false,
+                   "executed" => false,
+                   "inferred" => false,
+                   "merged" => false,
+                   "observed" => false,
+                   "published" => false,
+                   "receipted" => false,
+                   "replayed" => false,
+                   "selected" => false,
+                   "verified" => false
+                 },
+                 "evidence_ceiling" => "EXECUTED_VERIFIED",
+                 "falsifiers" => ["materialize accepts a WorkOrder whose digest was altered after admission",
+                  "receipt seals without the required courts passing"],
+                 "identity" => "SJ-001",
+                 "path_scope" => ["lib/xaas/ultracode/**",
+                  "lib/mix/tasks/xaas.semantic.*",
+                  "test/xaas/ultracode/**", "docs/sjira/**"],
+                 "projections" => ["jira", "verification",
+                  "receipt"],
+                 "promotion_rule" => "verified_by_required_courts_then_receipted",
+                 "replay_identity" => "sjira-v26.9.21-sj-001",
+                 "replay_required" => false,
+                 "repository" => "seanchatmangpt/xaas",
+                 "required_courts" => ["compile", "tests",
+                  "chicago_no_mocks"],
+                 "required_evidence" => ["command_exit_codes",
+                  "real_output"],
+                 "required_receipt_classes" => ["manufacture",
+                  "verification"],
+                 "standing" => "ALIVE",
+                 "subject" => "xaas-semantic-jira-e2e",
+                 "title" => "xaas consumes a real Semantic Jira WorkOrder end to end",
+                 "work_order_digest" => "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7"
+               },
+               admission_digest: "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+               base_sha: "8e72cfcb85bd901ad067589295598eb7580a1442",
+               repository_identity: "seanchatmangpt/xaas",
+               work_order_iri: "urn:semantic-jira:work-order:SJ-001",
+               checkpoint_iri: "urn:semantic-jira:checkpoint:SJ-001@sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+               goal: "xaas consumes a real Semantic Jira WorkOrder end to end: xaas already shells to `mix semantic_jira.*` (semantic_crown.ex, mix xaas.semantic.materialize/receipt), but no committed proof shows an admitted WorkOrder from this directory flowing admit -> materialize -> receipt -> replay. Produce that proof.",
+               graph_digest: "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+               execution_repo_alias: "sj001",
+               verifier_suite: "sjira-e2e",
+               execution_policy: :autonomic_wave_attempt,
+               court_map: nil
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:506: (test)
+
+...
+
+  2) test digest form (versioned producer contract) a descriptor whose declared form mismatches its digests is refused, typed (Xaas.Ultracode.SemanticWorkTest)
+     test/xaas/ultracode/semantic_work_test.exs:446
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:admitted_definition_stale, recomputed}}} =
+              SemanticWork.admit(faked, binding: :snapshot)
+     left:  {:error, {:refused_semantic_work, {:admitted_definition_stale, recomputed}}}
+     right: {:error,
+             {:refused_semantic_work,
+              {:admitted_snapshot_mismatch,
+               :bridge_definition_digest}}}
+     stacktrace:
+       test/xaas/ultracode/semantic_work_test.exs:477: (test)
+
+....
+Finished in 3.4 seconds (0.2s async, 3.1s sync)
+
+Result: 32/34 passed
+Failed: 2 tests

@@ -1,0 +1,17 @@
+Merge friday/gc-fri-0800 (c561d9f) into v23/R1-X-LOCK - bring the pinned-gate prerequisite (release defect repair R1c, F1)
+
+Merge forward (no rebase) so the R1-X-LOCK lane gate runs on a head that
+contains the removal of the unused `require Ash.Query`
+(lib/xaas/ultracode/semantic_drive.ex:78; c614b9a via R1-X-PGREP, also
+integrated with R1-X-COURTS merge 246460c). That warning failed
+`MIX_ENV=test mix compile --force --warnings-as-errors` under the
+.tool-versions pin (Elixir 1.20.2-otp-28) at 27cbcbe and blocked the R1a
+gate (pre-existing, outside this lane's diff).
+
+No conflicts: the lane diff (27cbcbe: priv/zcode_plugin/ggen.lock; fa0d88c:
+receipts/v26.9.23/R1-X-LOCK.*) and e999e62..c561d9f touch disjoint paths.
+
+Refs: ARD section 22 (generator-owned artifacts), ARD section 5.5
+(deterministic projection), PRD PR-013 (Replay), PRD section 13 (Release
+Stop Condition); DRIVER.md release closure procedure (only the named defect
+changes).

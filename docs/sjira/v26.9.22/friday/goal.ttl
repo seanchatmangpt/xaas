@@ -1,0 +1,373 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix fri: <https://ggen-igniter.dev/sjira/v26.9.22/friday#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# GC-FRI-0800: the governing object of the Friday 2026-09-25 08:00 PT stop
+# court (plan: ~/.claude/plans/i-need-you-to-iterative-sedgewick.md; scope:
+# /Users/sac/wt/v26922/COORDINATION.md "Friday Stop Court scope").
+#
+# Vocabulary: the semantic-jira-pack sj: namespace (ggen_igniter
+# priv/ggen/semantic-jira-pack/ontology.ttl), including the Friday
+# GoalCheckpoint contract (sj:GoalCheckpoint, sj:checkpointOf,
+# sj:boundaryClass, sj:courtCommand, sj:stopQuery, sj:successorOf and the
+# WorkOrder tuple sj:postcondition / sj:requiresCapability / sj:evidenceHorizon
+# / sj:exclusion / sj:consequenceClass / sj:successorPolicy). Admission (G4):
+# this graph merged with the pack ontology, validated by
+# GgenIgniter.SemanticJira.Shacl against shapes/work-order.shacl.ttl.
+#
+# Law of this graph:
+# - It never asserts a receipt, and the stop court ignores any sj:standing
+#   written here: standing is observed, never declared. `mix xaas.stop_court`
+#   runs each gate's sj:courtCommand from the xaas repository root, writes one
+#   R-schema gate receipt per gate (docs/sjira/v26.9.22/friday/receipts/<G>.json),
+#   projects the receipts ADMITTED by validate_receipt.py into sj:Receipt
+#   nodes, and evaluates GC-FRI-0800's sj:stopQuery (= stop.rq) over this
+#   graph plus those nodes. Exit 0 only when STOP=true.
+# - Court commands for gates whose machinery lands later in the week are the
+#   commands the plan names (they fail until then, so the gate stays UNKNOWN,
+#   which is the correct standing). The lane that lands a gate's machinery
+#   edits that gate's sj:courtCommand here; this graph is the source.
+# - Discovered work that does not falsify one of G0..G12 is filed under the
+#   successor GC-026923 and cannot hold this checkpoint open.
+# - ${GGEN_IGNITER_DIR:-$HOME/ggen_igniter} in a court command names the
+#   ggen_igniter checkout under judgement (the Friday integration worktree
+#   before merge, ~/ggen_igniter after).
+
+# ── Root and successor ──────────────────────────────────────────────────────
+
+fri:GC-FRI-0800 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-FRI-0800" ;
+    rdfs:label "GC-FRI-0800 Friday 2026-09-25 08:00 PT stop court" ;
+    dcterms:description "STOP(Fri0800) = G0 and ... and G12, subject to: everything left on the frontier is Successor, Blocked, Unsupported or Refused; no required item is UNKNOWN; no LLM is required on the steady-state KNOWN path. Completion is a finite semantic predicate compiled from accepted prose (Vision 2030 + the Friday WBPR), never 'no more work'." ;
+    sj:baseSha "0d57147fc410444f2bf4608242e42075e2fea7c6" ;
+    sj:exclusion "Discovered work that does not falsify one of G0..G12 is filed under GC-026923.",
+        "ZOE Wednesday is a successor, not a Friday gate.",
+        "No unbounded completion search and no inference of what arbitrary programs mean (Busy Beaver and Rice avoided by construction)." ;
+    sj:courtCommand "mix xaas.stop_court --checkpoint GC-FRI-0800" ;
+    sj:stopQuery """# STOP(GC-FRI-0800). True iff (1) GC-FRI-0800 has at least one child gate,
+# (2) every child gate (sj:checkpointOf GC-FRI-0800) has a gate receipt with
+# standing ALIVE, and (3) every WorkOrder with sj:checkpointOf GC-FRI-0800 is
+# typed Successor (sj:boundaryClass sj:Successor) or has a receipt whose
+# standing is terminal: ALIVE, BLOCKED, UNSUPPORTED or REFUSED. UNKNOWN,
+# PARTIAL_ALIVE, BUILD_BROKEN or no receipt at all keeps STOP false.
+# Receipts enter the graph only through mix xaas.stop_court, which projects
+# receipts ADMITTED by validate_receipt.py as sj:Receipt nodes; goal.ttl
+# itself may not assert any receipt. This text is byte-equal (trimmed) to the
+# sj:stopQuery of GC-FRI-0800 in goal.ttl; the court refuses to run on drift.
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+ASK {
+  ?gc a sj:GoalCheckpoint ;
+      dcterms:identifier "GC-FRI-0800" .
+  FILTER EXISTS {
+    ?anyGate a sj:GoalCheckpoint ;
+             sj:checkpointOf ?gc .
+  }
+  FILTER NOT EXISTS {
+    ?gate a sj:GoalCheckpoint ;
+          sj:checkpointOf ?gc .
+    FILTER NOT EXISTS {
+      ?gate sj:receipt ?gateReceipt .
+      ?gateReceipt a sj:Receipt ;
+                   sj:standing "ALIVE" .
+    }
+  }
+  FILTER NOT EXISTS {
+    ?order a sj:WorkOrder ;
+           sj:checkpointOf ?gc .
+    FILTER NOT EXISTS { ?order sj:boundaryClass sj:Successor . }
+    FILTER NOT EXISTS {
+      ?order sj:receipt ?orderReceipt .
+      ?orderReceipt a sj:Receipt ;
+                    sj:standing ?standing .
+      FILTER(?standing = "ALIVE" || STRSTARTS(?standing, "BLOCKED") || STRSTARTS(?standing, "UNSUPPORTED") || STRSTARTS(?standing, "REFUSED"))
+    }
+  }
+}""" .
+
+fri:GC-026923 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-026923" ;
+    rdfs:label "GC-026923 successor of the Friday checkpoint" ;
+    dcterms:description "Successor goal that receives every item typed out of GC-FRI-0800: the 176 synthesized v26.9.22 orders, the 18 in-flight ZCode lane orders (L2-L8, L10), the remaining W1 law orders, the ultracode takeover runtime and watcher, the ggen-ecosystem crown laws, ZOE Wednesday, receipt-format conversion for non-critical repos, and xaas main SJ-010/011 (renumbered here). Its stop predicate is not compiled yet, so its stop query is false by construction." ;
+    sj:successorOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Successor ;
+    sj:stopQuery """PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+# GC-026923 has no accepted prose yet: STOP is false by construction.
+ASK { FILTER(false) }""" .
+
+# ── Gates G0..G12 (plan section "Gates -> implementation -> court") ─────────
+
+fri:G0 a sj:GoalCheckpoint ;
+    dcterms:identifier "G0" ;
+    rdfs:label "G0 Future bounded" ;
+    dcterms:description "Vision = the accepted 2030 prose (the user decides which). WBPR = \"2026-09-25 Semantic Manufacturing Reference Loop\", drafted Tue night and accepted by the user Wed morning. Both live in xaas docs/sjira/v26.9.22/friday/{vision,wbpr}.md." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:exclusion "Operator acceptance of the WBPR is the one irreducible human edge; no court may stand in for it." ;
+    sj:courtCommand """git ls-files --error-unmatch docs/sjira/v26.9.22/friday/vision.md docs/sjira/v26.9.22/friday/wbpr.md && grep -qF 'Status: **ACCEPTED' docs/sjira/v26.9.22/friday/wbpr.md""" ;
+    sj:acceptance fri:G0-acceptance ;
+    sj:falsifier fri:G0-falsifier .
+fri:G0-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G0 acceptance" ;
+    dcterms:description "Prose is committed, and each sentence maps to at least one proposition (G1)." .
+fri:G0-falsifier a sj:Falsifier ;
+    rdfs:label "G0 falsifier" ;
+    dcterms:description "vision.md or wbpr.md is not committed, or wbpr.md still carries the DRAFT status line (no operator acceptance)." .
+
+fri:G1 a sj:GoalCheckpoint ;
+    dcterms:identifier "G1" ;
+    rdfs:label "G1 Semantic closure" ;
+    dcterms:description "Compile the WBPR into friday/propositions.ttl with these classes: Actor, Capability, Postcondition, Invariant, Exclusion, Falsifier, Evidence, BoundaryClass, Successor." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:courtCommand """F="$PWD/docs/sjira/v26.9.22/friday" && cd "${GGEN_IGNITER_DIR:-$HOME/ggen_igniter}" && mix semantic_jira.compile_prose --check "$F/wbpr.md" --propositions "$F/propositions.ttl\"""" ;
+    sj:acceptance fri:G1-acceptance ;
+    sj:falsifier fri:G1-falsifier .
+fri:G1-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G1 acceptance" ;
+    dcterms:description "SHACL admits it, and a SPARQL check finds zero propositions without a boundary class and no prose-only requirement." .
+fri:G1-falsifier a sj:Falsifier ;
+    rdfs:label "G1 falsifier" ;
+    dcterms:description "A proposition without a boundary class, or a WBPR requirement present only as prose, is admitted." .
+
+fri:G2 a sj:GoalCheckpoint ;
+    dcterms:identifier "G2" ;
+    rdfs:label "G2 Cold bootstrap" ;
+    dcterms:description "New mix semantic_jira.bootstrap --fleet fleet.ttl in ggen_igniter. From durable artifacts only (git refs, TTL graphs, receipts, recipe registry, lease rules), it rebuilds subjects/SHAs, capabilities, authority, receipts and frontier (frontier_from_events)." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Bootstrap ;
+    sj:exclusion "No ~/.claude, chat transcript or LLM session is an input to the bootstrap." ;
+    sj:courtCommand """F="$PWD/docs/sjira/v26.9.22/friday" && cd "${GGEN_IGNITER_DIR:-$HOME/ggen_igniter}" && a=$(env -i PATH="$PATH" HOME="$(mktemp -d)" mix semantic_jira.bootstrap --fleet "$F/fleet.ttl") && b=$(env -i PATH="$PATH" HOME="$(mktemp -d)" mix semantic_jira.bootstrap --fleet "$F/fleet.ttl") && test -n "$a" && test "$a" = "$b\"""" ;
+    sj:acceptance fri:G2-acceptance ;
+    sj:falsifier fri:G2-falsifier .
+fri:G2-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G2 acceptance" ;
+    dcterms:description "It runs under env -i HOME=$(mktemp -d) with no ~/.claude or chat. Its output digest matches a second independent run, and every critical-path frontier item is reconstructed." .
+fri:G2-falsifier a sj:Falsifier ;
+    rdfs:label "G2 falsifier" ;
+    dcterms:description "The two cold runs differ, or a critical-path frontier item is missing from the reconstruction." .
+
+fri:G3 a sj:GoalCheckpoint ;
+    dcterms:identifier "G3" ;
+    rdfs:label "G3 First-mile compiler" ;
+    dcterms:description "New mix semantic_jira.compile_prose (ggen_igniter lib/ggen_igniter/semantic_jira/prose.ex). Pipeline: LLM candidate extraction (the only LLM edge; reuses the open-ontologies scaffold approach) -> Shacl.validate admission -> a deterministic delta, meaning propositions not yet witnessed by any receipt -> emitted sj:WorkOrders. The fresh example is the WD FA WBPR (see G12)." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:FirstMile ;
+    sj:exclusion "The LLM candidate extraction is the only LLM edge; the admitted TTL -> orders replay has none." ;
+    sj:courtCommand """F="$PWD/docs/sjira/v26.9.22/friday" && cd "${GGEN_IGNITER_DIR:-$HOME/ggen_igniter}" && a=$(env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_BASE_URL -u ZAI_API_KEY mix semantic_jira.compile_prose --replay "$F/wd-fa/admitted.ttl") && b=$(env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_BASE_URL -u ZAI_API_KEY mix semantic_jira.compile_prose --replay "$F/wd-fa/admitted.ttl") && test -n "$a" && test "$a" = "$b\"""" ;
+    sj:acceptance fri:G3-acceptance ;
+    sj:falsifier fri:G3-falsifier .
+fri:G3-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G3 acceptance" ;
+    dcterms:description "The admitted TTL -> orders run is replayed twice and is byte-identical with no LLM." .
+fri:G3-falsifier a sj:Falsifier ;
+    rdfs:label "G3 falsifier" ;
+    dcterms:description "The two replays differ, or a replay reaches an LLM provider." .
+
+fri:G4 a sj:GoalCheckpoint ;
+    dcterms:identifier "G4" ;
+    rdfs:label "G4 Finite work graph" ;
+    dcterms:description "ggen_igniter ontology.ttl + shapes/work-order.shacl.ttl gain sj:postcondition, sj:requiresCapability, sj:evidenceHorizon, sj:exclusion, sj:consequenceClass, sj:successorPolicy. New sj:GoalCheckpoint (sj:checkpointOf, sj:boundaryClass, sj:stopQuery) is declared owl:equivalentClass gall-core gall:SemanticCheckpoint, with gall:Exclusion reused. Adds shapes for sj:Checkpoint, sj:GoalCheckpoint and sj:MachineExperience. Orders outside the goal graph are not required to carry the new fields." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Core ;
+    sj:courtCommand """GOAL="$PWD/docs/sjira/v26.9.22/friday/goal.ttl" && cd "${GGEN_IGNITER_DIR:-$HOME/ggen_igniter}" && GOAL="$GOAL" mix run --no-start -e 'g = RDF.Graph.add(GgenIgniter.Ontology.load!("priv/ggen/semantic-jira-pack/ontology.ttl"), GgenIgniter.Ontology.load!(System.fetch_env!("GOAL"))); r = GgenIgniter.SemanticJira.Shacl.validate_file(g); IO.puts("conforms=#{r.conforms} violations=#{length(r.violations)}"); unless r.conforms, do: System.halt(1)' && mix test test/ggen_igniter_semantic_jira_goal_checkpoint_test.exs""" ;
+    sj:acceptance fri:G4-acceptance ;
+    sj:falsifier fri:G4-falsifier .
+fri:G4-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G4 acceptance" ;
+    dcterms:description "The SHACL court passes on goal.ttl. Mutation check: dropping any tuple field from one order must be refused." .
+fri:G4-falsifier a sj:Falsifier ;
+    rdfs:label "G4 falsifier" ;
+    dcterms:description "Dropping a tuple field from one GC-FRI-0800 order is not refused." .
+
+fri:G5 a sj:GoalCheckpoint ;
+    dcterms:identifier "G5" ;
+    rdfs:label "G5 SA2A conservation" ;
+    dcterms:description "xaas lib/xaas/sa2a/route.ex. The SA2A request is SemanticA2A.task_from_work_order (ggen_igniter). Capability -> provider resolution goes through a capability registry (config :xaas, :ultracode_construction_recipes). A tuple digest over (subject, postcondition, capability, evidence ceiling, authority ceiling, consequence class, exclusions) is computed at the sJira -> SA2A -> XaaS epoch hops." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Core ;
+    sj:courtCommand "mix test test/xaas/sa2a/route_test.exs" ;
+    sj:acceptance fri:G5-acceptance ;
+    sj:falsifier fri:G5-falsifier .
+fri:G5-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G5 acceptance" ;
+    dcterms:description "Digests are equal at every hop. Mutating one field at any hop is refused as broken_term: admission_vacuous." .
+fri:G5-falsifier a sj:Falsifier ;
+    rdfs:label "G5 falsifier" ;
+    dcterms:description "A tuple digest mutated at one hop is admitted." .
+
+fri:G6 a sj:GoalCheckpoint ;
+    dcterms:identifier "G6" ;
+    rdfs:label "G6 No-LLM execution" ;
+    dcterms:description "Reference KNOWN class: mix format drift repair in ggen_igniter. Graph side: commit the wo-03 restore with its two defects fixed (cli.ex TransitionLog.read returns a list; build_xaas_contract admits the eligible row) and the descriptor provider made a parameter. xaas side: new lib/xaas/ultracode/recipe_worker.ex (claim -> run argv via Verifier spawn_and_collect -> refuse :no_delta or commit -> Lease.close), recipe registry config, and a provider allowlist in engine.ex ready_providers/0." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Core ;
+    sj:exclusion "No LLM provider, credential or zcode binary is reachable on the KNOWN path." ;
+    sj:courtCommand "env -u ZCODE_CLI_DIR -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_BASE_URL -u ZAI_API_KEY mix test test/xaas/ultracode/recipe_worker_test.exs" ;
+    sj:acceptance fri:G6-acceptance ;
+    sj:falsifier fri:G6-falsifier .
+fri:G6-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G6 acceptance" ;
+    dcterms:description "The episode runs with ZCODE_CLI_DIR unset, no ANTHROPIC* or Z.AI credentials in env, and zcode binaries absent from PATH. The receipt's executor is recipe-worker, and the OCEL has zero LLM provider events." .
+fri:G6-falsifier a sj:Falsifier ;
+    rdfs:label "G6 falsifier" ;
+    dcterms:description "An LLM credential or zcode on PATH during the episode does not produce a typed refusal." .
+
+fri:G7 a sj:GoalCheckpoint ;
+    dcterms:identifier "G7" ;
+    rdfs:label "G7 Last-mile consequence" ;
+    dcterms:description "xaas court_receipt.ex gains an exit_status format; target_suites.ex gains a ggen-igniter-format suite (mix format --check-formatted, receipt: true); semantic_receipt.ex passes through the court receipt's binding results for suites without an adapter; an R-projection of the xaas receipt is validated by validate_receipt.py." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:courtCommand "mix test test/xaas/ultracode/court_receipt_test.exs test/xaas/ultracode/semantic_receipt_test.exs test/xaas/receipt/r_projection_test.exs" ;
+    sj:acceptance fri:G7-acceptance ;
+    sj:falsifier fri:G7-falsifier .
+fri:G7-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G7 acceptance" ;
+    dcterms:description "The independent observer (Verifier guarded run: clean tree, same head) checks the postcondition. The falsifier (reverting the commit makes the court fail) holds. The R-projection is ADMITTED, and the OCEL event exists (mix xaas.export_ocel)." .
+fri:G7-falsifier a sj:Falsifier ;
+    rdfs:label "G7 falsifier" ;
+    dcterms:description "Reverting the recipe commit does not make the court fail." .
+
+fri:G8 a sj:GoalCheckpoint ;
+    dcterms:identifier "G8" ;
+    rdfs:label "G8 Closed frontier" ;
+    dcterms:description "SemanticCrown.drive/1, extracted from loop/execute/finish/frontier with the repo slug as a parameter and the APS sense/seed dropped. It chains descriptor -> materialize -> RecipeWorker -> xaas.semantic.receipt -> semantic_jira.xaas_receipt -> reconcile -> frontier." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:courtCommand "mix test test/xaas/ultracode/semantic_crown_drive_test.exs" ;
+    sj:acceptance fri:G8-acceptance ;
+    sj:falsifier fri:G8-falsifier .
+fri:G8-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G8 acceptance" ;
+    dcterms:description "Before/after frontier diff: the order leaves the frontier and its dependent enters it. This is recorded in the TransitionLog." .
+fri:G8-falsifier a sj:Falsifier ;
+    rdfs:label "G8 falsifier" ;
+    dcterms:description "The executed order stays on the frontier, or its dependent does not enter it." .
+
+fri:G9 a sj:GoalCheckpoint ;
+    dcterms:identifier "G9" ;
+    rdfs:label "G9 Learning ratchet" ;
+    dcterms:description "Episode 1: format drift on subject S1 with no admitted route is UNKNOWN; a bounded exploration resolves it; the result is SemanticJira.machine_experience/1 -> an admitted route (failure_class -> capability recipe:mix-format) in the graph. Episode 2: format drift on a different subject S2 routes as KNOWN (autofde-lab episode1/episode2/equivalence pattern)." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Core ;
+    sj:courtCommand "mix test test/xaas/ultracode/learning_ratchet_test.exs" ;
+    sj:acceptance fri:G9-acceptance ;
+    sj:falsifier fri:G9-falsifier .
+fri:G9-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G9 acceptance" ;
+    dcterms:description "Two-episode court: episode 2 has 0 LLM invocations and fewer steps than episode 1, both from the OCEL. The route came from the admitted MachineExperience, not from a literal." .
+fri:G9-falsifier a sj:Falsifier ;
+    rdfs:label "G9 falsifier" ;
+    dcterms:description "Episode 2 invokes an LLM, takes at least as many steps as episode 1, or routes from a literal instead of the admitted MachineExperience." .
+
+fri:G10 a sj:GoalCheckpoint ;
+    dcterms:identifier "G10" ;
+    rdfs:label "G10 Replay" ;
+    dcterms:description "SemanticCrown.replay/2 becomes directory-aware (ledger dir), plus SemanticJira.replay_check/2 KNOWN_REPLAY." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:Bootstrap ;
+    sj:exclusion "No transcript access during replay." ;
+    sj:courtCommand """a=$(env -i PATH="$PATH" HOME="$(mktemp -d)" mix xaas.semantic.crown --replay docs/sjira/v26.9.22/friday/ledger) && b=$(env -i PATH="$PATH" HOME="$(mktemp -d)" mix xaas.semantic.crown --replay docs/sjira/v26.9.22/friday/ledger) && test -n "$a" && test "$a" = "$b\"""" ;
+    sj:acceptance fri:G10-acceptance ;
+    sj:falsifier fri:G10-falsifier .
+fri:G10-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G10 acceptance" ;
+    dcterms:description "A cold process (env -i, fresh HOME) recomputes standing and frontier from receipts plus the TransitionLog, byte-identical, with no transcript access." .
+fri:G10-falsifier a sj:Falsifier ;
+    rdfs:label "G10 falsifier" ;
+    dcterms:description "Deleting a receipt does not make the replay diverge." .
+
+fri:G11 a sj:GoalCheckpoint ;
+    dcterms:identifier "G11" ;
+    rdfs:label "G11 Per-repo bounded standing" ;
+    dcterms:description "Generated matrix friday/repo-matrix.ttl plus a markdown projection from receipts and court verdicts. Critical path = ggen_igniter + xaas (+ ash_a2a only if Gall.Capability is used). Every other repo is classified Successor / Blocked / Unsupported / Refused, with the exact SHA and evidence ceiling." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:courtCommand """test -s docs/sjira/v26.9.22/friday/repo-matrix.ttl && test -s docs/sjira/v26.9.22/friday/repo-matrix.md && test "$(gh run list --repo seanchatmangpt/xaas --branch main --limit 1 --json conclusion --jq '.[0].conclusion')" = success && test "$(gh run list --repo seanchatmangpt/ggen_igniter --branch main --limit 1 --json conclusion --jq '.[0].conclusion')" = success""" ;
+    sj:acceptance fri:G11-acceptance ;
+    sj:falsifier fri:G11-falsifier .
+fri:G11-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G11 acceptance" ;
+    dcterms:description "Critical-path repos: exact-head receipt ALIVE and main CI green on the merged SHA. Zero unclassified repos." .
+fri:G11-falsifier a sj:Falsifier ;
+    rdfs:label "G11 falsifier" ;
+    dcterms:description "An unclassified repo does not make G11 fail." .
+
+fri:G12 a sj:GoalCheckpoint ;
+    dcterms:identifier "G12" ;
+    rdfs:label "G12 WD deliverable" ;
+    dcterms:description "5-8 pages compiled from the G3 WD FA semantic graph. Sources: the FA Case Study deck, autofde-lab wd_fa court (PR #170, eb93405c), xaas WD-CS2 (PR #61), marketplace WD FA packs (#474). Every claim gets a class: observed proof (receipt-linked), bounded architectural inference, or WD-dependent UNKNOWN (MTTR baseline, live data, QMS write-back)." ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:boundaryClass sj:LastMile ;
+    sj:exclusion "WD brief sections 2a-2h are WD-dependent UNKNOWN unless the user supplies them." ;
+    sj:courtCommand """test -s docs/sjira/v26.9.22/friday/wd/proposal.md && grep -qF 'Status: **FROZEN' docs/sjira/v26.9.22/friday/wd/proposal.md && python3 docs/sjira/v26.9.22/friday/wd/claims_court.py docs/sjira/v26.9.22/friday/wd/claims-ledger.json""" ;
+    sj:acceptance fri:G12-acceptance ;
+    sj:falsifier fri:G12-falsifier .
+fri:G12-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "G12 acceptance" ;
+    dcterms:description "A claims ledger: every sentence carrying a claim is linked to a class, and every observed-proof claim has a validating receipt. The user freezes the text Thu." .
+fri:G12-falsifier a sj:Falsifier ;
+    rdfs:label "G12 falsifier" ;
+    dcterms:description "A claim-bearing sentence has no class, or an observed-proof claim has no ADMITTED receipt." .
+
+# ── Critical-path work orders (tuple-complete, sj:checkpointOf GC-FRI-0800) ─
+
+fri:cap-construct-xaas-mix-task a sj:Capability ;
+    rdfs:label "Construct: xaas mix task" ;
+    dcterms:description "Hand construction of an xaas Mix task and its Chicago tests; no generator renders a stop-court runner (UNSUPPORTED(generator-capability), HANDWRITTEN.md)." ;
+    sj:capabilityId "construct:xaas-mix-task" .
+
+fri:WO-FRI-T5 a sj:WorkOrder ;
+    rdfs:label "FRI-T5 Stop court runner and governing graph" ;
+    dcterms:identifier "FRI-T5" ;
+    dcterms:title "Stop court runner and GC-FRI-0800 governing graph" ;
+    dcterms:description "Author goal.ttl (GC-FRI-0800 with gates G0..G12 and successor GC-026923) and stop.rq, and build mix xaas.stop_court: run each gate's court command with a timeout, write one R-schema gate receipt per gate, evaluate the stop query over the graph plus admitted receipts, print the per-gate table and STOP, exit 0 only when STOP=true. No LLM anywhere." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "0d57147fc410444f2bf4608242e42075e2fea7c6" ;
+    sj:subject "xaas:stop-court-runner" ;
+    sj:pathScope "docs/sjira/v26.9.22/friday/goal.ttl", "docs/sjira/v26.9.22/friday/stop.rq",
+        "lib/mix/tasks/xaas.stop_court.ex", "test/mix/tasks/xaas_stop_court_test.exs",
+        "receipts/v26.9.22/FRI-T5.json", "HANDWRITTEN.md" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:promotionRule "Standing advances only from receipts/v26.9.22/FRI-T5.json ADMITTED by validate_receipt.py whose identity.tuple_digest equals this order's tuple digest; the sj:standing literal here is never read by the stop court." ;
+    sj:replayIdentity "semantic-jira:v26.9.22:FRI-T5" ;
+    sj:requiresCourt fri:court-FRI-T5 ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:requiresReceiptClass "manufacture", "verification" ;
+    sj:acceptance fri:acceptance-FRI-T5 ;
+    sj:falsifier fri:falsifier-FRI-T5-vacuous, fri:falsifier-FRI-T5-asserted ;
+    sj:projection sj:markdown-projection ;
+    sj:nextAction fri:action-FRI-T5 ;
+    sj:nextCheckpoint fri:GC-FRI-0800 ;
+    sj:checkpointOf fri:GC-FRI-0800 ;
+    sj:postcondition "mix xaas.stop_court over a two-gate goal graph exits 1 with STOP=false when one court command fails and exits 0 with STOP=true when both pass; every gate receipt it writes is ADMITTED by validate_receipt.py; a missing gate receipt keeps STOP=false." ;
+    sj:requiresCapability fri:cap-construct-xaas-mix-task ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:exclusion "No LLM anywhere in the stop court path.",
+        "No gate is promoted without its court command's observed exit 0.",
+        "The goal graph never asserts a receipt, and its sj:standing literals are never read." ;
+    sj:consequenceClass "manufacture" ;
+    sj:successorPolicy "Gate court commands whose machinery lands later in the week are refined in this graph by their owning lanes; stop-court features not needed to evaluate STOP(GC-FRI-0800) are filed under GC-026923." .
+
+fri:court-FRI-T5 a sj:Court ;
+    rdfs:label "FRI-T5 lane gate" ;
+    dcterms:description "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/mix/tasks/xaas_stop_court_test.exs, exit 0 at the exact subject." .
+fri:acceptance-FRI-T5 a sj:AcceptanceCriterion ;
+    rdfs:label "FRI-T5 acceptance" ;
+    dcterms:description "Chicago tests over real tmp git repos, real shell court commands and the real validator: 'true' + 'false' -> STOP=false, exit 1, both receipts ADMITTED; 'true' + 'true' -> STOP=true, exit 0; a missing gate receipt -> STOP=false." .
+fri:falsifier-FRI-T5-vacuous a sj:Falsifier ;
+    rdfs:label "FRI-T5 vacuous stop" ;
+    dcterms:description "STOP=true is printed, or the court exits 0, while some gate of the checkpoint has no ADMITTED receipt with standing ALIVE." .
+fri:falsifier-FRI-T5-asserted a sj:Falsifier ;
+    rdfs:label "FRI-T5 asserted receipt" ;
+    dcterms:description "A receipt or ALIVE standing asserted inside the goal graph itself changes the stop verdict instead of being refused." .
+fri:action-FRI-T5 a sj:Action ;
+    rdfs:label "Run the FRI-T5 lane gate" ;
+    dcterms:description "Run the lane gate and write receipts/v26.9.22/FRI-T5.json bound to this order's tuple digest." .

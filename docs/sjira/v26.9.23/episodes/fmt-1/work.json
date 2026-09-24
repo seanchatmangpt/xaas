@@ -1,0 +1,157 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23",
+  "court_maps": {
+    "EP-A": {
+      "acceptance": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check": {
+          "test": "format"
+        }
+      },
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+      ],
+      "falsifiers": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent": {
+          "test": "format"
+        }
+      }
+    },
+    "EP-B": {
+      "acceptance": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-fmt-1-acceptance-format-check": {
+          "test": "format"
+        }
+      },
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+      ],
+      "falsifiers": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-fmt-1-falsifier-drift-absent": {
+          "test": "format"
+        }
+      }
+    }
+  },
+  "episode": "fmt-1",
+  "schema": "xaas/semantic-drive-work-graph/v1",
+  "work_orders": [
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+      "consequence_class": "postcondition",
+      "dependencies": [],
+      "description": "The reference KNOWN class (format-drift repair) on subject v23/episode-fmt-1: the drift commit 80a8a4c71b331a39771ad65d1149eb835645d17c changes lib/ggen_igniter/semantic_jira/cli.ex; the recipe provider restores `mix format --check-formatted` with no model on the path.",
+      "evidence_ceiling": "repository-local",
+      "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+      "exclusions": [
+        "no LLM provider on the KNOWN path",
+        "no file outside path_scope changes",
+        "no push, merge or publish"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent"
+      ],
+      "identity": "EP-A",
+      "next_checkpoint": "GC-26.9.23",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+      "projections": [
+        "jira",
+        "sa2a",
+        "worker",
+        "verification",
+        "receipt",
+        "replay"
+      ],
+      "promotion_rule": "EP-A leaves UNKNOWN only through a ledger transition whose XaaS receipt binds the candidate head descended from 80a8a4c71b331a39771ad65d1149eb835645d17c: the ggen-igniter-format court must observe exit 0 at that head and a non-zero exit when the recipe commit is reverted.",
+      "replay_identity": "semantic-jira:v26.9.23:episode:fmt-1:EP-A",
+      "repository": "seanchatmangpt/ggen_igniter",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-fmt-1-format-check"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:mix-format",
+      "standing": "UNKNOWN",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+      "successor_policy": "a format drift the recipe cannot repair is typed UNSUPPORTED and handed to successor v23:GC-26.9.24",
+      "title": "Repair the deterministic mix format drift of episode fmt-1"
+    },
+    {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-fmt-1-acceptance-format-check"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "authority_requirement": "NONE",
+      "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+      "consequence_class": "postcondition",
+      "dependencies": [
+        {
+          "required_standing": "ALIVE",
+          "type": "requiresReceipt",
+          "upstream": "EP-A"
+        }
+      ],
+      "description": "Fenced by EP-A: the frontier must hold EP-B until EP-A's receipt re-enters the ledger, then admit it (PRD PR-012).",
+      "evidence_ceiling": "repository-local",
+      "evidence_horizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+      "exclusions": [
+        "no LLM provider on the KNOWN path",
+        "no file outside path_scope changes",
+        "no push, merge or publish"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-B-fmt-1-falsifier-drift-absent"
+      ],
+      "identity": "EP-B",
+      "next_checkpoint": "GC-26.9.23",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+      "projections": [
+        "jira",
+        "sa2a",
+        "worker",
+        "verification",
+        "receipt",
+        "replay"
+      ],
+      "promotion_rule": "EP-B is eligible only when the ledger holds an ALIVE transition of EP-A; its own promotion follows EP-A's court law.",
+      "replay_identity": "semantic-jira:v26.9.23:episode:fmt-1:EP-B",
+      "repository": "seanchatmangpt/ggen_igniter",
+      "required_courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format"
+      ],
+      "required_evidence": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-fmt-1-format-check"
+      ],
+      "required_receipt_classes": [
+        "verification"
+      ],
+      "requires_capability": "recipe:mix-format",
+      "standing": "UNKNOWN",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-B",
+      "successor_policy": "a format drift the recipe cannot repair is typed UNSUPPORTED and handed to successor v23:GC-26.9.24",
+      "title": "Dependent order of episode fmt-1: eligible only after EP-A is ALIVE"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "decided_at": "2026-09-23T15:14:03.067051Z",
+  "decision": "UNKNOWN",
+  "declared_capability": null,
+  "episode": "me-1",
+  "experience_sources": [],
+  "failure_class": "format_drift",
+  "order": "EP-A",
+  "order_iri": "https://ggen-igniter.dev/sjira/v26.9.23#order-80234039c90fbe53",
+  "order_turtle_sha256": "sha256:1aaa3572860daef3fb811cbea1a899470fef85ae514285b7d924354f52523dab",
+  "route": {
+    "detail": {
+      "admissions_not_admitted": [],
+      "experiences_applicable": [],
+      "experiences_considered": [],
+      "experiences_without_admission": [],
+      "failure_class": "format_drift",
+      "order": "EP-A"
+    },
+    "hop": "route",
+    "reason": "no_capability_no_experience",
+    "standing": "UNKNOWN"
+  },
+  "schema": "xaas/machine-experience-route/v1"
+}

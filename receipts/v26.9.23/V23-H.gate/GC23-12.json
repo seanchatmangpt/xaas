@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "actor": "xaas.stop_court",
+    "ceiling": "OBSERVE",
+    "grant": "NONE"
+  },
+  "consequence": {
+    "commits": [],
+    "files_changed": [],
+    "remote_effects": []
+  },
+  "gate": {
+    "boundary_class": "Core",
+    "checkpoint": "GC-26.9.23",
+    "duration_ms": 12621,
+    "env": {
+      "GGEN_IGNITER_DIR": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+      "XAAS_DIR": "/Users/sac/wt/v26922/v23/V23-H"
+    },
+    "gate": "GC23-12",
+    "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+    "outcome": "blocked",
+    "timed_out": false,
+    "timeout_ms": 900000
+  },
+  "identity": {
+    "base_sha": "bd1efb165f625e3505953b2c242196838d4311b6",
+    "graph_hash": "sha256:9858c187e7204b4444f1f15c621f482460b41dac51ffa8553575f43fbef709a3",
+    "repo": "/Users/sac/wt/v26922/v23/V23-H",
+    "subject": "GC-26.9.23/GC23-12",
+    "subject_sha": "eecc5fe955f40e5dce40657dc1349c483944b59a"
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/GC23-12.sh",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-H",
+        "exit": 77,
+        "output_sha256": "6a57017ed5a8eb0191ea2315894b59cf8b8687659e9168218a1126bbfadf7baf",
+        "summary": "BLOCKED(operator_acceptance): GC23-12 successor prose sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1 awaits the operator: docs/sjira/v26.9.23/successor/ACCEPTED is absent (bro"
+      }
+    ],
+    "durable_location": "/private/tmp/claude-501/v23-scratch/B1c-V23-H/gate-receipts/GC23-12.json"
+  },
+  "standing": {
+    "broken_term": "R_missing_authority",
+    "derived_from": "court command of GC-26.9.23/GC23-12 exited 77 (blocked) at eecc5fe955f40e5dce40657dc1349c483944b59a; ALIVE iff exit 0, BLOCKED iff exit 77 with a typed BLOCKED(<reason>) (broken_term <term>) line",
+    "value": "BLOCKED:operator_acceptance"
+  }
+}

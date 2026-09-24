@@ -1,0 +1,65 @@
+
+Compiling 3 files (.ex)
+Generated xaas app
+01:45:47.772 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:45:48.140 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:45:48.413 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 507537, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+....01:45:49.385 [warning] [ultracode] run 81c918b0-c973-472a-b838-99bc16b6ee35 stopped: refused 1 live lease(s) (reason :run_stopped)
+01:45:49.394 [warning] [ultracode] run 81c918b0-c973-472a-b838-99bc16b6ee35 recovering from failed epoch 9683fb04-4ccf-4e38-8506-dd23f03accc8: constructed replacement epoch cycle=1 (epoch_id=4a83d91e-3c57-45b1-8be1-f6b9c75ec7dc)
+......01:45:49.569 [warning] [ultracode] epoch fbdb77fd-1529-4435-bda6-f40f9cebbd41 (run b92150ab-a9bf-403f-a53f-456231e2b3e5, cycle 0) expected_at=2026-09-23 08:44:49.555384Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+..
+
+  1) test provider allowlist a malformed allowlist is logged with the bad value and surfaced as a typed config error, never an empty pool (Xaas.Ultracode.EngineTest)
+     test/xaas/ultracode/engine_test.exs:741
+     Assertion with == failed
+     code:  assert Engine.fill(worker: &claim_close_worker/2) == invalid
+     left:  []
+     right: {:error, {:invalid_config, :ultracode_engine_providers}}
+     stacktrace:
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:121: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:83: ExUnit.CaptureLog.capture_log/2
+       test/xaas/ultracode/engine_test.exs:753: anonymous fn/3 in Xaas.Ultracode.EngineTest."test provider allowlist a malformed allowlist is logged with the bad value and surfaced as a typed config error, never an empty pool"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/ultracode/engine_test.exs:746: (test)
+
+..01:45:49.611 [warning] [ultracode-engine] reaped epoch 61bb3f89-a79b-4489-8150-89f9be50ba1b (worker ended without closing)
+.01:45:49.622 [warning] [ultracode-engine] reaped epoch 642999d1-92e8-43d5-8cb8-b008684c4c5d (worker ended without closing)
+.01:45:49.653 [warning] [ultracode] run 9836981a-6382-4327-a441-a7b58f2efcd2 stopped: refused 1 live lease(s) (reason :run_stopped)
+..................01:45:53.465 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153153411-12674; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+..
+
+  2) test SemanticWork and Run.capability_id carry the canonical capabilityId pattern source (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:583
+     match (=) failed
+     code:  assert {:error, {:refused_semantic_work, {:invalid, :capability}}} =
+              SemanticWork.admit(Map.put(descriptor(), "capability", "recipe:x\n"))
+     left:  {:error, {:refused_semantic_work, {:invalid, :capability}}}
+     right: {:ok,
+             %{
+               dependencies: [],
+               provider: "recipe",
+               work_order_iri: "urn:sj:wo:fri-t2-format",
+               checkpoint_iri: "urn:sj:checkpoint:GC-FRI-0800",
+               graph_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+               repository_identity: "seanchatmangpt/ggen_igniter",
+               execution_repo_alias: "ggen_igniter",
+               base_sha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+               goal: "mix format drift repair",
+               verifier_suite: "recipe-format-court",
+               execution_policy: :continuous_epoch_run,
+               court_map: nil,
+               capability: "recipe:x\n"
+             }}
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:605: (test)
+
+.
+Finished in 5.2 seconds (0.00s async, 5.2s sync)
+39 tests, 2 failures
+EXIT=2

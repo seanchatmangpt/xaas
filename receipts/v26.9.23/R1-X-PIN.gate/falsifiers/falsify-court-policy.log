@@ -1,0 +1,10 @@
+restored:  test/sjira/v26_9_23_goal_test.exs (tree clean)
+  1) test GC23-0 (real sh + ggen_igniter compile_prose --check) refuses a hand-edited compiled/orders.ttl (Xaas.Sjira.V26923GoalTest)
+     UNKNOWN: no_llm_env: no policy data at /Users/sac/.cache/tmp/v23_court_repo_14723/docs/sjira/v26.9.23/courts/../../../../priv/no_llm/policy.json
+  2) test GC23-3 (real sh + ggen_igniter --admit-goal) refuses a goal.ttl whose lane order lost sj:postcondition (F1) (Xaas.Sjira.V26923GoalTest)
+     UNKNOWN: no_llm_env: no policy data at /Users/sac/.cache/tmp/v23_court_repo_14787/docs/sjira/v26.9.23/courts/../../../../priv/no_llm/policy.json
+Result: 0/2 passed, 35 excluded
+inner_exit=2
+FALSIFIER court-policy: fired as expected
+sh $G/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN $L/fals $n  4.14s user 5.92s system 85% cpu 11.730 total
+exit=0

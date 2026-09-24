@@ -1,0 +1,38 @@
+{
+  "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+  "bridge": {
+    "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+    "definition_digest": "sha256:7f3419c2b13bf85f7b6c63ae2b2913756e0c21a54fbb8889ccff92e6b138d068",
+    "evidence_ceiling": "EXECUTED_VERIFIED",
+    "identity": "WO-14958CC7712C739E",
+    "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "replay_identity": "semantic-jira:GC-26.9.24:WO-14958CC7712C739E",
+    "repository": "seanchatmangpt/xaas",
+    "requires": {
+      "acceptance": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-acceptance"
+      ],
+      "courts": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-court"
+      ],
+      "evidence": [
+        "https://ggen-igniter.dev/ontology/semantic-jira#receipt-evidence"
+      ],
+      "falsifiers": [
+        "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-falsifier"
+      ]
+    },
+    "source_snapshot_digest": "sha256:65fd62dbbb3ee8280dd84685774166f975333cefb1b6f504da6b24fe972c51ee",
+    "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-5fde57949cad3644"
+  },
+  "checkpoint_iri": "urn:semantic-jira:checkpoint:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "dependencies": [],
+  "execution_policy": "autonomic_wave_attempt",
+  "execution_repo_alias": "xaas",
+  "goal": "WO-14958CC7712C739E: An independent run of ggen sync --check on a fresh worktree at the produced head exits 0, and the same check exits non-zero when the recipe commit is reverted.\n\nManufactured by mix semantic_jira.compile_prose (PR-004, ARD section 5.5) from the admitted Postcondition proposition https://ggen-igniter.dev/sjira/v26.9.23#P-5fde57949cad3644 (docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md bytes [1467, 1626) of sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1), required by GC24-3 and not witnessed by an ALIVE receipt.\n\nAcceptance:\n- https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-acceptance\n\nFalsifiers:\n- https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e-falsifier\n\nPath scope:\n- unassigned",
+  "graph_digest": "sha256:89eabeb436e03f60d49dd4e42e629c3ecb4e217ae981dba64337fc7a905b8e62",
+  "provider": "recipe",
+  "repository_identity": "seanchatmangpt/xaas",
+  "verifier_suite": "ggen-sync-check",
+  "work_order_iri": "urn:semantic-jira:work-order:WO-14958CC7712C739E"
+}
