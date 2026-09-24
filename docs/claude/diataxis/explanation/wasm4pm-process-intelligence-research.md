@@ -87,21 +87,19 @@ to something else (by design, "graduation" to `wasm4pm` proper).
 read directly, 176 lines) is real, running code in this repo. It attaches to
 Ash's real `:telemetry` `:stop` events (confirmed against Ash's own source
 in its moduledoc, not assumed) for every configured Ash domain and the four
-CRUD action types, and on each event appends one JSON-OCEL record to
-`priv/ocel/ash-actions.ndjson` with real fields:
-
-```
-"ocel:eid"       => Ash.UUIDv7.generate()
-"ocel:activity"  => "#{resource_short_name}.#{action}"
-"ocel:timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
-"ocel:omap"      => [to_string(resource_short_name)]
-"ocel:vmap"      => %{...enriched via Ash.Resource.Info...}
-```
-
-This is the real OCEL 2.0 JSON-per-line event shape (`ocel:eid`,
-`ocel:activity`, `ocel:timestamp`, `ocel:omap`, `ocel:vmap`), not a bespoke
-schema — the same field names wasm4pm's OCEL v2 WASM route and
-wasm4pm-compat's `LinkedOcel`/`Ocel20` witness expect at the record level.
+CRUD action types, and on each event appends one JSON line to
+`priv/ocel/ash-actions.ndjson`. **Shape (changed 2026-09-22, commit
+d353fef): each appended line is now a COMPLETE, individually-conformant
+OCEL 2.0 JSON log** — exactly the four top-level keys `ocel:objectTypes`,
+`ocel:eventTypes`, `ocel:events`, `ocel:objects` — not the flat
+single-event record this research originally observed (`ocel:eid` /
+`ocel:activity` / `ocel:timestamp` / `ocel:omap` / `ocel:vmap` at the top
+level). The log is capped at 10 MiB with at most two rotated siblings
+(`ash-actions.ndjson.1` freshest, `.2` oldest, deleted on shift), checked
+before every append — worst case ~30 MiB, no logrotate dependency. The
+event-level field names remain the OCEL 2.0 names wasm4pm's OCEL v2 WASM
+route and wasm4pm-compat's `LinkedOcel`/`Ocel20` witness expect at the
+record level.
 The module's own moduledoc is honest about a real limitation: Ash emits
 only `:stop`, never a distinguishable `:exception` event, so every record's
 outcome is "ran to completion of the span" — success/failure cannot
@@ -114,15 +112,13 @@ say it is for:
 
 1. **wasm4pm as an OCEL v2 consumer of the Ash NDJSON log.** wasm4pm's
    `wpm evidence session` route takes an OCEL v2 **JSON** file (object with
-   `ocel:events`/`ocel:objects`, not raw NDJSON lines) and an
-   `--object-type`. `ash-actions.ndjson` is newline-delimited single event
-   records, not a full OCEL v2 document (it has no `ocel:objects` array or
-   `ocel:global-log` header, and it is NDJSON rather than one JSON object).
-   A real integration would need a conversion step — wrap the per-line
-   events into a proper OCEL v2 JSON document (synthesizing `ocel:objects`
-   from the distinct `ocel:omap` values seen) — before wasm4pm's WASM route
-   would accept it. This conversion does not exist today; it would be new
-   work, not a plug-in.
+   `ocel:events`/`ocel:objects`) and an `--object-type`. Since 2026-09-22
+   (commit d353fef) each `ash-actions.ndjson` line is itself a complete
+   OCEL 2.0 document, and the lines→document assembly this research
+   originally flagged as missing now exists in this repo:
+   `Xaas.Telemetry.OcelNdjson.assemble_document/1` folds the per-line
+   documents into one merged OCEL 2.0 JSON document — the conversion step
+   is no longer hypothetical new work, it is shipped code here.
 2. **wasm4pm-compat as a structural admission gate.** Before any such file
    is handed to wasm4pm's engine, wasm4pm-compat's `LinkedOcel` admitter
    could validate it (no dangling event-object links, no duplicate object

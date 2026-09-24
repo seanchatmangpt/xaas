@@ -1,0 +1,22 @@
+# Update the related docs to match current main
+
+## Ground truth (all verified in source today, on branch `docs/readme-refresh`)
+
+- **13 Ash domains** configured (`config/config.exs:13-27`): Library, Accounts, Billing, Coupling, Generation, Governance, Ledger, Marketplace, Ocel, Operations, Platform, TemporalMemory, Ultracode — **92 resources total** (counted per domain's `resources do` block: Accounts 5, Billing 8, Coupling 1, Generation 1, Governance 28, Ledger 4, Library 7, Marketplace 2, Ocel 5, Operations 20, Platform 7, TemporalMemory 1, Ultracode 3).
+- Extensions per domain verified (e.g. Accounts/Billing/Marketplace/Operations have `AshTypescript.Rpc`; Operations adds `ProjectMeasure.Extension`; Coupling/Ocel are Admin-only; Generation/TemporalMemory have none).
+- **Router** (`lib/xaas_web/router.ex`): adds since the docs were written — execution-fabric routes (`POST /internal-api/execution/mcp` 7 verbs, `hooks/:event`, `runs`, `epochs/:epoch_id/receipts`), `/internal-api/{prometheus/query,health,rpc/run,rpc/validate}`, `/mcp` (generated `XaasWeb.McpScope` + `AuditMcpToolCall`), `/a2a/{zoe-event,/}`, `/api/workbench/ggen{,/health}`, `/internal-api/sparql`, `POST /webhooks/stripe`, `/next-read` LiveView, `SetInternalApiSystemActor` pipeline (XAAS-2602). Dev flag is `:xaas`, not `:kanban`.
+- **JSON:API recount** (same greps the doc itself established): 62 resources declare a real `base(...)` path — **56 on `/api`** (7 domains mounted in `ApiRouter` of 13 configured), **1 on `/internal-api`** (`capability_liveness_receipts`), **5 Library routes declared but Library is not mounted** in either AshJsonApi router (served via `/mcp` tools instead). **45 of the 56 `/api` resources expose a mutation route** (routes now use paren-call style; new verbs beyond the old doc: `post(:issue)`, `patch(:revoke)`, `patch(:remediate)`, `patch(:record_attempt)`, `delete(:destroy)`). New wired resources since the doc: `/orgs` (Accounts), `/billing_subscriptions`, Governance +4 (`/freeze_window`, `/pentest_findings`, `/audit_export_tokens`, `/approval_compliance_rotation_block`), Operations +3 (`/incidents`, `/project_measurement`, `/audit_log_entries`), Platform +2 (`/webhooks`, `/webhook_deliveries`). Deliberately-unwired list unchanged (Ledger×3, User, Token) plus new `Token.RevokeNonce`.
+- CLAUDE.md and `actuation-and-semantics.md`: still accurate, no changes needed. `docs/ultracode/` is recent, no changes.
+
+## Edits (4 files)
+
+1. **`docs/claude/diataxis/reference/ash-configuration.md`** — `ash_domains` row → 13 domains; "The 8 real Ash domains" section → 13-domain table with verified extensions + resource counts (92 total, method+date noted); Library section gains `School` + `PersonaGrant`.
+2. **`docs/claude/diataxis/reference/http-api-surface.md`** — re-verify header (date + method); router topology → full current scope list with the load-bearing ordering facts preserved; auth section gains `SetInternalApiSystemActor` + `AuditMcpToolCall`; `/api` recount + updated per-domain tables (Billing +1, Governance +4, Operations +3, Platform +2, Accounts `/orgs` note); keep still-true example/response-shape/history sections; unwired section + `Token.RevokeNonce`; new sections for the execution-fabric endpoints, the other plain-JSON controller routes, `/mcp`, `/a2a`, `/webhooks/stripe`, `/api/workbench/ggen`, `/internal-api/sparql`, browser + dev-only routes; See-also refresh.
+3. **`docs/claude/diataxis/explanation/architecture-overview.md`** — 8→13 domains, 74→92 resources; extended domain table with the 5 new domains and corrected counts; fix the "every domain uses JsonApi+Graphql+Admin" claim; non-domain `lib/xaas/` dirs paragraph updated (ultracode, sa2a, castle, zoe, workbench, semantics, actuation, telemetry…); routing tiers gain execution fabric + workbench; `:kanban` → `:xaas` dev-routes flag; cross-cutting section gains system-actor + MCP-audit + lease-gated actuation.
+4. **`AGENTS.md`** (one line) — "seven-domain architecture" → point at `config/config.exs` as the authority for the configured domain set (13 as of 2026-09-22), so the contract stops freezing a volatile number.
+
+## Verification after edit
+
+- Same greps re-run against the edited docs' claims (counts reproducible by command).
+- Relative link/path check for anything newly cited.
+- Docs-only commit on `docs/readme-refresh` (continues the README refresh), reported with branch/SHA.

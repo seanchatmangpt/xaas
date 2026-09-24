@@ -1094,3 +1094,38 @@ makes the next cycle's ratio measurable at all.
 **Standing**: ALIVE, scoped to the consolidation + its validation at
 `main @ 9000c94`. Remaining: the 8-hour launch — one command per
 eight-hour-run §1.
+
+## 2026-09-23 — offpeak launch: capacity-8 standing wave (campaign 2, env-repaired)
+
+Operator order (offpeak task "Figure it Out"): launch the maximum lawful
+agent wave. Executed via the manufactured machine, not session fan-out.
+
+- **Pre-flight tripwires hit + fixed**: stale phx server (28h, pre-v26.9.22
+  config) served CompileError 500s on `/internal-api/execution/mcp` → killed,
+  `mix ecto.migrate` (already up), fresh boot with `INTERNAL_API_TOKEN`;
+  handshake 401 unauth / 200 authorized. No zombie campaign rows.
+- **Worker env repair (new tripwire)**: every headless worker died
+  `exit=1 ~1.3s` → `Model creation failed` wrapping `Select a model before
+  continuing`: the personal provider registry at `~/.zcode/v2/provider_config.json`
+  was `schemaVersion:99, config:{}` (foreign/unsupported schema → runtime
+  flags recovery → CLI refuses to rewrite → zero providers → no default model).
+  Fix: valid v1 file at a stable isolated path `~/.zcode/failover/provider_config.json`
+  (CLI's own legacy importer populated it with `zai` + models + key, byte-verified),
+  campaign launched with `ZCODE_PERSONAL_PROVIDER_CONFIG_FILE` pointing there so
+  every spawned worker inherits it. Shared-path v99 file left in place (desktop
+  owns it); backups: `provider_config.json.v99-bak-offpeak-launch`,
+  `migrations/provider-registry-44e57383111ef435.json.bak-offpeak-launch`,
+  `~/.zcode/cli/config.json.bak-offpeak-launch` (model.main flipped to glm-5.3).
+- **Launch**: `mix xaas.ultracode.start --repo aps,eds,nounverb --capacity 8
+  --duration 8h --wave-interval 30m` (first attempt campaign 2f49f792 abandoned
+  1 wave — all dispatches refused worker_no_close pre-fix; relaunched after
+  repair). Capacity 8 = projected in-flight ≤16 heavyweight ceiling; the loop's
+  `dispatch_bounded` top-up semaphore enforces it and halves on provider rate
+  refusal. Sustained `status=ok exit=0 ~60-70s` dispatches observed; 16 worker
+  processes = 8 slots × 2 procs; repair runs resurrecting the abandoned backlog.
+- **Operator did NOT write**: server restart, migration markers, provider
+  registry repair, capacity selection, campaign launch/relaunch, receipt.
+
+**Standing**: PARTIAL_ALIVE at launch (live dispatches observed; wave/campaign
+terminal standing derives from `mix xaas.ultracode.audit` after budget
+discharge). Log: `/tmp/xaas-campaign-v26922b.log`.

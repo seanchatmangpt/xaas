@@ -58,7 +58,7 @@ Do not freeze volatile commands here: discover and execute the current commands 
 
 This repository is the SOURCE of the xaas-fabric zcode plugin. ggen projects `ontology.ttl` + `templates/*.tmpl` → `priv/zcode_plugin/marketplace/xaas-fabric/` (8 files); drift is checked by `test/xaas/zcode_plugin/projection_test.exs`. The installed user-side copy at `~/.zcode/cli/plugins/cache/xaas-fabric-marketplace/xaas-fabric/26.9.17/` was byte-identical as of 2026-09-22. Edit the owning ontology/templates, never the projection.
 
-The execution fabric MCP surface is `POST /internal-api/execution/mcp` (JSON-RPC; 7 verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`), `POST /internal-api/execution/hooks/:event`, and `GET /internal-api/execution/epochs/:epoch_id/receipts` — all behind `RequireInternalApiToken` (`router.ex:80-112`).
+The execution fabric MCP surface is `POST /internal-api/execution/mcp` (JSON-RPC; 7 verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`), `POST /internal-api/execution/hooks/:event`, `POST /internal-api/execution/runs` (org-scoped run submission via `ExecutionFabricController.create_run`, added 2026-09-17 — typed 403 for org-less/shared-token callers), and `GET /internal-api/execution/epochs/:epoch_id/receipts` — all behind `RequireInternalApiToken` (`router.ex:80-112`).
 
 Native dispatch: semantic runs invoke `zcode gall-work --lease <descriptor>`. The contract file `priv/zcode_plugin/gall-work.contract.json` must stay byte-identical to zcode-cli's `test/fixtures/gall-work.contract.json`.
 
