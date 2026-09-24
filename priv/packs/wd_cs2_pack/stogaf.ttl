@@ -74,7 +74,7 @@ wdcs2:currentConformance a skos:Concept ;
 wdcs2:targetConformance a skos:Concept ;
   skos:prefLabel "ST-6 AUTONOMIC" .
 
-wdcs2:humanAuthority org:Role ;
+wdcs2:humanAuthority a org:Role ;
   skos:prefLabel "ENGINEER_DISPOSITION_REQUIRED" .
 
 wdcs2:machineExperienceContract a prov:Plan ;
