@@ -16,4 +16,12 @@ defmodule XaasWeb.WdFaStogafControllerTest do
     assert body["excluded_production_do"]["plane"] == "DO"
     refute Enum.any?(body["capabilities"], &(&1["plane"] == "DO"))
   end
+
+  test "GET /case-studies/wd-fa/context/:case_id.json preserves the JSON context contract", %{conn: conn} do
+    conn = get(conn, "/case-studies/wd-fa/context/known_firmware.json")
+    body = json_response(conn, 200)
+
+    assert body["canonical_subject"] == "urn:xaas:wd-cs2:case:known_firmware"
+    assert body["authority_ceiling"] == "SELECT_CONSTRUCT_ONLY"
+  end
 end
