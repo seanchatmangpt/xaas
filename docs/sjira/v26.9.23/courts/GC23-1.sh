@@ -47,12 +47,46 @@ done
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/gc23-1.XXXXXX") || unknown "cannot create a temp dir"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 
+# The helper builds $gi (MIX_ENV=dev) with the elixir/erl it finds, and the
+# caller's PATH carries the xaas pin: ggen_igniter's deps only compile under
+# its own .tool-versions pin (faker fails under 1.20.2). Resolve the
+# graph-side toolchain exactly as gi_mix.sh does (R1-X-PIN;
+# Xaas.Ultracode.SemanticDrive.graph_toolchain/2) and hand it to the helper
+# as BOOTSTRAP_ELIXIR_BIN / BOOTSTRAP_ERLANG_BIN. This court used to pass only
+# because the retired shadow int tree kept a warm _build/dev (2026-09-24).
+gi_elixir_bin=""
+gi_erlang_bin=""
+if [ -f "$xaas/lib/mix/tasks/xaas.episode.ex" ]; then
+  (cd "$xaas" && env MIX_ENV=test mix xaas.episode --graph-toolchain \
+    --ggen-igniter-dir "$gi" --ggen-build-path "$gi/_build/dev" </dev/null) \
+    >"$tmp/toolchain.log" 2>&1 || {
+    tail -5 "$tmp/toolchain.log"
+    unknown "no graph-side toolchain resolves for $gi"
+  }
+  dirs=$(python3 -I - "$tmp/toolchain.log" <<'PY'
+import json, os, sys
+for line in reversed(open(sys.argv[1], encoding="utf-8").read().splitlines()):
+    line = line.strip()
+    if line.startswith("{"):
+        t = json.loads(line)
+        print(os.path.dirname(t["mix"]) + " " + os.path.dirname(t["erl"]))
+        break
+else:
+    raise SystemExit("no toolchain JSON")
+PY
+  ) || unknown "unreadable graph-side toolchain for $gi"
+  gi_elixir_bin=${dirs% *}
+  gi_erlang_bin=${dirs#* }
+  echo "GC23-1: graph-side toolchain for $gi: elixir $gi_elixir_bin, erlang $gi_erlang_bin"
+fi
+
 # bootstrap [NAME=value ...]: the helper under the no-LLM env. The receipts
 # dirs list holds a space, which no_llm_env.sh assignments cannot carry, so an
 # inner sh sets it.
 bootstrap() {
   sh "$courts/no_llm_env.sh" \
     XAAS_DIR="$xaas" GGEN_IGNITER_DIR="$gi" TMPDIR="$tmp" \
+    BOOTSTRAP_ELIXIR_BIN="$gi_elixir_bin" BOOTSTRAP_ERLANG_BIN="$gi_erlang_bin" \
     BOOTSTRAP_VERSION=v26.9.23 \
     BOOTSTRAP_FLEET="$xaas/$v/fleet/universe.json" \
     BOOTSTRAP_GOAL="$xaas/$v/goal.ttl" \
