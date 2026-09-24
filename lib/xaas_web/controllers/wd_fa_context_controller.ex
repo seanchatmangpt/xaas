@@ -4,6 +4,7 @@ defmodule XaasWeb.WdFaContextController do
   alias Xaas.CaseStudies.WdFa.ContextEnvelope
 
   def show(conn, %{"case_id" => case_id} = params) do
+    case_id = String.replace_suffix(case_id, ".json", "")
     viewpoint = Map.get(params, "viewpoint", "fa-engineer")
     learned? = Map.get(params, "learned") in ["1", "true", "yes"]
 
