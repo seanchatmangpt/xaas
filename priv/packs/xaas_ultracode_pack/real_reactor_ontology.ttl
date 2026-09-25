@@ -1,0 +1,53 @@
+@prefix rx: <https://ggen-igniter.dev/ontology/reactor-scaffold#> .
+
+# Bootstrap Equivalence Court (ULTRACODE-50 section 45-47): real module name
+# Xaas.Ultracode.EpochReactor, real step wiring and real run bodies
+# transcribed verbatim from lib/xaas/ultracode/epoch_reactor.ex. Generation
+# target is tmp_out/ only -- never overwrites the real, closed-milestone file.
+
+rx:real_epoch_reactor a rx:ReactorDef ;
+    rx:moduleName "Xaas.Ultracode.EpochReactor" ;
+    rx:inputs "epoch_id" ;
+    rx:returnStep "receipt" .
+
+rx:step_observe a rx:Step ;
+    rx:order "1" ;
+    rx:name "observe" ;
+    rx:arguments "argument(:epoch_id, input(:epoch_id))" ;
+    rx:runBody "fn %{epoch_id: epoch_id}, _context ->\n      case Ash.get(Xaas.Ultracode.Epoch, epoch_id, authorize?: false, load: [:run]) do\n        {:ok, epoch} -> {:ok, epoch}\n        {:error, error} -> {:error, {:observe_failed, error}}\n      end\n    end" ;
+    rx:async "true" .
+
+rx:step_admit a rx:Step ;
+    rx:order "2" ;
+    rx:name "admit" ;
+    rx:arguments "argument(:epoch, result(:observe))" ;
+    rx:runBody "fn %{epoch: epoch}, _context ->\n      if epoch.state in [:expected, :running] do\n        {:ok, %{epoch: epoch, admitted?: true}}\n      else\n        {:error, {:refused, :epoch_not_admissible, epoch.state}}\n      end\n    end" ;
+    rx:async "true" .
+
+rx:step_plan a rx:Step ;
+    rx:order "3" ;
+    rx:name "plan" ;
+    rx:arguments "argument(:admission, result(:admit))" ;
+    rx:runBody "fn %{admission: %{epoch: epoch}}, _context ->\n      next_action = if epoch.state == :expected, do: :start, else: :complete\n      {:ok, %{epoch: epoch, next_action: next_action}}\n    end" ;
+    rx:async "true" .
+
+rx:step_construct a rx:Step ;
+    rx:order "4" ;
+    rx:name "construct" ;
+    rx:arguments "argument(:plan, result(:plan))" ;
+    rx:runBody "fn %{plan: %{epoch: epoch, next_action: next_action}}, _context ->\n      changeset = Ash.Changeset.for_update(epoch, next_action, %{}, authorize?: false)\n\n      case Ash.update(changeset) do\n        {:ok, updated_epoch} -> {:ok, %{epoch: updated_epoch, action_taken: next_action}}\n        {:error, error} -> {:error, {:construct_failed, next_action, error}}\n      end\n    end" ;
+    rx:async "true" .
+
+rx:step_verify a rx:Step ;
+    rx:order "5" ;
+    rx:name "verify" ;
+    rx:arguments "argument(:constructed, result(:construct))\n    argument(:original, result(:observe))" ;
+    rx:runBody "fn %{constructed: %{epoch: constructed_epoch, action_taken: action_taken}, original: original},\n           _context ->\n      expected_state = if action_taken == :start, do: :running, else: :completed\n\n      case Ash.get(Xaas.Ultracode.Epoch, constructed_epoch.id, authorize?: false) do\n        {:ok, %{state: ^expected_state} = reloaded} ->\n          {:ok,\n           %{\n             outcome: :alive,\n             epoch: reloaded,\n             original_state: original.state,\n             action_taken: action_taken,\n             evidence: %{\n               \"expected_state\" => Atom.to_string(expected_state),\n               \"observed_state\" => Atom.to_string(reloaded.state)\n             }\n           }}\n\n        {:ok, mismatched} ->\n          {:ok,\n           %{\n             outcome: :build_broken,\n             epoch: mismatched,\n             original_state: original.state,\n             action_taken: action_taken,\n             evidence: %{\n               \"expected_state\" => Atom.to_string(expected_state),\n               \"observed_state\" => Atom.to_string(mismatched.state)\n             }\n           }}\n\n        {:error, error} ->\n          {:error, {:verify_failed, error}}\n      end\n    end" ;
+    rx:async "true" .
+
+rx:step_receipt a rx:Step ;
+    rx:order "6" ;
+    rx:name "receipt" ;
+    rx:arguments "argument(:verification, result(:verify))\n    argument(:epoch, result(:observe))" ;
+    rx:runBody "fn %{verification: verification, epoch: original_epoch}, _context ->\n      Xaas.Ultracode.Receipt\n      |> Ash.Changeset.for_create(\n        :seal,\n        %{\n          epoch_id: original_epoch.id,\n          subject: original_epoch.exact_subject,\n          outcome: verification.outcome,\n          evidence: verification.evidence,\n          sealed_at: DateTime.utc_now()\n        },\n        authorize?: false\n      )\n      |> Ash.create()\n      |> case do\n        {:ok, receipt} ->\n          {:ok,\n           %{\n             epoch_id: original_epoch.id,\n             action_taken: verification.action_taken,\n             outcome: verification.outcome,\n             receipt_id: receipt.id\n           }}\n\n        {:error, error} ->\n          {:error, {:receipt_seal_failed, error}}\n      end\n    end" ;
+    rx:async "true" .

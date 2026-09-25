@@ -1,0 +1,11 @@
+---
+to: GGEN-SH-AFTER-PROOF.txt
+skip_empty: false
+sh_after: "mix compile 2>&1 | tee GGEN-SH-AFTER-MIX-COMPILE.log; echo real-sh-after-ran >> GGEN-SH-AFTER-MIX-COMPILE.log"
+sparql:
+  results: |
+    PREFIX xar: <https://ggen.io/ontology/xaas-ash-render#>
+    SELECT ?moduleName WHERE { ?t a xar:RenderTarget ; xar:moduleName ?moduleName . }
+---
+real capability count from ontology: {{ results | length }}
+generated at project root (cwd for sh_after): this file's own directory

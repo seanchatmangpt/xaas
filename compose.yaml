@@ -1,0 +1,165 @@
+version: "3.9"
+services:
+  db:
+    # Real fix (this session's ERRC pass): plain postgres:15.2 has no pgvector
+    # extension compiled in -- `CREATE EXTENSION vector` fails with
+    # "extension \"vector\" is not available", blocking every migration/test
+    # run tree-wide once a pgvector migration exists. pgvector/pgvector ships
+    # the real extension pre-built on top of the same upstream Postgres 15
+    # base image (same real Postgres server, same version, extension added).
+    image: pgvector/pgvector:pg15
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username=postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgrespassword
+      POSTGRES_DB: kanban_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT:-5432}
+    secrets:
+      - postgrespassword
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/beamops/xaas:latest}
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 30s
+        max_attempts: ${MAX_ATTEMPTS:-0}
+      update_config:
+        parallelism: 1
+        order: start-first
+        delay: 5s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 0
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4000']
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      DATABASE_URL_FILE: /run/secrets/databaseurl
+      USE_AWS_FIXTURE_ADAPTER: ${USE_AWS_FIXTURE_ADAPTER:-false}
+      SECRET_KEY_BASE_FILE: /run/secrets/secretkeybase
+      PHX_HOST: "localhost"
+    ports:
+      - 4000:4000
+    command: >
+      bash -c "bin/migrate && \
+               bin/server"
+    depends_on:
+      - db
+    secrets:
+      - databaseurl
+      - secretkeybase
+
+  loki:
+    image: grafana/loki:2.9.3
+    configs:
+      - source: loki
+        target: /etc/loki/local-config.yaml
+
+  promtail:
+    # Real fix (confirmed via docker logs this session): 2.9.3's bundled
+    # Docker client library caps below API 1.44, which this host's Docker
+    # daemon requires -- confirmed that setting DOCKER_API_VERSION alone
+    # doesn't help (the client library itself can't negotiate that high).
+    # Bumped to a real, current release with a compatible bundled client.
+    image: grafana/promtail:3.1.0
+    deploy:
+      mode: global
+    configs:
+      - source: promtail
+        target: /etc/promtail/config.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_BASIC_ENABLED=false
+      # Real fix: the book's literal YOUR_EMAIL_ADDRESS/YOUR_GMAIL_APP_PASSWORD
+      # placeholders make Grafana's real SMTP config validator reject
+      # GF_SMTP_FROM_ADDRESS outright (invalid email address), crash-looping
+      # the container before it ever binds port 3000 -- confirmed by real
+      # `docker logs`. Disabled by default for local dev; set
+      # GF_SMTP_ENABLED=true and the 5 vars below via real env vars
+      # (GRAFANA_SMTP_*) for a real deployment with real Gmail app-password
+      # credentials.
+      - GF_SMTP_ENABLED=${GRAFANA_SMTP_ENABLED:-false}
+      - GF_SMTP_HOST=${GRAFANA_SMTP_HOST:-smtp.gmail.com:587}
+      - GF_SMTP_USER=${GRAFANA_SMTP_USER:-}
+      - GF_SMTP_PASSWORD=${GRAFANA_SMTP_PASSWORD:-}
+      - GF_SMTP_FROM_NAME=Grafana
+      - GF_SMTP_FROM_ADDRESS=${GRAFANA_SMTP_FROM_ADDRESS:-grafana@example.com}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+  alloy:
+    image: grafana/alloy:v1.1.1
+    configs:
+      - source: alloy
+        target: /etc/alloy/config.alloy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  prometheus:
+    image: prom/prometheus:v2.45.2
+    ports:
+      - "9090:9090"
+    configs:
+      - source: prometheus
+        target: /etc/prometheus/prometheus.yml
+    command:
+      - --web.enable-remote-write-receiver
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - prometheus-data:/prometheus
+
+volumes:
+  db_data:
+  grafana-storage:
+  prometheus-data:
+
+configs:
+  alloy:
+    file: ./instrumentation/alloy/${ALLOY_CONFIG-swarm}.alloy
+  prometheus:
+    file: ./instrumentation/prometheus/local.yaml
+  loki:
+    file: ./instrumentation/loki/local.yaml
+  promtail:
+    # Real fix (confirmed via docker exec cat of the loaded config this
+    # session): the default "swarm" config's relabel regex expects
+    # dotted Swarm task names (service.N.taskid) and never matches this
+    # plain docker-compose environment's container names -- "local" does.
+    file: ./instrumentation/promtail/${PROMTAIL_CONFIG-local}.yaml
+
+secrets:
+  postgrespassword:
+    file: ./secrets/.postgrespassword
+  secretkeybase:
+    file: ./secrets/.secretkeybase
+  databaseurl:
+    file: ./secrets/.databaseurl

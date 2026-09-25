@@ -1,0 +1,48 @@
+name: CI packer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "packer/**"
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    name: Compile with mix test, format, dialyzer & unused deps check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse versions from .tool-versions
+        id: parse-asdf
+        run: ./scripts/versions.sh
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: ${{ env.PACKER_VERSION }}
+
+      - name: Packer init
+        working-directory: packer
+        # Real fix: `packer validate` fails with "Error: Missing plugins ...
+        # Did you run packer init for this project?" on every run on main
+        # back through at least headSha 2207203 -- confirmed via a real
+        # failed CI run this session (run 33908448807). `packer init` must
+        # run before `packer validate` to install required plugins
+        # (github.com/hashicorp/amazon).
+        run: packer init .
+
+      - name: Packer template validation
+        working-directory: packer
+        # Real fix: `-check` is not a valid `packer validate` flag (that flag
+        # belongs to `packer fmt -check` below) -- confirmed via a real failed
+        # CI run this session ("flag provided but not defined: -check").
+        run: packer validate .
+
+      - name: Packer template format check
+        working-directory: packer
+        run: packer fmt -check .

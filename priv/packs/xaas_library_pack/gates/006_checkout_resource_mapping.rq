@@ -1,0 +1,14 @@
+PREFIX schema: <https://schema.org/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+
+SELECT ?res ?module ?tableName ?user ?book ?borrowedAt ?returnedAt ?status WHERE {
+  ?res a xl:Checkout ;
+       xl:resourceModule ?module ;
+       xl:tableName ?tableName ;
+       prov:wasAssociatedWith ?user ;
+       schema:itemBorrowed ?book ;
+       schema:startTime ?borrowedAt ;
+       schema:endTime ?returnedAt ;
+       schema:actionStatus ?status .
+}

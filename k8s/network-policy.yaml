@@ -1,0 +1,185 @@
+# Default-deny ingress/egress on the xaas Deployment (app: xaas), plus narrow
+# explicit allows -- adapted from ~/chatman-ecosystem/platform-console/k8s/
+# network-policies.yaml's default-deny + scoped-allow pattern, simplified for
+# this project's real topology: single namespace (default), no Istio (no
+# istiod/ingressgateway/sidecar egress needed), no cross-namespace callers.
+#
+# Apply with:
+#   kubectl apply -f k8s/network-policy.yaml
+#
+# UPDATE 2026-08-20: applied to kind-xaas (kind v0.30.0) and real before/after
+# connectivity testing (curl TCP-connect to a should-be-denied path,
+# xaas -> prometheus:9090, repeated 3x with policy present/absent) confirms
+# kindnet on this cluster DOES enforce NetworkPolicy -- connection succeeded
+# before applying this file and timed out (blocked) after, reproducibly.
+# This supersedes the original disclosure below, which is now stale for this
+# cluster/kind version -- kept for history, but do not assume it without
+# re-checking, since kindnet's enforcement has evidently changed. See
+# docs/claude/diataxis/explanation/k8s-fault-scan-report.md finding 4 for the
+# full real test record.
+#
+# Scope: the `app: xaas` Deployment (k8s/deployment.yaml) only.
+# `app: postgres` (k8s/postgres.yaml) is not given its own default-deny here
+# -- only a matching ingress allow so xaas can still reach it (see below).
+# Widening postgres to its own default-deny + DNS egress allow is a natural
+# follow-up but is out of scope for "the xaas Deployment" as asked.
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: xaas-default-deny
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: xaas
+  policyTypes:
+    - Ingress
+    - Egress
+  # No ingress/egress rules listed -> both directions fully denied by
+  # default for pods matching `app: xaas`. Every allow below is additive
+  # (NetworkPolicy objects on the same pods are OR'd per policyType, not
+  # replacing), same semantics as the platform-console reference file.
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  # Inbound HTTP: xaas serves Phoenix on containerPort 4000
+  # (k8s/deployment.yaml, k8s/headless-service.yaml). No Istio ingress
+  # gateway or platform-console proxy exists in front of this app, so this
+  # allows from any pod in the same default namespace on 4000 -- the
+  # narrowest rule that still lets the xaas Service/headless-service and
+  # any port-forward/kubectl-proxy-based access work in this single-
+  # namespace, no-mesh setup. Tighten to a specific client podSelector
+  # later if/when a real front door (ingress controller, gateway) exists.
+  name: xaas-allow-ingress-http
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: xaas
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+      ports:
+        - protocol: TCP
+          port: 4000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  # Outbound to Postgres: config/runtime.exs's DATABASE_URL points at the
+  # in-cluster `postgres` Service (k8s/postgres.yaml, app: postgres) on
+  # 5432. Without this, xaas-default-deny above blocks Ecto's connection
+  # entirely.
+  name: xaas-allow-egress-postgres
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: xaas
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  # Outbound DNS: xaas-default-deny's empty egress blocks kube-dns too,
+  # which would break Service-name resolution (e.g. resolving `postgres`
+  # itself) even though the rule above allows the resulting connection.
+  # Standard kube-system/kube-dns coordinates, same as the reference
+  # file's own *-allow-egress-dns-istiod rules minus the istiod half
+  # (no Istio in this cluster, so no istiod/sidecar egress is needed).
+  name: xaas-allow-egress-dns
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: xaas
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  # Inbound allow for postgres so xaas-allow-egress-postgres's egress side
+  # actually has a matching, permitted path in (NetworkPolicy is
+  # stateful/connection-tracking per the CNI, but that only covers the
+  # return traffic of a connection already allowed both ways at
+  # initiation -- if postgres pods ever gain their own default-deny
+  # ingress policy, this rule is required for xaas to reach them at all).
+  # No default-deny is added on `app: postgres` by this file (see header),
+  # so today this rule is additive/inert-until-postgres-gets-a-deny-policy,
+  # included now so postgres can be locked down later without also having
+  # to remember to come back and re-open this specific path.
+  name: postgres-allow-ingress-from-xaas
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: xaas
+      ports:
+        - protocol: TCP
+          port: 5432
+
+# ------------------------------------------------------------ original caveat (2026, earlier)
+#
+# kind's default CNI is kindnet, which does NOT enforce NetworkPolicy
+# objects -- they are accepted by the API server but silently have no
+# effect on traffic. If ~/xaas's kind cluster (`docs/AWS-CHAPTERS-
+# SUBSTITUTION.md`'s colima+kind substitution) is still running stock
+# kindnet, applying this file changes nothing observable until a
+# NetworkPolicy-enforcing CNI (Calico, Cilium, etc.) is installed instead.
+# Confirm with `kubectl get pods -n kube-system -l app=calico-node` (or
+# equivalent) before relying on this file for real isolation -- do not
+# assume enforcement without checking the live cluster's CNI.
+#
+# ------------------------------------------------------- 2026-08-20 correction
+#
+# The above is NOT current for kind-xaas on kind v0.30.0. Only a bare
+# `kindnet-*` pod exists in kube-system (no calico-node/cilium), yet real
+# before/after TCP-connect testing (xaas pod -> prometheus:9090, an
+# unallowed path under this policy) showed the connection succeed with the
+# policy absent and time out (blocked) with it applied, reproducibly across
+# 3 attempts and a remove/reapply cycle. kindnet's real NetworkPolicy
+# enforcement has evidently changed since the original note above was
+# written -- do not trust either version of this caveat without a fresh
+# live check on your own cluster/kind version; enforcement behavior is not
+# a stable assumption across kind releases.

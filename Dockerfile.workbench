@@ -1,0 +1,21 @@
+# Private GGen execution worker for Fly.io.
+#
+# Runtime identity is the exact signed multi-arch ggen-ecosystem index observed
+# in successful publication run 33926356178. Do not move this to :latest: the
+# digest is part of every workbench construction receipt.
+ARG GGEN_ECOSYSTEM_IMAGE=ghcr.io/seanchatmangpt/ggen-ecosystem@sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0
+FROM ${GGEN_ECOSYSTEM_IMAGE}
+
+ENV PORT=8080
+ENV GGEN_ECOSYSTEM_DIGEST=sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0
+ENV HOME=/tmp/xaas-workbench-home
+
+COPY fly/workbench_server.py /opt/xaas/workbench_server.py
+
+RUN mkdir -p "${HOME}" \
+    && chown -R nobody:nogroup "${HOME}" /opt/xaas
+
+USER nobody
+
+EXPOSE 8080
+CMD ["python3", "/opt/xaas/workbench_server.py"]

@@ -1,0 +1,8 @@
+PREFIX xu: <https://ggen.io/ontology/xaas-ultracode#>
+
+SELECT ?resource ?resourceModule ?tableName ?field WHERE {
+  ?resource xu:resourceModule ?resourceModule ;
+            xu:tableName ?tableName ;
+            xu:field ?field .
+}
+ORDER BY ?resourceModule ?field

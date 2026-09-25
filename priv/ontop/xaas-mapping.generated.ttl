@@ -1,0 +1,675 @@
+@prefix rr: <http://www.w3.org/ns/r2rml#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#Xaas_Governance_ApprovalCmekKeyBinding> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_cmek_key_bindings" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "key_ref" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "provider" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ] .
+
+<#Xaas_Operations_CastleVerbInventoryGoals> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "castle_verb_inventory_goals" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Accounts_Org> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "orgs" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/org#Organization>; rr:class <http://www.w3.org/ns/prov#Agent> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/2004/02/skos/core#notation>; rr:objectMap [ rr:column "slug" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "suspension_reason" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "name" ] ] .
+
+<#Xaas_Operations_RouteCastleDeploy> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_castle_deploys" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Operations_RouteCastleSchedule> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_castle_schedules" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Marketplace_Provider> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "marketplace_providers" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Agent>; rr:class <https://schema.org/Organization> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/description>; rr:objectMap [ rr:column "description" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/2004/02/skos/core#notation>; rr:objectMap [ rr:column "slug" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "name" ] ] .
+
+<#Xaas_Operations_ActuationReceipt> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "actuation_receipts" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "intent_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "subject_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/odrl/2/action>; rr:objectMap [ rr:column "action" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "completed_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "started_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "attempt" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "error" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "input_hash" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "ontology_class_iri" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "ontology_projection_hash" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "replay_token" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "resource_module" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "result" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "result_hash" ] ] .
+
+<#Xaas_Governance_ApprovalSsoRoleMappingUpdate> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_sso_role_mapping_updates" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "requested_mappings" ] ] .
+
+<#Xaas_Governance_ApprovalDeniedPartyOverride> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_denied_party_overrides" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "screening_record_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "decision" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "justification" ] ] .
+
+<#Xaas_Governance_ApprovalLegalHoldRelease> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_legal_hold_releases" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "hold_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "release_reason" ] ] .
+
+<#Xaas_Governance_ApprovalPersonnelAttestationRecord> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_personnel_attestation_records" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "attestation_statement" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "overrides" ] ] .
+
+<#Xaas_Governance_ApprovalGeofenceExceptionGrant> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_geofence_exception_grants" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "identifier_or_cidr" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "ttl_hours" ] ] .
+
+<#Xaas_Operations_RouteCastleSunset> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_castle_sunsets" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Governance_ApprovalComplianceRotationBlock> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_compliance_rotation_blocks" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ] .
+
+<#Xaas_Billing_ApprovalPricingOverride> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_pricing_overrides" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Platform_RouteProjects> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_projects" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Accounts_OrgMembership> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "org_memberships" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/org#Membership> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#role>; rr:objectMap [ rr:column "role" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "user_id" ] ] .
+
+<#Xaas_Billing_Subscription> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "billing_subscriptions" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <https://schema.org/Service> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "stripe_customer_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "stripe_subscription_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/2004/02/skos/core#notation>; rr:objectMap [ rr:column "tier" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "current_period_end" ] ] .
+
+<#Xaas_Governance_ApprovalPentestFindingResolve> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_pentest_finding_resolves" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "finding_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "resolution" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "resolution_notes" ] ] .
+
+<#Xaas_Platform_RouteSecrets> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_secrets" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "namespace" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "name" ] ] .
+
+<#Xaas_Operations_CastleVerbInventoryComponents> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "castle_verb_inventory_components" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Governance_AuditExportToken> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "audit_export_tokens" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "expires_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "revoked_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "created_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "scope" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "token_hash" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "token_prefix" ] ] .
+
+<#Xaas_Ledger_Account> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "ledger_accounts" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <https://schema.org/BankAccount> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "identifier" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/currency>; rr:objectMap [ rr:column "currency" ] ] .
+
+<#Xaas_Governance_ApprovalSourceEscrowSnapshot> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_source_escrow_snapshots" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "namespace" ] ] .
+
+<#Xaas_Accounts_User> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "users" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Agent>; rr:class <http://xmlns.com/foaf/0.1/Person> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "archived_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "confirmed_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "hashed_password" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/email>; rr:objectMap [ rr:column "email" ] ] .
+
+<#Xaas_Platform_RouteProjectsBackups> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_projects_backups" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "taken_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "namespace" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "retain_until" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "size_bytes" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "job_name" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "project_name" ] ] .
+
+<#Xaas_Platform_RouteOrgsCustomDomain> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_orgs_custom_domains" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "certificate_message" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "certificate_reason" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "hostname" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "certificate_secret_name" ] ] .
+
+<#Xaas_Governance_ApprovalBackupRetentionChange> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_backup_retention_changes" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/2004/02/skos/core#notation>; rr:objectMap [ rr:column "tier" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "requested_retention_days" ] ] .
+
+<#Xaas_Governance_ApprovalBreakGlassJustificationReview> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_break_glass_justification_reviews" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "grant_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "justification" ] ] .
+
+<#Xaas_Governance_ApprovalExportSubscriptionUpdate> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_export_subscription_updates" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "access_key_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "bucket_endpoint" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "cadence" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "enabled" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "prefix" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "scope" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "secret_access_key" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "bucket_name" ] ] .
+
+<#Xaas_Ledger_Transfer> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "ledger_transfers" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity>; rr:class <https://schema.org/MoneyTransfer> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "from_account_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "to_account_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "timestamp" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/value>; rr:objectMap [ rr:column "amount" ] ] .
+
+<#Xaas_Governance_PentestFinding> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "pentest_findings" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/description>; rr:objectMap [ rr:column "description" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "engagement_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "filed_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "severity" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "title" ] ] .
+
+<#Xaas_Governance_ApprovalDsarErasure> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_dsar_erasures" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "subject_email" ] ] .
+
+<#Xaas_Platform_RouteFeatureFlags> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_feature_flags" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "enabled" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "flag_key" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "required_tier" ] ] .
+
+<#Xaas_Platform_Webhook> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "platform_webhooks" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <https://schema.org/EntryPoint> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "enabled" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "encrypted_secret" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "event_types" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/url>; rr:objectMap [ rr:column "url" ] ] .
+
+<#Xaas_Governance_ApprovalDrFailover> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_dr_failovers" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "from_region" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "to_region" ] ] .
+
+<#Xaas_Governance_ApprovalEnvironmentPromote> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_environment_promotes" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "from_environment" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "to_environment" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "project_name" ] ] .
+
+<#Xaas_Governance_ApprovalInsurancePolicyUpdate> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_insurance_policy_updates" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "am_best_rating" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "carrier" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "coverage_limit_usd" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "coverage_type" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "effective_date" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "expiry_date" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "policy_number" ] ] .
+
+<#Xaas_Operations_ActuationIntent> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "actuation_intents" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "subject_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/odrl/2/action>; rr:objectMap [ rr:column "action" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "actor_ref" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "authority" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "idempotency_key" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "input" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "input_hash" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "ontology_class_iri" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "ontology_projection_hash" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "resource_module" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "tenant_ref" ] ] .
+
+<#Xaas_Governance_ApprovalChangeOfControlNotify> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_change_of_control_notifies" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/description>; rr:objectMap [ rr:column "description" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "event_type" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "notice_window_days" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "notification_method" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "trigger_date" ] ] .
+
+<#Xaas_Operations_AuditLogEntry> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "audit_log_entries" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/description>; rr:objectMap [ rr:column "actor_description" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "resource_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "resource_type" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/odrl/2/action>; rr:objectMap [ rr:column "action" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#generatedAtTime>; rr:objectMap [ rr:column "occurred_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#value>; rr:objectMap [ rr:column "metadata" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "actor_id" ] ] .
+
+<#Xaas_Operations_CapabilityLivenessReceipt> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "capability_liveness_receipts" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/description>; rr:objectMap [ rr:column "detail" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/subject>; rr:objectMap [ rr:column "subject" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "authority" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "capability" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "executed" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "exit_code" ] ] .
+
+<#Xaas_Platform_WebhookDelivery> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "platform_webhook_deliveries" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "webhook_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "last_attempted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "attempt_count" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "event_type" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "payload" ] ] .
+
+<#Xaas_Governance_DataDestructionCertificateIssue> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "data_destruction_certificate_issues" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Governance_ApprovalDeploymentQuarantine> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_deployment_quarantines" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "environment" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "deployment_name" ] ] .
+
+<#Xaas_Billing_ApprovalTierDowngrade> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_tier_downgrades" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "subscription_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "requested_tier" ] ] .
+
+<#Xaas_Governance_FreezeWindow> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "freeze_windows" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <https://schema.org/Schedule> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "allow_emergency_override" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "created_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/endDate>; rr:objectMap [ rr:column "ends_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/startDate>; rr:objectMap [ rr:column "starts_at" ] ] .
+
+<#Xaas_Operations_ApprovalK8sFaultRemediateSuggest> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_k8s_fault_remediate_suggests" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Billing_ApprovalQuotaOverride> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_quota_overrides" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Operations_CastleVerbFortune5Requirements> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "castle_verb_fortune5_requirements" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Operations_RouteCastleRun> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "route_castle_runs" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Billing_ApprovalPatchSlaCreditApply> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_patch_sla_credit_applies" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "credit_amount_cents" ] ] .
+
+<#Xaas_Governance_ApprovalFreezeOverride> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_freeze_overrides" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "freeze_window_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reason" ] ] .
+
+<#Xaas_Governance_ApprovalOrgDelete> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_org_deletes" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Billing_ApprovalInvoiceReconciliationApprove> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_invoice_reconciliation_approves" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Billing_ApprovalSlaCreditApply> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_sla_credit_applies" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "credit_amount_cents" ] ] .
+
+<#Xaas_Governance_ApprovalSubprocessorRegistryUpdate> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_subprocessor_registry_updates" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "subprocessor_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "category" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "change_action" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "data_categories" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "purpose" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "regions" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/name>; rr:objectMap [ rr:column "name" ] ] .
+
+<#Xaas_Governance_ApprovalVendorOffboardingAttestationIssue> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_vendor_offboarding_attestation_issues" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "contractual_sla_days" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "termination_date" ] ] .
+
+<#Xaas_Marketplace_ApprovalProviderStatusChange> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_provider_status_changes" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "provider_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "requested_status" ] ] .
+
+<#Xaas_Governance_ApprovalLeRequestRespond> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_le_request_responds" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "jurisdiction" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "reference_number" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "request_type" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "requesting_authority" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "response_summary" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "summary" ] ] .
+
+<#Xaas_Operations_Incident> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "incidents" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/prov#Activity>; rr:class <https://schema.org/Event> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "inserted_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/description>; rr:objectMap [ rr:column "description" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/type>; rr:objectMap [ rr:column "status" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/org#organization>; rr:objectMap [ rr:column "org_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "opened_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "resolved_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "postmortem_remediation" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "postmortem_root_cause" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "postmortem_status" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "severity" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "title" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/addressRegion>; rr:objectMap [ rr:column "region" ] ] .
+
+<#Xaas_Accounts_Token> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "tokens" ] ;
+  rr:subjectMap [ rr:template "{jti}"; rr:class <http://www.w3.org/ns/prov#Entity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/created>; rr:objectMap [ rr:column "created_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/modified>; rr:objectMap [ rr:column "updated_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/subject>; rr:objectMap [ rr:column "subject" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#atTime>; rr:objectMap [ rr:column "expires_at" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "encrypted_extra_data" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "jti" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "purpose" ] ] .
+
+<#Xaas_Operations_ApprovalCastleVerbSchedule> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "approval_castle_verb_schedules" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <http://www.w3.org/ns/odrl/2/Agreement>; rr:class <http://www.w3.org/ns/prov#Activity> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "approved_by" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://www.w3.org/ns/prov#wasAssociatedWith>; rr:objectMap [ rr:column "requested_by" ] ] .
+
+<#Xaas_Ledger_Balance> a rr:TriplesMap ;
+  rr:logicalTable [ rr:tableName "ledger_balances" ] ;
+  rr:subjectMap [ rr:template "{id}"; rr:class <https://schema.org/MonetaryAmount> ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/identifier>; rr:objectMap [ rr:column "id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "account_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <http://purl.org/dc/terms/relation>; rr:objectMap [ rr:column "transfer_id" ] ];
+  rr:predicateObjectMap [ rr:predicate <https://schema.org/additionalProperty>; rr:objectMap [ rr:column "balance" ] ] .

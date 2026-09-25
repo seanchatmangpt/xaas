@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#17150F}
+a{color:#B5352A}a:hover{color:#8E2519}
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<section data-label="Title" data-screen-label="01" data-speaker-notes="Set the frame: this is a proposal plus a working system. Everything after slide 17 is running software, not a promise." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Qvest engagement · Willow Creek Unified, K–8</div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:36px">
+    <h1 style="font-family:'Instrument Serif',serif;font-size:172px;line-height:.92;letter-spacing:-.03em;margin:0;font-weight:400">Next Read</h1>
+    <p style="font-size:44px;line-height:1.3;margin:0;max-width:1180px;color:rgba(23,21,15,.78);text-wrap:pretty">Turning circulation history and the electronic catalog into more books in more students' hands.</p>
+  </div>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:48px;padding-top:40px;border-top:1px solid rgba(23,21,15,.18)">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:28px;color:rgba(23,21,15,.55)">Architecture, rollout, and delivery estimate</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.75)">Wednesday 9 September 2026 · 11:00 PT</span>
+    </div>
+    <div style="border:3px solid #B5352A;border-radius:6px;padding:16px 26px;transform:rotate(-2.2deg)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;letter-spacing:.18em;text-transform:uppercase;color:#B5352A">Proposal + live demo</span>
+    </div>
+  </div>
+</section>
+
+<section data-label="The brief" data-screen-label="02" data-speaker-notes="Read the brief back to them before proposing anything. Three asks in the scenario, three added by the follow-up email." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Starting point</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">The brief, as we heard it</h2>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px;margin-top:56px">
+    <div style="background:#FCFAF5;border:1px solid rgba(23,21,15,.14);border-radius:8px;padding:40px 36px;display:flex;flex-direction:column;gap:20px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.4)">01</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:42px;line-height:1.1">Raise student reading</span>
+      <span style="font-size:28px;line-height:1.5;color:rgba(23,21,15,.7)">Using circulation history and the electronic catalog the district already runs.</span>
+    </div>
+    <div style="background:#FCFAF5;border:1px solid rgba(23,21,15,.14);border-radius:8px;padding:40px 36px;display:flex;flex-direction:column;gap:20px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.4)">02</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:42px;line-height:1.1">Show the whole system</span>
+      <span style="font-size:28px;line-height:1.5;color:rgba(23,21,15,.7)">Architecture, rollout, and how the thing is managed once we hand it over.</span>
+    </div>
+    <div style="background:#FCFAF5;border:1px solid rgba(23,21,15,.14);border-radius:8px;padding:40px 36px;display:flex;flex-direction:column;gap:20px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.4)">03</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:42px;line-height:1.1">Estimate the delivery</span>
+      <span style="font-size:28px;line-height:1.5;color:rgba(23,21,15,.7)">Duration and team, in terms both technical and nontechnical partners can hold.</span>
+    </div>
+  </div>
+  <div style="margin-top:44px;padding-top:32px;border-top:1px solid rgba(23,21,15,.18);display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Added by the follow-up</span>
+    <span style="font-size:28px;color:rgba(23,21,15,.72)">Runnable code · architecture diagrams · an explicit AI/ML trade-off argument.</span>
+  </div>
+</section>
+
+<section data-label="Div · Problem" data-screen-label="03" data-speaker-notes="Short section break. One sentence, then move." style="padding:88px 96px 80px;background:#17150F;color:#F4EFE6;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column;justify-content:center">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:200px;line-height:1;color:rgba(244,239,230,.16)">01</span>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:110px;line-height:1;margin:24px 0 0;font-weight:400">Problem and signal</h2>
+  <p style="font-size:36px;line-height:1.4;margin:36px 0 0;max-width:1080px;color:rgba(244,239,230,.62)">What is actually going wrong, and what the district already knows without collecting anything new.</p>
+</section>
+
+<section data-label="Where reading time goes" data-screen-label="04" data-speaker-notes="Be explicit that these are placeholder baselines from the scenario, not audited district numbers. Week one of discovery replaces them." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Baseline</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">The catalog is bigger than the habit</h2>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:64px;align-items:center;margin-top:40px">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <span style="font-family:'Instrument Serif',serif;font-size:150px;line-height:.9;color:#B5352A">38%</span>
+      <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.75)">of titles circulated at least once last year. The rest of the shelf is invisible.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <span style="font-family:'Instrument Serif',serif;font-size:150px;line-height:.9;color:#B5352A">1 in 5</span>
+      <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.75)">students borrowed nothing after October. Drop-off, not refusal.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <span style="font-family:'Instrument Serif',serif;font-size:150px;line-height:.9;color:#B5352A">0</span>
+      <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.75)">personalized suggestions in today's catalog. It answers searches; it never starts one.</span>
+    </div>
+  </div>
+  <div style="margin-top:36px;padding-top:28px;border-top:1px solid rgba(23,21,15,.18);font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">Placeholder baselines from the scenario dataset. Discovery week 1 replaces each one with the district's own ILS extract.</div>
+</section>
+
+<section data-label="Librarian insight" data-screen-label="05" data-speaker-notes="This is the human argument for the whole product. The system is not replacing reader's advisory; it is scaling one librarian across four hundred students." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column;justify-content:center">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">The librarian's read on it</div>
+  <blockquote style="margin:56px 0 0;max-width:1500px">
+    <p style="font-family:'Instrument Serif',serif;font-size:92px;line-height:1.12;letter-spacing:-.02em;margin:0;text-wrap:pretty">“I can hand the right book to any student standing in front of me. I can't do that for four hundred students at once.”</p>
+  </blockquote>
+  <div style="margin-top:52px;display:flex;gap:24px;align-items:baseline;flex-wrap:wrap">
+    <span style="width:64px;height:2px;background:#B5352A;display:block"></span>
+    <span style="font-size:30px;color:rgba(23,21,15,.72)">Composite of teacher-librarian interviews in the brief</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.45)">to be re-validated in discovery, week 1</span>
+  </div>
+</section>
+
+<section data-label="Signals in the building" data-screen-label="06" data-speaker-notes="Key nontechnical point: the pilot needs no new data collection. Everything on this slide is already recorded by the ILS." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Data inventory</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Signals already in the building</h2>
+  <div style="flex:1;margin-top:44px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:40px;padding-bottom:18px;border-bottom:2px solid rgba(23,21,15,.35)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Signal</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Where it lives</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">What the ranker gets from it</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:40px;padding:26px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Circulation history</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.6)">ILS, nightly extract</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.78)">Co-read patterns and completion pace</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:40px;padding:26px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Catalog metadata</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.6)">MARC + electronic catalog</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.78)">Subject, reading level, format, series</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:40px;padding:26px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Holds and renewals</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.6)">ILS</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.78)">Strength of interest, not just exposure</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:40px;padding:26px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Shelf availability</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.6)">ILS item status</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.78)">Whether a student can take it home today</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:40px;padding:26px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600;color:#B5352A">Librarian curation</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.6)">New — added by Next Read</span>
+      <span style="font-size:28px;color:rgba(23,21,15,.78)">Professional judgment, as a weighted signal</span>
+    </div>
+  </div>
+  <div style="margin-top:32px;font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">The pilot requires no new data collection from students, teachers, or families.</div>
+</section>
+
+<section data-label="Div · Product" data-screen-label="07" data-speaker-notes="Transition into the product. Two audiences, one domain." style="padding:88px 96px 80px;background:#17150F;color:#F4EFE6;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column;justify-content:center">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:200px;line-height:1;color:rgba(244,239,230,.16)">02</span>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:110px;line-height:1;margin:24px 0 0;font-weight:400">Product and intelligence</h2>
+  <p style="font-size:36px;line-height:1.4;margin:36px 0 0;max-width:1080px;color:rgba(244,239,230,.62)">What a student sees, what a librarian controls, and how a title earns its place in the list.</p>
+</section>
+
+<section data-label="Student experience" data-screen-label="08" data-speaker-notes="Three claims: ranked not searched, explained in the student's own borrowing history, and only titles they can actually take home today." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Student experience</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Four books, not four thousand</h2>
+  <div style="flex:1;display:grid;grid-template-columns:1.35fr 1fr;gap:56px;margin-top:44px;min-height:0">
+    <div style="background:#FCFAF5;border:1px solid rgba(23,21,15,.14);border-radius:8px;padding:34px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px">
+        <span style="font-family:'Instrument Serif',serif;font-size:40px">Your next reads</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.45)">Maya R. · grade 6</span>
+      </div>
+      <div style="display:flex;gap:22px;align-items:center;padding:22px;border:1px solid rgba(181,53,42,.35);border-radius:6px;background:rgba(181,53,42,.05)">
+        <span style="flex:none;width:64px;height:88px;border-radius:3px;background:#23405F;display:block"></span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1">The Salt Road Cipher</span>
+          <span style="font-size:26px;color:rgba(23,21,15,.6)">Science mystery · level 5.4 · 3 on shelf</span>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#B5352A">match 87</span>
+      </div>
+      <div style="display:flex;gap:22px;align-items:center;padding:22px;border:1px solid rgba(23,21,15,.12);border-radius:6px">
+        <span style="flex:none;width:64px;height:88px;border-radius:3px;background:#5A6B45;display:block"></span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1">Bloom of the Deep</span>
+          <span style="font-size:26px;color:rgba(23,21,15,.6)">Marine science fiction · level 6.1 · 2 on shelf</span>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">match 78</span>
+      </div>
+      <div style="display:flex;gap:22px;align-items:center;padding:22px;border:1px solid rgba(23,21,15,.12);border-radius:6px">
+        <span style="flex:none;width:64px;height:88px;border-radius:3px;background:#B07A1E;display:block"></span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1">Fieldwork for Beginners</span>
+          <span style="font-size:26px;color:rgba(23,21,15,.6)">Nonfiction · level 5.8 · 1 on shelf</span>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">match 71</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:34px;justify-content:center">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Ranked, not searched</span>
+        <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.78)">The page opens with a decision already made. No empty search box.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Explained in their own words</span>
+        <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.78)">“Because you finished The Wildwater Signal…” — every reason traces to a record.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Borrowable today</span>
+        <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.78)">Availability is a ranking weight, so the list matches the shelf.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Librarian experience" data-screen-label="09" data-speaker-notes="The librarian is not a spectator. Curation is a first-class input to the model, and the AI panel answers in the catalog's own vocabulary." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Librarian experience</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">The desk keeps the last word</h2>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1.35fr;gap:56px;margin-top:44px;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:34px;justify-content:center">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#23405F">Curation as a signal</span>
+        <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.78)">Pin, suppress, or promote a title. The change reaches the student in under a second.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#23405F">Circulation as it happens</span>
+        <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.78)">Checkouts land on the desk dashboard without a refresh or a report run.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#23405F">Ask in plain language</span>
+        <span style="font-size:30px;line-height:1.45;color:rgba(23,21,15,.78)">“Accessible science fiction for students who liked this title” — answered from the catalog index.</span>
+      </div>
+    </div>
+    <div style="background:#FCFAF5;border:1px solid rgba(23,21,15,.14);border-radius:8px;padding:34px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px">
+        <span style="font-family:'Instrument Serif',serif;font-size:40px">Advisory desk</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#5A6B45">live · no refresh</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px">
+        <div style="border:1px solid rgba(23,21,15,.12);border-radius:6px;padding:20px;background:#F8F4EC;display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.45)">Out today</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1">42</span>
+        </div>
+        <div style="border:1px solid rgba(23,21,15,.12);border-radius:6px;padding:20px;background:#F8F4EC;display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.45)">Readers</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1">312</span>
+        </div>
+        <div style="border:1px solid rgba(23,21,15,.12);border-radius:6px;padding:20px;background:#F8F4EC;display:flex;flex-direction:column;gap:8px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.45)">Accepted</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1">68%</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;padding:20px 0;border-top:1px solid rgba(23,21,15,.12)">
+        <span style="flex:none;width:8px;height:44px;border-radius:2px;background:#5A6B45;display:block"></span>
+        <span style="flex:1;font-size:28px">Bloom of the Deep</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:8px 14px;border-radius:3px;background:#B5352A;color:#F4EFE6">pinned</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;padding:0 0 20px;border-bottom:1px solid rgba(23,21,15,.12)">
+        <span style="flex:none;width:8px;height:44px;border-radius:2px;background:#23405F;display:block"></span>
+        <span style="flex:1;font-size:28px">The Salt Road Cipher</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:8px 14px;border-radius:3px;border:1px solid rgba(23,21,15,.22);color:rgba(23,21,15,.6)">pin</span>
+      </div>
+      <div style="padding:22px;border:1px solid rgba(35,64,95,.25);border-radius:6px;background:#F5F3EE;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:#23405F">Ask the catalog</span>
+        <span style="font-size:26px;line-height:1.45;color:rgba(23,21,15,.7)">Ranker admits the candidates. The model writes the sentence.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Ranking model" data-screen-label="10" data-speaker-notes="This is the slide the engineers will interrogate. Weights are configurable per school and stored with every ranking, so any recommendation can be reconstructed months later." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Recommendation intelligence</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">How a title earns its rank</h2>
+  <div style="margin-top:44px;padding:34px 40px;background:#17150F;border-radius:8px" data-om-raster="true">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:32px;line-height:1.6;color:#F4EFE6">score = 0.34·collab + 0.26·semantic + 0.16·gradeFit + 0.10·available + 0.06·diversity + 0.09·curation</span>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px 56px;margin-top:44px;align-content:center">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:30px;font-weight:600">Collaborative</span><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">0.34</span></div>
+      <div style="height:10px;border-radius:99px;background:rgba(23,21,15,.1)"><div style="height:10px;width:100%;border-radius:99px;background:#B5352A"></div></div>
+      <span style="font-size:26px;line-height:1.4;color:rgba(23,21,15,.6)">Who else finished what this student finished</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:30px;font-weight:600">Semantic</span><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">0.26</span></div>
+      <div style="height:10px;border-radius:99px;background:rgba(23,21,15,.1)"><div style="height:10px;width:76%;border-radius:99px;background:#B5352A"></div></div>
+      <span style="font-size:26px;line-height:1.4;color:rgba(23,21,15,.6)">Catalog-text similarity via Ash AI vectors</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:30px;font-weight:600">Grade fit</span><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">0.16</span></div>
+      <div style="height:10px;border-radius:99px;background:rgba(23,21,15,.1)"><div style="height:10px;width:47%;border-radius:99px;background:#B5352A"></div></div>
+      <span style="font-size:26px;line-height:1.4;color:rgba(23,21,15,.6)">Reading level near the student's own band</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:30px;font-weight:600">Availability</span><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">0.10</span></div>
+      <div style="height:10px;border-radius:99px;background:rgba(23,21,15,.1)"><div style="height:10px;width:29%;border-radius:99px;background:#23405F"></div></div>
+      <span style="font-size:26px;line-height:1.4;color:rgba(23,21,15,.6)">On the shelf, in this building, today</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:30px;font-weight:600">Diversity</span><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">0.06</span></div>
+      <div style="height:10px;border-radius:99px;background:rgba(23,21,15,.1)"><div style="height:10px;width:18%;border-radius:99px;background:#23405F"></div></div>
+      <span style="font-size:26px;line-height:1.4;color:rgba(23,21,15,.6)">Breaks the series rut, widens subject range</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:30px;font-weight:600;color:#B5352A">Curation</span><span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(23,21,15,.5)">0.09</span></div>
+      <div style="height:10px;border-radius:99px;background:rgba(23,21,15,.1)"><div style="height:10px;width:26%;border-radius:99px;background:#B5352A"></div></div>
+      <span style="font-size:26px;line-height:1.4;color:rgba(23,21,15,.6)">The librarian's pin, weighted like any other signal</span>
+    </div>
+  </div>
+  <div style="margin-top:32px;padding-top:28px;border-top:1px solid rgba(23,21,15,.18);font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">Weights are per-school configuration. Every ranking stores the weight set and candidate pool that produced it.</div>
+</section>
+
+<section data-label="AI boundary" data-screen-label="11" data-speaker-notes="The defensible line. We did not send children's borrowing histories to a language model and ask what they should read next." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">AI/ML trade-off</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Division of labour</h2>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:44px;margin-top:48px">
+    <div style="background:#FCFAF5;border:2px solid #17150F;border-radius:8px;padding:40px;display:flex;flex-direction:column;gap:24px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#17150F">Deterministic ranker owns</span>
+      <span style="font-size:32px;line-height:1.5">Candidate generation from circulation history</span>
+      <span style="font-size:32px;line-height:1.5">Scoring, ordering, and tie-breaking</span>
+      <span style="font-size:32px;line-height:1.5">Availability, reading-level, and opt-out filters</span>
+      <span style="font-size:32px;line-height:1.5">Reproducibility — same inputs, same list</span>
+    </div>
+    <div style="background:#FCFAF5;border:2px solid #23405F;border-radius:8px;padding:40px;display:flex;flex-direction:column;gap:24px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#23405F">Language model owns</span>
+      <span style="font-size:32px;line-height:1.5">Explaining a ranked title in a student's own history</span>
+      <span style="font-size:32px;line-height:1.5">Enriching thin catalog records for librarian review</span>
+      <span style="font-size:32px;line-height:1.5">Translating librarian questions into catalog queries</span>
+      <span style="font-size:32px;line-height:1.5">Never selecting, ordering, or admitting a title</span>
+    </div>
+  </div>
+  <div style="margin-top:44px;padding:32px 40px;background:#B5352A;border-radius:8px">
+    <span style="font-size:34px;line-height:1.4;color:#F4EFE6;text-wrap:pretty">If the model is unavailable, students still get ranked recommendations — they just arrive without the sentence explaining them.</span>
+  </div>
+</section>
+
+<section data-label="Cold start" data-screen-label="12" data-speaker-notes="Three failure modes with a specific answer each. Note the human approval gate on enrichment." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Edge cases we own</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Cold start and thin metadata</h2>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;margin-top:52px">
+    <div style="display:flex;flex-direction:column;gap:22px;padding-top:30px;border-top:4px solid #17150F">
+      <span style="font-family:'Instrument Serif',serif;font-size:44px;line-height:1.1">New student</span>
+      <span style="font-size:29px;line-height:1.5;color:rgba(23,21,15,.78)">No history. We start from the grade-band cohort and three interest taps, then decay the cohort weight as their own record fills in.</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">usable list from checkout one</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:22px;padding-top:30px;border-top:4px solid #23405F">
+      <span style="font-family:'Instrument Serif',serif;font-size:44px;line-height:1.1">Thin record</span>
+      <span style="font-size:29px;line-height:1.5;color:rgba(23,21,15,.78)">A MARC record with no summary gets model-proposed subjects and level. It sits in a review queue and cannot influence ranking until a librarian approves it.</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">human approval gate, always</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:22px;padding-top:30px;border-top:4px solid #B5352A">
+      <span style="font-family:'Instrument Serif',serif;font-size:44px;line-height:1.1">New title</span>
+      <span style="font-size:29px;line-height:1.5;color:rgba(23,21,15,.78)">Content and semantic signals only until it has five circulations, so a new arrival is never buried by having no history.</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">graduates into collaborative scoring</span>
+    </div>
+  </div>
+</section>
+
+<section data-label="Div · Architecture" data-screen-label="13" data-speaker-notes="Signal the shift for the nontechnical half of the room: two diagrams, one privacy slide, then we open the app." style="padding:88px 96px 80px;background:#17150F;color:#F4EFE6;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column;justify-content:center">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:200px;line-height:1;color:rgba(244,239,230,.16)">03</span>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:110px;line-height:1;margin:24px 0 0;font-weight:400">Architecture and governance</h2>
+  <p style="font-size:36px;line-height:1.4;margin:36px 0 0;max-width:1080px;color:rgba(244,239,230,.62)">Two diagrams, one boundary. Then we stop describing it and run it.</p>
+</section>
+
+<section data-label="System context" data-screen-label="14" data-speaker-notes="C4 level 1. Note that we read from the ILS and never become the system of record for circulation." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">C4 · level 1</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">System context</h2>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 130px 1.15fr 130px 1fr;gap:26px;align-items:center;margin-top:40px" data-om-raster="true">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="border:2px solid #17150F;border-radius:8px;padding:26px;background:#FCFAF5;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:30px;font-weight:600">Student</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.6)">Grades 3–8</span>
+      </div>
+      <div style="border:2px solid #17150F;border-radius:8px;padding:26px;background:#FCFAF5;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:30px;font-weight:600">Teacher-librarian</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.6)">Curates and advises</span>
+      </div>
+      <div style="border:2px solid #17150F;border-radius:8px;padding:26px;background:#FCFAF5;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:30px;font-weight:600">District admin</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.6)">Reads outcomes</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">uses</span>
+      <span style="width:100%;height:2px;background:rgba(23,21,15,.35);display:block"></span>
+    </div>
+    <div style="border:3px solid #B5352A;border-radius:10px;padding:38px 32px;background:#FCFAF5;display:flex;flex-direction:column;gap:16px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Software system</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1.05">Next Read</span>
+      <span style="font-size:26px;line-height:1.45;color:rgba(23,21,15,.72)">Ranks, explains, and curates reading recommendations. Realtime for both audiences.</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">Elixir · Ash · Phoenix LiveView</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">reads</span>
+      <span style="width:100%;height:2px;background:rgba(23,21,15,.35);display:block"></span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="border:2px dashed rgba(23,21,15,.45);border-radius:8px;padding:26px;background:transparent;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:30px;font-weight:600">Library ILS</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.6)">Circulation + catalog, system of record</span>
+      </div>
+      <div style="border:2px dashed rgba(23,21,15,.45);border-radius:8px;padding:26px;background:transparent;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:30px;font-weight:600">District SSO</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.6)">Rostering and identity</span>
+      </div>
+      <div style="border:2px dashed rgba(23,21,15,.45);border-radius:8px;padding:26px;background:transparent;display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:30px;font-weight:600">LLM provider</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.6)">Explanation and enrichment only</span>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:32px;font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">Next Read never becomes the system of record for circulation. The ILS stays authoritative.</div>
+</section>
+
+<section data-label="Container view" data-screen-label="15" data-speaker-notes="C4 level 2. One deployable Phoenix release, one Postgres, four Ash domains. Oban runs the nightly ILS sync and embedding backfill." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">C4 · level 2</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Container view</h2>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:34px;margin-top:40px" data-om-raster="true">
+    <div style="display:flex;flex-direction:column;gap:26px">
+      <div style="border:2px solid #17150F;border-radius:8px;padding:28px;background:#FCFAF5;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Browser</span>
+        <span style="font-size:31px;font-weight:600">Student LiveView</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.65)">Ranked reads, explanations, checkout</span>
+      </div>
+      <div style="border:2px solid #17150F;border-radius:8px;padding:28px;background:#FCFAF5;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Browser</span>
+        <span style="font-size:31px;font-weight:600">Librarian LiveView</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.65)">Curation, dashboard, catalog Q&amp;A</span>
+      </div>
+      <div style="padding:22px 28px;border-radius:8px;background:rgba(181,53,42,.1);border:1px solid rgba(181,53,42,.3);display:flex;flex-direction:column;gap:6px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#B5352A">websocket</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.7)">Both views subscribe to PubSub topics</span>
+      </div>
+    </div>
+    <div style="border:3px solid #B5352A;border-radius:10px;padding:32px;background:#FCFAF5;display:flex;flex-direction:column;gap:20px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Phoenix release · Fly.io</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="border:1px solid rgba(23,21,15,.2);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:28px;font-weight:600">Catalog</span>
+          <span style="font-size:24px;color:rgba(23,21,15,.6)">Ash resources, vectors</span>
+        </div>
+        <div style="border:1px solid rgba(23,21,15,.2);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:28px;font-weight:600">Circulation</span>
+          <span style="font-size:24px;color:rgba(23,21,15,.6)">Checkouts, holds, history</span>
+        </div>
+        <div style="border:1px solid rgba(23,21,15,.2);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:28px;font-weight:600">Advisory</span>
+          <span style="font-size:24px;color:rgba(23,21,15,.6)">Ranker, curation, explanations</span>
+        </div>
+        <div style="border:1px solid rgba(23,21,15,.2);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:28px;font-weight:600">Identity</span>
+          <span style="font-size:24px;color:rgba(23,21,15,.6)">Ash policies, scopes</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:8px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:8px 14px;border-radius:4px;background:rgba(23,21,15,.07)">Ash AI</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:8px 14px;border-radius:4px;background:rgba(23,21,15,.07)">Notifiers</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:8px 14px;border-radius:4px;background:rgba(23,21,15,.07)">Oban jobs</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:8px 14px;border-radius:4px;background:rgba(23,21,15,.07)">AshPhoenix forms</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:26px">
+      <div style="border:2px solid #23405F;border-radius:8px;padding:28px;background:#FCFAF5;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Datastore</span>
+        <span style="font-size:31px;font-weight:600">PostgreSQL</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.65)">AshPostgres · pgvector · release migrations</span>
+      </div>
+      <div style="border:2px dashed rgba(23,21,15,.45);border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Nightly</span>
+        <span style="font-size:31px;font-weight:600">ILS sync</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.65)">API where available, SIP2/CSV fallback</span>
+      </div>
+      <div style="border:2px dashed rgba(23,21,15,.45);border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">External</span>
+        <span style="font-size:31px;font-weight:600">LLM API</span>
+        <span style="font-size:25px;color:rgba(23,21,15,.65)">Called with catalog fields, never student names</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Realtime boundary" data-screen-label="16" data-speaker-notes="The engineering point of the demo: notifiers fire after the transaction commits, so a broadcast can never describe a write that did not land." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Realtime</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">One curation, six hops, no refresh</h2>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:20px;align-items:start;margin-top:48px" data-om-raster="true">
+    <div style="display:flex;flex-direction:column;gap:16px;padding:28px 22px;border-radius:8px;background:#FCFAF5;border:1px solid rgba(23,21,15,.16)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#B5352A">01</span>
+      <span style="font-size:29px;font-weight:600;line-height:1.2">Librarian pins a title</span>
+      <span style="font-size:25px;line-height:1.4;color:rgba(23,21,15,.6)">LiveView event</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:28px 22px;border-radius:8px;background:#FCFAF5;border:1px solid rgba(23,21,15,.16)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#B5352A">02</span>
+      <span style="font-size:29px;font-weight:600;line-height:1.2">Ash action runs</span>
+      <span style="font-size:25px;line-height:1.4;color:rgba(23,21,15,.6)">Policy check, changeset, validation</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:28px 22px;border-radius:8px;background:#FCFAF5;border:1px solid rgba(23,21,15,.16)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#B5352A">03</span>
+      <span style="font-size:29px;font-weight:600;line-height:1.2">Postgres commits</span>
+      <span style="font-size:25px;line-height:1.4;color:rgba(23,21,15,.6)">Curation row is durable</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:28px 22px;border-radius:8px;background:#17150F;border:1px solid #17150F">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#E9A79F">04</span>
+      <span style="font-size:29px;font-weight:600;line-height:1.2;color:#F4EFE6">Notifier fires</span>
+      <span style="font-size:25px;line-height:1.4;color:rgba(244,239,230,.7)">After commit — never before</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:28px 22px;border-radius:8px;background:#FCFAF5;border:1px solid rgba(23,21,15,.16)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#B5352A">05</span>
+      <span style="font-size:29px;font-weight:600;line-height:1.2">PubSub broadcast</span>
+      <span style="font-size:25px;line-height:1.4;color:rgba(23,21,15,.6)">Topic per student and per school</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:28px 22px;border-radius:8px;background:#FCFAF5;border:1px solid rgba(23,21,15,.16)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#B5352A">06</span>
+      <span style="font-size:29px;font-weight:600;line-height:1.2">Student view patches</span>
+      <span style="font-size:25px;line-height:1.4;color:rgba(23,21,15,.6)">Diff over the socket, no reload</span>
+    </div>
+  </div>
+  <div style="margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:44px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Why it matters</span>
+      <span style="font-size:29px;line-height:1.45;color:rgba(23,21,15,.78)">A broadcast can never describe a write that failed to land.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#B5352A">Same path, reversed</span>
+      <span style="font-size:29px;line-height:1.45;color:rgba(23,21,15,.78)">A student checkout patches the librarian dashboard through the identical six hops.</span>
+    </div>
+  </div>
+</section>
+
+<section data-label="Privacy and governance" data-screen-label="17" data-speaker-notes="Slow down here. This is the slide that gets the district's sign-off, and it is the one nontechnical partners will remember." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Governance</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Where student data stops</h2>
+  <div style="flex:1;margin-top:44px">
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding-bottom:18px;border-bottom:2px solid rgba(23,21,15,.35)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Decision</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Our position</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:17px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Identifiers</span>
+      <span style="font-size:28px;line-height:1.4;color:rgba(23,21,15,.78)">Internal student ids only. Names never leave the district boundary.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:17px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">LLM payloads</span>
+      <span style="font-size:28px;line-height:1.4;color:rgba(23,21,15,.78)">Title, subject, and reading level. No student name, id, or borrowing history.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:17px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Retention</span>
+      <span style="font-size:28px;line-height:1.4;color:rgba(23,21,15,.78)">Recommendation logs 180 days, then aggregate. Explanations regenerate; they are not archived.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:17px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Access</span>
+      <span style="font-size:28px;line-height:1.4;color:rgba(23,21,15,.78)">Librarian scoped to their school, admin to aggregates. Enforced by Ash policies at the resource, not the page.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:17px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Opt-out</span>
+      <span style="font-size:28px;line-height:1.4;color:rgba(23,21,15,.78)">Per student, honored at candidate generation — not filtered at display time.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:17px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:30px;font-weight:600">Audit</span>
+      <span style="font-size:28px;line-height:1.4;color:rgba(23,21,15,.78)">Every recommendation stores its weights, candidate pool, and model version.</span>
+    </div>
+  </div>
+  <div style="margin-top:28px;font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">Reading records are among the most protected data a school holds. We treat FERPA and COPPA as design constraints, not a compliance review at the end.</div>
+</section>
+
+<section data-label="LIVE DEMO" data-screen-label="18" data-speaker-notes="Open two real browser windows if the network allows. Work the eight cues in order and do not refresh either window — that is the whole point." style="padding:56px 60px 44px;background:#17150F;color:#F4EFE6;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap">
+    <div style="display:flex;align-items:baseline;gap:28px;flex-wrap:wrap">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#E9A79F">Live demo</span>
+      <h2 style="font-family:'Instrument Serif',serif;font-size:64px;line-height:1;margin:0;font-weight:400">Two windows, one system</h2>
+    </div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(244,239,230,.5)">next-read.fly.dev · release v37 · sjc</span>
+  </div>
+  <div style="flex:1;min-height:0;border-radius:8px;overflow:hidden;background:#F4EFE6;position:relative">
+    <iframe src="{{ demoSrc }}" title="Next Read realtime demo" style="width:2250px;height:942px;border:0;transform:scale(.8);transform-origin:top left;display:block"></iframe>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid rgba(244,239,230,.25);color:rgba(244,239,230,.85)">01 show ranked reads</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid rgba(244,239,230,.25);color:rgba(244,239,230,.85)">02 open the reason</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid rgba(244,239,230,.25);color:rgba(244,239,230,.85)">03 librarian pins a title</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid #B5352A;background:rgba(181,53,42,.2);color:#F4EFE6">04 student list changes — no refresh</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid rgba(244,239,230,.25);color:rgba(244,239,230,.85)">05 student checks out</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid #B5352A;background:rgba(181,53,42,.2);color:#F4EFE6">06 desk updates — no refresh</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid rgba(244,239,230,.25);color:rgba(244,239,230,.85)">07 ask the catalog</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;padding:9px 14px;border-radius:4px;border:1px solid rgba(244,239,230,.25);color:rgba(244,239,230,.85)">08 deploy receipt</span>
+  </div>
+</section>
+
+<section data-label="Div · Delivery" data-screen-label="19" data-speaker-notes="Back to the partners. Everything from here is scope, time, money, and risk." style="padding:88px 96px 80px;background:#17150F;color:#F4EFE6;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column;justify-content:center">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:200px;line-height:1;color:rgba(244,239,230,.16)">04</span>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:110px;line-height:1;margin:24px 0 0;font-weight:400">Delivery</h2>
+  <p style="font-size:36px;line-height:1.4;margin:36px 0 0;max-width:1080px;color:rgba(244,239,230,.62)">One school first, measured, then the district — in twelve weeks.</p>
+</section>
+
+<section data-label="Pilot and measurement" data-screen-label="20" data-speaker-notes="Name the primary metric out loud: one more checkout per student per month. Everything else is diagnostic." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Pilot</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">How we will know it worked</h2>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:48px">
+    <div style="display:flex;flex-direction:column;gap:28px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Pilot design</span>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:32px;font-weight:600">One middle school, six weeks</span>
+        <span style="font-size:28px;line-height:1.45;color:rgba(23,21,15,.7)">Roughly 400 students, one teacher-librarian sponsor.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:32px;font-weight:600">Three sections on, three off</span>
+        <span style="font-size:28px;line-height:1.45;color:rgba(23,21,15,.7)">A holdout group so the lift is attributable, not anecdotal.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:32px;font-weight:600">Weekly desk review</span>
+        <span style="font-size:28px;line-height:1.45;color:rgba(23,21,15,.7)">Thirty minutes with the librarian; ranking weights tuned from what she sees.</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5);padding-bottom:18px">Measurement</span>
+      <div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;padding:22px 0;border-top:2px solid #B5352A">
+        <span style="font-size:30px;font-weight:600;color:#B5352A">Checkouts per student / month</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;color:#B5352A">+1.0 target</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;padding:22px 0;border-top:1px solid rgba(23,21,15,.14)">
+        <span style="font-size:30px">Share of catalog circulating</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;color:rgba(23,21,15,.55)">38% → 55%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;padding:22px 0;border-top:1px solid rgba(23,21,15,.14)">
+        <span style="font-size:30px">Recommendation accept rate</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;color:rgba(23,21,15,.55)">&gt; 40%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;padding:22px 0;border-top:1px solid rgba(23,21,15,.14)">
+        <span style="font-size:30px">Offline precision@5, held-out weeks</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;color:rgba(23,21,15,.55)">tracked weekly</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;padding:22px 0;border-top:1px solid rgba(23,21,15,.14)">
+        <span style="font-size:30px;color:#5A6B45">Guardrail — reading-level fit</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;color:#5A6B45">no regression</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;padding:22px 0;border-top:1px solid rgba(23,21,15,.14)">
+        <span style="font-size:30px;color:#5A6B45">Guardrail — subgroup equity</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:28px;color:#5A6B45">reviewed at week 9</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Twelve-week rollout" data-screen-label="21" data-speaker-notes="Point at the three milestone stamps: POC week 3, pilot live week 6, readout week 9. If the ILS extract slips, everything after week 4 shifts with it." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Rollout</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Twelve-week baseline</h2>
+  <div style="flex:1;display:flex;flex-direction:column;gap:0;margin-top:44px" data-om-raster="true">
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;padding-bottom:14px;border-bottom:1px solid rgba(23,21,15,.2)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.45)">Workstream</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">1</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">2</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">3</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">4</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">5</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">6</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">7</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">8</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">9</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">10</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">11</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;text-align:center;color:rgba(23,21,15,.45)">12</span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">Discovery + data governance</span>
+      <span style="grid-column:2 / span 2;height:26px;border-radius:4px;background:#17150F;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">ILS integration + catalog sync</span>
+      <span style="grid-column:3 / span 3;height:26px;border-radius:4px;background:#23405F;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">Ranker + explanation layer</span>
+      <span style="grid-column:4 / span 3;height:26px;border-radius:4px;background:#B5352A;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">Student + librarian LiveViews</span>
+      <span style="grid-column:4 / span 4;height:26px;border-radius:4px;background:#B5352A;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">One-school pilot</span>
+      <span style="grid-column:7 / span 4;height:26px;border-radius:4px;background:#5A6B45;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">Measured iteration + tuning</span>
+      <span style="grid-column:9 / span 3;height:26px;border-radius:4px;background:#5A6B45;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,21,15,.09)">
+      <span style="font-size:28px">Accessibility audit + staff training</span>
+      <span style="grid-column:11 / span 2;height:26px;border-radius:4px;background:#B07A1E;display:block"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:430px repeat(12,1fr);gap:6px;align-items:center;padding:11px 0">
+      <span style="font-size:28px">Staged district deployment</span>
+      <span style="grid-column:12 / span 2;height:26px;border-radius:4px;background:#17150F;display:block"></span>
+    </div>
+  </div>
+  <div style="margin-top:32px;padding-top:28px;border-top:1px solid rgba(23,21,15,.18);display:flex;gap:44px;flex-wrap:wrap">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#B5352A">◆ week 3 · working POC</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#B5352A">◆ week 6 · pilot live in one school</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#B5352A">◆ week 9 · measured readout</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(23,21,15,.5)">critical path: ILS read access by week 2</span>
+  </div>
+</section>
+
+<section data-label="Estimate and team" data-screen-label="22" data-speaker-notes="Give the range, not a single number. Say plainly that the estimate holds only if ILS access lands in week 2." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Estimate</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">Team and cost to run it</h2>
+  <div style="flex:1;display:grid;grid-template-columns:1.4fr 1fr;gap:64px;margin-top:44px">
+    <div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding-bottom:16px;border-bottom:2px solid rgba(23,21,15,.35)">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.5)">Role</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.5)">FTE</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.5)">Weeks</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding:22px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+        <span style="font-size:29px">Elixir / Ash engineer</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">1.0</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">12</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding:22px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+        <span style="font-size:29px">LiveView / full-stack engineer</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">1.0</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">10</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding:22px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+        <span style="font-size:29px">ML / data engineer</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">0.5</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">8</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding:22px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+        <span style="font-size:29px">Product / UX designer</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">0.4</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">6</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding:22px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+        <span style="font-size:29px">Delivery lead</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">0.3</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;color:rgba(23,21,15,.7)">12</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:28px;padding:22px 0">
+        <span style="font-size:29px;font-weight:600">Blended effort</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600">3.2</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600">≈ 31 person-weeks</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:34px;justify-content:center">
+      <div style="padding:32px;background:#17150F;border-radius:8px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:#E9A79F">Duration</span>
+        <span style="font-family:'Instrument Serif',serif;font-size:88px;line-height:1;color:#F4EFE6">12 weeks</span>
+        <span style="font-size:26px;line-height:1.4;color:rgba(244,239,230,.7)">Discovery to staged district deployment.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Run cost, pilot scale</span>
+        <span style="font-size:29px;line-height:1.45;color:rgba(23,21,15,.78)">Fly.io app and Postgres ≈ $180/mo. Explanations ≈ $60/mo with caching, at roughly $0.004 each.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:rgba(23,21,15,.5)">Assumption</span>
+        <span style="font-size:29px;line-height:1.45;color:rgba(23,21,15,.78)">ILS read access by week 2. Every figure is a range until discovery closes.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Risks and trade-offs" data-screen-label="23" data-speaker-notes="Volunteering the risks is what makes the estimate credible. Do not skip this to save time." style="padding:88px 96px 80px;background:#F4EFE6;color:#17150F;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#B5352A">Risk register</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:76px;line-height:1.02;letter-spacing:-.015em;margin:26px 0 0;font-weight:400">What could go wrong, and our answer</h2>
+  <div style="flex:1;margin-top:44px">
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding-bottom:16px;border-bottom:2px solid rgba(23,21,15,.35)">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.5)">Risk</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.12em;text-transform:uppercase;color:rgba(23,21,15,.5)">Position</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding:16px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:29px;font-weight:600">Sparse circulation data</span>
+      <span style="font-size:27px;line-height:1.4;color:rgba(23,21,15,.78)">Content and cohort signals carry the cold start; librarian pinning covers the gap from day one.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding:16px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:29px;font-weight:600">Model invents a book</span>
+      <span style="font-size:27px;line-height:1.4;color:rgba(23,21,15,.78)">It cannot. Candidates come from the catalog index; the model only writes prose about admitted titles.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding:16px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:29px;font-weight:600">ILS integration slips</span>
+      <span style="font-size:27px;line-height:1.4;color:rgba(23,21,15,.78)">Nightly CSV or SIP2 ingest is the fallback path, scoped in week 1 so the pilot date holds.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding:16px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:29px;font-weight:600">Equity of recommendations</span>
+      <span style="font-size:27px;line-height:1.4;color:rgba(23,21,15,.78)">Availability and format weights favour what students can actually borrow; subgroup outcomes reviewed at week 9.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding:16px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:29px;font-weight:600">Staff adoption</span>
+      <span style="font-size:27px;line-height:1.4;color:rgba(23,21,15,.78)">The product ships curation controls, not automation. The librarian keeps the last word, visibly.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:44px;padding:16px 0;border-bottom:1px solid rgba(23,21,15,.12)">
+      <span style="font-size:29px;font-weight:600">Vendor lock-in</span>
+      <span style="font-size:27px;line-height:1.4;color:rgba(23,21,15,.78)">The Ash domain is portable Elixir. Hosting and model provider are swappable at the boundary.</span>
+    </div>
+  </div>
+</section>
+
+<section data-label="The ask" data-screen-label="24" data-speaker-notes="Close on three specific requests and a decision. Do not end on thank-you." style="padding:88px 96px 80px;background:#17150F;color:#F4EFE6;font-family:'Libre Franklin',system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;letter-spacing:.2em;text-transform:uppercase;color:#E9A79F">The ask</div>
+  <h2 style="font-family:'Instrument Serif',serif;font-size:88px;line-height:1.02;letter-spacing:-.02em;margin:28px 0 0;font-weight:400">Three things, and a decision</h2>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px;align-content:center;margin-top:52px">
+    <div style="display:flex;flex-direction:column;gap:20px;padding-top:28px;border-top:3px solid #B5352A">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(244,239,230,.5)">01</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:46px;line-height:1.1">ILS read access</span>
+      <span style="font-size:29px;line-height:1.45;color:rgba(244,239,230,.72)">A circulation and catalog extract in hand by week 2.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px;padding-top:28px;border-top:3px solid #B5352A">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(244,239,230,.5)">02</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:46px;line-height:1.1">A pilot school</span>
+      <span style="font-size:29px;line-height:1.45;color:rgba(244,239,230,.72)">One middle school and a teacher-librarian sponsor with thirty minutes a week.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px;padding-top:28px;border-top:3px solid #B5352A">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:rgba(244,239,230,.5)">03</span>
+      <span style="font-family:'Instrument Serif',serif;font-size:46px;line-height:1.1">Sign-off on the boundary</span>
+      <span style="font-size:29px;line-height:1.45;color:rgba(244,239,230,.72)">Agreement on the data-handling positions in this deck, before code touches student records.</span>
+    </div>
+  </div>
+  <div style="padding-top:40px;border-top:1px solid rgba(244,239,230,.2);display:flex;align-items:flex-end;justify-content:space-between;gap:44px;flex-wrap:wrap">
+    <span style="font-family:'Instrument Serif',serif;font-size:44px;line-height:1.2;max-width:1100px">Approve the twelve-week baseline today and the pilot is live in one school by week six.</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:rgba(244,239,230,.5)">next-read.fly.dev · running today</span>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;demoUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Qvest%20Realtime%20Demo.dc.html&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo slide&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { demoSrc: this.props.demoUrl ?? 'Qvest%20Realtime%20Demo.dc.html' };
+  }
+}
+</script>
+</body>
+</html>

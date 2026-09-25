@@ -1,0 +1,85 @@
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix agp:    <https://ggen.io/ontology/ash-igniter-gen-pipeline#> .
+@prefix ex4pm:  <https://ggen.io/ontology/ex4pm#> .
+@prefix oce:    <https://ggen.io/ontology/xaas-ocel-envelope#> .
+
+<https://ggen.io/ontology/xaas-ocel-envelope#> a owl:Ontology ;
+  rdfs:label "XaaS OCEL Envelope Vendored Fragment" ;
+  rdfs:comment "VENDORED FRAGMENT — subset of /Users/sac/ex4pm/priv/ontology/ex4pm.ttl and /Users/sac/ex4pm/priv/shacl/ex4pm-shapes.ttl, copied into this repo because ggen_igniter's Ontology.load!/1 reads exactly one file per sync invocation with no owl:imports resolution, and this pack's own agp:CodegenTarget pipeline individuals must coexist with these Event/EventShape facts in one file. Cross-repo path resolution (--ontology pointing directly at ex4pm's real file) was found to work mechanically but produces a machine-specific absolute path with zero CI/portability guarantee and zero drift-detection (ex4pm is an unpinned path dependency, absent from mix.lock) — vendoring this ontology fact makes it visible in xaas's own git history and diffable on future ex4pm changes instead." .
+
+# --- Vendored ex4pm facts (copied verbatim from ex4pm.ttl / ex4pm-shapes.ttl) ---
+#
+# Source: /Users/sac/ex4pm/priv/ontology/ex4pm.ttl
+#   ex4pm:Observation a rdfs:Class .
+#   ex4pm:Event a rdfs:Class ; rdfs:subClassOf ex4pm:Observation .
+#   ex4pm:activity a rdf:Property ; rdfs:domain ex4pm:Event ; rdfs:range xsd:string .
+#   ex4pm:timestamp a rdf:Property ; rdfs:domain ex4pm:Event ; rdfs:range xsd:dateTime .
+#   ex4pm:relatesObject a rdf:Property ; rdfs:domain ex4pm:Event ; rdfs:range ex4pm:Object .
+#
+# Source: /Users/sac/ex4pm/priv/shacl/ex4pm-shapes.ttl
+#   ex4pm:EventShape a sh:NodeShape ;
+#     sh:targetClass ex4pm:Event ;
+#     sh:property [ sh:path ex4pm:activity ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+#     sh:property [ sh:path ex4pm:timestamp ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+#
+# MODULEDOC-STYLE DIVERGENCE NOTE (documented here so the generated
+# Xaas.Telemetry.OcelEnvelope module's own @moduledoc can cite it, and so the
+# divergence is visible next to the vendored facts it diverges from, not only
+# in generated code):
+#
+#   (a) `timestamp` is generated as String.t(), not DateTime.t(), because
+#       every real producer (Xaas.Telemetry.OcelForwarder,
+#       Xaas.Telemetry.OcelAshEmitter) emits pre-formatted ISO8601 strings
+#       (via DateTime.to_iso8601/1) at the call site, never parsed DateTime
+#       structs — the vendored xsd:dateTime datatype constraint describes the
+#       wire/logical type, not the Elixir term shape xaas actually produces.
+#
+#   (b) `relatesObject`/omap is generated as list(String.t()) of object TYPE
+#       NAMES (e.g. ["checkout"]), not per-instance ex4pm:Object references,
+#       because real producers only ever have the resource's short_name
+#       available at the call site, never an object instance identity — the
+#       vendored rdfs:range ex4pm:Object triple describes a per-instance
+#       relation that this codebase cannot and does not populate.
+
+ex4pm:Observation a rdfs:Class ;
+  rdfs:label "Vendored ex4pm:Observation (superclass)" .
+
+ex4pm:Event a rdfs:Class ;
+  rdfs:subClassOf ex4pm:Observation ;
+  rdfs:label "Vendored ex4pm:Event" ;
+  rdfs:comment "See MODULEDOC-STYLE DIVERGENCE NOTE above: (a) timestamp generated as String.t(), not DateTime.t(); (b) relatesObject/omap generated as list(String.t()) of object type names, not per-instance Object references." .
+
+ex4pm:activity a rdf:Property ;
+  rdfs:domain ex4pm:Event ;
+  rdfs:range xsd:string .
+
+ex4pm:timestamp a rdf:Property ;
+  rdfs:domain ex4pm:Event ;
+  rdfs:range xsd:dateTime .
+
+ex4pm:relatesObject a rdf:Property ;
+  rdfs:domain ex4pm:Event ;
+  rdfs:range ex4pm:Object .
+
+ex4pm:EventShape a sh:NodeShape ;
+  sh:targetClass ex4pm:Event ;
+  sh:property [ sh:path ex4pm:activity ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ex4pm:timestamp ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+
+# --- Codegen Pipeline Individuals (agp:CodegenTarget) ---
+# Reuses the agp: namespace from xaas_library_pack's ontology.ttl for
+# consistency, but with distinct individual IRIs (oce:*) to avoid the
+# flagged agp:individual-name collision risk between packs sharing one
+# manifest.
+
+oce:OcelEnvelopeCore a agp:CodegenTarget ;
+  agp:phase "core" ;
+  agp:order 1 ;
+  agp:mixTask "xaas.telemetry.core" ;
+  agp:targetModule "Xaas.Telemetry.OcelEnvelope" ;
+  dct:description "Envelope field-construction/validation module for the vendored ex4pm:Event/EventShape shape; consumed by hand-written Xaas.Telemetry.OcelForwarder / Xaas.Telemetry.OcelAshEmitter — this pack does not generate the HTTP-calling business logic itself, only the envelope field-construction/validation code." .

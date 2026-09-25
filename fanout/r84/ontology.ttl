@@ -1,0 +1,7 @@
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<urn:xaas:r84-consumer> a prov:Entity ;
+  dcterms:identifier "seanchatmangpt/xaas" ;
+  prov:wasDerivedFrom <https://github.com/seanchatmangpt/ggen-marketplace/pull/324> ;
+  prov:specializationOf <urn:xaas:r80-consumer> .
