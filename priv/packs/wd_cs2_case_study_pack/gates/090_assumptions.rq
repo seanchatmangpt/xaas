@@ -1,0 +1,15 @@
+PREFIX cs: <urn:xaas:case-study:>
+SELECT ?assumption_id ?question ?unknown ?interim_assumption ?change_if_different
+       ?asked_on ?asked_via ?answer_status
+WHERE {
+  ?assumption a cs:Assumption ;
+              cs:assumptionId ?assumption_id ;
+              cs:question ?question ;
+              cs:unknown ?unknown ;
+              cs:interimAssumption ?interim_assumption ;
+              cs:changeIfDifferent ?change_if_different ;
+              cs:askedOn ?asked_on_date ;
+              cs:askedVia ?asked_via ;
+              cs:answerStatus ?answer_status .
+  BIND(STR(?asked_on_date) AS ?asked_on)
+}

@@ -61,6 +61,15 @@ def _pack_dir(explicit: Path | None, build: Path) -> Path:
     for candidate in candidates:
         p = candidate.expanduser().resolve()
         if (p / "pack.toml").is_file() and (p / "ontology.ttl").is_file():
+            observed = _pack_commit(p)
+            if observed != MARKETPLACE_COMMIT:
+                typer.echo(
+                    f"REFUSED:PACK_COMMIT_DRIFT: {p} expected {MARKETPLACE_COMMIT} "
+                    f"observed {observed or 'UNKNOWN'} (write .marketplace-commit via "
+                    "`wd-deck materialize`, or checkout the pinned commit)",
+                    err=True,
+                )
+                raise typer.Exit(8)
             return p
 
     typer.echo(
@@ -70,6 +79,24 @@ def _pack_dir(explicit: Path | None, build: Path) -> Path:
     )
     raise typer.Exit(3)
 
+
+
+def _pack_commit(pack: Path) -> str | None:
+    """The marketplace commit a materialized pack came from.
+
+    A `git archive` materialization carries a `.marketplace-commit` marker; a
+    git checkout of ggen-marketplace answers with its HEAD. Anything else is
+    unknown and refused by `_pack_dir`.
+    """
+    marker = pack / ".marketplace-commit"
+    if marker.is_file():
+        return marker.read_text(encoding="utf-8").strip()
+    result = subprocess.run(
+        ["git", "-C", str(pack), "rev-parse", "HEAD"], text=True, capture_output=True
+    )
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return None
 
 
 def _ontology_sources() -> list[Path]:
@@ -133,6 +160,27 @@ def _slides_for(spec: dict, audience: Audience) -> list[dict]:
     return slides
 
 
+BLOCK_OF = re.compile(r"^\s*pres:blockOf\s+wddeck:(slide-\d+)\s*;", re.MULTILINE)
+BLOCK_DECL = re.compile(r"\sa\s+pres:Block\s*;")
+
+
+def _source_block_counts() -> dict:
+    """Blocks per slide as declared in the source TTL (what the deck must carry)."""
+    counts: dict = {"__failures__": []}
+    declared = 0
+    for path in _ontology_sources():
+        text = path.read_text(encoding="utf-8")
+        declared += len(BLOCK_DECL.findall(text))
+        if "pres:lockOf" in text:
+            counts["__failures__"].append(f"{path.name}_uses_pres:lockOf")
+        for sid in BLOCK_OF.findall(text):
+            counts[sid] = counts.get(sid, 0) + 1
+    linked = sum(v for k, v in counts.items() if k != "__failures__")
+    if declared != linked:
+        counts["__failures__"].append(f"blocks_declared={declared} blocks_linked={linked}")
+    return counts
+
+
 def _xml_text(data: bytes) -> str:
     root = ET.fromstring(data)
     ns = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
@@ -181,7 +229,20 @@ def _verify(pptx: Path, spec_path: Path, audience: Audience, receipt_path: Path)
                 if anchor not in note_text:
                     failures.append(f"slide_{i+1}_notes_anchor_missing")
 
+    source_blocks = _source_block_counts()
+    failures.extend(source_blocks.pop("__failures__"))
+    block_counts = {}
+    for slide in expected:
+        sid = slide.get("slide_id", "")
+        observed_blocks = len(slide.get("blocks", []))
+        block_counts[sid] = observed_blocks
+        if observed_blocks != source_blocks.get(sid, 0):
+            failures.append(
+                f"{sid}_block_count expected={source_blocks.get(sid, 0)} observed={observed_blocks}"
+            )
+
     receipt = {
+        "block_counts": block_counts,
         "subject": str(pptx.relative_to(REPO_ROOT) if pptx.is_relative_to(REPO_ROOT) else pptx),
         "standing": "ALIVE_REPO_LOCAL" if not failures else "BLOCKED",
         "audience": audience,
@@ -199,7 +260,8 @@ def _verify(pptx: Path, spec_path: Path, audience: Audience, receipt_path: Path)
         ],
         "falsifiers": [
             "ontology hash differs", "pack commit differs", "renderer runtime version differs",
-            "slide count differs", "expected title absent", "expected speaker notes absent"
+            "slide count differs", "expected title absent", "expected speaker notes absent",
+            "a source pres:Block is missing from the projected slide"
         ],
     }
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
@@ -282,6 +344,153 @@ def inspect_deck(
     data = json.loads(spec.read_text())
     for s in _slides_for(data, audience):
         typer.echo(f"{int(s['order']):02d} [{s.get('audience','interview')}] {s['layout']}: {s['title'].replace(chr(10),' / ')}")
+
+
+@app.command()
+def materialize(
+    dest: Annotated[Path, typer.Option(help="Directory to extract packs/<pack> into.")] = REPO_ROOT / "tmp/ggen-marketplace-pinned",
+    marketplace: Annotated[Path, typer.Option(help="Local ggen-marketplace git repository.")] = REPO_ROOT.parent / "ggen-marketplace",
+) -> None:
+    """Extract the pinned pack with `git archive` (no second checkout) and mark its commit."""
+    repo = marketplace.expanduser().resolve()
+    probe = subprocess.run(["git", "-C", str(repo), "cat-file", "-e", f"{MARKETPLACE_COMMIT}^{{commit}}"], capture_output=True)
+    if probe.returncode != 0:
+        _run(["git", "-C", str(repo), "fetch", "origin", MARKETPLACE_COMMIT])
+    out = dest.expanduser().resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    archive = subprocess.run(
+        ["git", "-C", str(repo), "archive", MARKETPLACE_COMMIT, f"packs/{PACK_NAME}"], capture_output=True, check=True
+    ).stdout
+    subprocess.run(["tar", "-x", "-C", str(out)], input=archive, check=True)
+    pack = out / "packs" / PACK_NAME
+    expected = subprocess.run(
+        ["git", "-C", str(repo), "ls-tree", "-r", MARKETPLACE_COMMIT, f"packs/{PACK_NAME}"], text=True, capture_output=True, check=True
+    ).stdout.split("\n")
+    expected_blobs = sorted(line.split()[2] + "  " + line.split("\t", 1)[1] for line in expected if line.strip())
+    observed_blobs = []
+    for f in sorted(p for p in pack.rglob("*") if p.is_file() and p.name != ".marketplace-commit"):
+        blob = subprocess.run(["git", "hash-object", str(f)], text=True, capture_output=True, check=True).stdout.strip()
+        observed_blobs.append(f"{blob}  {f.relative_to(out)}")
+    if sorted(observed_blobs) != expected_blobs:
+        typer.echo("REFUSED:PACK_TREE_MISMATCH", err=True)
+        raise typer.Exit(8)
+    (pack / ".marketplace-commit").write_text(MARKETPLACE_COMMIT + "\n", encoding="utf-8")
+    typer.echo(json.dumps({"pack": str(pack), "marketplace_commit": MARKETPLACE_COMMIT, "files": len(observed_blobs)}, indent=2))
+
+
+# ---------------------------------------------------------------- case study
+
+SEMANTIC_PACK = REPO_ROOT / "priv/packs/wd_cs2_pack"
+CASE_STUDY_PACK = REPO_ROOT / "priv/packs/wd_cs2_case_study_pack"
+CASE_STUDY_DIR = REPO_ROOT / "docs/case-studies/wd-fa"
+CASE_STUDY_SOURCES = ("case-study.ttl", "claims.ttl", "stogaf-core.ttl")
+CASE_STUDY_PROJECTIONS = (
+    ("case-study.json.eex", "case-study.json"),
+    ("claims-ledger.json.eex", "claims-ledger.json"),
+    ("slide-evidence-map.json.eex", "SLIDE-EVIDENCE-MAP.json"),
+)
+CASE_NS = "urn:xaas:case-study:"
+
+
+def _case_sources() -> list[Path]:
+    sources = [SEMANTIC_PACK / name for name in CASE_STUDY_SOURCES] + _ontology_sources()
+    missing = [str(p) for p in sources if not p.is_file()]
+    if missing:
+        typer.echo("BLOCKED:CASE_SOURCES_MISSING: " + ", ".join(missing), err=True)
+        raise typer.Exit(3)
+    return sources
+
+
+def _case_revision(sources: list[Path]) -> tuple[str, str]:
+    """(case IRI, sha256 of the canonical sorted N-Triples of the case sources)."""
+    try:
+        from rdflib import Graph, RDF, URIRef
+        from rdflib.compare import to_canonical_graph
+    except ImportError:
+        typer.echo("BLOCKED:RDFLIB_MISSING: pip install 'rdflib>=7,<8'", err=True)
+        raise typer.Exit(5)
+    graph = Graph()
+    for path in sources:
+        graph.parse(path, format="turtle")
+    cases = sorted(str(c) for c in graph.subjects(RDF.type, URIRef(CASE_NS + "CaseStudy")))
+    if len(cases) != 1:
+        typer.echo(f"REFUSED:CASE_STUDY_CARDINALITY: {cases}", err=True)
+        raise typer.Exit(4)
+    lines = sorted(
+        line for line in to_canonical_graph(graph).serialize(format="nt").splitlines() if line.strip()
+    )
+    return cases[0], hashlib.sha256(("\n".join(lines) + "\n").encode("utf-8")).hexdigest()
+
+
+def _generator_identity() -> str:
+    lock = (REPO_ROOT / "mix.lock").read_text(encoding="utf-8")
+    match = re.search(r'"ggen_igniter": \{:hex, :ggen_igniter, "([^"]+)"', lock)
+    version = match.group(1) if match else "UNKNOWN"
+    h = hashlib.sha256()
+    for path in sorted(p for p in CASE_STUDY_PACK.rglob("*") if p.is_file()):
+        h.update(str(path.relative_to(CASE_STUDY_PACK)).encode("utf-8") + b"\0")
+        h.update(path.read_bytes() + b"\0")
+    return f"ggen_igniter@{version}+engine=sparql;wd_cs2_case_study_pack=sha256:{h.hexdigest()}"
+
+
+@app.command(name="case-study")
+def case_study(
+    check: Annotated[bool, typer.Option("--check", help="Regenerate into the build dir and byte-compare with committed projections.")] = False,
+    build_dir: Annotated[Path, typer.Option()] = REPO_ROOT / "tmp/wd-case-study",
+) -> None:
+    """Project claims.ttl + deck TTL into case-study.json, claims-ledger.json and SLIDE-EVIDENCE-MAP.json."""
+    build = build_dir.resolve()
+    generated = build / "generated"
+    generated.mkdir(parents=True, exist_ok=True)
+    sources = _case_sources()
+    case_iri, digest = _case_revision(sources)
+    identity = _generator_identity()
+    revision = generated / "revision.ttl"
+    revision.write_text(
+        f"@prefix cs: <{CASE_NS}> .\n\n<{case_iri}> cs:caseRevisionDigest \"{digest}\" ;\n"
+        f"  cs:generatorIdentity \"{identity}\" .\n",
+        encoding="utf-8",
+    )
+    ontology = generated / "case.ttl"
+    ontology.write_text("\n".join(p.read_text(encoding="utf-8") for p in sources + [revision]), encoding="utf-8")
+
+    drift: list[str] = []
+    outputs: dict[str, str] = {}
+    for template, name in CASE_STUDY_PROJECTIONS:
+        out = generated / name
+        _run([
+            "mix", "ggen_igniter.sync",
+            "--engine", "sparql",
+            "--pack-dir", str(CASE_STUDY_PACK),
+            "--ontology", str(ontology),
+            "--template", str(CASE_STUDY_PACK / "templates" / template),
+            "--out", str(out),
+        ])
+        data = out.read_bytes()
+        if not data.endswith(b"\n"):
+            data += b"\n"
+            out.write_bytes(data)
+        json.loads(data)
+        committed = CASE_STUDY_DIR / name
+        outputs[name] = hashlib.sha256(data).hexdigest()
+        if check:
+            if not committed.is_file() or committed.read_bytes() != data:
+                drift.append(name)
+        else:
+            committed.write_bytes(data)
+
+    report = {
+        "case_iri": case_iri,
+        "case_revision_digest": digest,
+        "generator_identity": identity,
+        "projections_sha256": outputs,
+        "mode": "check" if check else "write",
+        "drift": drift,
+    }
+    typer.echo(json.dumps(report, indent=2, sort_keys=True))
+    if drift:
+        typer.echo("REFUSED:PROJECTION_DRIFT: " + ", ".join(drift), err=True)
+        raise typer.Exit(9)
 
 
 if __name__ == "__main__":

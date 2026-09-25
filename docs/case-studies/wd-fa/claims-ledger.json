@@ -1,0 +1,425 @@
+
+{
+  "case_id": "wd-cs2",
+  "case_revision_digest": "6bd9762edbdf7c8f2a267106343601c60eef8c5cf32f52e183b963cc6453806f",
+  "claim_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12"
+  ],
+  "claims": [
+    {
+      "assumptions": [],
+      "authority_ceiling": "NONE",
+      "claim_id": "C01",
+      "claimed_level": null,
+      "evidence": [
+        "E01"
+      ],
+      "evidence_ceiling": "DESIGN_DOCUMENT",
+      "falsifiers": [
+        {
+          "command": null,
+          "falsifier_id": "F01",
+          "observation": "The submission recommends free-form chat answers over a vector index as the primary interface."
+        }
+      ],
+      "rendered_on_slides": [
+        1
+      ],
+      "standing": "DESIGN",
+      "text": "The HDD failure-analysis agent is designed as a governed quality loop, not a chatbot in front of a vector database."
+    },
+    {
+      "assumptions": [
+        "A1"
+      ],
+      "authority_ceiling": "NONE",
+      "claim_id": "C02",
+      "claimed_level": null,
+      "evidence": [
+        "E02",
+        "E17"
+      ],
+      "evidence_ceiling": "DESIGN_DOCUMENT",
+      "falsifiers": [
+        {
+          "command": null,
+          "falsifier_id": "F02",
+          "observation": "WD's answer to assumption A1 names a dominant bottleneck other than context reconstruction and prior-art retrieval."
+        }
+      ],
+      "rendered_on_slides": [
+        3
+      ],
+      "standing": "DESIGN",
+      "text": "The dominant FA cost is repeated human reconstruction of a failed drive's context, pending WD's answer to assumption A1."
+    },
+    {
+      "assumptions": [
+        "A2"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C03",
+      "claimed_level": null,
+      "evidence": [
+        "E03",
+        "E04"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "mix test test/xaas/case_studies/wd_fa_chicago_test.exs",
+          "falsifier_id": "F03",
+          "observation": "A high-scoring novel candidate is admitted as KNOWN, or the test fails."
+        },
+        {
+          "command": "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack",
+          "falsifier_id": "F04",
+          "observation": "Gate 020 returns a refusal row (authority other than SELECT_CONSTRUCT_ONLY, or human gate drift)."
+        }
+      ],
+      "rendered_on_slides": [
+        4
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "A candidate is not an admission and an admission is not authority: a high-scoring candidate cannot become KNOWN, and consequential disposition stays with an engineer."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C04",
+      "claimed_level": null,
+      "evidence": [
+        "E05",
+        "E15"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack",
+          "falsifier_id": "F05",
+          "observation": "Gate 030 returns a view that is not derived from the architecture episode."
+        }
+      ],
+      "rendered_on_slides": [
+        5
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "One evidence state is projected into several views; every declared view is derived from the architecture episode."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C05",
+      "claimed_level": null,
+      "evidence": [
+        "E03"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "mix test test/xaas/case_studies/wd_fa_chicago_test.exs",
+          "falsifier_id": "F06",
+          "observation": "A case lacking required waveform evidence is returned as KNOWN instead of PARTIAL."
+        }
+      ],
+      "rendered_on_slides": [
+        6
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "For a failed drive the agent returns KNOWN only on deterministic evidence closure, PARTIAL when required evidence is missing, and UNKNOWN otherwise."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C06",
+      "claimed_level": null,
+      "evidence": [
+        "E07",
+        "E08"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "mix test test/xaas/case_studies/wd_fa_learning_ocel_test.exs",
+          "falsifier_id": "F07",
+          "observation": "The learning episode persists without binding work, disposition, receipt and experience objects."
+        }
+      ],
+      "rendered_on_slides": [
+        7
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "The data model is object-centric: a learning episode binds work, disposition, receipt and MachineExperience objects with provenance."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "NONE",
+      "claim_id": "C07",
+      "claimed_level": null,
+      "evidence": [
+        "E09"
+      ],
+      "evidence_ceiling": "DESIGN_DOCUMENT",
+      "falsifiers": [
+        {
+          "command": null,
+          "falsifier_id": "F08",
+          "observation": "A recommendation is produced from evidence retrieved outside the current case's fact envelope."
+        }
+      ],
+      "rendered_on_slides": [
+        8
+      ],
+      "standing": "DESIGN",
+      "text": "Corpus understanding is precomputed; the decision for a case is made on that case's current facts."
+    },
+    {
+      "assumptions": [
+        "A3"
+      ],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C08",
+      "claimed_level": null,
+      "evidence": [
+        "E06",
+        "E10"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "mix test test/xaas/case_studies/wd_fa_evidence_policy_test.exs",
+          "falsifier_id": "F09",
+          "observation": "Classification or purpose mismatch, or private evidence without clearance, is admitted."
+        }
+      ],
+      "rendered_on_slides": [
+        9
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "Evidence admission fails closed on classification or purpose mismatch and on private evidence without explicit clearance."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C09",
+      "claimed_level": null,
+      "evidence": [
+        "E11",
+        "E12"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "mix xaas.wd.fa_eval wd-cs2-evaluation.json",
+          "falsifier_id": "F10",
+          "observation": "controls_passed is not 7, or mttr is reported as anything other than UNMEASURED."
+        }
+      ],
+      "rendered_on_slides": [
+        10
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "The offline evaluation executes seven negative and positive controls on repository fixtures and reports MTTR as UNMEASURED."
+    },
+    {
+      "assumptions": [
+        "A3"
+      ],
+      "authority_ceiling": "NONE",
+      "claim_id": "C10",
+      "claimed_level": null,
+      "evidence": [
+        "E13"
+      ],
+      "evidence_ceiling": "DESIGN_DOCUMENT",
+      "falsifiers": [
+        {
+          "command": null,
+          "falsifier_id": "F11",
+          "observation": "The 30/60/90 plan starts outside a bounded, shadow-only vertical slice."
+        }
+      ],
+      "rendered_on_slides": [
+        11
+      ],
+      "standing": "DESIGN",
+      "text": "Delivery starts with a bounded 30-day vertical slice in shadow mode, sized to the access WD can authorize."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "CONSTRUCT",
+      "claim_id": "C11",
+      "claimed_level": null,
+      "evidence": [
+        "E14"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "mix test test/xaas/case_studies/wd_fa_learning_loop_test.exs",
+          "falsifier_id": "F12",
+          "observation": "An UNKNOWN fixture becomes reusable experience without independent verification, or a disposition mismatch compiles."
+        }
+      ],
+      "rendered_on_slides": [
+        12
+      ],
+      "standing": "ALIVE_FIXTURE",
+      "text": "An UNKNOWN fixture becomes reusable MachineExperience only after independent verification of the engineer disposition."
+    },
+    {
+      "assumptions": [],
+      "authority_ceiling": "SELECT",
+      "claim_id": "C12",
+      "claimed_level": "ST-4 CONSTRAINED",
+      "evidence": [
+        "E15",
+        "E16"
+      ],
+      "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+      "falsifiers": [
+        {
+          "command": "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack",
+          "falsifier_id": "F13",
+          "observation": "The court standing is not ALIVE, or currentConformance is anything other than ST-4 CONSTRAINED."
+        }
+      ],
+      "rendered_on_slides": [],
+      "standing": "ALIVE_FIXTURE",
+      "text": "The architecture episode's current STOGAF conformance is ST-4 CONSTRAINED."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "E01",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/19-SEPTEMBER-25-SUBMISSION.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    },
+    {
+      "evidence_id": "E02",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/02-BASELINE-TARGET-GAP.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    },
+    {
+      "evidence_id": "E03",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "test/xaas/case_studies/wd_fa_chicago_test.exs",
+      "result": "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827",
+      "validator": "mix test test/xaas/case_studies/wd_fa_chicago_test.exs"
+    },
+    {
+      "evidence_id": "E04",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "priv/packs/wd_cs2_pack/gates/020_authority_ceiling.rq",
+      "result": "0 refusal rows; court standing ALIVE (local replay on git archive f9670f44)",
+      "validator": "python3 scripts/stogaf_semantic_court.py"
+    },
+    {
+      "evidence_id": "E05",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "priv/packs/wd_cs2_pack/gates/030_view_projection.rq",
+      "result": "0 refusal rows; court standing ALIVE (local replay on git archive f9670f44)",
+      "validator": "python3 scripts/stogaf_semantic_court.py"
+    },
+    {
+      "evidence_id": "E06",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "test/xaas/case_studies/wd_fa_evidence_policy_test.exs",
+      "result": "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827",
+      "validator": "mix test test/xaas/case_studies/wd_fa_evidence_policy_test.exs"
+    },
+    {
+      "evidence_id": "E07",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "test/xaas/case_studies/wd_fa_learning_ocel_test.exs",
+      "result": "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827",
+      "validator": "mix test test/xaas/case_studies/wd_fa_learning_ocel_test.exs"
+    },
+    {
+      "evidence_id": "E08",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/04-DATA-ARCHITECTURE.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    },
+    {
+      "evidence_id": "E09",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/CONTEXT-ENVELOPE.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    },
+    {
+      "evidence_id": "E10",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/07-SECURITY-GOVERNANCE.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    },
+    {
+      "evidence_id": "E11",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "test/xaas/case_studies/wd_fa_evaluation_test.exs",
+      "result": "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827",
+      "validator": "mix test test/xaas/case_studies/wd_fa_evaluation_test.exs"
+    },
+    {
+      "evidence_id": "E12",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "lib/mix/tasks/xaas.wd.fa_eval.ex",
+      "result": "controls_passed 7; mttr UNMEASURED (STOGAF court run 36082037670)",
+      "validator": "mix xaas.wd.fa_eval wd-cs2-evaluation.json"
+    },
+    {
+      "evidence_id": "E13",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/09-MIGRATION-30-60-90.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    },
+    {
+      "evidence_id": "E14",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "test/xaas/case_studies/wd_fa_learning_loop_test.exs",
+      "result": "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827",
+      "validator": "mix test test/xaas/case_studies/wd_fa_learning_loop_test.exs"
+    },
+    {
+      "evidence_id": "E15",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "scripts/stogaf_semantic_court.py",
+      "result": "standing ALIVE, 5 gates, 0 refusal rows; report sha256 e65aed338f6fc187f4e94303f1dc47bb330a90172a211a7b810353499a26a52c",
+      "validator": "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack"
+    },
+    {
+      "evidence_id": "E16",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "priv/packs/wd_cs2_pack/stogaf-wd-instance.ttl",
+      "result": "currentConformance ST-4 CONSTRAINED admitted by gate 020",
+      "validator": "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack"
+    },
+    {
+      "evidence_id": "E17",
+      "exact_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+      "path": "docs/case-studies/wd-fa/03-BUSINESS-ARCHITECTURE.md",
+      "result": "DESIGN_DOCUMENT",
+      "validator": "design review"
+    }
+  ],
+  "generator_identity": "ggen_igniter@26.9.15+engine=sparql;wd_cs2_case_study_pack=sha256:32704e04ec1ea4fc15eebb00a73678eabb0feac1720c8ad8ebb64b57c8a07693"
+}

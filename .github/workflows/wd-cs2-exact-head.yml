@@ -3,6 +3,7 @@ name: WD CS2 exact-head court
 on:
   push:
     branches:
+      - main
       - feat/wd-cs2-quality-loop-v26.9.21
   pull_request:
     branches: [main]

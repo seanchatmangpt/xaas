@@ -1,0 +1,5 @@
+PREFIX cs: <urn:xaas:case-study:>
+SELECT ?non_claim_id ?label
+WHERE {
+  ?non_claim a cs:NonClaim ; cs:nonClaimId ?non_claim_id ; cs:nonClaimLabel ?label .
+}

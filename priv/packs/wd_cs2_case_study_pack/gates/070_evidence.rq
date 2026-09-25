@@ -1,0 +1,10 @@
+PREFIX cs: <urn:xaas:case-study:>
+SELECT ?evidence_id ?path ?exact_subject ?validator ?result
+WHERE {
+  ?evidence a cs:Evidence ;
+            cs:evidenceId ?evidence_id ;
+            cs:evidencePath ?path ;
+            cs:exactSubject ?exact_subject ;
+            cs:validator ?validator ;
+            cs:result ?result .
+}

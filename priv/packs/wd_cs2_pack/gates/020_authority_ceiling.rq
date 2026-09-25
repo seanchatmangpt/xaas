@@ -1,19 +1,33 @@
 PREFIX stogaf: <urn:xaas:stogaf:>
 PREFIX wdcs2: <urn:xaas:wd-cs2:>
 
+# Each UNION branch binds its own triple pattern: a FILTER inside a nested
+# group cannot see variables bound outside it (SPARQL bottom-up evaluation),
+# so the pre-v26.9.25 shape of this gate could never return a row.
 SELECT ?subject ?reason WHERE {
-  wdcs2:architectureEpisode stogaf:authority ?authority ;
-                            stogaf:humanGate ?gate ;
-                            stogaf:currentConformance ?level .
   BIND(wdcs2:architectureEpisode AS ?subject)
   {
+    wdcs2:architectureEpisode stogaf:authority ?authority .
     FILTER(?authority != "SELECT_CONSTRUCT_ONLY")
     BIND("friday-demo-authority-exceeds-SELECT_CONSTRUCT_ONLY" AS ?reason)
   } UNION {
+    wdcs2:architectureEpisode stogaf:humanGate ?gate .
     FILTER(?gate != "ENGINEER_DISPOSITION_REQUIRED")
     BIND("friday-demo-human-gate-drift" AS ?reason)
   } UNION {
+    wdcs2:architectureEpisode stogaf:currentConformance ?level .
     FILTER(?level IN ("ST-7 ACTUATED", "ST-8 CLOSED_LOOP", "ST-9 LEARNING"))
     BIND("unobserved-production-conformance-claimed" AS ?reason)
+  } UNION {
+    # ST-6 AUTONOMIC is the declared targetConformance; it is never a current claim.
+    wdcs2:architectureEpisode stogaf:currentConformance ?level .
+    FILTER(?level IN ("ST-6 AUTONOMIC"))
+    BIND("unobserved-autonomic-conformance-claimed" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:authority ?anyAuthority }
+    BIND("authority-undeclared" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:humanGate ?anyGate }
+    BIND("human-gate-undeclared" AS ?reason)
   }
 }

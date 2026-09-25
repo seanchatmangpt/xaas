@@ -1,25 +1,35 @@
 PREFIX stogaf: <urn:xaas:stogaf:>
 PREFIX wdcs2: <urn:xaas:wd-cs2:>
 
+# Each UNION branch binds its own subject. Under strict SPARQL bottom-up
+# evaluation a nested group cannot see variables bound outside it; rdflib
+# happens to substitute them for FILTER NOT EXISTS, but not for a plain FILTER
+# (gate 020's pre-v26.9.25 conformance branch returned 0 rows on ST-7 input).
+# Branch-local binding keeps every gate engine-portable.
 SELECT ?subject ?reason WHERE {
-  BIND(wdcs2:architectureEpisode AS ?subject)
   {
-    FILTER NOT EXISTS { ?subject stogaf:baseline ?v }
+    BIND(wdcs2:architectureEpisode AS ?subject)
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:baseline ?v }
     BIND("missing-baseline" AS ?reason)
   } UNION {
-    FILTER NOT EXISTS { ?subject stogaf:target ?v }
+    BIND(wdcs2:architectureEpisode AS ?subject)
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:target ?v }
     BIND("missing-target" AS ?reason)
   } UNION {
-    FILTER NOT EXISTS { ?subject stogaf:gap ?v }
+    BIND(wdcs2:architectureEpisode AS ?subject)
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:gap ?v }
     BIND("missing-gap" AS ?reason)
   } UNION {
-    FILTER NOT EXISTS { ?subject stogaf:currentConformance ?v }
+    BIND(wdcs2:architectureEpisode AS ?subject)
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:currentConformance ?v }
     BIND("missing-current-conformance" AS ?reason)
   } UNION {
-    FILTER NOT EXISTS { ?subject stogaf:evidenceCeiling ?v }
+    BIND(wdcs2:architectureEpisode AS ?subject)
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:evidenceCeiling ?v }
     BIND("missing-evidence-ceiling" AS ?reason)
   } UNION {
-    FILTER NOT EXISTS { ?subject stogaf:authority ?v }
+    BIND(wdcs2:architectureEpisode AS ?subject)
+    FILTER NOT EXISTS { wdcs2:architectureEpisode stogaf:authority ?v }
     BIND("missing-authority" AS ?reason)
   }
 }

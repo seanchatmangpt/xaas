@@ -1,0 +1,6 @@
+PREFIX cs: <urn:xaas:case-study:>
+SELECT ?claim_id ?falsifier_id
+WHERE {
+  ?claim a cs:Claim ; cs:claimId ?claim_id ; cs:falsifiedBy ?falsifier .
+  ?falsifier cs:falsifierId ?falsifier_id .
+}

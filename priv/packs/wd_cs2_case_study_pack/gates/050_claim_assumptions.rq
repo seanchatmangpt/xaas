@@ -1,0 +1,6 @@
+PREFIX cs: <urn:xaas:case-study:>
+SELECT ?claim_id ?assumption_id
+WHERE {
+  ?claim a cs:Claim ; cs:claimId ?claim_id ; cs:dependsOn ?assumption .
+  ?assumption cs:assumptionId ?assumption_id .
+}

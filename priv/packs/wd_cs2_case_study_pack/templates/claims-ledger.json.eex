@@ -1,0 +1,81 @@
+<%
+# Shared prelude (identical in every template of this pack). Rows are sorted
+# here; the sparql engine's ORDER BY is not relied on.
+s = fn value -> if is_nil(value), do: nil, else: to_string(value) end
+int = fn value ->
+  case Integer.parse(to_string(value || "0")) do
+    {n, _} -> n
+    :error -> 0
+  end
+end
+pairs = fn rows, k, v ->
+  rows
+  |> Enum.group_by(&s.(Map.get(&1, k)), &s.(Map.get(&1, v)))
+  |> Map.new(fn {key, values} -> {key, values |> Enum.uniq() |> Enum.sort()} end)
+end
+
+[case_row] = case_study
+case_id = s.(case_row["case_id"])
+revision = s.(case_row["case_revision_digest"])
+generator = s.(case_row["generator_identity"])
+
+evidence_by_claim = pairs.(claim_evidence, "claim_id", "evidence_id")
+falsifiers_by_claim = pairs.(claim_falsifiers, "claim_id", "falsifier_id")
+assumptions_by_claim = pairs.(claim_assumptions, "claim_id", "assumption_id")
+slide_order_by_id = Map.new(slides, fn row -> {s.(row["slide_id"]), int.(row["slide_order"])} end)
+slides_by_claim =
+  claim_slides
+  |> Enum.group_by(&s.(&1["claim_id"]), &int.(&1["slide_order"]))
+  |> Map.new(fn {key, values} -> {key, values |> Enum.uniq() |> Enum.sort()} end)
+
+claim_rows = claims |> Enum.uniq_by(&s.(&1["claim_id"])) |> Enum.sort_by(&s.(&1["claim_id"]))
+claim_ids = Enum.map(claim_rows, &s.(&1["claim_id"]))
+standing_by_claim = Map.new(claim_rows, &{s.(&1["claim_id"]), s.(&1["standing"])})
+
+falsifier_index =
+  falsifiers
+  |> Enum.uniq_by(&s.(&1["falsifier_id"]))
+  |> Map.new(fn row ->
+    {s.(row["falsifier_id"]),
+     %{"falsifier_id" => s.(row["falsifier_id"]), "command" => s.(row["command"]),
+       "observation" => s.(row["observation"])}}
+  end)
+
+evidence_rows =
+  evidence
+  |> Enum.uniq_by(&s.(&1["evidence_id"]))
+  |> Enum.sort_by(&s.(&1["evidence_id"]))
+  |> Enum.map(fn row ->
+    %{"evidence_id" => s.(row["evidence_id"]), "path" => s.(row["path"]),
+      "exact_subject" => s.(row["exact_subject"]), "validator" => s.(row["validator"]),
+      "result" => s.(row["result"])}
+  end)
+path_by_evidence = Map.new(evidence_rows, &{&1["evidence_id"], &1["path"]})
+
+header = %{
+  "case_id" => case_id,
+  "case_revision_digest" => revision,
+  "generator_identity" => generator,
+  "claim_ids" => claim_ids
+}
+%>
+<%
+ledger_claims =
+  Enum.map(claim_rows, fn row ->
+    id = s.(row["claim_id"])
+    %{
+      "claim_id" => id,
+      "text" => s.(row["claim_text"]),
+      "standing" => s.(row["standing"]),
+      "evidence_ceiling" => s.(row["evidence_ceiling"]),
+      "authority_ceiling" => s.(row["authority_ceiling"]),
+      "claimed_level" => s.(row["claimed_level"]),
+      "evidence" => Map.get(evidence_by_claim, id, []),
+      "falsifiers" => Enum.map(Map.get(falsifiers_by_claim, id, []), &Map.fetch!(falsifier_index, &1)),
+      "assumptions" => Map.get(assumptions_by_claim, id, []),
+      "rendered_on_slides" => Map.get(slides_by_claim, id, [])
+    }
+  end)
+
+doc = Map.merge(header, %{"claims" => ledger_claims, "evidence" => evidence_rows})
+%><%= Jason.encode!(doc, pretty: true) %>

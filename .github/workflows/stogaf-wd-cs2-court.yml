@@ -3,6 +3,7 @@ name: WD CS2 STOGAF court
 on:
   push:
     branches:
+      - main
       - feat/stogaf-wd-cs2-v26.9.22
   pull_request:
     paths:
@@ -10,6 +11,10 @@ on:
       - "docs/case-studies/wd-fa/**"
       - "docs/sjira/v26.9.22/**"
       - "priv/packs/wd_cs2_pack/**"
+      - "priv/packs/wd_cs2_case_study_pack/**"
+      - "scripts/stogaf_semantic_court.py"
+      - "test/*.py"
+      - "tools/wd_deck/**"
       - "lib/xaas/case_studies/wd_fa/**"
       - "lib/xaas_web/live/wd_fa/**"
       - "lib/xaas_web/controllers/wd_fa_stogaf_controller.ex"
@@ -25,7 +30,8 @@ permissions:
 
 concurrency:
   group: wd-cs2-stogaf-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  # Main-push runs are evidence for the frozen subject; never cancel them.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -57,6 +63,9 @@ jobs:
         with:
           ref: ${{ env.SUBJECT_SHA }}
           persist-credentials: false
+          # Full history: the freeze and case-study courts replay the frozen
+          # subject with git archive and check evidence paths at it.
+          fetch-depth: 0
 
       - name: Assert exact subject
         run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
@@ -83,7 +92,7 @@ jobs:
         run: mix ecto.create && mix ecto.migrate
 
       - name: Install semantic court dependencies
-        run: python -m pip install "rdflib>=7,<8" "pyshacl>=0.30,<1"
+        run: python -m pip install "rdflib>=7,<8" "pyshacl>=0.30,<1" pytest
 
       - name: Execute RDF / SHACL / SPARQL court
         run: |
@@ -94,8 +103,13 @@ jobs:
           assert report["standing"] == "ALIVE", report
           assert report["shacl"]["conforms"] is True, report
           assert report["refusal_rows"] == 0, report
-          assert report["gate_count"] >= 5, report
+          assert report["gate_count"] >= 9, report
+          assert report["schema"] == "STOGAF_SEMANTIC_COURT_V2", report
           PY
+          sha256sum wd-cs2-stogaf-semantic-report.json
+
+      - name: Case-study, freeze and court Python tests
+        run: python -m pytest -q test/stogaf_semantic_court_test.py test/wd_case_study_court_test.py test/wd_submission_freeze_test.py
 
       - name: Compile exact subject
         run: mix compile --force --warnings-as-errors

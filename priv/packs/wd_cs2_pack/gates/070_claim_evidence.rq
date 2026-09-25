@@ -1,0 +1,32 @@
+# Refuse a supported claim without evidence, a claim without a falsifier, an
+# executed-standing claim whose falsifiers carry no command, and evidence bound
+# to a subject other than the case subject or its tree-identical head.
+PREFIX cs: <urn:xaas:case-study:>
+
+SELECT ?subject ?reason WHERE {
+  {
+    ?subject a cs:Claim ; cs:standing ?standing .
+    FILTER(?standing != "UNKNOWN")
+    FILTER NOT EXISTS { ?subject cs:supportedBy ?evidence }
+    BIND("supported-claim-without-evidence" AS ?reason)
+  } UNION {
+    ?subject a cs:Claim .
+    FILTER NOT EXISTS { ?subject cs:falsifiedBy ?falsifier }
+    BIND("claim-without-falsifier" AS ?reason)
+  } UNION {
+    ?subject a cs:Claim ; cs:standing ?standing .
+    FILTER(?standing IN ("ALIVE_FIXTURE", "PARTIAL_ALIVE"))
+    FILTER NOT EXISTS { ?subject cs:falsifiedBy/cs:falsifierCommand ?command }
+    BIND("executed-claim-without-falsifier-command" AS ?reason)
+  } UNION {
+    ?claim a cs:Claim ; cs:claimOf ?case ; cs:supportedBy ?subject .
+    ?subject cs:exactSubject ?exact .
+    FILTER NOT EXISTS { ?case cs:boundSubject ?exact }
+    FILTER NOT EXISTS { ?case cs:treeIdenticalSubject ?exact }
+    BIND("evidence-bound-to-foreign-subject" AS ?reason)
+  } UNION {
+    ?subject a cs:Claim ; cs:supportedBy ?evidence .
+    FILTER NOT EXISTS { ?evidence a cs:Evidence }
+    BIND("claim-supported-by-undeclared-evidence" AS ?reason)
+  }
+}
