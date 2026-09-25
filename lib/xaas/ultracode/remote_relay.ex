@@ -10,6 +10,21 @@ defmodule Xaas.Ultracode.RemoteRelay do
 
   defmodule Envelope do
     @enforce_keys [:command_id, :epoch_id, :task_id, :sequence, :intent_digest, :exact_subject, :verb]
+    @type t :: %__MODULE__{
+            command_id: String.t(),
+            epoch_id: String.t(),
+            task_id: String.t(),
+            sequence: pos_integer(),
+            intent_digest: String.t(),
+            exact_subject: String.t(),
+            verb: atom(),
+            issued_at: integer() | nil,
+            expires_at: integer() | nil,
+            execution_manifest_digest: String.t() | nil,
+            authority_ref: String.t() | nil,
+            channel: :control | :observe
+          }
+
     defstruct [
       :command_id,
       :epoch_id,
@@ -28,6 +43,15 @@ defmodule Xaas.Ultracode.RemoteRelay do
 
   defmodule State do
     @enforce_keys [:execution_manifest_digest]
+    @type t :: %__MODULE__{
+            execution_manifest_digest: String.t(),
+            session_id: String.t() | nil,
+            worker_id: String.t() | nil,
+            last_acknowledged_sequence: non_neg_integer(),
+            seen_command_ids: [String.t()],
+            dedup_limit: pos_integer()
+          }
+
     defstruct [
       :execution_manifest_digest,
       :session_id,
