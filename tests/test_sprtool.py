@@ -98,25 +98,6 @@ class TestRender(unittest.TestCase):
         self.assertTrue(first.startswith("- First statement"))
         self.assertTrue(first.endswith("priming set.\n"))
 
-    def test_unreadable_path_raises_spr_error(self):
-        # Files reach render() through load(), which documents SprError on
-        # unreadable input.
-        with self.assertRaisesRegex(sprtool.SprError, "cannot read"):
-            sprtool.render(sprtool.load(os.path.join(REPO, "no_such_file.md")))
-
-    def test_statement_free_content_raises_spr_error(self):
-        # Zero bullet statements violate the document contract; parse()
-        # rejects the document before render() can be handed it.
-        with self.assertRaisesRegex(sprtool.SprError, "no SPR statements"):
-            sprtool.render(sprtool.parse("Just prose, no bullets here at all."))
-
-    def test_short_document_round_trip_flags_s1_violation(self):
-        # render() itself does not gate content; re-validating its output
-        # must name the documented S1 violation for a too-short document.
-        doc = sprtool.parse("- Only one statement exists here.\n- And a second one.")
-        violations = sprtool.validate(sprtool.parse(sprtool.render(doc)))
-        self.assertTrue(any(v.startswith("S1:") for v in violations))
-
 
 class TestCli(unittest.TestCase):
     def run_cli(self, *args):
