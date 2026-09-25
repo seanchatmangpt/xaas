@@ -112,7 +112,12 @@ defmodule Xaas.Ultracode.RemoteRelay do
   """
   @spec admit_gall_work(State.t(), Envelope.t(), map(), integer()) ::
           {:ok, State.t()} | {:replay, State.t()} | {:error, atom()}
-  def admit_gall_work(%State{} = state, %Envelope{} = envelope, descriptor, now_ms \\ System.system_time(:millisecond))
+  def admit_gall_work(
+        %State{} = state,
+        %Envelope{} = envelope,
+        descriptor,
+        now_ms \\ System.system_time(:millisecond)
+      )
       when is_map(descriptor) do
     with :ok <- validate_gall_work_binding(envelope, descriptor) do
       admit(state, envelope, now_ms)
@@ -184,9 +189,9 @@ defmodule Xaas.Ultracode.RemoteRelay do
 
     cond do
       schema != "gall.work-lease/1" -> {:error, :descriptor_schema_mismatch}
-      not is_binary(work_order_iri) or work_order_iri == "" -> {:error, :descriptor_identity_missing}
-      not is_binary(graph_digest) or graph_digest == "" -> {:error, :descriptor_identity_missing}
-      not is_binary(epoch_id) or epoch_id == "" -> {:error, :descriptor_identity_missing}
+      blank_identity?(work_order_iri) -> {:error, :descriptor_identity_missing}
+      blank_identity?(graph_digest) -> {:error, :descriptor_identity_missing}
+      blank_identity?(epoch_id) -> {:error, :descriptor_identity_missing}
       envelope.intent_digest != graph_digest -> {:error, :intent_digest_mismatch}
       envelope.exact_subject != expected_subject -> {:error, :exact_subject_mismatch}
       envelope.epoch_id != epoch_id -> {:error, :epoch_mismatch}
@@ -194,6 +199,8 @@ defmodule Xaas.Ultracode.RemoteRelay do
       true -> :ok
     end
   end
+
+  defp blank_identity?(value), do: not is_binary(value) or value == ""
 
   defp descriptor_value(descriptor, string_key, atom_key) do
     Map.get(descriptor, string_key) || Map.get(descriptor, atom_key)
