@@ -1,0 +1,11 @@
+M1: anchor check removed from verify_hops/2
+route_test: Result: 74 passed
+anchor: EP-A tuple sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174 request sha256:33524064eb6f519f4c3b2bdd8b17d32b596808278775e09777a79f5a59aa3620 graph sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c via mix semantic_jira.descriptor (empty ledger) at ggen_igniter 3937a4f89ecf (build_manifest elixir 1.19.5)
+hops: 5 hops, tuple sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174, request sha256:33524064eb6f519f4c3b2bdd8b17d32b596808278775e09777a79f5a59aa3620, carriers re-derived
+F2 f2-underneath: REFUSED(tuple_digest_mismatch) broken_term=admission_vacuous hop=sa2a
+F2 f2-forged: REFUSED(tuple_digest_mismatch) broken_term=admission_vacuous hop=provider carrier=tuple field=postcondition
+    └─ /Users/sac/wt/v26922/v23/R1-X-COURTS/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"anchor":{"graph_digest":"sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c","request_digest":"sha256:33524064eb6f519f4c3b2bdd8b17d32b596808278775e09777a79f5a59aa3620","source":{"ggen_igniter_dir":"/Users/sac/wt/v26922/fri/ggen_igniter-int","ggen_igniter_sha":"3937a4f89ecf2b7fa12068406377c05ec1a1b8fc","process":"mix semantic_jira.descriptor (empty ledger)","toolchain":{"build_compiler":{"elixir":"1.19.5","otp":"28"},"elixir":"1.19.5","erlang":"28","mix":"/Users/sac/.asdf/installs/elixir/1.19.5-otp-27/bin/mix","source":"build_manifest"},"work_graph":"/Users/sac/wt/v26922/v23/R1-X-COURTS/docs/sjira/v26.9.23/episodes/fmt-1/work.json","work_graph_sha256":"sha256:0f12c61c44cd37d2844141a616ea8235d255dc107af8da27d448b116580e15c8"},"tuple_digest":"sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174","work_order":"EP-A"},"hops":"/private/tmp/claude-501/v23-scratch/R1a-R1-X-COURTS/gc23-4.Mhfn7D/f2-allforged.json","request_digest":"sha256:0485a16be6266f5cbc1464711ce59e563319f7e04558542580b4296cd7e4a70f","standing":"ALIVE","tuple_digest":"sha256:0d86d3d9a2748ab1d06adc2669ecf5e8ad8660532dc190309abe888cd37c3398"}
+REFUSED: GC23-4 F2 f2-allforged: verify-hops exited 0, expected 3 (refused)
+court_exit=1

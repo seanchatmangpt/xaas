@@ -1,0 +1,13 @@
+diff --git a/lib/xaas/ultracode/dispatch.ex b/lib/xaas/ultracode/dispatch.ex
+index 4b29e10..73fe4d9 100644
+--- a/lib/xaas/ultracode/dispatch.ex
++++ b/lib/xaas/ultracode/dispatch.ex
+@@ -842,7 +842,7 @@ defmodule Xaas.Ultracode.Dispatch do
+ 
+   # The kill is verified, not assumed (TERM, poll, KILL, poll): see
+   # `Xaas.Ultracode.ProcessGroup`, shared with the node --version probe.
+-  defp kill_group(os_pid), do: ProcessGroup.kill(os_pid, @grace_ms, @kill_confirm_ms)
++  defp kill_group(_os_pid), do: :ok
+ 
+   # Killing the group usually closes the port first; closing a closed port
+   # raises, and that must not turn a timeout into a spawn error.

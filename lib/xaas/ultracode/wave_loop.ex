@@ -8,8 +8,8 @@ defmodule Xaas.Ultracode.WaveLoop do
   @kind "ultracode-wave-loop/1"
   @kind_token "\"kind\":\"ultracode-wave-loop/1\""
   @provider "zcode"
-  @default_state_path "/Users/sac/xaas-tmp/w8-loop/STATE.md"
-  @default_telemetry_path "/Users/sac/xaas-tmp/w8-loop/loop.ndjson"
+  @default_state_path "/Users/sac/xaas/tmp/w8-loop/STATE.md"
+  @default_telemetry_path "/Users/sac/xaas/tmp/w8-loop/loop.ndjson"
   # A step turn may legitimately run long (branch integrations with full
   # gates); bounded UNDER the hourly cadence so one tick can never overlap
   # the next through its own dispatch.
@@ -37,7 +37,7 @@ defmodule Xaas.Ultracode.WaveLoop do
 
   ## One tick (the `:wave_loop` action body, `Xaas.Ultracode.WaveLoop.tick/1`)
 
-    1. READ the STATE file (`/Users/sac/xaas-tmp/w8-loop/STATE.md`) and
+    1. READ the STATE file (`/Users/sac/xaas/tmp/w8-loop/STATE.md`) and
        parse it through `Xaas.Ultracode.WaveLoop.State` -- a tolerant
        parser whose every unknown shape is a TYPED refusal, never a crash.
     2. SELECT the first actionable step: first table step that owes work

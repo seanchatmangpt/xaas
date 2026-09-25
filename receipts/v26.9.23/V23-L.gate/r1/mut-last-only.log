@@ -1,0 +1,45 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-L/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+Generated xaas app
+08:20:50.629 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+08:20:51.025 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+08:20:51.385 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+08:20:51.476 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:51.476 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+08:20:51.489 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:51.489 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+08:20:51.500 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:51.500 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+08:20:51.507 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:51.507 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+08:20:51.515 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:51.515 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+08:20:51.519 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:51.519 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 670876, max_cases: 32
+Excluding tags: [:test]
+Including tags: [location: {"test/sjira/v26_9_23_goal_test.exs", 1057}]
+
+
+
+  1) test --order-receipts-dir is repeatable and replaces the registry list (GGEN_IGNITER_DIR is then not read) (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1057
+     Assertion with =~ failed
+     code:  assert out =~ "order receipts option #{first} "
+     left:  "stop court GC-26.9.23 at 39047a1095df2bcc78debc24808d63c0ab3c9793\ngraph /Users/sac/.cache/tmp/v23_fixture_22404/goal/goal.ttl\ncourt env GGEN_IGNITER_DIR=/Users/sac/.cache/tmp/v23l_ggen_igniter_24962 XAAS_DIR=/Users/sac/.cache/tmp/v23_fixture_22404\norder receipts option /Users/sac/.cache/tmp/v23_fixture_22404/second (no git checkout)\nGATE   BOUNDARY   STANDING       EXIT         SECS    RECEIPT            SOURCE\nGA     Core       ALIVE          0            0.0     ADMITTED           ran\norder WO-A standing=NONE receipt=MISSING digest=sha256:8b6a15c0635ecb1a0e01249287ac77ac4d24e7656be97be50d5519ccaf1551a4 unlinked=:missing\nstop receipt /Users/sac/.cache/tmp/v23_fixture_22404/gate-receipts/STOP-GC-26.9.23.json ADMITTED\nSTOP=false\n"
+     right: "order receipts option /Users/sac/.cache/tmp/v23_fixture_22404/first "
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:1071: (test)
+
+
+Finished in 1.4 seconds (0.00s async, 1.4s sync)
+1 test, 1 failure (22 excluded)

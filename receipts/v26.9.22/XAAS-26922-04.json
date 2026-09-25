@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-04",
+  "base_sha": "release/v26.9.22 88750bd (#59) / 5710ccb (#61)",
+  "command": "git merge --no-ff 9cac7a0; git merge --no-ff --no-commit eee7a11 + SJ-010->SJ-013 renumber; mix test test/xaas/case_studies/wd_fa_chicago_test.exs; rg -l '\"identity\": \"SJ-010\"' docs/sjira | wc -l",
+  "exit": 0,
+  "output_excerpt": "#59 merged clean (AGENTS.md + engineering-standards.json + profile ttl). #61 merged with WD-CS2 renumbered SJ-010->SJ-013 (013-wd-cs2-quality-loop.md). wd_fa chicago test exit 0. rg count = 1 (sj-007's 010-atlassian-public-vocab-pin.md).",
+  "standing": "PARTIAL_ALIVE",
+  "notes": "RESIDUAL (honest): the rerun hosted courts executed against the STALE pre-push base and are red — #60's dialyzer step (fixed locally since), #61's wd-cs2 Playwright classification mismatch (real, unresolved; local wd_fa chicago court green). Exact-head CI green on the NEW base is still owed: an operator retrigger after this wave's main lands will provide it, or the Playwright mismatch needs a repair.",
+  "evidence_ts": "2026-09-22T19:00Z"
+}

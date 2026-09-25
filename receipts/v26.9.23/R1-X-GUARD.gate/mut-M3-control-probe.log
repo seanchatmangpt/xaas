@@ -1,0 +1,8 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"broken_term":"mu_on_O","detail":{"binaries":["/opt/homebrew/bin/codex","/opt/homebrew/bin/gemini","/opt/homebrew/bin/litellm","/opt/homebrew/bin/ollama","/opt/homebrew/bin/openai"],"providers":["google-gemini","litellm","ollama","openai"],"unadmitted":[],"variables":[]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}

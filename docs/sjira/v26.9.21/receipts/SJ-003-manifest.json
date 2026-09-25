@@ -1,0 +1,117 @@
+{
+ "admit_receipt": "rec-e088bcd4",
+ "base_sha": "01aa6fbf0b8fc5430f6a48bc4ccd24e11d4ac30a",
+ "files": [
+  {
+   "blob": "7aa86ecc31793c73a1500c00e13f852c61dd97b8",
+   "path": "HANDWRITTEN.md",
+   "status": "M"
+  },
+  {
+   "blob": "330d7f4c6a56bae208e083ce90c3099a95e167be",
+   "path": "priv/zcode_plugin/ggen.lock",
+   "status": "A"
+  },
+  {
+   "blob": "c5a5922cc5200826ab84a54f6ef1ad1e0e767987",
+   "path": "priv/zcode_plugin/ggen.toml",
+   "status": "M"
+  },
+  {
+   "blob": "476d2c7baf42c1fb182968e99df03bc76b7424d6",
+   "path": "priv/zcode_plugin/ontology.ttl",
+   "status": "M"
+  },
+  {
+   "blob": "d2907b46a57f0990370486a3e81a9b4fd450a125",
+   "path": "priv/zcode_plugin/packs/ultracode-actuation-lease-pack/ontology.ttl",
+   "status": "A"
+  },
+  {
+   "blob": "88d835af09a4bbb2fa0e762dafe356818b6cd36d",
+   "path": "priv/zcode_plugin/packs/ultracode-actuation-lease-pack/pack.toml",
+   "status": "A"
+  },
+  {
+   "blob": "f6112c76d0fbc5fb24137df58ca75487664c799d",
+   "path": "priv/zcode_plugin/packs/ultracode-actuation-lease-pack/templates/script-lease.mjs.tmpl",
+   "status": "R073"
+  },
+  {
+   "blob": "152cb3407fd30b294f9eee790b3c669ebea58604",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/ontology.ttl",
+   "status": "A"
+  },
+  {
+   "blob": "35bead80d0e4a62299b162dbbb2963e8cafc8407",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/pack.toml",
+   "status": "A"
+  },
+  {
+   "blob": "6a956c35ca3b851ec46a3de2756fd0672f106273",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/agent-xaas-worker.md.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "b9abb7fd9b7e41ec2a6e24a3f74e358eb3ac2f3b",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/command-xaas.md.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "5b3f57abbd53892b4a452ba979efee3da569006f",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/hooks.json.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "06b84065ceb71c7bf55bf4f9702db4b6d5743204",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/marketplace.json.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "15f6c70e3de8a2d33a9182d1eb91a14488a860f5",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/mcp.json.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "b426f97c642d802fc85e735bfb2dcc471e553e7b",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/plugin.json.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "2752ad13815993b15469bf590dc7f695fbabe41e",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/script-xaas-gate.mjs.tmpl",
+   "status": "R078"
+  },
+  {
+   "blob": "206a7a194232ecafb026d924cc8e3f22b35cc04f",
+   "path": "priv/zcode_plugin/packs/zcode-plugin-pack/templates/skill-xaas-worker.md.tmpl",
+   "status": "R100"
+  },
+  {
+   "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "path": "priv/zcode_plugin/templates/.gitkeep",
+   "status": "A"
+  },
+  {
+   "blob": "03b38303aad943868ae87ca3fcac460bda241c07",
+   "path": "test/xaas/zcode_plugin/projection_test.exs",
+   "status": "M"
+  }
+ ],
+ "head_sha": "191e7d59c65b78bf35459ffcc6c16bee10bd8076",
+ "observed": {
+  "cleanroom_render_identical_to_checked_in": true,
+  "handwritten_active_rows": {
+   "after": 18,
+   "before": 20
+  },
+  "mix_test_test_xaas_zcode_plugin": {
+   "failures": 0,
+   "tests": 33
+  },
+  "negative_control_mutation_changes_rendered_script": true,
+  "plugin_ggen_sync_exit": 0
+ },
+ "order_digest": "sha256:ecbcd23865fa1ba78061350b53f718dfd8e65aef17510355df3a27d0afe469a6",
+ "subject": "SJ-003"
+}

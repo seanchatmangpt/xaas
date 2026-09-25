@@ -1,0 +1,8 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-DIGEST/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"definition_digest":"sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58","digest_form":"sjira-digest/2","fixture":"test/fixtures/semantic_work/sj-001-descriptor.json","ggen_igniter_dir":"/Users/sac/wt/v26922/fri/ggen_igniter-int","matches":false,"mode":"check","ok":false,"producer":"docs/sjira/v26.9.21/e2e_project.exs","sha256":"a28d55fafc35189d0e434afa9876788eafecc7a87363f6bdbd75e01c4709d33c","toolchain":{"elixir":"1.18.4-otp-27","erlang":"27.2.4","mix":"/Users/sac/.asdf/installs/elixir/1.18.4-otp-27/bin/mix","source":"asdf"},"work_order_digest":"sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7"}

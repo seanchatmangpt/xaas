@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-02",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "test -z \"$(git status --porcelain)\" && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test; git push origin main; git rev-list --left-right --count origin/main...main",
+  "exit": 0,
+  "output_excerpt": "TREE_CLEAN; FORMAT_OK; compile exit 0 (only a dep warning from deps/ex4pm/mix.exs); mix test: \"1462 passed, 76 excluded\" in 184.9s; push: 57c77e7..2d229c2 main -> main; rev-list count \"0\\t0\"",
+  "standing": "ALIVE",
+  "notes": "Full gate green on main 2d229c2 BEFORE push; this also now substantiates the ERRC commit message's 1462/0 claim with a receipt. Push was a plain push (never force). DEVIATION (recorded, not faked): the WO's 'restart phx.server PID 34803 on the committed code with autofde on PATH' sub-step was NOT executed — operator doctrine in force for this wave says phx is UP on :4000 with the internal token and must never be stopped. The server process (16h uptime) was left untouched; restart deferred to the operator.",
+  "evidence_ts": "2026-09-22T14:52-15:05Z"
+}

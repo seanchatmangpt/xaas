@@ -1,0 +1,318 @@
+{
+ "identity": {
+  "subject": "R1-X-DIGEST",
+  "repo": "/Users/sac/xaas",
+  "repo_slug": "seanchatmangpt/xaas",
+  "subject_sha": "05eca25c56a24a60cc0e77c5811f7403d6c887e1",
+  "base_sha": "246460c256175c1641dda9480bcb95e54f5dc890",
+  "base_sha_why": "merge-base of v23/R1-X-DIGEST with friday/gc-fri-0800 at lane start (worktree created from friday/gc-fri-0800 = 246460c)",
+  "branch": "v23/R1-X-DIGEST",
+  "worktree": "/Users/sac/wt/v26922/v23/R1-X-DIGEST",
+  "work_order": null,
+  "tuple_digest": null,
+  "tuple_digest_why": "no goal.ttl order for repair lane R1-X-DIGEST (wave R1a release defect repair F2); the receipt is not linked by the stop court",
+  "prd_ard": "PRD PR-008 (semantic conservation), PR-013 (replay); ARD section 8 (a digest over the semantic contract is checked at XaaS; mutation refuses), section 12 (old artifacts remain historical), AR-003 (originating artifacts preserved as provenance)",
+  "ggen_igniter_dir": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+  "ggen_igniter_dir_head": "3ed6a7afc51fcfc652cfa72f75680d7fa1543bc8",
+  "mix_lock_sha256": "9d8343c16444361b29cc422fc3d70f659d824767bc47229ddacf4fb407f3161b",
+  "toolchain": {
+   "xaas": "Elixir 1.20.2 / Erlang/OTP 28 (erts-16.4.0.2), the xaas .tool-versions pin (PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin); deps/ and _build/ APFS-cloned from /Users/sac/wt/v26922/v23/R1-X-COURTS (built under the same pin, mix.lock identical), compile --force under the pin",
+   "graph_side_sj001": "the graph checkout's .tool-versions pin, Elixir 1.18.4-otp-27 + Erlang 27.2.4 (RecipeWorker.toolchain/1), private APFS clone of ggen_igniter-int _build/test (compiled by 1.18.4 / OTP 27: compile.elixir_scm {1, {1.18.4, 27}})",
+   "graph_side_drive": "SemanticDrive.graph_toolchain/2, unchanged by this lane (see classification.environment)"
+  }
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave R1a lane R1-X-DIGEST (/Users/sac/wt/v26922/v26923/DRIVER.md 12:50 PT entry, lanes/wave-R1a.json; COORDINATION.md v26.9.23 scope): release defect repair F2 on the frozen subject friday/gc-fri-0800 -- only the named defect. No push, no integrate, no remote effect; ggen_igniter-int read-only.",
+  "actor": "claude-opus-5.5 workflow subagent (lane R1-X-DIGEST)"
+ },
+ "consequence": {
+  "commits": [
+   "05eca25c56a24a60cc0e77c5811f7403d6c887e1"
+  ],
+  "commit_notes": {
+   "05eca25": "versioned admitted-snapshot digest form: AdmissionBinding @digest_forms (sjira-digest/1, sjira-digest/2), snapshot_digest/2, definition_digest/2, typed refusals (digest_form_undeclared, unknown_digest_form, digest_form_mismatch, admitted_definition_stale); SemanticWork digest_form key; producer e2e_project.exs declares + checks sjira-digest/2; current-form fixture produced by running the producer; historical v26.9.21 evidence declares sjira-digest/1; tests; SJ-001 e2e graph side under the graph pin; HANDWRITTEN row"
+  },
+  "files_changed": [
+   "HANDWRITTEN.md",
+   "docs/sjira/v26.9.21/e2e_project.exs",
+   "docs/sjira/v26.9.21/receipts/sj-001/evidence/descriptor.json",
+   "lib/xaas/ultracode/semantic_work.ex",
+   "lib/xaas/ultracode/semantic_work/admission_binding.ex",
+   "scripts/sj001_descriptor_fixture.exs",
+   "test/fixtures/semantic_work/sj-001-descriptor.json",
+   "test/xaas/ultracode/semantic_jira_e2e_test.exs",
+   "test/xaas/ultracode/semantic_work_falsifier_test.exs",
+   "test/xaas/ultracode/semantic_work_test.exs"
+  ],
+  "files_changed_basis": "git diff --name-only 246460c 05eca25; the receipt commit adds receipts/v26.9.23/R1-X-DIGEST.json and receipts/v26.9.23/R1-X-DIGEST.gate/**",
+  "generated_vs_handwritten": "test/fixtures/semantic_work/sj-001-descriptor.json is PRODUCED (the producer run, byte-checked by --check and by the SJ-001 e2e assertion); every digest in it is producer output. The historical evidence descriptor gets ONE added declaration line (digest_form sjira-digest/1), no digest touched. Everything else is hand-written residue with a HANDWRITTEN.md row: UNSUPPORTED(generator-capability) -- no ggen-marketplace pack (326, grep digest_form/definition_fields: 0) and not semantic-jira-pack at int 3ed6a7a (the definition whitelist and drop list live in GgenIgniter.SemanticJira code) declare digest forms as data",
+  "reserved_files": "none of the Friday-reserved files (recipe_worker, engine, court_receipt, target_suites, semantic_receipt, semantic_crown, route.ex, stop_court.ex, docs/sjira/v26.9.22/friday/**), none of goal.ttl, stop.rq, prd-ard.md, the court scripts or the episode artifacts; ggen_igniter not edited",
+  "remote_effects": [],
+  "local_effects": [
+   "/Users/sac/wt/v26922/v23/R1-X-DIGEST: git worktree (branch v23/R1-X-DIGEST from friday/gc-fri-0800 246460c); deps/_build APFS-cloned from /Users/sac/wt/v26922/v23/R1-X-COURTS",
+   "/Users/sac/wt/v26922/v23/R1-X-DIGEST-gi: lane-owned detached ggen_igniter worktree at 3ed6a7a (diagnostic OTP-28 graph build; tracked tree clean, only gitignored _build/deps/native target/priv native, ~675M). RETAINED: `git worktree remove --force` was denied by the session permission policy; the driver may remove it (clean, no submodules)",
+   "/private/tmp/claude-501/v23-scratch/R1a-R1-X-DIGEST/base-xaas: detached scratch xaas worktree at 246460c for the base court runs (tracked tree clean; submodules uninitialized). RETAINED: worktree removal and rm of scratch build clones were denied by the session permission policy; scratch also holds probe/gbuild (APFS clone of ggen_igniter-int _build/test)",
+   "local Postgres xaas_test: mix test alias ecto.create --quiet + ecto.migrate --quiet (sandboxed)"
+  ]
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/R1-X-DIGEST.gate/ (lane gate logs on the committed subject, base baseline, RED witnesses, producer write/check, courts at head/base/diagnostic, revert-mutation logs + generator)",
+  "commands": [
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH elixir --version",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 1/4: Elixir 1.20.2 (compiled with Erlang/OTP 28), the xaas .tool-versions pin",
+    "output_sha256": "0703b368753ac489dfda45d59bd667dceaeccbd3f23d239166496ff20a03a757",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/gate.elixir-version.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH mix format --check-formatted",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 2/4: formatted (log holds only the pre-existing deps/ex4pm mix.exs Application.get_env warning)",
+    "output_sha256": "601cb7fe4b3ee354cfd7857e03db8b7d30faa77004c1e0a9ee96877e6928a5ec",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/gate.format.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "lane gate 3/4: Compiling 520 files (.ex), Generated xaas app, no xaas warning",
+    "output_sha256": "5acb69a73789dbe356e7259018c9242ac2c7043b291f74e2b02c31eea593fe68",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/gate.compile.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 2,
+    "summary": "lane gate 4/4: Finished in 562.8 s; Result: 776/797 passed, 25 excluded; Failed: 21 tests -- the 21 are EXACTLY the pre-existing set failing at base 246460c (comm of the two failure lists: 0 only-at-head; SJ-001 only-at-base = fixed); 0 new failures; SJ-001 e2e + all SemanticWork/SemanticWorkFalsifier tests pass",
+    "output_sha256": "2e15f88fe0e6ec44bcaf578da09cc74224ec756b6ccd886138120c36e9bb5a00",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/gate.test-ultracode.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 246460c (lane worktree before any edit)",
+    "exit": 2,
+    "summary": "baseline at base 246460c under the same pin and GGEN_IGNITER_DIR: Finished in 409.2 s; Result: 771/793 passed; Failed: 22 tests = the 21 environment failures + SJ-001 (the graph projection process exits 1 under the xaas pin before the digest assertion)",
+    "output_sha256": "bd9a1826d053d70c746f77b1c8a63292909872ecf33f1f94ae14983d94286e00",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/preexisting/ultracode.at-base-246460c.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode/semantic_jira_e2e_test.exs test/xaas/ultracode/semantic_work_test.exs test/xaas/ultracode/semantic_work_falsifier_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 246460c (lane worktree before any edit)",
+    "exit": 2,
+    "summary": "RED at base: 30/31 passed; SJ-001 fails at `{0, admit} = project(...)` with {1, nil}: the graph side runs under the xaas pin's mix (Elixir 1.20.2) and ggen_igniter's faker dependency does not compile there (see red/graph-projection-under-xaas-pin-1.20.2.log)",
+    "output_sha256": "ef504f17c8390146127dd76e72b9d752348e0ac6400c72f0a4fa91d8b4428cf6",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/red/sj001-and-semantic-work.at-base-246460c.log"
+   },
+   {
+    "cmd": "cd /Users/sac/wt/v26922/fri/ggen_igniter-int && env -u ASDF_ELIXIR_VERSION -u ASDF_ERLANG_VERSION PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH MIX_ENV=test MIX_BUILD_PATH=<scratch clone of /Users/sac/wt/v26922/fri/ggen_igniter-int/_build/test> WO=<SJ-001 front matter> OUT=<scratch> perl -e 'alarm shift; exec @ARGV' 900 mix run /Users/sac/wt/v26922/v23/R1-X-DIGEST/docs/sjira/v26.9.21/e2e_project.exs",
+    "cwd": "/Users/sac/wt/v26922/fri/ggen_igniter-int (read-only use; private MIX_BUILD_PATH in scratch)",
+    "exit": 1,
+    "summary": "environment RED: `== Compilation error in file lib/faker/string.ex == ** (SyntaxError) invalid line break character in string: \\u0085` under Elixir 1.20.2 -- the graph side cannot run under the xaas pin",
+    "output_sha256": "312de5712c22c9bb79cceca57bbd2c4ae3316e69903ba56538873e67affbac60",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/red/graph-projection-under-xaas-pin-1.20.2.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH F=<test/fixtures/semantic_work/sj-001-descriptor.json> MIX_ENV=test mix run --no-start -e '<base AdmissionBinding.snapshot_digest/1, definition_digest/1, SemanticWork.admit/2 on the current producer output>'",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-DIGEST/base-xaas (detached scratch worktree @ 246460c, removed after)",
+    "exit": 0,
+    "summary": "F2 witnessed at base on the producer's current output: base snapshot_digest sha256:5a8d6d30... vs carried sha256:2da4d987... (exactly the qualification's left/right), base definition_digest sha256:0d8bfc3c... vs bridge sha256:c0cc3a2e...; admit -> REFUSED admitted_snapshot_stale",
+    "output_sha256": "6a3e9d51d34b0317da71c914454ad9d0950ebfc7575169e665f8cb2e42f7b30b",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/red/base-admission-binding-on-current-producer-output.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix run --no-start scripts/sj001_descriptor_fixture.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST (before commit 05eca25; the fixture it wrote is committed there)",
+    "exit": 0,
+    "summary": "producer RUN (docs/sjira/v26.9.21/e2e_project.exs in ggen_igniter-int 3ed6a7a under its pin elixir 1.18.4-otp-27 + erlang 27.2.4) wrote test/fixtures/semantic_work/sj-001-descriptor.json: digest_form sjira-digest/2, work_order_digest sha256:2da4d987..., definition_digest sha256:c0cc3a2e..., file sha256 a28d55fa...",
+    "output_sha256": "5f0a17096ca5337aafea40a122efc539e082f1befc7a14388a93a97158e7ea7d",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/fixture-write.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix run --no-start scripts/sj001_descriptor_fixture.exs --check",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "the committed fixture is byte-identical to a fresh producer run (matches: true, sha256 a28d55fa...)",
+    "output_sha256": "6dc2f2b5ed7548c0728d1006ec4c7e1357a348aa8944c2d9078932b859c10668",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/fixture-check.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-5.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused typed REFUSED(llm_credential_present) broken_term mu_on_O)",
+    "output_sha256": "24d2e0f615408ba7ee7b2df1b5a9a8fa67007c3cf824574212647934a6731f62",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-5.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-6.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "ALIVE: GC23-6 consequence independently observed at 9c5e7571; F4 revert falsifier killed",
+    "output_sha256": "fd2d8a710f652f2a4d3f6c31b6fb7c5c43c907f28cf50a101e62ac42919ccee7",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-6.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-7.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "ALIVE: GC23-7 receipt ADMITTED and consistent (6 receipt mutants refused), OCEL conformant (xaas court + pm4py 11 events) on episode fmt-1",
+    "output_sha256": "b56f87d36c4562c9d09f467595fd2e1774db77e1f669bb1114159702a9f311f4",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-7.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 75,
+    "summary": "UNKNOWN (exit 75): route_test 74 passed; the hop-0 anchor's graph side is BUILD_BROKEN (graph_toolchain pairs the pinned Elixir 1.18.4 with the running OTP-28 ERTS while ggen_igniter-int _build/test is compiled on OTP 27: yamerl_constr.hrl enoent) -- identical at base (courts/base-court-GC23-4.log)",
+    "output_sha256": "99d6def28df54e45323f6be7eea6903a5aeaca1c0cea1b923cb4ed3985ad7faf",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-4.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-8.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 75,
+    "summary": "UNKNOWN (exit 75): the live frontier recompute's graph side is BUILD_BROKEN (same yamerl cause) -- identical at base (courts/base-court-GC23-8.log)",
+    "output_sha256": "6ae3d423bde19a757082693522a3b4a751b578578f9e0f10086fc6bd0303bacb",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-8.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-DIGEST/base-xaas (detached scratch worktree @ 246460c, removed after)",
+    "exit": 75,
+    "summary": "pre-existing: UNKNOWN at base 246460c, same message (graph side does not compile under the resolved toolchain)",
+    "output_sha256": "3ca03b2e2992ff82cb8e81e620b554ae783a1151158213ce9e1fd2380dd49c8e",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/base-court-GC23-4.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int sh docs/sjira/v26.9.23/courts/GC23-8.sh",
+    "cwd": "/private/tmp/claude-501/v23-scratch/R1a-R1-X-DIGEST/base-xaas (detached scratch worktree @ 246460c, removed after)",
+    "exit": 75,
+    "summary": "pre-existing: UNKNOWN at base 246460c, same message",
+    "output_sha256": "bce88f429a0d0b50726dceecdd7ff9c9c51a0825001806f95058a6c6941522d6",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/base-court-GC23-8.log"
+   },
+   {
+    "cmd": "cd /Users/sac/wt/v26922/v23/R1-X-DIGEST-gi && /opt/homebrew/bin/timeout 1100 env -u ASDF_ELIXIR_VERSION -u ASDF_ERLANG_VERSION PATH=/Users/sac/.asdf/installs/elixir/1.19.5-otp-27/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:/Users/sac/.cargo/bin:/usr/bin:/bin MIX_ENV=test CARGO_BUILD_JOBS=4 mix compile",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST-gi (lane-owned detached ggen_igniter worktree at 3ed6a7a = ggen_igniter-int HEAD; deps APFS-cloned from int, _build/test from the RELA probe build of identical lib/priv/mix sources)",
+    "exit": 0,
+    "summary": "diagnostic graph build on the running OTP 28: Compiling 104 files, crate ggen_graph_nif, Generated ggen_igniter app (4 min)",
+    "output_sha256": "53a08806c17d35ec287ed33cf2e3fc048d5a7f64c0cd7e6df47322413b1c530f",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/preexisting/diag.gi-otp28-build-compile.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/R1-X-DIGEST-gi sh docs/sjira/v26.9.23/courts/GC23-4.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "diagnostic, same ggen_igniter SHA 3ed6a7a built on OTP 28: ALIVE: GC23-4 SA2A conservation witnessed on episode fmt-1 (5 hop digests equal the admitted-order anchor; F2 incl. the all-hop forgery refused)",
+    "output_sha256": "86a4315fedb319336f4c85d7face8fde583f7af0e7c9a4f1b51b94b0a6365ea0",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-4.gi-otp28.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/R1-X-DIGEST-gi sh docs/sjira/v26.9.23/courts/GC23-8.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "diagnostic, same SHA built on OTP 28: ALIVE: GC23-8 closed frontier on episode fmt-1 (EP-A left ALIVE, EP-B entered, recomputed live)",
+    "output_sha256": "27384bc3b24f8f1c6e3d0f1b9601c53fd2cdbe906d2afe59b86f1f8e79df52c9",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/courts/head-court-GC23-8.gi-otp28.log"
+   },
+   {
+    "cmd": "PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/v23/R1-X-DIGEST-gi mix test test/xaas/ultracode/machine_experience_test.exs test/xaas/ultracode/semantic_drive_test.exs test/xaas/ultracode/semantic_drive_anchor_test.exs test/xaas/ultracode/semantic_replay_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 2,
+    "summary": "diagnostic: 52/55 passed -- the 18 graph-side environment failures of the lane gate (drive, anchor, replay incl. crown replay, MachineExperience episodes) PASS at this head against an OTP-28 build of the same ggen_igniter SHA; the 3 remaining are SemanticDriveToolchainTest (graph_toolchain vs Elixir 1.20 compile.elixir_scm 4-tuple / node-Elixir manifest), pre-existing and independent of GGEN_IGNITER_DIR",
+    "output_sha256": "5801bbfcfe52f3341a59c23c3f5b1d98e7232eaf1ff44d12cf4279b47250a828",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/preexisting/diag.graph-otp28-build.at-head.log"
+   },
+   {
+    "cmd": "! (python3 receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/mutate.py M2-infer-undeclared && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode/semantic_work_test.exs test/xaas/ultracode/semantic_work_falsifier_test.exs); git checkout -- lib/xaas/ultracode/semantic_work/admission_binding.ex",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "inverted (the test command exited 2): revert-mutation M2-infer-undeclared (digest_form/2 infers \"sjira-digest/2\" for an undeclared form): 33/34: 'an undeclared or unknown form is refused, never inferred' fails -> killed; file restored, tree clean",
+    "output_sha256": "a63f4b873cb0d9800a60899c1b9c6b1a1c3baece63fc69515e3199f892891b7e",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/M2-infer-undeclared.log"
+   },
+   {
+    "cmd": "! (python3 receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/mutate.py M3-no-definition-self-check && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode/semantic_work_test.exs test/xaas/ultracode/semantic_work_falsifier_test.exs); git checkout -- lib/xaas/ultracode/semantic_work/admission_binding.ex",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "inverted (the test command exited 2): revert-mutation M3-no-definition-self-check (definition_self_consistent/2 skipped): 32/34: 'embedded definition digest altered after admission' and 'declared form mismatches its digests' (shape-faking relabel) fail -> killed; file restored, tree clean",
+    "output_sha256": "2f13c4a2c7f0117a76580543216ff231fdc76808ddb4c4bc9635363c2c51a816",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/M3-no-definition-self-check.log"
+   },
+   {
+    "cmd": "! (python3 receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/mutate.py M4-no-form-shape && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode/semantic_work_test.exs test/xaas/ultracode/semantic_work_falsifier_test.exs); git checkout -- lib/xaas/ultracode/semantic_work/admission_binding.ex",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "inverted (the test command exited 2): revert-mutation M4-no-form-shape (snapshot_has_form_shape/2 always :ok): 32/34: both relabel and malformed-shape tests fail -> killed; file restored, tree clean",
+    "output_sha256": "7bcb7008bbf7d1503dacf1d888c09b5b044aa10d4d0dff660d2991b7810a14b9",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/M4-no-form-shape.log"
+   },
+   {
+    "cmd": "! (python3 receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/mutate.py M5-v2-computes-legacy && PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix test test/xaas/ultracode/semantic_work_test.exs test/xaas/ultracode/semantic_work_falsifier_test.exs); git checkout -- lib/xaas/ultracode/semantic_work/admission_binding.ex",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "inverted (the test command exited 2): revert-mutation M5-v2-computes-legacy (\"sjira-digest/2\" snapshot digest computed with the legacy drop list (the pre-repair behavior)): 23/34: 11 SemanticWork/SemanticWorkFalsifier tests fail on the current-form fixture -> killed (the F2 defect reproduced); file restored, tree clean",
+    "output_sha256": "fb931701576661a6ea3452a3bdba7e4d9533fbb1f52a469bab4996cc4af39942",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/M5-v2-computes-legacy.log"
+   },
+   {
+    "cmd": "! (PATH=/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin:/Users/sac/.asdf/installs/erlang/28.5.0.2/bin:$PATH GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int mix run --no-start scripts/sj001_descriptor_fixture.exs --check) with the committed fixture's snapshot standing edited ALIVE->PARTIAL_ALIVE; git checkout -- test/fixtures/semantic_work/sj-001-descriptor.json",
+    "cwd": "/Users/sac/wt/v26922/v23/R1-X-DIGEST @ 05eca25 (clean tree)",
+    "exit": 0,
+    "summary": "inverted (the check exited 1, matches: false): a hand-edited fixture is refused by the producer re-run",
+    "output_sha256": "1115b80bbc40531a72d3a8d7ab11b11aed94673334ba8c792311afa861d76090",
+    "log": "receipts/v26.9.23/R1-X-DIGEST.gate/revert-mutation/fixture-check-mutated.log"
+   }
+  ]
+ },
+ "standing": {
+  "value": "PARTIAL_ALIVE",
+  "derived_from": "at subject 05eca25c56a24a60cc0e77c5811f7403d6c887e1: F2 repaired and witnessed -- SJ-001 e2e passes under the pin against GGEN_IGNITER_DIR=ggen_igniter-int (base: fails), the SemanticWork/SemanticWorkFalsifier tests pass on the producer-generated current-form fixture, the legacy form verifies only on the historical artifact that declares it, declared-form mismatch is REFUSED typed, 4 revert-mutations + a fixture mutation killed; courts GC23-5/6/7 ALIVE against int; lane gate steps 1-3 exit 0; lane gate step 4 exit 2 with 21 failures = the identical pre-existing environment set at base 246460c (0 new). Not ALIVE: the lane gate did not exit 0, and GC23-4/GC23-8 are UNKNOWN (exit 75) against ggen_igniter-int at head and at base (ALIVE against an OTP-28 build of the same ggen_igniter SHA).",
+  "broken_term": "mu_unlawful"
+ },
+ "classification": {
+  "F2": "subject defect (cross-repo contract drift): xaas AdmissionBinding computed the pre-33c8e86 digest form against ggen_igniter 33c8e86+ output. Repaired in this commit.",
+  "sj001_projection_under_xaas_pin": "environment (toolchain), exposed by the pinned lane gate: the SJ-001 e2e ran the graph side with the xaas pin's mix (Elixir 1.20.2), under which ggen_igniter's faker does not compile; repaired in the test (graph side under the graph checkout's pin) because the F2 proof cannot run otherwise",
+  "environment_preexisting_21": "environment (toolchain) + pre-existing: ggen_igniter-int _build/test is now compiled by Elixir 1.18.4 on OTP 27 (compile.elixir_scm mtime 2026-09-23 14:16 PT), while SemanticDrive.graph_toolchain/2 always pairs the resolved Elixir with the running node's OTP-28 ERTS, so every graph-side process recompiles the deps and fails (yamerl_constr.hrl enoent): 15 drive/anchor/replay/MachineExperience tests + 3 SemanticCrownReplayTest + GC23-4/GC23-8 UNKNOWN; 3 SemanticDriveToolchainTest fail because Elixir 1.20.2 writes compile.elixir_scm as a 4-tuple {2, {vsn, otp}, scm, nil}. Identical at base; 18 of the 21 pass at this head against an OTP-28 build of the same ggen_igniter SHA. Owner: the pinned-suite lane (R1-X-PIN per DRIVER.md): graph_toolchain should run the graph side on the build's own ERTS (the .tool-versions pin, as SJ-001 now does) and read the 1.20 manifest form. Not changed here (only the named defect may change)."
+ },
+ "falsifiers": [
+  {
+   "claim": "xaas recomputes the producer's current digests",
+   "falsifier": "SJ-001 e2e digest assertions at head",
+   "result": "survived (passes; base REFUSED admitted_snapshot_stale on the same output)"
+  },
+  {
+   "claim": "a descriptor whose declared form mismatches its digests is refused, typed",
+   "falsifier": "relabel /2->/1 and /1->/2, shape-faking relabel, stripped relabel",
+   "result": "survived: {:digest_form_mismatch, form, :definition_digest} x2, {:admitted_definition_stale, _}, {:admitted_snapshot_mismatch, :bridge_definition_digest}"
+  },
+  {
+   "claim": "the form is never inferred",
+   "falsifier": "M2 revert-mutation (infer /2 when undeclared)",
+   "result": "killed by the undeclared-form test"
+  },
+  {
+   "claim": "the legacy form stays verifiable only where declared",
+   "falsifier": "historical descriptor without its declaration",
+   "result": "survived: REFUSED :digest_form_undeclared; with it, admitted under /1"
+  },
+  {
+   "claim": "the committed fixture is the producer's output",
+   "falsifier": "hand-edited fixture vs producer re-run (--check); SJ-001 e2e byte-equality",
+   "result": "survived: --check exit 1 on the edited fixture, exit 0 on the committed one"
+  },
+  {
+   "claim": "episode courts GC23-4..8 unaffected",
+   "falsifier": "court runs at head vs base",
+   "result": "GC23-5/6/7 ALIVE at head; GC23-4/8 UNKNOWN at head AND base against int (environment), ALIVE at head against an OTP-28 build of the same ggen_igniter SHA"
+  }
+ ],
+ "successor_opportunities": [
+  "semantic-jira-pack: declare digest forms (drop list, definition take, embedding) as pack data and have admit_work_order/1 + the descriptor emitter stamp digest_form (then AdmissionBinding @digest_forms retires to a read)",
+  "SemanticDrive.graph_toolchain/2: run the graph side on the build's own ERTS / the graph .tool-versions pin; parse the Elixir 1.20 compile.elixir_scm form (R1-X-PIN)"
+ ]
+}

@@ -1,0 +1,350 @@
+diff --git a/lib/xaas/ultracode/no_llm_policy.ex b/lib/xaas/ultracode/no_llm_policy.ex
+index 1f3eb18..0bf934d 100644
+--- a/lib/xaas/ultracode/no_llm_policy.ex
++++ b/lib/xaas/ultracode/no_llm_policy.ex
+@@ -144,7 +144,7 @@ defmodule Xaas.Ultracode.NoLlmPolicy do
+ 
+     cond do
+       variables != [] or binaries != [] -> {:refused, "llm_credential_present", detail}
+-      unadmitted != [] -> {:refused, "unadmitted_environment", detail}
++      unadmitted != [] -> :ok
+       true -> :ok
+     end
+   end
+diff --git a/priv/no_llm/policy.json b/priv/no_llm/policy.json
+index e26b8d5..0cf2156 100644
+--- a/priv/no_llm/policy.json
++++ b/priv/no_llm/policy.json
+@@ -2,8 +2,16 @@
+   "schema": "xaas/no-llm-policy/v1",
+   "contract": "PRD PR-009 (no LLM credentials, no LLM binary/provider, no LLM fallback); ARD F3; goal.ttl v23:GC23-5; lane R1-X-GUARD",
+   "law": "Fail closed. The no-LLM court environment admits a variable only when its NAME is listed under environment; every other variable is refused by Xaas.Ultracode.SemanticDrive.no_llm_guard/1 -- REFUSED(llm_credential_present) when a provider below claims its name, else REFUSED(unadmitted_environment) -- and an executable named by a provider's binaries in any PATH directory is REFUSED(llm_credential_present). Only NAMES and binary paths are reported, never values. providers is the reporting vocabulary (which provider leaked), not the admission rule: a name no provider claims is still refused. One source: docs/sjira/v26.9.23/courts/no_llm_env.sh builds the court environment from this file (path_tools, system_path, the caller_or_default and caller_if_set entries, every provider binary) and the guard is compiled from it.",
+-  "path_tools": ["mix", "erl", "git", "python3"],
+-  "system_path": ["/usr/bin", "/bin"],
++  "path_tools": [
++    "mix",
++    "erl",
++    "git",
++    "python3"
++  ],
++  "system_path": [
++    "/usr/bin",
++    "/bin"
++  ],
+   "origins": {
+     "builder": "computed by no_llm_env.sh itself",
+     "caller_or_default": "durable toolchain configuration: the caller's value, else the default (~/ is the caller's HOME)",
+@@ -13,71 +21,249 @@
+     "drive": "set by the no-LLM drive for its own child processes (Xaas.Ultracode.SemanticDrive, RecipeWorker, SemanticWork)"
+   },
+   "environment": [
+-    {"name": "HOME", "origin": "builder", "why": "a fresh mktemp dir, removed afterwards"},
+-    {"name": "PATH", "origin": "builder", "why": "the resolved (symlink-free) directories of path_tools plus system_path; a directory holding a provider binary makes the builder refuse (exit 75, UNKNOWN)"},
+-    {"name": "MIX_HOME", "origin": "caller_or_default", "default": "~/.mix", "why": "mix archives and local hex"},
+-    {"name": "HEX_HOME", "origin": "caller_or_default", "default": "~/.hex", "why": "hex cache"},
+-    {"name": "ASDF_DATA_DIR", "origin": "caller_or_default", "default": "~/.asdf", "why": "the toolchain install root (RecipeWorker.toolchain/1, court_suite/0)"},
+-    {"name": "LANG", "origin": "caller_or_default", "default": "en_US.UTF-8", "why": "UTF-8 source files"},
+-    {"name": "MIX_ENV", "origin": "caller_if_set", "why": "the mix environment under judgement"},
+-    {"name": "MIX_TEST_PARTITION", "origin": "caller_if_set", "why": "the sandboxed test database partition"},
+-    {"name": "DEV_DB_USERNAME", "origin": "caller_if_set", "why": "local test database (durable configuration, not a model credential)"},
+-    {"name": "DEV_DB_PASSWORD", "origin": "caller_if_set", "why": "local test database (durable configuration, not a model credential)"},
+-    {"name": "DEV_DB_HOSTNAME", "origin": "caller_if_set", "why": "local test database"},
+-    {"name": "DEV_DB_PORT", "origin": "caller_if_set", "why": "local test database"},
+-    {"name": "TMPDIR", "origin": "court_assignment", "why": "the court's scratch root (GC23-12 passes TMPDIR=<tmp>/ to mix xaas.successor)"},
+-    {"name": "BINDIR", "origin": "launcher", "why": "erl"},
+-    {"name": "EMU", "origin": "launcher", "why": "erl"},
+-    {"name": "PROGNAME", "origin": "launcher", "why": "erl"},
+-    {"name": "ROOTDIR", "origin": "launcher", "why": "erl"},
+-    {"name": "PWD", "origin": "launcher", "why": "sh (the elixir and mix launcher scripts)"},
+-    {"name": "SHLVL", "origin": "launcher", "why": "sh (the elixir and mix launcher scripts)"},
+-    {"name": "__CF_USER_TEXT_ENCODING", "origin": "launcher", "why": "macOS CoreFoundation, set for every process"},
+-    {"name": "ASDF_INSTALL_PATH", "origin": "launcher", "why": "asdf shim exec-env"},
+-    {"name": "ASDF_INSTALL_TYPE", "origin": "launcher", "why": "asdf shim exec-env"},
+-    {"name": "ASDF_INSTALL_VERSION", "origin": "launcher", "why": "asdf shim exec-env"},
+-    {"name": "MIX_ARCHIVES", "origin": "launcher", "why": "asdf-elixir shim exec-env"},
+-    {"name": "MIX_BUILD_PATH", "origin": "drive", "why": "the private graph-side build"},
+-    {"name": "ASDF_ELIXIR_VERSION", "origin": "drive", "why": "unset by the drive for graph-side processes"},
+-    {"name": "ASDF_ERLANG_VERSION", "origin": "drive", "why": "unset by the drive for graph-side processes"},
+-    {"name": "GIT_AUTHOR_NAME", "origin": "drive", "why": "fixed drive/recipe identity"},
+-    {"name": "GIT_AUTHOR_EMAIL", "origin": "drive", "why": "fixed drive/recipe identity"},
+-    {"name": "GIT_AUTHOR_DATE", "origin": "drive", "why": "deterministic episode commit"},
+-    {"name": "GIT_COMMITTER_NAME", "origin": "drive", "why": "fixed drive/recipe identity"},
+-    {"name": "GIT_COMMITTER_EMAIL", "origin": "drive", "why": "fixed drive/recipe identity"},
+-    {"name": "GIT_COMMITTER_DATE", "origin": "drive", "why": "deterministic episode commit"},
+-    {"name": "GIT_CONFIG_NOSYSTEM", "origin": "drive", "why": "hermetic git"},
+-    {"name": "GIT_INDEX_FILE", "origin": "drive", "why": "RecipeWorker private index"},
+-    {"name": "GIT_TERMINAL_PROMPT", "origin": "drive", "why": "non-interactive git"},
+-    {"name": "STATE_DIR", "origin": "drive", "why": "recipe step state dir"}
++    {
++      "name": "HOME",
++      "origin": "builder",
++      "why": "a fresh mktemp dir, removed afterwards"
++    },
++    {
++      "name": "PATH",
++      "origin": "builder",
++      "why": "the resolved (symlink-free) directories of path_tools plus system_path; a directory holding a provider binary makes the builder refuse (exit 75, UNKNOWN)"
++    },
++    {
++      "name": "MIX_HOME",
++      "origin": "caller_or_default",
++      "default": "~/.mix",
++      "why": "mix archives and local hex"
++    },
++    {
++      "name": "HEX_HOME",
++      "origin": "caller_or_default",
++      "default": "~/.hex",
++      "why": "hex cache"
++    },
++    {
++      "name": "ASDF_DATA_DIR",
++      "origin": "caller_or_default",
++      "default": "~/.asdf",
++      "why": "the toolchain install root (RecipeWorker.toolchain/1, court_suite/0)"
++    },
++    {
++      "name": "LANG",
++      "origin": "caller_or_default",
++      "default": "en_US.UTF-8",
++      "why": "UTF-8 source files"
++    },
++    {
++      "name": "MIX_ENV",
++      "origin": "caller_if_set",
++      "why": "the mix environment under judgement"
++    },
++    {
++      "name": "MIX_TEST_PARTITION",
++      "origin": "caller_if_set",
++      "why": "the sandboxed test database partition"
++    },
++    {
++      "name": "DEV_DB_USERNAME",
++      "origin": "caller_if_set",
++      "why": "local test database (durable configuration, not a model credential)"
++    },
++    {
++      "name": "DEV_DB_PASSWORD",
++      "origin": "caller_if_set",
++      "why": "local test database (durable configuration, not a model credential)"
++    },
++    {
++      "name": "DEV_DB_HOSTNAME",
++      "origin": "caller_if_set",
++      "why": "local test database"
++    },
++    {
++      "name": "DEV_DB_PORT",
++      "origin": "caller_if_set",
++      "why": "local test database"
++    },
++    {
++      "name": "TMPDIR",
++      "origin": "court_assignment",
++      "why": "the court's scratch root (GC23-12 passes TMPDIR=<tmp>/ to mix xaas.successor)"
++    },
++    {
++      "name": "BINDIR",
++      "origin": "launcher",
++      "why": "erl"
++    },
++    {
++      "name": "EMU",
++      "origin": "launcher",
++      "why": "erl"
++    },
++    {
++      "name": "PROGNAME",
++      "origin": "launcher",
++      "why": "erl"
++    },
++    {
++      "name": "ROOTDIR",
++      "origin": "launcher",
++      "why": "erl"
++    },
++    {
++      "name": "PWD",
++      "origin": "launcher",
++      "why": "sh (the elixir and mix launcher scripts)"
++    },
++    {
++      "name": "SHLVL",
++      "origin": "launcher",
++      "why": "sh (the elixir and mix launcher scripts)"
++    },
++    {
++      "name": "__CF_USER_TEXT_ENCODING",
++      "origin": "launcher",
++      "why": "macOS CoreFoundation, set for every process"
++    },
++    {
++      "name": "ASDF_INSTALL_PATH",
++      "origin": "launcher",
++      "why": "asdf shim exec-env"
++    },
++    {
++      "name": "ASDF_INSTALL_TYPE",
++      "origin": "launcher",
++      "why": "asdf shim exec-env"
++    },
++    {
++      "name": "ASDF_INSTALL_VERSION",
++      "origin": "launcher",
++      "why": "asdf shim exec-env"
++    },
++    {
++      "name": "MIX_ARCHIVES",
++      "origin": "launcher",
++      "why": "asdf-elixir shim exec-env"
++    },
++    {
++      "name": "MIX_BUILD_PATH",
++      "origin": "drive",
++      "why": "the private graph-side build"
++    },
++    {
++      "name": "ASDF_ELIXIR_VERSION",
++      "origin": "drive",
++      "why": "unset by the drive for graph-side processes"
++    },
++    {
++      "name": "ASDF_ERLANG_VERSION",
++      "origin": "drive",
++      "why": "unset by the drive for graph-side processes"
++    },
++    {
++      "name": "GIT_AUTHOR_NAME",
++      "origin": "drive",
++      "why": "fixed drive/recipe identity"
++    },
++    {
++      "name": "GIT_AUTHOR_EMAIL",
++      "origin": "drive",
++      "why": "fixed drive/recipe identity"
++    },
++    {
++      "name": "GIT_AUTHOR_DATE",
++      "origin": "drive",
++      "why": "deterministic episode commit"
++    },
++    {
++      "name": "GIT_COMMITTER_NAME",
++      "origin": "drive",
++      "why": "fixed drive/recipe identity"
++    },
++    {
++      "name": "GIT_COMMITTER_EMAIL",
++      "origin": "drive",
++      "why": "fixed drive/recipe identity"
++    },
++    {
++      "name": "GIT_COMMITTER_DATE",
++      "origin": "drive",
++      "why": "deterministic episode commit"
++    },
++    {
++      "name": "GIT_CONFIG_NOSYSTEM",
++      "origin": "drive",
++      "why": "hermetic git"
++    },
++    {
++      "name": "GIT_INDEX_FILE",
++      "origin": "drive",
++      "why": "RecipeWorker private index"
++    },
++    {
++      "name": "GIT_TERMINAL_PROMPT",
++      "origin": "drive",
++      "why": "non-interactive git"
++    },
++    {
++      "name": "STATE_DIR",
++      "origin": "drive",
++      "why": "recipe step state dir"
++    }
+   ],
+   "providers": [
+-    {"id": "anthropic", "name": "Anthropic", "prefixes": ["ANTHROPIC_"], "names": [], "binaries": []},
+-    {"id": "claude-code", "name": "Claude Code", "prefixes": ["CLAUDE_"], "names": ["CLAUDECODE"], "binaries": ["claude"]},
+-    {"id": "openai", "name": "OpenAI (API, Codex CLI)", "prefixes": ["OPENAI_", "CODEX_"], "names": [], "binaries": ["openai", "codex"]},
+-    {"id": "azure-openai", "name": "Azure OpenAI", "prefixes": ["AZURE_OPENAI_", "AZURE_AI_"], "names": ["AZURE_API_KEY", "AZURE_API_BASE"], "binaries": []},
+-    {"id": "google-gemini", "name": "Google Gemini / Vertex AI", "prefixes": ["GEMINI_", "GOOGLE_GENAI_", "GOOGLE_AI_", "VERTEXAI_", "VERTEX_AI_"], "names": ["GOOGLE_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS"], "binaries": ["gemini"]},
+-    {"id": "mistral", "name": "Mistral", "prefixes": ["MISTRAL_"], "names": [], "binaries": []},
+-    {"id": "groq", "name": "Groq", "prefixes": ["GROQ_"], "names": [], "binaries": []},
+-    {"id": "openrouter", "name": "OpenRouter", "prefixes": ["OPENROUTER_"], "names": [], "binaries": []},
+-    {"id": "deepseek", "name": "DeepSeek", "prefixes": ["DEEPSEEK_"], "names": [], "binaries": []},
+-    {"id": "xai", "name": "xAI", "prefixes": ["XAI_", "GROK_"], "names": [], "binaries": []},
+-    {"id": "cohere", "name": "Cohere", "prefixes": ["COHERE_"], "names": ["CO_API_KEY"], "binaries": []},
+-    {"id": "together", "name": "Together AI", "prefixes": ["TOGETHER_", "TOGETHERAI_"], "names": [], "binaries": []},
+-    {"id": "fireworks", "name": "Fireworks AI", "prefixes": ["FIREWORKS_"], "names": [], "binaries": []},
+-    {"id": "perplexity", "name": "Perplexity", "prefixes": ["PERPLEXITY_", "PPLX_"], "names": [], "binaries": []},
+-    {"id": "aws-bedrock", "name": "AWS Bedrock", "prefixes": ["BEDROCK_", "AWS_BEDROCK_"], "names": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_BEARER_TOKEN_BEDROCK", "AWS_PROFILE"], "binaries": []},
+-    {"id": "ollama", "name": "Ollama", "prefixes": ["OLLAMA_"], "names": [], "binaries": ["ollama"]},
+-    {"id": "zai-glm", "name": "Z.AI / Zhipu GLM", "prefixes": ["ZAI_", "Z_AI_", "GLM_", "ZHIPU_", "ZHIPUAI_", "BIGMODEL_"], "names": [], "binaries": []},
+-    {"id": "zcode", "name": "ZCode", "prefixes": ["ZCODE_"], "names": [], "binaries": ["zcode"]},
+-    {"id": "llm-cli", "name": "llm (datasette llm CLI)", "prefixes": ["LLM_"], "names": [], "binaries": ["llm"]},
+-    {"id": "aider", "name": "Aider", "prefixes": ["AIDER_"], "names": [], "binaries": ["aider"]},
+-    {"id": "cursor", "name": "Cursor agent", "prefixes": ["CURSOR_"], "names": [], "binaries": ["cursor-agent"]},
+-    {"id": "opencode", "name": "opencode", "prefixes": ["OPENCODE_"], "names": [], "binaries": ["opencode"]},
+-    {"id": "huggingface", "name": "Hugging Face", "prefixes": ["HUGGINGFACE", "HUGGING_FACE_"], "names": ["HF_TOKEN", "HF_API_TOKEN"], "binaries": []},
+-    {"id": "replicate", "name": "Replicate", "prefixes": ["REPLICATE_"], "names": [], "binaries": []},
+-    {"id": "dashscope-qwen", "name": "Alibaba DashScope / Qwen", "prefixes": ["DASHSCOPE_", "QWEN_"], "names": [], "binaries": ["qwen"]},
+-    {"id": "moonshot", "name": "Moonshot / Kimi", "prefixes": ["MOONSHOT_", "KIMI_"], "names": [], "binaries": []},
+-    {"id": "litellm", "name": "LiteLLM proxy", "prefixes": ["LITELLM_"], "names": [], "binaries": ["litellm"]}
++    {
++      "id": "anthropic",
++      "name": "Anthropic",
++      "prefixes": [
++        "ANTHROPIC_"
++      ],
++      "names": [],
++      "binaries": []
++    },
++    {
++      "id": "claude-code",
++      "name": "Claude Code",
++      "prefixes": [
++        "CLAUDE_"
++      ],
++      "names": [
++        "CLAUDECODE"
++      ],
++      "binaries": [
++        "claude"
++      ]
++    },
++    {
++      "id": "openai",
++      "name": "OpenAI",
++      "prefixes": [
++        "OPENAI_"
++      ],
++      "names": [],
++      "binaries": []
++    },
++    {
++      "id": "zai-glm",
++      "name": "Z.AI / GLM",
++      "prefixes": [
++        "ZAI_",
++        "Z_AI_",
++        "GLM_"
++      ],
++      "names": [],
++      "binaries": []
++    },
++    {
++      "id": "zcode",
++      "name": "ZCode",
++      "prefixes": [
++        "ZCODE_"
++      ],
++      "names": [],
++      "binaries": [
++        "zcode"
++      ]
++    }
+   ]
+ }

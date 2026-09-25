@@ -1,0 +1,8 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-M/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"base":"c90c17b878d96e14a008c1de498555bc97515937","branch":"v23/episode-me-1","drift":{"kind":"defmodule_spacing","path":"lib/ggen_igniter/semantic_jira/reconciler.ex"},"failure_class":"format_drift","ledger":"docs/sjira/v26.9.23/episodes/me-1/ledger.ndjson","name":"me-1","orders":["EP-A","EP-B"],"repo":"/Users/sac/ggen_igniter","repository":"seanchatmangpt/ggen_igniter","requires_capability":"removed from every order","schema":"xaas/machine-experience-prepare/v1","standing":"PREPARED","subject_sha":"92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f","work_graph":"docs/sjira/v26.9.23/episodes/me-1/work.json"}

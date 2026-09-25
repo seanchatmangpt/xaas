@@ -1,0 +1,1843 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Canonical RDF for the v26.9.22 multi-repo wave: one sj:WorkOrder per lane work
+# order, hosted by xaas (repository slugs are owner/name). Vocabulary is the
+# semantic-jira-pack ontology; class and evidence-requirement definitions are
+# verbatim from that pack. Standing is NOT asserted here: it is observed state,
+# projected by generate.py from docs/sjira/v26.9.22/transition-log.jsonl
+# (the TransitionLog projection) and standing/<identity>.json inputs.
+# Generated tickets, wo.json and index.json are projections of this graph;
+# edit this file, never a projection.
+
+sj:WorkOrder a rdfs:Class .
+sj:Court a rdfs:Class .
+sj:EvidenceRequirement a rdfs:Class .
+sj:AcceptanceCriterion a rdfs:Class .
+sj:Falsifier a rdfs:Class .
+sj:DependencyEdge a rdfs:Class .
+
+sj:local-execution-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Local execution evidence" ;
+    dcterms:description "Observed repository-local exact-subject execution evidence." .
+sj:hosted-ci-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Hosted CI evidence" ;
+    dcterms:description "Hosted CI evidence kept distinct from local execution." .
+sj:receipt-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Receipt evidence" ;
+    dcterms:description "Durable receipt evidence for the exact subject and transition." .
+sj:replay-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Replay evidence" ;
+    dcterms:description "Fresh replay over pack, dependency, graph, consequence, toolchain, and environment identities." .
+sj:authority-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Authority evidence" ;
+    dcterms:description "Prepared authority evidence for a consequential transition." .
+
+<#WO-XAAS-26922-1> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-1" ;
+    dcterms:title "Preserve work that is on no ref" ;
+    dcterms:description "Commit each dirty worktree (auto/t3-sa2a-execute, auto/t6-ash-atlassian, auto/t4-dod-trust, errc/sj001-guard, errc/zcode-package-verify) on its own branch so nothing is lost." ;
+    sj:subject "preserve-work-on-no-ref" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git -C <wt> status --porcelain | wc -l prints 0 for each of the five worktrees" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "worktrees/**" .
+
+<#WO-XAAS-26922-2> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-2" ;
+    dcterms:title "Verify and push main 2d229c2" ;
+    dcterms:description "Run the full gate on main (format, forced compile --warnings-as-errors, full test suite) and push the 28 local commits; no force." ;
+    sj:subject "verify-and-push-main" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test; git rev-list --left-right --count origin/main...main ends in 0 0" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/** mix.exs lib/** test/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-3> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-3" ;
+    dcterms:title "Merge PR #60 and clear dialyzer" ;
+    dcterms:description "Merge fix/ecosystem-exact-head-courts-v26.9.21 (602dac5), reconciling computation.ex to main's test-pinned :invalid_computation_artifact fallback, then clear the dialyzer errors." ;
+    sj:subject "merge-pr-60-courts" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git merge-base --is-ancestor 602dac5 main && mix test test/xaas/semantics_computation_test.exs test/xaas/semantics/registry_test.exs && MIX_ENV=dev mix dialyzer" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/semantics/** .github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-4> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-4" ;
+    dcterms:title "Merge PRs #59 and #61 with SJ-010 renumber" ;
+    dcterms:description "Rerun and merge #59 (engineering standards adoption); merge #61 after renumbering its WD-CS2 order SJ-010 to SJ-013, which collides with sj-007's 010-atlassian-public-vocab-pin." ;
+    sj:subject "merge-pr-59-61" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr checks 59/61 show no fail; rg -l '\"identity\": \"SJ-010\"' docs/sjira | wc -l is at most 1" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/sjira/** lib/xaas/case_studies/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-03" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-5> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-5" ;
+    dcterms:title "Merge docs/v26.9.21-sjira-wip and zoe-private-meeting-inference" ;
+    dcterms:description "Merge 70761b1 (work-orders.ttl XAAS-SJIRA-2621-001..003) and 495236d, resolving the README add/add by moving the ZOE README to docs/sjira/v26.9.21/zoe/README.md; recheck 2621-003 since bddfc43 is merged." ;
+    sj:subject "merge-sjira-wip-zoe" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git merge-base --is-ancestor 70761b1 main && git merge-base --is-ancestor 495236d main && mix test test/xaas/zoe test/xaas_web/a2a" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/sjira/v26.9.21/** lib/xaas/zoe/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-6> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-6" ;
+    dcterms:title "SJ-001: admission guard then doc" ;
+    dcterms:description "Merge errc2/sj001-guard (the superset code), then sjira/sj-001 doc e70da11 proving admit -> materialize -> receipt -> replay." ;
+    sj:subject "sj-001-admission-guard" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git merge-base --is-ancestor e514980 main; semantic_work/falsifier/e2e tests show 0 failures and 0 skipped" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/ultracode/** test/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-7> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-7" ;
+    dcterms:title "Standing is a generator input" ;
+    dcterms:description "generate.py reads standing for every order (extending errc2/sj004-registry's standing/*.json) with a configurable OUT; merge errc2/sj004-registry and the sj-004/005/009/002/003 doc branches without clobbering index.json." ;
+    sj:subject "standing-as-generator-input" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix test test/xaas/sjira_orders_generation_test.exs; regenerate docs/sjira/v26.9.21; index.json keeps SJ-005 ALIVE" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/sjira/v26.9.21/** test/xaas/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-06" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-8> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-8" ;
+    dcterms:title "SJ-007: ash_atlassian ARD court" ;
+    dcterms:description "Commit the t6 ARD court, reconcile sjira/sj-007 on the sj-007 line (current ARD, AshAi packs in REUSE, SemanticJira-admittable standing), run the court with --receipt recording the ash_atlassian SHA." ;
+    sj:subject "sj-007-ard-court" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "MIX_TEST_PARTITION=t6 mix test test/xaas/sjira && mix xaas.sjira.ard_court docs/sjira/v26.9.21/ash-atlassian-ard.md --receipt docs/sjira/v26.9.21/receipts/SJ-007-ard-court.json ACCEPTED" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/sjira/** docs/sjira/v26.9.21/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "ASHATL-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-9> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-9" ;
+    dcterms:title "Cross-repo standing write-back for SJ-006 and SJ-008" ;
+    dcterms:description "Write back standings through receipts that bind each target repo's merged SHA, following the dependency protocol (SJ-001 and SJ-002 first)." ;
+    sj:subject "cross-repo-standing-writeback" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-9" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "receipts/SJ-00{6,8}-*.json name commits that are ancestors of autofde-lab origin/master and gymact origin/main; index.json standing matches" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/sjira/v26.9.21/receipts/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-07" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-10> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-10" ;
+    dcterms:title "Integrate zcode-package and t1-register-merge" ;
+    dcterms:description "Merge errc2/zcode-package (plus committed zcode-package-verify WIP) and auto/t1-register-merge, reconciling repos.ex with main's ba76798 and the ultracode-repos.json refresh keys." ;
+    sj:subject "zcode-package-register-merge" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-10" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git merge-base --is-ancestor 6a4edb1 main && git merge-base --is-ancestor 7b7055e main; provider_health/zcode_package/repos_refresh/sj_program_registry tests pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/ultracode/** test/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-11> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-11" ;
+    dcterms:title "Land errc/semantic-jira-bridge on a durable ggen_igniter dependency" ;
+    dcterms:description "Replace the path dependency with hex 26.9.22 or a pushed git ref; move SemanticCrown off the deleted mix semantic_jira.* calls; point semantic_crown_test at a real checkout." ;
+    sj:subject "semantic-jira-bridge-durable-dep" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-11" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "! rg -n 'ggen_igniter.*path:' mix.exs && mix deps.get --check-locked; bridge and crown tests 0 failures 0 skipped" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "mix.exs lib/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-06" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGEN_IGNITER-26922-13" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-12> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-12" ;
+    dcterms:title "Scheduled frontier feeder" ;
+    dcterms:description "AshOban action on Run: SemanticJiraBridge.frontier/2 -> descriptor/4 -> SemanticWork.materialize/2, reconciling receipts into the TransitionLog; route the sensing fallback through admission or remove it." ;
+    sj:subject "scheduled-frontier-feeder" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-12" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix test test/xaas/ultracode/semantic_frontier_schedule_test.exs: one cron fire materializes exactly one epoch from one admitted order; a second fire with no new receipt materializes none" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-11" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGEN_IGNITER-26922-07" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-13> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-13" ;
+    dcterms:title "Bump the ash_a2a lock to 26.9.22" ;
+    dcterms:description "Bump the ash_a2a lock from 26.9.12 to 26.9.22 (WorkEnvelope-conserved lease identity; ash/mint advisories)." ;
+    sj:subject "ash-a2a-lock-bump" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-13" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix deps.get && mix test test/xaas/sa2a test/xaas/ultracode; mix.lock names ash_a2a 26.9.22" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "mix.lock mix.exs" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASH_A2A-26922-12" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-14> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-14" ;
+    dcterms:title "SA2A in the loop" ;
+    dcterms:description "Commit the t3 executor, add a fail-closed Bridge.plan/admit gate before materialize, and make _sa2a_admit able to refuse." ;
+    sj:subject "sa2a-in-the-loop" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-14" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "PATH=$HOME/autofde-lab/.venv/bin:$PATH mix test test/xaas/sa2a test/xaas/ultracode/semantic_work_test.exs; rg -n 'Sa2a' lib/xaas/ultracode | wc -l is at least 1" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/sa2a/** lib/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-12" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-06" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-15> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-15" ;
+    dcterms:title "Land-back hop: stop re-sensing integrated APS items" ;
+    dcterms:description "Stop re-sensing already-integrated APS items (32 unlanded aps-autonomic-* branches) and add an authority-gated promote-to-default edge or an explicit human gate." ;
+    sj:subject "landback-stop-resensing" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-15" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "a test shows a wave re-senses no item already on an aps-autonomic-* integration branch; the unmerged aps-autonomic-* count does not grow across one wave" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/ultracode/**" .
+
+<#WO-XAAS-26922-16> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-16" ;
+    dcterms:title "Durable unattended trigger" ;
+    dcterms:description "Install a launchd agent for the server or dispatcher, reset or re-scope the DurationBudget, and fix or disable claude-daily-drain.yml." ;
+    sj:subject "launchd-unattended-trigger" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-16" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "launchctl list | grep -c dev.xaas is at least 1; after one :semantic_wave the newest budget receipt has within_budget=true and epochs.completed >= 1" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "scripts/** ~/Library/LaunchAgents/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-12" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-17> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-17" ;
+    dcterms:title "docs/sjira/v26.9.22 as the multi-repo graph host" ;
+    dcterms:description "A TTL work-orders.ttl in sj: vocabulary with orders for xaas, autofde-lab, gymact, ash_atlassian, beam4pm, ash_surface, ferroplan, gitvan, ggen and ggen-marketplace (owner/name slugs), projected deterministically and admitted by GgenIgniter.SemanticJira, standings from observed transitions, not literals." ;
+    sj:subject "v26922-multi-repo-graph" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-17" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "from ~/ggen_igniter: WO=<dir>/wo.json mix run <dir>/admit.exs | grep -c '^REFUSED' prints 0; ADMITTED count equals jq length index.json" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/sjira/v26.9.22/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-07" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGEN_IGNITER-26922-08" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26922-18> a sj:WorkOrder ;
+    sj:identity "XAAS-26922-18" ;
+    dcterms:title "Release v26.9.22 plus hygiene" ;
+    dcterms:description "VERSION 26.9.17 -> 26.9.22, the full gate, the first v26.9.x tag, retire backup/errc-semantic-jira-bridge and the merged worktrees." ;
+    sj:subject "release-v26922" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "2d229c272c3a02dcb8e75ff600ea0a4edc058d71" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-XAAS-26922-18" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "[ \"$(cat VERSION)\" = 26.9.22 ] && full gate && MIX_ENV=dev mix dialyzer && mix deps.unlock --check-unused && asyncapi validate && git ls-remote --tags origin v26.9.22" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "VERSION mix.exs" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-03" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-06" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-07" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-11" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-AFDE-26922-1> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-1" ;
+    dcterms:title "Land SJ-006 in autofde-lab" ;
+    dcterms:description "Merge local sjira/sj-006 455cc7b5 and rewrite the Pass 5 SA2A row to cite a run at the merged SHA." ;
+    sj:subject "land-sj-006" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git merge-base --is-ancestor 455cc7b5 master; pytest tests/beam gives 4 passed; no worktree path citation remains" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/**" .
+
+<#WO-AFDE-26922-2> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-2" ;
+    dcterms:title "Fix SA2A-B2 BUILD_BROKEN" ;
+    dcterms:description "harness.py:493 calls DatalogEngine.compute_closure, which does not exist (datalog_layer has execute_fixpoint)." ;
+    sj:subject "sa2a-b2-fix" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "scripts/run_sa2a_benchmarks.py passes and reports all_passed" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "src/autofde_lab/** scripts/**" .
+
+<#WO-AFDE-26922-3> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-3" ;
+    dcterms:title "Refresh SA2A qualification receipts at the exact subject" ;
+    dcterms:description "Generate first and verify second; receipts name the pre-commit subject SHA." ;
+    sj:subject "qualification-receipts" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "run_chicago_qualification.py then verify_rfc_sa2a_002_qualification.py exit 0" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "reports/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-AFDE-26922-4> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-4" ;
+    dcterms:title "agentic-fabric gymnasium install in CI" ;
+    dcterms:description "Install gymnasium so exact-head-fabric can collect tests/fabric (the SA2A real-caller test)." ;
+    sj:subject "fabric-gymnasium-ci" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr checks 169 exact-head-fabric passes" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" .
+
+<#WO-AFDE-26922-5> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-5" ;
+    dcterms:title "Land #171, #170, #157, #159" ;
+    dcterms:description "Merge the four PRs; delete the superseded feat/sa2a-gnn-candidate-inference." ;
+    sj:subject "land-prs-157-159-170-171" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr view states print MERGED 4 times; the superseded branch is gone from origin" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/** src/**" .
+
+<#WO-AFDE-26922-6> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-6" ;
+    dcterms:title "Frontier-to-descriptor stack #163/#167" ;
+    dcterms:description "Merge #163 then #167; push or supersede local feat/gall-swf-v26.9.18 select_frontier." ;
+    sj:subject "frontier-descriptor-stack" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr view 163 and 167 = MERGED; select_frontier/frontier exists; tests/fabric/test_gall_semantic_work.py passes" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "src/autofde_lab/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-AFDE-26922-7> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-7" ;
+    dcterms:title "GALL-005 stacks bottom-up" ;
+    dcterms:description "#161 -> #166; #160 -> #164, #165 (real court run) -> #168 (resolve CONFLICTING)." ;
+    sj:subject "gall-005-stacks" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr states MERGED 6 times; gall composition crown and process spine tests pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "src/autofde_lab/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-AFDE-26922-8> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-8" ;
+    dcterms:title "First-ever green master ci.yml" ;
+    dcterms:description "Make the hub C++ extension importable in the Linux integration partition; regenerate the #169 format sweep on current master, merge last." ;
+    sj:subject "green-master-ci" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh run list ci.yml master = success" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-04" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-05" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-06" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-07" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-AFDE-26922-9> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-9" ;
+    dcterms:title "Unattended Phase H trigger" ;
+    dcterms:description "Scheduled workflow for phase_h_trigger.run_once writing state outside tracked files, uploading JSON named by github.sha." ;
+    sj:subject "unattended-phase-h" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-9" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "rg phase_h_trigger in workflows; local run_once leaves src/autofde_lab/fabric clean" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/** src/autofde_lab/fabric/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-08" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-AFDE-26922-10> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-10" ;
+    dcterms:title "gymact Receipt schema drift" ;
+    dcterms:description "pinned 26.8.8 vs live 26.8.23 planning_provenance_digest extra_forbidden." ;
+    sj:subject "gymact-receipt-schema-drift" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-10" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pytest tests/domains/python/test_level4_crown_real_trial_chicago.py gives 6 passed" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "src/autofde_lab/**" .
+
+<#WO-AFDE-26922-11> a sj:WorkOrder ;
+    sj:identity "AFDE-26922-11" ;
+    dcterms:title "autofde-lab hygiene" ;
+    dcterms:description "Commit docs/jira/v26.9.19, resolve submodule dirt, commit worktree WIP before pruning, refresh the stale zero-human-factory standing doc." ;
+    sj:subject "hygiene" ;
+    sj:repository "seanchatmangpt/autofde-lab" ;
+    sj:baseSha "f5cc664bac7598d5cf53cab399876df300bb6b14" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-AFDE-26922-11" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git status --porcelain is empty; each listed worktree clean or removed after commit" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/** .claude/worktrees/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "AFDE-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GYMACT-26922-1> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-1" ;
+    dcterms:title "Land SJ-008" ;
+    dcterms:description "Worktree repair (never prune), drop OCEL churn, push sjira/sj-008 333aeb5 and merge into main." ;
+    sj:subject "land-sj-008" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git merge-base --is-ancestor 333aeb5 origin/main; SJ-008 replay receipt file exists; 4 backlog tickets Done; no prunable worktrees" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "push authority" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GYMACT-26922-2> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-2" ;
+    dcterms:title "GYMACT-5: hoist AUTHORITY out of module-skipped tests" ;
+    dcterms:description "Move AUTHORITY and shared constants out of tests/test_terraform_plan.py's module-level-skipped file." ;
+    sj:subject "gymact-5-terraform-plan" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pytest test_terraform_plan.py test_verify_replay.py exits 0 with no import error" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "tests/**" .
+
+<#WO-GYMACT-26922-3> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-3" ;
+    dcterms:title "GYMACT-6: deterministic event-loop close" ;
+    dcterms:description "Close the fastmcp.Client loop and self-pipe AF_UNIX sockets deterministically (no filterwarnings suppression)." ;
+    sj:subject "gymact-6-event-loop" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pytest with PytestUnraisableExceptionWarning as error passes on the three files" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "tests/**" .
+
+<#WO-GYMACT-26922-4> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-4" ;
+    dcterms:title "py3.13 FM-CONFIG-004 togaf template pack" ;
+    dcterms:description "rust/togaf_gym/templates missing from the ephemeral workspace; needs ggen on PATH." ;
+    sj:subject "py313-fm-config-004" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "uv run --python 3.13 pytest test_ggen_togaf_gym_pack.py exits 0 with 0 skipped" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "tests/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GYMACT-26922-5> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-5" ;
+    dcterms:title "GYMACT-7: named require_standing skips" ;
+    dcterms:description "Convert environment-gated failures (wpm mine-declare, docker swegym, cube collection ImportError) into named skips." ;
+    sj:subject "gymact-7-require-standing" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pytest --co reports 0 errors" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "tests/**" .
+
+<#WO-GYMACT-26922-6> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-6" ;
+    dcterms:title "Hermetic suite plus committed uv.lock" ;
+    dcterms:description "Stop rewriting tracked reports/ocel, tests/fixtures, .inspect_logs; fix chatman_state PROVIDER_ERROR." ;
+    sj:subject "hermetic-suite-uv-lock" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "uv run pytest passes and leaves the tree clean; uv.lock is tracked" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "tests/** .gitignore" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-03" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GYMACT-26922-7> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-7" ;
+    dcterms:title "Green exact-head CI on main" ;
+    dcterms:description "Including the world execution crown and the GCP census." ;
+    sj:subject "exact-head-ci" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh run list for origin/main head shows only success" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-03" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GYMACT-26922-8> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-8" ;
+    dcterms:title "Merge PRs #135 and #136" ;
+    dcterms:description "ruff-format 2 files, merge main into #135 (9 behind), rerun the crown, fix the stale body, merge; merge #136." ;
+    sj:subject "pr-135-136" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr view 135 = MERGED; 9966cd0 is an ancestor of origin/main" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "src/** tests/**" .
+
+<#WO-GYMACT-26922-9> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-9" ;
+    dcterms:title "Branch triage" ;
+    dcterms:description "15 unmerged remote heads; mark v26.9.19 tickets resolved-by-push; commit docs/jira/v26.9.19; handle the divergent kubernetes_goat.py; delete the merged zoe-devotional branch." ;
+    sj:subject "branch-triage" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-9" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git branch -r --no-merged origin/main is empty; docs/jira/v26.9.19 tracked" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-08" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GYMACT-26922-10> a sj:WorkOrder ;
+    sj:identity "GYMACT-26922-10" ;
+    dcterms:title "Register gymact-dod/gymact-canonical in xaas TargetSuites" ;
+    dcterms:description "Lift the deliberate non-registration from 09defab so xaas can verify gymact." ;
+    sj:subject "register-target-suites" ;
+    sj:repository "seanchatmangpt/gymact" ;
+    sj:baseSha "bf123ddbfb8fb7983e2dd8ed53d91b0a1c0ba637" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GYMACT-26922-10" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "rg gymact-dod in target_suites.ex matches; xaas ultracode tests pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GYMACT-26922-06" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-10" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASHATL-26922-1> a sj:WorkOrder ;
+    sj:identity "ASHATL-26922-1" ;
+    dcterms:title "Seal the verification gate at 36b1799" ;
+    dcterms:description "Full README gate plus F8 regeneration with a durable receipt." ;
+    sj:subject "seal-verification-gate" ;
+    sj:repository "seanchatmangpt/ash_atlassian" ;
+    sj:baseSha "36b1799381d04b50da2bececd4b201defc231333" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASHATL-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "23 tests 0 failures with ggen on PATH; ash-atlassian-GENERATED.sh leaves lib/config clean" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/** config/**" .
+
+<#WO-ASHATL-26922-2> a sj:WorkOrder ;
+    sj:identity "ASHATL-26922-2" ;
+    dcterms:title "Remote plus CI with ggen on PATH" ;
+    dcterms:description "Create the GitHub repo so ash_atlassian can be leased and triggered (operator approval)." ;
+    sj:subject "remote-plus-ci" ;
+    sj:repository "seanchatmangpt/ash_atlassian" ;
+    sj:baseSha "36b1799381d04b50da2bececd4b201defc231333" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASHATL-26922-2" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh repo view succeeds; latest CI run success with GgenGatesTest executed" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASHATL-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASHATL-26922-3> a sj:WorkOrder ;
+    sj:identity "ASHATL-26922-3" ;
+    dcterms:title "Register in the xaas ultracode registry" ;
+    dcterms:description "mix xaas.ultracode.repos --register with a suite in TargetSuites.devs() satisfying Verifier.registered?." ;
+    sj:subject "register-xaas-registry" ;
+    sj:repository "seanchatmangpt/ash_atlassian" ;
+    sj:baseSha "36b1799381d04b50da2bececd4b201defc231333" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASHATL-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "rg ash_atlassian in ultracode-repos.json and target_suites.ex; xaas ultracode tests pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/ultracode/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASHATL-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "XAAS-26922-10" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASHATL-26922-4> a sj:WorkOrder ;
+    sj:identity "ASHATL-26922-4" ;
+    dcterms:title "Release 26.9.22" ;
+    dcterms:description "@version and ggen.toml to 26.9.22, ggen sync, commit, local tag." ;
+    sj:subject "release-26922" ;
+    sj:repository "seanchatmangpt/ash_atlassian" ;
+    sj:baseSha "36b1799381d04b50da2bececd4b201defc231333" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASHATL-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "version greps pass; ggen sync leaves tree clean; v26.9.22 tag exists" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "mix.exs ggen.toml" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASHATL-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-1> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-1" ;
+    dcterms:title "Merge origin/main; fix the a2a gate bootstrap" ;
+    dcterms:description "git rm the tracked .beam4pm-a2a-gate-bootstrap and gitignore it; make guard Q6 derive the skill count from the domain." ;
+    sj:subject "merge-origin-main-bootstrap" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor origin/main HEAD; file untracked; mix test and sa2a qualification pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/** priv/**" .
+
+<#WO-BEAM4PM-26922-2> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-2" ;
+    dcterms:title "Fix the shared base determinism regression" ;
+    dcterms:description "A 1324-line reprojection hash diff on every PR since 2026-09-20T17:07Z." ;
+    sj:subject "base-determinism" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gate_m2_check.sh exits 0 on the merged tree; the determinism CI job passes" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "scripts/** lib/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-3> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-3" ;
+    dcterms:title "SA2A guard writes a durable subject-bound receipt" ;
+    dcterms:description "Land the ash_a2a 26.9.21 consumption via PR." ;
+    sj:subject "sa2a-guard-receipt" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "qualification passes; receipt subject_sha equals pre-commit HEAD; the chore PR shows merged" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "qualification/** docs/jira/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-4> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-4" ;
+    dcterms:title "Vendored ggen-marketplace raise" ;
+    dcterms:description "Once f2ae5382e/6750aa19f are upstream, merge chore/ggen-consumption-max and clear the dirty submodule." ;
+    sj:subject "vendored-marketplace-raise" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "submodule contains f2ae5382e and is clean; authorship gate passes" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "vendor/ggen-marketplace" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-5> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-5" ;
+    dcterms:title "Merge parity/integration 70e2662" ;
+    dcterms:description "Dfcm.sa2a_validate_card/admit/replay, AutofdeBridge, fabric, cmca, graphlaw; re-prove on a clean subject." ;
+    sj:subject "parity-integration" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor 70e2662 HEAD; the five test files pass; authorship gate passes; priv/bin/autofde tracked" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/** priv/bin/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-6> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-6" ;
+    dcterms:title "AutofdeBridge SA2A wrappers" ;
+    dcterms:description "Add sa2a_plan/sa2a_admit/sa2a_replay over the autofde-lab beam_port_bridge." ;
+    sj:subject "autofde-bridge-sa2a" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "bridge test with plan/admit/replay cases, 0 failures with autofde on PATH" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/beam4pm/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-7> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-7" ;
+    dcterms:title "GALL landings and work-envelope PR" ;
+    dcterms:description "Land feat/gall-swf-v26.9.18; PR for remote feat/v26.9.19-work-envelope-v2 superseding #78; land #75->#76->#79 and #77->#80." ;
+    sj:subject "gall-landings" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gall ocel test passes; none of 75,76,77,78,79,80 remain open" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-8> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-8" ;
+    dcterms:title "PR/branch hygiene" ;
+    dcterms:description "Close #63; retarget #70/#64/#66; resolve #59 (CONFLICTING, #61 stacked); fix #84's lfs-smudge checkout; commit or discard scratch g1-g3; triage beam4pm_ws2." ;
+    sj:subject "pr-hygiene" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "at most 3 open PRs each with a recorded keep reason" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-BEAM4PM-26922-9> a sj:WorkOrder ;
+    sj:identity "BEAM4PM-26922-9" ;
+    dcterms:title "Release 26.9.22" ;
+    dcterms:description "mix beam4pm.version_bump 26.9.22 --yes, tag v26.9.22, push or retire local-only v26.9.10." ;
+    sj:subject "release-26922" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:baseSha "574368706e6afd804c7a13771bed3cf03da33ce0" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-BEAM4PM-26922-9" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix.exs carries 26.9.22; v26.9.22 tag on origin" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "mix.exs src/beam4pm.app.src" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-03" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "BEAM4PM-26922-05" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "push authority" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-1> a sj:WorkOrder ;
+    sj:identity "ASF-26922-1" ;
+    dcterms:title "Reconcile the two lineages" ;
+    dcterms:description "Record origin/main ancestry on feat/dfcm-surface-core (tree-identity-proven) and open a PR to main." ;
+    sj:subject "reconcile-lineages" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-1" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor origin/main feat/dfcm-surface-core; exactly one open PR from that head" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "user decision on method" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-2> a sj:WorkOrder ;
+    sj:identity "ASF-26922-2" ;
+    dcterms:title "Port PR #6's dependency pins" ;
+    dcterms:description "01e8b49 (ash 3.33.9, mint 1.10.1) and 164a07b (LFS-fenced manufacture pin e2a5e88)." ;
+    sj:subject "port-pr6-pins" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix deps.get and hex.audit exit 0; manufacture job succeeds on the PR head" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "mix.exs mix.lock" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-3> a sj:WorkOrder ;
+    sj:identity "ASF-26922-3" ;
+    dcterms:title "Merge PR #4 blue-river-dam 0d99161" ;
+    dcterms:description "OBSERVE-only SA2A command center; keep OTP 28.3/Elixir 1.20.3 pins; add the exact-subject checkout." ;
+    sj:subject "merge-pr4-command-center" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor 0d99161 HEAD; command_center and obligation tests plus test.all pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/ash_surface/** ci.yml" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "ASF-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-4> a sj:WorkOrder ;
+    sj:identity "ASF-26922-4" ;
+    dcterms:title "Merge PR #6 df0e859 ZOE human surface" ;
+    dcterms:description "Keep mix.exs at HEAD version under version_sync_test; re-freeze runtime.mjs golden; add HANDWRITTEN/UNSUPPORTED pairs; update chicago census." ;
+    sj:subject "merge-pr6-zoe-surface" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor df0e859 HEAD; the five named test files, test.all and ci_falsifier pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/ash_surface/** priv/static/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-03" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-5> a sj:WorkOrder ;
+    sj:identity "ASF-26922-5" ;
+    dcterms:title "Exact-HEAD CI receipt on the reconciled head" ;
+    dcterms:description "elixir, javascript, falsifier, zero-config, zero-config-v2, dialyzer, coverage, manufacture all success." ;
+    sj:subject "exact-head-ci-receipt" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "check-runs unique conclusion is success on HEAD" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-6> a sj:WorkOrder ;
+    sj:identity "ASF-26922-6" ;
+    dcterms:title "Regenerate engineering-standards; close #3" ;
+    dcterms:description "render-repository-adoption.py against the reconciled base; no ALIVE claim before green." ;
+    sj:subject "regen-standards-close-3" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr checks 5 no fail; PR 3 CLOSED" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "engineering-standards.json" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-7> a sj:WorkOrder ;
+    sj:identity "ASF-26922-7" ;
+    dcterms:title "Repin ash_a2a to v26.9.22" ;
+    dcterms:description "From e25ed6e to ash_a2a v26.9.22 (pulls rdf ~>3.0 and wasmex NIF); re-prove delegation, env -i battery, dialyzer PLT." ;
+    sj:subject "repin-ash-a2a" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "deps.get and the three test files plus zero_config_check.sh and dialyzer pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "mix.exs mix.lock" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "ASH_A2A-26922-12" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-8> a sj:WorkOrder ;
+    sj:identity "ASF-26922-8" ;
+    dcterms:title "Unblock paydowns 026/050" ;
+    dcterms:description "Once the marketplace ash-extension-pack branches are published, repin ggen.toml off the deleted ash-extension-core-pack@7c50bef." ;
+    sj:subject "paydown-026-050" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "no ash-extension-core-pack in ggen.toml; handwritten_ledger_test passes" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "ggen.toml" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-9> a sj:WorkOrder ;
+    sj:identity "ASF-26922-9" ;
+    dcterms:title "Re-scope gapfix-blob-purge-016" ;
+    dcterms:description "Close as SUPERSEDED via squash landing plus deleting the feature branch (no filter-repo, no force-push)." ;
+    sj:subject "gapfix-016-supersede" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-9" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "frontmatter status no longer OPEN" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/jira/v26.9.17/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-10> a sj:WorkOrder ;
+    sj:identity "ASF-26922-10" ;
+    dcterms:title "Bump to 26.9.22 through the lawful mechanism and tag" ;
+    dcterms:description "scripts/bump_version.sh moves the lib carriers and goldens together." ;
+    sj:subject "bump-26922-tag" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-10" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "bump_version.sh --check and bump succeed; mix test.all passes; v26.9.22 tag exists" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/** mix.exs" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-04" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "ASF-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-ASF-26922-11> a sj:WorkOrder ;
+    sj:identity "ASF-26922-11" ;
+    dcterms:title "Worktree and branch hygiene" ;
+    dcterms:description "Remove the 31 ash-surface-wt worktrees after verifying content is in HEAD; coordinate /private/tmp/xaas-w9-sweep-ash_surface removal with xaas; correct the stale g07 note." ;
+    sj:subject "worktree-hygiene" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:baseSha "7d5492795d9b9a0956f51545ed1ad1932768b77e" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-ASF-26922-11" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git worktree list count is 1; tree clean" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "ASF-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-1> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-1" ;
+    dcterms:title "rustfmt policy_validation.rs" ;
+    dcterms:description "Fix the 4 hunks from the ppcx merge." ;
+    sj:subject "rustfmt-policy-validation" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "cargo fmt --check and cargo check -p ferroplan --locked pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "crates/ferroplan/src/**" .
+
+<#WO-FERROPLAN-26922-2> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-2" ;
+    dcterms:title "A deep lane that can pass" ;
+    dcterms:description "FERROPLAN_ORACLE_DIR/FERROPLAN_CORPUS_DIR defaulting to ~/.cache/ferroplan so the ignored tests run or skip by name; fix the chatman-ecosystem projection-law job." ;
+    sj:subject "durable-oracle-corpus" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "CI main workflow success; plugins/chatman-ecosystem pytest passes" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/** crates/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "FERROPLAN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-3> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-3" ;
+    dcterms:title "Rule on fond-htn-67" ;
+    dcterms:description "Vendor autofde-lab's sa2a-v26.9.17 domain/problem (no :goal), run fresh at HEAD, record ruling (a) or implement flag-gated (b)." ;
+    sj:subject "fond-htn-67-ruling" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-3" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "sa2a_goal_set_ruling and planning_runtime tests pass; dated standing row in the divergence ticket" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/jira/v26.9.17/** crates/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "FERROPLAN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-4> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-4" ;
+    dcterms:title "Bookkeeping" ;
+    dcterms:description "Commit docs/jira/v26.9.19; close #43/#44 as landed; delete superseded origin branches; drop format-recovery.yml." ;
+    sj:subject "bookkeeping" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "0 open PRs; tree clean; format-recovery.yml absent" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "docs/jira/** .github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "FERROPLAN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-5> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-5" ;
+    dcterms:title "Merge upstream hhh42 main" ;
+    dcterms:description "Re-resolve the ref at execution time (0.28 cut in progress); version/tag collision needs a user decision." ;
+    sj:subject "merge-upstream" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-5" ;
+    sj:authorityRequirement "OPERATOR_DECISION_REQUIRED" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor upstream-main main; fmt, clippy, workspace tests, crucible tests pass" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "crates/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "FERROPLAN-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-6> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-6" ;
+    dcterms:title "Standing guard for ticket frontmatter" ;
+    dcterms:description "verify_ticket_standing.py fails when frontmatter disagrees with the last History row (49 contradictions)." ;
+    sj:subject "standing-guard" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "the checker exits 0 on docs/jira and non-zero on a mutated copy" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "scripts/** docs/jira/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "FERROPLAN-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-7> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-7" ;
+    dcterms:title "Finish or retire respawn tickets fond-htn-47..56" ;
+    dcterms:description "55 wasip1-clippy, 48 hygiene, 54 fond-unsafe-hddl (feeds 03); prune the 43 merged worktrees." ;
+    sj:subject "respawn-tickets" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "wasip1 clippy passes; worktree list at most 5" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "crates/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "FERROPLAN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-FERROPLAN-26922-8> a sj:WorkOrder ;
+    sj:identity "FERROPLAN-26922-8" ;
+    dcterms:title "integration/all-open-prs-2026-07-31 decision" ;
+    dcterms:description "69 unique patches (v26.8.1 ggen full_planning graph): land by merge or delete with a rationale recorded in v26.9.19 tickets 008/009." ;
+    sj:subject "all-open-prs-decision" ;
+    sj:repository "seanchatmangpt/ferroplan" ;
+    sj:baseSha "e90928d7b0687a959831553c4eacca3d75ca6c88" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-FERROPLAN-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "the branch is an ancestor of main or gone; the tickets record Standing CLOSED/DONE/ALIVE" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." .
+
+<#WO-GITVAN-26922-1> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-1" ;
+    dcterms:title "Clean the dirty tree without destroying anything" ;
+    dcterms:description "Stash (never discard) the lockfile re-resolution and placeholder workspace, deactivate the ralph loop file, commit docs/jira/v26.9.19, resolve the agents README deletion, triage the 4 stashes." ;
+    sj:subject "clean-tree" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git status --porcelain is empty" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." .
+
+<#WO-GITVAN-26922-2> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-2" ;
+    dcterms:title "Build fix: cherry-pick aabbb82 + d645b6e" ;
+    dcterms:description "workflow-engine.mjs:77 is missing async initialize(); the break is on main, local main, #23 and #24." ;
+    sj:subject "build-fix-cherry-pick" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pnpm install --frozen-lockfile && pnpm build exit 0" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "src/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GITVAN-26922-3> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-3" ;
+    dcterms:title "Merge origin/main and push" ;
+    dcterms:description "3 commits, disjoint files; push the 26 local commits." ;
+    sj:subject "merge-origin-main-push" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git rev-list --left-right --count origin/main...main ends 0 0" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "push authority" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GITVAN-26922-4> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-4" ;
+    dcterms:title "A test gate that can fail" ;
+    dcterms:description "pnpm test must exit non-zero on failing tests and on heap OOM; docs verifier threshold must not pass with 262 failures." ;
+    sj:subject "test-gate-fails" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "an injected failing assertion yields non-zero; the real tree yields 0" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "package.json scripts/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GITVAN-26922-5> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-5" ;
+    dcterms:title "Land #23 with #24's checks fix" ;
+    dcterms:description "Retarget #24 to main, undraft and merge; extend kgc4d-receipt-qualification triggers to main and frontier-evidence paths." ;
+    sj:subject "land-23-24" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "frontier-evidence and foundation-spike vitest pass; PR 24 MERGED main" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-03" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-04" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GITVAN-26922-6> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-6" ;
+    dcterms:title "Live frontier-evidence/v1 emitter at main HEAD" ;
+    dcterms:description "kgc-4d-event-capture -> receipt -> frontierEvidenceFromKgc; xaas binds the live artifact instead of fixture 6e5dee0." ;
+    sj:subject "live-frontier-emitter" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "emit-frontier-evidence.mjs producer_head equals HEAD; xaas frontier_evidence_test passes 0 failures" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "scripts/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GITVAN-26922-7> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-7" ;
+    dcterms:title "Decide #22; delete or reopen PR-less branches" ;
+    dcterms:description "Harvest aabbb82/d645b6e; delete or reopen the 4 PR-less branches; delete the 13 merged claude/* heads." ;
+    sj:subject "decide-22-branch-triage" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git branch -r --no-merged count for the named heads is 0" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GITVAN-26922-8> a sj:WorkOrder ;
+    sj:identity "GITVAN-26922-8" ;
+    dcterms:title "Version and lockfile drift" ;
+    dcterms:description "VERSION 3.0.0 vs package.json 4.0.1; the missing v4.0.1 tag; test.yml using npm ci against a pnpm lockfile." ;
+    sj:subject "version-lockfile-drift" ;
+    sj:repository "seanchatmangpt/gitvan" ;
+    sj:baseSha "b6d6ea9b4f8f8d389d7d8de3f1cf05a66daff0e6" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GITVAN-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "VERSION equals package.json version; no npm ci in workflows" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "VERSION package.json .github/workflows/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GITVAN-26922-03" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGEN-26922-1> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-1" ;
+    dcterms:title "Repair the main CI baseline" ;
+    dcterms:description "Deep core/integration/quality lanes red at 5de2ba735; Live examples; invalid YAML in receipt-chain-migration-constructor.yml; rf:packCount 86 vs 92 tracked dirs." ;
+    sj:subject "repair-ci-baseline" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "yaml.safe_load passes; just pre-commit passes; ci.yml main = success" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" .
+
+<#WO-GGEN-26922-2> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-2" ;
+    dcterms:title "Merge #725 and #724" ;
+    dcterms:description "LFS smudge fence for ggen-sync-run.yml; engineering standards." ;
+    sj:subject "merge-725-724" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr view 725 and 724 = MERGED" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope ".github/workflows/**" .
+
+<#WO-GGEN-26922-3> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-3" ;
+    dcterms:title "Land the GALL-001 replay court #720" ;
+    dcterms:description "Merge main into it after 01. Ordinary receipts stay UNKNOWN; only the court writes PASS." ;
+    sj:subject "land-720-replay-court" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "PR 720 MERGED; portable_receipt_e2e and gall_checkpoint_001_replay_e2e pass on origin/main" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "crates/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGEN-26922-4> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-4" ;
+    dcterms:title "One gall-semantic-work descriptor for the xaas contract" ;
+    dcterms:description "execution_repo_alias (from #723) plus typed dependencies and authority NONE (from the v2 branch); retire the other line." ;
+    sj:subject "unified-gall-descriptor" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "every key in xaas semantic_work.ex @required is present; declared-vs-used template check prints []" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "priv/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGEN-26922-5> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-5" ;
+    dcterms:title "Release v26.9.13 and fix the tap" ;
+    dcterms:description "Sequential counter release containing #720; fix homebrew-release.yml formula (arm64 gets x86_64 tarball; Intel/Linux stuck at v26.8.18); fix the local symlinks." ;
+    sj:subject "release-v26913-tap" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-5" ;
+    sj:authorityRequirement "PUBLISH_AUTHORITY" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "ggen --version above 26.9.12; the ~/.local/bin/ggen link resolves" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-03" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "publish authority" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGEN-26922-6> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-6" ;
+    dcterms:title "HEAD branch merge and push as #672 update" ;
+    dcterms:description "= #672 plus 10 commits on no remote; merge origin/main, recompute rf:packCount, push." ;
+    sj:subject "head-branch-push-672" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "no unpushed commits on the branch; gh pr checks 672 no fail" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "push authority" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGEN-26922-7> a sj:WorkOrder ;
+    sj:identity "GGEN-26922-7" ;
+    dcterms:title "Divergence and PR cleanup" ;
+    dcterms:description "Decide #694 (local main is its head); push or archive release/v26.8.9 (51 unpushed); close CONFLICTING #681/#692; settle #717; close superseded dependabot singles." ;
+    sj:subject "divergence-cleanup" ;
+    sj:repository "seanchatmangpt/ggen" ;
+    sj:baseSha "f893e800492a92967e984a7c39e1f9287d8ba23d" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGEN-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "main vs origin/main 0 0; open dependabot PRs at most 1" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGEN-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-1> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-1" ;
+    dcterms:title "Reconcile diverged main; publish 13 local commits via PR" ;
+    dcterms:description "Merge origin/main (#466/#467) into local main; publish sa2a-bridge-pack, es-receipt-chain, pi-ocel-tap, st-fsm-codegen, targets-shacl-zod through a PR." ;
+    sj:subject "reconcile-main-publish" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "merge-base is-ancestor origin/main HEAD; afc850afc reachable; validate reports packs=320; admission and 4 qualify shards no fail" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "push authority" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-2> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-2" ;
+    dcterms:title "Main CI debt" ;
+    dcterms:description "Re-lock mdbook-pattern-language-pack (FM-PACK-008); ggen-platform-pack templates (FM-PACK-005); refresh source-correspondence SHAs; inline VALUES in xaas-public-ash-projection-pack (E0010)." ;
+    sj:subject "main-ci-debt" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pages.yml and publish.yml main runs success" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-3> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-3" ;
+    dcterms:title "sa2a-bridge-pack exact-head court" ;
+    dcterms:description "Fail witnesses for all 8 gates plus a byte-drift check against the xaas vendored copy, receipt bound to the commit SHA and ggen v26.8.11." ;
+    sj:subject "sa2a-bridge-court" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pytest tests/test_sa2a_bridge_pack.py passes; the three vendored files are byte-identical" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/sa2a-bridge-pack/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-4> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-4" ;
+    dcterms:title "Land PR #477 semantic-life-loop-pack" ;
+    dcterms:description "After fixing FM-PACK-013 (drop the bare sosa:Procedure typing or reference bg:capability-05)." ;
+    sj:subject "land-477" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "gh pr checks 477 no fail; PR MERGED; validate reports packs=321" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/semantic-life-loop-pack/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGEN_IGNITER-26922-05" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-5> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-5" ;
+    dcterms:title "Push or merge the local-only pack branches" ;
+    dcterms:description "frozen-duckdb-capabilities-g9, wave-26918-integration (vendor raise beam4pm pins), fin/second-consumer, ash-extension-pack-{doc-template,license-file}." ;
+    sj:subject "push-pack-branches" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "no local-only branches remain; f2ae5382e resolves on origin" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-6> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-6" ;
+    dcterms:title "One canonical Zod projection" ;
+    dcterms:description "shacl-projection-pack shacl_zod.ts.tmpl vs #475 vs #474; merge #475, retarget #478, fix FM-TPL-017." ;
+    sj:subject "one-zod-projection" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-6" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "pack test passes; #475 and #478 checks no fail" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-7> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-7" ;
+    dcterms:title "PR #474 STUB fix and SA2A vocabulary reconciliation" ;
+    dcterms:description "Fix the shacl-to-fastapi-pack STUB; reconcile sa2a-fastapi (s2a:) vs sa2a-bridge (s2b:) vocabularies or record why they do not compose; fold WORKGRAPH.ttl into sj:WorkOrder or supersede." ;
+    sj:subject "pr-474-vocab" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-7" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "no failing checks on #474" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "packs/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-8> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-8" ;
+    dcterms:title "ZOCEL-004 receipt on published main" ;
+    dcterms:description "SHA-bound acc-1..acc-6 (acc-4 runs packs/*/test*.py; ceiling BLOCKED-on-human for signing keys)." ;
+    sj:subject "zocel-004-receipt" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-8" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "receipt JSON with subject_sha equal to origin/main, validate line, qualify counts, triaged DIFF/UNIFIED lines, signing-keys BLOCKED-on-human" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-01" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-9> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-9" ;
+    dcterms:title "PR hygiene" ;
+    dcterms:description "Merge #468/#471/#473/#476; rerun #472; close #440/#441/#442/#458 (heads in main); delete merged gpack/mkt-01/02 branches." ;
+    sj:subject "pr-hygiene" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-9" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "at most 3 open PRs each with a keep reason" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "." ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-02" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-GGMKT-26922-10> a sj:WorkOrder ;
+    sj:identity "GGMKT-26922-10" ;
+    dcterms:title "Release v26.9.22 through publish.yml" ;
+    dcterms:description "Clean tree (commit docs/jira/v26.9.19 and RFC-GGEN-001; gitignore .ggen_igniter); marketplace.toml version v26.9.22." ;
+    sj:subject "release-v26922" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:baseSha "616e93d1e6f9566e4b5eb4e2c3d1400746786e50" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.9.22-GGMKT-26922-10" ;
+    sj:authorityRequirement "PUBLISH_AUTHORITY" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "tree clean; gh release view v26.9.22 resolves; publish.yml end-to-end verify success" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance command's exit 0 against the exact subject" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "evidence claimed without a durable receipt binding the subject SHA" ], [ a sj:Falsifier ; sj:index 2 ; dcterms:description "consequential transition actuated without fresh operator-supplied authority" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "marketplace.toml" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-02" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "GGMKT-26922-09" ; sj:dependencyType "requiresReceipt" ], [ a sj:DependencyEdge ; sj:upstream "publish authority" ; sj:dependencyType "requiresReceipt" ] .

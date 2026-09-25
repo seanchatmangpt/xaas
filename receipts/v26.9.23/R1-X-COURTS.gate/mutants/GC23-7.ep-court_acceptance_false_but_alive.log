@@ -1,0 +1,7 @@
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-COURTS/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"broken_term":"admission_vacuous","detail":{"unwitnessed":[{"acceptance":"https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check","result":false}]},"hop":"receipt","reason":"alive_acceptance_false","standing":"REFUSED(alive_acceptance_false)"}
+REFUSED: GC23-7 receipt.r.json: REFUSED(alive_acceptance_false) broken_term=admission_vacuous
+exit=1

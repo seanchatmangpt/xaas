@@ -297,9 +297,17 @@ defmodule Xaas.Ultracode.Verifier do
   # Containment and repository state
   # ------------------------------------------------------------------
 
-  defp contained_worktree(nil), do: {:error, "no_worktree"}
+  @doc """
+  The containment law: `{:ok, realpath}` only when `worktree` resolves
+  (symlinks followed) to a git top-level strictly under
+  `config :xaas, :ultracode_worktree_root`; `{:error, reason}` otherwise
+  (unset root refuses). Public so a mutating construction worker
+  (`Xaas.Ultracode.RecipeWorker`) is fenced by the same root as the verifier.
+  """
+  @spec contained_worktree(String.t() | nil) :: {:ok, String.t()} | {:error, String.t()}
+  def contained_worktree(nil), do: {:error, "no_worktree"}
 
-  defp contained_worktree(worktree) do
+  def contained_worktree(worktree) do
     case Application.get_env(:xaas, :ultracode_worktree_root) do
       root when is_binary(root) and root != "" ->
         with {:ok, real_root} <- realpath(root),
@@ -489,7 +497,32 @@ defmodule Xaas.Ultracode.Verifier do
     if reason, do: Map.put(base, "reason", reason_string(reason)), else: base
   end
 
-  defp spawn_and_collect(argv, suite, worktree, tmp, timeout_ms, max_out) do
+  @doc """
+  The fabric's one guarded process runner: spawns `argv` (already resolved,
+  no placeholders) in `worktree` through `/usr/bin/env -i` with only
+  `suite.env` plus `HOME`/`TMPDIR` pointed at `tmp`, as its own process
+  group with a `SIGALRM` backstop, and kills the whole group at
+  `timeout_ms`. Keeps only the last `max_out` bytes of combined output.
+
+  Public so a deterministic construction worker
+  (`Xaas.Ultracode.RecipeWorker`) runs its argv through the SAME runner the
+  independent verifier uses -- one containment implementation, never a copy.
+
+  Returns `{:exit, code, output_tail}`, `{:timeout, output_tail}`, or
+  `{:spawn_error, reason}`.
+  """
+  @spec spawn_and_collect(
+          [String.t()],
+          map(),
+          String.t(),
+          String.t(),
+          pos_integer(),
+          pos_integer()
+        ) ::
+          {:exit, non_neg_integer(), binary()}
+          | {:timeout, binary()}
+          | {:spawn_error, String.t()}
+  def spawn_and_collect(argv, suite, worktree, tmp, timeout_ms, max_out) do
     env =
       suite
       |> Map.get(:env, %{})
@@ -598,7 +631,16 @@ defmodule Xaas.Ultracode.Verifier do
     |> Map.new()
   end
 
-  defp argv_digest(suite) do
+  @doc """
+  The `argv_sha256` a verification (and its court receipt binding) records
+  for `suite`: lowercase hex sha256 over the JSON of each step's `:id`,
+  `:argv`, `:timeout_ms` and `:receipt_argv`. Environment, toolchain probes
+  and output limits are not part of it. Public so a court can check that a
+  receipt's replay command is the command the declaration that produced its
+  evidence runs (`Xaas.Receipt.RProjection.consistency/2`).
+  """
+  @spec argv_digest(map()) :: String.t()
+  def argv_digest(suite) do
     suite.steps
     |> Enum.map(&Map.take(&1, [:id, :argv, :timeout_ms, :receipt_argv]))
     |> Jason.encode!()

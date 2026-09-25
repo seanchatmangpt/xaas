@@ -59,8 +59,52 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   test "the code-declared target suites pass the registration admission gate" do
     devs = TargetSuites.devs()
 
-    assert MapSet.new(Map.keys(devs)) == MapSet.new(["eds-dod", "nounverb-dod", "spr-dod"])
+    # The three wave-5 suites plus the durable-registry targets' `-dod` AND
+    # `-canonical` judges (2026-09-21; `spr` joined the registered set the
+    # same day, replacing its legacy aps courts per the V4/V10
+    # mis-registration finding): Run admission validates the `-dod` name per
+    # item, and Autonomic resolves the `-canonical` name from the registry
+    # entry at the per-repo integration head -- a missing half fails
+    # tonight's multi-repo run closed. The t1 registration merge (2026-09-22)
+    # adds the four SJ-program targets (xaas, autofde-lab, gymact,
+    # ggen-igniter) via sj_program_suites/0, so they are declared targets
+    # now, not deliberately-absent reserved gaps.
+
+    assert MapSet.new(Map.keys(devs)) ==
+             MapSet.new([
+               "eds-dod",
+               "nounverb-dod",
+               "spr-dod",
+               "spr-canonical",
+               "bitstar-dod",
+               "bitstar-canonical",
+               "infinite-agentic-cli-dod",
+               "infinite-agentic-cli-canonical",
+               "xaas-dod",
+               "xaas-canonical",
+               "autofde-lab-dod",
+               "autofde-lab-canonical",
+               "gymact-dod",
+               "gymact-canonical",
+               "ggen-igniter-dod",
+               "ggen-igniter-canonical",
+               "ggen-igniter-format"
+             ])
+
     assert TargetSuites.validate(devs) == :ok
+  end
+
+  test "every declared suite is runtime-registered under the dev opt-in" do
+    # Generalized guard for future registrations: a name declared in
+    # devs/0 but not reachable through Verifier.registered?/1 (the exact
+    # check `VerifierSuiteRegistered` applies at Run admission) would
+    # reserve a target that dispatch always refuses.
+    Application.put_env(:xaas, :ultracode_target_suites, TargetSuites)
+
+    for {name, suite} <- TargetSuites.devs() do
+      assert Verifier.registered?(name), "declared suite #{name} is not runtime-registered"
+      assert Map.has_key?(suite, :steps)
+    end
   end
 
   test "a bad command is refused: empty argv, non-binary element, embedded placeholder" do
@@ -97,7 +141,8 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
   end
 
   test "a bad timeout is refused: missing, zero, negative, non-integer, over the cap" do
-    base = %{"t" => hd(Map.values(TargetSuites.devs()))}
+    # A one-step suite (the mutation below addresses step 0 / the sole step).
+    base = %{"t" => TargetSuites.devs()["spr-dod"]}
 
     for bad <- [0, -1, "300000", 3_600_001] do
       mutated =
@@ -108,8 +153,11 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
     end
 
     missing =
-      update_in(base, ["t", Access.key!(:steps)], fn [step] ->
-        [Map.delete(step, :timeout_ms)]
+      update_in(base, ["t", Access.key!(:steps)], fn steps ->
+        # Suites may carry MULTIPLE steps (e.g. autofde-lab-dod's sync+test):
+        # the refused shape is "a step without a timeout", not "a one-step
+        # suite" -- drop timeout_ms from every step.
+        Enum.map(steps, &Map.delete(&1, :timeout_ms))
       end)
 
     assert {:error, problems} = TargetSuites.validate(missing)

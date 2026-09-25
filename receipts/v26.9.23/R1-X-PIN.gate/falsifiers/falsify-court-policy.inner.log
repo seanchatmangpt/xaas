@@ -1,0 +1,58 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+18:56:22.997 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+18:56:23.666 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+18:56:24.005 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+18:56:24.086 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:56:24.086 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+18:56:24.098 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:56:24.099 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+18:56:24.108 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:56:24.108 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+18:56:24.115 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:56:24.115 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+18:56:24.122 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:56:24.122 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+18:56:24.126 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:56:24.126 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 794648, max_cases: 32
+Excluding tags: [:test]
+Including tags: [location: {"test/sjira/v26_9_23_goal_test.exs", 815}, location: {"test/sjira/v26_9_23_goal_test.exs", 831}]
+
+
+
+  1) test GC23-0 (real sh + ggen_igniter compile_prose --check) refuses a hand-edited compiled/orders.ttl (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:815
+     GC23-0 source: docs/sjira/v26.9.23/prd-ard.md sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 (byte-identical to the accepted prose)
+     UNKNOWN: no_llm_env: no policy data at /Users/sac/.cache/tmp/v23_court_repo_14723/docs/sjira/v26.9.23/courts/../../../../priv/no_llm/policy.json
+     UNKNOWN: GC23-0 no-LLM env unbuildable for prose_spans.py
+
+     code: assert code == 1, out
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:824: (test)
+
+
+
+  2) test GC23-3 (real sh + ggen_igniter --admit-goal) refuses a goal.ttl whose lane order lost sj:postcondition (F1) (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:831
+     UNKNOWN: no_llm_env: no policy data at /Users/sac/.cache/tmp/v23_court_repo_14787/docs/sjira/v26.9.23/courts/../../../../priv/no_llm/policy.json
+     UNKNOWN: GC23-3 no-LLM env or ggen_igniter checkout unusable
+
+     code: assert code == 1, out
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:844: (test)
+
+
+Finished in 6.4 seconds (0.00s async, 6.4s sync)
+
+Result: 0/2 passed, 35 excluded
+Failed: 2 tests

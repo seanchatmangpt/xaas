@@ -38,8 +38,10 @@ defmodule Xaas.Governance.EnqueueWebhookDeliveriesTest do
   end
 
   setup_all do
-    port = 21_000 + :erlang.phash2(__MODULE__, 5_000)
-    {:ok, _pid} = Plug.Cowboy.http(Always200Plug, [], port: port, ref: __MODULE__)
+    # OS-assigned ephemeral port read back from ranch, instead of a
+    # hash-derived port that can collide and raise :eaddrinuse (SJ-009).
+    {:ok, _pid} = Plug.Cowboy.http(Always200Plug, [], port: 0, ref: __MODULE__)
+    port = :ranch.get_port(__MODULE__)
     on_exit(fn -> Plug.Cowboy.shutdown(__MODULE__) end)
     {:ok, listener_url: "http://127.0.0.1:#{port}/"}
   end

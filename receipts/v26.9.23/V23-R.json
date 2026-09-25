@@ -1,0 +1,173 @@
+{
+ "identity": {
+  "subject": "V23-R",
+  "repo": "/Users/sac/xaas",
+  "subject_sha": "b7a47140f820c4fcf3dd4e2b5e986833921ca787",
+  "base_sha": "04599d6604e56efb031eb19de430e1361e381d21",
+  "branch": "v23/V23-R",
+  "worktree": "/Users/sac/wt/v26922/v23/V23-R",
+  "work_order": "v23:WO-V23-R",
+  "tuple_digest": "sha256:01861be76e742250e796228de64e8dde326ed035812f8532743c930d55520cc3",
+  "tuple_digest_observed": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-10 at b7a4714 printed `order V23-R standing=NONE receipt=MISSING digest=sha256:01861be76e742250e796228de64e8dde326ed035812f8532743c930d55520cc3` (equal to DRIVER.md; goal.ttl unchanged by this lane)",
+  "graph_side": {
+   "judge": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+   "ggen_igniter_sha": "c90c17b878d96e14a008c1de498555bc97515937",
+   "toolchain": "SemanticDrive.graph_toolchain/2 source build_manifest: Elixir 1.19.5 on OTP 28 (the build's own compiler); private APFS clone of its _build/test as MIX_BUILD_PATH, nothing of the int checkout written",
+   "episode_subject": "v23/episode-fmt-1-receipt = 9c5e7571c948f97f6ae08d9399f69f502d81efd4 (receipt head); base 80a8a4c71b331a39771ad65d1149eb835645d17c"
+  },
+  "prd_ard": "PRD PR-013 (Replay), section 12 GC23-10; ARD section 7 (Standing Model), section 12 (Receipt Architecture), section 16 (Bootstrap Architecture), section 26 F5/F6 (+F3 guard)"
+ },
+ "authority": {
+  "ceiling": "CONSTRUCT",
+  "grant": "wave B1b lane V23-R (/Users/sac/wt/v26922/v26923/DRIVER.md gate map GC23-10; COORDINATION.md v26.9.23 scope; goal.ttl v23:WO-V23-R). No push, no integrate, no remote effect, no shared ref written (F6 commits live in scratch repositories sharing objects through alternates).",
+  "actor": "claude-opus-5.5 workflow subagent (lane V23-R)"
+ },
+ "consequence": {
+  "commits": [
+   "b7a47140f820c4fcf3dd4e2b5e986833921ca787"
+  ],
+  "commit_notes": {
+   "b7a4714": "SemanticReplay + mix xaas.replay + scripts/semantic_replay_task.exs + SemanticCrown.replay/2 directory-aware + GC23-10 court body + replay_project.py + episodes/fmt-1/replay.json (recorded digest) + semantic_replay_test.exs + HANDWRITTEN row"
+  },
+  "files_changed": [
+   "HANDWRITTEN.md",
+   "docs/sjira/v26.9.23/courts/GC23-10.sh",
+   "docs/sjira/v26.9.23/courts/replay_project.py",
+   "docs/sjira/v26.9.23/episodes/fmt-1/replay.json",
+   "lib/mix/tasks/xaas.replay.ex",
+   "lib/xaas/ultracode/semantic_crown.ex",
+   "lib/xaas/ultracode/semantic_replay.ex",
+   "scripts/semantic_replay_task.exs",
+   "test/xaas/ultracode/semantic_replay_test.exs"
+  ],
+  "files_changed_basis": "git diff --name-only 04599d6 b7a4714; the receipt commit adds receipts/v26.9.23/V23-R.json and receipts/v26.9.23/V23-R.gate/**",
+  "remote_effects": [],
+  "reserved_files": "semantic_crown.ex is a Friday-reserved file; changed because the lane task names SemanticCrown.replay/2 (the File.cp! of a directory ledger). recipe_worker.ex, engine.ex, court_receipt.ex, target_suites.ex, semantic_receipt.ex, route.ex, xaas.stop_court.ex, goal.ttl, prd-ard.md and docs/sjira/v26.9.22/friday/** untouched (git diff 04599d6 b7a4714 -- those paths: empty). The committed V23-D episode artifacts are unchanged; replay.json is a new file in the episode dir.",
+  "generated_vs_handwritten": {
+   "generated": [
+    "docs/sjira/v26.9.23/episodes/fmt-1/replay.json (output of courts/replay_project.py over the episode-time artifacts; the court re-derives and compares it)"
+   ],
+   "handwritten": [
+    "lib/xaas/ultracode/semantic_replay.ex",
+    "lib/mix/tasks/xaas.replay.ex",
+    "scripts/semantic_replay_task.exs",
+    "lib/xaas/ultracode/semantic_crown.ex (replay/2, copy_into/2, optional_env/1)",
+    "docs/sjira/v26.9.23/courts/GC23-10.sh",
+    "docs/sjira/v26.9.23/courts/replay_project.py",
+    "test/xaas/ultracode/semantic_replay_test.exs"
+   ],
+   "ledger": "HANDWRITTEN.md row (UNSUPPORTED(generator-capability): 326 ggen-marketplace packs checked -- counterfactual-frontier-replay-pack, ggen-igniter-bootstrap-pack, evidence-standing-pack render no ledger re-derivation / git-ref currency; semantic-jira-pack has no replay task; owner semantic-jira-pack `mix semantic_jira.replay`)"
+  }
+ },
+ "replay": {
+  "durable_location": "receipts/v26.9.23/V23-R.gate/ (gate, court, stop-court and mutation logs) + docs/sjira/v26.9.23/episodes/fmt-1/replay.json",
+  "commands": [
+   {
+    "cmd": "mix format --check-formatted",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R @ b7a4714",
+    "exit": 0,
+    "summary": "lane gate step 1: formatted",
+    "output_sha256": "7acdcf4413f62ee670f5f2afc39cd45e97116056cde9340a25bc04b72234a350",
+    "log": "receipts/v26.9.23/V23-R.gate/gate.format.log"
+   },
+   {
+    "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R @ b7a4714",
+    "exit": 0,
+    "summary": "lane gate step 2: Compiling 514 files (.ex), Generated xaas app",
+    "output_sha256": "e2f985de18b79133d0cef3a750ab1e55cb0ca40b41a34c5cfc083a34b026a2c1",
+    "log": "receipts/v26.9.23/V23-R.gate/gate.compile.log"
+   },
+   {
+    "cmd": "mix test test/xaas/ultracode/semantic_replay_test.exs",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R @ b7a4714",
+    "exit": 0,
+    "summary": "lane gate step 3: 13 tests, 0 failures (0 skipped) in 55.0 s; GGEN_IGNITER_DIR unset -> default judge ggen_igniter-int c90c17b",
+    "output_sha256": "9ccb4200a3369b1787fea515972c48ea7ed80a89f6e9114003de571e4ca5e41a",
+    "log": "receipts/v26.9.23/V23-R.gate/gate.test.log"
+   },
+   {
+    "cmd": "sh docs/sjira/v26.9.23/courts/GC23-10.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R @ b7a4714",
+    "exit": 0,
+    "summary": "lane gate step 4: ALIVE -- recorded digest sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb = python3 projection of the episode-time artifacts; ~/.claude fence proven live; 2 cold runs (no_llm_env.sh inside sandbox-exec) byte-identical and equal to it; F3 REFUSED(llm_credential_present)/mu_on_O; F5 EP-A ALIVE->UNKNOWN, eligible [EP-A], unreceipted_transition/R_missing_replay; F6 covered commit -> EP-A UNKNOWN subject_changed/R_missing_identity, docs/-only control keeps ALIVE + recorded frontier",
+    "output_sha256": "6ba081b37a7bf40a334a29c092db64abd6127934dcd84b9189a6c116d104bf58",
+    "log": "receipts/v26.9.23/V23-R.gate/gate.court.log"
+   },
+   {
+    "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-R.gate/stop-court-GC23-10.receipt.json",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R",
+    "exit": 0,
+    "summary": "ADMITTED (the stop court's GC23-10 gate receipt)",
+    "output_sha256": "463fcb90f31d10e4a995a4e8632ab951b435142bd9c07119af746d2e3ebacedb",
+    "log": "receipts/v26.9.23/V23-R.gate/stop-court-GC23-10.receipt.json"
+   },
+   {
+    "cmd": "sh docs/sjira/v26.9.23/courts/check_scripts.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R",
+    "exit": 0,
+    "summary": "13 court scripts exist, sh -n clean; rdflib parse: 13 gates each naming its own script (GC23-10 path + exit contract kept)"
+   }
+  ]
+ },
+ "standing": {
+  "value": "ALIVE",
+  "derived_from": "observed runs on the exact committed subject b7a47140f820c4fcf3dd4e2b5e986833921ca787 against the mandated judge GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (c90c17b): lane gate (format 0, compile --force --warnings-as-errors 0, 13/13 tests, GC23-10 court exit 0); the real stop court maps GC23-10 ALIVE with an ADMITTED gate receipt bound to b7a4714; revert-mutations M1/M2/M3 each make the gate fail. Order tuple digest = DRIVER.md V23-R digest."
+ },
+ "falsifiers": {
+  "F5": "delete receipt.json in a copy of the episode -> mix xaas.replay exit 4 DIVERGED: standing EP-A UNKNOWN (was ALIVE), frontier eligible [EP-A] with EP-B blocked dependencies_unsatisfied (was eligible [EP-B]), ledger tail genesis, replay_check REFUSED identity_mismatch {consequence_set, standing_projection}, divergence unreceipted_transition / R_missing_replay -- witnessed by the court and the F5 test",
+  "F6": "a commit on v23/episode-fmt-1-receipt after the receipt head touching lib/ (in path_scope) -> exit 4: evidence current=false, changed_paths [the file], EP-A UNKNOWN, subject_changed / R_missing_identity; control commit touching docs/ only -> exit 0 KNOWN_REPLAY with the recorded standing/completed/frontier (only subject.tip differs) -- witnessed by the court and the F6 test",
+  "F3": "ANTHROPIC_API_KEY=x exposed -> exit 3 REFUSED(llm_credential_present), broken term mu_on_O, nothing written; the guard runs before any input is read (test: nonexistent episode dir still refuses at the guard)",
+  "anti_vacuity": "M1 (dir ledger), M2 (subject currency), M3 (trust the committed log) each fail the gate; the ~/.claude fence is proven by an ls under the same sandbox profile failing before the replays run",
+  "tamper": "a receipt with a mutated final_head -> receipt_digest_mismatch / R_missing_identity + unreceipted_transition / R_missing_replay, EP-A UNKNOWN (test)"
+ },
+ "notes": [
+  "The digest recorded at episode time is the state projected from the artifacts the V23-D drive wrote (work.json, frontier_after.json, receipt.json, ledger.ndjson, drive.json) by the independent python3 projector, committed as episodes/fmt-1/replay.json by this lane (the drive predates the replay schema); the court re-projects it on every run and refuses a drifted record.",
+  "Evidence re-derivation: mix semantic_jira.xaas_receipt with the sealed receipt as its own bridge reproduces the committed reconciler_receipt.json exactly, and mix semantic_jira.reconcile into a fresh ledger reproduces the committed ledger.ndjson byte for byte (probe at c90c17b before the module was written).",
+  "The stop court's gate receipt base_sha field (bd1efb1) is the stop court's own base computation; this receipt's base_sha is the merge base with friday/gc-fri-0800 (04599d6).",
+  "Pre-existing: none observed on the lane gate; the dep ex4pm mix.exs Application.get_env warning is printed by every mix command and is not a compile warning of xaas."
+ ],
+ "falsifier_runs": {
+  "note": "expected non-zero exits (kept out of replay.commands, which lists only the runs the ALIVE standing rests on): the stop court exits 1 because STOP needs all 13 gates (GC23-10 itself ALIVE, ADMITTED); the mock grep exits 1 for no matches; M1-M3 are revert-mutations that must fail",
+  "commands": [
+   {
+    "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-10 --receipts-dir <scratch>",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R @ b7a4714",
+    "exit": 1,
+    "summary": "the real stop court: GC23-10 Bootstrap ALIVE exit 0 in 23.7 s, gate receipt ADMITTED (subject_sha b7a4714, ggen_igniter_sha c90c17b); STOP=false (exit 1) because only GC23-10 ran",
+    "output_sha256": "e5ab9da38f4993804c43e44318739d22ac348a68d72793cf8c7b65c554f4ac60",
+    "log": "receipts/v26.9.23/V23-R.gate/stopcourt.log"
+   },
+   {
+    "cmd": "M1 revert-mutation (m1.diff: SemanticCrown copy_into File.cp! for every existing path) + mix test ...semantic_replay_test.exs:446 :487 :498",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R",
+    "exit": 2,
+    "summary": "4 tests, 1 failure: the directory-ledger test raises File.CopyError (illegal operation on a directory); file/absent controls pass. Restored by git checkout -- (committed content)",
+    "output_sha256": "1cb254713cf21f9a202fb22426e9460939333ca88cd85a14b1bf587f9ee83089",
+    "log": "receipts/v26.9.23/V23-R.gate/m1.test.log"
+   },
+   {
+    "cmd": "M2 mutation (m2.diff: subject currency ignored, changed paths always []) + mix test ...:178 + sh GC23-10.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R",
+    "exit": 1,
+    "summary": "F6 test: 1 test, 1 failure (demoted replay KNOWN_REPLAY, not DIVERGED); court exit 1: REFUSED: GC23-10 F6: a covered-path commit exited 0, not 4",
+    "output_sha256": "1d8cf38931e8d06166a54961043477808c3a0334c7f429d12568d9ceab098c84",
+    "log": "receipts/v26.9.23/V23-R.gate/m2.court.log"
+   },
+   {
+    "cmd": "M3 mutation (m3.diff: standing projected from the committed TransitionLog instead of the receipt-re-derived one) + mix test ...:149 + sh GC23-10.sh",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R",
+    "exit": 1,
+    "summary": "F5 test: 1 test, 1 failure (EP-A stays ALIVE without its receipt); court exit 1: REFUSED: GC23-10 F5: deleting the receipt did not diverge standing and frontier",
+    "output_sha256": "edf1afb999092b5f14b422e2349defc43ecefc4aa123f03ec2834c188acea704",
+    "log": "receipts/v26.9.23/V23-R.gate/m3.court.log"
+   },
+   {
+    "cmd": "grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" <the 6 new/changed V23-R code+test files>",
+    "cwd": "/Users/sac/wt/v26922/v23/V23-R",
+    "exit": 1,
+    "summary": "no matches (Chicago: real episode, real graph-side processes, real git, real python3, real mix subprocess)"
+   }
+  ]
+ }
+}

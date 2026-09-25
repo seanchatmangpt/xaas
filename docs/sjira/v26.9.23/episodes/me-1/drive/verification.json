@@ -1,0 +1,95 @@
+{
+  "head": "77df08277fa3fa1aa535265fd92029e604890944",
+  "independent": {
+    "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+    "court_receipt": {
+      "acceptance_results": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check": true
+      },
+      "binding": {
+        "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+        "head": "77df08277fa3fa1aa535265fd92029e604890944",
+        "step_id": "format",
+        "suite": "ggen-igniter-format"
+      },
+      "court_results": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format": {
+          "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+          "head": "77df08277fa3fa1aa535265fd92029e604890944",
+          "passed": true,
+          "step_id": "format",
+          "suite": "ggen-igniter-format"
+        }
+      },
+      "falsifier_results": {
+        "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent": "survived"
+      }
+    },
+    "head": "77df08277fa3fa1aa535265fd92029e604890944",
+    "status": "pass",
+    "steps": [
+      {
+        "duration_ms": 474,
+        "exit": 0,
+        "id": "format",
+        "output_tail": "",
+        "status": "pass"
+      }
+    ],
+    "suite": "ggen-igniter-format",
+    "toolchain": {
+      "git --version": "git version 2.51.2",
+      "mix --version": "Erlang/OTP 27 [erts-15.2.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]\n\nMix 1.18.4 (compiled with Erlang/OTP 27)"
+    }
+  },
+  "revert_falsifier": {
+    "court": {
+      "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+      "court_receipt": {
+        "acceptance_results": {
+          "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-acceptance-format-check": false
+        },
+        "binding": {
+          "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+          "head": "5c2f39a0014cf16650984c176f4aba55f18bc8d3",
+          "step_id": "format",
+          "suite": "ggen-igniter-format"
+        },
+        "court_results": {
+          "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-me-1-format": {
+            "argv_sha256": "26fd0160d2536650804f14178055d5bd377a3ab41bc79a416bcb49ceebb68d5b",
+            "head": "5c2f39a0014cf16650984c176f4aba55f18bc8d3",
+            "passed": false,
+            "step_id": "format",
+            "suite": "ggen-igniter-format"
+          }
+        },
+        "falsifier_results": {
+          "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent": "failed"
+        }
+      },
+      "head": "5c2f39a0014cf16650984c176f4aba55f18bc8d3",
+      "reason": "step format: fail",
+      "status": "fail",
+      "steps": [
+        {
+          "duration_ms": 502,
+          "exit": 1,
+          "id": "format",
+          "output_tail": "** (Mix) mix format failed due to --check-formatted.\nThe following files are not formatted:\n\n\u001B[1m\u001B[31m/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23m-r2/work/drive-verify-d00e11747a92556fa5fa/lib/ggen_igniter/semantic_jira/reconciler.ex\n\u001B[0m\n  1     -|defmodule  GgenIgniter.SemanticJira.Reconciler  do\n      1 +|defmodule GgenIgniter.SemanticJira.Reconciler do\n  2   2  |  @moduledoc \"\"\"\n  3   3  |  Verified receipt -> lawful canonical-state transition.\n         |\n\n\n\n",
+          "status": "fail"
+        }
+      ],
+      "suite": "ggen-igniter-format",
+      "toolchain": {
+        "git --version": "git version 2.51.2",
+        "mix --version": "Erlang/OTP 27 [erts-15.2.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]\n\nMix 1.18.4 (compiled with Erlang/OTP 27)"
+      }
+    },
+    "reverted_commit": "77df08277fa3fa1aa535265fd92029e604890944",
+    "reverted_head": "5c2f39a0014cf16650984c176f4aba55f18bc8d3",
+    "verdict": "killed"
+  },
+  "schema": "xaas/semantic-drive-verification/v1",
+  "worktree": "fresh detached worktree at the receipt head (removed after)"
+}

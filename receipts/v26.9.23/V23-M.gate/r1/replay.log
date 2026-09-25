@@ -1,0 +1,18 @@
+subject code: d19623ed280fbdeff831676a5e86d652f8707cd3; judge /Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc; episode base c90c17b878d96e14a008c1de498555bc97515937
+prepare me-1: exit 0; drift commit 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f (committed 92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f, equal=yes); work.json byte-identical=yes
+prepare me-2: exit 0; drift commit 36605534141aa44429586d3e15e8ff159f3d5bc8 (committed 36605534141aa44429586d3e15e8ff159f3d5bc8, equal=yes); work.json byte-identical=yes
+me-1 without exploration: exit 4 UNKNOWN no_capability_no_experience considered 0
+me-1 with the committed exploration.json: exit 0
+  replay: standing ALIVE decision UNKNOWN steps 20 events 15 objects 13 llm 3 exploration 2 equivalent True used {'candidates': 1, 'drive_runs': 1, 'elapsed_s': 21} ME https://ggen-igniter.dev/sjira/v26.9.23#ME-46ec06e23654f3a3
+  committed: standing ALIVE decision UNKNOWN steps 20 events 15 objects 13 llm 3 exploration 2 equivalent True used {'candidates': 1, 'drive_runs': 1, 'elapsed_s': 22} ME https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2
+  by_class equal, steps equal
+me-2 KNOWN from the replayed me-1 experience: exit 0
+  replay: standing ALIVE decision KNOWN steps 16 events 12 llm 0 exploration 0 equivalent True route https://ggen-igniter.dev/sjira/v26.9.23#ME-46ec06e23654f3a3
+  committed: standing ALIVE decision KNOWN steps 16 events 12 llm 0 exploration 0 equivalent True route https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2
+  route cites the replayed me-1 IRI; by_class equal, steps equal; no exploration artifact
+route me-2 over the COMMITTED me-1 graph: exit 0 KNOWN https://ggen-igniter.dev/sjira/v26.9.23#ME-d8e720a599d3c7e2 recipe:mix-format
+v23/episode-me-1 92d0a43
+v23/episode-me-1-receipt bd84b3e
+v23/episode-me-2 3660553
+v23/episode-me-2-receipt 48ae4ad
+REPLAY_EXIT=0

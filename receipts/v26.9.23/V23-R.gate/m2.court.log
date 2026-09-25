@@ -1,0 +1,10 @@
+record matches the episode-time projection: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb
+recorded: sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb (subject ref v23/episode-fmt-1-receipt)
+fence: /Users/sac/.claude unreadable under the replay profile
+cold: 2 runs, digest sha256:e24bff7983a500c010aa88bb782586f4f32accfbb3c6e7860d5f79f2317376fb == recorded; standing {'EP-A': 'ALIVE', 'EP-B': 'UNKNOWN'}, completed ['EP-A'], eligible ['EP-B']
+F3: REFUSED(llm_credential_present), broken term mu_on_O
+F5: EP-A ALIVE -> UNKNOWN, eligible ['EP-A'], typed [('unreceipted_transition', 'R_missing_replay', 'EP-A')]
+     └─ lib/xaas/ultracode/semantic_replay.ex:526:28: Xaas.Ultracode.SemanticReplay.changed/4
+
+{"completed":["EP-A"],"digest":"sha256:1ca16ecb3661b3a5a1f078307a8aa538256c87ac1c7c58899d7604600110630c","divergence":[],"eligible":["EP-B"],"ledger_tail":"sha256:41c2dd0faf87393a70d35aadabe043cabebb6c90e09545f0ff4250c18644648e","out":"/private/tmp/claude-501/v23-scratch/B1b-V23-R/gc23-10.DYfzxs/f6/state.json","replay":"KNOWN_REPLAY","standing":{"EP-A":"ALIVE","EP-B":"UNKNOWN"}}
+REFUSED: GC23-10 F6: a covered-path commit exited 0, not 4 (DIVERGED)

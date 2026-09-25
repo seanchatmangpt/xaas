@@ -1,0 +1,4 @@
+publish-image: if = "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"
+deploy: if = "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''"
+REFUSED: the dispatched ref is refs/heads/main
+sha 60972f8e9757a4e4bd45ef265781518d5ccdebdf ref refs/heads/main: FENCE NOT PROVEN

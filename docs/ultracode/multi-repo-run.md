@@ -44,7 +44,7 @@ closed — it cannot half-run.
   (`config :xaas, :ultracode_repos` baseline + the durable registry file);
   no worker, ticket, or goal text ever carries a raw path as authority.
 - **Never a live session's tree.** All construction happens in provisioned,
-  detached worktrees under `~/xaas-worktrees/runs/<name>` (`Worktrees
+  detached worktrees under `~/xaas/worktrees/runs/<name>` (`Worktrees
   .provision/3` = `git worktree add --detach <path> <base_sha>`; names are
   strict slugs; the path can never leave the root; an existing path is
   refused). Sensing derives items from a throwaway worktree at an exact
@@ -65,10 +65,10 @@ closed — it cannot half-run.
 Clones must exist locally first. Verified on disk this session:
 
 ```
-~/xaas-worktrees/repos/aps      -> github.com/seanchatmangpt/agile-protocol-specification (main)
-~/xaas-worktrees/repos/eds      -> /Users/sac/eds (main)
-~/xaas-worktrees/repos/nounverb -> /Users/sac/ex_noun_verb_cli (main)
-~/xaas-worktrees/repos/infinite-agentic-cli, mmdio   (present, not yet suite-covered)
+~/xaas/worktrees/repos/aps      -> github.com/seanchatmangpt/agile-protocol-specification (main)
+~/xaas/worktrees/repos/eds      -> /Users/sac/eds (main)
+~/xaas/worktrees/repos/nounverb -> /Users/sac/ex_noun_verb_cli (main)
+~/xaas/worktrees/repos/infinite-agentic-cli, mmdio   (present, not yet suite-covered)
 ```
 
 Registration (surface owned by `Xaas.Ultracode.Repos`, IN-FLIGHT —
@@ -79,7 +79,7 @@ Registration (surface owned by `Xaas.Ultracode.Repos`, IN-FLIGHT —
 mix xaas.ultracode.repos
 
 # register a target (atomic write to the durable registry file)
-mix xaas.ultracode.repos --register eds --path /Users/sac/xaas-worktrees/repos/eds \
+mix xaas.ultracode.repos --register eds --path /Users/sac/xaas/worktrees/repos/eds \
   --sensing todo_file --suite eds-dod
 ```
 
@@ -99,7 +99,7 @@ The law the task enforces (fail closed, typed):
 - suite/sensing names are name-format checks only — the registry never
   interprets what a suite runs;
 - the durable registry file (config `:xaas, :ultracode_repos_file`, dev
-  default `~/xaas-worktrees/ultracode-repos.json`) is written atomically,
+  default `~/xaas/worktrees/ultracode-repos.json`) is written atomically,
   merged additively, existing entries preserved, a corrupt file never
   clobbered; file entries WIN over config for the same alias (the file is
   the operator's latest registration intent);
@@ -131,7 +131,7 @@ The campaign command gains a repo SPEC (`Xaas.Ultracode.WavePlan`,
 IN-FLIGHT):
 
 ```bash
-cd /Users/sac/xaas-worktrees/campaign-8h   # or your campaign worktree
+cd /Users/sac/xaas/worktrees/campaign-8h   # or your campaign worktree
 export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"
 mix --version   # MUST print Mix 1.20.2 (compiled with Erlang/OTP 28)
 
@@ -173,7 +173,7 @@ state:         running (standing unknown)
 budget:        15/16 waves, 2068s of wall clock remaining
 deadline_at:   2026-09-20T20:33:05.527428Z
 in-flight:     6 running epoch(s) (1 leased, 5 unleased)
-ledger:        /Users/sac/xaas-worktrees/tickets/campaign-<ID8>/ledger.ndjson
+ledger:        /Users/sac/xaas/worktrees/tickets/campaign-<ID8>/ledger.ndjson
 wave 1: ALIVE
 ...
 ```
@@ -183,7 +183,7 @@ targets — this is the number the keep-alive automation compares against the
 capacity setpoint, exactly as single-repo (§8). Per-repo legibility lives in
 the durable records, not in the status line:
 
-- **Campaign ledger** (`~/xaas-worktrees/tickets/campaign-<ID8>/ledger.ndjson`):
+- **Campaign ledger** (`~/xaas/worktrees/tickets/campaign-<ID8>/ledger.ndjson`):
   in a multi-repo wave every per-item line (`attempt_start`, `item_done`,
   `attempt_failed`, `item_blocked`, `merged`) carries `"repo": <alias>`;
   the `start` event names the selected repos and each repo's base sha.
@@ -193,7 +193,7 @@ the durable records, not in the status line:
   worker_returned, item_done, attempt_failed, item_blocked, merged,
   merge_conflict, promotion_failed, canonical, reap, campaign_wave_start,
   campaign_wave_done, final`.
-- **Per-item tickets** (`~/xaas-worktrees/tickets/*.json`): the ticket's
+- **Per-item tickets** (`~/xaas/worktrees/tickets/*.json`): the ticket's
   mission and allowed paths name the repo; append-only history per item.
 - **Wave receipt** (`autonomic-<nonce>/receipt.json`): per-item receipts
   carry the repo alias; `human_inputs: 0` either way.
@@ -242,14 +242,14 @@ receipt carries `head_verified`, (c) every wave Run's OCEL log passes steps
 ## 6. (e) Prerequisites per repo type
 
 Everything in eight-hour-run §3 holds (toolchain, Postgres, operator dirs,
-node >= 22.5, quota). Per-target additions:
+node >= 22.19.0 (zcode-cli `package.json` `engines.node`), quota). Per-target additions:
 
 - **PATH order (verified this session)**: `export
   PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"` — asdf first. asdf has
   NO node plugin on this machine (`asdf current node` -> "No such plugin"),
-  so `node` still resolves from homebrew (v26.8.1, >= 22.5) while `mix`
+  so `node` still resolves from homebrew (v26.8.1, >= 22.19.0) while `mix`
   resolves under the shims (1.20.2). One order, both constraints satisfied.
-- **Clones**: `~/xaas-worktrees/repos/<alias>`, real checkouts, on `main`
+- **Clones**: `~/xaas/worktrees/repos/<alias>`, real checkouts, on `main`
   (or any base you intend), never a bare dir, never a session worktree.
 - **Suite hermeticity (the fabric court's environment law, from
   `Xaas.Ultracode.TargetSuites`)**: the verifier spawns children through
@@ -258,7 +258,7 @@ node >= 22.5, quota). Per-target additions:
   - Elixir targets (`nounverb-dod`): `PATH` pinned to the exact asdf
     install dirs (`~/.asdf/installs/elixir/1.20.2-otp-28/bin`,
     `~/.asdf/installs/erlang/28.3/bin`, then homebrew); `MIX_ARCHIVES`
-    pinned to the operator-owned `~/xaas-worktrees/toolchain/mix-archives`
+    pinned to the operator-owned `~/xaas/worktrees/toolchain/mix-archives`
     (a throwaway HOME would otherwise trigger the interactive
     `mix local.hex` prompt and hang the court). Steps: `mix deps.get` ->
     `mix compile --warnings-as-errors` -> `mix test`.
@@ -279,7 +279,13 @@ node >= 22.5, quota). Per-target additions:
     other non-zero (outside `infra_exit_codes`) = fail, timeout =
     unverifiable.
 - **Sensing profile**: each target needs an implemented profile (registry
-  gap until then). Profiles (`Xaas.Ultracode.Sensing`, IN-FLIGHT):
+  gap until then). A registry `sensing` NAME resolves to a declared profile
+  map via `Sensing.profile_for/1` (`config :xaas,
+  :ultracode_sensing_profiles`); `Autonomic.sense/1` senses through that
+  profile when the name resolves and through the per-repo backlog script
+  otherwise. A registry entry with `refresh: true` is fetched +
+  fast-forwarded (`Repos.refresh/1`, non-destructive) before `base_sha` is
+  pinned. Profiles (`Xaas.Ultracode.Sensing`):
   `todo_file` (GitHub task-list lines), `jira_dir` (ticket `## Status`
   first-words not in the closed set), `failing_tests` (run a command in
   the sensed worktree, parse failures — a non-zero suite exit is EXPECTED,
@@ -300,7 +306,7 @@ The eight-hour-run §7 ladder applies verbatim: (1) `mix xaas.ultracode.stop`
 additions:
 
 - **Remove a target between campaigns**: edit/delete its entry in the
-  durable registry file (`~/xaas-worktrees/ultracode-repos.json`) — it is
+  durable registry file (`~/xaas/worktrees/ultracode-repos.json`) — it is
   operator-owned JSON outside the repo; or re-register the alias with new
   facts (file wins over config). Never edit the registry mid-campaign: `all`
   resolves membership at wave time, so a mid-campaign removal changes later
@@ -343,7 +349,7 @@ telemetry line, and quit. The campaign may target one repo or many
 (--repo a,b|all); nothing in your steps depends on which.
 
 1. STATUS. Run exactly:
-     cd /Users/sac/xaas-worktrees/campaign-8h && export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH" && mix xaas.ultracode.status
+     cd /Users/sac/xaas/worktrees/campaign-8h && export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH" && mix xaas.ultracode.status
    (First tick only: also record now as START_TS and the printed campaign id
    as RUN_ID; on later ticks, if the printed campaign id differs from RUN_ID,
    treat the run as finished: go to step 5 with reason "new-campaign".)
@@ -361,7 +367,7 @@ telemetry line, and quit. The campaign may target one repo or many
    "action":"none" and the observed reason, then END silently.
 3. TOP UP. If in-flight total < 5 and budget remains, run exactly ONE
    top-up pass:
-     cd /Users/sac/xaas-worktrees/campaign-8h && export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH" && ./scripts/xaas-glm-failover-dispatcher.sh --once
+     cd /Users/sac/xaas/worktrees/campaign-8h && export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH" && ./scripts/xaas-glm-failover-dispatcher.sh --once
    The dispatcher serves whatever epoch is ready -- it is repo-agnostic;
    never pass --epoch, never filter or prefer by repo, never widen the
    command. Record its exit code (0 = ok or no ready work, 1 = dispatch
@@ -370,16 +376,16 @@ telemetry line, and quit. The campaign may target one repo or many
    concurrently with yourself, never retry a failed pass within the same
    tick.
 4. TELEMETRY. Append EXACTLY ONE ndjson line (create the directory first
-   with mkdir -p; this path is OUTSIDE every repo -- never write anywhere
-   under /Users/sac/xaas, /Users/sac/xaas-worktrees/campaign-8h, or any
-   other checked-out tree):
-     /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson
+   with mkdir -p; this path is OUTSIDE every checked-out tree -- writing
+   is permitted ONLY at this sanctioned telemetry path, never anywhere
+   else under /Users/sac/xaas or in any other checked-out tree):
+     /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson
    Line schema (single line, UTF-8, UTC ISO8601 ts):
      {"ts":"...","kind":"ultracode-keepalive/1","tick":K,"run_id":"...","state":"running","waves_executed":N,"wave_budget":M,"seconds_remaining":S,"in_flight":{"total":T,"leased":L,"unleased":U},"topup":{"ran":true,"exit":0},"action":"topup|none","reason":"..."}
 5. END SILENTLY. Produce no prose, no summary, no recommendations. Hard
    prohibitions: never git push anything (force or otherwise), never check
    out or touch main or any branch in any repo, never edit or delete files
-   except appending to /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson,
+   except appending to /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson,
    never restart or kill any process or server, never run mix test or
    compile, never run mix xaas.ultracode.start or stop, never widen these
    commands with extra flags. If any command errors, record the error in
@@ -388,7 +394,7 @@ Hard limits: at most 48 ticks at 10-minute cadence (= 8 hours). Killing
 this automation (deleting it from the scheduler) is the operator cut.
 ```
 
-Reading the telemetry: `tail -f /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson`.
+Reading the telemetry: `tail -f /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson`.
 
 ## 9. Verification record (this session, worktree /tmp/xaas-w5-docs @ 3ec0946)
 
@@ -421,7 +427,7 @@ completed 8-hour proof this section now extends to multiple repos. The
 10-minute keep-alive (§8) ran that campaign and was retired 2026-09-20
 (last tick 43, 2026-09-20T19:48:03Z; deletion — the operator cut — leaves
 no terminal tick by design). The wave-8 loop is hourly and STATE-driven:
-it executes from `/Users/sac/xaas-tmp/w8-loop/STATE.md` (outside every
+it executes from `/Users/sac/xaas/tmp/w8-loop/STATE.md` (outside every
 repo), which gates this launch on its steps [1]–[6] being `done`.
 
 ### 10.0 Prerequisites — ALL must hold before launch
@@ -481,8 +487,8 @@ git -C /Users/sac/xaas fetch origin
 TIP=$(git -C /Users/sac/xaas rev-parse origin/feat/ultracode-cron-wave) \
   && echo "campaign base: $TIP"
 git -C /Users/sac/xaas worktree add --detach \
-  /Users/sac/xaas-worktrees/campaign-8h-c3 "$TIP"
-cd /Users/sac/xaas-worktrees/campaign-8h-c3
+  /Users/sac/xaas/worktrees/campaign-8h-c3 "$TIP"
+cd /Users/sac/xaas/worktrees/campaign-8h-c3
 export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"
 mix --version   # MUST print Mix 1.20.2
 mix deps.get && mix compile
@@ -501,7 +507,7 @@ mix xaas.ultracode.start --repo aps,nounverb,eds --capacity 5
   clean adjustment is stop/cap/resume (§7).
 - Budget law: eight-hour-run §2 verbatim — 16 × 30-minute serial waves.
 - The hourly loop monitors from THIS worktree (`mix xaas.ultracode.status`)
-  and appends telemetry ONLY to `/Users/sac/xaas-tmp/w8-loop/loop.ndjson`.
+  and appends telemetry ONLY to `/Users/sac/xaas/tmp/w8-loop/loop.ndjson`.
 
 ### 10.3 Validation chain — per wave, during and after the run
 
@@ -509,7 +515,7 @@ Full wave-run UUID from the campaign ledger's `attempt_start` events (the
 export refuses an 8-hex prefix, §5):
 
 ```bash
-cd /Users/sac/xaas-worktrees/campaign-8h-c3
+cd /Users/sac/xaas/worktrees/campaign-8h-c3
 export PATH="$HOME/.asdf/shims:/opt/homebrew/bin:$PATH"
 mix xaas.ultracode.export_ocel <wave-run-uuid> --out /tmp/c3-ocel
 mix xaas.ocel_validate /tmp/c3-ocel/<wave-run-uuid>.ocel.json

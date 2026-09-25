@@ -1,3 +1,16 @@
+# Engineering Standards Root Binding
+
+> Generated adoption header. Shared engineering semantics are rooted at `seanchatmangpt/engineering-standards@5a3bb6446aeaee2255a7523d4d8cebf6042960c3`.
+
+- Repository subject: `seanchatmangpt/xaas@57c77e7a9bb510d9b10c774ebc32a1cc5b414390`
+- Ecosystem role: capability, runtime, delivery, governance, and autonomic consequence orchestration
+- Adoption manifest: `engineering-standards.json`
+- Project profile: `semantic/engineering-standards-profile.ttl`
+
+The local constitution below remains authoritative for repository-specific mechanics. It may narrow the root but may not redefine shared WorkOrder identity, authority, receipt/replay, generated-artifact sovereignty, or evidence standing. Ticket, agent, capability, plan, proof, and generated output do not acquire ambient DO authority.
+
+---
+
 # xaas Agent Operating Contract
 
 This contract governs the repository unless a deeper `AGENTS.md` narrows a subtree. Live repository evidence outranks stale prose. Nested contracts may add constraints but may not silently weaken safety, evidence, authority, replay, or publication rules.
@@ -33,10 +46,24 @@ Never silently move the admitted base. Use a purpose branch, intentional commit,
 
 ## Repository-local law — xaas
 
-The live project instruction surface identifies `xaas` as a BEAM/Phoenix/Ash platform with a seven-domain architecture and explicit platform substitutions documented under `docs/`. `CLAUDE.md` and the referenced Diataxis architecture/reference files are required doctrine, not optional reading.
+The live project instruction surface identifies `xaas` as a BEAM/Phoenix/Ash platform whose authoritative domain set is the `ash_domains` list in `config/config.exs` (13 Ash domains as of 2026-09-22 — do not freeze the count here; the config is the source) with explicit platform substitutions documented under `docs/`. `CLAUDE.md` and the referenced Diataxis architecture/reference files are required doctrine, not optional reading.
 
 Testing is Chicago-style: real Postgres through the repository's Ecto sandbox, real Ash actions, and real HTTP requests. Do not introduce interaction-mocking libraries for owned collaborators. Re-run the repository's documented mock-pattern audit after relevant changes.
 
 Ash authorization is deny-by-default. Do not weaken the policy floor mechanically. `/internal-api` and `/api` routes require the real internal token gate and fail closed when it is unset. Financial-ledger resources and auth/PII resources documented as deliberately unwired must remain unwired unless the task includes an explicit access-control design.
 
 Do not freeze volatile commands here: discover and execute the current commands from `CLAUDE.md`, manifests, and CI at the admitted SHA. Claims such as compile, test, server boot, HTTP behavior, or generation require the real run named by the claim.
+
+## Zcode integration (added 2026-09-22)
+
+This repository is the SOURCE of the xaas-fabric zcode plugin. ggen projects `ontology.ttl` + `templates/*.tmpl` → `priv/zcode_plugin/marketplace/xaas-fabric/` (8 files); drift is checked by `test/xaas/zcode_plugin/projection_test.exs`. The installed user-side copy at `~/.zcode/cli/plugins/cache/xaas-fabric-marketplace/xaas-fabric/26.9.17/` was byte-identical as of 2026-09-22. Edit the owning ontology/templates, never the projection.
+
+The execution fabric MCP surface is `POST /internal-api/execution/mcp` (JSON-RPC; 7 verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`), `POST /internal-api/execution/hooks/:event`, and `GET /internal-api/execution/epochs/:epoch_id/receipts` — all behind `RequireInternalApiToken` (`router.ex:80-112`).
+
+Native dispatch: semantic runs invoke `zcode gall-work --lease <descriptor>`. The contract file `priv/zcode_plugin/gall-work.contract.json` must stay byte-identical to zcode-cli's `test/fixtures/gall-work.contract.json`.
+
+Worker semantics: `XAAS_WORKER=1` arms the plugin PreToolUse gate (`scripts/xaas-gate.mjs`); `XAAS_ALLOW_SUBAGENTS=1` overrides its agent-spawn denial; `XAAS_MCP_URL`/`XAAS_MCP_TOKEN` override endpoints.
+
+Receipt conventions: `docs/ultracode/<wave>-receipts/` directories, `PROGRESS.md` entries, and `standing-ledger.ndjson` hash chains (see `wave-v26.9.19-receipts/semantic-autonomics-crown/`).
+
+Known asymmetry (open work order): `AuditMcpToolCall` covers `/mcp` but NOT `/internal-api/execution/mcp`.

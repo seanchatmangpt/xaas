@@ -29,8 +29,8 @@ defmodule Xaas.Ultracode.AutonomicMultiRepoTest do
   alias Xaas.Ultracode.{Autonomic, Epoch, Lease, Receipt, Run, TargetSuites}
 
   @provider "zcode-multi-autonomic-test"
-  @nv_source Path.expand("~/xaas-worktrees/repos/nounverb")
-  @eds_source Path.expand("~/xaas-worktrees/repos/eds")
+  @nv_source Path.expand("~/xaas/worktrees/repos/nounverb")
+  @eds_source Path.expand("~/xaas/worktrees/repos/eds")
 
   # The last eds sha with a GREEN suite (59 passed, observed this session).
   # The operator clone's HEAD (`w7-crown-seed` @ 0132a24) carries the crown
@@ -56,7 +56,7 @@ defmodule Xaas.Ultracode.AutonomicMultiRepoTest do
                     "python3 not on PATH"
 
                   not is_binary(System.get_env("MIX_ARCHIVES")) and
-                      not File.dir?(Path.expand("~/xaas-worktrees/toolchain/mix-archives")) ->
+                      not File.dir?(Path.expand("~/xaas/worktrees/toolchain/mix-archives")) ->
                     "pinned MIX_ARCHIVES missing (nounverb-dod deps step would hang)"
 
                   true ->

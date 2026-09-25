@@ -1,0 +1,84 @@
+@prefix xz: <https://ggen.io/ontology/xaas-zcode-ocel#> .
+
+# Vendored (not a live cross-repo pointer) copy of the OCEL 2.0 event/object-type
+# registry for the zcode agent loop, sourced from
+# ~/ggen_igniter/priv/ggen/zcode-ocel-pack/ontology.ttl (ggen_igniter v26.9.12,
+# `zc:` namespace `https://ggen-igniter.dev/ontology/zcode-ocel#`), re-namespaced
+# under `xz:` so xaas owns its own copy of the individuals rather than reaching
+# across a repo boundary at generation time. Individual names, `name`/`order`/
+# `primaryObject`/`event`/`object`/`qualifier`/`fromState`/`toState` predicate
+# local names, and every literal value are kept byte-identical to the source so a
+# future `ggen sync` against the real ggen_igniter pack can be diffed against this
+# vendored copy mechanically.
+#
+# SJ-002: renders lib/xaas/generated/zcode_event_registry.ex via:
+#   mix ggen_igniter.sync --pack-dir priv/packs/xaas_zcode_ocel_pack \
+#     --template priv/packs/xaas_zcode_ocel_pack/templates/zcode_event_registry.ex.eex \
+#     --out lib/xaas/generated/zcode_event_registry.ex
+
+xz:obj_session a xz:ObjectType ; xz:name "session" ; xz:order 0 .
+xz:obj_turn a xz:ObjectType ; xz:name "turn" ; xz:order 1 .
+xz:obj_tool_call a xz:ObjectType ; xz:name "tool_call" ; xz:order 2 .
+xz:obj_model_request a xz:ObjectType ; xz:name "model_request" ; xz:order 3 .
+xz:obj_subagent a xz:ObjectType ; xz:name "subagent" ; xz:order 4 .
+xz:obj_permission a xz:ObjectType ; xz:name "permission" ; xz:order 5 .
+xz:obj_file a xz:ObjectType ; xz:name "file" ; xz:order 6 .
+
+xz:evt_TurnStarted a xz:EventType ; xz:name "TurnStarted" ; xz:order 0 ; xz:primaryObject "turn" .
+xz:evt_TurnComplete a xz:EventType ; xz:name "TurnComplete" ; xz:order 1 ; xz:primaryObject "turn" .
+xz:evt_TurnError a xz:EventType ; xz:name "TurnError" ; xz:order 2 ; xz:primaryObject "turn" .
+xz:evt_ModelRequest a xz:EventType ; xz:name "ModelRequest" ; xz:order 3 ; xz:primaryObject "model_request" .
+xz:evt_ModelComplete a xz:EventType ; xz:name "ModelComplete" ; xz:order 4 ; xz:primaryObject "model_request" .
+xz:evt_ToolCallScheduled a xz:EventType ; xz:name "ToolCallScheduled" ; xz:order 5 ; xz:primaryObject "tool_call" .
+xz:evt_ToolCallStarted a xz:EventType ; xz:name "ToolCallStarted" ; xz:order 6 ; xz:primaryObject "tool_call" .
+xz:evt_ToolCallResult a xz:EventType ; xz:name "ToolCallResult" ; xz:order 7 ; xz:primaryObject "tool_call" .
+xz:evt_ToolCallError a xz:EventType ; xz:name "ToolCallError" ; xz:order 8 ; xz:primaryObject "tool_call" .
+xz:evt_PermissionRequested a xz:EventType ; xz:name "PermissionRequested" ; xz:order 9 ; xz:primaryObject "permission" .
+xz:evt_PermissionResolved a xz:EventType ; xz:name "PermissionResolved" ; xz:order 10 ; xz:primaryObject "permission" .
+xz:evt_SubagentSpawned a xz:EventType ; xz:name "SubagentSpawned" ; xz:order 11 ; xz:primaryObject "subagent" .
+xz:evt_SubagentStopped a xz:EventType ; xz:name "SubagentStopped" ; xz:order 12 ; xz:primaryObject "subagent" .
+xz:evt_CompactStarted a xz:EventType ; xz:name "CompactStarted" ; xz:order 13 ; xz:primaryObject "session" .
+xz:evt_CompactCompleted a xz:EventType ; xz:name "CompactCompleted" ; xz:order 14 ; xz:primaryObject "session" .
+
+xz:tr_TurnStarted a xz:Transition ; xz:event "TurnStarted" ; xz:fromState "idle" ; xz:toState "running" .
+xz:tr_TurnComplete a xz:Transition ; xz:event "TurnComplete" ; xz:fromState "running" ; xz:toState "idle" .
+xz:tr_TurnError a xz:Transition ; xz:event "TurnError" ; xz:fromState "running" ; xz:toState "idle" .
+xz:tr_ModelRequest a xz:Transition ; xz:event "ModelRequest" ; xz:fromState "running" ; xz:toState "awaiting_model" .
+xz:tr_ModelComplete a xz:Transition ; xz:event "ModelComplete" ; xz:fromState "awaiting_model" ; xz:toState "running" .
+xz:tr_ToolCallScheduled a xz:Transition ; xz:event "ToolCallScheduled" ; xz:fromState "running" ; xz:toState "tool_pending" .
+xz:tr_ToolCallStarted a xz:Transition ; xz:event "ToolCallStarted" ; xz:fromState "tool_pending" ; xz:toState "tool_running" .
+xz:tr_ToolCallResult a xz:Transition ; xz:event "ToolCallResult" ; xz:fromState "tool_running" ; xz:toState "running" .
+xz:tr_ToolCallError a xz:Transition ; xz:event "ToolCallError" ; xz:fromState "tool_running" ; xz:toState "running" .
+xz:tr_PermissionRequested a xz:Transition ; xz:event "PermissionRequested" ; xz:fromState "tool_pending" ; xz:toState "awaiting_permission" .
+xz:tr_PermissionResolved a xz:Transition ; xz:event "PermissionResolved" ; xz:fromState "awaiting_permission" ; xz:toState "tool_pending" .
+xz:tr_SubagentSpawned a xz:Transition ; xz:event "SubagentSpawned" ; xz:fromState "running" ; xz:toState "running" .
+xz:tr_SubagentStopped a xz:Transition ; xz:event "SubagentStopped" ; xz:fromState "running" ; xz:toState "running" .
+xz:tr_CompactStarted a xz:Transition ; xz:event "CompactStarted" ; xz:fromState "running" ; xz:toState "compacting" .
+xz:tr_CompactCompleted a xz:Transition ; xz:event "CompactCompleted" ; xz:fromState "compacting" ; xz:toState "running" .
+
+xz:q_TurnStarted_session a xz:Qualifier ; xz:event "TurnStarted" ; xz:object "session" ; xz:qualifier "context" .
+xz:q_TurnStarted_turn a xz:Qualifier ; xz:event "TurnStarted" ; xz:object "turn" ; xz:qualifier "subject" .
+xz:q_TurnComplete_session a xz:Qualifier ; xz:event "TurnComplete" ; xz:object "session" ; xz:qualifier "context" .
+xz:q_TurnComplete_turn a xz:Qualifier ; xz:event "TurnComplete" ; xz:object "turn" ; xz:qualifier "subject" .
+xz:q_TurnError_session a xz:Qualifier ; xz:event "TurnError" ; xz:object "session" ; xz:qualifier "context" .
+xz:q_TurnError_turn a xz:Qualifier ; xz:event "TurnError" ; xz:object "turn" ; xz:qualifier "subject" .
+xz:q_ModelRequest_turn a xz:Qualifier ; xz:event "ModelRequest" ; xz:object "turn" ; xz:qualifier "context" .
+xz:q_ModelRequest_model_request a xz:Qualifier ; xz:event "ModelRequest" ; xz:object "model_request" ; xz:qualifier "subject" .
+xz:q_ModelComplete_turn a xz:Qualifier ; xz:event "ModelComplete" ; xz:object "turn" ; xz:qualifier "context" .
+xz:q_ModelComplete_model_request a xz:Qualifier ; xz:event "ModelComplete" ; xz:object "model_request" ; xz:qualifier "subject" .
+xz:q_ToolCallScheduled_turn a xz:Qualifier ; xz:event "ToolCallScheduled" ; xz:object "turn" ; xz:qualifier "context" .
+xz:q_ToolCallScheduled_tool_call a xz:Qualifier ; xz:event "ToolCallScheduled" ; xz:object "tool_call" ; xz:qualifier "subject" .
+xz:q_ToolCallStarted_turn a xz:Qualifier ; xz:event "ToolCallStarted" ; xz:object "turn" ; xz:qualifier "context" .
+xz:q_ToolCallStarted_tool_call a xz:Qualifier ; xz:event "ToolCallStarted" ; xz:object "tool_call" ; xz:qualifier "subject" .
+xz:q_ToolCallResult_tool_call a xz:Qualifier ; xz:event "ToolCallResult" ; xz:object "tool_call" ; xz:qualifier "subject" .
+xz:q_ToolCallResult_file a xz:Qualifier ; xz:event "ToolCallResult" ; xz:object "file" ; xz:qualifier "touched" .
+xz:q_ToolCallError_tool_call a xz:Qualifier ; xz:event "ToolCallError" ; xz:object "tool_call" ; xz:qualifier "subject" .
+xz:q_PermissionRequested_tool_call a xz:Qualifier ; xz:event "PermissionRequested" ; xz:object "tool_call" ; xz:qualifier "context" .
+xz:q_PermissionRequested_permission a xz:Qualifier ; xz:event "PermissionRequested" ; xz:object "permission" ; xz:qualifier "subject" .
+xz:q_PermissionResolved_tool_call a xz:Qualifier ; xz:event "PermissionResolved" ; xz:object "tool_call" ; xz:qualifier "context" .
+xz:q_PermissionResolved_permission a xz:Qualifier ; xz:event "PermissionResolved" ; xz:object "permission" ; xz:qualifier "subject" .
+xz:q_SubagentSpawned_turn a xz:Qualifier ; xz:event "SubagentSpawned" ; xz:object "turn" ; xz:qualifier "parent" .
+xz:q_SubagentSpawned_subagent a xz:Qualifier ; xz:event "SubagentSpawned" ; xz:object "subagent" ; xz:qualifier "subject" .
+xz:q_SubagentStopped_subagent a xz:Qualifier ; xz:event "SubagentStopped" ; xz:object "subagent" ; xz:qualifier "subject" .
+xz:q_CompactStarted_session a xz:Qualifier ; xz:event "CompactStarted" ; xz:object "session" ; xz:qualifier "subject" .
+xz:q_CompactCompleted_session a xz:Qualifier ; xz:event "CompactCompleted" ; xz:object "session" ; xz:qualifier "subject" .

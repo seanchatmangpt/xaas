@@ -1,0 +1,115 @@
+{
+  "blocked": [],
+  "eligible": [
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:7f3419c2b13bf85f7b6c63ae2b2913756e0c21a54fbb8889ccff92e6b138d068",
+      "identity": "WO-14958CC7712C739E",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-5fde57949cad3644",
+      "title": "An independent run of ggen sync --check on a fresh worktree at the produced head exits 0, and the same check exits non-zero when the recipe commit is reverted.",
+      "work_order_digest": "sha256:65fd62dbbb3ee8280dd84685774166f975333cefb1b6f504da6b24fe972c51ee"
+    },
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:a554aad747d0f66028b05429332beedaeb7abfa7bb049e5ed487ea68501a7562",
+      "identity": "WO-225C3317AC8B1A7C",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-665cf62cda37215d",
+      "title": "A hand-edited generated file survives the repair while the ggen-sync-check court exits 0.",
+      "work_order_digest": "sha256:258440d183293411cfc8c5990b4cf5824507da4a2112de41fc98fd62275fd1ee"
+    },
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:bb65b4a45dae7f8a38daf17f51a7cb16bd7db51cc328deb9d6c99567afada8d9",
+      "identity": "WO-84E5C77BA6E27329",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-1a6690f304a126bc",
+      "title": "ggen sync --check still exits 0 after the recipe commit is reverted.",
+      "work_order_digest": "sha256:9ea82a0fd0897925bca93d3665c13a7deee83cf3097143cf6033591d309b975b"
+    },
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:887088a1a53f6a706f53f3060e1896dcb1cfe9dbc397b72aa3f30f394563b927",
+      "identity": "WO-95B42E31B8D14F21",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-a4f1c33fd2841d94",
+      "title": "No LLM, network model API or zcode binary participates on the projection-drift repair path.",
+      "work_order_digest": "sha256:ff188417900f72f7ce0873c4a84d51049af0c3ca37f67f55d5a6d073696e8a2c"
+    },
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:858c0650385bb36540865a18fe40658b62e4058bb658c72fc90db62960cb9035",
+      "identity": "WO-A5BDBED88AD1A65C",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-4e5c43114996b4e8",
+      "title": "The ggen-sync-check verifier runs ggen sync --check in a clean worktree of the episode subject and exits non-zero whenever a generated file differs from what ggen sync renders.",
+      "work_order_digest": "sha256:bcb083e0ed732c717fa8f38f8b56dc9cfe9517dac719ea3271b33f3c9c88ce09"
+    },
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:b6597e8d6a38b108a7e96acae5d457bcccbdccbe73e611e76508cd2c9e95349c",
+      "identity": "WO-EB2622DC89B96973",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-ad49046a63dbed74",
+      "title": "Only files that ggen sync renders change in the repair commit.",
+      "work_order_digest": "sha256:b85d9b97b5e97e0769707af4be1043d22342d502b9d07c15c37f3ff3793c5cd3"
+    },
+    {
+      "authority": "NONE",
+      "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+      "candidate_sha": null,
+      "definition_digest": "sha256:461b269ccbfa6c6ba14476588205080d5f003bf815e160536a5e047a49222a2f",
+      "identity": "WO-F0D81444C49FC00D",
+      "path_scope": [
+        "unassigned"
+      ],
+      "repository": "seanchatmangpt/xaas",
+      "subject": "https://ggen-igniter.dev/sjira/v26.9.23#P-107a4577b52df3e4",
+      "title": "The capability recipe:ggen-sync resolves to the recipe-worker provider, which runs ggen sync on the drifted subject and commits only files that ggen sync renders.",
+      "work_order_digest": "sha256:91f39fc5a830e26ea8492c6171d2f54f09c8da8a30d1c5eeae767736b3bfe1a9"
+    }
+  ],
+  "events": 0,
+  "ledger_tail": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "standings": {
+    "WO-14958CC7712C739E": "UNKNOWN",
+    "WO-225C3317AC8B1A7C": "UNKNOWN",
+    "WO-84E5C77BA6E27329": "UNKNOWN",
+    "WO-95B42E31B8D14F21": "UNKNOWN",
+    "WO-A5BDBED88AD1A65C": "UNKNOWN",
+    "WO-EB2622DC89B96973": "UNKNOWN",
+    "WO-F0D81444C49FC00D": "UNKNOWN"
+  },
+  "status": "ok"
+}

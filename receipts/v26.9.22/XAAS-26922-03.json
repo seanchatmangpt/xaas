@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-03",
+  "base_sha": "25f7205db96bb5eeef4cebb00da3714d7f0a35c8 (merge of PR #60 head 602dac5, amended for computation.ex reconciliation)",
+  "command": "git merge --no-ff 602dac5; reconcile computation.ex; mix test test/xaas/semantics_computation_test.exs test/xaas/semantics/registry_test.exs; MIX_ENV=dev mix dialyzer",
+  "exit": 0,
+  "output_excerpt": "Reconciliation: PR's `_ -> :deterministic_must_be_boolean` superseded by main's test-pinned `_ -> :invalid_computation_artifact` (the PR's atom has no test anywhere); crown workflow grep-guard restored (77887a6) after the W0 full-suite found the test/workflow 3-way incoherence. Semantics tests: exit 0. Dialyzer (iter5): \"Total errors: 29, Skipped: 29, Unnecessary Skips: 0\", EXIT=0 — 5 fixed in code (dispatch.ex descriptor spec, dead gethostname catch-all, dead io_log nil clause; zoe sha256_file via File.open!/IO.binstream), 24 legacy warnings recorded in .dialyzer_ignore.exs (files untouched by this wave).",
+  "standing": "ALIVE",
+  "notes": "The '19 dialyzer errors' count grew to 29 with the ERRC wave's landing; all disposed.",
+  "evidence_ts": "2026-09-22T18:40Z"
+}

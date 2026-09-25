@@ -1,0 +1,4 @@
+executor recipe-worker; OCEL 11 events, 0 LLM-provider events/objects
+control: {"no_llm_guard":"passed","standing":"ALIVE"}
+F3: {"broken_term":"mu_on_O","detail":{"binaries":[],"variables":["ANTHROPIC_API_KEY"]},"hop":"guard","reason":"llm_credential_present","standing":"REFUSED(llm_credential_present)"}
+ALIVE: GC23-5 no-LLM KNOWN execution witnessed on episode fmt-1 (recipe-worker, 0 LLM events, F3 refused)

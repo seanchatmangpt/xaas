@@ -1,0 +1,11 @@
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+/Users/sac/.local/bin/ggen
+/opt/homebrew/bin/ggen
+ggen 26.9.18
+357cfd4e595c6f8a8341ab95088b8e4e70acee58663c3daf065cc0824d6f5a26  /opt/homebrew/Cellar/ggen/26.9.18/bin/ggen
+<string>:1: DeprecationWarning: Accessing jsonschema.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for jsonschema's version.
+3.14.3 4.23.0

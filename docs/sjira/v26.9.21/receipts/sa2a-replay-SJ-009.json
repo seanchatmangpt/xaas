@@ -1,0 +1,15 @@
+{
+  "work_order": "SJ-009",
+  "bridge": "Xaas.Sa2a.Bridge via docs/sjira/v26.9.21/sa2a_loop.exs replay",
+  "manifest": "docs/sjira/v26.9.21/receipts/SJ-009.verification-manifest.json",
+  "replay": {
+    "result": {
+      "computed_hash": "63e41d1852e5720710f2181d86ec272667dd532f4206f53328e8218d22ff1eed",
+      "expected_hash": "63e41d1852e5720710f2181d86ec272667dd532f4206f53328e8218d22ff1eed",
+      "ok": true,
+      "verified": true
+    },
+    "expected_hash": "63e41d1852e5720710f2181d86ec272667dd532f4206f53328e8218d22ff1eed"
+  },
+  "wrong_hash_falsifier": "wrong-hash: {:error, %{\"computed_hash\" => \"63e41d1852e5720710f2181d86ec272667dd532f4206f53328e8218d22ff1eed\", \"expected_hash\" => \"0000000000000000000000000000000000000000000000000000000000000000\", \"ok\" => false, \"verified\" => false}}"
+}

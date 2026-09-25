@@ -1,0 +1,56 @@
+## decoy pid 492 started 2026-09-23T20:28:06Z
+## pgrep -fl 'zcode.js --prompt' before:
+492 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## HEAD d7a230d0ed0fc1507c368fb43d837fccc87db4ee porcelain=[]
+## cmd: elixir --version && mix test test/xaas/ultracode/dispatch_test.exs
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: unused require Ash.Query
+    │
+ 78 │   require Ash.Query
+    │   ~
+    │
+    └─ lib/xaas/ultracode/semantic_drive.ex:78:3
+
+13:28:11.794 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:28:12.459 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:28:12.826 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:28:12.933 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:28:12.933 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:28:12.947 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:28:12.947 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:28:12.959 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:28:12.959 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:28:12.967 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:28:12.967 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+13:28:12.976 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:28:12.976 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+13:28:12.980 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:28:12.980 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PGREP/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 76676, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+13:28:14.254 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+...............13:28:17.503 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+13:28:17.503 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+................13:28:29.172 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+.
+Finished in 16.1 seconds (0.00s async, 16.1s sync)
+
+Result: 32 passed
+## exit 0
+## decoy 492 alive at end: yes
+## pgrep -fl 'zcode.js --prompt' after:
+492 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## decoy stopped 2026-09-23T20:28:29Z

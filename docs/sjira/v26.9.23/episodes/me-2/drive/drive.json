@@ -1,0 +1,107 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.23",
+  "dependents": [
+    "EP-B"
+  ],
+  "finished_at": "2026-09-23T15:14:24.078704Z",
+  "frontier": {
+    "entered": [
+      "EP-B"
+    ],
+    "left": [
+      "EP-A"
+    ]
+  },
+  "graph_side": {
+    "ggen_igniter_dir": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+    "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+    "toolchain": {
+      "build_compiler": {
+        "elixir": "1.19.5",
+        "otp": "28"
+      },
+      "build_manifest": "/private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad/v23m-r2/build/test/lib/ggen_igniter/.mix/compile.elixir_scm",
+      "elixir": "1.19.5",
+      "erlang": "28",
+      "erts": "running node (/Users/sac/.erlmcp/otp-28.3.1/lib/erlang/bin)",
+      "mix": "/opt/homebrew/Cellar/elixir/1.19.5/lib/elixir/bin/mix",
+      "source": "build_manifest"
+    }
+  },
+  "hops": [
+    "sjira",
+    "sa2a",
+    "xaas",
+    "provider",
+    "receipt"
+  ],
+  "no_llm_guard": "passed",
+  "ocel": {
+    "equivalent": true,
+    "events": 11,
+    "not_reached": [
+      "MachineExperienceAdmitted"
+    ],
+    "objects": 12,
+    "reached": [
+      "WorkOrderCreated",
+      "CapabilityResolved",
+      "LeaseAcquired",
+      "ActuationStarted",
+      "ActuationCompleted",
+      "VerificationCompleted",
+      "ReceiptSealed",
+      "StandingChanged",
+      "FrontierChanged"
+    ]
+  },
+  "order": "EP-A",
+  "provider": {
+    "capability": "recipe:mix-format",
+    "executor": "recipe-worker",
+    "provider": "recipe"
+  },
+  "request_digest": "sha256:609e448fee3ce815185951793833e0927d963cfe3cd9a2bf473cf7b71cb5c91c",
+  "route": {
+    "admission": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434-admission",
+    "admission_digest": "sha256:7d69cb3ec1875e4b93303c2e18a1a99229698dd65a7721df094f50b8400aafd1",
+    "capability": "recipe:mix-format",
+    "experience_digest": "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222",
+    "experiences_applicable": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
+    ],
+    "experiences_considered": [
+      "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434"
+    ],
+    "machine_experience": "https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434",
+    "order": "EP-A",
+    "predicate_sha256": "sha256:3e6523a47a725da300771eee7c06e0487ab22da181db885b01bd54b0414c73d0",
+    "problem_class": "format_drift",
+    "provider_class": "recipe",
+    "source": "machine_experience"
+  },
+  "schema": "xaas/semantic-drive/v1",
+  "standing": "ALIVE",
+  "started_at": "2026-09-23T15:14:15.622491Z",
+  "subject": {
+    "base_sha": "36605534141aa44429586d3e15e8ff159f3d5bc8",
+    "head": "1bbbdcfafd78156906f7de1c8b83b36b9f26b1f3",
+    "pinned": "v23/episode-me-2-r2-receipt",
+    "repo": "/Users/sac/ggen_igniter",
+    "repository": "seanchatmangpt/ggen_igniter"
+  },
+  "transition": {
+    "authority": "NONE",
+    "definition_digest": "sha256:600dd71f078f4ac2fde27098bd4c98700029c7010e7b7a8b12ec0aabe969398a",
+    "event_digest": "sha256:902072f3fbe74d9b25f7f797698373d477bad93769cc4a129fb3c20274bcd88f",
+    "from": "UNKNOWN",
+    "identity": "EP-A",
+    "kind": "standing_transition_event",
+    "receipt_digest": "sha256:27b62feb347e36ac3302e2c440bc30601f32caa0129c2a6e81620fe6fafcd5a7",
+    "seq": 1,
+    "snapshot_digest": "sha256:f89dc1421694a688a3e977a34bd4112970ef094cc5c00d3ed486fb1a832a5d22",
+    "to": "ALIVE",
+    "transition_digest": "sha256:4c7fd97fe78662a9e776f094b937d866f63840d0b21bb57a79f6cc421ef05e28"
+  },
+  "tuple_digest": "sha256:487af9b1b85fc03bcb06be33877679634182ff99b5308269a333d3244b7c7ba8"
+}

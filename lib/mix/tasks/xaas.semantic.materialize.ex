@@ -8,12 +8,33 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   one started Epoch. The descriptor's `bridge` object is stored on the Run and
   never interpreted.
 
-      mix xaas.semantic.materialize --descriptor descriptor.json [--ticket-file ticket.json]
+      mix xaas.semantic.materialize --descriptor descriptor.json \\
+        [--ticket-file ticket.json] [--binding snapshot|graph] \\
+        [--expected-graph-digest sha256:..] [--expected-snapshot-digest sha256:..]
 
   `--ticket-file` copies a definition-of-done ticket to
   `<ticket_dir>/<run_id>.json`, the location suites that use the `{ticket}`
   placeholder read from. Prints one JSON object: `run_id`, `epoch_id`,
   `worktree`. A refusal prints the typed reason and exits non-zero.
+
+  `--binding` declares the producer's digest contract to
+  `Xaas.Ultracode.SemanticWork.AdmissionBinding` (the operator declares it,
+  never the descriptor):
+
+    * `snapshot` (the DEFAULT, fail-closed) requires `graph_digest` to equal
+      the admitted work-order snapshot digest XaaS recomputes/reads from the
+      descriptor's own anchors, and refuses a descriptor stripped of every
+      anchor (`admission_anchor_missing`).
+    * `graph` is the explicit opt-out for a producer whose `graph_digest` is
+      graph-wide (what `mix semantic_jira.descriptor` emits today, without an
+      `admitted_work_order`). It leaves `graph_digest` UNBOUND unless you also
+      pass a pin below.
+
+  `--expected-graph-digest` / `--expected-snapshot-digest` are out-of-band
+  trust roots taken from your own admission record (never from the descriptor
+  file): `graph_digest` must equal the first, every in-band snapshot anchor
+  must equal the second. They are the only defence against a descriptor that
+  was rewritten wholesale after admission.
   """
 
   use Mix.Task
@@ -23,14 +44,31 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
   @impl Mix.Task
   def run(args) do
     {opts, _rest, _invalid} =
-      OptionParser.parse(args, strict: [descriptor: :string, ticket_file: :string])
+      OptionParser.parse(args,
+        strict: [
+          descriptor: :string,
+          ticket_file: :string,
+          binding: :string,
+          expected_graph_digest: :string,
+          expected_snapshot_digest: :string,
+          help: :boolean
+        ]
+      )
 
+    if opts[:help] do
+      Mix.shell().info(Mix.Task.moduledoc(__MODULE__))
+    else
+      materialize(opts)
+    end
+  end
+
+  defp materialize(opts) do
     path = opts[:descriptor] || Mix.raise("--descriptor PATH is required")
     Mix.Task.run("app.start")
 
     descriptor = path |> File.read!() |> Jason.decode!()
 
-    case SemanticWork.materialize(descriptor) do
+    case SemanticWork.materialize(descriptor, admission_options(opts)) do
       {:ok, %{run: run, epoch: epoch, worktree: worktree}} ->
         if opts[:ticket_file], do: copy_ticket(opts[:ticket_file], run.id)
 
@@ -40,6 +78,25 @@ defmodule Mix.Tasks.Xaas.Semantic.Materialize do
         Mix.raise("materialize refused: #{inspect(reason)}")
     end
   end
+
+  # Only set what the operator gave: an absent flag keeps the library's
+  # fail-closed default rather than restating it here.
+  defp admission_options(opts) do
+    [
+      binding: opts[:binding] && binding_mode(opts[:binding]),
+      expected_graph_digest: opts[:expected_graph_digest],
+      expected_snapshot_digest: opts[:expected_snapshot_digest]
+    ]
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+  end
+
+  # Whitelisted, never String.to_atom/1 on operator input. `auto` is not a
+  # mode: a guard the descriptor's own content can switch off is no guard.
+  defp binding_mode("snapshot"), do: :snapshot
+  defp binding_mode("graph"), do: :graph
+
+  defp binding_mode(other),
+    do: Mix.raise("--binding must be snapshot or graph, got: #{other}")
 
   defp copy_ticket(source, run_id) do
     dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)

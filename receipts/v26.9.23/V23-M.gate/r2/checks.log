@@ -1,0 +1,22 @@
+subject: 0ddb308f21d930f757cdae78c196cbd3dfb63a04
+== mock grep (lane test/lib/script/court + semantic_drive)
+MOCKGREP_EXIT=1 (1 = zero matches)
+== reserved files, goal.ttl, prd-ard.md, stop court since base 04599d6
+RESERVED_DIFF_LINES=0
+prd-ard: 7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212 39386 bytes
+== episode refs in /Users/sac/ggen_igniter
+v23/episode-me-1 92d0a43
+v23/episode-me-1-r2-receipt 77df082
+v23/episode-me-1-receipt bd84b3e
+v23/episode-me-2 3660553
+v23/episode-me-2-r2-receipt 1bbbdcf
+v23/episode-me-2-receipt 48ae4ad
+== receipts
+ADMITTED receipts/v26.9.23/V23-M.gate/r2/GC23-9.json
+ADMITTED receipts/v26.9.23/V23-M.gate/r2/STOP-GC-26.9.23.json
+== commits since repair-1 receipt
+0ddb308 test(ultracode): V23-M repair 2 -- an unknown FILTER function is never admitted (GC23-9; ARD §15)
+d9939a6 episode(v26.9.23): regenerate MachineExperience episodes me-1 and me-2 with the repair-2 code (V23-M; GC23-9)
+ffbbee0 fix(ultracode): V23-M repair 2 -- route only from admissions that re-verify from the graph (GC23-9; PR-014, PR-016, ARD §15)
+== scratch mutation worktree listed: 0
+df: 43 GB free

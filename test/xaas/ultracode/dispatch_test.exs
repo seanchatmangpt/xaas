@@ -17,7 +17,7 @@ defmodule Xaas.Ultracode.DispatchTest do
   alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Receipt, Run}
 
   @provider "zcode-dispatch-test"
-  @sh "/bin/sh"
+  @sh Path.expand("../../support/fake-node.sh", __DIR__)
 
   @git_env [
     {"GIT_AUTHOR_NAME", "dispatch-test"},
@@ -156,13 +156,13 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.descriptor == nil
   end
 
-  test "plan refuses a CLI directory that does not hold bin/zcode.js" do
+  test "plan refuses a CLI directory that does not hold package.json" do
     {:ok, _run, epoch} = create_running_epoch!()
 
     assert {:error, {:cli_unavailable, path}} =
              Dispatch.plan(epoch.id, cli_dir: "/nonexistent-dispatch-cli", node_path: @sh)
 
-    assert path == "/nonexistent-dispatch-cli/bin/zcode.js"
+    assert path == "/nonexistent-dispatch-cli/package.json"
   end
 
   test "plan passes a registered repo's toolchain_env pin into the worker env; the plain string registry shape stays inherit-only",
@@ -241,6 +241,32 @@ defmodule Xaas.Ultracode.DispatchTest do
              Dispatch.plan(epoch.id, cli_dir: cli_dir, node_path: "/nonexistent-node-xyz")
   end
 
+  test "plan is bounded by :node_version_timeout_ms when node --version hangs", %{
+    worktree: worktree,
+    base: base
+  } do
+    {_run, epoch} = create_epoch!(worktree)
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    # Real executable whose --version never returns (5s, so an orphan expires
+    # by itself if the bound were ever broken).
+    hang = Path.join(base, "hang-node.sh")
+    File.write!(hang, "#!/bin/sh\nexec sleep 5\n")
+    File.chmod!(hang, 0o755)
+
+    started = System.monotonic_time(:millisecond)
+
+    assert {:error, {:node_version_unreadable, ^hang, "timeout after 400ms"}} =
+             Dispatch.plan(epoch.id,
+               provider: @provider,
+               cli_dir: cli_dir,
+               node_path: hang,
+               node_version_timeout_ms: 400
+             )
+
+    assert System.monotonic_time(:millisecond) - started < 3_000
+  end
+
   test "plan resolves node from PATH when no :node_path is given (the documented default)" do
     # Permanent guard for the 2026-09-20 campaign falsifier: an unset
     # :node_path used to hard-refuse every launch {:node_unavailable,
@@ -253,8 +279,19 @@ defmodule Xaas.Ultracode.DispatchTest do
         # No node on PATH: the fail-closed refusal is the lawful outcome.
         assert {:error, {:node_unavailable, "node"}} = Dispatch.plan(epoch.id, cli_dir: cli_dir)
 
-      _node ->
-        assert {:ok, _plan} = Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir)
+      node ->
+        # The PATH lookup must resolve (never `node_unavailable`). Whether the
+        # resolved node then satisfies the CLI's engines.node floor is a
+        # property of the machine's PATH, not of this guard: a v20 node first
+        # on PATH is the typed, measured `node_too_old` refusal (observed
+        # falsifier: PATH=/usr/local/bin:$PATH with node v20.13.0).
+        case Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir) do
+          {:ok, _plan} ->
+            :ok
+
+          {:error, {:node_too_old, ^node, found, ">=22.19.0"}} ->
+            assert found =~ ~r/\A\d+\.\d+\.\d+\z/
+        end
     end
   end
 
@@ -564,7 +601,24 @@ defmodule Xaas.Ultracode.DispatchTest do
     worktree: worktree
   } do
     {_run, epoch} = create_epoch!(worktree)
-    cli_dir = fake_cli_dir("sleep 60\n")
+
+    # The survivor check is scoped to what THIS dispatch spawned, recorded
+    # at spawn by the worker itself: its own pid, its process group (the
+    # perl wrapper's setpgrp(0,0) group the timeout kill targets) and its
+    # child's pid. A machine-wide `pgrep -f "zcode.js --prompt"` also
+    # matched unrelated live ZCode dispatches on the host (release defect
+    # F5, xaas e999e62: 14 foreign pids), so an unrelated process with that
+    # cmdline runs for the whole test and the regression is deterministic,
+    # not host-load-dependent.
+    unrelated = start_unrelated_zcode_prompt!()
+    spawned_file = test_path("dispatch-timeout-spawned")
+
+    cli_dir =
+      fake_cli_dir("""
+      sleep 60 &
+      echo "$$ $(ps -o pgid= -p $$) $!" > "$SPAWNED_FILE"
+      wait
+      """)
 
     started = System.monotonic_time(:millisecond)
 
@@ -573,7 +627,8 @@ defmodule Xaas.Ultracode.DispatchTest do
         provider: @provider,
         cli_dir: cli_dir,
         node_path: @sh,
-        timeout_seconds: 2
+        timeout_seconds: 2,
+        extra_env: %{"SPAWNED_FILE" => spawned_file}
       )
 
     elapsed = System.monotonic_time(:millisecond) - started
@@ -585,11 +640,23 @@ defmodule Xaas.Ultracode.DispatchTest do
     # 60s the (killed) child was told to sleep, above the 2s deadline.
     assert elapsed >= 2_000 and elapsed < 30_000
 
-    # The killed group is really gone, not orphaned (SIGTERM/KILL to the
-    # group; allow the kill helper's own 2s grace).
-    Process.sleep(2_500)
-    {out, _exit} = System.cmd("pgrep", ["-f", "zcode.js --prompt"], stderr_to_stdout: true)
-    assert String.trim(out) == "", "dispatched process survived the timeout kill: #{out}"
+    # Falsifier guard: the worker really recorded what it spawned before
+    # the deadline, else the scoped survivor check would pass vacuously.
+    assert File.exists?(spawned_file),
+           "worker never recorded its pids; assertion would be vacuous"
+
+    [worker_pid, pgid, child_pid] =
+      spawned_file |> File.read!() |> String.split() |> Enum.map(&String.to_integer/1)
+
+    # The killed group is really gone, not orphaned: no member of the
+    # dispatched group and neither recorded pid survives the kill.
+    assert_spawned_gone!(pgid, [worker_pid, child_pid])
+
+    # The unrelated process matched the old machine-wide pattern the whole
+    # time and the group kill left it alone.
+    assert os_pid_alive?(unrelated), "the unrelated zcode.js --prompt process was killed"
+    {all, _} = System.cmd("pgrep", ["-f", "zcode.js --prompt"], stderr_to_stdout: true)
+    assert Integer.to_string(unrelated) in String.split(all)
   end
 
   # ------------------------------------------------------------------
@@ -1136,12 +1203,94 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert String.trim(out) == "", "orphan processes survived: #{out}"
   end
 
+  # Scoped survivor law: every member of the dispatched process group and
+  # every pid the worker recorded at spawn is gone. Polled like
+  # `assert_no_orphans!/2` (the boundary's kill is verified before the
+  # result returns; a loaded scheduler must not turn a not-yet-reaped
+  # zombie into a false red). A genuinely surviving process fails here.
+  defp assert_spawned_gone!(pgid, pids, attempts_left \\ 25) do
+    {group, _} = System.cmd("pgrep", ["-g", Integer.to_string(pgid)], stderr_to_stdout: true)
+    alive = Enum.filter(pids, &os_pid_alive?/1)
+
+    cond do
+      String.trim(group) == "" and alive == [] ->
+        :ok
+
+      attempts_left > 0 ->
+        Process.sleep(200)
+        assert_spawned_gone!(pgid, pids, attempts_left - 1)
+
+      true ->
+        flunk(
+          "dispatched process survived the timeout kill: group #{pgid} members " <>
+            "#{inspect(String.split(group))}, recorded pids alive #{inspect(alive)}"
+        )
+    end
+  end
+
+  defp os_pid_alive?(os_pid) do
+    match?(
+      {_, 0},
+      System.cmd("/bin/kill", ["-0", Integer.to_string(os_pid)], stderr_to_stdout: true)
+    )
+  end
+
+  # A real process unrelated to any dispatch whose cmdline matches the old
+  # machine-wide survivor pattern, standing in for a live ZCode dispatch
+  # elsewhere on the host. It blocks on its stdin (the port's pipe), so it
+  # lives exactly as long as the test process holds the port. Returns once
+  # the pattern really sees it (the environment condition is witnessed,
+  # not assumed).
+  defp start_unrelated_zcode_prompt! do
+    dir = mktmp("unrelated")
+    File.mkdir_p!(Path.join(dir, "bin"))
+    script = Path.join([dir, "bin", "zcode.js"])
+    File.write!(script, "read _line\n")
+
+    port =
+      Port.open({:spawn_executable, "/bin/sh"}, [
+        :binary,
+        {:args, [script, "--prompt", "/xaas unrelated-live-dispatch"]}
+      ])
+
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+    await_pattern_match!(os_pid, 25)
+    os_pid
+  end
+
+  defp await_pattern_match!(os_pid, attempts_left) do
+    {all, _} = System.cmd("pgrep", ["-f", "zcode.js --prompt"], stderr_to_stdout: true)
+
+    cond do
+      Integer.to_string(os_pid) in String.split(all) ->
+        :ok
+
+      attempts_left > 0 ->
+        Process.sleep(200)
+        await_pattern_match!(os_pid, attempts_left - 1)
+
+      true ->
+        flunk("unrelated zcode.js --prompt process #{os_pid} never became visible")
+    end
+  end
+
   defp fake_cli_dir(script) do
     dir = mktmp("cli")
     File.mkdir_p!(Path.join(dir, "bin"))
     path = Path.join([dir, "bin", "zcode.js"])
     File.write!(path, script)
     File.chmod!(path, 0o755)
+
+    File.write!(
+      Path.join(dir, "package.json"),
+      Jason.encode!(%{
+        "name" => "zcode-app-cli",
+        "version" => "0.0.0-test",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=22.19.0"}
+      })
+    )
+
     dir
   end
 

@@ -1,0 +1,15 @@
+--- with-decoy-v2.pre-comment-fix.sh	2026-09-23 14:30:30
++++ with-decoy-v2.sh	2026-09-23 14:17:05
+@@ -7,9 +7,9 @@
+ # command. Visibility is checked again right after the command, and the
+ # harness exits 97 if the decoy is not alive and visible then, whatever the
+ # command's own exit was.
+-# The b8fe52f version (with-decoy.sh) only logged pgrep output. Round 1 saw a
+-# gate run where that log was empty before and after the run, while kill -0
+-# still reported the decoy alive.
++# The b8fe52f version (with-decoy.sh) only logged the pgrep output. In v2 the
++# decoy's visibility is checked, and the harness fails closed when it is not
++# visible, so a run whose decoy never matched the old pattern cannot pass.
+ # usage: with-decoy-v2.sh <log> <command string>
+ # The command runs in /Users/sac/wt/v26922/v23/R1-X-PGREP under the xaas pin.
+ set -u

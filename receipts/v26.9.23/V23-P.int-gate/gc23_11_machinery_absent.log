@@ -1,0 +1,3 @@
+$ XAAS_DIR=<empty tmp dir> sh docs/sjira/v26.9.23/courts/GC23-11.sh
+UNKNOWN: GC23-11 machinery lands in lane V23-F
+exit=75

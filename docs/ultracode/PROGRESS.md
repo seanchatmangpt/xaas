@@ -1017,3 +1017,80 @@ templates + generator into `zcode-plugin-pack` (blocked only on the
 ZCode-side install bug), admit `ultracode-actuation-lease-pack` and the
 mcp-surface family extension from the proven shapes — after which
 plugin drift renders manufactured and the ratio moves off 0.
+
+## 2026-09-21 — Cycle: root consolidation — five `~/xaas*` trees collapsed into `~/xaas`, validated for tonight's 8-hour launch
+
+**Baseline before this cycle**: operator order "all of the xaas* need to be
+merged into ~/xaas, there should never be different folders"; the ultracode
+runtime spanned five top-level trees. Preconditions executed by the
+coordinator: `phx.server` stopped (Oban clock frozen), 8 zombie epochs
+confirmed (6 `running` unleased + 1 `expected` + 1 lease expired
+2026-09-18, no live worker processes), branch `feat/xaas-root-consolidation`
+cut with `.gitignore` gaining `/worktrees/` + `/tmp/`. Ticket:
+`docs/jira/v26.9.21/xaas-root-consolidation.md` (the only legal path map;
+historical evidence keeps old paths verbatim per that map's own rule).
+
+**What moved** (a live-path consolidation, not a git-history merge): the
+four sibling trees collapsed into the repo root under two gitignored dirs —
+`~/xaas-worktrees` → `~/xaas/worktrees`, `~/xaas-tmp` → `~/xaas/tmp`,
+`~/xaas-wt2` (2 main-repo worktrees + loose logs) → `~/xaas/worktrees/wt2`,
+`~/xaas-wt3` (empty) → deleted. Physical move + `git worktree repair`
+(main + aps): 282 worktrees repaired (18 + 264), 0 prunable/broken. The
+durable repo registry (`~/xaas/worktrees/ultracode-repos.json`) rewritten
+at the new paths. Old dirs gone at close: `ls -d /Users/sac/xaas-worktrees
+/Users/sac/xaas-tmp /Users/sac/xaas-wt2 /Users/sac/xaas-wt3` → all missing
+(re-verified at this entry's write time).
+
+**Wave shape**: 10 default agents on disjoint file slices (config, repos
+libs, wave loop, tests, two doc slices, physical move, zombie reap, external
+sweep, validator); git serialized through the coordinator — agents never
+commit; mix gates through the compile lock
+(`.claude/workflow-compile-lock.sh`); no agent recreated a directory at an
+old path — failures report, never patch. Zombie epochs reaped in the DB by
+the A8 slice per the zombie-runs-cleanup ticket. Merged to `main` as
+`e3ce136`; the worker-leg tripwires hit in the smoke landed on top as
+`9000c94` (eight-hour-run §3).
+
+**Real verification** (gates at `main @ e3ce136`, exits as recorded in the
+ticket History):
+- `mix compile --force --warnings-as-errors` → exit 0
+- `mix format --check-formatted` → exit 0
+- ultracode suite → 529 passed, 0 failures; zcode_plugin → 33 passed,
+  0 failures
+- whole repo `mix test` → 1363 passed, 0 failures
+
+**Smoke evidence at the new paths** (real one-worker campaign `d955857e`):
+the full worker leg — claim → construct → court → receipt — ran live under
+`~/xaas/worktrees/*`: one item finished done with the fabric court verdict
+pass and a `head_verified` receipt; OCEL export of the wave run `719ac930`
+passed the conformance court, `valid (5 events, 6 objects)`, exit 0;
+`human_inputs: 0`. Campaign terminal standing honestly **PARTIAL_ALIVE** —
+a bounded smoke, not the 8-hour run; the launch itself is the remaining
+step.
+
+**Gaps found and closed during validation (6)**:
+1. `lib/xaas/semantics/computation.ex:61` dead clause → removed + guard
+   test.
+2. Homebrew python 3.14 `rpds`/`jsonschema` broken → repaired; the
+   `aps-dod` court works (proven by the smoke court verdicts).
+3. Zombie campaign `d649c9ca` (loop died with the old VM, would have
+   refused tonight's start) → `stop` → `abandoned`.
+4. Pending dev migrations → `mix ecto.migrate` (had been surfacing
+   PendingMigrationError 503s).
+5. `phx.server` restarted without `INTERNAL_API_TOKEN` → every worker
+   fail-closed at the `xaas-execution` plug; documented in eight-hour-run
+   §3 and restarted with the token.
+6. zcode-cli headless sessions no longer register `xaas-execution` from
+   user scope → project `.mcp.json` placed in `ZCODE_CLI_DIR`
+   (git-excluded locally); runbook §3 documents the requirement.
+
+**比 (fail-closed)**: this cycle delivered path repoints, doc sync, worktree
+repair, and registry/data rewrites — layout and configuration migration,
+not pack-rendered product code. 0 delivered lines attributable to a pack
+render this cycle → ratio contribution **0%**, honestly. The consolidation's
+value is a single lawful root (one checkout, one registry), which is what
+makes the next cycle's ratio measurable at all.
+
+**Standing**: ALIVE, scoped to the consolidation + its validation at
+`main @ 9000c94`. Remaining: the 8-hour launch — one command per
+eight-hour-run §1.

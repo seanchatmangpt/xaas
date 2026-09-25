@@ -1,0 +1,7 @@
+validator: ADMITTED /private/tmp/claude-501/v23-scratch/B1b-V23-D/tamper-GC23-7-ocel2-event-dropped/receipt.r.json
+R: ALIVE at 9c5e7571c948f97f6ae08d9399f69f502d81efd4, native sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1
+ocel_validate: /private/tmp/claude-501/v23-scratch/B1b-V23-D/tamper-GC23-7-ocel2-event-dropped/ocel.json: valid (11 events, 11 objects)
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+AssertionError: event counts differ
+REFUSED: GC23-7 pm4py, equivalence or reached-class check failed

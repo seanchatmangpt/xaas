@@ -1,0 +1,62 @@
+
+Compiling 1 file (.ex)
+Generated xaas app
+01:45:39.002 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:45:39.451 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:45:39.839 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 974860, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+
+
+  1) test a lease lost between steps refused by another party through Lease.refuse/3: typed :lease_lost, no commit, only that party's receipt (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:315
+     Expected false or nil, got true
+     code: refute File.exists?(Path.join(signals, "step2"))
+     arguments:
+
+         # 1
+         "/Users/sac/.cache/tmp/xaas-recipe-test-signals-1790153140509-1028/step2"
+
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:708: Xaas.Ultracode.RecipeWorkerTest.assert_no_write_after_loss/3
+       test/xaas/ultracode/recipe_worker_test.exs:328: (test)
+
+..
+
+  2) test a lease lost between steps re-claimed by another owner after expiry: typed :lease_lost, no second step, nothing staged or committed, the new owner's lease intact (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:276
+     Expected false or nil, got true
+     code: refute File.exists?(Path.join(signals, "step2"))
+     arguments:
+
+         # 1
+         "/Users/sac/.cache/tmp/xaas-recipe-test-signals-1790153141409-17219/step2"
+
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:708: Xaas.Ultracode.RecipeWorkerTest.assert_no_write_after_loss/3
+       test/xaas/ultracode/recipe_worker_test.exs:306: (test)
+
+.......
+
+  3) test a lease lost between steps expired mid-recipe under the engine: the worker stops uncommitted and the engine reaps the epoch with a refused receipt (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:335
+     Expected false or nil, got true
+     code: refute File.exists?(Path.join(signals, "step2"))
+     arguments:
+
+         # 1
+         "/Users/sac/.cache/tmp/xaas-recipe-test-signals-1790153144226-18435/step2"
+
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:708: Xaas.Ultracode.RecipeWorkerTest.assert_no_write_after_loss/3
+       test/xaas/ultracode/recipe_worker_test.exs:353: (test)
+
+....01:45:44.747 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153144693-26498; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+..
+Finished in 5.9 seconds (0.00s async, 5.9s sync)
+18 tests, 3 failures
+EXIT=2

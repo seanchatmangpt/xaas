@@ -1,0 +1,133 @@
+{
+  "identity": {
+    "subject": "V23-S",
+    "repo": "/Users/sac/xaas",
+    "repo_slug": "seanchatmangpt/xaas",
+    "subject_sha": "26a6a0cb8b7e3100a9ae8c5c667343cf391a40ce",
+    "base_sha": "fdacbed4eeb0a00e0954ab8bed050f70c69f4648",
+    "branch": "v23/V23-S",
+    "worktree": "/Users/sac/wt/v26922/v23/V23-S",
+    "work_order": null,
+    "tuple_digest": null,
+    "tuple_digest_why": "no goal.ttl order for lane V23-S (task: do not set a tuple digest); the receipt is not linked by the stop court",
+    "prd_ard": "operator release sequence steps 3 and 5; ARD section 12 (Receipt Architecture), section 13 (OCEL Architecture), section 19 (Stop Court), section 26 F3/F7, section 27 (Release Receipt); PRD section 13 (Release Stop Condition), PR-013 (Replay), PR-017 (Stop calculus)"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "wave S lane V23-S (/Users/sac/wt/v26922/v26923/DRIVER.md; COORDINATION.md v26.9.23 scope; lib/mix/tasks/xaas.stop_court.ex is a reserved critical-path file, changed because the lane task names the stop court as the only surface). No push, no integrate, no remote effect.",
+    "actor": "claude-opus-5.5 workflow subagent (lane V23-S)"
+  },
+  "consequence": {
+    "commits": [
+      "26a6a0cb8b7e3100a9ae8c5c667343cf391a40ce"
+    ],
+    "commit_notes": {
+      "26a6a0c": "stop court: gate + STOP receipts carry identity.repo slug + worktree, verifier (runner/court command/court script/validator/schema/stop query digests, at-subject blob checks), toolchain, replay invocation; STOP derives ARD 27 release_counters; 9 new Chicago tests; HANDWRITTEN row"
+    },
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "lib/mix/tasks/xaas.stop_court.ex",
+      "test/mix/tasks/xaas_stop_court_test.exs",
+      "test/sjira/v26_9_23_goal_test.exs"
+    ],
+    "files_changed_basis": "git diff --name-only fdacbed 26a6a0c; the receipt commit adds receipts/v26.9.23/V23-S.json and receipts/v26.9.23/V23-S.gate/**",
+    "remote_effects": [],
+    "reserved_files": "only lib/mix/tasks/xaas.stop_court.ex among the Friday-reserved files (the lane's named surface); goal.ttl, stop.rq, prd-ard.md, court scripts, episodes, docs/sjira/v26.9.22/friday/** untouched (git diff fdacbed 26a6a0c -- those paths: empty)",
+    "generated_vs_handwritten": {
+      "generated": [],
+      "handwritten": [
+        "lib/mix/tasks/xaas.stop_court.ex (release evidence: identity_json/repo_identity/github_slug, verifier/court_script/blob_at_subject, toolchain, replay_env/invocation, release_counters/required_unknown/unclassified_required_work, episode_counters/llm_provider_events/unreceipted_actuations)",
+        "test/mix/tasks/xaas_stop_court_test.exs (3 tests)",
+        "test/sjira/v26_9_23_goal_test.exs (6 tests)"
+      ],
+      "ledger": "HANDWRITTEN.md row 'lib/mix/tasks/xaas.stop_court.ex (release evidence)': UNSUPPORTED(generator-capability) -- receipt-provenance-unification-pack renders a validator + census, not a receipt producer; chatman-ecosystem-release-pack is release composition law; no pack renders a stop-court runner; owners semantic-jira-pack + chatman-ecosystem-release-pack"
+    }
+  },
+  "replay": {
+    "durable_location": "receipts/v26.9.23/V23-S.gate/ (lane gate logs, the real stop-court run log and its two receipts, revert-mutation logs and diff)",
+    "commands": [
+      {
+        "cmd": "mix format --check-formatted",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S @ 26a6a0c (clean tree)",
+        "exit": 0,
+        "summary": "lane gate step 1: formatted (log holds only the pre-existing deps/ex4pm mix.exs Application.get_env warning)",
+        "output_sha256": "cd240aa6776054f3c3708540180fdf617588b0f8e3b281badd501f4c05998a8f",
+        "log": "receipts/v26.9.23/V23-S.gate/gate.format.log"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S @ 26a6a0c",
+        "exit": 0,
+        "summary": "lane gate step 2: Compiling 520 files (.ex), Generated xaas app",
+        "output_sha256": "99666d12ddd1cb5d7e4c6470550d2f83c6a1dc2ebaccb74cb02920aa03ea12a6",
+        "log": "receipts/v26.9.23/V23-S.gate/gate.compile.log"
+      },
+      {
+        "cmd": "mix test test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S @ 26a6a0c",
+        "exit": 0,
+        "summary": "lane gate step 3: 56 tests, 0 failures (0 skipped) in 273.0 s = 47 pre-existing (16 stop court + 31 goal) + 9 new; GGEN_IGNITER_DIR unset -> default judge /Users/sac/wt/v26922/fri/ggen_igniter-int",
+        "output_sha256": "240018cec912d8057b9017db7a69802b5549358b2eed645be43d953e0be24244",
+        "log": "receipts/v26.9.23/V23-S.gate/gate.test.log"
+      },
+      {
+        "cmd": "python3 ~/.claude/dfcm/validate_receipt.py receipts/v26.9.23/V23-S.gate/stop-court-GC23-11.receipt.json receipts/v26.9.23/V23-S.gate/stop-court-STOP.receipt.json",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S",
+        "exit": 0,
+        "summary": "ADMITTED x2 (the new-shape gate and STOP receipts from the real run)"
+      },
+      {
+        "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" test/mix/tasks/xaas_stop_court_test.exs test/sjira/v26_9_23_goal_test.exs lib/mix/tasks/xaas.stop_court.ex",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S",
+        "exit": 0,
+        "summary": "no matches (negated grep exits 0): Chicago-only; real tmp git repos, real sh courts, real validator, python3 runs the GC23-9 court's own measure"
+      }
+    ]
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed runs on the exact committed subject 26a6a0cb8b7e3100a9ae8c5c667343cf391a40ce: lane gate format 0, compile --force --warnings-as-errors 0, 56/56 tests; the real stop court at 26a6a0c wrote ADMITTED gate and STOP receipts carrying every new field and the derived counters; revert-mutations M1/M2 make all 9 new tests fail while the 16 pre-existing stop-court tests pass on the base runner"
+  },
+  "falsifiers": {
+    "court_script_edit": "a court script edited after a run changes court_script_sha256 on the next run and court_script_at_subject turns false with 'the bytes differ from the blob at courts/G1.sh in <head>'; committing the edit turns it true (test)",
+    "llm_injection": "one event with provider llm:claude-opus-5-5@fixture appended to a tmp copy of me-2/ocel.json -> LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=1, REQUIRED_LLM_KNOWN=1 [me-2]; the GC23-9 court's own measure (cut from courts/GC23-9.sh, run by python3) counts [0, 1]; an executor zcode-cli event (GC23-5 rule only) -> 1 while GC23-9's measure says 0 (tests)",
+    "anti_vacuity_llm": "me-1's committed OCEL read as a KNOWN-path episode: the counter equals the GC23-9 measure count (> 0) (test)",
+    "unreadable": "truncated JSON in me-2/ocel.json -> LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH, REQUIRED_LLM_KNOWN and UNRECEIPTED_ACTUATION null naming the path and the JSON error; a non-OCEL JSON and an absent file -> the LLM counters null with the reason; an absent episodes dir and an unparseable ledger line -> UNRECEIPTED_ACTUATION null naming the path/line; never 0 (tests)",
+    "unreceipted": "ReceiptSealed removed from a tmp fmt-1 OCEL -> UNRECEIPTED_ACTUATION=1 naming the ledger event_digest (test)",
+    "F7": "a universe repository without a classification in a fixture repo copy of the fleet -> UNCLASSIFIED_REQUIRED_WORK=1 with the REFUSED(unclassified) line (test)",
+    "reproducible_invocation": "re-running the recorded argv reproduces the gate receipt: identical identity, verifier, toolchain, invocation and output_sha256 (test)"
+  },
+  "open": {
+    "slug_vs_validator": "with identity.repo a GitHub slug, validate_receipt.py no longer checks subject_sha against a local checkout (its check keys on a local repo path); the stop court records identity.worktree and derives subject_sha from that worktree's HEAD, and runner_source_at_subject / court_script_at_subject bind the executed bytes to it. A validator-side worktree check is successor work (the validator is outside this lane's surface).",
+    "classification_argv_duplication": "the GC23-11 check-classification argv lives in the stop court registry and in courts/GC23-11.sh; the counter records GC23-11.sh's sha256 so drift is visible; single-source rendering is the HANDWRITTEN paydown (semantic-jira-pack)."
+  },
+  "witnesses": {
+    "note": "runs whose non-zero exit is the expected observation (STOP=false on a partial receipts dir; revert-mutations must fail); kept out of replay.commands, which the validator requires to be all exit 0 for ALIVE",
+    "commands": [
+      {
+        "cmd": "MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-11 --receipts-dir <scratch>",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S @ 26a6a0c",
+        "exit": 1,
+        "summary": "real run (STOP=false expected: 12 gates have no receipt in a fresh dir): GC23-11 gate receipt identity.repo seanchatmangpt/xaas, worktree the lane worktree, court_script_sha256 sha256:9fa04c23b10fac691f2e5e402f10764b32cefbfdab995caf340ce74fe12d2982 at_subject true, runner_source_at_subject true; release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=0 REQUIRED_LLM_KNOWN=0 REQUIRED_UNKNOWN=14 (12 gates without receipt in the scratch dir + GC23-11 UNKNOWN + order V23-Q MISSING) UNCLASSIFIED_REQUIRED_WORK=0 UNRECEIPTED_ACTUATION=0; both receipts ADMITTED by the fleet validator",
+        "output_sha256": "f0aaf948d07a43448d95f48904f77595c65a037f037f393d0d9379128ef29f73",
+        "log": "receipts/v26.9.23/V23-S.gate/stopcourt.log"
+      },
+      {
+        "cmd": "git show fdacbed:lib/mix/tasks/xaas.stop_court.ex > lib/mix/tasks/xaas.stop_court.ex && mix test test/mix/tasks/xaas_stop_court_test.exs (then the committed file restored, cmp-verified)",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S (tests = 26a6a0c content, runner = base fdacbed)",
+        "exit": 2,
+        "summary": "revert-mutation M1: 19 tests, 3 failures -- exactly the 3 new tests fail; the 16 pre-existing stop-court tests pass on the base runner",
+        "output_sha256": "7645750816e909116e341951485542e10b2229d577821e0d0dab5ec31a681042",
+        "log": "receipts/v26.9.23/V23-S.gate/m1.test.log"
+      },
+      {
+        "cmd": "same base runner; mix test test/sjira/v26_9_23_goal_test.exs:1682 :1710 :1737 :1769 :1808 :1886",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-S (tests = 26a6a0c content, runner = base fdacbed)",
+        "exit": 2,
+        "summary": "revert-mutation M2: 6 tests, 6 failures (31 excluded) -- every new goal test fails on the base runner (episode_counters undefined; no verifier/counters in the real receipts)",
+        "output_sha256": "0ef2565c9c675546af5fd2f97978cb2c453d246f3cdef4f9257f6827537db4dd",
+        "log": "receipts/v26.9.23/V23-S.gate/m2.test.log"
+      }
+    ]
+  }
+}

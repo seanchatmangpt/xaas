@@ -58,9 +58,20 @@ defmodule Xaas.Ultracode.CourtReceipt do
   A predicate is v1-exactly `%{"test" => test_id}`: the id of the one test
   whose outcome decides the verdict, in the suite's native id syntax (for
   `pytest -v`: `tests/test_w7_crown_seed.py::test_name`; for
-  `mix test --trace`: the test description). Unknown predicate kinds are
-  REFUSED, never silently ignored -- a mapping the fabric does not
-  understand must not quietly become "no court".
+  `mix test --trace`: the test description; for `exit_status`: the receipt
+  step's own id). Unknown predicate kinds are REFUSED, never silently
+  ignored -- a mapping the fabric does not understand must not quietly
+  become "no court".
+
+  ## The `exit_status` result format
+
+  For a suite whose receipt step IS the check (e.g. `mix format
+  --check-formatted`), the verdict is the step's observed exit status, not
+  parsed output: `%{step_id => :pass}` when the step exited 0,
+  `%{step_id => :fail}` when it exited non-zero and was judged `"fail"`.
+  A step with no observed exit (timeout, spawn error) or an infra exit
+  (status `"error"`) yields NO verdict, so a mapped IRI is refused with
+  `:missing_verdict` -- an unobserved exit is never a defaulted pass or fail.
 
   ## Fail-closed law
 
@@ -73,7 +84,7 @@ defmodule Xaas.Ultracode.CourtReceipt do
   court could not witness it, and `:alive` requires a qualifying court.
   """
 
-  @result_formats ~w(pytest_v mix_trace)
+  @result_formats ~w(pytest_v mix_trace exit_status)
 
   @type predicate :: %{required(String.t()) => String.t()}
 
@@ -126,7 +137,7 @@ defmodule Xaas.Ultracode.CourtReceipt do
     format = Map.get(suite, :result_format)
 
     with {:ok, ^format} <- check_format(format),
-         {:ok, verdicts} <- verdicts(format, step_result["output_tail"] || "") do
+         {:ok, verdicts} <- verdicts(format, step_result) do
       binding = %{
         "suite" => suite_name,
         "step_id" => step_result["id"],
@@ -257,8 +268,26 @@ defmodule Xaas.Ultracode.CourtReceipt do
   defp check_format(other),
     do: {:error, {:refused_court_receipt, {:unknown_result_format, other}}}
 
-  # Per-test verdicts observed in the output: %{test_id => :pass | :fail}.
-  defp verdicts("pytest_v", output) do
+  # Per-test verdicts observed in the step: %{test_id => :pass | :fail}.
+  # `exit_status` judges the step itself by its observed exit code; the
+  # output profiles parse the step's captured output tail.
+  defp verdicts("exit_status", step_result), do: {:ok, exit_verdict(step_result)}
+
+  defp verdicts(format, step_result) when format in ["pytest_v", "mix_trace"],
+    do: output_verdicts(format, step_result["output_tail"] || "")
+
+  defp verdicts(_, _), do: {:error, {:refused_court_receipt, :result_format_undeclared}}
+
+  defp exit_verdict(%{"id" => id, "exit" => 0, "status" => "pass"}) when is_binary(id),
+    do: %{id => :pass}
+
+  defp exit_verdict(%{"id" => id, "exit" => code, "status" => "fail"})
+       when is_binary(id) and is_integer(code) and code != 0,
+       do: %{id => :fail}
+
+  defp exit_verdict(_unobserved), do: %{}
+
+  defp output_verdicts("pytest_v", output) do
     line_regex = ~r/^(?<id>\S+::\S+)\s+(?<verdict>PASSED|FAILED|ERROR|XFAIL|XPASS|SKIPPED)\b/
 
     verdicts =
@@ -279,7 +308,7 @@ defmodule Xaas.Ultracode.CourtReceipt do
   # failing tests are re-listed in the Failures section as `  N) description
   # (file.ex:line)`. A description fails iff it appears in the failure
   # re-listing; the run line alone is not evidence of passing.
-  defp verdicts("mix_trace", output) do
+  defp output_verdicts("mix_trace", output) do
     lines = String.split(output, "\n")
 
     run_lines =
@@ -310,8 +339,6 @@ defmodule Xaas.Ultracode.CourtReceipt do
 
     {:ok, verdicts}
   end
-
-  defp verdicts(_, _), do: {:error, {:refused_court_receipt, :result_format_undeclared}}
 
   # One observed verdict per declared IRI, mapped into the consumer's
   # vocabulary. A mapped test with NO observed verdict is a refusal -- a

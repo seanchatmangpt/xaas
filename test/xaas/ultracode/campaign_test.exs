@@ -101,14 +101,28 @@ defmodule Xaas.Ultracode.CampaignTest do
 
     assert summary.status == :completed
     assert summary.waves_executed == 2
-    assert summary.standing == "admitted"
+
+    # The RAISED standing law (one judgment): the stubbed waves report
+    # ALIVE, but the campaign's ledger carries no attempt census at all --
+    # vacuous terminality is never ALIVE, so `Xaas.Ultracode.Audit`
+    # judges PARTIAL_ALIVE and the row completes :blocked with the gap
+    # named (this assertion was the OLD coarse law: `:admitted` off the
+    # wave report standings alone).
+    assert summary.standing == "blocked"
+    assert summary.standing_source == "audit"
+
+    assert summary.standing_gaps == [
+             "campaign executed 2 wave(s) but the ledger carries no attempt_start " <>
+               "census (wave evidence absent)"
+           ]
+
     assert length(summary.waves) == 2
     assert Enum.map(summary.waves, & &1.standing) == ["ALIVE", "ALIVE"]
     assert Enum.all?(summary.waves, &(&1.receipt == "/tmp/fake-wave-receipt.json"))
 
     campaign = Ash.get!(Run, summary.run_id, action: :read_unscoped, authorize?: false)
     assert campaign.state == :completed
-    assert campaign.standing == :admitted
+    assert campaign.standing == :blocked
     assert campaign.cycle == 2
     assert campaign.max_cycles == 2
     assert campaign.provider == "zcode"
@@ -477,9 +491,12 @@ defmodule Xaas.Ultracode.CampaignTest do
           sleeper: &no_sleep/1
         )
 
-      # Not the microsecond coin flip: wave 1 must actually run.
+      # Not the microsecond coin flip: wave 1 must actually run. (The
+      # standing is the raised law's, not the stub's report: a campaign
+      # whose ledger carries no attempt census judges PARTIAL_ALIVE ->
+      # row :blocked -- see the standing assertion in the discharge test.)
       assert summary.waves_executed == 1
-      assert summary.standing == "admitted"
+      assert summary.standing == "blocked"
     end
   end
 

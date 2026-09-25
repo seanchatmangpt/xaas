@@ -1,0 +1,56 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/fri/FRI-T4/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+22:32:51.846 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+22:32:52.465 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+22:32:52.774 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 0, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+22:32:53.035 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+22:32:53.036 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T4/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+22:32:53.086 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+22:32:53.086 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T4/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+.22:32:53.131 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+22:32:53.131 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T4/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+..22:32:53.182 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+22:32:53.182 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T4/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+................22:32:53.260 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+22:32:53.260 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T4/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+..22:32:53.293 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+22:32:53.293 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T4/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+....................................................................................................................................................................................22:32:54.607 [warning] [ultracode] epoch 5135922d-34c1-419b-bb26-c3aebddaef63 (run ec7d2ac7-98c5-4159-8110-63de5e99a7a0, cycle 0) expected_at=2026-09-23 05:31:54.388821Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+22:32:54.607 [warning] [ultracode] epoch 12532b4a-3fae-452b-b27b-05c0bc7d3f98 (run ec6dee40-bc52-4d7f-b35b-34da95772eef, cycle 0) expected_at=2026-09-23 05:31:54.388604Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+....22:32:54.638 [warning] [ultracode] epoch a4354657-eb28-48f5-a8c6-bf853e5394a4 (run 2321eab2-c6a6-4e18-975a-eb713a2af60f, cycle 0) expected_at=2026-09-23 05:31:54.625873Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.22:32:54.643 [warning] [ultracode] epoch 2b94c971-a66c-42d0-969d-3738603bfcf7 (run 45fe0807-0d20-447d-95d2-fd0e1cbfbe73, cycle 0) expected_at=2026-09-23 05:31:54.629338Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+.....................................................22:32:54.851 [warning] [ultracode] undo: refusing to compensate epoch b96cad92-6961-4dec-9af1-20899dee2f67 -- real row is :completed, not the :running state :construct left it in (a concurrent close/refuse/re-lease moved it); compensating would clobber a settled row
+................../Users/sac/.cache/tmp/xaas-ocel-mix-1790141574971-4878/93900e8a-f65d-4cea-99f5-ffcb001f1790.ocel.json
+...........22:32:55.340 [warning] XAAS_LEASE_CLOSE head mismatch epoch=fe391393-ee82-4aa5-907c-77ab33ef88d2
+.............................error: /Users/sac/.cache/tmp/profile-sense-0eebd6ef/runs/fix-sense-6fbdc6 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-0f6df666/runs/fix-sense-971ef7 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-9f7d0f65/runs/fix-sense-c5f9c1 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-82ff845f/runs/fix-sense-e14288 has no contracts/ directory
+.error: /Users/sac/.cache/tmp/profile-sense-7248ef66/runs/fix-sense-80fc28 has no contracts/ directory
+......22:33:03.055 [warning] XAAS_LEASE_CLOSE head mismatch epoch=e3040916-5e46-48c6-8f6f-fb7efbc46916
+......................................................................22:33:08.463 [warning] [ultracode] epoch dbc61bdc-95f3-43f2-af80-71a35e1f6b41 (run a219a61d-16df-4c05-a217-0474af0d2053, cycle 0) expected_at=2026-09-23 05:33:08.439985Z exceeded epoch_timeout_seconds=0 -> marked :missed (receipt sealed)
+............22:33:09.035 [warning] [ultracode-engine] reaped epoch 05f5f7d7-cb63-485f-b3b2-ecdd73514c11 (worker ended without closing)
+...22:33:09.071 [warning] [ultracode] epoch f6809a03-e737-4c3d-91e5-d25647fe2ef1 (run 58575376-0024-412b-8097-8f07535d4c4f, cycle 0) expected_at=2026-09-23 05:32:09.059146Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+..22:33:09.126 [warning] [ultracode] run f6927c7f-b6cc-4904-9497-18c7dd0a1d29 stopped: refused 1 live lease(s) (reason :run_stopped)
+.22:33:09.175 [warning] [ultracode] run 61627197-759f-4814-9e07-cb726621c854 stopped: refused 1 live lease(s) (reason :run_stopped)
+22:33:09.192 [warning] [ultracode] run 61627197-759f-4814-9e07-cb726621c854 recovering from failed epoch d77b1437-3529-4a53-a717-f6747f373879: constructed replacement epoch cycle=1 (epoch_id=2a42d2d1-7011-4bdd-8a22-169a3f04da93)
+..22:33:09.220 [warning] [ultracode-engine] reaped epoch c1f075d9-137f-4834-aab7-cf8e034d5c6d (worker ended without closing)
+............22:33:11.621 [warning] XAAS_LEASE_CLOSE head mismatch epoch=1b27cc40-0fa9-425a-9fe0-6b5424e5ec2e
+.................22:33:14.281 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+.22:33:14.440 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+......22:33:20.229 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+22:33:20.233 [warning] [ultracode] dispatch failover-class outcome (attempt 1); retrying once after 10ms
+..........................................................................................................................................................................................................................................................................................................................................
+Finished in 566.8 seconds (4.9s async, 561.8s sync)
+783 tests, 0 failures (25 excluded)

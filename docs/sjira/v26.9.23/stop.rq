@@ -1,0 +1,47 @@
+# STOP(GC-26.9.23), PRD section 13 / ARD section 19. True iff
+# (1) GC-26.9.23 has at least one child gate,
+# (2) every child gate (sj:checkpointOf GC-26.9.23, i.e. GC23-0 .. GC23-12)
+#     has a gate receipt with standing ALIVE, and
+# (3) every WorkOrder under GC-26.9.23 (sj:checkpointOf+ : on the root itself
+#     or on one of its gates) is typed Successor (sj:boundaryClass
+#     sj:Successor) or has a receipt whose standing is terminal: ALIVE,
+#     BLOCKED, UNSUPPORTED or REFUSED. UNKNOWN, PARTIAL_ALIVE, BUILD_BROKEN or
+#     no receipt at all keeps STOP false.
+# RequiredUnknown = empty and RequiredLLM_KNOWN = empty are carried by the
+# gates (a gate is ALIVE only when its court exits 0); RemainingFrontier within
+# Successor/Blocked/Unsupported/Refused is clause (3). Receipts enter the graph
+# only through mix xaas.stop_court, which projects receipts ADMITTED by
+# validate_receipt.py as sj:Receipt nodes; goal.ttl itself may not assert any
+# receipt. No LLM participates in the stop calculation. This text is
+# byte-equal (trimmed) to the sj:stopQuery of GC-26.9.23 in goal.ttl; the
+# court refuses to run on drift.
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+ASK {
+  ?gc a sj:GoalCheckpoint ;
+      dcterms:identifier "GC-26.9.23" .
+  FILTER EXISTS {
+    ?anyGate a sj:GoalCheckpoint ;
+             sj:checkpointOf ?gc .
+  }
+  FILTER NOT EXISTS {
+    ?gate a sj:GoalCheckpoint ;
+          sj:checkpointOf ?gc .
+    FILTER NOT EXISTS {
+      ?gate sj:receipt ?gateReceipt .
+      ?gateReceipt a sj:Receipt ;
+                   sj:standing "ALIVE" .
+    }
+  }
+  FILTER NOT EXISTS {
+    ?order a sj:WorkOrder ;
+           sj:checkpointOf+ ?gc .
+    FILTER NOT EXISTS { ?order sj:boundaryClass sj:Successor . }
+    FILTER NOT EXISTS {
+      ?order sj:receipt ?orderReceipt .
+      ?orderReceipt a sj:Receipt ;
+                    sj:standing ?standing .
+      FILTER(?standing = "ALIVE" || STRSTARTS(?standing, "BLOCKED") || STRSTARTS(?standing, "UNSUPPORTED") || STRSTARTS(?standing, "REFUSED"))
+    }
+  }
+}

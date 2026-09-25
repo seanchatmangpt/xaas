@@ -1,0 +1,8 @@
+subject: d9939a63f1bb222b199f7cd56c14a4cf391ba53a; judge ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+REGRESSION_EXIT=2
+  1) test a subject with no drift is REFUSED(no_delta) by the provider: no commit, no ledger change, EP-A stays on the frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:345
+  2) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:107
+Finished in 33.1 seconds (1.4s async, 31.7s sync)
+113 tests, 2 failures

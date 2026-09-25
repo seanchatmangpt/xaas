@@ -1,0 +1,44 @@
+{
+  "allocations": [
+    {
+      "experiments": 3,
+      "fraction": 0.18232044198895025,
+      "item_id": "SJ-007",
+      "lane": 3,
+      "standing": "ADMITTED",
+      "ticks": 911,
+      "tokens": 91160
+    },
+    {
+      "experiments": 4,
+      "fraction": 0.2430939226519337,
+      "item_id": "SJ-010",
+      "lane": 2,
+      "standing": "ADMITTED",
+      "ticks": 1215,
+      "tokens": 121546
+    },
+    {
+      "experiments": 4,
+      "fraction": 0.2430939226519337,
+      "item_id": "SJ-011",
+      "lane": 1,
+      "standing": "ADMITTED",
+      "ticks": 1215,
+      "tokens": 121546
+    },
+    {
+      "experiments": 6,
+      "fraction": 0.33149171270718236,
+      "item_id": "SJ-012",
+      "lane": 0,
+      "standing": "ADMITTED",
+      "ticks": 1657,
+      "tokens": 165745
+    }
+  ],
+  "ok": true,
+  "plan_hash": "da1d266637fe8916ee0d4e0d3ecd1ba5bf341f53c35c4375166607a44c475d82",
+  "plan_id": "sjira-v26.9.21-sj007",
+  "total_entropy_preserved": 1.6629834254143647
+}

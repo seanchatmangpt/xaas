@@ -64,12 +64,17 @@ defmodule Xaas.Platform.WebhookDeliveryStressTest do
     run_tag = System.unique_integer([:positive, :monotonic])
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
-    port = 21_000 + rem(run_tag, 4000)
+    # OS-assigned ephemeral port read back from ranch, and shutdown of the
+    # ref actually started (the previous on_exit shut down
+    # CapturingPlug.HTTP, a ref never started here, leaking the listener).
+    ref = make_ref()
 
     {:ok, _pid} =
-      Plug.Cowboy.http(CapturingPlug, [agent: agent], port: port, ref: make_ref())
+      Plug.Cowboy.http(CapturingPlug, [agent: agent], port: 0, ref: ref)
 
-    on_exit(fn -> Plug.Cowboy.shutdown(CapturingPlug.HTTP) end)
+    port = :ranch.get_port(ref)
+
+    on_exit(fn -> Plug.Cowboy.shutdown(ref) end)
 
     base_url = "http://127.0.0.1:#{port}/"
 

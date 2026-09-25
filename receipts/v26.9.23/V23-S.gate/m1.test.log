@@ -1,0 +1,86 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-S/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+Generated xaas app
+11:19:20.563 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+11:19:21.442 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+11:19:22.838 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+11:19:24.281 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:19:24.281 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+11:19:24.368 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:19:24.368 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+11:19:24.484 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:19:24.487 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+11:19:24.552 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:19:24.552 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+11:19:24.573 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:19:24.573 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+11:19:24.618 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+11:19:24.618 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-S/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 642230, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+....
+
+  1) test a court script edited after the run changes court_script_sha256; at_subject stays false until the edit is committed (Mix.Tasks.Xaas.StopCourtTest)
+     test/mix/tasks/xaas_stop_court_test.exs:811
+     Assertion with == failed
+     code:  assert before["court_script_sha256"] == sha256(File.read!(script))
+     left:  nil
+     right: "sha256:02a69a6ecd08e3a7effd7a3d4b40f9afc136b12adf4985c73faed2bdd0e83c50"
+     stacktrace:
+       test/mix/tasks/xaas_stop_court_test.exs:817: (test)
+
+.........
+
+  2) test a gate receipt binds the GitHub slug, verifier and toolchain identities and a replay invocation that reproduces it (Mix.Tasks.Xaas.StopCourtTest)
+     test/mix/tasks/xaas_stop_court_test.exs:696
+     match (=) failed
+     The following variables were pinned:
+       top = "/Users/sac/.cache/tmp/stop_court_5"
+     code:  assert %{
+              "repo" => "seanchatmangpt/xaas",
+              "worktree" => ^top,
+              "repo_source" => "git remote origin (github.com)",
+              "subject" => "GC-FRI-0800/G1"
+            } = g1["identity"]
+     left:  %{
+              "repo" => "seanchatmangpt/xaas",
+              "worktree" => ^top,
+              "repo_source" => "git remote origin (github.com)",
+              "subject" => "GC-FRI-0800/G1"
+            }
+     right: %{
+              "base_sha" => "d8e4e50d315da3869eba16f3e36e93cbffeb442c",
+              "graph_hash" => "sha256:3a8774b01e1876a45237cd03091fc021cac91eab9d3e39ed69974de701957225",
+              "repo" => "/Users/sac/.cache/tmp/stop_court_5",
+              "subject" => "GC-FRI-0800/G1",
+              "subject_sha" => "d8e4e50d315da3869eba16f3e36e93cbffeb442c"
+            }
+     stacktrace:
+       test/mix/tasks/xaas_stop_court_test.exs:717: (test)
+
+
+
+  3) test an inline court names no script; without a github.com remote identity.repo stays the worktree; GC-FRI-0800 derives REQUIRED_UNKNOWN only (Mix.Tasks.Xaas.StopCourtTest)
+     test/mix/tasks/xaas_stop_court_test.exs:842
+     Assertion with =~ failed
+     code:  assert out =~
+              "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=null REQUIRED_LLM_KNOWN=null" <>
+                " REQUIRED_UNKNOWN=2 UNCLASSIFIED_REQUIRED_WORK=null UNRECEIPTED_ACTUATION=null"
+     left:  "stop court GC-FRI-0800 at 931050201abcf4b6c7ee25e5b61dd0b38623878a\ngraph /Users/sac/.cache/tmp/stop_court_13379/goal/goal.ttl\ncourt env GGEN_IGNITER_DIR=/Users/sac/ggen_igniter XAAS_DIR=/Users/sac/.cache/tmp/stop_court_13379\norder receipts option /Users/sac/.cache/tmp/stop_court_13379/order-receipts (absent)\nGATE   BOUNDARY   STANDING       EXIT         SECS    RECEIPT            SOURCE\nG1     Core       ALIVE          0            0.1     ADMITTED           ran\nG2     Core       UNKNOWN        1            0.1     ADMITTED           ran\norder WO-1 standing=NONE receipt=MISSING digest=sha256:de0b5bc4877e36f0eb69fb5a3666ea9c15b377ef23adbb94f907a6027b4bebe0 unlinked=:missing\nstop receipt /Users/sac/.cache/tmp/stop_court_13379/gate-receipts/STOP-GC-FRI-0800.json ADMITTED\nSTOP=false\n"
+     right: "release counters LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH=null REQUIRED_LLM_KNOWN=null REQUIRED_UNKNOWN=2 UNCLASSIFIED_REQUIRED_WORK=null UNRECEIPTED_ACTUATION=null"
+     stacktrace:
+       test/mix/tasks/xaas_stop_court_test.exs:849: (test)
+
+...
+Finished in 39.7 seconds (0.00s async, 39.7s sync)
+19 tests, 3 failures

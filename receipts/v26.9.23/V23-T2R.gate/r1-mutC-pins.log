@@ -1,0 +1,45 @@
+HEAD=19060ec7b50e10cc0ccf3ccdaeca44f4a516ab2a + mutation C-unreadable-pins-as-absent
+
+Compiling 1 file (.ex)
+     warning: function unreadable_pins/2 is unused
+
+Generated xaas app
+01:46:41.899 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+01:46:42.271 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+01:46:42.536 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 760362, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.............
+
+  1) test a target .tool-versions that exists but cannot be read is a logged :toolchain_unresolved refusal, never a silent node fallback (Xaas.Ultracode.RecipeWorkerTest)
+     test/xaas/ultracode/recipe_worker_test.exs:515
+     match (=) failed
+     code:  assert {:error, {:toolchain_unresolved, why}} = RecipeWorker.toolchain(worktree)
+     left:  {:error, {:toolchain_unresolved, why}}
+     right: {:ok,
+             %{
+               "elixir" => nil,
+               "erl" => "/Users/sac/.erlmcp/otp-28.3.1/lib/erlang/bin/erl",
+               "erlang" => "28.3.1",
+               "mix" => "/opt/homebrew/Cellar/elixir/1.19.5/lib/elixir/bin/mix",
+               "node_elixir" => "1.19.5",
+               "path" => "/opt/homebrew/Cellar/elixir/1.19.5/lib/elixir/bin:/Users/sac/.erlmcp/otp-28.3.1/lib/erlang/bin:/usr/bin:/bin",
+               "pin_satisfied" => nil,
+               "source" => "node",
+               "tool_versions" => nil
+             }}
+     stacktrace:
+       test/xaas/ultracode/recipe_worker_test.exs:524: anonymous fn/1 in Xaas.Ultracode.RecipeWorkerTest."test a target .tool-versions that exists but cannot be read is a logged :toolchain_unresolved refusal, never a silent node fallback"/1
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:121: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.19.5) lib/ex_unit/capture_log.ex:83: ExUnit.CaptureLog.capture_log/2
+       test/xaas/ultracode/recipe_worker_test.exs:523: (test)
+
+01:46:46.941 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790153206896-2498; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+....
+Finished in 4.4 seconds (0.00s async, 4.4s sync)
+18 tests, 1 failure
+EXIT=2

@@ -1,0 +1,128 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-L/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+Generated xaas app
+08:20:18.192 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+08:20:18.764 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+08:20:19.081 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+08:20:19.145 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:19.145 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+08:20:19.165 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:19.165 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+08:20:19.177 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:19.177 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+08:20:19.185 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:19.185 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+08:20:19.195 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:19.195 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+08:20:19.199 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+08:20:19.199 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-L/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 186721, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.................
+
+  1) test committed_at_head is typed: false with the reason, or null with the git failure (never folded into false) (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1104
+     Assertion with == failed
+     code:  assert orders["WO-A"]["committed_at_head_why"] == "no git checkout holds the receipt dir"
+     left:  nil
+     right: "no git checkout holds the receipt dir"
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:1139: (test)
+
+.
+
+  2) test an order whose receipt lives only in the second dir (GGEN_IGNITER_DIR) links ALIVE; the STOP receipt records that dir and repo HEAD (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:932
+     Assertion with == failed
+     code:  assert orders["WO-A"] == %{
+              "order" => "WO-A",
+              "tuple_digest" => digest,
+              "verdict" => "ADMITTED",
+              "linked" => true,
+              "standing" => "ALIVE",
+              "why_unlinked" => nil,
+              "found_in" => [path],
+              "receipt" => path,
+              "receipt_sha256" => sha256_of(path),
+              "dir" => dir,
+              "origin" => "ggen_igniter",
+              "repo" => ggen,
+              "repo_head" => receipt_head,
+              "committed_at_head" => true,
+              "committed_at_head_why" => nil
+            }
+     left:  %{
+              "committed_at_head" => true,
+              "dir" => "/Users/sac/.cache/tmp/v23l_ggen_igniter_29954/receipts/v26.9.23",
+              "found_in" => ["/Users/sac/.cache/tmp/v23l_ggen_igniter_29954/receipts/v26.9.23/WO-A.json"],
+              "linked" => true,
+              "order" => "WO-A",
+              "origin" => "ggen_igniter",
+              "receipt" => "/Users/sac/.cache/tmp/v23l_ggen_igniter_29954/receipts/v26.9.23/WO-A.json",
+              "receipt_sha256" => "sha256:8f57b9ef18e343d8eb065d939ec4dc50e90a96aaa31a1a9a682c674bd39fb894",
+              "repo" => "/Users/sac/.cache/tmp/v23l_ggen_igniter_29954",
+              "repo_head" => "9f529c8dac598cac296ea8f56e11729fcf06d778",
+              "standing" => "ALIVE",
+              "tuple_digest" => "sha256:8b6a15c0635ecb1a0e01249287ac77ac4d24e7656be97be50d5519ccaf1551a4",
+              "verdict" => "ADMITTED",
+              "why_unlinked" => nil
+            }
+     right: %{
+              "committed_at_head" => true,
+              "committed_at_head_why" => nil,
+              "dir" => "/Users/sac/.cache/tmp/v23l_ggen_igniter_29954/receipts/v26.9.23",
+              "found_in" => ["/Users/sac/.cache/tmp/v23l_ggen_igniter_29954/receipts/v26.9.23/WO-A.json"],
+              "linked" => true,
+              "order" => "WO-A",
+              "origin" => "ggen_igniter",
+              "receipt" => "/Users/sac/.cache/tmp/v23l_ggen_igniter_29954/receipts/v26.9.23/WO-A.json",
+              "receipt_sha256" => "sha256:8f57b9ef18e343d8eb065d939ec4dc50e90a96aaa31a1a9a682c674bd39fb894",
+              "repo" => "/Users/sac/.cache/tmp/v23l_ggen_igniter_29954",
+              "repo_head" => "9f529c8dac598cac296ea8f56e11729fcf06d778",
+              "standing" => "ALIVE",
+              "tuple_digest" => "sha256:8b6a15c0635ecb1a0e01249287ac77ac4d24e7656be97be50d5519ccaf1551a4",
+              "verdict" => "ADMITTED",
+              "why_unlinked" => nil
+            }
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:953: (test)
+
+.
+
+  3) test each gate's UNKNOWN stub names a lane whose order's path scope covers that court script (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:359
+     Assertion with =~ failed
+     code:  assert body =~ ~r/^exit #{StopCourt.unknown_exit()}$/m
+     left:  "#!/bin/sh\n# GC23-10 court: Cold Replay (PRD section 12, PR-013; ARD sections 7 and 16;\n# falsifiers F5, F6; goal.ttl v23:GC23-10). Machinery: lane V23-R.\n# Run by mix xaas.stop_court --checkpoint GC-26.9.23 from the xaas root with\n# XAAS_DIR and GGEN_IGNITER_DIR in the env. Exit 0 = ALIVE; exit 75 = the\n# court cannot witness (standing UNKNOWN); exit 1 = the court ran and refused.\n#\n# Every replay below is `mix xaas.replay` (Xaas.Ultracode.SemanticReplay)\n# under the F3 cold environment: courts/no_llm_env.sh (env -i, fresh HOME,\n# no model variable, no claude/zcode on PATH) inside a sandbox-exec profile\n# that denies every read and write of the operator's ~/.claude. It rebuilds\n# subject identity, evidence, standing, completed work and the frontier from\n# the episode's receipts + TransitionLog + work graph + git refs only, with\n# the graph side's own law (mix semantic_jira.xaas_receipt / reconcile /\n# frontier, SemanticJira.replay_check/2) in GGEN_IGNITER_DIR under a private\n# MIX_BUILD_PATH clone.\n#\n# Witnesses, over the committed reference episode fmt-1:\n#   0. the recorded digest: episodes/fmt-1/replay.json is exactly the state\n#      projected from the episode-time artifacts by the independent\n#      courts/replay_project.py (python3; no graph side, no git);\n#   1. fence anti-vacuity: under the profile, ~/.claude is unreadable;\n#   2. two cold replays: exit 0 (KNOWN_REPLAY), byte-identical outputs, and\n#      both digests equal the recorded digest;\n#   3. F3: the replay with ANTHROPIC_API_KEY=x exposed is refused\n#      REFUSED(llm_credential_present), broken term mu_on_O;\n#   4. F5: a copy of the episode with receipt.json deleted diverges (exit 4):\n#      EP-A is no longer ALIVE, the frontier differs, typed\n#      unreceipted_transition / R_missing_replay;\n#   5. F6: a commit after the receipt head that touches the order's\n#      path_scope (lib/) demotes EP-A (exit 4, typed subject_changed /\n#      R_missing_identity); control: a commit outside the path_scope (docs/)\n#      keeps EP-A ALIVE and the recorded frontier (exit 0). Both commits are\n#      made in a scratch repository whose objects are the subject\n#      repository's (alternates); no shared ref is written.\nset -u\n\nxaas=${XAAS_DIR:-$(pwd)}\nggen=${GGEN_IGNITER_DIR:-/Users/sac/wt/v26922/fri/ggen_igniter-int}\nep=${GC23_EPISODE_DIR:-$xaas/docs/sjira/v26.9.23/episodes/fmt-1}\ncd \"$xaas\" || { echo \"UNKNOWN: GC23-10 XAAS_DIR $xaas unreadable\"; exit 75; }\n\nfor f in work.json ledger.ndjson receipt.json drive.json frontier_after.json replay.json; do\n  [ -f \"$ep/$f\" ] || { echo \"UNKNOWN: GC23-10 episode fmt-1 has no $f\"; exit 75; }\ndone\n[ -f \"$xaas/lib/mix/tasks/xaas.replay.ex\" ] || { echo \"UNKNOWN: GC23-10 machinery lands in lane V23-R\"; exit 75; }\nfor t in xaas_receipt reconcile frontier; do\n  [ -f \"$ggen/lib/mix/tasks/semantic_jira.$t.ex\" ] || {\n    echo \"UNKNOWN: GC23-10 GGEN_IGNITER_DIR $ggen lacks mix semantic_jira.$t (the restored surface, FRI-T6)\"\n    exit 75\n  }\ndone\ncommand -v sandbox-exec >/dev/null 2>&1 || { echo \"UNKNOWN: GC23-10 no sandbox-exec; cannot fence ~/.claude\"; exit 75; }\n\ntmp=$(mktemp -d \"${TMPDIR:-/tmp}/gc23-10.XXXXXX\")\ntrap 'rm -rf \"$tmp\"' EXIT INT TERM\nrefuse() { echo \"REFUSED: GC23-10 $*\"; exit 1; }\nenv_sh=\"$xaas/docs/sjira/v26.9.23/courts/no_llm_env.sh\"\nproj=\"$xaas/docs/sjira/v26.9.23/courts/replay_project.py\"\n\n# 0. the recorded digest is the episode-time projection\npython3 \"$proj\" \"$ep\" --check \"$ep/replay.json\" || refuse \"replay.json is not the projection of the episode-time artifacts\"\nrecorded=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[\"digest\"])' \"$ep/replay.json\")\nref=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[\"subject\"][\"pinned\"])' \"$ep/drive.json\")\necho \"recorded: $recorded (subject ref $ref)\"\n\n# 1. the ~/.claude fence, proven live\nrealhome=$HOME\nclaude_dir=$(cd \"$realhome/.claude\" 2>/dev/null && pwd -P || echo \"$realhome/.claude\")\nprofile=\"(version 1)(allow default)(deny file-read* file-write* (subpath \\\"$realhome/.claude\\\") (subpath \\\"$claude_dir\\\"))\"\nif [ -d \"$claude_dir\" ]; then\n  if" <> ...
+     right: ~r/^exit 75$/m
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:369: anonymous fn/3 in Xaas.Sjira.V26923GoalTest."test each gate's UNKNOWN stub names a lane whose order's path scope covers that court script"/1
+       (elixir 1.19.5) lib/enum.ex:4539: Enum.map_range/4
+       (elixir 1.19.5) lib/enum.ex:4539: Enum.map_range/4
+       (elixir 1.19.5) lib/enum.ex:4539: Enum.map/2
+       test/sjira/v26_9_23_goal_test.exs:363: (test)
+
+..........
+
+  4) test --order-receipts-dir is repeatable and replaces the registry list (GGEN_IGNITER_DIR is then not read) (Xaas.Sjira.V26923GoalTest)
+     test/sjira/v26_9_23_goal_test.exs:1057
+     Assertion with == failed
+     code:  assert orders["WO-A"]["committed_at_head_why"] == "HEAD has no blob at this path"
+     left:  nil
+     right: "HEAD has no blob at this path"
+     stacktrace:
+       test/sjira/v26_9_23_goal_test.exs:1084: (test)
+
+......
+Finished in 24.3 seconds (0.00s async, 24.3s sync)
+39 tests, 4 failures

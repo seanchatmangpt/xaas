@@ -1,0 +1,46 @@
+@prefix zp:   <http://seanchatmangpt.github.io/packs/zcode-plugin#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# zcode-plugin-pack vocabulary. The pack owns the classes/properties and the
+# templates that consume them; a consumer supplies the individuals (its own
+# plugin, hook, command/agent/skill and gate-policy facts). Nothing here is
+# consumer-specific.
+
+zp:Marketplace a owl:Class ; rdfs:label "ZCode marketplace" .
+zp:Plugin      a owl:Class ; rdfs:label "ZCode plugin" .
+zp:Hook        a owl:Class ; rdfs:label "Plugin hook (event + script)" .
+zp:Command     a owl:Class ; rdfs:label "Plugin slash command" .
+zp:Agent       a owl:Class ; rdfs:label "Plugin agent" .
+zp:Skill       a owl:Class ; rdfs:label "Plugin skill" .
+
+# PreToolUse gate policy. Each individual carries zp:order (xsd:integer) so the
+# rendered script is byte-deterministic (SPARQL results are ORDER BY zp:order).
+zp:AllowedTool a owl:Class ;
+    rdfs:label "Tool name admitted into a gate tool set" ;
+    rdfs:comment "zp:toolSet is one of pre_lease_ok (read-only before a lease exists), local_only (never sent to the arbiter), write (needs worktree containment)." .
+zp:ToolMapping a owl:Class ;
+    rdfs:label "zcode tool name -> execution-server tool name" ;
+    rdfs:comment "zp:fromTool / zp:toTool; unmapped tools are admitted under their own name." .
+zp:AllowedBashVerb a owl:Class ;
+    rdfs:label "Argv-level Bash verb admitted by the gate" ;
+    rdfs:comment "zp:verbSet is git_sub (a git subcommand) or read_helper (a read-only binary scoped to the leased worktree)." .
+zp:ForbiddenGitFlag a owl:Class ;
+    rdfs:label "git flag refused even under an allowed subcommand" .
+zp:DeniedPath a owl:Class ;
+    rdfs:label "Path the gate never lets Read/Grep/Glob touch" ;
+    rdfs:comment "zp:pathScope home means zp:relPath is a directory or file directly under the user's home." .
+
+zp:pluginName a owl:DatatypeProperty . zp:version a owl:DatatypeProperty .
+zp:description a owl:DatatypeProperty . zp:endpoint a owl:DatatypeProperty .
+zp:mcpServerName a owl:DatatypeProperty . zp:mcpPath a owl:DatatypeProperty .
+zp:tokenUserConfigKey a owl:DatatypeProperty . zp:sourcePath a owl:DatatypeProperty .
+zp:marketplaceName a owl:DatatypeProperty . zp:ownerName a owl:DatatypeProperty .
+zp:hookEvent a owl:DatatypeProperty . zp:hookScript a owl:DatatypeProperty .
+zp:hookTimeout a owl:DatatypeProperty . zp:hookStatusMessage a owl:DatatypeProperty .
+zp:toolName a owl:DatatypeProperty . zp:toolSet a owl:DatatypeProperty .
+zp:fromTool a owl:DatatypeProperty . zp:toTool a owl:DatatypeProperty .
+zp:verb a owl:DatatypeProperty . zp:verbSet a owl:DatatypeProperty .
+zp:flag a owl:DatatypeProperty . zp:pathScope a owl:DatatypeProperty .
+zp:relPath a owl:DatatypeProperty . zp:order a owl:DatatypeProperty ; rdfs:range xsd:integer .

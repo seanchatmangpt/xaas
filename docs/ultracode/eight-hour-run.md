@@ -53,14 +53,16 @@ Every flag is real and exercised:
 
 `--repo` names an entry in the validated multi-repo registry
 (`Xaas.Ultracode.Repos`): `config :xaas, :ultracode_repos` (the code-seeded
-baseline) merged with the durable file `~/xaas-worktrees/ultracode-repos.json`
+baseline) merged with the durable file `~/xaas/worktrees/ultracode-repos.json`
 (written ONLY by the registering task; file wins per alias). Inspect and
 extend it with:
 
 ```bash
 mix xaas.ultracode.repos    # list every entry: status, path, suites, gaps
 mix xaas.ultracode.repos --register ALIAS --path /abs/clone \
-  [--sensing PROFILE] [--suite NAME] [--canonical-suite NAME] [--worktree-root PATH]
+  [--sensing PROFILE] [--suite NAME] [--canonical-suite NAME] [--worktree-root PATH] \
+  [--refresh-before-sense]
+mix xaas.ultracode.repos --refresh ALIAS|all   # fetch + fast-forward a stale clone
 ```
 
 Registration validates before writing (alias format, `--path` must be an
@@ -79,9 +81,25 @@ are sibling wave-5 entries in the config baseline):
 
 | alias | clone | verifier (observed exit 0) | status |
 |---|---|---|---|
-| `aps` | `~/xaas-worktrees/repos/aps` | `aps-dod` + `aps-canonical` suites | ready |
-| `infinite-agentic-cli` | `~/xaas-worktrees/repos/infinite-agentic-cli` | `uv run --frozen pytest tests/test_analysis.py -q` | reserved: suite `infinite-agentic-cli-dod` (sensing `generic-pytest` recorded) |
-| `bitstar` | `~/xaas-worktrees/repos/bitstar` | `uv run --frozen pytest test_cli_fixes.py -q` | reserved: suite `bitstar-dod` (sensing `generic-pytest` recorded) |
+| `aps` | `~/xaas/worktrees/repos/aps` | `aps-dod` + `aps-canonical` suites | ready |
+| `infinite-agentic-cli` | `~/xaas/worktrees/repos/infinite-agentic-cli` | `uv run --frozen pytest tests/test_analysis.py -q` | reserved: suite `infinite-agentic-cli-dod` (sensing `generic-pytest` recorded) |
+| `bitstar` | `~/xaas/worktrees/repos/bitstar` | `uv run --frozen pytest test_cli_fixes.py -q` | reserved: suite `bitstar-dod` (sensing `generic-pytest` recorded) |
+| `xaas` | `~/xaas/worktrees/repos/xaas` | `xaas-dod` (seed, deps, strict compile, format, actuation + ultracode tests) + `xaas-canonical` (same gates, full `mix test`) | ready; sensing `xaas-sjira` (`jira_dir` over `docs/sjira`); `refresh` on |
+| `autofde-lab` | `~/xaas/worktrees/repos/autofde-lab` | `autofde-lab-dod` (subject guard + `tests/sa2a tests/beam`) + `autofde-lab-canonical` (the repo's `just test` set) | ready; sensing `autofde-lab-jira` (no ticket carries a `## Status` yet, so it senses 0 items); `refresh` on |
+| `gymact` | `~/xaas/worktrees/repos/gymact` | `gymact-dod` + `gymact-canonical` (venv-pinned pytest; see the standing note below) | ready; sensing `gymact-jira`; `refresh` on |
+| `ggen-igniter` | `~/xaas/worktrees/repos/ggen-igniter` | `ggen-igniter-dod` + `ggen-igniter-canonical` (elixir 1.18.4-otp-27, `mix test`) | ready; sensing `ggen-igniter-jira`; `refresh` on |
+
+The four SJ-program rows (T1) are `git clone --local` clones of the operator
+checkouts. Their registry entries opt in to `refresh`: before the loop pins
+`base_sha`, `Repos.refresh/1` fetches the clone's upstream and fast-forwards
+the checked-out branch (`merge --ff-only` only — an ahead or diverged clone
+is reported and left untouched; the per-alias integration branch is never
+involved). `mix xaas.ultracode.repos --refresh ALIAS|all` runs the same step
+by hand. Sensing names resolve to declared profiles
+(`config :xaas, :ultracode_sensing_profiles`,
+`Xaas.Ultracode.Sensing.profile/1`); the sense stage runs a repo's backlog
+script first and, when that fails, falls back to the repo's named profile
+over the same provisioned tree — fallback is ledgered, never silent.
 
 ## 2. The budget law (what makes this ONE run, not an infinite cron)
 
@@ -116,21 +134,33 @@ refusal (`{:campaign_already_running, id}`), never a silent overlap.
   (`PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d xaas_dev -c "select 1;"`).
   `DEV_DB_*` env vars override the postgres/postgres defaults.
 - **APS clone + operator dirs** (dev.exs, already configured):
-  `~/xaas-worktrees/repos/aps` (the sensed repo),
-  `~/xaas-worktrees/runs` (provisioned epoch worktrees),
-  `~/xaas-worktrees/tickets` (tickets, campaign ledgers, wave receipts).
-- **zcode CLI + a Node ≥ 22.5 for the worker** (`node:sqlite` is required by
+  `~/xaas/worktrees/repos/aps` (the sensed repo),
+  `~/xaas/worktrees/runs` (provisioned epoch worktrees),
+  `~/xaas/worktrees/tickets` (tickets, campaign ledgers, wave receipts).
+- **zcode CLI + a Node ≥ 22.19.0 (`engines.node` in `~/dev/zcode-cli/package.json`, the contract xaas reads; earlier guidance said ≥ 22.5, which `node:sqlite` alone allowed) for the worker** (`node:sqlite` is required by
   `bin/zcode.js`): `ZCODE_CLI_DIR` defaults to `/Users/sac/dev/zcode-cli`;
   the dispatcher inherits your PATH, so **a PATH whose first `node` is
   v20 (e.g. `/usr/local/bin/node`) kills every worker instantly** with
   `No such built-in module: node:sqlite` (observed 2026-09-20, campaign
-  `d6d977be` epoch `bcf50839` → reaped `failed`). A working invocation prefixes
-  a dir whose `node` is ≥ 22.5 (homebrew v26 is proven):
-  `export PATH="/opt/homebrew/bin:$HOME/.asdf/shims:$PATH"` — then verify
-  `which mix` still resolves under asdf shims, or symlink just `node` into a
-  private bin dir and prepend that.
-- **Auth**: no `INTERNAL_API_TOKEN` needed — the campaign loop is in-process
-  (Ash + the dispatcher's direct psql/zcode path), no HTTP surface involved.
+  `d6d977be` epoch `bcf50839` → reaped `failed`). Prepending all of
+  `/opt/homebrew/bin` is not a fix: its `mix` is homebrew 1.19.5 and would
+  shadow the asdf shim, breaking the toolchain law above. The fix symlinks
+  just `node` (≥ 22.5; homebrew v26 is the proven source) into a private bin
+  dir and prepends that. Deployed on this host as
+  `~/.local-xaas-bin/` (`node → /opt/homebrew/bin/node`, v26.8.1), so the
+  launch shell uses `export PATH="$HOME/.local-xaas-bin:$HOME/.asdf/shims:$PATH"`
+  — node ≥ 22.5 first, `mix` still under asdf shims (verified 2026-09-21:
+  `mix --version` → Mix 1.20.2 / OTP 28, exit 0).
+- **Auth**: the campaign loop itself is in-process (Ash + the dispatcher's
+  direct psql/zcode path), but the WORKER leg is not: workers claim over the
+  `xaas-execution` MCP endpoint, whose `RequireInternalApiToken` plug fails
+  closed with 503 `internal_api_misconfigured` when the server was started
+  without `INTERNAL_API_TOKEN`. Start phx WITH the token matching the
+  plugin's `zcode_xaas_token` (observed fail-closed 2026-09-21: every worker
+  BLOCKED "cannot reach xaas-execution" until the server was restarted with
+  the token). The worker session also needs a project `.mcp.json` in
+  `ZCODE_CLI_DIR` registering `xaas-execution` (shape: the plugin cache's
+  `.mcp.json`) — headless sessions do not register it from user scope alone.
 - **GLM provider quota**: each wave spawns up to `capacity` real zcode/GLM
   sessions; `[1302]`/429 rate-kills are expected occasionally (§6).
 
@@ -141,8 +171,8 @@ Each wave is one `Xaas.Ultracode.Autonomic.run/1` pass (identical to
 
 1. **Sense**: `priv/verifiers/aps_backlog.py` derives work items at an exact
    `base_sha` in a throwaway worktree.
-2. **Plan**: per item — a provisioned worktree under `~/xaas-worktrees/runs/`,
-   a ticket JSON under `~/xaas-worktrees/tickets/`, and a `Run` + `:running`
+2. **Plan**: per item — a provisioned worktree under `~/xaas/worktrees/runs/`,
+   a ticket JSON under `~/xaas/worktrees/tickets/`, and a `Run` + `:running`
    `Epoch` bound to that worktree.
 3. **Act**: the dispatcher in directed mode —
    `scripts/xaas-glm-failover-dispatcher.sh --epoch <uuid>` (lock-free,
@@ -162,9 +192,9 @@ Each wave is one `Xaas.Ultracode.Autonomic.run/1` pass (identical to
 Paths, for campaign run id `<ID>` (first 8 hex = `<ID8>`):
 
 - Campaign ledger (the durable session record):
-  `~/xaas-worktrees/tickets/campaign-<ID8>/ledger.ndjson`
-- Per-dispatch state/logs: `~/xaas-worktrees/tickets/campaign-<ID8>/dispatch-wave-<n>/`
-- Per-wave terminal receipts: `~/xaas-worktrees/tickets/autonomic-<nonce>/receipt.json`
+  `~/xaas/worktrees/tickets/campaign-<ID8>/ledger.ndjson`
+- Per-dispatch state/logs: `~/xaas/worktrees/tickets/campaign-<ID8>/dispatch-wave-<n>/`
+- Per-wave terminal receipts: `~/xaas/worktrees/tickets/autonomic-<nonce>/receipt.json`
 - Ash→OCEL telemetry egress (already live): `<build>/priv/ocel/ash-actions.ndjson`
   (the `Xaas.Telemetry.OcelAshEmitter` handlers write this at boot — observed
   in every campaign boot log).
@@ -187,7 +217,7 @@ the ledger's `attempt_start`/`item_done` events):
 ```bash
 python3 - <<'EOF'
 import json, subprocess
-led = f"/Users/sac/xaas-worktrees/tickets/campaign-<ID8>/ledger.ndjson"
+led = f"/Users/sac/xaas/worktrees/tickets/campaign-<ID8>/ledger.ndjson"
 ids = [json.loads(l)["data"]["epoch_id"] for l in open(led)
        if '"attempt_start"' in l]
 print(" ".join(ids))
@@ -296,7 +326,7 @@ authority: you run two read-only-or-idempotent local commands, append one
 telemetry line, and quit.
 
 1. STATUS. Run exactly:
-     cd /Users/sac/xaas && export PATH="/opt/homebrew/bin:$HOME/.asdf/shims:$PATH" && mix xaas.ultracode.status
+     cd /Users/sac/xaas && export PATH="$HOME/.local-xaas-bin:$HOME/.asdf/shims:$PATH" && mix xaas.ultracode.status
    (First tick only: also record now as START_TS and the printed campaign id
    as RUN_ID; on later ticks, if the printed campaign id differs from RUN_ID,
    treat the run as finished: go to step 5 with reason "new-campaign".)
@@ -316,15 +346,17 @@ telemetry line, and quit.
    never install launchd, never run two --once passes concurrently with
    yourself, never retry a failed pass within the same tick.
 4. TELEMETRY. Append EXACTLY ONE ndjson line (create the directory first with
-   mkdir -p; this path is OUTSIDE the repo — never write anywhere under
-   /Users/sac/xaas):
-     /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson
+   mkdir -p; writing inside /Users/sac/xaas is permitted ONLY to this exact
+   sanctioned gitignored telemetry path — never write anywhere else under
+   /Users/sac/xaas, no repo-tree writes):
+     /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson
    Line schema (single line, UTF-8, UTC ISO8601 ts):
      {"ts":"...","kind":"ultracode-keepalive/1","tick":K,"run_id":"...","state":"running","waves_executed":N,"wave_budget":M,"seconds_remaining":S,"in_flight":{"total":T,"leased":L,"unleased":U},"topup":{"ran":true,"exit":0},"action":"topup|none","reason":"..."}
 5. END SILENTLY. Produce no prose, no summary, no recommendations. Hard
    prohibitions: never git push anything (force or otherwise), never check
    out or touch main or any branch, never edit or delete files except
-   appending to /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson, never
+   appending to the sanctioned telemetry path
+   /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson, never
    restart or kill any process or server, never run mix test/compile, never
    widen these commands with extra flags. If any command errors, record the
    error in the telemetry line's "reason" field and still end silently.
@@ -332,7 +364,7 @@ Hard limits: at most 48 ticks at 10-minute cadence (= 8 hours). Killing this
 automation (deleting it from the scheduler) is the operator cut.
 ```
 
-Reading the telemetry: `tail -f /Users/sac/xaas-tmp/ultracode-keepalive/log.ndjson`.
+Reading the telemetry: `tail -f /Users/sac/xaas/tmp/ultracode-keepalive/log.ndjson`.
 
 ## 9. Smoke evidence (bounded, 2026-09-20, this branch)
 

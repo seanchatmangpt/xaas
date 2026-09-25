@@ -1,0 +1,10 @@
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+16.4.0.2
+ggen 26.9.18
+2026-09-24T00:16:51.170833Z  INFO ggen.cli{command=--version version="26.9.18"}: ggen_cli_lib: close time.busy=32.1µs time.idle=3.37µs
+/opt/homebrew/Cellar/ggen/26.9.18/bin/ggen
+357cfd4e595c6f8a8341ab95088b8e4e70acee58663c3daf065cc0824d6f5a26  /opt/homebrew/Cellar/ggen/26.9.18/bin/ggen

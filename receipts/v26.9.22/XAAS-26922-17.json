@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-17",
+  "base_sha": "release/v26.9.22 (docs/sjira/v26.9.22 committed this wave)",
+  "command": "cd /Users/sac/ggen_igniter && WO=/Users/sac/xaas/docs/sjira/v26.9.22/wo.json mix run /Users/sac/xaas/docs/sjira/v26.9.22/admit.exs; jq length docs/sjira/v26.9.22/index.json",
+  "exit": 0,
+  "output_excerpt": "ADMITTED=96 REFUSED=0 (receipts/admit-v26.9.22.log); jq length index.json = 96. work-orders.ttl: 96 sj:WorkOrder individuals across 10 repos (xaas 18, autofde-lab 11, gymact 10, ash_atlassian 4, beam4pm 9, ash_surface 11, ferroplan 8, gitvan 8, ggen 7, ggen-marketplace 10), repository slugs owner/name, rdflib-validated (3531 triples). Standing projected from transition-log.jsonl (TransitionLog projection, latest event by seq) and standing/*.json inputs — no standings in literals. generate.py --check reproduces wo.json/index.json/jira byte-identically.",
+  "standing": "ALIVE",
+  "notes": "Admission ran against ~/ggen_igniter at f81cf54 (current local checkout; GGEN_IGNITER-26922-08's TTL-loader/sync-projection capability remains queued — generate.py is the deterministic in-repo projection used this cycle, noted in README).",
+  "evidence_ts": "2026-09-22T19:15Z"
+}

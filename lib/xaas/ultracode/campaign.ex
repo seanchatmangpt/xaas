@@ -65,16 +65,37 @@ defmodule Xaas.Ultracode.Campaign do
   Campaign rows are identified by the `ultracode-campaign/1` goal prefix, so
   `status`/`stop` can default to "the most recent campaign" without a
   second hand-edited registry anywhere.
+
+  ## The terminal standing is the audit's judgment (one law)
+
+  At the `:running -> :completed` edge, `finish/4` no longer derives the
+  row's `standing` from the wave receipts' coarse standings -- that second,
+  independent judgment is exactly what let campaign 50762ec9 record
+  row-standing `blocked` while its audit said PARTIAL_ALIVE with one named
+  gap. The row's terminal standing is now `Xaas.Ultracode.Audit.judgment/2`'s
+  (`:alive -> :admitted`; `:partial_alive -> :blocked`, with the named gaps
+  carried on the `campaign_end` ledger event as `standing_gaps`), run
+  BOUNDED (worker process + timeout) and FAIL-OPEN: on any audit failure
+  (crash, timeout, refused judgment) the loop falls back to the previous
+  coarse wave-standing derivation, ledgers the error as
+  `standing_audit_error`, and never hangs or crashes. Which law produced
+  the standing is always on the terminal event (`standing_source`).
   """
 
   require Ash.Query
 
-  alias Xaas.Ultracode.{Epoch, Run, WavePlan}
+  alias Xaas.Ultracode.{Audit, Epoch, Run, WavePlan}
 
   @goal_marker "ultracode-campaign/1"
   @default_capacity 5
   @default_suite "aps-dod"
   @default_repo "aps"
+
+  # The wall-clock bound on the campaign-end standing audit (see
+  # `terminal_standing/3`): past it the loop fails OPEN to the coarse
+  # wave-standing derivation and ledgers the timeout -- the campaign loop
+  # must never hang on the audit.
+  @standing_audit_timeout_ms 60_000
 
   @typedoc "Duration/interval string: a positive integer with an h/m/s unit."
   @type duration_string :: String.t()
@@ -397,7 +418,7 @@ defmodule Xaas.Ultracode.Campaign do
         stopped_summary(campaign, waves_done, receipts)
 
       past?(now, campaign.deadline_at) or waves_done >= campaign.max_cycles ->
-        finish(campaign, waves_done, receipts)
+        finish(campaign, waves_done, receipts, ledger)
 
       true ->
         wave_number = waves_done + 1
@@ -536,16 +557,19 @@ defmodule Xaas.Ultracode.Campaign do
 
   defp reload(id), do: Ash.get!(Run, id, action: :read_unscoped, authorize?: false)
 
-  defp finish(campaign, waves_done, receipts) do
+  # The terminal transition. The standing written here is THE audit
+  # judgment's (`Xaas.Ultracode.Audit.judgment/2` with `closing: true` --
+  # see that module: the row's :running state at this instant is the
+  # pre-image of the transition this judgment informs, so the law's row
+  # half evaluates against the :completed being certified; every other
+  # half is byte-identical). The audit runs bounded and fail-open: on
+  # crash/timeout/refused judgment the previous coarse wave-standing
+  # derivation speaks, with the error on the terminal event -- the loop
+  # never hangs or crashes on audit failure.
+  defp finish(campaign, waves_done, receipts, ledger) do
     waves = chronological_waves(receipts)
-    standings = Enum.map(waves, & &1.standing)
 
-    standing =
-      cond do
-        standings == [] -> :unknown
-        Enum.all?(standings, &(&1 == "ALIVE")) -> :admitted
-        true -> :blocked
-      end
+    {standing, evidence} = terminal_standing(campaign.id, ledger, waves)
 
     campaign
     |> Ash.Changeset.for_update(:transition_state, %{state: :completed, standing: standing},
@@ -553,14 +577,141 @@ defmodule Xaas.Ultracode.Campaign do
     )
     |> Ash.update!()
 
-    %{
-      status: :completed,
-      waves_executed: waves_done,
-      wave_budget: campaign.max_cycles,
-      standing: Atom.to_string(standing),
-      waves: waves
-    }
+    Map.merge(
+      %{
+        status: :completed,
+        waves_executed: waves_done,
+        wave_budget: campaign.max_cycles,
+        standing: Atom.to_string(standing),
+        waves: waves
+      },
+      evidence
+    )
   end
+
+  # Maps the ONE judgment onto the Run standing vocabulary:
+  # `:alive -> :admitted`; `:partial_alive -> :blocked` with the named
+  # gaps carried onto the campaign_end ledger event (`standing_gaps`);
+  # a refused judgment or any audit failure falls back to the coarse
+  # wave-standing derivation with the error ledgered
+  # (`standing_audit_error`). `standing_source` names which law spoke,
+  # so no standing is ever of unknown provenance.
+  defp terminal_standing(campaign_id, ledger, waves) do
+    coarse = coarse_standing(waves)
+
+    case bounded_judgment(campaign_id, ledger) do
+      {:ok, %{standing: :alive}} ->
+        {:admitted, %{standing_source: "audit"}}
+
+      {:ok, %{standing: :partial_alive, gaps: gaps}} when is_list(gaps) ->
+        {:blocked, %{standing_source: "audit", standing_gaps: gaps}}
+
+      {:ok, %{standing: :partial_alive}} ->
+        {:blocked, %{standing_source: "audit", standing_gaps: []}}
+
+      {:ok, %{standing: :blocked}} ->
+        {coarse,
+         %{
+           standing_source: "coarse",
+           standing_audit_error:
+             "audit refused to judge (standing blocked) -- coarse wave-standing derivation spoke"
+         }}
+
+      {:error, reason} ->
+        {coarse, %{standing_source: "coarse", standing_audit_error: format_audit_error(reason)}}
+    end
+  end
+
+  # The PREVIOUS coarse derivation, retained verbatim as the fail-open
+  # fallback only: whenever the audit judges, it owns the verdict.
+  defp coarse_standing(waves) do
+    standings = Enum.map(waves, & &1.standing)
+
+    cond do
+      standings == [] -> :unknown
+      Enum.all?(standings, &(&1 == "ALIVE")) -> :admitted
+      true -> :blocked
+    end
+  end
+
+  # Runs the standing audit in a BOUNDED worker process: spawn -> (sandbox
+  # ownership delegation) -> :go handshake -> result, with a hard receive
+  # timeout that kills the worker and returns a typed error. The audit is
+  # injectable through the same application-env seam the wave runner uses
+  # (`config :xaas, :ultracode_standing_audit`, a `{mod, fun}` pair called
+  # as `apply(mod, fun, [campaign_id, [closing: true, ledger: ledger]])`)
+  # so tests can qualify the crash/timeout paths without reaching the real
+  # judgment; the default is the real shared law.
+  defp bounded_judgment(campaign_id, ledger) do
+    {mod, fun} =
+      Application.get_env(:xaas, :ultracode_standing_audit, {Audit, :judgment})
+
+    timeout_ms =
+      Application.get_env(:xaas, :ultracode_standing_audit_timeout_ms, @standing_audit_timeout_ms)
+
+    caller = self()
+    ref = make_ref()
+
+    worker =
+      spawn(fn ->
+        receive do
+          :go -> send(caller, {ref, judgment_result(mod, fun, campaign_id, ledger)})
+        after
+          # The :go handshake is the delegation point (see below); if it
+          # never arrives this worker exits silently and the caller's
+          # receive falls through to the timeout path.
+          30_000 -> :ok
+        end
+      end)
+
+    delegate_sandbox_ownership(worker)
+    send(worker, :go)
+
+    receive do
+      {^ref, value} ->
+        value
+    after
+      timeout_ms ->
+        Process.exit(worker, :kill)
+        {:error, {:audit_timeout, timeout_ms}}
+    end
+  end
+
+  # The audit itself, isolated: ANY failure inside the worker -- raise,
+  # throw, exit -- comes back as a typed {:error, _}, never propagates to
+  # the campaign loop.
+  defp judgment_result(mod, fun, campaign_id, ledger) do
+    apply(mod, fun, [campaign_id, [closing: true, ledger: ledger]])
+  rescue
+    e -> {:error, {:audit_raised, Exception.message(e)}}
+  catch
+    kind, value -> {:error, {:audit_uncaught, kind, value}}
+  end
+
+  # Under the SQL sandbox (the test env's pool), the judgment worker must
+  # share the caller's checked-out connection to observe the campaign's
+  # own transactional state -- Ecto's documented `Sandbox.allow/3`
+  # delegation, deterministic here because the worker waits for the :go
+  # handshake before its first query. Every other pool (dev/prod) needs
+  # no delegation.
+  defp delegate_sandbox_ownership(worker) do
+    if Xaas.Repo.config()[:pool] == Ecto.Adapters.SQL.Sandbox do
+      Ecto.Adapters.SQL.Sandbox.allow(Xaas.Repo, self(), worker)
+    end
+  rescue
+    _ -> :ok
+  end
+
+  defp format_audit_error({:audit_timeout, ms}),
+    do: "audit timed out after #{ms}ms"
+
+  defp format_audit_error({:audit_raised, message}),
+    do: "audit crashed: " <> message
+
+  defp format_audit_error({:audit_uncaught, kind, value}),
+    do: "audit crashed (#{kind}): " <> inspect(value)
+
+  defp format_audit_error(reason), do: "audit could not judge: " <> inspect(reason)
 
   defp stopped_summary(campaign, waves_done, receipts) do
     waves = chronological_waves(receipts)

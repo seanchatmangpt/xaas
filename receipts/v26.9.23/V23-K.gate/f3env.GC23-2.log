@@ -1,0 +1,9 @@
+llm_vars_in_court_env=0
+no claude/zcode on court PATH
+determinism: 2 fresh compiles byte-identical to docs/sjira/v26.9.23/compiled/*.ttl (orders.ttl sha256:c572d56cb525de7a08a614e8c082c24dc95c1670e5fcd38f1ddfc09083bd8d09)
+mutation: shifted span of https://ggen-igniter.dev/sjira/v26.9.23#P-00ca1bee2d40f587 and smuggled WorkOrder refused; nothing written
+placement: 110 WorkOrders = 110 required Postcondition/Invariant/Falsifier propositions (1:1, sj:checkpointOf = sj:requiredBy within GC-26.9.23 + 13 gates); 26 not-required propositions yield 0 orders
+F8 attack: discovered prose claiming sj:requiredBy GC23-8 refused against GC-26.9.23 (provenance_mismatch on the root); nothing written
+F8 route: WO-ad4505ca4a1c4f2f admitted under GC-26.9.24 (checkpointOf GC24-F8), not under GC-26.9.23; orders under GC-26.9.23 unchanged (120)
+ALIVE: GC23-2 accepted prose compiles deterministically into a finite sJira delta; candidate mutation refused; F8 routes discovered work to GC-26.9.24
+no_llm_env.sh ... -- sh docs/sjira/v26.9.23/courts/GC23-2.sh => 0 (50 s)

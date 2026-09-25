@@ -110,7 +110,7 @@ jobs:
           test -s docs/rfc/RFC-STOGAF-v26.9.22.md
           test -s docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
           test -s docs/case-studies/wd-fa/STOGAF-DEMO-VIEWPOINTS.md
-          test -s docs/sjira/v26.9.22/011-stogaf-wd-cs2.md
+          test -s docs/sjira/v26.9.22/stogaf-wd-cs2/011-stogaf-wd-cs2.md
           test -s priv/packs/wd_cs2_pack/stogaf.ttl
           test -s priv/packs/wd_cs2_pack/stogaf-core.ttl
           test -s priv/packs/wd_cs2_pack/stogaf-shapes.ttl
@@ -119,7 +119,7 @@ jobs:
           test -s docs/case-studies/wd-fa/conformance.json
           test -s docs/case-studies/wd-fa/viewpoints.json
           test -s docs/case-studies/wd-fa/adm.json
-          test -s docs/sjira/v26.9.22/index.json
+          test -s docs/sjira/v26.9.22/stogaf-wd-cs2/index.json
           grep -q "ST-4 CONSTRAINED" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
           grep -q "ST-6 AUTONOMIC" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md
           ! grep -q "Current cumulative level: ST-7" docs/case-studies/wd-fa/STOGAF-CONFORMANCE.md

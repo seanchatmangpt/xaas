@@ -1,0 +1,7 @@
+HELD GC23-4 [provider-subject-mutated] exit=1 :: REFUSED: GC23-4 hop digests do not recompute, disagree, or do not match their carriers
+HELD GC23-5 [actor-zcode] exit=1 :: REFUSED: GC23-5 executor is not the deterministic provider, or the OCEL names an LLM provider
+HELD GC23-6 [consequence-removed] exit=1 :: REFUSED: GC23-6 receipt head parent bc8ea06d7fa4e249283f2b8fcd00fef5128b4151 is not the episode subject 80a8a4c71b331a39771ad65d1149eb835645d17c
+HELD GC23-7 [ocel2-event-dropped] exit=1 :: REFUSED: GC23-7 pm4py, equivalence or reached-class check failed
+HELD GC23-8 [ep-b-not-entered] exit=1 :: REFUSED: GC23-8 the recorded frontier diff does not close EP-A and open EP-B
+HELD GC23-8 [live-digest-disagrees] exit=1 :: REFUSED: GC23-8 the live recompute disagrees with the recorded frontier
+TAMPER_FAIL=0

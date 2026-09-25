@@ -1,0 +1,264 @@
+MUT-4 route.ex reverted to friday/gc-fri-0800 b3f85b3 (HEAD 7fec9d8 + revert)
+ lib/xaas/sa2a/route.ex | 17 ++---------------
+ 1 file changed, 2 insertions(+), 15 deletions(-)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 2 files (.ex)
+Generated xaas app
+02:59:57.688 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+02:59:58.067 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+02:59:58.329 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 410984, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+.......
+
+  1) test capability typing: GALL labels are not sj:capabilityId values merge is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values merge is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+....
+
+  2) test capability typing: GALL labels are not sj:capabilityId values commit is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values commit is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+..
+
+  3) test capability typing: GALL labels are not sj:capabilityId values Push is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Push is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+..
+
+  4) test capability typing: GALL labels are not sj:capabilityId values Edit is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Edit is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+....
+
+  5) test capability typing: GALL labels are not sj:capabilityId values Publish is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Publish is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+............
+
+  6) test capability typing: GALL labels are not sj:capabilityId values edit is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values edit is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+
+
+  7) test capability typing: GALL labels are not sj:capabilityId values publish is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values publish is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+
+
+  8) test capability typing: GALL labels are not sj:capabilityId values read is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values read is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+.
+
+  9) test capability typing: GALL labels are not sj:capabilityId values Merge is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Merge is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+.
+
+ 10) test capability typing: GALL labels are not sj:capabilityId values push is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values push is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+...
+
+ 11) test capability typing: GALL labels are not sj:capabilityId values Commit is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Commit is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+...
+
+ 12) test capability typing: GALL labels are not sj:capabilityId values Deploy is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Deploy is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+....
+
+ 13) test capability typing: GALL labels are not sj:capabilityId values Read is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Read is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+...
+
+ 14) test capability typing: GALL labels are not sj:capabilityId values write is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values write is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+.
+
+ 15) test capability typing: GALL labels are not sj:capabilityId values Write is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values Write is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+......
+
+ 16) test capability typing: GALL labels are not sj:capabilityId values deploy is refused as a capability at every hop and by the registry (Xaas.Sa2a.RouteTest)
+     test/xaas/sa2a/route_test.exs:271
+     Assertion with == failed
+     code:  assert Route.tuple(hop, carrier(labelled, hop)) == {:refused, {:invalid_field, "capability"}}
+     left:  {:refused,
+             {:epoch_contract,
+              {:refused_semantic_work, {:invalid, :capability}}}}
+     right: {:refused, {:invalid_field, "capability"}}
+     stacktrace:
+       test/xaas/sa2a/route_test.exs:275: anonymous fn/3 in Xaas.Sa2a.RouteTest."test capability typing: GALL labels are not sj:capabilityId values deploy is refused as a capability at every hop and by the registry"/1
+       (elixir 1.19.5) lib/enum.ex:2520: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/xaas/sa2a/route_test.exs:272: (test)
+
+.....
+Finished in 0.3 seconds (0.00s async, 0.3s sync)
+74 tests, 16 failures

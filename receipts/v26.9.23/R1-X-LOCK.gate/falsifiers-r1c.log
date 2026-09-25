@@ -1,0 +1,6 @@
+subject=38c614b1533c0342042877ec6d13612957a21b6e ggen=ggen 26.9.18
+FA frozen-subject reproduction: inner_exit=1 expected=1+FM-PACK-008 -> fired
+FB revert-mutation (lock -> e999e62 bytes): inner_exit=2 expected=2+FM-PACK-008 restored_sha256=508605ec931b053ad80b2c359a3bb8deaf307bc35d7474303f9e3c977b43735d -> fired
+FC re-lock determinism: sync=0 cmp_lock=0 diff_projection=0 resync=0 cmp_lock2=0 -> held
+FD Chicago mock grep: inner_exit=1 expected=1 (no match) -> held
+RESULT fail=0

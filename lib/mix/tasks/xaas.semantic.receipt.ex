@@ -18,7 +18,17 @@ defmodule Mix.Tasks.Xaas.Semantic.Receipt do
 
   @impl Mix.Task
   def run(args) do
-    {opts, _rest, _invalid} = OptionParser.parse(args, strict: [epoch: :string, out: :string])
+    {opts, _rest, _invalid} =
+      OptionParser.parse(args, strict: [epoch: :string, out: :string, help: :boolean])
+
+    if opts[:help] do
+      Mix.shell().info(Mix.Task.moduledoc(__MODULE__))
+    else
+      export(opts)
+    end
+  end
+
+  defp export(opts) do
     epoch_id = opts[:epoch] || Mix.raise("--epoch EPOCH_ID is required")
     Mix.Task.run("app.start")
 

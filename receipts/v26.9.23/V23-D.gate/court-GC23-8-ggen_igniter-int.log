@@ -1,0 +1,4 @@
+HEAD=7fec9d883580984ef8ac623c210b9985652d4398 GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int (52798a00a7c36314ba6bb65249626ea50f6763a3)
+recorded: EP-A left (sha256:000000000000 -> sha256:41c2dd0faf87), EP-B entered
+UNKNOWN: GC23-8 live recompute needs mix semantic_jira.frontier in GGEN_IGNITER_DIR /Users/sac/wt/v26922/fri/ggen_igniter-int (the restored mix semantic_jira.* surface, FRI-T6 via lane V23-T6R, not merged there)
+COURT_EXIT=75

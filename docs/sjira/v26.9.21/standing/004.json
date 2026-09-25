@@ -1,0 +1,11 @@
+{
+  "standing": "ALIVE",
+  "standing_note": "bounded: see Receipts; full-suite `mix test` NOT RUN at the verified head",
+  "repository_suffix": " (order base); observed at merge head `0f73fa8` = main `2ec5fdb` + `sjira/sj-004`",
+  "done": [
+    0,
+    1,
+    2
+  ],
+  "receipts": "004.receipts.md"
+}
