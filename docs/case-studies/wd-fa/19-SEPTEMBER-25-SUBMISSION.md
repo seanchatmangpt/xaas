@@ -6,9 +6,10 @@
 **Implementation baseline inspected:** `seanchatmangpt/xaas` PR #62 head `7c457827dcfdb3e4809395df67f09611bbff37c8`, merged as `f9670f446537ddb882edf9cd7e0b6519de557e60`  
 **Evidence ceiling:** repository-local design and fixture evidence only  
 **Freeze:** FROZEN 2026-09-25 for the 08:00 PT presentation  
-**Frozen subject:** `seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60` (PR #62 merge; `git diff --stat 7c457827 f9670f44` is empty, so the tree is identical to PR head `7c457827`)  
-**Court report:** `wd-cs2-stogaf-semantic-report.json` sha256 `e65aed338f6fc187f4e94303f1dc47bb330a90172a211a7b810353499a26a52c` (local replay of `scripts/stogaf_semantic_court.py` on `git archive f9670f44`; standing ALIVE, 5 gates, 0 refusal rows; payload equal to the court log line of run 36082037670)  
-**Runs cited:** STOGAF court 36082037670, exact-head court 36082037553, deck manufacture 36082037511 (all `pull_request` on `7c457827`, success); CI/CD Elixir 36085665790 (`push` on `f9670f44`, success)
+**Frozen subject:** `seanchatmangpt/xaas@70f7ea75df1d20a37666cd09050d5ec10a237892` (PR #69 merge of head `e2d9b22d`, tree-identical to it; carries the PR #68 freeze of PR #62 merge `f9670f44` plus the Semantic Case Study court)  
+**Court report:** `wd-cs2-stogaf-semantic-report.json` sha256 `7e25a5869bcd9e7aa1335d04ccd356e9b4fc8d7eca0a7f7bfc94f67a15fe7ff1` (STOGAF_SEMANTIC_COURT_V2, standing ALIVE, 9 gates, 0 refusal rows; local replay on `git archive 70f7ea75` equals the digest printed by main push court run 36111479221 on `70f7ea75` and PR court run 36100453038 on `e2d9b22d`)  
+**Runs cited:** PR #69 head `e2d9b22d`: STOGAF court 36100453038, exact-head court 36100453050, deck manufacture 36100453057, CI/CD Elixir 36100453024 (all success); PR #68 head `be8cbf06`: 36098848597, 36098848599, 36098848507, 36098848602 (all success); PR #62: 36082037670 / 36082037553 / 36082037511 on `7c457827`, CI/CD Elixir 36085665790 on `f9670f44`; push runs on `70f7ea75`: court 36111479221, exact-head 36111479272, deck 36111479344 (all success)  
+**Case revision:** `case_revision_digest` `6bd9762edbdf7c8f2a267106343601c60eef8c5cf32f52e183b963cc6453806f` (claims ledger `docs/case-studies/wd-fa/claims-ledger.json`, 12 claims; `wd-deck case-study --check` drift-free in run 36100453057)
 
 ## Executive summary
 
@@ -813,7 +814,9 @@ The exact-head CI state is intentionally not promoted beyond what was observed:
 
 - PR head `7c457827`: STOGAF court run 36082037670 succeeded (RDF/SHACL/SPARQL court standing ALIVE, 5 gates, 0 refusal rows), exact-head court run 36082037553 succeeded, deck manufacture run 36082037511 succeeded;
 - merge `f9670f44` (tree-identical to `7c457827`): CI/CD Elixir run 36085665790 succeeded on the push to main;
-- the STOGAF court and deck workflows were not re-run on the main push; the court report digest above is a local replay on the exact merge tree.
+- the STOGAF court and deck workflows were not re-run on the `f9670f44` main push;
+- PR #68 head `be8cbf06` (this freeze + the deck `pres:blockOf` fix): court 36098848597, exact-head 36098848599, deck 36098848507, CI/CD Elixir 36098848602 succeeded; merged as `08553fce`;
+- PR #69 head `e2d9b22d` (Semantic Case Study court, claims ledger, 9 gates): court 36100453038, exact-head 36100453050, deck 36100453057, CI/CD Elixir 36100453024 succeeded; merged as `70f7ea75`, the frozen subject; the court report digest in the header is a local replay on that exact tree and equals the digest the court run printed.
 
 Therefore this proposal does **not** claim that the current PR head is globally ALIVE, production-ready, deployed, accepted by WD or proven to improve MTTR.
 

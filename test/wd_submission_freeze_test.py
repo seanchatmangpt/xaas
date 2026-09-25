@@ -94,7 +94,8 @@ def test_court_report_digest_replays_on_frozen_subject(tmp_path: Path) -> None:
     if not _has_object(sha):
         pytest.skip(f"git object {sha} absent (shallow checkout); replay not observable")
     archive = subprocess.run(
-        ["git", "archive", sha, "scripts/stogaf_semantic_court.py", "priv/packs/wd_cs2_pack"],
+        ["git", "archive", sha, "scripts/stogaf_semantic_court.py", "priv/packs/wd_cs2_pack",
+         "docs/case-studies/wd-fa/presentation"],
         cwd=ROOT,
         check=True,
         capture_output=True,
