@@ -1,0 +1,41 @@
+{
+  "offline": {
+    "positive": [
+      "known_firmware"
+    ],
+    "partial": [
+      "partial_firmware"
+    ],
+    "novel": [
+      "novel_x"
+    ],
+    "negative_controls": [
+      "NC-01",
+      "NC-02",
+      "NC-03",
+      "NC-04",
+      "NC-05",
+      "NC-06"
+    ]
+  },
+  "shadow_metrics": [
+    "retrieval_recall",
+    "candidate_ranking_quality",
+    "false_known",
+    "false_unknown",
+    "evidence_completeness",
+    "diagnostic_action_usefulness",
+    "engineer_override",
+    "context_reconstruction_time"
+  ],
+  "production_metrics": [
+    "mttr",
+    "time_to_containment",
+    "time_to_verified_disposition",
+    "engineer_touches",
+    "exploratory_steps",
+    "repeat_investigations_avoided",
+    "machine_experience_reuse"
+  ],
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE"
+}

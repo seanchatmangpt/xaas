@@ -55,7 +55,7 @@ defmodule Xaas.CaseStudies.WdFaChicagoTest do
     assert state.classification == "KNOWN"
     assert Enum.sort(projection["eventTypes"]) == ["failure_observed", "triage_constructed"]
 
-    for type <- WdFa.object_types(), do: assert(type in projection["objectTypes"])
+    for type <- WdFa.observation_object_types(), do: assert(type in projection["objectTypes"])
 
     triage = Enum.find(projection["events"], &(&1["type"] == "triage_constructed"))
     assert triage["attributes"]["classification"] == "KNOWN"

@@ -1,0 +1,7 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+SELECT ?level ?number ?label WHERE {
+  ?level a stogaf:ConformanceLevel ;
+         stogaf:levelNumber ?number ;
+         <http://www.w3.org/2004/02/skos/core#prefLabel> ?label .
+}
+ORDER BY ?number

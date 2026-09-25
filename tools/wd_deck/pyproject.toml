@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xaas-wd-deck"
+version = "0.1.0"
+description = "Reproducible WD Case Study 2 presentation manufacture via ggen_igniter and PptxGenJS"
+requires-python = ">=3.11"
+dependencies = ["typer==0.27.2"]
+
+[project.scripts]
+wd-deck = "wd_deck:app"
+
+[tool.setuptools]
+py-modules = ["wd_deck"]

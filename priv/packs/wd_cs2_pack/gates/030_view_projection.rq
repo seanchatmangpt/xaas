@@ -1,0 +1,9 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?view ?reason WHERE {
+  ?view a stogaf:View .
+  FILTER NOT EXISTS { ?view prov:wasDerivedFrom ?source }
+  BIND("view-missing-canonical-derivation" AS ?reason)
+}
+ORDER BY ?view

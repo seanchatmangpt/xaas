@@ -56,6 +56,8 @@ defmodule XaasWeb.Router do
     get("/", PageController, :home)
     live("/next-read", NextRead.ReaderLive)
     live("/case-studies/wd-fa", WdFa.CaseStudyLive)
+    get("/case-studies/wd-fa/stogaf.json", WdFaStogafController, :show)
+    get("/case-studies/wd-fa/context/:case_id", WdFaContextController, :show)
   end
 
   # Real public external Stripe webhook receiver -- deliberately NOT

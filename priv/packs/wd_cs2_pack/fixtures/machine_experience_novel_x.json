@@ -1,0 +1,18 @@
+{
+  "id": "MX-NOVEL-X-001",
+  "source_case": "novel_x",
+  "verified_disposition": "MODE-X-NOVEL",
+  "verifier": "repository-local-independent-verifier",
+  "applicability": {
+    "fixture_class": "novel_x",
+    "population": "REPO_LOCAL_FIXTURE"
+  },
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "receipt_identity": "MX-NOVEL-X-001",
+  "replay_identity": "NOVEL-X-REPLAY",
+  "falsifiers": [
+    "subject/evidence mismatch",
+    "receipt verification failure",
+    "applicability mismatch"
+  ]
+}

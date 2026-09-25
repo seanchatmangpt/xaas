@@ -1,0 +1,62 @@
+[
+  {
+    "slide": 1,
+    "subject": "baseline-target-gap",
+    "evidence": [
+      "02-BASELINE-TARGET-GAP.md"
+    ],
+    "standing": "DESIGN"
+  },
+  {
+    "slide": 2,
+    "subject": "governed-disposition",
+    "evidence": [
+      "wd_fa_chicago_test",
+      "authority-boundary"
+    ],
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "slide": 3,
+    "subject": "semantic-evidence-graph",
+    "evidence": [
+      "OCEL object relations",
+      "04-DATA-ARCHITECTURE.md"
+    ],
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "slide": 4,
+    "subject": "known-is-earned",
+    "evidence": [
+      "false-known-negative-control",
+      "known-partial-unknown"
+    ],
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "slide": 5,
+    "subject": "machine-experience",
+    "evidence": [
+      "unknown-to-known-replay",
+      "14-MACHINE-EXPERIENCE.md"
+    ],
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "slide": 6,
+    "subject": "evaluation",
+    "evidence": [
+      "08-EVALUATION-MEASUREMENT.md"
+    ],
+    "standing": "DESIGN"
+  },
+  {
+    "slide": 7,
+    "subject": "migration",
+    "evidence": [
+      "09-MIGRATION-30-60-90.md"
+    ],
+    "standing": "DESIGN"
+  }
+]

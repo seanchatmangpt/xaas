@@ -1,0 +1,16 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+
+SELECT ?requirement ?reason WHERE {
+  ?requirement a stogaf:Requirement .
+  {
+    FILTER NOT EXISTS { ?artifact stogaf:satisfiesRequirement ?requirement }
+    BIND("requirement-has-no-satisfying-artifact" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?requirement stogaf:verifiedBy ?court }
+    BIND("requirement-has-no-verification-court" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?requirement stogaf:standing ?standing }
+    BIND("requirement-has-no-standing" AS ?reason)
+  }
+}
+ORDER BY ?requirement ?reason

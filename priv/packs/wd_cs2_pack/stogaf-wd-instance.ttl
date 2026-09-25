@@ -1,0 +1,87 @@
+@prefix stogaf: <urn:xaas:stogaf:> .
+@prefix wdcs2: <urn:xaas:wd-cs2:> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+wdcs2:architectureEpisode a stogaf:ArchitectureEpisode, prov:Activity ;
+  dct:title "WD Case Study 2 semantic failure-analysis architecture episode" ;
+  stogaf:baseline wdcs2:baselineArchitecture ;
+  stogaf:target wdcs2:targetArchitecture ;
+  stogaf:gap wdcs2:architectureGap ;
+  stogaf:currentConformance "ST-4 CONSTRAINED" ;
+  stogaf:targetConformance "ST-6 AUTONOMIC" ;
+  stogaf:evidenceCeiling "REPO_LOCAL_FIXTURE" ;
+  stogaf:authority "SELECT_CONSTRUCT_ONLY" ;
+  stogaf:humanGate "ENGINEER_DISPOSITION_REQUIRED" ;
+  stogaf:currentAdmPhase "G IMPLEMENTATION_GOVERNANCE" ;
+  stogaf:nextAdmPhase "H ARCHITECTURE_CHANGE_MANAGEMENT" ;
+  stogaf:projectsTo wdcs2:morningBriefView, wdcs2:managerView, wdcs2:executiveView,
+                    wdcs2:architectureView, wdcs2:assessmentView,
+                    wdcs2:sjiraProjection, wdcs2:sa2aProjection .
+
+wdcs2:baselineArchitecture a stogaf:ArchitectureState ;
+  dct:title "Fragmented FA baseline" .
+wdcs2:targetArchitecture a stogaf:ArchitectureState ;
+  dct:title "Closed semantic FA quality loop" .
+wdcs2:architectureGap a stogaf:Gap ;
+  dct:title "Canonical-state to work/view/verification closure" .
+
+wdcs2:morningBriefView a stogaf:View ;
+  dct:title "FA Morning Brief" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+wdcs2:managerView a stogaf:View ;
+  dct:title "FA Operating Board" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+wdcs2:executiveView a stogaf:View ;
+  dct:title "FA Agent Board Deck" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+wdcs2:architectureView a stogaf:View ;
+  dct:title "System / Space" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+wdcs2:assessmentView a stogaf:View ;
+  dct:title "WD Case Study 2 Deck" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+
+wdcs2:sjiraProjection a prov:Entity ;
+  dct:title "sJira work projection" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+wdcs2:sa2aProjection a prov:Entity ;
+  dct:title "SA2A capability projection" ;
+  prov:wasDerivedFrom wdcs2:architectureEpisode .
+
+wdcs2:mxNovelX a stogaf:MachineExperience ;
+  stogaf:requiresEvidence "NOVEL-X:test|NOVEL-X:waveform|NOVEL-X:lot_trace" ;
+  stogaf:applicability "exact novel-X fixture class" ;
+  stogaf:replayIdentity "NOVEL-X-REPLAY" ;
+  stogaf:receiptIdentity "MX-NOVEL-X-001" .
+
+wdcs2:req01 a stogaf:Requirement ; dct:title "Rank probable failure modes" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "candidate-ranking-non-authority" .
+wdcs2:req02 a stogaf:Requirement ; dct:title "Bind supporting evidence" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "evidence-binding" .
+wdcs2:req03 a stogaf:Requirement ; dct:title "Expose closest prior cases" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "prior-art-applicability" .
+wdcs2:req04 a stogaf:Requirement ; dct:title "Construct next action" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "next-action-present" .
+wdcs2:req05 a stogaf:Requirement ; dct:title "Preserve multimodal corpus provenance" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "source-modality-provenance" .
+wdcs2:req06 a stogaf:Requirement ; dct:title "Join structured and unstructured context" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "ocel-object-relations" .
+wdcs2:req07 a stogaf:Requirement ; dct:title "Ground with traceability" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "exact-source-binding" .
+wdcs2:req08 a stogaf:Requirement ; dct:title "Prevent confidently wrong root cause" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "false-known-negative-control" .
+wdcs2:req09 a stogaf:Requirement ; dct:title "Expose confidence basis" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "confidence-basis-visible" .
+wdcs2:req10 a stogaf:Requirement ; dct:title "Preserve human consequential authority" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "authority-boundary" .
+wdcs2:req11 a stogaf:Requirement ; dct:title "Distinguish known and novel" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "known-partial-unknown" .
+wdcs2:req12 a stogaf:Requirement ; dct:title "Close verified learning loop" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "unknown-to-known-replay" .
+wdcs2:req13 a stogaf:Requirement ; dct:title "Measure MTTR and process value" ; stogaf:standing "DESIGN" ; stogaf:verifiedBy "measurement-design" .
+wdcs2:req14 a stogaf:Requirement ; dct:title "Security and governance" ; stogaf:standing "PARTIAL_ALIVE" ; stogaf:verifiedBy "acl-authority-design" .
+wdcs2:req15 a stogaf:Requirement ; dct:title "Evaluation rigor" ; stogaf:standing "ALIVE_FIXTURE" ; stogaf:verifiedBy "chicago-playwright-negative-controls" .
+wdcs2:req16 a stogaf:Requirement ; dct:title "30/60/90 delivery plan" ; stogaf:standing "DESIGN" ; stogaf:verifiedBy "plan-completeness" .
+
+wdcs2:evidenceGraph a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req02, wdcs2:req03, wdcs2:req05, wdcs2:req06, wdcs2:req07 .
+wdcs2:triageAdmission a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req01, wdcs2:req08, wdcs2:req11 .
+wdcs2:semanticWork a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req04 .
+wdcs2:engineerDisposition a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req10 .
+wdcs2:machineExperience a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req12 .
+wdcs2:evaluation a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req13, wdcs2:req15 .
+wdcs2:governance a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req14 .
+wdcs2:migration a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req16 .
+
+# R-09 "visible confidence basis": docs/case-studies/wd-fa/requirements.json binds it to the
+# MorningBriefView building block, which renders the admitted confidence basis
+# (lib/xaas_web/live/wd_fa/case_study_live.ex data-testid="confidence-basis").
+wdcs2:morningBriefView stogaf:satisfiesRequirement wdcs2:req09 .

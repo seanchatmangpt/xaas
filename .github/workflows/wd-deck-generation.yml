@@ -1,0 +1,144 @@
+name: WD deck manufacture
+
+on:
+  push:
+    branches:
+      - feat/stogaf-wd-cs2-v26.9.22
+    paths:
+      - "docs/case-studies/wd-fa/presentation/**"
+      - "tools/wd_deck/**"
+      - "test/wd_deck_pin_test.py"
+      - ".github/workflows/wd-deck-generation.yml"
+  pull_request:
+    paths:
+      - "docs/case-studies/wd-fa/presentation/**"
+      - "tools/wd_deck/**"
+      - "test/wd_deck_pin_test.py"
+      - ".github/workflows/wd-deck-generation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wd-deck-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  # MARKETPLACE_SHA is not pinned here: it is derived from
+  # tools/wd_deck/wd_deck.py MARKETPLACE_COMMIT (single source) below, so the
+  # workflow and the CLI receipt cannot name different marketplace subjects.
+
+jobs:
+  manufacture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact XaaS subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact XaaS subject
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Derive marketplace subject from wd_deck.py (single source)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(sed -nE 's/^MARKETPLACE_COMMIT = "([0-9a-f]{40})"$/\1/p' tools/wd_deck/wd_deck.py)"
+          test "$(printf '%s\n' "$sha" | grep -cE '^[0-9a-f]{40}$')" = 1
+          echo "MARKETPLACE_SHA=$sha" >> "$GITHUB_ENV"
+          echo "MARKETPLACE_SHA=$sha"
+
+      - name: Setup BEAM
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Materialize exact marketplace pack
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ggen-marketplace
+          ref: ${{ env.MARKETPLACE_SHA }}
+          path: tmp/ggen-marketplace
+          persist-credentials: false
+
+      - name: Assert exact marketplace subject
+        run: test "$(git -C tmp/ggen-marketplace rev-parse HEAD)" = "$MARKETPLACE_SHA"
+
+      - name: Resolve locked Elixir dependencies
+        run: mix deps.get --check-locked
+
+      - name: Install WD deck CLI
+        run: python -m pip install -e tools/wd_deck pytest
+
+      - name: Marketplace pin single-source court
+        run: python -m pytest -q test/wd_deck_pin_test.py
+
+      - name: Install exact PptxGenJS runtime
+        run: wd-deck bootstrap
+
+      - name: Manufacture full deck through ggen_igniter
+        run: |
+          wd-deck render \
+            --pack-dir tmp/ggen-marketplace/packs/pptx-presentation-pack \
+            --build-dir tmp/wd-deck-full \
+            --audience all \
+            --output tmp/wd-deck-full/wd_case_study_2_presentation_notes.pptx
+          cp tmp/wd-deck-full/receipt.json tmp/wd-deck-full/full-receipt.json
+
+      - name: Manufacture interview projection through ggen_igniter
+        run: |
+          wd-deck render \
+            --pack-dir tmp/ggen-marketplace/packs/pptx-presentation-pack \
+            --build-dir tmp/wd-deck-interview \
+            --audience interview \
+            --output tmp/wd-deck-interview/wd_case_study_2_interview.pptx
+          cp tmp/wd-deck-interview/receipt.json tmp/wd-deck-interview/interview-receipt.json
+
+      - name: Assert bounded receipts
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          pack = f"seanchatmangpt/ggen-marketplace@{os.environ['MARKETPLACE_SHA']}:pptx-presentation-pack"
+          for path, slides in [
+              (Path("tmp/wd-deck-full/full-receipt.json"), 14),
+              (Path("tmp/wd-deck-interview/interview-receipt.json"), 12),
+          ]:
+              receipt = json.loads(path.read_text())
+              assert receipt["standing"] == "ALIVE_REPO_LOCAL", receipt
+              assert receipt["expected_slides"] == slides, receipt
+              assert receipt["failures"] == [], receipt
+              assert "EXTERNAL_STANDING" in receipt["non_claims"], receipt
+              assert receipt["marketplace_pack"] == pack, receipt
+          PY
+
+      - name: Upload receipted deck artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wd-case-study-decks-${{ env.SUBJECT_SHA }}
+          path: |
+            tmp/wd-deck-full/wd_case_study_2_presentation_notes.pptx
+            tmp/wd-deck-full/full-receipt.json
+            tmp/wd-deck-full/generated/deck.json
+            tmp/wd-deck-interview/wd_case_study_2_interview.pptx
+            tmp/wd-deck-interview/interview-receipt.json
+            tmp/wd-deck-interview/generated/deck.json
+          if-no-files-found: error
+          retention-days: 30

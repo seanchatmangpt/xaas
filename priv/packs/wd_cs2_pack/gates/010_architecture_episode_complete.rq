@@ -1,0 +1,26 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+PREFIX wdcs2: <urn:xaas:wd-cs2:>
+
+SELECT ?subject ?reason WHERE {
+  BIND(wdcs2:architectureEpisode AS ?subject)
+  {
+    FILTER NOT EXISTS { ?subject stogaf:baseline ?v }
+    BIND("missing-baseline" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?subject stogaf:target ?v }
+    BIND("missing-target" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?subject stogaf:gap ?v }
+    BIND("missing-gap" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?subject stogaf:currentConformance ?v }
+    BIND("missing-current-conformance" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?subject stogaf:evidenceCeiling ?v }
+    BIND("missing-evidence-ceiling" AS ?reason)
+  } UNION {
+    FILTER NOT EXISTS { ?subject stogaf:authority ?v }
+    BIND("missing-authority" AS ?reason)
+  }
+}
+ORDER BY ?reason

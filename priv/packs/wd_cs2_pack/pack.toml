@@ -1,0 +1,4 @@
+[pack]
+name = "wd-cs2-stogaf-pack"
+version = "26.9.22"
+description = "Semantic TOGAF profile, constraints and projections for the WD Case Study 2 demo. Repository-local evidence only."

@@ -1,0 +1,19 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+PREFIX wdcs2: <urn:xaas:wd-cs2:>
+
+SELECT ?subject ?reason WHERE {
+  wdcs2:architectureEpisode stogaf:authority ?authority ;
+                            stogaf:humanGate ?gate ;
+                            stogaf:currentConformance ?level .
+  BIND(wdcs2:architectureEpisode AS ?subject)
+  {
+    FILTER(?authority != "SELECT_CONSTRUCT_ONLY")
+    BIND("friday-demo-authority-exceeds-SELECT_CONSTRUCT_ONLY" AS ?reason)
+  } UNION {
+    FILTER(?gate != "ENGINEER_DISPOSITION_REQUIRED")
+    BIND("friday-demo-human-gate-drift" AS ?reason)
+  } UNION {
+    FILTER(?level IN ("ST-7 ACTUATED", "ST-8 CLOSED_LOOP", "ST-9 LEARNING"))
+    BIND("unobserved-production-conformance-claimed" AS ?reason)
+  }
+}

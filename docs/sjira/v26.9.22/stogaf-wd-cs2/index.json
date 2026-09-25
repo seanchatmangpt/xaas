@@ -1,0 +1,82 @@
+[
+  {
+    "id": "SJ-011",
+    "path": "011-stogaf-wd-cs2.md",
+    "standing": "UNKNOWN",
+    "dependencies": []
+  },
+  {
+    "id": "SJ-012",
+    "path": "012-requirement-graph-closure.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-011"
+    ]
+  },
+  {
+    "id": "SJ-013",
+    "path": "013-semantic-constraint-closure.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-012"
+    ]
+  },
+  {
+    "id": "SJ-014",
+    "path": "014-viewpoint-manufacture.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-013"
+    ]
+  },
+  {
+    "id": "SJ-015",
+    "path": "015-sjira-work-projection.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-013"
+    ]
+  },
+  {
+    "id": "SJ-016",
+    "path": "016-sa2a-capability-selection.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-015"
+    ]
+  },
+  {
+    "id": "SJ-017",
+    "path": "017-generated-runtime-parity.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-013",
+      "SJ-014",
+      "SJ-016"
+    ]
+  },
+  {
+    "id": "SJ-018",
+    "path": "018-receipt-replay-closure.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-017"
+    ]
+  },
+  {
+    "id": "SJ-019",
+    "path": "019-presentation-parity.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-018"
+    ]
+  },
+  {
+    "id": "SJ-020",
+    "path": "020-handoff-readiness.md",
+    "standing": "UNKNOWN",
+    "dependencies": [
+      "SJ-019"
+    ]
+  }
+]

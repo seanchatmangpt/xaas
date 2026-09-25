@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "STOGAF Architecture Episode",
+  "type": "object",
+  "required": [
+    "id",
+    "profile",
+    "subject",
+    "baseline",
+    "target",
+    "gap",
+    "current_conformance",
+    "target_conformance",
+    "evidence_ceiling",
+    "authority",
+    "human_gate"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "baseline": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "gap": {
+      "type": "string"
+    },
+    "current_conformance": {
+      "type": "string"
+    },
+    "target_conformance": {
+      "type": "string"
+    },
+    "evidence_ceiling": {
+      "type": "string"
+    },
+    "authority": {
+      "const": "SELECT_CONSTRUCT_ONLY"
+    },
+    "human_gate": {
+      "const": "ENGINEER_DISPOSITION_REQUIRED"
+    },
+    "projections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

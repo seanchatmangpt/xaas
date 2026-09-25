@@ -1,0 +1,32 @@
+{
+  "case_id": "known_firmware",
+  "symptom": "intermittent command timeout",
+  "expected_classification": "KNOWN",
+  "expected_mode": "MODE-A-FIRMWARE",
+  "evidence": [
+    {
+      "id": "fw_trace",
+      "kind": "firmware_trace",
+      "modality": "structured",
+      "source_ref": "fixture://wd/known_firmware/fw_trace",
+      "subject": "known_firmware",
+      "provenance_state": "OBSERVED"
+    },
+    {
+      "id": "timeout_waveform",
+      "kind": "waveform",
+      "modality": "plot",
+      "source_ref": "fixture://wd/known_firmware/timeout_waveform",
+      "subject": "known_firmware",
+      "provenance_state": "OBSERVED"
+    },
+    {
+      "id": "lot_genealogy",
+      "kind": "genealogy",
+      "modality": "structured",
+      "source_ref": "fixture://wd/known_firmware/lot_genealogy",
+      "subject": "known_firmware",
+      "provenance_state": "OBSERVED"
+    }
+  ]
+}

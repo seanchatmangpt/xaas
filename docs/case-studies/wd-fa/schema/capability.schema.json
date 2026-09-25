@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bounded SA2A Capability",
+  "type": "object",
+  "required": [
+    "id",
+    "plane",
+    "authority",
+    "intelligence"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "plane": {
+      "enum": [
+        "OBSERVE",
+        "SELECT",
+        "CONSTRUCT",
+        "DO"
+      ]
+    },
+    "authority": {
+      "type": "string"
+    },
+    "intelligence": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

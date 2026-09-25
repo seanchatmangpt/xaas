@@ -1,0 +1,10 @@
+@prefix pres: <https://ggen.dev/ns/presentation#> .
+@prefix wddeck: <urn:wd:case-study-2:deck:> .
+
+wddeck:deck a pres:Presentation ;
+  pres:id "wd-case-study-2" ;
+  pres:title "Western Digital Case Study 2 — HDD Failure Analysis AI Agent" ;
+  pres:author "Sean Chatman" ;
+  pres:company "XaaS" ;
+  pres:subject "WD Senior Forward Deployed Engineer case study" ;
+  pres:footer "Sean Chatman  /  Western Digital  /  September 2026" .

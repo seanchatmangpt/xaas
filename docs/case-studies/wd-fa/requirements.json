@@ -1,0 +1,114 @@
+[
+  {
+    "id": "R-01",
+    "requirement": "ranked_probable_failure_modes",
+    "building_block": "TriageAdmission",
+    "court": "candidate-ranking-non-authority",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-02",
+    "requirement": "supporting_evidence",
+    "building_block": "EvidenceGraph",
+    "court": "evidence-binding",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-03",
+    "requirement": "closest_prior_cases",
+    "building_block": "EvidenceGraph",
+    "court": "prior-art-applicability",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-04",
+    "requirement": "specific_next_action",
+    "building_block": "SemanticWorkOrder",
+    "court": "next-action-present",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-05",
+    "requirement": "multimodal_corpus",
+    "building_block": "EvidenceGraph",
+    "court": "source-modality-provenance",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-06",
+    "requirement": "structured_unstructured_join",
+    "building_block": "EvidenceGraph",
+    "court": "ocel-object-relations",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-07",
+    "requirement": "grounding_traceability",
+    "building_block": "VerificationReceipt",
+    "court": "exact-source-binding",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-08",
+    "requirement": "avoid_wrong_root_cause",
+    "building_block": "TriageAdmission",
+    "court": "false-known-negative-control",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-09",
+    "requirement": "visible_confidence",
+    "building_block": "MorningBriefView",
+    "court": "confidence-basis-visible",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-10",
+    "requirement": "human_loop",
+    "building_block": "EngineerDisposition",
+    "court": "authority-boundary",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-11",
+    "requirement": "known_vs_novel",
+    "building_block": "TriageAdmission",
+    "court": "known-partial-unknown",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-12",
+    "requirement": "feedback_learning",
+    "building_block": "MachineExperience",
+    "court": "unknown-to-known-replay",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-13",
+    "requirement": "mttr_measurement",
+    "building_block": "Evaluation",
+    "court": "measurement-design",
+    "standing": "DESIGN"
+  },
+  {
+    "id": "R-14",
+    "requirement": "security_governance",
+    "building_block": "Governance",
+    "court": "acl-authority-design",
+    "standing": "PARTIAL_ALIVE"
+  },
+  {
+    "id": "R-15",
+    "requirement": "evaluation_rigor",
+    "building_block": "Verification",
+    "court": "chicago-playwright-negative-controls",
+    "standing": "ALIVE_FIXTURE"
+  },
+  {
+    "id": "R-16",
+    "requirement": "30_60_90",
+    "building_block": "MigrationPlan",
+    "court": "plan-completeness",
+    "standing": "DESIGN"
+  }
+]

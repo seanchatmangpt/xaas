@@ -1,0 +1,318 @@
+@prefix pres: <https://ggen.dev/ns/presentation#> .
+@prefix wddeck: <urn:wd:case-study-2:deck:> .
+
+wddeck:slide-05 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-05" ;
+  pres:order 5 ;
+  pres:layout "pipeline" ;
+  pres:audience "interview" ;
+  pres:title "Architecture: one evidence state, many projections" ;
+  pres:notes "Walk left to right. Sources remain sources. Ingestion creates normalized evidence but also quarantines failures. The canonical evidence plane binds identity, provenance, source ACLs and applicability rules. The triage plane uses retrieval and ranking, but admission is deterministic. Downstream artifacts are projections; we avoid each dashboard or work queue becoming a separate truth source." .
+
+wddeck:slide-05-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "Source systems\nPPT · images · Confluence · Excel · data lake" ;
+  pres:tone "blue" .
+
+wddeck:slide-05-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Ingestion boundary\nextract · normalize · quarantine failures" ;
+  pres:tone "gold" .
+
+wddeck:slide-05-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "Canonical FA evidence plane\nidentity · provenance · graph · rules" ;
+  pres:tone "green" .
+
+wddeck:slide-05-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 4 ;
+  pres:role "stage" ;
+  pres:title "Triage plane\nretrieve · rank · admit · construct work" ;
+  pres:tone "stone" .
+
+wddeck:slide-05-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 5 ;
+  pres:role "projection" ;
+  pres:title "Engineer view" ;
+  pres:tone "white" .
+
+wddeck:slide-05-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 6 ;
+  pres:role "projection" ;
+  pres:title "sJira work" ;
+  pres:tone "white" .
+
+wddeck:slide-05-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 7 ;
+  pres:role "projection" ;
+  pres:title "Audit receipt" ;
+  pres:tone "white" .
+
+wddeck:slide-05-block-08 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 8 ;
+  pres:role "projection" ;
+  pres:title "Manager view" ;
+  pres:tone "white" .
+
+wddeck:slide-05-block-09 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 9 ;
+  pres:role "projection" ;
+  pres:title "Evaluation" ;
+  pres:tone "white" .
+
+wddeck:slide-05-block-10 a pres:Block ;
+  pres:blockOf wddeck:slide-05 ;
+  pres:order 10 ;
+  pres:role "callout" ;
+  pres:body "The graph is canonical. Views, work items, receipts and demos are projections." ;
+  pres:tone "stone" .
+
+wddeck:slide-06 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-06" ;
+  pres:order 6 ;
+  pres:layout "pairs" ;
+  pres:audience "interview" ;
+  pres:title "What the agent returns for a failed drive" ;
+  pres:notes "Use a concrete example verbally: for a failed drive with a reported timeout symptom, the system might surface two probable known modes, show lot and firmware applicability, link to prior cases, indicate missing station retest evidence, and recommend a named diagnostic action. The important part: it also states whether the evidence is sufficient for KNOWN, only PARTIAL, or truly UNKNOWN." .
+
+wddeck:slide-06-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 1 ;
+  pres:role "pair" ;
+  pres:title "Ranked candidates" ;
+  pres:body "probable failure modes + why ranked" ;
+  pres:tone "blue" .
+
+wddeck:slide-06-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 2 ;
+  pres:role "pair" ;
+  pres:title "Evidence packet" ;
+  pres:body "supporting, contradicting and missing evidence" ;
+  pres:tone "green" .
+
+wddeck:slide-06-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 3 ;
+  pres:role "pair" ;
+  pres:title "Closest prior cases" ;
+  pres:body "applicable prior art, not merely similar text" ;
+  pres:tone "blue" .
+
+wddeck:slide-06-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 4 ;
+  pres:role "pair" ;
+  pres:title "Next action" ;
+  pres:body "named test, teardown step, route, closure or escalation" ;
+  pres:tone "green" .
+
+wddeck:slide-06-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 5 ;
+  pres:role "pair" ;
+  pres:title "Standing" ;
+  pres:body "KNOWN · PARTIAL · UNKNOWN" ;
+  pres:tone "blue" .
+
+wddeck:slide-06-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 6 ;
+  pres:role "pair" ;
+  pres:title "Authority" ;
+  pres:body "what the system constructed vs what engineer must decide" ;
+  pres:tone "green" .
+
+wddeck:slide-06-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-06 ;
+  pres:order 7 ;
+  pres:role "callout" ;
+  pres:body "The output is a triage packet. It should reduce search, expose uncertainty and construct the next bounded action." ;
+  pres:tone "stone" .
+
+wddeck:slide-07 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-07" ;
+  pres:order 7 ;
+  pres:layout "graph" ;
+  pres:audience "interview" ;
+  pres:title "Data model: object-centric, provenance-bound" ;
+  pres:notes "Explain the data stance. A failed drive is not a blob of text. It is related to drive identity, build, lot, supplier, BOM revision, firmware, station, tests, rework, evidence artifacts, observations, failure modes, actions, dispositions and reusable experience. Provenance is carried with each assertion. This lets the engineer ask: what is observed, what was derived, and where did it come from?" .
+
+wddeck:slide-07-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 1 ;
+  pres:role "node" ;
+  pres:title "FailureCase" ;
+  pres:tone "gold" .
+
+wddeck:slide-07-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 2 ;
+  pres:role "node" ;
+  pres:title "Drive" ;
+  pres:tone "blue" .
+
+wddeck:slide-07-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 3 ;
+  pres:role "node" ;
+  pres:title "Build" ;
+  pres:tone "blue" .
+
+wddeck:slide-07-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 4 ;
+  pres:role "node" ;
+  pres:title "EvidenceArtifact" ;
+  pres:tone "blue" .
+
+wddeck:slide-07-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 5 ;
+  pres:role "node" ;
+  pres:title "FailureMode" ;
+  pres:tone "green" .
+
+wddeck:slide-07-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 6 ;
+  pres:role "node" ;
+  pres:title "DiagnosticAction" ;
+  pres:tone "green" .
+
+wddeck:slide-07-block-07 a pres:Block ;
+  pres:lockOf wddeck:slide-07 ;
+  pres:order 7 ;
+  pres:role "node" ;
+  pres:title "MachineExperience" ;
+  pres:tone "green" .
+
+wddeck:slide-07-block-08 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 8 ;
+  pres:role "callout" ;
+  pres:body "Observed ≠ derived ≠ inferred." ;
+  pres:tone "stone" .
+
+wddeck:slide-07-block-09 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 9 ;
+  pres:role "callout" ;
+  pres:body "Vector index is disposable; evidence record is not." ;
+  pres:tone "stone" .
+
+wddeck:slide-07-block-10 a pres:Block ;
+  pres:blockOf wddeck:slide-07 ;
+  pres:order 10 ;
+  pres:role "callout" ;
+  pres:body "Source ACLs travel with evidence." ;
+  pres:tone "stone" .
+
+wddeck:slide-08 a pres:Slide ;
+  pres:slideOf wddeck:deck ;
+  pres:id "slide-08" ;
+  pres:order 8 ;
+  pres:layout "split" ;
+  pres:audience "interview" ;
+  pres:title "Reasoning design: precompute corpus, decide on current facts" ;
+  pres:notes "This is the cost and latency answer. I would not retrieve the last 200 documents into context. Corpus normalization, embeddings, image observations and known-case metadata are precomputed. Query time reconstructs the current failed drive, filters by ACL, retrieves candidate prior art, ranks hypotheses and then applies admission rules. For structured data, I prefer purpose-built tools over unrestricted text-to-SQL because the tool contract controls cost, joins, permissions and auditability." .
+
+wddeck:slide-08-block-01 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 1 ;
+  pres:role "section" ;
+  pres:title "Offline / precomputed" ;
+  pres:tone "blue" .
+
+wddeck:slide-08-block-02 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 2 ;
+  pres:role "section" ;
+  pres:title "Query time" ;
+  pres:tone "green" .
+
+wddeck:slide-08-block-03 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 3 ;
+  pres:role "left" ;
+  pres:body "Normalize documents, images, plots" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-04 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 4 ;
+  pres:role "left" ;
+  pres:body "Embeddings + lexical indexes" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-05 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 5 ;
+  pres:role "left" ;
+  pres:body "Prior-case metadata" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-06 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 6 ;
+  pres:role "left" ;
+  pres:body "Applicability definitions" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-07 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 7 ;
+  pres:role "right" ;
+  pres:body "Resolve drive/build facts" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-08 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 8 ;
+  pres:role "right" ;
+  pres:body "ACL-filter retrieval" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-09 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 9 ;
+  pres:role "right" ;
+  pres:body "Rank candidates" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-10 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 10 ;
+  pres:role "right" ;
+  pres:body "Admit KNOWN/PARTIAL/UNKNOWN" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-11 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 11 ;
+  pres:role "center" ;
+  pres:title "Curated semantic tools\nnot unrestricted text-to-SQL" ;
+  pres:tone "stone" .
+
+wddeck:slide-08-block-12 a pres:Block ;
+  pres:blockOf wddeck:slide-08 ;
+  pres:order 12 ;
+  pres:role "callout" ;
+  pres:body "Expensive corpus work stays offline; current drive facts stay current." ;
+  pres:tone "stone" .
+

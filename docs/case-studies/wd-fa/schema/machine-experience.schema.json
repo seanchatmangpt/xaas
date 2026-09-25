@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MachineExperience",
+  "type": "object",
+  "required": [
+    "id",
+    "source_case",
+    "verified_disposition",
+    "verifier",
+    "applicability",
+    "evidence_ceiling",
+    "receipt_identity",
+    "replay_identity"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "source_case": {
+      "type": "string"
+    },
+    "verified_disposition": {
+      "type": "string"
+    },
+    "verifier": {
+      "type": "string"
+    },
+    "applicability": {
+      "type": "object"
+    },
+    "evidence_ceiling": {
+      "type": "string"
+    },
+    "receipt_identity": {
+      "type": "string"
+    },
+    "replay_identity": {
+      "type": "string"
+    },
+    "falsifiers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

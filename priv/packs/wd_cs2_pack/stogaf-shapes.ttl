@@ -1,0 +1,27 @@
+@prefix stogaf: <urn:xaas:stogaf:> .
+@prefix wdcs2: <urn:xaas:wd-cs2:> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+stogaf:ArchitectureEpisodeShape a sh:NodeShape ;
+  sh:targetNode wdcs2:architectureEpisode ;
+  sh:property [ sh:path stogaf:baseline ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:target ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:gap ; sh:minCount 1 ] ;
+  sh:property [ sh:path stogaf:currentConformance ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:targetConformance ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:evidenceCeiling ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:authority ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:humanGate ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+stogaf:MachineExperienceShape a sh:NodeShape ;
+  sh:targetClass stogaf:MachineExperience ;
+  sh:property [ sh:path stogaf:requiresEvidence ; sh:minCount 1 ] ;
+  sh:property [ sh:path stogaf:applicability ; sh:minCount 1 ] ;
+  sh:property [ sh:path stogaf:replayIdentity ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stogaf:receiptIdentity ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+stogaf:ViewShape a sh:NodeShape ;
+  sh:targetClass stogaf:View ;
+  sh:property [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ] .

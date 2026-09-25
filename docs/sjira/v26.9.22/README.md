@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # docs/sjira/v26.9.22 — the multi-repo Semantic Jira graph
 
 Hosts the v26.9.22 wave's work orders for ten repositories as one admitted RDF
@@ -54,8 +53,8 @@ the admitting kernel's repo. The pack-based projection of this graph
 used for admission this cycle.
 
 `docs/sjira/v26.9.21` stays as the historical cycle.
-=======
-# Semantic Jira work orders — v26.9.22
+
+## Hand-authored orders SJ-010 / SJ-011 (main lineage)
 
 Open work orders continuing the v26.9.21 cycle. Protocol unchanged from
 `../v26.9.21/README.md`: real collaborators only (Chicago-style, no mocks),
@@ -65,7 +64,7 @@ standing vocabulary `UNKNOWN | PARTIAL_ALIVE | ALIVE | BLOCKED | BUILD_BROKEN
 Jira admits and selects WorkOrders; it grants no authority and performs no
 merge/publish.
 
-## Orders
+### Orders
 
 | id | order | standing | falsifier |
 |---|---|---|---|
@@ -86,7 +85,7 @@ merge/publish.
   `tools/call` to the execution fabric produces an audit row queryable via
   existing audit tables.
 
-## Receipts convention
+### Receipts convention
 
 Wave receipts go to `docs/ultracode/<wave>-receipts/`, and cycle progress is
 appended to `docs/ultracode/PROGRESS.md` (existing examples:
@@ -95,7 +94,7 @@ commands + exit codes, real output, and the standing claimed. Receipt files
 are append-only evidence: historical receipts are never edited, corrections
 are recorded here in the cycle README instead.
 
-## Supply correction (2026-09-22)
+### Supply correction (2026-09-22)
 
 > The wave-v26.9.17 receipts pin ggen_igniter feat/calver-ticket-day-pack@d018ed4; that branch no longer exists. Current ggen_igniter line: feat/zcode-ocel-pack@f81cf54 (pack content survives there; priv/ggen/calver-ticket-day-pack + priv/ggen/semantic-jira-pack present on HEAD). Re-pin future manufacturing to a live ref.
 
@@ -103,11 +102,10 @@ This README is the correction record. The v26.9.17 receipt files are
 historical evidence and are NOT edited to match; new manufacturing re-pins to
 the live ref above.
 
-## Files
+### Files
 
 - `SJ-010-zcode-ocel-pack-consumer.md`, `SJ-011-execution-mcp-audit-coverage.md` — one WorkOrder each (JSON front matter = the admitted field set).
 - `index.json` — machine index.
->>>>>>> main
 
 ## Hand-authored continuation orders (main lineage)
 
@@ -118,3 +116,16 @@ v26.9.21 SJ-002) and `SJ-011-execution-mcp-audit-coverage.md`. They are
 not (yet) individuals of `work-orders.ttl`; admit them through
 `admit.exs` after adding them to the TTL. Cycle numbering restarts per
 version, so these do not collide with v26.9.21's SJ-010..013.
+
+## STOGAF / WD CS2 sub-graph (`stogaf-wd-cs2/`)
+
+PR #62 (STOGAF WD Case Study 2) opened an independent v26.9.22 work graph
+`SJ-011 → SJ-020` (ST-4 CONSTRAINED → ST-6 AUTONOMIC, repository-local).
+It lives in `stogaf-wd-cs2/` with its own `README.md`, `index.json`,
+`workgraph.json`, `state.json`, `closure-policy.json` and
+`sa2a-capabilities.json`, so it does not overwrite the generated `index.json`
+above (a `generate.py` projection) and its identities are scoped to that
+directory: `stogaf-wd-cs2/SJ-011` is not the hand-authored
+`SJ-011-execution-mcp-audit-coverage.md` in this directory. The Elixir
+planner (`Xaas.CaseStudies.WdFa.Stogaf.WorkGraph`) reads the same
+`SJ-011..SJ-020` identities.

@@ -1,0 +1,27 @@
+{
+  "case_id": "partial_firmware",
+  "symptom": "intermittent command timeout",
+  "expected_classification": "PARTIAL",
+  "expected_mode": null,
+  "required_missing": [
+    "timeout_waveform"
+  ],
+  "evidence": [
+    {
+      "id": "fw_trace",
+      "kind": "firmware_trace",
+      "modality": "structured",
+      "source_ref": "fixture://wd/partial_firmware/fw_trace",
+      "subject": "partial_firmware",
+      "provenance_state": "OBSERVED"
+    },
+    {
+      "id": "lot_genealogy",
+      "kind": "genealogy",
+      "modality": "structured",
+      "source_ref": "fixture://wd/partial_firmware/lot_genealogy",
+      "subject": "partial_firmware",
+      "provenance_state": "OBSERVED"
+    }
+  ]
+}

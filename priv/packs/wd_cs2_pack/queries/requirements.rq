@@ -1,0 +1,7 @@
+PREFIX stogaf: <urn:xaas:stogaf:>
+SELECT ?requirement ?standing ?court WHERE {
+  ?requirement a stogaf:Requirement ;
+               stogaf:standing ?standing ;
+               stogaf:verifiedBy ?court .
+}
+ORDER BY ?requirement
