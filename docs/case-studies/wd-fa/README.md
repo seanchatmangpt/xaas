@@ -16,7 +16,7 @@ The presentation is a generated projection of canonical RDF under `presentation/
 
 ```text
 presentation/*.ttl
-→ ggen-marketplace pptx-presentation-pack @ 69e7f6b256158dc0ad4dd5af7e5807279de6bba2
+→ ggen-marketplace pptx-presentation-pack @ 05011be534f647d1b5aef18a2080cb61bfcf7951
 → ggen_igniter
 → deck.json + renderer fragments
 → deterministic render.mjs assembly
