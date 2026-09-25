@@ -139,7 +139,7 @@ jobs:
         run: |
           MIX_ENV=test mix phx.server > /tmp/stogaf-wd.log 2>&1 &
           for i in $(seq 1 45); do
-            if curl -fsS http://127.0.0.1:4002/case-studies/wd-fa >/dev/null; then exit 0; fi
+            if curl -fsS http://localhost:4002/case-studies/wd-fa >/dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/stogaf-wd.log
@@ -147,7 +147,10 @@ jobs:
 
       - name: Run browser court
         env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4002
+          # The test endpoint's url host is localhost; a 127.0.0.1 origin is
+          # refused by Phoenix check_origin, so LiveView would never connect
+          # (same fix as wd-cs2-exact-head.yml).
+          PLAYWRIGHT_BASE_URL: http://localhost:4002
         run: npx playwright test e2e/wd-fa-cs2.spec.cjs
 
       - name: Manufacture WD offline evaluation report

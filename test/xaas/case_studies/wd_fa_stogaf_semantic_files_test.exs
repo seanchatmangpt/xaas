@@ -40,5 +40,18 @@ defmodule Xaas.CaseStudies.WdFaStogafSemanticFilesTest do
     assert experience =~ "machine-experience-missing-receipt"
   end
 
+  test "human authority stays a typed RDF subject (malformed-Turtle regression)" do
+    stogaf = read!("stogaf.ttl")
+
+    assert stogaf =~ "@prefix org: <http://www.w3.org/ns/org#> ."
+    assert stogaf =~ "wdcs2:humanAuthority a org:Role ;"
+  end
+
+  test "every WD CS2 requirement has a satisfying artifact (R-09 via MorningBriefView)" do
+    instance = read!("stogaf-wd-instance.ttl")
+
+    assert instance =~ "wdcs2:morningBriefView stogaf:satisfiesRequirement wdcs2:req09 ."
+  end
+
   defp read!(relative), do: File.read!(Path.join(@pack, relative))
 end

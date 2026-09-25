@@ -80,3 +80,8 @@ wdcs2:machineExperience a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdc
 wdcs2:evaluation a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req13, wdcs2:req15 .
 wdcs2:governance a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req14 .
 wdcs2:migration a stogaf:BuildingBlock ; stogaf:satisfiesRequirement wdcs2:req16 .
+
+# R-09 "visible confidence basis": docs/case-studies/wd-fa/requirements.json binds it to the
+# MorningBriefView building block, which renders the admitted confidence basis
+# (lib/xaas_web/live/wd_fa/case_study_live.ex data-testid="confidence-basis").
+wdcs2:morningBriefView stogaf:satisfiesRequirement wdcs2:req09 .
