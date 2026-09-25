@@ -122,7 +122,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, ProcessGroup, Receipt, Run, Worktrees, ZcodePackage}
+  alias Xaas.Ultracode.{Epoch, ProcessGroup, ProviderRegistry, Receipt, Run, Worktrees, ZcodePackage}
 
   # Keep below the run default `epoch_timeout_seconds` (900), same bound the
   # bash dispatcher documents: the lease clock is the provider's to spend,
@@ -785,7 +785,12 @@ defmodule Xaas.Ultracode.Dispatch do
          max_output_bytes: Keyword.get(opts, :max_output_bytes, @default_max_output_bytes),
          log_path: Keyword.get(opts, :log_path),
          extra_env: Keyword.get(opts, :extra_env, %{}),
-         provider: Keyword.get(opts, :provider, "zcode")
+         # No hardcoded default here: an unsupplied provider resolves through
+         # the registry (`ProviderRegistry.default_provider/0`, config
+         # `:xaas, :ultracode_default_provider`) -- the one place the fabric's
+         # default provider is named. The historical default ("zcode") is
+         # that config's own default, so behavior is unchanged.
+         provider: Keyword.get_lazy(opts, :provider, &ProviderRegistry.default_provider/0)
        }}
     end
   end

@@ -109,6 +109,16 @@ config :xaas, Oban, testing: :manual
 # `:ultracode_provider_tools` tests use.
 config :xaas, :ultracode_pool_capacity, nil
 
+# The provider registry is EMPTY in tests (fail-closed: nothing is
+# selectable until a test installs entries). Production's config.exs pins a
+# real "zcode" entry; here every registry-consuming test writes its own
+# entries via `Application.put_env(:xaas, :ultracode_providers, ...)` +
+# `on_exit` restore (the same pattern `:ultracode_provider_tools` tests
+# use). `:ultracode_default_provider` stays "zcode" (inherited from
+# config.exs) so the unsupplied-provider default keeps its historical
+# value everywhere the registry is not under test.
+config :xaas, :ultracode_providers, %{}
+
 # Test-only real OTel SDK config for
 # test/xaas/telemetry/ocel_real_otel_span_test.exs: configuring ANY
 # processor here just ensures :opentelemetry's real supervision tree

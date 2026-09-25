@@ -332,7 +332,11 @@ defmodule XaasWeb.ExecutionFabricController do
   defp dispatch_tool("claim_next", args) do
     with {:ok, opts} <- claim_opts(args),
          {:ok, epoch, token, run} <-
-           Lease.claim_next(args["provider"] || "zcode", args["provider_worker_id"], opts) do
+           Lease.claim_next(
+             args["provider"] || Xaas.Ultracode.ProviderRegistry.default_provider(),
+             args["provider_worker_id"],
+             opts
+           ) do
       {:ok,
        %{
          lease_token: token,

@@ -29,18 +29,26 @@ defmodule Xaas.Ultracode.ProviderHealth do
   @doc """
   Options: `:cli_dir`, `:node_path` (same fallbacks as `Dispatch.run/1`),
   `:node_version_timeout_ms` (deadline for the `node --version` probe,
-  default `ZcodePackage.default_version_timeout_ms/0`). The whole call is
-  bounded: a hung node yields
+  default `ZcodePackage.default_version_timeout_ms/0`), and `:provider`
+  (registry key; when the provider's `:ultracode_providers` entry pins a
+  `transport` with `:cli_dir`/`:node_path`, that pin sits BETWEEN the
+  explicit option and the app-env default in the fallback chain -- a
+  provider-specific pin wins over the global env, an explicit option wins
+  over everything). The whole call is bounded: a hung node yields
   `{:error, {:node_version_unreadable, node, "timeout after Nms"}}`.
   """
   @spec check(keyword()) :: {:ok, health()} | {:error, term()}
   def check(opts \\ []) do
+    transport = transport_pin(opts[:provider])
+
     cli_dir =
       Keyword.get(opts, :cli_dir) ||
+        Keyword.get(transport, :cli_dir) ||
         Application.get_env(:xaas, :ultracode_dispatch_cli_dir, ZcodePackage.default_cli_dir())
 
     node_path =
       Keyword.get(opts, :node_path) ||
+        Keyword.get(transport, :node_path) ||
         Application.get_env(:xaas, :ultracode_dispatch_node_path, nil) ||
         System.find_executable("node")
 
@@ -64,13 +72,56 @@ defmodule Xaas.Ultracode.ProviderHealth do
   @doc """
   Lease gate: `:ok` when the provider can run a worker, otherwise
   `{:error, {:provider_unhealthy, typed_reason}}` -- the shape an issuer
-  refuses with.
+  refuses with. When `opts[:provider]` names a provider that is DISABLED in
+  the registry, the gate refuses without probing anything (a disabled
+  provider is not able to run a worker, by operator order, whatever its CLI
+  checkout looks like). An UNKNOWN provider falls through to the transport
+  probes (the registry is selection's gate, not health's: an unregistered
+  provider keeps the historical probe-only behavior).
   """
   @spec gate(keyword()) :: :ok | {:error, {:provider_unhealthy, term()}}
   def gate(opts \\ []) do
-    case check(opts) do
-      {:ok, _health} -> :ok
-      {:error, reason} -> {:error, {:provider_unhealthy, reason}}
+    with :ok <- registry_enabled?(opts[:provider]),
+         {:ok, _health} <- check(opts) do
+      :ok
+    else
+      {:error, {:provider_disabled, _} = reason} ->
+        {:error, {:provider_unhealthy, reason}}
+
+      {:error, reason} ->
+        {:error, {:provider_unhealthy, reason}}
+    end
+  end
+
+  defp registry_enabled?(nil), do: :ok
+
+  defp registry_enabled?(provider) do
+    case Xaas.Ultracode.ProviderRegistry.lookup(provider) do
+      {:ok, entry} ->
+        if Map.get(entry, :enabled, true) do
+          :ok
+        else
+          {:error, {:provider_disabled, provider}}
+        end
+
+      # Unregistered: not health's fence (see `gate/1` doc).
+      {:error, {:unknown_provider, _}} ->
+        :ok
+    end
+  end
+
+  # The provider's registry transport pin, when it is a keyword-shaped map.
+  # A descriptor-only transport (string or map without :cli_dir/:node_path)
+  # contributes nothing.
+  defp transport_pin(nil), do: []
+
+  defp transport_pin(provider) do
+    case Xaas.Ultracode.ProviderRegistry.lookup(provider) do
+      {:ok, %{transport: transport}} when is_map(transport) ->
+        Keyword.take(Enum.to_list(transport), [:cli_dir, :node_path])
+
+      _ ->
+        []
     end
   end
 
