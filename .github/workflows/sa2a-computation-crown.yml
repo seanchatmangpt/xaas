@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -nE 'alias[[:space:]]+Xaas\.Actuation|Xaas\.Actuation\.|Reactor\.run|Ash\.create|Ash\.update|Ash\.destroy' \
+          ! grep -nE 'Xaas\.Actuation|Reactor\.run|Ash\.create|Ash\.update|Ash\.destroy' \
             lib/xaas/semantics/computation.ex
 
       - name: Assert no actuation dependency (AST court, PR #60 lineage)
