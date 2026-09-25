@@ -115,6 +115,20 @@ defmodule XaasWeb.Router do
     get("/execution/epochs/:epoch_id/receipts", ExecutionFabricController, :receipts)
   end
 
+  # Bounded runtime fabric (protocol xaas-fabric/1; see XaasWeb.FabricController):
+  # probe -> admit -> idempotent submit -> bounded receipts long-poll. `actuate`
+  # is an explicit 403 REFUSED(authority_ceiling:actuate). Registered before the
+  # catch-all `forward "/internal-api"` below for the same shadowing reason.
+  scope "/internal-api/fabric", XaasWeb do
+    pipe_through([:api, :require_internal_api_token])
+
+    get("/probe", FabricController, :probe)
+    post("/admit", FabricController, :admit)
+    post("/runs", FabricController, :submit)
+    get("/epochs/:epoch_id/receipts", FabricController, :receipts)
+    post("/actuate", FabricController, :actuate)
+  end
+
   # Production MCP server: read-only Library tools (see Xaas.Library's
   # `tools do` block). Gated behind the same `:require_internal_api_token`
   # Bearer check as `/api` -- an MCP caller is not a separate trust tier.
