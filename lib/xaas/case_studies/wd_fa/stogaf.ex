@@ -47,11 +47,27 @@ defmodule Xaas.CaseStudies.WdFa.Stogaf do
   ]
 
   @viewpoints [
-    %{id: "fa-engineer", view: "FA Morning Brief", concern: "what requires engineer judgment now"},
-    %{id: "fa-manager", view: "FA operating board", concern: "queue, blockers, evidence and throughput"},
+    %{
+      id: "fa-engineer",
+      view: "FA Morning Brief",
+      concern: "what requires engineer judgment now"
+    },
+    %{
+      id: "fa-manager",
+      view: "FA operating board",
+      concern: "queue, blockers, evidence and throughput"
+    },
     %{id: "executive", view: "FA Agent Board Deck", concern: "business value, risk and adoption"},
-    %{id: "architecture", view: "System / Space", concern: "canonical state, interfaces and authority"},
-    %{id: "assessment", view: "WD Case Study 2 Deck", concern: "requirements, tradeoffs and evidence"}
+    %{
+      id: "architecture",
+      view: "System / Space",
+      concern: "canonical state, interfaces and authority"
+    },
+    %{
+      id: "assessment",
+      view: "WD Case Study 2 Deck",
+      concern: "requirements, tradeoffs and evidence"
+    }
   ]
 
   @invariants [
@@ -105,14 +121,47 @@ defmodule Xaas.CaseStudies.WdFa.Stogaf do
     [
       %{level: "ST-0", standing: "ALIVE", evidence: "RFC and WD conformance package"},
       %{level: "ST-1", standing: "ALIVE", evidence: "stable object, event and work identities"},
-      %{level: "ST-2", standing: "ALIVE", evidence: "OCEL object/event relations and semantic work links"},
-      %{level: "ST-3", standing: "ALIVE", evidence: "source-bound evidence, OCEL and receipt provenance"},
-      %{level: "ST-4", standing: "ALIVE", evidence: "SHACL/rule constraints and explicit authority ceiling"},
-      %{level: "ST-5", standing: "PARTIAL_ALIVE", evidence: "views exist; full graph-to-view manufacture is still being closed"},
-      %{level: "ST-6", standing: "PARTIAL_ALIVE", evidence: "sJira/SA2A/autonomic surfaces exist; WD end-to-end closure still under court"},
-      %{level: "ST-7", standing: "UNKNOWN", evidence: "no consequential production DO authority is claimed"},
-      %{level: "ST-8", standing: "UNKNOWN", evidence: "fixture replay exists, but cumulative production closed-loop standing is not claimed"},
-      %{level: "ST-9", standing: "UNKNOWN", evidence: "production organizational-learning effect remains unmeasured"}
+      %{
+        level: "ST-2",
+        standing: "ALIVE",
+        evidence: "OCEL object/event relations and semantic work links"
+      },
+      %{
+        level: "ST-3",
+        standing: "ALIVE",
+        evidence: "source-bound evidence, OCEL and receipt provenance"
+      },
+      %{
+        level: "ST-4",
+        standing: "ALIVE",
+        evidence: "SHACL/rule constraints and explicit authority ceiling"
+      },
+      %{
+        level: "ST-5",
+        standing: "PARTIAL_ALIVE",
+        evidence: "views exist; full graph-to-view manufacture is still being closed"
+      },
+      %{
+        level: "ST-6",
+        standing: "PARTIAL_ALIVE",
+        evidence: "sJira/SA2A/autonomic surfaces exist; WD end-to-end closure still under court"
+      },
+      %{
+        level: "ST-7",
+        standing: "UNKNOWN",
+        evidence: "no consequential production DO authority is claimed"
+      },
+      %{
+        level: "ST-8",
+        standing: "UNKNOWN",
+        evidence:
+          "fixture replay exists, but cumulative production closed-loop standing is not claimed"
+      },
+      %{
+        level: "ST-9",
+        standing: "UNKNOWN",
+        evidence: "production organizational-learning effect remains unmeasured"
+      }
     ]
   end
 end

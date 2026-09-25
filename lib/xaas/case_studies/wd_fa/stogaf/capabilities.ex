@@ -8,10 +8,25 @@ defmodule Xaas.CaseStudies.WdFa.Stogaf.Capabilities do
 
   @capabilities [
     %{id: "reconstruct_subject", plane: "OBSERVE", authority: "NONE", intelligence: "NONE"},
-    %{id: "retrieve_prior_cases", plane: "OBSERVE", authority: "NONE", intelligence: "OPTIONAL_RETRIEVAL"},
-    %{id: "rank_hypotheses", plane: "SELECT", authority: "NONE", intelligence: "BOUNDED_MODEL_ALLOWED"},
+    %{
+      id: "retrieve_prior_cases",
+      plane: "OBSERVE",
+      authority: "NONE",
+      intelligence: "OPTIONAL_RETRIEVAL"
+    },
+    %{
+      id: "rank_hypotheses",
+      plane: "SELECT",
+      authority: "NONE",
+      intelligence: "BOUNDED_MODEL_ALLOWED"
+    },
     %{id: "test_applicability", plane: "SELECT", authority: "NONE", intelligence: "NONE"},
-    %{id: "construct_diagnostic_work", plane: "CONSTRUCT", authority: "NONE", intelligence: "NONE"},
+    %{
+      id: "construct_diagnostic_work",
+      plane: "CONSTRUCT",
+      authority: "NONE",
+      intelligence: "NONE"
+    },
     %{id: "project_sjira", plane: "CONSTRUCT", authority: "NONE", intelligence: "NONE"},
     %{id: "project_view", plane: "CONSTRUCT", authority: "NONE", intelligence: "NONE"},
     %{id: "verify_receipt", plane: "OBSERVE", authority: "NONE", intelligence: "NONE"},

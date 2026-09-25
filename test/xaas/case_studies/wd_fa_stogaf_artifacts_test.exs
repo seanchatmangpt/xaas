@@ -44,8 +44,16 @@ defmodule Xaas.CaseStudies.WdFaStogafArtifactsTest do
     viewpoints = read_json!("viewpoints.json")
 
     assert length(viewpoints) >= 5
-    assert Enum.any?(viewpoints, &(&1["id"] == "fa-engineer" and &1["view"] == "FA Morning Brief"))
-    assert Enum.any?(viewpoints, &(&1["id"] == "assessment" and &1["view"] == "WD Case Study 2 Deck"))
+
+    assert Enum.any?(
+             viewpoints,
+             &(&1["id"] == "fa-engineer" and &1["view"] == "FA Morning Brief")
+           )
+
+    assert Enum.any?(
+             viewpoints,
+             &(&1["id"] == "assessment" and &1["view"] == "WD Case Study 2 Deck")
+           )
   end
 
   test "ADM map includes all phases through architecture change management" do

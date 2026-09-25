@@ -10,7 +10,18 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
   use XaasWeb, :live_view
 
   alias Xaas.CaseStudies.WdFa
-  alias Xaas.CaseStudies.WdFa.{CapabilitySelector, EvidenceCatalog, Evaluation, Ingestion, LearningLoop, MorningBrief, ProcessDelta, SemanticWork}
+
+  alias Xaas.CaseStudies.WdFa.{
+    CapabilitySelector,
+    EvidenceCatalog,
+    Evaluation,
+    Ingestion,
+    LearningLoop,
+    MorningBrief,
+    ProcessDelta,
+    SemanticWork
+  }
+
   alias Xaas.CaseStudies.WdFa.Stogaf
   alias Xaas.CaseStudies.WdFa.Stogaf.{ArchitectureChange, AutonomicPlanner}
   alias Xaas.CaseStudies.WdFa.Stogaf.{Conformance, Metrics, Requirements, Viewpoints, WorkGraph}
@@ -81,7 +92,6 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           standard → evidence → abnormality → work → disposition → verified experience → improved standard
         </p>
       </header>
-
 
       <section class="mb-6 rounded border p-4" data-testid="morning-brief">
         <p class="text-sm font-semibold uppercase tracking-wide">FA Morning Brief</p>
@@ -204,8 +214,6 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         </article>
       </section>
 
-
-
       <section class="mt-6 grid gap-6 md:grid-cols-2">
         <article class="rounded border p-4" data-testid="semantic-work">
           <h2 class="font-semibold">Semantic work order</h2>
@@ -264,7 +272,6 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           </div>
         </div>
 
-
         <div class="mt-6 grid gap-4 md:grid-cols-4" data-testid="stogaf-dfcm">
           <article class="rounded border p-3">
             <strong>Requirements mapped</strong>
@@ -280,7 +287,9 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           </article>
           <article class="rounded border p-3">
             <strong>Production levels unclaimed</strong>
-            <div data-testid="stogaf-unclaimed-count">{@dfcm_metrics.production_levels_unclaimed}</div>
+            <div data-testid="stogaf-unclaimed-count">
+              {@dfcm_metrics.production_levels_unclaimed}
+            </div>
           </article>
         </div>
 
@@ -303,7 +312,6 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           SJ-011 → SJ-020 · SELECT/CONSTRUCT only
         </p>
 
-
         <h3 class="mt-4 font-semibold">Autonomic work selection</h3>
         <%= case @autonomic_next do %>
           <% {:work, work} -> %>
@@ -325,8 +333,6 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
         </ul>
       </section>
 
-
-
       <section class="mt-6 rounded border p-4" data-testid="process-delta">
         <h2 class="font-semibold">Verified replay process delta</h2>
         <p data-testid="delta-before">
@@ -336,7 +342,9 @@ defmodule XaasWeb.WdFa.CaseStudyLive do
           after: {@process_delta.after.classification} · {@process_delta.after.work_standing}
         </p>
         <p data-testid="delta-retired">
-          novel investigation retired: {if @process_delta.novel_investigation_retired, do: "YES", else: "NO"}
+          novel investigation retired: {if @process_delta.novel_investigation_retired,
+            do: "YES",
+            else: "NO"}
         </p>
         <p data-testid="delta-time">production time saved: {@process_delta.production_time_saved}</p>
       </section>

@@ -7,6 +7,7 @@ defmodule Xaas.CaseStudies.WdFa.Stogaf.Receipt do
   """
 
   alias Xaas.CaseStudies.WdFa.Stogaf
+
   alias Xaas.CaseStudies.WdFa.Stogaf.{
     Capabilities,
     Conformance,

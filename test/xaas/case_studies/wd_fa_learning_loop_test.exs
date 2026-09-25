@@ -6,7 +6,9 @@ defmodule Xaas.CaseStudies.WdFaLearningLoopTest do
 
   test "UNKNOWN fixture becomes reusable experience only after independent verification" do
     assert WdFa.presentation_state("novel_x").classification == "UNKNOWN"
-    assert {:ok, %{receipt: receipt, experience: experience}} = LearningLoop.verify_novel_fixture()
+
+    assert {:ok, %{receipt: receipt, experience: experience}} =
+             LearningLoop.verify_novel_fixture()
 
     assert receipt.observed_disposition == "MODE-X-NOVEL"
     assert experience.mode_id == "MODE-X-NOVEL"

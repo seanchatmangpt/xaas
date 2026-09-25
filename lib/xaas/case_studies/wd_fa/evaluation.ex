@@ -33,11 +33,20 @@ defmodule Xaas.CaseStudies.WdFa.Evaluation do
 
     controls = [
       control("known-admitted", known.classification == "KNOWN" and known.admitted_mode != nil),
-      control("partial-unadmitted", partial.classification == "PARTIAL" and is_nil(partial.admitted_mode)),
-      control("novel-remains-unknown", novel.classification == "UNKNOWN" and is_nil(novel.admitted_mode)),
+      control(
+        "partial-unadmitted",
+        partial.classification == "PARTIAL" and is_nil(partial.admitted_mode)
+      ),
+      control(
+        "novel-remains-unknown",
+        novel.classification == "UNKNOWN" and is_nil(novel.admitted_mode)
+      ),
       control("self-certification-refused", self_certification_refused),
       control("tampered-receipt-refused", not VerificationReceipt.verify(tampered)),
-      control("verified-replay-known", learned.classification == "KNOWN" and learned.admitted_mode == "MODE-X-NOVEL"),
+      control(
+        "verified-replay-known",
+        learned.classification == "KNOWN" and learned.admitted_mode == "MODE-X-NOVEL"
+      ),
       control(
         "private-evidence-refused",
         match?(

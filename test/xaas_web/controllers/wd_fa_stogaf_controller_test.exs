@@ -1,7 +1,9 @@
 defmodule XaasWeb.WdFaStogafControllerTest do
   use XaasWeb.ConnCase, async: true
 
-  test "GET /case-studies/wd-fa/stogaf.json exposes bounded architecture projection", %{conn: conn} do
+  test "GET /case-studies/wd-fa/stogaf.json exposes bounded architecture projection", %{
+    conn: conn
+  } do
     conn = get(conn, ~p"/case-studies/wd-fa/stogaf.json")
     body = json_response(conn, 200)
 
@@ -17,7 +19,9 @@ defmodule XaasWeb.WdFaStogafControllerTest do
     refute Enum.any?(body["capabilities"], &(&1["plane"] == "DO"))
   end
 
-  test "GET /case-studies/wd-fa/context/:case_id.json preserves the JSON context contract", %{conn: conn} do
+  test "GET /case-studies/wd-fa/context/:case_id.json preserves the JSON context contract", %{
+    conn: conn
+  } do
     conn = get(conn, "/case-studies/wd-fa/context/known_firmware.json")
     body = json_response(conn, 200)
 
