@@ -1,0 +1,65 @@
+;; ppcx/domain/eds_cycle.hddl
+;;
+;; Formal HDDL interchange artifact for the paper's Sec.4 recurring weekly
+;; research cycle. This file is documentation/interchange only -- it is NOT
+;; fed to an external HTN/FOND solver (none is installed in this repo). The
+;; actually-executed structure lives in sim/hddl_model.py as a small
+;; dataclass mirror of exactly this domain, walked at runtime by
+;; sim/fond_engine.py.
+;;
+;; :oneof is the standard FOND-PDDL/HDDL nondeterministic-effect syntax,
+;; marking the four action nodes where sim/fond_engine.py performs a real
+;; seeded random draw instead of following a single scripted path.
+
+(define (domain eds-cycle)
+  (:requirements :hierarchie :typing)
+  (:types agent artifact hypothesis)
+
+  ;; compound task: one weekly EDS research cycle (paper sec 4)
+  (:task do-eds-cycle :parameters (?a - agent))
+
+  (:method eds-cycle-standard
+    :parameters (?a - agent)
+    :task (do-eds-cycle ?a)
+    :ordered-subtasks (and
+      (ontology-align ?a)
+      (world-observe ?a)
+      (infer-hypothesis ?a)
+      (plan-manufacture ?a)
+      (falsify-check ?a)
+      (admit-or-reject ?a)
+      (manufacture-artifact ?a)
+      (execute-artifact ?a)
+      (verify-result ?a)))
+
+  (:action ontology-align :parameters (?a - agent)
+    :precondition (and) :effect (ontology-aligned ?a))
+
+  (:action world-observe :parameters (?a - agent)
+    :precondition (ontology-aligned ?a) :effect (world-observed ?a))
+
+  (:action infer-hypothesis :parameters (?a - agent)
+    :precondition (world-observed ?a) :effect (hypothesis-inferred ?a))
+
+  (:action plan-manufacture :parameters (?a - agent)
+    :precondition (hypothesis-inferred ?a) :effect (plan-ready ?a))
+
+  ;; FOND: nondeterministic outcome node -- multiple possible effects
+  (:action falsify-check :parameters (?a - agent)
+    :precondition (plan-ready ?a)
+    :effect (oneof (survives ?a) (falsified ?a)))
+
+  (:action admit-or-reject :parameters (?a - agent)
+    :precondition (survives ?a) :effect (admitted ?a))
+
+  (:action manufacture-artifact :parameters (?a - agent)
+    :precondition (admitted ?a)
+    :effect (oneof (manufactured ?a) (blocked ?a) (unsupported ?a)))
+
+  (:action execute-artifact :parameters (?a - agent)
+    :precondition (manufactured ?a)
+    :effect (oneof (executed ?a) (blocked ?a)))
+
+  (:action verify-result :parameters (?a - agent)
+    :precondition (executed ?a)
+    :effect (oneof (verified ?a) (falsified ?a))))

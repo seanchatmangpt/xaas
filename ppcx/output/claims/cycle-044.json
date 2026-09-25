@@ -1,0 +1,14 @@
+{
+  "artifact_reference": "ppcx-year-sim:cycle-044",
+  "evidence": "cycle 44: falsify-check survived, admit-or-reject positive",
+  "evidence_state": "UNSUPPORTED",
+  "falsifier": "OutcomeContradictionFalsifier: refutes on a real 'falsified' FOND draw",
+  "hypothesis": "weekly EDS research cycle 44 (2027-05-29) produces a genuine, evidenced increment along the paper's Sec.4 loop",
+  "id": "eds-year-cycle-044",
+  "no_falsifier": false,
+  "receipt_refs": [
+    "eds-year-cycle-044-receipt"
+  ],
+  "source_revision": "ppcx-year-sim@1",
+  "verification": ""
+}

@@ -1,0 +1,20 @@
+{
+  "artifact_reference": "ppcx-year-sim:cycle-028",
+  "claim_id": "eds-year-cycle-028",
+  "digest": "sha256:27f50d0d5307b0f78be64fa79251708a5a87385239d01e804c31a31395ada5ae",
+  "environment": {
+    "cycle_no": "28",
+    "historical": "False"
+  },
+  "execution_command": "ppcx.sim.fond_engine.run_cycle",
+  "id": "eds-year-cycle-028-receipt",
+  "inputs": "{\"master_seed\": 20260912, \"random_values\": {\"execute-artifact\": 0.9703055746344366, \"falsify-check\": 0.22940918545690703, \"manufacture-artifact\": 0.10757185396893809}}",
+  "outputs": "BLOCKED",
+  "source_revision": "ppcx-year-sim@1",
+  "supports_proposition": "weekly EDS research cycle 28 (2027-02-06) produces a genuine, evidenced increment along the paper's Sec.4 loop",
+  "timestamp": "2027-02-06",
+  "validators": [
+    "OutcomeContradictionFalsifier",
+    "DictSubsetVerifier"
+  ]
+}

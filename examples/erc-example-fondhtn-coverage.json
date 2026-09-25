@@ -1,0 +1,12 @@
+{
+  "artifact_reference": "ferroplan (local, UNVERIFIED build this session)",
+  "evidence": "",
+  "evidence_state": "PROPOSED",
+  "falsifier": "Coverage_FONDHTN <= Coverage_Replanning under predeclared benchmark conditions",
+  "hypothesis": "A nondeterministic hierarchical policy (FOND-HTN) provides greater admitted branch coverage than deterministic planning followed by reactive replanning",
+  "id": "erc-example-fondhtn-coverage",
+  "no_falsifier": false,
+  "receipt_refs": [],
+  "source_revision": "",
+  "verification": ""
+}

@@ -1,0 +1,2388 @@
+{
+  "eventTypes": [
+    {
+      "attributes": [],
+      "name": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "name": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "name": "UNSUPPORTED"
+    },
+    {
+      "attributes": [],
+      "name": "VERIFIED"
+    }
+  ],
+  "events": [
+    {
+      "attributes": [],
+      "id": "event-001",
+      "relationships": [
+        {
+          "objectId": "cycle-001",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-001",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-08-01T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-002",
+      "relationships": [
+        {
+          "objectId": "cycle-002",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-002",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-08-08T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-003",
+      "relationships": [
+        {
+          "objectId": "cycle-003",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-003",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-08-15T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-004",
+      "relationships": [
+        {
+          "objectId": "cycle-004",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-004",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-08-22T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-005",
+      "relationships": [
+        {
+          "objectId": "cycle-005",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-005",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-08-29T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-006",
+      "relationships": [
+        {
+          "objectId": "cycle-006",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-006",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-09-05T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-007",
+      "relationships": [
+        {
+          "objectId": "cycle-007",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-007",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-09-12T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-008",
+      "relationships": [
+        {
+          "objectId": "cycle-008",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-008",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-09-19T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-009",
+      "relationships": [
+        {
+          "objectId": "cycle-009",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-009",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-09-26T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-010",
+      "relationships": [
+        {
+          "objectId": "cycle-010",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-010",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-10-03T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-011",
+      "relationships": [
+        {
+          "objectId": "cycle-011",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-011",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-10-10T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-012",
+      "relationships": [
+        {
+          "objectId": "cycle-012",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-012",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-10-17T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-013",
+      "relationships": [
+        {
+          "objectId": "cycle-013",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-013",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-10-24T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-014",
+      "relationships": [
+        {
+          "objectId": "cycle-014",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-014",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-10-31T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-015",
+      "relationships": [
+        {
+          "objectId": "cycle-015",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-015",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-11-07T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-016",
+      "relationships": [
+        {
+          "objectId": "cycle-016",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-016",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-11-14T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-017",
+      "relationships": [
+        {
+          "objectId": "cycle-017",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-017",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-11-21T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-018",
+      "relationships": [
+        {
+          "objectId": "cycle-018",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-018",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-11-28T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-019",
+      "relationships": [
+        {
+          "objectId": "cycle-019",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-019",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-12-05T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-020",
+      "relationships": [
+        {
+          "objectId": "cycle-020",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-020",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-12-12T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-021",
+      "relationships": [
+        {
+          "objectId": "cycle-021",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-021",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-12-19T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-022",
+      "relationships": [
+        {
+          "objectId": "cycle-022",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-022",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2026-12-26T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-023",
+      "relationships": [
+        {
+          "objectId": "cycle-023",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-023",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-01-02T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-024",
+      "relationships": [
+        {
+          "objectId": "cycle-024",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-024",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-01-09T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-025",
+      "relationships": [
+        {
+          "objectId": "cycle-025",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-025",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-01-16T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-026",
+      "relationships": [
+        {
+          "objectId": "cycle-026",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-026",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-01-23T00:00:00Z",
+      "type": "UNSUPPORTED"
+    },
+    {
+      "attributes": [],
+      "id": "event-027",
+      "relationships": [
+        {
+          "objectId": "cycle-027",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-027",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-01-30T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-028",
+      "relationships": [
+        {
+          "objectId": "cycle-028",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-028",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-02-06T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-029",
+      "relationships": [
+        {
+          "objectId": "cycle-029",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-029",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-02-13T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-030",
+      "relationships": [
+        {
+          "objectId": "cycle-030",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-030",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-02-20T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-031",
+      "relationships": [
+        {
+          "objectId": "cycle-031",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-031",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-02-27T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-032",
+      "relationships": [
+        {
+          "objectId": "cycle-032",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-032",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-03-06T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-033",
+      "relationships": [
+        {
+          "objectId": "cycle-033",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-033",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-03-13T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-034",
+      "relationships": [
+        {
+          "objectId": "cycle-034",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-034",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-03-20T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-035",
+      "relationships": [
+        {
+          "objectId": "cycle-035",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-035",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-03-27T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-036",
+      "relationships": [
+        {
+          "objectId": "cycle-036",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-036",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-04-03T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-037",
+      "relationships": [
+        {
+          "objectId": "cycle-037",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-037",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-04-10T00:00:00Z",
+      "type": "UNSUPPORTED"
+    },
+    {
+      "attributes": [],
+      "id": "event-038",
+      "relationships": [
+        {
+          "objectId": "cycle-038",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-038",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-04-17T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-039",
+      "relationships": [
+        {
+          "objectId": "cycle-039",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-039",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-04-24T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-040",
+      "relationships": [
+        {
+          "objectId": "cycle-040",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-040",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-05-01T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-041",
+      "relationships": [
+        {
+          "objectId": "cycle-041",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-041",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-05-08T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-042",
+      "relationships": [
+        {
+          "objectId": "cycle-042",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-042",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-05-15T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-043",
+      "relationships": [
+        {
+          "objectId": "cycle-043",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-043",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-05-22T00:00:00Z",
+      "type": "BLOCKED"
+    },
+    {
+      "attributes": [],
+      "id": "event-044",
+      "relationships": [
+        {
+          "objectId": "cycle-044",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-044",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-05-29T00:00:00Z",
+      "type": "UNSUPPORTED"
+    },
+    {
+      "attributes": [],
+      "id": "event-045",
+      "relationships": [
+        {
+          "objectId": "cycle-045",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-045",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-06-05T00:00:00Z",
+      "type": "UNSUPPORTED"
+    },
+    {
+      "attributes": [],
+      "id": "event-046",
+      "relationships": [
+        {
+          "objectId": "cycle-046",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-046",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-06-12T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-047",
+      "relationships": [
+        {
+          "objectId": "cycle-047",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-047",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-06-19T00:00:00Z",
+      "type": "VERIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-048",
+      "relationships": [
+        {
+          "objectId": "cycle-048",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-048",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-06-26T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-049",
+      "relationships": [
+        {
+          "objectId": "cycle-049",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-049",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-07-03T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-050",
+      "relationships": [
+        {
+          "objectId": "cycle-050",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-050",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-07-10T00:00:00Z",
+      "type": "FALSIFIED"
+    },
+    {
+      "attributes": [],
+      "id": "event-051",
+      "relationships": [
+        {
+          "objectId": "cycle-051",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-051",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-07-17T00:00:00Z",
+      "type": "UNSUPPORTED"
+    },
+    {
+      "attributes": [],
+      "id": "event-052",
+      "relationships": [
+        {
+          "objectId": "cycle-052",
+          "qualifier": "cycle"
+        },
+        {
+          "objectId": "eds-year-cycle-052",
+          "qualifier": "erc"
+        }
+      ],
+      "time": "2027-07-24T00:00:00Z",
+      "type": "VERIFIED"
+    }
+  ],
+  "objectTypes": [
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "type": "boolean"
+        },
+        {
+          "name": "cycle_date",
+          "type": "string"
+        }
+      ],
+      "name": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "type": "string"
+        }
+      ],
+      "name": "erc"
+    }
+  ],
+  "objects": [
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-08-01T00:00:00Z",
+          "value": "True"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-08-01T00:00:00Z",
+          "value": "2026-08-01"
+        }
+      ],
+      "id": "cycle-001",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-08-01T00:00:00Z",
+          "value": "weekly EDS research cycle 1 (2026-08-01) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-001",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-08-08T00:00:00Z",
+          "value": "True"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-08-08T00:00:00Z",
+          "value": "2026-08-08"
+        }
+      ],
+      "id": "cycle-002",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-08-08T00:00:00Z",
+          "value": "weekly EDS research cycle 2 (2026-08-08) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-002",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-08-15T00:00:00Z",
+          "value": "True"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-08-15T00:00:00Z",
+          "value": "2026-08-15"
+        }
+      ],
+      "id": "cycle-003",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-08-15T00:00:00Z",
+          "value": "weekly EDS research cycle 3 (2026-08-15) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-003",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-08-22T00:00:00Z",
+          "value": "True"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-08-22T00:00:00Z",
+          "value": "2026-08-22"
+        }
+      ],
+      "id": "cycle-004",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-08-22T00:00:00Z",
+          "value": "weekly EDS research cycle 4 (2026-08-22) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-004",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-08-29T00:00:00Z",
+          "value": "True"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-08-29T00:00:00Z",
+          "value": "2026-08-29"
+        }
+      ],
+      "id": "cycle-005",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-08-29T00:00:00Z",
+          "value": "weekly EDS research cycle 5 (2026-08-29) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-005",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-09-05T00:00:00Z",
+          "value": "True"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-09-05T00:00:00Z",
+          "value": "2026-09-05"
+        }
+      ],
+      "id": "cycle-006",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-09-05T00:00:00Z",
+          "value": "weekly EDS research cycle 6 (2026-09-05) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-006",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-09-12T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-09-12T00:00:00Z",
+          "value": "2026-09-12"
+        }
+      ],
+      "id": "cycle-007",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-09-12T00:00:00Z",
+          "value": "weekly EDS research cycle 7 (2026-09-12) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-007",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-09-19T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-09-19T00:00:00Z",
+          "value": "2026-09-19"
+        }
+      ],
+      "id": "cycle-008",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-09-19T00:00:00Z",
+          "value": "weekly EDS research cycle 8 (2026-09-19) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-008",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-09-26T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-09-26T00:00:00Z",
+          "value": "2026-09-26"
+        }
+      ],
+      "id": "cycle-009",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-09-26T00:00:00Z",
+          "value": "weekly EDS research cycle 9 (2026-09-26) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-009",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-10-03T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-10-03T00:00:00Z",
+          "value": "2026-10-03"
+        }
+      ],
+      "id": "cycle-010",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-10-03T00:00:00Z",
+          "value": "weekly EDS research cycle 10 (2026-10-03) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-010",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-10-10T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-10-10T00:00:00Z",
+          "value": "2026-10-10"
+        }
+      ],
+      "id": "cycle-011",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-10-10T00:00:00Z",
+          "value": "weekly EDS research cycle 11 (2026-10-10) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-011",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-10-17T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-10-17T00:00:00Z",
+          "value": "2026-10-17"
+        }
+      ],
+      "id": "cycle-012",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-10-17T00:00:00Z",
+          "value": "weekly EDS research cycle 12 (2026-10-17) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-012",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-10-24T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-10-24T00:00:00Z",
+          "value": "2026-10-24"
+        }
+      ],
+      "id": "cycle-013",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-10-24T00:00:00Z",
+          "value": "weekly EDS research cycle 13 (2026-10-24) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-013",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-10-31T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-10-31T00:00:00Z",
+          "value": "2026-10-31"
+        }
+      ],
+      "id": "cycle-014",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-10-31T00:00:00Z",
+          "value": "weekly EDS research cycle 14 (2026-10-31) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-014",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-11-07T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-11-07T00:00:00Z",
+          "value": "2026-11-07"
+        }
+      ],
+      "id": "cycle-015",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-11-07T00:00:00Z",
+          "value": "weekly EDS research cycle 15 (2026-11-07) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-015",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-11-14T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-11-14T00:00:00Z",
+          "value": "2026-11-14"
+        }
+      ],
+      "id": "cycle-016",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-11-14T00:00:00Z",
+          "value": "weekly EDS research cycle 16 (2026-11-14) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-016",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-11-21T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-11-21T00:00:00Z",
+          "value": "2026-11-21"
+        }
+      ],
+      "id": "cycle-017",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-11-21T00:00:00Z",
+          "value": "weekly EDS research cycle 17 (2026-11-21) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-017",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-11-28T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-11-28T00:00:00Z",
+          "value": "2026-11-28"
+        }
+      ],
+      "id": "cycle-018",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-11-28T00:00:00Z",
+          "value": "weekly EDS research cycle 18 (2026-11-28) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-018",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-12-05T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-12-05T00:00:00Z",
+          "value": "2026-12-05"
+        }
+      ],
+      "id": "cycle-019",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-12-05T00:00:00Z",
+          "value": "weekly EDS research cycle 19 (2026-12-05) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-019",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-12-12T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-12-12T00:00:00Z",
+          "value": "2026-12-12"
+        }
+      ],
+      "id": "cycle-020",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-12-12T00:00:00Z",
+          "value": "weekly EDS research cycle 20 (2026-12-12) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-020",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-12-19T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-12-19T00:00:00Z",
+          "value": "2026-12-19"
+        }
+      ],
+      "id": "cycle-021",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-12-19T00:00:00Z",
+          "value": "weekly EDS research cycle 21 (2026-12-19) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-021",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2026-12-26T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2026-12-26T00:00:00Z",
+          "value": "2026-12-26"
+        }
+      ],
+      "id": "cycle-022",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2026-12-26T00:00:00Z",
+          "value": "weekly EDS research cycle 22 (2026-12-26) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-022",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-01-02T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-01-02T00:00:00Z",
+          "value": "2027-01-02"
+        }
+      ],
+      "id": "cycle-023",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-01-02T00:00:00Z",
+          "value": "weekly EDS research cycle 23 (2027-01-02) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-023",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-01-09T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-01-09T00:00:00Z",
+          "value": "2027-01-09"
+        }
+      ],
+      "id": "cycle-024",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-01-09T00:00:00Z",
+          "value": "weekly EDS research cycle 24 (2027-01-09) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-024",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-01-16T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-01-16T00:00:00Z",
+          "value": "2027-01-16"
+        }
+      ],
+      "id": "cycle-025",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-01-16T00:00:00Z",
+          "value": "weekly EDS research cycle 25 (2027-01-16) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-025",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-01-23T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-01-23T00:00:00Z",
+          "value": "2027-01-23"
+        }
+      ],
+      "id": "cycle-026",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-01-23T00:00:00Z",
+          "value": "weekly EDS research cycle 26 (2027-01-23) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-026",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-01-30T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-01-30T00:00:00Z",
+          "value": "2027-01-30"
+        }
+      ],
+      "id": "cycle-027",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-01-30T00:00:00Z",
+          "value": "weekly EDS research cycle 27 (2027-01-30) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-027",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-02-06T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-02-06T00:00:00Z",
+          "value": "2027-02-06"
+        }
+      ],
+      "id": "cycle-028",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-02-06T00:00:00Z",
+          "value": "weekly EDS research cycle 28 (2027-02-06) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-028",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-02-13T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-02-13T00:00:00Z",
+          "value": "2027-02-13"
+        }
+      ],
+      "id": "cycle-029",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-02-13T00:00:00Z",
+          "value": "weekly EDS research cycle 29 (2027-02-13) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-029",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-02-20T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-02-20T00:00:00Z",
+          "value": "2027-02-20"
+        }
+      ],
+      "id": "cycle-030",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-02-20T00:00:00Z",
+          "value": "weekly EDS research cycle 30 (2027-02-20) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-030",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-02-27T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-02-27T00:00:00Z",
+          "value": "2027-02-27"
+        }
+      ],
+      "id": "cycle-031",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-02-27T00:00:00Z",
+          "value": "weekly EDS research cycle 31 (2027-02-27) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-031",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-03-06T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-03-06T00:00:00Z",
+          "value": "2027-03-06"
+        }
+      ],
+      "id": "cycle-032",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-03-06T00:00:00Z",
+          "value": "weekly EDS research cycle 32 (2027-03-06) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-032",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-03-13T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-03-13T00:00:00Z",
+          "value": "2027-03-13"
+        }
+      ],
+      "id": "cycle-033",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-03-13T00:00:00Z",
+          "value": "weekly EDS research cycle 33 (2027-03-13) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-033",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-03-20T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-03-20T00:00:00Z",
+          "value": "2027-03-20"
+        }
+      ],
+      "id": "cycle-034",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-03-20T00:00:00Z",
+          "value": "weekly EDS research cycle 34 (2027-03-20) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-034",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-03-27T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-03-27T00:00:00Z",
+          "value": "2027-03-27"
+        }
+      ],
+      "id": "cycle-035",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-03-27T00:00:00Z",
+          "value": "weekly EDS research cycle 35 (2027-03-27) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-035",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-04-03T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-04-03T00:00:00Z",
+          "value": "2027-04-03"
+        }
+      ],
+      "id": "cycle-036",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-04-03T00:00:00Z",
+          "value": "weekly EDS research cycle 36 (2027-04-03) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-036",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-04-10T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-04-10T00:00:00Z",
+          "value": "2027-04-10"
+        }
+      ],
+      "id": "cycle-037",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-04-10T00:00:00Z",
+          "value": "weekly EDS research cycle 37 (2027-04-10) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-037",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-04-17T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-04-17T00:00:00Z",
+          "value": "2027-04-17"
+        }
+      ],
+      "id": "cycle-038",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-04-17T00:00:00Z",
+          "value": "weekly EDS research cycle 38 (2027-04-17) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-038",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-04-24T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-04-24T00:00:00Z",
+          "value": "2027-04-24"
+        }
+      ],
+      "id": "cycle-039",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-04-24T00:00:00Z",
+          "value": "weekly EDS research cycle 39 (2027-04-24) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-039",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-05-01T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-05-01T00:00:00Z",
+          "value": "2027-05-01"
+        }
+      ],
+      "id": "cycle-040",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-05-01T00:00:00Z",
+          "value": "weekly EDS research cycle 40 (2027-05-01) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-040",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-05-08T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-05-08T00:00:00Z",
+          "value": "2027-05-08"
+        }
+      ],
+      "id": "cycle-041",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-05-08T00:00:00Z",
+          "value": "weekly EDS research cycle 41 (2027-05-08) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-041",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-05-15T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-05-15T00:00:00Z",
+          "value": "2027-05-15"
+        }
+      ],
+      "id": "cycle-042",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-05-15T00:00:00Z",
+          "value": "weekly EDS research cycle 42 (2027-05-15) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-042",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-05-22T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-05-22T00:00:00Z",
+          "value": "2027-05-22"
+        }
+      ],
+      "id": "cycle-043",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-05-22T00:00:00Z",
+          "value": "weekly EDS research cycle 43 (2027-05-22) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-043",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-05-29T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-05-29T00:00:00Z",
+          "value": "2027-05-29"
+        }
+      ],
+      "id": "cycle-044",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-05-29T00:00:00Z",
+          "value": "weekly EDS research cycle 44 (2027-05-29) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-044",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-06-05T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-06-05T00:00:00Z",
+          "value": "2027-06-05"
+        }
+      ],
+      "id": "cycle-045",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-06-05T00:00:00Z",
+          "value": "weekly EDS research cycle 45 (2027-06-05) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-045",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-06-12T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-06-12T00:00:00Z",
+          "value": "2027-06-12"
+        }
+      ],
+      "id": "cycle-046",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-06-12T00:00:00Z",
+          "value": "weekly EDS research cycle 46 (2027-06-12) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-046",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-06-19T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-06-19T00:00:00Z",
+          "value": "2027-06-19"
+        }
+      ],
+      "id": "cycle-047",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-06-19T00:00:00Z",
+          "value": "weekly EDS research cycle 47 (2027-06-19) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-047",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-06-26T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-06-26T00:00:00Z",
+          "value": "2027-06-26"
+        }
+      ],
+      "id": "cycle-048",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-06-26T00:00:00Z",
+          "value": "weekly EDS research cycle 48 (2027-06-26) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-048",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-07-03T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-07-03T00:00:00Z",
+          "value": "2027-07-03"
+        }
+      ],
+      "id": "cycle-049",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-07-03T00:00:00Z",
+          "value": "weekly EDS research cycle 49 (2027-07-03) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-049",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-07-10T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-07-10T00:00:00Z",
+          "value": "2027-07-10"
+        }
+      ],
+      "id": "cycle-050",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-07-10T00:00:00Z",
+          "value": "weekly EDS research cycle 50 (2027-07-10) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-050",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-07-17T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-07-17T00:00:00Z",
+          "value": "2027-07-17"
+        }
+      ],
+      "id": "cycle-051",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-07-17T00:00:00Z",
+          "value": "weekly EDS research cycle 51 (2027-07-17) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-051",
+      "relationships": [],
+      "type": "erc"
+    },
+    {
+      "attributes": [
+        {
+          "name": "historical",
+          "time": "2027-07-24T00:00:00Z",
+          "value": "False"
+        },
+        {
+          "name": "cycle_date",
+          "time": "2027-07-24T00:00:00Z",
+          "value": "2027-07-24"
+        }
+      ],
+      "id": "cycle-052",
+      "relationships": [],
+      "type": "cycle"
+    },
+    {
+      "attributes": [
+        {
+          "name": "hypothesis",
+          "time": "2027-07-24T00:00:00Z",
+          "value": "weekly EDS research cycle 52 (2027-07-24) produces a genuine, evidenced increment along the paper's Sec.4 loop"
+        }
+      ],
+      "id": "eds-year-cycle-052",
+      "relationships": [],
+      "type": "erc"
+    }
+  ]
+}

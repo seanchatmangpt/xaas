@@ -1,0 +1,14 @@
+{
+  "artifact_reference": "ppcx-year-sim:cycle-005",
+  "evidence": "historical: autofde-lab/docs/2026-09-12-executable-design-science.md sec 4, week of 2026-08-29\nhistorical: autofde-lab/docs/2026-09-12-executable-design-science.md sec 4, week of 2026-08-29",
+  "evidence_state": "VERIFIED",
+  "falsifier": "OutcomeContradictionFalsifier: refutes on a real 'falsified' FOND draw",
+  "hypothesis": "weekly EDS research cycle 5 (2026-08-29) produces a genuine, evidenced increment along the paper's Sec.4 loop",
+  "id": "eds-year-cycle-005",
+  "no_falsifier": false,
+  "receipt_refs": [
+    "eds-year-cycle-005-receipt"
+  ],
+  "source_revision": "ppcx-year-sim@1",
+  "verification": ""
+}

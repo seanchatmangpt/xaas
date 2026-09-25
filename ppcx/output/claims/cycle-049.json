@@ -1,0 +1,14 @@
+{
+  "artifact_reference": "ppcx-year-sim:cycle-049",
+  "evidence": "FALSIFIED: real seeded FOND draw for this cycle's falsify-check/verify-result action landed on 'falsified' -- the hypothesis does not survive this cycle's own evidence",
+  "evidence_state": "FALSIFIED",
+  "falsifier": "OutcomeContradictionFalsifier: refutes on a real 'falsified' FOND draw",
+  "hypothesis": "weekly EDS research cycle 49 (2027-07-03) produces a genuine, evidenced increment along the paper's Sec.4 loop",
+  "id": "eds-year-cycle-049",
+  "no_falsifier": false,
+  "receipt_refs": [
+    "eds-year-cycle-049-receipt"
+  ],
+  "source_revision": "ppcx-year-sim@1",
+  "verification": ""
+}

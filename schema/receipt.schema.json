@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://executable-design-science.org/schema/receipt.schema.json",
+  "title": "EDS Research Receipt",
+  "description": "Charter §9: R_E = receipt(claim, artifact, source, environment, inputs, execution, outputs, validators).",
+  "type": "object",
+  "required": [
+    "id", "claim_id", "artifact_reference", "source_revision",
+    "environment", "inputs", "execution_command", "outputs",
+    "validators", "supports_proposition", "digest"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "claim_id": { "type": "string", "description": "The ERC.id this receipt is evidence for." },
+    "artifact_reference": { "type": "string", "description": "Exact artifact executed." },
+    "source_revision": { "type": "string", "description": "Exact SHA that produced the artifact — never a symbolic ref (main/HEAD)." },
+    "environment": {
+      "type": "object",
+      "description": "Declared execution environment (charter §8 EXECUTABLE requirement).",
+      "properties": {
+        "os": { "type": "string" },
+        "toolchain": { "type": "string" },
+        "dependencies": { "type": "string" }
+      }
+    },
+    "inputs": { "type": "string", "description": "Input/benchmark identity used." },
+    "execution_command": { "type": "string", "description": "The exact command(s) actually run." },
+    "outputs": { "type": "string", "description": "The exact observed output (or a pointer to a stored log)." },
+    "validators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Which validators interpreted the outputs (test framework, SHACL validator, statistical test, human reviewer, etc.)."
+    },
+    "supports_proposition": {
+      "type": "string",
+      "description": "Which proposition the evidence actually supports — stated narrowly, not generalized beyond what was observed (charter §25)."
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "sha256 of the canonicalized receipt body (all fields above, sorted keys, this field excluded) — makes the receipt independently checkable for tampering."
+    }
+  }
+}
