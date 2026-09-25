@@ -4,6 +4,8 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
   alias Xaas.Ultracode.RemoteRelay
   alias Xaas.Ultracode.RemoteRelay.Envelope
 
+  @contract Path.expand("../../../priv/ultracode/remote-relay.contract.json", __DIR__)
+
   defp state(opts \\ []) do
     RemoteRelay.new_state(
       Keyword.merge([execution_manifest_digest: "manifest", dedup_limit: 2], opts)
@@ -64,6 +66,21 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
         overrides
       )
     )
+  end
+
+  test "machine-readable relay contract pins the executable admission vocabulary" do
+    contract = @contract |> File.read!() |> Jason.decode!()
+
+    assert contract["contract"] == "xaas-remote-relay"
+    assert contract["contract_version"] == 1
+    assert contract["envelope_schema"] == "xaas.remote-relay-envelope/1"
+    assert contract["gall_work_binding"]["payload_schema"] == "gall.work-lease/1"
+    assert contract["gall_work_binding"]["intent_digest"] == "payload.graph_digest"
+
+    assert Enum.sort(contract["envelope"]["channels"]) == ["control", "observe"]
+    assert "EXECUTION_MANIFEST_DRIFT" in contract["refusals"]
+    assert "AUTHORITY_REF_REQUIRED" in contract["refusals"]
+    assert "KNOWN_REPLAY" in contract["replay"]["after_ack"]
   end
 
   test "gall-work admission binds graph, subject, epoch, and work-order identity" do
