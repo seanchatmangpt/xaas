@@ -57,6 +57,16 @@ defmodule Xaas.Ultracode.SemanticCrown do
       dcterms:description "An ALIVE receipt of the aps-dod court, produced by the fabric verifier for the exact candidate head." .
   """
 
+  # Origin authority (G1, v26.9.25 post-tag hardening). Every WorkOrder the
+  # crown builds -- the observed base, the dependent seed and the observe call
+  # -- names the canonical ggen_igniter objective SJ-001 originates from. It is
+  # pinned by `sj:trust-root-objective-semantic-jira-mvp` in the canonical
+  # semantic-jira-pack ontology (ggen_igniter 647db5f2 `Authority.trust_roots/0`);
+  # the kernel resolves it against those pins and refuses a missing or
+  # self-declared origin. The value is a module constant, never a caller option:
+  # the crown cannot declare its own authority.
+  @origin_authority "https://ggen-igniter.dev/ontology/semantic-jira#objective-semantic-jira-mvp"
+
   @acceptance_gates ~w(CHI-EXACT-HEAD CHI-INDEPENDENT CHI-SCOPE CHI-MOCK CHI-ASSERT CHI-CANONICAL)
   @a_identity "SJ-CROWN-A"
   @b_identity "SJ-CROWN-B"
@@ -202,29 +212,23 @@ defmodule Xaas.Ultracode.SemanticCrown do
     # graph is a work copy of the canonical ontology plus those two nodes.
     ontology_path = Path.join(dir, "ontology.ttl")
 
-    File.write!(
-      ontology_path,
-      File.read!(Path.join(ctx.ggen_dir, "priv/ggen/semantic-jira-pack/ontology.ttl")) <>
-        "\n" <> @ontology_nodes
-    )
+    File.write!(ontology_path, admission_ontology(ctx.ggen_dir))
 
     base = base_work_order(ctx, a)
     write_json(Path.join(dir, "finding.json"), finding)
     write_json(Path.join(dir, "base-work-order.json"), base)
     candidate_path = Path.join(dir, "candidate.json")
 
-    case ggen(ctx, "semantic_jira.observe", [
-           "--finding",
-           Path.join(dir, "finding.json"),
-           "--base-work-order",
-           Path.join(dir, "base-work-order.json"),
-           "--identity",
-           @a_identity,
-           "--ontology",
-           ontology_path,
-           "--out",
-           candidate_path
-         ]) do
+    case ggen(
+           ctx,
+           "semantic_jira.observe",
+           observe_args(
+             Path.join(dir, "finding.json"),
+             Path.join(dir, "base-work-order.json"),
+             ontology_path,
+             candidate_path
+           )
+         ) do
       {0, %{"work_order" => wo_a, "shacl" => shacl}, _} ->
         wo_b = dependent_work_order(ctx, base, b)
         write_json(ctx.work_orders_path, [wo_a, wo_b])
@@ -242,7 +246,52 @@ defmodule Xaas.Ultracode.SemanticCrown do
     end
   end
 
-  defp base_work_order(ctx, item) do
+  @doc """
+  The canonical ggen_igniter objective every crown WorkOrder originates from
+  (`sj:objective-semantic-jira-mvp`, pinned by the canonical trust root).
+  """
+  @spec origin_authority() :: String.t()
+  def origin_authority, do: @origin_authority
+
+  @doc """
+  The admission graph of the observe call: the canonical semantic-jira-pack
+  ontology of `ggen_dir` plus the aps-dod court and evidence nodes.
+  """
+  @spec admission_ontology(Path.t()) :: String.t()
+  def admission_ontology(ggen_dir) do
+    File.read!(Path.join(ggen_dir, "priv/ggen/semantic-jira-pack/ontology.ttl")) <>
+      "\n" <> @ontology_nodes
+  end
+
+  @doc """
+  The `mix semantic_jira.observe` argument vector. `--origin-authority` is
+  the kernel's INVARIANT A: without it the observation is refused
+  `missing_origin_authority` before any kernel work.
+  """
+  @spec observe_args(Path.t(), Path.t(), Path.t(), Path.t()) :: [String.t()]
+  def observe_args(finding_path, base_path, ontology_path, candidate_path) do
+    [
+      "--finding",
+      finding_path,
+      "--base-work-order",
+      base_path,
+      "--identity",
+      @a_identity,
+      "--origin-authority",
+      @origin_authority,
+      "--ontology",
+      ontology_path,
+      "--out",
+      candidate_path
+    ]
+  end
+
+  @doc """
+  The observed base WorkOrder (`SJ-CROWN-BASE`) of APS backlog `item` at
+  `ctx.base_sha`; it carries `origin_authority/0`.
+  """
+  @spec base_work_order(%{required(:base_sha) => String.t()}, map()) :: map()
+  def base_work_order(ctx, item) do
     %{
       "identity" => "SJ-CROWN-BASE",
       "title" => "APS contract test hardening",
@@ -263,11 +312,18 @@ defmodule Xaas.Ultracode.SemanticCrown do
       "required_receipt_classes" => ["verification"],
       "path_scope" => item["allowed_paths"],
       "authority_requirement" => "NONE",
+      "origin_authority" => @origin_authority,
       "replay_required" => false
     }
   end
 
-  defp dependent_work_order(ctx, base, item) do
+  @doc """
+  The seeded dependent WorkOrder (`SJ-CROWN-B`): `base` specialised to
+  `item`, requiring an ALIVE receipt of `SJ-CROWN-A`. Its `origin_authority`
+  is set here, never inherited from `base`.
+  """
+  @spec dependent_work_order(%{required(:base_sha) => String.t()}, map(), map()) :: map()
+  def dependent_work_order(ctx, base, item) do
     Map.merge(base, %{
       "identity" => @b_identity,
       "title" => "APS contract test hardening: #{item["id"]}",
@@ -278,6 +334,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
       "acceptance" => @acceptance_gates,
       "falsifiers" => ["CHI-MUTATION"],
       "path_scope" => item["allowed_paths"],
+      "origin_authority" => @origin_authority,
       "dependencies" => [
         %{"upstream" => @a_identity, "type" => "requiresReceipt", "required_standing" => "ALIVE"}
       ]
