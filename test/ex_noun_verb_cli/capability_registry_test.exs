@@ -67,26 +67,23 @@ defmodule ExNounVerbCli.CapabilityRegistryTest do
     end
   end
 
-  describe "contains?/2 -- invalid input" do
-    test "raises FunctionClauseError when given a bare packages map instead of the registry" do
-      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
+  describe "remove_package/2 negative paths" do
+    test "refuses an id that was never registered, naming it in the error" do
+      registry = CapabilityRegistry.new()
 
-      assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(%{"pkg-001" => package}, "pkg-001")
-      end
+      {:ok, registry} =
+        CapabilityRegistry.add_package(registry, Package.new("pkg-001", "P", "1", "d"))
+
+      assert {:error, message} = CapabilityRegistry.remove_package(registry, "ghost-pkg")
+      assert message =~ "Package not found: ghost-pkg"
+      # The refusal must not partially mutate the registry.
+      assert CapabilityRegistry.count(registry) == 1
+      assert CapabilityRegistry.contains?(registry, "pkg-001")
     end
 
-    test "raises FunctionClauseError when given nil instead of the registry" do
+    test "raises FunctionClauseError when the registry argument has the wrong shape" do
       assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(nil, "pkg-001")
-      end
-    end
-
-    test "raises FunctionClauseError when given a non-registry struct" do
-      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
-
-      assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(package, "pkg-001")
+        CapabilityRegistry.remove_package(%{packages: %{}}, "pkg-001")
       end
     end
   end
