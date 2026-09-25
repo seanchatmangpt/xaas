@@ -196,7 +196,7 @@ wddeck:slide-07-block-06 a pres:Block ;
   pres:tone "green" .
 
 wddeck:slide-07-block-07 a pres:Block ;
-  pres:lockOf wddeck:slide-07 ;
+  pres:blockOf wddeck:slide-07 ;
   pres:order 7 ;
   pres:role "node" ;
   pres:title "MachineExperience" ;

@@ -34,7 +34,7 @@ wddeck:slide-13-block-03 a pres:Block ;
   pres:tone "stone" .
 
 wddeck:slide-13-block-04 a pres:Block ;
-  pres:lockOf wddeck:slide-13 ;
+  pres:blockOf wddeck:slide-13 ;
   pres:order 4 ;
   pres:role "bullet" ;
   pres:body "“He could ship a 30-day slice while preserving security, provenance and evaluation rigor.”" ;
