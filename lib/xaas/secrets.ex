@@ -1,7 +1,0 @@
-defmodule Xaas.Secrets do
-  use AshAuthentication.Secret
-
-  def secret_for([:authentication, :tokens, :signing_secret], Xaas.Accounts.User, _opts, _context) do
-    Application.fetch_env(:xaas, :token_signing_secret)
-  end
-end
