@@ -129,6 +129,25 @@ defmodule XaasWeb.ExecutionFabricController do
       }
     },
     %{
+      name: "cancel_work",
+      description:
+        "Cancel the leased work: the epoch lands terminal and the sealed receipt carries the " <>
+          "standing outcome `blocked` with cancelled_by evidence (a cancellation is \"work will " <>
+          "not proceed\", not a subject failure). The lease token IS the authority -- a worker " <>
+          "may cancel only its own live lease; a stale/expired/re-claimed token is a typed " <>
+          "refusal, never a clobber of the current holder. Distinct from refuse: refuse reports " <>
+          "why the provider will not do the work; cancel stands the lease down.",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          lease_token: %{type: "string"},
+          reason: %{type: "string"},
+          evidence: %{type: "object"}
+        },
+        required: ["lease_token", "reason"]
+      }
+    },
+    %{
       name: "actuate",
       description:
         "Invoke the admitted Ash.Reactor DO kernel (Xaas.Actuation.run/4) for one " <>
@@ -392,6 +411,28 @@ defmodule XaasWeb.ExecutionFabricController do
   end
 
   defp dispatch_tool("refuse", _), do: {:error, :lease_token_and_reason_required}
+
+  # The wire `reason` is attacker-controlled free text, so it goes through
+  # the SAME existing-atom-only coercion `refuse` uses (an unbounded
+  # String.to_atom/1 would be an atom-table exhaustion DoS).
+  defp dispatch_tool("cancel_work", %{"lease_token" => token, "reason" => reason} = args)
+       when is_binary(token) do
+    case Lease.cancel(token, reason_atom(reason), args["evidence"] || %{}) do
+      {:ok, epoch, receipt} ->
+        {:ok,
+         %{
+           status: "cancelled",
+           epoch_id: epoch.id,
+           outcome: receipt.outcome,
+           cancelled_by: receipt.evidence["cancelled_by"]
+         }}
+
+      {:error, err} ->
+        {:error, err}
+    end
+  end
+
+  defp dispatch_tool("cancel_work", _), do: {:error, :lease_token_and_reason_required}
 
   defp dispatch_tool("actuate", %{"lease_token" => token} = args) when is_binary(token) do
     case Lease.actuate(token, args) do

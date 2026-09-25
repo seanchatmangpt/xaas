@@ -724,9 +724,9 @@ defmodule Xaas.Ultracode.Lease do
   `:blocked` with `cancelled_by` evidence -- a cancellation is "work will
   not proceed", not "the subject failed". Reusing `:failed` + `:blocked`
   keeps every existing consumer (`MissedEpochs`, `NextEpoch` recovery, the
-  OCEL egress's `epoch_failed`/`refused` events, run validation) correct
-  without forking the state machine; the receipt evidence is what
-  distinguishes a cancellation from a refusal.
+  OCEL egress's `epoch_failed` events, run validation) correct without
+  forking the state machine; the receipt evidence is what distinguishes a
+  cancellation from a refusal.
 
   Same race posture as `close/4`/`refuse/3`: after a TTL expiry + re-claim
   the stale token's cancel is the typed `{:error, {:lease_stale, _}}`, never
@@ -736,89 +736,100 @@ defmodule Xaas.Ultracode.Lease do
   def cancel(lease_token, reason, evidence \\ %{})
       when is_binary(lease_token) and is_atom(reason) do
     with {:ok, epoch} <- live_lease(lease_token, [:run]) do
-      evidence = bind_semantic_work_identity(epoch, evidence)
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> Map.merge(%{
+          "cancelled_by" => "lease_holder",
+          "cancellation_reason" => Atom.to_string(reason)
+        })
 
-      do_cancel(epoch, %{
-        cancelled_by: "lease_holder",
-        cancellation_reason: Atom.to_string(reason)
-      })
-      |> then(fn extra -> Map.merge(evidence, extra) end)
-      |> then(&seal_cancellation(epoch, lease_token, &1))
+      seal_cancellation(epoch, lease_token, evidence)
     end
   end
 
   @doc """
   INTERNAL cancellation -- the lease holder is gone or the episode is being
-  wound down (`DurationBudget` drain, operator stop, `MissedEpochs`-style
-  reaping of an unreclaimable epoch). Authority: an admitted
-  `Xaas.SystemAuthority` struct ONLY -- the check is the real
-  `Xaas.Checks.SystemActor` predicate over the epoch kernel's canonical
-  service (`:ultracode_reactor`); any other actor is the typed
-  `{:error, :refused_no_authority}`. No ambient authority, no actor-free
-  call.
+  wound down (`DurationBudget` drain, operator stop, reaping an
+  unreclaimable epoch). Authority: an admitted `Xaas.SystemAuthority` whose
+  service is the epoch kernel's canonical one -- resolved through
+  `Xaas.Checks.SystemActor.service_for/2` (the SAME closed capability map
+  the policies use, never a locally re-typed literal), so an actor carrying
+  any other service is the typed `{:error, :refused_no_authority}`. No
+  ambient authority, no actor-free call.
 
-  Cancels the epoch whether or not a lease is bound (an unclaimed
-  `:running` epoch of a dead episode is cancellable; a terminal one is
-  not -- a stale row is the typed `{:error, {:epoch_not_cancellable,
-  state}}`). A bound lease is REVOKED by the same atomic write (token +
-  expiry cleared), so a worker that later surfaces with the old token finds
-  a terminal epoch (`lease_not_live`), never a live capability.
+  Cancels the epoch whether or not a lease is bound (an unclaimed epoch of
+  a dead episode is cancellable; a terminal one is not -- the typed
+  `{:error, {:epoch_not_cancellable, state}}`). A bound lease is REVOKED by
+  the same atomic write (token + expiry cleared), so a worker that later
+  surfaces with the old token finds a terminal epoch (`lease_not_live`),
+  never a live capability. The write is one `UPDATE ... WHERE state IN
+  (expected, running) RETURNING *` -- a concurrent close/refuse/cancel that
+  won the row first makes this call the typed loser, exactly like every
+  other lease write here.
   """
   @spec cancel_epoch(Epoch.t() | String.t(), Xaas.SystemAuthority.t(), atom(), map()) ::
           {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
   def cancel_epoch(epoch_or_id, %Xaas.SystemAuthority{} = actor, reason, evidence \\ %{})
       when is_atom(reason) do
-    if Xaas.Checks.SystemActor.match?([action: :mark_failed], actor, %{}) do
-      do_cancel_epoch(epoch_or_id, actor, reason, evidence)
+    with {:ok, required_service} <- Xaas.Checks.SystemActor.service_for(Epoch, :mark_failed),
+         :ok <- admit_service(actor, required_service),
+         {:ok, epoch} <- fetch_epoch(epoch_or_id) do
+      cancel_epoch_row(epoch, actor, reason, evidence)
     else
-      {:error, :refused_no_authority}
+      :error -> {:error, :refused_no_authority}
+      {:error, _} = err -> err
     end
   end
 
-  defp do_cancel_epoch(epoch_or_id, actor, reason, evidence) do
-    with {:ok, epoch} <- fetch_epoch(epoch_or_id) do
-      cond do
-        epoch.state not in [:expected, :running] ->
-          {:error, {:epoch_not_cancellable, epoch.state}}
+  defp admit_service(%Xaas.SystemAuthority{service: service}, required)
+       when service == required,
+       do: :ok
 
-        true ->
-          evidence = bind_semantic_work_identity(epoch, evidence)
+  defp admit_service(%Xaas.SystemAuthority{}, _required), do: {:error, :refused_no_authority}
 
-          extra =
-            Map.merge(%{cancelled_by: "internal", cancellation_reason: Atom.to_string(reason)}, %{
-              revoked_lease: not is_nil(epoch.lease_token)
+  defp cancel_epoch_row(%Epoch{} = epoch, actor, reason, evidence) do
+    if epoch.state not in [:expected, :running] do
+      {:error, {:epoch_not_cancellable, epoch.state}}
+    else
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> Map.merge(%{
+          "cancelled_by" => "internal",
+          "cancellation_reason" => Atom.to_string(reason),
+          "revoked_lease" => not is_nil(epoch.lease_token)
+        })
+
+      result =
+        atomic_row_update(
+          from(e in Epoch,
+            where: e.id == ^epoch.id and (e.state == :expected or e.state == :running)
+          ),
+          state: :failed,
+          terminal_at: DateTime.utc_now(),
+          lease_token: nil,
+          lease_expires_at: nil
+        )
+
+      case result do
+        {:ok, epoch} ->
+          {:ok, receipt} =
+            Receipt
+            |> Ash.Changeset.for_create(:seal, %{
+              epoch_id: epoch.id,
+              subject: epoch.exact_subject,
+              outcome: :blocked,
+              evidence: evidence,
+              sealed_at: DateTime.utc_now()
             })
+            |> Ash.create(actor: actor)
 
-          result =
-            atomic_row_update(
-              from(e in Epoch,
-                where:
-                  e.id == ^epoch.id and e.state in [:expected, :running]
-              ),
-              state: :failed,
-              terminal_at: DateTime.utc_now(),
-              lease_token: nil,
-              lease_expires_at: nil
-            )
+          {:ok, epoch, receipt}
 
-          case result do
-            {:ok, epoch} ->
-              {:ok, receipt} =
-                Receipt
-                |> Ash.Changeset.for_create(:seal, %{
-                  epoch_id: epoch.id,
-                  subject: epoch.exact_subject,
-                  outcome: :blocked,
-                  evidence: Map.merge(evidence, extra),
-                  sealed_at: DateTime.utc_now()
-                })
-                |> Ash.create(actor: actor)
-
-              {:ok, epoch, receipt}
-
-            {:error, :no_match} ->
-              {:error, {:epoch_not_cancellable, epoch.state}}
-          end
+        # A concurrent close/refuse/cancel won the row first.
+        {:error, :no_match} ->
+          {:error, {:epoch_not_cancellable, epoch.state}}
       end
     end
   end
@@ -845,19 +856,17 @@ defmodule Xaas.Ultracode.Lease do
     end
   end
 
-  # Evidence-only helper: no write.
-  defp do_cancel(_epoch, extra), do: extra
+  # ALWAYS re-reads: the cancellation decision (state check, revoked-lease
+  # evidence, lease revocation) must be made against the DB's current row,
+  # never a possibly-stale caller snapshot.
+  defp fetch_epoch(%Epoch{id: id}), do: fetch_epoch(id)
 
   defp fetch_epoch(epoch_id) when is_binary(epoch_id) do
-    Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false, load: [:run])
-    |> case do
-      {:ok, %Epoch{run: %Run{}} = epoch} -> {:ok, epoch}
-      {:ok, %Epoch{}} -> {:ok, Ash.load!(Epoch |> Ash.Query.for_read(:read_unscoped) |> Ash.Query.filter(id == ^epoch_id), [:run], authorize?: false)}
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false, load: [:run]) do
+      {:ok, %Epoch{} = epoch} -> {:ok, epoch}
       {:error, error} -> {:error, {:epoch_not_found, epoch_id, inspect(error)}}
     end
   end
-
-  defp fetch_epoch(%Epoch{} = epoch), do: {:ok, epoch}
 
   # ------------------------------------------------------------------
   # Closure
