@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Xaas.Successor do
-  @shortdoc "Successor intake: compiled successor orders -> frontier -> descriptor -> Route.resolve (GC23-12)"
+  @shortdoc "Successor intake (GC23-12): retired with compile_prose -- typed UNSUPPORTED(provider_capability)"
 
   @moduledoc """
   The GC23-12 successor intake runner (lane V23-H; PRD section 12, ARD
@@ -8,6 +8,14 @@ defmodule Mix.Tasks.Xaas.Successor do
       mix xaas.successor --dir DIR --ggen-igniter-dir GI [--out-dir OUT] [--check]
                          [--ggen-build-path PATH] [--verifier-suite NAME]
                          [--alias owner/repo=alias ...]
+
+  RETIRED (v26.9.25 post-tag hardening, X1): ggen_igniter retired
+  `mix semantic_jira.compile_prose` in dc2724263b7c955f23cd3e1a7407f3665e2a022e
+  (prose is observation-only; a WorkOrder originates only from a pinned
+  `origin_authority`). After the no-LLM guard the task now prints
+  `UNSUPPORTED(provider_capability)` (reason `compile_prose_retired`, with the
+  successor pointer, `Xaas.Sjira.Successor.successor/0`) and exits `69`; it
+  runs no graph-side process and writes nothing. The historical contract:
 
   `DIR` holds the successor goal graph (`goal.ttl`) and the first-mile
   compiler's output (`compiled/orders.ttl`). The intake projects the compiled
@@ -28,11 +36,12 @@ defmodule Mix.Tasks.Xaas.Successor do
 
   ## Exit codes
 
-  `0` the intake ran (last stdout line: the JSON summary; its `standing` is
-  the first eligible order's item standing), `2` invalid invocation, `3` a
+  Historical (before the retirement): `0` the intake ran (last stdout line:
+  the JSON summary), `75` the graph side had no usable build. Now: `2`
+  invalid invocation, `3` a
   typed refusal (last stdout line: `{"standing": "REFUSED(...)", ...}`),
-  `75` the graph side has no usable build (`BUILD_BROKEN`; a court reads it
-  as UNKNOWN).
+  `69` `UNSUPPORTED(provider_capability)`: the retired prose -> WorkOrder
+  edge (last stdout line: the typed JSON with the successor pointer).
   """
 
   use Mix.Task
@@ -52,6 +61,7 @@ defmodule Mix.Tasks.Xaas.Successor do
   ]
 
   @impl Mix.Task
+  @spec run([String.t()]) :: no_return()
   def run(args) do
     {opts, rest, invalid} = OptionParser.parse(args, strict: @switches)
 
@@ -85,6 +95,7 @@ defmodule Mix.Tasks.Xaas.Successor do
     end
   end
 
+  @spec intake(keyword(), map()) :: no_return()
   defp intake(opts, aliases) do
     intake_opts =
       [
@@ -101,8 +112,7 @@ defmodule Mix.Tasks.Xaas.Successor do
       if opts[:check], do: Successor.check(intake_opts), else: Successor.intake(intake_opts)
 
     case result do
-      {:ok, summary} -> emit(0, summary)
-      {:refused, %{"standing" => "BUILD_BROKEN"} = typed} -> emit(75, typed)
+      {:unsupported, typed} -> emit(69, typed)
       {:refused, typed} -> emit(3, typed)
     end
   end
@@ -116,8 +126,11 @@ defmodule Mix.Tasks.Xaas.Successor do
     end)
   end
 
+  # Every outcome of the retired intake is non-zero (2, 3 or 69): emit always
+  # exits.
+  @spec emit(pos_integer(), map()) :: no_return()
   defp emit(code, document) do
     Mix.shell().info(Jason.encode!(document))
-    if code != 0, do: exit({:shutdown, code})
+    exit({:shutdown, code})
   end
 end
