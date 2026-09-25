@@ -22,9 +22,7 @@ defmodule Xaas.CaseStudies.WdFa.CapabilitySelector do
   @spec for_case(String.t(), boolean()) :: [map()]
   def for_case(case_id, experience_admitted? \\ false) do
     _state = WdFa.presentation_state(case_id, experience_admitted?)
-    allowed = MapSet.new(@common)
 
-    Capabilities.friday()
-    |> Enum.filter(&MapSet.member?(allowed, &1.id))
+    Enum.filter(Capabilities.friday(), &(&1.id in @common))
   end
 end
