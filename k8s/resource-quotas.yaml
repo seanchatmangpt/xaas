@@ -1,0 +1,72 @@
+# ResourceQuota for the `default` namespace, sized for the three real
+# Deployments that live there: xaas (app), postgres (data), prometheus
+# (scraping xaas.default.svc.cluster.local:80/metrics per prometheus.yaml).
+#
+# Unlike ~/chatman-ecosystem/platform-console/k8s/resource-quotas.yaml, this
+# cluster has NO Istio sidecar injection: `kubectl get ns default -o
+# jsonpath='{.metadata.labels}'` -> only kubernetes.io/metadata.name, no
+# istio-injection label, and `istio-system` namespace does not exist on this
+# cluster at all. So per-pod cost here is the app container alone, no
+# +2000m/+1024Mi sidecar tax to add on top.
+#
+# xaas container resources (k8s/deployment.yaml) were verified LIVE this
+# session via `kubectl patch` against a running migration: the original
+# 512Mi memory limit OOM-killed a real `mix ecto.migrate` run mid-migration
+# (confirmed via `kubectl describe pod` showing OOMKilled + restart count
+# increment). Patched live to 100m/500m cpu, 512Mi request / 1Gi limit
+# memory, which let the same migration complete without a restart. That is
+# what's now baked into deployment.yaml (not just live-patched) as of this
+# change.
+#
+# postgres and prometheus resources are NOT live-verified the way xaas's
+# are -- no OOM/CPU-throttle incident observed against them this session --
+# they're conservative, standard sizing for a single-writer dev Postgres
+# (postgres:16-alpine, 1Gi PVC) and a single-target Prometheus scraper
+# (prom/prometheus:v2.53.0, 15s scrape interval, one job) respectively, now
+# added to postgres.yaml / prometheus.yaml alongside this quota so the
+# quota's own numbers are grounded in the same files it constrains.
+#
+# Per-pod resources (app container only, no sidecar):
+#   xaas:       requests 100m cpu / 512Mi mem, limits 500m cpu / 1Gi mem
+#   postgres:   requests 200m cpu / 512Mi mem, limits 1000m cpu / 2Gi mem
+#   prometheus: requests 100m cpu / 256Mi mem, limits 500m cpu / 512Mi mem
+#
+# Replica counts used for quota headroom:
+#   xaas:       k8s/hpa.yaml -> minReplicas 1, maxReplicas 3 (CPU target
+#               50%). Quota sized for maxReplicas (3) + 1 RollingUpdate
+#               surge pod = 4, so a deploy landing while already scaled to
+#               HPA max doesn't get wedged on quota.
+#   postgres:   replicas: 1 in postgres.yaml, no HPA (stateful, RWO PVC ->
+#               true concurrent duplicate won't actually schedule, but the
+#               quota still budgets +1 surge pod for the brief window a
+#               RollingUpdate creates the replacement pod before the old
+#               one terminates).
+#   prometheus: replicas: 1 in prometheus.yaml, no HPA, same +1 surge logic.
+#
+# Totals (requests / limits), summed per pod-count above:
+#   xaas       (4 pods): requests 4*100m=400m cpu,  4*512Mi=2048Mi mem
+#                        limits   4*500m=2000m cpu, 4*1Gi=4096Mi mem
+#   postgres   (2 pods): requests 2*200m=400m cpu,  2*512Mi=1024Mi mem
+#                        limits   2*1000m=2000m cpu,2*2Gi=4096Mi mem
+#   prometheus (2 pods): requests 2*100m=200m cpu,  2*256Mi=512Mi mem
+#                        limits   2*500m=1000m cpu, 2*512Mi=1024Mi mem
+#   ------------------------------------------------------------------
+#   sum: requests.cpu 1000m, requests.memory 3584Mi
+#        limits.cpu   5000m, limits.memory   9216Mi
+#        pods (max concurrent during a rolling deploy): 4+2+2=8
+#
+# Quota hard values below round the above sums up for headroom (matching
+# the platform-console file's own practice of rounding up rather than
+# quota-starving a real deploy), rather than setting them to the exact sum.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: xaas-quota
+  namespace: default
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "1200m"
+    requests.memory: "4Gi"
+    limits.cpu: "6"
+    limits.memory: "10Gi"

@@ -1,0 +1,144 @@
+;; mechanical-rename.hddl
+;; Observed this session: the kanban -> xaas OTP-app/module rename. Written
+;; down because it is a genuinely recurring shape (any future namespace/app
+;; rename in an Elixir/Ash monorepo needs the same steps in the same order),
+;; and because this session's execution surfaced two real failure modes worth
+;; encoding as preconditions/guards, not just prose warnings:
+;;   (a) blindly moving a whole directory can collide with an existing target
+;;       (lib/kanban/repo.ex -> lib/xaas/repo.ex collided with an existing,
+;;       semantically DIFFERENT Xaas.Repo -- required a distinct target name,
+;;       not a merge)
+;;   (b) a stray concurrent process on a different toolchain version
+;;       (asdf Elixir 1.18 vs homebrew 1.19) racing the same _build/deps
+;;       directory produces misleading, non-reproducible compile errors that
+;;       look like real code bugs but are pure environment corruption
+
+(define (domain mechanical-rename)
+  (:requirements :hierarchy :typing :negative-preconditions)
+
+  (:types
+    old-name - object
+    new-name - object
+    file-or-dir - object
+    repo - object
+  )
+
+  (:predicates
+    (scope-mapped ?o - old-name ?n - new-name)
+    (collision-checked ?f - file-or-dir)
+    (has-collision ?f - file-or-dir)
+    (renamed-distinctly ?f - file-or-dir)
+    (moved ?f - file-or-dir)
+    (text-swept ?r - repo)
+    (stray-toolchain-checked ?r - repo)
+    (stray-toolchain-clean ?r - repo)
+    (recompiled ?r - repo)
+    (stragglers-fixed ?r - repo)
+    (rename-verified ?r - repo)
+  )
+
+  (:task RENAME-NAMESPACE
+    :parameters (?r - repo ?o - old-name ?n - new-name)
+  )
+
+  (:method m-rename-namespace
+    :parameters (?r - repo ?o - old-name ?n - new-name)
+    :task (RENAME-NAMESPACE ?r ?o ?n)
+    :ordered-subtasks (and
+      (t1 (map-scope ?o ?n))
+      (t2 (move-with-collision-check ?r))
+      (t3 (text-sweep ?r ?o ?n))
+      (t4 (check-stray-toolchain ?r))
+      (t5 (recompile-clean ?r))
+      (t6 (fix-stragglers ?r))
+      (t7 (verify-rename ?r))
+    )
+  )
+
+  (:action map-scope
+    :parameters (?o - old-name ?n - new-name)
+    :precondition ()
+    :effect (scope-mapped ?o ?n)
+    ;; real: grep -rl "<Old>\|<old>" across lib/, test/, config/, mix.exs,
+    ;; infra files (Dockerfile, compose.yaml, k8s/, terraform) BEFORE moving
+    ;; anything -- the scope map is the plan, not a byproduct of moving files.
+  )
+
+  (:method m-move-no-collision
+    :parameters (?f - file-or-dir)
+    :task (move-with-collision-check repo)
+    :precondition (and (collision-checked ?f) (not (has-collision ?f)))
+    :subtasks (and (t1 (git-mv-directly ?f)))
+  )
+
+  (:method m-move-with-collision
+    :parameters (?f - file-or-dir)
+    :task (move-with-collision-check repo)
+    :precondition (and (collision-checked ?f) (has-collision ?f))
+    :subtasks (and (t1 (rename-to-distinct-target ?f)))
+    ;; real precedent this session: Kanban.Repo (a plain Ecto.Repo, the book
+    ;; scaffold's original) collided with the ALREADY-EXISTING Xaas.Repo (a
+    ;; separate AshPostgres.Repo for ported resources) -- renamed to
+    ;; Xaas.LegacyRepo instead of merging. A collision is a signal to check
+    ;; whether the two things are actually the same, not a license to force
+    ;; a merge.
+  )
+
+  (:action git-mv-directly
+    :parameters (?f - file-or-dir)
+    :precondition ()
+    :effect (moved ?f)
+  )
+
+  (:action rename-to-distinct-target
+    :parameters (?f - file-or-dir)
+    :precondition ()
+    :effect (and (renamed-distinctly ?f) (moved ?f))
+  )
+
+  (:action text-sweep
+    :parameters (?r - repo ?o - old-name ?n - new-name)
+    :precondition (scope-mapped ?o ?n)
+    :effect (text-swept ?r)
+    ;; real: ordered substitution -- compound names first (KanbanWeb before
+    ;; bare Kanban), then module-qualified names, then snake_case paths, then
+    ;; the bare capitalized/lowercase catch-all last, to avoid double-
+    ;; substitution artifacts.
+  )
+
+  (:action check-stray-toolchain
+    :parameters (?r - repo)
+    :precondition (text-swept ?r)
+    :effect (stray-toolchain-checked ?r)
+    ;; real: `ps aux | grep -iE "beam|mix compile"` and confirm every live
+    ;; process's Elixir/OTP path matches the one about to run the real
+    ;; verification compile -- kill any that don't, BEFORE trusting a
+    ;; confusing compile error as a real code bug.
+  )
+
+  (:action recompile-clean
+    :parameters (?r - repo)
+    :precondition (and (text-swept ?r) (stray-toolchain-checked ?r) (stray-toolchain-clean ?r))
+    :effect (recompiled ?r)
+    ;; real: rm -rf _build deps && mix deps.get && mix compile --force, from
+    ;; a clean state, uncontested -- not an incremental compile that might
+    ;; hide a rename miss behind a stale artifact.
+  )
+
+  (:action fix-stragglers
+    :parameters (?r - repo)
+    :precondition (recompiled ?r)
+    :effect (stragglers-fixed ?r)
+    ;; real: any remaining old-name reference found by the compiler
+    ;; (ambiguous imports, undefined-module errors) or a second grep pass --
+    ;; fix and re-run t5, do not declare done on the first partial pass.
+  )
+
+  (:action verify-rename
+    :parameters (?r - repo)
+    :precondition (stragglers-fixed ?r)
+    :effect (rename-verified ?r)
+    ;; real: delegates to (VERIFY-AND-COMMIT ?r changeset) from
+    ;; verify-and-commit.hddl.
+  )
+)

@@ -1,0 +1,45 @@
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix xu:     <https://ggen.io/ontology/xaas-ultracode#> .
+
+<https://ggen.io/ontology/xaas-ultracode#> a owl:Ontology ;
+  rdfs:label "XaaS Ultracode Domain Ontology (real-subject equivalence court)" ;
+  rdfs:comment """Bootstrap Equivalence Court (ULTRACODE-50 section 45-47):
+    real Xaas.Ultracode.Run/Epoch module names and their real, exact
+    attribute lists (transcribed directly from lib/xaas/ultracode/run.ex
+    and lib/xaas/ultracode/epoch.ex, not from the earlier extracted-semantics
+    summary, to avoid compounding transcription error). Generation target is
+    tmp_out/ (never the real lib/xaas/ultracode/*.ex files) -- this proves
+    field-level equivalence without touching the closed, hand-written
+    milestone.""" .
+
+xu:EngineeringRun a owl:Class ; rdfs:subClassOf prov:Activity .
+xu:EngineeringEpoch a owl:Class ; rdfs:subClassOf prov:Activity .
+
+xu:Resource_RealRun a xu:EngineeringRun ;
+  xu:resourceModule "Xaas.Ultracode.Run" ;
+  xu:domainModule "Xaas.Ultracode" ;
+  xu:tableName "ultracode_runs" ;
+  xu:field "goal:string" ;
+  xu:field "state:atom" ;
+  xu:field "standing:atom" ;
+  xu:field "started_at:utc_datetime_usec" ;
+  xu:field "deadline_at:utc_datetime_usec" ;
+  xu:field "cycle:integer" ;
+  xu:field "max_cycles:integer" ;
+  xu:field "epoch_timeout_seconds:integer" ;
+  xu:field "last_expected_epoch_at:utc_datetime_usec" ;
+  xu:field "last_completed_epoch_at:utc_datetime_usec" .
+
+xu:Resource_RealEpoch a xu:EngineeringEpoch ;
+  xu:resourceModule "Xaas.Ultracode.Epoch" ;
+  xu:domainModule "Xaas.Ultracode" ;
+  xu:tableName "ultracode_epochs" ;
+  xu:field "cycle:integer" ;
+  xu:field "exact_subject:string" ;
+  xu:field "state:atom" ;
+  xu:field "expected_at:utc_datetime_usec" ;
+  xu:field "started_at:utc_datetime_usec" ;
+  xu:field "completed_at:utc_datetime_usec" .

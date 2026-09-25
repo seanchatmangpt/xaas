@@ -1,0 +1,13 @@
+PREFIX schema: <https://schema.org/>
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+
+SELECT ?res ?module ?tableName ?book ?curatedBy ?gradeBand ?reason ?active WHERE {
+  ?res a xl:Curation ;
+       xl:resourceModule ?module ;
+       xl:tableName ?tableName ;
+       schema:item ?book ;
+       schema:curator ?curatedBy ;
+       schema:typicalAgeRange ?gradeBand ;
+       schema:headline ?reason ;
+       schema:activeThrough ?active .
+}

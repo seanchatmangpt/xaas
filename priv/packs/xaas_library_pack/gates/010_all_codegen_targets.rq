@@ -1,0 +1,10 @@
+PREFIX agp: <https://ggen.io/ontology/ash-igniter-gen-pipeline#>
+
+SELECT ?target ?phase ?order ?mixTask ?targetModule WHERE {
+  ?target a agp:CodegenTarget ;
+          agp:phase ?phase ;
+          agp:order ?order ;
+          agp:mixTask ?mixTask ;
+          agp:targetModule ?targetModule .
+}
+ORDER BY ?phase ?order

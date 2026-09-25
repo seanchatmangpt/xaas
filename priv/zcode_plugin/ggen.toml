@@ -1,0 +1,8 @@
+[project]
+name = "xaas-zcode-plugin"
+
+[ontology]
+source = "ontology.ttl"
+
+[templates]
+dir = "templates"

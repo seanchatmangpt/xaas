@@ -1,0 +1,126 @@
+defmodule Xaas.Marketplace.ProviderTest do
+  @moduledoc """
+  Real Chicago-style tests: real `Ecto.Adapters.SQL.Sandbox`-backed
+  Postgres (`Xaas.Repo`), real `Ash.Changeset.for_create` + `Ash.create!`/
+  `Ash.read!` calls against the real `marketplace_providers` table. No
+  mocking.
+  """
+  use ExUnit.Case, async: true
+  require Ash.Query
+
+  alias Xaas.Marketplace.Provider
+
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+    :ok
+  end
+
+  defp create!(attrs) do
+    Provider
+    |> Ash.Changeset.for_create(:create, attrs)
+    |> Ash.create!(authorize?: false)
+  end
+
+  test "creating a provider persists real attributes with the real :pending default status" do
+    org_id = "org-#{System.unique_integer([:positive])}"
+
+    provider =
+      create!(%{
+        name: "Acme Widgets",
+        slug: "acme-widgets-#{System.unique_integer([:positive])}",
+        description: "Widgets as a service",
+        org_id: org_id
+      })
+
+    assert provider.name == "Acme Widgets"
+    assert provider.status == :pending
+    assert provider.org_id == org_id
+    assert provider.inserted_at != nil
+    assert provider.updated_at != nil
+
+    reread = Provider |> Ash.get!(provider.id, authorize?: false)
+    assert reread.id == provider.id
+  end
+
+  test "slug uniqueness is really enforced" do
+    slug = "dup-slug-#{System.unique_integer([:positive])}"
+    create!(%{name: "First", slug: slug, org_id: "org-a"})
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             Provider
+             |> Ash.Changeset.for_create(:create, %{name: "Second", slug: slug, org_id: "org-b"})
+             |> Ash.create(authorize?: false)
+  end
+
+  test "provider lifecycle status cannot bypass the Reactor actuation boundary" do
+    provider =
+      create!(%{
+        name: "Beta Co",
+        slug: "beta-co-#{System.unique_integer([:positive])}",
+        org_id: "org-c"
+      })
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             provider
+             |> Ash.Changeset.for_update(:actuate_status, %{status: :active})
+             |> Ash.update(authorize?: false)
+
+    assert Provider |> Ash.get!(provider.id, authorize?: false) |> Map.fetch!(:status) == :pending
+  end
+
+  # Real, disclosed change this session: the `AshIam` pilot on this
+  # resource was removed (see `Xaas.Marketplace.Provider`'s own moduledoc
+  # "AshIam read pilot -- removed this session" section for the real,
+  # live-verified reason: `ash_iam`'s auto-injected field_policies
+  # ANDed against every other authorization path and made every real
+  # HTTP `POST`/`PATCH` response serialize its attributes as
+  # `Ash.ForbiddenField` -> `null`, regardless of a real, already-passing
+  # action-level authorization). `:read` now runs on
+  # `Xaas.Marketplace.Checks.ActorOrgFilter`, the same real
+  # `%{org_id: ...}`-actor mechanism `:create`/`:update` use -- these two
+  # tests are rewritten to that real mechanism rather than the removed
+  # `iam_policy`/`AshIam.Check` shape.
+  test "an actor whose real org_id matches can read that org's real row" do
+    provider =
+      create!(%{
+        name: "Readable Co",
+        slug: "readable-co-#{System.unique_integer([:positive])}",
+        org_id: "org-readable"
+      })
+
+    results = Provider |> Ash.read!(actor: %{org_id: "org-readable"})
+    assert Enum.any?(results, &(&1.id == provider.id))
+  end
+
+  test "an actor with no real org_id is really denied read -- not silently allowed" do
+    _provider =
+      create!(%{
+        name: "Hidden Co",
+        slug: "hidden-co-#{System.unique_integer([:positive])}",
+        org_id: "org-d"
+      })
+
+    results = Provider |> Ash.read!(actor: %{})
+    assert results == []
+  end
+
+  test "an actor whose real org_id names a different org cannot read this row" do
+    visible =
+      create!(%{
+        name: "Visible Co",
+        slug: "visible-co-#{System.unique_integer([:positive])}",
+        org_id: "org-visible"
+      })
+
+    other =
+      create!(%{
+        name: "Other Co",
+        slug: "other-co-#{System.unique_integer([:positive])}",
+        org_id: "org-other"
+      })
+
+    results = Provider |> Ash.read!(actor: %{org_id: "org-visible"})
+    assert Enum.any?(results, &(&1.id == visible.id))
+    refute Enum.any?(results, &(&1.id == other.id))
+  end
+end

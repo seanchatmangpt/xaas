@@ -1,0 +1,8 @@
+PREFIX xl: <https://ggen.io/ontology/xaas-library#>
+
+SELECT ?domainModule ?adminShow WHERE {
+  ?domain a xl:LibraryDomain ;
+          xl:domainModule ?domainModule ;
+          xl:adminShow ?adminShow .
+  FILTER(?adminShow = true)
+}

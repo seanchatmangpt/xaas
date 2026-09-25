@@ -1,0 +1,19 @@
+---
+to: ".ash-gen-receipts/{{ moduleName }}.txt"
+skip_empty: false
+unless_exists: true
+for_each: results
+sparql:
+  results: |
+    PREFIX xar: <https://ggen.io/ontology/xaas-ash-render#>
+    SELECT ?moduleName ?domainModule WHERE {
+      ?t a xar:RenderTarget ;
+         xar:moduleName ?moduleName ;
+         xar:domainModule ?domainModule .
+    }
+sh_after: "mix ash.gen.resource {{ domainModule }}.{{ moduleName }} --ignore-if-exists --default-actions read 2>&1 | tee -a .ash-gen-receipts/{{ moduleName }}.mix.log"
+---
+real ash.gen.resource invocation for {{ domainModule }}.{{ moduleName }}, driven by the live xar:RenderTarget ontology row (not hand-written).
+generated: {{ moduleName }}
+domain: {{ domainModule }}
+command: mix ash.gen.resource {{ domainModule }}.{{ moduleName }} --ignore-if-exists --default-actions read

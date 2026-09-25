@@ -1,0 +1,473 @@
+asyncapi: 3.1.0
+info:
+  title: XaaS GGen Workbench
+  version: 1.0.0
+  description: >
+    Canonical machine-facing contract for the zero-install GGen workbench.
+    XaaS receives bounded construction requests, executes only the admitted
+    ggen binary in the digest-pinned ggen-ecosystem worker, and returns typed
+    standing plus a deterministic construction receipt. Publication,
+    deployment, and other consequential mutation are outside this contract.
+  tags:
+    - name: ggen
+    - name: workbench
+    - name: brce
+defaultContentType: application/json
+
+servers:
+  fly:
+    host: "{app}.fly.dev"
+    protocol: https
+    description: Public XaaS Fly.io control plane.
+    variables:
+      app:
+        default: xaas
+        description: Externally allocated Fly App name.
+    security:
+      - $ref: "#/components/securitySchemes/internalBearer"
+
+channels:
+  workbenchRun:
+    address: /api/workbench/ggen
+    title: GGen construction request
+    description: >
+      Authenticated construction surface. This channel does not grant shell,
+      Git, GitHub, Fly, Docker, or cloud actuation authority.
+    servers:
+      - $ref: "#/servers/fly"
+    messages:
+      runRequested:
+        $ref: "#/components/messages/RunRequested"
+
+  workbenchRunReply:
+    address: /api/workbench/ggen
+    title: GGen construction reply
+    servers:
+      - $ref: "#/servers/fly"
+    messages:
+      runCompleted:
+        $ref: "#/components/messages/RunCompleted"
+      runRefused:
+        $ref: "#/components/messages/RunRefused"
+      runBlocked:
+        $ref: "#/components/messages/RunBlocked"
+
+  workbenchHealth:
+    address: /api/workbench/ggen/health
+    title: GGen runtime observation request
+    servers:
+      - $ref: "#/servers/fly"
+    messages:
+      healthRequested:
+        $ref: "#/components/messages/HealthRequested"
+
+  workbenchHealthReply:
+    address: /api/workbench/ggen/health
+    title: GGen runtime observation reply
+    servers:
+      - $ref: "#/servers/fly"
+    messages:
+      healthObserved:
+        $ref: "#/components/messages/HealthObserved"
+      healthRefused:
+        $ref: "#/components/messages/RunRefused"
+      healthBlocked:
+        $ref: "#/components/messages/RunBlocked"
+
+operations:
+  receiveRun:
+    action: receive
+    title: Construct with GGen
+    summary: Receive one bounded GGen construction request.
+    description: >
+      XaaS admits the file bundle, argv, and timeout; the worker independently
+      re-admits them and executes ggen directly with shell=false in an
+      ephemeral workspace.
+    channel:
+      $ref: "#/channels/workbenchRun"
+    messages:
+      - $ref: "#/channels/workbenchRun/messages/runRequested"
+    security:
+      - $ref: "#/components/securitySchemes/internalBearer"
+    bindings:
+      http:
+        method: POST
+        bindingVersion: "0.3.0"
+    reply:
+      channel:
+        $ref: "#/channels/workbenchRunReply"
+      messages:
+        - $ref: "#/channels/workbenchRunReply/messages/runCompleted"
+        - $ref: "#/channels/workbenchRunReply/messages/runRefused"
+        - $ref: "#/channels/workbenchRunReply/messages/runBlocked"
+    tags:
+      - name: ggen
+      - name: construct
+    x-xaas-authority: CONSTRUCT
+    x-xaas-actuation: false
+
+  receiveHealth:
+    action: receive
+    title: Observe GGen runtime
+    summary: Execute ggen --version against the exact hosted worker.
+    channel:
+      $ref: "#/channels/workbenchHealth"
+    messages:
+      - $ref: "#/channels/workbenchHealth/messages/healthRequested"
+    security:
+      - $ref: "#/components/securitySchemes/internalBearer"
+    bindings:
+      http:
+        method: GET
+        bindingVersion: "0.3.0"
+    reply:
+      channel:
+        $ref: "#/channels/workbenchHealthReply"
+      messages:
+        - $ref: "#/channels/workbenchHealthReply/messages/healthObserved"
+        - $ref: "#/channels/workbenchHealthReply/messages/healthRefused"
+        - $ref: "#/channels/workbenchHealthReply/messages/healthBlocked"
+    tags:
+      - name: ggen
+      - name: observe
+    x-xaas-authority: OBSERVE
+    x-xaas-actuation: false
+
+components:
+  securitySchemes:
+    internalBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: INTERNAL_API_TOKEN
+      description: Existing XaaS internal bearer token.
+
+  correlationIds:
+    requestId:
+      description: Phoenix Plug.RequestId correlation identity.
+      location: "$message.header#/x-request-id"
+
+  messages:
+    RunRequested:
+      name: xaas.ggen.run.requested
+      title: GGen run requested
+      summary: Bounded input bundle and argv for the fixed ggen executable.
+      correlationId:
+        $ref: "#/components/correlationIds/requestId"
+      headers:
+        $ref: "#/components/schemas/RequestHeaders"
+      payload:
+        $ref: "#/components/schemas/RunRequest"
+      bindings:
+        http:
+          headers:
+            $ref: "#/components/schemas/RequestHeaders"
+          bindingVersion: "0.3.0"
+      x-xaas-admission: required
+
+    RunCompleted:
+      name: xaas.ggen.run.completed
+      title: GGen run completed
+      summary: Executed GGen result with artifacts and deterministic receipt.
+      correlationId:
+        $ref: "#/components/correlationIds/requestId"
+      payload:
+        $ref: "#/components/schemas/RunResult"
+      bindings:
+        http:
+          statusCode: 200
+          bindingVersion: "0.3.0"
+
+    RunRefused:
+      name: xaas.ggen.run.refused
+      title: GGen run refused
+      summary: Typed refusal before or at an admission boundary.
+      correlationId:
+        $ref: "#/components/correlationIds/requestId"
+      payload:
+        $ref: "#/components/schemas/Refusal"
+      bindings:
+        http:
+          bindingVersion: "0.3.0"
+
+    RunBlocked:
+      name: xaas.ggen.run.blocked
+      title: GGen run blocked
+      summary: Transport, worker, timeout, or unavailable dependency blocked completion.
+      correlationId:
+        $ref: "#/components/correlationIds/requestId"
+      payload:
+        $ref: "#/components/schemas/Blocked"
+      bindings:
+        http:
+          bindingVersion: "0.3.0"
+
+    HealthRequested:
+      name: xaas.ggen.health.requested
+      title: GGen health requested
+      correlationId:
+        $ref: "#/components/correlationIds/requestId"
+      headers:
+        $ref: "#/components/schemas/RequestHeaders"
+      bindings:
+        http:
+          headers:
+            $ref: "#/components/schemas/RequestHeaders"
+          bindingVersion: "0.3.0"
+
+    HealthObserved:
+      name: xaas.ggen.health.observed
+      title: GGen runtime observed
+      summary: Result of executing ggen --version against the hosted worker.
+      correlationId:
+        $ref: "#/components/correlationIds/requestId"
+      payload:
+        $ref: "#/components/schemas/HealthResult"
+      bindings:
+        http:
+          statusCode: 200
+          bindingVersion: "0.3.0"
+
+  schemas:
+    RequestHeaders:
+      type: object
+      properties:
+        x-request-id:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Optional caller-supplied replay/correlation identifier.
+      additionalProperties: true
+
+    RunRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        args:
+          type: array
+          minItems: 1
+          maxItems: 64
+          items:
+            type: string
+            minLength: 1
+            maxLength: 512
+        files:
+          type: object
+          maxProperties: 256
+          additionalProperties:
+            oneOf:
+              - type: string
+              - $ref: "#/components/schemas/Base64File"
+        timeout_ms:
+          type: integer
+          minimum: 1
+          maximum: 300000
+          default: 120000
+      required:
+        - args
+        - files
+
+    Base64File:
+      type: object
+      additionalProperties: false
+      properties:
+        content_base64:
+          type: string
+          contentEncoding: base64
+      required:
+        - content_base64
+
+    RunResult:
+      type: object
+      additionalProperties: true
+      properties:
+        standing:
+          type: string
+          enum: [ALIVE, BUILD_BROKEN]
+        observed:
+          type: boolean
+          const: true
+        admitted:
+          type: boolean
+          const: true
+        executed:
+          type: boolean
+          const: true
+        changed:
+          type: boolean
+        verified:
+          type: boolean
+        inferred:
+          type: boolean
+        refused:
+          type: boolean
+          const: false
+        blocked:
+          type: boolean
+          const: false
+        unsupported:
+          type: boolean
+          const: false
+        stdout:
+          type: string
+        stderr:
+          type: string
+        stdout_truncated:
+          type: boolean
+        stderr_truncated:
+          type: boolean
+        stdout_size:
+          type: integer
+          minimum: 0
+        stderr_size:
+          type: integer
+          minimum: 0
+        artifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Artifact"
+        receipt:
+          $ref: "#/components/schemas/ConstructionReceipt"
+      required:
+        - standing
+        - observed
+        - admitted
+        - executed
+        - changed
+        - verified
+        - refused
+        - blocked
+        - artifacts
+        - receipt
+
+    Artifact:
+      type: object
+      additionalProperties: false
+      properties:
+        path:
+          type: string
+        sha256:
+          $ref: "#/components/schemas/Sha256Hex"
+        size:
+          type: integer
+          minimum: 0
+        content_base64:
+          type: string
+          contentEncoding: base64
+        content_omitted:
+          type: boolean
+      required: [path, sha256, size]
+
+    ConstructionReceipt:
+      type: object
+      additionalProperties: false
+      properties:
+        protocol:
+          type: string
+          const: xaas.ggen-workbench.v1
+        ggen_ecosystem_digest:
+          type: string
+          const: sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0
+        request_sha256:
+          $ref: "#/components/schemas/Sha256Hex"
+        command:
+          type: array
+          minItems: 2
+          items:
+            type: string
+        exit_code:
+          type: integer
+        stdout_sha256:
+          $ref: "#/components/schemas/Sha256Hex"
+        stderr_sha256:
+          $ref: "#/components/schemas/Sha256Hex"
+        artifact_manifest:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactManifestEntry"
+        receipt_sha256:
+          $ref: "#/components/schemas/Sha256Hex"
+      required:
+        - protocol
+        - ggen_ecosystem_digest
+        - request_sha256
+        - command
+        - exit_code
+        - stdout_sha256
+        - stderr_sha256
+        - artifact_manifest
+        - receipt_sha256
+
+    ArtifactManifestEntry:
+      type: object
+      additionalProperties: false
+      properties:
+        path:
+          type: string
+        sha256:
+          $ref: "#/components/schemas/Sha256Hex"
+        size:
+          type: integer
+          minimum: 0
+      required: [path, sha256, size]
+
+    Refusal:
+      type: object
+      additionalProperties: true
+      properties:
+        standing:
+          type: string
+          pattern: '^REFUSED\[[A-Z0-9_]+\]$'
+        refused:
+          type: boolean
+          const: true
+        detail:
+          type: string
+      required: [standing, refused, detail]
+
+    Blocked:
+      type: object
+      additionalProperties: true
+      properties:
+        standing:
+          type: string
+          const: BLOCKED
+        blocked:
+          type: boolean
+          const: true
+        detail:
+          type: string
+      required: [standing, blocked, detail]
+
+    HealthResult:
+      type: object
+      additionalProperties: true
+      properties:
+        standing:
+          type: string
+          enum: [ALIVE, BUILD_BROKEN]
+        observed:
+          type: boolean
+          const: true
+        executed:
+          type: boolean
+          const: true
+        verified:
+          type: boolean
+        ggen_ecosystem_digest:
+          type: string
+          const: sha256:917eb72a031da073f1d7e0c1295cda6023171275d79674b6303d5d817a3d4cb0
+        ggen_version:
+          type: string
+        exit_code:
+          type: integer
+      required:
+        - standing
+        - observed
+        - executed
+        - verified
+        - ggen_ecosystem_digest
+        - exit_code
+
+    Sha256Hex:
+      type: string
+      pattern: '^[a-f0-9]{64}$'
