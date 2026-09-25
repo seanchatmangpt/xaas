@@ -22,17 +22,12 @@ defmodule Xaas.CaseStudies.WdFaLearningOcelTest do
              "verification_receipt_observed"
            ]
 
-    for type <- [
-          "FailureCase",
-          "Drive",
-          "StandardWork",
-          "SemanticWorkOrder",
-          "EngineerDisposition",
-          "VerificationReceipt",
-          "MachineExperience"
-        ] do
+    for type <- ["FailureCase", "Drive", "StandardWork" | WdFa.learning_object_types()] do
       assert type in projection["objectTypes"]
     end
+
+    assert WdFa.object_types() ==
+             WdFa.observation_object_types() ++ WdFa.learning_object_types()
 
     assert result.receipt.authority_scope == "REPO_LOCAL_FIXTURE"
     assert result.experience.id == "MX-NOVEL-X-001"

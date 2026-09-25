@@ -49,7 +49,8 @@ defmodule Xaas.CaseStudies.WdFa do
     }
   }
 
-  @object_types [
+  # Object types bound by a single observation + triage episode (seed_ocel!/1).
+  @observation_object_types [
     "FailureCase",
     "Drive",
     "Lot",
@@ -58,15 +59,23 @@ defmodule Xaas.CaseStudies.WdFa do
     "FirmwareRevision",
     "TestStation",
     "EvidenceArtifact",
-    "StandardWork",
+    "StandardWork"
+  ]
+
+  # Object types that only exist once the learning loop runs (seed_learning_ocel!/0).
+  @learning_object_types [
     "SemanticWorkOrder",
     "EngineerDisposition",
     "VerificationReceipt",
     "MachineExperience"
   ]
 
+  @object_types @observation_object_types ++ @learning_object_types
+
   def scenario_ids, do: @scenarios |> Map.keys() |> Enum.sort()
   def object_types, do: @object_types
+  def observation_object_types, do: @observation_object_types
+  def learning_object_types, do: @learning_object_types
 
   def presentation_state(id, experience_admitted? \\ false) do
     scenario = Map.fetch!(@scenarios, id)
@@ -178,7 +187,6 @@ defmodule Xaas.CaseStudies.WdFa do
 
     %{run_id: run, state: state, projection: projection}
   end
-
 
   @doc """
   Materializes the complete repository-local learning episode in real Ash/OCEL
