@@ -81,6 +81,13 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
     assert "EXECUTION_MANIFEST_DRIFT" in contract["refusals"]
     assert "AUTHORITY_REF_REQUIRED" in contract["refusals"]
     assert "KNOWN_REPLAY" in contract["replay"]["after_ack"]
+
+    assert contract["ocel_identity_env"] == [
+             "XAAS_LEASE_CWD",
+             "XAAS_WORK_ORDER_IRI",
+             "XAAS_EPOCH_ID",
+             "XAAS_BASE_SHA"
+           ]
   end
 
   test "gall-work admission binds graph, subject, epoch, and work-order identity" do
