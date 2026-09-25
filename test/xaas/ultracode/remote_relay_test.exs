@@ -32,6 +32,89 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
     )
   end
 
+  defp descriptor(overrides \\ %{}) do
+    Map.merge(
+      %{
+        "schema" => "gall.work-lease/1",
+        "work_order_iri" => "urn:gall:work:1",
+        "checkpoint_iri" => "urn:gall:checkpoint:1",
+        "graph_digest" => "sha256:" <> String.duplicate("a", 64),
+        "repository_identity" => "seanchatmangpt/xaas",
+        "base_sha" => String.duplicate("b", 40),
+        "epoch_id" => "epoch-1",
+        "worker_id" => "worker-1",
+        "worktree" => "/tmp/xaas"
+      },
+      overrides
+    )
+  end
+
+  defp gall_envelope(overrides \\ %{}) do
+    d = descriptor()
+
+    envelope(
+      Map.merge(
+        %{
+          task_id: d["work_order_iri"],
+          intent_digest: d["graph_digest"],
+          exact_subject: d["repository_identity"] <> "@" <> d["base_sha"],
+          verb: :actuate,
+          authority_ref: "grant-1"
+        },
+        overrides
+      )
+    )
+  end
+
+  test "gall-work admission binds graph, subject, epoch, and work-order identity" do
+    env = gall_envelope()
+    assert {:ok, _} = RemoteRelay.admit_gall_work(state(), env, descriptor(), 5)
+  end
+
+  test "gall-work semantic binding fails closed before generic relay admission" do
+    env = gall_envelope()
+
+    assert {:error, :intent_digest_mismatch} =
+             RemoteRelay.admit_gall_work(
+               state(),
+               env,
+               descriptor(%{"graph_digest" => "sha256:" <> String.duplicate("c", 64)}),
+               5
+             )
+
+    assert {:error, :exact_subject_mismatch} =
+             RemoteRelay.admit_gall_work(
+               state(),
+               env,
+               descriptor(%{"base_sha" => String.duplicate("c", 40)}),
+               5
+             )
+
+    assert {:error, :epoch_mismatch} =
+             RemoteRelay.admit_gall_work(
+               state(),
+               env,
+               descriptor(%{"epoch_id" => "epoch-2"}),
+               5
+             )
+
+    assert {:error, :task_mismatch} =
+             RemoteRelay.admit_gall_work(
+               state(),
+               env,
+               descriptor(%{"work_order_iri" => "urn:gall:work:2"}),
+               5
+             )
+
+    assert {:error, :descriptor_schema_mismatch} =
+             RemoteRelay.admit_gall_work(
+               state(),
+               env,
+               descriptor(%{"schema" => "gall.work-lease/2"}),
+               5
+             )
+  end
+
   test "acknowledged transport replay never becomes a fresh command" do
     env = envelope()
     assert {:ok, s0} = RemoteRelay.admit(state(), env, 5)
