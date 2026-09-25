@@ -103,6 +103,22 @@ defmodule Xaas.Ultracode.RemoteRelay do
     end
   end
 
+  @doc """
+  Admit a gall.work-lease/1 payload through the generic relay envelope.
+
+  The semantic graph digest is the relay intent identity; the envelope also
+  binds the lease's epoch, work-order IRI, and exact repository@base subject.
+  This is admission only. It does not execute the lease or create authority.
+  """
+  @spec admit_gall_work(State.t(), Envelope.t(), map(), integer()) ::
+          {:ok, State.t()} | {:replay, State.t()} | {:error, atom()}
+  def admit_gall_work(%State{} = state, %Envelope{} = envelope, descriptor, now_ms \\ System.system_time(:millisecond))
+      when is_map(descriptor) do
+    with :ok <- validate_gall_work_binding(envelope, descriptor) do
+      admit(state, envelope, now_ms)
+    end
+  end
+
   @spec acknowledge(State.t(), Envelope.t()) :: {:ok, State.t()} | {:error, atom()}
   def acknowledge(%State{} = state, %Envelope{} = envelope) do
     if envelope.sequence == state.last_acknowledged_sequence + 1 do
@@ -152,6 +168,36 @@ defmodule Xaas.Ultracode.RemoteRelay do
       do: :transient
 
   def classify_transport_failure(_reason), do: :ambiguous
+
+  defp validate_gall_work_binding(%Envelope{} = envelope, descriptor) do
+    schema = descriptor_value(descriptor, "schema", :schema)
+    work_order_iri = descriptor_value(descriptor, "work_order_iri", :work_order_iri)
+    graph_digest = descriptor_value(descriptor, "graph_digest", :graph_digest)
+    repository_identity = descriptor_value(descriptor, "repository_identity", :repository_identity)
+    base_sha = descriptor_value(descriptor, "base_sha", :base_sha)
+    epoch_id = descriptor_value(descriptor, "epoch_id", :epoch_id)
+
+    expected_subject =
+      if is_binary(repository_identity) and is_binary(base_sha),
+        do: repository_identity <> "@" <> base_sha,
+        else: nil
+
+    cond do
+      schema != "gall.work-lease/1" -> {:error, :descriptor_schema_mismatch}
+      not is_binary(work_order_iri) or work_order_iri == "" -> {:error, :descriptor_identity_missing}
+      not is_binary(graph_digest) or graph_digest == "" -> {:error, :descriptor_identity_missing}
+      not is_binary(epoch_id) or epoch_id == "" -> {:error, :descriptor_identity_missing}
+      envelope.intent_digest != graph_digest -> {:error, :intent_digest_mismatch}
+      envelope.exact_subject != expected_subject -> {:error, :exact_subject_mismatch}
+      envelope.epoch_id != epoch_id -> {:error, :epoch_mismatch}
+      envelope.task_id != work_order_iri -> {:error, :task_mismatch}
+      true -> :ok
+    end
+  end
+
+  defp descriptor_value(descriptor, string_key, atom_key) do
+    Map.get(descriptor, string_key) || Map.get(descriptor, atom_key)
+  end
 
   defp validate_envelope(%Envelope{} = envelope) do
     required = [
