@@ -1,0 +1,119 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+05:47:08.855 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+05:47:09.408 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+05:47:09.691 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+05:47:09.773 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:47:09.774 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+05:47:09.787 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:47:09.787 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+Running ExUnit with seed: 780555, max_cases: 32
+05:47:09.798 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:47:09.798 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+05:47:09.806 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:47:09.806 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+05:47:09.815 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:47:09.815 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+05:47:09.818 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:47:09.818 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+05:49:13.722 [error] Postgrex.Protocol (#PID<0.652.0> ({Postgrex.Protocol, "xaas_test_v23d"})) disconnected: ** (DBConnection.ConnectionError) owner #PID<0.732.0> ({:sql_sandbox_owner, %{started_by: #PID<0.731.0>}}) timed out because it owned the connection for longer than 120000ms (set via the :ownership_timeout option)
+
+
+  1) test a subject with no drift is REFUSED(no_delta) by the provider: no commit, no ledger change, EP-A stays on the frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:345
+     match (=) failed
+     code:  assert {:refused,
+             %{
+               "standing" => "REFUSED(no_delta)",
+               "broken_term" => "R_missing_consequence",
+               "hop" => "provider"
+             }} = drive(ctx, out, pin_ref: pin)
+     left:  {:refused,
+             %{
+               "standing" => "REFUSED(no_delta)",
+               "broken_term" => "R_missing_consequence",
+               "hop" => "provider"
+             }}
+     right: {:refused,
+             %{
+               "broken_term" => "R_missing_standing",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "a2a app\n==> ggen_igniter\nCompiling 97 files (.ex)\n\n== Compilation error in file lib/ggen_igniter/native/graph_nif.ex ==\n** (ErlangError) Erlang error: :enoent\n    (elixir 1.18.4) lib/system.ex:1114: System.cmd(\"cargo\", [\"metadata\", \"--format-version=1\"], [cd: \"native/ggen_graph_nif\"])\n    (rustler 0.38.0) lib/rustler/compiler/config.ex:74: Rustler.Compiler.Config.metadata!/1\n    (rustler 0.38.0) lib/rustler/compiler/config.ex:61: Rustler.Compiler.Config.build/1\n    (rustler 0.38.0) lib/rustler/compiler.ex:8: Rustler.Compiler.compile_crate/3\n    lib/ggen_igniter/native/graph_nif.ex:9: (module)\n"
+               },
+               "hop" => "sjira",
+               "reason" => "frontier_refused",
+               "standing" => "REFUSED(frontier_refused)"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:353: (test)
+
+
+
+  2) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:107
+     match (=) failed
+     code:  assert {:ok, summary} = drive(ctx, out, pin_ref: pin)
+     left:  {:ok, summary}
+     right: {:refused,
+             %{
+               "broken_term" => "R_missing_standing",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "Compiling 97 files (.ex)\n\n== Compilation error in file lib/ggen_igniter/native/graph_nif.ex ==\n** (ErlangError) Erlang error: :enoent\n    (elixir 1.18.4) lib/system.ex:1114: System.cmd(\"cargo\", [\"metadata\", \"--format-version=1\"], [cd: \"native/ggen_graph_nif\"])\n    (rustler 0.38.0) lib/rustler/compiler/config.ex:74: Rustler.Compiler.Config.metadata!/1\n    (rustler 0.38.0) lib/rustler/compiler/config.ex:61: Rustler.Compiler.Config.build/1\n    (rustler 0.38.0) lib/rustler/compiler.ex:8: Rustler.Compiler.compile_crate/3\n    lib/ggen_igniter/native/graph_nif.ex:9: (module)\n"
+               },
+               "hop" => "sjira",
+               "reason" => "frontier_refused",
+               "standing" => "REFUSED(frontier_refused)"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:114: (test)
+
+
+
+  3) test an unregistered capability is REFUSED(unregistered_capability) at resolution: no Run, no ledger change (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:287
+     match (=) failed
+     code:  assert {:refused,
+             %{
+               "standing" => "REFUSED(unregistered_capability)",
+               "broken_term" => "mu_on_O",
+               "hop" => "resolve",
+               "detail" => %{"capability" => "recipe:not-registered"}
+             }} = drive(ctx, out)
+     left:  {:refused,
+             %{
+               "standing" => "REFUSED(unregistered_capability)",
+               "broken_term" => "mu_on_O",
+               "hop" => "resolve",
+               "detail" => %{"capability" => "recipe:not-registered"}
+             }}
+     right: {:refused,
+             %{
+               "broken_term" => "R_missing_standing",
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => "Compiling 97 files (.ex)\n\n== Compilation error in file lib/ggen_igniter/native/graph_nif.ex ==\n** (ErlangError) Erlang error: :enoent\n    (elixir 1.18.4) lib/system.ex:1114: System.cmd(\"cargo\", [\"metadata\", \"--format-version=1\"], [cd: \"native/ggen_graph_nif\"])\n    (rustler 0.38.0) lib/rustler/compiler/config.ex:74: Rustler.Compiler.Config.metadata!/1\n    (rustler 0.38.0) lib/rustler/compiler/config.ex:61: Rustler.Compiler.Config.build/1\n    (rustler 0.38.0) lib/rustler/compiler.ex:8: Rustler.Compiler.compile_crate/3\n    lib/ggen_igniter/native/graph_nif.ex:9: (module)\n"
+               },
+               "hop" => "sjira",
+               "reason" => "frontier_refused",
+               "standing" => "REFUSED(frontier_refused)"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:295: (test)
+
+.............................................................................................05:49:56.206 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /private/tmp/claude-501/v23-scratch/B1b-V23-D/xaas-recipe-test-asdf-empty-1790167796161-32578; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+.
+Finished in 166.4 seconds (0.00s async, 166.4s sync)
+97 tests, 3 failures
+TEST_EXIT=2

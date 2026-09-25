@@ -1,0 +1,14 @@
+{
+  "standing": "ALIVE",
+  "standing_note": "subject already merged in worktree sjira/sj-005 (commit d95eed2, prior session) and re-verified for real in this session on the worktree",
+  "done": [
+    0,
+    1
+  ],
+  "repository_suffix": " (worktree HEAD: d95eed2959914ef6b90bbc7a1ecdc828e2a6fce4, branch sjira/sj-005)",
+  "receipts": "005.receipts.md",
+  "status_block": "005.status.md",
+  "evidence_section": "005.evidence_section.md",
+  "runnable_check": "005.runnable.md",
+  "before_falsifiers": "005.pre_falsifiers.md"
+}

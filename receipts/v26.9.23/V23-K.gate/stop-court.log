@@ -1,0 +1,39 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-K/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+stop court GC-26.9.23 at 13e4cfa837e440d0d66ec9fd600bb34ccd403042
+graph /Users/sac/wt/v26922/v23/V23-K/docs/sjira/v26.9.23/goal.ttl
+court env GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int XAAS_DIR=/Users/sac/wt/v26922/v23/V23-K
+order receipts repo /Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23 (/Users/sac/wt/v26922/v23/V23-K @ 13e4cfa837e440d0d66ec9fd600bb34ccd403042)
+order receipts ggen_igniter /Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23 (/Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc)
+GATE   BOUNDARY   STANDING       EXIT         SECS    RECEIPT            SOURCE
+GC23-0 FirstMile  ALIVE          0            29.3    ADMITTED           ran
+GC23-1 Bootstrap  ALIVE          0            5.2     ADMITTED           ran
+GC23-2 FirstMile  ALIVE          0            50.1    ADMITTED           ran
+GC23-3 FirstMile  ALIVE          0            35.4    ADMITTED           ran
+GC23-4 Core       NONE           -            -       MISSING            disk
+GC23-5 Core       NONE           -            -       MISSING            disk
+GC23-6 LastMile   NONE           -            -       MISSING            disk
+GC23-7 LastMile   NONE           -            -       MISSING            disk
+GC23-8 LastMile   NONE           -            -       MISSING            disk
+GC23-9 Core       NONE           -            -       MISSING            disk
+GC23-10 Bootstrap  NONE           -            -       MISSING            disk
+GC23-11 Core       NONE           -            -       MISSING            disk
+GC23-12 Core       NONE           -            -       MISSING            disk
+order V23-B standing=ALIVE receipt=ADMITTED digest=sha256:5bee8ea4d45e0cc88a311a2a910240211441b2f82fae54372622a1b93647f97f from=ggen_igniter:/Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23@3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+order V23-C standing=ALIVE receipt=ADMITTED digest=sha256:007031d1b404fe3952e106c69b8d8156528829d3e2687b9eafaa5da9f858d873 from=ggen_igniter:/Users/sac/wt/v26922/fri/ggen_igniter-int/receipts/v26.9.23@3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+order V23-D standing=ALIVE receipt=ADMITTED digest=sha256:3d3b9cf4ea96e6498d1d5c1a0c490fb8fd67f7cd68cf210eb889dd5b92801d58 from=repo:/Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23@13e4cfa837e440d0d66ec9fd600bb34ccd403042
+order V23-F standing=ALIVE receipt=ADMITTED digest=sha256:ad837c0282c6d3b4e645298aba9b3c505d242fd5b37b976bb95c8897d7cfbae8 from=repo:/Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23@13e4cfa837e440d0d66ec9fd600bb34ccd403042
+order V23-H standing=NONE receipt=MISSING digest=sha256:9f666dd9c31ca278923c55898c57e49ecf59700b9c3987fe7c3cb2e3512ee845 unlinked=:missing
+order V23-M standing=ALIVE receipt=ADMITTED digest=sha256:10199e1d08495cc7bcb4423e76cabd9878375f7e695dfe5e8603201c3818fa02 from=repo:/Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23@13e4cfa837e440d0d66ec9fd600bb34ccd403042
+order V23-P standing=ALIVE receipt=ADMITTED digest=sha256:b2e94ab651a9298b944fdda688d93779c3d261dfce998cb8a3b31756374a99e8 from=repo:/Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23@13e4cfa837e440d0d66ec9fd600bb34ccd403042
+order V23-Q standing=NONE receipt=MISSING digest=sha256:79cf01e19ce4b3ee1f7064e607a1c8deb272aecbcc544003affcb015fe735e9f unlinked=:missing
+order V23-R standing=ALIVE receipt=ADMITTED digest=sha256:01861be76e742250e796228de64e8dde326ed035812f8532743c930d55520cc3 from=repo:/Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23@13e4cfa837e440d0d66ec9fd600bb34ccd403042
+order V23-X standing=ALIVE receipt=ADMITTED digest=sha256:145ec391eed5183aabd9766fe31a7c538b4de8431435adb92ce6f0ff350e1ebc from=repo:/Users/sac/wt/v26922/v23/V23-K/receipts/v26.9.23@13e4cfa837e440d0d66ec9fd600bb34ccd403042
+stop receipt /private/tmp/claude-501/v23-scratch/B1c-V23-K/gate/stop/STOP-GC-26.9.23.json ADMITTED
+STOP=false
+GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0,GC23-1,GC23-2,GC23-3 --receipts-dir <scratch>/stop => 1

@@ -1,0 +1,316 @@
+{
+  "checkpoint": "GC-26.9.23",
+  "gate": "GC23-11",
+  "repositories": [
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ash_a2a",
+      "name": "ash_a2a",
+      "path": "/Users/sac/ash_a2a",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ash_atlassian",
+      "name": "ash_atlassian",
+      "path": "/Users/sac/ash_atlassian",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ash_surface",
+      "name": "ash_surface",
+      "path": "/Users/sac/ash_surface",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/autofde-lab",
+      "name": "autofde-lab",
+      "path": "/Users/sac/autofde-lab",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/beam4pm",
+      "name": "beam4pm",
+      "path": "/Users/sac/beam4pm",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": null,
+      "fleet_role": "peripheral",
+      "github": "seanchatmangpt/chatman-ecosystem",
+      "github_probe": {
+        "cmd": "gh repo view seanchatmangpt/chatman-ecosystem --json nameWithOwner,defaultBranchRef,visibility",
+        "default_branch": "main",
+        "exit": 0,
+        "name_with_owner": "seanchatmangpt/chatman-ecosystem",
+        "visibility": "PUBLIC"
+      },
+      "name": "chatman-ecosystem",
+      "path": "/Users/sac/chatman-ecosystem",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": null,
+      "fleet_role": null,
+      "github": "seanchatmangpt/engineering-standards",
+      "github_probe": {
+        "cmd": "gh repo view seanchatmangpt/engineering-standards --json nameWithOwner,defaultBranchRef,visibility",
+        "default_branch": "main",
+        "exit": 0,
+        "name_with_owner": "seanchatmangpt/engineering-standards",
+        "visibility": "PUBLIC"
+      },
+      "name": "engineering-standards",
+      "path": null,
+      "sources": [
+        "ard-4"
+      ],
+      "survey_relevant": null
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ferroplan",
+      "name": "ferroplan",
+      "path": "/Users/sac/ferroplan",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/frozen-duckdb",
+      "name": "frozen-duckdb",
+      "path": "/Users/sac/frozen-duckdb",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ggen",
+      "name": "ggen",
+      "path": "/Users/sac/ggen",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ggen-ecosystem",
+      "name": "ggen-ecosystem",
+      "path": "/Users/sac/ggen-ecosystem",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ggen-marketplace",
+      "name": "ggen-marketplace",
+      "path": "/Users/sac/ggen-marketplace",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/ggen_igniter",
+      "name": "ggen_igniter",
+      "path": "/Users/sac/ggen_igniter",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/gitvan",
+      "name": "gitvan",
+      "path": "/Users/sac/gitvan",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/gymact",
+      "name": "gymact",
+      "path": "/Users/sac/gymact",
+      "sources": [
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": null,
+      "github": "seanchatmangpt/open-ontologies",
+      "name": "open-ontologies",
+      "path": "/Users/sac/open-ontologies",
+      "sources": [
+        "ard-4",
+        "local-checkout"
+      ],
+      "survey_relevant": null
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": null,
+      "github": "seanchatmangpt/remo",
+      "name": "remo",
+      "path": "/Users/sac/remo",
+      "sources": [
+        "survey.json"
+      ],
+      "survey_relevant": false
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": null,
+      "github": "seanchatmangpt/turbo-fieldfare",
+      "name": "turbo-fieldfare",
+      "path": "/Users/sac/turbo-fieldfare",
+      "sources": [
+        "survey.json"
+      ],
+      "survey_relevant": false
+    },
+    {
+      "ard_section4": false,
+      "default_remote": "origin",
+      "fleet_role": null,
+      "github": "seanchatmangpt/unjucks",
+      "name": "unjucks",
+      "path": "/Users/sac/unjucks",
+      "sources": [
+        "survey.json"
+      ],
+      "survey_relevant": false
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "origin",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/xaas",
+      "name": "xaas",
+      "path": "/Users/sac/xaas",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    },
+    {
+      "ard_section4": true,
+      "default_remote": "fork",
+      "fleet_role": "relevant",
+      "github": "seanchatmangpt/zcode-cli",
+      "name": "zcode-cli",
+      "path": "/Users/sac/dev/zcode-cli",
+      "sources": [
+        "ard-4",
+        "fleet.ttl",
+        "survey.json"
+      ],
+      "survey_relevant": true
+    }
+  ],
+  "schema": "xaas.fleet.universe/v1",
+  "sources": [
+    {
+      "id": "fleet.ttl",
+      "path": "/Users/sac/wt/v26922/fleet.ttl",
+      "sha256": "sha256:f798f1e0d0379c8b7468537e667e89dcde10f39527064ca8d3c99e6128660cf4"
+    },
+    {
+      "id": "survey.json",
+      "path": "/Users/sac/wt/v26922/survey.json",
+      "sha256": "sha256:175544a81b2b06d590f5bf6eb6df4a3ce239b089019b1e974f84accb16c7d6c1"
+    },
+    {
+      "id": "ard-4",
+      "path": "docs/sjira/v26.9.23/prd-ard.md",
+      "section": "# 4. Repository Responsibilities",
+      "sha256": "sha256:7c8797b2bc9130fc4c8fce9138cc8140cb704e0633715807398451c660658212"
+    }
+  ]
+}

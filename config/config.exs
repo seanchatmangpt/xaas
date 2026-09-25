@@ -237,6 +237,14 @@ config :phoenix, :json_library, Jason
 # stays `aps_backlog.py`. Names only, never caller-supplied paths.
 config :xaas, :ultracode_verifier_suites, %{}
 config :xaas, :ultracode_backlog_scripts, %{}
+# The sensing-profile NAME registry (`Xaas.Ultracode.Sensing.profile/1`): a
+# repo's registered `sensing:` name maps to a deterministic profile (the same
+# shape `Sensing.derive/2` takes). Driven by the Autonomic sense stage's
+# fallback when a repo's backlog script fails; an unmapped name stays a
+# visible registration gap (`Repos.gaps/1`) and a typed sense refusal, never
+# a silent skip. Environments that use it register named profiles in their
+# own config file.
+config :xaas, :ultracode_sensing_profiles, %{}
 config :xaas, :ultracode_worktree_root, nil
 config :xaas, :ultracode_ticket_dir, nil
 # Opt-in module value (an atom, e.g. Xaas.Ultracode.TargetSuites) whose devs/0
@@ -245,6 +253,7 @@ config :xaas, :ultracode_ticket_dir, nil
 # extra suites.
 config :xaas, :ultracode_target_suites, nil
 config :xaas, :ultracode_repos, %{}
+config :xaas, :ultracode_sensing_profiles, %{}
 
 # The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
 # pool_capacity/1`, enforced race-free inside `claim_next/3`): 5 live
@@ -253,11 +262,41 @@ config :xaas, :ultracode_repos, %{}
 # wave's in-process semaphore. Integer = one bound for all providers; a
 # map gives per-provider bounds (`%{"zcode" => 5, default: 3}`); nil =
 # unbounded (the test-env choice, so `LeaseConcurrencyStressTest`'s
-# 25-way claim storm keeps its exact semantics). The default worker seam
-# for `Xaas.Ultracode.Engine.fill/1` stays unset (observe-only engine);
-# environments that want the engine actually dispatching configure
-# `config :xaas, :ultracode_engine_worker, {Mod, :fun}`.
+# 25-way claim storm keeps its exact semantics).
 config :xaas, :ultracode_pool_capacity, 5
+
+# The engine's worker seam (`Xaas.Ultracode.Engine.fill/1`) and the provider
+# allowlist it fills on its own. The configured worker is the deterministic
+# recipe provider (`Xaas.Ultracode.RecipeWorker`: registered argv, no model),
+# and it is only ever handed epochs of allowlisted providers -- zcode (LLM)
+# epochs are never discovered by the engine's undirected fill, so they are
+# never dispatched to, declined by, and then reaped from the recipe worker.
+config :xaas, :ultracode_engine_worker, {Xaas.Ultracode.RecipeWorker, :run}
+config :xaas, :ultracode_engine_providers, ["recipe"]
+
+# The deterministic construction recipe registry
+# (`Xaas.Ultracode.RecipeWorker.recipe/1`): capability id (the work order's
+# `sj:capabilityId`) => argv recipe, admitted by `TargetSuites.validate/1`
+# plus a literal-argv check and run through `Verifier.spawn_and_collect/6`
+# (`env -i` with ONLY this env, throwaway HOME/TMPDIR). Names only: a
+# capability absent here is refused before any claim.
+#
+# "recipe:mix-format" -- the Friday reference KNOWN class (GC-FRI-0800 G6,
+# GC23-5): `mix format` drift repair. The formatter's output is
+# Elixir-version dependent, so the toolchain is the TARGET's:
+# `elixir_toolchain: :target` makes `RecipeWorker.toolchain/1` resolve PATH
+# per epoch from the target worktree's `.tool-versions` through the asdf
+# install layout (absolute install dirs, because a throwaway HOME defeats
+# asdf shims), else from the running node's `mix` + ERTS -- never a
+# host-specific pin here (xaas CI runs setup-beam from .tool-versions, not
+# asdf). The resolved identity lands in the lease evidence as `toolchain`.
+config :xaas, :ultracode_construction_recipes, %{
+  "recipe:mix-format" => %{
+    elixir_toolchain: :target,
+    env: %{"LANG" => "en_US.UTF-8"},
+    steps: [%{id: "format", argv: ["mix", "format"], timeout_ms: 300_000}]
+  }
+}
 
 # The wave loop's judge seam (`Xaas.Ultracode.Autonomic.judge_receipt/1`).
 # True (default): a receipt sealed `partial_alive` by an honest worker is

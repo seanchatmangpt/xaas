@@ -1,0 +1,38 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/fri/FRI-T2/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+00:50:04.841 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+00:50:05.750 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+00:50:06.278 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+00:50:06.443 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:06.445 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+00:50:06.468 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:06.468 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+Running ExUnit with seed: 456407, max_cases: 32
+00:50:06.483 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:06.483 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+00:50:06.497 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:06.497 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+00:50:06.508 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:06.508 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+00:50:06.514 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+00:50:06.514 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/fri/FRI-T2/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+...00:50:08.511 [warning] [ultracode-engine] reaped epoch 2950abe9-229b-404c-ab49-43af1b37f271 (worker ended without closing)
+..00:50:08.602 [warning] [ultracode] run 17210164-5941-42e5-9e57-aabcd300938f stopped: refused 1 live lease(s) (reason :run_stopped)
+00:50:08.623 [warning] [ultracode] run 17210164-5941-42e5-9e57-aabcd300938f recovering from failed epoch 97de54ae-738b-4a0e-b3c4-c5c4615f7e38: constructed replacement epoch cycle=1 (epoch_id=91613ce2-f069-49a0-82f0-e7e5464130be)
+.00:50:08.641 [warning] [ultracode-engine] reaped epoch 4d7debd2-f2fd-4cf8-8d0c-30da007581dd (worker ended without closing)
+........00:50:08.809 [warning] [ultracode] epoch 35ffddfb-dac0-4936-8fc6-def6fee88970 (run 358ef438-9b9e-4bb3-86a6-274024218fd7, cycle 0) expected_at=2026-09-23 07:49:08.777320Z exceeded epoch_timeout_seconds=1 -> marked :missed (receipt sealed)
+..00:50:08.968 [warning] [ultracode] run d0fc54a7-e22c-492f-bdda-fffd89afd400 stopped: refused 1 live lease(s) (reason :run_stopped)
+.............00:50:17.536 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /Users/sac/.cache/tmp/xaas-recipe-test-asdf-empty-1790149817216-35395; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+.......
+Finished in 14.3 seconds (0.00s async, 14.3s sync)
+36 tests, 0 failures

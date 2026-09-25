@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+AssertionError: {'actor': 'zcode', 'ceiling': 'CONSTRUCT', 'grant': 'xaas-lease:epoch:eed260ac-acc8-4c70-8284-57555bd271da'}
+REFUSED: GC23-5 executor is not the deterministic provider, or the OCEL names an LLM provider

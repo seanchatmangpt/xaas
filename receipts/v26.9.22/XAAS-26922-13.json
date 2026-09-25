@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-13",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED: the ash_a2a lock bump from 26.9.12 requires ash_a2a v26.9.22 to exist (WorkEnvelope-conserved lease identity; ash 3.33.1/mint 1.10.0 advisory bumps). Awaiting ASH_A2A-26922-12 (release v26.9.22 + hex publish). ash_a2a main is at 5969606 (tag v26.9.21) with red test.all as of the wave survey.",
+  "awaiting_refs": ["ASH_A2A-26922-12"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}

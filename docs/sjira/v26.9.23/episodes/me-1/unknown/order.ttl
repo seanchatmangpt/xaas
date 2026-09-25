@@ -1,0 +1,20 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v23: <https://ggen-igniter.dev/sjira/v26.9.23#> .
+@prefix xme: <https://xaas.dev/ontology/machine-experience#> .
+
+v23:order-80234039c90fbe53
+    rdf:type sj:WorkOrder ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:baseSha "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f" ;
+    sj:consequenceClass "postcondition" ;
+    sj:evidenceCeiling "repository-local" ;
+    sj:pathScope ".formatter.exs" ;
+    sj:pathScope "config" ;
+    sj:pathScope "lib" ;
+    sj:pathScope "mix.exs" ;
+    sj:pathScope "test" ;
+    sj:repository "seanchatmangpt/ggen_igniter" ;
+    sj:subject "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A" ;
+    xme:failureClass "format_drift" .

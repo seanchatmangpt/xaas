@@ -25,6 +25,18 @@ defmodule Xaas.Semantics.ComputationTest do
     refute ComputationArtifact.hash(onnx) == ComputationArtifact.hash(nx)
   end
 
+  test "deterministic false is admitted and non-boolean deterministic is refused" do
+    assert {:ok, artifact} =
+             ComputationArtifact.new(artifact_attrs() |> Map.put(:deterministic, false))
+
+    refute artifact.deterministic
+
+    assert {:error, :invalid_computation_artifact} =
+             artifact_attrs()
+             |> Map.put(:deterministic, "no")
+             |> ComputationArtifact.new()
+  end
+
   test "any computation output remains a powerless candidate claim" do
     assert {:ok, artifact} = ComputationArtifact.new(artifact_attrs())
 
@@ -138,5 +150,46 @@ defmodule Xaas.Semantics.ComputationTest do
                %{"rollback" => 0.49, "failover" => 0.52},
                0.05
              )
+  end
+
+  # Guard for the crown workflow's "Assert no actuation dependency" step
+  # (.github/workflows/sa2a-computation-crown.yml). That step greps computation.ex with a
+  # fixed pattern, and a moduledoc that merely spelled the forbidden module name in prose
+  # used to turn the step red (CI run 35427336804). The pattern is read out of the workflow
+  # file itself so the two cannot drift apart; the real source file is matched, no doubles.
+  describe "crown workflow no-actuation step" do
+    @workflow ".github/workflows/sa2a-computation-crown.yml"
+    @source "lib/xaas/semantics/computation.ex"
+
+    defp crown_pattern do
+      workflow = File.read!(@workflow)
+
+      [_, pattern] =
+        Regex.run(~r/Assert no actuation dependency.*?grep -nE '([^']+)'/s, workflow)
+
+      Regex.compile!(pattern)
+    end
+
+    test "the extracted pattern really detects a forbidden reference (falsifier)" do
+      pattern = crown_pattern()
+
+      assert Regex.match?(pattern, "cross Xaas.Actuation")
+      assert Regex.match?(pattern, "Reactor.run(reactor)")
+      assert Regex.match?(pattern, "Ash.create(changeset)")
+      refute Regex.match?(pattern, "cross the actuation boundary")
+    end
+
+    test "computation.ex, moduledoc and comments included, carries no forbidden reference" do
+      pattern = crown_pattern()
+
+      offending =
+        @source
+        |> File.stream!()
+        |> Stream.with_index(1)
+        |> Enum.filter(fn {line, _no} -> Regex.match?(pattern, line) end)
+        |> Enum.map(fn {line, no} -> "#{@source}:#{no}: #{String.trim(line)}" end)
+
+      assert offending == []
+    end
   end
 end

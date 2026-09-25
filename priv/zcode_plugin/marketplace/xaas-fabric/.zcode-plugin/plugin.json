@@ -5,7 +5,7 @@
   "userConfig": {
     "zcode_xaas_token": {
       "type": "string",
-      "sensitive": false,
+      "sensitive": true,
       "default": "unset",
       "description": "Bearer token for the XaaS internal API (/internal-api). Set with: zcode plugins configure xaas-fabric@<marketplace> --options-file"
     }

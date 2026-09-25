@@ -1,0 +1,49 @@
+{
+  "bridge": {
+    "definition_digest": "sha256:aa8e146cf922f53f6008d716b3da0955040d8187509383e8ecabff9d339217ab",
+    "identity": "SJ-001",
+    "repository": "seanchatmangpt/xaas",
+    "requires": {
+      "acceptance": [
+        "one SJ-00x work order from this dir is admitted by GgenIgniter.SemanticJira.admit_work_order/1",
+        "`mix xaas.semantic.materialize` accepts it and `mix xaas.semantic.receipt` seals a receipt",
+        "replay of the receipt reproduces the same digest"
+      ],
+      "courts": [
+        "compile",
+        "tests",
+        "chicago_no_mocks"
+      ],
+      "falsifiers": [
+        "materialize accepts a WorkOrder whose digest was altered after admission",
+        "receipt seals without the required courts passing"
+      ]
+    },
+    "source_snapshot_digest": "sha256:4e0458934ec42dcc4953107d1fde191cc2ab2cb27f33fcf0804a30bfa6b91dda",
+    "subject": "xaas-semantic-jira-e2e"
+  },
+  "epoch_id": "59e42899-d90d-4b61-ad3c-7c7727454f3e",
+  "fabric_verifier": {
+    "status": "pass",
+    "steps": [
+      {
+        "id": "compile",
+        "status": "pass"
+      },
+      {
+        "id": "tests",
+        "status": "pass"
+      },
+      {
+        "id": "chicago_no_mocks",
+        "status": "pass"
+      }
+    ]
+  },
+  "final_head": "b3fa3d16832ad378d6194b75c03abe6ce9b3044b",
+  "head_verified": true,
+  "outcome": "alive",
+  "receipt_digest": "sha256:528d91c4e4886fc372fb5f2efe1114dca577f991e832586f18b8f7ad35b1bc04",
+  "receipt_id": "ab10df01-eb55-4317-b90e-0adf97bbc54d",
+  "run_id": "bb986280-6bd7-45f8-bf93-87f1acf4bb05"
+}

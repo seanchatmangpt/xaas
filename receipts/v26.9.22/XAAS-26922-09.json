@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-09",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED by wave serialization: cross-repo standing write-back requires the producer lanes' merged subjects. Awaiting AFDE-26922-01 (autofde-lab: sjira/sj-006 455cc7b5 merged to master) and GYMACT-26922-01 (gymact: sjira/sj-008 333aeb5 merged to origin/main). No receipt may name a subject SHA that is not an ancestor of the target's origin head; neither merge exists yet, so writing receipts now would fabricate evidence.",
+  "awaiting_refs": ["AFDE-26922-01", "GYMACT-26922-01"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}

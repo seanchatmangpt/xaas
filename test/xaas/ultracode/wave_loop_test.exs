@@ -648,7 +648,11 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                WaveLoop.tick(
                  state_path: state_path,
                  telemetry_path: telemetry_path,
-                 dispatch_opts: [cli_dir: cli_dir, node_path: "/bin/sh", timeout_seconds: 60]
+                 dispatch_opts: [
+                   cli_dir: cli_dir,
+                   node_path: Path.expand("../../support/fake-node.sh", __DIR__),
+                   timeout_seconds: 60
+                 ]
                )
 
       # The REAL subprocess really ran (Dispatch -> port -> sh -> script).
@@ -685,6 +689,44 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       {:ok, state} = state_path |> File.read!() |> State.parse()
       assert fetch_step(state, "3").status == :pending
       assert telemetry_lines(telemetry_path) =~ ~s("outcome":"dispatch_refused")
+    end
+  end
+
+  # ------------------------------------------------------------------
+  # Consolidated runtime paths
+  # ------------------------------------------------------------------
+
+  describe "consolidated runtime paths" do
+    # Root consolidation (2026-09-21): the loop's STATE + telemetry files
+    # live under the repo root's gitignored tmp/ tree. No config key
+    # overrides the paths, so the module attributes ARE the operative
+    # defaults, and the moduledoc's Seams section interpolates them
+    # verbatim -- pinning the published doc pins the constants. Any
+    # regression to a retired top-level tree fails here, not at the next
+    # live hourly tick.
+    @new_state_path "/Users/sac/xaas/tmp/w8-loop/STATE.md"
+    @new_telemetry_path "/Users/sac/xaas/tmp/w8-loop/loop.ndjson"
+    @retired_tree_regex ~S{/Users/sac/xaas-(tmp|worktrees|wt2|wt3)}
+
+    test "default STATE and telemetry paths live under the repo-root tmp/ tree" do
+      assert {:docs_v1, _anno, _lang, _format, module_doc, _meta, _docs} =
+               Code.fetch_docs(WaveLoop)
+
+      doc = module_doc["en"]
+
+      assert doc =~ @new_state_path
+      assert doc =~ @new_telemetry_path
+      refute doc =~ @retired_tree_regex
+    end
+
+    test "no config env override points at a retired top-level tree" do
+      for key <- [:ultracode_wave_loop_state_path, :ultracode_wave_loop_telemetry_path] do
+        case Application.get_env(:xaas, key) do
+          nil -> :ok
+          path when is_binary(path) -> refute path =~ @retired_tree_regex
+          other -> flunk("#{inspect(key)} override is not a path binary: #{inspect(other)}")
+        end
+      end
     end
   end
 
@@ -917,6 +959,17 @@ defmodule Xaas.Ultracode.WaveLoopTest do
     path = Path.join([dir, "bin", "zcode.js"])
     File.write!(path, script)
     File.chmod!(path, 0o755)
+
+    File.write!(
+      Path.join(dir, "package.json"),
+      Jason.encode!(%{
+        "name" => "zcode-app-cli",
+        "version" => "0.0.0-test",
+        "bin" => %{"zcode" => "bin/zcode.js"},
+        "engines" => %{"node" => ">=22.19.0"}
+      })
+    )
+
     dir
   end
 

@@ -1,0 +1,8 @@
+code subject: 835925d4e1f778e94dcdc7fe25a7b0ad1a0e7e4b + working tree (porcelain: 53 paths)
+judge: /Users/sac/wt/v26922/fri/ggen_igniter-int @ 3937a4f89ecf2b7fa12068406377c05ec1a1b8fc
+refs before: v23/episode-me-1=92d0a43 v23/episode-me-1-receipt=bd84b3e v23/episode-me-2=3660553 v23/episode-me-2-receipt=48ae4ad 
+df: 49 GB free
+me-1 before exploration: exit 4 {"detail":{"admissions_not_admitted":[],"experiences_applicable":[],"experiences_considered":[],"experiences_without_admission":[],"exploration":"absent: docs/sjira/v26.9.23/episodes/me-1/exploration.
+me-1 with exploration: exit 0 ALIVE UNKNOWN 20 steps 15 events https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434
+me-2 KNOWN: exit 0 ALIVE KNOWN 16 steps 12 events https://ggen-igniter.dev/sjira/v26.9.23#ME-0a15fe7a53ed4434
+refs after: v23/episode-me-1=92d0a43 v23/episode-me-1-r2-receipt=77df082 v23/episode-me-1-receipt=bd84b3e v23/episode-me-2=3660553 v23/episode-me-2-r2-receipt=1bbbdcf v23/episode-me-2-receipt=48ae4ad 

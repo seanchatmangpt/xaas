@@ -1,0 +1,91 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+18:32:12.366 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+18:32:12.751 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+18:32:13.048 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+18:32:13.114 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:32:13.114 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+18:32:13.127 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:32:13.127 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+18:32:13.139 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:32:13.139 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+18:32:13.147 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:32:13.147 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 131804, max_cases: 1
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+18:32:13.156 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:32:13.156 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+18:32:13.159 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:32:13.159 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+
+Xaas.Ultracode.CourtReceiptTest [test/xaas/ultracode/court_receipt_test.exs]
+  * test produce/6 with the exit_status format REAL mix format court over a real tmp repo: formatted -> pass, unformatted -> fail [L#330]  * test produce/6 with the exit_status format REAL mix format court over a real tmp repo: formatted -> pass, unformatted -> fail (skipped) [L#330]
+  * test produce/6 with real pytest -v output shapes a mapped test with no observed verdict is a typed refusal, never a defaulted row [L#181]  * test produce/6 with real pytest -v output shapes a mapped test with no observed verdict is a typed refusal, never a defaulted row (3.2ms) [L#181]
+  * test admit/1 a non-list courts value is refused [L#100]  * test admit/1 a non-list courts value is refused (0.00ms) [L#100]
+  * test admit/1 an unsupported predicate kind is refused, not ignored [L#86]  * test admit/1 an unsupported predicate kind is refused, not ignored (0.00ms) [L#86]
+  * test suite declaration admission (TargetSuites.validate/1) an unknown result_format is refused [L#416]  * test suite declaration admission (TargetSuites.validate/1) an unknown result_format is refused (1.8ms) [L#416]
+  * test suite declaration admission (TargetSuites.validate/1) a malformed receipt_argv is refused [L#398]  * test suite declaration admission (TargetSuites.validate/1) a malformed receipt_argv is refused (0.01ms) [L#398]
+  * test admit/1 a blank test id and a non-map predicate are refused [L#92]  * test admit/1 a blank test id and a non-map predicate are refused (0.00ms) [L#92]
+  * test produce/6 with real pytest -v output shapes ERROR and SKIPPED verdicts are not passes [L#165]  * test produce/6 with real pytest -v output shapes ERROR and SKIPPED verdicts are not passes (0.01ms) [L#165]
+  * test produce/6 with real pytest -v output shapes RED: a failing predicate makes acceptance false and the falsifier fire [L#144]  * test produce/6 with real pytest -v output shapes RED: a failing predicate makes acceptance false and the falsifier fire (0.01ms) [L#144]
+  * test produce/6 with the exit_status format an unobserved exit (timeout, spawn error, infra exit) is a refusal, never a verdict [L#292]  * test produce/6 with the exit_status format an unobserved exit (timeout, spawn error, infra exit) is a refusal, never a verdict (0.00ms) [L#292]
+  * test produce/6 guard rails an undeclared result_format is a refusal [L#230]  * test produce/6 guard rails an undeclared result_format is a refusal (0.00ms) [L#230]
+  * test produce/6 with real pytest -v output shapes a partially observed output refuses the WHOLE receipt (no partial receipt) [L#192]  * test produce/6 with real pytest -v output shapes a partially observed output refuses the WHOLE receipt (no partial receipt) (0.02ms) [L#192]
+  * test admit/1 a non-IRI key is refused [L#79]  * test admit/1 a non-IRI key is refused (0.00ms) [L#79]
+  * test suite declaration admission (TargetSuites.validate/1) the code-declared suites (eds-dod receipt-flagged) stay admissible [L#382]  * test suite declaration admission (TargetSuites.validate/1) the code-declared suites (eds-dod receipt-flagged) stay admissible (1.1ms) [L#382]
+  * test admit/1 nil is a valid no-court contract [L#60]  * test admit/1 nil is a valid no-court contract (0.00ms) [L#60]
+  * test produce/6 with the exit_status format exit 0 is the step's pass verdict; a non-zero fail exit is its fail verdict [L#279]  * test produce/6 with the exit_status format exit 0 is the step's pass verdict; a non-zero fail exit is its fail verdict (0.00ms) [L#279]
+  * test descriptor threading (SemanticWork.admit/1) a string-keyed court_map normalizes onto the descriptor [L#446]  * test descriptor threading (SemanticWork.admit/1) a string-keyed court_map normalizes onto the descriptor (4.0ms) [L#446]
+  * test produce/6 with real mix test --trace output shapes pass and failure re-listings become survived/failed [L#205]  * test produce/6 with real mix test --trace output shapes pass and failure re-listings become survived/failed (0.02ms) [L#205]
+  * test admit/1 a well-formed court map round-trips [L#64]  * test admit/1 a well-formed court map round-trips (0.00ms) [L#64]
+  * test descriptor threading (SemanticWork.admit/1) a valid court_map is admitted onto the descriptor [L#439]  * test descriptor threading (SemanticWork.admit/1) a valid court_map is admitted onto the descriptor (0.01ms) [L#439]
+  * test admit/1 unknown keys are refused, never silently ignored [L#74]  * test admit/1 unknown keys are refused, never silently ignored (0.00ms) [L#74]
+  * test suite declaration admission (TargetSuites.validate/1) a non-boolean receipt flag is refused [L#391]  * test suite declaration admission (TargetSuites.validate/1) a non-boolean receipt flag is refused (0.01ms) [L#391]
+  * test produce/6 guard rails an unknown result_format is a refusal [L#235]  * test produce/6 guard rails an unknown result_format is a refusal (0.00ms) [L#235]
+  * test produce/6 with the exit_status format a verdict for another step id never answers the mapped step [L#300]  * test produce/6 with the exit_status format a verdict for another step id never answers the mapped step (0.00ms) [L#300]
+  * test suite declaration admission (TargetSuites.validate/1) the ggen-igniter-format suite is one exit_status receipt step: mix format [L#405]  * test suite declaration admission (TargetSuites.validate/1) the ggen-igniter-format suite is one exit_status receipt step: mix format (1.2ms) [L#405]
+  * test descriptor threading (SemanticWork.admit/1) a malformed court_map is a typed refusal [L#457]  * test descriptor threading (SemanticWork.admit/1) a malformed court_map is a typed refusal (0.01ms) [L#457]
+  * test produce/6 with real pytest -v output shapes GREEN: acceptance true, falsifier survived, court bound to the passing step [L#109]  * test produce/6 with real pytest -v output shapes GREEN: acceptance true, falsifier survived, court bound to the passing step (0.02ms) [L#109]
+  * test produce/6 guard rails an omitted courts list yields empty court_results (the consumer refuses, honestly) [L#240]  * test produce/6 guard rails an omitted courts list yields empty court_results (the consumer refuses, honestly) (0.01ms) [L#240]
+  * test admit/1 an empty court map is refused: it declares no contract [L#70]  * test admit/1 an empty court map is refused: it declares no contract (0.00ms) [L#70]
+
+Xaas.Sjira.SuccessorTest [test/xaas/sjira/successor_test.exs]
+  * test the real intake against the ggen_igniter checkout a drifted committed output is REFUSED(output_drift) naming the file [L#244]  * test the real intake against the ggen_igniter checkout a drifted committed output is REFUSED(output_drift) naming the file (skipped) [L#244]
+  * test the real intake against the ggen_igniter checkout Successor.check/1 recomputes the committed intake byte for byte (real graph-side mix processes) [L#224]  * test the real intake against the ggen_igniter checkout Successor.check/1 recomputes the committed intake byte for byte (real graph-side mix processes) (skipped) [L#224]
+  * test successor_law.py admits the committed successor and refuses a smuggled WorkOrder (real python3) [L#142]  * test successor_law.py admits the committed successor and refuses a smuggled WorkOrder (real python3) (skipped) [L#142]
+  * test successor_acceptance.sh: only a committed ACCEPTED naming the prose digest accepts (real git, real sh) [L#168]  * test successor_acceptance.sh: only a committed ACCEPTED naming the prose digest accepts (real git, real sh) (539.9ms) [L#168]
+  * test classify: the committed successor rows are typed UNSUPPORTED(provider_capability), never an error [L#70]  * test classify: the committed successor rows are typed UNSUPPORTED(provider_capability), never an error (5.4ms) [L#70]
+  * test classify: a registered capability routes KNOWN (still UNKNOWN standing); construct:unassigned is UNKNOWN [L#85]  * test classify: a registered capability routes KNOWN (still UNKNOWN standing); construct:unassigned is UNKNOWN (0.2ms) [L#85]
+  * test intake: an exposed model credential is REFUSED(llm_credential_present) before anything runs [L#117]  * test intake: an exposed model credential is REFUSED(llm_credential_present) before anything runs (8.5ms) [L#117]
+  * test classify: a tuple the route cannot admit, or a digest that moved, is a typed refusal [L#105]  * test classify: a tuple the route cannot admit, or a digest that moved, is a typed refusal (0.3ms) [L#105]
+
+Xaas.Ultracode.SemanticReceiptTest [test/xaas/ultracode/semantic_receipt_test.exs]
+  * test court receipt passthrough (suites without an adapter) REAL ggen-igniter-format court: formatted commit passes, unformatted is refuted [L#220]  * test court receipt passthrough (suites without an adapter) REAL ggen-igniter-format court: formatted commit passes, unformatted is refuted (skipped) [L#220]
+  * test aps-dod court adapter strings the court cannot speak to, and gates it did not report, are left out [L#315]  * test aps-dod court adapter strings the court cannot speak to, and gates it did not report, are left out (71.2ms) [L#315]
+  * test court receipt passthrough (suites without an adapter) a produced court receipt's binding results pass through so promotion can read them [L#172]  * test court receipt passthrough (suites without an adapter) a produced court receipt's binding results pass through so promotion can read them (625.0ms) [L#172]
+  * test export typed refusals: unknown epoch, no bridge, not completed [L#137]  * test export typed refusals: unknown epoch, no bridge, not completed (189.8ms) [L#137]
+  * test export canonical form is key-sorted [key, value] pairs, compact JSON, sha256-prefixed [L#150]  * test export canonical form is key-sorted [key, value] pairs, compact JSON, sha256-prefixed (70.5ms) [L#150]
+  * test aps-dod court adapter a failed gate makes exactly the criteria that depend on it false / killed [L#296]  * test aps-dod court adapter a failed gate makes exactly the criteria that depend on it false / killed (72.3ms) [L#296]
+  * test aps-dod court adapter observed passing gates map onto gate ids and observation-edge criteria [L#268]  * test aps-dod court adapter observed passing gates map onto gate ids and observation-edge criteria (70.0ms) [L#268]
+  * test aps-dod court adapter no gates in the court receipt means no observations at all [L#356]  * test aps-dod court adapter no gates in the court receipt means no observations at all (71.0ms) [L#356]
+  * test aps-dod court adapter the suite's real court step stands for exactly the court nodes bound to it [L#331]  * test aps-dod court adapter the suite's real court step stands for exactly the court nodes bound to it (69.2ms) [L#331]
+  * test export a claimed ALIVE that fails the suite exports build_broken, never alive [L#127]  * test export a claimed ALIVE that fails the suite exports build_broken, never alive (255.4ms) [L#127]
+  * test bridge persistence the descriptor bridge is stored on the Run verbatim and never interpreted [L#68]  * test bridge persistence the descriptor bridge is stored on the Run verbatim and never interpreted (124.0ms) [L#68]
+  * test aps-dod court adapter only an ALIVE court receipt yields the court-receipt evidence requirement [L#348]  * test aps-dod court adapter only an ALIVE court receipt yields the court-receipt evidence requirement (68.0ms) [L#348]
+  * test bridge persistence a descriptor without a bridge still materializes; a non-object bridge is refused [L#80]  * test bridge persistence a descriptor without a bridge still materializes; a non-object bridge is refused (124.2ms) [L#80]
+  * test export the digest binds every field: changing one changes it [L#116]  * test export the digest binds every field: changing one changes it (267.8ms) [L#116]
+  * test mix xaas.semantic.materialize materializes a descriptor file, prints ids and files the ticket [L#362]  * test mix xaas.semantic.materialize materializes a descriptor file, prints ids and files the ticket (133.8ms) [L#362]
+  * test export a verified ALIVE close exports the sealed facts, the bridge and a recomputable digest [L#94]  * test export a verified ALIVE close exports the sealed facts, the bridge and a recomputable digest (264.4ms) [L#94]
+
+Finished in 3.3 seconds (0.1s async, 3.1s sync)
+
+Result: 48 passed, 5 skipped

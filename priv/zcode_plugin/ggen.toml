@@ -4,5 +4,12 @@ name = "xaas-zcode-plugin"
 [ontology]
 source = "ontology.ttl"
 
+# Repo-local path packs (publication to ggen-marketplace is tracked in
+# HANDWRITTEN.md's paydown plan). Pack templates are discovered from each
+# pack's own templates/; the consumer templates/ dir is intentionally empty.
+[packs]
+zcode_plugin = { path = "packs/zcode-plugin-pack" }
+ultracode_actuation_lease = { path = "packs/ultracode-actuation-lease-pack" }
+
 [templates]
 dir = "templates"

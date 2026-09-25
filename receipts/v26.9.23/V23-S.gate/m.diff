@@ -1,0 +1,943 @@
+diff --git a/lib/mix/tasks/xaas.stop_court.ex b/lib/mix/tasks/xaas.stop_court.ex
+index 8f13e9b..0c086d6 100644
+--- a/lib/mix/tasks/xaas.stop_court.ex
++++ b/lib/mix/tasks/xaas.stop_court.ex
+@@ -111,6 +111,61 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+   with the reason, or `null` with the git failure), every path it was found
+   at, and the refusal if any.
+ 
++  Release evidence (lane V23-S; operator release sequence steps 3 and 5,
++  ARD sections 12 and 27). Every gate receipt and the STOP receipt carry:
++
++    * `identity.repo`: the GitHub slug (`owner/name`) of the repository
++      under judgement, from its first github.com remote (`origin` first); the
++      observed worktree path is `identity.worktree` and `identity.repo_source`
++      names where the slug came from (a checkout without a github.com remote
++      keeps its path in `identity.repo` and says so there);
++    * `verifier`: `runner` (`mix xaas.stop_court`), `runner_source` and
++      `runner_source_sha256` (this module's source, digested at compile time)
++      with `runner_source_at_subject` (whether those bytes are the blob at the
++      subject), `court_command` and `court_command_sha256`, `court_script` and
++      `court_script_sha256` (the script a `sh|bash|python3 <file>` court
++      command names, read just before it runs; `null` with
++      `court_script_why` for an inline command) with `court_script_at_subject`
++      (`true`, `false` with the reason, or `null` with the git failure),
++      `validator`/`validator_sha256`, `schema`/`schema_sha256`
++      (`~/.claude/dfcm/receipt.schema.json`, the schema the validator loads)
++      and `stop_query_sha256` (the root's `sj:stopQuery` text as evaluated).
++      The STOP receipt's court is the runner itself (`court_script` =
++      `runner_source`);
++    * `toolchain`: `elixir` (`System.version/0`), `otp_release`,
++      `erts_version`, `python3` (`python3 --version`) and `python3_path`;
++    * `replay.commands[].invocation`: the exact reproducible invocation
++      (`argv`, `env`, `cwd` and a `shell` line): `mix xaas.stop_court
++      --checkpoint <cp>` with every explicit option resolved to an absolute
++      path and `--only <gate>` for a gate receipt (the `--only` list as given
++      for the STOP receipt), under `env` = `MIX_ENV` (the court's own
++      `Mix.env/0`), `GGEN_IGNITER_DIR` (the resolved court env value),
++      `GC23_FLEET_RECEIPTS_DIR` and every other `GC23_*`/`DFCM_*` variable of
++      the caller (an unset variable is `null` and `env -u` in `shell`).
++
++  The STOP receipt also derives (never asserts) the ARD section 27 counters in
++  `release_counters`, each `{value, why, source, rule, ...evidence}`; a
++  counter whose source cannot be read is `value: null` with `why`, never 0:
++
++    * `REQUIRED_UNKNOWN`: gates of the root plus non-Successor WorkOrders under
++      it whose linked, validator-ADMITTED receipt is not terminal (ALIVE,
++      BLOCKED*, UNSUPPORTED*, REFUSED*), missing or unlinked (this run);
++    * `UNCLASSIFIED_REQUIRED_WORK`: the violation count of the GC23-11 court's
++      step 1 (`fleet_matrix.py check-classification`, same argv, re-executed
++      at the subject under the court deadline);
++    * `LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH` and `REQUIRED_LLM_KNOWN`:
++      LLM-provider events in the known-reference episodes' OCEL logs
++      (`episodes/{fmt-1,me-2}/ocel.json`) by the GC23-5 and GC23-9 court
++      rules (`llm_provider_events/1`), summed, and the number of those
++      episodes with at least one;
++    * `UNRECEIPTED_ACTUATION`: episode ledger actuations (every
++      `ledger.ndjson` line of every episode directory) whose OCEL
++      `StandingChanged` event (same `event_digest`) does not name a receipt a
++      `ReceiptSealed` event sealed.
++
++  Checkpoints without episodes or a classification check in the registry
++  (GC-FRI-0800) get those counters `null` with the reason.
++
+   Exit codes: `0` STOP=true, `1` STOP=false, `2` the court could not run
+   (bad arguments, unreadable graph, unknown checkpoint, asserted receipts,
+   stop-query drift, missing validator, query engine error).
+@@ -147,7 +202,29 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+       graph: "docs/sjira/v26.9.23/goal.ttl",
+       receipts_dir: "docs/sjira/v26.9.23/receipts",
+       order_receipts_dirs: [{:repo, "receipts/v26.9.23"}, {:ggen_igniter, "receipts/v26.9.23"}],
+-      ggen_igniter_dir: "/Users/sac/wt/v26922/fri/ggen_igniter-int"
++      ggen_igniter_dir: "/Users/sac/wt/v26922/fri/ggen_igniter-int",
++      # Release counters (lane V23-S, ARD section 27): the episodes whose
++      # OCEL/ledger the counters read, and the GC23-11 court's step 1 argv
++      # (docs/sjira/v26.9.23/courts/GC23-11.sh, relative to the repository).
++      episodes: %{dir: "docs/sjira/v26.9.23/episodes", known_reference: ["fmt-1", "me-2"]},
++      classification_check: %{
++        court: "docs/sjira/v26.9.23/courts/GC23-11.sh",
++        argv: [
++          "python3",
++          "scripts/sjira/fleet_matrix.py",
++          "check-classification",
++          "--classification",
++          "docs/sjira/v26.9.23/fleet/classification.ttl",
++          "--universe",
++          "docs/sjira/v26.9.23/fleet/universe.json",
++          "--courts-dir",
++          "docs/sjira/v26.9.23/courts",
++          "--expect-critical",
++          "xaas",
++          "--expect-critical",
++          "ggen_igniter"
++        ]
++      }
+     }
+   }
+   @path_options [
+@@ -181,6 +258,35 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+   @ask ~r/\A((?:\s*(?:#[^\n]*(?:\n|\z)|(?:PREFIX|BASE)\b[^\n]*(?:\n|\z)))*\s*)ASK\b/i
+   @tuple_fields ~w(subject postcondition capability evidence_ceiling authority_ceiling consequence_class exclusions)
+ 
++  # Verifier identity (lane V23-S): this module's own source, digested when it
++  # is compiled, is the runner that judged; the schema is the one the fleet
++  # validator loads (`Path.home() / ".claude/dfcm/receipt.schema.json"`).
++  @runner "mix xaas.stop_court"
++  @runner_source Path.relative_to_cwd(__ENV__.file)
++  @runner_source_sha256 "sha256:" <>
++                          Base.encode16(:crypto.hash(:sha256, File.read!(__ENV__.file)),
++                            case: :lower
++                          )
++  @schema "~/.claude/dfcm/receipt.schema.json"
++  # A court command that runs one script file: `sh|bash|dash|zsh|python3 <file>`.
++  @script_command ~r/\A\s*(?:\S*\/)?(?:sh|bash|dash|zsh|python3?)\s+([^\s;&|<>'"$`\-][^\s;&|<>'"$`]*)(?:\s|\z)/
++  # Caller env the courts read (beyond MIX_ENV, GGEN_IGNITER_DIR and
++  # GC23_FLEET_RECEIPTS_DIR, always recorded), by prefix.
++  @replay_env_prefixes ~w(GC23_ DFCM_)
++  @shell_safe ~r/\A[A-Za-z0-9_@%+=:,.\/-]+\z/
++  @github ~r{\A(?:https?://(?:[^@/]+@)?github\.com/|git@github\.com:|ssh://git@github\.com/)([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?\z}
++
++  # LLM-provider event rules, each with its own court's words: GC23-5
++  # (witness 2: an LLM word in a provider/executor/leased_to attribute or in a
++  # provider:* relationship) and GC23-9 (`measure`: a relationship to a
++  # Provider object with deterministic=false or an LLM-named id, or an LLM
++  # word in a provider/producer/candidate_producer attribute).
++  @gc23_5_words ~w(zcode claude anthropic openai glm zai)
++  @gc23_5_keys ~w(provider executor leased_to)
++  @gc23_9_words ~w(llm claude anthropic openai zcode glm zai)
++  @gc23_9_keys ~w(provider producer candidate_producer)
++  @terminal ~r/\A(?:ALIVE\z|BLOCKED|UNSUPPORTED|REFUSED)/
++
+   @switches [
+     checkpoint: :string,
+     graph: :string,
+@@ -242,9 +348,11 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+ 
+       ctx = %{
+         checkpoint: opts[:checkpoint],
++        opts: opts,
+         repo: repo,
+         subject_sha: subject_sha,
+         base_sha: base_sha(root, subject_sha),
++        graph_path: graph_path,
+         graph_hash: "sha256:" <> sha256_hex(bytes),
+         receipts_dir: abs(paths.receipts_dir, repo),
+         order_receipts_dirs: order_receipts_dirs(paths, repo),
+@@ -254,6 +362,14 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+         ggen_igniter_sha: ggen_igniter_sha(court_env)
+       }
+ 
++      ctx =
++        Map.merge(ctx, %{
++          identity: repo_identity(repo),
++          verifier: verifier(ctx, stop_query),
++          toolchain: toolchain(),
++          replay_env: replay_env(court_env)
++        })
++
+       File.mkdir_p!(ctx.receipts_dir)
+       ran = Map.new(selected, &{&1.id, run_gate(&1, ctx)})
+ 
+@@ -269,7 +385,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+         orders = Enum.map(orders, &judge_order(&1, verdicts))
+ 
+         with {:ok, stop} <- ask(graph, gates, orders, stop_query) do
+-          stop_receipt = write_stop_receipt(stop, gates, orders, ctx)
++          counters = release_counters(gates, orders, ctx)
++          stop_receipt = write_stop_receipt(stop, gates, orders, counters, ctx)
+ 
+           stop_verdict =
+             case validate([stop_receipt], ctx) do
+@@ -291,7 +408,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+              orders: orders,
+              stop: stop,
+              stop_receipt: stop_receipt,
+-             stop_receipt_verdict: stop_verdict
++             stop_receipt_verdict: stop_verdict,
++             release_counters: counters
+            }}
+         end
+       end
+@@ -836,6 +954,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+   # ------------------------------------------------------------------ run
+ 
+   defp run_gate(gate, ctx) do
++    # The script is read before it runs: its digest is the court that judged.
++    script = court_script(gate.command, ctx)
+     started = System.monotonic_time(:millisecond)
+ 
+     {status, exit_code, digest, tail} =
+@@ -853,15 +973,16 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+       end
+ 
+     receipt = %{
+-      "identity" => %{
+-        "subject" => "#{ctx.checkpoint}/#{gate.id}",
+-        "repo" => ctx.repo,
+-        "subject_sha" => ctx.subject_sha,
+-        "base_sha" => ctx.base_sha,
+-        "graph_hash" => ctx.graph_hash
+-      },
++      "identity" => identity_json("#{ctx.checkpoint}/#{gate.id}", ctx),
+       "authority" => %{"ceiling" => "OBSERVE", "grant" => "NONE", "actor" => "xaas.stop_court"},
+       "consequence" => %{"commits" => [], "files_changed" => [], "remote_effects" => []},
++      "verifier" =>
++        Map.merge(ctx.verifier, %{
++          "court_command" => gate.command,
++          "court_command_sha256" => "sha256:" <> sha256_hex(gate.command)
++        })
++        |> Map.merge(script),
++      "toolchain" => ctx.toolchain,
+       "replay" => %{
+         "commands" => [
+           %{
+@@ -869,7 +990,8 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+             "cwd" => ctx.repo,
+             "exit" => exit_code,
+             "summary" => summary,
+-            "output_sha256" => digest
++            "output_sha256" => digest,
++            "invocation" => invocation(ctx, [gate.id])
+           }
+         ],
+         "durable_location" => Path.relative_to(path, ctx.repo)
+@@ -1173,7 +1295,7 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+ 
+   # ------------------------------------------------------------------ stop receipt
+ 
+-  defp write_stop_receipt(stop, gates, orders, ctx) do
++  defp write_stop_receipt(stop, gates, orders, counters, ctx) do
+     path = Path.join(ctx.receipts_dir, "STOP-#{ctx.checkpoint}.json")
+     linked = Enum.filter(gates, & &1.linked?)
+     linked_orders = Enum.count(orders, & &1.linked?)
+@@ -1184,28 +1306,37 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+       end)
+ 
+     alive = Enum.count(gates, &(&1.standing == "ALIVE"))
++    command = "mix xaas.stop_court --checkpoint #{ctx.checkpoint}"
+ 
+     receipt = %{
+-      "identity" => %{
+-        "subject" => "#{ctx.checkpoint}/STOP",
+-        "repo" => ctx.repo,
+-        "subject_sha" => ctx.subject_sha,
+-        "base_sha" => ctx.base_sha,
+-        "graph_hash" => ctx.graph_hash
+-      },
++      "identity" => identity_json("#{ctx.checkpoint}/STOP", ctx),
+       "authority" => %{"ceiling" => "OBSERVE", "grant" => "NONE", "actor" => "xaas.stop_court"},
+       "consequence" => %{"commits" => [], "files_changed" => [], "remote_effects" => []},
++      # The STOP court is the runner itself: its script is this module's source.
++      "verifier" =>
++        Map.merge(ctx.verifier, %{
++          "court_command" => command,
++          "court_command_sha256" => "sha256:" <> sha256_hex(command),
++          "court_script" => @runner_source,
++          "court_script_sha256" => @runner_source_sha256,
++          "court_script_why" => nil,
++          "court_script_at_subject" => ctx.verifier["runner_source_at_subject"],
++          "court_script_at_subject_why" => ctx.verifier["runner_source_at_subject_why"]
++        }),
++      "toolchain" => ctx.toolchain,
++      "release_counters" => counters,
+       "replay" => %{
+         "commands" =>
+           gate_commands ++
+             [
+               %{
+-                "cmd" => "mix xaas.stop_court --checkpoint #{ctx.checkpoint}",
++                "cmd" => command,
+                 "cwd" => ctx.repo,
+                 "exit" => if(stop, do: 0, else: 1),
+                 "summary" =>
+                   "sj:stopQuery ASK over the goal graph + #{length(linked)} admitted gate receipts" <>
+-                    " + #{linked_orders}/#{length(orders)} linked order receipts: STOP=#{stop}"
++                    " + #{linked_orders}/#{length(orders)} linked order receipts: STOP=#{stop}",
++                "invocation" => invocation(ctx, only(ctx.opts))
+               }
+             ],
+         "durable_location" => Path.relative_to(path, ctx.repo)
+@@ -1308,6 +1439,630 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+     end
+   end
+ 
++  # ------------------------------------------------------------------ release evidence (lane V23-S)
++
++  # identity.repo is the GitHub slug; the observed worktree is its own field.
++  defp identity_json(subject, ctx) do
++    Map.merge(ctx.identity, %{
++      "subject" => subject,
++      "subject_sha" => ctx.subject_sha,
++      "base_sha" => ctx.base_sha,
++      "graph_hash" => ctx.graph_hash
++    })
++  end
++
++  defp repo_identity(repo) do
++    case github_slug(repo) do
++      {:ok, slug, remote} ->
++        %{
++          "repo" => slug,
++          "worktree" => repo,
++          "repo_source" => "git remote #{remote} (github.com)"
++        }
++
++      {:none, why} ->
++        %{"repo" => repo, "worktree" => repo, "repo_source" => why}
++    end
++  end
++
++  @doc """
++  The GitHub slug (`owner/name`) of the checkout at `dir`: the first remote
++  (`origin` first, then by name) whose URL is on github.com, as
++  `{:ok, slug, remote_name}`, else `{:none, reason}`. The URL itself (which
++  may carry credentials) is never returned.
++  """
++  @spec github_slug(Path.t()) :: {:ok, String.t(), String.t()} | {:none, String.t()}
++  def github_slug(dir) do
++    case git(dir, ["remote"]) do
++      {:ok, out} ->
++        out
++        |> String.split("\n", trim: true)
++        |> Enum.sort_by(&{&1 != "origin", &1})
++        |> Enum.find_value(
++          {:none, "no github.com remote: identity.repo is the worktree path"},
++          fn remote ->
++            with {:ok, url} <- git(dir, ["remote", "get-url", remote]),
++                 [_, owner, name] <- Regex.run(@github, url) do
++              {:ok, owner <> "/" <> name, remote}
++            else
++              _ -> nil
++            end
++          end
++        )
++
++      {:error, reason} ->
++        {:none, "git remote failed (#{inspect(reason)}): identity.repo is the worktree path"}
++    end
++  end
++
++  defp verifier(ctx, stop_query) do
++    {runner_at, runner_why} =
++      blob_at_subject(ctx.repo, ctx.subject_sha, @runner_source, @runner_source_sha256)
++
++    schema = Path.expand(@schema)
++    {schema_sha, schema_why} = file_sha256(schema)
++    {validator_sha, validator_why} = file_sha256(ctx.validator)
++
++    %{
++      "runner" => @runner,
++      "runner_source" => @runner_source,
++      "runner_source_sha256" => @runner_source_sha256,
++      "runner_source_at_subject" => runner_at,
++      "runner_source_at_subject_why" => runner_why,
++      "validator" => ctx.validator,
++      "validator_sha256" => validator_sha,
++      "validator_why" => validator_why,
++      "schema" => schema,
++      "schema_sha256" => schema_sha,
++      "schema_why" => schema_why,
++      "stop_query_sha256" => "sha256:" <> sha256_hex(stop_query)
++    }
++  end
++
++  defp file_sha256(path) do
++    case File.read(path) do
++      {:ok, bytes} -> {"sha256:" <> sha256_hex(bytes), nil}
++      {:error, reason} -> {nil, "#{path} unreadable: #{:file.format_error(reason)}"}
++    end
++  end
++
++  # The script a `sh|bash|python3 <file>` court command runs, read before it
++  # runs: its digest, and whether those bytes are the blob at the subject.
++  defp court_script(command, ctx) do
++    case Regex.run(@script_command, command) do
++      [_, file] ->
++        abs = Path.expand(file, ctx.repo)
++
++        case File.read(abs) do
++          {:ok, bytes} ->
++            digest = "sha256:" <> sha256_hex(bytes)
++
++            {at, why} =
++              case Path.relative_to(abs, ctx.repo) do
++                ^abs -> {nil, "#{file} is outside the repository under judgement"}
++                rel -> blob_at_subject(ctx.repo, ctx.subject_sha, rel, digest)
++              end
++
++            script_json(file, digest, nil, at, why)
++
++          {:error, reason} ->
++            why = "court script #{file} unreadable: #{:file.format_error(reason)}"
++            script_json(file, nil, why, nil, why)
++        end
++
++      nil ->
++        why = "the court command is inline (no script file); court_command_sha256 binds its text"
++        script_json(nil, nil, why, nil, why)
++    end
++  end
++
++  defp script_json(file, digest, why, at, at_why) do
++    %{
++      "court_script" => file,
++      "court_script_sha256" => digest,
++      "court_script_why" => why,
++      "court_script_at_subject" => at,
++      "court_script_at_subject_why" => at_why
++    }
++  end
++
++  # Whether the bytes digested as `digest` are the blob at `rel` in commit
++  # `sha` of `repo`: `{true, nil}`, `{false, reason}`, or `{nil, why}` when
++  # git cannot answer (never folded into false).
++  defp blob_at_subject(repo, sha, rel, digest) do
++    if Path.type(rel) == :absolute do
++      {nil, "#{rel} is not a repository-relative path"}
++    else
++      with {:ok, listing} <- git(repo, ["ls-tree", sha, "--", rel]) do
++        case Regex.run(~r/^\d+ blob ([0-9a-f]{40,64})\t/, listing) do
++          nil ->
++            {false, "no blob at #{rel} in #{sha}"}
++
++          [_, blob] ->
++            case git_raw(repo, ["cat-file", "blob", blob]) do
++              {:ok, bytes} ->
++                if "sha256:" <> sha256_hex(bytes) == digest,
++                  do: {true, nil},
++                  else: {false, "the bytes differ from the blob at #{rel} in #{sha}"}
++
++              {:error, reason} ->
++                {nil, inspect(reason)}
++            end
++        end
++      else
++        {:error, reason} -> {nil, inspect(reason)}
++      end
++    end
++  end
++
++  defp toolchain do
++    python3 = System.find_executable("python3")
++
++    version =
++      case python3 && System.cmd(python3, ["--version"], stderr_to_stdout: true) do
++        {out, 0} -> String.trim(out)
++        _ -> nil
++      end
++
++    %{
++      "elixir" => System.version(),
++      "otp_release" => List.to_string(:erlang.system_info(:otp_release)),
++      "erts_version" => List.to_string(:erlang.system_info(:version)),
++      "python3" => version,
++      "python3_path" => python3
++    }
++  end
++
++  # MIX_ENV (this court's own), GGEN_IGNITER_DIR (the resolved court env) and
++  # GC23_FLEET_RECEIPTS_DIR (the caller's; nil when unset) always, plus every
++  # other GC23_*/DFCM_* variable of the caller.
++  defp replay_env(court_env) do
++    caller =
++      for {key, value} <- System.get_env(),
++          Enum.any?(@replay_env_prefixes, &String.starts_with?(key, &1)),
++          into: %{},
++          do: {key, value}
++
++    Map.merge(caller, %{
++      "MIX_ENV" => to_string(Mix.env()),
++      "GGEN_IGNITER_DIR" => court_env["GGEN_IGNITER_DIR"],
++      "GC23_FLEET_RECEIPTS_DIR" => present(System.get_env("GC23_FLEET_RECEIPTS_DIR"))
++    })
++  end
++
++  # The exact invocation that reproduces a receipt: every explicit option,
++  # resolved as the court resolved it, then `--only`.
++  defp invocation(ctx, only) do
++    opts = ctx.opts
++
++    optional = fn
++      true, args -> args
++      _, _args -> []
++    end
++
++    argv =
++      ["mix", "xaas.stop_court", "--checkpoint", ctx.checkpoint] ++
++        optional.(opts[:repo] != nil, ["--repo", ctx.repo]) ++
++        optional.(present(opts[:graph]) != nil, ["--graph", ctx.graph_path]) ++
++        optional.(present(opts[:receipts_dir]) != nil, ["--receipts-dir", ctx.receipts_dir]) ++
++        (opts
++         |> Keyword.get_values(:order_receipts_dir)
++         |> Enum.filter(&present/1)
++         |> Enum.flat_map(&["--order-receipts-dir", Path.expand(&1, ctx.repo)])) ++
++        optional.(opts[:stop_query] != nil, [
++          "--stop-query",
++          Path.expand(opts[:stop_query] || "", Path.dirname(ctx.graph_path))
++        ]) ++
++        optional.(opts[:validator] != nil, ["--validator", ctx.validator]) ++
++        optional.(present(opts[:ggen_igniter_dir]) != nil, [
++          "--ggen-igniter-dir",
++          Path.expand(opts[:ggen_igniter_dir] || "")
++        ]) ++
++        optional.(opts[:timeout] != nil, ["--timeout", to_string(opts[:timeout])]) ++
++        Enum.flat_map(only, &["--only", &1])
++
++    env = ctx.replay_env
++    cwd = File.cwd!()
++    unset = for {key, nil} <- Enum.sort(env), do: " -u " <> key
++    set = for {key, value} <- Enum.sort(env), value != nil, do: " #{key}=#{shell_quote(value)}"
++
++    %{
++      "argv" => argv,
++      "env" => env,
++      "cwd" => cwd,
++      "shell" =>
++        "cd #{shell_quote(cwd)} && env" <>
++          Enum.join(unset) <> Enum.join(set) <> " " <> Enum.map_join(argv, " ", &shell_quote/1)
++    }
++  end
++
++  defp shell_quote(value) do
++    if Regex.match?(@shell_safe, value),
++      do: value,
++      else: "'" <> String.replace(value, "'", "'\\''") <> "'"
++  end
++
++  # ARD section 27 counters, derived from this run and the observed episode
++  # evidence; a counter whose source cannot be read is null with `why`.
++  defp release_counters(gates, orders, ctx) do
++    registry = Map.get(@checkpoints, ctx.checkpoint, %{})
++
++    episodes =
++      case registry[:episodes] do
++        %{dir: dir, known_reference: known} ->
++          episode_counters(Path.expand(dir, ctx.repo), known)
++
++        nil ->
++          why = "checkpoint #{ctx.checkpoint} registers no episodes directory"
++
++          Map.new(
++            ~w(REQUIRED_LLM_KNOWN LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH UNRECEIPTED_ACTUATION),
++            &{&1, %{"value" => nil, "why" => why, "source" => nil, "rule" => nil}}
++          )
++      end
++
++    episodes
++    |> Map.put("REQUIRED_UNKNOWN", required_unknown(gates, orders, ctx))
++    |> Map.put(
++      "UNCLASSIFIED_REQUIRED_WORK",
++      unclassified_required_work(registry[:classification_check], ctx)
++    )
++  end
++
++  defp required_unknown(gates, orders, ctx) do
++    required_orders = Enum.reject(orders, & &1.successor?)
++
++    items =
++      for(
++        gate <- gates,
++        not terminal?(gate.standing),
++        do: "gate #{gate.id}: #{standing_label(gate)}"
++      ) ++
++        for order <- required_orders,
++            not terminal?(order.standing),
++            do: "order #{order.id}: #{standing_label(order)}"
++
++    %{
++      "value" => length(items),
++      "why" => nil,
++      "items" => items,
++      "source" =>
++        "this court run at #{ctx.subject_sha}: #{length(gates)} gates of #{ctx.checkpoint} judged from" <>
++          " #{ctx.receipts_dir} and #{length(required_orders)} non-Successor WorkOrders under it" <>
++          " judged against the order-receipts dirs",
++      "rule" =>
++        "a gate or a non-Successor WorkOrder counts unless its linked, validator-ADMITTED receipt" <>
++          " has a terminal standing (ALIVE, BLOCKED*, UNSUPPORTED*, REFUSED*)"
++    }
++  end
++
++  defp terminal?(nil), do: false
++  defp terminal?(standing), do: Regex.match?(@terminal, standing)
++
++  defp standing_label(%{standing: nil} = node),
++    do: "no linked receipt (#{verdict_label(node.verdict, node.linked?)})"
++
++  defp standing_label(%{standing: standing}), do: standing
++
++  defp unclassified_required_work(nil, ctx) do
++    %{
++      "value" => nil,
++      "why" => "checkpoint #{ctx.checkpoint} registers no fleet classification check (GC23-11)",
++      "source" => nil,
++      "rule" => nil
++    }
++  end
++
++  defp unclassified_required_work(%{court: court, argv: [_exe, script | _] = argv}, ctx) do
++    command = Enum.map_join(argv, " ", &shell_quote/1)
++    {court_sha, _why} = file_sha256(Path.expand(court, ctx.repo))
++
++    base = %{
++      "source" =>
++        "GC23-11 court step 1 (#{court} #{court_sha || "absent"}) re-executed at #{ctx.subject_sha}",
++      "rule" =>
++        "the violation count check-classification reports (`REFUSED (N violations)`, exit 1);" <>
++          " 0 on `OK` (exit 0); any other outcome could not run and is null",
++      "command" => command,
++      "cwd" => ctx.repo
++    }
++
++    if File.regular?(Path.expand(script, ctx.repo)) do
++      {status, code, digest, tail} = shell(command, ctx.repo, ctx.timeout_ms, ctx.court_env)
++      summary = last_line(tail)
++      base = Map.merge(base, %{"exit" => code, "output_sha256" => digest, "summary" => summary})
++      refused = Regex.run(~r/\Acheck-classification: REFUSED \((\d+) violations?\)/, summary)
++
++      cond do
++        status == :exited and code == 0 and
++            String.starts_with?(summary, "check-classification: OK") ->
++          Map.merge(base, %{"value" => 0, "why" => nil, "items" => []})
++
++        status == :exited and code == 1 and refused != nil ->
++          items =
++            tail
++            |> String.split("\n", trim: true)
++            |> Enum.filter(&String.starts_with?(&1, "REFUSED("))
++
++          Map.merge(base, %{
++            "value" => refused |> List.last() |> String.to_integer(),
++            "why" => nil,
++            "items" => items
++          })
++
++        true ->
++          Map.merge(base, %{
++            "value" => nil,
++            "why" => "check-classification could not run (#{status} #{code}): #{summary}"
++          })
++      end
++    else
++      Map.merge(base, %{"value" => nil, "why" => "#{script} absent in #{ctx.repo}"})
++    end
++  end
++
++  @doc """
++  The episode-derived release counters (ARD section 27) over `dir`, each
++  `%{"value" => integer | nil, "why" => ...}`:
++
++    * `"LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"`: LLM-provider events
++      (`llm_provider_events/1`) summed over `<dir>/<name>/ocel.json` for each
++      known-reference episode `name`;
++    * `"REQUIRED_LLM_KNOWN"`: the known-reference episodes with at least one;
++    * `"UNRECEIPTED_ACTUATION"`: `ledger.ndjson` lines of every episode
++      directory under `dir` whose OCEL `StandingChanged` event (same
++      `event_digest`) relates to no receipt a `ReceiptSealed` event sealed.
++
++  An unreadable source (absent, not JSON, not an OCEL log, an unparseable
++  ledger line) makes its counters `nil` with the reason, never 0.
++  """
++  @spec episode_counters(Path.t(), [String.t()]) :: %{String.t() => map()}
++  def episode_counters(dir, known_reference) do
++    llm_source =
++      "LLM-provider events in " <>
++        Enum.map_join(known_reference, ", ", &"#{&1}/ocel.json") <> " under #{dir}"
++
++    llm_rule =
++      "an OCEL event counts when the GC23-5 rule (a word of #{Enum.join(@gc23_5_words, "/")} in its" <>
++        " provider/executor/leased_to attribute or in a provider:* relationship) or the GC23-9 rule" <>
++        " (a relationship to a Provider object with deterministic=false or an id holding a word of" <>
++        " #{Enum.join(@gc23_9_words, "/")}, or such a word in its provider/producer/candidate_producer" <>
++        " attribute) holds"
++
++    {invocations, required} =
++      case known_path_llm(dir, known_reference) do
++        {:ok, per} ->
++          total =
++            per |> Map.values() |> Enum.map(&length(&1["llm_provider_events"])) |> Enum.sum()
++
++          using = for {name, %{"llm_provider_events" => [_ | _]}} <- per, do: name
++
++          {%{"value" => total, "why" => nil, "episodes" => per},
++           %{"value" => length(using), "why" => nil, "items" => Enum.sort(using)}}
++
++        {:error, why} ->
++          {%{"value" => nil, "why" => why}, %{"value" => nil, "why" => why}}
++      end
++
++    actuation =
++      case unreceipted_actuations(dir) do
++        {:ok, per} ->
++          total = per |> Map.values() |> Enum.map(&length(&1["unreceipted"])) |> Enum.sum()
++          %{"value" => total, "why" => nil, "episodes" => per}
++
++        {:error, why} ->
++          %{"value" => nil, "why" => why}
++      end
++
++    %{
++      "LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH" =>
++        Map.merge(invocations, %{"source" => llm_source, "rule" => llm_rule}),
++      "REQUIRED_LLM_KNOWN" =>
++        Map.merge(required, %{
++          "source" => llm_source,
++          "rule" =>
++            "the known-reference episodes with at least one LLM-provider event (#{llm_rule})"
++        }),
++      "UNRECEIPTED_ACTUATION" =>
++        Map.merge(actuation, %{
++          "source" => "every ledger.ndjson line of every episode directory under #{dir}",
++          "rule" =>
++            "a ledger actuation is receipted when its episode's ocel.json has a StandingChanged" <>
++              " event with the same event_digest relating to a receipt:* object that a" <>
++              " ReceiptSealed event relates to"
++        })
++    }
++  end
++
++  @doc """
++  The ids of the LLM-provider events of a decoded OCEL log (`ocel:events`,
++  `ocel:objects`): an event counts when the GC23-5 court rule or the GC23-9
++  court rule (`measure`) holds for it, each with its own court's words.
++  """
++  @spec llm_provider_events(map()) :: [String.t()]
++  def llm_provider_events(%{"ocel:events" => events, "ocel:objects" => objects}) do
++    nondeterministic =
++      for %{"type" => "Provider"} = object <- objects,
++          Map.get(attributes(object), "deterministic") == "false" or
++            word?(object["id"], @gc23_9_words),
++          into: MapSet.new(),
++          do: object["id"]
++
++    for event <- events, gc23_5?(event) or gc23_9?(event, nondeterministic), do: event["id"]
++  end
++
++  defp gc23_5?(event) do
++    attrs = attributes(event)
++
++    Enum.any?(@gc23_5_keys, &(Map.has_key?(attrs, &1) and word?(attrs[&1], @gc23_5_words))) or
++      Enum.any?(relationships(event), fn %{"objectId" => id} ->
++        String.starts_with?(id, "provider:") and word?(id, @gc23_5_words)
++      end)
++  end
++
++  defp gc23_9?(event, nondeterministic) do
++    attrs = attributes(event)
++
++    Enum.any?(relationships(event), &MapSet.member?(nondeterministic, &1["objectId"])) or
++      Enum.any?(@gc23_9_keys, &word?(Map.get(attrs, &1, ""), @gc23_9_words))
++  end
++
++  defp word?(value, words) do
++    text = if is_binary(value), do: value, else: Jason.encode!(value)
++    text = String.downcase(text)
++    Enum.any?(words, &String.contains?(text, &1))
++  end
++
++  defp attributes(item), do: Map.get(item, "attributes", %{})
++  defp relationships(item), do: Map.get(item, "relationships", [])
++
++  defp known_path_llm(dir, known) do
++    Enum.reduce_while(known, {:ok, %{}}, fn name, {:ok, acc} ->
++      path = Path.join([dir, name, "ocel.json"])
++
++      case read_ocel(path) do
++        {:ok, ocel, bytes} ->
++          entry = %{
++            "ocel" => path,
++            "ocel_sha256" => "sha256:" <> sha256_hex(bytes),
++            "events" => length(ocel["ocel:events"]),
++            "llm_provider_events" => llm_provider_events(ocel)
++          }
++
++          {:cont, {:ok, Map.put(acc, name, entry)}}
++
++        {:error, why} ->
++          {:halt, {:error, why}}
++      end
++    end)
++  end
++
++  defp read_ocel(path) do
++    with {:ok, bytes} <- read_source(path) do
++      case Jason.decode(bytes) do
++        {:ok, %{"ocel:events" => events, "ocel:objects" => objects} = ocel}
++        when is_list(events) and is_list(objects) ->
++          if Enum.all?(events ++ objects, &ocel_item?/1),
++            do: {:ok, ocel, bytes},
++            else:
++              {:error,
++               "#{path}: an OCEL event or object lacks a string id/type, an attributes map" <>
++                 " or a relationships list of objectId strings"}
++
++        {:ok, _other} ->
++          {:error, "#{path} is not an OCEL log (no ocel:events/ocel:objects lists)"}
++
++        {:error, error} ->
++          {:error, "#{path} is not JSON: #{Exception.message(error)}"}
++      end
++    end
++  end
++
++  defp ocel_item?(%{"id" => id, "type" => type} = item) when is_binary(id) and is_binary(type) do
++    rels = relationships(item)
++
++    is_map(attributes(item)) and is_list(rels) and
++      Enum.all?(rels, &match?(%{"objectId" => object_id} when is_binary(object_id), &1))
++  end
++
++  defp ocel_item?(_item), do: false
++
++  defp read_source(path) do
++    case File.read(path) do
++      {:ok, bytes} -> {:ok, bytes}
++      {:error, reason} -> {:error, "#{path} unreadable: #{:file.format_error(reason)}"}
++    end
++  end
++
++  defp unreceipted_actuations(dir) do
++    with {:ok, names} <- episode_dirs(dir) do
++      Enum.reduce_while(names, {:ok, %{}}, fn name, {:ok, acc} ->
++        case episode_actuations(Path.join(dir, name)) do
++          {:ok, entry} -> {:cont, {:ok, Map.put(acc, name, entry)}}
++          {:error, why} -> {:halt, {:error, why}}
++        end
++      end)
++    end
++  end
++
++  defp episode_dirs(dir) do
++    case File.ls(dir) do
++      {:ok, entries} ->
++        case entries |> Enum.filter(&File.dir?(Path.join(dir, &1))) |> Enum.sort() do
++          [] -> {:error, "#{dir} holds no episode directory"}
++          names -> {:ok, names}
++        end
++
++      {:error, reason} ->
++        {:error, "#{dir} unreadable: #{:file.format_error(reason)}"}
++    end
++  end
++
++  defp episode_actuations(episode) do
++    ledger = Path.join(episode, "ledger.ndjson")
++
++    with {:ok, bytes} <- read_source(ledger),
++         {:ok, lines} <- ledger_lines(ledger, bytes),
++         {:ok, sealed?} <- sealing(episode, lines) do
++      {:ok,
++       %{
++         "ledger" => ledger,
++         "ledger_sha256" => "sha256:" <> sha256_hex(bytes),
++         "actuations" => length(lines),
++         "unreceipted" =>
++           for(
++             line <- lines,
++             not sealed?.(line),
++             do: Jason.encode!(Map.take(line, ~w(seq identity from to event_digest)))
++           )
++       }}
++    end
++  end
++
++  defp ledger_lines(path, bytes) do
++    bytes
++    |> String.split("\n")
++    |> Enum.with_index(1)
++    |> Enum.reject(fn {line, _n} -> String.trim(line) == "" end)
++    |> Enum.reduce_while({:ok, []}, fn {line, n}, {:ok, acc} ->
++      case Jason.decode(line) do
++        {:ok, %{} = entry} -> {:cont, {:ok, [entry | acc]}}
++        _ -> {:halt, {:error, "#{path} line #{n} is not a JSON object"}}
++      end
++    end)
++    |> case do
++      {:ok, lines} -> {:ok, Enum.reverse(lines)}
++      error -> error
++    end
++  end
++
++  # An empty ledger has nothing to bind: its OCEL is not read.
++  defp sealing(_episode, []), do: {:ok, fn _line -> true end}
++
++  defp sealing(episode, _lines) do
++    with {:ok, ocel, _bytes} <- read_ocel(Path.join(episode, "ocel.json")) do
++      events = ocel["ocel:events"]
++
++      sealed =
++        for %{"type" => "ReceiptSealed"} = event <- events,
++            %{"objectId" => "receipt:" <> _ = id} <- relationships(event),
++            into: MapSet.new(),
++            do: id
++
++      {:ok,
++       fn line ->
++         digest = line["event_digest"]
++
++         is_binary(digest) and
++           Enum.any?(events, fn event ->
++             event["type"] == "StandingChanged" and
++               Map.get(attributes(event), "event_digest") == digest and
++               Enum.any?(relationships(event), &MapSet.member?(sealed, &1["objectId"]))
++           end)
++       end}
++    end
++  end
++
+   # ------------------------------------------------------------------ print
+ 
+   defp print(report) do
+@@ -1363,6 +2118,15 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+       )
+     end)
+ 
++    shell.info(
++      "release counters " <>
++        (report.release_counters
++         |> Enum.sort()
++         |> Enum.map_join(" ", fn {name, counter} ->
++           "#{name}=#{if counter["value"] == nil, do: "null", else: counter["value"]}"
++         end))
++    )
++
+     shell.info(
+       "stop receipt #{report.stop_receipt} #{verdict_label(report.stop_receipt_verdict, true)}"
+     )
+@@ -1406,6 +2170,16 @@ defmodule Mix.Tasks.Xaas.StopCourt do
+     error in ErlangError -> {:error, {:git_unavailable, inspect(error.original)}}
+   end
+ 
++  # Untrimmed stdout (blob bytes); stderr is discarded.
++  defp git_raw(dir, args) do
++    case System.cmd("sh", ["-c", "exec git -C \"$0\" \"$@\" 2>/dev/null", dir | args]) do
++      {out, 0} -> {:ok, out}
++      {_out, code} -> {:error, {:git_failed, args, code}}
++    end
++  rescue
++    error in ErlangError -> {:error, {:git_unavailable, inspect(error.original)}}
++  end
++
+   defp sha256_hex(bytes), do: hex(:crypto.hash(:sha256, bytes))
+   defp hex(bin), do: Base.encode16(bin, case: :lower)
+ end

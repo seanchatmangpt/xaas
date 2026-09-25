@@ -1,0 +1,8 @@
+route_test: Result: 74 passed
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-COURTS/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+{"broken_term":"admission_vacuous","detail":{"anchor":"admitted_work_graph","carrier":"tuple","digest":"tuple_digest","expected":"sha256:af87dbf1ae1fc76844c86318906bebc0873809c0dc9e1099d0de5b47d94ab174","field":"postcondition","observed":"sha256:05ab12747f97a7d59e61de87b7ac2b6ece24524a796757e566e2b85d7fa1f2d3"},"hop":"sjira","reason":"tuple_digest_mismatch","standing":"REFUSED(tuple_digest_mismatch)"}
+REFUSED: GC23-4 anchored verify-hops: REFUSED(tuple_digest_mismatch) broken_term=admission_vacuous hop=sjira anchor=admitted_work_graph carrier=tuple field=postcondition
+exit=1

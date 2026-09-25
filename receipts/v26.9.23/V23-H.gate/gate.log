@@ -1,0 +1,68 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-H/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+GATE step1 mix format --check-formatted => 0
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-H/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 520 files (.ex)
+Generated xaas app
+GATE step2 MIX_ENV=test mix compile --force --warnings-as-errors => 0
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-H/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+10:19:02.513 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+10:19:03.074 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+10:19:03.353 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+10:19:03.430 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+10:19:03.431 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-H/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+10:19:03.445 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+10:19:03.445 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-H/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+10:19:03.456 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+10:19:03.456 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-H/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+Running ExUnit with seed: 448574, max_cases: 32
+10:19:03.463 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+10:19:03.463 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-H/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+10:19:03.473 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+10:19:03.473 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-H/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+10:19:03.477 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+10:19:03.477 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-H/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+...............................
+Finished in 96.3 seconds (0.00s async, 96.3s sync)
+31 tests, 0 failures
+GATE step3 mix test test/sjira/v26_9_23_goal_test.exs => 0
+candidates: CHECK OK: 18 candidates bound to docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1; gates GC24-0=2 GC24-1=1 GC24-2=7 GC24-3=2
+compile: DELTA: 7 required Postcondition/Invariant/Falsifier, 0 witnessed ALIVE (0 ALIVE receipts read), 7 work orders; CHECK: docs/sjira/v26.9.23/successor/compiled outputs recompute byte-identically
+L1 successor goal: root GC-26.9.24 (successorOf GC-26.9.23), 4 gates, 0 WorkOrders, 0 receipts
+L2 goal.ttl: GC-26.9.23 sj:successorCheckpoint GC-26.9.24
+L3 prose docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1: 49 lines, headed DRAFT, pinned by the root
+L4 admission: 18 propositions = 18 emitted candidates, all bound to the prose
+L5 compiler output: 7 WorkOrders = 7 required Postcondition/Invariant/Falsifier propositions, each IRI = WO-sha256(subject)[:16]
+L6 full tuple on 7 orders; tuple digests recomputed (json.dumps)
+L7 placement: 7 orders under GC-26.9.24, 0 under GC-26.9.23
+L8 predecessor inventory (GC-26.9.23 lane orders typed Successor, not GC-26.9.24 delta): V23-W
+L9 intake: frontier 7 eligible; first WO-14958CC7712C739E (recipe:ggen-sync) -> descriptor provider recipe -> Route.resolve -> UNSUPPORTED(provider_capability); items {"UNSUPPORTED(provider_capability)": 7}
+mutations: smuggled goal WorkOrder refused (L1); forged order WO-0000000000000000 refused (L5)
+intake: 7 orders, 7 eligible; first WO-14958CC7712C739E (recipe:ggen-sync) -> UNSUPPORTED(provider_capability) (provider_capability); outputs recompute byte-identically
+F3: intake with ANTHROPIC_API_KEY=x refused REFUSED(llm_credential_present), broken_term mu_on_O
+acceptance probe: stale digest -> BLOCKED; committed digest -> ACCEPTED
+GC23-12 witnesses 0-6 hold; the only open item is the operator-acceptance edge of the successor prose
+BLOCKED(operator_acceptance): GC23-12 successor prose sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1 awaits the operator: docs/sjira/v26.9.23/successor/ACCEPTED is absent (broken_term R_missing_authority)
+GATE chain exit => 77

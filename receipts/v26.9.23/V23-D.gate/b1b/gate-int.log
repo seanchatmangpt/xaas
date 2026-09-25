@@ -1,0 +1,49 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 512 files (.ex)
+Generated xaas app
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+05:57:39.853 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+05:57:40.416 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+05:57:40.697 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+05:57:40.781 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:57:40.783 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+05:57:40.801 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:57:40.801 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+Running ExUnit with seed: 788158, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+05:57:40.812 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:57:40.812 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+05:57:40.823 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:57:40.823 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+05:57:40.830 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:57:40.830 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+05:57:40.833 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+05:57:40.833 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/V23-D/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+..............................................................................................05:58:06.725 [warning] [recipe-worker] target pins %{"elixir" => "0.0.0-absent"} not installed under /private/tmp/claude-501/v23-scratch/B1b-V23-D/xaas-recipe-test-asdf-empty-1790168286680-12802; falling back to the running node's toolchain (/opt/homebrew/bin/mix)
+.......
+Finished in 27.3 seconds (1.3s async, 26.0s sync)
+101 tests, 0 failures
+GATE_EXIT=0

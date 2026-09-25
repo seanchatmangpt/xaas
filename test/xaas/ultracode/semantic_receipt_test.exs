@@ -8,7 +8,7 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
 
   use ExUnit.Case, async: false
 
-  alias Xaas.Ultracode.{Lease, SemanticReceipt, SemanticWork}
+  alias Xaas.Ultracode.{Lease, SemanticReceipt, SemanticWork, TargetSuites}
   alias Xaas.Ultracode.SemanticReceipt.ApsDod
 
   @provider "zcode-semantic-receipt"
@@ -49,7 +49,9 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
 
     Application.put_env(:xaas, :ultracode_verifier_suites, %{
       "sem-pass" => suite("test -f hello.txt"),
-      "sem-fail" => suite("test -f no-such-file.txt")
+      "sem-fail" => suite("test -f no-such-file.txt"),
+      "sem-court" => court_suite("test -f hello.txt"),
+      "ggen-igniter-format" => TargetSuites.devs()["ggen-igniter-format"]
     })
 
     on_exit(fn ->
@@ -64,7 +66,9 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
 
   describe "bridge persistence" do
     test "the descriptor bridge is stored on the Run verbatim and never interpreted", %{sha: sha} do
-      assert {:ok, %{run: run}} = SemanticWork.materialize(descriptor(sha, "sem-pass"))
+      assert {:ok, %{run: run}} =
+               SemanticWork.materialize(descriptor(sha, "sem-pass"), binding: :graph)
+
       assert run.semantic_bridge == @bridge
 
       reread =
@@ -76,11 +80,13 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     test "a descriptor without a bridge still materializes; a non-object bridge is refused",
          %{sha: sha} do
       no_bridge = Map.delete(descriptor(sha, "sem-pass"), "bridge")
-      assert {:ok, %{run: run}} = SemanticWork.materialize(no_bridge)
+      assert {:ok, %{run: run}} = SemanticWork.materialize(no_bridge, binding: :graph)
       assert run.semantic_bridge == nil
 
       assert {:error, {:refused_semantic_work, {:invalid, :bridge}}} =
-               SemanticWork.admit(Map.put(descriptor(sha, "sem-pass"), "bridge", "not-an-object"))
+               SemanticWork.admit(Map.put(descriptor(sha, "sem-pass"), "bridge", "not-an-object"),
+                 binding: :graph
+               )
     end
   end
 
@@ -131,11 +137,13 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     test "typed refusals: unknown epoch, no bridge, not completed", %{sha: sha} do
       assert {:error, :epoch_not_found} = SemanticReceipt.export(Ecto.UUID.generate())
 
-      assert {:ok, %{epoch: open}} = SemanticWork.materialize(descriptor(sha, "sem-pass"))
+      assert {:ok, %{epoch: open}} =
+               SemanticWork.materialize(descriptor(sha, "sem-pass"), binding: :graph)
+
       assert {:error, {:epoch_not_completed, :running}} = SemanticReceipt.export(open.id)
 
       no_bridge = Map.delete(descriptor(sha, "sem-pass", "urn:t:no-bridge"), "bridge")
-      assert {:ok, %{epoch: bare}} = SemanticWork.materialize(no_bridge)
+      assert {:ok, %{epoch: bare}} = SemanticWork.materialize(no_bridge, binding: :graph)
       assert {:error, :no_semantic_bridge} = SemanticReceipt.export(bare.id)
     end
 
@@ -145,6 +153,98 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
 
       assert SemanticReceipt.digest(value) ==
                "sha256:" <> (:crypto.hash(:sha256, expected) |> Base.encode16(case: :lower))
+    end
+  end
+
+  describe "court receipt passthrough (suites without an adapter)" do
+    @acc "https://ggen-igniter.dev/ontology/semantic-jira#fri-format-acceptance"
+    @fals "https://ggen-igniter.dev/ontology/semantic-jira#fri-format-falsifier"
+    @court_iri "https://ggen-igniter.dev/ontology/semantic-jira#fri-format-court"
+
+    defp court_map(step_id) do
+      %{
+        "acceptance" => %{@acc => %{"test" => step_id}},
+        "falsifiers" => %{@fals => %{"test" => step_id}},
+        "courts" => [@court_iri]
+      }
+    end
+
+    test "a produced court receipt's binding results pass through so promotion can read them",
+         %{sha: sha} do
+      {epoch, head} = run_worker(sha, "sem-court", court_map: court_map("court"))
+
+      assert {:ok, export} = SemanticReceipt.export(epoch.id)
+      assert export["outcome"] == "alive"
+      court = export["fabric_verifier"]["court_receipt"]
+
+      assert court["acceptance_results"] == %{@acc => true}
+      assert court["falsifier_results"] == %{@fals => "survived"}
+
+      assert %{"passed" => true, "suite" => "sem-court", "step_id" => "court", "head" => ^head} =
+               court["court_results"][@court_iri]
+
+      assert %{"suite" => "sem-court", "step_id" => "court", "head" => ^head} = court["binding"]
+      assert court["binding"]["argv_sha256"] =~ ~r/\A[0-9a-f]{64}\z/
+
+      assert Map.keys(court) |> Enum.sort() ==
+               ~w(acceptance_results binding court_results falsifier_results)
+
+      assert export["receipt_digest"] == SemanticReceipt.receipt_digest(export)
+    end
+
+    # The registered ggen-igniter-format suite pins the graph side's own
+    # toolchain by absolute PATH (asdf installs under ~/.asdf). A runner where
+    # that PATH does not yield a working `mix` (CI: setup-beam, no asdf) cannot
+    # execute the real court, so the test is skipped by name -- never faked.
+    @format_toolchain (case System.cmd(
+                              "/usr/bin/env",
+                              [
+                                "-i",
+                                "HOME=" <> System.tmp_dir!(),
+                                "PATH=" <> TargetSuites.devs()["ggen-igniter-format"].env["PATH"],
+                                "mix",
+                                "--version"
+                              ],
+                              stderr_to_stdout: true
+                            ) do
+                         {_, 0} -> true
+                         _ -> false
+                       end)
+    @tag skip:
+           if(@format_toolchain,
+             do: false,
+             else:
+               "ggen-igniter-format toolchain absent: no working mix on the suite's pinned PATH"
+           )
+    @tag timeout: 600_000
+    test "REAL ggen-igniter-format court: formatted commit passes, unformatted is refuted",
+         %{sha: sha} do
+      formatted = %{
+        ".formatter.exs" => ~s([inputs: ["*.ex"]]\n),
+        "a.ex" => "defmodule A do\n  def a, do: 1\nend\n"
+      }
+
+      {green, head} =
+        run_worker(sha, "ggen-igniter-format", court_map: court_map("format"), files: formatted)
+
+      assert {:ok, export} = SemanticReceipt.export(green.id)
+      assert export["outcome"] == "alive", inspect(export["fabric_verifier"])
+      court = export["fabric_verifier"]["court_receipt"]
+      assert court["acceptance_results"] == %{@acc => true}
+      assert court["court_results"][@court_iri]["passed"] == true
+      assert court["court_results"][@court_iri]["head"] == head
+
+      unformatted = %{formatted | "a.ex" => "defmodule A do\ndef a,   do: 1\nend\n"}
+
+      {red, _head} =
+        run_worker(sha, "ggen-igniter-format", court_map: court_map("format"), files: unformatted)
+
+      assert {:ok, refuted} = SemanticReceipt.export(red.id)
+      assert refuted["outcome"] == "build_broken"
+      court = refuted["fabric_verifier"]["court_receipt"]
+      assert court["acceptance_results"] == %{@acc => false}
+      assert court["falsifier_results"] == %{@fals => "failed"}
+      assert court["court_results"][@court_iri]["passed"] == false
     end
   end
 
@@ -290,17 +390,23 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
 
   # -- fixtures -------------------------------------------------------------------
 
-  defp run_worker(sha, suite) do
-    {:ok, %{epoch: epoch, worktree: worktree}} =
-      SemanticWork.materialize(
-        descriptor(sha, suite, "urn:t:#{suite}:#{System.unique_integer([:positive])}")
-      )
+  defp run_worker(sha, suite, opts \\ []) do
+    raw = descriptor(sha, suite, "urn:t:#{suite}:#{System.unique_integer([:positive])}")
+
+    raw =
+      case Keyword.get(opts, :court_map) do
+        nil -> raw
+        court_map -> Map.put(raw, "court_map", court_map)
+      end
+
+    {:ok, %{epoch: epoch, worktree: worktree}} = SemanticWork.materialize(raw, binding: :graph)
 
     {:ok, _claimed, token, _run} =
       Lease.claim_next(@provider, "worker-#{suite}", epoch_id: epoch.id)
 
-    File.write!(Path.join(worktree, "worker-note.txt"), "done\n")
-    git!(worktree, ["add", "worker-note.txt"])
+    files = Keyword.get(opts, :files, %{"worker-note.txt" => "done\n"})
+    Enum.each(files, fn {name, body} -> File.write!(Path.join(worktree, name), body) end)
+    git!(worktree, ["add" | Map.keys(files)])
     git!(worktree, ["commit", "-q", "-m", "worker"], commit_env())
     head = git!(worktree, ["rev-parse", "HEAD"])
     {:ok, _epoch, _receipt} = Lease.close(token, head, :alive, %{"note" => "worker done"})
@@ -311,7 +417,7 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
     %{
       "work_order_iri" => iri,
       "checkpoint_iri" => "urn:t:checkpoint:1",
-      "graph_digest" => "sha256:" <> String.duplicate("a", 64),
+      "graph_digest" => "sha256:" <> String.duplicate("e", 64),
       "repository_identity" => "seanchatmangpt/demo",
       "execution_repo_alias" => "demo",
       "base_sha" => sha,
@@ -322,6 +428,13 @@ defmodule Xaas.Ultracode.SemanticReceiptTest do
       "dependencies" => [],
       "bridge" => @bridge
     }
+  end
+
+  defp court_suite(script) do
+    script
+    |> suite()
+    |> Map.put(:result_format, "exit_status")
+    |> Map.update!(:steps, fn [step] -> [Map.put(step, :receipt, true)] end)
   end
 
   defp suite(script) do

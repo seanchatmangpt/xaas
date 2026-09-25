@@ -1,0 +1,37 @@
+## decoy pid 22659 started 2026-09-23T20:34:43Z
+## pgrep -fl 'zcode.js --prompt' before:
+22659 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## HEAD fcd4a56cb4965ba35d2f48367c8e203c4e07c725 porcelain=[]
+## cmd: elixir --version && mix format --check-formatted && MIX_ENV=test mix compile --force --warnings-as-errors && mix test test/xaas/ultracode/dispatch_test.exs
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PGREP/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 520 files (.ex)
+Compiling lib/mix/tasks/xaas.autonomic.controls.ex (it's taking more than 10s)
+    warning: unused require Ash.Query
+    │
+ 78 │   require Ash.Query
+    │   ~
+    │
+    └─ lib/xaas/ultracode/semantic_drive.ex:78:3
+
+Compilation failed due to warnings while using the --warnings-as-errors option
+## exit 1
+## decoy 22659 alive at end: yes
+## pgrep -fl 'zcode.js --prompt' after:
+22659 node bin/zcode.js --prompt /xaas R1-X-PGREP-external-decoy 1500
+## decoy stopped 2026-09-23T20:35:32Z

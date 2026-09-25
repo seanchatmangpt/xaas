@@ -1,0 +1,27 @@
+{
+ "note": "real autofde beam-bridge via Xaas.Sa2a.Bridge (docs/sjira/v26.9.21/receipts/sa2a_post_SJ-003.exs); admit/replay only, sa2a_execute (DO edge) never called; SA2A admission is a candidate-shape admission, not authority or standing",
+ "admit": {
+  "admitted_assertion": "workorder:SJ-003 digest:sha256:ecbcd23865fa1ba78061350b53f718dfd8e65aef17510355df3a27d0afe469a6 constructed head:191e7d59c65b78bf35459ffcc6c16bee10bd8076",
+  "candidate_hash": "d6e00a036f85efa25eb87c4bee873b86f666234c5839d3703b9d81af51d3669c",
+  "ok": true,
+  "reasons": [
+   "CONFORMS_TO_SPEC"
+  ],
+  "receipt_id": "rec-ffcfcbb6",
+  "standing": "KNOWN"
+ },
+ "replay": {
+  "computed_hash": "e5d31200ff7bedad1879d27575cf02743b35fe17ff14bb2d8a1acea8cdce6085",
+  "expected_hash": "e5d31200ff7bedad1879d27575cf02743b35fe17ff14bb2d8a1acea8cdce6085",
+  "ok": true,
+  "verified": true,
+  "manifest": "receipts/SJ-003-manifest.json"
+ },
+ "replay_wrong_hash_control": {
+  "computed_hash": "e5d31200ff7bedad1879d27575cf02743b35fe17ff14bb2d8a1acea8cdce6085",
+  "expected_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "ok": false,
+  "verified": false
+ },
+ "prior_admit_receipt": "rec-e088bcd4"
+}

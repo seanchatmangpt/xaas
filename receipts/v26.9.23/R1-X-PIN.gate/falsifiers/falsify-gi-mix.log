@@ -1,0 +1,8 @@
+restored:  docs/sjira/v26.9.23/courts/gi_mix.sh (tree clean)
+    (elixir 1.20.2) lib/kernel/parallel_compiler.ex:548: anonymous fn/5 in Kernel.ParallelCompiler.spawn_workers/8
+could not compile dependency :faker, "mix compile" failed. Errors may have been logged above. You can recompile this dependency with "mix deps.compile faker --force", update it with "mix deps.update faker" or clean it with "mix deps.clean f
+REFUSED: GC23-0 compile_prose --check exited 1
+inner_exit=1
+FALSIFIER gi-mix: fired as expected
+sh $G/falsify.sh /Users/sac/wt/v26922/v23/R1-X-PIN $L/fals $n  93.18s user 28.23s system 192% cpu 1:03.00 total
+exit=0

@@ -22,7 +22,7 @@ defmodule Xaas.Ultracode.AutonomicTest do
   @moduletag :subprocess
   @moduletag timeout: 600_000
 
-  @source Path.expand("~/xaas-worktrees/repos/aps")
+  @source Path.expand("~/xaas/worktrees/repos/aps")
   @provider "zcode-autonomic-test"
 
   @moduletag skip:

@@ -1,0 +1,160 @@
+{
+  "checkpoint": "https://ggen-igniter.dev/sjira/v26.9.23#GC-26.9.24",
+  "descriptor": {
+    "execution_repo_alias": "xaas",
+    "order": "WO-14958CC7712C739E",
+    "provider": "recipe",
+    "verifier_suite": "ggen-sync-check",
+    "verifier_suite_registered": false
+  },
+  "first": {
+    "capability": "recipe:ggen-sync",
+    "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-3",
+    "classification": "Successor",
+    "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e",
+    "order": "WO-14958CC7712C739E",
+    "provider": "recipe",
+    "reason": "provider_capability",
+    "registered_capabilities": [
+      "recipe:mix-format"
+    ],
+    "resolve": "refused:unregistered_capability",
+    "resolver": "Xaas.Sa2a.Route.resolve/1",
+    "route": "UNSUPPORTED",
+    "standing": "UNSUPPORTED(provider_capability)",
+    "tuple_digest": "sha256:69e3e85717e565968829fe9a69c21fcb4935be9935083c7adb329ed1e6725a4b"
+  },
+  "inputs": {
+    "descriptor_sha256": "sha256:3b0214609435663b9d7939a51e21c755014fc63f45510d01547a861e476c88bf",
+    "frontier_sha256": "sha256:4b613d655cb916c56a600e79e05ce6be7d37ea06971eb832b4cae0f830eb7f7b",
+    "work_graph_sha256": "sha256:af4ac36624d53814bd5ae92c586ccab87353ac865751168c214f8f03b7766a77"
+  },
+  "items": [
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-3",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-14958cc7712c739e",
+      "order": "WO-14958CC7712C739E",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:69e3e85717e565968829fe9a69c21fcb4935be9935083c7adb329ed1e6725a4b"
+    },
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-225c3317ac8b1a7c",
+      "order": "WO-225C3317AC8B1A7C",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:5d20ca0fa6c4dac37e477efd0902025d77eed7c57c830f55ecc4f1484a53ac0f"
+    },
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-3",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-84e5c77ba6e27329",
+      "order": "WO-84E5C77BA6E27329",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:761e8f2f1c81003bc13e8fe6dde0dd457b35d96f249d32d0dcda4946725ad63f"
+    },
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-95b42e31b8d14f21",
+      "order": "WO-95B42E31B8D14F21",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:749761e64e96106338a22c6074c14e6cc315c5caa92c4efb0d76e4ee85f6edbb"
+    },
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-1",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-a5bdbed88ad1a65c",
+      "order": "WO-A5BDBED88AD1A65C",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:8e4bdc911cb471c1d1fab699fb44bed46f289685e916bf06719539f4746faae9"
+    },
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-eb2622dc89b96973",
+      "order": "WO-EB2622DC89B96973",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:3baf0b583e8435f9eed4b5b95f737d7e00c51d151bb12a79b6c0ea009a1a8e0c"
+    },
+    {
+      "capability": "recipe:ggen-sync",
+      "checkpoint_of": "https://ggen-igniter.dev/sjira/v26.9.23#GC24-2",
+      "classification": "Successor",
+      "iri": "https://ggen-igniter.dev/sjira/v26.9.23#WO-f0d81444c49fc00d",
+      "order": "WO-F0D81444C49FC00D",
+      "provider": "recipe",
+      "reason": "provider_capability",
+      "registered_capabilities": [
+        "recipe:mix-format"
+      ],
+      "resolve": "refused:unregistered_capability",
+      "resolver": "Xaas.Sa2a.Route.resolve/1",
+      "route": "UNSUPPORTED",
+      "standing": "UNSUPPORTED(provider_capability)",
+      "tuple_digest": "sha256:9d4680c21c87f2c33fcfbcd90d94fc162f569e6bc25eaff86bb2fbfb01f11687"
+    }
+  ],
+  "pipeline": [
+    "scripts/successor_work_graph.exs (semantic-jira-pack bootstrap/work_orders.rq)",
+    "mix semantic_jira.frontier",
+    "mix semantic_jira.descriptor --provider recipe",
+    "Xaas.Sa2a.Route.tuple/2 + Xaas.Sa2a.Route.resolve/1"
+  ],
+  "schema": "xaas/successor-intake/v1"
+}

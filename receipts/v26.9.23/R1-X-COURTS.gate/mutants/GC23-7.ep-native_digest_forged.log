@@ -1,0 +1,2 @@
+REFUSED: GC23-7 receipt.r.json: REFUSED(r_native_unbound) broken_term=R_missing_identity native=sha256:0000000000000000000000000000000000000000000000000000000000000000 sealed=sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1
+exit=1

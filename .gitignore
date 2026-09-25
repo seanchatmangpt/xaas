@@ -100,3 +100,10 @@ _build_clean/
 __pycache__/
 *.pyc
 tmp_out/
+
+# Consolidated xaas* runtime trees (2026-09-21 migration)
+/worktrees/
+/tmp/
+
+# Held-while-running mutex of .claude/workflow-compile-lock.sh
+.claude/.workflow-compile.lock

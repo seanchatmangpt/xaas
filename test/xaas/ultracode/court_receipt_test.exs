@@ -250,6 +250,134 @@ defmodule Xaas.Ultracode.CourtReceiptTest do
     end
   end
 
+  describe "produce/6 with the exit_status format" do
+    @format_iri @sj <> "#fri-format-acceptance"
+    @format_falsifier @sj <> "#fri-format-falsifier"
+
+    defp format_map do
+      %{
+        "acceptance" => %{@format_iri => %{"test" => "format"}},
+        "falsifiers" => %{@format_falsifier => %{"test" => "format"}},
+        "courts" => [@court]
+      }
+    end
+
+    defp exit_step(exit_code, status),
+      do: %{"id" => "format", "exit" => exit_code, "status" => status, "output_tail" => ""}
+
+    defp produce_exit(step),
+      do:
+        CourtReceipt.produce(
+          format_map(),
+          "ggen-igniter-format",
+          %{result_format: "exit_status"},
+          step,
+          @head,
+          @argv_sha
+        )
+
+    test "exit 0 is the step's pass verdict; a non-zero fail exit is its fail verdict" do
+      assert {:ok, green} = produce_exit(exit_step(0, "pass"))
+      assert green["acceptance_results"] == %{@format_iri => true}
+      assert green["falsifier_results"] == %{@format_falsifier => "survived"}
+      assert green["court_results"][@court]["passed"] == true
+      assert green["court_results"][@court]["step_id"] == "format"
+
+      assert {:ok, red} = produce_exit(exit_step(1, "fail"))
+      assert red["acceptance_results"] == %{@format_iri => false}
+      assert red["falsifier_results"] == %{@format_falsifier => "failed"}
+      assert red["court_results"][@court]["passed"] == false
+    end
+
+    test "an unobserved exit (timeout, spawn error, infra exit) is a refusal, never a verdict" do
+      for step <- [exit_step(nil, "timeout"), exit_step(nil, "error"), exit_step(2, "error")] do
+        assert {:error,
+                {:refused_court_receipt, {:missing_verdict, :acceptance, @format_iri, "format"}}} =
+                 produce_exit(step)
+      end
+    end
+
+    test "a verdict for another step id never answers the mapped step" do
+      assert {:error, {:refused_court_receipt, {:missing_verdict, :acceptance, _, "format"}}} =
+               produce_exit(%{exit_step(0, "pass") | "id" => "compile"})
+    end
+
+    # The registered ggen-igniter-format suite pins the graph side's own
+    # toolchain by absolute PATH (asdf installs under ~/.asdf). A runner where
+    # that PATH does not yield a working `mix` (CI: setup-beam, no asdf) cannot
+    # execute the real court, so the test is skipped by name -- never faked.
+    @format_toolchain (case System.cmd(
+                              "/usr/bin/env",
+                              [
+                                "-i",
+                                "HOME=" <> System.tmp_dir!(),
+                                "PATH=" <> TargetSuites.devs()["ggen-igniter-format"].env["PATH"],
+                                "mix",
+                                "--version"
+                              ],
+                              stderr_to_stdout: true
+                            ) do
+                         {_, 0} -> true
+                         _ -> false
+                       end)
+    @tag skip:
+           if(@format_toolchain,
+             do: false,
+             else:
+               "ggen-igniter-format toolchain absent: no working mix on the suite's pinned PATH"
+           )
+    @tag timeout: 300_000
+    test "REAL mix format court over a real tmp repo: formatted -> pass, unformatted -> fail" do
+      suite = TargetSuites.devs()["ggen-igniter-format"]
+      repo = format_repo("defmodule A do\n  def a, do: 1\nend\n")
+
+      assert {:ok, green} = produce_real(suite, repo)
+      assert green["acceptance_results"] == %{@format_iri => true}
+      assert green["court_results"][@court]["passed"] == true
+
+      File.write!(Path.join(repo, "a.ex"), "defmodule A do\ndef a,   do: 1\nend\n")
+
+      assert {:ok, red} = produce_real(suite, repo)
+      assert red["acceptance_results"] == %{@format_iri => false}
+      assert red["falsifier_results"] == %{@format_falsifier => "failed"}
+      assert red["court_results"][@court]["passed"] == false
+    end
+
+    # Runs the declared receipt step's argv under the declared env through
+    # `/usr/bin/env -i` (a throwaway HOME, as the verifier does) and feeds the
+    # OBSERVED exit into produce/6.
+    defp produce_real(suite, repo) do
+      [%{id: id, argv: argv, receipt: true}] = suite.steps
+      home = Path.join(repo, ".home-#{System.unique_integer([:positive])}")
+      File.mkdir_p!(home)
+
+      env_args =
+        suite.env
+        |> Map.merge(%{"HOME" => home, "TMPDIR" => home})
+        |> Enum.map(fn {k, v} -> "#{k}=#{v}" end)
+
+      {out, code} =
+        System.cmd("/usr/bin/env", ["-i" | env_args] ++ argv, cd: repo, stderr_to_stdout: true)
+
+      File.rm_rf!(home)
+      status = if code == 0, do: "pass", else: "fail"
+      step = %{"id" => id, "exit" => code, "status" => status, "output_tail" => out}
+      CourtReceipt.produce(format_map(), "ggen-igniter-format", suite, step, @head, @argv_sha)
+    end
+
+    defp format_repo(source) do
+      repo =
+        Path.join(System.tmp_dir!(), "xaas-court-format-#{System.unique_integer([:positive])}")
+
+      File.mkdir_p!(repo)
+      on_exit(fn -> File.rm_rf(repo) end)
+      {_, 0} = System.cmd("git", ["-C", repo, "init", "--quiet"], stderr_to_stdout: true)
+      File.write!(Path.join(repo, ".formatter.exs"), ~s([inputs: ["*.ex"]]\n))
+      File.write!(Path.join(repo, "a.ex"), source)
+      repo
+    end
+  end
+
   describe "suite declaration admission (TargetSuites.validate/1)" do
     test "the code-declared suites (eds-dod receipt-flagged) stay admissible" do
       assert :ok = TargetSuites.validate(TargetSuites.devs())
@@ -272,6 +400,17 @@ defmodule Xaas.Ultracode.CourtReceiptTest do
 
       assert {:error, problems} = TargetSuites.validate(%{"s" => suite})
       assert Enum.any?(problems, &(&1 =~ "receipt_argv"))
+    end
+
+    test "the ggen-igniter-format suite is one exit_status receipt step: mix format" do
+      assert :ok = TargetSuites.validate(TargetSuites.devs())
+      format = TargetSuites.devs()["ggen-igniter-format"]
+      assert format.result_format == "exit_status"
+      assert "exit_status" in CourtReceipt.result_formats()
+      assert format.env == TargetSuites.devs()["ggen-igniter-dod"].env
+
+      assert [%{id: "format", receipt: true, argv: ["mix", "format", "--check-formatted"]}] =
+               format.steps
     end
 
     test "an unknown result_format is refused" do
@@ -298,7 +437,9 @@ defmodule Xaas.Ultracode.CourtReceiptTest do
     }
 
     test "a valid court_map is admitted onto the descriptor" do
-      assert {:ok, descriptor} = SemanticWork.admit(Map.put(@descriptor, :court_map, court_map()))
+      assert {:ok, descriptor} =
+               SemanticWork.admit(Map.put(@descriptor, :court_map, court_map()), binding: :graph)
+
       assert descriptor.court_map["courts"] == [@court]
     end
 
@@ -306,14 +447,18 @@ defmodule Xaas.Ultracode.CourtReceiptTest do
       raw = %{@descriptor | execution_policy: "autonomic_wave_attempt"}
 
       assert {:ok, descriptor} =
-               SemanticWork.admit(Map.put(raw, "court_map", %{"courts" => [@court]}))
+               SemanticWork.admit(Map.put(raw, "court_map", %{"courts" => [@court]}),
+                 binding: :graph
+               )
 
       assert descriptor.court_map["courts"] == [@court]
     end
 
     test "a malformed court_map is a typed refusal" do
       assert {:error, {:refused_court_map, {:unknown_keys, _}}} =
-               SemanticWork.admit(Map.put(@descriptor, :court_map, %{"bogus" => %{}}))
+               SemanticWork.admit(Map.put(@descriptor, :court_map, %{"bogus" => %{}}),
+                 binding: :graph
+               )
     end
   end
 end

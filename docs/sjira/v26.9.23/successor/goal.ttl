@@ -1,0 +1,80 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v23: <https://ggen-igniter.dev/sjira/v26.9.23#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# GC-26.9.24 successor goal graph (lane V23-H, gate GC23-12 Semantic
+# Self-Hosting; PRD section 12, ARD section 24 M9). It is the root the
+# first-mile compiler reads for the successor prose
+# docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md (DRAFT, awaiting operator
+# acceptance): root v23:GC-26.9.24 pins that prose's sha256 and names the
+# gates GC24-0 .. GC24-3 the prose itself declares ("GC24-<n>, <title>: ...").
+#
+# Law of this graph:
+# - It holds NO sj:WorkOrder, no sj:Receipt and no sj:receipt. Every
+#   GC-26.9.24 work order is compiler output: `mix semantic_jira.compile_prose`
+#   (ggen_igniter, lane V23-C) over the prose, the candidates
+#   (candidates.ttl, emitted by scripts/sjira/prose_spans.py from the recorded
+#   LLM extraction candidates.extract.json) and this graph writes
+#   compiled/{propositions,orders}.ttl; the GC23-12 court recomputes them and
+#   refuses any order no admitted proposition produced.
+# - The root carries no sj:boundaryClass: the compiler's root law
+#   (prose/root.rq) takes a Successor-classed checkpoint for a bucket, not a
+#   root. docs/sjira/v26.9.23/goal.ttl types the same IRI sj:Successor as the
+#   bucket of GC-26.9.23; the two graphs are read separately.
+# - Operator acceptance is the one open edge: docs/sjira/v26.9.23/successor/ACCEPTED
+#   (created only by the operator) must contain this root's sj:sourceSha256.
+#   Until it does, the GC23-12 court exits BLOCKED(operator_acceptance).
+# - Gates carry no sj:courtCommand yet: their courts land with the
+#   GC-26.9.24 machinery lanes after acceptance.
+
+v23:GC-26.9.24 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-26.9.24" ;
+    rdfs:label "GC-26.9.24 ggen projection-drift repair (successor of GC-26.9.23)" ;
+    dcterms:description "ggen projection-drift repair is a KNOWN class: the sJira, SA2A and XaaS pipeline of v26.9.23 regenerates drifted ggen projections with ggen sync through the deterministic recipe provider, verified by ggen sync --check, with no LLM on the path (successor prose v26.9.24-wbpr.md)." ;
+    dcterms:source "docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md" ;
+    sj:sourceSha256 "sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "b4ef5d664cb5afa2ab5456ac20d28500f5b00144" ;
+    sj:successorOf v23:GC-26.9.23 ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:requiresEvidence sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.9.24:GC-26.9.24" ;
+    sj:successorPolicy "discovered work that falsifies no GC24 proposition -> the successor of GC-26.9.24" ;
+    sj:acceptance v23:GC-26.9.24-acceptance ;
+    sj:falsifier v23:GC-26.9.24-falsifier .
+v23:GC-26.9.24-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "GC-26.9.24 acceptance" ;
+    dcterms:description "docs/sjira/v26.9.23/successor/ACCEPTED names the sha256 of the successor prose, every GC24 gate is ALIVE, and every GC-26.9.24 work order recomputes from an admitted proposition of that prose." .
+v23:GC-26.9.24-falsifier a sj:Falsifier ;
+    rdfs:label "GC-26.9.24 falsifier" ;
+    dcterms:description "A GC-26.9.24 work order exists that no admitted proposition of the accepted successor prose produced." .
+
+v23:GC24-0 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC24-0" ;
+    rdfs:label "GC24-0 Accepted successor prose" ;
+    dcterms:description "The operator accepted the successor prose, and the GC-26.9.24 work orders are recomputed from it by mix semantic_jira.compile_prose with no hand-authored backlog." ;
+    sj:checkpointOf v23:GC-26.9.24 ;
+    sj:boundaryClass sj:FirstMile .
+
+v23:GC24-1 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC24-1" ;
+    rdfs:label "GC24-1 Projection-drift detection" ;
+    dcterms:description "The ggen-sync-check verifier runs ggen sync --check in a clean worktree of the episode subject and exits non-zero whenever a generated file differs from what ggen sync renders." ;
+    sj:checkpointOf v23:GC-26.9.24 ;
+    sj:boundaryClass sj:Core .
+
+v23:GC24-2 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC24-2" ;
+    rdfs:label "GC24-2 Deterministic projection repair" ;
+    dcterms:description "The capability recipe:ggen-sync resolves to the recipe-worker provider, which runs ggen sync on the drifted subject and commits only files that ggen sync renders." ;
+    sj:checkpointOf v23:GC-26.9.24 ;
+    sj:boundaryClass sj:Core .
+
+v23:GC24-3 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC24-3" ;
+    rdfs:label "GC24-3 Independent consequence" ;
+    dcterms:description "An independent run of ggen sync --check on a fresh worktree at the produced head exits 0, and the same check exits non-zero when the recipe commit is reverted." ;
+    sj:checkpointOf v23:GC-26.9.24 ;
+    sj:boundaryClass sj:LastMile .

@@ -1,0 +1,32 @@
+Wed Sep 23 18:08:40 PDT 2026
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 516 files (.ex)
+Finding suitable PLTs
+Checking PLT...
+[:a2a, :abnf_parsec, :absinthe, :absinthe_plug, :ash, :ash_a2a, :ash_admin, :ash_ai, :ash_archival, :ash_authentication, :ash_authentication_phoenix, :ash_cloak, :ash_double_entry, :ash_events, :ash_graphql, :ash_iam, :ash_json_api, :ash_money, :ash_oban, :ash_onetime, :ash_paper_trail, :ash_phoenix, :ash_postgres, :ash_r2rml, :ash_rate_limiter, :ash_sql, :ash_state_machine, :ash_typescript, :asn1, :assent, :aws_signature, :axon, :bandit, :bcrypt_elixir, :benchee, :broadway, :bumblebee, :cachex, :castore, :certifi, :cinder, :cloak, :comeonin, :compiler, :complex, :content_type, :conv_case, :cowboy, :cowboy_telemetry, :cowlib, :crux, :crypto, :db_connection, :decimal, :deep_merge, :dns_cluster, :dotenvy, :ecto, :ecto_sql, :eex, :elixir, :esbuild, :eternal, :ets, :ex4pm, :ex_ast, :ex_aws, :ex_hash_ring, :ex_money, :ex_money_sql, :ex_unit, :exla, :explorer, :expo, :faker, :file_system, :finch, :gen_stage, :gen_state_machine, :gettext, :ggen_igniter, :glob_ex, :hackney, :hammer, :heroicons, :hpax, :idna, :igniter, :inets, :iterex, :jason, :jcs, :joken, :jose, :json_ld, :json_xema, :jsv, :jumper, :kernel, :localize, :localize_sql, :logger, :makeup, :makeup_elixir, :metrics, :mime, :mimerl, :mint, :mix, :mnesia, :multigraph, :nimble_csv, :nimble_options, :nimble_parsec, :nimble_pool, :nx, :nx_image, :nx_signal, :oban, :octo_fetch, :open_api_spex, :opentelemetry_api, :opentelemetry_ash, :opentelemetry_process_propagator, :owl, :parse_trans, :petal_components, :phoenix, :phoenix_ecto, :phoenix_html, :phoenix_html_helpers, :phoenix_live_dashboard, :phoenix_live_reload, :phoenix_live_view, :phoenix_pubsub, :phoenix_template, :phoenix_view, :phx_new, :picosat_elixir, :plug, :plug_cowboy, :plug_crypto, :polaris, :postgrex, :prom_ex, :protocol_ex, :public_key, :ranch, :rdf, :rdf_xml, :reactor, :req, :req_llm, :rewrite, :runtime_tools, :rustler, :rustler_precompiled, :safetensors, :saxy, :server_sent_events, :sleeplocks, :slugify, :sourceror, :spark, :sparql, :sparql_client, :spitfire, :splode, :ssl, :ssl_verify_fun, :statistex, :stdlib, :stream_data, :stripity_stripe, :sweet_xml, :swoosh, :syntax_tools, :table, :table_rex, :tailwind, :telemetry, :telemetry_metrics, :telemetry_metrics_prometheus_core, :telemetry_poller, :tesla, :text_diff, :texture, :thousand_island, :tokenizers, :toml, :unicode_util_compat, :uniq, :unpickler, :unsafe, :unzip, :uri_query, :wasmex, :websock, :websock_adapter, :websockex, ...]
+PLT is up to date!
+ignore_warnings: .dialyzer_ignore.exs
+
+Starting Dialyzer
+[
+  check_plt: false,
+  init_plt: ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/priv/plts/project.plt",
+  files: [~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.XaasWeb.Plugs.ResolveOrgActor.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Xaas.AwsRepo.FixtureAdapter.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Xaas.Autofde.StatusParser.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Inspect.Xaas.Governance.ApprovalSourceEscrowSnapshot.beam",
+   ~c"/Users/sac/wt/v26922/v23/R1-X-PIN/_build/dev/lib/xaas/ebin/Elixir.Xaas.Operations.CapabilityLivenessReceipt.Workers.CheckRegressions.beam",
+   ...],
+  ...
+]
+Total errors: 29, Skipped: 29, Unnecessary Skips: 0
+done in 0m24.6s
+done (passed successfully)
+env MIX_ENV=dev mix dialyzer --format github  161.65s user 30.72s system 493% cpu 39.011 total
+exit=0

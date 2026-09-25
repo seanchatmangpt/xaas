@@ -1,0 +1,8 @@
+17264513e618881363565135511fceb8552f925a449de3e97cae87daea5841b5  /Users/sac/.hex/packages/hexpm/ash_a2a-26.9.21.tar
+8164f5c6e1857102e73282c4e34de6a4f2c9e554f8f75be4c0640edad30a2b93  src/lib/ash_a2a/gall/capability.ex
+[
+  decode: :error,
+  valid: false,
+  labels: ["Read", "Write", "Edit", "Commit", "Push", "Publish", "Deploy",
+   "Merge"]
+]

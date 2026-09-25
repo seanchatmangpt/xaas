@@ -1,0 +1,10 @@
+{
+  "result": {
+    "computed_hash": "6f19f7da1a0f2e812e2ff8cf4491039cf41db89196e5d473d5dcdce323e0c30d",
+    "expected_hash": "6f19f7da1a0f2e812e2ff8cf4491039cf41db89196e5d473d5dcdce323e0c30d",
+    "ok": true,
+    "verified": true
+  },
+  "expected_hash": "6f19f7da1a0f2e812e2ff8cf4491039cf41db89196e5d473d5dcdce323e0c30d"
+}
+wrong-hash: {:error, %{"computed_hash" => "6f19f7da1a0f2e812e2ff8cf4491039cf41db89196e5d473d5dcdce323e0c30d", "expected_hash" => "0000000000000000000000000000000000000000000000000000000000000000", "ok" => false, "verified" => false}}

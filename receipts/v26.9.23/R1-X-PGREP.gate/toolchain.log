@@ -1,0 +1,24 @@
+## 2026-09-23T20:37:44Z
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/elixir
+/Users/sac/.asdf/installs/elixir/1.20.2-otp-28/bin/mix
+/Users/sac/.asdf/installs/erlang/28.5.0.2/bin/erl
+Erlang/OTP 28 [erts-16.4.0.2] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit]
+
+Elixir 1.20.2 (compiled with Erlang/OTP 28)
+otp_release 28 erts 16.4.0.2
+cat: /Users/sac/.asdf/installs/erlang/28.5.0.2/lib/erlang/releases/28/OTP_VERSION: No such file or directory
+/usr/bin/pgrep
+/usr/bin/perl
+ProductName:		macOS
+ProductVersion:		26.2
+BuildVersion:		25C56
+Python 3.14.3
+<string>:1: DeprecationWarning: Accessing jsonschema.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for jsonschema's version.
+jsonschema 4.23.0
+psql (PostgreSQL) 14.19 (Homebrew)
+elixir 1.20.2-otp-28
+erlang 28.5.0.2
+9d8343c16444361b29cc422fc3d70f659d824767bc47229ddacf4fb407f3161b  /Users/sac/wt/v26922/v23/R1-X-PGREP/mix.lock
+9d8343c16444361b29cc422fc3d70f659d824767bc47229ddacf4fb407f3161b  /Users/sac/wt/v26922/fri/xaas-int/mix.lock
+1.20.2k
+Elixir.Mix.SCM.Pathw

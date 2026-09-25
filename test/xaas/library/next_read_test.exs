@@ -286,7 +286,9 @@ defmodule Xaas.Library.NextReadTest do
 
       assert length(logs) == before_count + 1
 
-      log = Enum.max_by(logs, & &1.inserted_at)
+      # `DateTime` comparator: default max_by compares %DateTime{} structurally (see
+      # test/xaas/datetime_structural_compare_guard_test.exs).
+      log = Enum.max_by(logs, & &1.inserted_at, DateTime)
 
       assert log.candidate_pool_size >= length(recs)
       assert log.weights["collab"] == Config.weights().collab

@@ -1,0 +1,35 @@
+{
+  "schema": "xaas/machine-experience-exploration/v1",
+  "episode": "me-1",
+  "order": "EP-A",
+  "problem_class": "format_drift",
+  "producer": "llm:claude-opus-5-5@B1b/V23-M",
+  "producer_class": "llm",
+  "producer_note": "The one-time UNKNOWN exploration of GC23-9 episode me-1, performed by the lane V23-M executor (an LLM agent session) and recorded here as a CANDIDATE. It is the only LLM edge of GC23-9: it proposes; it executes nothing, grants nothing and is admitted only through the no-LLM drive, the independent ggen-igniter-format court and the revert falsifier. Episode me-2 must not need it.",
+  "started_at": "2026-09-23T13:56:44Z",
+  "finished_at": "2026-09-23T13:56:55Z",
+  "budget": {
+    "time_s": 1800,
+    "drive_runs": 2,
+    "candidates": 2,
+    "consequence_ceiling": "CONSTRUCT",
+    "evidence_requirement": [
+      "drive_alive",
+      "independent_pass",
+      "revert_killed",
+      "r_alive"
+    ]
+  },
+  "inputs": [
+    "docs/sjira/v26.9.23/episodes/me-1/work.json order EP-A: failure_class format_drift, no requires_capability, postcondition `mix format --check-formatted` exits 0 at the candidate head, authority_ceiling CONSTRUCT, path_scope .formatter.exs config lib mix.exs test",
+    "docs/sjira/v26.9.23/episodes/me-1/unknown/route.json: UNKNOWN(no_capability_no_experience), zero experiences considered",
+    "config/config.exs :ultracode_construction_recipes: the registered deterministic recipes (recipe:mix-format -> argv mix format, elixir_toolchain :target)"
+  ],
+  "candidates": [
+    {
+      "capability": "recipe:mix-format",
+      "authority_ceiling": "CONSTRUCT",
+      "rationale": "The postcondition is exactly the check mode of `mix format`; the registered recipe runs `mix format` under the subject's own toolchain and commits the delta through the recipe worker, which stays inside the order's CONSTRUCT ceiling and path scope. Falsifiable by the order's own court: if the recipe does not restore `mix format --check-formatted` exit 0, or reverting its commit does not make the court fail, the candidate is refused."
+    }
+  ]
+}

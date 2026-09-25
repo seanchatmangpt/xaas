@@ -67,9 +67,20 @@ ENV ERL_FLAGS="+JPperf true"
 WORKDIR /app
 
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends build-essential git \
+  && apt-get install -y --no-install-recommends build-essential git curl ca-certificates clang libclang-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+# ggen_igniter (hex) compiles its Rustler NIF native/ggen_graph_nif from source
+# at `mix deps.compile` (`use Rustler`, no precompiled artifact): the builder
+# needs cargo >= 1.87 (oxigraph/oxrocksdb-sys 0.5.11 rust-version) and libclang
+# (oxrocksdb-sys runs bindgen). Without it: System.cmd("cargo", ...) :enoent.
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+  | sh -s -- -y --no-modify-path --profile minimal --default-toolchain 1.97.0 \
+  && cargo --version
 
 RUN mix local.hex --force && mix local.rebar --force
 

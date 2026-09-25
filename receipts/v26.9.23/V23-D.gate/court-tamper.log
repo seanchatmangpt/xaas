@@ -1,0 +1,5 @@
+court anti-vacuity: each court run on a scratch copy of docs/sjira/v26.9.23/episodes/fmt-1 with ONE artifact tampered (HEAD 7fec9d883580984ef8ac623c210b9985652d4398); expected exit 1
+GC23-5 tamper[receipt.r.json authority.actor=zcode] exit=1 :: REFUSED: GC23-5 executor is not the deterministic provider, or the OCEL names an LLM provider
+GC23-6 tamper[receipt.json final_head = the drift subject (consequence removed)] exit=1 :: REFUSED: GC23-6 receipt head parent bc8ea06d7fa4e249283f2b8fcd00fef5128b4151 is not the episode subject 80a8a4c71b331a39771ad65d1149eb835645d17c
+GC23-7 tamper[ocel2.json last event dropped] exit=1 :: REFUSED: GC23-7 pm4py, equivalence or reached-class check failed
+GC23-8 tamper[frontier_after.json eligible emptied (EP-B never entered)] exit=1 :: REFUSED: GC23-8 the recorded frontier diff does not close EP-A and open EP-B

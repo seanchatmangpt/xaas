@@ -10,7 +10,7 @@ defmodule Xaas.Operations.AutofdePlannerCacheHotset do
   Never calls gymact's real DO path (POST /episodes/{id}/actions/selected); this is a
   planning connector, not an actuation connector.
   """
-  use Ash.Resource,
+  use Xaas.Resource,
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]

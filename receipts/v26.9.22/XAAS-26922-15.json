@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-15",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED: the land-back hop (stop re-sensing integrated APS items; authority-gated promote-to-default edge or explicit human gate) requires the user's DO-authority decision. No authority grant was supplied this wave; planning a promote-to-default edge without it would widen the authority resolver, which is refused.",
+  "awaiting_refs": ["user DO-authority decision"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}

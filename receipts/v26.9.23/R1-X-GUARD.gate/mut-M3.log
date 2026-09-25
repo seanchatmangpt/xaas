@@ -1,0 +1,94 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+13:51:24.973 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+13:51:25.346 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+13:51:25.626 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+13:51:25.706 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:25.707 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+13:51:25.724 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:25.724 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+13:51:25.737 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:25.737 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+13:51:25.745 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:25.745 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+Running ExUnit with seed: 729803, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+13:51:25.755 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:25.755 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+13:51:25.759 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+13:51:25.759 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-GUARD/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+    warning: incompatible types given to Path.join/2:
+
+        Path.join(nil, "_build/test")
+
+    given types:
+
+        -nil-, binary()
+
+    but expected one of:
+
+        binary() or empty_list() or non_empty_list(term(), term()), term()
+
+    type warning found at:
+    │
+ 68 │     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
+    │                                             ~
+    │
+    └─ test/xaas/ultracode/semantic_drive_test.exs:68:45: Xaas.Ultracode.SemanticDriveTest.__ex_unit_setup_all_0/1
+
+....*****.
+
+  1) test no_llm_env.sh and the guard agree: the built environment passes, a caller credential does not survive, an assignment is refused (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:838
+     match (=) failed
+     code:  assert :ok = SemanticDrive.no_llm_guard(built)
+     left:  :ok
+     right: {:refused,
+             %{
+               "broken_term" => "mu_on_O",
+               "detail" => %{
+                 "binaries" => ["/opt/homebrew/bin/codex",
+                  "/opt/homebrew/bin/gemini",
+                  "/opt/homebrew/bin/litellm",
+                  "/opt/homebrew/bin/ollama",
+                  "/opt/homebrew/bin/openai"],
+                 "providers" => ["google-gemini", "litellm",
+                  "ollama", "openai"],
+                 "unadmitted" => [],
+                 "variables" => []
+               },
+               "hop" => "guard",
+               "reason" => "llm_credential_present",
+               "standing" => "REFUSED(llm_credential_present)"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:846: (test)
+
+
+
+  2) test the real task under the F3 court environment: clean passes; GEMINI_API_KEY, ANTHROPIC_API_KEY and an unlisted variable are refused (exit 3) (Xaas.Ultracode.SemanticDriveNoLlmGuardTest)
+     test/xaas/ultracode/semantic_drive_test.exs:886
+     ** (MatchError) no match of right hand side value:
+
+         {"    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead\n    │\n 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do\n    │                         ~\n    │\n    └─ /Users/sac/wt/v26922/v23/R1-X-GUARD/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)\n\n{\"broken_term\":\"mu_on_O\",\"detail\":{\"binaries\":[\"/opt/homebrew/bin/codex\",\"/opt/homebrew/bin/gemini\",\"/opt/homebrew/bin/litellm\",\"/opt/homebrew/bin/ollama\",\"/opt/homebrew/bin/openai\"],\"providers\":[\"google-gemini\",\"litellm\",\"ollama\",\"openai\"],\"unadmitted\":[],\"variables\":[]},\"hop\":\"guard\",\"reason\":\"llm_credential_present\",\"standing\":\"REFUSED(llm_credential_present)\"}\n",
+          3}
+
+     code: {clean, 0} = builder([], task, mix_env)
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:890: (test)
+
+......
+Finished in 2.9 seconds (1.6s async, 1.3s sync)
+
+Result: 11/13 passed, 5 skipped
+Failed: 2 tests

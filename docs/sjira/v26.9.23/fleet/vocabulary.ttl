@@ -1,0 +1,71 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+# Goal-graph-local fleet vocabulary for GC-26.9.23 gate GC23-11 (lane V23-F).
+#
+# The semantic-jira-pack (ggen_igniter priv/ggen/semantic-jira-pack/ontology.ttl on
+# friday/gc-fri-0800 at 5984ec48) declares no fleet-classification terms. These terms are
+# local to docs/sjira/v26.9.23 until the pack admits them (successor item for GC-26.9.24).
+# The observation terms sj:ObservedRepository, sj:repositoryPath, sj:fleetRole,
+# sj:githubSlug, sj:observedSha, sj:dirtyEntryCount and sj:defaultBranch are reused
+# verbatim from the fleet-observation candidate vocabulary of GGEN_IGNITER-26922-15
+# (uncommitted in its own worktree, not on the critical-path base), so the two converge
+# without renaming when that candidate is admitted.
+#
+# Consumers: scripts/sjira/fleet_matrix.py (check-classification, emit, check-standing),
+# docs/sjira/v26.9.23/courts/GC23-11.sh. Standing is never asserted in this vocabulary's
+# instances: classification.ttl declares scope, receipts carry standing.
+
+# ── Classification ──────────────────────────────────────────────────────────
+
+sj:FleetClassification a rdfs:Class ;
+    rdfs:label "Fleet classification" ;
+    rdfs:comment "Exactly one per universe repository (ARD F7): its class, whether the checkpoint requires it, the reason and the observed evidence." .
+
+sj:FleetClass a rdfs:Class ;
+    rdfs:label "Fleet class" ;
+    rdfs:comment "CriticalPath (required; needs exact-subject standing) or one of the PRD section 13 RemainingFrontier classes Successor, Blocked, Unsupported, Refused." .
+
+sj:CriticalPath a sj:FleetClass ; rdfs:label "CriticalPath" ;
+    rdfs:comment "Required by the checkpoint: STOP needs an admitted ALIVE receipt at the repository's exact head." .
+sj:Successor a sj:FleetClass ; rdfs:label "Successor" ;
+    rdfs:comment "Not required; any work on it belongs to the successor checkpoint named by sj:successorCheckpoint." .
+sj:Blocked a sj:FleetClass ; rdfs:label "Blocked" ;
+    rdfs:comment "Not required; its own standing path is blocked on a named edge outside this checkpoint." .
+sj:Unsupported a sj:FleetClass ; rdfs:label "Unsupported" ;
+    rdfs:comment "Not required; exact-subject standing is not supported for it as observed (for example, no single subject)." .
+sj:Refused a sj:FleetClass ; rdfs:label "Refused" ;
+    rdfs:comment "Not required; refused from this checkpoint's scope (not relevant to it)." .
+
+sj:fleetClass a rdf:Property ; rdfs:domain sj:FleetClassification ; rdfs:range sj:FleetClass .
+sj:requiredForCheckpoint a rdf:Property ; rdfs:domain sj:FleetClassification ; rdfs:range xsd:boolean ;
+    rdfs:comment "true iff sj:fleetClass is sj:CriticalPath." .
+sj:classifiedUnder a rdf:Property ; rdfs:comment "The root GoalCheckpoint the classification is made under." .
+sj:classifiesRepository a rdf:Property ; rdfs:domain sj:FleetClassification .
+sj:classificationReason a rdf:Property ; rdfs:range xsd:string .
+sj:evidence a rdf:Property ; rdfs:range xsd:string ;
+    rdfs:comment "An observed fact with its source: path, command, PR number, run id or receipt." .
+sj:successorCheckpoint a rdf:Property ;
+    rdfs:comment "For sj:Successor rows: the GoalCheckpoint that receives the repository's work." .
+
+# ── Matrix projection (written only by fleet_matrix.py emit) ────────────────
+
+sj:FleetMatrix a rdfs:Class ; rdfs:subClassOf prov:Entity ; rdfs:label "Fleet matrix (generated projection)" .
+sj:FleetMatrixRow a rdfs:Class ; rdfs:subClassOf prov:Entity ; rdfs:label "Fleet matrix row" .
+sj:matrixOf a rdf:Property .
+sj:observedAt a rdf:Property ; rdfs:range xsd:dateTime .
+sj:classificationDigest a rdf:Property ; rdfs:range xsd:string .
+sj:observationsDigest a rdf:Property ; rdfs:range xsd:string .
+sj:rowCount a rdf:Property ; rdfs:range xsd:integer .
+sj:observedBranch a rdf:Property ; rdfs:range xsd:string .
+sj:defaultBranchSha a rdf:Property ; rdfs:range xsd:string .
+sj:aheadCount a rdf:Property ; rdfs:range xsd:integer .
+sj:behindCount a rdf:Property ; rdfs:range xsd:integer .
+sj:openPullRequestCount a rdf:Property ; rdfs:range xsd:integer .
+sj:fetchStatus a rdf:Property ; rdfs:range xsd:string .
+sj:subjectPath a rdf:Property ; rdfs:range xsd:string ;
+    rdfs:comment "The checkout under judgement for a CriticalPath repository (the integration worktree)." .
+sj:subjectSha a rdf:Property ; rdfs:range xsd:string .

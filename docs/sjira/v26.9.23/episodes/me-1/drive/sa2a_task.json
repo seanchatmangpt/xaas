@@ -1,0 +1,38 @@
+{
+  "contextId": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+  "input": [
+    {
+      "data": {
+        "schema": "semantic-jira/route-tuple/v1",
+        "tuple": {
+          "authorityCeiling": "CONSTRUCT",
+          "consequenceClass": "postcondition",
+          "evidenceCeiling": "repository-local",
+          "evidenceHorizon": "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree",
+          "exclusions": [
+            "no LLM provider on the KNOWN path",
+            "no file outside path_scope changes",
+            "no push, merge or publish"
+          ],
+          "postcondition": "`mix format --check-formatted` exits 0 at the candidate head",
+          "requiresCapability": "recipe:mix-format",
+          "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A",
+          "workOrder": "EP-A"
+        },
+        "workOrderDigest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb"
+      },
+      "kind": "data"
+    }
+  ],
+  "metadata": {
+    "authority": "NONE",
+    "baseSha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+    "graphDigest": "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb",
+    "schema": "semantic-jira/route-tuple/v1"
+  },
+  "status": {
+    "reasonCode": "UNKNOWN",
+    "state": "submitted"
+  },
+  "taskId": "urn:semantic-jira:v26.9.23:episode:me-1:EP-A"
+}

@@ -1,0 +1,66 @@
+{
+  "acceptance_results": {
+    "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check": true
+  },
+  "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+  "candidate_sha": "9c5e7571c948f97f6ae08d9399f69f502d81efd4",
+  "court_results": {
+    "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format": {
+      "passed": true
+    }
+  },
+  "definition_digest": "sha256:9e7833aea62a843e884e0fe2e0ca4cf13c5e61d8b40ab9b1b4050704c6bcab44",
+  "evidence": {
+    "acceptance_results": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-acceptance-format-check": true
+    },
+    "base_sha": "80a8a4c71b331a39771ad65d1149eb835645d17c",
+    "court_results": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#court-episode-fmt-1-format": {
+        "passed": true
+      }
+    },
+    "evidence_ceiling": "repository-local",
+    "evidence_types": [
+      "exact_head_verification",
+      "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-fmt-1-format-check",
+      "verification"
+    ],
+    "falsifier_results": {
+      "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent": "survived"
+    },
+    "inherited_standing": false,
+    "observed_execution": true,
+    "receipt_classes": [
+      "verification"
+    ],
+    "repository": "seanchatmangpt/ggen_igniter",
+    "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A"
+  },
+  "evidence_ceiling": "repository-local",
+  "evidence_types": [
+    "exact_head_verification",
+    "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-fmt-1-format-check",
+    "verification"
+  ],
+  "falsifier_results": {
+    "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-fmt-1-falsifier-drift-absent": "survived"
+  },
+  "identity": "EP-A",
+  "inherited_standing": false,
+  "observed_execution": true,
+  "receipt_classes": [
+    "verification"
+  ],
+  "receipt_digest": "sha256:2d70981e915b20f12160ed252ccbb760f4bab4e96d3d2b78188a6beba3a4cbf1",
+  "repository": "seanchatmangpt/ggen_igniter",
+  "snapshot_digest": "sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c",
+  "source_snapshot_digest": "sha256:a6d7832e9db9b3c48d0de24db88710932ea26dc2665f866d8f08f1135bef379c",
+  "subject": "seanchatmangpt/ggen_igniter@v23/episode-fmt-1#EP-A",
+  "target": "ALIVE",
+  "xaas": {
+    "epoch_id": "eed260ac-acc8-4c70-8284-57555bd271da",
+    "receipt_id": "fa8694c3-ce5a-4fb1-8634-2c2969f23c1d",
+    "run_id": "3e70ff03-aea9-413f-9fa7-fb3c2dcd6cfa"
+  }
+}

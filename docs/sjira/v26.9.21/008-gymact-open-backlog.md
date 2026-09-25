@@ -56,7 +56,6 @@ PARTIAL_ALIVE
 ## Description
 docs/2026-08-13-gymact-jira-backlog.md: GYMACT-1 (dev_portfolio not registered) and GYMACT-2 (false docstring) marked In Progress; GYMACT-3 (CLAUDE.md cites missing STATUS.md / ecosystem-standing.md) and GYMACT-4 (8 pytest failures, unreproduced) Open. Re-verify each with a real command, fix what still reproduces, update the backlog Status.
 
-## Evidence
 - 4 tickets in the backlog file (verified by grep 2026-09-21)
 
 ## Definition of done

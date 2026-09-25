@@ -1,7 +1,7 @@
 defmodule Xaas.Zoe.EventSimulationZoeTest do
   use ExUnit.Case, async: true
 
-  alias Xaas.Zoe.EventSimulationZoe, as: EventSimulation
+  alias Xaas.Zoe.EventSimulation
 
   defp snapshot do
     %{

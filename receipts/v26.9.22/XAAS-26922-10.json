@@ -1,0 +1,10 @@
+{
+  "wo": "XAAS-26922-10",
+  "base_sha": "e083a02 (zcode-package) / 107916a (t1) on release/v26.9.22",
+  "command": "mix test test/xaas/ultracode/provider_health_test.exs test/xaas/ultracode/zcode_package_test.exs test/xaas/ultracode/repos_refresh_test.exs test/xaas/ultracode/sj_program_registry_test.exs",
+  "exit": 0,
+  "output_excerpt": "37 passed, 0 failed. Reconciliations: repos.ex keeps the ERRC registration-gap law plus t1's refresh law (Repos.refresh/1); sensing.ex keeps profile/1 + registered? and adds t1's profile_for/1 as the raw lookup; autonomic.ex keeps script-first-then-profile fallback plus t1's refresh ledger; dev.exs registers the four SJ-program targets on the current worktree root with one merged :ultracode_sensing_profiles block; t1's count/path pins updated to the reconciled state.",
+  "standing": "ALIVE",
+  "notes": "merge-base --is-ancestor 6a4edb1/7b7055e satisfied via errc2/zcode-package (1df7273, which subsumes the zcode-package-verify WIP) and auto/t1-register-merge (7b7055e).",
+  "evidence_ts": "2026-09-22T18:45Z"
+}

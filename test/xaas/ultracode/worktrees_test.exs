@@ -291,7 +291,7 @@ defmodule Xaas.Ultracode.WorktreesTest do
     dir =
       Path.join(
         System.tmp_dir!(),
-        "xaas-worktrees-test-#{label}-#{System.unique_integer([:positive])}"
+        "worktrees-test-#{label}-#{System.unique_integer([:positive])}"
       )
 
     File.mkdir_p!(dir)

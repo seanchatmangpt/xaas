@@ -1,0 +1,8 @@
+candidates: CHECK OK: 18 candidates bound to docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1; gates GC24-0=2 GC24-1=1 GC24-2=7 GC24-3=2
+REFUSED(output_drift) /private/tmp/claude-501/v23-scratch/B1c-V23-H/mut/docs/sjira/v26.9.23/successor/compiled/propositions.ttl: existing output differs from the recomputed bytes
+REFUSED(output_drift) /private/tmp/claude-501/v23-scratch/B1c-V23-H/mut/docs/sjira/v26.9.23/successor/compiled/orders.ttl: existing output differs from the recomputed bytes
+REFUSED: 2 refusal(s); nothing written
+REFUSED(output_drift) /private/tmp/claude-501/v23-scratch/B1c-V23-H/mut/docs/sjira/v26.9.23/successor/compiled/propositions.ttl: existing output differs from the recomputed bytes
+REFUSED(output_drift) /private/tmp/claude-501/v23-scratch/B1c-V23-H/mut/docs/sjira/v26.9.23/successor/compiled/orders.ttl: existing output differs from the recomputed bytes
+REFUSED: 2 refusal(s); nothing written
+REFUSED: GC23-12 compile_prose --check exited 1

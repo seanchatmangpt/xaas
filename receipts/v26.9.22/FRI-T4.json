@@ -1,0 +1,233 @@
+{
+  "lane": "FRI-T4",
+  "gate": "G5 SA2A conservation (GC-FRI-0800)",
+  "identity": {
+    "subject": "FRI-T4",
+    "repo": "seanchatmangpt/xaas",
+    "subject_sha": "080fa9a196fd7e342a0226e70ea6dde263c469ad",
+    "base_sha": "0d57147fc410444f2bf4608242e42075e2fea7c6",
+    "graph_hash": "sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e"
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "NONE (local commits on branch fri/FRI-T4 only; no push, merge, publish or registry write)",
+    "actor": "claude-opus-5-5 workflow subagent, lane FRI-T4"
+  },
+  "consequence": {
+    "commits": [
+      "fe6327c7598e1e87f90ea34a39386b9aace02f2d",
+      "080fa9a196fd7e342a0226e70ea6dde263c469ad"
+    ],
+    "files_changed": [
+      "HANDWRITTEN.md",
+      "lib/xaas/sa2a/route.ex",
+      "scripts/gen_sa2a_route_fixture.exs",
+      "test/fixtures/sa2a_route/sa2a_task.json",
+      "test/fixtures/sa2a_route/sa2a_task.provenance.json",
+      "test/fixtures/sa2a_route/work_order.json",
+      "test/xaas/sa2a/route_test.exs",
+      "receipts/v26.9.22/FRI-T4.json",
+      "receipts/v26.9.22/FRI-T4.gate/format.log",
+      "receipts/v26.9.22/FRI-T4.gate/compile.log",
+      "receipts/v26.9.22/FRI-T4.gate/test.log",
+      "receipts/v26.9.22/FRI-T4.gate/gall-probe-hex-26.9.21.log",
+      "receipts/v26.9.22/FRI-T4.gate/gall-probe-pinned.log"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "git worktree add -b fri/FRI-T4 /Users/sac/wt/v26922/fri/FRI-T4 friday/gc-fri-0800",
+        "cwd": "/Users/sac/xaas",
+        "exit": 0,
+        "summary": "HEAD is now at 0d57147 (base_sha)"
+      },
+      {
+        "cmd": "MIX_DEPS_PATH=<scratch>/gi_mix/deps MIX_BUILD_PATH=<scratch>/gi_mix/_build/dev mix run -e 'Code.eval_file(\"/Users/sac/wt/v26922/fri/FRI-T4/scripts/gen_sa2a_route_fixture.exs\")'",
+        "cwd": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+        "exit": 0,
+        "summary": "real GgenIgniter.SemanticJira.admit_work_order/1 + SemanticA2A.task_from_work_order/2 at ggen_igniter 5984ec480c2318e86aa621da5f496e5e014b0fac wrote sa2a_task.json; work_order_digest=sha256:f1a19f526c79e6932ddd9378593a939fa2915d78171d02755d82ab20c26df41e; ggen_igniter-int tracked tree left clean"
+      },
+      {
+        "cmd": "(same generator command, second run) && shasum -a 256 test/fixtures/sa2a_route/sa2a_task.json test/fixtures/sa2a_route/sa2a_task.provenance.json",
+        "cwd": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+        "exit": 0,
+        "summary": "BYTE_IDENTICAL_REPLAY: sa2a_task.json 82461b96df166c7b9ff3856bfa50e4512717bcddec917b0566f36f314a2ed4fc before and after",
+        "output_sha256": "82461b96df166c7b9ff3856bfa50e4512717bcddec917b0566f36f314a2ed4fc"
+      },
+      {
+        "cmd": "mix format --check-formatted > receipts/v26.9.22/FRI-T4.gate/format.log 2>&1",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "FORMAT_EXIT=0 on the tree of subject_sha 080fa9a196fd7e342a0226e70ea6dde263c469ad (log holds only the deps/ex4pm/mix.exs dependency warning)",
+        "output_sha256": "3cf743844a4325e7be3da470d5e0f4070f49019d0ce0512441c1a9ef6e4ea772"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors > receipts/v26.9.22/FRI-T4.gate/compile.log 2>&1",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "Compiling 505 files (.ex); Generated xaas app; COMPILE_EXIT=0 (only warning is in dependency file deps/ex4pm/mix.exs)",
+        "output_sha256": "8ac84fd243f5f7f1ebe7cfe8687effc0ba7ba0c0cd186f6546026850c401d1b4"
+      },
+      {
+        "cmd": "MIX_TEST_PARTITION=_frit4 mix test --seed 0 test/xaas/sa2a/route_test.exs test/xaas/ultracode > receipts/v26.9.22/FRI-T4.gate/test.log 2>&1",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "plan per-lane xaas gate (touched suite + test/xaas/ultracode): 783 tests, 0 failures (25 excluded by the test_helper default tag list), seed 0, isolated DB xaas_test_frit4; route_test.exs alone is 74 tests",
+        "output_sha256": "b4e3c52373e6e4452102f44e250d3c2dee16ace2004fde6aae79c41412e7b8c3"
+      },
+      {
+        "cmd": "! grep -rn \"unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch\\|Mox\\b\\|:meck\\|meck\\.\" test/xaas/sa2a/route_test.exs lib/xaas/sa2a/route.ex scripts/gen_sa2a_route_fixture.exs",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "grep found no matches (exit 1), negated to exit 0: no test doubles in touched files"
+      },
+      {
+        "cmd": "shasum -a 256 ~/.hex/packages/hexpm/ash_a2a-26.9.21.tar <x>/lib/ash_a2a/gall/capability.ex; elixir -r <x>/lib/ash_a2a/gall/capability.ex -e 'IO.inspect([decode: m.decode(\"recipe:mix-format\"), valid: m.valid?(\"recipe:mix-format\"), labels: m.labels()])' > receipts/v26.9.22/FRI-T4.gate/gall-probe-hex-26.9.21.log 2>&1  (<x> = contents.tar.gz of the cached hex tarball, extracted to scratch)",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "released AshA2A.Gall.Capability (hex ash_a2a 26.9.21, tar sha256 17264513...5841b5) refuses the tuple capability: decode(\"recipe:mix-format\") == :error, valid? false; labels = Read Write Edit Commit Push Publish Deploy Merge",
+        "output_sha256": "47724e5cbd6bf980bddeb2a329dc70c739239d9cde2e4494166d73aae4cbe6f5"
+      },
+      {
+        "cmd": "MIX_ENV=test mix run --no-start --no-compile -e 'IO.inspect([ash_a2a_vsn: to_string(Application.spec(:ash_a2a, :vsn)), gall_capability_loaded: Code.ensure_loaded?(AshA2A.Gall.Capability)])' > receipts/v26.9.22/FRI-T4.gate/gall-probe-pinned.log 2>&1",
+        "cwd": "/Users/sac/wt/v26922/fri/FRI-T4",
+        "exit": 0,
+        "summary": "xaas pins ash_a2a 26.9.12 (mix.lock); gall_capability_loaded: false",
+        "output_sha256": "71f8d7663b534129ffb99a1b877857a9b60bdfb74281da9fa7724767da017a5a"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/FRI-T4.json + receipts/v26.9.22/FRI-T4.gate/*.log on branch fri/FRI-T4 (seanchatmangpt/xaas); each output_sha256 above is the sha256 of the committed log named in its cmd"
+  },
+  "falsifiers_exercised": [
+    {
+      "mutation": "falsifier M1: Route.digest/1 made to omit \"postcondition\" (@fields -> (@fields -- [\"postcondition\"])), then mix test test/xaas/sa2a/route_test.exs",
+      "cwd": "APFS clone (cp -cR) of /Users/sac/wt/v26922/fri/FRI-T4 at 080fa9a196fd7e342a0226e70ea6dde263c469ad in the session scratchpad, .git pointer removed; route.ex restored and cmp-identical to the worktree after each mutation",
+      "observed_exit": 2,
+      "expected": "non-zero (court must fail)",
+      "summary": "74 tests, 4 failures (python3 digest cross-check + postcondition mutated at order/task/epoch hops)"
+    },
+    {
+      "mutation": "falsifier M2: Route.conserve/3 digest-equality check replaced by `if true do`, then mix test test/xaas/sa2a/route_test.exs",
+      "cwd": "APFS clone (cp -cR) of /Users/sac/wt/v26922/fri/FRI-T4 at 080fa9a196fd7e342a0226e70ea6dde263c469ad in the session scratchpad, .git pointer removed; route.ex restored and cmp-identical to the worktree after each mutation",
+      "observed_exit": 2,
+      "expected": "non-zero (court must fail)",
+      "summary": "74 tests, 24 failures"
+    },
+    {
+      "mutation": "falsifier M3: capability admission widened to any non-empty string (Regex.match?(@capability, value) -> value != \"\"), then mix test test/xaas/sa2a/route_test.exs",
+      "cwd": "APFS clone (cp -cR) of /Users/sac/wt/v26922/fri/FRI-T4 at 080fa9a196fd7e342a0226e70ea6dde263c469ad in the session scratchpad, .git pointer removed; route.ex restored and cmp-identical to the worktree after each mutation",
+      "observed_exit": 2,
+      "expected": "non-zero (a GALL label must not re-enter as a capability id)",
+      "summary": "74 tests, 17 failures: the 16 GALL label/spelling cases + the all-hops-Commit conservation case"
+    }
+  ],
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "lane gate (format check, forced warnings-as-errors test compile, route_test.exs + test/xaas/ultracode 783/0 at seed 0) exit 0 on the tree of subject_sha 080fa9a196fd7e342a0226e70ea6dde263c469ad; falsifiers M1/M2/M3 make route_test.exs fail. Scope: the FRI-T4 lane subject only. G5 gate standing stays UNKNOWN until integration: T1 SHACL admission of the tuple fields, T2's registry entry merged, and a stop-court run on the integrated head."
+  },
+  "tuple_digest": {
+    "fixture": "test/fixtures/sa2a_route/work_order.json",
+    "digest": "sha256:0f61c8058edf3e8e077109277b949fb8e87c1e8028ecb7963c1ce98b8ac5119a",
+    "computed_by": "python3 json.dumps(sort_keys=True, separators=(',', ':'), ensure_ascii=False) + sha256, independent of Route.digest/1 (equality asserted in route_test.exs)"
+  },
+  "generated_vs_handwritten": {
+    "generated": [
+      "test/fixtures/sa2a_route/sa2a_task.json (real GgenIgniter.SemanticA2A.task_from_work_order/2 run)",
+      "test/fixtures/sa2a_route/sa2a_task.provenance.json"
+    ],
+    "handwritten": [
+      "lib/xaas/sa2a/route.ex -- HANDWRITTEN.md row, UNSUPPORTED(generator-capability): no generator renders per-representation field maps or the canonical-JSON tuple digest from the sj: vocabulary contract",
+      "scripts/gen_sa2a_route_fixture.exs camelCase tuple package -- task_from_work_order/2 has no tuple projection (same HANDWRITTEN.md row)",
+      "test/xaas/sa2a/route_test.exs",
+      "test/fixtures/sa2a_route/work_order.json (input data: wo.json row shape + GC-FRI-0800 tuple fields)"
+    ]
+  },
+  "interfaces": {
+    "sa2a_tuple_carrier": "SA2A task input data part with data.schema = \"semantic-jira/route-tuple/v1\" and data.tuple = {subject, postcondition, requiresCapability, evidenceCeiling, authorityCeiling, consequenceClass, exclusions}",
+    "epoch_tuple_carrier": "SemanticWork descriptor bridge {subject, postcondition, evidence_ceiling, authority_ceiling, consequence_class, exclusions}; capability = top-level descriptor `capability` (T2 sj:capabilityId) or bridge `requires_capability`; both present must agree",
+    "registry_shapes_resolved": "map keyed by full capability id (T2 config shape \"recipe:mix-format\" => %{env:, steps:}), key = bare recipe id, or list entries with capability_id; recipe id = entry :id if present else the id after \"recipe:\""
+  },
+  "repair_round": {
+    "round": 2,
+    "court_verdicts_in": {
+      "GATE": "pass",
+      "REVERT-MUTATION": "pass"
+    },
+    "addressed": [
+      "GATE note: route.ex types capabilities by regex, not ash_a2a Gall.Capability (plan reuse target). Resolved as a typed exclusion, not adoption: Gall.Capability is a closed 8-label authority vocabulary that refuses every provider:id capability (gall-probe-hex-26.9.21.log), and the pinned ash_a2a 26.9.12 does not ship it (gall-probe-pinned.log). Exclusion stated in the Route moduledoc and guarded by 18 route_test.exs cases (tripwire on the pin + GALL labels refused at every hop and by the registry); falsifier M3 shows the guard fails when capability admission is widened.",
+      "GATE note: output_sha256 values hashed uncommitted captured logs with a random ExUnit seed. The gate now runs with --seed 0 and every output_sha256 hashes a log committed under receipts/v26.9.22/FRI-T4.gate/.",
+      "Plan per-lane gate: the xaas gate is narrowed to the touched suites plus test/xaas/ultracode; round 1 ran route_test.exs only. Round 2 runs both (783 tests, 0 failures) against an isolated test DB (MIX_TEST_PARTITION=_frit4 -> xaas_test_frit4), because other lanes run mix test concurrently against xaas_test."
+    ],
+    "not_addressed": [
+      "The ash_a2a dependency bump to a Gall-bearing ash_a2a (>= 26.9.20) is not made: it changes the shared mix.lock and puts ash_a2a on the Friday critical path (plan G11), and would still not type sj:capabilityId (decode refuses provider:id). GALL requires/forbids typing of a recipe belongs to the T2 registry entry; successor GC-026923 if wanted."
+    ]
+  },
+  "exclusions": [
+    "AshA2A.Gall.Capability does not type sj:capabilityId: closed vocabulary Read..Merge, decode(\"recipe:mix-format\") == :error (ash_a2a 26.9.21); not shipped by the pinned ash_a2a 26.9.12"
+  ],
+  "integration": {
+    "target_branch": "friday/gc-fri-0800",
+    "worktree": "/Users/sac/wt/v26922/fri/xaas-int",
+    "pre_merge_head": "0d57147fc410444f2bf4608242e42075e2fea7c6",
+    "merged_ref": "fri/FRI-T4",
+    "merged_sha": "b822231ffadb902771842934bd00946abc28e91a",
+    "merge_commit": "243ab48dc2049df59a24d3b06f74bbe89416b6c7",
+    "merge_cmd": "git merge --no-ff fri/FRI-T4 -F <msgfile>",
+    "conflicts": [],
+    "merge_note": "merge-base == pre_merge_head; merge commit tree == b822231 tree; no conflicts",
+    "lock": "/Users/sac/wt/v26922/xaas/.merge.lock (owner claude:FRI-T4-integrate)",
+    "provisioning": "deps/ and _build/{dev,test} APFS-cloned (cp -cR) from /Users/sac/wt/v26922/fri/FRI-T4 (mix.lock and mix.exs byte-identical); mix deps.get exit 0",
+    "lane_gate": [
+      {
+        "cmd": "mix format --check-formatted",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T4.int-gate/format.log",
+        "output_sha256": "sha256:8f1c65f9bdd102cb8cfdd13a71f75d0c82ca72ff20d318776752e02ffe4a7907"
+      },
+      {
+        "cmd": "MIX_ENV=test mix compile --force --warnings-as-errors",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T4.int-gate/compile.log",
+        "output_sha256": "sha256:47f4dc2124ae7f8415b28be956acafde1e799a2aedf0b8e284708fde763f6d24",
+        "summary": "Compiling 505 files (.ex); Generated xaas app"
+      },
+      {
+        "cmd": "mix test test/xaas/sa2a/route_test.exs",
+        "exit": 0,
+        "log": "receipts/v26.9.22/FRI-T4.int-gate/test.log",
+        "output_sha256": "sha256:9d4dad53634e67220bcf564ca1497b8bb5a23959f29e1955fe3ee142ca15ff32",
+        "summary": "74 tests, 0 failures (seed 553929)"
+      }
+    ],
+    "chicago_mock_grep": {
+      "cmd": "grep -rn \"unittest.mock|Mock(|MagicMock|patch(|monkeypatch|Mox|:meck|Mimic|Mock.\" test/xaas/sa2a/route_test.exs lib/xaas/sa2a/route.ex",
+      "exit": 1,
+      "matches": 0
+    },
+    "widened_run": {
+      "cmd": "mix test test/xaas/sa2a/route_test.exs test/xaas/ultracode --seed 0",
+      "exit": 2,
+      "log": "receipts/v26.9.22/FRI-T4.int-gate/test-wide.log",
+      "output_sha256": "sha256:2a991a96188b04243805e107c286ddc2507f99235e823a16a8e48682743cb3fe",
+      "summary": "783 tests, 2 failures (25 excluded); outside the lane gate",
+      "failures": [
+        {
+          "test": "test/xaas/ultracode/dispatch_test.exs:899 (process-group deadline kills spawned child)",
+          "classification": "PRE-EXISTING timing flake (not merge-introduced)",
+          "evidence": "passes in isolated rerun (rerun2.log: 2 tests, 1 failure — only the e2e test fails); merge diff under lib/ is only the new module lib/xaas/sa2a/route.ex"
+        },
+        {
+          "test": "test/xaas/ultracode/semantic_jira_e2e_test.exs:106 (SJ-001 admit->materialize->receipt->replay)",
+          "classification": "ENVIRONMENTAL (not merge-introduced)",
+          "evidence": "fails at project/3 ({1, nil}): the graph-side subprocess runs cd /Users/sac/ggen_igniter (external operator checkout, HEAD d83d6c8), whose priv/ is mode drw------- with ctime 2026-09-22 23:05:19 PDT — changed during this run and after the lane run that recorded 783/0; the hop does not read the xaas tree beyond unchanged docs/sjira/v26.9.21 front matter",
+          "unverified": "base-tree (0d57147) rerun of this test not executed; a reproduction of the subprocess in /Users/sac/ggen_igniter was denied by permission policy"
+        }
+      ],
+      "rerun_log": "receipts/v26.9.22/FRI-T4.int-gate/rerun2.log",
+      "rerun_output_sha256": "sha256:9002ae8709ebcfbd20f30f77f40ddc3a889c751fc002cc80f7d46723939d10d7"
+    },
+    "standing": "ALIVE (lane subject integrated; lane gate exit 0 on merge_commit tree). G5 gate standing unchanged: UNKNOWN until T1 SHACL admission, T2 registry entry, and a stop-court run on the integrated head."
+  }
+}

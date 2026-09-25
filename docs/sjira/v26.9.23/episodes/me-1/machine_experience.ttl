@@ -1,0 +1,43 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v23: <https://ggen-igniter.dev/sjira/v26.9.23#> .
+@prefix xme: <https://xaas.dev/ontology/machine-experience#> .
+
+v23:ME-0a15fe7a53ed4434
+    rdf:type sj:MachineExperience ;
+    rdfs:label "MachineExperience format_drift -> recipe:mix-format (episode me-1)" ;
+    sj:authorityClaim "NONE" ;
+    sj:executionReceiptHash "sha256:c1dbbbfc2fd9030e24180cae819782f29af56a926c5f9f0f61ded87e7ed062d6" ;
+    sj:experienceDigest "sha256:0a15fe7a53ed4434df5e7d241e48ae8cc43ae78daea07a3346452a9142049222" ;
+    sj:observationRef "docs/sjira/v26.9.23/episodes/me-1/drive/hops.json" ;
+    sj:observationRef "docs/sjira/v26.9.23/episodes/me-1/drive/ocel.json" ;
+    sj:observationRef "docs/sjira/v26.9.23/episodes/me-1/drive/receipt.json" ;
+    sj:observationRef "docs/sjira/v26.9.23/episodes/me-1/drive/receipt.r.json" ;
+    sj:observationRef "docs/sjira/v26.9.23/episodes/me-1/drive/verification.json" ;
+    sj:replayIdentity "semantic-jira:v26.9.23:episode:me-1:EP-A" ;
+    sj:resultingStateDigest "sha256:4933067564002c1732717610dbd2bc9909d2e1e2f09e05dec999d0e372871069" ;
+    sj:standing "CANDIDATE" ;
+    sj:subject "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-A" ;
+    sj:verificationDigest "sha256:84779178a7f5ee110376b8d673d50741a9a1c53ae29369b2996e6ef669cc293f" ;
+    sj:workOrderDigest "sha256:d8228120c11e943e334ab99b724c71661447c565d60007bd81f01650cba31ffb" .
+
+v23:ME-0a15fe7a53ed4434-admission
+    rdf:type xme:AdmittedExperience ;
+    rdfs:label "Admission of format_drift MachineExperience (ARD section 15)" ;
+    xme:admission "ADMITTED" ;
+    xme:admissionDigest "sha256:7d69cb3ec1875e4b93303c2e18a1a99229698dd65a7721df094f50b8400aafd1" ;
+    xme:admittedCapability "recipe:mix-format" ;
+    xme:applicabilityPredicate "PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>\nPREFIX xme: <https://xaas.dev/ontology/machine-experience#>\nSELECT ?order WHERE {\n  ?order a sj:WorkOrder ;\n    xme:failureClass \"format_drift\" ;\n    sj:repository \"seanchatmangpt/ggen_igniter\" ;\n    sj:consequenceClass \"postcondition\" ;\n    sj:authorityCeiling \"CONSTRUCT\" .\n  OPTIONAL { ?order sj:requiresCapability ?declared . }\n  FILTER(!BOUND(?declared))\n}\n" ;
+    xme:consequenceBounds "{\"authority_ceiling\":\"CONSTRUCT\",\"consequence_class\":\"postcondition\",\"exclusions\":[\"no LLM provider on the KNOWN path\",\"no file outside path_scope changes\",\"no push, merge or publish\"],\"path_scope\":[\".formatter.exs\",\"config\",\"lib\",\"mix.exs\",\"test\"]}" ;
+    xme:experience v23:ME-0a15fe7a53ed4434 ;
+    xme:falsifier "https://ggen-igniter.dev/sjira/v26.9.23#EP-A-me-1-falsifier-drift-absent" ;
+    xme:falsifier "revert falsifier: the ggen-igniter-format court must fail with the provider's commit reverted" ;
+    xme:problemClass "format_drift" ;
+    xme:providerClass "recipe" ;
+    xme:requiredEvidence "exact-head run of the ggen-igniter-format court (`mix format --check-formatted`, exit status) on the candidate SHA in a clean worktree" ;
+    xme:requiredEvidence "https://ggen-igniter.dev/sjira/v26.9.23#evidence-episode-me-1-format-check" ;
+    xme:sourceEpisode "me-1" ;
+    xme:sourceExploration "sha256:1a8da3ee1734c0cb0244f4d27e15d3de95754fbf3fee174c25805b0e8aa07267" ;
+    xme:sourceOrder "semantic-jira:v26.9.23:episode:me-1:EP-A" ;
+    xme:successfulVerification "{\"head\":\"77df08277fa3fa1aa535265fd92029e604890944\",\"independent\":\"pass\",\"receipt_digest\":\"sha256:c1dbbbfc2fd9030e24180cae819782f29af56a926c5f9f0f61ded87e7ed062d6\",\"revert_falsifier\":\"killed\",\"standing\":\"ALIVE\",\"suite\":\"ggen-igniter-format\"}" .

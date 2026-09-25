@@ -1,0 +1,100 @@
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/R1-X-PIN/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+18:54:53.863 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+18:54:54.756 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+18:54:55.265 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+18:54:55.376 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:54:55.378 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/application.json.eex to Grafana: :unkown
+18:54:55.397 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:54:55.397 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/beam.json.eex to Grafana: :unkown
+18:54:55.419 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:54:55.419 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/phoenix.json.eex to Grafana: :unkown
+18:54:55.446 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:54:55.446 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/ecto.json.eex to Grafana: :unkown
+18:54:55.467 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:54:55.467 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/prom_ex/priv/phoenix_live_view.json.eex to Grafana: :unkown
+18:54:55.491 [warning] Received an unhandled response from Grafana because: {:error, %Finch.TransportError{reason: :nxdomain, source: %Mint.TransportError{reason: :nxdomain}}}
+18:54:55.491 [warning] PromEx.DashboardUploader failed to upload /Users/sac/wt/v26922/v23/R1-X-PIN/_build/test/lib/xaas/priv/grafana_dashboards/infrastructure.json to Grafana: :unkown
+Running ExUnit with seed: 458694, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+    warning: module attribute @needs_validator was set but never used
+    │
+ 22 │   @needs_validator if File.regular?(@validator),
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ test/xaas/receipt/r_projection_test.exs:22: Xaas.Receipt.RProjectionTest (module)
+
+
+
+  1) test a subject_sha that is not a commit in the local repo is REFUSED by the real validator (Xaas.Receipt.RProjectionTest)
+     test/xaas/receipt/r_projection_test.exs:114
+     match (=) failed
+     code:  assert {out, 1} = validate(foreign_path)
+     left:  {out, 1}
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+             2}
+     stacktrace:
+       test/xaas/receipt/r_projection_test.exs:130: (test)
+
+
+
+  2) test a native receipt with its digest stripped is refused, never defaulted to sealed (Xaas.Receipt.RProjectionTest)
+     test/xaas/receipt/r_projection_test.exs:171
+     match (=) failed
+     code:  assert {out, 0} = validate(r_path)
+     left:  {out, 0}
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+             2}
+     stacktrace:
+       test/xaas/receipt/r_projection_test.exs:198: (test)
+
+.
+
+  3) test a projection with a missing subject_sha is REFUSED by the real validator (Xaas.Receipt.RProjectionTest)
+     test/xaas/receipt/r_projection_test.exs:97
+     match (=) failed
+     code:  assert {out, 1} = validate(r_path)
+     left:  {out, 1}
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+             2}
+     stacktrace:
+       test/xaas/receipt/r_projection_test.exs:109: (test)
+
+
+
+  4) test a sealed ALIVE receipt projects to an R the real validator ADMITS (Xaas.Receipt.RProjectionTest)
+     test/xaas/receipt/r_projection_test.exs:65
+     match (=) failed
+     code:  assert {out, 0} = validate(r_path)
+     left:  {out, 0}
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+             2}
+     stacktrace:
+       test/xaas/receipt/r_projection_test.exs:93: (test)
+
+.
+
+  5) test a court-refuted close projects BUILD_BROKEN with its broken term, still a valid R (Xaas.Receipt.RProjectionTest)
+     test/xaas/receipt/r_projection_test.exs:134
+     match (=) failed
+     code:  assert {out, 0} = validate(r_path)
+     left:  {out, 0}
+     right: {"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can't open file '/private/tmp/claude-501/v23-scratch/R1c-R1-X-PIN/fals/emptyhome.SlgpDP/.claude/dfcm/validate_receipt.py': [Errno 2] No such file or directory\n",
+             2}
+     stacktrace:
+       test/xaas/receipt/r_projection_test.exs:147: (test)
+
+.
+Finished in 3.5 seconds (0.00s async, 3.5s sync)
+
+Result: 3/8 passed
+Failed: 5 tests

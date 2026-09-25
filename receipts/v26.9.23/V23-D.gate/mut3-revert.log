@@ -1,0 +1,52 @@
+MUT-3 revert falsifier made a no-op (reverted head = receipt head) (HEAD 7fec9d8 + mutation)
+ lib/xaas/ultracode/semantic_drive.ex | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+    warning: Application.get_env/2 is discouraged in the module body, use Application.compile_env/3 instead
+    │
+ 12 │   if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+    │                         ~
+    │
+    └─ /Users/sac/wt/v26922/v23/V23-D/deps/ex4pm/mix.exs:12:25: Ex4pm.MixProject (module)
+
+Compiling 1 file (.ex)
+      warning: function revert_unused/2 is unused
+      │
+ 1356 │   defp revert_unused(path, head) do
+      │        ~
+      │
+      └─ lib/xaas/ultracode/semantic_drive.ex:1356:8: Xaas.Ultracode.SemanticDrive (module)
+
+Generated xaas app
+02:59:29.427 [warning] [ex_money] Automatically starting the exchange rate service is deprecated. Set `auto_start_exchange_rate_service: false` and, if you use the service, add `Money.ExchangeRates.Retriever` to your supervision tree.
+02:59:29.825 [warning] Xaas.Sa2a.Bridge not started: "autofde" executable not found on PATH. sa2a-bridge-pack edges (validate/admit/plan/execute/replay) are unavailable until autofde-lab (https://github.com/seanchatmangpt/autofde-lab) is installed and its "autofde" console script is on PATH.
+02:59:30.147 [warning] node not running in distributed mode. When running outside of a release, you must start net_kernel manually with
+longnames.
+https://www.erlang.org/doc/man/net_kernel.html#start-2
+
+Running ExUnit with seed: 242565, max_cases: 32
+Excluding tags: [:stress, :kind, :requires_cnv_deploy, :external, :external_llm, :subprocess, :property, :castle_kernel]
+
+
+
+  1) test a prepared episode drives EP-A to ALIVE: equal hop digests, sealed + independently verified receipt, admitted R, conformant OCEL, closed frontier (Xaas.Ultracode.SemanticDriveTest)
+     test/xaas/ultracode/semantic_drive_test.exs:107
+     match (=) failed
+     code:  assert {:ok, summary} = drive(ctx, out, pin_ref: pin)
+     left:  {:ok, summary}
+     right: {:refused,
+             %{
+               "broken_term" => "admission_vacuous",
+               "detail" => %{
+                 "reverted_head" => "40f7d9b30d6c90f2bf70828b36061a49916b9afc",
+                 "status" => "pass"
+               },
+               "hop" => "verify",
+               "reason" => "falsifier_vacuous",
+               "standing" => "REFUSED(falsifier_vacuous)"
+             }}
+     stacktrace:
+       test/xaas/ultracode/semantic_drive_test.exs:114: (test)
+
+....
+Finished in 18.0 seconds (0.00s async, 18.0s sync)
+5 tests, 1 failure

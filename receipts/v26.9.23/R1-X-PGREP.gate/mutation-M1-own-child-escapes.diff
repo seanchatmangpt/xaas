@@ -1,0 +1,13 @@
+diff --git a/test/xaas/ultracode/dispatch_test.exs b/test/xaas/ultracode/dispatch_test.exs
+index aeb5363..49c5122 100644
+--- a/test/xaas/ultracode/dispatch_test.exs
++++ b/test/xaas/ultracode/dispatch_test.exs
+@@ -615,7 +615,7 @@ defmodule Xaas.Ultracode.DispatchTest do
+ 
+     cli_dir =
+       fake_cli_dir("""
+-      sleep 60 &
++      perl -e 'setpgrp(0,0); exec @ARGV' sleep 60 &
+       echo "$$ $(ps -o pgid= -p $$) $!" > "$SPAWNED_FILE"
+       wait
+       """)

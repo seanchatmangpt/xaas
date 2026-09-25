@@ -1,0 +1,34 @@
+{
+  "work_order": "SJ-009",
+  "replay_identity": "sjira-v26.9.21-sj-009",
+  "subject": "ash-ai-dependency-retest",
+  "repository": "seanchatmangpt/xaas",
+  "subject_sha": "01aa6fbf0b8fc5430f6a48bc4ccd24e11d4ac30a",
+  "branch": "sjira/sj-009",
+  "mix_exs_sha256": "6e4fca69406d73cccb942cef104af05f166eddcefd5f97017ec62501d8c24b19",
+  "mix_lock_sha256": "9d8343c16444361b29cc422fc3d70f659d824767bc47229ddacf4fb407f3161b",
+  "resolved": {
+    "ash": "3.33.9",
+    "ash_ai": "1.0.3",
+    "ash_postgres": "2.13.1",
+    "finch": "0.23.0",
+    "req": "0.7.4",
+    "req_llm": "1.20.0"
+  },
+  "verdict": "COMPATIBLE",
+  "commands": [
+    {"cmd": "mix deps.get", "exit": 0},
+    {"cmd": "mix compile", "exit": 0, "note": "Compiling 478 files (.ex), Generated xaas app"},
+    {"cmd": "mix test", "exit": 0, "tests": 1346, "failures": 0, "excluded": 71}
+  ],
+  "prior_runs_preserved": [
+    {"cmd": "mix test", "exit": 1, "note": "ecto.create timed out under host load (load avg ~560); no tests ran"},
+    {"cmd": "mix test", "exit": 2, "tests": 1346, "failures": 34, "class": "DBConnection.ConnectionError x34 (shared Postgres too_many_connections); none in ash_ai/req_llm/finch"},
+    {"cmd": "mix test --failed", "exit": 0, "tests": 34, "failures": 0}
+  ],
+  "chicago_no_mocks": {
+    "changed_lib_test_files": 0,
+    "grep": "Mox\\b|:meck|unittest.mock|MagicMock|monkeypatch",
+    "hits": "comments/docs and the self-referential verify-task fixture only; no mocking library use"
+  }
+}

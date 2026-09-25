@@ -1,0 +1,4 @@
+candidates: CHECK OK: 18 candidates bound to docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md sha256:b1d3d24fc1937f48b2986b1b701409090d765d3d33c4ff75dc498558bb390dc1; gates GC24-0=2 GC24-1=1 GC24-2=7 GC24-3=2
+compile: DELTA: 7 required Postcondition/Invariant/Falsifier, 0 witnessed ALIVE (0 ALIVE receipts read), 7 work orders; CHECK: docs/sjira/v26.9.23/successor/compiled outputs recompute byte-identically
+REFUSED: GC23-12 L1 hand-authored WorkOrder in the successor goal graph: ['https://ggen-igniter.dev/sjira/v26.9.23#WO-HAND-AUTHORED']
+REFUSED: GC23-12 successor law broken

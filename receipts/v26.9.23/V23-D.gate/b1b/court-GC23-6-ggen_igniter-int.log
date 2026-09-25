@@ -1,0 +1,6 @@
+check at receipt head 9c5e7571c948f97f6ae08d9399f69f502d81efd4: exit 0
+F4 revert falsifier at d890dd74845178716ac7fd1179aee83b9b6e12b6: exit 1 (killed)
+episode subject 80a8a4c71b331a39771ad65d1149eb835645d17c: exit 1 (drift observed)
+verification.json: independent pass, revert falsifier killed
+ALIVE: GC23-6 consequence independently observed at 9c5e7571c948f97f6ae08d9399f69f502d81efd4; F4 revert falsifier killed
+EXIT=0

@@ -1,0 +1,11 @@
+{
+  "wo": "XAAS-26922-16",
+  "base_sha": "2d229c272c3a02dcb8e75ff600ea0a4edc058d71",
+  "command": "not executed this wave",
+  "exit": null,
+  "output_excerpt": "",
+  "standing": "BLOCKED",
+  "notes": "QUEUED: installing a launchd agent is persistent machine configuration requiring user approval (not granted this wave), and the trigger it would fire depends on XAAS-26922-12. phx.server PID 34803 remains the only clock and was deliberately not restarted or replaced (operator doctrine: the running server is never stopped by this lane).",
+  "awaiting_refs": ["XAAS-26922-12", "user approval (persistent config)"],
+  "evidence_ts": "2026-09-22T23:59Z"
+}

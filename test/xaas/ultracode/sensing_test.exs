@@ -129,6 +129,26 @@ defmodule Xaas.Ultracode.SensingTest do
       assert ids == Enum.sort(ids)
     end
 
+    test "duplicate task lines dedup to one id; max_items binds AFTER dedup + sort", %{
+      base: base
+    } do
+      repo =
+        init_repo(base, %{
+          "TODO.md" => "- [ ] same task\n- [ ] same task\n- [ ] task b\n- [ ] task a\n"
+        })
+
+      # Four lines, three distinct ids (the duplicate collapses), then the
+      # bound: the output is the deduped, id-sorted head -- never a silent
+      # prune of distinct work.
+      {:ok, doc} = Sensing.derive(%{"type" => "todo_file", "max_items" => 3}, repo)
+
+      assert length(doc["items"]) == 3
+      assert length(Enum.filter(doc["items"], &(&1["source"]["text"] =~ "same task"))) == 1
+
+      ids = Enum.map(doc["items"], & &1["id"])
+      assert ids == Enum.sort(Enum.uniq(ids))
+    end
+
     test "custom file, allowed_paths and item_overrides flow into the items", %{base: base} do
       repo =
         init_repo(base, %{
@@ -481,6 +501,60 @@ defmodule Xaas.Ultracode.SensingTest do
       assert {:error, :profile_missing_type} = Sensing.derive(%{"file" => "TODO.md"}, "/tmp")
       assert {:error, :profile_not_a_map} = Sensing.derive("todo_file", "/tmp")
       assert {:error, :path_not_a_string} = Sensing.derive(%{"type" => "todo_file"}, 42)
+    end
+  end
+
+  # ----------------------------------------------------------------------
+  # Registered profile names (the fallback seam the Autonomic stage drives)
+  # ----------------------------------------------------------------------
+
+  describe "registered profile names" do
+    setup do
+      original = Application.get_env(:xaas, :ultracode_sensing_profiles)
+
+      Application.put_env(:xaas, :ultracode_sensing_profiles, %{
+        "demo-jira" => %{"type" => "jira_dir", "dir" => "docs/jira"},
+        "broken" => %{"type" => "no-such-type"}
+      })
+
+      on_exit(fn ->
+        if is_nil(original),
+          do: Application.delete_env(:xaas, :ultracode_sensing_profiles),
+          else: Application.put_env(:xaas, :ultracode_sensing_profiles, original)
+      end)
+
+      :ok
+    end
+
+    test "a registered name resolves to its explicit profile; registered? agrees" do
+      assert {:ok, %{"type" => "jira_dir", "dir" => "docs/jira"}} = Sensing.profile("demo-jira")
+      assert Sensing.registered?("demo-jira")
+    end
+
+    test "an unknown name is a typed error, never silently ignored" do
+      assert {:error, {:unknown_sensing_profile, "nope"}} = Sensing.profile("nope")
+      refute Sensing.registered?("nope")
+      # A hand-built ctx without a sensing name is the same refusal shape.
+      assert {:error, {:unknown_sensing_profile, nil}} = Sensing.profile(nil)
+    end
+
+    test "a name mapped to a malformed profile fails closed" do
+      assert {:error,
+              {:invalid_sensing_profile, "broken", {:unknown_profile_type, "no-such-type"}}} =
+               Sensing.profile("broken")
+
+      refute Sensing.registered?("broken")
+    end
+
+    test "the registered profile actually derives: name -> derive round trip", %{base: base} do
+      repo =
+        init_repo(base, %{
+          "docs/jira/v1/t.md" => "# T\n\n## Status\n\nOPEN — work remains.\n"
+        })
+
+      assert {:ok, profile} = Sensing.profile("demo-jira")
+      assert {:ok, doc} = Sensing.derive(profile, repo)
+      assert [%{"source" => %{"file" => "docs/jira/v1/t.md"}}] = doc["items"]
     end
   end
 

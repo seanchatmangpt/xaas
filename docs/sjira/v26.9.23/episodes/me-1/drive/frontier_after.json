@@ -1,0 +1,35 @@
+{
+  "blocked": [
+    {
+      "identity": "EP-A",
+      "reason": "standing=ALIVE"
+    }
+  ],
+  "eligible": [
+    {
+      "authority": "NONE",
+      "base_sha": "92d0a43d78c7c9a22e7eb092a95f7b73d5347d6f",
+      "candidate_sha": null,
+      "definition_digest": "sha256:9ac87db4655d89c4a31ef2c26e0dab93a527a362fe92cbcd633c18576d345397",
+      "identity": "EP-B",
+      "path_scope": [
+        ".formatter.exs",
+        "config",
+        "lib",
+        "mix.exs",
+        "test"
+      ],
+      "repository": "seanchatmangpt/ggen_igniter",
+      "subject": "seanchatmangpt/ggen_igniter@v23/episode-me-1#EP-B",
+      "title": "EP-B of MachineExperience episode me-1: repair the format_drift of lib/ggen_igniter/semantic_jira/reconciler.ex",
+      "work_order_digest": "sha256:275dffc695d728bc6da4f059431fa36de972d8ad170818636316230079eda36d"
+    }
+  ],
+  "events": 1,
+  "ledger_tail": "sha256:88ed4c04814aef7fe6c418a6b5e3f77ebe8bace20f2e512ae5c905a325326ab5",
+  "standings": {
+    "EP-A": "ALIVE",
+    "EP-B": "UNKNOWN"
+  },
+  "status": "ok"
+}

@@ -1,0 +1,13 @@
+{
+  "standing": "ALIVE",
+  "standing_note": "2026-09-22, worktree sjira/sj-001, verified this session",
+  "done": [
+    0,
+    1,
+    2
+  ],
+  "receipts": "001.receipts.md",
+  "status_block": "001.status.md",
+  "evidence_section": "001.evidence_section.md",
+  "runnable_check": "001.runnable.md"
+}
