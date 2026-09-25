@@ -67,26 +67,22 @@ defmodule ExNounVerbCli.CapabilityRegistryTest do
     end
   end
 
-  describe "contains?/2 -- invalid input" do
-    test "raises FunctionClauseError when given a bare packages map instead of the registry" do
-      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
-
+  describe "packages/1" do
+    test "refuses a plain map shaped like a registry (only a CapabilityRegistry struct is a t())" do
       assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(%{"pkg-001" => package}, "pkg-001")
+        CapabilityRegistry.packages(%{packages: %{"pkg-001" => :anything}})
       end
     end
 
-    test "raises FunctionClauseError when given nil instead of the registry" do
+    test "refuses a non-registry term" do
       assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(nil, "pkg-001")
+        CapabilityRegistry.packages(:ok)
       end
     end
 
-    test "raises FunctionClauseError when given a non-registry struct" do
-      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
-
-      assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(package, "pkg-001")
+    test "refuses a malformed registry whose packages value is not a map" do
+      assert_raise BadMapError, fn ->
+        CapabilityRegistry.packages(%CapabilityRegistry{packages: :not_a_map})
       end
     end
   end
