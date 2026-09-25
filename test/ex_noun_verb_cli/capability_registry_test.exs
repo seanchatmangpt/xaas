@@ -67,27 +67,27 @@ defmodule ExNounVerbCli.CapabilityRegistryTest do
     end
   end
 
-  describe "contains?/2 -- invalid input" do
-    test "raises FunctionClauseError when given a bare packages map instead of the registry" do
-      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
+  describe "count/1 -- refuses malformed registries" do
+    test "refuses a plain map shaped like a registry (wrong shape is not the t() struct)" do
+      malformed = %{packages: %{"pkg-001" => Package.new("pkg-001", "P", "1", "d")}}
 
+      assert_raise FunctionClauseError, fn -> CapabilityRegistry.count(malformed) end
+    end
+
+    test "refuses a JSON-decoded document with string keys and unknown fields" do
+      malformed = %{"packages" => %{}, "standing" => "alive", "unexpected" => [1, 2]}
+
+      assert_raise FunctionClauseError, fn -> CapabilityRegistry.count(malformed) end
+    end
+
+    test "refuses a package struct in place of the registry (wrong type)" do
       assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(%{"pkg-001" => package}, "pkg-001")
+        CapabilityRegistry.count(Package.new("pkg-001", "P", "1", "d"))
       end
     end
 
-    test "raises FunctionClauseError when given nil instead of the registry" do
-      assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(nil, "pkg-001")
-      end
-    end
-
-    test "raises FunctionClauseError when given a non-registry struct" do
-      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
-
-      assert_raise FunctionClauseError, fn ->
-        CapabilityRegistry.contains?(package, "pkg-001")
-      end
+    test "refuses nil" do
+      assert_raise FunctionClauseError, fn -> CapabilityRegistry.count(nil) end
     end
   end
 
