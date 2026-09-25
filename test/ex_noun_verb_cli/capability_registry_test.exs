@@ -67,6 +67,30 @@ defmodule ExNounVerbCli.CapabilityRegistryTest do
     end
   end
 
+  describe "contains?/2 -- invalid input" do
+    test "raises FunctionClauseError when given a bare packages map instead of the registry" do
+      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
+
+      assert_raise FunctionClauseError, fn ->
+        CapabilityRegistry.contains?(%{"pkg-001" => package}, "pkg-001")
+      end
+    end
+
+    test "raises FunctionClauseError when given nil instead of the registry" do
+      assert_raise FunctionClauseError, fn ->
+        CapabilityRegistry.contains?(nil, "pkg-001")
+      end
+    end
+
+    test "raises FunctionClauseError when given a non-registry struct" do
+      package = Package.new("pkg-001", "TestPkg", "1.0.0", "Test")
+
+      assert_raise FunctionClauseError, fn ->
+        CapabilityRegistry.contains?(package, "pkg-001")
+      end
+    end
+  end
+
   describe "dependency_order/1 -- ported dependency-closure resolution logic" do
     test "is closed and stable, mirroring the real Rust dependency_order_is_closed_and_stable test" do
       registry = CapabilityRegistry.new()
