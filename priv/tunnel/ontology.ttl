@@ -1,0 +1,41 @@
+@prefix tf: <http://seanchatmangpt.github.io/packs/tunnel-fabric#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Bounded runtime fabric (protocol xaas-fabric/1, scope /internal-api/fabric).
+# Source of truth for the capability allowlist of Xaas.Tunnel.Capabilities:
+# test/xaas/tunnel/capabilities_ontology_test.exs asserts the admitted set below
+# equals `Capabilities.allowlist/0` and the refused set equals `refused/0`.
+# No admitted pack renders the Elixir module from this graph yet
+# (HANDWRITTEN.md, UNSUPPORTED(generator-capability)); the test is the
+# drift guard until one does.
+
+<urn:tf:fabric/xaas-fabric-1> a tf:Fabric ;
+    tf:protocol "xaas-fabric/1" ;
+    tf:scope "/internal-api/fabric" ;
+    tf:longPollMaxMs 25000 ;
+    tf:authorityCeiling "CONSTRUCT" .
+
+<urn:tf:capability/fabric.probe> a tf:Capability ;
+    tf:capabilityOf <urn:tf:fabric/xaas-fabric-1> ;
+    tf:verb "fabric.probe" ;
+    tf:standing "ADMITTED" ;
+    rdfs:comment "GET /probe and POST /admit: read the capability contract." .
+
+<urn:tf:capability/run.submit> a tf:Capability ;
+    tf:capabilityOf <urn:tf:fabric/xaas-fabric-1> ;
+    tf:verb "run.submit" ;
+    tf:standing "ADMITTED" ;
+    rdfs:comment "POST /runs: idempotent Run + Epoch submission; org-scoped token required." .
+
+<urn:tf:capability/epoch.receipts> a tf:Capability ;
+    tf:capabilityOf <urn:tf:fabric/xaas-fabric-1> ;
+    tf:verb "epoch.receipts" ;
+    tf:standing "ADMITTED" ;
+    rdfs:comment "GET /epochs/:id/receipts: bounded long-poll for sealed receipts." .
+
+<urn:tf:capability/actuate> a tf:Capability ;
+    tf:capabilityOf <urn:tf:fabric/xaas-fabric-1> ;
+    tf:verb "actuate" ;
+    tf:standing "REFUSED" ;
+    tf:refusalReason "authority_ceiling" ;
+    rdfs:comment "The DO verb. Refused permanently: the fabric ceiling is CONSTRUCT." .

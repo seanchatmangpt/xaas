@@ -50,7 +50,8 @@ defmodule XaasWeb.ExecutionFabricController do
   require Logger
 
   alias Xaas.Accounts.Org
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt, Run}
+  alias Xaas.Tunnel.Submit
+  alias Xaas.Ultracode.{Epoch, Lease, Receipt}
 
   @mcp_tools [
     %{
@@ -426,29 +427,9 @@ defmodule XaasWeb.ExecutionFabricController do
   # unit" (`Xaas.Actuation.run/4`'s `Ash.DataLayer.transaction/5` +
   # `Ash.DataLayer.rollback/2`), not a new mechanism.
   defp do_create_run(conn, %Org{} = org, params) do
-    goal = params["goal"]
-    worktree = params["worktree"]
-    provider = params["provider"] || "zcode"
-    verifier_suite = params["verifier_suite"]
-    resources = [Run, Epoch]
-
-    transaction_result =
-      Ash.DataLayer.transaction(
-        resources,
-        fn ->
-          with {:ok, run} <- create_run_row(goal, provider, org.id, verifier_suite),
-               exact_subject = params["exact_subject"] || default_exact_subject(org, run),
-               {:ok, epoch} <- create_running_epoch(run, exact_subject, worktree) do
-            {run, epoch}
-          else
-            {:error, reason} -> Ash.DataLayer.rollback(resources, reason)
-          end
-        end,
-        nil,
-        %{type: :custom, metadata: %{operation: :xaas_execution_fabric_create_run}}
-      )
-
-    case transaction_result do
+    # The Run/Epoch transaction lives in `Xaas.Tunnel.Submit.create/2`, shared
+    # with the idempotent `/internal-api/fabric/runs` surface.
+    case Submit.create(org, params) do
       {:ok, {run, epoch}} ->
         conn
         |> put_status(201)
@@ -466,7 +447,8 @@ defmodule XaasWeb.ExecutionFabricController do
   # semantics for a rate limit, and real evidence a caller-facing client
   # can branch on (retry-after semantics) rather than treating both cases
   # identically.
-  defp create_run_error(conn, reason) do
+  @doc false
+  def create_run_error(conn, reason) do
     if rate_limited?(reason) do
       conn
       |> put_status(429)
@@ -504,49 +486,6 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp rate_limited?(%AshRateLimiter.LimitExceeded{}), do: true
   defp rate_limited?(_), do: false
-
-  # `verifier_suite` is a NAME the operator registered
-  # (`Xaas.Ultracode.Verifier`); `VerifierSuiteRegistered` turns an unknown
-  # name into a typed 400, and a suite only ever executes in a worktree under
-  # the operator containment root, so naming one grants no execution reach.
-  defp create_run_row(goal, provider, org_id, verifier_suite) do
-    Run
-    |> Ash.Changeset.for_create(
-      :submit,
-      %{goal: goal, provider: provider, org_id: org_id, verifier_suite: verifier_suite},
-      authorize?: false
-    )
-    |> Ash.create()
-  end
-
-  # Cycle 0, state :running directly (not via Run.:start/CreateFirstEpoch,
-  # which produces a :expected epoch) -- same shape this controller's own
-  # test suite already relies on (provider_run_and_epoch/2 in
-  # execution_fabric_controller_test.exs), so a run submitted here is
-  # immediately claim_next-visible to a provider worker.
-  defp create_running_epoch(run, exact_subject, worktree) do
-    Epoch
-    |> Ash.Changeset.for_create(
-      :create,
-      %{
-        run_id: run.id,
-        # Denormalized from the just-created Run -- see Epoch's own
-        # moduledoc "Org scoping" section. This is the real value
-        # `receipts_for_org/3` below filters on at the query layer.
-        org_id: run.org_id,
-        cycle: 0,
-        exact_subject: exact_subject,
-        state: :running,
-        started_at: DateTime.utc_now(),
-        worktree: worktree
-      },
-      authorize?: false
-    )
-    |> Ash.create()
-  end
-
-  defp default_exact_subject(%Org{slug: slug}, %Run{id: run_id}),
-    do: "org:#{slug}-run:#{run_id}"
 
   defp org_scoped_token_required(conn) do
     conn
