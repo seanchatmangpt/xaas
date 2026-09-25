@@ -3,8 +3,12 @@
 **Candidate:** Sean Chatman  
 **Submission target:** September 25, 2026  
 **Problem selected:** Case Study 2 — HDD Failure Analysis AI Agent  
-**Implementation baseline inspected:** `seanchatmangpt/xaas` PR #62 at `1ebbaff4d8e74ef82c833984b435d7e32c3f875a`  
-**Evidence ceiling:** repository-local design and fixture evidence only
+**Implementation baseline inspected:** `seanchatmangpt/xaas` PR #62 head `7c457827dcfdb3e4809395df67f09611bbff37c8`, merged as `f9670f446537ddb882edf9cd7e0b6519de557e60`  
+**Evidence ceiling:** repository-local design and fixture evidence only  
+**Freeze:** FROZEN 2026-09-25 for the 08:00 PT presentation  
+**Frozen subject:** `seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60` (PR #62 merge; `git diff --stat 7c457827 f9670f44` is empty, so the tree is identical to PR head `7c457827`)  
+**Court report:** `wd-cs2-stogaf-semantic-report.json` sha256 `e65aed338f6fc187f4e94303f1dc47bb330a90172a211a7b810353499a26a52c` (local replay of `scripts/stogaf_semantic_court.py` on `git archive f9670f44`; standing ALIVE, 5 gates, 0 refusal rows; payload equal to the court log line of run 36082037670)  
+**Runs cited:** STOGAF court 36082037670, exact-head court 36082037553, deck manufacture 36082037511 (all `pull_request` on `7c457827`, success); CI/CD Elixir 36085665790 (`push` on `f9670f44`, success)
 
 ## Executive summary
 
@@ -783,10 +787,11 @@ Beyond the three questions already sent:
 
 The code prototype is supplemental evidence for the design; it is not the design narrative and it is not represented as a WD production deployment.
 
-The inspected implementation baseline is PR #62 at:
+The inspected implementation baseline is PR #62, head and merge:
 
 ```text
-1ebbaff4d8e74ef82c833984b435d7e32c3f875a
+head  7c457827dcfdb3e4809395df67f09611bbff37c8
+merge f9670f446537ddb882edf9cd7e0b6519de557e60
 ```
 
 Repository-local implementation surfaces include:
@@ -804,14 +809,11 @@ Repository-local implementation surfaces include:
 - Phoenix/browser surfaces;
 - offline evaluation and verification-receipt paths.
 
-The current exact-head CI state is intentionally not promoted beyond what was observed. At the inspected head:
+The exact-head CI state is intentionally not promoted beyond what was observed:
 
-- exact subject checkout succeeded;
-- locked dependency resolution succeeded;
-- PostgreSQL preparation succeeded in the WD/STOGAF workflow;
-- semantic-court dependencies installed successfully;
-- the WD/STOGAF workflow then failed at the RDF/SHACL/SPARQL court, so subsequent compile, WD tests, browser court, evaluation report and STOGAF receipt steps were skipped in that run;
-- the general exact-head test workflow failed at formatting before compile/tests.
+- PR head `7c457827`: STOGAF court run 36082037670 succeeded (RDF/SHACL/SPARQL court standing ALIVE, 5 gates, 0 refusal rows), exact-head court run 36082037553 succeeded, deck manufacture run 36082037511 succeeded;
+- merge `f9670f44` (tree-identical to `7c457827`): CI/CD Elixir run 36085665790 succeeded on the push to main;
+- the STOGAF court and deck workflows were not re-run on the main push; the court report digest above is a local replay on the exact merge tree.
 
 Therefore this proposal does **not** claim that the current PR head is globally ALIVE, production-ready, deployed, accepted by WD or proven to improve MTTR.
 
