@@ -84,7 +84,7 @@ that a claim's `falsifier`/`verification` text fields are non-empty.
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pytest tests/ -v                      # 61 tests, real files/hashing, no mocks
+pytest tests/ -v                      # 62 tests, real files/hashing, no mocks
 
 eds erc-new --id my-claim --hypothesis "..." --artifact "repo@sha" \
   --state PROPOSED --falsifier "..." --out claims/my-claim.json
@@ -94,7 +94,7 @@ eds metrics claims/ --json
 
 ## Status
 
-**IMPLEMENTED, VERIFIED for its own test suite** (`pytest` → 61 passed, this
+**IMPLEMENTED, VERIFIED for its own test suite** (`pytest` → 62 passed, this
 session, real run — see commit history and the later "Named gap closed"
 entries below for the incremental counts), including a
 real, executed falsifier that genuinely produces both a SURVIVES and a

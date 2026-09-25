@@ -20,3 +20,13 @@ def test_dedup_labels_normalizes_before_comparing():
 
 def test_dedup_labels_preserves_first_occurrence_order():
     assert dedup_labels(["B", "a", "b", " A\t"]) == ["b", "a"]
+
+
+def test_dedup_labels_receipt_guard_casefolds_caseless_equivalents():
+    # Receipt-bound regression guard for CROWN2-001 (W9 crown): the repaired
+    # normalize-before-dedup contract must hold under Unicode CASELESS
+    # matching, not ASCII lowercasing. ``Straße`` and ``STRASSE`` denote the
+    # same label, so the fold must be ``str.casefold()``-strength: labels
+    # that are casefold-equivalent collapse to the first occurrence.
+    assert dedup_labels(["Straße", "STRASSE"]) == ["strasse"]
+    assert dedup_labels(["ẞ", "ss"]) == ["ss"]

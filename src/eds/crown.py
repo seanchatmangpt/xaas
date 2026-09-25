@@ -4,6 +4,11 @@ Contract (tests/test_w6_crown_seed.py): strip surrounding whitespace,
 lowercase, and collapse inner whitespace runs (tabs, repeated spaces) to a
 single space.
 
+CROWN2-002 receipt guard (tests/test_w7_crown_seed.py): the fold is
+``str.casefold()``-strength Unicode caseless matching, not ASCII
+lowercasing — casefold-equivalent labels (``Straße``/``STRASSE``,
+``ẞ``/``ss``) are the same label.
+
 W7-A8 crown-v2 seed subject: ``dedup_labels`` — Contract
 (tests/test_w7_crown_seed.py): normalize every label through
 ``normalize_label`` first, then keep the FIRST occurrence of each distinct
@@ -12,7 +17,7 @@ normalized label, preserving original order.
 
 
 def normalize_label(value: str) -> str:
-    return " ".join(value.split()).lower()
+    return " ".join(value.split()).casefold()
 
 
 def dedup_labels(values: list[str]) -> list[str]:
