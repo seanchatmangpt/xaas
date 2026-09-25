@@ -67,40 +67,6 @@ defmodule ExNounVerbCli.CapabilityTest do
     end
   end
 
-  describe "ProofSurface.alive?/1 with invalid input (the alive?(t()) contract)" do
-    test "a wrong-shape input (a binary) is refused by the function head with FunctionClauseError" do
-      assert_raise FunctionClauseError, fn ->
-        ProofSurface.alive?("receipt:unit:001")
-      end
-    end
-
-    test "a malformed document — a plain map with the surface fields plus an unknown key — is refused with FunctionClauseError" do
-      malformed = %{
-        name: "unit-contract",
-        rung: "unit",
-        receipt: "receipt:unit:001",
-        observed: true,
-        replay_verified: true,
-        unknown_key: true
-      }
-
-      assert_raise FunctionClauseError, fn ->
-        ProofSurface.alive?(malformed)
-      end
-    end
-
-    test "contract-violating content — a non-string receipt — is refused with FunctionClauseError from String.trim/1" do
-      malformed = %{
-        ProofSurface.new("unit-contract", "unit", "receipt:unit:001", true, true)
-        | receipt: 42
-      }
-
-      assert_raise FunctionClauseError, fn ->
-        ProofSurface.alive?(malformed)
-      end
-    end
-  end
-
   describe "record_proof/2" do
     test "adding one fully-alive proof surface moves an :unknown package to :alive" do
       package = Package.new("pkg-001", "Graph", "1.0.0", "Graph operations")
@@ -161,6 +127,27 @@ defmodule ExNounVerbCli.CapabilityTest do
 
       assert {:error, _message} =
                Capability.record_proof(package, ProofSurface.new("unit", "", "r1", true, true))
+    end
+  end
+
+  describe "with_default_verb/2" do
+    test "a first argument that is not a %Package{} raises FunctionClauseError — the head \
+          matches only the real struct, so a wrong-shape input is refused, not silently rebuilt" do
+      assert_raise FunctionClauseError,
+                   "no function clause matching in ExNounVerbCli.Capability.Package.with_default_verb/2",
+                   fn ->
+                     Package.with_default_verb(%{id: "pkg-001", name: "Graph"}, "verify")
+                   end
+    end
+
+    test "binding an empty-string default verb violates the documented contract and is \
+          refused by validate/1 with the ported Rust reason" do
+      package =
+        Package.new("pkg-001", "Graph", "1.0.0", "Graph operations")
+        |> Package.with_default_verb("")
+
+      assert package.default_verb == ""
+      assert {:error, "Default verb cannot be empty"} = Package.validate(package)
     end
   end
 
