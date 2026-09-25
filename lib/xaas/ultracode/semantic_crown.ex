@@ -290,7 +290,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
   The observed base WorkOrder (`SJ-CROWN-BASE`) of APS backlog `item` at
   `ctx.base_sha`; it carries `origin_authority/0`.
   """
-  @spec base_work_order(%{required(:base_sha) => String.t()}, map()) :: map()
+  @spec base_work_order(map(), map()) :: map()
   def base_work_order(ctx, item) do
     %{
       "identity" => "SJ-CROWN-BASE",
@@ -322,7 +322,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
   `item`, requiring an ALIVE receipt of `SJ-CROWN-A`. Its `origin_authority`
   is set here, never inherited from `base`.
   """
-  @spec dependent_work_order(%{required(:base_sha) => String.t()}, map(), map()) :: map()
+  @spec dependent_work_order(map(), map(), map()) :: map()
   def dependent_work_order(ctx, base, item) do
     Map.merge(base, %{
       "identity" => @b_identity,

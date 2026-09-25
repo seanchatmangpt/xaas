@@ -61,6 +61,7 @@ defmodule Mix.Tasks.Xaas.Successor do
   ]
 
   @impl Mix.Task
+  @spec run([String.t()]) :: no_return()
   def run(args) do
     {opts, rest, invalid} = OptionParser.parse(args, strict: @switches)
 
@@ -94,6 +95,7 @@ defmodule Mix.Tasks.Xaas.Successor do
     end
   end
 
+  @spec intake(keyword(), map()) :: no_return()
   defp intake(opts, aliases) do
     intake_opts =
       [
@@ -124,8 +126,11 @@ defmodule Mix.Tasks.Xaas.Successor do
     end)
   end
 
+  # Every outcome of the retired intake is non-zero (2, 3 or 69): emit always
+  # exits.
+  @spec emit(pos_integer(), map()) :: no_return()
   defp emit(code, document) do
     Mix.shell().info(Jason.encode!(document))
-    if code != 0, do: exit({:shutdown, code})
+    exit({:shutdown, code})
   end
 end
