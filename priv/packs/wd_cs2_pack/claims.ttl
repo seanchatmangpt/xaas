@@ -1,0 +1,268 @@
+@prefix cs: <urn:xaas:case-study:> .
+@prefix stogaf: <urn:xaas:stogaf:> .
+@prefix wdcs2: <urn:xaas:wd-cs2:> .
+@prefix wdc: <urn:xaas:wd-cs2:claim:> .
+@prefix wde: <urn:xaas:wd-cs2:evidence:> .
+@prefix wdf: <urn:xaas:wd-cs2:falsifier:> .
+@prefix wdn: <urn:xaas:wd-cs2:non-claim:> .
+@prefix wda: <urn:xaas:wd-cs2:assumption:> .
+@prefix wddeck: <urn:wd:case-study-2:deck:> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# WD Case Study 2 claims ledger source. No blank nodes: the canonical
+# N-Triples digest of this file is stable. Every claim is bound to evidence on
+# the frozen subject and to at least one falsifier. Standing vocabulary:
+# ALIVE_FIXTURE (observed on repository fixtures at the subject), DESIGN
+# (argued in the design documents, not executed), UNKNOWN.
+
+wdcs2:case a cs:CaseStudy ;
+  cs:caseId "wd-cs2" ;
+  cs:title "Western Digital Case Study 2 - HDD Failure Analysis AI Agent" ;
+  cs:boundSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:treeIdenticalSubject "seanchatmangpt/xaas@7c457827dcfdb3e4809395df67f09611bbff37c8" ;
+  cs:authorityCeiling "CONSTRUCT" ;
+  cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ;
+  cs:humanGate "ENGINEER_DISPOSITION_REQUIRED" ;
+  cs:currentConformance stogaf:ST4 ;
+  cs:targetConformance stogaf:ST6 ;
+  cs:episode wdcs2:architectureEpisode .
+
+# ---------------------------------------------------------------- evidence
+
+wde:E01 a cs:Evidence ; cs:evidenceId "E01" ;
+  cs:evidencePath "docs/case-studies/wd-fa/19-SEPTEMBER-25-SUBMISSION.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+wde:E02 a cs:Evidence ; cs:evidenceId "E02" ;
+  cs:evidencePath "docs/case-studies/wd-fa/02-BASELINE-TARGET-GAP.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+wde:E03 a cs:Evidence ; cs:evidenceId "E03" ;
+  cs:evidencePath "test/xaas/case_studies/wd_fa_chicago_test.exs" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "mix test test/xaas/case_studies/wd_fa_chicago_test.exs" ;
+  cs:result "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827" .
+wde:E04 a cs:Evidence ; cs:evidenceId "E04" ;
+  cs:evidencePath "priv/packs/wd_cs2_pack/gates/020_authority_ceiling.rq" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "python3 scripts/stogaf_semantic_court.py" ;
+  cs:result "0 refusal rows; court standing ALIVE (local replay on git archive f9670f44)" .
+wde:E05 a cs:Evidence ; cs:evidenceId "E05" ;
+  cs:evidencePath "priv/packs/wd_cs2_pack/gates/030_view_projection.rq" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "python3 scripts/stogaf_semantic_court.py" ;
+  cs:result "0 refusal rows; court standing ALIVE (local replay on git archive f9670f44)" .
+wde:E06 a cs:Evidence ; cs:evidenceId "E06" ;
+  cs:evidencePath "test/xaas/case_studies/wd_fa_evidence_policy_test.exs" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "mix test test/xaas/case_studies/wd_fa_evidence_policy_test.exs" ;
+  cs:result "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827" .
+wde:E07 a cs:Evidence ; cs:evidenceId "E07" ;
+  cs:evidencePath "test/xaas/case_studies/wd_fa_learning_ocel_test.exs" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "mix test test/xaas/case_studies/wd_fa_learning_ocel_test.exs" ;
+  cs:result "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827" .
+wde:E08 a cs:Evidence ; cs:evidenceId "E08" ;
+  cs:evidencePath "docs/case-studies/wd-fa/04-DATA-ARCHITECTURE.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+wde:E09 a cs:Evidence ; cs:evidenceId "E09" ;
+  cs:evidencePath "docs/case-studies/wd-fa/CONTEXT-ENVELOPE.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+wde:E10 a cs:Evidence ; cs:evidenceId "E10" ;
+  cs:evidencePath "docs/case-studies/wd-fa/07-SECURITY-GOVERNANCE.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+wde:E11 a cs:Evidence ; cs:evidenceId "E11" ;
+  cs:evidencePath "test/xaas/case_studies/wd_fa_evaluation_test.exs" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "mix test test/xaas/case_studies/wd_fa_evaluation_test.exs" ;
+  cs:result "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827" .
+wde:E12 a cs:Evidence ; cs:evidenceId "E12" ;
+  cs:evidencePath "lib/mix/tasks/xaas.wd.fa_eval.ex" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "mix xaas.wd.fa_eval wd-cs2-evaluation.json" ;
+  cs:result "controls_passed 7; mttr UNMEASURED (STOGAF court run 36082037670)" .
+wde:E13 a cs:Evidence ; cs:evidenceId "E13" ;
+  cs:evidencePath "docs/case-studies/wd-fa/09-MIGRATION-30-60-90.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+wde:E14 a cs:Evidence ; cs:evidenceId "E14" ;
+  cs:evidencePath "test/xaas/case_studies/wd_fa_learning_loop_test.exs" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "mix test test/xaas/case_studies/wd_fa_learning_loop_test.exs" ;
+  cs:result "PASS in STOGAF court run 36082037670 on tree-identical head 7c457827" .
+wde:E15 a cs:Evidence ; cs:evidenceId "E15" ;
+  cs:evidencePath "scripts/stogaf_semantic_court.py" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack" ;
+  cs:result "standing ALIVE, 5 gates, 0 refusal rows; report sha256 e65aed338f6fc187f4e94303f1dc47bb330a90172a211a7b810353499a26a52c" .
+wde:E16 a cs:Evidence ; cs:evidenceId "E16" ;
+  cs:evidencePath "priv/packs/wd_cs2_pack/stogaf-wd-instance.ttl" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack" ;
+  cs:result "currentConformance ST-4 CONSTRAINED admitted by gate 020" .
+wde:E17 a cs:Evidence ; cs:evidenceId "E17" ;
+  cs:evidencePath "docs/case-studies/wd-fa/03-BUSINESS-ARCHITECTURE.md" ;
+  cs:exactSubject "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60" ;
+  cs:validator "design review" ; cs:result "DESIGN_DOCUMENT" .
+
+# ---------------------------------------------------------------- falsifiers
+
+wdf:F01 a cs:Falsifier ; cs:falsifierId "F01" ;
+  cs:falsifierObservation "The submission recommends free-form chat answers over a vector index as the primary interface." .
+wdf:F02 a cs:Falsifier ; cs:falsifierId "F02" ;
+  cs:falsifierObservation "WD's answer to assumption A1 names a dominant bottleneck other than context reconstruction and prior-art retrieval." .
+wdf:F03 a cs:Falsifier ; cs:falsifierId "F03" ;
+  cs:falsifierCommand "mix test test/xaas/case_studies/wd_fa_chicago_test.exs" ;
+  cs:falsifierObservation "A high-scoring novel candidate is admitted as KNOWN, or the test fails." .
+wdf:F04 a cs:Falsifier ; cs:falsifierId "F04" ;
+  cs:falsifierCommand "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack" ;
+  cs:falsifierObservation "Gate 020 returns a refusal row (authority other than SELECT_CONSTRUCT_ONLY, or human gate drift)." .
+wdf:F05 a cs:Falsifier ; cs:falsifierId "F05" ;
+  cs:falsifierCommand "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack" ;
+  cs:falsifierObservation "Gate 030 returns a view that is not derived from the architecture episode." .
+wdf:F06 a cs:Falsifier ; cs:falsifierId "F06" ;
+  cs:falsifierCommand "mix test test/xaas/case_studies/wd_fa_chicago_test.exs" ;
+  cs:falsifierObservation "A case lacking required waveform evidence is returned as KNOWN instead of PARTIAL." .
+wdf:F07 a cs:Falsifier ; cs:falsifierId "F07" ;
+  cs:falsifierCommand "mix test test/xaas/case_studies/wd_fa_learning_ocel_test.exs" ;
+  cs:falsifierObservation "The learning episode persists without binding work, disposition, receipt and experience objects." .
+wdf:F08 a cs:Falsifier ; cs:falsifierId "F08" ;
+  cs:falsifierObservation "A recommendation is produced from evidence retrieved outside the current case's fact envelope." .
+wdf:F09 a cs:Falsifier ; cs:falsifierId "F09" ;
+  cs:falsifierCommand "mix test test/xaas/case_studies/wd_fa_evidence_policy_test.exs" ;
+  cs:falsifierObservation "Classification or purpose mismatch, or private evidence without clearance, is admitted." .
+wdf:F10 a cs:Falsifier ; cs:falsifierId "F10" ;
+  cs:falsifierCommand "mix xaas.wd.fa_eval wd-cs2-evaluation.json" ;
+  cs:falsifierObservation "controls_passed is not 7, or mttr is reported as anything other than UNMEASURED." .
+wdf:F11 a cs:Falsifier ; cs:falsifierId "F11" ;
+  cs:falsifierObservation "The 30/60/90 plan starts outside a bounded, shadow-only vertical slice." .
+wdf:F12 a cs:Falsifier ; cs:falsifierId "F12" ;
+  cs:falsifierCommand "mix test test/xaas/case_studies/wd_fa_learning_loop_test.exs" ;
+  cs:falsifierObservation "An UNKNOWN fixture becomes reusable experience without independent verification, or a disposition mismatch compiles." .
+wdf:F13 a cs:Falsifier ; cs:falsifierId "F13" ;
+  cs:falsifierCommand "python3 scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack" ;
+  cs:falsifierObservation "The court standing is not ALIVE, or currentConformance is anything other than ST-4 CONSTRAINED." .
+
+# ---------------------------------------------------------------- claims
+
+wdc:C01 a cs:Claim ; cs:claimId "C01" ; cs:claimOf wdcs2:case ;
+  cs:claimText "The HDD failure-analysis agent is designed as a governed quality loop, not a chatbot in front of a vector database." ;
+  cs:standing "DESIGN" ; cs:evidenceCeiling "DESIGN_DOCUMENT" ; cs:authorityCeiling "NONE" ;
+  cs:supportedBy wde:E01 ; cs:falsifiedBy wdf:F01 ; cs:renderedBy wddeck:slide-01 .
+
+wdc:C02 a cs:Claim ; cs:claimId "C02" ; cs:claimOf wdcs2:case ;
+  cs:claimText "The dominant FA cost is repeated human reconstruction of a failed drive's context, pending WD's answer to assumption A1." ;
+  cs:standing "DESIGN" ; cs:evidenceCeiling "DESIGN_DOCUMENT" ; cs:authorityCeiling "NONE" ;
+  cs:supportedBy wde:E02, wde:E17 ; cs:dependsOn wda:A1 ; cs:falsifiedBy wdf:F02 ;
+  cs:renderedBy wddeck:slide-03 .
+
+wdc:C03 a cs:Claim ; cs:claimId "C03" ; cs:claimOf wdcs2:case ;
+  cs:claimText "A candidate is not an admission and an admission is not authority: a high-scoring candidate cannot become KNOWN, and consequential disposition stays with an engineer." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E03, wde:E04 ; cs:dependsOn wda:A2 ; cs:falsifiedBy wdf:F03, wdf:F04 ;
+  cs:renderedBy wddeck:slide-04 .
+
+wdc:C04 a cs:Claim ; cs:claimId "C04" ; cs:claimOf wdcs2:case ;
+  cs:claimText "One evidence state is projected into several views; every declared view is derived from the architecture episode." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E05, wde:E15 ; cs:falsifiedBy wdf:F05 ;
+  cs:renderedBy wddeck:slide-05 .
+
+wdc:C05 a cs:Claim ; cs:claimId "C05" ; cs:claimOf wdcs2:case ;
+  cs:claimText "For a failed drive the agent returns KNOWN only on deterministic evidence closure, PARTIAL when required evidence is missing, and UNKNOWN otherwise." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E03 ; cs:falsifiedBy wdf:F06 ;
+  cs:renderedBy wddeck:slide-06 .
+
+wdc:C06 a cs:Claim ; cs:claimId "C06" ; cs:claimOf wdcs2:case ;
+  cs:claimText "The data model is object-centric: a learning episode binds work, disposition, receipt and MachineExperience objects with provenance." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E07, wde:E08 ; cs:falsifiedBy wdf:F07 ;
+  cs:renderedBy wddeck:slide-07 .
+
+wdc:C07 a cs:Claim ; cs:claimId "C07" ; cs:claimOf wdcs2:case ;
+  cs:claimText "Corpus understanding is precomputed; the decision for a case is made on that case's current facts." ;
+  cs:standing "DESIGN" ; cs:evidenceCeiling "DESIGN_DOCUMENT" ; cs:authorityCeiling "NONE" ;
+  cs:supportedBy wde:E09 ; cs:falsifiedBy wdf:F08 ;
+  cs:renderedBy wddeck:slide-08 .
+
+wdc:C08 a cs:Claim ; cs:claimId "C08" ; cs:claimOf wdcs2:case ;
+  cs:claimText "Evidence admission fails closed on classification or purpose mismatch and on private evidence without explicit clearance." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E06, wde:E10 ; cs:dependsOn wda:A3 ; cs:falsifiedBy wdf:F09 ;
+  cs:renderedBy wddeck:slide-09 .
+
+wdc:C09 a cs:Claim ; cs:claimId "C09" ; cs:claimOf wdcs2:case ;
+  cs:claimText "The offline evaluation executes seven negative and positive controls on repository fixtures and reports MTTR as UNMEASURED." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E11, wde:E12 ; cs:falsifiedBy wdf:F10 ;
+  cs:renderedBy wddeck:slide-10 .
+
+wdc:C10 a cs:Claim ; cs:claimId "C10" ; cs:claimOf wdcs2:case ;
+  cs:claimText "Delivery starts with a bounded 30-day vertical slice in shadow mode, sized to the access WD can authorize." ;
+  cs:standing "DESIGN" ; cs:evidenceCeiling "DESIGN_DOCUMENT" ; cs:authorityCeiling "NONE" ;
+  cs:supportedBy wde:E13 ; cs:dependsOn wda:A3 ; cs:falsifiedBy wdf:F11 ;
+  cs:renderedBy wddeck:slide-11 .
+
+wdc:C11 a cs:Claim ; cs:claimId "C11" ; cs:claimOf wdcs2:case ;
+  cs:claimText "An UNKNOWN fixture becomes reusable MachineExperience only after independent verification of the engineer disposition." ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "CONSTRUCT" ;
+  cs:supportedBy wde:E14 ; cs:falsifiedBy wdf:F12 ;
+  cs:renderedBy wddeck:slide-12 .
+
+wdc:C12 a cs:Claim ; cs:claimId "C12" ; cs:claimOf wdcs2:case ;
+  cs:claimText "The architecture episode's current STOGAF conformance is ST-4 CONSTRAINED." ;
+  cs:claimedLevel stogaf:ST4 ;
+  cs:standing "ALIVE_FIXTURE" ; cs:evidenceCeiling "REPO_LOCAL_FIXTURE" ; cs:authorityCeiling "SELECT" ;
+  cs:supportedBy wde:E15, wde:E16 ; cs:falsifiedBy wdf:F13 .
+
+# ---------------------------------------------------------------- slides without claims
+
+wddeck:slide-02 cs:noClaimReason "Agenda slide: lists what the talk covers; asserts nothing beyond the claims on later slides." .
+wddeck:slide-13 cs:noClaimReason "Internal presenter prep (audience internal): not shown to WD." .
+wddeck:slide-14 cs:noClaimReason "Internal presenter prep (audience internal): not shown to WD." .
+
+# ---------------------------------------------------------------- non-claims
+
+wdn:N01 a cs:NonClaim ; cs:nonClaimId "N01" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "ST-6 AUTONOMIC" .
+wdn:N02 a cs:NonClaim ; cs:nonClaimId "N02" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "ST-7 ACTUATED" .
+wdn:N03 a cs:NonClaim ; cs:nonClaimId "N03" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "ST-8 CLOSED_LOOP" .
+wdn:N04 a cs:NonClaim ; cs:nonClaimId "N04" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "ST-9 LEARNING" .
+wdn:N05 a cs:NonClaim ; cs:nonClaimId "N05" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "production deployment" .
+wdn:N06 a cs:NonClaim ; cs:nonClaimId "N06" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "measured WD MTTR reduction" .
+wdn:N07 a cs:NonClaim ; cs:nonClaimId "N07" ; cs:nonClaimOf wdcs2:case ;
+  cs:nonClaimLabel "WD acceptance" .
+
+# ---------------------------------------------------------------- assumptions
+# Source: 19-SEPTEMBER-25-SUBMISSION.md "Questions already sent to WD and
+# interim assumptions". Forwarding confirmation is not an answer.
+
+wda:A1 a cs:Assumption ; cs:assumptionId "A1" ; cs:assumptionOf wdcs2:case ;
+  cs:question "When a failed drive comes in, what does the engineer actually do today, and where does the process usually get stuck?" ;
+  cs:unknown "Exact current workflow, handoffs, wait states and dominant bottleneck" ;
+  cs:interimAssumption "Engineers spend material time reconstructing context and finding applicable prior art before selecting the next diagnostic step" ;
+  cs:changeIfDifferent "I would remap the first vertical slice around the measured bottleneck rather than preserve my assumed workflow" ;
+  cs:askedOn "2026-09-23"^^xsd:date ; cs:askedVia "Pradyot Kar" ; cs:answerStatus "UNANSWERED" .
+
+wda:A2 a cs:Assumption ; cs:assumptionId "A2" ; cs:assumptionOf wdcs2:case ;
+  cs:question "When evidence disagrees — prior FA history, build data, current test results and engineer judgment — what is authoritative?" ;
+  cs:unknown "WD's precedence, escalation and ground-truth policy" ;
+  cs:interimAssumption "No source is allowed to silently dominate; contradictions remain visible and consequential disposition stays with an engineer" ;
+  cs:changeIfDifferent "Admission rules, evidence precedence and escalation policy would be revised to WD's actual governance model" ;
+  cs:askedOn "2026-09-23"^^xsd:date ; cs:askedVia "Pradyot Kar" ; cs:answerStatus "UNANSWERED" .
+
+wda:A3 a cs:Assumption ; cs:assumptionId "A3" ; cs:assumptionOf wdcs2:case ;
+  cs:question "If I had 30 days to prove usefulness, what data and systems would I realistically have access to, and what result would the team want to see first?" ;
+  cs:unknown "Accessible sources, security constraints, representative corpus and first success metric" ;
+  cs:interimAssumption "Start with a bounded historical/redacted corpus plus whatever structured build facts WD can authorize; use shadow-only recommendations" ;
+  cs:changeIfDifferent "The first 30-day slice and measurement plan would be narrowed or expanded around the actual access envelope" ;
+  cs:askedOn "2026-09-23"^^xsd:date ; cs:askedVia "Pradyot Kar" ; cs:answerStatus "UNANSWERED" .

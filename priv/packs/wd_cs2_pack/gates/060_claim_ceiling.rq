@@ -1,0 +1,27 @@
+# Refuse any cs:Claim (never a cs:NonClaim) that exceeds the case ceilings:
+# a claimed STOGAF level of ST-6 or above, an authority ceiling outside
+# {NONE, SELECT, CONSTRUCT}, an externally-observed evidence ceiling, or text
+# asserting autonomic/actuated/production-deployed/MTTR-improved standing.
+PREFIX cs: <urn:xaas:case-study:>
+PREFIX stogaf: <urn:xaas:stogaf:>
+
+SELECT ?subject ?reason WHERE {
+  ?subject a cs:Claim .
+  {
+    ?subject cs:claimedLevel ?level .
+    ?level stogaf:levelNumber ?n .
+    FILTER(?n >= 6)
+    BIND("claim-exceeds-current-conformance-ceiling" AS ?reason)
+  } UNION {
+    ?subject cs:authorityCeiling ?authority .
+    FILTER(?authority NOT IN ("NONE", "SELECT", "CONSTRUCT"))
+    BIND("claim-authority-exceeds-CONSTRUCT" AS ?reason)
+  } UNION {
+    ?subject cs:evidenceCeiling "EXTERNALLY_OBSERVED" .
+    BIND("claim-evidence-ceiling-exceeds-repo-local" AS ?reason)
+  } UNION {
+    ?subject cs:claimText ?text .
+    FILTER(REGEX(?text, "ST-[6-9]|ACTUATED|AUTONOMIC|(customer|production) deploy|MTTR (reduc|improv)", "i"))
+    BIND("claim-text-asserts-non-claim" AS ?reason)
+  }
+}

@@ -3,15 +3,28 @@ name: WD deck manufacture
 on:
   push:
     branches:
+      - main
       - feat/stogaf-wd-cs2-v26.9.22
     paths:
       - "docs/case-studies/wd-fa/presentation/**"
+      - "docs/case-studies/wd-fa/case-study.json"
+      - "docs/case-studies/wd-fa/claims-ledger.json"
+      - "docs/case-studies/wd-fa/SLIDE-EVIDENCE-MAP.json"
+      - "priv/packs/wd_cs2_pack/case-study.ttl"
+      - "priv/packs/wd_cs2_pack/claims.ttl"
+      - "priv/packs/wd_cs2_case_study_pack/**"
       - "tools/wd_deck/**"
       - "test/wd_deck_pin_test.py"
       - ".github/workflows/wd-deck-generation.yml"
   pull_request:
     paths:
       - "docs/case-studies/wd-fa/presentation/**"
+      - "docs/case-studies/wd-fa/case-study.json"
+      - "docs/case-studies/wd-fa/claims-ledger.json"
+      - "docs/case-studies/wd-fa/SLIDE-EVIDENCE-MAP.json"
+      - "priv/packs/wd_cs2_pack/case-study.ttl"
+      - "priv/packs/wd_cs2_pack/claims.ttl"
+      - "priv/packs/wd_cs2_case_study_pack/**"
       - "tools/wd_deck/**"
       - "test/wd_deck_pin_test.py"
       - ".github/workflows/wd-deck-generation.yml"
@@ -22,7 +35,7 @@ permissions:
 
 concurrency:
   group: wd-deck-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -84,10 +97,13 @@ jobs:
         run: mix deps.get --check-locked
 
       - name: Install WD deck CLI
-        run: python -m pip install -e tools/wd_deck pytest
+        run: python -m pip install -e tools/wd_deck pytest "rdflib>=7,<8"
 
       - name: Marketplace pin single-source court
         run: python -m pytest -q test/wd_deck_pin_test.py
+
+      - name: Case-study projections are byte-identical to their regeneration
+        run: wd-deck case-study --check --build-dir tmp/wd-case-study
 
       - name: Install exact PptxGenJS runtime
         run: wd-deck bootstrap
@@ -127,6 +143,8 @@ jobs:
               assert receipt["failures"] == [], receipt
               assert "EXTERNAL_STANDING" in receipt["non_claims"], receipt
               assert receipt["marketplace_pack"] == pack, receipt
+              # slide-07 carries MachineExperience (was dropped by pres:lockOf).
+              assert receipt["block_counts"]["slide-07"] == 10, receipt
           PY
 
       - name: Upload receipted deck artifacts
@@ -140,5 +158,6 @@ jobs:
             tmp/wd-deck-interview/wd_case_study_2_interview.pptx
             tmp/wd-deck-interview/interview-receipt.json
             tmp/wd-deck-interview/generated/deck.json
+            tmp/wd-case-study/generated/case.ttl
           if-no-files-found: error
           retention-days: 30

@@ -1,0 +1,26 @@
+# The deck is a projection of the case: every slide renders a claim or states
+# why it carries none, and a claim may only be rendered by a declared slide
+# (a projection may omit claims, never add one).
+PREFIX cs: <urn:xaas:case-study:>
+PREFIX pres: <https://ggen.dev/ns/presentation#>
+
+SELECT ?subject ?reason WHERE {
+  {
+    ?subject a pres:Slide .
+    FILTER NOT EXISTS { ?claim a cs:Claim ; cs:renderedBy ?subject }
+    FILTER NOT EXISTS { ?subject cs:noClaimReason ?why }
+    BIND("slide-without-claim-or-no-claim-reason" AS ?reason)
+  } UNION {
+    ?subject cs:renderedBy ?slide .
+    FILTER NOT EXISTS { ?slide a pres:Slide }
+    BIND("claim-rendered-by-undeclared-slide" AS ?reason)
+  } UNION {
+    ?subject cs:renderedBy ?slide .
+    FILTER NOT EXISTS { ?subject a cs:Claim }
+    BIND("projection-renders-undeclared-claim" AS ?reason)
+  } UNION {
+    ?subject a pres:Slide ; cs:noClaimReason ?why .
+    ?claim a cs:Claim ; cs:renderedBy ?subject .
+    BIND("slide-both-renders-claim-and-declares-none" AS ?reason)
+  }
+}

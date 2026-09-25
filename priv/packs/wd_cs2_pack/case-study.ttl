@@ -1,0 +1,63 @@
+@prefix cs: <urn:xaas:case-study:> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Semantic Case Study vocabulary (RFC-0003 instance for WD Case Study 2).
+# A case study is a bounded set of claims, each bound to evidence on an exact
+# subject and to at least one falsifier. Projections (deck, ledger, evidence
+# map) may omit claims; they may never add one.
+
+cs:CaseStudy a rdfs:Class ; rdfs:label "Case study" .
+cs:Claim a rdfs:Class ; rdfs:label "Claim" .
+cs:NonClaim a rdfs:Class ; rdfs:label "Explicit non-claim" .
+cs:Evidence a rdfs:Class ; rdfs:label "Evidence bound to an exact subject" .
+cs:Assumption a rdfs:Class ; rdfs:label "Interim assumption pending a stakeholder answer" .
+cs:Falsifier a rdfs:Class ; rdfs:label "Observation that refutes a claim" .
+cs:Projection a rdfs:Class ; rdfs:label "Generated projection of the case" .
+
+cs:caseId a rdf:Property ; rdfs:domain cs:CaseStudy ; rdfs:range xsd:string .
+cs:title a rdf:Property ; rdfs:range xsd:string .
+cs:boundSubject a rdf:Property ; rdfs:domain cs:CaseStudy ; rdfs:range xsd:string .
+cs:treeIdenticalSubject a rdf:Property ; rdfs:domain cs:CaseStudy ; rdfs:range xsd:string .
+cs:humanGate a rdf:Property ; rdfs:range xsd:string .
+cs:currentConformance a rdf:Property ; rdfs:domain cs:CaseStudy .
+cs:targetConformance a rdf:Property ; rdfs:domain cs:CaseStudy .
+cs:episode a rdf:Property ; rdfs:domain cs:CaseStudy .
+
+cs:claimOf a rdf:Property ; rdfs:range cs:CaseStudy .
+cs:claimId a rdf:Property ; rdfs:range xsd:string .
+cs:claimText a rdf:Property ; rdfs:range xsd:string .
+cs:claimedLevel a rdf:Property ; rdfs:domain cs:Claim .
+cs:standing a rdf:Property ; rdfs:range xsd:string .
+cs:evidenceCeiling a rdf:Property ; rdfs:range xsd:string .
+cs:authorityCeiling a rdf:Property ; rdfs:range xsd:string .
+cs:supportedBy a rdf:Property ; rdfs:domain cs:Claim ; rdfs:range cs:Evidence .
+cs:dependsOn a rdf:Property ; rdfs:domain cs:Claim ; rdfs:range cs:Assumption .
+cs:falsifiedBy a rdf:Property ; rdfs:domain cs:Claim ; rdfs:range cs:Falsifier .
+cs:renderedBy a rdf:Property ; rdfs:domain cs:Claim .
+cs:noClaimReason a rdf:Property ; rdfs:range xsd:string .
+
+cs:evidenceId a rdf:Property ; rdfs:domain cs:Evidence ; rdfs:range xsd:string .
+cs:evidencePath a rdf:Property ; rdfs:domain cs:Evidence ; rdfs:range xsd:string .
+cs:exactSubject a rdf:Property ; rdfs:domain cs:Evidence ; rdfs:range xsd:string .
+cs:validator a rdf:Property ; rdfs:domain cs:Evidence ; rdfs:range xsd:string .
+cs:result a rdf:Property ; rdfs:domain cs:Evidence ; rdfs:range xsd:string .
+
+cs:falsifierId a rdf:Property ; rdfs:domain cs:Falsifier ; rdfs:range xsd:string .
+cs:falsifierCommand a rdf:Property ; rdfs:domain cs:Falsifier ; rdfs:range xsd:string .
+cs:falsifierObservation a rdf:Property ; rdfs:domain cs:Falsifier ; rdfs:range xsd:string .
+
+cs:nonClaimOf a rdf:Property ; rdfs:domain cs:NonClaim ; rdfs:range cs:CaseStudy .
+cs:nonClaimId a rdf:Property ; rdfs:domain cs:NonClaim ; rdfs:range xsd:string .
+cs:nonClaimLabel a rdf:Property ; rdfs:domain cs:NonClaim ; rdfs:range xsd:string .
+
+cs:assumptionOf a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range cs:CaseStudy .
+cs:assumptionId a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .
+cs:question a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .
+cs:unknown a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .
+cs:interimAssumption a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .
+cs:changeIfDifferent a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .
+cs:askedOn a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:date .
+cs:askedVia a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .
+cs:answerStatus a rdf:Property ; rdfs:domain cs:Assumption ; rdfs:range xsd:string .

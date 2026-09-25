@@ -1,0 +1,8 @@
+PREFIX cs: <urn:xaas:case-study:>
+PREFIX pres: <https://ggen.dev/ns/presentation#>
+SELECT ?slide_id ?slide_order ?title ?audience ?no_claim_reason
+WHERE {
+  ?slide a pres:Slide ; pres:id ?slide_id ; pres:order ?slide_order ; pres:title ?title .
+  OPTIONAL { ?slide pres:audience ?audience . }
+  OPTIONAL { ?slide cs:noClaimReason ?no_claim_reason . }
+}

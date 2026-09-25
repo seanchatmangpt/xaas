@@ -1,0 +1,4 @@
+[pack]
+name = "wd-cs2-case-study-pack"
+version = "26.9.25"
+description = "Projection pack for the WD Case Study 2 Semantic Case Study (RFC-0003 instance): claims.ttl + deck TTL -> case-study.json, claims-ledger.json, SLIDE-EVIDENCE-MAP.json. CONSTRUCT-only; each projection carries case_id, case_revision_digest, generator_identity and claim_ids. The gates/ here are projection queries (ggen_igniter convention), not refusal gates; the refusal gates live in priv/packs/wd_cs2_pack/gates."

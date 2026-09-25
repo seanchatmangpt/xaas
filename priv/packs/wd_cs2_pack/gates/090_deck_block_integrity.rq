@@ -1,0 +1,23 @@
+# Every pres:Block belongs to exactly one declared pres:Slide. A block typed
+# with the pres:lockOf misspelling (or any block without pres:blockOf) is
+# silently dropped by the pptx pack's 030_blocks.rq join.
+PREFIX pres: <https://ggen.dev/ns/presentation#>
+
+SELECT ?subject ?reason WHERE {
+  {
+    ?subject a pres:Block .
+    FILTER NOT EXISTS { ?subject pres:blockOf ?slide }
+    BIND("block-without-blockOf" AS ?reason)
+  } UNION {
+    ?subject pres:lockOf ?slide .
+    BIND("block-uses-lockOf-misspelling" AS ?reason)
+  } UNION {
+    ?subject a pres:Block ; pres:blockOf ?slide .
+    FILTER NOT EXISTS { ?slide a pres:Slide }
+    BIND("block-of-undeclared-slide" AS ?reason)
+  } UNION {
+    ?subject a pres:Block ; pres:blockOf ?a, ?b .
+    FILTER(STR(?a) < STR(?b))
+    BIND("block-of-multiple-slides" AS ?reason)
+  }
+}

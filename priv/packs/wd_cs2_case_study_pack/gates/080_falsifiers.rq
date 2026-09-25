@@ -1,0 +1,8 @@
+PREFIX cs: <urn:xaas:case-study:>
+SELECT ?falsifier_id ?command ?observation
+WHERE {
+  ?falsifier a cs:Falsifier ;
+             cs:falsifierId ?falsifier_id ;
+             cs:falsifierObservation ?observation .
+  OPTIONAL { ?falsifier cs:falsifierCommand ?command . }
+}

@@ -1,0 +1,69 @@
+@prefix cs: <urn:xaas:case-study:> .
+@prefix cssh: <urn:xaas:case-study:shape:> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+cssh:CaseStudyShape a sh:NodeShape ;
+  sh:targetClass cs:CaseStudy ;
+  sh:property [ sh:path cs:caseId ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path cs:boundSubject ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:pattern "^[^@]+@[0-9a-f]{40}$" ] ;
+  sh:property [ sh:path cs:authorityCeiling ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "NONE" "SELECT" "CONSTRUCT" ) ] ;
+  sh:property [ sh:path cs:evidenceCeiling ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:currentConformance ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+cssh:ClaimShape a sh:NodeShape ;
+  sh:targetClass cs:Claim ;
+  sh:property [ sh:path cs:claimId ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:pattern "^C[0-9]{2}$" ] ;
+  sh:property [ sh:path cs:claimOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cs:CaseStudy ] ;
+  sh:property [ sh:path cs:claimText ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path cs:standing ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "ALIVE_FIXTURE" "PARTIAL_ALIVE" "DESIGN" "UNKNOWN" ) ] ;
+  sh:property [ sh:path cs:authorityCeiling ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "NONE" "SELECT" "CONSTRUCT" ) ] ;
+  sh:property [ sh:path cs:evidenceCeiling ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:falsifiedBy ; sh:minCount 1 ; sh:class cs:Falsifier ] ;
+  sh:property [ sh:path cs:supportedBy ; sh:class cs:Evidence ] ;
+  sh:property [ sh:path cs:dependsOn ; sh:class cs:Assumption ] .
+
+cssh:SupportedClaimShape a sh:NodeShape ;
+  sh:targetClass cs:Claim ;
+  sh:or (
+    [ sh:property [ sh:path cs:standing ; sh:in ( "UNKNOWN" ) ] ]
+    [ sh:property [ sh:path cs:supportedBy ; sh:minCount 1 ] ]
+  ) .
+
+cssh:EvidenceShape a sh:NodeShape ;
+  sh:targetClass cs:Evidence ;
+  sh:property [ sh:path cs:evidenceId ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:evidencePath ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:pattern "^[^/][^ ]*$" ] ;
+  sh:property [ sh:path cs:exactSubject ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:pattern "^[^@]+@[0-9a-f]{40}$" ] ;
+  sh:property [ sh:path cs:validator ; sh:minCount 1 ] ;
+  sh:property [ sh:path cs:result ; sh:minCount 1 ] .
+
+cssh:FalsifierShape a sh:NodeShape ;
+  sh:targetClass cs:Falsifier ;
+  sh:property [ sh:path cs:falsifierId ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:falsifierObservation ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+cssh:NonClaimShape a sh:NodeShape ;
+  sh:targetClass cs:NonClaim ;
+  sh:property [ sh:path cs:nonClaimId ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:nonClaimLabel ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:nonClaimOf ; sh:minCount 1 ; sh:class cs:CaseStudy ] .
+
+cssh:AssumptionShape a sh:NodeShape ;
+  sh:targetClass cs:Assumption ;
+  sh:property [ sh:path cs:assumptionId ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:question ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:unknown ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:interimAssumption ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:changeIfDifferent ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:askedOn ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:date ] ;
+  sh:property [ sh:path cs:askedVia ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path cs:answerStatus ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "UNANSWERED" "ANSWERED" ) ] .

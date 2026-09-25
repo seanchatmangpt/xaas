@@ -1,0 +1,12 @@
+PREFIX cs: <urn:xaas:case-study:>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?claim_id ?claim_text ?standing ?evidence_ceiling ?authority_ceiling ?claimed_level
+WHERE {
+  ?claim a cs:Claim ;
+         cs:claimId ?claim_id ;
+         cs:claimText ?claim_text ;
+         cs:standing ?standing ;
+         cs:evidenceCeiling ?evidence_ceiling ;
+         cs:authorityCeiling ?authority_ceiling .
+  OPTIONAL { ?claim cs:claimedLevel ?level . ?level skos:prefLabel ?claimed_level . }
+}

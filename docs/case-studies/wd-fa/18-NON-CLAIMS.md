@@ -12,6 +12,8 @@ The following statements are intentionally **not** made by this repository-local
 - We do not claim production actuation authority.
 - We do not claim a customer-approved ontology.
 - We do not claim ST-7 ACTUATED, ST-8 CLOSED_LOOP or ST-9 LEARNING.
+- We do not claim ST-6 AUTONOMIC; it is the declared target (current: ST-4 CONSTRAINED).
+- We do not claim WD acceptance of this design or of the repository prototype.
 - We do not claim Toyota is a WD customer or part of Case Study 2.
 - We do not claim STOGAF is an official Open Group specification.
 

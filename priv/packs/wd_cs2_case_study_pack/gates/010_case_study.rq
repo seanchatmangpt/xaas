@@ -1,0 +1,21 @@
+PREFIX cs: <urn:xaas:case-study:>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?case_id ?title ?bound_subject ?tree_identical_subject ?authority_ceiling
+       ?evidence_ceiling ?human_gate ?current_conformance ?target_conformance
+       ?case_revision_digest ?generator_identity
+WHERE {
+  ?case a cs:CaseStudy ;
+        cs:caseId ?case_id ;
+        cs:title ?title ;
+        cs:boundSubject ?bound_subject ;
+        cs:treeIdenticalSubject ?tree_identical_subject ;
+        cs:authorityCeiling ?authority_ceiling ;
+        cs:evidenceCeiling ?evidence_ceiling ;
+        cs:humanGate ?human_gate ;
+        cs:currentConformance ?current ;
+        cs:targetConformance ?target ;
+        cs:caseRevisionDigest ?case_revision_digest ;
+        cs:generatorIdentity ?generator_identity .
+  ?current skos:prefLabel ?current_conformance .
+  ?target skos:prefLabel ?target_conformance .
+}

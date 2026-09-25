@@ -1,14 +1,21 @@
 PREFIX stogaf: <urn:xaas:stogaf:>
 
+# Each UNION branch binds its own subject. Under strict SPARQL bottom-up
+# evaluation a nested group cannot see variables bound outside it; rdflib
+# happens to substitute them for FILTER NOT EXISTS, but not for a plain FILTER
+# (gate 020's pre-v26.9.25 conformance branch returned 0 rows on ST-7 input).
+# Branch-local binding keeps every gate engine-portable.
 SELECT ?requirement ?reason WHERE {
-  ?requirement a stogaf:Requirement .
   {
+    ?requirement a stogaf:Requirement .
     FILTER NOT EXISTS { ?artifact stogaf:satisfiesRequirement ?requirement }
     BIND("requirement-has-no-satisfying-artifact" AS ?reason)
   } UNION {
+    ?requirement a stogaf:Requirement .
     FILTER NOT EXISTS { ?requirement stogaf:verifiedBy ?court }
     BIND("requirement-has-no-verification-court" AS ?reason)
   } UNION {
+    ?requirement a stogaf:Requirement .
     FILTER NOT EXISTS { ?requirement stogaf:standing ?standing }
     BIND("requirement-has-no-standing" AS ?reason)
   }

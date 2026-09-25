@@ -1,0 +1,90 @@
+
+{
+  "assumptions": [
+    {
+      "answer_status": "UNANSWERED",
+      "asked_on": "2026-09-23",
+      "asked_via": "Pradyot Kar",
+      "assumption_id": "A1",
+      "change_if_different": "I would remap the first vertical slice around the measured bottleneck rather than preserve my assumed workflow",
+      "interim_assumption": "Engineers spend material time reconstructing context and finding applicable prior art before selecting the next diagnostic step",
+      "question": "When a failed drive comes in, what does the engineer actually do today, and where does the process usually get stuck?",
+      "unknown": "Exact current workflow, handoffs, wait states and dominant bottleneck"
+    },
+    {
+      "answer_status": "UNANSWERED",
+      "asked_on": "2026-09-23",
+      "asked_via": "Pradyot Kar",
+      "assumption_id": "A2",
+      "change_if_different": "Admission rules, evidence precedence and escalation policy would be revised to WD's actual governance model",
+      "interim_assumption": "No source is allowed to silently dominate; contradictions remain visible and consequential disposition stays with an engineer",
+      "question": "When evidence disagrees — prior FA history, build data, current test results and engineer judgment — what is authoritative?",
+      "unknown": "WD's precedence, escalation and ground-truth policy"
+    },
+    {
+      "answer_status": "UNANSWERED",
+      "asked_on": "2026-09-23",
+      "asked_via": "Pradyot Kar",
+      "assumption_id": "A3",
+      "change_if_different": "The first 30-day slice and measurement plan would be narrowed or expanded around the actual access envelope",
+      "interim_assumption": "Start with a bounded historical/redacted corpus plus whatever structured build facts WD can authorize; use shadow-only recommendations",
+      "question": "If I had 30 days to prove usefulness, what data and systems would I realistically have access to, and what result would the team want to see first?",
+      "unknown": "Accessible sources, security constraints, representative corpus and first success metric"
+    }
+  ],
+  "authority_ceiling": "CONSTRUCT",
+  "bound_subject": "seanchatmangpt/xaas@f9670f446537ddb882edf9cd7e0b6519de557e60",
+  "case_id": "wd-cs2",
+  "case_revision_digest": "6bd9762edbdf7c8f2a267106343601c60eef8c5cf32f52e183b963cc6453806f",
+  "claim_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12"
+  ],
+  "current_conformance": "ST-4 CONSTRAINED",
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "generator_identity": "ggen_igniter@26.9.15+engine=sparql;wd_cs2_case_study_pack=sha256:32704e04ec1ea4fc15eebb00a73678eabb0feac1720c8ad8ebb64b57c8a07693",
+  "human_gate": "ENGINEER_DISPOSITION_REQUIRED",
+  "non_claims": [
+    {
+      "label": "ST-6 AUTONOMIC",
+      "non_claim_id": "N01"
+    },
+    {
+      "label": "ST-7 ACTUATED",
+      "non_claim_id": "N02"
+    },
+    {
+      "label": "ST-8 CLOSED_LOOP",
+      "non_claim_id": "N03"
+    },
+    {
+      "label": "ST-9 LEARNING",
+      "non_claim_id": "N04"
+    },
+    {
+      "label": "production deployment",
+      "non_claim_id": "N05"
+    },
+    {
+      "label": "measured WD MTTR reduction",
+      "non_claim_id": "N06"
+    },
+    {
+      "label": "WD acceptance",
+      "non_claim_id": "N07"
+    }
+  ],
+  "target_conformance": "ST-6 AUTONOMIC",
+  "title": "Western Digital Case Study 2 - HDD Failure Analysis AI Agent",
+  "tree_identical_subject": "seanchatmangpt/xaas@7c457827dcfdb3e4809395df67f09611bbff37c8"
+}

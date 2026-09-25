@@ -50,3 +50,57 @@ def test_workflow_derivation_step_extracts_the_pin() -> None:
         ["bash", "-c", command], cwd=ROOT, check=True, capture_output=True, text=True
     )
     assert result.stdout.strip() == _pinned()
+
+
+def _load_wd_deck():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("wd_deck_under_test", WD_DECK)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _fake_free_pack(root: Path, marker: str | None) -> Path:
+    """A real on-disk pack directory (pack.toml + ontology.ttl), outside any git repo."""
+    pack = root / "packs" / "pptx-presentation-pack"
+    pack.mkdir(parents=True)
+    (pack / "pack.toml").write_text("[pack]\nname = \"pptx-presentation-pack\"\n", encoding="utf-8")
+    (pack / "ontology.ttl").write_text("", encoding="utf-8")
+    if marker is not None:
+        (pack / ".marketplace-commit").write_text(marker + "\n", encoding="utf-8")
+    return pack
+
+
+def test_pack_dir_admits_a_pack_marked_with_the_pinned_commit(tmp_path: Path) -> None:
+    wd_deck = _load_wd_deck()
+    pack = _fake_free_pack(tmp_path, _pinned())
+    assert wd_deck._pack_dir(pack, tmp_path) == pack.resolve()
+
+
+def test_pack_dir_refuses_commit_drift(tmp_path: Path, capsys) -> None:
+    import typer
+
+    wd_deck = _load_wd_deck()
+    pack = _fake_free_pack(tmp_path, "0" * 40)
+    try:
+        wd_deck._pack_dir(pack, tmp_path)
+    except typer.Exit as exit_:
+        assert exit_.exit_code == 8
+    else:
+        raise AssertionError("drifted pack admitted")
+    assert "REFUSED:PACK_COMMIT_DRIFT" in capsys.readouterr().err
+
+
+def test_pack_dir_refuses_an_unmarked_pack_outside_git(tmp_path: Path, capsys) -> None:
+    import typer
+
+    wd_deck = _load_wd_deck()
+    pack = _fake_free_pack(tmp_path, None)
+    try:
+        wd_deck._pack_dir(pack, tmp_path)
+    except typer.Exit as exit_:
+        assert exit_.exit_code == 8
+    else:
+        raise AssertionError("unmarked pack admitted")
+    assert "observed UNKNOWN" in capsys.readouterr().err
