@@ -67,6 +67,40 @@ defmodule ExNounVerbCli.CapabilityTest do
     end
   end
 
+  describe "ProofSurface.alive?/1 with invalid input (the alive?(t()) contract)" do
+    test "a wrong-shape input (a binary) is refused by the function head with FunctionClauseError" do
+      assert_raise FunctionClauseError, fn ->
+        ProofSurface.alive?("receipt:unit:001")
+      end
+    end
+
+    test "a malformed document — a plain map with the surface fields plus an unknown key — is refused with FunctionClauseError" do
+      malformed = %{
+        name: "unit-contract",
+        rung: "unit",
+        receipt: "receipt:unit:001",
+        observed: true,
+        replay_verified: true,
+        unknown_key: true
+      }
+
+      assert_raise FunctionClauseError, fn ->
+        ProofSurface.alive?(malformed)
+      end
+    end
+
+    test "contract-violating content — a non-string receipt — is refused with FunctionClauseError from String.trim/1" do
+      malformed = %{
+        ProofSurface.new("unit-contract", "unit", "receipt:unit:001", true, true)
+        | receipt: 42
+      }
+
+      assert_raise FunctionClauseError, fn ->
+        ProofSurface.alive?(malformed)
+      end
+    end
+  end
+
   describe "record_proof/2" do
     test "adding one fully-alive proof surface moves an :unknown package to :alive" do
       package = Package.new("pkg-001", "Graph", "1.0.0", "Graph operations")
