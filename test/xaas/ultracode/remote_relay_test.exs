@@ -204,6 +204,32 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
     assert {:replay, ^s3} = RemoteRelay.admit(s3, envelope(), 5)
   end
 
+  test "ACK mutation reuses manifest, authority, expiry, duplicate and sequence admission" do
+    env = envelope()
+    assert {:ok, s1} = RemoteRelay.acknowledge(state(), env, 5)
+    assert {:replay, ^s1} = RemoteRelay.acknowledge(s1, env, 5)
+
+    assert {:error, :execution_manifest_drift} =
+             RemoteRelay.acknowledge(
+               state(),
+               envelope(%{execution_manifest_digest: "drift"}),
+               5
+             )
+
+    assert {:error, :command_expired} =
+             RemoteRelay.acknowledge(state(), envelope(%{expires_at: 4}), 5)
+
+    assert {:error, :authority_ref_required} =
+             RemoteRelay.acknowledge(state(), envelope(%{verb: :actuate}), 5)
+
+    assert {:error, :ack_sequence_mismatch} =
+             RemoteRelay.acknowledge(
+               state(),
+               envelope(%{command_id: "cmd-2", sequence: 2}),
+               5
+             )
+  end
+
   test "transport failures remain transport classes" do
     assert :permanent = RemoteRelay.classify_transport_failure(:unauthorized)
     assert :transient = RemoteRelay.classify_transport_failure(:timeout)
