@@ -83,11 +83,12 @@ defmodule Xaas.Ultracode.DispatchTest do
 
     assert plan.argv_tail == [
              "bin/zcode.js",
-             "--prompt",
+             "-p",
              plan.prompt,
              "--cwd",
              plan.cwd,
-             "--json",
+             "--output-format",
+             "stream-json",
              "--mode",
              "yolo"
            ]
@@ -409,7 +410,8 @@ defmodule Xaas.Ultracode.DispatchTest do
     logged = File.read!(fake_log)
     assert logged =~ "XAAS_WORKER=1"
     assert logged =~ "XAAS_LEASE_CWD=#{realpath(worktree)}"
-    assert logged =~ "--json"
+    assert logged =~ "--output-format"
+    assert logged =~ "stream-json"
 
     # The sealed receipts of the epoch ride on the dispatch result.
     assert [%{"outcome" => "partial_alive", "head_verified" => false, "sealed_at" => _}] =

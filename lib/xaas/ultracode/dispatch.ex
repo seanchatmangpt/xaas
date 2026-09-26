@@ -568,11 +568,17 @@ defmodule Xaas.Ultracode.Dispatch do
           {:xaas_prompt, prompt,
            [
              resolved.zcode_bin,
-             "--prompt",
+             # `-p` (the --prompt alias) + stream-json: the one output shape
+             # the worker's OCEL tap records (src/ocel-tap.ts
+             # ocelSourceForArgs). Plain `--json` produced a single envelope
+             # the tap ignores, so dispatched workers were unobserved
+             # (observed 2026-09-26: empty tap dir after a real turn).
+             "-p",
              prompt,
              "--cwd",
              cwd_real,
-             "--json",
+             "--output-format",
+             "stream-json",
              "--mode",
              "yolo"
            ], nil}
