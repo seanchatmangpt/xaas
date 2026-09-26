@@ -32,11 +32,13 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
       :execution_manifest_digest
     ]
     defstruct @enforce_keys
+    @type t :: %__MODULE__{}
   end
 
   defmodule QualificationReceipt do
     @enforce_keys [:receipt_digest, :verifier_evidence_digest, :replay_digest, :passed]
     defstruct @enforce_keys
+    @type t :: %__MODULE__{}
   end
 
   defmodule PartPassport do
@@ -52,6 +54,7 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
       :qualification_receipt
     ]
     defstruct @enforce_keys
+    @type t :: %__MODULE__{}
   end
 
   @type kind :: :provider | :transport
