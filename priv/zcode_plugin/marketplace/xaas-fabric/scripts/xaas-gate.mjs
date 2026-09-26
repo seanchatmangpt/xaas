@@ -203,7 +203,10 @@ function bashDecision(command, lease, ctx) {
     return null;
   }
 
-  if (bin === "pwd" || bin === "echo") return null;
+  // `date` is the leased worker's only timestamp source — evidence law
+  // needs it (observed 2026-09-26: a burn-in step requiring an ISO8601
+  // timestamp had no clock available inside the allowlist).
+  if (bin === "pwd" || bin === "echo" || bin === "date") return null;
 
   return `${bin} is not an allowed command for a leased worker`;
 }
@@ -281,10 +284,26 @@ async function admit(lease, tool) {
     }),
     signal: AbortSignal.timeout(8000),
   });
-  const body = await res.json();
+  // Evidence in the refusal itself: a bare "admit_tool error" (observed in
+  // the 2026-09-26 burn-in) hides whether auth, transport or the court
+  // refused. Status + a body snippet ride along, token never does.
+  const raw = await res.text();
+  let body = null;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    body = null;
+  }
   const text = body?.result?.content?.[0]?.text ?? "";
-  if (!body?.result || body.result.isError) return { ok: false, reason: text || "admit_tool error" };
-  return JSON.parse(text)?.decision === "allow" ? { ok: true } : { ok: false, reason: text };
+  if (res.status !== 200) {
+    return { ok: false, reason: `admit_tool HTTP ${res.status}: ${raw.slice(0, 160)}` };
+  }
+  if (!body?.result || body.result.isError) {
+    return { ok: false, reason: text || `admit_tool error: ${raw.slice(0, 160)}` };
+  }
+  const decision = JSON.parse(text)?.decision;
+  if (decision !== "allow") return { ok: false, reason: text };
+  return { ok: true };
 }
 
 async function main() {

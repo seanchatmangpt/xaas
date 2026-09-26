@@ -497,7 +497,24 @@ defmodule Xaas.Ultracode.WaveLoop do
   defp settle(step, epoch_id, result, state_path, telemetry_path, tick_no) do
     case result do
       {:ok, %{status: :ok, epoch_state: :completed} = res} ->
-        apply_success(step, epoch_id, res, state_path, telemetry_path, tick_no)
+        case worker_terminal_outcome(res) do
+          outcome when outcome in [:blocked, :refused] ->
+            # The worker closed head-verified but typed the work itself
+            # blocked/refused: the row must NOT advance to DONE (observed
+            # 2026-09-26 — a gate-blocked worker's epoch completed and the
+            # loop marked the step DONE with no work done).
+            apply_blocked(
+              step,
+              outcome,
+              "wave-loop tick #{tick_no}: worker closed #{outcome} — " <> evidence_tail(res),
+              state_path,
+              telemetry_path,
+              tick_no
+            )
+
+          _ ->
+            apply_success(step, epoch_id, res, state_path, telemetry_path, tick_no)
+        end
 
       {:ok, %{status: :ok} = res} ->
         non_terminal(step, epoch_id, res, "worker_ended_without_closing", :worker_unclosed, %{
@@ -635,6 +652,22 @@ defmodule Xaas.Ultracode.WaveLoop do
         )
     end
   end
+
+  # The worker's own typed verdict: the last head-verified receipt in the
+  # dispatch result, or :unknown when none carries one.
+  defp worker_terminal_outcome(%{receipts: receipts}) when is_list(receipts) do
+    receipts
+    |> Enum.reverse()
+    |> Enum.find_value(:unknown, fn
+      %{"head_verified" => true, "outcome" => outcome} ->
+        String.to_existing_atom(outcome)
+
+      _ ->
+        nil
+    end)
+  end
+
+  defp worker_terminal_outcome(_), do: :unknown
 
   defp apply_blocked(step, outcome, line, state_path, telemetry_path, tick_no) do
     with {:ok, raw} <- read_state(state_path),

@@ -886,6 +886,68 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                hd(loop_runs())
     end
 
+    test "a worker that closes blocked leaves the row BLOCKED, never DONE", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, @state)
+
+      fake_dispatch = fn epoch_id, _opts ->
+        {:ok, epoch} = Epoch |> Ash.get(epoch_id, action: :read_unscoped, authorize?: false)
+
+        {:ok, _} =
+          epoch
+          |> Ash.Changeset.for_update(
+            :complete,
+            %{final_head: "sha256:" <> String.duplicate("c", 64)},
+            authorize?: false
+          )
+          |> Ash.update()
+
+        {:ok, _} =
+          Receipt
+          |> Ash.Changeset.for_create(
+            :seal,
+            %{
+              epoch_id: epoch_id,
+              subject: epoch.exact_subject,
+              outcome: :blocked,
+              evidence: %{"head_verified" => true, "note" => "worker typed the work blocked"}
+            },
+            authorize?: false
+          )
+          |> Ash.create()
+
+        {:ok,
+         %{
+           status: :ok,
+           epoch_id: epoch_id,
+           worker_id: "zcode-test",
+           mode: :reap,
+           protocol: :xaas_prompt,
+           attempts: 1,
+           exit_code: 0,
+           duration_ms: 5,
+           output_tail: "closed blocked",
+           log_path: "/tmp/unused.log",
+           prompt: nil,
+           epoch_state: :completed,
+           receipts: [%{"outcome" => "blocked", "head_verified" => true}]
+         }}
+      end
+
+      assert {:ok, %{outcome: :blocked, step: "3"}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: fake_dispatch
+               )
+
+      {:ok, state} = state_path |> File.read!() |> State.parse()
+      assert fetch_step(state, "3").status == :blocked
+      refute fetch_step(state, "3").status == :done
+    end
+
     test "a dispatcher-level typed refusal leaves the row pending for the next tick",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
