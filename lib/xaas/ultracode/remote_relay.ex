@@ -124,22 +124,42 @@ defmodule Xaas.Ultracode.RemoteRelay do
     end
   end
 
-  @spec acknowledge(State.t(), Envelope.t()) :: {:ok, State.t()} | {:error, atom()}
-  def acknowledge(%State{} = state, %Envelope{} = envelope) do
-    if envelope.sequence == state.last_acknowledged_sequence + 1 do
-      ids =
-        [envelope.command_id | state.seen_command_ids]
-        |> Enum.uniq()
-        |> Enum.take(state.dedup_limit)
+  @doc """
+  ACK mutation is admitted through the same manifest, authority-shape, expiry,
+  exact-envelope and sequence gates as initial delivery. A transport cannot
+  acknowledge an envelope that would itself be refused, and duplicate ACKs are
+  typed replay rather than fresh mutation.
+  """
+  @spec acknowledge(State.t(), Envelope.t(), integer()) ::
+          {:ok, State.t()} | {:replay, State.t()} | {:error, atom()}
+  def acknowledge(%State{} = state, %Envelope{} = envelope, now_ms \\ System.system_time(:millisecond)) do
+    with :ok <- validate_envelope(envelope),
+         :ok <- validate_expiry(envelope, now_ms),
+         :ok <- validate_manifest(state, envelope),
+         :ok <- validate_authority_shape(envelope) do
+      cond do
+        envelope.command_id in state.seen_command_ids ->
+          {:replay, state}
 
-      {:ok,
-       %{
-         state
-         | last_acknowledged_sequence: envelope.sequence,
-           seen_command_ids: ids
-       }}
-    else
-      {:error, :ack_sequence_mismatch}
+        envelope.sequence <= state.last_acknowledged_sequence ->
+          {:replay, state}
+
+        envelope.sequence != state.last_acknowledged_sequence + 1 ->
+          {:error, :ack_sequence_mismatch}
+
+        true ->
+          ids =
+            [envelope.command_id | state.seen_command_ids]
+            |> Enum.uniq()
+            |> Enum.take(state.dedup_limit)
+
+          {:ok,
+           %{
+             state
+             | last_acknowledged_sequence: envelope.sequence,
+               seen_command_ids: ids
+           }}
+      end
     end
   end
 
