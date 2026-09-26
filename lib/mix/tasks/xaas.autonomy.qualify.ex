@@ -181,13 +181,17 @@ defmodule Mix.Tasks.Xaas.Autonomy.Qualify do
     bad =
       Enum.reject(edge.next_work_orders, fn candidate ->
         not Map.has_key?(candidate, :provider) and
-          candidate.capability_id == Xaas.Ultracode.ProviderRegistry.capability_left_segment(candidate.capability_id)
+          candidate.capability_id ==
+            Xaas.Ultracode.ProviderRegistry.capability_left_segment(candidate.capability_id)
       end)
 
     if bad == [] do
       failures
     else
-      ["provider_neutrality: #{length(bad)} candidate(s) carry provider identity outside the capabilityId left segment" | failures]
+      [
+        "provider_neutrality: #{length(bad)} candidate(s) carry provider identity outside the capabilityId left segment"
+        | failures
+      ]
     end
   end
 

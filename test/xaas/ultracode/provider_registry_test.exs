@@ -115,7 +115,11 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
     test "selects the enabled, capable provider whose ceiling covers the requirement" do
       with_registry(
         %{
-          "a" => %{capabilities: ["construction"], authority_ceiling: :construction, enabled: true},
+          "a" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :construction,
+            enabled: true
+          },
           "b" => %{capabilities: ["gall_work"], authority_ceiling: :construction, enabled: true}
         },
         fn ->
@@ -128,7 +132,11 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
     test "a DISABLED provider is invisible to selection (kill-switch falsifier)" do
       with_registry(
         %{
-          "a" => %{capabilities: ["construction"], authority_ceiling: :construction, enabled: false}
+          "a" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :construction,
+            enabled: false
+          }
         },
         fn ->
           assert {:error, {:no_qualifying_provider, [%{provider: "a", verdict: :disabled}]}} =
@@ -140,7 +148,11 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
     test "a provider missing a required capability is refused with the exact gap named" do
       with_registry(
         %{
-          "a" => %{capabilities: ["construction"], authority_ceiling: :construction, enabled: true}
+          "a" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :construction,
+            enabled: true
+          }
         },
         fn ->
           assert {:error,
@@ -155,11 +167,18 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
       with_registry(
         %{
           "low" => %{capabilities: ["construction"], authority_ceiling: :none, enabled: true},
-          "ok" => %{capabilities: ["construction"], authority_ceiling: :construction, enabled: true}
+          "ok" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :construction,
+            enabled: true
+          }
         },
         fn ->
           assert {:ok, "ok", _} =
-                   ProviderRegistry.select(%{capabilities: ["construction"], authority: :construction})
+                   ProviderRegistry.select(%{
+                     capabilities: ["construction"],
+                     authority: :construction
+                   })
 
           assert {:error,
                   {:no_qualifying_provider,
@@ -167,7 +186,10 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
                      %{provider: "low", verdict: {:authority_ceiling_too_low, :none}},
                      %{provider: "ok", verdict: {:authority_ceiling_too_low, :construction}}
                    ]}} =
-                   ProviderRegistry.select(%{capabilities: ["construction"], authority: :actuation})
+                   ProviderRegistry.select(%{
+                     capabilities: ["construction"],
+                     authority: :actuation
+                   })
         end
       )
     end
@@ -176,7 +198,11 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
       with_registry(
         %{
           "no-ceiling" => %{capabilities: ["construction"], enabled: true},
-          "bad-ceiling" => %{capabilities: ["construction"], authority_ceiling: :omnipotent, enabled: true}
+          "bad-ceiling" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :omnipotent,
+            enabled: true
+          }
         },
         fn ->
           # Rejection details list EVERY candidate in deterministic (sorted)
@@ -190,7 +216,10 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
                    ProviderRegistry.select(%{capabilities: ["construction"]})
 
           assert {:error, {:no_qualifying_provider, _}} =
-                   ProviderRegistry.select(%{capabilities: ["construction"], authority: :unknown_term})
+                   ProviderRegistry.select(%{
+                     capabilities: ["construction"],
+                     authority: :unknown_term
+                   })
         end
       )
     end
@@ -198,8 +227,18 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
     test "policy :cost orders ascending with deterministic id tie-break; :capability by coverage" do
       with_registry(
         %{
-          "cheap-b" => %{capabilities: ["construction"], authority_ceiling: :construction, enabled: true, cost: 1},
-          "cheap-a" => %{capabilities: ["construction"], authority_ceiling: :construction, enabled: true, cost: 1},
+          "cheap-b" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :construction,
+            enabled: true,
+            cost: 1
+          },
+          "cheap-a" => %{
+            capabilities: ["construction"],
+            authority_ceiling: :construction,
+            enabled: true,
+            cost: 1
+          },
           "rich" => %{
             capabilities: ["construction", "gall_work"],
             authority_ceiling: :construction,
@@ -227,7 +266,9 @@ defmodule Xaas.Ultracode.ProviderRegistryTest do
 
       with_registry(%{"a" => entry}, fn ->
         assert ProviderRegistry.disable("a") == true
-        assert {:error, {:no_qualifying_provider, _}} = ProviderRegistry.select(%{capabilities: ["construction"]})
+
+        assert {:error, {:no_qualifying_provider, _}} =
+                 ProviderRegistry.select(%{capabilities: ["construction"]})
 
         # The entry survived the disable (config loss would be a second harm).
         assert {:ok, %{enabled: false}} = ProviderRegistry.lookup("a")

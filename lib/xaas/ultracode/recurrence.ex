@@ -418,8 +418,7 @@ defmodule Xaas.Ultracode.Recurrence do
          {:ok, sjira} <- read_pack(@sj_ontology) do
       {:ok,
        %{
-         origin_authority_law_present?:
-           String.contains?(sjira, "originAuthority"),
+         origin_authority_law_present?: String.contains?(sjira, "originAuthority"),
          provider_neutrality_law_present?:
            String.contains?(aloop, "Provider-neutral work order") and
              String.contains?(aloop, "aloop:originAuthority")

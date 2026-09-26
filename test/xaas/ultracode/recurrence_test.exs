@@ -111,8 +111,15 @@ defmodule Xaas.Ultracode.RecurrenceTest do
 
       # reobserve: the LATEST standing per work order (keyed by the
       # receipt's own subject), with its disposition.
-      assert [%{work_order: "rec:subject-open", disposition: :reobserve, standing_in: :partial_alive} =
-                observed] = edge.reobserve
+      assert [
+               %{
+                 work_order: "rec:subject-open",
+                 disposition: :reobserve,
+                 standing_in: :partial_alive
+               } =
+                 observed
+             ] = edge.reobserve
+
       assert observed.receipt_id == receipt.id
       assert observed.reconstructed == true
 
@@ -183,7 +190,15 @@ defmodule Xaas.Ultracode.RecurrenceTest do
     end
 
     test "a Run with NO semantic identity degrades honestly: epoch subject keys, no fabricated fields" do
-      run = semantic_run("rec-edge-bare", work_order_iri: nil, checkpoint_iri: nil, graph_digest: nil, repository_identity: nil, base_sha: nil, capability_id: nil)
+      run =
+        semantic_run("rec-edge-bare",
+          work_order_iri: nil,
+          checkpoint_iri: nil,
+          graph_digest: nil,
+          repository_identity: nil,
+          base_sha: nil,
+          capability_id: nil
+        )
 
       epoch = epoch_for(run, 0, "rec:bare-subject")
       seal(epoch, :blocked)
@@ -253,7 +268,16 @@ defmodule Xaas.Ultracode.RecurrenceTest do
     end
 
     def sJira_frontier(_run) do
-      {:ok, [%{work_order: "urn:sj:wo:injected", disposition: :repair, standing_in: :blocked, receipt_id: "injected", frontier_source: :injected}]}
+      {:ok,
+       [
+         %{
+           work_order: "urn:sj:wo:injected",
+           disposition: :repair,
+           standing_in: :blocked,
+           receipt_id: "injected",
+           frontier_source: :injected
+         }
+       ]}
     end
 
     def bad_frontier(_run), do: {:ok, "not a list"}

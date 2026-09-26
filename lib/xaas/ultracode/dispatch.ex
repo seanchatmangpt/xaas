@@ -122,7 +122,15 @@ defmodule Xaas.Ultracode.Dispatch do
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, ProcessGroup, ProviderRegistry, Receipt, Run, Worktrees, ZcodePackage}
+  alias Xaas.Ultracode.{
+    Epoch,
+    ProcessGroup,
+    ProviderRegistry,
+    Receipt,
+    Run,
+    Worktrees,
+    ZcodePackage
+  }
 
   # Keep below the run default `epoch_timeout_seconds` (900), same bound the
   # bash dispatcher documents: the lease clock is the provider's to spend,

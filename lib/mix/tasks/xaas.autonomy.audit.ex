@@ -87,8 +87,11 @@ defmodule Mix.Tasks.Xaas.Autonomy.Audit do
     shell.info("DCR:    #{length(report.dcr)}#{ids(report.dcr)}")
 
     case report.standing do
-      :alive -> shell.info("standing: ALIVE (UAR=0, DCR=0)")
-      {:partial_alive, missing} -> shell.info("standing: PARTIAL_ALIVE (#{Enum.join(missing, "; ")})")
+      :alive ->
+        shell.info("standing: ALIVE (UAR=0, DCR=0)")
+
+      {:partial_alive, missing} ->
+        shell.info("standing: PARTIAL_ALIVE (#{Enum.join(missing, "; ")})")
     end
   end
 

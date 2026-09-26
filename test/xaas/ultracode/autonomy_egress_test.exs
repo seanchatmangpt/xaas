@@ -118,7 +118,8 @@ defmodule Xaas.Ultracode.AutonomyEgressTest do
 
       {:ok, lines} = AutonomyEgress.derive_episode_lines(run)
 
-      event_types = lines |> Enum.flat_map(& &1["ocel:eventTypes"]) |> Enum.map(& &1["name"]) |> Enum.uniq()
+      event_types =
+        lines |> Enum.flat_map(& &1["ocel:eventTypes"]) |> Enum.map(& &1["name"]) |> Enum.uniq()
 
       for required <- ~w(provider.select worker.claim receipt.persist reobserve) do
         assert required in event_types, "missing CONTRACT event #{required}"
@@ -128,7 +129,9 @@ defmodule Xaas.Ultracode.AutonomyEgressTest do
         lines |> Enum.flat_map(& &1["ocel:objectTypes"]) |> Enum.map(& &1["name"]) |> MapSet.new()
 
       declared = object_types
-      for t <- ~w(Episode Provider Worker WorkerRun Subject Authority Receipt Consequence Evidence WorkOrder) do
+
+      for t <-
+            ~w(Episode Provider Worker WorkerRun Subject Authority Receipt Consequence Evidence WorkOrder) do
         assert t in declared, "declared object types must include #{t}"
       end
 
@@ -140,7 +143,8 @@ defmodule Xaas.Ultracode.AutonomyEgressTest do
         |> Enum.map(& &1["qualifier"])
         |> MapSet.new()
 
-      for q <- ~w(episode provider worker subject receipt consequence evidence originAuthority input output) do
+      for q <-
+            ~w(episode provider worker subject receipt consequence evidence originAuthority input output) do
         assert q in qualifiers, "missing CONTRACT qualifier #{q}"
       end
 

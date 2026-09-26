@@ -146,9 +146,14 @@ defmodule Xaas.Ultracode.AutonomyEgress do
         [
           object("Episode", run.id, %{"goal" => run.goal, "state" => to_string(run.state)}),
           obj_if(run.goal, "Objective", "objective:#{run.id}", %{}),
-          obj_if(run.verifier_suite, "Requirement", "requirement:#{run.id}:#{run.verifier_suite}", %{
-            "suite" => run.verifier_suite
-          }),
+          obj_if(
+            run.verifier_suite,
+            "Requirement",
+            "requirement:#{run.id}:#{run.verifier_suite}",
+            %{
+              "suite" => run.verifier_suite
+            }
+          ),
           obj_if(run.work_order_iri, "WorkOrder", run.work_order_iri, %{
             "capability_left_segment" => left_segment,
             "base_sha" => run.base_sha,
@@ -243,11 +248,16 @@ defmodule Xaas.Ultracode.AutonomyEgress do
       ]
       |> rels()
 
-    event("provider.select", run.inserted_at, %{
-      "reconstructed" => true,
-      "provider" => run.provider,
-      "epoch_id" => epoch.id
-    }, rels)
+    event(
+      "provider.select",
+      run.inserted_at,
+      %{
+        "reconstructed" => true,
+        "provider" => run.provider,
+        "epoch_id" => epoch.id
+      },
+      rels
+    )
   end
 
   defp worker_claim(%Epoch{claimed_at: nil}, _ctx), do: nil
@@ -307,7 +317,11 @@ defmodule Xaas.Ultracode.AutonomyEgress do
     )
   end
 
-  defp falsifier_run(epoch, %Receipt{evidence: %{"fabric_verifier" => %{"status" => status}}} = receipt, ctx)
+  defp falsifier_run(
+         epoch,
+         %Receipt{evidence: %{"fabric_verifier" => %{"status" => status}}} = receipt,
+         ctx
+       )
        when is_binary(status) do
     rels =
       [
@@ -380,7 +394,7 @@ defmodule Xaas.Ultracode.AutonomyEgress do
           {ctx["authority:#{@origin_authority}"], "originAuthority"},
           {ctx["objective:" <> run.id], "output"}
         ]
-      |> rels()
+        |> rels()
 
       event("episode.terminal", run.terminal_at, %{"state" => to_string(run.state)}, rels)
     else
@@ -393,7 +407,9 @@ defmodule Xaas.Ultracode.AutonomyEgress do
   defp rels(pairs) do
     pairs
     |> Enum.reject(fn {object, _qualifier} -> is_nil(object) end)
-    |> Enum.map(fn {object, qualifier} -> %{"objectId" => object["id"], "qualifier" => qualifier} end)
+    |> Enum.map(fn {object, qualifier} ->
+      %{"objectId" => object["id"], "qualifier" => qualifier}
+    end)
   end
 
   defp event(type, time, attrs, rels) do
@@ -407,7 +423,10 @@ defmodule Xaas.Ultracode.AutonomyEgress do
   end
 
   defp event_digest(type, time, rels, attrs) do
-    :crypto.hash(:sha256, "#{type}|#{DateTime.to_iso8601(time)}|#{inspect(rels)}|#{inspect(attrs)}")
+    :crypto.hash(
+      :sha256,
+      "#{type}|#{DateTime.to_iso8601(time)}|#{inspect(rels)}|#{inspect(attrs)}"
+    )
     |> Base.encode16(case: :lower)
     |> binary_part(0, 32)
   end

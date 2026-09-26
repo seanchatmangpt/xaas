@@ -280,6 +280,7 @@ config :xaas, :ultracode_pool_capacity, 5
 # registry EMPTY (fail-closed: nothing selectable) and tests install their
 # own entries via Application.put_env.
 config :xaas, :ultracode_default_provider, "zcode"
+
 config :xaas, :ultracode_providers, %{
   "zcode" => %{
     capabilities: ["construction", "gall_work"],

@@ -38,7 +38,9 @@ defmodule Mix.Tasks.Xaas.Autonomy.ExportOcel do
             Mix.shell().info(path)
 
           {:error, :run_not_found} ->
-            Mix.raise("episode OCEL export refused: :run_not_found -- no Xaas.Ultracode.Run #{inspect(run_id)}")
+            Mix.raise(
+              "episode OCEL export refused: :run_not_found -- no Xaas.Ultracode.Run #{inspect(run_id)}"
+            )
 
           {:error, reason} ->
             Mix.raise("episode OCEL export failed: #{inspect(reason)}")

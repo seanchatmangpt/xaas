@@ -261,7 +261,11 @@ defmodule Xaas.Ultracode.LeaseCancelTest do
       {is_error, result, content_count} =
         rpc_call("tools/call", %{
           "name" => "cancel_work",
-          "arguments" => %{"lease_token" => token, "reason" => "superseded", "evidence" => %{"k" => "v"}}
+          "arguments" => %{
+            "lease_token" => token,
+            "reason" => "superseded",
+            "evidence" => %{"k" => "v"}
+          }
         })
         |> unwrap_tool_result()
 

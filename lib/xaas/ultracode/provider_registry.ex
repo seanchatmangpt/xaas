@@ -276,7 +276,9 @@ defmodule Xaas.Ultracode.ProviderRegistry do
   # Rank lookup. Unknown authority terms have NO rank -- `ranked?/1` gates
   # before any comparison so an unknown term is a typed rejection, never a
   # silent pass through term-ordering comparison.
-  defp rank(term) when term in @authority_ranks, do: Enum.find_index(@authority_ranks, &(&1 == term))
+  defp rank(term) when term in @authority_ranks,
+    do: Enum.find_index(@authority_ranks, &(&1 == term))
+
   defp rank(_unknown), do: nil
 
   defp ranked?(term), do: term in @authority_ranks
@@ -291,16 +293,18 @@ defmodule Xaas.Ultracode.ProviderRegistry do
 
   defp order(qualifying, :name), do: Enum.sort_by(qualifying, fn {id, _} -> id end)
 
-  defp order(_qualifying, other), do: raise(ArgumentError, "unknown selection policy #{inspect(other)}")
+  defp order(_qualifying, other),
+    do: raise(ArgumentError, "unknown selection policy #{inspect(other)}")
 
   defp cost(entry), do: Map.get(entry, :cost, 0)
 
   defp rejections_map(rejections) do
     Enum.map(rejections, fn {provider_id, verdict} ->
-      reason = case verdict do
-        {:error, reason} -> reason
-        reason -> reason
-      end
+      reason =
+        case verdict do
+          {:error, reason} -> reason
+          reason -> reason
+        end
 
       %{provider: provider_id, verdict: reason}
     end)
