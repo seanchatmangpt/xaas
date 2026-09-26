@@ -71,6 +71,18 @@ config :xaas, :ex4pm_ontology_check,
 # (`<resource_short_name>_<schedule/trigger_name>`) -- confirmed via the
 # real `RuntimeError` `AshOban.require_queues!/4` raised on boot, one at a
 # time, until all three were named correctly.
+#
+# The wave loop's concurrency mode (2026-09-26, operator-ordered): the
+# `:wave_loop` schedule fires every 5 minutes and up to
+# `wave_loop_concurrency` loop workers may be in flight, fanned across
+# INDEPENDENT steps only (a step held by a live lease is excluded from the
+# next tick's selection). The number must stay <= `:ultracode_pool_capacity`
+# below -- the pool bound is what actually fences live leases per provider.
+# Measured agent turns average minutes (burn-in 2026-09-26: a mechanical
+# step ~1-6 min), so a 5-minute cadence with 3 slots keeps the loop fed
+# without pile-up; surplus fires record `busy` and exit 0.
+wave_loop_concurrency = 3
+
 config :xaas, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
@@ -96,7 +108,7 @@ config :xaas, Oban,
     # file. A tick's dispatch may legitimately run most of an hour, so the
     # single slot is what makes "one loop worker at a time" real; a second
     # hourly fire waits here rather than overlapping.
-    ultracode_wave_loop: 1
+    ultracode_wave_loop: wave_loop_concurrency
   ],
   repo: Xaas.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
@@ -280,6 +292,11 @@ config :xaas, :ultracode_pool_capacity, 5
 # registry EMPTY (fail-closed: nothing selectable) and tests install their
 # own entries via Application.put_env.
 config :xaas, :ultracode_default_provider, "zcode"
+
+# Wave loop in-flight worker bound (`Xaas.Ultracode.WaveLoop.acquire_slot/0`
+# + step-selection exclusion). Must stay <= `:ultracode_pool_capacity`;
+# declared above next to the Oban queue that shares the same value.
+config :xaas, :ultracode_wave_loop_concurrency, wave_loop_concurrency
 
 # The zcode CLI checkout `Dispatch`/`ZcodePackage`/`ProviderHealth` admit the
 # worker launcher from. `/Users/sac/dev/zcode-cli` (the v26.9.22-era default)

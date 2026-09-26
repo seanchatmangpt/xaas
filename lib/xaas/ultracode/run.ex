@@ -299,11 +299,13 @@ defmodule Xaas.Ultracode.Run do
       # `Xaas.Ultracode.WaveLoop.tick/1` -- parse the loop STATE file,
       # dispatch ONE real zcode worker for the first actionable step
       # through the `Dispatch` boundary, settle STATE + telemetry from the
-      # sealed receipt. Single-slot dedicated queue (`ultracode_wave_loop:
-      # 1`) for the same serialization reason as the other wave queues: a
-      # tick's dispatch may legitimately run most of an hour, and two
-      # ticks must never overlap.
-      schedule :wave_loop, "0 * * * *" do
+      # sealed receipt. Cadence `*/5` (2026-09-26, operator-ordered: the
+      # hourly cadence wasted the queue on a machine whose agent turns
+      # average minutes): a tick whose steps are all in flight or whose
+      # slot bound is reached records `busy` and exits 0, so a tighter
+      # cadence never double-dispatches. The dedicated single-name queue
+      # keeps a tick's dispatch serialized per Oban concurrency slot.
+      schedule :wave_loop, "*/5 * * * *" do
         action(:wave_loop)
         worker_module_name(Xaas.Ultracode.Run.Workers.WaveLoop)
 

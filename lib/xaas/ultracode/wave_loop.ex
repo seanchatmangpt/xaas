@@ -18,6 +18,17 @@ defmodule Xaas.Ultracode.WaveLoop do
   # must never reap a loop epoch mid-turn; the worker's own lease renewal
   # plus this bound keep the epoch alive for the whole dispatch.
   @epoch_timeout_seconds 7200
+  # Provider-overload sensing (2026-09-26, operator-ordered "detect
+  # overload by the z.ai api"): worker-side rate-kills (HTTP 429, z.ai
+  # error 1302, "too many requests") surface in dispatch outcomes and the
+  # evidence tails this loop already writes to telemetry. >= threshold
+  # signature-bearing lines inside the window = overload: the tick records
+  # `busy` and dispatches nothing, draining at the cron cadence until the
+  # hits age out of the window (the measured [1302] half-pace law, made
+  # mechanical).
+  @overload_regex ~r/1302|429|rate.?limit|too many requests|overload/i
+  @overload_window_minutes 30
+  @overload_default_threshold 3
 
   @moduledoc """
   The fabric-native hourly wave loop: the Oban scheduler's own clock
@@ -68,11 +79,16 @@ defmodule Xaas.Ultracode.WaveLoop do
 
   ## Capacity and determinism laws
 
-    * ONE loop worker at a time. A previous tick's still-running worker
-      (a live lease on a `:wave_loop_step` epoch) makes this tick record
-      `busy` and exit 0. A lease that has EXPIRED is not a running worker:
-      the stale epoch is reaped first, then this tick proceeds.
-    * STATE writes are atomic (temp file + rename in the same directory).
+    * At most `:ultracode_wave_loop_concurrency` (default 1) loop workers
+      in flight, and never two on the same step: a step already held by a
+      live lease is excluded from this tick's selection, so extra
+      concurrency fans across INDEPENDENT steps only. A tick that finds
+      every actionable step in flight records `busy` and exits 0. A lease
+      that has EXPIRED is not a running worker: the stale epoch is reaped
+      first, then this tick proceeds.
+    * STATE writes are atomic (temp file + rename in the same directory)
+      and re-read the file at settle time, so concurrent settles of
+      different steps merge row-wise.
     * A corrupted/unreadable STATE file is a typed `:refused` tick with
       telemetry -- never a crash loop.
     * The tick carries zero ambient authority beyond the scheduler's own
@@ -139,15 +155,43 @@ defmodule Xaas.Ultracode.WaveLoop do
           finish(tick_no, nil, :complete, %{note: "STATE is complete"}, telemetry_path)
 
         true ->
-          case State.first_actionable(state) do
-            :complete ->
-              finish(tick_no, nil, :complete, %{note: "no remaining steps"}, telemetry_path)
+          # Provider-overload gate first: dispatching into a rate-kill
+          # storm only deepens it. Drain now; the cron cadence re-probes.
+          if provider_overloaded?(telemetry_path) do
+            finish(tick_no, nil, :busy, %{
+              note: "provider overload detected — draining",
+              window_minutes: @overload_window_minutes
+            }, telemetry_path)
+          else
+            # Steps already being worked by a live loop worker are excluded
+            # from selection: with `:ultracode_wave_loop_concurrency` > 1 the
+            # next tick picks the NEXT actionable step instead of double-
+            # dispatching the same one.
+            excluded = live_in_flight_step_ids(state_path)
 
-            {:waiting, step, unmet} ->
-              finish(tick_no, step.id, :waiting_deps, %{unmet: unmet}, telemetry_path)
+            case State.first_actionable(state, excluded) do
+              :complete ->
+                if excluded == [] do
+                  finish(tick_no, nil, :complete, %{note: "no remaining steps"}, telemetry_path)
+                else
+                  # Every owing step is held by a live worker: busy on the
+                  # newest in-flight step, matching the pre-concurrency
+                  # reporting shape.
+                  finish(
+                    tick_no,
+                    hd(excluded),
+                    :busy,
+                    %{note: "all actionable steps in flight"},
+                    telemetry_path
+                  )
+                end
 
-            {:ok, step} ->
-              dispatch_step(step, state, opts, state_path, telemetry_path, tick_no)
+              {:waiting, step, unmet} ->
+                finish(tick_no, step.id, :waiting_deps, %{unmet: unmet}, telemetry_path)
+
+              {:ok, step} ->
+                dispatch_step(step, state, opts, state_path, telemetry_path, tick_no)
+            end
           end
       end
     else
@@ -204,28 +248,106 @@ defmodule Xaas.Ultracode.WaveLoop do
   end
 
   # ------------------------------------------------------------------
-  # Capacity: ONE loop worker at a time
+  # Capacity: up to `:ultracode_wave_loop_concurrency` loop workers, never
+  # two on the same step
   # ------------------------------------------------------------------
 
   defp acquire_slot do
-    case find_in_flight() do
-      nil ->
+    max_in_flight = Application.get_env(:xaas, :ultracode_wave_loop_concurrency, 1)
+    in_flight = in_flight_epochs()
+    {live, stale} = Enum.split_with(in_flight, &lease_live?/1)
+
+    cond do
+      live == [] and stale == [] ->
         :ok
 
-      %Epoch{id: epoch_id, run_id: run_id} = epoch ->
-        if lease_live?(epoch) do
-          {:busy, run_id, epoch_id}
-        else
-          case close_out_epoch(epoch_id, "stale_worker_lease_expired") do
-            {:reaped, _previous_state} -> :ok
-            {:already_terminal, _state} -> :ok
-            other -> {:stale_reap_failed, other}
+      length(live) >= max_in_flight ->
+        newest = Enum.max_by(live, & &1.inserted_at)
+        {:busy, newest.run_id, newest.id}
+
+      true ->
+        Enum.reduce_while(stale, :ok, fn epoch, :ok ->
+          case close_out_epoch(epoch.id, "stale_worker_lease_expired") do
+            {:reaped, _previous_state} -> {:cont, :ok}
+            {:already_terminal, _state} -> {:cont, :ok}
+            other -> {:halt, {:stale_reap_failed, other}}
           end
-        end
+        end)
     end
   end
 
-  defp find_in_flight do
+  defp in_flight_epochs do
+    Epoch
+    |> Ash.Query.for_read(:read_unscoped)
+    |> Ash.Query.filter(
+      state in [:expected, :running] and run.state == :running and
+        run.execution_policy == ^:wave_loop_step
+    )
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.read!(authorize?: false)
+  end
+
+  # Overload = >= threshold telemetry lines inside the window whose outcome
+  # or evidence carries a provider rate-kill signature. Malformed lines are
+  # skipped, never a crash.
+  defp provider_overloaded?(telemetry_path) do
+    threshold =
+      Application.get_env(:xaas, :ultracode_wave_loop_overload_threshold, @overload_default_threshold)
+
+    cutoff = DateTime.add(DateTime.utc_now(), -@overload_window_minutes * 60, :second)
+
+    telemetry_path
+    |> telemetry_lines_in_window(cutoff)
+    |> Enum.count(&(&1 =~ @overload_regex or &1 =~ ~s("outcome":"rate_limited")))
+    |> then(&(&1 >= threshold))
+  end
+
+  defp telemetry_lines_in_window(telemetry_path, cutoff) do
+    case File.read(telemetry_path) do
+      {:ok, content} ->
+        content
+        |> String.split("\n", trim: true)
+        |> Enum.filter(fn line ->
+          case Jason.decode(line) do
+            {:ok, %{"ts" => ts}} ->
+              case DateTime.from_iso8601(ts) do
+                {:ok, dt, _offset} -> DateTime.compare(dt, cutoff) == :gt
+                _ -> false
+              end
+
+            _ ->
+              false
+          end
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  # Step ids of THIS state's steps held by a live loop worker, newest first
+  # (subjects are "wave-loop:step-<id>@<state_path>").
+  defp live_in_flight_step_ids(state_path) do
+    in_flight_epochs()
+    |> Enum.filter(&lease_live?/1)
+    |> Enum.flat_map(fn epoch ->
+      case step_id_from_subject(epoch.exact_subject, state_path) do
+        nil -> []
+        id -> [id]
+      end
+    end)
+  end
+
+  defp step_id_from_subject("wave-loop:step-" <> rest, state_path) do
+    case String.split(rest, "@", parts: 2) do
+      [id, ^state_path] -> id
+      _ -> nil
+    end
+  end
+
+  defp step_id_from_subject(_, _), do: nil
+
+  defp in_flight_epochs do
     Epoch
     |> Ash.Query.for_read(:read_unscoped)
     |> Ash.Query.filter(

@@ -129,8 +129,10 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   # REMAINING note names it (the note re-opens a DONE row, e.g. a re-sweep).
   # A dep counts as done only when its row is :done and the note does not
   # re-open it.
-  @spec first_actionable(t()) :: {:ok, step()} | {:waiting, step(), [String.t()]} | :complete
-  def first_actionable(%__MODULE__{steps: steps, remaining_chain: chain}) do
+  @spec first_actionable(t(), Enumerable.t()) ::
+          {:ok, step()} | {:waiting, step(), [String.t()]} | :complete
+  def first_actionable(%__MODULE__{steps: steps, remaining_chain: chain}, exclude \\ MapSet.new()) do
+    excluded = MapSet.new(exclude)
     note_listed = MapSet.new(Map.keys(chain))
 
     done_ids =
@@ -139,7 +141,8 @@ defmodule Xaas.Ultracode.WaveLoop.State do
       |> MapSet.new(& &1.id)
 
     case Enum.find(steps, fn s ->
-           s.status in [:pending, :blocked] or MapSet.member?(note_listed, s.id)
+           not MapSet.member?(excluded, s.id) and
+             (s.status in [:pending, :blocked] or MapSet.member?(note_listed, s.id))
          end) do
       nil ->
         :complete
