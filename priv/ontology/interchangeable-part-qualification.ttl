@@ -1,0 +1,26 @@
+@prefix ce: <https://seanchatman.dev/chatman-equilibrium#> .
+
+ce:InterchangeablePartQualification a ce:QualificationPolicy ;
+  ce:policyVersion "v26.9.25" ;
+  ce:requiredQualificationField ce:exactSubject ;
+  ce:requiredQualificationField ce:verifierEvidenceDigest ;
+  ce:requiredQualificationField ce:replayDigest ;
+  ce:requiredQualificationField ce:standing ;
+  ce:admittedStanding ce:ALIVE ;
+  ce:unknownStanding ce:UNKNOWN ;
+  ce:authorityBoundary ce:NONE ;
+  ce:requiresExactSubject true ;
+  ce:requiresDeterministicReplay true ;
+  ce:requiresCryptographicBinding true .
+
+ce:QualificationEvidence a ce:EvidenceClass ;
+  ce:provenanceRequirement ce:exactSubject ;
+  ce:provenanceRequirement ce:verifierEvidenceDigest ;
+  ce:provenanceRequirement ce:replayDigest .
+
+ce:SubstitutionStanding a ce:StandingClass ;
+  ce:scope ce:InterchangeablePartQualification .
+
+ce:UNKNOWN a ce:StandingState .
+ce:ALIVE a ce:StandingState .
+ce:NONE a ce:AuthorityBoundary .
