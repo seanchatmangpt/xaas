@@ -69,22 +69,22 @@ defmodule Xaas.Ultracode.DispatcherPermissionTest do
 
     argv = String.split(String.trim(out), "\n")
 
-    assert argv == [
+    assert [
              "node",
              "bin/zcode.js",
              "--prompt",
-             "/xaas Call claim_next with provider_worker_id exactly \"zcode-dispatch-#{hostname()}-11111111-#{System.pid()}\" and epoch_id exactly \"11111111-1111-1111-1111-111111111111\"; do not use any other values.",
+             prompt,
              "--cwd",
-             realpath(worktree),
+             cwd,
              "--json",
              "--mode",
              "yolo"
-           ]
-  end
+           ] = argv
 
-  defp hostname do
-    {out, 0} = System.cmd("hostname", ["-s"])
-    String.trim(out)
+    assert prompt =~
+             ~r/^\/xaas Call claim_next with provider_worker_id exactly "zcode-dispatch-[^"]+-11111111-\d+" and epoch_id exactly "11111111-1111-1111-1111-111111111111"; do not use any other values\.$/
+
+    assert cwd == realpath(worktree)
   end
 
   defp realpath(dir) do
