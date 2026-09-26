@@ -13,13 +13,11 @@ import Config
 port = String.to_integer(System.get_env("PORT") || "4000")
 
 # Configure your database
-# Real fix: username/password/hostname/port now read from env vars with the
-# book's original plaintext defaults as fallback -- needed to point local
-# `mix ash_postgres.generate_migrations`/`mix ecto.migrate` at the real
-# running docker-compose Postgres (whose POSTGRES_PASSWORD_FILE-backed
-# secret and randomly-published host port differ from the book's hardcoded
-# "postgres"/5432 defaults), without hardcoding that real secret into a
-# committed file.
+# Real fix: username/password/hostname/port now read from env vars with
+# plaintext defaults as fallback -- env vars override without hardcoding
+# real credentials into a committed file. Current dev db (observed
+# 2026-09-26): native brew postgresql@14 on localhost:5432, database
+# xaas_dev; a docker-compose Postgres would also work via these vars.
 config :xaas, Xaas.LegacyRepo,
   username: System.get_env("DEV_DB_USERNAME", "postgres"),
   password: System.get_env("DEV_DB_PASSWORD", "postgres"),
