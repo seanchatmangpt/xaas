@@ -86,10 +86,10 @@ work = %WorkIdentity{
 }
 
 {:ok, r1} = S.realize(a, work, 1)
-{:admitted, l1} = Ledger.deliver(Ledger.new(), r1)
+{:admitted, l1} = Ledger.deliver(Ledger.new(a, work), r1)
 
 big =
-  Enum.reduce(1..1_000, Ledger.new(), fn i, l ->
+  Enum.reduce(1..1_000, Ledger.new(a, work), fn i, l ->
     {:ok, r} = S.realize(a, work, i)
     {:admitted, l} = Ledger.deliver(l, r)
     l
@@ -100,10 +100,10 @@ persisted = Ledger.entries(big)
 jobs = %{
   "admit" => fn -> {:ok, _} = S.admit(ma, abb, contract) end,
   "realize" => fn -> {:ok, _} = S.realize(a, work, 7) end,
-  "deliver_append" => fn -> {:admitted, _} = Ledger.deliver(Ledger.new(), r1) end,
+  "deliver_append" => fn -> {:admitted, _} = Ledger.deliver(Ledger.new(a, work), r1) end,
   "deliver_duplicate" => fn -> {:duplicate, _} = Ledger.deliver(l1, r1) end,
   "substitute" => fn -> {:ok, _} = S.substitute(a, b, work) end,
-  "replay_1000" => fn -> {:ok, _} = Ledger.replay(persisted) end
+  "replay_1000" => fn -> {:ok, _} = Ledger.replay(a, work, persisted, big.head) end
 }
 
 iters = fn

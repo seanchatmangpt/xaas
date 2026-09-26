@@ -353,31 +353,108 @@ defmodule Xaas.Ultracode.SbbRealizationTest do
     end
   end
 
+  describe "implementation passport admission (DoD 1, 8, 10; xaas#80 court P1-P3)" do
+    test "passport with a DO ceiling is refused as authority laundering" do
+      impl = passport("provider-a", @sha_b, qual(), %{authority_ceiling: [:do]})
+
+      assert {:error, :do_authority_laundering} =
+               S.admit(manifest(%{implementation: impl}), abb(), contract())
+
+      mixed = passport("provider-a", @sha_b, qual(), %{authority_ceiling: [:select, :do]})
+
+      assert {:error, :do_authority_laundering} =
+               S.admit(manifest(%{implementation: mixed}), abb(), contract())
+    end
+
+    test "passport ceiling above the contract ceiling is refused" do
+      narrow = contract(%{authority_ceiling: [:observe, :select]})
+      m = manifest(%{contract_digest: S.contract_digest(narrow), requested_authority: [:select]})
+      assert {:error, :implementation_ceiling_exceeds_contract} = S.admit(m, abb(), narrow)
+    end
+
+    test "requested authority above the passport ceiling is refused" do
+      impl = passport("provider-a", @sha_b, qual(), %{authority_ceiling: [:observe, :select]})
+
+      assert {:error, :authority_exceeds_implementation} =
+               S.admit(manifest(%{implementation: impl}), abb(), contract())
+
+      assert {:ok, _} =
+               S.admit(
+                 manifest(%{implementation: impl, requested_authority: [:select]}),
+                 abb(),
+                 contract()
+               )
+    end
+
+    test "branch subject and placeholder passport digests are refused" do
+      cases = [
+        {%{exact_subject: "o/p@main"}, :part_subject_not_exact},
+        {%{part_digest: "sha256:x"}, :part_digest_invalid},
+        {%{producer_digest: "y"}, :producer_digest_invalid},
+        {%{part_id: " "}, :part_identity_missing},
+        {%{kind: :vendor}, :part_kind_invalid}
+      ]
+
+      for {o, reason} <- cases do
+        impl = passport("provider-a", @sha_b, qual(), o)
+
+        assert {:error, ^reason} = S.admit(manifest(%{implementation: impl}), abb(), contract()),
+               inspect(o)
+      end
+    end
+
+    test "placeholder qualification receipt digests are refused" do
+      cases = [
+        {%{receipt_digest: "x"}, :qualification_receipt_digest_invalid},
+        {%{verifier_evidence_digest: "y"}, :verifier_evidence_digest_invalid},
+        {%{replay_digest: "z"}, :qualification_replay_digest_invalid}
+      ]
+
+      for {o, reason} <- cases do
+        m = manifest(%{qualification_receipt: qual(o)})
+        assert {:error, ^reason} = S.admit(m, abb(), contract()), inspect(o)
+      end
+    end
+  end
+
   describe "ledger: duplicate delivery, reordering, crash/restart replay (DoD 6)" do
     defp realizations(n), do: for(i <- 1..n, do: elem(S.realize(admitted!(), work(), i), 1))
+    defp ledger, do: Ledger.new(admitted!(), work())
+
+    defp filled(n) do
+      Enum.reduce(realizations(n), ledger(), fn r, l ->
+        {:admitted, l} = Ledger.deliver(l, r)
+        l
+      end)
+    end
 
     test "duplicate delivery is idempotent" do
       [r1] = realizations(1)
-      {:admitted, l1} = Ledger.deliver(Ledger.new(), r1)
+      {:admitted, l1} = Ledger.deliver(ledger(), r1)
       assert {:duplicate, ^l1} = Ledger.deliver(l1, r1)
       assert length(Ledger.entries(l1)) == 1
     end
 
-    test "reordering, gaps and conflicting reuse of a sequence are refused" do
+    test "reordering and gaps are refused" do
       [r1, r2, r3] = realizations(3)
-      assert {:error, :sequence_gap} = Ledger.deliver(Ledger.new(), r2)
-      {:admitted, l} = Ledger.deliver(Ledger.new(), r1)
+      assert {:error, :sequence_gap} = Ledger.deliver(ledger(), r2)
+      {:admitted, l} = Ledger.deliver(ledger(), r1)
       {:admitted, l} = Ledger.deliver(l, r2)
-      assert {:error, :sequence_gap} = Ledger.deliver(Ledger.new(), r3)
-
-      {:ok, other_r1} = S.realize(admitted!(), work(%{work_order_id: "urn:work:other"}), 1)
-      assert {:error, :sequence_conflict} = Ledger.deliver(l, other_r1)
+      assert {:error, :sequence_gap} = Ledger.deliver(ledger(), r3)
       assert {:admitted, _} = Ledger.deliver(l, r3)
+    end
+
+    test "conflicting reuse of a recorded sequence is refused" do
+      [r1, r2] = realizations(2)
+      {:admitted, l} = Ledger.deliver(ledger(), r1)
+      {:admitted, l} = Ledger.deliver(l, r2)
+      l = %{l | by_seq: Map.put(l.by_seq, 1, @d9)}
+      assert {:error, :sequence_conflict} = Ledger.deliver(l, r1)
     end
 
     test "sequence regression below the ledger head is refused" do
       [r1, r2] = realizations(2)
-      {:admitted, l} = Ledger.deliver(Ledger.new(), r1)
+      {:admitted, l} = Ledger.deliver(ledger(), r1)
       {:admitted, l} = Ledger.deliver(l, r2)
       l = %{l | by_seq: Map.delete(l.by_seq, 1)}
       assert {:error, :sequence_regression} = Ledger.deliver(l, r1)
@@ -387,42 +464,91 @@ defmodule Xaas.Ultracode.SbbRealizationTest do
       [r1] = realizations(1)
 
       assert {:error, :receipt_digest_mismatch} =
-               Ledger.deliver(Ledger.new(), %{r1 | authority: "DO"})
+               Ledger.deliver(ledger(), %{r1 | authority: "DO"})
 
-      assert {:error, :malformed_input} = Ledger.deliver(Ledger.new(), %{})
+      assert {:error, :malformed_input} = Ledger.deliver(ledger(), %{})
+      assert {:error, :malformed_input} = Ledger.deliver(:junk, r1)
+    end
+
+    test "self-digested forged realization claiming DO is refused (court P4)" do
+      [r1] = realizations(1)
+
+      forged =
+        r1
+        |> Map.delete(:receipt_digest)
+        |> Map.merge(%{authority: "DO", grants_do_authority: true, do_route: "none"})
+
+      forged = Map.put(forged, :receipt_digest, S.digest(forged))
+      assert S.receipt_intact?(forged)
+      assert {:error, :realization_not_bound} = Ledger.deliver(ledger(), forged)
+    end
+
+    test "a realization of another WorkOrder or another SBB is refused" do
+      {:ok, other_work} = S.realize(admitted!(), work(%{work_order_id: "urn:work:other"}), 1)
+      assert {:error, :realization_not_bound} = Ledger.deliver(ledger(), other_work)
+
+      b =
+        admitted!(
+          manifest(%{
+            sbb_id: "sbb:queue/provider-b",
+            implementation: passport("provider-b", @sha_c, qual())
+          })
+        )
+
+      {:ok, other_sbb} = S.realize(b, work(), 1)
+      assert {:error, :realization_not_bound} = Ledger.deliver(ledger(), other_sbb)
+    end
+
+    test "ledgers of different bindings start from different genesis heads" do
+      other = Ledger.new(admitted!(), work(%{work_order_id: "urn:work:other"}))
+      assert ledger().head != other.head
+      assert ledger().head == Ledger.genesis(admitted!(), work())
     end
 
     test "crash/restart replay reproduces the exact chain head" do
-      ledger =
-        Enum.reduce(realizations(5), Ledger.new(), fn r, l ->
-          {:admitted, l} = Ledger.deliver(l, r)
-          l
-        end)
-
-      persisted = Ledger.entries(ledger)
-      assert {:ok, restored} = Ledger.replay(persisted)
-      assert restored.head == ledger.head
+      l = filled(5)
+      persisted = Ledger.entries(l)
+      assert {:ok, restored} = Ledger.replay(admitted!(), work(), persisted)
+      assert restored.head == l.head
       assert restored.last_seq == 5
+      assert {:ok, _} = Ledger.replay(admitted!(), work(), persisted, l.head)
       [r1 | _] = realizations(1)
       assert {:duplicate, _} = Ledger.deliver(restored, r1)
     end
 
     test "replay refuses reordered, truncated-prefix or tampered entries" do
-      ledger =
-        Enum.reduce(realizations(3), Ledger.new(), fn r, l ->
-          {:admitted, l} = Ledger.deliver(l, r)
-          l
-        end)
+      [e1, e2, e3] = Ledger.entries(filled(3))
+      rp = &Ledger.replay(admitted!(), work(), &1)
+      assert {:error, :replay_mismatch} = rp.([e2, e1, e3])
+      assert {:error, :replay_mismatch} = rp.([e2, e3])
+      assert {:error, :replay_mismatch} = rp.([e1, %{e2 | receipt_digest: @d9}, e3])
+      assert {:error, :replay_mismatch} = rp.([e1, %{e2 | chain: @d9}, e3])
+      assert {:error, :malformed_input} = rp.([e1, :junk])
+      assert {:error, :malformed_input} = Ledger.replay(admitted!(), work(), :junk)
+      assert {:ok, %Ledger{head: head}} = rp.([])
+      assert head == Ledger.genesis(admitted!(), work())
+    end
 
-      [e1, e2, e3] = Ledger.entries(ledger)
-      assert {:error, :replay_mismatch} = Ledger.replay([e2, e1, e3])
-      assert {:error, :replay_mismatch} = Ledger.replay([e2, e3])
-      assert {:error, :replay_mismatch} = Ledger.replay([e1, %{e2 | receipt_digest: @d9}, e3])
-      assert {:error, :replay_mismatch} = Ledger.replay([e1, %{e2 | chain: @d9}, e3])
-      assert {:error, :malformed_input} = Ledger.replay([e1, :junk])
-      assert {:error, :malformed_input} = Ledger.replay(:junk)
-      assert {:ok, %Ledger{head: head}} = Ledger.replay([])
-      assert head == Ledger.genesis()
+    test "history rewritten with a recomputed chain is refused (court P5)" do
+      [e1, e2, _e3] = Ledger.entries(filled(3))
+      evil = "sha256:" <> String.duplicate("e", 64)
+      rewritten = [e1, %{e2 | receipt_digest: evil, chain: S.digest({e1.chain, 2, evil})}]
+      assert {:error, :replay_mismatch} = Ledger.replay(admitted!(), work(), rewritten)
+    end
+
+    test "replay under a different binding is refused" do
+      persisted = Ledger.entries(filled(2))
+      other = work(%{work_order_id: "urn:work:other"})
+      assert {:error, :replay_mismatch} = Ledger.replay(admitted!(), other, persisted)
+    end
+
+    test "anchored replay refuses a truncated suffix" do
+      l = filled(3)
+      [e1, e2, _e3] = Ledger.entries(l)
+      assert {:ok, _} = Ledger.replay(admitted!(), work(), [e1, e2])
+
+      assert {:error, :replay_head_mismatch} =
+               Ledger.replay(admitted!(), work(), [e1, e2], l.head)
     end
   end
 
@@ -457,10 +583,11 @@ defmodule Xaas.Ultracode.SbbRealizationTest do
   describe "benchmark regression bound" do
     # Deterministic timing gate. Measured 2026-09-26 with
     # `MIX_ENV=test mix run --no-start bench/sbb_realization_bench.exs`
-    # (Elixir 1.20.2 / OTP 28.5, Apple Silicon, loaded host), medians:
-    # admit 14us, realize 9us, deliver_append 5us, deliver_duplicate 4us,
-    # substitute 43us, replay_1000 2236us (~2.2us/entry).
-    # admit+realize+deliver ~= 28us/op; the bounds below are ~18x / ~45x the
+    # (Elixir 1.20.2 / OTP 28.5, Apple Silicon, load avg ~43), medians:
+    # admit 24us, realize 10us, deliver_append 19us (recomputes the bound
+    # realization), deliver_duplicate 15us, substitute 51us, anchored
+    # replay_1000 16267us (~16us/entry, recomputes every receipt).
+    # admit+realize+deliver ~= 55us/op; the bounds below are ~9x / ~6x the
     # measured medians so they trip on an algorithmic regression (e.g. an
     # O(n) ledger scan per delivery), not on scheduler noise.
     @ops 2_000
@@ -473,7 +600,7 @@ defmodule Xaas.Ultracode.SbbRealizationTest do
 
       {us, ledger} =
         :timer.tc(fn ->
-          Enum.reduce(1..@ops, Ledger.new(), fn i, l ->
+          Enum.reduce(1..@ops, Ledger.new(a, work()), fn i, l ->
             {:ok, _} = S.admit(m, abb(), contract())
             {:ok, r} = S.realize(a, work(), i)
             {:admitted, l} = Ledger.deliver(l, r)
@@ -484,7 +611,9 @@ defmodule Xaas.Ultracode.SbbRealizationTest do
       assert ledger.last_seq == @ops
       assert us / @ops < @bound_us_per_op, "#{us / @ops} us/op exceeds #{@bound_us_per_op}"
 
-      {replay_us, {:ok, restored}} = :timer.tc(fn -> Ledger.replay(Ledger.entries(ledger)) end)
+      {replay_us, {:ok, restored}} =
+        :timer.tc(fn -> Ledger.replay(a, work(), Ledger.entries(ledger), ledger.head) end)
+
       assert restored.head == ledger.head
       assert replay_us / @ops < @replay_bound_us_per_entry
     end

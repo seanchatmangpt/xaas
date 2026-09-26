@@ -16,11 +16,24 @@ defmodule Xaas.Ultracode.SbbRealization do
   qualified contract is delegated to `Xaas.Ultracode.SubstitutionCourt`, and
   the semantic realization identity is conserved across the substitution.
 
+  The implementation `PartPassport` is admitted by the same passport law as
+  `SubstitutionCourt` (`SubstitutionCourt.validate_part/1`): exact subject,
+  exact content and qualification digests, and an authority ceiling that never
+  contains DO (`:do_authority_laundering`). The passport ceiling must also lie
+  inside the contract ceiling, and the requested authority inside both.
+
   `Ledger` gives crash/restart/replay and duplicate-delivery evidence: an
-  append-only, hash-chained, strictly sequenced record of realizations.
-  Duplicate delivery is idempotent, reordering and conflicting sequence reuse
-  are refused, and replay of a persisted ledger recomputes the chain so any
-  tampered or reordered entry is refused with `:replay_mismatch`.
+  append-only, hash-chained, strictly sequenced record of realizations for ONE
+  admission and ONE WorkOrder (`Ledger.new/2`). A delivered realization is
+  admitted only if it is exactly the record `realize/3` produces for that
+  binding at that sequence number, so a self-digested forgery (e.g. one that
+  claims DO) or a realization of another WorkOrder is refused. Duplicate
+  delivery is idempotent; reordering, gaps and sequence reuse are refused.
+  `Ledger.replay/3` rebuilds a persisted ledger against its binding and
+  recomputes every receipt and chain link, so a tampered, reordered or
+  rewritten-with-recomputed-chain history is refused with `:replay_mismatch`.
+  A truncated suffix is still a valid prefix; `Ledger.replay/4` with the
+  expected head digest refuses that (`:replay_head_mismatch`).
   """
 
   alias Xaas.Ultracode.SubstitutionCourt
@@ -111,6 +124,7 @@ defmodule Xaas.Ultracode.SbbRealization do
          :ok <- validate_qualification(m),
          :ok <- validate_implementation(m, contract),
          :ok <- validate_authority_request(m.requested_authority, contract),
+         :ok <- within_implementation(m, contract),
          :ok <- within_contract(m.requested_behaviors, contract) do
       admission_digest =
         digest(%{
@@ -277,24 +291,41 @@ defmodule Xaas.Ultracode.SbbRealization do
 
   defmodule Ledger do
     @moduledoc """
-    Append-only, hash-chained, strictly sequenced realization ledger.
-    Serializable via `entries/1`; `replay/1` rebuilds and re-verifies it.
+    Append-only, hash-chained, strictly sequenced realization ledger bound to
+    one `Admitted` SBB and one `WorkIdentity`. Serializable via `entries/1`;
+    `replay/3,4` rebuilds and re-verifies it against the same binding.
     """
     alias Xaas.Ultracode.SbbRealization
+    alias Xaas.Ultracode.SbbRealization.Admitted
+    alias Xaas.Ultracode.SubstitutionCourt
+    alias Xaas.Ultracode.SubstitutionCourt.WorkIdentity
 
-    @genesis "sha256:" <> String.duplicate("0", 64)
-    defstruct entries: [], head: @genesis, last_seq: 0, by_seq: %{}
+    @enforce_keys [:admitted, :work, :binding_digest, :head]
+    defstruct [:admitted, :work, :binding_digest, :head, entries: [], last_seq: 0, by_seq: %{}]
 
-    def genesis, do: @genesis
-    def new, do: %__MODULE__{}
+    @doc "A fresh ledger bound to one admission and one WorkOrder."
+    def new(%Admitted{} = a, %WorkIdentity{} = work) do
+      binding = genesis(a, work)
+      %__MODULE__{admitted: a, work: work, binding_digest: binding, head: binding}
+    end
+
+    @doc "Genesis head: digest of the (admission, work identity) binding."
+    def genesis(%Admitted{} = a, %WorkIdentity{} = work) do
+      SbbRealization.digest(
+        {"xaas.sbb-ledger/1", a.admission_digest, SubstitutionCourt.work_identity_digest(work)}
+      )
+    end
 
     @doc """
     Deliver a realization. Returns `{:admitted, ledger}`, `{:duplicate, ledger}`
     (same receipt redelivered: idempotent, ledger unchanged) or `{:error, reason}`.
+    Only the exact record `realize/3` yields for this ledger's binding at that
+    sequence is admitted (`:realization_not_bound` otherwise).
     """
     def deliver(%__MODULE__{} = l, %{receipt_digest: rd, sequence: seq} = r) do
       cond do
         not SbbRealization.receipt_intact?(r) -> {:error, :receipt_digest_mismatch}
+        expected(l, seq) != {:ok, r} -> {:error, :realization_not_bound}
         Map.get(l.by_seq, seq) == rd -> {:duplicate, l}
         Map.has_key?(l.by_seq, seq) -> {:error, :sequence_conflict}
         seq <= l.last_seq -> {:error, :sequence_regression}
@@ -304,6 +335,9 @@ defmodule Xaas.Ultracode.SbbRealization do
     end
 
     def deliver(_, _), do: {:error, :malformed_input}
+
+    defp expected(%__MODULE__{admitted: a, work: work}, seq),
+      do: SbbRealization.realize(a, work, seq)
 
     defp append(%__MODULE__{} = l, seq, rd) do
       chain = SbbRealization.digest({l.head, seq, rd})
@@ -321,13 +355,18 @@ defmodule Xaas.Ultracode.SbbRealization do
     @doc "Persisted form (oldest first)."
     def entries(%__MODULE__{entries: e}), do: Enum.reverse(e)
 
-    @doc "Crash/restart: rebuild from persisted entries, recomputing every link."
-    def replay(entries) when is_list(entries) do
-      Enum.reduce_while(entries, {:ok, new()}, fn
-        %{sequence: seq, receipt_digest: rd, prev: prev, chain: chain}, {:ok, l} ->
+    @doc """
+    Crash/restart: rebuild from persisted entries against the binding,
+    recomputing every receipt (via `realize/3`) and every chain link.
+    """
+    def replay(%Admitted{} = a, %WorkIdentity{} = work, entries) when is_list(entries) do
+      Enum.reduce_while(entries, {:ok, new(a, work)}, fn
+        %{sequence: seq, receipt_digest: rd, prev: prev, chain: chain}, {:ok, l}
+        when is_integer(seq) ->
           cond do
             prev != l.head -> {:halt, {:error, :replay_mismatch}}
             seq != l.last_seq + 1 -> {:halt, {:error, :replay_mismatch}}
+            not receipt_expected?(l, seq, rd) -> {:halt, {:error, :replay_mismatch}}
             SbbRealization.digest({prev, seq, rd}) != chain -> {:halt, {:error, :replay_mismatch}}
             true -> {:cont, {:ok, append(l, seq, rd)}}
           end
@@ -337,7 +376,23 @@ defmodule Xaas.Ultracode.SbbRealization do
       end)
     end
 
-    def replay(_), do: {:error, :malformed_input}
+    def replay(_, _, _), do: {:error, :malformed_input}
+
+    @doc "Anchored replay: additionally refuses unless the rebuilt head is `expected_head`."
+    def replay(a, work, entries, expected_head) do
+      case replay(a, work, entries) do
+        {:ok, %__MODULE__{head: ^expected_head} = l} -> {:ok, l}
+        {:ok, _} -> {:error, :replay_head_mismatch}
+        error -> error
+      end
+    end
+
+    defp receipt_expected?(l, seq, rd) do
+      case expected(l, seq) do
+        {:ok, %{receipt_digest: ^rd}} -> true
+        _ -> false
+      end
+    end
   end
 
   @doc "True when the realization's receipt digest recomputes from its body."
@@ -414,6 +469,29 @@ defmodule Xaas.Ultracode.SbbRealization do
   defp validate_qualification(_), do: {:error, :qualification_receipt_missing}
 
   defp validate_implementation(%Manifest{implementation: %PartPassport{} = p} = m, c) do
+    with :ok <- SubstitutionCourt.validate_part(p) do
+      implementation_within_contract(p, m, c)
+    end
+  end
+
+  defp validate_implementation(_, _), do: {:error, :implementation_passport_missing}
+
+  defp within_implementation(%Manifest{implementation: p, requested_authority: req}, c) do
+    ceiling = MapSet.new(p.authority_ceiling)
+
+    cond do
+      not MapSet.subset?(ceiling, MapSet.new(c.authority_ceiling)) ->
+        {:error, :implementation_ceiling_exceeds_contract}
+
+      not MapSet.subset?(MapSet.new(req), ceiling) ->
+        {:error, :authority_exceeds_implementation}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp implementation_within_contract(p, m, c) do
     cond do
       p.qualification_receipt != m.qualification_receipt ->
         {:error, :qualification_not_bound_to_implementation}
@@ -428,8 +506,6 @@ defmodule Xaas.Ultracode.SbbRealization do
         :ok
     end
   end
-
-  defp validate_implementation(_, _), do: {:error, :implementation_passport_missing}
 
   defp validate_authority_request(list, c) when is_list(list) do
     with :ok <- validate_ceiling(list) do
