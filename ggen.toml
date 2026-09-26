@@ -15,6 +15,14 @@ name = "xaas"
 
 [ontology]
 source = "ontology.ttl"
+# Import closure (lane W9, 2026-09-25): vision-2030 domain ontology +
+# the SA2A bridge ontology. Paths repo-root-relative, matching the
+# wasm4pm exemplar convention. Files verified present; ggen sync runs
+# at integration by the coordinator.
+imports = [
+  "docs/ontology/vision-2030.ttl",
+  "priv/sa2a_bridge/ontology/ontology.ttl",
+]
 
 [packs.xaas_castle_bridge]
 git = "https://github.com/seanchatmangpt/ggen-marketplace.git"
