@@ -14,6 +14,7 @@ on:
       - "priv/packs/wd_cs2_case_study_pack/**"
       - "scripts/stogaf_semantic_court.py"
       - "test/*.py"
+      - "release/v26.9.25/receipts/**"
       - "tools/wd_deck/**"
       - "lib/xaas/case_studies/wd_fa/**"
       - "lib/xaas_web/live/wd_fa/**"
@@ -109,7 +110,7 @@ jobs:
           sha256sum wd-cs2-stogaf-semantic-report.json
 
       - name: Case-study, freeze and court Python tests
-        run: python -m pytest -q test/stogaf_semantic_court_test.py test/wd_case_study_court_test.py test/wd_submission_freeze_test.py
+        run: python -m pytest -q test/stogaf_semantic_court_test.py test/wd_case_study_court_test.py test/wd_submission_freeze_test.py test/release_v26925_case_study_post_tag_test.py
 
       - name: Compile exact subject
         run: mix compile --force --warnings-as-errors
