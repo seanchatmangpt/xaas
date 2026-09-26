@@ -115,6 +115,17 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
     })
   end
 
+  @doc """
+  Public admission of a single part passport (kind, exact subject, content
+  digests, qualification receipt digests, authority ceiling without DO).
+
+  This is the one passport law; other courts (e.g.
+  `Xaas.Ultracode.SbbRealization`) call it instead of re-implementing it.
+  """
+  @spec validate_part(PartPassport.t()) :: :ok | {:error, atom()}
+  def validate_part(%PartPassport{} = passport), do: validate_passport(passport)
+  def validate_part(_), do: {:error, :implementation_passport_missing}
+
   defp validate_work(work) do
     cond do
       blank?(work.work_order_id) -> {:error, :work_order_identity_missing}
