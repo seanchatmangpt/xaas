@@ -43,9 +43,16 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
 
   defmodule Snapshot do
     @moduledoc false
-    @enforce_keys [:closure_digest, :snapshot_digest, :members, :authority]
+    @enforce_keys [
+      :closure_digest,
+      :portable_closure_digest,
+      :snapshot_digest,
+      :members,
+      :authority
+    ]
     defstruct [
       :closure_digest,
+      :portable_closure_digest,
       :snapshot_digest,
       :members,
       :source_repository,
@@ -56,6 +63,7 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
 
     @type t :: %__MODULE__{
             closure_digest: String.t(),
+            portable_closure_digest: String.t(),
             snapshot_digest: String.t(),
             members: %{required(String.t()) => Member.t()},
             source_repository: String.t() | nil,
@@ -140,10 +148,12 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
          :ok <- validate_provenance(opts) do
       ordered = Enum.sort_by(members, &{&1.capability_id, &1.version, &1.capability_digest})
       closure_digest = digest_term(Enum.map(ordered, &closure_projection/1))
+      portable_closure_digest = portable_digest(ordered)
       member_map = Map.new(ordered, &{&1.capability_id, &1})
 
       snapshot_payload = {
         closure_digest,
+        portable_closure_digest,
         Keyword.get(opts, :source_repository),
         Keyword.get(opts, :source_sha),
         Keyword.get(opts, :release_evidence_digest),
@@ -153,6 +163,7 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
       {:ok,
        %Snapshot{
          closure_digest: closure_digest,
+         portable_closure_digest: portable_closure_digest,
          snapshot_digest: digest_term(snapshot_payload),
          members: member_map,
          source_repository: Keyword.get(opts, :source_repository),
@@ -178,11 +189,20 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
          :ok <- unique_ids(members) do
       ordered = Enum.sort_by(members, &{&1.capability_id, &1.version, &1.capability_digest})
       actual = digest_term(Enum.map(ordered, &closure_projection/1))
+      portable_actual = portable_digest(ordered)
 
-      if actual == snapshot.closure_digest do
-        :ok
-      else
-        {:error, {:closure_digest_mismatch, snapshot.closure_digest, actual}}
+      cond do
+        actual != snapshot.closure_digest ->
+          {:error, {:closure_digest_mismatch, snapshot.closure_digest, actual}}
+
+        portable_actual != snapshot.portable_closure_digest ->
+          {:error,
+           {:portable_closure_digest_mismatch,
+            snapshot.portable_closure_digest,
+            portable_actual}}
+
+        true ->
+          :ok
       end
     end
   end
@@ -306,6 +326,37 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
       member.admission_digest,
       member.release_digest
     }
+  end
+
+  @doc """
+  RFC 8785/JCS closure identity shared with AshA2A.CapabilityRelease.
+
+  This is additive to the compatibility closure digest and is intended for
+  independent recomputation by non-BEAM tooling.
+  """
+  @spec portable_digest([Member.t()]) :: String.t()
+  def portable_digest(members) when is_list(members) do
+    canonical_members =
+      members
+      |> Enum.sort_by(&{&1.capability_id, &1.version, &1.capability_digest})
+      |> Enum.map(fn member ->
+        %{
+          "capability_id" => member.capability_id,
+          "version" => member.version,
+          "capability_digest" => member.capability_digest,
+          "admission_digest" => member.admission_digest,
+          "release_digest" => member.release_digest
+        }
+      end)
+
+    payload = %{
+      "schema" => "chatman.release-closure/v1",
+      "members" => canonical_members
+    }
+
+    "sha256:" <>
+      (:crypto.hash(:sha256, Jcs.encode(payload))
+       |> Base.encode16(case: :lower))
   end
 
   defp fetch(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
