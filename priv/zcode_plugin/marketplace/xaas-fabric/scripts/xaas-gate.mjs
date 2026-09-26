@@ -233,11 +233,36 @@ function writePathDecision(input, lease, ctx) {
   return null;
 }
 
+function pluginMcpServer(cfgPath) {
+  // Plugin-registered servers live in the plugin's own .mcp.json (key
+  // `mcpServers`), NOT flattened into the user config's `mcp.servers` — that
+  // assumption denied every consequential call of a real leased worker
+  // (observed 2026-09-26, burn-in tick 1) while the CLI's own loader, which
+  // reads this same manifest, succeeded. HERE is .../xaas-fabric/<version>/,
+  // so the manifest is one level up from scripts/.
+  const manifestPath = path.join(HERE, "..", ".mcp.json");
+  const server = JSON.parse(readFileSync(manifestPath, "utf8"))?.mcpServers?.["xaas-execution"];
+  if (!server?.url || !server?.headers?.Authorization) return null;
+  // The manifest carries ${user_config.*} placeholders the CLI interpolates
+  // from plugins.options; resolve them the same way, from the same file.
+  const auth = server.headers.Authorization.replace(
+    /\$\{user_config\.([^}]+)\}/g,
+    (_, dotted) =>
+      dotted
+        .split(".")
+        .reduce((acc, key) => (acc == null ? acc : acc[key]), JSON.parse(readFileSync(cfgPath, "utf8")))
+  );
+  if (!auth || /[$]\{user_config\./.test(auth)) return null;
+  return { url: server.url, auth };
+}
+
 function mcpTarget() {
   if (process.env.XAAS_MCP_URL && process.env.XAAS_MCP_TOKEN) {
     return { url: process.env.XAAS_MCP_URL, auth: `Bearer ${process.env.XAAS_MCP_TOKEN}` };
   }
   const cfgPath = process.env.ZCODE_CONFIG_PATH ?? path.join(homedir(), ".zcode", "cli", "config.json");
+  const fromPlugin = pluginMcpServer(cfgPath);
+  if (fromPlugin) return fromPlugin;
   const server = JSON.parse(readFileSync(cfgPath, "utf8"))?.mcp?.servers?.["xaas-execution"];
   if (!server?.url || !server?.headers?.Authorization) throw new Error("xaas-execution MCP server is not configured");
   return { url: server.url, auth: server.headers.Authorization };
