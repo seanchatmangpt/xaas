@@ -47,10 +47,13 @@ defmodule Xaas.Ultracode.Dispatch do
 
          * a run WITHOUT full semantic identity keeps the generic
            `/xaas` prompt path for non-semantic waves, byte-identical to
-           the bash script's: `<node> bin/zcode.js --prompt "/xaas
-           Call claim_next with provider_worker_id exactly <worker_id>
-           and epoch_id exactly <epoch_id>; do not use any other
-           values." --cwd <cwd> --json`.
+           the bash script's compatibility path. It pins the unattended
+           worker permission posture explicitly: `<node> bin/zcode.js
+           --prompt "/xaas Call claim_next with provider_worker_id exactly
+           <worker_id> and epoch_id exactly <epoch_id>; do not use any other
+           values." --cwd <cwd> --json --mode yolo`. This is the headless
+           equivalent of the interactive TUI's `/mode yolo`; the worker
+           never depends on a prompt broker to approve ordinary construction.
 
        Either way it runs with cwd = the zcode CLI dir and
        `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` added to the child
@@ -551,7 +554,16 @@ defmodule Xaas.Ultracode.Dispatch do
           prompt = prompt(worker_id, epoch_id)
 
           {:xaas_prompt, prompt,
-           [resolved.zcode_bin, "--prompt", prompt, "--cwd", cwd_real, "--json"], nil}
+           [
+             resolved.zcode_bin,
+             "--prompt",
+             prompt,
+             "--cwd",
+             cwd_real,
+             "--json",
+             "--mode",
+             "yolo"
+           ], nil}
       end
 
     {:ok,

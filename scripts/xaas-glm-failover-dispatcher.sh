@@ -14,9 +14,10 @@
 #     without native gall-work exits non-zero and the dispatch is classified
 #     failed.
 #   * epochs without semantic identity -> the generic /xaas prompt path for
-#     non-semantic waves, unchanged.
-# Either way it never grants tools: Bash, git_push and publish stay
-# hard-refused server-side by Xaas.Ultracode.Lease.admit_tool.
+#     non-semantic waves, with --mode yolo pinned explicitly so unattended
+#     workers do not fall back to build-mode permission prompts.
+# Either way it never manufactures authority: server-side
+# Xaas.Ultracode.Lease.admit_tool remains the consequence fence.
 #
 # Usage: xaas-glm-failover-dispatcher.sh [--once] [--interval SECONDS]
 #        xaas-glm-failover-dispatcher.sh --epoch EPOCH_UUID
@@ -252,7 +253,7 @@ dispatch_one_epoch() {
     # became canonical. New semantic Runs never use this prompt projection.
     run_with_timeout node "$ZCODE_BIN" \
       --prompt "/xaas Call claim_next with provider_worker_id exactly \"${worker_id}\" and epoch_id exactly \"${epoch_id}\"; do not use any other values." \
-      --cwd "$cwd_real" --json
+      --cwd "$cwd_real" --json --mode yolo
   ) > "$logfile" 2>&1
   rc=$?
 
