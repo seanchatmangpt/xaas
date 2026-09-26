@@ -110,7 +110,7 @@ run through GitHub Actions.
 
 ## Receipted production deployment
 
-`.github/workflows/fly_deploy.yaml` is the sole production deployment path. It
+`.github/workflows/fly_deploy.yaml` is the sole Fly production deployment path. It
 is deliberately `workflow_dispatch` only; merging or pushing does not acquire
 production actuation authority by itself.
 
@@ -153,6 +153,16 @@ The deployment sequence is:
 
 The inherited automatic AWS deployment job has been removed. Fly is therefore
 the sole production actuation topology introduced by this change.
+
+The same operator-dispatch contract fences `.github/workflows/ci_cd.yaml`: the
+registry publication (`publish-image`) and swarm deployment (`deploy`) jobs no
+longer run on push to `main`. Both run only on `workflow_dispatch` from
+`refs/heads/main` with `expected_head_sha` equal to `github.sha` and a non-empty
+`reason`; each job re-admits those facts in its first step and refuses with a
+typed `REFUSED[NOT_OPERATOR_DISPATCH|NOT_MAIN|HEAD_MOVED|REASON_MISSING]`
+(exit 64). Each actuation writes and uploads a receipt — `xaas.image-publish.v1`
+(ALIVE only when the registry's raw-manifest SHA-256 equals the pushed digest)
+and `xaas.swarm-deploy.v1` (PARTIAL_ALIVE; no post-deploy health check exists).
 
 ## Pull-request verification
 

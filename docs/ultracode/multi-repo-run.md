@@ -117,6 +117,63 @@ declared as code in `Xaas.Ultracode.TargetSuites` (merged into the verifier
 registry by `config :xaas, :ultracode_target_suites` in dev.exs — see §6);
 baseline config already carries `"nounverb"` and `"eds"` alongside `"aps"`.
 
+## 6b. Engine and judge configuration keys (config/config.exs)
+
+Beyond the multi-repo keys above (`:ultracode_repos`,
+`:ultracode_repos_file`, `:ultracode_worktree_root`,
+`:ultracode_verifier_suites`, `:ultracode_target_suites`,
+`:ultracode_sensing_profiles`, `:ultracode_backlog_scripts`,
+`:ultracode_ticket_dir`), the fabric loop is fenced by:
+
+- `config :xaas, :ultracode_pool_capacity` (default `5`) — per-provider
+  live-lease bound enforced race-free inside `Lease.claim_next/3` on EVERY
+  claim path (MCP workers included), not just the wave's in-process
+  semaphore. Integer = one bound for all providers; a map gives per-provider
+  bounds (`%{"zcode" => 5, default: 3}`); `nil` = unbounded (test env only).
+- `config :xaas, :ultracode_judge_accept_court_verified_partial`
+  (default `true`) — a receipt sealed `partial_alive` by an honest worker is
+  accepted WITHOUT re-dispatch when the fabric's own court passed the exact
+  head (`fabric_verifier.status == "pass"` AND `head_verified == true`).
+  `false` restores the strict alive-only predicate (pre-2026-09-19). A
+  fail/timeout/error verdict or an unverified head still repairs in both
+  modes.
+- `config :xaas, :ultracode_engine_worker` (default
+  `{Xaas.Ultracode.RecipeWorker, :run}`) and
+  `config :xaas, :ultracode_engine_providers` (default `["recipe"]`) — the
+  engine's worker seam (`Xaas.Ultracode.Engine.fill/1`) and its provider
+  allowlist. The deterministic recipe worker is only ever handed
+  allowlisted-provider epochs (zcode/LLM epochs are never engine-filled). A
+  malformed `:ultracode_engine_providers` fails closed with a typed error.
+- `config :xaas, :ultracode_construction_recipes` — the deterministic
+  recipe registry (`capability id => argv recipe`); ships
+  `"recipe:mix-format"` with `elixir_toolchain: :target` (PATH resolved per
+  epoch from the target worktree's `.tool-versions`). A capability absent
+  here is refused before any claim.
+- `config :xaas, :ultracode_default_provider` (default `"zcode"`) — names
+  the default provider in exactly one place (`Xaas.Ultracode.ProviderRegistry`
+  @ `c338d02`); dispatch defaults, the fabric `claim_next` fallback, and
+  health gating resolve through the registry instead of a hardcoded string.
+- `config :xaas, :ultracode_providers` — the provider registry: one map of
+  provider id => `%{capabilities: [...], transport: ...,
+  authority_ceiling: ..., receipt_protocol: ..., enabled: boolean, cost:
+  ..., concurrency: ...}` carrying ALL per-provider facets (`enabled:
+  false` is the live kill switch — `ProviderRegistry.disable/1` makes a
+  provider invisible to selection mid-episode; `concurrency` is advisory,
+  the ENFORCED per-provider bound remains `:ultracode_pool_capacity`).
+  Selection (`ProviderRegistry.select/2`) admits enabled providers whose
+  capabilities cover the requirement and whose ceiling ranks >= the
+  required authority, ordered by policy (`:cost` default; also
+  `:capability`, `:name`); an empty/exhausted registry is the typed
+  `{:error, {:no_qualifying_provider, details}}` naming each candidate's
+  rejection — never a silent default. `Lease.claim_next_among/3` does
+  candidate-list claims over the ordered set. Test env ships an empty
+  registry (fail-closed).
+- Oban queues/schedules (config/config.exs): `ultracode_wave: 1` and
+  `ultracode_engine: 1` are driven by the `:autonomic_wave` /
+  `:semantic_wave` schedules (every 30 minutes) and the `:engine_cycle`
+  schedule (every 5 minutes); `ultracode_wave_loop: 1` is the hourly
+  fabric-native wave loop (§8).
+
 IN-FLIGHT verify-commands (run after `ultracode/w5-registry` lands;
 record exits here):
 
@@ -557,3 +614,28 @@ ever pushes to any remote; promotion is local `--no-ff` merges per repo.
 - `docs/ultracode/c4-architecture.md` — Run/Epoch/Lease/Receipt model.
 - Owning modules: `Xaas.Ultracode.{Repos,Sensing,TargetSuites,WavePlan,
   OcelEgress,RunValidation,Worktrees,Campaign,Autonomic}`.
+
+## 11. Cold replay (mix xaas.replay)
+
+`mix xaas.replay` replays a recorded no-LLM episode cold: subject identity,
+evidence, standing, completed work and the current frontier re-derived from the
+episode's sealed receipts, its TransitionLog, its work graph and git refs only
+(`Xaas.Ultracode.SemanticReplay`), every graph-side step a real OS process in
+`--ggen-igniter-dir` (private `MIX_BUILD_PATH`). The task never starts the
+application and needs no database.
+
+```bash
+mix xaas.replay --episode EPISODE_DIR --ggen-igniter-dir DIR --out STATE.json \
+  [--subject-repo DIR] [--subject-ref REF] [--ggen-build-path DIR] [--scratch DIR]
+```
+
+`--episode`, `--ggen-igniter-dir` and `--out` are required; the remaining
+switches are optional. A no-LLM guard runs before anything is read and fails
+closed (`SemanticDrive.no_llm_guard/1` over `priv/no_llm/policy.json`): a
+provider-claimed variable or a provider executable on `PATH` is
+`REFUSED(llm_credential_present)`, any other variable the policy does not admit
+is `REFUSED(unadmitted_environment)`. The last stdout line is always one JSON
+object. Exit codes: `0` = `KNOWN_REPLAY` (the recorded state was re-derived,
+nothing diverged), `4` = `DIVERGED` (the state is written but carries typed
+divergence), `3` = refused (typed JSON on the last stdout line, nothing
+written), `2` = invalid invocation.
