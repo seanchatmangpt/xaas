@@ -1,0 +1,24 @@
+{
+  "schema": "xaas.bench-receipt/1",
+  "subject": "lib/xaas/ultracode/sbb_realization.ex",
+  "parent_sha": "119fa49c46789d8a993675e75ded40138a6817d0",
+  "command": "MIX_ENV=test mix run --no-start bench/sbb_realization_bench.exs",
+  "toolchain": "Elixir 1.20.2 / OTP 28.5.0.2, darwin arm64, shared host under concurrent load",
+  "measured_at": "2026-09-26",
+  "unit": "microseconds",
+  "results": {
+    "admit": {"iters": 5000, "median": 14, "p99": 63},
+    "realize": {"iters": 5000, "median": 9, "p99": 32},
+    "deliver_append": {"iters": 5000, "median": 5, "p99": 22},
+    "deliver_duplicate": {"iters": 5000, "median": 4, "p99": 18},
+    "substitute": {"iters": 5000, "median": 43, "p99": 113},
+    "replay_1000": {"iters": 200, "median": 2236, "p99": 3981}
+  },
+  "regression_bound": {
+    "gate": "test/xaas/ultracode/sbb_realization_test.exs \"benchmark regression bound\"",
+    "admit_realize_deliver_us_per_op_max": 500,
+    "replay_us_per_entry_max": 100
+  },
+  "authority": "NONE",
+  "evidence_ceiling": "LOCAL_RUN"
+}
