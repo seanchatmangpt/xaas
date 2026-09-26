@@ -68,6 +68,16 @@ defmodule Xaas.Sjira.GovernanceObligation do
         }
 
   @required_finding ~w(id required_action action_owner evidence_required disposition)
+  @key_atoms %{
+    "gate" => :gate,
+    "phase" => :phase,
+    "findings" => :findings,
+    "id" => :id,
+    "required_action" => :required_action,
+    "action_owner" => :action_owner,
+    "evidence_required" => :evidence_required,
+    "disposition" => :disposition
+  }
 
   @spec compile_gate(map(), keyword()) :: {:ok, [t()]} | {:refused, map()}
   def compile_gate(%{} = gate_result, opts) when is_list(opts) do
@@ -311,7 +321,10 @@ defmodule Xaas.Sjira.GovernanceObligation do
   end
 
   defp value(map, key) do
-    Map.get(map, key) || Map.get(map, String.to_atom(key))
+    case Map.fetch(map, key) do
+      {:ok, value} -> value
+      :error -> Map.get(map, Map.fetch!(@key_atoms, key))
+    end
   end
 
   defp nonempty?(value), do: is_binary(value) and byte_size(value) > 0
