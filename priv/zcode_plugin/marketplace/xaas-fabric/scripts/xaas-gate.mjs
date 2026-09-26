@@ -241,21 +241,33 @@ function pluginMcpServer(cfgPath) {
   // `mcpServers`), NOT flattened into the user config's `mcp.servers` — that
   // assumption denied every consequential call of a real leased worker
   // (observed 2026-09-26, burn-in tick 1) while the CLI's own loader, which
-  // reads this same manifest, succeeded. HERE is .../xaas-fabric/<version>/,
+  // reads this same manifest, succeeded. HERE is .../<marketplace>/<name>/<version>/,
   // so the manifest is one level up from scripts/.
   const manifestPath = path.join(HERE, "..", ".mcp.json");
   const server = JSON.parse(readFileSync(manifestPath, "utf8"))?.mcpServers?.["xaas-execution"];
   if (!server?.url || !server?.headers?.Authorization) return null;
-  // The manifest carries ${user_config.*} placeholders the CLI interpolates
-  // from plugins.options; resolve them the same way, from the same file.
+  // ${user_config.KEY} is the PLUGIN'S user-supplied options object —
+  // config.json plugins.options."<name>@<marketplace>" — not the config
+  // root (a root lookup yields "Bearer undefined" and a 401 the worker
+  // cannot explain; observed 2026-09-26 burn-in tick 4). The plugin's own
+  // name is static — this script ships inside it — and the cache and
+  // source trees nest to different depths, so match the options key by
+  // name prefix instead of by path arithmetic.
+  const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
+  const optionsEntry = Object.entries(cfg?.plugins?.options ?? {}).find(
+    ([k]) => k.split("@")[0] === "xaas-fabric"
+  );
+  const options = (optionsEntry && optionsEntry[1]) ?? {};
   const auth = server.headers.Authorization.replace(
     /\$\{user_config\.([^}]+)\}/g,
     (_, dotted) =>
       dotted
         .split(".")
-        .reduce((acc, key) => (acc == null ? acc : acc[key]), JSON.parse(readFileSync(cfgPath, "utf8")))
+        .reduce((acc, key) => (acc == null ? acc : acc[key]), options) ?? ""
   );
-  if (!auth || /[$]\{user_config\./.test(auth)) return null;
+  if (!auth || /^Bearer (undefined|null|)?$/.test(auth) || /[$]\{user_config\./.test(auth)) {
+    return null;
+  }
   return { url: server.url, auth };
 }
 
