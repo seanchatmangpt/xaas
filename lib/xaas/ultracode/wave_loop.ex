@@ -185,7 +185,7 @@ defmodule Xaas.Ultracode.WaveLoop do
     subject = "wave-loop:step-#{step.id}@#{state_path}"
 
     with {:ok, run} <- create_loop_run(goal),
-         {:ok, run} <- start_run(run, subject),
+         {:ok, run} <- start_run(run, subject, state.work_surface),
          {:ok, epoch} <- activate_first_epoch(run) do
       result = dispatch(epoch, opts)
       settle(step, epoch.id, result, state_path, telemetry_path, tick_no)
@@ -313,9 +313,16 @@ defmodule Xaas.Ultracode.WaveLoop do
     |> Ash.create()
   end
 
-  defp start_run(run, subject) do
+  defp start_run(run, subject, worktree) do
+    # The STATE-declared work surface becomes the first epoch's bound
+    # worktree: without it Dispatch reaps the worker into a throwaway cwd
+    # and every step action fails the worker-side gate (observed tick 1,
+    # 2026-09-26). WorktreeIsSafe re-fails the start when the path is not a
+    # real git repo.
     run
-    |> Ash.Changeset.for_update(:start, %{exact_subject: subject}, authorize?: false)
+    |> Ash.Changeset.for_update(:start, %{exact_subject: subject, worktree: worktree},
+      authorize?: false
+    )
     |> Ash.update()
   end
 

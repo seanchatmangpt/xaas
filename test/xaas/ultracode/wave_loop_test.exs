@@ -214,6 +214,30 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert fetch_step(state2, "1").evidence == "see x | y docs"
       assert fetch_step(state2, "1").status == :done
     end
+
+    test "a WORK SURFACE line parses into the work_surface field" do
+      raw = """
+      WORK SURFACE: /Users/sac/xaas/tmp/wt
+
+      | step | status | evidence |
+      |---|---|---|
+      | 1 only step | DONE | ok |
+      """
+
+      assert {:ok, state} = State.parse(raw)
+      assert state.work_surface == "/Users/sac/xaas/tmp/wt"
+    end
+
+    test "no WORK SURFACE line parses work_surface as nil" do
+      raw = """
+      | step | status | evidence |
+      |---|---|---|
+      | 1 only step | DONE | ok |
+      """
+
+      assert {:ok, state} = State.parse(raw)
+      assert state.work_surface == nil
+    end
   end
 
   describe "State.first_actionable" do

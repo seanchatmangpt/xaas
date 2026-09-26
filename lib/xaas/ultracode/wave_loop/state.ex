@@ -65,7 +65,8 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     :law,
     :remaining_note,
     :remaining_chain,
-    :complete_marker
+    :complete_marker,
+    :work_surface
   ]
 
   @type step :: %{
@@ -90,6 +91,7 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   @step_header_regex ~r/^\s*\|\s*step\s*\|\s*status\s*\|\s*evidence/i
   @complete_marker_regex ~r/\bLOOP COMPLETE\b/
   @listed_step_regex ~r/\bstep\s+(\d+)/i
+  @work_surface_regex ~r/^WORK SURFACE:\s*(\S.+?)\s*$/
 
   # ------------------------------------------------------------------
   # Parsing
@@ -114,7 +116,8 @@ defmodule Xaas.Ultracode.WaveLoop.State do
          law: sections.law,
          remaining_note: note,
          remaining_chain: chain,
-         complete_marker: Enum.any?(lines, &(&1 =~ @complete_marker_regex))
+         complete_marker: Enum.any?(lines, &(&1 =~ @complete_marker_regex)),
+         work_surface: work_surface(lines)
        }}
     end
   end
@@ -414,6 +417,19 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     lines
     |> Enum.filter(&(&1 =~ ~r/^\s*REMAINING\b/i))
     |> List.last()
+  end
+
+  # The STATE-declared work surface: the first `WORK SURFACE: <path>` line
+  # wins. Only the raw string is captured here — admission (absolute, real
+  # git repo) stays with WorktreeIsSafe at the Epoch-create boundary.
+  defp work_surface(lines) do
+    lines
+    |> Enum.find_value(fn line ->
+      case Regex.run(@work_surface_regex, line) do
+        [_, path] -> path
+        nil -> nil
+      end
+    end)
   end
 
   defp parse_remaining(nil, _table_ids), do: {:ok, %{}}
