@@ -62,7 +62,8 @@ defmodule Xaas.Tunnel.Wire do
   end
 
   @spec response(non_neg_integer(), map()) :: map()
-  def response(status, body) when is_integer(status) and status >= 100 and status <= 599 and is_map(body) do
+  def response(status, body)
+      when is_integer(status) and status >= 100 and status <= 599 and is_map(body) do
     %{"v" => @version, "kind" => "http_response", "status" => status, "body" => body}
   end
 end

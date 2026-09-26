@@ -177,6 +177,72 @@ defmodule Xaas.Ultracode.Lease do
     do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id), capacity)
   end
 
+  @doc """
+  Claims ready work trying a CANDIDATE-PROVIDER LIST in order -- the
+  provider-routing half of selection (`ProviderRegistry.select/2` picks the
+  order; this executes it against the live claim kernel).
+
+  For each provider in `providers` (deduplicated, order preserved), this is
+  exactly `claim_next/3` for that provider -- the same atomic bind, the same
+  per-provider advisory-locked capacity fence, the same bounded lost-bind
+  retries; no new concurrency surface is introduced. First success wins:
+
+    * a provider with no ready work (`:no_ready_work`) is skipped to the
+      next candidate -- work re-routes;
+    * a provider at pool capacity (`:pool_at_capacity`) is likewise skipped,
+      recorded in the failure detail;
+    * a DISABLED or unregistered provider is not special-cased here (the
+      registry gates selection upstream; the claim kernel's own truth is the
+      Run.provider column -- an empty queue under that provider is
+      `:no_ready_work`).
+
+  Every candidate exhausted is the typed
+  `{:error, {:no_ready_work_among, providers, capacity_blocks}}` -- never a
+  silent default and never a wait for a human to pick a provider. A caller
+  wanting fail-closed BLOCKED semantics over an empty result has the typed
+  reason in hand.
+  """
+  @spec claim_next_among([String.t()], String.t() | nil, keyword()) ::
+          {:ok, Epoch.t(), String.t(), Run.t()}
+          | {:error, {:no_ready_work_among, [String.t()], [String.t()]}}
+          | {:error, term()}
+  def claim_next_among(providers, worker_id \\ nil, opts \\ [])
+
+  def claim_next_among([], _worker_id, _opts),
+    do: {:error, {:no_ready_work_among, [], []}}
+
+  def claim_next_among(providers, worker_id, opts) when is_list(providers) do
+    providers
+    |> Enum.uniq()
+    |> Enum.reduce_while({:error, {:no_ready_work_among, [], []}}, fn provider, acc ->
+      case claim_next(provider, worker_id, opts) do
+        {:ok, _epoch, _token, _run} = claimed ->
+          {:halt, claimed}
+
+        {:error, :pool_at_capacity} ->
+          {:error, {:no_ready_work_among, tried, blocked}} = acc
+          {:cont, {:error, {:no_ready_work_among, [provider | tried], [provider | blocked]}}}
+
+        {:error, :no_ready_work} ->
+          {:error, {:no_ready_work_among, tried, blocked}} = acc
+          {:cont, {:error, {:no_ready_work_among, [provider | tried], blocked}}}
+
+        # A provider-specific non-terminal failure (e.g. a malformed
+        # directed epoch_id) is the whole call's failure -- a typed error is
+        # never demoted into "try the next provider".
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:error, {:no_ready_work_among, tried, blocked}} ->
+        {:error, {:no_ready_work_among, Enum.reverse(tried), Enum.reverse(blocked)}}
+
+      claimed ->
+        claimed
+    end
+  end
+
   defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id, capacity) do
     result =
       Xaas.Repo.transaction(
@@ -640,6 +706,166 @@ defmodule Xaas.Ultracode.Lease do
   # exact lease that requested it without extending the token's blast radius.
   defp lease_fingerprint(lease_token) do
     :crypto.hash(:sha256, lease_token) |> Base.encode16(case: :lower)
+  end
+
+  # ------------------------------------------------------------------
+  # Cancellation
+  # ------------------------------------------------------------------
+
+  @doc """
+  Cancels the leased work. The lease token IS the capability: its holder may
+  cancel its own epoch (a worker standing down, a superseded candidate), and
+  the cancellation is typed, never a silent abandonment.
+
+  Cancellation law (and why there is no new `:cancelled` epoch state): the
+  epoch lands `:failed` through the SAME atomic, lease-token-guarded write
+  `refuse/3` uses (so expiry, re-claim, and the concurrency invariants keep
+  exactly one meaning), and the sealed receipt carries the STANDING outcome
+  `:blocked` with `cancelled_by` evidence -- a cancellation is "work will
+  not proceed", not "the subject failed". Reusing `:failed` + `:blocked`
+  keeps every existing consumer (`MissedEpochs`, `NextEpoch` recovery, the
+  OCEL egress's `epoch_failed` events, run validation) correct without
+  forking the state machine; the receipt evidence is what distinguishes a
+  cancellation from a refusal.
+
+  Same race posture as `close/4`/`refuse/3`: after a TTL expiry + re-claim
+  the stale token's cancel is the typed `{:error, {:lease_stale, _}}`, never
+  a clobber of the new holder's lease.
+  """
+  @spec cancel(String.t(), atom(), map()) :: {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
+  def cancel(lease_token, reason, evidence \\ %{})
+      when is_binary(lease_token) and is_atom(reason) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> Map.merge(%{
+          "cancelled_by" => "lease_holder",
+          "cancellation_reason" => Atom.to_string(reason)
+        })
+
+      seal_cancellation(epoch, lease_token, evidence)
+    end
+  end
+
+  @doc """
+  INTERNAL cancellation -- the lease holder is gone or the episode is being
+  wound down (`DurationBudget` drain, operator stop, reaping an
+  unreclaimable epoch). Authority: an admitted `Xaas.SystemAuthority` whose
+  service is the epoch kernel's canonical one -- resolved through
+  `Xaas.Checks.SystemActor.service_for/2` (the SAME closed capability map
+  the policies use, never a locally re-typed literal), so an actor carrying
+  any other service is the typed `{:error, :refused_no_authority}`. No
+  ambient authority, no actor-free call.
+
+  Cancels the epoch whether or not a lease is bound (an unclaimed epoch of
+  a dead episode is cancellable; a terminal one is not -- the typed
+  `{:error, {:epoch_not_cancellable, state}}`). A bound lease is REVOKED by
+  the same atomic write (token + expiry cleared), so a worker that later
+  surfaces with the old token finds a terminal epoch (`lease_not_live`),
+  never a live capability. The write is one `UPDATE ... WHERE state IN
+  (expected, running) RETURNING *` -- a concurrent close/refuse/cancel that
+  won the row first makes this call the typed loser, exactly like every
+  other lease write here.
+  """
+  @spec cancel_epoch(Epoch.t() | String.t(), Xaas.SystemAuthority.t(), atom(), map()) ::
+          {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
+  def cancel_epoch(epoch_or_id, %Xaas.SystemAuthority{} = actor, reason, evidence \\ %{})
+      when is_atom(reason) do
+    with {:ok, required_service} <- Xaas.Checks.SystemActor.service_for(Epoch, :mark_failed),
+         :ok <- admit_service(actor, required_service),
+         {:ok, epoch} <- fetch_epoch(epoch_or_id) do
+      cancel_epoch_row(epoch, actor, reason, evidence)
+    else
+      :error -> {:error, :refused_no_authority}
+      {:error, _} = err -> err
+    end
+  end
+
+  defp admit_service(%Xaas.SystemAuthority{service: service}, required)
+       when service == required,
+       do: :ok
+
+  defp admit_service(%Xaas.SystemAuthority{}, _required), do: {:error, :refused_no_authority}
+
+  defp cancel_epoch_row(%Epoch{} = epoch, actor, reason, evidence) do
+    if epoch.state not in [:expected, :running] do
+      {:error, {:epoch_not_cancellable, epoch.state}}
+    else
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> Map.merge(%{
+          "cancelled_by" => "internal",
+          "cancellation_reason" => Atom.to_string(reason),
+          "revoked_lease" => not is_nil(epoch.lease_token)
+        })
+
+      result =
+        atomic_row_update(
+          from(e in Epoch,
+            where: e.id == ^epoch.id and (e.state == :expected or e.state == :running)
+          ),
+          state: :failed,
+          terminal_at: DateTime.utc_now(),
+          lease_token: nil,
+          lease_expires_at: nil
+        )
+
+      case result do
+        {:ok, epoch} ->
+          {:ok, receipt} =
+            Receipt
+            |> Ash.Changeset.for_create(:seal, %{
+              epoch_id: epoch.id,
+              subject: epoch.exact_subject,
+              outcome: :blocked,
+              evidence: evidence,
+              sealed_at: DateTime.utc_now()
+            })
+            |> Ash.create(actor: actor)
+
+          {:ok, epoch, receipt}
+
+        # A concurrent close/refuse/cancel won the row first.
+        {:error, :no_match} ->
+          {:error, {:epoch_not_cancellable, epoch.state}}
+      end
+    end
+  end
+
+  # Lease-holder path: the SAME token-guarded atomic write as refuse/3
+  # (state :failed + terminal_at), then the :blocked receipt.
+  defp seal_cancellation(%Epoch{} = epoch, lease_token, evidence) do
+    with {:ok, epoch} <-
+           atomic_lease_write(epoch, lease_token,
+             state: :failed,
+             terminal_at: DateTime.utc_now()
+           ),
+         {:ok, receipt} <-
+           Receipt
+           |> Ash.Changeset.for_create(:seal, %{
+             epoch_id: epoch.id,
+             subject: epoch.exact_subject,
+             outcome: :blocked,
+             evidence: evidence,
+             sealed_at: DateTime.utc_now()
+           })
+           |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
+      {:ok, epoch, receipt}
+    end
+  end
+
+  # ALWAYS re-reads: the cancellation decision (state check, revoked-lease
+  # evidence, lease revocation) must be made against the DB's current row,
+  # never a possibly-stale caller snapshot.
+  defp fetch_epoch(%Epoch{id: id}), do: fetch_epoch(id)
+
+  defp fetch_epoch(epoch_id) when is_binary(epoch_id) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false, load: [:run]) do
+      {:ok, %Epoch{} = epoch} -> {:ok, epoch}
+      {:error, error} -> {:error, {:epoch_not_found, epoch_id, inspect(error)}}
+    end
   end
 
   # ------------------------------------------------------------------

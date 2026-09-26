@@ -20,6 +20,11 @@ against `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
   *before* the catch-all forward): `capability_liveness_regressions`, `ocel_summary`,
   `prometheus/query`, `health`, `rpc/run`, `rpc/validate`, `execution/hooks/:event`,
   `execution/mcp`, `execution/runs`, `execution/epochs/:epoch_id/receipts`.
+- **`/internal-api/fabric`** (`[:api, :require_internal_api_token]`, registered before the
+  catch-all forward for the same shadowing reason): the bounded runtime fabric scope
+  (protocol `xaas-fabric/1`) — `GET /probe`, `POST /admit`, `POST /runs`,
+  `GET /epochs/:epoch_id/receipts`, `POST /actuate` (added 2026-09-25; see
+  [Runtime fabric endpoints](#runtime-fabric-endpoints-internal-apifabric) below).
 - **`/mcp`** (`[:api, :require_internal_api_token, :resolve_org_actor,
   :audit_mcp_tool_call]`): generated `XaasWeb.McpScope.mount()` forwarding to
   `AshAi.Mcp.Router` — read-only Library tools, one audit row per request.
@@ -516,11 +521,22 @@ AshTypescript RPC surface for the four domains declaring `AshTypescript.Rpc`
 All under `/internal-api/execution/`, behind the token gate, backed by
 `Xaas.Ultracode.*` (`lib/xaas_web/controllers/execution_fabric_controller.ex`):
 
-- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with seven verbs:
+- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with eight verbs:
   `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`,
-  `refuse`, `actuate`. `actuate` is the only way a provider worker crosses into the admitted
+  `refuse`, `actuate`, `cancel_work`. `actuate` is the only way a provider worker crosses into the admitted
   `Xaas.Actuation.run/4` DO kernel (via `Xaas.Ultracode.Lease.actuate/2`) — a wholly
   separate, narrower surface from `admit_tool`'s construction/consequence fence.
+  `cancel_work` ({lease_token, reason[, evidence]}; backed by
+  `Xaas.Ultracode.Lease.cancel/3` and the internal `cancel_epoch/4`) stands a lease
+  down: the epoch lands terminal and the sealed receipt carries the standing outcome
+  `blocked` with `cancelled_by` evidence — a cancellation is "work will not proceed",
+  not a subject failure (that is `refuse`). The lease token IS the authority: a
+  worker may cancel only its own live lease, a stale/expired/re-claimed token is a
+  typed refusal (never a clobber of the current holder), and an already-terminal
+  epoch is the typed `epoch_not_cancellable`. Success returns
+  `{status: "cancelled", epoch_id, outcome: "blocked", cancelled_by}`; the free-text
+  `reason` goes through the same existing-atom-only coercion fence `refuse` uses
+  (an atom-table exhaustion guard).
 - `POST /internal-api/execution/hooks/:event` — plain-JSON PreToolUse hook surface for the
   generated provider plugin.
 - `POST /internal-api/execution/runs` — org-scoped run submission: requires the request to
@@ -531,6 +547,32 @@ All under `/internal-api/execution/`, behind the token gate, backed by
 
 `/internal-api/sparql` (same scope, before the forward) reverse-proxies to the Ontop R2RML
 SPARQL endpoint via `XaasWeb.OntopProxyPlug`.
+
+## Runtime fabric endpoints (`/internal-api/fabric`)
+
+The bounded runtime fabric scope (added 2026-09-25, `lib/xaas_web/controllers/fabric_controller.ex`):
+the outbound-only surface a remote client (chatgpt-cloud-elixir `mix xaas_runtime.fabric`)
+drives, behind the same `require_internal_api_token` gate as every `/internal-api` route.
+Each action first admits its own capability through `Xaas.Tunnel.Capabilities` (allowlist
+`fabric.probe` / `run.submit` / `epoch.receipts`; unknown verbs fail closed):
+
+- `GET /internal-api/fabric/probe` — capabilities, protocol (`xaas-fabric/1`), and the
+  long-poll bound.
+- `POST /internal-api/fabric/admit` — admits a requested capability set; returns the
+  admitted/refused split.
+- `POST /internal-api/fabric/runs` — idempotent org-scoped submit keyed on the Epoch's
+  `exact_subject` `fabric:<org slug>:<key>` under `pg_advisory_xact_lock`
+  (`Xaas.Tunnel.Submit`): `201` for a new run, `200` for an idempotent replay.
+- `GET /internal-api/fabric/epochs/:epoch_id/receipts` — bounded long-poll (`wait_ms`
+  capped at 25000): returns the sealed receipts when one arrives, `204` with an
+  `x-fabric-state` header on timeout.
+- `POST /internal-api/fabric/actuate` — always `403 REFUSED(authority_ceiling:actuate)`;
+  the authority ceiling is refused in every state, and execution itself stays on the
+  provider-pull seam (`/internal-api/execution/mcp` `claim_next` / `close_candidate`).
+
+Fabric state is a pure state machine in `Xaas.Tunnel.Fabric` — new → probed → admitted →
+submitted → executing → sealed → replayed — with typed illegal transitions and crash-window
+`reconcile/1` decisions.
 
 ## Other HTTP surfaces
 
@@ -564,6 +606,8 @@ SPARQL endpoint via `XaasWeb.OntopProxyPlug`.
   `lib/xaas_web/plugs/audit_mcp_tool_call.ex` — the real auth/actor/audit plugs
 - `lib/xaas_web/controllers/execution_fabric_controller.ex`, `lib/xaas/ultracode/lease.ex` —
   the real execution-fabric surface and its lease-gated actuation kernel
+- `lib/xaas_web/controllers/fabric_controller.ex`, `lib/xaas/tunnel/fabric.ex` — the bounded
+  runtime-fabric surface (`/internal-api/fabric`) and its pure state machine
 - `lib/xaas/operations/capability_liveness_receipt.ex`,
   `lib/xaas/operations/capability_liveness_regressions.ex`,
   `lib/mix/tasks/xaas.ingest_capability_receipts.ex` — the real MAPE-K loop backing

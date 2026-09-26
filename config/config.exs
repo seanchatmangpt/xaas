@@ -265,6 +265,34 @@ config :xaas, :ultracode_sensing_profiles, %{}
 # 25-way claim storm keeps its exact semantics).
 config :xaas, :ultracode_pool_capacity, 5
 
+# The provider registry + selection policy (`Xaas.Ultracode.ProviderRegistry`,
+# closing UNSUPPORTED(provider-selection:policy)): one config map carrying ALL
+# per-provider facets -- capabilities, transport descriptor, authority ceiling,
+# receipt protocol, enabled kill switch, cost, concurrency. Selection
+# (`ProviderRegistry.select/2`) admits only enabled providers whose
+# capabilities cover the requirement and whose ceiling ranks at or above the
+# required authority, ordered by policy (default ascending cost); an empty or
+# exhausted registry is the typed `{:error, {:no_qualifying_provider, _}}` --
+# never a silent default. The default provider for unsupplied callers is
+# `:ultracode_default_provider` (the historical "zcode", named in exactly one
+# place now). `concurrency` here is advisory; the ENFORCED per-provider slot
+# bound remains `:ultracode_pool_capacity` above. The test env leaves the
+# registry EMPTY (fail-closed: nothing selectable) and tests install their
+# own entries via Application.put_env.
+config :xaas, :ultracode_default_provider, "zcode"
+
+config :xaas, :ultracode_providers, %{
+  "zcode" => %{
+    capabilities: ["construction", "gall_work"],
+    transport: %{kind: "zcode_cli"},
+    authority_ceiling: :construction,
+    receipt_protocol: "gall.work-receipt/1",
+    enabled: true,
+    cost: 1,
+    concurrency: 5
+  }
+}
+
 # The engine's worker seam (`Xaas.Ultracode.Engine.fill/1`) and the provider
 # allowlist it fills on its own. The configured worker is the deterministic
 # recipe provider (`Xaas.Ultracode.RecipeWorker`: registered argv, no model),

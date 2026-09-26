@@ -1,6 +1,6 @@
 # Ultracode Failover Runbook — Claude Code to XaaS/GLM
 
-**Version:** v26.9.17
+**Version:** v26.9.22
 **Date:** 2026-09-18
 **Standing:** PARTIAL_ALIVE — dispatcher exists and was tested against real DB
 state (`--once`, exit 0, true "no ready work" negative); construction-side

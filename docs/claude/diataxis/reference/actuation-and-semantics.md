@@ -81,3 +81,18 @@ commit `771cb4f` started wrapping this error and broke the contract above; see
 5. conflicting idempotency-key reuse is refused.
 
 These tests are the repository-native qualification surface for the contract above. Documentation alone does not confer ALIVE standing.
+
+## Admission binding modes
+
+How a descriptor's `graph_digest` relates to its admission snapshot is declared by the trusted caller, never selected by the descriptor (`Xaas.Ultracode.SemanticWork.AdmissionBinding`). The default — no `:binding` option — is verify-when-present: a carried snapshot is verified when present, and an anchor-less descriptor is admitted with the graph digest unbound. Explicit `:snapshot` forces the graph digest to bind to a carried admission anchor; `:graph` is the explicit opt-out for a producer whose `graph_digest` is a graph-wide digest. There is deliberately no content-selected mode: `:auto` is refused as an option (`{:invalid_binding_option, :auto}`) — a guard the descriptor could switch off by deleting its own snapshot is not a guard.
+
+`Xaas.Ultracode.SemanticWork.materialize/2` pins `:snapshot` itself (it admits with `binding: :snapshot` unless the caller declared a mode), so the materialize boundary is strict: the descriptor's graph digest must bind to its admission anchors.
+
+## Digest forms (producer contract)
+
+WHICH fields the snapshot digests cover is a property of the producer version, so it is an explicit, versioned part of the contract: a descriptor carrying `admitted_work_order` MUST declare `digest_form`. XaaS computes and checks exactly the declared form; it is never inferred from the snapshot's shape, and an undeclared form is refused (`:digest_form_undeclared`), not defaulted.
+
+- `"sjira-digest/2"` (current) — the admitted snapshot EMBEDS `definition_digest`; the snapshot digest drops it with the other digest fields; the definition digest is taken over the CLOSED field whitelist (`Map.take`). The embedded digest must equal the recomputed one, else `{:admitted_definition_stale, recomputed}`.
+- `"sjira-digest/1"` (historical, pre ggen_igniter `33c8e86`) — no embedded `definition_digest`; the definition digest is the snapshot minus `standing`, `dimensions` and the digest fields. Kept verifiable only for committed historical artifacts that declare it.
+
+A snapshot whose shape is not its declared form's (an embedded `definition_digest` under `/1`, none or a malformed one under `/2`) is refused as `{:digest_form_mismatch, form, :definition_digest}` before any digest is recomputed; an unknown form is `{:unknown_digest_form, value}`. Source of truth: the `Xaas.Ultracode.SemanticWork.AdmissionBinding` moduledoc.
