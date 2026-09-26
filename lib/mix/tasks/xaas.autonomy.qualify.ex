@@ -50,18 +50,16 @@ defmodule Mix.Tasks.Xaas.Autonomy.Qualify do
 
     Mix.Task.run("app.start")
 
-    runs = resolve_runs(opts)
-
-    case runs do
+    case resolve_runs(opts) do
       {:error, reason} ->
         Mix.shell().error("standing: BLOCKED (#{format_reason(reason)})")
         System.halt(1)
 
-      [] ->
+      {:ok, []} ->
         Mix.shell().error("standing: BLOCKED (no Xaas.Ultracode.Run rows exist)")
         System.halt(1)
 
-      runs ->
+      {:ok, runs} ->
         results = Enum.map(runs, &qualify/1)
         Enum.each(results, &print_report/1)
 
