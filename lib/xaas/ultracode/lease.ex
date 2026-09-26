@@ -134,6 +134,16 @@ defmodule Xaas.Ultracode.Lease do
   # Consequence-class tools refused under this domain's no-ceiling fence.
   @refused_consequence_tools ~w(Bash git_push publish)
 
+  @doc """
+  The hardcoded consequence-class tools `admit_tool/2` refuses
+  (`{:refused_no_authority, tool}`), in declaration order. Read-only accessor:
+  `priv/packs/xaas_capability_pack/profiles/ultracode.ttl` declares the same
+  set as REFUSED delivery tools and `test/xaas/pack/pack_ontology_test.exs`
+  asserts equality, so the fence and its ontology cannot drift silently.
+  """
+  @spec refused_consequence_tools() :: [String.t()]
+  def refused_consequence_tools, do: @refused_consequence_tools
+
   # ------------------------------------------------------------------
   # Claim / renew
   # ------------------------------------------------------------------

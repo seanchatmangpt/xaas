@@ -237,6 +237,25 @@ config :phoenix, :json_library, Jason
 # stays `aps_backlog.py`. Names only, never caller-supplied paths.
 config :xaas, :ultracode_verifier_suites, %{}
 config :xaas, :ultracode_backlog_scripts, %{}
+
+# Out-of-band content pins for `Xaas.Pack.load/2`: the digest of
+# ontology.ttl + the profile + gates/*.rq of each pinned capability pack.
+# A pack whose bytes do not reproduce the committed literal is refused
+# (`{:pack_digest_mismatch, pinned, observed}`). Re-pin deliberately, never
+# from the loader.
+config :xaas, :capability_pack_pins, %{
+  "provider_status" => %{
+    pack: "xaas_capability_pack",
+    profile: "profiles/provider_status.ttl",
+    digest: "sha256:ca8f9cd09fb2529a0be5b210b6a8874d9198b7184ea8d9d5997f38565dcc4946"
+  },
+  "ultracode" => %{
+    pack: "xaas_capability_pack",
+    profile: "profiles/ultracode.ttl",
+    digest: "sha256:5a623257fe0fba9d9a44bf8d4c03fa3c3043ba0069e2e626f5d9bf8f439ffeb8"
+  }
+}
+
 # The sensing-profile NAME registry (`Xaas.Ultracode.Sensing.profile/1`): a
 # repo's registered `sensing:` name maps to a deterministic profile (the same
 # shape `Sensing.derive/2` takes). Driven by the Autonomic sense stage's

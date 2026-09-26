@@ -1,0 +1,31 @@
+@prefix xu:     <https://ggen.io/ontology/xaas-ultracode#> .
+@prefix xcp:    <https://xaas.dev/ontology/capability-pack#> .
+@prefix ps:     <https://xaas.dev/pack/xaas_capability_pack/profile/provider_status#> .
+
+# Provider-status profile: the one ADMITTED DO binding is the Reactor-fenced
+# Xaas.Marketplace.Provider :actuate_status action. The pack confers no
+# authority; admission additionally requires an sJira WorkOrder whose own
+# authority_ceiling is DO and an explicit caller authority context.
+
+ps:provider-actuate-status a xcp:CapabilityDeclaration ;
+  xcp:capability "xaas:provider-actuate-status" ;
+  xcp:standing "ADMITTED" ;
+  xcp:facet xcp:CapabilityFacet ;
+  xu:resourceModule "Xaas.Marketplace.Provider" ;
+  xcp:action "actuate_status" ;
+  xcp:consequenceClass "actuation" ;
+  xcp:pathScope "resource:Xaas.Marketplace.Provider" ;
+  xcp:requiredExclusion "no model output is authority" ;
+  xcp:requiredExclusion "no direct Ash call bypassing Xaas.Actuation.run/4" .
+
+ps:ledger-transfer a xcp:CapabilityDeclaration ;
+  xcp:capability "xaas:ledger-transfer" ;
+  xcp:standing "REFUSED" ;
+  xcp:facet xcp:AuthorityFacet ;
+  xcp:refusalReason "sensitive_resource" .
+
+ps:provider-destroy a xcp:CapabilityDeclaration ;
+  xcp:capability "xaas:provider-destroy" ;
+  xcp:standing "UNSUPPORTED" ;
+  xcp:facet xcp:ConsequenceFacet ;
+  xcp:refusalReason "no_reactor_fenced_action" .

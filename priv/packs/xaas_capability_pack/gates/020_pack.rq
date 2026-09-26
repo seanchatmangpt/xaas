@@ -1,0 +1,13 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xcp: <https://xaas.dev/ontology/capability-pack#>
+
+# The pack node: identity, conferred authority, passport ceiling, and the
+# facets it carries with the ROADMAP.md plane each maps onto.
+SELECT ?pack ?packId ?confers ?authorityCeiling ?facet ?plane
+WHERE {
+  ?pack rdf:type xcp:Pack .
+  OPTIONAL { ?pack xcp:packId ?packId }
+  OPTIONAL { ?pack xcp:confers ?confers }
+  OPTIONAL { ?pack xcp:authorityCeiling ?authorityCeiling }
+  OPTIONAL { ?pack xcp:facet ?facet . ?facet xcp:roadmapPlane ?plane }
+}
