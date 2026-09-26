@@ -87,7 +87,9 @@ defmodule Xaas.Ultracode.DispatchTest do
              plan.prompt,
              "--cwd",
              plan.cwd,
-             "--json"
+             "--json",
+             "--mode",
+             "yolo"
            ]
   end
 
@@ -154,6 +156,7 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.protocol == :xaas_prompt
     assert plan.prompt =~ epoch.id
     assert plan.descriptor == nil
+    assert Enum.take(plan.argv_tail, -2) == ["--mode", "yolo"]
   end
 
   test "plan refuses a CLI directory that does not hold package.json" do
