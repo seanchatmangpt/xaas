@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chatman.ai/cs2/engineer-workflow.schema.json",
+  "type": "object",
+  "required": ["schema", "subject", "work_id", "authority_ceiling", "evidence", "provenance"],
+  "properties": {
+    "schema": {"const": "cs2-consumer/v1"},
+    "subject": {"const": "https://chatman.ai/cs2#RFC-CS2-001"},
+    "work_id": {"const": "CS2-WRK-013"},
+    "authority_ceiling": {"const": "CONSTRUCT"},
+    "evidence": {"type": "object"},
+    "provenance": {"type": "object", "minProperties": 1}
+  },
+  "additionalProperties": true
+}
