@@ -1,0 +1,382 @@
+{
+  "deck": {
+    "author": "Sean Chatman",
+    "company": "Proposal draft (not sent)",
+    "deck_id": "greene-licensing-proposal-draft",
+    "footer": "Proposal draft by Sean Chatman - not sent - authority NONE - evidence REPO_LOCAL_FIXTURE",
+    "subject": "Licensing proposal draft for an ordinal-indexed strategy lab",
+    "title": "Licensing proposal draft: executable doctrine lab"
+  },
+  "slides": [
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "order": 1,
+          "role": "stage",
+          "title": "Ordinal index",
+          "tone": "blue"
+        },
+        {
+          "order": 2,
+          "role": "stage",
+          "title": "Own titles",
+          "tone": "blue"
+        },
+        {
+          "order": 3,
+          "role": "stage",
+          "title": "14 primitives",
+          "tone": "gold"
+        },
+        {
+          "order": 4,
+          "role": "stage",
+          "title": "Simulated worlds",
+          "tone": "green"
+        },
+        {
+          "order": 5,
+          "role": "stage",
+          "title": "Sealed receipts",
+          "tone": "green"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "hero_flow",
+      "notes": "Open by stating the boundary: this is a proposal draft by the author of the lab, nothing has been sent, and no license exists today.",
+      "order": 1,
+      "slide_id": "slide-01",
+      "subtitle": "An ordinal-indexed strategy lab with sealed, replayable receipts",
+      "title": "Licensing proposal draft: executable doctrine lab"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "33 entries indexed by ordinal, each with an own paraphrased title of 60 characters or fewer",
+          "order": 1,
+          "role": "bullet"
+        },
+        {
+          "body": "Own compositions over 14 primitive operators with five declared duals",
+          "order": 2,
+          "role": "bullet"
+        },
+        {
+          "body": "Six entries operationalized with ordered steps and falsifiers; 27 stubs",
+          "order": 3,
+          "role": "bullet"
+        },
+        {
+          "body": "The catalog carries a licensing non-claim and is gated against excerpts",
+          "order": 4,
+          "role": "bullet"
+        },
+        {
+          "body": "No sentence of the book appears anywhere in the software or this deck",
+          "order": 5,
+          "role": "conclusion"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "bullets",
+      "notes": "The catalog is my own operationalization. Point to the licensing non-claim carried in the catalog itself and to the no-excerpt gate.",
+      "order": 2,
+      "slide_id": "slide-02",
+      "title": "What exists today"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "Ordinal entries and compositions",
+          "order": 1,
+          "role": "stage",
+          "title": "Catalog",
+          "tone": "blue"
+        },
+        {
+          "body": "One policy per operationalized entry",
+          "order": 2,
+          "role": "stage",
+          "title": "Policies",
+          "tone": "gold"
+        },
+        {
+          "body": "Simulated competitive worlds and seeds",
+          "order": 3,
+          "role": "stage",
+          "title": "Worlds",
+          "tone": "green"
+        },
+        {
+          "body": "Hash-chained, signed episode records",
+          "order": 4,
+          "role": "stage",
+          "title": "Ledger",
+          "tone": "stone"
+        },
+        {
+          "body": "Authority NONE: the lab reads data and constructs reports only",
+          "order": 5,
+          "role": "callout"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "pipeline",
+      "notes": "Walk the pipeline left to right. Every hop is software with receipts; none of it acts in the world.",
+      "order": 3,
+      "slide_id": "slide-03",
+      "title": "How the lab works"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "252 episodes over 9 worlds and 2 seeds at autofde-lab d6becb59",
+          "order": 1,
+          "role": "bullet"
+        },
+        {
+          "body": "Ledger of 252 records, valid; tail digest f10e2294...c8665",
+          "order": 2,
+          "role": "bullet"
+        },
+        {
+          "body": "verify_run with replay: valid, zero failures",
+          "order": 3,
+          "role": "bullet"
+        },
+        {
+          "body": "Matrix digest 762fab0f...3ef7; report digest 5e4c530b...1cf3",
+          "order": 4,
+          "role": "bullet"
+        },
+        {
+          "body": "Evidence ceiling REPO_LOCAL_FIXTURE; authority ceiling NONE",
+          "order": 5,
+          "role": "conclusion"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "bullets",
+      "notes": "Cite the exact autofde-lab commit d6becb59. Read the digests from the appendix, not from memory.",
+      "order": 4,
+      "slide_id": "slide-04",
+      "title": "Run evidence at the bound commit"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "report.json sha256 9f1d03a3...c6d4 in both processes",
+          "order": 1,
+          "role": "bullet"
+        },
+        {
+          "body": "ledger.jsonl sha256 e5d42b8a...030b in both processes",
+          "order": 2,
+          "role": "bullet"
+        },
+        {
+          "body": "Observation timestamps are pinned, so bytes do not drift between runs",
+          "order": 3,
+          "role": "bullet"
+        },
+        {
+          "body": "Same commit, same inputs, same bytes",
+          "order": 4,
+          "role": "conclusion"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "bullets",
+      "notes": "Run the lab twice in separate processes and compare the file hashes live if time allows.",
+      "order": 5,
+      "slide_id": "slide-05",
+      "title": "Reproducibility across processes"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "Two primitive-equivalence clusters in this model",
+          "order": 1,
+          "role": "bullet"
+        },
+        {
+          "body": "sd-13 and sd-14 produce behaviourally identical policies",
+          "order": 2,
+          "role": "bullet"
+        },
+        {
+          "body": "sd-01 and sd-12 share one composition and one policy",
+          "order": 3,
+          "role": "bullet"
+        },
+        {
+          "body": "Model-relative only: no real-world performance is claimed",
+          "order": 4,
+          "role": "conclusion"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "bullets",
+      "notes": "Stress that these are model-relative observations of a fixture lab, not predictions about any real contest.",
+      "order": 6,
+      "slide_id": "slide-06",
+      "title": "What the model shows"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "Non-exclusive use of the book title as the lab name",
+          "order": 1,
+          "role": "part",
+          "title": "Title"
+        },
+        {
+          "body": "Non-exclusive use of the 1 to 33 ordinal index as catalog key",
+          "order": 2,
+          "role": "part",
+          "title": "Ordinals"
+        },
+        {
+          "body": "Not requested: no book text is used in any case",
+          "order": 3,
+          "role": "part",
+          "title": "Quotation"
+        },
+        {
+          "body": "Terms are set by the rights holder",
+          "order": 4,
+          "role": "conclusion"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "three_part",
+      "notes": "Walk the rights table: five items, nothing held today, a fallback for each.",
+      "order": 7,
+      "slide_id": "slide-07",
+      "title": "What is requested"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "order": 1,
+          "role": "section",
+          "title": "If accepted",
+          "tone": "green"
+        },
+        {
+          "order": 2,
+          "role": "section",
+          "title": "If declined",
+          "tone": "red"
+        },
+        {
+          "body": "Name and index the lab after the book",
+          "order": 3,
+          "role": "left"
+        },
+        {
+          "body": "Factual attribution with no affiliation stated",
+          "order": 4,
+          "role": "left"
+        },
+        {
+          "body": "Rename to a generic strategic-doctrine name",
+          "order": 5,
+          "role": "right"
+        },
+        {
+          "body": "Drop every ordinal mapping; keep own algebra",
+          "order": 6,
+          "role": "right"
+        },
+        {
+          "order": 7,
+          "role": "center",
+          "title": "Decision rests with the rights holder",
+          "tone": "stone"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "split",
+      "notes": "Both branches are prepared; the decline branch needs no further contact.",
+      "order": 8,
+      "slide_id": "slide-08",
+      "title": "If accepted, if declined"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "Not licensed: no rights grant exists today",
+          "order": 1,
+          "role": "bullet"
+        },
+        {
+          "body": "No affiliation implied with any author, publisher or rights holder",
+          "order": 2,
+          "role": "bullet"
+        },
+        {
+          "body": "No book excerpts; ordinals and own titles only",
+          "order": 3,
+          "role": "bullet"
+        },
+        {
+          "body": "No real-world performance claims; model-relative results only",
+          "order": 4,
+          "role": "bullet"
+        },
+        {
+          "body": "Draft authored by the user; nothing has been sent",
+          "order": 5,
+          "role": "bullet"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "bullets",
+      "notes": "Read each non-claim aloud. They are part of the case study graph, not a disclaimer added afterwards.",
+      "order": 9,
+      "slide_id": "slide-09",
+      "title": "Boundaries and non-claims"
+    },
+    {
+      "audience": "external",
+      "blocks": [
+        {
+          "body": "Replay every digest from the exact commit (see appendix)",
+          "order": 1,
+          "role": "bullet"
+        },
+        {
+          "body": "Live demonstration: five steps in the demo spec",
+          "order": 2,
+          "role": "bullet"
+        },
+        {
+          "body": "A short call to discuss scope and terms, if of interest",
+          "order": 3,
+          "role": "bullet"
+        },
+        {
+          "body": "Proposal draft by Sean Chatman; not sent",
+          "order": 4,
+          "role": "conclusion"
+        }
+      ],
+      "kicker": "LICENSING PROPOSAL DRAFT",
+      "layout": "bullets",
+      "notes": "Offer the replay demonstration and a short call. Nothing is sent by any tool; the user decides.",
+      "order": 10,
+      "slide_id": "slide-10",
+      "title": "Next step"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "audience": "all",
+  "block_counts": {
+    "slide-01": 5,
+    "slide-02": 5,
+    "slide-03": 5,
+    "slide-04": 5,
+    "slide-05": 4,
+    "slide-06": 4,
+    "slide-07": 4,
+    "slide-08": 7,
+    "slide-09": 5,
+    "slide-10": 4
+  },
+  "deck_spec_sha256": "0e12c8fb38b7009850951851df6ad6f8142b12f4be60646aca90b1e62162efd2",
+  "expected_notes": 10,
+  "expected_slides": 10,
+  "failures": [],
+  "falsifiers": [
+    "ontology hash differs",
+    "pack commit differs",
+    "renderer runtime version differs",
+    "slide count differs",
+    "expected title absent",
+    "expected speaker notes absent",
+    "a source pres:Block is missing from the projected slide"
+  ],
+  "marketplace_pack": "seanchatmangpt/ggen-marketplace@05011be534f647d1b5aef18a2080cb61bfcf7951:pptx-presentation-pack",
+  "non_claims": [
+    "WD_ACCEPTANCE",
+    "PRODUCTION_DEPLOYMENT",
+    "CUSTOMER_AUTHORITY",
+    "EXTERNAL_STANDING"
+  ],
+  "ontology_source_sha256": {
+    "docs/case-studies/greene-licensing/presentation/deck.ttl": "2622d314c7368db14ec544f5bb033ad305157306e3ecfbc609a86b005125097e"
+  },
+  "ontology_sources": [
+    "docs/case-studies/greene-licensing/presentation/deck.ttl"
+  ],
+  "pptx_sha256": "4f8ffd1e8049cd3375f22c4b92cc2313274ce783faa6b1e725c5bb57cf13872f",
+  "pptxgenjs": "4.0.1",
+  "standing": "ALIVE_REPO_LOCAL",
+  "subject": "tmp/greene-deck/greene_licensing_proposal_draft.pptx"
+}

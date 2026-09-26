@@ -1,0 +1,412 @@
+@prefix cs: <urn:xaas:case-study:> .
+@prefix glc: <https://ggen.dev/ontology/greene-licensing-case#> .
+@prefix gdeck: <https://ggen.dev/ontology/greene-licensing-case/deck#> .
+@prefix pres: <https://ggen.dev/ns/presentation#> .
+
+# The 10-slide proposal deck as pres: facts for pptx-presentation-pack
+# (layouts from its admitted v0.1.0 vocabulary; its templates are used
+# unchanged). The deck and every slide are also cs:Projection nodes of
+# glc:case (see cs-pres-bridge.ttl): claim-bearing slides carry
+# cs:rendersClaim, the others carry cs:noClaimReason. Each pres:blockOf
+# sits on its own line so block-count verifiers can count source blocks.
+# Own composition only; no source text.
+
+gdeck:deck a pres:Presentation , cs:Projection ;
+  cs:projectionOf glc:case ;
+  cs:rendersClaim glc:c01 , glc:c02 , glc:c03 , glc:c04 , glc:c05 ;
+  pres:id "greene-licensing-proposal-draft" ;
+  pres:title "Licensing proposal draft: executable doctrine lab" ;
+  pres:author "Sean Chatman" ;
+  pres:company "Proposal draft (not sent)" ;
+  pres:subject "Licensing proposal draft for an ordinal-indexed strategy lab" ;
+  pres:footer "Proposal draft by Sean Chatman - not sent - authority NONE - evidence REPO_LOCAL_FIXTURE" .
+
+gdeck:slide-01 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:noClaimReason "Title slide; states the packet boundary only." ;
+  pres:id "slide-01" ;
+  pres:order 1 ;
+  pres:layout "hero_flow" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:subtitle "An ordinal-indexed strategy lab with sealed, replayable receipts" ;
+  pres:notes "Open by stating the boundary: this is a proposal draft by the author of the lab, nothing has been sent, and no license exists today." ;
+  pres:title "Licensing proposal draft: executable doctrine lab" .
+
+gdeck:slide-01-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-01 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "Ordinal index" ;
+  pres:tone "blue" .
+gdeck:slide-01-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-01 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Own titles" ;
+  pres:tone "blue" .
+gdeck:slide-01-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-01 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "14 primitives" ;
+  pres:tone "gold" .
+gdeck:slide-01-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-01 ;
+  pres:order 4 ;
+  pres:role "stage" ;
+  pres:title "Simulated worlds" ;
+  pres:tone "green" .
+gdeck:slide-01-b05 a pres:Block ;
+  pres:blockOf gdeck:slide-01 ;
+  pres:order 5 ;
+  pres:role "stage" ;
+  pres:title "Sealed receipts" ;
+  pres:tone "green" .
+
+gdeck:slide-02 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:rendersClaim glc:c05 ;
+  pres:id "slide-02" ;
+  pres:order 2 ;
+  pres:layout "bullets" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "The catalog is my own operationalization. Point to the licensing non-claim carried in the catalog itself and to the no-excerpt gate." ;
+  pres:title "What exists today" .
+
+gdeck:slide-02-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-02 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "33 entries indexed by ordinal, each with an own paraphrased title of 60 characters or fewer" .
+gdeck:slide-02-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-02 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "Own compositions over 14 primitive operators with five declared duals" .
+gdeck:slide-02-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-02 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "Six entries operationalized with ordered steps and falsifiers; 27 stubs" .
+gdeck:slide-02-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-02 ;
+  pres:order 4 ;
+  pres:role "bullet" ;
+  pres:body "The catalog carries a licensing non-claim and is gated against excerpts" .
+gdeck:slide-02-b05 a pres:Block ;
+  pres:blockOf gdeck:slide-02 ;
+  pres:order 5 ;
+  pres:role "conclusion" ;
+  pres:body "No sentence of the book appears anywhere in the software or this deck" .
+
+gdeck:slide-03 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:noClaimReason "Mechanism overview; carries no evidence-bearing claim." ;
+  pres:id "slide-03" ;
+  pres:order 3 ;
+  pres:layout "pipeline" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Walk the pipeline left to right. Every hop is software with receipts; none of it acts in the world." ;
+  pres:title "How the lab works" .
+
+gdeck:slide-03-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-03 ;
+  pres:order 1 ;
+  pres:role "stage" ;
+  pres:title "Catalog" ;
+  pres:body "Ordinal entries and compositions" ;
+  pres:tone "blue" .
+gdeck:slide-03-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-03 ;
+  pres:order 2 ;
+  pres:role "stage" ;
+  pres:title "Policies" ;
+  pres:body "One policy per operationalized entry" ;
+  pres:tone "gold" .
+gdeck:slide-03-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-03 ;
+  pres:order 3 ;
+  pres:role "stage" ;
+  pres:title "Worlds" ;
+  pres:body "Simulated competitive worlds and seeds" ;
+  pres:tone "green" .
+gdeck:slide-03-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-03 ;
+  pres:order 4 ;
+  pres:role "stage" ;
+  pres:title "Ledger" ;
+  pres:body "Hash-chained, signed episode records" ;
+  pres:tone "stone" .
+gdeck:slide-03-b05 a pres:Block ;
+  pres:blockOf gdeck:slide-03 ;
+  pres:order 5 ;
+  pres:role "callout" ;
+  pres:body "Authority NONE: the lab reads data and constructs reports only" .
+
+gdeck:slide-04 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:rendersClaim glc:c01 , glc:c03 ;
+  pres:id "slide-04" ;
+  pres:order 4 ;
+  pres:layout "bullets" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Cite the exact autofde-lab commit d6becb59. Read the digests from the appendix, not from memory." ;
+  pres:title "Run evidence at the bound commit" .
+
+gdeck:slide-04-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-04 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "252 episodes over 9 worlds and 2 seeds at autofde-lab d6becb59" .
+gdeck:slide-04-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-04 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "Ledger of 252 records, valid; tail digest f10e2294...c8665" .
+gdeck:slide-04-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-04 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "verify_run with replay: valid, zero failures" .
+gdeck:slide-04-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-04 ;
+  pres:order 4 ;
+  pres:role "bullet" ;
+  pres:body "Matrix digest 762fab0f...3ef7; report digest 5e4c530b...1cf3" .
+gdeck:slide-04-b05 a pres:Block ;
+  pres:blockOf gdeck:slide-04 ;
+  pres:order 5 ;
+  pres:role "conclusion" ;
+  pres:body "Evidence ceiling REPO_LOCAL_FIXTURE; authority ceiling NONE" .
+
+gdeck:slide-05 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:rendersClaim glc:c02 ;
+  pres:id "slide-05" ;
+  pres:order 5 ;
+  pres:layout "bullets" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Run the lab twice in separate processes and compare the file hashes live if time allows." ;
+  pres:title "Reproducibility across processes" .
+
+gdeck:slide-05-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-05 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "report.json sha256 9f1d03a3...c6d4 in both processes" .
+gdeck:slide-05-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-05 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "ledger.jsonl sha256 e5d42b8a...030b in both processes" .
+gdeck:slide-05-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-05 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "Observation timestamps are pinned, so bytes do not drift between runs" .
+gdeck:slide-05-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-05 ;
+  pres:order 4 ;
+  pres:role "conclusion" ;
+  pres:body "Same commit, same inputs, same bytes" .
+
+gdeck:slide-06 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:rendersClaim glc:c04 ;
+  pres:id "slide-06" ;
+  pres:order 6 ;
+  pres:layout "bullets" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Stress that these are model-relative observations of a fixture lab, not predictions about any real contest." ;
+  pres:title "What the model shows" .
+
+gdeck:slide-06-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-06 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "Two primitive-equivalence clusters in this model" .
+gdeck:slide-06-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-06 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "sd-13 and sd-14 produce behaviourally identical policies" .
+gdeck:slide-06-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-06 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "sd-01 and sd-12 share one composition and one policy" .
+gdeck:slide-06-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-06 ;
+  pres:order 4 ;
+  pres:role "conclusion" ;
+  pres:body "Model-relative only: no real-world performance is claimed" .
+
+gdeck:slide-07 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:noClaimReason "Request summary; rights items are not case claims." ;
+  pres:id "slide-07" ;
+  pres:order 7 ;
+  pres:layout "three_part" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Walk the rights table: five items, nothing held today, a fallback for each." ;
+  pres:title "What is requested" .
+
+gdeck:slide-07-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-07 ;
+  pres:order 1 ;
+  pres:role "part" ;
+  pres:title "Title" ;
+  pres:body "Non-exclusive use of the book title as the lab name" .
+gdeck:slide-07-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-07 ;
+  pres:order 2 ;
+  pres:role "part" ;
+  pres:title "Ordinals" ;
+  pres:body "Non-exclusive use of the 1 to 33 ordinal index as catalog key" .
+gdeck:slide-07-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-07 ;
+  pres:order 3 ;
+  pres:role "part" ;
+  pres:title "Quotation" ;
+  pres:body "Not requested: no book text is used in any case" .
+gdeck:slide-07-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-07 ;
+  pres:order 4 ;
+  pres:role "conclusion" ;
+  pres:body "Terms are set by the rights holder" .
+
+gdeck:slide-08 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:noClaimReason "Decision branches; carries no evidence-bearing claim." ;
+  pres:id "slide-08" ;
+  pres:order 8 ;
+  pres:layout "split" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Both branches are prepared; the decline branch needs no further contact." ;
+  pres:title "If accepted, if declined" .
+
+gdeck:slide-08-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 1 ;
+  pres:role "section" ;
+  pres:title "If accepted" ;
+  pres:tone "green" .
+gdeck:slide-08-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 2 ;
+  pres:role "section" ;
+  pres:title "If declined" ;
+  pres:tone "red" .
+gdeck:slide-08-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 3 ;
+  pres:role "left" ;
+  pres:body "Name and index the lab after the book" .
+gdeck:slide-08-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 4 ;
+  pres:role "left" ;
+  pres:body "Factual attribution with no affiliation stated" .
+gdeck:slide-08-b05 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 5 ;
+  pres:role "right" ;
+  pres:body "Rename to a generic strategic-doctrine name" .
+gdeck:slide-08-b06 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 6 ;
+  pres:role "right" ;
+  pres:body "Drop every ordinal mapping; keep own algebra" .
+gdeck:slide-08-b07 a pres:Block ;
+  pres:blockOf gdeck:slide-08 ;
+  pres:order 7 ;
+  pres:role "center" ;
+  pres:title "Decision rests with the rights holder" ;
+  pres:tone "stone" .
+
+gdeck:slide-09 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:noClaimReason "Lists the case non-claims; renders no claim." ;
+  pres:id "slide-09" ;
+  pres:order 9 ;
+  pres:layout "bullets" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Read each non-claim aloud. They are part of the case study graph, not a disclaimer added afterwards." ;
+  pres:title "Boundaries and non-claims" .
+
+gdeck:slide-09-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-09 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "Not licensed: no rights grant exists today" .
+gdeck:slide-09-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-09 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "No affiliation implied with any author, publisher or rights holder" .
+gdeck:slide-09-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-09 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "No book excerpts; ordinals and own titles only" .
+gdeck:slide-09-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-09 ;
+  pres:order 4 ;
+  pres:role "bullet" ;
+  pres:body "No real-world performance claims; model-relative results only" .
+gdeck:slide-09-b05 a pres:Block ;
+  pres:blockOf gdeck:slide-09 ;
+  pres:order 5 ;
+  pres:role "bullet" ;
+  pres:body "Draft authored by the user; nothing has been sent" .
+
+gdeck:slide-10 a pres:Slide , cs:Projection ;
+  pres:slideOf gdeck:deck ;
+  cs:projectionOf glc:case ;
+  cs:noClaimReason "Closing slide; carries no evidence-bearing claim." ;
+  pres:id "slide-10" ;
+  pres:order 10 ;
+  pres:layout "bullets" ;
+  pres:audience "external" ;
+  pres:kicker "LICENSING PROPOSAL DRAFT" ;
+  pres:notes "Offer the replay demonstration and a short call. Nothing is sent by any tool; the user decides." ;
+  pres:title "Next step" .
+
+gdeck:slide-10-b01 a pres:Block ;
+  pres:blockOf gdeck:slide-10 ;
+  pres:order 1 ;
+  pres:role "bullet" ;
+  pres:body "Replay every digest from the exact commit (see appendix)" .
+gdeck:slide-10-b02 a pres:Block ;
+  pres:blockOf gdeck:slide-10 ;
+  pres:order 2 ;
+  pres:role "bullet" ;
+  pres:body "Live demonstration: five steps in the demo spec" .
+gdeck:slide-10-b03 a pres:Block ;
+  pres:blockOf gdeck:slide-10 ;
+  pres:order 3 ;
+  pres:role "bullet" ;
+  pres:body "A short call to discuss scope and terms, if of interest" .
+gdeck:slide-10-b04 a pres:Block ;
+  pres:blockOf gdeck:slide-10 ;
+  pres:order 4 ;
+  pres:role "conclusion" ;
+  pres:body "Proposal draft by Sean Chatman; not sent" .
