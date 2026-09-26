@@ -156,6 +156,9 @@ defmodule Xaas.MixProject do
       {:gettext, "~> 1.0"},
       {:heroicons, "~> 0.5"},
       {:jason, "~> 1.2"},
+      # RFC 8785 canonical JSON for cross-runtime release-closure identity.
+      # Already locked transitively; explicit because deployment code calls it.
+      {:jcs, "~> 0.2"},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 4.1"},
