@@ -281,6 +281,12 @@ config :xaas, :ultracode_pool_capacity, 5
 # own entries via Application.put_env.
 config :xaas, :ultracode_default_provider, "zcode"
 
+# The zcode CLI checkout `Dispatch`/`ZcodePackage`/`ProviderHealth` admit the
+# worker launcher from. `/Users/sac/dev/zcode-cli` (the v26.9.22-era default)
+# was retired 2026-09-26 — 36 commits behind and subsumed by the canonical
+# checkout; the same fact as `ZcodePackage.default_cli_dir/0`.
+config :xaas, :ultracode_dispatch_cli_dir, "/Users/sac/zcode-cli"
+
 config :xaas, :ultracode_providers, %{
   "zcode" => %{
     capabilities: ["construction", "gall_work"],

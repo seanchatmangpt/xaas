@@ -4,7 +4,7 @@ defmodule Xaas.Ultracode.ZcodePackageTest do
   alias Xaas.Ultracode.ZcodePackage
 
   @fake_node Path.expand("../../support/fake-node.sh", __DIR__)
-  @real_cli Path.expand("~/dev/zcode-cli")
+  @real_cli Path.expand("~/zcode-cli")
 
   defp cli(pkg, script? \\ true) do
     dir =
@@ -76,9 +76,9 @@ defmodule Xaas.Ultracode.ZcodePackageTest do
   @tag skip:
          if(File.regular?(Path.join(@real_cli, "package.json")),
            do: false,
-           else: "~/dev/zcode-cli not present"
+           else: "~/zcode-cli not present"
          )
-  test "the real ~/dev/zcode-cli package.json is admitted; the machine's node is measured against it" do
+  test "the real ~/zcode-cli package.json is admitted; the machine's node is measured against it" do
     node = System.find_executable("node") || "node"
 
     # Admission of the package is independent of which node is first on PATH.

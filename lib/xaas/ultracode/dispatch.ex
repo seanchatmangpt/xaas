@@ -539,7 +539,11 @@ defmodule Xaas.Ultracode.Dispatch do
 
     env_added = [
       {"XAAS_WORKER", "1"},
-      {"XAAS_LEASE_CWD", cwd_real}
+      {"XAAS_LEASE_CWD", cwd_real},
+      # The worker's OCEL 2.0 tap (zcode-cli src/ocel-tap.ts): without this
+      # every dispatched session is unobserved -- no ocel:eid stream, no
+      # export_run/ocel_validate conformance evidence for the run.
+      {"ZCODE_OCEL", "1"}
       | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
     ]
 
