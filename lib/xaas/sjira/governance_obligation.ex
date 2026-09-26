@@ -187,6 +187,28 @@ defmodule Xaas.Sjira.GovernanceObligation do
   end
 
   @doc """
+  Complete OCEL-shaped fragment containing the governed work-order object,
+  the obligation object, and one transition event.
+
+  The fragment is compatible with Xaas.Ocel.Projection.import/1's map shape;
+  persistence remains a separate explicit call.
+  """
+  @spec ocel_fragment(t(), atom(), DateTime.t()) :: map()
+  def ocel_fragment(%__MODULE__{} = obligation, transition, %DateTime{} = occurred_at) do
+    event = ocel_event(obligation, transition, occurred_at)
+
+    %{
+      "objectTypes" => ["governance_obligation", "sjira_work_order"],
+      "eventTypes" => [event["type"]],
+      "objects" => [
+        %{"id" => obligation.subject_ref, "type" => "sjira_work_order"},
+        %{"id" => obligation.obligation_id, "type" => "governance_obligation"}
+      ],
+      "events" => [event]
+    }
+  end
+
+  @doc """
   OCEL-shaped transition evidence for process conformance.
 
   The event is a projection only. Recording it through Xaas.Ocel remains a
