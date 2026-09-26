@@ -147,20 +147,73 @@ defmodule Xaas.Sjira.GovernanceObligation do
   def prepare(%__MODULE__{} = obligation, _receipt_ref),
     do: {:refused, transition_refusal(obligation, "PREPARED_RECEIPT_TRANSITION_REFUSED")}
 
-  @doc "Recompute the content identity and refuse a mutated obligation."
+  @doc "Validate standing-field invariants without changing the obligation."
+  @spec validate(t()) :: :ok | {:refused, map()}
+  def validate(%__MODULE__{} = obligation) do
+    valid? =
+      case obligation.standing do
+        :proposed ->
+          is_nil(obligation.admission_digest) and
+            is_nil(obligation.authority_ref) and
+            is_nil(obligation.prepared_receipt_ref) and
+            obligation.ready_for_do == false
+
+        :admitted ->
+          nonempty?(obligation.admission_digest) and
+            is_nil(obligation.authority_ref) and
+            is_nil(obligation.prepared_receipt_ref) and
+            obligation.ready_for_do == false
+
+        :authorized ->
+          nonempty?(obligation.admission_digest) and
+            nonempty?(obligation.authority_ref) and
+            is_nil(obligation.prepared_receipt_ref) and
+            obligation.ready_for_do == false
+
+        :prepared ->
+          nonempty?(obligation.admission_digest) and
+            nonempty?(obligation.authority_ref) and
+            nonempty?(obligation.prepared_receipt_ref) and
+            obligation.ready_for_do == true
+
+        _other ->
+          false
+      end
+
+    if valid? do
+      :ok
+    else
+      {:refused,
+       refusal("OBLIGATION_STATE_INVARIANT_VIOLATION", %{
+         obligation_id: obligation.obligation_id,
+         standing: obligation.standing,
+         admission_digest: obligation.admission_digest,
+         authority_ref: obligation.authority_ref,
+         prepared_receipt_ref: obligation.prepared_receipt_ref,
+         ready_for_do: obligation.ready_for_do
+       })}
+    end
+  end
+
+  @doc "Recompute content identity and standing invariants; refuse mutation."
   @spec replay(t()) :: {:ok, t()} | {:refused, map()}
   def replay(%__MODULE__{} = obligation) do
     expected = digest_body(obligation)
 
-    if expected == obligation.digest do
-      {:ok, obligation}
-    else
-      {:refused,
-       refusal("OBLIGATION_DIGEST_MISMATCH", %{
-         obligation_id: obligation.obligation_id,
-         expected: expected,
-         observed: obligation.digest
-       })}
+    cond do
+      expected != obligation.digest ->
+        {:refused,
+         refusal("OBLIGATION_DIGEST_MISMATCH", %{
+           obligation_id: obligation.obligation_id,
+           expected: expected,
+           observed: obligation.digest
+         })}
+
+      true ->
+        case validate(obligation) do
+          :ok -> {:ok, obligation}
+          {:refused, reason} -> {:refused, reason}
+        end
     end
   end
 
