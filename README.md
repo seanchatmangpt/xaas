@@ -2,7 +2,7 @@
 
 XaaS is an Elixir/Phoenix platform built around Ash resources. Ash resources are executable application models with public-ontology projections, and consequential mutation is fenced behind a synchronous `Ash.Reactor` actuation path with durable intent/receipt records and idempotent replay. Around that control plane, the repository also ships an autonomous execution fabric (leases, campaigns, receipted worker actuation), OCEL 2.0 telemetry egress, and a generated ZCode integration plugin.
 
-Stack: Elixir ~> 1.18, Phoenix ~> 1.7, Ash ~> 3.0, PostgreSQL. Version: [`VERSION`](VERSION) (currently 26.9.22). Thirteen Ash domains are configured in `config/config.exs` (Accounts, Billing, Coupling, Generation, Governance, Ledger, Library, Marketplace, Ocel, Operations, Platform, TemporalMemory, Ultracode).
+Stack: Elixir ~> 1.18 (dev pinned via asdf `.tool-versions` to elixir 1.20.2-otp-28 / erlang 28.5.0.2), Phoenix ~> 1.7, Ash ~> 3.0, PostgreSQL. Version: [`VERSION`](VERSION). Thirteen Ash domains are configured in `config/config.exs` (Accounts, Billing, Coupling, Generation, Governance, Ledger, Library, Marketplace, Ocel, Operations, Platform, TemporalMemory, Ultracode).
 
 ## Documentation
 
@@ -41,7 +41,7 @@ Operate it through `mix xaas.ultracode.{start,status,stop,audit,learn,ocel_confo
 
 All worker-facing routes sit behind the internal API token gate and fail closed when it is unset (`lib/xaas_web/controllers/execution_fabric_controller.ex`):
 
-- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with eight verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`, `cancel_work` (cancels the leased work; the sealed receipt carries outcome `blocked` — cancellation, not subject failure).
+- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with eight verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`, `cancel_work` (cancels the leased work; the sealed receipt carries outcome `blocked` — cancellation, not subject failure). Bearer-authenticated with `INTERNAL_API_TOKEN`; observed serverInfo `xaas-ultracode-lease 1.0.0`.
 - `POST /internal-api/execution/hooks/:event` — plain-JSON hook surface.
 - `GET /internal-api/execution/epochs/:epoch_id/receipts` — receipt read path.
 - `POST /internal-api/execution/runs` — org-scoped run submission.
@@ -82,7 +82,7 @@ This documentation does not promote source inspection to runtime proof. The repo
 
 ## Development commands
 
-The repository doctrine in [`CLAUDE.md`](CLAUDE.md) is authoritative for development and testing. Tests run against real Postgres via docker compose (`db` service, credentials under `secrets/.postgrespassword`); CLAUDE.md gives the exact environment export. Core qualification commands include:
+The repository doctrine in [`CLAUDE.md`](CLAUDE.md) is authoritative for development and testing. Tests run against real local Postgres (brew `postgresql@14`, database `xaas_dev` on localhost:5432; `DEV_DB_*` env vars override — see `config/dev.exs`). Run all mix commands under the asdf-pinned toolchain (`.tool-versions`: elixir 1.20.2-otp-28 / erlang 28.5.0.2); a mixed-toolchain compile corrupts `_build` and can 500 a running server (observed 2026-09-26). Core qualification commands include:
 
 ```bash
 mix compile --force
