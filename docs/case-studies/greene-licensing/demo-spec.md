@@ -20,7 +20,7 @@ Expected: Exit 0; 252 episodes over 9 worlds; ledger valid; verify_run valid wit
 
 Command: `PYTHONPATH=lab/src python -m autofde_lab.simulation.doctrine_lab --out run2 && shasum -a 256 run/report.json run2/report.json`
 
-Expected: Both report.json files hash to 9f1d03a3188430dde6c8fad00c63714daff73aa3600229d9f521ec41e2edc6d4.
+Expected: Both report.json files hash to 9f1d3a03188430dde6c8fad00c63714daff73aa3600229d9f521ec41e2edc6d4.
 
 ## Step 4: Show the equivalence clusters
 

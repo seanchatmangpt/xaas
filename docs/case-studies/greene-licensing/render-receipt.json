@@ -2,7 +2,7 @@
   "authority": "NONE",
   "authority_ceiling": "CONSTRUCT",
   "commands": [
-    "git -C ggen-marketplace archive dee0303c5f433950e781836c7e5c1565973e7c24 -- packs scripts | tar -x -C mp",
+    "git -C ggen-marketplace archive b5821eeafc16ea35c2cd0f0ac71b9c392138fb67 -- packs scripts | tar -x -C mp",
     "python3 mp/packs/greene-licensing-case-pack/runners/render_packet.py --consumer render",
     "cp render/greene-licensing/*.md render/slide-facts.md docs/case-studies/greene-licensing/",
     "SOURCE_DATE_EPOCH=0 pandoc letter.md -o letter.docx",
@@ -23,15 +23,14 @@
       "slide-10": 4
     },
     "configuration": "wd_deck module driven with ONTOLOGY_DIR=docs/case-studies/greene-licensing/presentation and the source block regex keyed on the gdeck: prefix; every step is wd_deck code",
-    "deck_spec_sha256": "0e12c8fb38b7009850951851df6ad6f8142b12f4be60646aca90b1e62162efd2",
-    "earlier_attempt": "BLOCKED(disk) at 6fc25209 while host free space was 8.1-15 GiB; rerun once free space reached 21 GiB",
+    "deck_spec_sha256": "d48ac491cf023cd8995e6cd7ab378264db19b51831c903f59545eaa474d744ea",
     "expected_notes": 10,
     "expected_slides": 10,
     "failures": [],
     "pipeline": "tools/wd_deck (materialize pinned pptx-presentation-pack @05011be5 via git archive + tree check; mix ggen_igniter.sync --engine sparql of deck.json.eex and render.part0..3.mjs.eex; renderer assembly; node + PptxGenJS 4.0.1; OOXML verify)",
     "pptx_forbidden_language_matches": 0,
-    "pptx_sha256": "4f8ffd1e8049cd3375f22c4b92cc2313274ce783faa6b1e725c5bb57cf13872f",
-    "source": "presentation/deck.ttl = byte copy of ggen-marketplace dee0303c packs/greene-licensing-case-pack/ontology/greene-deck.ttl",
+    "pptx_sha256": "ad0d11e70dd5d5270331a27c4db7692cd8aeb95bce30401e674b6fc6ede09e0c",
+    "source": "presentation/deck.ttl = byte copy of ggen-marketplace b5821eea packs/greene-licensing-case-pack/ontology/greene-deck.ttl",
     "standing": "ALIVE_REPO_LOCAL"
   },
   "evidence_ceiling": "REPO_LOCAL_FIXTURE",
@@ -58,14 +57,14 @@
     "render_twice_identical": true
   },
   "outputs_sha256": {
-    "appendix.md": "a2685620b13fcbd53440030300e87c11095ae85b098334939e4f01a0a55b67af",
-    "deck-receipt.json": "fe35ca06a66b40c22d2e9ac2070827acac09f2f78aa23cea06023e23aa22db29",
-    "deck.json": "0e12c8fb38b7009850951851df6ad6f8142b12f4be60646aca90b1e62162efd2",
-    "demo-spec.md": "e9426a0e87700999552ae82da2894d84435bd24a8e0957c15cd2325334610e7d",
-    "greene_licensing_proposal_draft.pptx": "4f8ffd1e8049cd3375f22c4b92cc2313274ce783faa6b1e725c5bb57cf13872f",
+    "appendix.md": "96d1abd02d62e98c53a75aabe8f8949d17f39eb56a449faa998c75c96fb16fb1",
+    "deck-receipt.json": "aa9d13793f67e2c3581b157c5cc1c68afdcd772c15656b714f17f4bb35bf60db",
+    "deck.json": "d48ac491cf023cd8995e6cd7ab378264db19b51831c903f59545eaa474d744ea",
+    "demo-spec.md": "37dec038ec5c88c3aec072b02e459ae486d62450a0e814688ca569bbdb666616",
+    "greene_licensing_proposal_draft.pptx": "ad0d11e70dd5d5270331a27c4db7692cd8aeb95bce30401e674b6fc6ede09e0c",
     "letter.docx": "6cca7bce870174bca5488ed962ce95e6ec658e320286f6a4ab07d5918ebc8b51",
     "letter.md": "3ba9f27e338a80677ae1503a59709c24248e7780cfc1ed1d8b87453ccc686aa7",
-    "presentation/deck.ttl": "2622d314c7368db14ec544f5bb033ad305157306e3ecfbc609a86b005125097e",
+    "presentation/deck.ttl": "dd224eef283eaeb297904ff50ffcef2f21aa3763f1e21aef80817c890e485098",
     "rights-table.md": "af9c09d41a7b5421ac0c0663306b4f7107f105aa6cd8b969f52f8ae5a50e8929",
     "slide-facts.md": "a62e616bf593539de32c01ae0850b425bd3058c72a9265353926f1397a7e00fa"
   },
@@ -76,9 +75,29 @@
       "seanchatmangpt/autofde-lab@d6becb595aedac4f18cab84f80bf5aa90e1a45e4",
       "seanchatmangpt/ggen-marketplace@c0f27e5bed97b164ac267f86d8d9d989982319e8"
     ],
-    "commit": "dee0303c5f433950e781836c7e5c1565973e7c24",
+    "commit": "b5821eeafc16ea35c2cd0f0ac71b9c392138fb67",
     "pack": "packs/greene-licensing-case-pack",
+    "projection_inputs_identical_to": "6009f364e926935d38129654fe5111e0ebd2fc26 (git diff --quiet over ontology/, ontology.ttl, templates/, runners/ and semantic-case-study-pack; b5821eea changes gates and tests only)",
     "repo": "seanchatmangpt/ggen-marketplace"
   },
-  "status": "PROPOSAL_DRAFT_NOT_SENT"
+  "status": "PROPOSAL_DRAFT_NOT_SENT",
+  "supersedes": {
+    "defect": "stale projection: the report.json file sha256 was published with hex digits 5-8 transposed (render source predated the marketplace digest fix 6009f364); every copy now equals the recorded glc:sha256 9f1d3a03...c6d4",
+    "render_source_commit": "dee0303c5f433950e781836c7e5c1565973e7c24",
+    "repaired_files": [
+      "appendix.md",
+      "demo-spec.md",
+      "deck.json",
+      "deck-receipt.json",
+      "presentation/deck.ttl",
+      "greene_licensing_proposal_draft.pptx",
+      "render-receipt.json"
+    ],
+    "unchanged_outputs": [
+      "letter.md",
+      "letter.docx",
+      "rights-table.md",
+      "slide-facts.md"
+    ]
+  }
 }

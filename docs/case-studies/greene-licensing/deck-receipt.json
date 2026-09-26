@@ -12,7 +12,7 @@
     "slide-09": 5,
     "slide-10": 4
   },
-  "deck_spec_sha256": "0e12c8fb38b7009850951851df6ad6f8142b12f4be60646aca90b1e62162efd2",
+  "deck_spec_sha256": "d48ac491cf023cd8995e6cd7ab378264db19b51831c903f59545eaa474d744ea",
   "expected_notes": 10,
   "expected_slides": 10,
   "failures": [],
@@ -33,12 +33,12 @@
     "EXTERNAL_STANDING"
   ],
   "ontology_source_sha256": {
-    "docs/case-studies/greene-licensing/presentation/deck.ttl": "2622d314c7368db14ec544f5bb033ad305157306e3ecfbc609a86b005125097e"
+    "docs/case-studies/greene-licensing/presentation/deck.ttl": "dd224eef283eaeb297904ff50ffcef2f21aa3763f1e21aef80817c890e485098"
   },
   "ontology_sources": [
     "docs/case-studies/greene-licensing/presentation/deck.ttl"
   ],
-  "pptx_sha256": "4f8ffd1e8049cd3375f22c4b92cc2313274ce783faa6b1e725c5bb57cf13872f",
+  "pptx_sha256": "ad0d11e70dd5d5270331a27c4db7692cd8aeb95bce30401e674b6fc6ede09e0c",
   "pptxgenjs": "4.0.1",
   "standing": "ALIVE_REPO_LOCAL",
   "subject": "tmp/greene-deck/greene_licensing_proposal_draft.pptx"

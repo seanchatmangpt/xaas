@@ -170,7 +170,7 @@
       "audience": "external",
       "blocks": [
         {
-          "body": "report.json sha256 9f1d03a3...c6d4 in both processes",
+          "body": "report.json sha256 9f1d3a03...c6d4 in both processes",
           "order": 1,
           "role": "bullet"
         },

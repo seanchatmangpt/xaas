@@ -21,7 +21,7 @@ any real organization, market or conflict.
 | # | Kind | sha256 | Evidence |
 |---|---|---|---|
 | 1 | ledger tail digest | `f10e2294dbd5c6d7ee1c8b97b3af36fcb706326e6a6dc7ed88f5c8db441c8665` | E01 |
-| 2 | report.json file sha256 | `9f1d03a3188430dde6c8fad00c63714daff73aa3600229d9f521ec41e2edc6d4` | E02 |
+| 2 | report.json file sha256 | `9f1d3a03188430dde6c8fad00c63714daff73aa3600229d9f521ec41e2edc6d4` | E02 |
 | 3 | ledger.jsonl file sha256 | `e5d42b8af2f25fe71f8f9bd18df245a5e2f1992b7e45c54ffdc60af5640e030b` | E02 |
 | 4 | matrix digest | `762fab0feebe2109c4d1e1aef1618119a9e4f29ee5c425ad1931cb21af123ef7` | E03 |
 | 5 | report digest | `5e4c530b1ef265d16401605972405399f6e0c9949ae11aaa4b7ee4a3c2371cf3` | E03 |

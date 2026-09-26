@@ -203,7 +203,7 @@ gdeck:slide-05-b01 a pres:Block ;
   pres:blockOf gdeck:slide-05 ;
   pres:order 1 ;
   pres:role "bullet" ;
-  pres:body "report.json sha256 9f1d03a3...c6d4 in both processes" .
+  pres:body "report.json sha256 9f1d3a03...c6d4 in both processes" .
 gdeck:slide-05-b02 a pres:Block ;
   pres:blockOf gdeck:slide-05 ;
   pres:order 2 ;
