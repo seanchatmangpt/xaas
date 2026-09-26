@@ -184,4 +184,24 @@ defmodule Xaas.Sjira.GovernanceObligationTest do
              }
            ]
   end
+
+  test "OCEL fragment is directly shaped for Xaas.Ocel.Projection import" do
+    obligation = obligation!()
+    at = ~U[2026-09-26 05:30:00Z]
+    fragment = GovernanceObligation.ocel_fragment(obligation, :proposed, at)
+
+    assert fragment["objectTypes"] == [
+             "governance_obligation",
+             "sjira_work_order"
+           ]
+
+    assert fragment["eventTypes"] == ["sjira.governance.proposed"]
+    assert Enum.map(fragment["objects"], & &1["id"]) == [
+             "sjira:work-order:42",
+             obligation.obligation_id
+           ]
+
+    assert [event] = fragment["events"]
+    assert event == GovernanceObligation.ocel_event(obligation, :proposed, at)
+  end
 end
