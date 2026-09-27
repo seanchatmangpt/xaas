@@ -1,0 +1,11 @@
+{
+  "lane": "L8",
+  "claims_checked": [
+    "structural finding confirmed, not fixed: git submodule status -> -4c4232515b43d40cef8288c43eacfab2c31ab485 .ggen/marketplace (leading dash = not initialized); git ls-tree HEAD .ggen/marketplace -> 160000 commit 4c423251... (gitlink only, trees un-committable to xaas)",
+    "no L8 lane commit witnessed in git log -8; no .ggen/** files in wave diff f1d42eb..HEAD"
+  ],
+  "violations": [
+    "deliverable (marketplace source restore) not landed as a committable change in xaas — known structural, carried to successor wave"
+  ],
+  "standing": "PARTIAL_ALIVE"
+}

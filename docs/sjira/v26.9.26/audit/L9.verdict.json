@@ -1,0 +1,9 @@
+{
+  "lane": "L9",
+  "claims_checked": [
+    "no L9 lane commit claimed in dispatch contract and none witnessed in git log -8",
+    "lib/mix/tasks/xaas.autonomy.* files appear in wave diff f1d42eb..HEAD; attribution to merge dd32425 history (changelog anchor ccc84db 'autonomy audit/egress/stress tasks') vs a lane commit — queued for verify pass (git log f1d42eb..dd32425)"
+  ],
+  "violations": [],
+  "standing": "UNKNOWN"
+}

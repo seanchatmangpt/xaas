@@ -1,0 +1,12 @@
+{
+  "lane": "L4",
+  "claims_checked": [
+    "commit 40d7035 landed: priv/zcode_plugin/README.md + plugin-src/README.md (git log --stat) — inside owned paths",
+    "commit 600d3b6 forwarded gall-work.contract.json to canonical; shasum of priv/zcode_plugin/gall-work.contract.json == zcode-cli fixture == 5515775861807cdd7394ef74b1ee38679dd24279224515178702bb6652a95fc4 (observed)",
+    "600d3b6 carries no lane tag in its message; territory (priv/zcode_plugin/**) is L4's"
+  ],
+  "violations": [
+    "process: integration commit 600d3b6 not lane-labeled (attribution by territory, not by message)"
+  ],
+  "standing": "ALIVE"
+}
