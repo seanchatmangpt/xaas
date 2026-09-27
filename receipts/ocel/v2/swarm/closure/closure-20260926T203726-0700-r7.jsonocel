@@ -1,0 +1,550 @@
+{
+  "eventTypes": [
+    {
+      "name": "task_started",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "control_read",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "work_selected",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "scope_locked",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "source_read",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "branch_created",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "write_attempted",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "write_succeeded",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "dependency_connected",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "receipt_materialized",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    }
+  ],
+  "objectTypes": [
+    {
+      "name": "ScheduledTask",
+      "attributes": []
+    },
+    {
+      "name": "Run",
+      "attributes": []
+    },
+    {
+      "name": "Lane",
+      "attributes": []
+    },
+    {
+      "name": "WorkItem",
+      "attributes": []
+    },
+    {
+      "name": "Repository",
+      "attributes": [
+        {
+          "name": "github_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Branch",
+      "attributes": []
+    },
+    {
+      "name": "BaseCommit",
+      "attributes": []
+    },
+    {
+      "name": "Capability",
+      "attributes": []
+    },
+    {
+      "name": "CodeSurface",
+      "attributes": [
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ToolEdge",
+      "attributes": []
+    },
+    {
+      "name": "DependencyEdge",
+      "attributes": []
+    }
+  ],
+  "objects": [
+    {
+      "id": "task:notion-closure-code-lab",
+      "type": "ScheduledTask",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "run:closure-20260926T203726-0700-r7",
+          "qualifier": "run"
+        }
+      ]
+    },
+    {
+      "id": "run:closure-20260926T203726-0700-r7",
+      "type": "Run",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "lane:CLOSURE",
+          "qualifier": "lane"
+        }
+      ]
+    },
+    {
+      "id": "lane:CLOSURE",
+      "type": "Lane",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "work:CS2-WRK-013",
+      "type": "WorkItem",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "repo:seanchatmangpt/xaas",
+      "type": "Repository",
+      "attributes": [
+        {
+          "name": "github_id",
+          "time": "2026-09-26T20:37:26-07:00",
+          "value": "1340840751"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "id": "branch:swarm/closure-20260926-203726-r7",
+      "type": "Branch",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "parent"
+        }
+      ]
+    },
+    {
+      "id": "commit:f1d42eb39a71d57787a05ab2e0f2a24f3806cff5",
+      "type": "BaseCommit",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "parent"
+        }
+      ]
+    },
+    {
+      "id": "cap:RFC-CS2-001-xaas-engineer-workflow",
+      "type": "Capability",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "consumer"
+        }
+      ]
+    },
+    {
+      "id": "surface:lib/xaas/cs2/generated_fleet_contract.ex",
+      "type": "CodeSurface",
+      "attributes": [
+        {
+          "name": "path",
+          "time": "2026-09-26T20:37:26-07:00",
+          "value": "lib/xaas/cs2/generated_fleet_contract.ex"
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "surface:lib/xaas/cs2/engineer_workflow.ex",
+      "type": "CodeSurface",
+      "attributes": [
+        {
+          "name": "path",
+          "time": "2026-09-26T20:37:26-07:00",
+          "value": "lib/xaas/cs2/engineer_workflow.ex"
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "surface:lib/xaas/cs2/ash_a2a_bridge.ex",
+      "type": "CodeSurface",
+      "attributes": [
+        {
+          "name": "path",
+          "time": "2026-09-26T20:37:26-07:00",
+          "value": "lib/xaas/cs2/ash_a2a_bridge.ex"
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "surface:priv/cs2/engineer-workflow.schema.json",
+      "type": "CodeSurface",
+      "attributes": [
+        {
+          "name": "path",
+          "time": "2026-09-26T20:37:26-07:00",
+          "value": "priv/cs2/engineer-workflow.schema.json"
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "surface:test/xaas/cs2/ash_a2a_bridge_test.exs",
+      "type": "CodeSurface",
+      "attributes": [
+        {
+          "name": "path",
+          "time": "2026-09-26T20:37:26-07:00",
+          "value": "test/xaas/cs2/ash_a2a_bridge_test.exs"
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "edge:github-create-blob",
+      "type": "ToolEdge",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "dep:ash_a2a-to-xaas-cs2",
+      "type": "DependencyEdge",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "consumer"
+        },
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "target"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "type": "task_started",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 1
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "run:closure-20260926T203726-0700-r7",
+          "qualifier": "run"
+        }
+      ]
+    },
+    {
+      "id": "e2",
+      "type": "control_read",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 2
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "run:closure-20260926T203726-0700-r7",
+          "qualifier": "run"
+        },
+        {
+          "objectId": "lane:CLOSURE",
+          "qualifier": "lane"
+        }
+      ]
+    },
+    {
+      "id": "e3",
+      "type": "work_selected",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 3
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "work:CS2-WRK-013",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "run:closure-20260926T203726-0700-r7",
+          "qualifier": "run"
+        }
+      ]
+    },
+    {
+      "id": "e4",
+      "type": "scope_locked",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 4
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "e5",
+      "type": "source_read",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 5
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        },
+        {
+          "objectId": "commit:f1d42eb39a71d57787a05ab2e0f2a24f3806cff5",
+          "qualifier": "parent"
+        }
+      ]
+    },
+    {
+      "id": "e6",
+      "type": "branch_created",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 6
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "branch:swarm/closure-20260926-203726-r7",
+          "qualifier": "target"
+        }
+      ]
+    },
+    {
+      "id": "e7",
+      "type": "write_attempted",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 7
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "edge:github-create-blob",
+          "qualifier": "edge"
+        }
+      ]
+    },
+    {
+      "id": "e8",
+      "type": "write_succeeded",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 8
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "cap:RFC-CS2-001-xaas-engineer-workflow",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "e9",
+      "type": "dependency_connected",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 9
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "dep:ash_a2a-to-xaas-cs2",
+          "qualifier": "edge"
+        }
+      ]
+    },
+    {
+      "id": "e10",
+      "type": "receipt_materialized",
+      "time": "2026-09-26T20:37:26-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 10
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "run:closure-20260926T203726-0700-r7",
+          "qualifier": "run"
+        },
+        {
+          "objectId": "repo:seanchatmangpt/xaas",
+          "qualifier": "target"
+        }
+      ]
+    }
+  ]
+}

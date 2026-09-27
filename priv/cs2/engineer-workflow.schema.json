@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chatman.ai/cs2/xaas/engineer-workflow.schema.json",
+  "title": "RFC-CS2-001 XaaS Engineer Workflow Projection",
+  "type": "object",
+  "required": ["subject", "work_id", "source_consumer", "target_consumer", "projection", "authority_ceiling"],
+  "properties": {
+    "subject": {"const": "RFC-CS2-001"},
+    "work_id": {"type": "string", "enum": ["CS2-WRK-012", "CS2-WRK-013"]},
+    "source_consumer": {"const": "ash_a2a"},
+    "target_consumer": {"const": "xaas"},
+    "projection": {"const": "engineer-workflow"},
+    "authority_ceiling": {"const": "construct"},
+    "evidence": {"type": "array"},
+    "provenance": {"type": "object"},
+    "triage": {"type": "object"}
+  },
+  "additionalProperties": true
+}
