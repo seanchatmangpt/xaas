@@ -1,0 +1,9 @@
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+SELECT ?resource ?moduleName ?relKind ?relName ?relTarget WHERE {
+  ?resource a ucsd:AshResource ;
+            ucsd:resourceModule ?moduleName ;
+            ucsd:hasRel ?rel .
+  ?rel ucsd:relKind ?relKind ;
+       ucsd:relName ?relName ;
+       ucsd:relTarget ?relTarget .
+} ORDER BY ?moduleName ?relName

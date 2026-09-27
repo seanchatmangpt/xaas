@@ -1,0 +1,5 @@
+# Single row -> flattened to bare atom-keyed bindings (recurrence_threshold).
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+SELECT ?recurrence_threshold WHERE {
+  ?spec a ucsd:DigestSpec ; ucsd:recurrenceThreshold ?recurrence_threshold .
+}

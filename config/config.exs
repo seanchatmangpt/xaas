@@ -147,7 +147,9 @@ config :ash_typescript,
   run_endpoint: "/internal-api/rpc/run",
   validate_endpoint: "/internal-api/rpc/validate",
   output_field_formatter: :camel_case,
-  input_field_formatter: :camel_case
+  input_field_formatter: :camel_case,
+  # ash_typescript 0.18: the manifest module is mandatory (AshTypescript.manifest_module/0)
+  manifest: Xaas.AshTypescriptManifest
 
 config :ash,
   default_string_length_count: :codepoints,
@@ -187,7 +189,13 @@ config :ash,
     incident_status: Xaas.Operations.Types.IncidentStatus,
     incident_postmortem_status: Xaas.Operations.Types.IncidentPostmortemStatus,
     pentest_finding_severity: Xaas.Governance.Types.PentestFindingSeverity,
-    pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus
+    pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus,
+    frontier_outcome: Xaas.Ultracode.CapitalCensus.Types.FrontierOutcome,
+    gap_status: Xaas.Ultracode.CapitalCensus.Types.GapStatus,
+    primitive_target: Xaas.Ultracode.CapitalCensus.Types.PrimitiveTarget,
+    recurrence_class: Xaas.Ultracode.CapitalCensus.Types.RecurrenceClass,
+    resolution_outcome: Xaas.Ultracode.CapitalCensus.Types.ResolutionOutcome,
+    work_order_status: Xaas.Ultracode.CapitalCensus.Types.WorkOrderStatus
   ]
 
 # Configures the endpoint

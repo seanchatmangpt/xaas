@@ -427,18 +427,6 @@ defmodule Xaas.Ultracode.WaveLoop do
 
   defp step_id_from_subject(_, _), do: nil
 
-  defp in_flight_epochs do
-    Epoch
-    |> Ash.Query.for_read(:read_unscoped)
-    |> Ash.Query.filter(
-      state in [:expected, :running] and run.state == :running and
-        run.execution_policy == ^:wave_loop_step
-    )
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.read!(authorize?: false)
-    |> List.first()
-  end
-
   defp lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at}) do
     not is_nil(token) and not is_nil(expires_at) and
       DateTime.compare(expires_at, DateTime.utc_now()) == :gt

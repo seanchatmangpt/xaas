@@ -45,6 +45,15 @@
       "template": "/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex",
       "updated_at": "2026-09-09T21:26:38.981015Z"
     },
+    "priv/ggen/ultracode-self-digest-pack/templates/facts.ex.eex=>lib/xaas/generated/capital_census/facts.ex": {
+      "out_template": "lib/xaas/generated/capital_census/facts.ex",
+      "outputs": {
+        "/Users/sac/xaas/lib/xaas/generated/capital_census/facts.ex": "sha256:be12c29a29b2e32335de0a46757574f6575e4614825c1936e1e200ff928070c4"
+      },
+      "pack_dir": null,
+      "template": "priv/ggen/ultracode-self-digest-pack/templates/facts.ex.eex",
+      "updated_at": "2026-09-27T20:30:48.222692Z"
+    },
     "priv/packs/xaas_library_pack/templates/manufacture.ex.eex=>lib/mix/tasks/xaas.library.manufacture.ex": {
       "out_template": "lib/mix/tasks/xaas.library.manufacture.ex",
       "outputs": {

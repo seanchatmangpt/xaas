@@ -1,0 +1,4 @@
+[pack]
+name = "ultracode-self-digest-pack"
+version = "0.1.0"
+description = "Consumer-owned project pack (xaas): the self-digest semantic capital — WorkOrder/Experience/ExperienceCluster/Gap/Resolution as ontology facts, manufactured into real Ash resources (Xaas.Ultracode.CapitalCensus.*) by ggen_igniter, plus the digest law module (frontier ratio, recurrence threshold, G-table classification, sJira markdown render boundary) and the generated Chicago qualification test. Retires the handwritten SelfDigest spike; ontology is the constitution, Ash is the executable state."
