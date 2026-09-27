@@ -80,11 +80,20 @@ defmodule Xaas.Ultracode.ClosureController do
   """
   @spec record_empty_for_epoch(String.t(), String.t()) :: {:ok, map()} | {:error, term()}
   def record_empty_for_epoch(epoch_id, source \\ "wave_loop") do
-    with {:ok, %Epoch{} = epoch} <-
-           Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false),
+    with {:ok, %Epoch{state: :completed} = epoch} <-
+           completed_epoch(epoch_id),
          {:ok, %Run{} = run} <-
            Ash.get(Run, epoch.run_id, action: :read_unscoped, authorize?: false) do
       record(run, Frontier.empty(source))
+    end
+  end
+
+  defp completed_epoch(epoch_id) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false) do
+      {:ok, %Epoch{state: :completed} = epoch} -> {:ok, epoch}
+      {:ok, %Epoch{state: state}} -> {:error, {:epoch_not_completed, state}}
+      {:ok, nil} -> {:error, :epoch_not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -93,11 +102,9 @@ defmodule Xaas.Ultracode.ClosureController do
   # epoch settled; closure therefore joins the persisted semantic frontier
   # with the current Run/Epoch lifecycle.
   defp closure_proved?(frontier, active_epochs) do
-    active_epochs == 0 and
-      frontier["pending_work"] == 0 and
-      frontier["unsettled_epochs"] == 0 and
-      frontier["unpublished_deltas"] == 0 and
-      frontier["unsatisfied_dependencies"] == 0
+    frontier
+    |> Map.put("active_epochs", active_epochs)
+    |> Frontier.closed?()
   end
 
   defp active_epoch_count(run_id) do
