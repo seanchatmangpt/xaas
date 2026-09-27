@@ -124,6 +124,24 @@ config :swoosh, :api_client, false
 config :xaas, :ultracode_worktree_root, Path.expand("~/xaas/worktrees/runs")
 config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas/worktrees/tickets")
 
+# Wave-loop surfaces for the CRON path (2026-09-26 burn-in wiring): the
+# AshOban `:wave_loop` schedule's action runner calls
+# `Xaas.Ultracode.WaveLoop.tick/1` with NO opts, so the loop's STATE and
+# telemetry paths resolve through these app-env seams (WaveLoop moduledoc).
+# The manual burn-in drivers passed explicit `state_path:`/`telemetry_path:`
+# opts, which the cron path cannot do -- without these, every cron tick
+# lands on the module defaults (~/xaas/tmp/w8-loop/...; last ticked 09-21)
+# and can never advance the live burn-in STATE. Env-overridable per this
+# file's DEV_DB_* convention; unset env keeps the module defaults.
+config :xaas, :ultracode_wave_loop_state_path,
+  System.get_env("ULTRACODE_WAVE_LOOP_STATE_PATH", "/Users/sac/xaas/tmp/w8-loop/STATE.md")
+
+config :xaas, :ultracode_wave_loop_telemetry_path,
+  System.get_env(
+    "ULTRACODE_WAVE_LOOP_TELEMETRY_PATH",
+    "/Users/sac/xaas/tmp/w8-loop/loop.ndjson"
+  )
+
 # Multi-repo registry (Xaas.Ultracode.Repos). This env entry is the
 # code-seeded baseline; durable operator registrations -- other campaign
 # targets -- live in the registry file written ONLY by
