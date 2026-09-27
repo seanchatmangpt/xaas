@@ -81,7 +81,12 @@ config :xaas, :ex4pm_ontology_check,
 # Measured agent turns average minutes (burn-in 2026-09-26: a mechanical
 # step ~1-6 min), so a 5-minute cadence with 3 slots keeps the loop fed
 # without pile-up; surplus fires record `busy` and exit 0.
-wave_loop_concurrency = 3
+# 1 for now: parallel steps sharing ONE work surface collide on the
+# per-cwd lease state file (sha256(cwd), exit 65 lease_conflict; observed
+# 2026-09-27 00:11-00:35 — the second worker lawfully waited out the
+# first's lease). Raising it requires per-epoch lease keys or per-step
+# work surfaces first.
+wave_loop_concurrency = 1
 
 config :xaas, Oban,
   engine: Oban.Engines.Basic,
