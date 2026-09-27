@@ -108,7 +108,7 @@ defmodule Xaas.Ultracode.OcelEgress do
     | event type            | emitted when                     | time source                          |
     |-----------------------|----------------------------------|--------------------------------------|
     | `run_started`         | `Run.started_at` present         | `Run.started_at` (`:start` action)   |
-    | `run_completed`       | `Run.state == :completed`        | `Run.terminal_at` (a)                |
+    | `run_suspended`       | `Run.suspended_at != nil`        | `Run.suspended_at`                   |\n    | `run_completed`       | `Run.state == :completed`        | `Run.terminal_at` (a)                |
     | `run_failed`          | `Run.state == :failed`           | `Run.terminal_at` (a)                |
     | `run_abandoned`       | `Run.state == :abandoned`        | `Run.terminal_at` (a)                |
     | `epoch_scheduled`     | every Epoch                      | `Epoch.expected_at` || `inserted_at` |
@@ -182,7 +182,7 @@ defmodule Xaas.Ultracode.OcelEgress do
   require Ash.Query
 
   # Fixed declaration order (deterministic document skeleton). All five
-  # base object types and all sixteen event types are ALWAYS declared,
+  # base object types and all seventeen event types are ALWAYS declared,
   # even when a given run's log contains zero instances of one -- declared
   # vocabulary is the code's real event surface, emitted instances are
   # only the facts persistence can prove (see the moduledoc mapping
