@@ -39,6 +39,13 @@ defmodule Xaas.CS2.SemanticJiraBridgeTest do
     assert package["lease_request"]["work_order_id"] == "CS2-WRK-001"
   end
 
+  test "refuses a different semantic subject" do
+    other = "https://chatman.ai/cs2#OTHER"
+
+    assert {:error, {:refused_cs2_candidate, {:subject_mismatch, ^other}}} =
+             SemanticJiraBridge.execution_package(candidate(%{"subject" => other}), "zcode")
+  end
+
   test "refuses candidate authority instead of laundering it" do
     assert {:error, {:refused_cs2_candidate, :authority_must_be_none}} =
              SemanticJiraBridge.execution_package(candidate(%{"authority" => "EXECUTE"}), "zcode")

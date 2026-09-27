@@ -12,6 +12,7 @@ defmodule Xaas.CS2.SemanticJiraBridge do
   never creates a lease token, and never performs consequential DO.
   """
 
+  @subject "https://chatman.ai/cs2#RFC-CS2-001"
   @sha ~r/\A[0-9a-f]{40}\z/
   @repo ~r/\A[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\z/
   @semantic_digest ~r/\Asha256:[0-9a-f]{64}\z/
@@ -27,6 +28,7 @@ defmodule Xaas.CS2.SemanticJiraBridge do
     candidate = strings(raw)
 
     with :ok <- required(candidate),
+         :ok <- exact_subject(candidate["subject"]),
          :ok <- authority_none(candidate),
          :ok <- repository(candidate["repository"]),
          :ok <- sha(candidate["base_sha"]),
@@ -115,6 +117,9 @@ defmodule Xaas.CS2.SemanticJiraBridge do
       field -> {:error, {:missing_required_field, field}}
     end
   end
+
+  defp exact_subject(@subject), do: :ok
+  defp exact_subject(value), do: {:error, {:subject_mismatch, value}}
 
   defp authority_none(%{"authority" => "NONE"}), do: :ok
   defp authority_none(_), do: {:error, :authority_must_be_none}
