@@ -1,0 +1,87 @@
+name: Ultracode closure exact-head court
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/xaas/ultracode/frontier.ex"
+      - "lib/xaas/ultracode/closure_controller.ex"
+      - "lib/xaas/ultracode/durable_close.ex"
+      - "lib/xaas/ultracode/next_epoch.ex"
+      - "lib/xaas/ultracode/recipe_worker.ex"
+      - "lib/xaas/ultracode/run.ex"
+      - "lib/xaas/ultracode/wave_loop/**"
+      - "lib/xaas/ultracode/ocel_egress.ex"
+      - "lib/xaas/ultracode/validations/run_transition_allowed.ex"
+      - "priv/repo/migrations/*ultracode_frontier_closure.exs"
+      - "test/xaas/ultracode/*closure*"
+      - "test/xaas/ultracode/frontier_test.exs"
+      - "test/xaas/ultracode/next_epoch_test.exs"
+      - "test/xaas/ultracode/engine_test.exs"
+      - "test/xaas/ultracode/run_start_test.exs"
+      - "test/xaas/ultracode/wave_loop_test.exs"
+      - "test/xaas/ultracode/ocel_egress_test.exs"
+      - "test/xaas/ultracode/recipe_worker_test.exs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  MIX_ENV: test
+
+jobs:
+  closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
+
+      - name: Compile exact closure subject
+        run: mix compile --force --warnings-as-errors
+
+      - name: Run closure courts
+        run: >-
+          mix test
+          test/xaas/ultracode/frontier_test.exs
+          test/xaas/ultracode/closure_controller_test.exs
+          test/xaas/ultracode/next_epoch_test.exs
+          test/xaas/ultracode/engine_test.exs
+          test/xaas/ultracode/run_start_test.exs
+          test/xaas/ultracode/wave_loop_test.exs
+          test/xaas/ultracode/ocel_egress_test.exs
+          test/xaas/ultracode/recipe_worker_test.exs
+          --max-failures 1
+          --trace
