@@ -43,6 +43,7 @@ same-day (xaas f344fa4, 03fafc2, a6699cc + regression tests).
 
 ## History
 
-| ts | standing | note |
-|---|---|---|
-| 2026-09-26T23:20Z | UNKNOWN | seeded from operator directive; burn-in wave in flight (driver pid 70127) |
+| ts | standing | branch+HEAD | note |
+|---|---|---|---|
+| 2026-09-26T23:20Z | UNKNOWN | — | seeded from operator directive; burn-in wave in flight (driver pid 70127) |
+| 2026-09-27T03:48Z | PARTIAL_ALIVE | feat/alooop-lane2-autonomic-loop@da83d0e | 10-lane wave dispatched: census modules (lanes 3–5), per-epoch lease keys (lane 6), wave-loop cron repair (lane 1 — queue ultracode_wave_loop was never cron-fired; zombie job 9255 cancelled) | remaining: census lifecycle wiring, integration |
