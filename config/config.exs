@@ -118,7 +118,18 @@ config :xaas, Oban,
     ultracode_wave_loop: wave_loop_concurrency
   ],
   repo: Xaas.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron, []},
+    # P0.1 dispatch watchdog (fleet-sweep ticket, 2026-09-27): a BEAM death
+    # mid-tick (e.g. the 04:52Z server relaunch while oban job 20628 was
+    # executing) leaves the row `executing` FOREVER — no worker spawns, the
+    # concurrency-1 queue serializes on it, and recovery needed manual SQL.
+    # Lifeline orphans such jobs back to `available` once they exceed the
+    # maximum legitimate tick (dispatch timeout 3300s + margin). Oban's
+    # uniqueness then treats the orphan as incomplete, so the same job is
+    # rescued, not duplicated.
+    {Oban.Lifeline, rescue_after: {75, :minutes}}
+  ]
 
 config :ash_graphql, authorize_update_destroy_with_error?: true
 
@@ -275,14 +286,14 @@ config :xaas, :ultracode_repos, %{}
 config :xaas, :ultracode_sensing_profiles, %{}
 
 # The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
-# pool_capacity/1`, enforced race-free inside `claim_next/3`): 5 live
+# pool_capacity/1`, enforced race-free inside `claim_next/3`): 10 live
 # leases per provider -- the operator-ordered standing wave size, now a
 # real fence on EVERY claim path (MCP workers included), not just the
 # wave's in-process semaphore. Integer = one bound for all providers; a
 # map gives per-provider bounds (`%{"zcode" => 5, default: 3}`); nil =
 # unbounded (the test-env choice, so `LeaseConcurrencyStressTest`'s
 # 25-way claim storm keeps its exact semantics).
-config :xaas, :ultracode_pool_capacity, 5
+config :xaas, :ultracode_pool_capacity, 10
 
 # The provider registry + selection policy (`Xaas.Ultracode.ProviderRegistry`,
 # closing UNSUPPORTED(provider-selection:policy)): one config map carrying ALL

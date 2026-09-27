@@ -1065,6 +1065,96 @@ defmodule Xaas.Ultracode.WaveLoopTest do
     end
   end
 
+  describe "adaptive concurrency + work-conserving chain (P0.3/P0.4)" do
+    setup do
+      :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+      Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
+
+      %{
+        state_path: tmp_path("state", ".md"),
+        telemetry_path: tmp_path("telemetry", ".ndjson")
+      }
+    end
+
+    test "effective width narrows per in-window pressure signature and ignores aged-out ones", %{
+      telemetry_path: telemetry_path
+    } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      on_exit(fn ->
+        if prev,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 3)
+
+      now = DateTime.utc_now() |> DateTime.to_iso8601()
+      stale = DateTime.add(DateTime.utc_now(), -20 * 60, :second) |> DateTime.to_iso8601()
+
+      File.write!(telemetry_path, "")
+      assert 3 == WaveLoop.effective_concurrency(telemetry_path)
+
+      File.write!(
+        telemetry_path,
+        pressure_line(now, "1302") <>
+          pressure_line(now, "429") <>
+          pressure_line(stale, "1302"),
+        [:append]
+      )
+
+      # Only in-window signatures subtract width; the fleet-sweep run
+      # measured exactly this family of provider failures (2026-09-27).
+      assert 1 == WaveLoop.effective_concurrency(telemetry_path)
+    end
+
+    test "chain decision: consumes a step + owes steps + no storm => chain" do
+      assert WaveLoop.chain_decision(:worker_completed, true, false)
+      refute WaveLoop.chain_decision(:busy, true, false)
+      refute WaveLoop.chain_decision(:worker_completed, false, false)
+      refute WaveLoop.chain_decision(:worker_completed, true, true)
+      refute WaveLoop.chain_decision(:complete, false, false)
+    end
+
+    test "a worker_completed tick attempts the chain insert without crashing the settle", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, @state)
+
+      assert {:ok, %{outcome: :worker_completed}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: closing_dispatch()
+               )
+    end
+
+    test "a complete STATE never chains", %{state_path: state_path, telemetry_path: telemetry_path} do
+      File.write!(state_path, complete_state())
+
+      assert {:ok, %{outcome: :complete}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: flunk_dispatcher()
+               )
+
+      # The decision seam pins the never-chain law; see chain_decision test.
+      refute WaveLoop.chain_decision(:complete, false, false)
+    end
+
+    defp pressure_line(ts, code) do
+      Jason.encode!(%{
+        "ts" => ts,
+        "kind" => "ultracode-wave-loop/1",
+        "outcome" => "rate_limited",
+        "receipt" => %{"evidence" => "provider rate-kill code=#{code} too many requests"}
+      }) <> "\n"
+    end
+
+  end
+
   # ------------------------------------------------------------------
   # Fixtures + helpers
   # ------------------------------------------------------------------

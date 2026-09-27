@@ -29,6 +29,9 @@ defmodule Xaas.Ultracode.WaveLoop do
   @overload_regex ~r/1302|429|rate.?limit|too many requests|overload/i
   @overload_window_minutes 30
   @overload_default_threshold 3
+  # P0.4: rate-kill signatures inside this window each subtract one from
+  # the dispatch width (floor 1); they age out, so width recovers.
+  @pressure_window_minutes 10
 
   @moduledoc """
   The fabric-native hourly wave loop: the Oban scheduler's own clock
@@ -141,7 +144,67 @@ defmodule Xaas.Ultracode.WaveLoop do
 
         finish(tick_no, nil, :error, %{reason: Exception.message(error)}, telemetry_path)
     end
+    |> tap(&maybe_chain_next_tick(&1, state_path, telemetry_path))
   end
+
+  # P0.3 work-conserving chain: when a tick just completed real work and the
+  # STATE still owes steps, insert an immediate follow-up tick instead of
+  # idling until the next cron boundary. Cron stays as the supervision
+  # heartbeat (and the only trigger for busy/blocked refusals); the chain
+  # only ever follows a consumed step, so depth is bounded by the step
+  # table, never a tight loop.
+  # Pure decision seam (regression-pinned): chain iff the tick just consumed
+  # a step, the STATE still owes steps, and the provider is not in a storm.
+  @doc false
+  def chain_decision(outcome, state_owes?, overloaded?) do
+    outcome in [:worker_completed] and state_owes? and not overloaded?
+  end
+
+  defp maybe_chain_next_tick({:ok, report}, state_path, telemetry_path) do
+    state_owes? =
+      case read_state(state_path) do
+        {:ok, raw} ->
+          case State.parse(raw) do
+            {:ok, state} -> not State.complete?(state)
+            _ -> false
+          end
+
+        _ ->
+          false
+      end
+
+    overloaded? = provider_overloaded?(telemetry_path)
+
+    if chain_decision(report.outcome, state_owes?, overloaded?) do
+      # A raw %Oban.Job{} insert on purpose: the generated worker's
+      # uniqueness (period :infinity over incomplete states) would drop the
+      # chained insert while the current tick's job is still `executing`.
+      changeset =
+        Oban.Job.new(
+          worker: "Xaas.Ultracode.Run.Workers.WaveLoop",
+          queue: "ultracode_wave_loop",
+          args: %{"chain" => true}
+        )
+
+      case Oban.insert(changeset) do
+        {:ok, _} ->
+          Logger.info("[ultracode-wave-loop] chained next tick (work-conserving)")
+
+        {:error, reason} ->
+          Logger.warning("[ultracode-wave-loop] chain insert refused: #{inspect(reason)}")
+      end
+    end
+
+    :ok
+  rescue
+    error ->
+      # Chaining is best-effort throughput optimization; a failure here must
+      # never change the settled tick's outcome.
+      Logger.warning("[ultracode-wave-loop] chaining skipped: #{Exception.message(error)}")
+      :ok
+  end
+
+  defp maybe_chain_next_tick(_other, _state_path, _telemetry_path), do: :ok
 
   # ------------------------------------------------------------------
   # The tick
@@ -210,7 +273,7 @@ defmodule Xaas.Ultracode.WaveLoop do
   end
 
   defp dispatch_step(step, state, opts, state_path, telemetry_path, tick_no) do
-    case acquire_slot() do
+    case acquire_slot(telemetry_path) do
       {:busy, run_id, epoch_id} ->
         finish(tick_no, step.id, :busy, %{run_id: run_id, epoch_id: epoch_id}, telemetry_path)
 
@@ -252,8 +315,26 @@ defmodule Xaas.Ultracode.WaveLoop do
   # two on the same step
   # ------------------------------------------------------------------
 
-  defp acquire_slot do
-    max_in_flight = Application.get_env(:xaas, :ultracode_wave_loop_concurrency, 1)
+  # P0.4 adaptive concurrency: the base width comes from app env; every
+  # provider rate-kill signature inside the pressure window narrows it by
+  # one, floor 1. Signatures age out of the window, so width recovers
+  # automatically — provider throttling is a width signal, never a global
+  # stop.
+  @doc false
+  def effective_concurrency(telemetry_path) do
+    base = Application.get_env(:xaas, :ultracode_wave_loop_concurrency, 1)
+    cutoff = DateTime.add(DateTime.utc_now(), -@pressure_window_minutes * 60, :second)
+
+    pressure =
+      telemetry_path
+      |> telemetry_lines_in_window(cutoff)
+      |> Enum.count(&(&1 =~ @overload_regex))
+
+    max(base - pressure, 1)
+  end
+
+  defp acquire_slot(telemetry_path) do
+    max_in_flight = effective_concurrency(telemetry_path)
     in_flight = in_flight_epochs()
     {live, stale} = Enum.split_with(in_flight, &lease_live?/1)
 
