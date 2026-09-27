@@ -605,6 +605,10 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert telemetry_lines(telemetry_path) =~ ~s("outcome":"worker_completed")
       assert telemetry_lines(telemetry_path) =~ ~s("step":"3")
+
+      # Worker completion is only epoch evidence. The fabric records an empty
+      # frontier and performs the Run-level close itself.
+      assert [%Run{state: :completed, standing: :admitted, frontier_size: 0}] = loop_runs()
     end
 
     test "completing the last remaining step marks STATE COMPLETE and later ticks no-op",
