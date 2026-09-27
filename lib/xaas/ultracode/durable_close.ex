@@ -36,7 +36,16 @@ defmodule Xaas.Ultracode.DurableClose do
              {_, 0} <-
                System.cmd(
                  "git",
-                 ["-C", worktree, "update-ref", "-m", message, "HEAD", commit, base_head],
+                 [
+                   "-C",
+                   worktree,
+                   "update-ref",
+                   "-m",
+                   message,
+                   "HEAD",
+                   commit,
+                   base_head
+                 ],
                  stderr_to_stdout: true
                ) do
           :ok
