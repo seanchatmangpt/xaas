@@ -35,6 +35,11 @@ defmodule Xaas.Ultracode.Validations.RunTransitionAllowed do
     `Run.:stop` action's edge. Both were provisioned by this validation's
     original pass; neither was a dead provision anymore once the engine
     landed.
+  - `{:running, :suspended}` -- cycle horizon exhausted while the persisted
+    frontier is still open or unknown; closure has not been proved.
+  - `{:suspended, :running}` -- explicit bounded frontier resume.
+  - `{:suspended, :completed}` -- reconciliation later proves the persisted
+    frontier empty without manufacturing another execution epoch.
   - `{:pending, :abandoned}` -- `Run.:stop` on a never-started Run: an
     operator may withdraw a pending Run without first admitting it.
   - `{:abandoned, :running}` -- the operator-facing `Run.:resume` action's
@@ -56,6 +61,9 @@ defmodule Xaas.Ultracode.Validations.RunTransitionAllowed do
     {:running, :completed},
     {:running, :failed},
     {:running, :abandoned},
+    {:running, :suspended},
+    {:suspended, :running},
+    {:suspended, :completed},
     {:pending, :abandoned},
     {:abandoned, :running}
   ]
