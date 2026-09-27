@@ -125,7 +125,7 @@ Beyond the multi-repo keys above (`:ultracode_repos`,
 `:ultracode_sensing_profiles`, `:ultracode_backlog_scripts`,
 `:ultracode_ticket_dir`), the fabric loop is fenced by:
 
-- `config :xaas, :ultracode_pool_capacity` (default `5`) — per-provider
+- `config :xaas, :ultracode_pool_capacity` (default `10`) — per-provider
   live-lease bound enforced race-free inside `Lease.claim_next/3` on EVERY
   claim path (MCP workers included), not just the wave's in-process
   semaphore. Integer = one bound for all providers; a map gives per-provider
@@ -171,8 +171,13 @@ Beyond the multi-repo keys above (`:ultracode_repos`,
 - Oban queues/schedules (config/config.exs): `ultracode_wave: 1` and
   `ultracode_engine: 1` are driven by the `:autonomic_wave` /
   `:semantic_wave` schedules (every 30 minutes) and the `:engine_cycle`
-  schedule (every 5 minutes); `ultracode_wave_loop: 1` is the hourly
-  fabric-native wave loop (§8).
+  schedule (every 5 minutes); `ultracode_wave_loop: 1` is the every-5-minute
+  fabric-native wave loop (§8). `:ultracode_wave_loop_concurrency` (currently
+  `1`, must stay ≤ `:ultracode_pool_capacity`) bounds loop workers in
+  flight; a surplus fire records `busy` and exits 0.
+- Dev overrides the cron-path loop state/telemetry paths via
+  `ULTRACODE_WAVE_LOOP_STATE_PATH` / `ULTRACODE_WAVE_LOOP_TELEMETRY_PATH`
+  (config/dev.exs; unset env keeps the module defaults under `tmp/w8-loop/`).
 
 IN-FLIGHT verify-commands (run after `ultracode/w5-registry` lands;
 record exits here):
@@ -382,11 +387,12 @@ additions:
 > The wave loop is now FABRIC-NATIVE: the zcode-scheduler automation variant
 > below is unavailable platform-side (the platform refuses automation
 > creation from automation-owned sessions — verified finding, 2026-09-19), so
-> the loop clock is the fabric's own hourly Oban schedule `:wave_loop`
+> the loop clock is the fabric's own every-5-minute Oban schedule `:wave_loop`
 > (`Xaas.Ultracode.WaveLoop`, single-slot `:ultracode_wave_loop` queue): each
 > tick parses the loop STATE file, dispatches ONE real zcode worker through
 > the `Dispatch` boundary, and settles STATE + telemetry from the sealed
-> receipt. The paste-verbatim harness variant is retained for provenance.
+> receipt; a terminal receipt of `blocked`/`refused` marks the step BLOCKED,
+> never DONE. The paste-verbatim harness variant is retained for provenance.
 
 Same bounded shape as eight-hour-run §8 (10-minute cadence, max 48 ticks,
 telemetry OUTSIDE any repo, never push, status + at most one top-up pass).
@@ -483,7 +489,7 @@ W7→W8-A7 from `/tmp/xaas-w8-loop` @ `22aa308`. The predecessor campaign
 completed 8-hour proof this section now extends to multiple repos. The
 10-minute keep-alive (§8) ran that campaign and was retired 2026-09-20
 (last tick 43, 2026-09-20T19:48:03Z; deletion — the operator cut — leaves
-no terminal tick by design). The wave-8 loop is hourly and STATE-driven:
+no terminal tick by design). The wave-8 loop is every-5-minute and STATE-driven:
 it executes from `/Users/sac/xaas/tmp/w8-loop/STATE.md` (outside every
 repo), which gates this launch on its steps [1]–[6] being `done`.
 
@@ -563,7 +569,7 @@ mix xaas.ultracode.start --repo aps,nounverb,eds --capacity 5
   `config :xaas, :ultracode_wave_repo_caps` and are read at boot — the
   clean adjustment is stop/cap/resume (§7).
 - Budget law: eight-hour-run §2 verbatim — 16 × 30-minute serial waves.
-- The hourly loop monitors from THIS worktree (`mix xaas.ultracode.status`)
+- The every-5-minute loop monitors from THIS worktree (`mix xaas.ultracode.status`)
   and appends telemetry ONLY to `/Users/sac/xaas/tmp/w8-loop/loop.ndjson`.
 
 ### 10.3 Validation chain — per wave, during and after the run

@@ -12,6 +12,13 @@ supplied without a witnessed commit are marked UNKNOWN.
   dispatch (`3b4e193`), court shell dispatcher yolo posture (`428f258`), bind shell
   court to observed worker id (`9b565b5`).
 - Autonomy audit/egress/stress tasks + OCEL egress module (`ccc84db`).
+- Per-epoch `XAAS_LEASE_ID` keyed lease paths: gate + `xaas-lease.mjs`
+  resolve the `-<id>-`-suffixed path first, legacy per-cwd fallback
+  (`0a3e5d7`).
+- Opt-in `XAAS_SWEEP=1` typed read-only sweep profile for fleet-wide
+  inventory gates (`360a867`).
+- Dispatch lifeline, work-conserving chaining, adaptive width;
+  `:ultracode_pool_capacity` default 5→10 (`e12e117`).
 - Docs: land wave-2 diataxis residue — fabric scope, cancel_work, route conservation,
   config keys, cold replay (`96d03e1`).
 - Whole-tree AST-preserving mix format (`051fba3`); ontology import closure declared
