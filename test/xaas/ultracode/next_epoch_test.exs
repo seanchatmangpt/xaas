@@ -28,7 +28,7 @@ defmodule Xaas.Ultracode.NextEpochTest do
 
   @moduletag :ultracode
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run}
+  alias Xaas.Ultracode.{ClosureController, Epoch, Receipt, Run}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -119,6 +119,21 @@ defmodule Xaas.Ultracode.NextEpochTest do
     {:ok, _tick3} = Reactor.run(Xaas.Ultracode.Reactor)
     epoch1_after_tick3 = Ash.get!(Epoch, epoch1.id, action: :read_unscoped, authorize?: false)
     assert epoch1_after_tick3.state == :running
+
+    # The scheduler, not the worker, records that no semantic work remains.
+    # active_epochs is historical observation here; ClosureController joins
+    # it with live Epoch state when the final tick settles.
+    run_before_final = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
+
+    assert {:ok, _} =
+             ClosureController.record(run_before_final, %{
+               "source" => "next_epoch_test",
+               "pending_work" => 0,
+               "active_epochs" => 1,
+               "unsettled_epochs" => 0,
+               "unpublished_deltas" => 0,
+               "unsatisfied_dependencies" => 0
+             })
 
     # --- Tick 4: epoch 1 :running -> :completed, AND (same tick) the Run
     # itself reaches max_cycles=2, so :advance_next_epochs transitions the
