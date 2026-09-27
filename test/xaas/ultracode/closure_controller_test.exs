@@ -3,7 +3,7 @@ defmodule Xaas.Ultracode.ClosureControllerTest do
 
   @moduletag :ultracode
 
-  alias Xaas.Ultracode.{ClosureController, Frontier, OcelEgress, Run}
+  alias Xaas.Ultracode.{ClosureController, Epoch, Frontier, OcelEgress, Run}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -57,6 +57,27 @@ defmodule Xaas.Ultracode.ClosureControllerTest do
     completed = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
     assert completed.state == :completed
     assert completed.standing == :admitted
+  end
+
+  test "a non-completed epoch cannot manufacture an empty frontier" do
+    run = running_run!()
+
+    epoch =
+      Epoch
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: "closure-controller:running",
+          state: :running
+        },
+        authorize?: false
+      )
+      |> Ash.create!()
+
+    assert {:error, {:epoch_not_completed, :running}} =
+             ClosureController.record_empty_for_epoch(epoch.id, "test")
   end
 
   test "record_frontier refuses a digest that does not match its payload" do
