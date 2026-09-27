@@ -194,6 +194,7 @@ defmodule Xaas.Ultracode.OcelEgress do
 
   @event_types [
     "run_started",
+    "run_suspended",
     "epoch_scheduled",
     "epoch_started",
     "epoch_claimed",
@@ -382,6 +383,7 @@ defmodule Xaas.Ultracode.OcelEgress do
 
     Enum.concat([
       maybe_event("run_started", run.id, ts(run.started_at), %{}, context),
+      maybe_event("run_suspended", run.id, ts(run.suspended_at), %{}, context),
       terminal_run_event(run, :completed, context),
       terminal_run_event(run, :failed, context),
       terminal_run_event(run, :abandoned, context)
