@@ -105,7 +105,8 @@ defmodule Xaas.Ultracode.ClosureController do
     Epoch
     |> Ash.Query.for_read(:read_unscoped)
     |> Ash.Query.filter(run_id == ^run_id and state in [:expected, :running])
-    |> Ash.count!(authorize?: false)
+    |> Ash.read!(authorize?: false)
+    |> length()
   end
 
   defp close(%Run{state: :completed} = run, frontier) do
