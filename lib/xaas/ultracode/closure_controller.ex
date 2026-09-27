@@ -25,8 +25,7 @@ defmodule Xaas.Ultracode.ClosureController do
              %{
                frontier: Map.drop(snapshot, ["digest"]),
                frontier_digest: snapshot["digest"],
-               frontier_size: snapshot["pending_work"],
-               frontier_recorded_at: DateTime.utc_now()
+               frontier_size: snapshot["pending_work"]
              },
              authorize?: false
            )
