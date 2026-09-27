@@ -27,8 +27,10 @@ defmodule Xaas.ZcodePlugin.GallWorkContractTest do
 
   # Byte-identity pin: the sha256 of the shared fixture. Both repos' tests
   # assert this exact digest; update BOTH in the same wave when the contract
-  # changes (bump contract_version with it).
-  @contract_sha256 "390c9a3b8677fb9b0a408e6072d32868fd45901b9fdaa4ab62ec7603b6040f6a"
+  # changes (bump contract_version with it). Re-pinned 2026-09-26 when the
+  # newer contract (provider selection, capability discovery, idempotency_key,
+  # origin_authority) was forwarded from the zcode-cli side.
+  @contract_sha256 "5515775861807cdd7394ef74b1ee38679dd24279224515178702bb6652a95fc4"
 
   test "the shared fixture is byte-identical to the pinned cross-repo digest" do
     assert File.exists?(@contract_path), "the contract fixture is missing from priv/zcode_plugin"
