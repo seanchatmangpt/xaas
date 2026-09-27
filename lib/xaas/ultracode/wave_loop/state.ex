@@ -222,9 +222,9 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   end
 
   @doc """
-  The loop worker's goal: step id + the step's dispatch instructions
-  VERBATIM from STATE.md, the standing section (repo/branch facts), the law
-  section (the evidence law), and the mandatory state-update instruction.
+  The loop worker's goal: step id + dispatch instructions VERBATIM from
+  STATE.md, standing, and law. STATE.md and loop telemetry are fabric-owned
+  projections: the worker is explicitly forbidden from editing either one.
   Capped below Run.goal's 50_000-character constraint.
   """
   @spec build_goal(t(), step(), %{
@@ -249,11 +249,11 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     === THE LAW (STATE section (c), verbatim — non-negotiable) ===
     #{String.trim_trailing(state.law || default_law())}
 
-    === ON COMPLETION (mandatory, do BOTH before you finish) ===
-    1. Update #{sp}: set this step's row status and fill its DONE evidence \
-    with real command+exit evidence. Never leave a step done without evidence.
-    2. Append EXACTLY ONE telemetry line to #{tp}:
-    {"ts":"<UTC ISO8601>","kind":"ultracode-wave-loop/1","step":"#{step.id}","action":"worker","detail":"<one line>","evidence":"<cmd+exit or artifact path>"}
+    === ON COMPLETION ===
+    Close the assigned epoch through the admitted Ultracode lease/dispatch
+    boundary with real evidence. DO NOT edit #{sp}. DO NOT append to #{tp}.
+    Those are fabric-owned projections updated only after the sealed epoch
+    outcome is observed. Worker prose is never scheduler authority.
     """
     |> String.slice(0, 48_000)
   end
