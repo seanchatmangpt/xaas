@@ -479,8 +479,21 @@ defmodule Xaas.Ultracode.WaveLoop do
     # The completed epoch is the authority for the step Run's empty frontier.
     # STATE.md is updated only after this observation and remains a projection.
     case ClosureController.record_empty_for_epoch(epoch_id, "wave_loop") do
-      {:ok, _} ->
-        :ok
+      {:ok, %{run: run}} ->
+        case ClosureController.reconcile_cycle_exhausted(run) do
+          {:ok, %{outcome: :closed}} ->
+            :ok
+
+          {:ok, decision} ->
+            Logger.warning(
+              "[ultracode-wave-loop] completed step did not close its Run: #{inspect(decision)}"
+            )
+
+          {:error, reason} ->
+            Logger.warning(
+              "[ultracode-wave-loop] Run closure reconciliation refused for epoch #{epoch_id}: #{inspect(reason)}"
+            )
+        end
 
       {:error, reason} ->
         Logger.warning(
