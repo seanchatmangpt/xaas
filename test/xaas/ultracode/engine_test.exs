@@ -42,7 +42,16 @@ defmodule Xaas.Ultracode.EngineTest do
 
   @moduletag :ultracode
 
-  alias Xaas.Ultracode.{ClosureController, Engine, Epoch, Lease, MissedEpochs, Receipt, Run, TickHealth}
+  alias Xaas.Ultracode.{
+    ClosureController,
+    Engine,
+    Epoch,
+    Lease,
+    MissedEpochs,
+    Receipt,
+    Run,
+    TickHealth
+  }
 
   setup do
     # The engine dispatches slot workers in tasks that really touch the DB
