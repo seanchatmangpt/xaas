@@ -11,8 +11,8 @@ defmodule Xaas.Ultracode.Changes.ExtendCycleBudget do
   @impl true
   def change(changeset, _opts, _context) do
     additional = Ash.Changeset.get_argument(changeset, :additional_cycles) || 1
-    cycle = Ash.Changeset.get_data(changeset, :cycle) || 0
-    current = Ash.Changeset.get_data(changeset, :max_cycles) || 0
+    cycle = Ash.Changeset.get_attribute(changeset, :cycle) || 0
+    current = Ash.Changeset.get_attribute(changeset, :max_cycles) || 0
 
     Ash.Changeset.force_change_attribute(
       changeset,
