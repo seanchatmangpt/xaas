@@ -1,0 +1,9 @@
+{
+  "schema": "https://chatman.ai/cs2/fleet-contract/v1",
+  "subject": "https://chatman.ai/cs2#RFC-CS2-001",
+  "contract": "cs2-fleet-contract/26.9.27",
+  "work_id": "CS2-WRK-013",
+  "projection": "engineer workflow packet",
+  "maximum_operation": "CONSTRUCT",
+  "authority": "NONE"
+}
