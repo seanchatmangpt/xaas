@@ -8,6 +8,8 @@ defmodule Xaas.Ultracode.ClosureController do
   completed. Only a persisted, digest-bound empty frontier may close the Run.
   """
 
+  require Ash.Query
+
   alias Xaas.Ultracode.{Epoch, Frontier, Run}
 
   @actor_service :ultracode_reactor
@@ -100,8 +102,6 @@ defmodule Xaas.Ultracode.ClosureController do
   end
 
   defp active_epoch_count(run_id) do
-    require Ash.Query
-
     Epoch
     |> Ash.Query.for_read(:read_unscoped)
     |> Ash.Query.filter(run_id == ^run_id and state in [:expected, :running])
