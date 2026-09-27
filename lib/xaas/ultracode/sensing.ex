@@ -259,7 +259,8 @@ defmodule Xaas.Ultracode.Sensing do
     case prof.type do
       "todo_file" -> todo_items(prof, path)
       "jira_dir" -> jira_items(prof, path)
-      "failing_tests" -> failing_test_items(prof, path)\n      "legacy_recovery" -> LegacyRecovery.items(path, prof.file, prof.allowed_paths)
+      "failing_tests" -> failing_test_items(prof, path)
+      "legacy_recovery" -> LegacyRecovery.items(path, prof.file, prof.allowed_paths)
     end
   end
 
