@@ -117,6 +117,68 @@ declared as code in `Xaas.Ultracode.TargetSuites` (merged into the verifier
 registry by `config :xaas, :ultracode_target_suites` in dev.exs — see §6);
 baseline config already carries `"nounverb"` and `"eds"` alongside `"aps"`.
 
+## 6b. Engine and judge configuration keys (config/config.exs)
+
+Beyond the multi-repo keys above (`:ultracode_repos`,
+`:ultracode_repos_file`, `:ultracode_worktree_root`,
+`:ultracode_verifier_suites`, `:ultracode_target_suites`,
+`:ultracode_sensing_profiles`, `:ultracode_backlog_scripts`,
+`:ultracode_ticket_dir`), the fabric loop is fenced by:
+
+- `config :xaas, :ultracode_pool_capacity` (default `10`) — per-provider
+  live-lease bound enforced race-free inside `Lease.claim_next/3` on EVERY
+  claim path (MCP workers included), not just the wave's in-process
+  semaphore. Integer = one bound for all providers; a map gives per-provider
+  bounds (`%{"zcode" => 5, default: 3}`); `nil` = unbounded (test env only).
+- `config :xaas, :ultracode_judge_accept_court_verified_partial`
+  (default `true`) — a receipt sealed `partial_alive` by an honest worker is
+  accepted WITHOUT re-dispatch when the fabric's own court passed the exact
+  head (`fabric_verifier.status == "pass"` AND `head_verified == true`).
+  `false` restores the strict alive-only predicate (pre-2026-09-19). A
+  fail/timeout/error verdict or an unverified head still repairs in both
+  modes.
+- `config :xaas, :ultracode_engine_worker` (default
+  `{Xaas.Ultracode.RecipeWorker, :run}`) and
+  `config :xaas, :ultracode_engine_providers` (default `["recipe"]`) — the
+  engine's worker seam (`Xaas.Ultracode.Engine.fill/1`) and its provider
+  allowlist. The deterministic recipe worker is only ever handed
+  allowlisted-provider epochs (zcode/LLM epochs are never engine-filled). A
+  malformed `:ultracode_engine_providers` fails closed with a typed error.
+- `config :xaas, :ultracode_construction_recipes` — the deterministic
+  recipe registry (`capability id => argv recipe`); ships
+  `"recipe:mix-format"` with `elixir_toolchain: :target` (PATH resolved per
+  epoch from the target worktree's `.tool-versions`). A capability absent
+  here is refused before any claim.
+- `config :xaas, :ultracode_default_provider` (default `"zcode"`) — names
+  the default provider in exactly one place (`Xaas.Ultracode.ProviderRegistry`
+  @ `c338d02`); dispatch defaults, the fabric `claim_next` fallback, and
+  health gating resolve through the registry instead of a hardcoded string.
+- `config :xaas, :ultracode_providers` — the provider registry: one map of
+  provider id => `%{capabilities: [...], transport: ...,
+  authority_ceiling: ..., receipt_protocol: ..., enabled: boolean, cost:
+  ..., concurrency: ...}` carrying ALL per-provider facets (`enabled:
+  false` is the live kill switch — `ProviderRegistry.disable/1` makes a
+  provider invisible to selection mid-episode; `concurrency` is advisory,
+  the ENFORCED per-provider bound remains `:ultracode_pool_capacity`).
+  Selection (`ProviderRegistry.select/2`) admits enabled providers whose
+  capabilities cover the requirement and whose ceiling ranks >= the
+  required authority, ordered by policy (`:cost` default; also
+  `:capability`, `:name`); an empty/exhausted registry is the typed
+  `{:error, {:no_qualifying_provider, details}}` naming each candidate's
+  rejection — never a silent default. `Lease.claim_next_among/3` does
+  candidate-list claims over the ordered set. Test env ships an empty
+  registry (fail-closed).
+- Oban queues/schedules (config/config.exs): `ultracode_wave: 1` and
+  `ultracode_engine: 1` are driven by the `:autonomic_wave` /
+  `:semantic_wave` schedules (every 30 minutes) and the `:engine_cycle`
+  schedule (every 5 minutes); `ultracode_wave_loop: 1` is the every-5-minute
+  fabric-native wave loop (§8). `:ultracode_wave_loop_concurrency` (currently
+  `1`, must stay ≤ `:ultracode_pool_capacity`) bounds loop workers in
+  flight; a surplus fire records `busy` and exits 0.
+- Dev overrides the cron-path loop state/telemetry paths via
+  `ULTRACODE_WAVE_LOOP_STATE_PATH` / `ULTRACODE_WAVE_LOOP_TELEMETRY_PATH`
+  (config/dev.exs; unset env keeps the module defaults under `tmp/w8-loop/`).
+
 IN-FLIGHT verify-commands (run after `ultracode/w5-registry` lands;
 record exits here):
 
@@ -325,11 +387,12 @@ additions:
 > The wave loop is now FABRIC-NATIVE: the zcode-scheduler automation variant
 > below is unavailable platform-side (the platform refuses automation
 > creation from automation-owned sessions — verified finding, 2026-09-19), so
-> the loop clock is the fabric's own hourly Oban schedule `:wave_loop`
+> the loop clock is the fabric's own every-5-minute Oban schedule `:wave_loop`
 > (`Xaas.Ultracode.WaveLoop`, single-slot `:ultracode_wave_loop` queue): each
 > tick parses the loop STATE file, dispatches ONE real zcode worker through
 > the `Dispatch` boundary, and settles STATE + telemetry from the sealed
-> receipt. The paste-verbatim harness variant is retained for provenance.
+> receipt; a terminal receipt of `blocked`/`refused` marks the step BLOCKED,
+> never DONE. The paste-verbatim harness variant is retained for provenance.
 
 Same bounded shape as eight-hour-run §8 (10-minute cadence, max 48 ticks,
 telemetry OUTSIDE any repo, never push, status + at most one top-up pass).
@@ -426,7 +489,7 @@ W7→W8-A7 from `/tmp/xaas-w8-loop` @ `22aa308`. The predecessor campaign
 completed 8-hour proof this section now extends to multiple repos. The
 10-minute keep-alive (§8) ran that campaign and was retired 2026-09-20
 (last tick 43, 2026-09-20T19:48:03Z; deletion — the operator cut — leaves
-no terminal tick by design). The wave-8 loop is hourly and STATE-driven:
+no terminal tick by design). The wave-8 loop is every-5-minute and STATE-driven:
 it executes from `/Users/sac/xaas/tmp/w8-loop/STATE.md` (outside every
 repo), which gates this launch on its steps [1]–[6] being `done`.
 
@@ -506,7 +569,7 @@ mix xaas.ultracode.start --repo aps,nounverb,eds --capacity 5
   `config :xaas, :ultracode_wave_repo_caps` and are read at boot — the
   clean adjustment is stop/cap/resume (§7).
 - Budget law: eight-hour-run §2 verbatim — 16 × 30-minute serial waves.
-- The hourly loop monitors from THIS worktree (`mix xaas.ultracode.status`)
+- The every-5-minute loop monitors from THIS worktree (`mix xaas.ultracode.status`)
   and appends telemetry ONLY to `/Users/sac/xaas/tmp/w8-loop/loop.ndjson`.
 
 ### 10.3 Validation chain — per wave, during and after the run
@@ -557,3 +620,28 @@ ever pushes to any remote; promotion is local `--no-ff` merges per repo.
 - `docs/ultracode/c4-architecture.md` — Run/Epoch/Lease/Receipt model.
 - Owning modules: `Xaas.Ultracode.{Repos,Sensing,TargetSuites,WavePlan,
   OcelEgress,RunValidation,Worktrees,Campaign,Autonomic}`.
+
+## 11. Cold replay (mix xaas.replay)
+
+`mix xaas.replay` replays a recorded no-LLM episode cold: subject identity,
+evidence, standing, completed work and the current frontier re-derived from the
+episode's sealed receipts, its TransitionLog, its work graph and git refs only
+(`Xaas.Ultracode.SemanticReplay`), every graph-side step a real OS process in
+`--ggen-igniter-dir` (private `MIX_BUILD_PATH`). The task never starts the
+application and needs no database.
+
+```bash
+mix xaas.replay --episode EPISODE_DIR --ggen-igniter-dir DIR --out STATE.json \
+  [--subject-repo DIR] [--subject-ref REF] [--ggen-build-path DIR] [--scratch DIR]
+```
+
+`--episode`, `--ggen-igniter-dir` and `--out` are required; the remaining
+switches are optional. A no-LLM guard runs before anything is read and fails
+closed (`SemanticDrive.no_llm_guard/1` over `priv/no_llm/policy.json`): a
+provider-claimed variable or a provider executable on `PATH` is
+`REFUSED(llm_credential_present)`, any other variable the policy does not admit
+is `REFUSED(unadmitted_environment)`. The last stdout line is always one JSON
+object. Exit codes: `0` = `KNOWN_REPLAY` (the recorded state was re-derived,
+nothing diverged), `4` = `DIVERGED` (the state is written but carries typed
+divergence), `3` = refused (typed JSON on the last stdout line, nothing
+written), `2` = invalid invocation.

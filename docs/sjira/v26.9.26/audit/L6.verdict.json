@@ -1,0 +1,9 @@
+{
+  "lane": "L6",
+  "claims_checked": [
+    "commit d04456a landed (is HEAD): docs/claude/diataxis/ 4 files, 9 insertions 6 deletions (git log --stat) — inside owned paths docs/** minus docs/sjira/**",
+    "message declares lease verb census + domain-count VERIFY marker; content scoped to diataxis docs"
+  ],
+  "violations": [],
+  "standing": "ALIVE"
+}

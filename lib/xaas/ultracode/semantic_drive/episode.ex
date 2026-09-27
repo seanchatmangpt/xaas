@@ -21,7 +21,7 @@ defmodule Xaas.Ultracode.SemanticDrive.Episode do
        "court_maps": {"EP-A": ...}}`: EP-A repairs the drift through
        capability `recipe:mix-format`; EP-B depends on EP-A
        (`requiresReceipt`, ALIVE). Every order carries the admitted sJira
-       fields plus the FRI-T1 tuple (`postcondition`,
+       fields, the pinned `origin_authority/0`, plus the FRI-T1 tuple (`postcondition`,
        `requires_capability`, `evidence_horizon`, `exclusions`,
        `consequence_class`, `authority_ceiling`, `successor_policy`). The
        court map binds EP-A's acceptance and falsifier IRIs to the
@@ -35,6 +35,13 @@ defmodule Xaas.Ultracode.SemanticDrive.Episode do
   @namespace "https://ggen-igniter.dev/sjira/v26.9.23#"
   @repository "seanchatmangpt/ggen_igniter"
   @capability "recipe:mix-format"
+  # Origin authority (G1, v26.9.25 post-tag hardening): both episode orders are
+  # code work, so they originate from the canonical ggen_igniter objective
+  # `sj:objective-code-work-authority`, pinned by
+  # `sj:trust-root-objective-code-work-authority` in the canonical
+  # semantic-jira-pack ontology (ggen_igniter 647db5f2). A module constant: the
+  # episode never declares its own authority.
+  @origin_authority "https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority"
   @suite_step "format"
   @name ~r/\A[a-z0-9][a-z0-9-]{0,31}\z/
   @sha ~r/\A[0-9a-f]{40}\z/
@@ -53,6 +60,10 @@ defmodule Xaas.Ultracode.SemanticDrive.Episode do
   @doc "The episode branch for `name` (`v23/episode-<name>`)."
   @spec branch(String.t()) :: String.t()
   def branch(name), do: "v23/episode-" <> name
+
+  @doc "The canonical objective every episode order originates from (pinned trust root)."
+  @spec origin_authority() :: String.t()
+  def origin_authority, do: @origin_authority
 
   @doc "The subject capability every episode order resolves (`recipe:mix-format`)."
   @spec capability() :: String.t()
@@ -169,6 +180,7 @@ defmodule Xaas.Ultracode.SemanticDrive.Episode do
       "evidence_ceiling" => "repository-local",
       "authority_ceiling" => "CONSTRUCT",
       "authority_requirement" => "NONE",
+      "origin_authority" => @origin_authority,
       "postcondition" => "`mix format --check-formatted` exits 0 at the candidate head",
       "requires_capability" => @capability,
       "evidence_horizon" =>

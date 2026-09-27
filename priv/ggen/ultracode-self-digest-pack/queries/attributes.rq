@@ -1,0 +1,11 @@
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+SELECT ?resource ?moduleName ?attrName ?attrType ?attrRequired ?attrPublic ?attrOrder WHERE {
+  ?resource a ucsd:AshResource ;
+            ucsd:resourceModule ?moduleName ;
+            ucsd:hasAttr ?attr .
+  ?attr ucsd:attrName ?attrName ;
+        ucsd:attrType ?attrType ;
+        ucsd:attrRequired ?attrRequired ;
+        ucsd:attrPublic ?attrPublic ;
+        ucsd:attrOrder ?attrOrder .
+} ORDER BY ?moduleName ?attrOrder

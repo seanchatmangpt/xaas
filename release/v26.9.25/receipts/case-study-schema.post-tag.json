@@ -1,0 +1,101 @@
+{
+  "checks": {
+    "court_exit_0": true,
+    "court_output_sha256_equals_recorded": true,
+    "court_report_file_sha256_equals_recorded": true,
+    "court_report_sha256_equals_recorded": true,
+    "court_standing_alive": true,
+    "pytest_exit_0": true,
+    "pytest_no_skips": true,
+    "pytest_summary_equals_recorded": true,
+    "wd_deck_case_equals_recorded": true,
+    "wd_deck_check_exit_0": true,
+    "wd_deck_no_projection_drift": true
+  },
+  "commands": [
+    {
+      "command": "python scripts/stogaf_semantic_court.py --pack priv/packs/wd_cs2_pack --output semantic-report.json",
+      "cwd": "<subject-dir>",
+      "exit_code": 0,
+      "output_path": "semantic-report.json",
+      "output_sha256": "4fd863f520737165f75d1c68292f805f2ba6c9d1f52a2eae8148f41a523da105",
+      "output_sha256_match": true,
+      "recorded_output_sha256": "4fd863f520737165f75d1c68292f805f2ba6c9d1f52a2eae8148f41a523da105",
+      "recorded_report_file_sha256": "7e25a5869bcd9e7aa1335d04ccd356e9b4fc8d7eca0a7f7bfc94f67a15fe7ff1",
+      "report_file_sha256": "7e25a5869bcd9e7aa1335d04ccd356e9b4fc8d7eca0a7f7bfc94f67a15fe7ff1",
+      "report_file_sha256_match": true
+    },
+    {
+      "case_match": true,
+      "command": "python tools/wd_deck/wd_deck.py case-study --check --build-dir tmp/wd-case-study",
+      "cwd": "<subject-dir>",
+      "exit_code": 0,
+      "output_sha256": "33c9e4037f6e3899ab59f9f31505949dcc0009dc5904ec4a0c98b87fe6dcdf8b",
+      "output_sha256_match": false,
+      "recorded_output_sha256": "b4cea3df28ff3a183af3adf1b9701a81642ee5c10c99ca77c8b05e69039fcc14",
+      "report_json_sha256": "86b41dbec8ade85917ed96981cd8ddaa3f456bfbcb485e53d9c72b6bb3c00ad0"
+    },
+    {
+      "command": "python -m pytest -v -p no:cacheprovider test/wd_case_study_court_test.py",
+      "cwd": "<subject-dir>",
+      "exit_code": 0,
+      "non_passed": [],
+      "outcome_count": 25,
+      "outcome_digest_sha256": "aa281b7ca7d0c92a5edd390fadd42a0ba9fb67266e6348d5f2fdfe1a273ee912",
+      "output_sha256": "13b086e62154b3b6e1a685d6afdac11aa2b24a89fb87a8137d028c77e5e39076",
+      "output_sha256_match": false,
+      "recorded_output_sha256": "164072230ddd83180c4544a6c9c5b2b9a73b381708131386d6474d4635cab32d",
+      "recorded_summary": "25 passed",
+      "summary": "25 passed",
+      "summary_match": true
+    }
+  ],
+  "differences_explained": {
+    "command_text": "The tagged receipt recorded the interpreter as an absolute path (a system python3.14 for the court and pytest, and a scratch venv for wd_deck) and --output as an absolute scratch path. Neither is a durable locator. This receipt records the interpreter as the token 'python' plus interpreter.{implementation,version,requirements_lock_sha256}, and --output as 'semantic-report.json', which is relative to <subject-dir>.",
+    "court": "The court prints the report payload, not the output path. So its stdout+stderr and the report bytes do not depend on the path and must equal the recorded output_sha256/report_file_sha256.",
+    "pytest": "The pytest -v header embeds the interpreter path and rootdir, and the footer embeds the wall time. So the raw output hash is not expected to match. The summary and the sorted per-node outcome digest are compared instead.",
+    "wd_deck": "wd_deck echoes each 'mix ggen_igniter.sync' argv with absolute --pack-dir/--ontology/--template/--out paths that resolve under <subject-dir>. That makes the raw output hash depend on the location, so output_sha256 is not expected to match. The recorded case block (case_iri, case_revision_digest, generator_identity, projections_sha256) is compared instead."
+  },
+  "durable_report": {
+    "locator_form": "git:seanchatmangpt/xaas@<commit containing this receipt>:release/v26.9.25/receipts/case-study-schema.post-tag.semantic-report.json",
+    "path": "release/v26.9.25/receipts/case-study-schema.post-tag.semantic-report.json",
+    "sha256": "7e25a5869bcd9e7aa1335d04ccd356e9b4fc8d7eca0a7f7bfc94f67a15fe7ff1"
+  },
+  "evidence_ceiling": "REPO_LOCAL_FIXTURE",
+  "interpreter": {
+    "implementation": "CPython",
+    "requirements_lock": "release/v26.9.25/receipts/case-study-schema.requirements.lock",
+    "requirements_lock_sha256": "b42720fc2022c0abaf51a50863f357d62c6d4a599abc09e25863375b7cb60e72",
+    "version": "3.14.3"
+  },
+  "manufactured_at": "2026-09-25T23:56:06Z",
+  "manufacturer": "release/v26.9.25/receipts/rerun_case_study.py",
+  "name": "case-study-schema.post-tag",
+  "non_claims": [
+    "EXTERNAL_STANDING",
+    "WD_ACCEPTANCE",
+    "ST-6 AUTONOMIC",
+    "ST-7 ACTUATED"
+  ],
+  "receipt_sha256": "e91587e12a8e99d0a8ea6b03ed905c305876fa89549a0a8f0e1683428f0a05da",
+  "refusals": [],
+  "repository": "seanchatmangpt/xaas",
+  "requirement_ids": [
+    "AC-13"
+  ],
+  "schema": "xaas.release-receipt/v26.9.25+post-tag",
+  "standing": "ALIVE",
+  "subject": {
+    "materialization": "git archive <subject_sha> (plain dir)",
+    "repository": "seanchatmangpt/xaas",
+    "sha": "c10cdab95b927ed82c5c212a3f36d02b52ed525e"
+  },
+  "subject_sha": "c10cdab95b927ed82c5c212a3f36d02b52ed525e",
+  "superseded_receipt": {
+    "blob_sha256": "c302ddafb20ae0c1d5150e2d408dac0ce42a0b59b94474c1f96feaea7ccd0c8f",
+    "edited": false,
+    "receipt_sha256": "d32afca859a3b633584532c40be44a46a5343c68516fc292f508862a538f6d40",
+    "standing": "ALIVE"
+  },
+  "supersedes_locator": "git:seanchatmangpt/xaas@6a63d891ea5ce046d23c1e00cc78a2f070aca617:release/v26.9.25/receipts/case-study-schema.json"
+}

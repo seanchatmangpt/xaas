@@ -5,12 +5,10 @@ defmodule Xaas.Sjira.SuccessorTest do
   in docs/sjira/v26.9.23/successor/, the real `Xaas.Sa2a.Route` and the real
   `:ultracode_construction_recipes` registry for `classify/1`, the real
   `courts/successor_law.py` and `courts/successor_acceptance.sh` as `python3`
-  and `sh` OS processes over real tmp git repositories, and -- with the
-  ggen_igniter checkout (GGEN_IGNITER_DIR, else the int worktree; named skip
-  when absent) -- the real intake: `mix run` of the work-graph script,
-  `mix semantic_jira.frontier` and `mix semantic_jira.descriptor` as OS
-  processes in that checkout, recomputed byte for byte against the committed
-  intake. No mocks, no stubs.
+  and `sh` OS processes over real tmp git repositories, and the retired
+  intake: since ggen_igniter retired `compile_prose` (dc27242) `intake/1` and
+  `check/1` are a typed `UNSUPPORTED(provider_capability)` with a successor
+  pointer that reach no graph side and write nothing. No mocks, no stubs.
   """
   use ExUnit.Case, async: false
 
@@ -21,10 +19,6 @@ defmodule Xaas.Sjira.SuccessorTest do
   @courts Path.join(@repo, "docs/sjira/v26.9.23/courts")
   @prose_rel "docs/sjira/v26.9.23/successor/v26.9.24-wbpr.md"
   @ggen_dir System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter")
-  @ggen_ready File.regular?(Path.join(@ggen_dir, "lib/mix/tasks/semantic_jira.descriptor.ex")) and
-                File.regular?(
-                  Path.join(@ggen_dir, "lib/ggen_igniter/semantic_jira/bootstrap/graph.ex")
-                )
 
   defp tmp_dir(prefix) do
     dir = Path.join(System.tmp_dir!(), "#{prefix}_#{System.unique_integer([:positive])}")
@@ -212,53 +206,55 @@ defmodule Xaas.Sjira.SuccessorTest do
     assert out =~ "differs from its committed bytes"
   end
 
-  # ------------------------------------------------------------------ the real intake
+  # ------------------------------------------------------------------ the retired intake
 
-  describe "the real intake against the ggen_igniter checkout" do
-    if not @ggen_ready do
-      @describetag skip:
-                     "ggen_igniter checkout #{@ggen_dir} lacks mix semantic_jira.descriptor or Bootstrap.Graph"
-    end
+  # compile_prose was retired in ggen_igniter dc27242 (prose is
+  # observation-only): the intake is a typed UNSUPPORTED naming its successor,
+  # and runs nothing -- a ggen_igniter dir that does not exist proves no graph
+  # side is reached, an out_dir that stays absent proves nothing is written.
+  test "intake: the retired prose -> WorkOrder edge is UNSUPPORTED(provider_capability) with a successor pointer" do
+    out = Path.join(tmp_dir("x1_retired"), "intake")
+    absent = Path.join(tmp_dir("x1_no_ggen"), "ggen_igniter")
 
-    @tag timeout: 600_000
-    test "Successor.check/1 recomputes the committed intake byte for byte (real graph-side mix processes)" do
-      assert {:ok, summary} =
-               Successor.check(dir: @dir, ggen_igniter_dir: @ggen_dir, env: no_llm_env())
+    assert {:unsupported, typed} =
+             Successor.intake(
+               dir: @dir,
+               ggen_igniter_dir: absent,
+               out_dir: out,
+               env: no_llm_env()
+             )
 
-      assert summary["check"] == "outputs recompute byte-identically"
-      assert summary["standing"] == "UNSUPPORTED(provider_capability)"
-      assert summary["work_orders"] == 7
-      assert summary["eligible"] == 7
-      assert summary["items"] == %{"UNSUPPORTED(provider_capability)" => 7}
+    assert typed["standing"] == "UNSUPPORTED(provider_capability)"
+    assert typed["reason"] == "compile_prose_retired"
+    assert typed["broken_term"] == "mu_on_O"
+    assert typed["hop"] == "intake"
+    assert typed["detail"]["capability"] == "semantic_jira.compile_prose"
+    assert typed["detail"]["rfc0004_s39"] == "CAPABILITY_GAP"
 
-      resolution = Path.join(@dir, "intake/resolution.json") |> File.read!() |> Jason.decode!()
-      frontier = Path.join(@dir, "intake/frontier.json") |> File.read!() |> Jason.decode!()
-      descriptor = Path.join(@dir, "intake/descriptor.json") |> File.read!() |> Jason.decode!()
-      first = hd(frontier["eligible"])["identity"]
-      assert resolution["first"]["order"] == first
-      assert descriptor["bridge"]["identity"] == first
-      assert descriptor["provider"] == "recipe"
-    end
+    assert typed["detail"]["retired_in"] ==
+             "git:seanchatmangpt/ggen_igniter@dc2724263b7c955f23cd3e1a7407f3665e2a022e"
 
-    @tag timeout: 600_000
-    test "a drifted committed output is REFUSED(output_drift) naming the file" do
-      out = tmp_dir("v23h_drift")
+    successor = typed["detail"]["successor"]
+    assert successor == Successor.successor()
+    assert successor["observation_surface"] == "mix semantic_jira.observe_prose"
+    assert successor["work_origin"] =~ "origin_authority pinned by an sj:AuthorityTrustRoot"
 
-      for name <- Successor.outputs(),
-          do: File.cp!(Path.join([@dir, "intake", name]), Path.join(out, name))
+    for locator <- successor["locators"],
+        do: assert(locator =~ ~r"\Agit:seanchatmangpt/ggen_igniter@[0-9a-f]{40}:[^/~]")
 
-      File.write!(Path.join(out, "resolution.json"), "{}\n")
+    refute File.exists?(out)
+  end
 
-      assert {:refused, refused} =
-               Successor.check(
-                 dir: @dir,
-                 ggen_igniter_dir: @ggen_dir,
-                 out_dir: out,
-                 env: no_llm_env()
-               )
+  test "check: the committed intake is not recomputed; the same typed UNSUPPORTED, committed outputs untouched" do
+    before = for name <- Successor.outputs(), do: File.read!(Path.join([@dir, "intake", name]))
 
-      assert refused["standing"] == "REFUSED(output_drift)"
-      assert refused["detail"]["files"] == ["resolution.json"]
-    end
+    assert {:unsupported, typed} =
+             Successor.check(dir: @dir, ggen_igniter_dir: @ggen_dir, env: no_llm_env())
+
+    assert typed["standing"] == "UNSUPPORTED(provider_capability)"
+    assert typed["hop"] == "check"
+
+    assert before ==
+             for(name <- Successor.outputs(), do: File.read!(Path.join([@dir, "intake", name])))
   end
 end

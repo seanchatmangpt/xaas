@@ -83,11 +83,14 @@ defmodule Xaas.Ultracode.DispatchTest do
 
     assert plan.argv_tail == [
              "bin/zcode.js",
-             "--prompt",
+             "-p",
              plan.prompt,
              "--cwd",
              plan.cwd,
-             "--json"
+             "--output-format",
+             "stream-json",
+             "--mode",
+             "yolo"
            ]
   end
 
@@ -154,6 +157,7 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.protocol == :xaas_prompt
     assert plan.prompt =~ epoch.id
     assert plan.descriptor == nil
+    assert Enum.take(plan.argv_tail, -2) == ["--mode", "yolo"]
   end
 
   test "plan refuses a CLI directory that does not hold package.json" do
@@ -226,10 +230,13 @@ defmodule Xaas.Ultracode.DispatchTest do
     {:ok, plain_plan} =
       Dispatch.plan(plain_epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
 
-    # Byte-for-byte the historical env: gate vars only, no toolchain pin.
+    # Byte-for-byte the dispatch env: gate vars + the per-epoch lease id
+    # + the worker OCEL tap, no toolchain pin.
     assert plain_plan.env_added == [
              {"XAAS_WORKER", "1"},
-             {"XAAS_LEASE_CWD", realpath(worktree)}
+             {"XAAS_LEASE_CWD", realpath(worktree)},
+             {"XAAS_LEASE_ID", plain_epoch.id},
+             {"ZCODE_OCEL", "1"}
            ]
   end
 
@@ -404,7 +411,8 @@ defmodule Xaas.Ultracode.DispatchTest do
     logged = File.read!(fake_log)
     assert logged =~ "XAAS_WORKER=1"
     assert logged =~ "XAAS_LEASE_CWD=#{realpath(worktree)}"
-    assert logged =~ "--json"
+    assert logged =~ "--output-format"
+    assert logged =~ "stream-json"
 
     # The sealed receipts of the epoch ride on the dispatch result.
     assert [%{"outcome" => "partial_alive", "head_verified" => false, "sealed_at" => _}] =

@@ -1,0 +1,7 @@
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+SELECT ?className ?primitiveName ?gOrder WHERE {
+  ?class a ucsd:RecurrenceClass ; dcterms:identifier ?className ;
+         ucsd:targetsPrimitive ?target ; ucsd:gOrder ?gOrder .
+  ?target a ucsd:PrimitiveTarget ; dcterms:identifier ?primitiveName .
+} ORDER BY ?gOrder

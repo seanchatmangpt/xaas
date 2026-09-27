@@ -169,6 +169,9 @@ Next Read serves as the end-to-end demonstration of the XaaS architectural model
 
 ## 5. Summary Census of the 8 Ash Domains
 
+> VERIFY 2026-09-26: this census is a point-in-time snapshot predating the current
+> 13-domain / 92-resource surface (see `architecture-overview.md`, re-verified 2026-09-22).
+
 The platform comprises 8 Ash domains spanning 74 declarative resources:
 
 | Domain | Module | Resource Count | Functional Responsibility |

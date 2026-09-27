@@ -32,5 +32,10 @@ defmodule Xaas.Ultracode do
     resource(Xaas.Ultracode.Run)
     resource(Xaas.Ultracode.Epoch)
     resource(Xaas.Ultracode.Receipt)
+    resource(Xaas.Ultracode.CapitalCensus.ExperienceCluster)
+    resource(Xaas.Ultracode.CapitalCensus.Gap)
+    resource(Xaas.Ultracode.CapitalCensus.Resolution)
+    resource(Xaas.Ultracode.CapitalCensus.WorkOrder)
+    resource(Xaas.Ultracode.CapitalCensus.Episode)
   end
 end

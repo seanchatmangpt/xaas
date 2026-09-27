@@ -71,6 +71,25 @@ config :xaas, :ex4pm_ontology_check,
 # (`<resource_short_name>_<schedule/trigger_name>`) -- confirmed via the
 # real `RuntimeError` `AshOban.require_queues!/4` raised on boot, one at a
 # time, until all three were named correctly.
+#
+# The wave loop's concurrency mode (2026-09-26, operator-ordered): the
+# `:wave_loop` schedule fires every 5 minutes and up to
+# `wave_loop_concurrency` loop workers may be in flight, fanned across
+# INDEPENDENT steps only (a step held by a live lease is excluded from the
+# next tick's selection). The number must stay <= `:ultracode_pool_capacity`
+# below -- the pool bound is what actually fences live leases per provider.
+# Measured agent turns average minutes (burn-in 2026-09-26: a mechanical
+# step ~1-6 min), so a 5-minute cadence with 3 slots keeps the loop fed
+# without pile-up; surplus fires record `busy` and exit 0.
+# 1 for now: parallel steps sharing ONE work surface used to collide on the
+# per-cwd lease state file (sha256(cwd), exit 65 lease_conflict; observed
+# 2026-09-27 00:11-00:35 — the second worker lawfully waited out the
+# first's lease). Per-epoch lease keys (XAAS_LEASE_ID, zcode-cli c2adb24 +
+# dispatch env) remove the lease-file collision; the remaining boundary to
+# raising this is git-contention on the SHARED work surface (two workers
+# committing one repo race on index.lock) — per-step work surfaces first.
+wave_loop_concurrency = 1
+
 config :xaas, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
@@ -90,16 +109,27 @@ config :xaas, Oban,
     # argument as `ultracode_wave` (slot-filling work must never overlap
     # itself, or capacity accounting races).
     ultracode_engine: 1,
-    # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (hourly) -- the
-    # fabric-native wave loop: ONE real zcode worker per tick, dispatched
+    # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (every 5 minutes) --
+    # the fabric-native wave loop: ONE real zcode worker per tick, dispatched
     # synchronously by `Xaas.Ultracode.WaveLoop.tick/1` from the loop STATE
     # file. A tick's dispatch may legitimately run most of an hour, so the
     # single slot is what makes "one loop worker at a time" real; a second
     # hourly fire waits here rather than overlapping.
-    ultracode_wave_loop: 1
+    ultracode_wave_loop: wave_loop_concurrency
   ],
   repo: Xaas.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron, []},
+    # P0.1 dispatch watchdog (fleet-sweep ticket, 2026-09-27): a BEAM death
+    # mid-tick (e.g. the 04:52Z server relaunch while oban job 20628 was
+    # executing) leaves the row `executing` FOREVER — no worker spawns, the
+    # concurrency-1 queue serializes on it, and recovery needed manual SQL.
+    # Lifeline orphans such jobs back to `available` once they exceed the
+    # maximum legitimate tick (dispatch timeout 3300s + margin). Oban's
+    # uniqueness then treats the orphan as incomplete, so the same job is
+    # rescued, not duplicated.
+    {Oban.Lifeline, rescue_after: {75, :minutes}}
+  ]
 
 config :ash_graphql, authorize_update_destroy_with_error?: true
 
@@ -117,7 +147,9 @@ config :ash_typescript,
   run_endpoint: "/internal-api/rpc/run",
   validate_endpoint: "/internal-api/rpc/validate",
   output_field_formatter: :camel_case,
-  input_field_formatter: :camel_case
+  input_field_formatter: :camel_case,
+  # ash_typescript 0.18: the manifest module is mandatory (AshTypescript.manifest_module/0)
+  manifest: Xaas.AshTypescriptManifest
 
 config :ash,
   default_string_length_count: :codepoints,
@@ -157,7 +189,13 @@ config :ash,
     incident_status: Xaas.Operations.Types.IncidentStatus,
     incident_postmortem_status: Xaas.Operations.Types.IncidentPostmortemStatus,
     pentest_finding_severity: Xaas.Governance.Types.PentestFindingSeverity,
-    pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus
+    pentest_finding_status: Xaas.Governance.Types.PentestFindingStatus,
+    frontier_outcome: Xaas.Ultracode.CapitalCensus.Types.FrontierOutcome,
+    gap_status: Xaas.Ultracode.CapitalCensus.Types.GapStatus,
+    primitive_target: Xaas.Ultracode.CapitalCensus.Types.PrimitiveTarget,
+    recurrence_class: Xaas.Ultracode.CapitalCensus.Types.RecurrenceClass,
+    resolution_outcome: Xaas.Ultracode.CapitalCensus.Types.ResolutionOutcome,
+    work_order_status: Xaas.Ultracode.CapitalCensus.Types.WorkOrderStatus
   ]
 
 # Configures the endpoint
@@ -256,14 +294,53 @@ config :xaas, :ultracode_repos, %{}
 config :xaas, :ultracode_sensing_profiles, %{}
 
 # The engine's per-provider worker-slot bound (`Xaas.Ultracode.Lease.
-# pool_capacity/1`, enforced race-free inside `claim_next/3`): 5 live
+# pool_capacity/1`, enforced race-free inside `claim_next/3`): 10 live
 # leases per provider -- the operator-ordered standing wave size, now a
 # real fence on EVERY claim path (MCP workers included), not just the
 # wave's in-process semaphore. Integer = one bound for all providers; a
 # map gives per-provider bounds (`%{"zcode" => 5, default: 3}`); nil =
 # unbounded (the test-env choice, so `LeaseConcurrencyStressTest`'s
 # 25-way claim storm keeps its exact semantics).
-config :xaas, :ultracode_pool_capacity, 5
+config :xaas, :ultracode_pool_capacity, 10
+
+# The provider registry + selection policy (`Xaas.Ultracode.ProviderRegistry`,
+# closing UNSUPPORTED(provider-selection:policy)): one config map carrying ALL
+# per-provider facets -- capabilities, transport descriptor, authority ceiling,
+# receipt protocol, enabled kill switch, cost, concurrency. Selection
+# (`ProviderRegistry.select/2`) admits only enabled providers whose
+# capabilities cover the requirement and whose ceiling ranks at or above the
+# required authority, ordered by policy (default ascending cost); an empty or
+# exhausted registry is the typed `{:error, {:no_qualifying_provider, _}}` --
+# never a silent default. The default provider for unsupplied callers is
+# `:ultracode_default_provider` (the historical "zcode", named in exactly one
+# place now). `concurrency` here is advisory; the ENFORCED per-provider slot
+# bound remains `:ultracode_pool_capacity` above. The test env leaves the
+# registry EMPTY (fail-closed: nothing selectable) and tests install their
+# own entries via Application.put_env.
+config :xaas, :ultracode_default_provider, "zcode"
+
+# Wave loop in-flight worker bound (`Xaas.Ultracode.WaveLoop.acquire_slot/0`
+# + step-selection exclusion). Must stay <= `:ultracode_pool_capacity`;
+# declared above next to the Oban queue that shares the same value.
+config :xaas, :ultracode_wave_loop_concurrency, wave_loop_concurrency
+
+# The zcode CLI checkout `Dispatch`/`ZcodePackage`/`ProviderHealth` admit the
+# worker launcher from. `/Users/sac/dev/zcode-cli` (the v26.9.22-era default)
+# was retired 2026-09-26 — 36 commits behind and subsumed by the canonical
+# checkout; the same fact as `ZcodePackage.default_cli_dir/0`.
+config :xaas, :ultracode_dispatch_cli_dir, "/Users/sac/zcode-cli"
+
+config :xaas, :ultracode_providers, %{
+  "zcode" => %{
+    capabilities: ["construction", "gall_work"],
+    transport: %{kind: "zcode_cli"},
+    authority_ceiling: :construction,
+    receipt_protocol: "gall.work-receipt/1",
+    enabled: true,
+    cost: 1,
+    concurrency: 5
+  }
+}
 
 # The engine's worker seam (`Xaas.Ultracode.Engine.fill/1`) and the provider
 # allowlist it fills on its own. The configured worker is the deterministic

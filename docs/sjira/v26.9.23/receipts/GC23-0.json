@@ -12,14 +12,14 @@
   "gate": {
     "boundary_class": "FirstMile",
     "checkpoint": "GC-26.9.23",
-    "duration_ms": 29647,
+    "duration_ms": 107,
     "env": {
       "GGEN_IGNITER_DIR": "/Users/sac/ggen_igniter",
       "XAAS_DIR": "/Users/sac/xaas"
     },
     "gate": "GC23-0",
-    "ggen_igniter_sha": "6e7834ee68b6617b7f11ac48b1e9fc2651fc448d",
-    "outcome": "passed",
+    "ggen_igniter_sha": "c33b0f676e996ae1805cd69702c60a30af27fd16",
+    "outcome": "machinery_absent",
     "timed_out": false,
     "timeout_ms": 900000
   },
@@ -29,7 +29,7 @@
     "repo": "seanchatmangpt/xaas",
     "repo_source": "git remote origin (github.com)",
     "subject": "GC-26.9.23/GC23-0",
-    "subject_sha": "cb3991282f73727f008f478da7f29ab487ac57c3",
+    "subject_sha": "d04456abc9dde863bcbdd24caceec58efdbf7781",
     "worktree": "/Users/sac/xaas"
   },
   "replay": {
@@ -37,42 +37,40 @@
       {
         "cmd": "sh docs/sjira/v26.9.23/courts/GC23-0.sh",
         "cwd": "/Users/sac/xaas",
-        "exit": 0,
+        "exit": 75,
         "invocation": {
           "argv": [
             "mix",
             "xaas.stop_court",
             "--checkpoint",
             "GC-26.9.23",
-            "--receipts-dir",
-            "/Users/sac/.claude/migration/v26923-single-repo/release/int-stop-pre",
             "--only",
             "GC23-0"
           ],
           "cwd": "/Users/sac/xaas",
           "env": {
-            "GC23_FLEET_RECEIPTS_DIR": "/Users/sac/.local/state/sjira/receipts/fleet",
+            "GC23_FLEET_RECEIPTS_DIR": null,
             "GGEN_IGNITER_DIR": "/Users/sac/ggen_igniter",
-            "MIX_ENV": "test"
+            "MIX_ENV": "dev"
           },
-          "shell": "cd /Users/sac/xaas && env GC23_FLEET_RECEIPTS_DIR=/Users/sac/.local/state/sjira/receipts/fleet GGEN_IGNITER_DIR=/Users/sac/ggen_igniter MIX_ENV=test mix xaas.stop_court --checkpoint GC-26.9.23 --receipts-dir /Users/sac/.claude/migration/v26923-single-repo/release/int-stop-pre --only GC23-0"
+          "shell": "cd /Users/sac/xaas && env -u GC23_FLEET_RECEIPTS_DIR GGEN_IGNITER_DIR=/Users/sac/ggen_igniter MIX_ENV=dev mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0"
         },
-        "output_sha256": "00c25ae76e90bb376592f3ff253fdd191692d09cc9b461070139420fe32c221a",
-        "summary": "ALIVE: GC23-0 accepted prose + complete admitted semantic projection (compile_prose --check byte-identical, no LLM)"
+        "output_sha256": "7ab87eef27a2e4f874e8e4236d6f25ceb8016e854ae1dbd0a5affc8373093042",
+        "summary": "UNKNOWN: GC23-0 admission machinery (lane V23-C) absent: no mix semantic_jira.compile_prose in /Users/sac/ggen_igniter"
       }
     ],
-    "durable_location": "/Users/sac/.claude/migration/v26923-single-repo/release/int-stop-pre/GC23-0.json"
+    "durable_location": "docs/sjira/v26.9.23/receipts/GC23-0.json"
   },
   "standing": {
-    "derived_from": "court command of GC-26.9.23/GC23-0 exited 0 (passed) at cb3991282f73727f008f478da7f29ab487ac57c3; ALIVE iff exit 0, BLOCKED iff exit 77 with a typed BLOCKED(<reason>) (broken_term <term>) line",
-    "value": "ALIVE"
+    "derived_from": "court command of GC-26.9.23/GC23-0 exited 75 (machinery_absent) at d04456abc9dde863bcbdd24caceec58efdbf7781; ALIVE iff exit 0, BLOCKED iff exit 77 with a typed BLOCKED(<reason>) (broken_term <term>) line",
+    "value": "UNKNOWN"
   },
   "toolchain": {
     "elixir": "1.20.2",
     "erts_version": "16.4.0.2",
     "otp_release": "28",
-    "python3": "Python 3.14.3",
-    "python3_path": "/opt/homebrew/bin/python3"
+    "python3": "Python 3.9.6",
+    "python3_path": "/usr/bin/python3"
   },
   "verifier": {
     "court_command": "sh docs/sjira/v26.9.23/courts/GC23-0.sh",
@@ -88,11 +86,11 @@
     "runner_source_at_subject_why": null,
     "runner_source_sha256": "sha256:6d64dd32cb06c325c877d7a6ff295a6cb029c8654c03b176180d89d53a076ae8",
     "schema": "/Users/sac/.claude/dfcm/receipt.schema.json",
-    "schema_sha256": "sha256:c19451fafb55dce681f149d88afe00987be0b4daa6a97651d4bfad2aaf2a6d74",
+    "schema_sha256": "sha256:b513126e1a6cdef63be4da960a39a103a1854d33117b88a5c3ccef99d677e260",
     "schema_why": null,
     "stop_query_sha256": "sha256:77f7156957a337d31942ed612f70bb3514e77daa0978d6221a69e41efe1ba619",
     "validator": "/Users/sac/.claude/dfcm/validate_receipt.py",
-    "validator_sha256": "sha256:bc703c76837d369788ff50858547eab98d01d38ce467469f8b9a8214e9f55e2c",
+    "validator_sha256": "sha256:7d6abc1c4bd153ee6759e162e4f8d8ceb42401b9c4fcacc8f830ed48dbc650d6",
     "validator_why": null
   }
 }

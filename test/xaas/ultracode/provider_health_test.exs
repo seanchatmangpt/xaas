@@ -3,14 +3,14 @@ defmodule Xaas.Ultracode.ProviderHealthTest do
 
   @moduledoc """
   Chicago-style: real package.json files on disk, the real
-  `~/dev/zcode-cli` checkout, and real `--version` subprocesses (the
+  `~/zcode-cli` checkout, and real `--version` subprocesses (the
   `fake-node.sh` shim is a real executable answering `--version` like node).
   """
 
   alias Xaas.Ultracode.ProviderHealth
 
   @fake_node Path.expand("../../support/fake-node.sh", __DIR__)
-  @real_cli Path.expand("~/dev/zcode-cli")
+  @real_cli Path.expand("~/zcode-cli")
 
   defp cli(node_range) do
     dir =
@@ -71,9 +71,9 @@ defmodule Xaas.Ultracode.ProviderHealthTest do
   @tag skip:
          if(File.regular?(Path.join(@real_cli, "package.json")),
            do: false,
-           else: "~/dev/zcode-cli not present"
+           else: "~/zcode-cli not present"
          )
-  test "the real ~/dev/zcode-cli with the machine's node" do
+  test "the real ~/zcode-cli with the machine's node" do
     case ProviderHealth.check(cli_dir: @real_cli) do
       {:ok, health} ->
         assert health.zcode_bin == "bin/zcode.js"

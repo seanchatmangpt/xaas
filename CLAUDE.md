@@ -71,12 +71,25 @@ New/touched resources keep deny-by-default policy behavior. A scoped read carve-
 
 Public semantic projection does not grant authority. Consequential mutations must remain behind the admitted Ash.Reactor control-plane path. For provider lifecycle state, do not expose or bypass `:actuate_status`; use `Xaas.Actuation.run/4` with a stable idempotency key and explicit authority context.
 
+## Toolchain (asdf, pinned in `.tool-versions`)
+
+Observed 2026-09-26: elixir 1.20.2-otp-28 / erlang 28.5.0.2 via asdf.
+
+**Warning (observed 2026-09-26):** running `mix test` or any compile under a different
+toolchain (e.g. an OTP-27 elixir) corrupts `_build` compile state and 500s the running
+native server. Run every mix command under the pinned toolchain (`asdf install` first);
+after corruption, recompile under the pinned toolchain before trusting the server.
+
 ## Real commands
 
-```bash
-export DEV_DB_USERNAME=postgres DEV_DB_PASSWORD="$(cat secrets/.postgrespassword)" \
-       DEV_DB_HOSTNAME=localhost DEV_DB_PORT=$(docker compose port db 5432 | cut -d: -f2)
+The server runs natively (`mix phx.server` from this checkout, with `INTERNAL_API_TOKEN`
+set in the environment) — not in Docker/Colima. Postgres is the local brew
+`postgresql@14` on localhost:5432, database `xaas_dev`; `config/dev.exs` defaults
+username/password to `postgres` and honors `DEV_DB_USERNAME` / `DEV_DB_PASSWORD` /
+`DEV_DB_HOSTNAME` / `DEV_DB_PORT` overrides. (`compose.yaml` exists in the tree but is
+not the current dev path — VERIFY 2026-09-26.)
 
+```bash
 mix compile --force
 mix test
 mix test --include stress

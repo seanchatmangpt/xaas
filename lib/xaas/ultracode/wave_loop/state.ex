@@ -65,7 +65,8 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     :law,
     :remaining_note,
     :remaining_chain,
-    :complete_marker
+    :complete_marker,
+    :work_surface
   ]
 
   @type step :: %{
@@ -90,6 +91,7 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   @step_header_regex ~r/^\s*\|\s*step\s*\|\s*status\s*\|\s*evidence/i
   @complete_marker_regex ~r/\bLOOP COMPLETE\b/
   @listed_step_regex ~r/\bstep\s+(\d+)/i
+  @work_surface_regex ~r/^WORK SURFACE:\s*(\S.+?)\s*$/
 
   # ------------------------------------------------------------------
   # Parsing
@@ -114,7 +116,8 @@ defmodule Xaas.Ultracode.WaveLoop.State do
          law: sections.law,
          remaining_note: note,
          remaining_chain: chain,
-         complete_marker: Enum.any?(lines, &(&1 =~ @complete_marker_regex))
+         complete_marker: Enum.any?(lines, &(&1 =~ @complete_marker_regex)),
+         work_surface: work_surface(lines)
        }}
     end
   end
@@ -126,8 +129,10 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   # REMAINING note names it (the note re-opens a DONE row, e.g. a re-sweep).
   # A dep counts as done only when its row is :done and the note does not
   # re-open it.
-  @spec first_actionable(t()) :: {:ok, step()} | {:waiting, step(), [String.t()]} | :complete
-  def first_actionable(%__MODULE__{steps: steps, remaining_chain: chain}) do
+  @spec first_actionable(t(), Enumerable.t()) ::
+          {:ok, step()} | {:waiting, step(), [String.t()]} | :complete
+  def first_actionable(%__MODULE__{steps: steps, remaining_chain: chain}, exclude \\ MapSet.new()) do
+    excluded = MapSet.new(exclude)
     note_listed = MapSet.new(Map.keys(chain))
 
     done_ids =
@@ -136,7 +141,8 @@ defmodule Xaas.Ultracode.WaveLoop.State do
       |> MapSet.new(& &1.id)
 
     case Enum.find(steps, fn s ->
-           s.status in [:pending, :blocked] or MapSet.member?(note_listed, s.id)
+           not MapSet.member?(excluded, s.id) and
+             (s.status in [:pending, :blocked] or MapSet.member?(note_listed, s.id))
          end) do
       nil ->
         :complete
@@ -249,11 +255,10 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     === THE LAW (STATE section (c), verbatim — non-negotiable) ===
     #{String.trim_trailing(state.law || default_law())}
 
-    === ON COMPLETION (mandatory, do BOTH before you finish) ===
-    1. Update #{sp}: set this step's row status and fill its DONE evidence \
-    with real command+exit evidence. Never leave a step done without evidence.
-    2. Append EXACTLY ONE telemetry line to #{tp}:
-    {"ts":"<UTC ISO8601>","kind":"ultracode-wave-loop/1","step":"#{step.id}","action":"worker","detail":"<one line>","evidence":"<cmd+exit or artifact path>"}
+    === ON COMPLETION ===
+    Do NOT edit #{sp} or #{tp}: the loop settles the STATE row and telemetry     itself from your sealed receipt (workers sit outside those files'     authority fence — writes there are refused by design, observed \
+    2026-09-26). Close via the fabric with evidence; carry anything the \
+    coordinator must know inside your close evidence.
     """
     |> String.slice(0, 48_000)
   end
@@ -414,6 +419,19 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     lines
     |> Enum.filter(&(&1 =~ ~r/^\s*REMAINING\b/i))
     |> List.last()
+  end
+
+  # The STATE-declared work surface: the first `WORK SURFACE: <path>` line
+  # wins. Only the raw string is captured here — admission (absolute, real
+  # git repo) stays with WorktreeIsSafe at the Epoch-create boundary.
+  defp work_surface(lines) do
+    lines
+    |> Enum.find_value(fn line ->
+      case Regex.run(@work_surface_regex, line) do
+        [_, path] -> path
+        nil -> nil
+      end
+    end)
   end
 
   defp parse_remaining(nil, _table_ids), do: {:ok, %{}}

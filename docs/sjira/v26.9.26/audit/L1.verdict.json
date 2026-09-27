@@ -1,0 +1,11 @@
+{
+  "lane": "L1",
+  "claims_checked": [
+    "scaffold commit e9245af landed (git log --stat: _RUNBOOK.md, goal.ttl, prd-ard.md, receipts/.gitkeep, audit/METHOD.md)",
+    "goal.ttl contains no non-UNKNOWN standing literals (grep over ALIVE|BLOCKED|UNSUPPORTED|REFUSED minus UNKNOWN: only prose in dcterms:description line 52)"
+  ],
+  "violations": [
+    "boundary: e9245af wrote docs/sjira/v26.9.26/audit/METHOD.md, which the _RUNBOOK.md lane map assigns to L10 (L1 owns v26.9.26/** minus audit/**) — docs-only, no production paths"
+  ],
+  "standing": "PARTIAL_ALIVE"
+}

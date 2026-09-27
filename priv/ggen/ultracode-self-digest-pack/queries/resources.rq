@@ -1,0 +1,8 @@
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?resource ?moduleName ?resourceDomain ?defaultActions WHERE {
+  ?resource a ucsd:AshResource ;
+            ucsd:resourceModule ?moduleName ;
+            ucsd:resourceDomain ?resourceDomain ;
+            ucsd:defaultActions ?defaultActions .
+} ORDER BY ?moduleName

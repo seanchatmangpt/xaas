@@ -1,0 +1,13 @@
+# Three result sets in one query file are not possible with one SELECT —
+# this file holds the digest-law FACT rows (G-table + shape classification).
+# The threshold lives in facts_spec.rq (single row -> flattened binding).
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+SELECT ?shape ?className ?primitiveName ?gOrder WHERE {
+  ?shapeInd a ucsd:ResidualShape ; dcterms:identifier ?shape ;
+            ucsd:classifiedAs ?class .
+  ?class a ucsd:RecurrenceClass ; dcterms:identifier ?className ;
+         ucsd:targetsPrimitive ?target .
+  ?target a ucsd:PrimitiveTarget ; dcterms:identifier ?primitiveName .
+  ?class ucsd:gOrder ?gOrder .
+} ORDER BY ?gOrder ?shape

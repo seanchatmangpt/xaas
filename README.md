@@ -2,7 +2,7 @@
 
 XaaS is an Elixir/Phoenix platform built around Ash resources. Ash resources are executable application models with public-ontology projections, and consequential mutation is fenced behind a synchronous `Ash.Reactor` actuation path with durable intent/receipt records and idempotent replay. Around that control plane, the repository also ships an autonomous execution fabric (leases, campaigns, receipted worker actuation), OCEL 2.0 telemetry egress, and a generated ZCode integration plugin.
 
-Stack: Elixir ~> 1.18, Phoenix ~> 1.7, Ash ~> 3.0, PostgreSQL. Version: [`VERSION`](VERSION) (currently 26.9.17). Thirteen Ash domains are configured in `config/config.exs` (Accounts, Billing, Coupling, Generation, Governance, Ledger, Library, Marketplace, Ocel, Operations, Platform, TemporalMemory, Ultracode).
+Stack: Elixir ~> 1.18 (dev pinned via asdf `.tool-versions` to elixir 1.20.2-otp-28 / erlang 28.5.0.2), Phoenix ~> 1.7, Ash ~> 3.0, PostgreSQL. Version: [`VERSION`](VERSION). Thirteen Ash domains are configured in `config/config.exs` (Accounts, Billing, Coupling, Generation, Governance, Ledger, Library, Marketplace, Ocel, Operations, Platform, TemporalMemory, Ultracode).
 
 ## Documentation
 
@@ -35,22 +35,32 @@ See [`reference/actuation-and-semantics.md`](docs/claude/diataxis/reference/actu
 - **Leases** — provider-pull claims over epochs ([`lease.ex`](lib/xaas/ultracode/lease.ex)); every consequential worker actuation carries a lease and seals a receipt.
 - **Multi-repo registry** — clone paths, sensing profiles, and verifier suites per target repository ([`repos.ex`](lib/xaas/ultracode/repos.ex)).
 
-Operate it through `mix xaas.ultracode.{start,status,stop,audit,learn,ocel_conformance,reconcile_runs,export_ocel,repos}`, `mix xaas.autonomic.{run,controls}`, and `mix xaas.semantic.crown`. Run procedures are documented under [`docs/ultracode/`](docs/ultracode/).
+Operate it through `mix xaas.ultracode.{start,status,stop,audit,learn,ocel_conformance,reconcile_runs,export_ocel,repos,tick_health}`, `mix xaas.autonomic.{run,controls}`, `mix xaas.autonomy.{qualify,audit,stress,export_ocel}` (`qualify --run <id>|--latest [N]` autonomy self-check over one Run: ALIVE / `PARTIAL_ALIVE (missing: ...)` / BLOCKED across five courts — edge resolution, replay determinism, coverage, origin authority, provider neutrality — via `Xaas.Ultracode.Recurrence.recurrence_edge/1`; `audit` = UAR/DCR=0 window audit, `stress` = injected-failure suite, `export_ocel` = OCEL 2.0 ndjson episode export), `mix xaas.semantic.crown`, `mix xaas.semantic.{materialize,receipt}`, `mix xaas.sjira.ard_court`, `mix xaas.fabric.redeploy`, and the goal-checkpoint court tasks `mix xaas.{stop_court,episode,machine_experience,replay}`. `xaas.sjira.ard_court` exits 0 = ACCEPTED, `xaas.stop_court` exits 0 = STOP, `xaas.fabric.redeploy` is plan-only unless `--cut`, `xaas.autonomy.qualify` exits 0 when judged (ALIVE or PARTIAL_ALIVE) and non-zero only BLOCKED, matching `xaas.ultracode.audit`. `mix xaas.successor` is retired (v26.9.25): it prints `UNSUPPORTED(provider_capability)` (`compile_prose_retired`) and exits 69 without running. Run procedures are documented under [`docs/ultracode/`](docs/ultracode/).
 
 ## Execution fabric internal API
 
 All worker-facing routes sit behind the internal API token gate and fail closed when it is unset (`lib/xaas_web/controllers/execution_fabric_controller.ex`):
 
-- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with seven verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`.
+- `POST /internal-api/execution/mcp` — stateless MCP JSON-RPC with eight verbs: `claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`, `close_candidate`, `refuse`, `actuate`, `cancel_work` (cancels the leased work; the sealed receipt carries outcome `blocked` — cancellation, not subject failure). Bearer-authenticated with `INTERNAL_API_TOKEN`; observed serverInfo `xaas-ultracode-lease 1.0.0`.
 - `POST /internal-api/execution/hooks/:event` — plain-JSON hook surface.
 - `GET /internal-api/execution/epochs/:epoch_id/receipts` — receipt read path.
 - `POST /internal-api/execution/runs` — org-scoped run submission.
+
+The bounded runtime fabric (`lib/xaas_web/controllers/fabric_controller.ex`, protocol `xaas-fabric/1`) adds the `/internal-api/fabric` scope behind the same internal API token gate:
+
+- `GET /internal-api/fabric/probe` — capabilities, protocol, and long-poll bound.
+- `POST /internal-api/fabric/admit` — capability admit set (admitted / refused).
+- `POST /internal-api/fabric/runs` — idempotent org-scoped submit keyed `fabric:<org>:<key>` under `pg_advisory_xact_lock` (201 new / 200 idempotent replay).
+- `GET /internal-api/fabric/epochs/:epoch_id/receipts` — bounded long-poll (`wait_ms` ≤ 25000, `204` on timeout).
+- `POST /internal-api/fabric/actuate` — always `403 REFUSED(authority_ceiling:actuate)`.
+
+Fabric runs move through the pure state machine new → probed → admitted → submitted → executing → sealed → replayed.
 
 `actuate` is the only way a provider worker crosses into the admitted `Xaas.Actuation.run/4` DO kernel.
 
 ## xaas-fabric ZCode plugin
 
-`priv/zcode_plugin/` is a ggen project (`ontology.ttl` + templates) that renders the [`xaas-fabric`](priv/zcode_plugin/marketplace/xaas-fabric) ZCode plugin: the `xaas-execution` MCP server, a PreToolUse lease gate, a `/xaas` command, and the receipted worker doctrine (`claim → persist lease → admit_tool → close_candidate`). Projection drift is checked by [`test/xaas/zcode_plugin/projection_test.exs`](test/xaas/zcode_plugin/projection_test.exs).
+`priv/zcode_plugin/` is a ggen project (`ontology.ttl` + templates) that renders the [`xaas-fabric`](priv/zcode_plugin/marketplace/xaas-fabric) ZCode plugin: the `xaas-execution` MCP server, a PreToolUse lease gate, a `/xaas` command, and the receipted worker doctrine (`claim → persist lease → admit_tool → close_candidate`). Projection drift is checked by [`test/xaas/zcode_plugin/projection_test.exs`](test/xaas/zcode_plugin/projection_test.exs). The `zcode_xaas_token` option is declared sensitive (masked in output); installed-plugin caches need a reinstall to pick the flag up.
 
 ## OCEL v2 telemetry
 
@@ -72,7 +82,7 @@ This documentation does not promote source inspection to runtime proof. The repo
 
 ## Development commands
 
-The repository doctrine in [`CLAUDE.md`](CLAUDE.md) is authoritative for development and testing. Tests run against real Postgres via docker compose (`db` service, credentials under `secrets/.postgrespassword`); CLAUDE.md gives the exact environment export. Core qualification commands include:
+The repository doctrine in [`CLAUDE.md`](CLAUDE.md) is authoritative for development and testing. Tests run against real local Postgres (brew `postgresql@14`, database `xaas_dev` on localhost:5432; `DEV_DB_*` env vars override — see `config/dev.exs`). Run all mix commands under the asdf-pinned toolchain (`.tool-versions`: elixir 1.20.2-otp-28 / erlang 28.5.0.2); a mixed-toolchain compile corrupts `_build` and can 500 a running server (observed 2026-09-26). Core qualification commands include:
 
 ```bash
 mix compile --force
