@@ -26,3 +26,11 @@ end to end. When every STATE row is DONE the loop records `:complete`.
 A burn-in is only closed when `loop.ndjson` grows past 01:16Z without the
 driver (cron-fired ticks), steps 10–14 flip DONE with head-verified receipts,
 and the final `validate.sh` re-run exits 0 on the completed STATE.
+
+## History (continued)
+
+| ts | standing | note |
+|---|---|---|
+| 2026-09-27T05:45Z | BUILD_BROKEN | cron fired but workers had NO xaas-execution tools — server relaunch (04:01Z) omitted INTERNAL_API_TOKEN; MCP initialize 401; ticks 14–18 worker_unclosed |
+| 2026-09-27T05:52Z | PARTIAL_ALIVE | server relaunched WITH token + loop env (pid 99235); pool 5→10; tick 19 (oban 20628) wedged 80 min post-claim, no spawn — cancelled via SQL (typed UNKNOWN root cause; watchdog ordered P0.1) |
+| 2026-09-27T06:45Z | ALIVE | tick 20 (epoch e71a1843) ran clean end-to-end; steps 10–14 DONE via ticks 20–23, all head-verified; **burn-in COMPLETE: 14/14**; final validate.sh: **52/52 runs OCEL v2 valid**; loop recorded :complete |
