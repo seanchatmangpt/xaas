@@ -8,11 +8,13 @@ defmodule Xaas.Repo.Migrations.AddUltracodeFrontierClosure do
       add :frontier_size, :bigint, null: false, default: 0
       add :frontier_version, :bigint, null: false, default: 0
       add :frontier_recorded_at, :utc_datetime_usec
+      add :suspended_at, :utc_datetime_usec
     end
   end
 
   def down do
     alter table(:ultracode_runs) do
+      remove :suspended_at
       remove :frontier_recorded_at
       remove :frontier_version
       remove :frontier_size
