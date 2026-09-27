@@ -47,10 +47,12 @@ defmodule Xaas.Ultracode.ClosureController do
     with {:ok, run} <- Ash.get(Run, id, action: :read_unscoped, authorize?: false) do
       case Frontier.from_run(run) do
         {:ok, frontier} ->
-          if Frontier.closed?(frontier) do
+          active_epochs = active_epoch_count(run.id)
+
+          if closure_proved?(frontier, active_epochs) do
             close(run, frontier)
           else
-            suspend(run, frontier, :frontier_open)
+            suspend(run, frontier, {:frontier_open, active_epochs})
           end
 
         {:error, reason} ->
@@ -83,6 +85,27 @@ defmodule Xaas.Ultracode.ClosureController do
            Ash.get(Run, epoch.run_id, action: :read_unscoped, authorize?: false) do
       record(run, Frontier.empty(source))
     end
+  end
+
+  # Active epoch state is live database truth, not a worker-supplied
+  # frontier assertion. A snapshot may have been recorded before the final
+  # epoch settled; closure therefore joins the persisted semantic frontier
+  # with the current Run/Epoch lifecycle.
+  defp closure_proved?(frontier, active_epochs) do
+    active_epochs == 0 and
+      frontier["pending_work"] == 0 and
+      frontier["unsettled_epochs"] == 0 and
+      frontier["unpublished_deltas"] == 0 and
+      frontier["unsatisfied_dependencies"] == 0
+  end
+
+  defp active_epoch_count(run_id) do
+    require Ash.Query
+
+    Epoch
+    |> Ash.Query.for_read(:read_unscoped)
+    |> Ash.Query.filter(run_id == ^run_id and state in [:expected, :running])
+    |> Ash.count!(authorize?: false)
   end
 
   defp close(%Run{state: :completed} = run, frontier) do
