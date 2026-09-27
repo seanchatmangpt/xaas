@@ -483,10 +483,12 @@ defmodule Xaas.Ultracode.Run do
       accept([
         :frontier,
         :frontier_digest,
-        :frontier_size,
-        :frontier_recorded_at
+        :frontier_size
       ])
+      require_atomic?(false)
 
+      validate({Xaas.Ultracode.Validations.FrontierConsistent, []})
+      change(set_attribute(:frontier_recorded_at, &DateTime.utc_now/0))
       change(increment(:frontier_version))
       multitenancy(:bypass)
     end
