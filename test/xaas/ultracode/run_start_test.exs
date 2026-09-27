@@ -16,7 +16,7 @@ defmodule Xaas.Ultracode.RunStartTest do
 
   @moduletag :ultracode
 
-  alias Xaas.Ultracode.{Epoch, Receipt, Run}
+  alias Xaas.Ultracode.{ClosureController, Epoch, Receipt, Run}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -90,9 +90,24 @@ defmodule Xaas.Ultracode.RunStartTest do
 
     assert run.state == :running
 
-    # Zero manual Epoch creation from here on -- only real tick calls,
-    # same real Reactor the AshOban :tick scheduled action invokes.
-    Enum.each(1..4, fn _tick -> {:ok, _} = Reactor.run(Xaas.Ultracode.Reactor) end)
+    # Zero manual Epoch creation from here on -- only real tick calls.
+    # Before the final closing tick, the scheduler records the semantic
+    # frontier as empty; the worker never grants completion to itself.
+    Enum.each(1..3, fn _tick -> {:ok, _} = Reactor.run(Xaas.Ultracode.Reactor) end)
+
+    run_before_final = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
+
+    assert {:ok, _} =
+             ClosureController.record(run_before_final, %{
+               "source" => "run_start_test",
+               "pending_work" => 0,
+               "active_epochs" => 1,
+               "unsettled_epochs" => 0,
+               "unpublished_deltas" => 0,
+               "unsatisfied_dependencies" => 0
+             })
+
+    {:ok, _} = Reactor.run(Xaas.Ultracode.Reactor)
 
     final_run = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
     assert final_run.state == :completed
