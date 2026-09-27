@@ -46,7 +46,7 @@ defmodule Xaas.Ultracode.ClosureController do
   """
   @spec reconcile_cycle_exhausted(Run.t()) :: {:ok, map()} | {:error, term()}
   def reconcile_cycle_exhausted(%Run{id: id}) do
-    with {:ok, run} <- Ash.get(Run, id, action: :read_unscoped, authorize?: false) do
+    with {:ok, %Run{} = run} <- Ash.get(Run, id, action: :read_unscoped, authorize?: false) do
       case Frontier.from_run(run) do
         {:ok, frontier} ->
           active_epochs = active_epoch_count(run.id)
