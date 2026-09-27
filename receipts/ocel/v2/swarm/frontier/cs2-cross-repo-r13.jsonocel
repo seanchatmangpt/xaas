@@ -15,6 +15,9 @@
         "default_base_sha": "f1d42eb39a71d57787a05ab2e0f2a24f3806cff5",
         "parent_checkpoint_sha": "88d224bdb535224a11064826a8f258ae59e250a5",
         "upstream_igniter_branch": "closure/v26.9.27-cs2-cross-repo-r13-igniter",
+        "upstream_igniter_checkpoint": "c44616781b643d37598756b09dedbe9b8d1847e0",
+        "upstream_marketplace_branch": "closure/v26.9.27-cs2-cross-repo-r14-marketplace",
+        "upstream_marketplace_checkpoint": "26ce4a0237e5d94153756c5f27048e789ad8fedf",
         "authority": "NONE",
         "lease_issued": false
       }
