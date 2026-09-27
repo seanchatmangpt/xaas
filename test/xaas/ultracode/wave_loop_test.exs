@@ -677,14 +677,14 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       refute outcome == :busy
     end
 
-    test "a stale lease is reaped (receipted) and the tick proceeds; an unclosed worker BLOCKEDs the row",
+    test "a stale lease is reclaimed and an unclosed worker requeues the work item",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
       {:ok, stale_run, _stale_epoch} = loop_run_with_epoch!(live_lease: false)
 
       fake_dispatch = fn _epoch_id, _opts ->
-        # The worker "exited 0" but never closed the epoch: the loop must
-        # reap it (Engine semantics) and mark the row BLOCKED, never DONE.
+        # The worker "exited 0" but never closed the epoch: the attempt is
+        # reclaimed, but the higher-level work item remains pending.
         {:ok,
          %{
            status: :ok,
@@ -710,7 +710,7 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                  dispatcher: fake_dispatch
                )
 
-      assert outcome == :blocked
+      assert outcome == :requeued
 
       # The stale epoch from the "previous tick" is reaped...
       stale_epoch =
@@ -718,8 +718,8 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert stale_epoch.state == :failed
 
-      # ...and this tick's fresh run exists too; its unclosed epoch is
-      # reaped with a receipt (Engine semantics, never a silent drop).
+      # ...and this tick's fresh run exists too; its unclosed attempt is
+      # reclaimed with a receipt (never a silent drop).
       runs = loop_runs()
       assert length(runs) == 2
       new_run = Enum.find(runs, &(&1.id != stale_run.id))
@@ -735,13 +735,15 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert [%Receipt{} = receipt] = receipts
       assert receipt.outcome == :refused
-      assert receipt.evidence["reaped_by"] == "xaas-wave-loop"
+      assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+      assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
 
-      # The STATE row is BLOCKED with the tick stamp; telemetry records it.
+      # Attempt failure does not poison the work item: the row stays
+      # pending and telemetry records the requeue.
       {:ok, state} = state_path |> File.read!() |> State.parse()
-      assert fetch_step(state, "3").status == :blocked
-      assert File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
-      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"blocked")
+      assert fetch_step(state, "3").status == :pending
+      refute File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
+      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"requeued")
     end
 
     test "a completed worker advances the STATE row, shrinks the note, and appends telemetry",
@@ -1176,11 +1178,14 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                  dispatcher: dispatcher
                )
 
-      # dispatch_refused is the typed settle for a worker that died before
-      # producing a classified outcome; the law is "settled typed", any of
-      # these beat an executing-forever job.
-      assert outcome in [:blocked, :worker_unclosed, :handed_off, :dispatch_refused]
-      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"blocked")
+      # A dead worker is either observed after spawn (:requeued) or the
+      # boundary refuses before spawn (:dispatch_refused). Both terminalize
+      # the disposable attempt and leave the work recoverable.
+      assert outcome in [:requeued, :dispatch_refused]
+
+      telemetry = telemetry_lines(telemetry_path)
+      assert telemetry =~ ~s("outcome":"requeued") or
+               telemetry =~ ~s("outcome":"dispatch_refused")
 
       # Reclaim: no epoch of this run is left running/expected with a live
       # lease — the slot is free for the next tick without manual SQL.
