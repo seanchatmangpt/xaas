@@ -66,7 +66,12 @@ defmodule Xaas.Ultracode.Dispatch do
        repo whose `:ultracode_repos` entry pins `toolchain_env`, those
        assignments ride along verbatim (literal values, no shell
        expansion -- see the Worktrees "Worker environment contract"); the
-       caller's `:extra_env` is applied last and wins on duplicates. A
+       caller's `:extra_env` is applied last and wins on duplicates. The
+       fleet lever `config :xaas, :ultracode_subagent_max_turns` (default
+       nil) injects `ZCODE_SUBAGENT_MAX_TURNS` -- the subagent turn cap
+       the vendored runtime reads at its child-session spawn site
+       (zcode-cli src/max-turns.ts) -- as the lowest-precedence injected
+       assignment; nil injects nothing. A
        repo without a pin (the plain string registry shape, e.g. the APS
        entry) dispatches exactly as before. No goal text is ever placed
        on the command
@@ -540,20 +545,38 @@ defmodule Xaas.Ultracode.Dispatch do
 
     log_path = resolved.log_path || default_log_path(epoch_id)
 
-    env_added = [
-      {"XAAS_WORKER", "1"},
-      {"XAAS_LEASE_CWD", cwd_real},
-      # Per-epoch lease-state key on the zcode side (src/gall-work.ts): the
-      # worker's lease state file gains a "-<XAAS_LEASE_ID>" suffix so two
-      # dispatched workers sharing one work surface no longer collide on
-      # the per-cwd file (exit 65 lease_conflict).
-      {"XAAS_LEASE_ID", epoch_id},
-      # The worker's OCEL 2.0 tap (zcode-cli src/ocel-tap.ts): without this
-      # every dispatched session is unobserved -- no ocel:eid stream, no
-      # export_run/ocel_validate conformance evidence for the run.
-      {"ZCODE_OCEL", "1"}
-      | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
-    ]
+    # Fleet lever -> env (`config :xaas, :ultracode_subagent_max_turns`,
+    # see config.exs): the vendored runtime reads ZCODE_SUBAGENT_MAX_TURNS
+    # at its subagent spawn site (zcode-cli src/max-turns.ts). Placed
+    # FIRST on purpose -- the lowest-precedence injected assignment, so a
+    # repo `toolchain_env` pin or the caller's `:extra_env` (last wins
+    # under /usr/bin/env) can still override it per worker. nil injects
+    # nothing: the list stays byte-identical to the pre-lever shape.
+    turn_cap_env =
+      case Application.get_env(:xaas, :ultracode_subagent_max_turns) do
+        n when is_integer(n) and n > 0 ->
+          [{"ZCODE_SUBAGENT_MAX_TURNS", Integer.to_string(n)}]
+
+        _ ->
+          []
+      end
+
+    env_added =
+      turn_cap_env ++
+        [
+          {"XAAS_WORKER", "1"},
+          {"XAAS_LEASE_CWD", cwd_real},
+          # Per-epoch lease-state key on the zcode side (src/gall-work.ts): the
+          # worker's lease state file gains a "-<XAAS_LEASE_ID>" suffix so two
+          # dispatched workers sharing one work surface no longer collide on
+          # the per-cwd file (exit 65 lease_conflict).
+          {"XAAS_LEASE_ID", epoch_id},
+          # The worker's OCEL 2.0 tap (zcode-cli src/ocel-tap.ts): without this
+          # every dispatched session is unobserved -- no ocel:eid stream, no
+          # export_run/ocel_validate conformance evidence for the run.
+          {"ZCODE_OCEL", "1"}
+          | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
+        ]
 
     {protocol, prompt, argv_tail, descriptor} =
       case semantic_descriptor(epoch, worker_id, cwd_real) do

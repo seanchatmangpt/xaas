@@ -330,6 +330,20 @@ config :xaas, :ultracode_wave_loop_concurrency, wave_loop_concurrency
 # checkout; the same fact as `ZcodePackage.default_cli_dir/0`.
 config :xaas, :ultracode_dispatch_cli_dir, "/Users/sac/zcode-cli"
 
+# Subagent turn cap forwarded to every dispatched zcode worker
+# (`Xaas.Ultracode.Dispatch.build/2` -> env `ZCODE_SUBAGENT_MAX_TURNS`).
+# The vendored runtime reads it at the subagent child-session spawn site
+# (zcode-cli src/max-turns.ts; precedence there: explicit env > the
+# launcher's setting.json `subagents.maxTurns` lowering > upstream
+# default 4). nil injects nothing: the worker then inherits whatever its
+# launching environment exports, exactly as before this lever existed.
+# Measured 2026-09-27 (zcode-cli, live cap=100): the cap counts the
+# worker's own turns including the final report, so the value must
+# exceed the longest planned sequential tool chain PLUS that report
+# turn (a 100-call probe completed all 100 calls and was still killed
+# before its report).
+config :xaas, :ultracode_subagent_max_turns, nil
+
 config :xaas, :ultracode_providers, %{
   "zcode" => %{
     capabilities: ["construction", "gall_work"],

@@ -421,6 +421,93 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert run.id
   end
 
+  test "plan injects ZCODE_SUBAGENT_MAX_TURNS only when :ultracode_subagent_max_turns is set",
+       %{worktree: worktree} do
+    {_run, epoch} = create_epoch!(worktree)
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    prev = Application.get_env(:xaas, :ultracode_subagent_max_turns)
+
+    on_exit(fn ->
+      if prev,
+        do: Application.put_env(:xaas, :ultracode_subagent_max_turns, prev),
+        else: Application.delete_env(:xaas, :ultracode_subagent_max_turns)
+    end)
+
+    # nil default injects nothing: env_added stays byte-identical to the
+    # pre-lever shape (the exact-equality env test pins that).
+    {:ok, plain} =
+      Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    refute Enum.any?(plain.env_added, fn {k, _} -> k == "ZCODE_SUBAGENT_MAX_TURNS" end)
+
+    Application.put_env(:xaas, :ultracode_subagent_max_turns, 12)
+
+    {:ok, plan} =
+      Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    assert {"ZCODE_SUBAGENT_MAX_TURNS", "12"} in plan.env_added
+
+    # Lowest-precedence injection: the caller's :extra_env (applied last)
+    # still wins on duplicates under /usr/bin/env.
+    {:ok, overridden} =
+      Dispatch.plan(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        extra_env: %{"ZCODE_SUBAGENT_MAX_TURNS" => "7"}
+      )
+
+    last =
+      overridden.env_added
+      |> Enum.filter(fn {k, _} -> k == "ZCODE_SUBAGENT_MAX_TURNS" end)
+      |> List.last()
+
+    assert last == {"ZCODE_SUBAGENT_MAX_TURNS", "7"}
+  end
+
+  test "a configured turn cap reaches the worker process as ZCODE_SUBAGENT_MAX_TURNS",
+       %{worktree: worktree} do
+    {run, epoch} = create_epoch!(worktree)
+
+    fake_log = test_path("dispatch-turncap", ".log")
+
+    cli_dir =
+      fake_cli_dir("""
+      printf 'turncap=%s\\n' "$ZCODE_SUBAGENT_MAX_TURNS" > "$FAKE_LOG"
+      exit 0
+      """)
+
+    seal_receipt!(epoch, :partial_alive, %{"head_verified" => false})
+
+    prev = Application.get_env(:xaas, :ultracode_subagent_max_turns)
+
+    on_exit(fn ->
+      if prev,
+        do: Application.put_env(:xaas, :ultracode_subagent_max_turns, prev),
+        else: Application.delete_env(:xaas, :ultracode_subagent_max_turns)
+    end)
+
+    Application.put_env(:xaas, :ultracode_subagent_max_turns, 42)
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        extra_env: %{"FAKE_LOG" => fake_log}
+      )
+
+    assert result.status == :ok
+    assert result.attempts == 1
+
+    # The turn cap really reached the child process environment.
+    assert File.read!(fake_log) =~ "turncap=42"
+
+    assert run.id
+  end
+
   test "a semantic dispatch runs the NATIVE protocol: gall-work argv, descriptor on disk, no /xaas anywhere",
        %{worktree: worktree} do
     {_run, epoch} =

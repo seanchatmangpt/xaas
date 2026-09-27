@@ -175,6 +175,14 @@ Beyond the multi-repo keys above (`:ultracode_repos`,
   fabric-native wave loop (§8). `:ultracode_wave_loop_concurrency` (currently
   `1`, must stay ≤ `:ultracode_pool_capacity`) bounds loop workers in
   flight; a surplus fire records `busy` and exits 0.
+  `:ultracode_subagent_max_turns` (default `nil` = inherit) forwards
+  `ZCODE_SUBAGENT_MAX_TURNS` to every dispatched worker — the subagent
+  turn cap the vendored zcode runtime reads at its child-session spawn
+  site (zcode-cli `src/max-turns.ts`; a repo `toolchain_env` pin or the
+  caller's `:extra_env` still overrides). Must exceed the longest planned
+  sequential tool chain PLUS the final report turn: the cap counts the
+  worker's own turns, and a 100-call probe (2026-09-27, live cap=100)
+  completed all 100 calls and was still killed before its report.
 - Dev overrides the cron-path loop state/telemetry paths via
   `ULTRACODE_WAVE_LOOP_STATE_PATH` / `ULTRACODE_WAVE_LOOP_TELEMETRY_PATH`
   (config/dev.exs; unset env keeps the module defaults under `tmp/w8-loop/`).
