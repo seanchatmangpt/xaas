@@ -81,11 +81,13 @@ config :xaas, :ex4pm_ontology_check,
 # Measured agent turns average minutes (burn-in 2026-09-26: a mechanical
 # step ~1-6 min), so a 5-minute cadence with 3 slots keeps the loop fed
 # without pile-up; surplus fires record `busy` and exit 0.
-# 1 for now: parallel steps sharing ONE work surface collide on the
+# 1 for now: parallel steps sharing ONE work surface used to collide on the
 # per-cwd lease state file (sha256(cwd), exit 65 lease_conflict; observed
 # 2026-09-27 00:11-00:35 — the second worker lawfully waited out the
-# first's lease). Raising it requires per-epoch lease keys or per-step
-# work surfaces first.
+# first's lease). Per-epoch lease keys (XAAS_LEASE_ID, zcode-cli c2adb24 +
+# dispatch env) remove the lease-file collision; the remaining boundary to
+# raising this is git-contention on the SHARED work surface (two workers
+# committing one repo race on index.lock) — per-step work surfaces first.
 wave_loop_concurrency = 1
 
 config :xaas, Oban,
@@ -107,8 +109,8 @@ config :xaas, Oban,
     # argument as `ultracode_wave` (slot-filling work must never overlap
     # itself, or capacity accounting races).
     ultracode_engine: 1,
-    # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (hourly) -- the
-    # fabric-native wave loop: ONE real zcode worker per tick, dispatched
+    # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (every 5 minutes) --
+    # the fabric-native wave loop: ONE real zcode worker per tick, dispatched
     # synchronously by `Xaas.Ultracode.WaveLoop.tick/1` from the loop STATE
     # file. A tick's dispatch may legitimately run most of an hour, so the
     # single slot is what makes "one loop worker at a time" real; a second
