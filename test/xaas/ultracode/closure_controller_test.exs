@@ -3,7 +3,7 @@ defmodule Xaas.Ultracode.ClosureControllerTest do
 
   @moduletag :ultracode
 
-  alias Xaas.Ultracode.{ClosureController, Frontier, Run}
+  alias Xaas.Ultracode.{ClosureController, Frontier, OcelEgress, Run}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
@@ -19,6 +19,10 @@ defmodule Xaas.Ultracode.ClosureControllerTest do
     reloaded = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
     assert reloaded.state == :suspended
     assert reloaded.standing == :unknown
+    assert reloaded.suspended_at != nil
+
+    {:ok, ocel} = OcelEgress.derive_run(reloaded)
+    assert Enum.any?(ocel["ocel:events"], &(&1["type"] == "run_suspended"))
   end
 
   test "open frontier suspends, resume adds bounded headroom, empty frontier closes" do
