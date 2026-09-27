@@ -42,7 +42,7 @@ defmodule Xaas.Ultracode.EngineTest do
 
   @moduletag :ultracode
 
-  alias Xaas.Ultracode.{Engine, Epoch, Lease, MissedEpochs, Receipt, Run, TickHealth}
+  alias Xaas.Ultracode.{ClosureController, Engine, Epoch, Lease, MissedEpochs, Receipt, Run, TickHealth}
 
   setup do
     # The engine dispatches slot workers in tasks that really touch the DB
@@ -259,9 +259,21 @@ defmodule Xaas.Ultracode.EngineTest do
 
     assert [%{state: :expected}] = epochs_after_cycle
 
-    # ...the next tick starts it, the next engine cycle closes it, and the
-    # cycle's advance lands the Run at max_cycles.
+    # ...the next tick starts it. Before the final provider turn the scheduler
+    # records that there is no semantic work beyond this in-flight epoch.
     {:ok, _} = Reactor.run(Xaas.Ultracode.Reactor)
+
+    run_before_final = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
+
+    assert {:ok, _} =
+             ClosureController.record(run_before_final, %{
+               "source" => "engine_test",
+               "pending_work" => 0,
+               "active_epochs" => 1,
+               "unsettled_epochs" => 0,
+               "unpublished_deltas" => 0,
+               "unsatisfied_dependencies" => 0
+             })
 
     report_2 =
       Engine.cycle(worker: &claim_close_worker/2, pool_capacity: 5, providers: [provider])
