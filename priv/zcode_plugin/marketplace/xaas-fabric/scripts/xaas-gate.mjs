@@ -68,16 +68,31 @@ function stateFile(cwd, suffix) {
   return path.join(STATE_DIR, `${createHash("sha256").update(cwd).digest("hex")}${suffix}`);
 }
 
+// Key-matching law: the worker (zcode-cli src/gall-work.ts leaseFilePathsKeyed)
+// writes its lease state to a -<XAAS_LEASE_ID>-suffixed file when the
+// dispatcher sets that env. The gate must read the same key first or a keyed
+// worker is fenceless (denied everything) — observed 2026-09-27 as wave-loop
+// tick 14's worker_unclosed: exit 0, work done, no receipt sealed. Legacy
+// per-cwd path stays as fallback so non-keyed sessions are unchanged.
+function leaseIdSuffix() {
+  const id = (process.env.XAAS_LEASE_ID ?? "").trim();
+  return id ? `-${id.replace(/[^A-Za-z0-9._-]/g, "_")}` : "";
+}
+
 function readLease(leaseCwd) {
+  const keyed = leaseIdSuffix();
   for (const cwd of new Set([leaseCwd, realpathLoose(leaseCwd)])) {
-    try {
-      const lease = JSON.parse(readFileSync(stateFile(cwd, ".json"), "utf8"));
-      const expiresAt = Date.parse(lease.lease_expires_at ?? "");
-      if (lease && typeof lease.lease_token === "string" && lease.lease_token && expiresAt > Date.now()) {
-        return lease;
+    const suffixes = keyed ? [`${keyed}.json`, ".json"] : [".json"];
+    for (const suffix of suffixes) {
+      try {
+        const lease = JSON.parse(readFileSync(stateFile(cwd, suffix), "utf8"));
+        const expiresAt = Date.parse(lease.lease_expires_at ?? "");
+        if (lease && typeof lease.lease_token === "string" && lease.lease_token && expiresAt > Date.now()) {
+          return lease;
+        }
+      } catch {
+        // try the next candidate key
       }
-    } catch {
-      // try the next candidate key
     }
   }
   return null;
