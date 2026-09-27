@@ -208,6 +208,17 @@ function bashDecision(command, lease, ctx) {
   // timestamp had no clock available inside the allowlist).
   if (bin === "pwd" || bin === "echo" || bin === "date") return null;
 
+  // `sh`/`bash` script execution, worktree-confined on every non-flag arg
+  // (observed 2026-09-26: a step whose acceptance was "run the script and
+  // confirm its output" had no lawful way to execute any file it wrote).
+  if (bin === "sh" || bin === "bash") {
+    if (!inside(worktree, cwdReal)) return `${bin} is only allowed with the session cwd inside the leased worktree`;
+    for (const a of args.filter((x) => !x.startsWith("-"))) {
+      if (!inside(worktree, realpathLoose(path.resolve(cwdReal, a)))) return `${bin} may only execute inside the leased worktree`;
+    }
+    return null;
+  }
+
   return `${bin} is not an allowed command for a leased worker`;
 }
 

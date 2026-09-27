@@ -255,11 +255,10 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     === THE LAW (STATE section (c), verbatim — non-negotiable) ===
     #{String.trim_trailing(state.law || default_law())}
 
-    === ON COMPLETION (mandatory, do BOTH before you finish) ===
-    1. Update #{sp}: set this step's row status and fill its DONE evidence \
-    with real command+exit evidence. Never leave a step done without evidence.
-    2. Append EXACTLY ONE telemetry line to #{tp}:
-    {"ts":"<UTC ISO8601>","kind":"ultracode-wave-loop/1","step":"#{step.id}","action":"worker","detail":"<one line>","evidence":"<cmd+exit or artifact path>"}
+    === ON COMPLETION ===
+    Do NOT edit #{sp} or #{tp}: the loop settles the STATE row and telemetry     itself from your sealed receipt (workers sit outside those files'     authority fence — writes there are refused by design, observed \
+    2026-09-26). Close via the fabric with evidence; carry anything the \
+    coordinator must know inside your close evidence.
     """
     |> String.slice(0, 48_000)
   end
