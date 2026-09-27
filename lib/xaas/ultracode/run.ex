@@ -1109,8 +1109,10 @@ defmodule Xaas.Ultracode.Run do
     end
 
     # Persisted runtime frontier: Git/worker output does not close a Run.
-    # ClosureController records an exact frontier snapshot and only an observed
-    # empty frontier permits :completed. Missing evidence remains UNKNOWN.
+    # ClosureController records an exact frontier snapshot; for cycle-horizon
+    # closure, only an observed empty frontier permits :completed. Other explicit
+    # lifecycle owners retain their own terminal laws. Missing evidence remains
+    # UNKNOWN for the frontier-governed path.
     attribute :frontier, :map do
       allow_nil?(false)
       default(%{})
