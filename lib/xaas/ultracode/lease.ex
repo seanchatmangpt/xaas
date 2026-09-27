@@ -526,22 +526,24 @@ defmodule Xaas.Ultracode.Lease do
   materialized into a fresh attempt. A LIVE lease is never stolen merely
   because a caller asks to reap it: only direct owner-loss observations
   (worker exit/down, dispatch timeout, or provider-rate termination) may
-  reclaim a still-live token. Expiry/startup recovery must wait for the
-  lease clock.
+  reclaim a still-live token, and that observation must bind to the exact
+  owner via `:expected_lease_token` or `:expected_leased_to`. A generic
+  "worker died" fact can never revoke somebody else's live capability.
+  Expiry/startup recovery must wait for the lease clock.
 
   The state change is a single token-guarded UPDATE and the Receipt is
   created in the same database transaction. Concurrent close/refuse/reclaim
   races therefore have one winner; losers resolve the observed terminal or
   handed-off state instead of manufacturing a second terminal fact.
   """
-  @spec reclaim_epoch(String.t(), atom(), map()) ::
+  @spec reclaim_epoch(String.t(), atom(), map(), keyword()) ::
           {:reclaimed, Epoch.t(), Receipt.t()}
           | {:already_terminal, atom()}
           | :handed_off
           | {:settle_race, atom()}
           | {:error, term()}
-  def reclaim_epoch(epoch_id, reason, evidence \\ %{})
-      when is_binary(epoch_id) and is_atom(reason) and is_map(evidence) do
+  def reclaim_epoch(epoch_id, reason, evidence \\ %{}, opts \\ [])
+      when is_binary(epoch_id) and is_atom(reason) and is_map(evidence) and is_list(opts) do
     case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false) do
       {:ok, nil} ->
         {:error, {:epoch_not_found, epoch_id}}
@@ -550,18 +552,19 @@ defmodule Xaas.Ultracode.Lease do
         {:error, {:epoch_not_found, epoch_id, inspect(error)}}
 
       {:ok, %Epoch{} = epoch} ->
-        reclaim_epoch_record(epoch, reason, evidence)
+        reclaim_epoch_record(epoch, reason, evidence, opts)
     end
   end
 
-  defp reclaim_epoch_record(%Epoch{state: state}, _reason, _evidence)
-       when state not in [:expected, :running],
+  defp reclaim_epoch_record(%Epoch{state: state}, _reason, _evidence, _opts)
+       when state != :expected and state != :running,
        do: {:already_terminal, state}
 
-  defp reclaim_epoch_record(%Epoch{} = epoch, reason, evidence) do
+  defp reclaim_epoch_record(%Epoch{} = epoch, reason, evidence, opts) do
     lease_live? = epoch_lease_live?(epoch)
+    owner_loss_proven? = owner_gone_observation?(reason) and observed_owner?(epoch, opts)
 
-    if lease_live? and not owner_gone_observation?(reason) do
+    if lease_live? and not owner_loss_proven? do
       :handed_off
     else
       base_query =
@@ -656,6 +659,17 @@ defmodule Xaas.Ultracode.Lease do
         :worker_exit,
         :node_down
       ]
+
+  # A live lease is a capability. A generic failure observation is not
+  # sufficient authority to revoke it: the observer must bind the DOWN/exit
+  # fact to the worker id or exact token it actually observed.
+  defp observed_owner?(%Epoch{} = epoch, opts) do
+    expected_token = Keyword.get(opts, :expected_lease_token)
+    expected_worker = Keyword.get(opts, :expected_leased_to)
+
+    (is_binary(expected_token) and expected_token == epoch.lease_token) or
+      (is_binary(expected_worker) and expected_worker == epoch.leased_to)
+  end
 
   defp maybe_bind_reclaimed_lease(evidence, token) when is_binary(token),
     do: Map.put(evidence, "lease_fingerprint", lease_fingerprint(token))

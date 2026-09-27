@@ -68,15 +68,37 @@ defmodule Xaas.Ultracode.LeaseReclaimTest do
     assert Lease.live_leases(provider) == 1
 
     assert {:reclaimed, reclaimed, receipt} =
-             Lease.reclaim_epoch(epoch.id, :worker_down, %{
-               "observer" => "dispatch-monitor"
-             })
+             Lease.reclaim_epoch(
+               epoch.id,
+               :worker_down,
+               %{"observer" => "dispatch-monitor"},
+               expected_leased_to: "worker-dead"
+             )
 
     assert reclaimed.state == :failed
     assert receipt.evidence["reclaim_reason"] == "worker_down"
     assert receipt.evidence["lease_was_live"] == true
     assert is_binary(receipt.evidence["lease_fingerprint"])
     assert Lease.live_leases(provider) == 0
+  end
+
+  test "worker-down observation cannot revoke a different live owner" do
+    provider = provider_id()
+    {_run, epoch} = running_epoch(provider)
+
+    assert {:ok, _leased, _token, _run} =
+             Lease.claim_next(provider, "worker-live", epoch_id: epoch.id, pool_capacity: nil)
+
+    assert :handed_off =
+             Lease.reclaim_epoch(
+               epoch.id,
+               :worker_down,
+               %{"observer" => "dispatch-monitor"},
+               expected_leased_to: "some-other-worker"
+             )
+
+    assert Lease.live_leases(provider) == 1
+    assert Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false).state == :running
   end
 
   defp running_epoch(provider) do

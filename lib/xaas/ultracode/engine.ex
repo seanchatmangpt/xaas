@@ -241,8 +241,9 @@ defmodule Xaas.Ultracode.Engine do
     settle(epoch, result)
   rescue
     error ->
-      Logger.error("[ultracode-engine] slot worker crashed: #{Exception.message(error)}")
-      %{epoch_id: epoch.id, status: :worker_crashed, reason: Exception.message(error)}
+      message = Exception.message(error)
+      Logger.error("[ultracode-engine] slot worker crashed: #{message}")
+      settle(epoch, {:error, {:worker_crashed, message}})
   end
 
   # Decision from the DATABASE, not the worker's return value -- see the
@@ -283,38 +284,33 @@ defmodule Xaas.Ultracode.Engine do
     end
   end
 
-  # A worker that ENDED without closing and holds no live lease is a real
-  # refusal: `:mark_failed` plus a sealed `:refused` receipt naming the
-  # reap. (Same semantics as the wave's lease-holding reap via
-  # `Lease.refuse/3`; this is the no-live-lease variant, which
-  # `Autonomic.reap/2`'s else-branch marks failed but used to leave
-  # receipt-less.) Carries the XAAS-2601 system authority actor -- the
-  # same admitted `:ultracode_reactor` service the rest of the tick-driven
-  # pipeline (EpochReactor, NextEpoch, MissedEpochs, Lease closure) acts
-  # under.
+  # A worker that ENDED without closing and holds no live lease converges
+  # on the same lease-kernel transition as every other ownership-loss path.
+  # A live lease remains protected here because Engine does not possess an
+  # observed worker/token identity after the generic worker seam returns.
   defp reap(fresh, pre_worker_epoch) do
-    changeset = Ash.Changeset.for_update(fresh, :mark_failed, %{})
-
-    case Ash.update(changeset, actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
-      {:ok, failed} ->
-        {:ok, receipt} =
-          seal_receipt(failed, :refused, %{
-            "reaped_by" => "xaas-engine",
-            "reap_reason" => "worker_ended_without_closing",
-            "worker_had_lease" => not is_nil(pre_worker_epoch.lease_token)
-          })
-
+    case Lease.reclaim_epoch(fresh.id, :worker_unclosed, %{
+           "observer" => "xaas-engine",
+           "worker_had_lease" => not is_nil(pre_worker_epoch.lease_token)
+         }) do
+      {:reclaimed, reclaimed, receipt} ->
         Logger.warning(
-          "[ultracode-engine] reaped epoch #{fresh.id} (worker ended without closing)"
+          "[ultracode-engine] reclaimed epoch #{fresh.id} (worker ended without closing)"
         )
 
-        %{epoch_id: fresh.id, status: :reaped, receipt_id: receipt.id}
+        %{epoch_id: reclaimed.id, status: :reaped, receipt_id: receipt.id}
 
-      {:error, _error} ->
-        # The row moved concurrently (closed/refused/missed by someone else
-        # between the read and this write). Report what is really there.
-        observed = Ash.get!(Epoch, fresh.id, action: :read_unscoped).state
+      {:already_terminal, state} ->
+        %{epoch_id: fresh.id, status: :settle_race, observed_state: state}
+
+      :handed_off ->
+        %{epoch_id: fresh.id, status: :handed_off}
+
+      {:settle_race, observed} ->
         %{epoch_id: fresh.id, status: :settle_race, observed_state: observed}
+
+      {:error, reason} ->
+        %{epoch_id: fresh.id, status: :reclaim_failed, reason: inspect(reason)}
     end
   end
 
@@ -347,21 +343,6 @@ defmodule Xaas.Ultracode.Engine do
       {:ok, [%Receipt{id: id} | _]} -> id
       _ -> nil
     end
-  end
-
-  defp seal_receipt(epoch, outcome, evidence) do
-    Receipt
-    |> Ash.Changeset.for_create(
-      :seal,
-      %{
-        epoch_id: epoch.id,
-        subject: epoch.exact_subject,
-        outcome: outcome,
-        evidence: evidence,
-        sealed_at: DateTime.utc_now()
-      }
-    )
-    |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor))
   end
 
   # The worker seam: `:worker` opt wins (for any provider it is aimed at),

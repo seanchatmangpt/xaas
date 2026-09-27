@@ -611,11 +611,25 @@ defmodule Xaas.Ultracode.WaveLoop do
          outcome,
          %{state_path: state_path, telemetry_path: telemetry_path, tick_no: tick_no}
        ) do
-    case Lease.reclaim_epoch(epoch_id, reap_reason, %{
-           "observer" => "xaas-wave-loop",
-           "dispatch_outcome" => format_any(outcome),
-           "dispatch_evidence" => evidence_tail(res)
-         }) do
+    reclaim_opts =
+      case res do
+        %{worker_id: worker_id} when is_binary(worker_id) ->
+          [expected_leased_to: worker_id]
+
+        _ ->
+          []
+      end
+
+    case Lease.reclaim_epoch(
+           epoch_id,
+           reap_reason,
+           %{
+             "observer" => "xaas-wave-loop",
+             "dispatch_outcome" => format_any(outcome),
+             "dispatch_evidence" => evidence_tail(res)
+           },
+           reclaim_opts
+         ) do
       {:reclaimed, reclaimed, receipt} ->
         # Worker/process death is an ATTEMPT failure, not a work-item
         # verdict. The attempt is terminal + receipted (slot free), while

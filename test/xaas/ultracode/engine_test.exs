@@ -401,9 +401,31 @@ defmodule Xaas.Ultracode.EngineTest do
 
     receipt = Ash.get!(Receipt, receipt_id, authorize?: false)
     assert receipt.outcome == :refused
-    assert receipt.evidence["reaped_by"] == "xaas-engine"
-    assert receipt.evidence["reap_reason"] == "worker_ended_without_closing"
+    assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+    assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
+    assert receipt.evidence["observer"] == "xaas-engine"
     assert receipt.evidence["worker_had_lease"] == false
+  end
+
+  test "a worker exception converges on lease reclaim instead of leaking a slot" do
+    provider = unique_provider()
+    {_run, epoch} = running_run_and_epoch(provider)
+
+    [report] =
+      Engine.fill(
+        provider: provider,
+        worker: fn _epoch, _ctx -> raise "simulated worker crash" end
+      )
+
+    assert [%{status: :reaped, receipt_id: receipt_id}] = report.dispatched
+
+    reclaimed = Ash.get!(Epoch, epoch.id, action: :read_unscoped, authorize?: false)
+    assert reclaimed.state == :failed
+    assert Lease.live_leases(provider) == 0
+
+    receipt = Ash.get!(Receipt, receipt_id, authorize?: false)
+    assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+    assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
   end
 
   test "a rate-limited turn leaves the epoch reclaimable, not reaped" do
