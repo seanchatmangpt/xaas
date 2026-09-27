@@ -42,6 +42,9 @@ const TOOL_MAP = { Agent: "Task", TaskOutput: "Task", TaskStop: "Task", MultiEdi
 const GIT_SUBS = new Set(["add", "commit", "status", "diff", "log", "rev-parse", "show", "ls-files"]);
 const GIT_FORBIDDEN = new Set(["-c", "--exec-path", "--namespace", "--no-index", "-F", "--file", "-t", "--template"]);
 const READ_HELPERS = new Set(["ls", "cat", "head", "tail", "wc"]);
+// Sweep-profile git: strictly read-only subcommands (add/commit stay
+// worktree-only even in sweep mode).
+const GIT_SWEEP_SUBS = new Set(["status", "diff", "log", "rev-parse", "show", "ls-files"]);
 const SENSITIVE_HOME_DIRS = [".zcode", ".ssh", ".aws", ".gnupg", ".config", ".claude", ".docker", ".kube", ".netrc", ".npmrc"];
 
 function realpathLoose(p) {
@@ -191,6 +194,12 @@ function bashDecision(command, lease, ctx) {
   if (!lease) return "no live lease: claim_next and save the lease before running commands";
   const worktree = realpathLoose(lease.worktree ?? "");
   const cwdReal = realpathLoose(ctx.leaseCwd);
+  // Typed read-only sweep profile (XAAS_SWEEP=1, dispatched per run via
+  // extra_env): READ-ONLY commands may target paths under the home directory
+  // except the sensitive set — for fleet-wide inventory sweeps that must
+  // observe many checkouts from one leased session. Writes, git state
+  // changes, and every other rule are UNCHANGED; still fail-closed.
+  const sweep = process.env.XAAS_SWEEP === "1";
 
   if (bin === "git") {
     let repo = cwdReal;
@@ -200,7 +209,11 @@ function bashDecision(command, lease, ctx) {
       repo = realpathLoose(path.resolve(cwdReal, rest[1]));
       rest = rest.slice(2);
     }
-    if (!inside(worktree, repo)) return "git is only allowed inside the leased worktree";
+    if (!inside(worktree, repo)) {
+      if (!sweep || !GIT_SWEEP_SUBS.has(rest[0])) return "git is only allowed inside the leased worktree";
+      const denial = sweepPathDenial(repo);
+      if (denial) return denial;
+    }
     if (!GIT_SUBS.has(rest[0])) return `git ${rest[0] ?? ""} is not allowed (add, commit, status, diff, log, rev-parse, show, ls-files only)`;
     for (const a of rest) {
       if (GIT_FORBIDDEN.has(a) || a.startsWith("--git-dir") || a.startsWith("--work-tree") || a.startsWith("--output")) {
@@ -211,9 +224,16 @@ function bashDecision(command, lease, ctx) {
   }
 
   if (READ_HELPERS.has(bin)) {
-    if (!inside(worktree, cwdReal)) return `${bin} is only allowed with the session cwd inside the leased worktree`;
+    if (!inside(worktree, cwdReal) && !sweep) return `${bin} is only allowed with the session cwd inside the leased worktree`;
     for (const a of args.filter((x) => !x.startsWith("-"))) {
-      if (!inside(worktree, realpathLoose(path.resolve(cwdReal, a)))) return `${bin} may only read inside the leased worktree`;
+      const target = realpathLoose(path.resolve(cwdReal, a));
+      if (inside(worktree, target)) continue;
+      if (sweep) {
+        const denial = sweepPathDenial(target);
+        if (denial) return denial;
+        continue;
+      }
+      return `${bin} may only read inside the leased worktree`;
     }
     return null;
   }
@@ -239,6 +259,17 @@ function bashDecision(command, lease, ctx) {
 
 function pathFor(input) {
   return input.file_path ?? input.filePath ?? input.notebook_path ?? input.path ?? null;
+}
+
+// Sweep-profile path law: under the home directory, never inside a
+// sensitive dir. Writes never reach this function (write decisions keep
+// their own worktree containment).
+function sweepPathDenial(p) {
+  if (!inside(realpathLoose(homedir()), p)) return "sweep reads must stay under the home directory";
+  for (const d of SENSITIVE_HOME_DIRS) {
+    if (inside(realpathLoose(path.join(homedir(), d)), p)) return `reading ${d} is not allowed even in sweep mode`;
+  }
+  return null;
 }
 
 function readPathDecision(input, ctx) {
