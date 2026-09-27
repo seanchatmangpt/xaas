@@ -1144,6 +1144,59 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       refute WaveLoop.chain_decision(:complete, false, false)
     end
 
+    test "a worker killed mid-turn (SIGKILL) settles the row typed and reclaims the epoch", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      import Ecto.Query
+
+      File.write!(state_path, @state)
+
+      # A real dispatch whose worker binary kills its own shell instantly:
+      # the dead-worker family (P0.2) must settle typed, never wedge.
+      kill_dir = fake_cli_dir("kill -9 $$\n")
+
+      # node_path must be a real node (Dispatch probes `--version`); the
+      # fake bin is a shell script killed by its own first line.
+      node = System.get_env("ZCODE_NODE_TEST") || "/opt/homebrew/bin/node"
+
+      dispatcher = fn epoch_id, _opts ->
+        Xaas.Ultracode.Dispatch.dispatch(epoch_id,
+          provider: "zcode",
+          cli_dir: kill_dir,
+          node_path: node,
+          timeout_seconds: 30
+        )
+      end
+
+      assert {:ok, %{outcome: outcome, step: "3"}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: dispatcher
+               )
+
+      # dispatch_refused is the typed settle for a worker that died before
+      # producing a classified outcome; the law is "settled typed", any of
+      # these beat an executing-forever job.
+      assert outcome in [:blocked, :worker_unclosed, :handed_off, :dispatch_refused]
+      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"blocked")
+
+      # Reclaim: no epoch of this run is left running/expected with a live
+      # lease — the slot is free for the next tick without manual SQL.
+      assert [%Run{id: run_id}] = loop_runs()
+
+      live =
+        Xaas.Repo.all(
+          from(e in "ultracode_epochs",
+            where: e.run_id == ^Ecto.UUID.dump!(run_id) and e.state in ["running", "expected"],
+            select: e.id
+          )
+        )
+
+      assert [] == live
+    end
+
     defp pressure_line(ts, code) do
       Jason.encode!(%{
         "ts" => ts,

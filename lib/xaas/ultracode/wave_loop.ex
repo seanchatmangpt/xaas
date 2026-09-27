@@ -180,10 +180,9 @@ defmodule Xaas.Ultracode.WaveLoop do
       # uniqueness (period :infinity over incomplete states) would drop the
       # chained insert while the current tick's job is still `executing`.
       changeset =
-        Oban.Job.new(
+        Oban.Job.new(%{"chain" => true},
           worker: "Xaas.Ultracode.Run.Workers.WaveLoop",
-          queue: "ultracode_wave_loop",
-          args: %{"chain" => true}
+          queue: "ultracode_wave_loop"
         )
 
       case Oban.insert(changeset) do
