@@ -59,27 +59,22 @@ defmodule Xaas.Ultracode.ClosureControllerTest do
     assert completed.standing == :admitted
   end
 
-  test "corrupt persisted digest cannot prove closure" do
+  test "record_frontier refuses a digest that does not match its payload" do
     run = running_run!()
+    empty = Frontier.empty("test")
 
-    run =
-      run
-      |> Ash.Changeset.for_update(
-        :record_frontier,
-        %{
-          frontier: Map.drop(Frontier.empty("test"), ["digest"]),
-          frontier_digest: "sha256:" <> String.duplicate("0", 64),
-          frontier_size: 0,
-          frontier_recorded_at: DateTime.utc_now()
-        },
-        authorize?: false
-      )
-      |> Ash.update!()
-
-    assert {:ok, %{outcome: :suspended, reason: :frontier_digest_mismatch}} =
-             ClosureController.reconcile_cycle_exhausted(run)
-
-    assert Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false).state == :suspended
+    assert {:error, %Ash.Error.Invalid{}} =
+             run
+             |> Ash.Changeset.for_update(
+               :record_frontier,
+               %{
+                 frontier: Map.drop(empty, ["digest"]),
+                 frontier_digest: "sha256:" <> String.duplicate("0", 64),
+                 frontier_size: 0
+               },
+               authorize?: false
+             )
+             |> Ash.update()
   end
 
   defp running_run! do
