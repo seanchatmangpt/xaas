@@ -56,10 +56,13 @@ defmodule Xaas.Ultracode.Dispatch do
            never depends on a prompt broker to approve ordinary construction.
 
        Either way it runs with cwd = the zcode CLI dir and
-       `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` added to the child
-       env -- the two variables that arm the xaas-fabric plugin's
+       `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` + `XAAS_LEASE_ID=<epoch_id>`
+       added to the child env -- the first two arm the xaas-fabric plugin's
        PreToolUse gate (host-enforced admit_tool, worktree-confined
-       writes, Bash allowlist). When the epoch's run names a registered
+       writes, Bash allowlist); the lease id keys the worker's lease state
+       file per epoch (zcode-cli src/gall-work.ts) so two dispatched
+       workers sharing one work surface no longer collide on the per-cwd
+       file (exit 65 lease_conflict). When the epoch's run names a registered
        repo whose `:ultracode_repos` entry pins `toolchain_env`, those
        assignments ride along verbatim (literal values, no shell
        expansion -- see the Worktrees "Worker environment contract"); the
@@ -540,6 +543,11 @@ defmodule Xaas.Ultracode.Dispatch do
     env_added = [
       {"XAAS_WORKER", "1"},
       {"XAAS_LEASE_CWD", cwd_real},
+      # Per-epoch lease-state key on the zcode side (src/gall-work.ts): the
+      # worker's lease state file gains a "-<XAAS_LEASE_ID>" suffix so two
+      # dispatched workers sharing one work surface no longer collide on
+      # the per-cwd file (exit 65 lease_conflict).
+      {"XAAS_LEASE_ID", epoch_id},
       # The worker's OCEL 2.0 tap (zcode-cli src/ocel-tap.ts): without this
       # every dispatched session is unobserved -- no ocel:eid stream, no
       # export_run/ocel_validate conformance evidence for the run.

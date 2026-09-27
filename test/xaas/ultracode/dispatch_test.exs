@@ -230,11 +230,12 @@ defmodule Xaas.Ultracode.DispatchTest do
     {:ok, plain_plan} =
       Dispatch.plan(plain_epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
 
-    # Byte-for-byte the gate env: gate vars + the worker OCEL tap, no
-    # toolchain pin.
+    # Byte-for-byte the dispatch env: gate vars + the per-epoch lease id
+    # + the worker OCEL tap, no toolchain pin.
     assert plain_plan.env_added == [
              {"XAAS_WORKER", "1"},
              {"XAAS_LEASE_CWD", realpath(worktree)},
+             {"XAAS_LEASE_ID", plain_epoch.id},
              {"ZCODE_OCEL", "1"}
            ]
   end
