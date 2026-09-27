@@ -26,7 +26,11 @@ defmodule Xaas.Ultracode.LegacyRecoveryTest do
       "equivalent" => false,
       "verdict" => "COUNTEREXAMPLE",
       "counterexamples" => [
-        %{"index" => 0, "legacy" => %{"outcome" => "cancelled"}, "candidate" => %{"outcome" => "pending"}}
+        %{
+          "index" => 0,
+          "legacy" => %{"outcome" => "cancelled"},
+          "candidate" => %{"outcome" => "pending"}
+        }
       ],
       "receipt_digest" => digest,
       "authority_ceiling" => "OBSERVE"
@@ -75,7 +79,11 @@ defmodule Xaas.Ultracode.LegacyRecoveryTest do
     assert {:error, :legacy_court_contradictory_equivalence} =
              LegacyRecovery.items(root, "court.json", ["*"])
 
-    File.write!(Path.join(root, "court.json"), Jason.encode!(%{report | "authority_ceiling" => "DO"}))
-    assert {:error, :malformed_legacy_court_report} = LegacyRecovery.items(root, "court.json", ["*"])
+    File.write!(
+      Path.join(root, "court.json"),
+      Jason.encode!(%{report | "authority_ceiling" => "DO"})
+    )
+    assert {:error, :malformed_legacy_court_report} =
+             LegacyRecovery.items(root, "court.json", ["*"])
   end
 end
