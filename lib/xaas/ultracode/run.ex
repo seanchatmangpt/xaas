@@ -2,8 +2,8 @@ defmodule Xaas.Ultracode.Run do
   @moduledoc """
   A bounded attempt at a goal, realized across ordered `Epoch`s.
 
-  `state` is the Run-level lifecycle (`:pending | :running | :completed |
-  :failed | :abandoned`); `standing` is the DfCM admitted/observed vocabulary
+  `state` is the Run-level lifecycle (`:pending | :running | :suspended |
+  :completed | :failed | :abandoned`); `standing` is the DfCM admitted/observed vocabulary
   (`:unknown | :admitted | :refused | :blocked`) from this repo's own
   CLAUDE.md doctrine (UNKNOWN|PARTIAL_ALIVE|ALIVE|BLOCKED|... +
   typed REFUSED), kept as its own attribute rather than overloaded onto
@@ -358,6 +358,8 @@ defmodule Xaas.Ultracode.Run do
              :wave_loop,
              :begin_wave_session,
              :record_wave,
+             :record_frontier,
+             :resume_frontier,
              :stop,
              :resume
            ]) do
@@ -474,6 +476,18 @@ defmodule Xaas.Ultracode.Run do
     update :mark_completed_epoch do
       accept([:last_completed_epoch_at])
 
+      multitenancy(:bypass)
+    end
+
+    update :record_frontier do
+      accept([
+        :frontier,
+        :frontier_digest,
+        :frontier_size,
+        :frontier_recorded_at
+      ])
+
+      change(increment(:frontier_version))
       multitenancy(:bypass)
     end
 
@@ -870,6 +884,28 @@ defmodule Xaas.Ultracode.Run do
 
       multitenancy(:bypass)
     end
+
+    # Runtime-driven resume for a Run suspended because its cycle horizon ended
+    # while the persisted frontier was still open or unknown. This is distinct
+    # from operator :resume of an abandoned Run: it preserves the durable
+    # frontier and explicitly adds bounded cycle headroom.
+    update :resume_frontier do
+      accept([])
+      require_atomic?(false)
+
+      argument :additional_cycles, :integer do
+        allow_nil?(false)
+        default(1)
+        constraints(min: 1)
+      end
+
+      change(Xaas.Ultracode.Changes.ExtendCycleBudget)
+      change(set_attribute(:state, :running))
+      change(set_attribute(:standing, :unknown))
+
+      validate({Xaas.Ultracode.Validations.RunTransitionAllowed, []})
+      multitenancy(:bypass)
+    end
   end
 
   attributes do
@@ -1022,7 +1058,7 @@ defmodule Xaas.Ultracode.Run do
     attribute :state, :atom do
       allow_nil?(false)
       default(:pending)
-      constraints(one_of: [:pending, :running, :completed, :failed, :abandoned])
+      constraints(one_of: [:pending, :running, :suspended, :completed, :failed, :abandoned])
       public?(true)
     end
 
@@ -1062,6 +1098,35 @@ defmodule Xaas.Ultracode.Run do
     attribute :max_cycles, :integer do
       allow_nil?(false)
       default(1)
+      public?(true)
+    end
+
+    # Persisted runtime frontier: Git/worker output does not close a Run.
+    # ClosureController records an exact frontier snapshot and only an observed
+    # empty frontier permits :completed. Missing evidence remains UNKNOWN.
+    attribute :frontier, :map do
+      allow_nil?(false)
+      default(%{})
+      public?(true)
+    end
+
+    attribute :frontier_digest, :string do
+      public?(true)
+    end
+
+    attribute :frontier_size, :integer do
+      allow_nil?(false)
+      default(0)
+      public?(true)
+    end
+
+    attribute :frontier_version, :integer do
+      allow_nil?(false)
+      default(0)
+      public?(true)
+    end
+
+    attribute :frontier_recorded_at, :utc_datetime_usec do
       public?(true)
     end
 
