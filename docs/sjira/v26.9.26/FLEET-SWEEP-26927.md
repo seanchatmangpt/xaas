@@ -35,3 +35,11 @@
 - tick-19 wedge root cause (typed UNKNOWN): add a bounded watchdog/timeout around WaveLoop tick dispatch
 - 26 rows carry non-standard verdict wording; normalize on a follow-up pass
 - per-repo upgrade PRs (the sweep is the demand signal; work orders not yet created)
+
+## History (continued)
+
+| ts | standing | note |
+|---|---|---|
+| 2026-09-27T01:00Z | PARTIAL_ALIVE | P0.1/P0.3/P0.4 landed (e12e117): Oban.Lifeline (orphan ticks auto-rescued >75min), work-conserving tick chaining, adaptive dispatch width (10-min pressure window). Root cause of the 80-min wedge typed: BEAM kill mid-tick + no Lifeline — job orphaned `executing`, not a Dispatch deadlock |
+| 2026-09-27T01:10Z | PARTIAL_ALIVE | P0.2 SIGKILL regression landed: dead worker settles typed (dispatch_refused family), epoch reaped, slot free without SQL. wave_loop 47/47 |
+| 2026-09-27T01:15Z | BUILD_BROKEN(external) | semantic_replay/ggen toolchain: shim→1.18 mix loads Hex fine (v2.5.1 verified); corrupt-atom-table persists in COLD replays (fresh work_dir, no .tool-versions → shim falls to global toolchain). Filed as producer fix: semantic_crown must pin the work_dir toolchain or ship .tool-versions into the archive. 12 ultracode failures all in this family + RemoteRelay load-flake |
