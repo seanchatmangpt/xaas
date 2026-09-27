@@ -48,13 +48,13 @@ defmodule Xaas.Ultracode.WaveLoop do
        (`execution_policy: :wave_loop_step`, `provider: "zcode"`,
        non-semantic, so the generic `/xaas` claim prompt path) whose GOAL
        carries the step id, the step's dispatch instructions VERBATIM from
-       STATE.md, the standing table, the law section, and the mandatory
-       "update STATE.md + append loop.ndjson" instruction. The worker
-       claims the epoch through the fabric, works, and closes with
-       evidence -- the loop never closes on the worker's behalf.
+       STATE.md, the standing table, the law section, and the explicit rule
+       that STATE.md + loop.ndjson are fabric-owned projections. The worker
+       claims the epoch through the fabric, works, and closes with evidence;
+       it never writes scheduler state or closes the loop on its own behalf.
     4. SETTLE from the database and the sealed receipts (never the
        worker's exit code alone): a completed epoch advances the STATE
-       row (respecting a worker's own DONE wording) and removes the step
+       row (preserving any existing DONE wording) and removes the step
        from the REMAINING note; a dead worker's stale epoch is reaped
        (`:mark_failed` + `:refused` receipt, the `Xaas.Ultracode.Engine`
        semantics) and the row goes BLOCKED with the log path. Every
