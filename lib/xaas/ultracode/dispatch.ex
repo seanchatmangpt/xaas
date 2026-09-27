@@ -220,6 +220,10 @@ defmodule Xaas.Ultracode.Dispatch do
     * `:log_path` -- full-output log file; defaults to a per-dispatch file
       under the OS temp dir
     * `:extra_env` -- map of additional child-env assignments
+    * `:worker_id` -- optional scheduler-assigned worker identity. When
+      present, the exact value is used in the lease claim protocol so a
+      supervising process can bind a later `DOWN` observation to the
+      owner it actually launched.
     * `:dry_run` -- true builds and returns the plan without executing
       (same as `plan/2`)
 
@@ -260,7 +264,12 @@ defmodule Xaas.Ultracode.Dispatch do
   """
   @spec autonomic_worker(Epoch.t(), map()) :: :ok | :rate_limited | {:error, term()}
   def autonomic_worker(%Epoch{} = epoch, ctx) do
-    dispatch(epoch, Map.get(ctx, :dispatch_opts, []))
+    dispatch_opts =
+      ctx
+      |> Map.get(:dispatch_opts, [])
+      |> maybe_put_worker_id(Map.get(ctx, :worker_id))
+
+    dispatch(epoch, dispatch_opts)
     |> case do
       {:ok, %{status: :ok}} ->
         :ok
@@ -534,7 +543,7 @@ defmodule Xaas.Ultracode.Dispatch do
 
   defp build(%Epoch{} = epoch, resolved) do
     epoch_id = epoch.id
-    worker_id = worker_id(epoch_id)
+    worker_id = resolved.worker_id || worker_id(epoch_id)
     {mode, cwd} = pick_cwd(epoch.worktree)
     {:ok, cwd_real} = realpath(cwd)
 
@@ -823,6 +832,7 @@ defmodule Xaas.Ultracode.Dispatch do
          max_output_bytes: Keyword.get(opts, :max_output_bytes, @default_max_output_bytes),
          log_path: Keyword.get(opts, :log_path),
          extra_env: Keyword.get(opts, :extra_env, %{}),
+         worker_id: normalize_worker_id(Keyword.get(opts, :worker_id)),
          # No hardcoded default here: an unsupplied provider resolves through
          # the registry (`ProviderRegistry.default_provider/0`, config
          # `:xaas, :ultracode_default_provider`) -- the one place the fabric's
@@ -832,6 +842,14 @@ defmodule Xaas.Ultracode.Dispatch do
        }}
     end
   end
+
+  defp maybe_put_worker_id(opts, worker_id) when is_binary(worker_id) and worker_id != "",
+    do: Keyword.put_new(opts, :worker_id, worker_id)
+
+  defp maybe_put_worker_id(opts, _worker_id), do: opts
+
+  defp normalize_worker_id(worker_id) when is_binary(worker_id) and worker_id != "", do: worker_id
+  defp normalize_worker_id(_worker_id), do: nil
 
   defp check_node(nil), do: {:error, {:node_unavailable, "node"}}
 

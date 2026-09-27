@@ -256,7 +256,8 @@ defmodule Xaas.Ultracode.AutonomicTest do
 
     [first | _] = Enum.filter(receipts_for_item("contract-standing"), &(&1.attempt == 1))
     assert first.outcome == :refused
-    assert first.evidence["refusal_reason"] == "worker_no_close"
+    assert first.evidence["reclaimed_by"] == "xaas-lease-kernel"
+    assert first.evidence["reclaim_reason"] == "worker_unclosed"
   end
 
   test "an EXPIRED lease is reaped to a terminal epoch with a refused receipt", %{repo: _repo} do
@@ -313,8 +314,9 @@ defmodule Xaas.Ultracode.AutonomicTest do
              Receipt
              |> Ash.Query.for_read(:for_epoch, %{epoch_id: expired_epoch.id})
              |> Ash.read!(authorize?: false)
-             |> Enum.filter(&Map.has_key?(&1.evidence, "refusal_reason"))
+             |> Enum.filter(&Map.has_key?(&1.evidence, "reclaim_reason"))
 
+    assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
     assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
   end
 

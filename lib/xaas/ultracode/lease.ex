@@ -645,7 +645,7 @@ defmodule Xaas.Ultracode.Lease do
 
   defp epoch_lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at})
        when is_binary(token) and not is_nil(expires_at),
-       do: DateTime.compare(expires_at, DurationBudget.now()) == :gt
+       do: DateTime.compare(expires_at, DurationBudget.now()) != :lt
 
   defp epoch_lease_live?(_epoch), do: false
 

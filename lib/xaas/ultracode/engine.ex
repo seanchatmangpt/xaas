@@ -26,7 +26,11 @@ defmodule Xaas.Ultracode.Engine do
   ## The worker seam (dispatch is out of this module's scope)
 
   A worker is the SAME 2-arity contract the wave already defines:
-  `(epoch, ctx) -> :ok | :rate_limited | {:error, reason}`. It drives the
+  `(epoch, ctx) -> :ok | :rate_limited | {:error, reason}`. The context
+  also carries a scheduler-assigned `:worker_id`; the default Dispatch
+  uses that exact id for its lease claim, so the parent Task can turn an
+  actual task `DOWN` into an owner-bound reclaim instead of waiting for TTL.
+  It drives the
   lease protocol itself (directed `Lease.claim_next/3` on the handed
   epoch, work, `Lease.close/4` / `Lease.refuse/3`); the engine never
   claims on a worker's behalf and never inspects what the worker did --
@@ -206,21 +210,28 @@ defmodule Xaas.Ultracode.Engine do
         free = free_slots(capacity, in_flight_before)
         candidates = ready_epochs(provider, free)
 
+        dispatches =
+          Enum.map(candidates, fn candidate ->
+            {candidate, observed_worker_id(provider, candidate)}
+          end)
+
         dispatched =
-          candidates
+          dispatches
           |> Task.async_stream(
-            &dispatch_slot(&1, provider, worker),
-            max_concurrency: max(length(candidates), 1),
+            fn {candidate, worker_id} ->
+              dispatch_slot(candidate, provider, worker, worker_id)
+            end,
+            max_concurrency: max(length(dispatches), 1),
             timeout: :infinity,
             ordered: true
           )
-          |> Enum.zip(candidates)
+          |> Enum.zip(dispatches)
           |> Enum.map(fn
-            {{:ok, result}, _candidate} ->
+            {{:ok, result}, _dispatch} ->
               result
 
-            {{:exit, reason}, candidate} ->
-              %{epoch_id: candidate.id, status: :crashed, reason: inspect(reason)}
+            {{:exit, reason}, {candidate, worker_id}} ->
+              reclaim_task_down(candidate, worker_id, reason)
           end)
 
         %{
@@ -233,11 +244,52 @@ defmodule Xaas.Ultracode.Engine do
     end
   end
 
+  defp observed_worker_id(provider, %Epoch{id: epoch_id}) do
+    nonce = System.unique_integer([:positive, :monotonic])
+    "xaas-engine-#{provider}-#{String.slice(epoch_id, 0, 8)}-#{nonce}"
+  end
+
+  defp reclaim_task_down(%Epoch{} = epoch, worker_id, reason) do
+    case Lease.reclaim_epoch(
+           epoch.id,
+           :worker_down,
+           %{
+             "observer" => "xaas-engine-task-supervisor",
+             "task_exit" => inspect(reason)
+           },
+           expected_leased_to: worker_id
+         ) do
+      {:reclaimed, reclaimed, receipt} ->
+        %{
+          epoch_id: reclaimed.id,
+          status: :reaped,
+          receipt_id: receipt.id,
+          reason: inspect(reason)
+        }
+
+      :handed_off ->
+        %{epoch_id: epoch.id, status: :handed_off, reason: inspect(reason)}
+
+      {:already_terminal, state} ->
+        %{epoch_id: epoch.id, status: :settle_race, observed_state: state, reason: inspect(reason)}
+
+      {:settle_race, observed} ->
+        %{epoch_id: epoch.id, status: :settle_race, observed_state: observed, reason: inspect(reason)}
+
+      {:error, reclaim_reason} ->
+        %{
+          epoch_id: epoch.id,
+          status: :reclaim_failed,
+          reason: inspect({reason, reclaim_reason})
+        }
+    end
+  end
+
   defp free_slots(nil, _in_flight_before), do: @unbounded_fill_batch
   defp free_slots(capacity, in_flight_before), do: max(capacity - in_flight_before, 0)
 
-  defp dispatch_slot(epoch, provider, worker) do
-    result = worker.(epoch, %{provider: provider})
+  defp dispatch_slot(epoch, provider, worker, worker_id) do
+    result = worker.(epoch, %{provider: provider, worker_id: worker_id})
     settle(epoch, result)
   rescue
     error ->
