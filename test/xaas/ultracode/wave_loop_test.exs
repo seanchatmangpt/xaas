@@ -1067,6 +1067,16 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
   describe "adaptive concurrency + work-conserving chain (P0.3/P0.4)" do
     setup do
+      # ExUnit shuffles; width config leaks would poison neighbors. Every
+      # test in this describe starts from the DEFAULT (width 1) config.
+      Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      Application.delete_env(:xaas, :ultracode_wave_loop_concurrency_max)
+
+      on_exit(fn ->
+        Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+        Application.delete_env(:xaas, :ultracode_wave_loop_concurrency_max)
+      end)
+
       :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
       Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
 
@@ -1093,6 +1103,8 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       stale = DateTime.add(DateTime.utc_now(), -20 * 60, :second) |> DateTime.to_iso8601()
 
       File.write!(telemetry_path, "")
+      # Growth is opt-in (:ultracode_wave_loop_concurrency_max defaults to
+      # the configured base), so a clean window at base stays at base.
       assert 3 == WaveLoop.effective_concurrency(telemetry_path)
 
       File.write!(
@@ -1103,9 +1115,96 @@ defmodule Xaas.Ultracode.WaveLoopTest do
         [:append]
       )
 
-      # Only in-window signatures subtract width; the fleet-sweep run
-      # measured exactly this family of provider failures (2026-09-27).
+      # 2 in-window signatures narrow the effective width by exactly the
+      # in-window count (3 - 2); aged-out signatures count for nothing
+      # (2026-09-27 fleet sweep).
       assert 1 == WaveLoop.effective_concurrency(telemetry_path)
+    end
+
+    test "setpoint law: grow clean / hold 1-2 / drain -4 at >=3, floor and ceiling clamp", %{
+      telemetry_path: telemetry_path
+    } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      assert WaveLoop.setpoint(3, 0, 10, 1) == 4
+      assert WaveLoop.setpoint(10, 0, 10, 1) == 10
+      assert WaveLoop.setpoint(6, 1, 10, 1) == 6
+      assert WaveLoop.setpoint(6, 2, 10, 1) == 6
+      assert WaveLoop.setpoint(6, 3, 10, 1) == 2
+      assert WaveLoop.setpoint(2, 3, 10, 1) == 1
+      assert WaveLoop.setpoint(2, 5, 10, 4) == 4
+      assert WaveLoop.setpoint(9, 4, 10, 1) == 5
+
+      # Persistence: consecutive clean calls keep growing (+1 per window),
+      # and the setpoint file lives beside the telemetry.
+      File.write!(telemetry_path, "")
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 2)
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency_max, 4)
+
+      on_exit(fn ->
+        for key <- [:ultracode_wave_loop_concurrency, :ultracode_wave_loop_concurrency_max] do
+          if prev_val = Application.get_env(:xaas, key),
+            do: Application.put_env(:xaas, key, prev_val),
+            else: Application.delete_env(:xaas, key)
+        end
+      end)
+
+      assert 3 == WaveLoop.effective_concurrency(telemetry_path)
+      assert 4 == WaveLoop.effective_concurrency(telemetry_path)
+      # ceiling clamps
+      assert 4 == WaveLoop.effective_concurrency(telemetry_path)
+      assert File.read!(Path.join(Path.dirname(telemetry_path), "wave-setpoint.txt")) == "4"
+    end
+
+    test "one tick dispatches every ready step up to width, settles serially", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      on_exit(fn ->
+        if prev,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      prev_max = Application.get_env(:xaas, :ultracode_wave_loop_concurrency_max)
+      prev_base = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 3)
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency_max, 3)
+
+      on_exit(fn ->
+        if prev_max,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency_max, prev_max),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency_max)
+
+        if prev_base,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev_base),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      File.write!(state_path, @state)
+
+      {:ok, report} =
+        WaveLoop.tick(
+          state_path: state_path,
+          telemetry_path: telemetry_path,
+          dispatcher: closing_dispatch()
+        )
+
+      assert report.outcome == :worker_completed
+
+      # BOTH no-dep steps (3 and 4) started and closed in this one tick.
+      lines = telemetry_lines(telemetry_path) |> String.split("\n", trim: true)
+      completed = Enum.filter(lines, &(&1 =~ ~s("outcome":"worker_completed")))
+      assert length(completed) == 2
+      assert Enum.any?(completed, &(&1 =~ ~s("step":"3")))
+      assert Enum.any?(completed, &(&1 =~ ~s("step":"4")))
+
+      # Both rows advanced.
+      state = File.read!(state_path)
+      assert state =~ "3 branch integrations | DONE"
+      assert state =~ "4 sole-source fold | DONE"
     end
 
     test "chain decision: consumes a step + owes steps + no storm => chain" do

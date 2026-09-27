@@ -280,11 +280,79 @@ defmodule Xaas.Ultracode.WaveLoop do
         finish(tick_no, step.id, :stale_reap_failed, %{reason: inspect(reason)}, telemetry_path)
 
       :ok ->
-        run_step(step, state, opts, state_path, telemetry_path, tick_no)
+        jobs = [{step, state} | extra_ready_jobs(state, step.id, state_path, telemetry_path)]
+        dispatch_batch(jobs, opts, state_path, telemetry_path, tick_no)
     end
   end
 
-  defp run_step(step, state, opts, state_path, telemetry_path, tick_no) do
+  # Work-conserving width: beyond the first actionable step, every further
+  # ready step (deps met, not held by a live worker) within the effective
+  # width budget joins this tick's dispatch batch. Slots are acquired
+  # conservatively — a :busy extra step simply does not join, never blocks.
+  defp extra_ready_jobs(state, first_id, state_path, telemetry_path) do
+    live = live_in_flight_step_ids(state_path)
+    held = MapSet.new([first_id | live])
+    budget = max(effective_concurrency(telemetry_path) - MapSet.size(held), 0)
+
+    if budget <= 0 do
+      []
+    else
+      State.actionable_steps(state, MapSet.to_list(held))
+      |> Enum.take(budget)
+      |> Enum.flat_map(fn step ->
+        case acquire_slot(telemetry_path) do
+          :ok -> [{step, state}]
+          _ -> []
+        end
+      end)
+    end
+  end
+
+  # Construction is serialized (Run/Epoch inserts); the agent DISPATCHES —
+  # the minutes-long calls — run concurrently via Task.async_stream; and
+  # settles are applied SERIALLY in table order because each settle
+  # rewrites the shared STATE file (read-modify-write must never race).
+  # A dispatch task that dies before settling is typed
+  # :construction_refused with the row untouched (next tick retries).
+  defp dispatch_batch(jobs, opts, state_path, telemetry_path, tick_no) do
+    stream =
+      Task.async_stream(
+        jobs,
+        fn {step, st} ->
+          try do
+            {step, construct_and_dispatch(step, st, opts, state_path, telemetry_path)}
+          rescue
+            e -> {step, {:construction_refused, {:dispatch_raised, Exception.message(e)}}}
+          end
+        end,
+        max_concurrency: length(jobs),
+        timeout: dispatch_budget_ms(),
+        ordered: true
+      )
+
+    results =
+      Enum.zip(jobs, stream)
+      |> Enum.map(fn
+        {_job, {:ok, pair}} -> pair
+        {job, {:exit, reason}} ->
+          {elem(job, 0), {:construction_refused, {:dispatch_task_died, reason}}}
+      end)
+
+    reports =
+      Enum.map(results, fn
+        {step, {:settled, epoch_id, result}} ->
+          settle(step, epoch_id, result, state_path, telemetry_path, tick_no)
+
+        {step, {:construction_refused, reason}} ->
+          finish(tick_no, step.id, :construction_refused, %{reason: inspect(reason)}, telemetry_path)
+      end)
+
+    List.last(reports)
+  end
+
+  defp dispatch_budget_ms, do: (loop_timeout() + 60) * 1000
+
+  defp construct_and_dispatch(step, state, opts, state_path, telemetry_path) do
     goal =
       State.build_goal(state, step, %{state_path: state_path, telemetry_path: telemetry_path})
 
@@ -293,19 +361,12 @@ defmodule Xaas.Ultracode.WaveLoop do
     with {:ok, run} <- create_loop_run(goal),
          {:ok, run} <- start_run(run, subject, state.work_surface),
          {:ok, epoch} <- activate_first_epoch(run) do
-      result = dispatch(epoch, opts)
-      settle(step, epoch.id, result, state_path, telemetry_path, tick_no)
+      case dispatch(epoch, opts) do
+        {:ok, _} = result -> {:settled, epoch.id, result}
+        {:error, _} = result -> {:settled, epoch.id, result}
+      end
     else
-      {:error, reason} ->
-        # Construction refused: nothing ran, so the STATE row is untouched
-        # and the next tick retries. Typed, never raised.
-        finish(
-          tick_no,
-          step.id,
-          :construction_refused,
-          %{reason: inspect(reason)},
-          telemetry_path
-        )
+      {:error, reason} -> {:construction_refused, reason}
     end
   end
 
@@ -314,22 +375,74 @@ defmodule Xaas.Ultracode.WaveLoop do
   # two on the same step
   # ------------------------------------------------------------------
 
-  # P0.4 adaptive concurrency: the base width comes from app env; every
-  # provider rate-kill signature inside the pressure window narrows it by
-  # one, floor 1. Signatures age out of the window, so width recovers
-  # automatically — provider throttling is a width signal, never a global
-  # stop.
+  # P0.4 adaptive concurrency, extended with the [1302] rider setpoint law
+  # (measured 2026-09-16): the SETPOINT (persisted beside the telemetry) is
+  # the width the loop is allowed to grow to — +1 per clean pressure window,
+  # hold on 1–2 signatures (the deliberate edge), drain −4 at ≥3. The
+  # effective width is then narrowed by the CURRENT window's signatures,
+  # floor 1. Signatures age out, so width recovers at +1 per window —
+  # "drain, then resume at half pace", never a bulk burst.
   @doc false
   def effective_concurrency(telemetry_path) do
     base = Application.get_env(:xaas, :ultracode_wave_loop_concurrency, 1)
+
+    # Growth is OPT-IN: the ceiling defaults to the configured base (the
+    # one-writer-per-checkout boundary), so the setpoint law can only WIDEN
+    # width when the operator raises :ultracode_wave_loop_concurrency_max.
+    ceiling = Application.get_env(:xaas, :ultracode_wave_loop_concurrency_max, base)
+    pressure = pressure_signatures(telemetry_path)
+
+    # a fresh setpoint seeds at the configured base, never below it
+    setpoint = update_setpoint!(telemetry_path, pressure, ceiling, 1, base)
+
+    max(setpoint - pressure, 1)
+  end
+
+  @doc "Pure setpoint law: {prev, pressure, ceiling, floor} -> new setpoint."
+  def setpoint(prev, pressure, ceiling, floor) do
+    cond do
+      pressure >= 3 -> max(prev - 4, floor)
+      pressure in 1..2 -> prev
+      true -> min(prev + 1, ceiling)
+    end
+    |> max(floor)
+  end
+
+  # Keyed by the telemetry path's hash: several loops (and the test suite)
+  # share one telemetry DIRECTORY, so a single fixed filename would leak one
+  # loop's setpoint into another's width (observed cross-test in wave_loop_test).
+  defp setpoint_path(telemetry_path) do
+    name = "wave-setpoint-" <> Integer.to_string(:erlang.phash2(String.to_charlist(telemetry_path))) <> ".txt"
+    Path.join(Path.dirname(telemetry_path), name)
+  end
+
+  defp update_setpoint!(telemetry_path, pressure, ceiling, floor, seed) do
+    path = setpoint_path(telemetry_path)
+
+    prev =
+      case File.read(path) do
+        {:ok, body} ->
+          case Integer.parse(String.trim(body)) do
+            {n, _} -> n
+            :error -> seed
+          end
+
+        {:error, _} ->
+          seed
+      end
+
+    next = setpoint(prev, pressure, ceiling, floor)
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, Integer.to_string(next))
+    next
+  end
+
+  defp pressure_signatures(telemetry_path) do
     cutoff = DateTime.add(DateTime.utc_now(), -@pressure_window_minutes * 60, :second)
 
-    pressure =
-      telemetry_path
-      |> telemetry_lines_in_window(cutoff)
-      |> Enum.count(&(&1 =~ @overload_regex))
-
-    max(base - pressure, 1)
+    telemetry_path
+    |> telemetry_lines_in_window(cutoff)
+    |> Enum.count(&(&1 =~ @overload_regex))
   end
 
   defp acquire_slot(telemetry_path) do

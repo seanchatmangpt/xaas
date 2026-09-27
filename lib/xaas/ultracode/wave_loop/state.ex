@@ -155,6 +155,26 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     end
   end
 
+  # Every step (table order) that owes work AND whose deps are all done —
+  # the plural picker the batch dispatcher walks. Deps met is checked per
+  # step, so a dep-blocked head no longer hides later independent steps.
+  @spec actionable_steps(t(), Enumerable.t()) :: [step()]
+  def actionable_steps(%__MODULE__{steps: steps, remaining_chain: chain}, exclude \\ []) do
+    excluded = MapSet.new(exclude)
+    note_listed = MapSet.new(Map.keys(chain))
+
+    done_ids =
+      steps
+      |> Enum.filter(fn s -> s.status == :done and not MapSet.member?(note_listed, s.id) end)
+      |> MapSet.new(& &1.id)
+
+    Enum.filter(steps, fn s ->
+      not MapSet.member?(excluded, s.id) and
+        (s.status in [:pending, :blocked] or MapSet.member?(note_listed, s.id)) and
+        Enum.all?(s.deps, &MapSet.member?(done_ids, &1))
+    end)
+  end
+
   @spec complete?(t()) :: boolean()
   def complete?(%__MODULE__{complete_marker: true}), do: true
 
