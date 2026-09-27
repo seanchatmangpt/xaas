@@ -65,6 +65,21 @@ Success:       >= n-2 resolve without frontier coding
 | ts | standing | note |
 |---|---|---|
 | 2026-09-27T19:40Z | UNKNOWN | directive received; kernel `Xaas.Ultracode.CapitalCensus.SelfDigest` implemented (classify/1 per G-table, frontier_ratio/2, self_work_order/1); first self-ticket seeded from real evidence below |
+| 2026-09-27T21:05Z | UNKNOWN | operator correction 1: 4a2e9d1 is a spike, not implementation — hardcoded G-table = semantic duplication; tests prove constants; threshold ≥3; classify is hypothesis→conclusion; keep only frontier_ratio |
+| 2026-09-27T21:20Z | UNKNOWN | operator correction 2: Ash is the runtime spine — Ontology → ggen → Ash → SA2A/PPlan → Reactor/Oban → OCEL; resources/actions as generated Ash; RDF > generated Ash |
+| 2026-09-27T21:45Z | UNKNOWN | operator correction 3: not packs for apps — consumer-owned project pack, not marketplace; search existing packs first (pack-search ledger in pack README) |
+| 2026-09-27T22:05Z | UNKNOWN | operator correction 4: compose Ash's OWN generators (ash.gen.enum/ash.gen.resource/ash.extend) via a thin bridge — no bespoke Ash-DSL templates; ash_r2rml = the RDF projection leg; ash_oban = the digest trigger |
+| 2026-09-27T22:20Z | PARTIAL_ALIVE | **first self-improvement landed**: `priv/ggen/ultracode-self-digest-pack` (ontology + queries + Facts template + qualification); generic bridge `mix xaas.ash.gen`; 6 enums + 5 resources + domain registration + Facts MANUFACTURED; handwritten spike + tests DELETED (−213 lines); Law/Run/bridge/manifest ledgered (+4 rows); Chicago 7/7 on real PG, regression 107/107, regeneration court byte-clean; salvage-committed as 0a4e1a0a by concurrent merge-day executor; receipt: receipts/2026-09-27-selfdigest-retirement-receipt.json |
+
+## REMAINING
+
+- AshOban digest trigger: `ash.extend Episode` + scheduled_action (cron) running the Law digest — no LLM, no external runner.
+- sJira markdown as PROJECTION of the WorkOrder graph (AshR2RML mapping → SPARQL, or render_tickets over Ash reads); GC-26927-SELFDIGEST.md itself stops being canonical the moment that projection exists.
+- Resolver second-order tickets: `Xaas.Ultracode.CapabilityResolver` self-audit when ≥3 episodes share topology (Law.classify drives it; wiring pending).
+- Shadow/replay promotion path for factory changes (construct $U'$ → historical replay → adversarial → shadow → promote).
+- Subsume census `Experience` pure law into the Ash spine (Episode naming failed edge recorded in pack README).
+- ex4pm 26.9.10 upstream (compile_env fix already proven in deps/ patch) — unblocks ggen_igniter sync verify gate for every xaas pack; hex publish operator-gated.
+- Promote `xaas.ash.gen` bridge to a generic marketplace pack (separate admission; ledgered as debt until then).
 
 ## Self-ticket #1 — semantic_crown cold-replay toolchain (real evidence, already typed)
 
