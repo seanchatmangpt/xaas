@@ -38,6 +38,18 @@ defmodule Xaas.Ultracode.FrontierTest do
     refute Frontier.closed?(frontier)
   end
 
+  test "a stored digest mismatch is refused as corrupt frontier evidence" do
+    empty = Frontier.empty("test")
+
+    assert {:error, :frontier_digest_mismatch} =
+             Frontier.from_run(%{
+               frontier_recorded_at: DateTime.utc_now(),
+               frontier: Map.drop(empty, ["digest"]),
+               frontier_digest: "sha256:" <> String.duplicate("0", 64),
+               frontier_size: 0
+             })
+  end
+
   test "missing or negative closure counts are typed refusals" do
     assert {:error, {:frontier_count, "pending_work", nil}} =
              Frontier.admit(%{"source" => "test"})
