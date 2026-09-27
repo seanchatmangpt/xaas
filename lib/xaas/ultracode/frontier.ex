@@ -3,8 +3,11 @@ defmodule Xaas.Ultracode.Frontier do
   Canonical runtime frontier snapshot for one Ultracode Run.
 
   The frontier is evidence about remaining executable work, not authority.
-  A Run may close only when every closure count is observed as zero. Missing
-  frontier evidence is UNKNOWN and must never be interpreted as an empty queue.
+  A frontier-governed cycle horizon may close only when every closure count
+  is observed as zero. Missing frontier evidence is UNKNOWN and must never be
+  interpreted as an empty queue. Other Run lifecycle owners (for example a
+  duration-budget session or an Autonomic item attempt) retain their own
+  explicit terminal laws.
   """
 
   @schema "xaas.ultracode.frontier/1"
