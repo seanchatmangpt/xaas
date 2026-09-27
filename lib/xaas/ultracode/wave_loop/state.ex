@@ -163,7 +163,7 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   @doc """
   Rewrites step `id`'s row in the LAST step table. `new_status` (a binary)
   replaces the status cell when the row's current status is not already
-  `:done` -- a worker's own DONE wording is never clobbered; pass `nil` to
+  `:done` -- existing DONE wording is never clobbered; pass `nil` to
   leave the status untouched. `evidence_append` (a binary) is appended to
   the evidence cell unless the cell already contains it (idempotent
   re-ticks); pass `nil` to leave evidence untouched.
