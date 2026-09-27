@@ -8,7 +8,13 @@ defmodule Xaas.Ultracode.Frontier do
   """
 
   @schema "xaas.ultracode.frontier/1"
-  @count_keys ~w(pending_work active_epochs unsettled_epochs unpublished_deltas unsatisfied_dependencies)
+  @count_keys ~w(
+    pending_work
+    active_epochs
+    unsettled_epochs
+    unpublished_deltas
+    unsatisfied_dependencies
+  )
 
   @spec empty(String.t()) :: map()
   def empty(source \\ "runtime") do
@@ -87,7 +93,9 @@ defmodule Xaas.Ultracode.Frontier do
   defp require_schema(%{"schema" => @schema}), do: :ok
   defp require_schema(%{"schema" => other}), do: {:error, {:frontier_schema, other}}
 
-  defp require_source(%{"source" => value}) when is_binary(value) and byte_size(value) > 0, do: :ok
+  defp require_source(%{"source" => value})
+       when is_binary(value) and byte_size(value) > 0,
+       do: :ok
   defp require_source(_), do: {:error, :frontier_source}
 
   defp require_counts(snapshot) do
