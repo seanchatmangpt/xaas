@@ -501,6 +501,7 @@ defmodule Xaas.Ultracode.Run do
       # the Run (`:completed`/`:failed`/`:abandoned`) -- see the change's
       # own moduledoc and the `terminal_at` attribute doc.
       change(Xaas.Ultracode.Changes.SetTerminalAt)
+      change(Xaas.Ultracode.Changes.SetSuspendedAt)
 
       multitenancy(:bypass)
     end
@@ -1082,6 +1083,10 @@ defmodule Xaas.Ultracode.Run do
     # approximation. Nullable: a Run that never closed (and rows predating
     # the column) emits no terminal event rather than a fabricated time.
     attribute :terminal_at, :utc_datetime_usec do
+      public?(true)
+    end
+
+    attribute :suspended_at, :utc_datetime_usec do
       public?(true)
     end
 
