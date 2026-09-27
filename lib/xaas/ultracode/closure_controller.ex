@@ -1,7 +1,7 @@
 defmodule Xaas.Ultracode.ClosureController do
   @moduledoc """
-  Manufactures the Run-level continue/suspend/close decision from persisted
-  frontier evidence.
+  Manufactures the cycle-horizon continue/suspend/close decision from
+  persisted frontier evidence.
 
   Epoch completion is never Run completion. Exhausting max_cycles is a bounded
   scheduling fact: with an open or unknown frontier the Run is suspended, not
