@@ -1,0 +1,50 @@
+{
+  "schema": "xaas.bench-receipt/1",
+  "subject": "lib/xaas/ultracode/sbb_realization.ex",
+  "parent_sha": "dd76f80589d9e58c8c9e554358ab2af8692990a8",
+  "command": "MIX_ENV=test mix run --no-start bench/sbb_realization_bench.exs",
+  "toolchain": "Elixir 1.20.2 / OTP 28.5.0.2, darwin arm64, shared host under concurrent load (load avg ~43)",
+  "measured_at": "2026-09-26",
+  "unit": "microseconds",
+  "results": {
+    "admit": {
+      "iters": 5000,
+      "median": 24,
+      "p99": 99
+    },
+    "realize": {
+      "iters": 5000,
+      "median": 10,
+      "p99": 33
+    },
+    "deliver_append": {
+      "iters": 5000,
+      "median": 19,
+      "p99": 56
+    },
+    "deliver_duplicate": {
+      "iters": 5000,
+      "median": 15,
+      "p99": 41
+    },
+    "substitute": {
+      "iters": 5000,
+      "median": 51,
+      "p99": 117
+    },
+    "replay_1000": {
+      "iters": 200,
+      "median": 16267,
+      "p99": 28293
+    }
+  },
+  "regression_bound": {
+    "gate": "test/xaas/ultracode/sbb_realization_test.exs \"benchmark regression bound\"",
+    "admit_realize_deliver_us_per_op_max": 500,
+    "replay_us_per_entry_max": 100
+  },
+  "authority": "NONE",
+  "evidence_ceiling": "LOCAL_RUN",
+  "subject_relation": "parent_sha is the parent of the commit that records this receipt (a commit cannot contain its own hash); measured tree = parent + this commit",
+  "notes": "deliver and replay now recompute the bound realization (realize/3) per sequence: ledger admits only records bound to one admission + WorkOrder; replay_1000 is anchored to the expected head"
+}
