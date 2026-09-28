@@ -71,7 +71,7 @@ defmodule Xaas.Sjira.Checkpoint do
   end
 
   @spec migrate(map(), non_neg_integer()) :: {:ok, map()} | {:error, term()}
-  def migrate(%{} = state, target_version \\ 1)
+  def migrate(state, target_version \\ 1)
 
   def migrate(%{"version" => version} = state, version), do: {:ok, state}
 

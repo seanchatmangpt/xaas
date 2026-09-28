@@ -17,17 +17,17 @@ defmodule Xaas.Sjira.AtlassianTest do
     assert Atlassian.classify_response(503,nil,e).retry==true
   end
   test "dependency closure orders and partitions" do
-    assert {:ok,p}=DeliveryBatch.plan([item("C",["B"]),item("A"),item("B",["A"])],max_batch:2)
-    assert (for b<-p.batches,e<-b.envelopes,do:e.semantic_id)==["A","B","C"]
+    assert {:ok,p}=DeliveryBatch.plan([item("C",["B"]),item("A"),item("B",["A"])],max_batch: 2)
+    assert (for b<-p.batches,e<-b.envelopes,do: e.semantic_id)==["A","B","C"]
     assert Enum.map(p.batches,& &1.count)==[2,1]
     assert {:error,{:missing_dependencies,[{"A","X"}]}}=DeliveryBatch.plan([item("A",["X"])])
     assert {:error,{:dependency_cycle,["A","B"]}}=DeliveryBatch.plan([item("A",["B"]),item("B",["A"])])
   end
   test "checkpoint supports accepted, failed, JSON and resume" do
     {:ok,p}=DeliveryBatch.plan([item("A"),item("B"),item("C")])
-    cp=DeliveryBatch.record(p.checkpoint,"A",%{disposition: :accepted}); cp=DeliveryBatch.record(cp,"B",%{disposition: :retry,retry:true})
+    cp=DeliveryBatch.record(p.checkpoint,"A",%{disposition: :accepted}); cp=DeliveryBatch.record(cp,"B",%{disposition: :retry,retry: true})
     assert {:ok,decoded}=cp|>DeliveryBatch.checkpoint_json()|>DeliveryBatch.checkpoint_from_json(); assert decoded==cp
-    assert {:ok,r}=DeliveryBatch.resume(p,cp,max_batch:1,retry_failed:true); assert r.count==2
+    assert {:ok,r}=DeliveryBatch.resume(p,cp,max_batch: 1,retry_failed: true); assert r.count==2
   end
   test "offset and token cursors normalize pages" do
     o=AtlassianCursor.initial(mode: :offset)

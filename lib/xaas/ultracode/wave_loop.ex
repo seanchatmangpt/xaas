@@ -2,7 +2,7 @@ defmodule Xaas.Ultracode.WaveLoop do
   require Logger
   require Ash.Query
 
-  alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Run}
+  alias Xaas.Ultracode.{ClosureController, Dispatch, Epoch, Lease, Run}
   alias Xaas.Ultracode.WaveLoop.State
 
   @kind "ultracode-wave-loop/1"
@@ -138,7 +138,7 @@ defmodule Xaas.Ultracode.WaveLoop do
       inject the seam exactly like every other runner seam in this repo.
   """
 
-  alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Run}
+  alias Xaas.Ultracode.{ClosureController, Dispatch, Epoch, Lease, Run}
   alias Xaas.Ultracode.WaveLoop.State
 
   @doc """

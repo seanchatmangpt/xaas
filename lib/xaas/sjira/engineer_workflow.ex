@@ -50,9 +50,10 @@ defmodule Xaas.Sjira.EngineerWorkflow do
       case project(item, opts) do
         {:ok, e} ->
           id = e["work_id"]
+          digest = e["work_digest"]
           case acc[id] do
             nil -> {:cont, {:ok, Map.put(acc, id, e)}}
-            %{"work_digest" => digest} when digest == e["work_digest"] -> {:cont, {:ok, acc}}
+            %{"work_digest" => ^digest} -> {:cont, {:ok, acc}}
             prior -> {:halt, {:refused, :duplicate_identity_conflict,
               %{work_id: id, first_digest: prior["work_digest"], second_digest: e["work_digest"]}}}
           end
@@ -177,13 +178,13 @@ defmodule Xaas.Sjira.EngineerWorkflow do
   defp after_cursor(_ordered, cursor), do: {:refused, :invalid_cursor, cursor}
   defp cursor_for(e), do: Codec.encode_cursor(%{"work_id" => e["work_id"], "work_digest" => e["work_digest"]})
 
-  defp priority(w, opts), do: opts[:priority] || case {w["standing"], w["classification"]} do
+  defp priority(w, opts), do: (opts[:priority] || case {w["standing"], w["classification"]} do
     {"READY_FOR_ENGINEER_DISPOSITION", "KNOWN"} -> 10
     {"NOVEL_INVESTIGATION_REQUIRED", _} -> 20
     {"BLOCKED_ON_EVIDENCE", _} -> 30
     {"UNSUPPORTED(provider_capability)", _} -> 40
     _ -> 50
-  end
+  end)
 
   defp description(e), do: [e["obligation"], "", "Standing: #{e["standing"]}", "Authority: #{e["authority"]}",
     "Required evidence: #{Enum.join(e["required_evidence"], ", ")}", "Dependencies: #{Enum.join(e["dependencies"], ", ")}",
@@ -191,7 +192,7 @@ defmodule Xaas.Sjira.EngineerWorkflow do
   defp list(nil), do: []
   defp list(v) when is_list(v), do: v
   defp list(v), do: [v]
-  defp string_opt(opts, key), do: case opts[key] do v when is_binary(v) and v != "" -> v; _ -> nil end
+  defp string_opt(opts, key), do: (case opts[key] do v when is_binary(v) and v != "" -> v; _ -> nil end)
   defp positive(v, _default) when is_integer(v) and v > 0, do: v
   defp positive(_v, default), do: default
   defp clamp_page(v) when is_integer(v) and v > 0, do: min(v, @max_page_size)

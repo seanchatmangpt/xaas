@@ -134,6 +134,9 @@ defmodule Xaas.Ultracode.Lease do
   # via `Xaas.Ultracode.RuntimeSurface.admit_tool/2` (refusal rows always
   # win; a provider override can only narrow). See `admit_tool/2`.
 
+  # Consequence-class tools refused under this domain's no-ceiling fence.
+  @refused_consequence_tools ~w(Bash git_push publish)
+
   @doc """
   The hardcoded consequence-class tools `admit_tool/2` refuses
   (`{:refused_no_authority, tool}`), in declaration order. Read-only accessor:

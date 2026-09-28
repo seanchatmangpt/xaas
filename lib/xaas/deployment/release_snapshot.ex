@@ -47,8 +47,7 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
       :closure_digest,
       :portable_closure_digest,
       :snapshot_digest,
-      :members,
-      :authority
+      :members
     ]
     defstruct [
       :closure_digest,
