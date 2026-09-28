@@ -669,6 +669,67 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert File.read!(counter) |> String.trim() == "2"
   end
 
+  test "a failover retry is REFUSED when the caller-owned deadline cannot fit it (v26.9.27 wedge guard)",
+       %{worktree: worktree} do
+    {_run, epoch} = create_epoch!(worktree)
+
+    counter = test_path("dispatch-count-deadline")
+
+    cli_dir =
+      fake_cli_dir("""
+      n=$(cat "$FAKE_COUNT" 2>/dev/null || echo 0)
+      n=$((n+1))
+      echo "$n" > "$FAKE_COUNT"
+      echo 'Too Many Requests (HTTP 429)'
+      exit 0
+      """)
+
+    # Deadline 3s away: backoff (10ms) + the 5s minimum useful attempt does
+    # not fit, so the classified outcome is returned without a 2nd attempt.
+    deadline_at = System.monotonic_time(:millisecond) + 3_000
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        failover_backoff_ms: 10,
+        deadline_at_ms: deadline_at,
+        extra_env: %{"FAKE_COUNT" => counter}
+      )
+
+    assert result.status == :rate_limited
+    assert result.attempts == 1
+    assert File.read!(counter) |> String.trim() == "1"
+  end
+
+  test "an attempt is clamped to the caller-owned deadline, not its own timeout",
+       %{worktree: worktree} do
+    {_run, epoch} = create_epoch!(worktree)
+
+    cli_dir =
+      fake_cli_dir("""
+      sleep 30
+      exit 0
+      """)
+
+    started = System.monotonic_time(:millisecond)
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        deadline_at_ms: started + 1_500
+      )
+
+    elapsed = System.monotonic_time(:millisecond) - started
+    assert result.status == :timeout
+    assert elapsed < 10_000
+  end
+
   test "a non-zero exit is :failed with the code, not retried", %{worktree: worktree} do
     {_run, epoch} = create_epoch!(worktree)
 

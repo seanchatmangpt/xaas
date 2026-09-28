@@ -256,13 +256,14 @@ defmodule Xaas.Ultracode.AutonomicTest do
 
     [first | _] = Enum.filter(receipts_for_item("contract-standing"), &(&1.attempt == 1))
     assert first.outcome == :refused
-    assert first.evidence["refusal_reason"] == "worker_no_close"
+    assert first.evidence["reclaimed_by"] == "xaas-lease-kernel"
+    assert first.evidence["reclaim_reason"] == "worker_unclosed"
   end
 
   test "an EXPIRED lease is reaped to a terminal epoch with a refused receipt", %{repo: _repo} do
     # PERMANENT TRIPWIRE (observed falsifier 2026-09-21, Campaign 3 wave 1):
-    # when the worker's lease TTL expires before it vanishes, `Lease.refuse/3`
-    # errors with `{:lease_expired, _}` and the reap used to DISCARD that
+    # when the worker's lease TTL expires before it vanishes, the old
+    # `Lease.refuse/3` path errored with `{:lease_expired, _}` and discarded that
     # result -- the epoch stayed stuck `:running` forever, and
     # `mix xaas.run_validate` named it `missing_terminal`. The terminal
     # epoch => receipt invariant must hold through the expired-lease path.
@@ -313,9 +314,10 @@ defmodule Xaas.Ultracode.AutonomicTest do
              Receipt
              |> Ash.Query.for_read(:for_epoch, %{epoch_id: expired_epoch.id})
              |> Ash.read!(authorize?: false)
-             |> Enum.filter(&Map.has_key?(&1.evidence, "refusal_reason"))
+             |> Enum.filter(&Map.has_key?(&1.evidence, "reclaim_reason"))
 
-    assert receipt.evidence["refusal_reason"] == "worker_no_close"
+    assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+    assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
   end
 
   test "a provider rate refusal halves the pace and retries without spending an attempt", %{

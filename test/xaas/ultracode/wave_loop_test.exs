@@ -677,14 +677,14 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       refute outcome == :busy
     end
 
-    test "a stale lease is reaped (receipted) and the tick proceeds; an unclosed worker BLOCKEDs the row",
+    test "a stale lease is reclaimed and an unclosed worker requeues the work item",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
       {:ok, stale_run, _stale_epoch} = loop_run_with_epoch!(live_lease: false)
 
       fake_dispatch = fn _epoch_id, _opts ->
-        # The worker "exited 0" but never closed the epoch: the loop must
-        # reap it (Engine semantics) and mark the row BLOCKED, never DONE.
+        # The worker "exited 0" but never closed the epoch: the attempt is
+        # reclaimed, but the higher-level work item remains pending.
         {:ok,
          %{
            status: :ok,
@@ -710,7 +710,7 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                  dispatcher: fake_dispatch
                )
 
-      assert outcome == :blocked
+      assert outcome == :requeued
 
       # The stale epoch from the "previous tick" is reaped...
       stale_epoch =
@@ -718,8 +718,8 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert stale_epoch.state == :failed
 
-      # ...and this tick's fresh run exists too; its unclosed epoch is
-      # reaped with a receipt (Engine semantics, never a silent drop).
+      # ...and this tick's fresh run exists too; its unclosed attempt is
+      # reclaimed with a receipt (never a silent drop).
       runs = loop_runs()
       assert length(runs) == 2
       new_run = Enum.find(runs, &(&1.id != stale_run.id))
@@ -735,13 +735,15 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert [%Receipt{} = receipt] = receipts
       assert receipt.outcome == :refused
-      assert receipt.evidence["reaped_by"] == "xaas-wave-loop"
+      assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+      assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
 
-      # The STATE row is BLOCKED with the tick stamp; telemetry records it.
+      # Attempt failure does not poison the work item: the row stays
+      # pending and telemetry records the requeue.
       {:ok, state} = state_path |> File.read!() |> State.parse()
-      assert fetch_step(state, "3").status == :blocked
-      assert File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
-      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"blocked")
+      assert fetch_step(state, "3").status == :pending
+      refute File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
+      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"requeued")
     end
 
     test "a completed worker advances the STATE row, shrinks the note, and appends telemetry",
@@ -843,6 +845,68 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert telemetry_lines(telemetry_path) |> String.split("\n", trim: true) |> length() == 2
     end
 
+    test "a dispatch task that is KILLED does not take the tick down: typed reclaim + requeue (v26.9.27)",
+         %{state_path: state_path, telemetry_path: telemetry_path} do
+      File.write!(state_path, @state)
+
+      killer = fn _epoch_id, _opts -> Process.exit(self(), :kill) end
+
+      assert {:ok, %{outcome: :requeued, step: "3", receipt: receipt}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: killer
+               )
+
+      assert receipt.outcome =~ "dispatch_task_died"
+      [%Run{} = run] = loop_runs()
+      epoch = only_epoch!(run)
+      assert epoch.state == :failed
+      refute File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
+      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"requeued")
+    end
+
+    test "a dispatch that overruns the stream budget is killed and reclaimed as :dispatch_timeout (v26.9.27)",
+         %{state_path: state_path, telemetry_path: telemetry_path} do
+      File.write!(state_path, @state)
+
+      prev_timeout = Application.get_env(:xaas, :ultracode_wave_loop_timeout_seconds)
+      prev_grace = Application.get_env(:xaas, :ultracode_wave_loop_dispatch_grace_seconds)
+      Application.put_env(:xaas, :ultracode_wave_loop_timeout_seconds, 1)
+      Application.put_env(:xaas, :ultracode_wave_loop_dispatch_grace_seconds, 0)
+
+      on_exit(fn ->
+        restore_env(:ultracode_wave_loop_timeout_seconds, prev_timeout)
+        restore_env(:ultracode_wave_loop_dispatch_grace_seconds, prev_grace)
+      end)
+
+      parent = self()
+
+      wedged = fn _epoch_id, opts ->
+        send(parent, {:dispatch_opts, opts})
+        Process.sleep(30_000)
+      end
+
+      started = System.monotonic_time(:millisecond)
+
+      assert {:ok, %{outcome: :requeued, receipt: receipt}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: wedged
+               )
+
+      assert System.monotonic_time(:millisecond) - started < 10_000
+      assert receipt.outcome =~ "dispatch_timeout"
+
+      # The caller-owned absolute deadline reached the dispatch boundary.
+      assert_received {:dispatch_opts, opts}
+      assert is_integer(Keyword.fetch!(opts, :deadline_at_ms))
+
+      [%Run{} = run] = loop_runs()
+      assert only_epoch!(run).state == :failed
+    end
+
     test "the loop runs the REAL Dispatch boundary with a scripted CLI worker (hermetic)",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
@@ -857,7 +921,9 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       cli_dir = fake_cli_dir(script)
 
-      assert {:ok, %{outcome: :blocked}} =
+      # The worker exits without closing its epoch: the attempt is reclaimed
+      # through Lease.reclaim_epoch/4 and the work is requeued (v26.9.27).
+      assert {:ok, %{outcome: :requeued}} =
                WaveLoop.tick(
                  state_path: state_path,
                  telemetry_path: telemetry_path,
@@ -1229,7 +1295,10 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                )
     end
 
-    test "a complete STATE never chains", %{state_path: state_path, telemetry_path: telemetry_path} do
+    test "a complete STATE never chains", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
       File.write!(state_path, complete_state())
 
       assert {:ok, %{outcome: :complete}} =
@@ -1275,11 +1344,15 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                  dispatcher: dispatcher
                )
 
-      # dispatch_refused is the typed settle for a worker that died before
-      # producing a classified outcome; the law is "settled typed", any of
-      # these beat an executing-forever job.
-      assert outcome in [:blocked, :worker_unclosed, :handed_off, :dispatch_refused]
-      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"blocked")
+      # A dead worker is either observed after spawn (:requeued) or the
+      # boundary refuses before spawn (:dispatch_refused). Both terminalize
+      # the disposable attempt and leave the work recoverable.
+      assert outcome in [:requeued, :dispatch_refused]
+
+      telemetry = telemetry_lines(telemetry_path)
+
+      assert telemetry =~ ~s("outcome":"requeued") or
+               telemetry =~ ~s("outcome":"dispatch_refused")
 
       # Reclaim: no epoch of this run is left running/expected with a live
       # lease — the slot is free for the next tick without manual SQL.
@@ -1304,12 +1377,24 @@ defmodule Xaas.Ultracode.WaveLoopTest do
         "receipt" => %{"evidence" => "provider rate-kill code=#{code} too many requests"}
       }) <> "\n"
     end
-
   end
 
   # ------------------------------------------------------------------
   # Fixtures + helpers
   # ------------------------------------------------------------------
+
+  defp restore_env(key, nil), do: Application.delete_env(:xaas, key)
+  defp restore_env(key, value), do: Application.put_env(:xaas, key, value)
+
+  defp only_epoch!(%Run{id: run_id}) do
+    [epoch] =
+      Epoch
+      |> Ash.Query.for_read(:read_unscoped)
+      |> Ash.Query.filter(run_id == ^run_id)
+      |> Ash.read!(authorize?: false)
+
+    epoch
+  end
 
   defp flunk_dispatcher do
     fn _epoch_id, _opts -> flunk("the loop must not dispatch in this test") end

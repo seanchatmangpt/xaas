@@ -2,7 +2,7 @@ defmodule Xaas.Ultracode.WaveLoop do
   require Logger
   require Ash.Query
 
-  alias Xaas.Ultracode.{Dispatch, Epoch, Receipt, Run}
+  alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Run}
   alias Xaas.Ultracode.WaveLoop.State
 
   @kind "ultracode-wave-loop/1"
@@ -82,9 +82,10 @@ defmodule Xaas.Ultracode.WaveLoop do
        serialized because each one rewrites the shared STATE file): a
        completed epoch advances the STATE row (respecting a worker's own
        DONE wording) and removes the step from the REMAINING note; a
-       dead worker's stale epoch is reaped (`:mark_failed` + `:refused`
-       receipt, the `Xaas.Ultracode.Engine` semantics) and the row goes
-       BLOCKED with the log path. Every outcome appends EXACTLY ONE
+       dead worker's attempt is reclaimed through
+       `Xaas.Ultracode.Lease.reclaim_epoch/4` (`:failed` attempt +
+       `:refused` receipt, one transaction) while the work row remains
+       pending for rematerialization. Every outcome appends EXACTLY ONE
        telemetry line (`kind: "ultracode-wave-loop/1"`).
     5. COMPLETE: when the STATE's remaining list is empty, the loop marks
        STATE COMPLETE and every later tick is a `:complete` no-op. The
@@ -137,7 +138,7 @@ defmodule Xaas.Ultracode.WaveLoop do
       inject the seam exactly like every other runner seam in this repo.
   """
 
-  alias Xaas.Ultracode.{Dispatch, Epoch, Receipt, Run}
+  alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Run}
   alias Xaas.Ultracode.WaveLoop.State
 
   @doc """
@@ -241,10 +242,16 @@ defmodule Xaas.Ultracode.WaveLoop do
           # Provider-overload gate first: dispatching into a rate-kill
           # storm only deepens it. Drain now; the cron cadence re-probes.
           if provider_overloaded?(telemetry_path) do
-            finish(tick_no, nil, :busy, %{
-              note: "provider overload detected — draining",
-              window_minutes: @overload_window_minutes
-            }, telemetry_path)
+            finish(
+              tick_no,
+              nil,
+              :busy,
+              %{
+                note: "provider overload detected — draining",
+                window_minutes: @overload_window_minutes
+              },
+              telemetry_path
+            )
           else
             # Steps already being worked by a live loop worker are excluded
             # from selection: with `:ultracode_wave_loop_concurrency` > 1 the
@@ -329,51 +336,123 @@ defmodule Xaas.Ultracode.WaveLoop do
     end
   end
 
-  # Construction is serialized (Run/Epoch inserts); the agent DISPATCHES —
-  # the minutes-long calls — run concurrently via Task.async_stream; and
-  # settles are applied SERIALLY in table order because each settle
-  # rewrites the shared STATE file (read-modify-write must never race).
-  # A dispatch task that dies before settling is typed
-  # :construction_refused with the row untouched (next tick retries).
+  # Construction is serialized (Run/Epoch inserts happen HERE, in the tick
+  # process, before any task starts); the agent DISPATCHES -- the
+  # minutes-long calls -- run concurrently under the unlinked
+  # `Xaas.Ultracode.TaskSupervisor`; and settles are applied SERIALLY in
+  # table order because each settle rewrites the shared STATE file.
+  #
+  # v26.9.27 wedge guard: every dispatch carries one ABSOLUTE deadline
+  # (`:deadline_at_ms`) so Dispatch's failover retry can never outlive the
+  # tick budget; the stream uses `on_timeout: :kill_task`, so a dispatch
+  # that still overruns is a typed `:dispatch_timeout` reclaim of its
+  # (already constructed) epoch instead of an exit of the Oban job; and
+  # the tasks are unlinked, so a killed/crashed task is observed as
+  # `{:exit, reason}` rather than taking the tick down with it.
   defp dispatch_batch(jobs, opts, state_path, telemetry_path, tick_no) do
-    stream =
-      Task.async_stream(
-        jobs,
-        fn {step, st} ->
+    constructed =
+      Enum.map(jobs, fn {step, st} ->
+        try do
+          {step, construct(step, st, state_path, telemetry_path)}
+        rescue
+          e -> {step, {:construction_refused, {:dispatch_raised, Exception.message(e)}}}
+        end
+      end)
+
+    budget_ms = dispatch_budget_ms()
+    deadline_at = System.monotonic_time(:millisecond) + loop_timeout() * 1000
+
+    dispatch_opts =
+      Keyword.update(opts, :dispatch_opts, [deadline_at_ms: deadline_at], fn d_opts ->
+        Keyword.put_new(d_opts, :deadline_at_ms, deadline_at)
+      end)
+
+    runnable = for {step, {:constructed, epoch}} <- constructed, do: {step, epoch}
+
+    dispatched =
+      Xaas.Ultracode.TaskSupervisor
+      |> Task.Supervisor.async_stream_nolink(
+        runnable,
+        fn {_step, epoch} ->
           try do
-            {step, construct_and_dispatch(step, st, opts, state_path, telemetry_path)}
+            case dispatch(epoch, dispatch_opts) do
+              {:ok, _} = result -> {:settled, epoch.id, result}
+              {:error, _} = result -> {:settled, epoch.id, result}
+            end
           rescue
-            e -> {step, {:construction_refused, {:dispatch_raised, Exception.message(e)}}}
+            e -> {:settled, epoch.id, {:error, {:dispatch_raised, Exception.message(e)}}}
           end
         end,
-        max_concurrency: length(jobs),
-        timeout: dispatch_budget_ms(),
+        max_concurrency: max(length(runnable), 1),
+        timeout: budget_ms,
+        on_timeout: :kill_task,
         ordered: true
       )
+      |> Enum.zip(runnable)
+      |> Map.new(fn
+        {{:ok, settled}, {step, _epoch}} ->
+          {step.id, settled}
 
-    results =
-      Enum.zip(jobs, stream)
-      |> Enum.map(fn
-        {_job, {:ok, pair}} -> pair
-        {job, {:exit, reason}} ->
-          {elem(job, 0), {:construction_refused, {:dispatch_task_died, reason}}}
+        {{:exit, reason}, {step, epoch}} ->
+          {step.id, {:task_down, epoch.id, reason}}
       end)
 
     reports =
-      Enum.map(results, fn
-        {step, {:settled, epoch_id, result}} ->
-          settle(step, epoch_id, result, state_path, telemetry_path, tick_no)
+      Enum.map(constructed, fn
+        {step, {:constructed, _epoch}} ->
+          case Map.fetch!(dispatched, step.id) do
+            {:settled, epoch_id, result} ->
+              settle(step, epoch_id, result, state_path, telemetry_path, tick_no)
+
+            {:task_down, epoch_id, reason} ->
+              reclaim_task_down(step, epoch_id, reason, telemetry_path, tick_no)
+          end
 
         {step, {:construction_refused, reason}} ->
-          finish(tick_no, step.id, :construction_refused, %{reason: inspect(reason)}, telemetry_path)
+          finish(
+            tick_no,
+            step.id,
+            :construction_refused,
+            %{reason: inspect(reason)},
+            telemetry_path
+          )
       end)
 
     List.last(reports)
   end
 
-  defp dispatch_budget_ms, do: (loop_timeout() + 60) * 1000
+  # A dispatch task that timed out (killed by the stream) or died: its epoch
+  # was constructed, so the attempt is reclaimed through the ONE lease
+  # kernel and the work is requeued (the row stays pending).
+  defp reclaim_task_down(step, epoch_id, reason, telemetry_path, tick_no) do
+    reclaim_reason = if reason == :timeout, do: :dispatch_timeout, else: :worker_down
 
-  defp construct_and_dispatch(step, state, opts, state_path, telemetry_path) do
+    reclaim =
+      Lease.reclaim_epoch(epoch_id, reclaim_reason, %{
+        "observer" => "xaas-wave-loop-task-supervisor",
+        "task_exit" => inspect(reason)
+      })
+
+    outcome = if reason == :timeout, do: :dispatch_timeout, else: :dispatch_task_died
+
+    finish(
+      tick_no,
+      step.id,
+      :requeued,
+      %{outcome: format_any(outcome), epoch_id: epoch_id, reclaim: format_any(reclaim)},
+      telemetry_path
+    )
+  end
+
+  # The stream budget: the loop timeout plus a grace for Dispatch's own
+  # group reap. Dispatch is bounded by `:deadline_at_ms` (the loop timeout),
+  # so reaching this budget means the task itself wedged.
+  defp dispatch_budget_ms do
+    grace = Application.get_env(:xaas, :ultracode_wave_loop_dispatch_grace_seconds, 60)
+    (loop_timeout() + grace) * 1000
+  end
+
+  defp construct(step, state, state_path, telemetry_path) do
     goal =
       State.build_goal(state, step, %{state_path: state_path, telemetry_path: telemetry_path})
 
@@ -382,10 +461,7 @@ defmodule Xaas.Ultracode.WaveLoop do
     with {:ok, run} <- create_loop_run(goal),
          {:ok, run} <- start_run(run, subject, state.work_surface),
          {:ok, epoch} <- activate_first_epoch(run) do
-      case dispatch(epoch, opts) do
-        {:ok, _} = result -> {:settled, epoch.id, result}
-        {:error, _} = result -> {:settled, epoch.id, result}
-      end
+      {:constructed, epoch}
     else
       {:error, reason} -> {:construction_refused, reason}
     end
@@ -433,7 +509,10 @@ defmodule Xaas.Ultracode.WaveLoop do
   # share one telemetry DIRECTORY, so a single fixed filename would leak one
   # loop's setpoint into another's width (observed cross-test in wave_loop_test).
   defp setpoint_path(telemetry_path) do
-    name = "wave-setpoint-" <> Integer.to_string(:erlang.phash2(String.to_charlist(telemetry_path))) <> ".txt"
+    name =
+      "wave-setpoint-" <>
+        Integer.to_string(:erlang.phash2(String.to_charlist(telemetry_path))) <> ".txt"
+
     Path.join(Path.dirname(telemetry_path), name)
   end
 
@@ -481,8 +560,10 @@ defmodule Xaas.Ultracode.WaveLoop do
 
       true ->
         Enum.reduce_while(stale, :ok, fn epoch, :ok ->
-          case close_out_epoch(epoch.id, "stale_worker_lease_expired") do
-            {:reaped, _previous_state} -> {:cont, :ok}
+          case Lease.reclaim_epoch(epoch.id, :lease_expired, %{
+                 "observer" => "xaas-wave-loop"
+               }) do
+            {:reclaimed, _epoch, _receipt} -> {:cont, :ok}
             {:already_terminal, _state} -> {:cont, :ok}
             other -> {:halt, {:stale_reap_failed, other}}
           end
@@ -506,7 +587,11 @@ defmodule Xaas.Ultracode.WaveLoop do
   # skipped, never a crash.
   defp provider_overloaded?(telemetry_path) do
     threshold =
-      Application.get_env(:xaas, :ultracode_wave_loop_overload_threshold, @overload_default_threshold)
+      Application.get_env(
+        :xaas,
+        :ultracode_wave_loop_overload_threshold,
+        @overload_default_threshold
+      )
 
     cutoff = DateTime.add(DateTime.utc_now(), -@overload_window_minutes * 60, :second)
 
@@ -564,57 +649,6 @@ defmodule Xaas.Ultracode.WaveLoop do
   defp lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at}) do
     not is_nil(token) and not is_nil(expires_at) and
       DateTime.compare(expires_at, DateTime.utc_now()) == :gt
-  end
-
-  # The Engine's settlement semantics, loop-scoped: only an epoch with no
-  # live lease and no terminal state is reaped, and the reap is receipted.
-  defp close_out_epoch(epoch_id, reap_reason) do
-    epoch = Ash.get!(Epoch, epoch_id, action: :read_unscoped, authorize?: false)
-
-    cond do
-      epoch.state not in [:expected, :running] ->
-        {:already_terminal, epoch.state}
-
-      lease_live?(epoch) ->
-        :handed_off
-
-      true ->
-        case Ash.update(
-               Ash.Changeset.for_update(epoch, :mark_failed, %{}),
-               actor: Xaas.SystemAuthority.new(:ultracode_reactor)
-             ) do
-          {:ok, _failed} ->
-            {:ok, _} =
-              seal_receipt(epoch, %{
-                "reaped_by" => "xaas-wave-loop",
-                "reap_reason" => reap_reason
-              })
-
-            {:reaped, epoch.state}
-
-          {:error, _error} ->
-            # The row moved concurrently (closed/refused/missed by someone
-            # else between the read and this write). Report what is there.
-            observed = Ash.get!(Epoch, epoch_id, action: :read_unscoped, authorize?: false).state
-            {:settle_race, observed}
-        end
-    end
-  end
-
-  defp seal_receipt(epoch, evidence) do
-    Receipt
-    |> Ash.Changeset.for_create(
-      :seal,
-      %{
-        epoch_id: epoch.id,
-        subject: epoch.exact_subject,
-        outcome: :refused,
-        evidence: evidence,
-        sealed_at: DateTime.utc_now()
-      },
-      authorize?: false
-    )
-    |> Ash.create()
   end
 
   # ------------------------------------------------------------------
@@ -719,21 +753,21 @@ defmodule Xaas.Ultracode.WaveLoop do
         end
 
       {:ok, %{status: :ok} = res} ->
-        non_terminal(step, epoch_id, res, "worker_ended_without_closing", :worker_unclosed, %{
+        non_terminal(step, epoch_id, res, :worker_unclosed, :worker_unclosed, %{
           state_path: state_path,
           telemetry_path: telemetry_path,
           tick_no: tick_no
         })
 
       {:ok, %{status: :rate_limited} = res} ->
-        non_terminal(step, epoch_id, res, "worker_rate_limited", :rate_limited, %{
+        non_terminal(step, epoch_id, res, :rate_limited, :rate_limited, %{
           state_path: state_path,
           telemetry_path: telemetry_path,
           tick_no: tick_no
         })
 
       {:ok, %{status: :timeout} = res} ->
-        non_terminal(step, epoch_id, res, "worker_timeout", :timeout, %{
+        non_terminal(step, epoch_id, res, :dispatch_timeout, :timeout, %{
           state_path: state_path,
           telemetry_path: telemetry_path,
           tick_no: tick_no
@@ -744,7 +778,7 @@ defmodule Xaas.Ultracode.WaveLoop do
           step,
           epoch_id,
           res,
-          "worker_exit_#{res.exit_code}",
+          :worker_exit,
           {:worker_exit, res.exit_code},
           %{
             state_path: state_path,
@@ -754,14 +788,21 @@ defmodule Xaas.Ultracode.WaveLoop do
         )
 
       {:error, reason} ->
-        # The dispatch boundary refused before anything ran (CLI/node/log).
-        # Nothing proven, nothing reaped: the row stays pending for the
-        # next tick; the telemetry carries the typed refusal.
+        # The dispatch boundary refused before useful work completed. Close
+        # the disposable attempt through the SAME reclaim kernel used by
+        # worker loss, but leave the higher-level STATE row pending so the
+        # next tick can materialize a fresh attempt.
+        reclaim =
+          Lease.reclaim_epoch(epoch_id, :dispatch_refused, %{
+            "observer" => "xaas-wave-loop",
+            "dispatch_error" => inspect(reason)
+          })
+
         finish(
           tick_no,
           step.id,
           :dispatch_refused,
-          %{reason: inspect(reason)},
+          %{reason: inspect(reason), reclaim: format_any(reclaim)},
           telemetry_path
         )
     end
@@ -775,11 +816,47 @@ defmodule Xaas.Ultracode.WaveLoop do
          outcome,
          %{state_path: state_path, telemetry_path: telemetry_path, tick_no: tick_no}
        ) do
-    case close_out_epoch(epoch_id, reap_reason) do
-      {:reaped, _previous_state} ->
-        line = "wave-loop tick #{tick_no}: outcome=#{inspect(outcome)} " <> evidence_tail(res)
+    reclaim_opts =
+      case res do
+        %{worker_id: worker_id} when is_binary(worker_id) ->
+          [expected_leased_to: worker_id]
 
-        apply_blocked(step, outcome, line, state_path, telemetry_path, tick_no)
+        _ ->
+          []
+      end
+
+    case Lease.reclaim_epoch(
+           epoch_id,
+           reap_reason,
+           %{
+             "observer" => "xaas-wave-loop",
+             "dispatch_outcome" => format_any(outcome),
+             "dispatch_evidence" => evidence_tail(res)
+           },
+           reclaim_opts
+         ) do
+      {:reclaimed, reclaimed, receipt} ->
+        # Worker/process death is an ATTEMPT failure, not a work-item
+        # verdict. The attempt is terminal + receipted (slot free), while
+        # the STATE row stays pending so a later tick creates a fresh
+        # attempt. This is the Armstrong boundary: workers are disposable;
+        # work survives them.
+        line =
+          "wave-loop tick #{tick_no}: reclaimed #{reap_reason}; work requeued — " <>
+            evidence_tail(res)
+
+        finish(
+          tick_no,
+          step.id,
+          :requeued,
+          %{
+            outcome: format_any(outcome),
+            evidence: line,
+            epoch_id: reclaimed.id,
+            reclaim_receipt_id: receipt.id
+          },
+          telemetry_path
+        )
 
       {:already_terminal, :completed} ->
         # Closed in the race window between Dispatch's state read and the
@@ -791,8 +868,8 @@ defmodule Xaas.Ultracode.WaveLoop do
         apply_blocked(step, {:closed_as, state}, line, state_path, telemetry_path, tick_no)
 
       :handed_off ->
-        # A live lease survived the worker's exit: the lease owner finishes
-        # the epoch; the next tick's busy/stale path owns it. Row untouched.
+        # Only non-owner-loss observations may preserve a live lease. Direct
+        # worker-exit observations reclaim the exact token atomically.
         line =
           "wave-loop tick #{tick_no}: live lease survived, handed off — " <> evidence_tail(res)
 
@@ -804,6 +881,15 @@ defmodule Xaas.Ultracode.WaveLoop do
           step.id,
           :settle_race,
           "wave-loop tick #{tick_no}: settle race, epoch now #{observed}",
+          telemetry_path
+        )
+
+      {:error, reason} ->
+        apply_stateless(
+          tick_no,
+          step.id,
+          :reclaim_failed,
+          "wave-loop tick #{tick_no}: reclaim failed #{format_any(reason)}",
           telemetry_path
         )
     end

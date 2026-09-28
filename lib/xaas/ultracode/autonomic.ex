@@ -198,7 +198,8 @@ defmodule Xaas.Ultracode.Autonomic do
             {[item], acc}
 
           :unresolved ->
-            {[], [
+            {[],
+             [
                %{
                  item: item["id"],
                  status: :blocked,
@@ -210,7 +211,8 @@ defmodule Xaas.Ultracode.Autonomic do
              ]}
 
           class ->
-            {[], [
+            {[],
+             [
                %{
                  item: item["id"],
                  status: :satisfied_existing,
@@ -266,8 +268,9 @@ defmodule Xaas.Ultracode.Autonomic do
     # {:ok, result} | {:exit, reason} per item, aligned with `items` by
     # order -- exactly this function's contract.
     results =
-      items
-      |> Task.async_stream(
+      Xaas.Ultracode.TaskSupervisor
+      |> Task.Supervisor.async_stream_nolink(
+        items,
         fn item -> fun.(item, %{sem: sem}) end,
         max_concurrency: max(capacity, 1),
         timeout: :infinity,
@@ -923,58 +926,38 @@ defmodule Xaas.Ultracode.Autonomic do
   defp reap(epoch, ctx) do
     ledger(ctx, :reap, %{epoch_id: epoch.id, leased: not is_nil(epoch.lease_token)})
 
-    if epoch.lease_token do
-      case Lease.refuse(epoch.lease_token, :worker_no_close, %{"reaped_by" => "xaas-autonomic"}) do
-        {:ok, _epoch, _receipt} ->
-          :ok
+    opts =
+      if is_binary(epoch.lease_token),
+        do: [expected_lease_token: epoch.lease_token],
+        else: []
 
-        _refusal_error ->
-          # PERMANENT TRIPWIRE (observed falsifier 2026-09-21, Campaign 3
-          # wave 1 -- run_validate `missing_terminal` on epoch 7b54bd5c):
-          # the worker's lease TTL expired before it vanished, so
-          # `refuse/3` errors with `{:lease_expired, token}` and CANNOT
-          # terminate the epoch. The result used to be discarded (`_ =`),
-          # leaving a stuck-claimed epoch no receipt accounted for. The
-          # `terminal epoch => receipt` invariant is enforced here
-          # unconditionally: whatever the refusal outcome, the epoch ends
-          # terminal with its refused receipt.
-          mark_failed_and_seal(epoch)
-      end
-    else
-      # No live lease to refuse through -- same terminal disposition, and
-      # the SAME receipt invariant (`terminal epoch => receipt`): before
-      # this seal, a worker that died un-claimed left a `:failed` epoch
-      # with no receipt at all.
-      mark_failed_and_seal(epoch)
-    end
+    case Lease.reclaim_epoch(
+           epoch.id,
+           :worker_unclosed,
+           %{"observer" => "xaas-autonomic"},
+           opts
+         ) do
+      {:reclaimed, _failed, _receipt} ->
+        {:failed, "worker ended without closing the lease"}
 
-    {:failed, "worker ended without closing the lease"}
-  end
+      {:already_terminal, :completed} ->
+        # Closure won the race after settle/2's first read. Re-read through
+        # the normal evidence judge; do not turn success into a failure.
+        settle(epoch, ctx)
 
-  # The direct terminal seal (no live lease, or a refusal that could not
-  # terminate the epoch): `:failed` epoch + a refused receipt carrying the
-  # reason.
-  defp mark_failed_and_seal(epoch) do
-    case epoch
-         |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false)
-         |> Ash.update() do
-      {:ok, failed} ->
-        Receipt
-        |> Ash.Changeset.for_create(
-          :seal,
-          %{
-            epoch_id: failed.id,
-            subject: failed.exact_subject,
-            outcome: :refused,
-            evidence: %{"reaped_by" => "xaas-autonomic", "refusal_reason" => "worker_no_close"},
-            sealed_at: DateTime.utc_now()
-          },
-          authorize?: false
-        )
-        |> Ash.create()
+      {:already_terminal, _state} ->
+        {:failed, "worker ended without closing the lease"}
 
-      {:error, _} ->
-        {:error, :reap_failed}
+      :handed_off ->
+        # Ownership changed after our observation. Never revoke the new
+        # owner's capability; surface a retryable attempt failure instead.
+        {:failed, "worker ownership changed before reclaim"}
+
+      {:settle_race, observed} ->
+        {:failed, "worker reclaim raced with epoch state #{observed}"}
+
+      {:error, reason} ->
+        {:failed, "worker reclaim failed: #{inspect(reason)}"}
     end
   end
 

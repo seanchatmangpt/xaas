@@ -514,6 +514,169 @@ defmodule Xaas.Ultracode.Lease do
   end
 
   # ------------------------------------------------------------------
+  # Ownership reclaim
+  # ------------------------------------------------------------------
+
+  @doc """
+  Reclaims one non-terminal Epoch attempt after its worker ownership is gone.
+
+  This is the single convergence point for worker/process loss. The Epoch
+  attempt becomes terminal and receipted, which releases provider capacity;
+  the higher-level work item remains the scheduler's concern and may be
+  materialized into a fresh attempt. A LIVE lease is never stolen merely
+  because a caller asks to reap it: only direct owner-loss observations
+  (worker exit/down, dispatch timeout, or provider-rate termination) may
+  reclaim a still-live token, and that observation must bind to the exact
+  owner via `:expected_lease_token` or `:expected_leased_to`. A generic
+  "worker died" fact can never revoke somebody else's live capability.
+  Expiry/startup recovery must wait for the lease clock.
+
+  The state change is a single token-guarded UPDATE and the Receipt is
+  created in the same database transaction. Concurrent close/refuse/reclaim
+  races therefore have one winner; losers resolve the observed terminal or
+  handed-off state instead of manufacturing a second terminal fact.
+  """
+  @spec reclaim_epoch(String.t(), atom(), map(), keyword()) ::
+          {:reclaimed, Epoch.t(), Receipt.t()}
+          | {:already_terminal, atom()}
+          | :handed_off
+          | {:settle_race, atom()}
+          | {:error, term()}
+  def reclaim_epoch(epoch_id, reason, evidence \\ %{}, opts \\ [])
+      when is_binary(epoch_id) and is_atom(reason) and is_map(evidence) and is_list(opts) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false) do
+      {:ok, nil} ->
+        {:error, {:epoch_not_found, epoch_id}}
+
+      {:error, error} ->
+        {:error, {:epoch_not_found, epoch_id, inspect(error)}}
+
+      {:ok, %Epoch{} = epoch} ->
+        reclaim_epoch_record(epoch, reason, evidence, opts)
+    end
+  end
+
+  defp reclaim_epoch_record(%Epoch{state: state}, _reason, _evidence, _opts)
+       when state != :expected and state != :running,
+       do: {:already_terminal, state}
+
+  defp reclaim_epoch_record(%Epoch{} = epoch, reason, evidence, opts) do
+    lease_live? = epoch_lease_live?(epoch)
+    owner_loss_proven? = owner_gone_observation?(reason) and observed_owner?(epoch, opts)
+
+    if lease_live? and not owner_loss_proven? do
+      :handed_off
+    else
+      base_query =
+        from(e in Epoch,
+          where: e.id == ^epoch.id and e.state in [:expected, :running]
+        )
+
+      guarded_query =
+        if is_binary(epoch.lease_token) do
+          from(e in base_query, where: e.lease_token == ^epoch.lease_token)
+        else
+          from(e in base_query, where: is_nil(e.lease_token))
+        end
+
+      reclaim_evidence =
+        evidence
+        |> Map.merge(%{
+          "reclaimed_by" => "xaas-lease-kernel",
+          "reclaim_reason" => Atom.to_string(reason),
+          "previous_state" => Atom.to_string(epoch.state),
+          "leased_to" => epoch.leased_to,
+          "lease_was_live" => lease_live?
+        })
+        |> maybe_bind_reclaimed_lease(epoch.lease_token)
+
+      transaction =
+        Xaas.Repo.transaction(fn ->
+          with {:ok, reclaimed} <-
+                 atomic_row_update(guarded_query,
+                   state: :failed,
+                   terminal_at: DurationBudget.now()
+                 ),
+               {:ok, receipt} <-
+                 Receipt
+                 |> Ash.Changeset.for_create(:seal, %{
+                   epoch_id: reclaimed.id,
+                   subject: reclaimed.exact_subject,
+                   outcome: :refused,
+                   evidence: reclaim_evidence,
+                   sealed_at: DateTime.utc_now()
+                 })
+                 |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
+            {reclaimed, receipt}
+          else
+            {:error, :no_match} -> Xaas.Repo.rollback(:no_match)
+            {:error, error} -> Xaas.Repo.rollback({:reclaim_receipt_failed, error})
+          end
+        end)
+
+      case transaction do
+        {:ok, {%Epoch{} = reclaimed, %Receipt{} = receipt}} ->
+          {:reclaimed, reclaimed, receipt}
+
+        {:error, :no_match} ->
+          resolve_reclaim_race(epoch.id)
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp resolve_reclaim_race(epoch_id) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false) do
+      {:ok, %Epoch{state: state}} when state not in [:expected, :running] ->
+        {:already_terminal, state}
+
+      {:ok, %Epoch{} = observed} ->
+        if epoch_lease_live?(observed), do: :handed_off, else: {:settle_race, observed.state}
+
+      {:ok, nil} ->
+        {:error, {:epoch_not_found, epoch_id}}
+
+      {:error, error} ->
+        {:error, {:epoch_not_found, epoch_id, inspect(error)}}
+    end
+  end
+
+  defp epoch_lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at})
+       when is_binary(token) and not is_nil(expires_at),
+       do: DateTime.compare(expires_at, DurationBudget.now()) != :lt
+
+  defp epoch_lease_live?(_epoch), do: false
+
+  defp owner_gone_observation?(reason),
+    do:
+      reason in [
+        :worker_down,
+        :worker_unclosed,
+        :rate_limited,
+        :dispatch_timeout,
+        :worker_exit,
+        :node_down
+      ]
+
+  # A live lease is a capability. A generic failure observation is not
+  # sufficient authority to revoke it: the observer must bind the DOWN/exit
+  # fact to the worker id or exact token it actually observed.
+  defp observed_owner?(%Epoch{} = epoch, opts) do
+    expected_token = Keyword.get(opts, :expected_lease_token)
+    expected_worker = Keyword.get(opts, :expected_leased_to)
+
+    (is_binary(expected_token) and expected_token == epoch.lease_token) or
+      (is_binary(expected_worker) and expected_worker == epoch.leased_to)
+  end
+
+  defp maybe_bind_reclaimed_lease(evidence, token) when is_binary(token),
+    do: Map.put(evidence, "lease_fingerprint", lease_fingerprint(token))
+
+  defp maybe_bind_reclaimed_lease(evidence, _token), do: evidence
+
+  # ------------------------------------------------------------------
   # Admission court
   # ------------------------------------------------------------------
 

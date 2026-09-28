@@ -41,8 +41,8 @@ defmodule Xaas.Ultracode.SemanticWave do
       }
 
       results =
-        epochs
-        |> Task.async_stream(&dispatch(&1, ctx),
+        Xaas.Ultracode.TaskSupervisor
+        |> Task.Supervisor.async_stream_nolink(epochs, &dispatch(&1, ctx),
           max_concurrency: capacity,
           ordered: true,
           timeout: :infinity
