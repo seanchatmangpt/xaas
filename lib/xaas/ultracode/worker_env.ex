@@ -12,7 +12,8 @@ defmodule Xaas.Ultracode.WorkerEnv do
     1. `model_provider_names` ∪ `port_credential_names` -> admitted (the
        worker's own model credential and the SA2A/MCP port credential are
        the only secrets it may hold);
-    2. `deny_names`, `deny_prefixes`, `deny_suffix_regex` -> refused (forge,
+    2. `deny_names`, `deny_prefixes`, `deny_word_regex` (secret words anywhere
+       in the name) -> refused; any name not matching `name_regex` is refused first (forge,
        cloud, tracker and chat credentials never reach an agent: every
        consequential edge goes UltraCode -> SA2A -> capability);
     3. `allow_names`, `allow_prefixes` -> admitted (local construction
@@ -60,12 +61,14 @@ defmodule Xaas.Ultracode.WorkerEnv do
   @deny_prefixes list!.("deny_prefixes")
   @allow_names MapSet.new(list!.("allow_names"))
   @allow_prefixes list!.("allow_prefixes")
-  @deny_suffix_source Map.get(@worker_env, "deny_suffix_regex")
+  @deny_word_source Map.fetch!(@worker_env, "deny_word_regex")
+  @name_source Map.fetch!(@worker_env, "name_regex")
+  @url_names MapSet.new(Map.get(@worker_env, "url_names_no_userinfo", []))
 
-  if @deny_suffix_source != nil and not match?({:ok, _}, Regex.compile(@deny_suffix_source)) do
+  for {key, source} <- [deny_word_regex: @deny_word_source, name_regex: @name_source],
+      not match?({:ok, _}, Regex.compile(source)) do
     raise CompileError,
-      description:
-        "worker_env.deny_suffix_regex does not compile: #{inspect(@deny_suffix_source)}"
+      description: "worker_env.#{key} does not compile: #{inspect(source)}"
   end
 
   @typedoc "An environment variable pair."
@@ -86,6 +89,10 @@ defmodule Xaas.Ultracode.WorkerEnv do
   @spec allowed?(String.t()) :: boolean()
   def allowed?(name) when is_binary(name) do
     cond do
+      # Only canonical POSIX-uppercase names cross: lowercase, mixed case,
+      # whitespace and zero-width variants of a secret name never reach the
+      # deny rules' blind spots because they never reach the child at all.
+      not Regex.match?(Regex.compile!(@name_source), name) -> false
       MapSet.member?(@grant_names, name) -> true
       denied?(name) -> false
       MapSet.member?(@allow_names, name) -> true
@@ -99,14 +106,53 @@ defmodule Xaas.Ultracode.WorkerEnv do
   defp denied?(name) do
     MapSet.member?(@deny_names, name) or
       Enum.any?(@deny_prefixes, &String.starts_with?(name, &1)) or
-      deny_suffix?(name)
+      Regex.match?(Regex.compile!(@deny_word_source), name)
   end
 
-  defp deny_suffix?(name) do
-    case @deny_suffix_source do
-      nil -> false
-      source -> Regex.match?(Regex.compile!(source), name)
+  # A URL-valued variable (model endpoint, port endpoint) may cross only
+  # without embedded userinfo: `https://user:pass@host` would smuggle a
+  # credential through an admitted name.
+  defp value_admitted?(name, value) do
+    if MapSet.member?(@url_names, name) do
+      case URI.new(value) do
+        {:ok, %URI{userinfo: nil}} -> true
+        _ -> false
+      end
+    else
+      true
     end
+  end
+
+  defp admitted_pair?({k, v}),
+    do: allowed?(to_string(k)) and value_admitted?(to_string(k), to_string(v))
+
+  # An EXPLICIT caller assignment (dispatch `:extra_env`, a repo
+  # `toolchain_env` pin) is named intent, not ambient inheritance: it may
+  # carry a name the allowlist does not enumerate, but never a denied one.
+  defp explicit_pair?({k, v}) do
+    name = to_string(k)
+
+    Regex.match?(Regex.compile!(@name_source), name) and
+      (MapSet.member?(@grant_names, name) or not denied?(name)) and
+      value_admitted?(name, to_string(v))
+  end
+
+  @doc """
+  `build/2`, plus `explicit` caller assignments that may name variables the
+  allowlist does not enumerate (test harness scripting, repo toolchain pins)
+  but still pass every deny rule. Explicit pairs win on conflict.
+  """
+  @spec build(map(), [pair()] | map(), [pair()] | map()) :: [pair()]
+  def build(parent_env, additions, explicit) when is_map(parent_env) do
+    parent_env
+    |> build(additions)
+    |> Map.new()
+    |> Map.merge(
+      explicit
+      |> Enum.filter(&explicit_pair?/1)
+      |> Map.new(fn {k, v} -> {to_string(k), to_string(v)} end)
+    )
+    |> Enum.sort()
   end
 
   @doc """
@@ -116,11 +162,11 @@ defmodule Xaas.Ultracode.WorkerEnv do
   @spec build(map(), [pair()] | map()) :: [pair()]
   def build(parent_env, additions \\ []) when is_map(parent_env) do
     parent_env
-    |> Enum.filter(fn {k, _} -> allowed?(to_string(k)) end)
+    |> Enum.filter(&admitted_pair?/1)
     |> Map.new(fn {k, v} -> {to_string(k), to_string(v)} end)
     |> Map.merge(
       additions
-      |> Enum.filter(fn {k, _} -> allowed?(to_string(k)) end)
+      |> Enum.filter(&admitted_pair?/1)
       |> Map.new(fn {k, v} -> {to_string(k), to_string(v)} end)
     )
     |> Enum.sort()
@@ -140,10 +186,10 @@ defmodule Xaas.Ultracode.WorkerEnv do
   @doc "Names removed from `parent_env` ∪ `additions` by the law (evidence; names only)."
   @spec dropped(map(), [pair()] | map()) :: [String.t()]
   def dropped(parent_env, additions \\ []) when is_map(parent_env) do
-    (Enum.map(parent_env, fn {k, _} -> to_string(k) end) ++
-       Enum.map(additions, fn {k, _} -> to_string(k) end))
+    (Enum.to_list(parent_env) ++ Enum.to_list(additions))
+    |> Enum.reject(&admitted_pair?/1)
+    |> Enum.map(fn {k, _} -> to_string(k) end)
     |> Enum.uniq()
-    |> Enum.reject(&allowed?/1)
     |> Enum.sort()
   end
 end

@@ -34,6 +34,76 @@ defmodule Xaas.Ultracode.WorkerEnvTest do
     end
   end
 
+  # Court falsify-env (v26.9.27) witnessed every name below crossing the
+  # first policy draft; each is a regression fixture now.
+  @court_leaks [
+    "ZCODE_Token",
+    "ZCODE_github_token",
+    "LC_github_token",
+    "ZCODE_APIKEY",
+    "ZCODE_ApiKey",
+    "ZCODE_PASS",
+    "ZCODE_PWD",
+    "ASDF_HEX_PASS",
+    "LC_PASS",
+    "ZCODE_AUTH",
+    "ZCODE_AUTHORIZATION",
+    "ZCODE_BEARER",
+    "ZCODE_COOKIE",
+    "ZCODE_SESSION",
+    "ZCODE_TOKEN_V2",
+    "ZCODE_TOKEN2",
+    "ZCODE_CLIENT_SECRET_B64",
+    "ZCODE_PRIVATE_KEY_PEM",
+    "ZCODE_API_KEY_FILE",
+    "ASDF_GH_TOKEN_FILE",
+    "ZCODE_TOKEN ",
+    "ZCODE_TOKEN\t",
+    "ZCODE_TOKEN\r",
+    "ZCODE_TOKEN\n",
+    "ZCODE_SECRET\u200B",
+    "ERL_AFLAGS",
+    "ERL_FLAGS",
+    "ERL_ZFLAGS",
+    "ERL_LIBS",
+    "ELIXIR_ERL_OPTIONS",
+    "NODE_EXTRA_CA_CERTS",
+    "NODE_OPTIONS",
+    "HEX_HOME",
+    "CARGO_HOME",
+    "PGPASSWORD",
+    "GIT_ASKPASS",
+    "SSH_AUTH_SOCK",
+    "HTTPS_PROXY",
+    "https_proxy"
+  ]
+
+  describe "court falsify-env regressions" do
+    test "every witnessed leak name is refused" do
+      leaked = Enum.filter(@court_leaks, &WorkerEnv.allowed?/1)
+      assert leaked == []
+    end
+
+    test "dropped/2 names every refused variable, not only the obvious one" do
+      parent = Map.new(@court_leaks, &{&1, "fixture-leak"}) |> Map.put("PATH", "/bin")
+      assert WorkerEnv.dropped(parent, []) == Enum.sort(Enum.uniq(@court_leaks))
+      assert WorkerEnv.build(parent, []) == [{"PATH", "/bin"}]
+    end
+
+    test "a URL-valued admitted name cannot carry userinfo credentials" do
+      parent = %{
+        "ANTHROPIC_BASE_URL" => "https://user:fixture-pass@api.example.test",
+        "XAAS_MCP_URL" => "http://localhost:4000/internal-api/execution/mcp"
+      }
+
+      assert WorkerEnv.build(parent, []) == [
+               {"XAAS_MCP_URL", "http://localhost:4000/internal-api/execution/mcp"}
+             ]
+
+      assert WorkerEnv.dropped(parent, []) == ["ANTHROPIC_BASE_URL"]
+    end
+  end
+
   describe "build/2" do
     test "additions override parent but cannot smuggle a denied credential" do
       parent = %{"PATH" => "/bin", "HOME" => "/h", "GITHUB_TOKEN" => "fixture-gh"}

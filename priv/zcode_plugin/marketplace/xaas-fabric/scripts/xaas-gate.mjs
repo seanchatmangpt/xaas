@@ -47,7 +47,7 @@ const DEFAULT_GATE = Object.freeze({
   git_sweep_subs: ["status", "diff", "log", "rev-parse", "show", "ls-files"],
   git_forbidden: ["-c", "--exec-path", "--namespace", "--no-index", "-F", "--file", "-t", "--template"],
   read_helpers: ["ls", "cat", "head", "tail", "wc"],
-  sensitive_home_dirs: [".zcode", ".ssh", ".aws", ".gnupg", ".config", ".claude", ".docker", ".kube", ".netrc", ".npmrc"],
+  sensitive_home_dirs: [".aws", ".cargo", ".claude", ".config", ".docker", ".git-credentials", ".gitconfig", ".gnupg", ".hex", ".kube", ".netrc", ".npmrc", ".pgpass", ".ssh", ".zcode"],
   deny_tools: ["WebFetch", "WebSearch"],
 });
 

@@ -1,52 +1,423 @@
 {
   "schema": "xaas-ultracode-runtime-surface/v1",
   "law": "ExternalSemanticPorts(UltraCode) = {SA2A, sJira}; local construction is a separate classified set; consequential DO only via BRCE (Xaas.Actuation.run/4)",
-  "semantic_ports": ["sa2a", "sjira"],
-  "local_primitives": ["filesystem", "local_shell", "compiler", "test_runner", "generator", "local_git"],
+  "semantic_ports": [
+    "sa2a",
+    "sjira"
+  ],
+  "local_primitives": [
+    "filesystem",
+    "local_shell",
+    "compiler",
+    "test_runner",
+    "generator",
+    "local_git"
+  ],
   "direct_external": "deny",
-  "consequences": ["local_reversible", "local_durable", "external_read", "external_write", "external_consequential"],
-  "mediations": ["local", "sjira", "sa2a", "brce"],
+  "consequences": [
+    "local_reversible",
+    "local_durable",
+    "external_read",
+    "external_write",
+    "external_consequential"
+  ],
+  "mediations": [
+    "local",
+    "sjira",
+    "sa2a",
+    "brce"
+  ],
   "tools": [
-    {"name": "Read", "category": "filesystem", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "Grep", "category": "filesystem", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "Glob", "category": "filesystem", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "Edit", "category": "filesystem", "consequence": "local_durable", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "Write", "category": "filesystem", "consequence": "local_durable", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "Task", "category": "local_shell", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "TodoWrite", "category": "filesystem", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": true, "refusal": null},
-    {"name": "Bash", "category": "local_shell", "consequence": "local_durable", "agent_visible": true, "mediated_by": "local", "authority_required": false, "lease_admit": false, "refusal": "refused_no_authority", "note": "argv-allowlisted by the xaas-gate hook (gate.git_subs/read_helpers); never lease-admitted as a general tool"},
-    {"name": "WebFetch", "category": "external_http", "consequence": "external_read", "agent_visible": false, "mediated_by": "sa2a", "authority_required": false, "lease_admit": false, "refusal": "forbidden_external_semantic_edge", "required": "UltraCode -> SA2A -> resolve_capability"},
-    {"name": "WebSearch", "category": "external_http", "consequence": "external_read", "agent_visible": false, "mediated_by": "sa2a", "authority_required": false, "lease_admit": false, "refusal": "forbidden_external_semantic_edge", "required": "UltraCode -> SA2A -> resolve_capability"},
-    {"name": "git_push", "category": "remote_git", "consequence": "external_consequential", "agent_visible": false, "mediated_by": "brce", "authority_required": true, "lease_admit": false, "refusal": "refused_no_authority", "required": "UltraCode -> SA2A -> publish_change -> actuate (BRCE)"},
-    {"name": "publish", "category": "remote_publication", "consequence": "external_consequential", "agent_visible": false, "mediated_by": "brce", "authority_required": true, "lease_admit": false, "refusal": "refused_no_authority", "required": "UltraCode -> SA2A -> publish_change -> actuate (BRCE)"},
-    {"name": "mcp__xaas-execution__claim_next", "category": "semantic_port", "consequence": "local_durable", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__heartbeat", "category": "semantic_port", "consequence": "local_durable", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__admit_tool", "category": "semantic_port", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__record_provider_event", "category": "semantic_port", "consequence": "local_durable", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__close_candidate", "category": "semantic_port", "consequence": "local_durable", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__refuse", "category": "semantic_port", "consequence": "local_durable", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__cancel_work", "category": "semantic_port", "consequence": "local_durable", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__surface", "category": "semantic_port", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "sjira", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__resolve_capability", "category": "semantic_port", "consequence": "local_reversible", "agent_visible": true, "mediated_by": "sa2a", "authority_required": false, "lease_admit": false, "refusal": null},
-    {"name": "mcp__xaas-execution__actuate", "category": "semantic_port", "consequence": "external_consequential", "agent_visible": true, "mediated_by": "brce", "authority_required": true, "lease_admit": false, "refusal": null}
+    {
+      "name": "Read",
+      "category": "filesystem",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "Grep",
+      "category": "filesystem",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "Glob",
+      "category": "filesystem",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "Edit",
+      "category": "filesystem",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "Write",
+      "category": "filesystem",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "Task",
+      "category": "local_shell",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "TodoWrite",
+      "category": "filesystem",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": true,
+      "refusal": null
+    },
+    {
+      "name": "Bash",
+      "category": "local_shell",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "local",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": "refused_no_authority",
+      "note": "argv-allowlisted by the xaas-gate hook (gate.git_subs/read_helpers); never lease-admitted as a general tool"
+    },
+    {
+      "name": "WebFetch",
+      "category": "external_http",
+      "consequence": "external_read",
+      "agent_visible": false,
+      "mediated_by": "sa2a",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": "forbidden_external_semantic_edge",
+      "required": "UltraCode -> SA2A -> resolve_capability"
+    },
+    {
+      "name": "WebSearch",
+      "category": "external_http",
+      "consequence": "external_read",
+      "agent_visible": false,
+      "mediated_by": "sa2a",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": "forbidden_external_semantic_edge",
+      "required": "UltraCode -> SA2A -> resolve_capability"
+    },
+    {
+      "name": "git_push",
+      "category": "remote_git",
+      "consequence": "external_consequential",
+      "agent_visible": false,
+      "mediated_by": "brce",
+      "authority_required": true,
+      "lease_admit": false,
+      "refusal": "refused_no_authority",
+      "required": "UltraCode -> SA2A -> publish_change -> actuate (BRCE)"
+    },
+    {
+      "name": "publish",
+      "category": "remote_publication",
+      "consequence": "external_consequential",
+      "agent_visible": false,
+      "mediated_by": "brce",
+      "authority_required": true,
+      "lease_admit": false,
+      "refusal": "refused_no_authority",
+      "required": "UltraCode -> SA2A -> publish_change -> actuate (BRCE)"
+    },
+    {
+      "name": "mcp__xaas-execution__claim_next",
+      "category": "semantic_port",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__heartbeat",
+      "category": "semantic_port",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__admit_tool",
+      "category": "semantic_port",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__record_provider_event",
+      "category": "semantic_port",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__close_candidate",
+      "category": "semantic_port",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__refuse",
+      "category": "semantic_port",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__cancel_work",
+      "category": "semantic_port",
+      "consequence": "local_durable",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__surface",
+      "category": "semantic_port",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "sjira",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__resolve_capability",
+      "category": "semantic_port",
+      "consequence": "local_reversible",
+      "agent_visible": true,
+      "mediated_by": "sa2a",
+      "authority_required": false,
+      "lease_admit": false,
+      "refusal": null
+    },
+    {
+      "name": "mcp__xaas-execution__actuate",
+      "category": "semantic_port",
+      "consequence": "external_consequential",
+      "agent_visible": true,
+      "mediated_by": "brce",
+      "authority_required": true,
+      "lease_admit": false,
+      "refusal": null
+    }
   ],
   "gate": {
-    "pre_lease_ok": ["Read", "Grep", "Glob", "TodoWrite", "Skill"],
-    "local_only": ["Skill"],
-    "git_subs": ["add", "commit", "status", "diff", "log", "rev-parse", "show", "ls-files"],
-    "git_sweep_subs": ["status", "diff", "log", "rev-parse", "show", "ls-files"],
-    "git_forbidden": ["-c", "--exec-path", "--namespace", "--no-index", "-F", "--file", "-t", "--template"],
-    "read_helpers": ["ls", "cat", "head", "tail", "wc"],
-    "sensitive_home_dirs": [".zcode", ".ssh", ".aws", ".gnupg", ".config", ".claude", ".docker", ".kube", ".netrc", ".npmrc"],
-    "deny_tools": ["WebFetch", "WebSearch"]
+    "pre_lease_ok": [
+      "Read",
+      "Grep",
+      "Glob",
+      "TodoWrite",
+      "Skill"
+    ],
+    "local_only": [
+      "Skill"
+    ],
+    "git_subs": [
+      "add",
+      "commit",
+      "status",
+      "diff",
+      "log",
+      "rev-parse",
+      "show",
+      "ls-files"
+    ],
+    "git_sweep_subs": [
+      "status",
+      "diff",
+      "log",
+      "rev-parse",
+      "show",
+      "ls-files"
+    ],
+    "git_forbidden": [
+      "-c",
+      "--exec-path",
+      "--namespace",
+      "--no-index",
+      "-F",
+      "--file",
+      "-t",
+      "--template"
+    ],
+    "read_helpers": [
+      "ls",
+      "cat",
+      "head",
+      "tail",
+      "wc"
+    ],
+    "sensitive_home_dirs": [
+      ".aws",
+      ".cargo",
+      ".claude",
+      ".config",
+      ".docker",
+      ".git-credentials",
+      ".gitconfig",
+      ".gnupg",
+      ".hex",
+      ".kube",
+      ".netrc",
+      ".npmrc",
+      ".pgpass",
+      ".ssh",
+      ".zcode"
+    ],
+    "deny_tools": [
+      "WebFetch",
+      "WebSearch"
+    ]
   },
   "worker_env": {
-    "allow_names": ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TERM", "LANG", "TMPDIR", "TZ", "NODE_PATH", "NODE_EXTRA_CA_CERTS", "XAAS_WORKER", "XAAS_LEASE_CWD", "XAAS_LEASE_ID", "XAAS_MCP_URL", "XAAS_MCP_TOKEN", "XAAS_SURFACE_PATH", "XAAS_ALLOW_SUBAGENTS", "MIX_ENV", "MIX_HOME", "HEX_HOME", "MIX_BUILD_ROOT", "ASDF_DIR", "ASDF_DATA_DIR", "CARGO_HOME", "RUSTUP_HOME"],
-    "allow_prefixes": ["LC_", "ZCODE_", "ERL_", "ELIXIR_", "ASDF_"],
-    "model_provider_names": ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "ZCODE_API_KEY"],
-    "port_credential_names": ["XAAS_MCP_TOKEN"],
-    "deny_names": ["GITHUB_TOKEN", "GH_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_PAT", "DATABASE_URL", "SECRET_KEY_BASE", "INTERNAL_API_TOKEN", "HEX_API_KEY", "NPM_TOKEN", "OPENAI_API_KEY"],
-    "deny_prefixes": ["AWS_", "JIRA_", "ATLASSIAN_", "SLACK_", "NOTION_", "GOOGLE_", "GCLOUD_", "AZURE_", "DOPPLER_", "GITHUB_", "GH_"],
-    "deny_suffix_regex": "(TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIALS?|_KEY|_PAT)$"
+    "allow_names": [
+      "PATH",
+      "HOME",
+      "USER",
+      "LOGNAME",
+      "SHELL",
+      "TERM",
+      "LANG",
+      "TMPDIR",
+      "TZ",
+      "NODE_PATH",
+      "XAAS_WORKER",
+      "XAAS_LEASE_CWD",
+      "XAAS_LEASE_ID",
+      "XAAS_MCP_URL",
+      "XAAS_SURFACE_PATH",
+      "XAAS_ALLOW_SUBAGENTS",
+      "MIX_ENV",
+      "MIX_HOME",
+      "MIX_BUILD_ROOT",
+      "ASDF_DIR",
+      "ASDF_DATA_DIR",
+      "ZCODE_SUBAGENT_MAX_TURNS",
+      "ZCODE_OCEL",
+      "ZCODE_NODE",
+      "ZCODE_TUI_RUNTIME_LOG",
+      "ZCODE_FABRIC_MAX_CONCURRENT"
+    ],
+    "allow_prefixes": [
+      "LC_"
+    ],
+    "model_provider_names": [
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_AUTH_TOKEN",
+      "ANTHROPIC_BASE_URL",
+      "ZCODE_API_KEY"
+    ],
+    "port_credential_names": [
+      "XAAS_MCP_TOKEN"
+    ],
+    "deny_names": [
+      "CARGO_HOME",
+      "DATABASE_URL",
+      "ELIXIR_ERL_OPTIONS",
+      "ERL_AFLAGS",
+      "ERL_FLAGS",
+      "ERL_LIBS",
+      "ERL_ZFLAGS",
+      "GH_ENTERPRISE_TOKEN",
+      "GH_TOKEN",
+      "GITHUB_PAT",
+      "GITHUB_TOKEN",
+      "GIT_ASKPASS",
+      "HEX_API_KEY",
+      "HEX_HOME",
+      "INTERNAL_API_TOKEN",
+      "NETRC",
+      "NODE_EXTRA_CA_CERTS",
+      "NODE_OPTIONS",
+      "NPM_TOKEN",
+      "OPENAI_API_KEY",
+      "RUSTUP_HOME",
+      "SECRET_KEY_BASE",
+      "SSH_ASKPASS",
+      "SSH_AUTH_SOCK"
+    ],
+    "deny_prefixes": [
+      "ALL_PROXY",
+      "ATLASSIAN_",
+      "AWS_",
+      "AZURE_",
+      "DOPPLER_",
+      "ELIXIR_",
+      "ERL_",
+      "GCLOUD_",
+      "GH_",
+      "GITHUB_",
+      "GIT_",
+      "GOOGLE_",
+      "HTTPS_",
+      "HTTP_",
+      "JIRA_",
+      "MYSQL_",
+      "NOTION_",
+      "NO_PROXY",
+      "PG",
+      "REDIS_",
+      "SLACK_",
+      "SSH_"
+    ],
+    "name_regex": "^[A-Z_][A-Z0-9_]*$",
+    "deny_word_regex": "(^|_)(TOKEN|SECRET|PASS|PASSWORD|PASSWD|PWD|CREDENTIALS?|APIKEY|KEY|PAT|AUTH|AUTHORIZATION|BEARER|COOKIE|SESSION|PRIVATE|CERTS?)(_|$|[0-9])",
+    "url_names_no_userinfo": [
+      "ANTHROPIC_BASE_URL",
+      "XAAS_MCP_URL"
+    ]
   }
 }
