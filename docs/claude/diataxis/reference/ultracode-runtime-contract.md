@@ -66,15 +66,19 @@ win; `WebFetch`/`WebSearch` -> `forbidden_external_semantic_edge` naming
 
 Host gate `priv/zcode_plugin/marketplace/xaas-fabric/scripts/xaas-gate.mjs` loads the policy
 `gate` section (`XAAS_SURFACE_PATH` or the repo path; a built-in floor never widens on load
-failure). Order: `deny_tools` denied before any lease read or HTTP; lease-protocol MCP tools
-allowed; `Agent` denied unless `XAAS_ALLOW_SUBAGENTS=1`; `Bash` argv allowlist:
+failure). Order: `deny_tools` denied before any lease read or HTTP; `xaas-execution` MCP tools
+allowed only when the name is in `gate.port_tools` (exact match, not a prefix); `Agent`
+denied unless `XAAS_ALLOW_SUBAGENTS=1` (which `WorkerEnv` never forwards); `Bash` argv
+allowlist:
 
 - single simple command only (no chaining, pipes, redirection, substitution, globbing);
 - `git` inside the leased worktree, subcommands `git_subs`, flags in `git_forbidden` and
   `--git-dir`/`--work-tree`/`--output` denied; sweep mode (`XAAS_SWEEP=1`) allows
   `git_sweep_subs` outside the worktree except `sensitive_home_dirs`;
 - `read_helpers` (`ls cat head tail wc`) worktree-confined; `pwd`, `echo`, `date`;
-  `sh`/`bash` on worktree-confined scripts; `node` only for `xaas-lease.mjs save|get|clear`.
+  `node` only for `xaas-lease.mjs save|get|clear`;
+- `sh`, `bash`, `zsh`, `env` refused (`SHELL_IS_NOT_AUTHORITY`): a worker-written script is
+  arbitrary code no argv check can bound; acceptance runs go through the lease verifier suite.
 
 Other tools after a lease go to the server `admit_tool`.
 
@@ -105,7 +109,10 @@ handle is never trusted), re-checks it with `check_handle/2`, and admits only
 3. `deny_names`, `deny_prefixes`, `deny_word_regex` -> refused;
 4. `allow_names`, `allow_prefixes` (`LC_`) -> admitted; anything else refused.
 
-URL names in `url_names_no_userinfo` are refused if the value has userinfo. Caller additions
+Any value matching `credential_value_regex` (`scheme://u:p@`, `Password=`) is refused under
+every name. URL names in `url_names_no_userinfo` must be plain `http(s)` URLs with a host and
+no `@`, query or fragment. `XAAS_SURFACE_PATH` is set by `Dispatch` after all pairs, so no
+caller can redirect the gate policy. Caller additions
 pass the same law; explicit pairs (`env_added`: gate vars, repo `toolchain_env`, `:extra_env`)
 may name unlisted variables but never denied ones, and win on conflict. Receipts carry names
 only (`key_names/1`, `dropped/2`).
