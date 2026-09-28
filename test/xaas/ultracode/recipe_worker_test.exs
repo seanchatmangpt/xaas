@@ -356,7 +356,9 @@ defmodule Xaas.Ultracode.RecipeWorkerTest do
       assert reaped.state == :failed
       assert [receipt] = receipts_for(epoch.id)
       assert receipt.outcome == :refused
-      assert receipt.evidence["reap_reason"] == "worker_ended_without_closing"
+      # v26.9.27 lease kernel: the Engine reaps through Lease.reclaim_epoch/4.
+      assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+      assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
     end
 
     test "lost AFTER the last renew, while the delta is being staged: the fenced ref update refuses; HEAD, branch and the worktree's index untouched",

@@ -103,7 +103,8 @@ defmodule Xaas.Ultracode.CapabilityResolverTest do
     @impl true
     def candidates(_item, _ctx),
       do:
-        {:ok, [
+        {:ok,
+         [
            %{capability_id: "report:aggregate", satisfies: ["req-2"]},
            %{capability_id: "ingest:normalize", satisfies: ["req-1"]}
          ]}
@@ -149,7 +150,16 @@ defmodule Xaas.Ultracode.CapabilityResolverTest do
     end
   end
 
+  # The resolution receipts only: the same file also carries the
+  # deterministic execution records (xaas.capability-execution-record/1)
+  # appended after them for non-frontier verdicts.
   defp ndjson_lines(path) do
+    path
+    |> all_lines()
+    |> Enum.filter(&(&1["schema"] == "xaas.capability-resolution-receipt/1"))
+  end
+
+  defp all_lines(path) do
     path
     |> File.read!()
     |> String.split("\n", trim: true)
@@ -164,7 +174,9 @@ defmodule Xaas.Ultracode.CapabilityResolverTest do
 
       try do
         with_sources(%{"fleet" => FlipSource}, fn ->
-          tmp = Path.join(System.tmp_dir!(), "resolver-flip-#{System.unique_integer([:positive])}")
+          tmp =
+            Path.join(System.tmp_dir!(), "resolver-flip-#{System.unique_integer([:positive])}")
+
           File.mkdir_p!(tmp)
 
           assert %{class: :frontier} = CapabilityResolver.resolve_item(item(), ctx(tmp))
@@ -192,14 +204,26 @@ defmodule Xaas.Ultracode.CapabilityResolverTest do
         # Worker-eligibility is structural: nothing dispatchable comes back,
         # so the worker function is unreachable for this item.
         assert frontier == []
-        assert [%{item: "w-mix", status: :satisfied_existing, attempts: 0}] = results
+        assert [%{item: "w-mix", status: :satisfied_existing, attempts: 0} = result] = results
         assert [%{"class" => "reuse"}] = ndjson_lines(receipt_path(tmp))
+
+        # The hermetic OkSource names no prior subject (no run/work order/
+        # receipt witness), so the reuse is EXECUTED as a typed
+        # unsupported(no_prior_subject) record -- never a fabricated replay.
+        assert result.outcome == {:unsupported, :no_prior_subject}
+
+        assert [_resolution, %{"schema" => "xaas.capability-execution-record/1"} = exec] =
+                 all_lines(receipt_path(tmp))
+
+        assert exec["outcome"] == "unsupported:no_prior_subject"
       end)
     end
 
     test "(b) zero satisfiers from all-ok sources => :frontier, worker invoked, residual on the receipt" do
       with_sources(%{"fleet" => EmptySource}, fn ->
-        tmp = Path.join(System.tmp_dir!(), "resolver-frontier-#{System.unique_integer([:positive])}")
+        tmp =
+          Path.join(System.tmp_dir!(), "resolver-frontier-#{System.unique_integer([:positive])}")
+
         File.mkdir_p!(tmp)
 
         {frontier, results} =
@@ -363,7 +387,9 @@ defmodule Xaas.Ultracode.CapabilityResolverTest do
   describe "resolution receipt" do
     test "(f) persisted (NDJSON) BEFORE the dispatch stage, falsifier carried, sources recorded" do
       with_sources(%{"fleet" => OkSource}, fn ->
-        tmp = Path.join(System.tmp_dir!(), "resolver-receipt-#{System.unique_integer([:positive])}")
+        tmp =
+          Path.join(System.tmp_dir!(), "resolver-receipt-#{System.unique_integer([:positive])}")
+
         File.mkdir_p!(tmp)
 
         items = [item("w-1"), %{"id" => "w-2", "goal" => "unscoped work"}]
@@ -432,7 +458,9 @@ defmodule Xaas.Ultracode.CapabilityResolverTest do
 
     test "the court runs by default and the ledger records the class map" do
       with_sources(%{"fleet" => OkSource}, fn ->
-        tmp = Path.join(System.tmp_dir!(), "resolver-ledger-#{System.unique_integer([:positive])}")
+        tmp =
+          Path.join(System.tmp_dir!(), "resolver-ledger-#{System.unique_integer([:positive])}")
+
         File.mkdir_p!(tmp)
 
         Autonomic.resolve_capabilities([item("w-1")], ctx(tmp))

@@ -120,7 +120,10 @@ config :xaas, Oban,
   ],
   repo: Xaas.Repo,
   plugins: [
-    {Oban.Plugins.Cron, []},
+    # Daily self-digest (Xaas.Ultracode.SelfDigestWorker, queue
+    # :ultracode_wave): off the :00 minute so it never lands on the */30
+    # wave boundary. AshOban.config/2 prepends its own schedules to this list.
+    {Oban.Plugins.Cron, crontab: [{"17 6 * * *", Xaas.Ultracode.SelfDigestWorker}]},
     # P0.1 dispatch watchdog (fleet-sweep ticket, 2026-09-27): a BEAM death
     # mid-tick (e.g. the 04:52Z server relaunch while oban job 20628 was
     # executing) leaves the row `executing` FOREVER — no worker spawns, the
@@ -304,6 +307,31 @@ config :xaas, :ultracode_sensing_profiles, %{}
 # 25-way claim storm keeps its exact semantics).
 config :xaas, :ultracode_pool_capacity, 10
 
+# Capability-resolution court (Xaas.Ultracode.CapabilityResolver).
+#   * :ultracode_capability_sources -- nil = DERIVED default: the Local
+#     run/census source always, plus Sa2a only when the endpoint below is
+#     set. An unset endpoint is recorded on the receipt as
+#     skipped/not_configured (counted: false) and does NOT fail the closure.
+#     An explicit map (name => Source module) is taken verbatim, every
+#     entry counted and fail-closed.
+#   * :ultracode_sa2a_capability_endpoint -- SA2A fleet URL; nil = unset.
+#     A set endpoint that errors fail-closes the court (:unresolved).
+#   * :ultracode_capability_full_closure -- a COUNTED source returning
+#     {:skipped, _} forces :unresolved when true (ctx may override).
+config :xaas, :ultracode_capability_sources, nil
+config :xaas, :ultracode_sa2a_capability_endpoint, nil
+config :xaas, :ultracode_capability_full_closure, true
+
+# Self-digest (Xaas.Ultracode.SelfDigestWorker / mix xaas.self_digest).
+# telemetry_path nil => the wave loop's :ultracode_wave_loop_telemetry_path;
+# admit: true persists recurring classified clusters as UltraCode self-work
+# orders (ExperienceCluster -> Gap -> WorkOrder).
+config :xaas, :ultracode_self_digest,
+  telemetry_path: nil,
+  out_dir: "tmp/self-digest",
+  window_minutes: 1440,
+  admit: true
+
 # The provider registry + selection policy (`Xaas.Ultracode.ProviderRegistry`,
 # closing UNSUPPORTED(provider-selection:policy)): one config map carrying ALL
 # per-provider facets -- capabilities, transport descriptor, authority ceiling,
@@ -332,7 +360,6 @@ config :xaas, :ultracode_wave_loop_concurrency, wave_loop_concurrency
 # above, so width only grows when an operator sets this key explicitly
 # (never above `:ultracode_pool_capacity`). Intentionally NO default value
 # is declared here: absent the key, growth is off.
-
 
 # The zcode CLI checkout `Dispatch`/`ZcodePackage`/`ProviderHealth` admit the
 # worker launcher from. `/Users/sac/dev/zcode-cli` (the v26.9.22-era default)

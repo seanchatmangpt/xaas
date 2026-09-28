@@ -144,25 +144,46 @@ defmodule Xaas.Ultracode.Autonomic do
       # THE CAPABILITY-RESOLUTION COURT (between sensing and coding): an
       # item reaches the coding worker ONLY when the resolver proves no
       # existing capability or lawful composition satisfies it (`:frontier`).
-      # Reuse/compose/extend/generate verdicts are receipted and recorded
-      # satisfied-by-existing-capability (their deterministic execution is a
-      # follow-up); `:unresolved` (source error, or a skipped witness under
-      # the default full-closure mode) is BLOCKED: no epoch, no worker.
-      {frontier_items, resolved_results} = resolve_capabilities(items, ctx)
-
+      # Non-frontier verdicts are EXECUTED deterministically
+      # (`CapabilityResolver.Execution`): `:reuse` binds the prior subject
+      # as a `:known_replay`; compose/extend/generate are receipted typed
+      # `{:unsupported, _}` (the generation executor is not wired).
+      # `:unresolved` (a configured source errored/skipped) is BLOCKED.
       results =
-        frontier_items
-        |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
-          process_item(item, Map.merge(ctx, sem_ctx))
-        end)
-        |> Enum.zip(frontier_items)
-        |> Enum.map(fn
-          {{:ok, result}, _item} -> result
-          {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
+        resolve_and_dispatch(items, ctx, fn frontier_items ->
+          frontier_items
+          |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
+            process_item(item, Map.merge(ctx, sem_ctx))
+          end)
+          |> Enum.zip(frontier_items)
+          |> Enum.map(fn
+            {{:ok, result}, _item} -> result
+            {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
+          end)
         end)
 
-      finish(ctx, items, resolved_results ++ results)
+      finish(ctx, items, results)
     end
+  end
+
+  @doc """
+  The court + dispatch seam of `run/1`: resolves `items`, executes the
+  non-frontier verdicts, and calls `dispatcher` (a 1-arity function over
+  the frontier item list returning per-item results) ONLY when at least
+  one item is `:frontier`. Returns resolved results followed by the
+  dispatcher's results.
+  """
+  @spec resolve_and_dispatch([map()], map(), ([map()] -> [map()])) :: [map()]
+  def resolve_and_dispatch(items, ctx, dispatcher) when is_function(dispatcher, 1) do
+    {frontier_items, resolved_results} = resolve_capabilities(items, ctx)
+
+    dispatched =
+      case frontier_items do
+        [] -> []
+        frontier -> dispatcher.(frontier)
+      end
+
+    resolved_results ++ dispatched
   end
 
   @doc false
@@ -182,6 +203,22 @@ defmodule Xaas.Ultracode.Autonomic do
       # worker can claim an item whose resolution receipt is not on disk.
       path = Path.join(ctx.out_dir, "capability-resolutions.ndjson")
       CapabilityResolver.Receipt.persist(receipts, path)
+
+      # Deterministic execution of the non-frontier verdicts, appended to
+      # the SAME receipt file (schema xaas.capability-execution-record/1).
+      executions = CapabilityResolver.Execution.execute_all(receipts)
+      CapabilityResolver.Execution.append(executions, path)
+      by_item = Map.new(executions, &{&1.item_id, &1})
+
+      if executions != [] do
+        ledger(ctx, :capability_execution, %{
+          receipt: path,
+          outcomes:
+            Map.new(executions, fn e ->
+              {e.item_id, CapabilityResolver.Execution.outcome_json(e.outcome)}
+            end)
+        })
+      end
 
       ledger(ctx, :capability_resolution, %{
         receipt: path,
@@ -211,6 +248,8 @@ defmodule Xaas.Ultracode.Autonomic do
              ]}
 
           class ->
+            execution = Map.get(by_item, item["id"])
+
             {[],
              [
                %{
@@ -219,6 +258,8 @@ defmodule Xaas.Ultracode.Autonomic do
                  reason:
                    "satisfied_by_existing_capability (#{class}: " <>
                      Enum.join(receipt.selected_capabilities, ", ") <> ")",
+                 outcome: execution && execution.outcome,
+                 replay_of: execution && execution.subject,
                  attempts: 0,
                  history: []
                }
@@ -1129,8 +1170,15 @@ defmodule Xaas.Ultracode.Autonomic do
               :receipt_id,
               :executor,
               :fabric_verifier,
-              :reason
+              :reason,
+              :outcome,
+              :replay_of
             ])
+            |> then(fn m ->
+              if Map.has_key?(m, :outcome),
+                do: Map.update!(m, :outcome, &CapabilityResolver.Execution.outcome_json/1),
+                else: m
+            end)
             |> Map.put(:repo, repo_of(r, by_id, ctx))
             |> Map.put(:history, Enum.map(r.history, &stringify/1))
             |> Map.new(fn {k, v} -> {to_string(k), v} end)

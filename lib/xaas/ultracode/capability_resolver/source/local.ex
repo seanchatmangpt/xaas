@@ -58,23 +58,29 @@ defmodule Xaas.Ultracode.CapabilityResolver.Source.Local do
   # is Run's deliberately-global internal read action (`Run`'s primary
   # `:read` is tenant-enforced); the loop's own readers use the same one.
   defp completed_run_capability_ids do
-    ids =
+    # One candidate per distinct id, bound to its LATEST completed Run
+    # (terminal_at desc, id desc -- deterministic): the prior subject a
+    # :reuse verdict replays (`CapabilityResolver.Execution`).
+    candidates =
       Run
       |> Ash.Query.for_read(:read_unscoped)
       |> Ash.Query.filter(state == :completed and not is_nil(capability_id))
-      |> Ash.Query.select(:capability_id)
+      |> Ash.Query.select([:id, :capability_id, :terminal_at])
       |> Ash.read!(authorize?: false)
-      |> Enum.map(& &1.capability_id)
-      |> Enum.uniq()
-      |> Enum.sort()
+      |> Enum.group_by(& &1.capability_id)
+      |> Enum.map(fn {id, runs} ->
+        latest = Enum.max_by(runs, &{terminal_key(&1.terminal_at), &1.id})
+        %{capability_id: id, satisfies: [id], witness: "run:completed", run_id: latest.id}
+      end)
+      |> Enum.sort_by(& &1.capability_id)
 
-    {:ok,
-     Enum.map(ids, fn id ->
-       %{capability_id: id, satisfies: [id], witness: {:run, :completed}}
-     end)}
+    {:ok, candidates}
   rescue
     error -> {:error, {:run_read_failed, Exception.message(error)}}
   end
+
+  defp terminal_key(nil), do: 0
+  defp terminal_key(%DateTime{} = at), do: DateTime.to_unix(at, :microsecond)
 
   # Resolved census work orders whose subject IS a capability id.
   defp resolved_work_order_ids do
@@ -125,7 +131,8 @@ defmodule Xaas.Ultracode.CapabilityResolver.Source.Local do
         %{
           capability_id: work_order.subject,
           satisfies: [work_order.subject],
-          witness: {:census_resolution, :resolved},
+          witness: "census_resolution:resolved",
+          work_order_id: work_order.id,
           receipt: receipt_ref
         }
       ]

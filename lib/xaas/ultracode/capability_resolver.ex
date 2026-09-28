@@ -75,9 +75,22 @@ defmodule Xaas.Ultracode.CapabilityResolver do
   ## Sources
 
   Configured under `config :xaas, :ultracode_capability_sources` (name =>
-  module implementing `Xaas.Ultracode.CapabilityResolver.Source`). Default:
-  the in-repo `Local` census/run-history source and the config-driven
-  `Sa2a` cross-fleet HTTP source (skipped when unset). Candidates are
+  module implementing `Xaas.Ultracode.CapabilityResolver.Source`). When
+  that key is unset/nil the DEFAULT set is derived, never a static map:
+
+    * the in-repo `Local` census/run-history source, always;
+    * the `Sa2a` cross-fleet HTTP source ONLY when
+      `:ultracode_sa2a_capability_endpoint` is set. An unset endpoint is
+      NOT a configured witness: the default set is local-only, and the
+      receipt records `"sa2a" => %{status: :skipped, detail:
+      :not_configured, counted: false}` -- visible, but outside the
+      fail-closed law (an unconfigured source cannot fail a closure it was
+      never part of). A CONFIGURED source (explicit
+      `:ultracode_capability_sources` entry, or a set endpoint) that
+      errors or skips still fail-closes exactly as above.
+
+  Full-closure mode defaults from `config :xaas,
+  :ultracode_capability_full_closure` (default `true`); `ctx` overrides. Candidates are
   re-admitted by the court through `Source.admit_candidates/2`; one
   invalid candidate fails its whole source call (fail-closed), because a
   silently dropped candidate might have been the satisfier.
@@ -92,10 +105,13 @@ defmodule Xaas.Ultracode.CapabilityResolver do
   alias Xaas.Ultracode.CapabilityResolver.{Receipt, Source}
   alias Xaas.Ultracode.SemanticWork
 
-  @default_sources %{
-    "local" => Xaas.Ultracode.CapabilityResolver.Source.Local,
-    "sa2a" => Xaas.Ultracode.CapabilityResolver.Source.Sa2a
-  }
+  @local_source Xaas.Ultracode.CapabilityResolver.Source.Local
+  @sa2a_source Xaas.Ultracode.CapabilityResolver.Source.Sa2a
+
+  # Optional witness metadata a source may attach to a candidate; carried
+  # through admission (never trusted for the verdict) so a :reuse verdict
+  # can BIND the prior subject deterministically (`Execution`).
+  @witness_keys [:witness, :run_id, :receipt, :work_order_id, :ggen_pack]
 
   @doc """
   Resolves every item against the fleet's capability closure, in input
@@ -125,8 +141,11 @@ defmodule Xaas.Ultracode.CapabilityResolver do
         # what keeps today's requirement-less backlog waves flowing.
         {%{}, {:decided, :frontier, [], []}}
       else
-        statuses = query_sources(configured_sources(), item, ctx)
-        {statuses, verdict(requirements, statuses, ctx)}
+        {counted, uncounted} = configured_sources()
+        statuses = query_sources(counted, item, ctx)
+        # Uncounted (not-configured) sources are RECORDED but never enter
+        # the fail-closed law: the verdict is computed over `statuses`.
+        {Map.merge(uncounted, statuses), verdict(requirements, statuses, ctx)}
       end
 
     receipt =
@@ -196,8 +215,11 @@ defmodule Xaas.Ultracode.CapabilityResolver do
   def admit_candidates(source_name, candidates) when is_list(candidates) do
     Enum.reduce_while(candidates, {:ok, []}, fn candidate, {:ok, acc} ->
       case admit_candidate(candidate) do
-        {:ok, admitted} -> {:cont, {:ok, [stamped(admitted, source_name) | acc]}}
-        {:error, reason} -> {:halt, {:error, {:invalid_candidate, source_name, candidate, reason}}}
+        {:ok, admitted} ->
+          {:cont, {:ok, [stamped(admitted, source_name) | acc]}}
+
+        {:error, reason} ->
+          {:halt, {:error, {:invalid_candidate, source_name, candidate, reason}}}
       end
     end)
     |> case do
@@ -213,8 +235,32 @@ defmodule Xaas.Ultracode.CapabilityResolver do
   # Sources
   # ------------------------------------------------------------------
 
-  defp configured_sources do
-    Application.get_env(:xaas, :ultracode_capability_sources, @default_sources) || %{}
+  @doc """
+  The court's witness set: `{counted, uncounted}`. `counted` (name =>
+  module) is queried and bound by the fail-closed law; `uncounted` (name
+  => source status) is recorded on the receipt only. An explicit
+  `:ultracode_capability_sources` map is taken verbatim (all counted);
+  unset/nil derives the default (see moduledoc "Sources").
+  """
+  @spec configured_sources() :: {%{String.t() => module()}, %{String.t() => map()}}
+  def configured_sources do
+    case Application.get_env(:xaas, :ultracode_capability_sources) do
+      sources when is_map(sources) ->
+        {sources, %{}}
+
+      nil ->
+        if is_nil(Application.get_env(:xaas, :ultracode_sa2a_capability_endpoint)) do
+          {%{"local" => @local_source},
+           %{"sa2a" => %{status: :skipped, detail: :not_configured, counted: false}}}
+        else
+          {%{"local" => @local_source, "sa2a" => @sa2a_source}, %{}}
+        end
+
+      # A malformed sources value is a court with no lawful witnesses:
+      # zero counted sources => :unresolved (fail-closed), never a default.
+      _other ->
+        {%{}, %{}}
+    end
   end
 
   # One source call, crash-isolated: a raising source is a FAILED source
@@ -248,11 +294,20 @@ defmodule Xaas.Ultracode.CapabilityResolver do
   defp admit_candidate(%{} = candidate) do
     with {:ok, id} <- capability_id(candidate),
          {:ok, satisfies} <- satisfies(candidate) do
-      {:ok, %{capability_id: id, satisfies: satisfies}}
+      {:ok, Map.merge(witness_metadata(candidate), %{capability_id: id, satisfies: satisfies})}
     end
   end
 
   defp admit_candidate(_other), do: {:error, :not_a_map}
+
+  defp witness_metadata(candidate) do
+    Enum.reduce(@witness_keys, %{}, fn key, acc ->
+      case Map.get(candidate, key, Map.get(candidate, Atom.to_string(key))) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
 
   defp capability_id(candidate) do
     case candidate do
@@ -264,7 +319,12 @@ defmodule Xaas.Ultracode.CapabilityResolver do
 
   # Reuses the canonical pattern -- byte-identical source by construction,
   # never a second hand-maintained copy.
-  defp admit_id(id), do: if(Regex.match?(SemanticWork.capability_id_pattern(), id), do: {:ok, id}, else: {:error, :capability_id_pattern})
+  defp admit_id(id),
+    do:
+      if(Regex.match?(SemanticWork.capability_id_pattern(), id),
+        do: {:ok, id},
+        else: {:error, :capability_id_pattern}
+      )
 
   defp satisfies(candidate) do
     satisfies =
@@ -295,7 +355,12 @@ defmodule Xaas.Ultracode.CapabilityResolver do
 
   # The fail-closed law, then the mechanical classification.
   defp verdict(requirements, statuses, ctx) do
-    full_closure? = Map.get(ctx, :capability_full_closure, true)
+    full_closure? =
+      Map.get(
+        ctx,
+        :capability_full_closure,
+        Application.get_env(:xaas, :ultracode_capability_full_closure, true)
+      )
 
     any_error? = Enum.any?(statuses, fn {_, s} -> s.status == :error end)
     any_skipped? = Enum.any?(statuses, fn {_, s} -> s.status == :skipped end)

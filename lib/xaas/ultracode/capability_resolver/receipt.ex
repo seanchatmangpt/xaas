@@ -51,7 +51,10 @@ defmodule Xaas.Ultracode.CapabilityResolver.Receipt do
           required(:source) => String.t()
         }
 
-  @type source_status :: %{required(:status) => :ok | :error | :skipped, optional(:detail) => term()}
+  @type source_status :: %{
+          required(:status) => :ok | :error | :skipped,
+          optional(:detail) => term()
+        }
 
   @type t :: %__MODULE__{
           item_id: String.t() | nil,
@@ -123,18 +126,35 @@ defmodule Xaas.Ultracode.CapabilityResolver.Receipt do
             "satisfies" => candidate.satisfies,
             "source" => candidate.source
           }
+          |> Map.merge(witness_json(candidate))
         end),
       "selected_capabilities" => receipt.selected_capabilities,
       "class" => Atom.to_string(receipt.class),
       "residual_requirements" => receipt.residual_requirements,
       "sources_queried" =>
         Map.new(receipt.sources_queried, fn {name, status} ->
-          {name, %{"status" => Atom.to_string(status.status), "detail" => inspect(status[:detail])}}
+          {name,
+           %{
+             "status" => Atom.to_string(status.status),
+             "detail" => inspect(status[:detail]),
+             "counted" => Map.get(status, :counted, true)
+           }}
         end),
       "falsifier" => receipt.falsifier,
       "resolved_at" => DateTime.to_iso8601(receipt.resolved_at)
     }
   end
+
+  # Optional witness metadata (the prior subject a :reuse binds to) rides
+  # along verbatim when JSON-safe, inspected otherwise.
+  defp witness_json(candidate) do
+    candidate
+    |> Map.take([:witness, :run_id, :receipt, :work_order_id, :ggen_pack])
+    |> Map.new(fn {key, value} -> {Atom.to_string(key), json_safe(value)} end)
+  end
+
+  defp json_safe(value) when is_binary(value) or is_number(value) or is_boolean(value), do: value
+  defp json_safe(value), do: inspect(value)
 
   @doc """
   Persists receipts as NDJSON (one JSON object per line) at `path`. Called
