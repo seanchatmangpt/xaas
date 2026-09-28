@@ -1,0 +1,63 @@
+name: v26.9.28 repository release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - VERSION
+      - mix.exs
+      - mix.lock
+      - .github/workflows/release-tag-v26.9.28.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require coordinated upstream registries
+        run: |
+          set -euo pipefail
+          require_version() {
+            pkg="$1"
+            version="$2"
+            curl -fsS "https://hex.pm/api/packages/$pkg" |
+              jq -e --arg v "$version" '.releases[]? | select(.version == $v)' >/dev/null ||
+              { echo "BLOCKED(dependency_registry:${pkg}@${version})" >&2; exit 3; }
+          }
+          require_version ggen_igniter 26.9.28
+          require_version ash_r2rml 26.9.28
+          require_version ash_a2a 26.9.28
+          require_version beam4pm 26.9.28
+      - name: Require exact committed release graph
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\n\r' < VERSION)" = "26.9.28"
+          grep -F '"ggen_igniter": {:hex, :ggen_igniter, "26.9.28"' mix.lock ||
+            { echo 'BLOCKED(lock:ggen_igniter@26.9.28)' >&2; exit 4; }
+          grep -F '"ash_a2a": {:hex, :ash_a2a, "26.9.28"' mix.lock ||
+            { echo 'BLOCKED(lock:ash_a2a@26.9.28)' >&2; exit 4; }
+          grep -F '"ash_r2rml": {:git, "https://github.com/seanchatmangpt/ash_r2rml.git", "40d181fffdefbb65ee4a83486eae86534690c4d5"' mix.lock ||
+            { echo 'BLOCKED(lock:ash_r2rml@40d181f)' >&2; exit 4; }
+      - name: Create or verify exact lightweight tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          subject="$(git rev-parse HEAD)"
+          test "$subject" = "$GITHUB_SHA"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v26.9.28" >/dev/null 2>&1; then
+            test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v26.9.28" --jq .object.sha)" = "$subject"
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/v26.9.28" -f sha="$subject" >/dev/null
+          fi
+          if ! gh release view v26.9.28 >/dev/null 2>&1; then
+            gh release create v26.9.28 --target "$subject" --title "v26.9.28" --generate-notes
+          fi
