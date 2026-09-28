@@ -145,13 +145,26 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
 
   defp validate_passport_identity(passport) do
     cond do
-      blank?(passport.part_id) -> {:error, :part_identity_missing}
-      not valid_subject?(passport.exact_subject) -> {:error, :part_subject_not_exact}
-      not digest?(passport.part_digest) -> {:error, :part_digest_invalid}
-      not digest?(passport.producer_digest) -> {:error, :producer_digest_invalid}
-      not digest?(passport.consequence_schema_digest) -> {:error, :part_consequence_schema_digest_invalid}
-      not digest?(passport.receipt_schema_digest) -> {:error, :part_receipt_schema_digest_invalid}
-      true -> :ok
+      blank?(passport.part_id) ->
+        {:error, :part_identity_missing}
+
+      not valid_subject?(passport.exact_subject) ->
+        {:error, :part_subject_not_exact}
+
+      not digest?(passport.part_digest) ->
+        {:error, :part_digest_invalid}
+
+      not digest?(passport.producer_digest) ->
+        {:error, :producer_digest_invalid}
+
+      not digest?(passport.consequence_schema_digest) ->
+        {:error, :part_consequence_schema_digest_invalid}
+
+      not digest?(passport.receipt_schema_digest) ->
+        {:error, :part_receipt_schema_digest_invalid}
+
+      true ->
+        :ok
     end
   end
 
@@ -218,7 +231,8 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
       else: {:error, :authority_ceiling_increase}
   end
 
-  defp canonical_authority(authorities), do: authorities |> Enum.map(&Atom.to_string/1) |> Enum.sort()
+  defp canonical_authority(authorities),
+    do: authorities |> Enum.map(&Atom.to_string/1) |> Enum.sort()
 
   defp valid_subject?(value), do: is_binary(value) and Regex.match?(@subject, value)
   defp digest?(value), do: is_binary(value) and Regex.match?(@sha256, value)
@@ -233,9 +247,15 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
     "sha256:" <> (:crypto.hash(:sha256, canonical) |> Base.encode16(case: :lower))
   end
 
-  defp canonical_term(value) when is_struct(value), do: value |> Map.from_struct() |> canonical_term()
-  defp canonical_term(value) when is_map(value), do: value |> Enum.map(fn {k, v} -> {k, canonical_term(v)} end) |> Enum.sort()
+  defp canonical_term(value) when is_struct(value),
+    do: value |> Map.from_struct() |> canonical_term()
+
+  defp canonical_term(value) when is_map(value),
+    do: value |> Enum.map(fn {k, v} -> {k, canonical_term(v)} end) |> Enum.sort()
+
   defp canonical_term(value) when is_list(value), do: Enum.map(value, &canonical_term/1)
-  defp canonical_term(value) when is_tuple(value), do: value |> Tuple.to_list() |> Enum.map(&canonical_term/1) |> List.to_tuple()
+
+  defp canonical_term(value) when is_tuple(value),
+    do: value |> Tuple.to_list() |> Enum.map(&canonical_term/1) |> List.to_tuple()
   defp canonical_term(value), do: value
 end
