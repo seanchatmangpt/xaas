@@ -66,6 +66,24 @@ defmodule Xaas.Ultracode.CapabilityPort do
 
   @subject_keys ["repo", "base_sha"]
 
+  @event_prefix [:xaas, :ultracode, :capability]
+
+  @doc """
+  The `:telemetry` event names `resolve/4` emits (same `:telemetry.execute`
+  mechanism as `Lease.record_provider_event/2` and the wave-loop OCEL
+  counter): `capability_requested`, `capability_resolved`, `capability_gap`.
+  Measurements `%{count: 1}`; metadata carries `work_id`, `epoch_id` (the
+  lease epoch -- NEVER the bearer lease token), `capability`, `class`,
+  `code`, `policy_digest`.
+  """
+  @spec telemetry_events() :: [[atom()]]
+  def telemetry_events,
+    do:
+      Enum.map(
+        [:capability_requested, :capability_resolved, :capability_gap],
+        &(@event_prefix ++ [&1])
+      )
+
   @type handle :: %{String.t() => term()}
 
   @doc """
@@ -80,6 +98,7 @@ defmodule Xaas.Ultracode.CapabilityPort do
       when is_map(lease_ctx) and is_binary(capability) do
     constraints = constraints || %{}
     subject = subject(lease_ctx)
+    emit(:capability_requested, lease_ctx, capability, nil, nil)
 
     with :ok <- check_claimed_subject(subject, constraints["subject"]) do
       item = %{
@@ -90,6 +109,12 @@ defmodule Xaas.Ultracode.CapabilityPort do
 
       receipt = CapabilityResolver.resolve_item(item, resolver_ctx(opts))
       answer(receipt, lease_ctx, capability, subject, constraints, opts)
+    else
+      # A refused wire claim never reaches the court: no gap RECORD (nothing
+      # is missing from the closure), but the refusal is still evidenced.
+      {:error, failure} ->
+        emit(:capability_gap, lease_ctx, capability, nil, failure["code"])
+        {:error, failure}
     end
   end
 
@@ -207,6 +232,7 @@ defmodule Xaas.Ultracode.CapabilityPort do
       end
 
     consequential? = consequential?(capability_id) or consequential?(capability)
+    emit(:capability_resolved, lease_ctx, capability, Atom.to_string(class), nil)
 
     {:ok,
      %{
@@ -239,6 +265,14 @@ defmodule Xaas.Ultracode.CapabilityPort do
         "code" => failure["code"]
       },
       opts
+    )
+
+    emit(
+      :capability_gap,
+      lease_ctx,
+      capability,
+      Atom.to_string(receipt.class),
+      failure["code"]
     )
 
     {:error, failure}
@@ -284,6 +318,20 @@ defmodule Xaas.Ultracode.CapabilityPort do
       "resolution_class" => Atom.to_string(class),
       "residual" => receipt.residual_requirements || [],
       "policy_digest" => RuntimeSurface.policy_digest()
+    })
+  end
+
+  # Durable evidence of the runtime surface: one :telemetry event per port
+  # transition. The lease token is a live capability and never enters the
+  # metadata; the lease is identified by its epoch id.
+  defp emit(name, lease_ctx, capability, class, code) do
+    :telemetry.execute(@event_prefix ++ [name], %{count: 1}, %{
+      work_id: lease_ctx["work_id"],
+      epoch_id: lease_ctx["epoch_id"],
+      capability: capability,
+      class: class,
+      code: code,
+      policy_digest: RuntimeSurface.policy_digest()
     })
   end
 

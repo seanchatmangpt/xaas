@@ -589,6 +589,7 @@ defmodule Xaas.Ultracode.Lease do
           "lease_was_live" => lease_live?
         })
         |> maybe_bind_reclaimed_lease(epoch.lease_token)
+        |> stamp_effective_surface(epoch)
 
       transaction =
         Xaas.Repo.transaction(fn ->
@@ -675,6 +676,42 @@ defmodule Xaas.Ultracode.Lease do
     do: Map.put(evidence, "lease_fingerprint", lease_fingerprint(token))
 
   defp maybe_bind_reclaimed_lease(evidence, _token), do: evidence
+
+  # Durable evidence of the runtime surface the worker actually ran under:
+  # the fabric -- never the worker -- stamps `RuntimeSurface.effective_surface/1`
+  # into the sealed receipt (a worker-supplied "effective_surface" is
+  # overwritten). The surface carries the epoch id as `lease_id`, never the
+  # bearer lease token (`context_of/2` is called with a nil token and the
+  # token key is dropped before the surface is built).
+  defp stamp_effective_surface(evidence, %Epoch{} = epoch) do
+    ctx =
+      case epoch_with_run(epoch) do
+        %Epoch{run: %Run{}} = loaded ->
+          loaded |> context_of(nil) |> Map.delete("lease_token")
+
+        _no_run ->
+          %{"epoch_id" => epoch.id}
+      end
+
+    Map.put(evidence, "effective_surface", RuntimeSurface.effective_surface(ctx))
+  end
+
+  defp epoch_with_run(%Epoch{run: %Run{}} = epoch), do: epoch
+
+  defp epoch_with_run(%Epoch{} = epoch) do
+    # Same read path as `find_by_lease/2` (`:read_unscoped`, whose `:run`
+    # relationship load is itself routed through Run's `:read_unscoped`).
+    epoch_id = epoch.id
+
+    Epoch
+    |> Ash.Query.for_read(:read_unscoped)
+    |> Ash.Query.filter(id == ^epoch_id)
+    |> Ash.read_one(load: [:run])
+    |> case do
+      {:ok, %Epoch{} = loaded} -> loaded
+      _ -> epoch
+    end
+  end
 
   # ------------------------------------------------------------------
   # Admission court
@@ -1205,7 +1242,11 @@ defmodule Xaas.Ultracode.Lease do
     with {:ok, epoch} <- live_lease(lease_token, [:run]),
          :ok <- subject_drift(epoch, final_head) do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
-      evidence = bind_semantic_work_identity(epoch, evidence)
+
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> stamp_effective_surface(epoch)
 
       # Real finding, real-concurrency-tested (see `LeaseConcurrencyStressTest`
       # "concurrent close/refuse on the same lease_token"): the previous
