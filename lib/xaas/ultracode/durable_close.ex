@@ -63,16 +63,18 @@ defmodule Xaas.Ultracode.DurableClose do
         {:lease_lost, reason, commit}
 
       {:error, {:ref_update_failed, git_out}} ->
-        {:refuse, :ref_update_failed, %{
-          "git" => git_out,
-          "unreferenced_commit" => commit
-        }}
+        {:refuse, :ref_update_failed,
+         %{
+           "git" => git_out,
+           "unreferenced_commit" => commit
+         }}
 
       {:error, other} ->
-        {:refuse, :fence_failed, %{
-          "fence" => inspect(other),
-          "unreferenced_commit" => commit
-        }}
+        {:refuse, :fence_failed,
+         %{
+           "fence" => inspect(other),
+           "unreferenced_commit" => commit
+         }}
     end
   end
 

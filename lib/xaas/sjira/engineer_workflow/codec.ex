@@ -36,6 +36,9 @@ defmodule Xaas.Sjira.EngineerWorkflow.Codec do
 
   defp canonical(list) when is_list(list), do: Enum.map(list, &canonical/1)
   defp canonical(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> canonical()
-  defp canonical(atom) when is_atom(atom) and atom not in [true, false, nil], do: Atom.to_string(atom)
+
+  defp canonical(atom) when is_atom(atom) and atom not in [true, false, nil],
+    do: Atom.to_string(atom)
+
   defp canonical(other), do: other
 end

@@ -83,6 +83,7 @@ defmodule Xaas.Ultracode.LegacyRecoveryTest do
       Path.join(root, "court.json"),
       Jason.encode!(%{report | "authority_ceiling" => "DO"})
     )
+
     assert {:error, :malformed_legacy_court_report} =
              LegacyRecovery.items(root, "court.json", ["*"])
   end

@@ -1,6 +1,7 @@
 defmodule Xaas.ResearchRuntime.IdentityWaveTest do
   use ExUnit.Case, async: true
   alias Xaas.ResearchRuntime.ExactSubject
+
   test "refuses missing identity and admits bounded value" do
     assert {:error, :missing_subject_sha} = ExactSubject.new([])
     assert {:ok, value} = ExactSubject.new(subject_sha: "exact")

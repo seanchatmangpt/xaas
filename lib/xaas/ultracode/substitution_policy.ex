@@ -8,7 +8,10 @@ defmodule Xaas.Ultracode.SubstitutionPolicy do
   court must enforce.
   """
 
-  @policy_path Path.expand("../../../priv/ontology/interchangeable-part-qualification.ttl", __DIR__)
+  @policy_path Path.expand(
+                 "../../../priv/ontology/interchangeable-part-qualification.ttl",
+                 __DIR__
+               )
   @external_resource @policy_path
   @policy File.read!(@policy_path)
 

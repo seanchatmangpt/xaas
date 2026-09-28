@@ -14,7 +14,7 @@ and its status is reported as observed.
 | REQ-4 | Merge seams keep one source of truth: Ultracode consequence fence (`Lease.refused_consequence_tools/0` vs `RuntimeSurface`) | `test/xaas/pack/pack_ontology_test.exs` equality | attribute restored; pack test passes |
 | REQ-5 | Competing add/add implementations of `Xaas.ResearchRuntime.*` are resolved to one (r14 formatted set) and no HEAD-only consumer breaks | compile + `test/xaas/research_runtime/**` | r14 set taken; `research_runtime` tests pass |
 | REQ-6 | Version metadata consistent: `VERSION`, CHANGELOG entry | CHANGELOG has `[v26.9.28]` | done |
-| REQ-7 | Generated one-line code is normalized by the formatter, not hand-edited | `mix format --check-formatted` on runtime dirs | OPEN: 316 of the files changed since 7c3dc68 fail `mix format --check-formatted`; not reformatted this cycle |
+| REQ-7 | Generated one-line code is normalized by the formatter, not hand-edited | `mix format --check-formatted` on runtime dirs | DONE: `mix format` applied to files changed since 7c3dc68 (236 rewritten); suite unchanged 2489/2490 |
 | REQ-8 | Multi-clause functions declaring defaults use a header (compiler warnings in vkg, atlassian, engineer_workflow, trimtab/subject) | zero `multiple clauses and also declares default values` warnings | OPEN |
 
 ## Branch ledger (disposition of the 37 non-backup unmerged branches)

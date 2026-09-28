@@ -7,10 +7,13 @@ defmodule Xaas.Runtime.Router do
   end
 
   defp route([], capability, _input, _context, attempts),
-    do: {:error, :no_provider, %{capability: capability, attempts: Enum.reverse(attempts), selected: nil}}
+    do:
+      {:error, :no_provider,
+       %{capability: capability, attempts: Enum.reverse(attempts), selected: nil}}
 
   defp route([entry | rest], capability, input, context, attempts) do
     provider = entry.provider
+
     outcome =
       try do
         provider.execute(capability, input, context)
@@ -23,15 +26,28 @@ defmodule Xaas.Runtime.Router do
     case outcome do
       {:ok, value} ->
         ProviderRegistry.report(provider, :ok)
-        {:ok, value, %{capability: capability, selected: provider,
-          attempts: Enum.reverse([%{provider: provider, outcome: :ok} | attempts])}}
+
+        {:ok, value,
+         %{
+           capability: capability,
+           selected: provider,
+           attempts: Enum.reverse([%{provider: provider, outcome: :ok} | attempts])
+         }}
+
       {:error, reason} ->
         ProviderRegistry.report(provider, {:error, reason})
-        route(rest, capability, input, context, [%{provider: provider, outcome: {:error, reason}} | attempts])
+
+        route(rest, capability, input, context, [
+          %{provider: provider, outcome: {:error, reason}} | attempts
+        ])
+
       other ->
         reason = {:invalid_result, other}
         ProviderRegistry.report(provider, {:error, reason})
-        route(rest, capability, input, context, [%{provider: provider, outcome: {:error, reason}} | attempts])
+
+        route(rest, capability, input, context, [
+          %{provider: provider, outcome: {:error, reason}} | attempts
+        ])
     end
   end
 end

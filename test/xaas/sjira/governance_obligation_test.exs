@@ -75,6 +75,7 @@ defmodule Xaas.Sjira.GovernanceObligationTest do
     obligation = obligation!()
     {:ok, admitted} = GovernanceObligation.admit(obligation, "sha256:admission")
     {:ok, authorized} = GovernanceObligation.authorize(admitted, "odrl:permission:17")
+
     assert {:ok, prepared} =
              GovernanceObligation.prepare(authorized, "receipt:prepared:abc")
 
@@ -176,6 +177,7 @@ defmodule Xaas.Sjira.GovernanceObligationTest do
     assert event["attributes"]["standing"] == "PROPOSED"
     assert event["attributes"]["authority_ref"] == nil
     refute event["attributes"]["ready_for_do"]
+
     assert event["relationships"] == [
              %{"objectId" => "sjira:work-order:42", "qualifier" => "governs"},
              %{
@@ -196,6 +198,7 @@ defmodule Xaas.Sjira.GovernanceObligationTest do
            ]
 
     assert fragment["eventTypes"] == ["sjira.governance.proposed"]
+
     assert Enum.map(fragment["objects"], & &1["id"]) == [
              "sjira:work-order:42",
              obligation.obligation_id

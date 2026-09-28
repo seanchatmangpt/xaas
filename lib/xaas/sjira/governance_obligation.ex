@@ -134,7 +134,10 @@ defmodule Xaas.Sjira.GovernanceObligation do
     do: {:refused, transition_refusal(obligation, "AUTHORITY_TRANSITION_REFUSED")}
 
   @spec prepare(t(), String.t()) :: {:ok, t()} | {:refused, map()}
-  def prepare(%__MODULE__{standing: :authorized, authority_ref: authority_ref} = obligation, receipt_ref)
+  def prepare(
+        %__MODULE__{standing: :authorized, authority_ref: authority_ref} = obligation,
+        receipt_ref
+      )
       when is_binary(authority_ref) and byte_size(authority_ref) > 0 and
              is_binary(receipt_ref) and byte_size(receipt_ref) > 0 do
     {:ok,

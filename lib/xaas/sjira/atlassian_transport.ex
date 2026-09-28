@@ -272,7 +272,9 @@ defmodule Xaas.Sjira.AtlassianTransport do
 
     response_for_disposition =
       case result do
-        {:ok, %{status: _} = response} -> response
+        {:ok, %{status: _} = response} ->
+          response
+
         {:ok, %{"status" => status} = response} ->
           %{
             status: status,
@@ -441,8 +443,7 @@ defmodule Xaas.Sjira.AtlassianTransport do
          max_backoff_ms: Keyword.get(opts, :max_backoff_ms, 30_000),
          headers: normalize_headers(Keyword.get(opts, :headers, [])),
          now_fun: Keyword.get(opts, :now_fun, fn -> DateTime.utc_now() end),
-         now_ms_fun:
-           Keyword.get(opts, :now_ms_fun, fn -> System.system_time(:millisecond) end),
+         now_ms_fun: Keyword.get(opts, :now_ms_fun, fn -> System.system_time(:millisecond) end),
          sleep_fun: Keyword.get(opts, :sleep_fun, &Process.sleep/1)
        }}
     end

@@ -1,6 +1,7 @@
 defmodule Xaas.ResearchRuntime.EvolutionWaveTest do
   use ExUnit.Case, async: true
   alias Xaas.ResearchRuntime.SurvivalEvidence
+
   test "refuses missing identity and admits bounded value" do
     assert {:error, :missing_episode_id} = SurvivalEvidence.new([])
     assert {:ok, value} = SurvivalEvidence.new(episode_id: "exact")

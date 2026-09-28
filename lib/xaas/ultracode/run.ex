@@ -487,6 +487,7 @@ defmodule Xaas.Ultracode.Run do
         :frontier_digest,
         :frontier_size
       ])
+
       require_atomic?(false)
 
       validate({Xaas.Ultracode.Validations.FrontierConsistent, []})

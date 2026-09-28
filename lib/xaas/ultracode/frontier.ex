@@ -99,6 +99,7 @@ defmodule Xaas.Ultracode.Frontier do
   defp require_source(%{"source" => value})
        when is_binary(value) and byte_size(value) > 0,
        do: :ok
+
   defp require_source(_), do: {:error, :frontier_source}
 
   defp require_counts(snapshot) do

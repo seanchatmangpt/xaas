@@ -46,6 +46,7 @@ defmodule Xaas.Sjira.GovernanceRouteTest do
              )
 
     assert refusal["reason"] == "DUPLICATE_OBLIGATION_IDENTITY"
+
     assert refusal["detail"].identities == [
              "sjira:work-order:7:security:design:SEC-1"
            ]

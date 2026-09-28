@@ -196,9 +196,7 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
 
         portable_actual != snapshot.portable_closure_digest ->
           {:error,
-           {:portable_closure_digest_mismatch,
-            snapshot.portable_closure_digest,
-            portable_actual}}
+           {:portable_closure_digest_mismatch, snapshot.portable_closure_digest, portable_actual}}
 
         true ->
           :ok
@@ -306,7 +304,8 @@ defmodule Xaas.Deployment.ReleaseSnapshot do
       not is_nil(source_repository) and not nonempty?(source_repository) ->
         {:error, :source_repository_invalid}
 
-      not is_nil(source_sha) and not (is_binary(source_sha) and Regex.match?(@git_sha, source_sha)) ->
+      not is_nil(source_sha) and
+          not (is_binary(source_sha) and Regex.match?(@git_sha, source_sha)) ->
         {:error, :source_sha_invalid}
 
       not is_nil(evidence) and not digest?(evidence) ->

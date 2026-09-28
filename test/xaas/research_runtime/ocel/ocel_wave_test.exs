@@ -1,6 +1,7 @@
 defmodule Xaas.ResearchRuntime.OcelWaveTest do
   use ExUnit.Case, async: true
   alias Xaas.ResearchRuntime.Event
+
   test "refuses missing identity and admits bounded value" do
     assert {:error, :missing_event_id} = Event.new([])
     assert {:ok, value} = Event.new(event_id: "exact")

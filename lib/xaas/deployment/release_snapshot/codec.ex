@@ -71,6 +71,7 @@ defmodule Xaas.Deployment.ReleaseSnapshot.Codec do
   end
 
   defp schema(%{"schema" => @schema, "authority" => "none"}), do: :ok
+
   defp schema(%{"schema" => @schema, "authority" => authority}),
     do: {:error, {:serialized_authority_widened, authority}}
 
@@ -107,9 +108,14 @@ defmodule Xaas.Deployment.ReleaseSnapshot.Codec do
 
   defp compare_digest(field, actual, payload) do
     case Map.get(payload, field) do
-      ^actual -> :ok
-      expected when is_binary(expected) -> {:error, {:serialized_digest_mismatch, field, expected, actual}}
-      _ -> {:error, {:serialized_digest_missing, field}}
+      ^actual ->
+        :ok
+
+      expected when is_binary(expected) ->
+        {:error, {:serialized_digest_mismatch, field, expected, actual}}
+
+      _ ->
+        {:error, {:serialized_digest_missing, field}}
     end
   end
 end

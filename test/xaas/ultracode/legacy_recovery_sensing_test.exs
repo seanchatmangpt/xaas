@@ -14,6 +14,7 @@ defmodule Xaas.Ultracode.LegacyRecoverySensingTest do
     System.cmd("git", ["init", "-q", root])
     File.write!(Path.join(root, "seed.txt"), "seed\n")
     System.cmd("git", ["-C", root, "add", "."])
+
     System.cmd("git", [
       "-C",
       root,
@@ -53,6 +54,7 @@ defmodule Xaas.Ultracode.LegacyRecoverySensingTest do
 
     File.write!(Path.join(root, "court.json"), Jason.encode!(report))
     System.cmd("git", ["-C", root, "add", "court.json"])
+
     System.cmd("git", [
       "-C",
       root,

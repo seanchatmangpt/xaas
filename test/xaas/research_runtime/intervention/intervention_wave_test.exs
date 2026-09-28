@@ -1,6 +1,7 @@
 defmodule Xaas.ResearchRuntime.InterventionWaveTest do
   use ExUnit.Case, async: true
   alias Xaas.ResearchRuntime.WorkOrder
+
   test "refuses missing identity and admits bounded value" do
     assert {:error, :missing_work_order_iri} = WorkOrder.new([])
     assert {:ok, value} = WorkOrder.new(work_order_iri: "exact")

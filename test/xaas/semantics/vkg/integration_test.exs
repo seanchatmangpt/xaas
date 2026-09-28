@@ -73,6 +73,7 @@ defmodule Xaas.Semantics.VKG.IntegrationTest do
 
     assert connection["authority"] == "NONE"
     assert connection["receiptId"] == witness.receipt_id
+
     assert [%{"node" => node, "provenance" => provenance, "cursor" => cursor}] =
              connection["edges"]
 
