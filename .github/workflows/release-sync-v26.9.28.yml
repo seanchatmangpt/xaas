@@ -1,0 +1,60 @@
+name: v26.9.28 lock sync
+
+on:
+  schedule:
+    - cron: "29 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Observe coordinated upstream release line
+        id: upstream
+        run: |
+          set -euo pipefail
+          ready=true
+          for spec in ggen_igniter:26.9.28 ash_r2rml:26.9.28 ash_a2a:26.9.28 beam4pm:26.9.28; do
+            pkg="${spec%%:*}"
+            version="${spec##*:}"
+            if ! curl -fsS "https://hex.pm/api/packages/$pkg" |
+              jq -e --arg v "$version" '.releases[]? | select(.version == $v)' >/dev/null; then
+              ready=false
+            fi
+          done
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+      - uses: erlef/setup-beam@v1
+        if: steps.upstream.outputs.ready == 'true'
+        with:
+          elixir-version: "1.18.4"
+          otp-version: "27.3.4"
+      - name: Refresh exact release locks
+        if: steps.upstream.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.update ggen_igniter ash_a2a
+          grep -F '"ggen_igniter": {:hex, :ggen_igniter, "26.9.28"' mix.lock
+          grep -F '"ash_a2a": {:hex, :ash_a2a, "26.9.28"' mix.lock
+          grep -F '"ash_r2rml": {:git, "https://github.com/seanchatmangpt/ash_r2rml.git", "40d181fffdefbb65ee4a83486eae86534690c4d5"' mix.lock
+      - name: Commit lock receipt
+        if: steps.upstream.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- mix.lock; then
+            echo "Lock already exact"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mix.lock
+          git commit -m "chore(release): lock v26.9.28 upstream graph"
+          git push origin HEAD:main
