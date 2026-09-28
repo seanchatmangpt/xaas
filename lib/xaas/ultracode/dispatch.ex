@@ -123,12 +123,14 @@ defmodule Xaas.Ultracode.Dispatch do
     * timeout → the whole process group is killed and the result status is
       `:timeout`, never a hang
 
-  This is not an OS sandbox. The worker runs with this node's inherited
-  environment (the bash dispatcher did the same) and is bounded by the
-  plugin's host-side gate plus the server-side `Lease.admit_tool/2` fence,
-  not by this module. `:extra_env` adds explicit, caller-supplied
-  assignments on top of the inherited environment (used by tests to script
-  the CLI and by operators to pin per-dispatch variables).
+  This is not an OS sandbox. The worker starts from an empty environment
+  (`/usr/bin/env -i`) populated through `Xaas.Ultracode.WorkerEnv`: the
+  node's environment crosses only via the `runtime_surface.json` allowlist,
+  and forge/cloud/tracker credentials never do. It is further bounded by the
+  plugin's host-side gate plus the server-side `Lease.admit_tool/2` fence.
+  `:extra_env` adds explicit, caller-supplied assignments (used by tests to
+  script the CLI and by operators to pin per-dispatch variables); they may
+  name unlisted variables but still pass every deny rule.
   """
 
   require Logger
@@ -140,6 +142,8 @@ defmodule Xaas.Ultracode.Dispatch do
     ProviderRegistry,
     Receipt,
     Run,
+    RuntimeSurface,
+    WorkerEnv,
     Worktrees,
     ZcodePackage
   }
@@ -456,16 +460,29 @@ defmodule Xaas.Ultracode.Dispatch do
     end
   end
 
+  @doc false
+  # The exact environment the worker process starts with (name/value pairs);
+  # public so the credential falsifier can inspect the real spawn input.
+  def worker_env(built) do
+    WorkerEnv.build(
+      System.get_env(),
+      [{"XAAS_SURFACE_PATH", RuntimeSurface.policy_path()}],
+      built.env_added
+    )
+  end
+
   defp spawn_and_collect(built, resolved) do
     deadline = attempt_deadline(resolved)
     remaining_s = max(div(deadline - System.monotonic_time(:millisecond), 1000), 1)
     alarm_s = remaining_s + @alarm_grace_s
     code_file = code_file_path()
 
-    # /usr/bin/env takes assignments as plain `K=V` argv strings (a port
-    # args list itself must be all strings); the tuple form stays in the
-    # plan/dry-run shape for evidence.
-    env_args = Enum.map(built.env_added, fn {k, v} -> "#{k}=#{v}" end)
+    # Two-port runtime law (v26.9.27): the worker starts from an EMPTY
+    # environment (`env -i`). The node's environment crosses only through
+    # the `WorkerEnv` allowlist; `env_added` (gate vars, repo toolchain pin,
+    # caller `:extra_env`) is explicit intent and still passes every deny
+    # rule, so no forge/cloud/tracker credential reaches the worker.
+    env_args = WorkerEnv.env_argv(worker_env(built))
 
     args =
       env_args ++
