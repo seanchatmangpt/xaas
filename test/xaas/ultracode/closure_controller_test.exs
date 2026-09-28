@@ -1,0 +1,110 @@
+defmodule Xaas.Ultracode.ClosureControllerTest do
+  use ExUnit.Case, async: true
+
+  @moduletag :ultracode
+
+  alias Xaas.Ultracode.{ClosureController, Epoch, Frontier, OcelEgress, Run}
+
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+    :ok
+  end
+
+  test "cycle exhaustion with unknown frontier suspends instead of completing" do
+    run = running_run!()
+
+    assert {:ok, %{outcome: :suspended, reason: :frontier_unknown}} =
+             ClosureController.reconcile_cycle_exhausted(run)
+
+    reloaded = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
+    assert reloaded.state == :suspended
+    assert reloaded.standing == :unknown
+    assert reloaded.suspended_at != nil
+
+    {:ok, ocel} = OcelEgress.derive_run(reloaded)
+    assert Enum.any?(ocel["ocel:events"], &(&1["type"] == "run_suspended"))
+  end
+
+  test "open frontier suspends, resume adds bounded headroom, empty frontier closes" do
+    run = running_run!()
+
+    {:ok, %{run: run}} =
+      ClosureController.record(run, %{
+        "source" => "test",
+        "pending_work" => 2,
+        "active_epochs" => 0,
+        "unsettled_epochs" => 0,
+        "unpublished_deltas" => 0,
+        "unsatisfied_dependencies" => 0,
+        "next_work_item" => %{"id" => "edge-1"}
+      })
+
+    assert {:ok, %{outcome: :suspended, frontier_size: 2}} =
+             ClosureController.reconcile_cycle_exhausted(run)
+
+    suspended = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
+    assert suspended.state == :suspended
+
+    assert {:ok, resumed} = ClosureController.resume(suspended, 3)
+    assert resumed.state == :running
+    assert resumed.max_cycles >= resumed.cycle + 3
+
+    {:ok, %{run: resumed}} = ClosureController.record(resumed, Frontier.empty("test"))
+
+    assert {:ok, %{outcome: :closed, frontier_size: 0}} =
+             ClosureController.reconcile_cycle_exhausted(resumed)
+
+    completed = Ash.get!(Run, run.id, action: :read_unscoped, authorize?: false)
+    assert completed.state == :completed
+    assert completed.standing == :admitted
+  end
+
+  test "a non-completed epoch cannot manufacture an empty frontier" do
+    run = running_run!()
+
+    epoch =
+      Epoch
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: "closure-controller:running",
+          state: :running
+        },
+        authorize?: false
+      )
+      |> Ash.create!()
+
+    assert {:error, {:epoch_not_completed, :running}} =
+             ClosureController.record_empty_for_epoch(epoch.id, "test")
+  end
+
+  test "record_frontier refuses a digest that does not match its payload" do
+    run = running_run!()
+    empty = Frontier.empty("test")
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             run
+             |> Ash.Changeset.for_update(
+               :record_frontier,
+               %{
+                 frontier: Map.drop(empty, ["digest"]),
+                 frontier_digest: "sha256:" <> String.duplicate("0", 64),
+                 frontier_size: 0
+               },
+               authorize?: false
+             )
+             |> Ash.update()
+  end
+
+  defp running_run! do
+    Run
+    |> Ash.Changeset.for_create(:create, %{goal: "closure controller test", max_cycles: 1},
+      authorize?: false
+    )
+    |> Ash.create!()
+    |> Ash.Changeset.for_update(:transition_state, %{state: :running}, authorize?: false)
+    |> Ash.update!()
+  end
+end

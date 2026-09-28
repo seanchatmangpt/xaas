@@ -384,7 +384,7 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert State.complete?(state)
     end
 
-    test "build_goal carries the step verbatim, the standing, the law, and the update instruction" do
+    test "build_goal carries the step and forbids worker mutation of fabric state" do
       {:ok, state} = State.parse(@state)
 
       goal =
@@ -403,6 +403,8 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert goal =~ "/s/STATE.md"
       assert goal =~ "/s/l.ndjson"
       assert goal =~ "ultracode-wave-loop/1"
+      assert goal =~ "DO NOT edit /s/STATE.md"
+      assert goal =~ "fabric-owned projections"
       assert String.length(goal) < 50_000
     end
   end
@@ -818,6 +820,10 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert telemetry_lines(telemetry_path) =~ ~s("outcome":"worker_completed")
       assert telemetry_lines(telemetry_path) =~ ~s("step":"3")
+
+      # Worker completion is only epoch evidence. The fabric records an empty
+      # frontier and performs the Run-level close itself.
+      assert [%Run{state: :completed, standing: :admitted, frontier_size: 0}] = loop_runs()
     end
 
     test "completing the last remaining step marks STATE COMPLETE and later ticks no-op",
