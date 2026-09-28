@@ -136,6 +136,7 @@ defmodule Xaas.Ultracode.Dispatch do
   alias Xaas.Ultracode.{
     Epoch,
     ProcessGroup,
+    ProviderRecovery,
     ProviderRegistry,
     Receipt,
     Run,
@@ -248,8 +249,27 @@ defmodule Xaas.Ultracode.Dispatch do
     if Keyword.get(opts, :dry_run, false) do
       plan(epoch_or_id, opts)
     else
-      execute(epoch_or_id, opts)
+      epoch_or_id
+      |> execute(opts)
+      |> record_recovery(opts)
     end
+  end
+
+  # Runtime recovery: every real outcome feeds the provider's circuit
+  # breaker (`Xaas.Ultracode.ProviderRecovery`). `:provider_recovery` names
+  # the server (default the application's). An absent server is skipped --
+  # recording never changes or crashes the dispatch result.
+  defp record_recovery(result, opts) do
+    server = Keyword.get(opts, :provider_recovery, ProviderRecovery)
+
+    if is_atom(server) and Process.whereis(server) do
+      provider = Keyword.get_lazy(opts, :provider, &ProviderRegistry.default_provider/0)
+      _ = ProviderRecovery.record(provider, result, server)
+    end
+
+    result
+  rescue
+    _ -> result
   end
 
   @doc """

@@ -195,7 +195,7 @@ defmodule Xaas.Ultracode.WaveLoop do
           false
       end
 
-    overloaded? = provider_overloaded?(telemetry_path)
+    overloaded? = provider_overloaded?(telemetry_path, [])
 
     if chain_decision(report.outcome, state_owes?, overloaded?) do
       # A raw %Oban.Job{} insert on purpose: the generated worker's
@@ -241,7 +241,7 @@ defmodule Xaas.Ultracode.WaveLoop do
         true ->
           # Provider-overload gate first: dispatching into a rate-kill
           # storm only deepens it. Drain now; the cron cadence re-probes.
-          if provider_overloaded?(telemetry_path) do
+          if provider_overloaded?(telemetry_path, opts) do
             finish(
               tick_no,
               nil,
@@ -585,7 +585,21 @@ defmodule Xaas.Ultracode.WaveLoop do
   # Overload = >= threshold telemetry lines inside the window whose outcome
   # or evidence carries a provider rate-kill signature. Malformed lines are
   # skipped, never a crash.
-  defp provider_overloaded?(telemetry_path) do
+  #
+  # The runtime circuit breaker (`Xaas.Ultracode.ProviderRecovery`) is
+  # consulted FIRST: an `:open` breaker for the loop's provider is an
+  # overload regardless of telemetry. The window scan stays as the fallback
+  # (e.g. recovery server absent, or failures recorded only in telemetry).
+  @doc false
+  def provider_overloaded?(telemetry_path, opts) do
+    provider = opts |> Keyword.get(:dispatch_opts, []) |> Keyword.get(:provider, @provider)
+    server = Keyword.get(opts, :provider_recovery, Xaas.Ultracode.ProviderRecovery)
+
+    Xaas.Ultracode.ProviderRecovery.state(provider, server) == :open or
+      telemetry_overloaded?(telemetry_path)
+  end
+
+  defp telemetry_overloaded?(telemetry_path) do
     threshold =
       Application.get_env(
         :xaas,

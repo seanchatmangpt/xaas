@@ -183,19 +183,28 @@ defmodule Xaas.Ultracode.ProviderRegistry do
   EVERY candidate's rejection reason -- never a silent default, never a
   best-guess fallback. An empty registry and an empty candidate list are the
   same typed refusal (nothing was selectable), distinguishable in `details`.
+
+  A provider whose runtime circuit breaker (`Xaas.Ultracode.ProviderRecovery`,
+  server named by `opts[:provider_recovery]`) is `:open` is rejected with
+  `:breaker_open`; when that leaves nothing selectable the refusal is
+  `{:error, {:all_providers_open, details}}` (transient, retry after backoff).
+  `:half_open` breakers stay selectable -- that selection is the probe.
   """
   @spec select(required(), keyword()) ::
-          {:ok, provider_id(), entry()} | {:error, {:no_qualifying_provider, [map()]}}
+          {:ok, provider_id(), entry()}
+          | {:error, {:no_qualifying_provider, [map()]}}
+          | {:error, {:all_providers_open, [map()]}}
   def select(required, opts \\ []) when is_map(required) and is_list(opts) do
     required_caps = List.wrap(Map.get(required, :capabilities, []))
     required_authority = Map.get(required, :authority, :construction)
     policy = Keyword.get(opts, :policy, :cost)
     candidates = Keyword.get(opts, :candidates, nil) || Enum.sort(Map.keys(registry()))
+    recovery = Keyword.get(opts, :provider_recovery, Xaas.Ultracode.ProviderRecovery)
 
     rejections =
       candidates
       |> Enum.map(fn provider_id ->
-        {provider_id, judge(provider_id, required_caps, required_authority)}
+        {provider_id, judge(provider_id, required_caps, required_authority, recovery)}
       end)
 
     qualifying =
@@ -203,9 +212,20 @@ defmodule Xaas.Ultracode.ProviderRegistry do
         {provider_id, entry}
       end
 
+    breaker_open? = Enum.any?(rejections, &match?({_, {:error, :breaker_open}}, &1))
+
     case order(qualifying, policy) do
-      [{provider_id, entry} | _] -> {:ok, provider_id, entry}
-      [] -> {:error, {:no_qualifying_provider, rejections_map(rejections)}}
+      [{provider_id, entry} | _] ->
+        {:ok, provider_id, entry}
+
+      # Every provider that would otherwise qualify has an OPEN circuit
+      # breaker (`ProviderRecovery`): a transient, time-bounded refusal,
+      # typed apart from "no provider can ever do this".
+      [] when breaker_open? ->
+        {:error, {:all_providers_open, rejections_map(rejections)}}
+
+      [] ->
+        {:error, {:no_qualifying_provider, rejections_map(rejections)}}
     end
   end
 
@@ -221,7 +241,7 @@ defmodule Xaas.Ultracode.ProviderRegistry do
           {:ok, Xaas.Ultracode.Epoch.t(), String.t(), Xaas.Ultracode.Run.t()}
           | {:error, term()}
   def select_and_claim(required, worker_id, opts \\ []) do
-    {select_opts, claim_opts} = Keyword.split(opts, [:policy, :candidates])
+    {select_opts, claim_opts} = Keyword.split(opts, [:policy, :candidates, :provider_recovery])
 
     with {:ok, provider_id, _entry} <- select(required, select_opts) do
       Xaas.Ultracode.Lease.claim_next(provider_id, worker_id, claim_opts)
@@ -231,7 +251,7 @@ defmodule Xaas.Ultracode.ProviderRegistry do
   # The per-candidate admission court: `{:ok, entry}` or the typed rejection
   # reason. Every branch is a named fact, so `select/2`'s refusal details can
   # name exactly why each provider lost.
-  defp judge(provider_id, required_caps, required_authority) do
+  defp judge(provider_id, required_caps, required_authority, recovery) do
     case Map.fetch(registry(), provider_id) do
       :error ->
         {:error, :unknown_provider}
@@ -255,6 +275,11 @@ defmodule Xaas.Ultracode.ProviderRegistry do
 
           rank(Map.get(entry, :authority_ceiling)) < rank(required_authority) ->
             {:error, {:authority_ceiling_too_low, Map.get(entry, :authority_ceiling)}}
+
+          # Runtime circuit breaker, judged LAST so `:breaker_open` means
+          # "would qualify, but is cooling down". Half-open admits a probe.
+          not Xaas.Ultracode.ProviderRecovery.available?(provider_id, recovery) ->
+            {:error, :breaker_open}
 
           true ->
             {:ok, entry}
