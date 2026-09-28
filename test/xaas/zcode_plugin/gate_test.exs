@@ -196,8 +196,14 @@ defmodule Xaas.ZcodePlugin.GateTest do
     end
 
     test "a tool the server does not know is refused by the real arbiter", %{ctx: ctx} do
-      assert {:deny, reason} = gate(ctx, "WebSearch", %{query: "x"})
+      assert {:deny, reason} = gate(ctx, "NotARealTool", %{query: "x"})
       assert reason =~ "unknown_tool_class"
+    end
+
+    test "an external-edge tool is refused host-side before admission", %{ctx: ctx} do
+      assert {:deny, reason} = gate(ctx, "WebSearch", %{query: "x"})
+      assert reason =~ "FORBIDDEN_EXTERNAL_SEMANTIC_EDGE"
+      refute reason =~ "unknown_tool_class"
     end
 
     test "writes outside the worktree, or inside .git, are denied before admission", %{ctx: ctx} do

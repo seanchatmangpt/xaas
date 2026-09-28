@@ -171,17 +171,20 @@ defmodule XaasWeb.ExecutionFabricController do
           "pair is refused; authority evidence is always attached here and bound to this " <>
           "lease, never an empty/delegated authority map. There is no subject_id argument " <>
           "on purpose -- the registered pair's own config decides which subject (or none) " <>
-          "it may act on, never the caller.",
+          "it may act on, never the caller. `capability` names the SA2A capability this " <>
+          "DO realizes; it is re-resolved server-side for this lease and must carry the " <>
+          "BRCE actuate contract, else UNAUTHORIZED.",
       inputSchema: %{
         type: "object",
         properties: %{
           lease_token: %{type: "string"},
+          capability: %{type: "string"},
           resource: %{type: "string"},
           action: %{type: "string"},
           input: %{type: "object"},
           idempotency_key: %{type: "string"}
         },
-        required: ["lease_token", "resource", "action", "idempotency_key"]
+        required: ["lease_token", "capability", "resource", "action", "idempotency_key"]
       }
     },
     %{
@@ -482,10 +485,15 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp dispatch_tool("cancel_work", _), do: {:error, :lease_token_and_reason_required}
 
+  # Two-port law: an agent reaches DO only through a capability SA2A resolves
+  # for THIS lease right now (server-side re-resolution -- a wire-supplied
+  # handle is never trusted), and only when that capability's invocation
+  # contract is BRCE actuation. Capability exists != agent authorized: the
+  # registry + Xaas.Actuation.run/4 admission still decide the DO.
   defp dispatch_tool("actuate", %{"lease_token" => token} = args) when is_binary(token) do
-    case Lease.actuate(token, args) do
-      {:ok, envelope} -> {:ok, format_actuation(envelope)}
-      {:error, reason} -> {:error, reason}
+    with {:ok, _handle} <- actuation_capability(token, args["capability"]),
+         {:ok, envelope} <- Lease.actuate(token, args) do
+      {:ok, format_actuation(envelope)}
     end
   end
 
@@ -798,6 +806,36 @@ defmodule XaasWeb.ExecutionFabricController do
   # the Failure vocabulary maps their BARE atoms to WORK_NOT_FOUND. Normalize
   # here so a dead/unknown/reclaimed lease is WORK_NOT_FOUND, never a
   # generic CAPABILITY_UNAVAILABLE.
+  defp actuation_capability(token, capability) when is_binary(capability) and capability != "" do
+    with {:ok, ctx} <- lease_context_failure(Lease.lease_context(token)),
+         {:ok, handle} <- CapabilityPort.resolve(ctx, capability, %{}),
+         :ok <- CapabilityPort.check_handle(handle, Lease.lease_context(token)) do
+      case handle do
+        %{"invocation_contract" => "actuate"} ->
+          {:ok, handle}
+
+        _ ->
+          {:error,
+           {:surface_failure,
+            Failure.new(:unauthorized, %{
+              "reason" => "capability_not_actuating",
+              "capability" => capability
+            })}}
+      end
+    else
+      {:error, reason} -> {:error, {:surface_failure, surface_failure(reason)}}
+    end
+  end
+
+  defp actuation_capability(_token, _capability) do
+    {:error,
+     {:surface_failure,
+      Failure.new(:unauthorized, %{
+        "reason" => "capability_required",
+        "required" => "UltraCode -> SA2A -> resolve_capability -> actuate(capability)"
+      })}}
+  end
+
   defp lease_context_failure({:ok, _} = ok), do: ok
 
   defp lease_context_failure({:error, {tag, detail}})
