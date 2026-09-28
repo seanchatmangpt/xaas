@@ -35,17 +35,73 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const STATE_DIR = path.join(tmpdir(), "xaas-fabric");
 
-const PRE_LEASE_OK = new Set(["Read", "Grep", "Glob", "TodoWrite", "Skill"]);
-const LOCAL_ONLY = new Set(["Skill"]);
+// Built-in gate floor. Identical to the "gate" section of
+// priv/ultracode/runtime_surface.json today; used only when that policy file is
+// unreadable or a field is malformed -- never widened by a load failure.
+const DEFAULT_GATE = Object.freeze({
+  pre_lease_ok: ["Read", "Grep", "Glob", "TodoWrite", "Skill"],
+  local_only: ["Skill"],
+  git_subs: ["add", "commit", "status", "diff", "log", "rev-parse", "show", "ls-files"],
+  // Sweep-profile git: strictly read-only subcommands (add/commit stay
+  // worktree-only even in sweep mode).
+  git_sweep_subs: ["status", "diff", "log", "rev-parse", "show", "ls-files"],
+  git_forbidden: ["-c", "--exec-path", "--namespace", "--no-index", "-F", "--file", "-t", "--template"],
+  read_helpers: ["ls", "cat", "head", "tail", "wc"],
+  sensitive_home_dirs: [".zcode", ".ssh", ".aws", ".gnupg", ".config", ".claude", ".docker", ".kube", ".netrc", ".npmrc"],
+  deny_tools: ["WebFetch", "WebSearch"],
+});
+
+/**
+ * Path of the runtime-surface policy JSON: XAAS_SURFACE_PATH, else the
+ * repo-relative priv/ultracode/runtime_surface.json next to this plugin tree.
+ * @returns {string}
+ */
+export function surfacePath() {
+  const fromEnv = (process.env.XAAS_SURFACE_PATH ?? "").trim();
+  return fromEnv || path.join(HERE, "..", "..", "..", "..", "ultracode", "runtime_surface.json");
+}
+
+/**
+ * Loads the "gate" section of the runtime-surface policy. Each field must be an
+ * array of strings; an unreadable file, unparseable JSON, missing section or
+ * malformed field falls back to DEFAULT_GATE for that field.
+ * @param {string} [file]
+ * @returns {{source: string, gate: Record<string, string[]>}}
+ */
+export function loadGatePolicy(file = surfacePath()) {
+  let section = null;
+  let source = "builtin";
+  try {
+    const doc = JSON.parse(readFileSync(file, "utf8"));
+    if (doc && typeof doc.gate === "object" && doc.gate !== null) {
+      section = doc.gate;
+      source = file;
+    }
+  } catch {
+    section = null;
+  }
+  /** @type {Record<string, string[]>} */
+  const gate = {};
+  for (const [key, fallback] of Object.entries(DEFAULT_GATE)) {
+    const v = section?.[key];
+    gate[key] = Array.isArray(v) && v.every((x) => typeof x === "string") ? v : fallback;
+  }
+  return { source, gate };
+}
+
+const POLICY = loadGatePolicy();
+const PRE_LEASE_OK = new Set(POLICY.gate.pre_lease_ok);
+const LOCAL_ONLY = new Set(POLICY.gate.local_only);
 const WRITE_TOOLS = new Set(["Write", "Edit", "NotebookEdit", "MultiEdit"]);
 const TOOL_MAP = { Agent: "Task", TaskOutput: "Task", TaskStop: "Task", MultiEdit: "Edit", NotebookEdit: "Edit" };
-const GIT_SUBS = new Set(["add", "commit", "status", "diff", "log", "rev-parse", "show", "ls-files"]);
-const GIT_FORBIDDEN = new Set(["-c", "--exec-path", "--namespace", "--no-index", "-F", "--file", "-t", "--template"]);
-const READ_HELPERS = new Set(["ls", "cat", "head", "tail", "wc"]);
-// Sweep-profile git: strictly read-only subcommands (add/commit stay
-// worktree-only even in sweep mode).
-const GIT_SWEEP_SUBS = new Set(["status", "diff", "log", "rev-parse", "show", "ls-files"]);
-const SENSITIVE_HOME_DIRS = [".zcode", ".ssh", ".aws", ".gnupg", ".config", ".claude", ".docker", ".kube", ".netrc", ".npmrc"];
+const GIT_SUBS = new Set(POLICY.gate.git_subs);
+const GIT_FORBIDDEN = new Set(POLICY.gate.git_forbidden);
+const READ_HELPERS = new Set(POLICY.gate.read_helpers);
+const GIT_SWEEP_SUBS = new Set(POLICY.gate.git_sweep_subs);
+const SENSITIVE_HOME_DIRS = POLICY.gate.sensitive_home_dirs;
+// Tools with no lawful direct edge from a leased worker: external semantic
+// reads go through UltraCode -> SA2A -> resolve_capability, never direct.
+const DENY_TOOLS = new Set(POLICY.gate.deny_tools);
 
 function realpathLoose(p) {
   let cur = path.resolve(p);
@@ -214,7 +270,7 @@ function bashDecision(command, lease, ctx) {
       const denial = sweepPathDenial(repo);
       if (denial) return denial;
     }
-    if (!GIT_SUBS.has(rest[0])) return `git ${rest[0] ?? ""} is not allowed (add, commit, status, diff, log, rev-parse, show, ls-files only)`;
+    if (!GIT_SUBS.has(rest[0])) return `git ${rest[0] ?? ""} is not allowed (${[...GIT_SUBS].join(", ")} only)`;
     for (const a of rest) {
       if (GIT_FORBIDDEN.has(a) || a.startsWith("--git-dir") || a.startsWith("--work-tree") || a.startsWith("--output")) {
         return `git flag ${a} is not allowed`;
@@ -385,6 +441,15 @@ async function main() {
   const ctx = { tool, leaseCwd };
 
   if (!tool) return decide("deny", "hook payload carried no tool name", ctx);
+  // Denied before any lease read or admit_tool HTTP call: no network edge
+  // exists for these tools from a leased worker.
+  if (DENY_TOOLS.has(tool)) {
+    return decide(
+      "deny",
+      `FORBIDDEN_EXTERNAL_SEMANTIC_EDGE: ${tool} is not a lawful edge for a leased worker; required UltraCode -> SA2A -> resolve_capability (policy ${POLICY.source})`,
+      ctx
+    );
+  }
   if (/^mcp__(plugin_xaas-fabric_)?xaas-execution__/.test(tool)) return decide("allow", "lease protocol tool", ctx);
 
   if (tool === "Agent" && process.env.XAAS_ALLOW_SUBAGENTS !== "1") {
