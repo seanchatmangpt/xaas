@@ -438,13 +438,18 @@ defmodule Xaas.Ultracode.WaveLoop do
 
     outcome = if reason == :timeout, do: :dispatch_timeout, else: :dispatch_task_died
 
-    finish(
-      tick_no,
-      step.id,
-      :requeued,
-      %{outcome: format_any(outcome), epoch_id: epoch_id, reclaim: format_any(reclaim)},
-      telemetry_path
-    )
+    detail = %{outcome: format_any(outcome), epoch_id: epoch_id, reclaim: format_any(reclaim)}
+
+    detail =
+      case reclaim do
+        {:reclaimed, _epoch, %{id: receipt_id}} ->
+          Map.put(detail, :reclaim_receipt_id, receipt_id)
+
+        _ ->
+          detail
+      end
+
+    finish(tick_no, step.id, :requeued, detail, telemetry_path)
   end
 
   # The stream budget: the loop timeout plus a grace for Dispatch's own
@@ -1071,8 +1076,10 @@ defmodule Xaas.Ultracode.WaveLoop do
   end
 
   defp finish(tick_no, step, outcome, detail, telemetry_path) do
+    ts = iso_now()
+
     entry = %{
-      "ts" => iso_now(),
+      "ts" => ts,
       "kind" => @kind,
       "tick" => tick_no,
       "step" => step,
@@ -1087,6 +1094,26 @@ defmodule Xaas.Ultracode.WaveLoop do
         File.write(telemetry_path, line <> "\n", [:append])
       rescue
         _ -> :ok
+      end
+
+    # OCEL 2.0 evidence: one validated event per settled tick outcome
+    # (`WaveLoop.Ocel`). Emission failure is logged + counted there and
+    # can never change the tick outcome.
+    _ =
+      try do
+        Xaas.Ultracode.WaveLoop.Ocel.emit(%{
+          tick: tick_no,
+          step: step,
+          outcome: outcome,
+          outcome_name: entry["outcome"],
+          time: ts,
+          detail: detail,
+          provider: @provider,
+          telemetry_path: telemetry_path
+        })
+      rescue
+        error ->
+          Logger.warning("[ultracode-wave-loop] OCEL emit raised: #{Exception.message(error)}")
       end
 
     report = %{
