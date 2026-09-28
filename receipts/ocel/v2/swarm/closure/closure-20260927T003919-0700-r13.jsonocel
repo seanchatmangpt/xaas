@@ -1,0 +1,498 @@
+{
+  "eventTypes": [
+    {
+      "name": "task_started",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "control_read",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "work_selected",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "source_read",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "scope_locked",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "branch_created",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "write_attempted",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "write_succeeded",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "write_failed",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "fallback_selected",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "dependency_connected",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "receipt_materialized",
+      "attributes": [
+        {
+          "name": "sequence",
+          "type": "integer"
+        }
+      ]
+    }
+  ],
+  "objectTypes": [
+    {
+      "name": "ScheduledTask",
+      "attributes": []
+    },
+    {
+      "name": "Run",
+      "attributes": []
+    },
+    {
+      "name": "Lane",
+      "attributes": []
+    },
+    {
+      "name": "WorkItem",
+      "attributes": []
+    },
+    {
+      "name": "Repository",
+      "attributes": []
+    },
+    {
+      "name": "Branch",
+      "attributes": []
+    },
+    {
+      "name": "BaseCommit",
+      "attributes": []
+    },
+    {
+      "name": "Capability",
+      "attributes": []
+    },
+    {
+      "name": "CodeSurface",
+      "attributes": []
+    },
+    {
+      "name": "ToolEdge",
+      "attributes": []
+    },
+    {
+      "name": "DependencyEdge",
+      "attributes": []
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "type": "task_started",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 1
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "run:closure-20260927T003919-0700-r13",
+          "qualifier": "run"
+        }
+      ]
+    },
+    {
+      "id": "e2",
+      "type": "control_read",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 2
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "lane:closure",
+          "qualifier": "lane"
+        }
+      ]
+    },
+    {
+      "id": "e3",
+      "type": "work_selected",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 3
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "work:CS2-WRK-013",
+          "qualifier": "target"
+        }
+      ]
+    },
+    {
+      "id": "e4",
+      "type": "source_read",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 4
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "repo:xaas",
+          "qualifier": "consumer"
+        }
+      ]
+    },
+    {
+      "id": "e5",
+      "type": "scope_locked",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 5
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "cap:cs2-xaas",
+          "qualifier": "capability"
+        }
+      ]
+    },
+    {
+      "id": "e6",
+      "type": "branch_created",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 6
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "branch:swarm/closure-20260927-0039-r13",
+          "qualifier": "target"
+        }
+      ]
+    },
+    {
+      "id": "e7",
+      "type": "write_attempted",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 7
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "edge:create_blob",
+          "qualifier": "edge"
+        }
+      ]
+    },
+    {
+      "id": "e8",
+      "type": "write_succeeded",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 8
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "cap:cs2-xaas",
+          "qualifier": "target"
+        }
+      ]
+    },
+    {
+      "id": "e9",
+      "type": "write_failed",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 9
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "surface:workflow-schema",
+          "qualifier": "surface"
+        }
+      ]
+    },
+    {
+      "id": "e10",
+      "type": "fallback_selected",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 10
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "surface:bridge-test",
+          "qualifier": "next"
+        }
+      ]
+    },
+    {
+      "id": "e11",
+      "type": "dependency_connected",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 11
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "dep:ash-xaas",
+          "qualifier": "edge"
+        }
+      ]
+    },
+    {
+      "id": "e12",
+      "type": "receipt_materialized",
+      "time": "2026-09-27T00:39:19-07:00",
+      "attributes": [
+        {
+          "name": "sequence",
+          "value": 12
+        }
+      ],
+      "relationships": [
+        {
+          "objectId": "surface:receipt",
+          "qualifier": "target"
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "task:closure-code-lab",
+      "type": "ScheduledTask",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "run:closure-20260927T003919-0700-r13",
+          "qualifier": "run"
+        }
+      ]
+    },
+    {
+      "id": "run:closure-20260927T003919-0700-r13",
+      "type": "Run",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "lane:closure",
+          "qualifier": "lane"
+        }
+      ]
+    },
+    {
+      "id": "lane:closure",
+      "type": "Lane",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "work:CS2-WRK-013",
+      "type": "WorkItem",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "repo:xaas",
+      "type": "Repository",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "branch:swarm/closure-20260927-0039-r13",
+      "type": "Branch",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:xaas",
+          "qualifier": "parent"
+        }
+      ]
+    },
+    {
+      "id": "base:f1d42eb39a71d57787a05ab2e0f2a24f3806cff5",
+      "type": "BaseCommit",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "branch:swarm/closure-20260927-0039-r13",
+          "qualifier": "parent"
+        }
+      ]
+    },
+    {
+      "id": "cap:cs2-xaas",
+      "type": "Capability",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:xaas",
+          "qualifier": "consumer"
+        }
+      ]
+    },
+    {
+      "id": "surface:generated-contract",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "surface:ash-bridge",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "surface:engineer-workflow",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "surface:binding",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "surface:workflow-schema",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "surface:bridge-test",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "surface:receipt",
+      "type": "CodeSurface",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "edge:create_blob",
+      "type": "ToolEdge",
+      "attributes": [],
+      "relationships": []
+    },
+    {
+      "id": "dep:ash-xaas",
+      "type": "DependencyEdge",
+      "attributes": [],
+      "relationships": [
+        {
+          "objectId": "repo:xaas",
+          "qualifier": "consumer"
+        }
+      ]
+    }
+  ]
+}
