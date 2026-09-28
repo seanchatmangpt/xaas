@@ -1588,7 +1588,13 @@ defmodule Xaas.Ultracode.WaveLoopTest do
         "wave-loop-test-#{label}-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}#{suffix}"
       )
 
-    on_exit(fn -> File.rm_rf(path) end)
+    # WaveLoop derives its OCEL evidence file from the telemetry path
+    # (<rootname>.ocel.ndjson); remove it with the telemetry file.
+    on_exit(fn ->
+      File.rm_rf(path)
+      File.rm_rf(Path.rootname(path) <> ".ocel.ndjson")
+    end)
+
     path
   end
 end
