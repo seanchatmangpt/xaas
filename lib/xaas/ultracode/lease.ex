@@ -829,6 +829,11 @@ defmodule Xaas.Ultracode.Lease do
     end
   end
 
+  # An option-shaped "head" would be parsed by git as a flag, not a revision.
+  defp subject_drift(%Epoch{run: %Run{base_sha: base}}, "-" <> _ = observed_head)
+       when is_binary(base),
+       do: {:error, {:stale_subject, %{"bound" => base, "observed" => observed_head}}}
+
   defp subject_drift(%Epoch{run: %Run{base_sha: base}, worktree: cwd}, observed_head)
        when is_binary(base) and is_binary(cwd) do
     if git_checkout?(cwd) do
@@ -856,22 +861,33 @@ defmodule Xaas.Ultracode.Lease do
       )
   end
 
-  # actuate/2's observed head: the request's "head" when supplied, else the
-  # lease cwd's real HEAD; nil (no cwd, no head) skips the drift court.
+  # actuate/2's observed head. When the lease cwd is a real git checkout
+  # its HEAD is authoritative: a wire-supplied "head" can only AGREE with it
+  # (court F5: a wire head equal to the bound base used to satisfy the drift
+  # court while the checkout sat on an unrelated commit). Without a readable
+  # checkout the wire head is the only observation; nil skips the court.
   defp actuate_subject(%Epoch{} = epoch, request) do
-    head =
+    wire =
       case request["head"] do
-        h when is_binary(h) and h != "" ->
-          h
-
-        _ ->
-          case worktree_head(epoch.worktree) do
-            {:ok, h} -> h
-            _ -> nil
-          end
+        h when is_binary(h) and h != "" -> h
+        _ -> nil
       end
 
-    if is_binary(head), do: subject_drift(epoch, head), else: :ok
+    case {worktree_head(epoch.worktree), wire} do
+      {{:ok, real}, w} when w in [nil, real] ->
+        subject_drift(epoch, real)
+
+      {{:ok, real}, w} ->
+        {:error,
+         {:stale_subject,
+          %{"bound" => epoch.run.base_sha || real, "observed" => w, "checkout_head" => real}}}
+
+      {_, nil} ->
+        :ok
+
+      {_, w} ->
+        subject_drift(epoch, w)
+    end
   end
 
   @doc """

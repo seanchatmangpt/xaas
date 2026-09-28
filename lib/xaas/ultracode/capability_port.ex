@@ -31,7 +31,8 @@ defmodule Xaas.Ultracode.CapabilityPort do
   ## Consequence
 
   A capability whose id matches `@external_capability_patterns`
-  (publish/push/deploy/merge/release/external) is consequential: its handle
+  or that is not provably local (recipe/local namespace, or a local verb) is
+  consequential: its handle
   carries `"authority_requirement" => "brce"` and
   `"invocation_contract" => "actuate"` -- it is invocable ONLY through the
   existing actuate tool (`Lease.actuate/2` -> `Xaas.Actuation.run/4`). All
@@ -50,14 +51,18 @@ defmodule Xaas.Ultracode.CapabilityPort do
   alias Xaas.Ultracode.RuntimeSurface
   alias Xaas.Ultracode.RuntimeSurface.Failure
 
-  @external_capability_patterns [
-    ~r/(^|[:_.-])publish($|[:_.-])/,
-    ~r/(^|[:_.-])push($|[:_.-])/,
-    ~r/(^|[:_.-])deploy($|[:_.-])/,
-    ~r/(^|[:_.-])merge($|[:_.-])/,
-    ~r/(^|[:_.-])release($|[:_.-])/,
-    ~r/(^|[:_.-])external($|[:_.-])/
-  ]
+  # Fail-closed classification (court F8: a closed list of external verbs
+  # missed open_pull_request/tag_version/ship_to_prod/republish). A
+  # capability is LOCAL only when it is a construction recipe or every verb
+  # segment is a known local read/verify/construct verb AND no segment names
+  # an external effect; everything else is consequential (BRCE / actuate).
+  @external_verbs ~w(publish push deploy merge release external open tag ship
+                     republish write send post create delete update notify comment
+                     upload approve close transition assign)
+  @local_verbs ~w(inspect read retrieve list query get verify check format lint
+                  test compile render generate diff status fmt)
+  @local_namespaces ~w(recipe local)
+  @external_verb_source "(^|[:_.-])(#{Enum.join(@external_verbs, "|")})($|[:_.-])"
 
   @subject_keys ["repo", "base_sha"]
 
@@ -161,12 +166,28 @@ defmodule Xaas.Ultracode.CapabilityPort do
 
   @doc "The consequential capability-id patterns (publish/push/deploy/merge/...)."
   @spec external_capability_patterns() :: [Regex.t()]
-  def external_capability_patterns, do: @external_capability_patterns
+  def external_capability_patterns, do: [Regex.compile!(@external_verb_source)]
 
   @doc "True when `capability_id` is consequential (BRCE / actuate only)."
   @spec consequential?(String.t()) :: boolean()
-  def consequential?(capability_id) when is_binary(capability_id),
-    do: Enum.any?(@external_capability_patterns, &Regex.match?(&1, capability_id))
+  def consequential?(capability_id) when is_binary(capability_id) do
+    Regex.match?(Regex.compile!(@external_verb_source), capability_id) or
+      not local_capability?(capability_id)
+  end
+
+  defp local_capability?(capability_id) do
+    case String.split(capability_id, ":", parts: 2) do
+      [ns, _] when ns in @local_namespaces ->
+        true
+
+      [_ns, name] ->
+        segments = String.split(name, ~r/[:_.-]/, trim: true)
+        segments != [] and Enum.any?(segments, &(&1 in @local_verbs))
+
+      _ ->
+        false
+    end
+  end
 
   # ------------------------------------------------------------------
 

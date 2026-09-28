@@ -232,8 +232,15 @@ defmodule Xaas.Ultracode.LeaseSurfaceTest do
       assert {:error, {:stale_subject, %{"bound" => ^x, "observed" => ^y}}} =
                Lease.actuate(token, %{"resource" => "R", "action" => "a"})
 
-      # Explicit request head that descends from X passes the court and
-      # reaches the (empty, fail-closed) registry.
+      # Court F5 falsifier: a wire "head" naming the bound base cannot
+      # override the checkout's real HEAD -- the drift court still refuses.
+      assert {:error, {:stale_subject, %{"bound" => ^x, "observed" => ^x, "checkout_head" => ^y}}} =
+               Lease.actuate(token, %{"resource" => "R", "action" => "a", "head" => x})
+
+      # A wire head that AGREES with a descending checkout reaches the
+      # (empty, fail-closed) registry.
+      {_, 0} = git(repo, ["checkout", "--quiet", "--detach", x])
+
       assert {:error, {:unregistered_actuation, {"R", "a"}}} =
                Lease.actuate(token, %{"resource" => "R", "action" => "a", "head" => x})
     end

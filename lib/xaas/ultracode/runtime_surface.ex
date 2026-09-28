@@ -205,7 +205,8 @@ defmodule Xaas.Ultracode.RuntimeSurface do
         "base_sha" => ctx["base_sha"],
         "branch" => ctx["branch"]
       },
-      "lease_id" => ctx["lease_id"] || ctx["lease_token"],
+      # Never the bearer lease token: surfaces travel into receipts/OCEL.
+      "lease_id" => ctx["lease_id"] || ctx["epoch_id"],
       "authority" => ctx["authority"] || "NONE",
       "env_keys" => ctx["env_keys"] || []
     })

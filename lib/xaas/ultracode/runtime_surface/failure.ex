@@ -58,6 +58,12 @@ defmodule Xaas.Ultracode.RuntimeSurface.Failure do
       when reason in [:lease_expired, :unknown_lease, :not_found, :lease_not_live],
       do: new(:work_not_found, %{"reason" => Atom.to_string(reason)})
 
+  def from_term({reason, d}) when reason in [:lease_expired, :lease_not_live, :no_lease],
+    do: new(:work_not_found, %{"reason" => Atom.to_string(reason), "detail" => inspect(d)})
+
+  def from_term({:unregistered_actuation, target}),
+    do: new(:unauthorized, %{"reason" => "unregistered_actuation", "target" => inspect(target)})
+
   def from_term({:sa2a_transport, d}),
     do: new(:capability_unavailable, %{"reason" => "sa2a_transport", "detail" => inspect(d)})
 
