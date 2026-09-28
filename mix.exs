@@ -100,7 +100,7 @@ defmodule Xaas.MixProject do
       {:ash_a2a, "~> 26.9.12"},
       {:ash_r2rml,
        git: "https://github.com/seanchatmangpt/ash_r2rml.git",
-       ref: "9c6c466431b954a8baab13486d308e6bea93cb2b",
+       ref: "40d181fffdefbb65ee4a83486eae86534690c4d5",
        override: true},
       {:a2a, "~> 0.2"},
       {:bandit, "~> 1.5"},
