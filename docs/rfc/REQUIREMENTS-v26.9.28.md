@@ -10,11 +10,11 @@ and its status is reported as observed.
 |----|-------------|-----------|--------|
 | REQ-1 | Integration line contains every lawful unmerged branch; each unmerged branch has a typed disposition | `git branch -r --no-merged HEAD` minus ledger below is empty | see ledger |
 | REQ-2 | Every `.ex/.exs` in `lib/ test/ config/` parses under the pinned toolchain (elixir 1.20.2-otp-28) | `test/xaas/release/tree_parse_guard_test.exs` | implemented, passing |
-| REQ-3 | Integrated tree compiles with no `undefined module/function` diagnostics | `mix compile --force` output grep | compiled exit 0; undefined-ref warnings fixed (ClosureController alias) |
-| REQ-4 | Merge seams keep one source of truth: Ultracode consequence fence (`Lease.refused_consequence_tools/0` vs `RuntimeSurface`) | `test/xaas/pack/pack_ontology_test.exs` equality | attribute restored; pack test result in test run |
-| REQ-5 | Competing add/add implementations of `Xaas.ResearchRuntime.*` are resolved to one (r14 formatted set) and no HEAD-only consumer breaks | compile + `test/xaas/research_runtime/**` | r14 set taken; result in test run |
+| REQ-3 | Integrated tree compiles with no `undefined module/function` diagnostics | `mix compile --force` output grep | `mix compile` exit 0; undefined-ref warnings fixed; done |
+| REQ-4 | Merge seams keep one source of truth: Ultracode consequence fence (`Lease.refused_consequence_tools/0` vs `RuntimeSurface`) | `test/xaas/pack/pack_ontology_test.exs` equality | attribute restored; pack test passes |
+| REQ-5 | Competing add/add implementations of `Xaas.ResearchRuntime.*` are resolved to one (r14 formatted set) and no HEAD-only consumer breaks | compile + `test/xaas/research_runtime/**` | r14 set taken; `research_runtime` tests pass |
 | REQ-6 | Version metadata consistent: `VERSION`, CHANGELOG entry | CHANGELOG has `[v26.9.28]` | done |
-| REQ-7 | Generated one-line code is normalized by the formatter, not hand-edited | `mix format --check-formatted` on runtime dirs | OPEN (not run) |
+| REQ-7 | Generated one-line code is normalized by the formatter, not hand-edited | `mix format --check-formatted` on runtime dirs | OPEN: 316 of the files changed since 7c3dc68 fail `mix format --check-formatted`; not reformatted this cycle |
 | REQ-8 | Multi-clause functions declaring defaults use a header (compiler warnings in vkg, atlassian, engineer_workflow, trimtab/subject) | zero `multiple clauses and also declares default values` warnings | OPEN |
 
 ## Branch ledger (disposition of the 37 non-backup unmerged branches)
@@ -38,3 +38,17 @@ and its status is reported as observed.
   rename/kanban-to-xaas, feat/ash-ai-mcp-a2a-next-read, fix/coupling-engine-zero-weight,
   fix/ocel-import-typed-error.
 - SKIPPED by design: `backup/*`.
+
+## Observed verification (2026-09-28, pinned elixir 1.20.2-otp-28 installed from builds.hex.pm; postgres 16 + pgvector)
+
+- `mix compile` exit 0. `mix test`: 2489/2490 passed (2483/2484 tests, 6/6 doctests; 105 skipped, 76 excluded by tags).
+- OPEN failure: `Xaas.Ultracode.RecipeWorkerTest` "a lease lost between steps ..." expects
+  `{:lease_lost, {:no_lease, redacted}}` with the redacted lease-token digest; the `DurableClose`
+  fence (7e4d6a1) now returns `{:lease_lost, :no_lease}` with no token. Reconciling requires deciding
+  whether the token-redaction assertion is retained (security-relevant) - deliberately NOT edited here.
+- Test-side reconciliations made (behavior kept, stale expectations updated): A2A bridge -> `from_a2a/1`;
+  Gall contract tool set/`result_fields`; VKG graphql first-row order; relay `acknowledge` fixed clock.
+- Source fixes: Atlassian tuple digest + JSON-safe checkpoint outcomes; VKG `rows_by_contract` passthrough;
+  release-snapshot codec `{:serialized_authority_widened, _}`; CapitalCensus resources -> `Xaas.Resource`
+  (note: still no policy block - policy floor is a follow-up); DateTime comparators; `build_goal` text.
+- Not run: `mix test --include stress`, mock grep, `mix format --check-formatted` gating.
