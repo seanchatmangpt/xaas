@@ -44,6 +44,10 @@ defmodule Xaas.Operations.ActuationReceipt do
         :subject_id,
         :ontology_class_iri,
         :ontology_projection_hash,
+        :spg_graph_id,
+        :spg_graph_version,
+        :spg_node_id,
+        :spg_edge_id,
         :input_hash,
         :replay_token,
         :started_at
@@ -105,6 +109,22 @@ defmodule Xaas.Operations.ActuationReceipt do
 
     attribute :ontology_projection_hash, :string do
       allow_nil?(false)
+      public?(true)
+    end
+
+    attribute :spg_graph_id, :string do
+      public?(true)
+    end
+
+    attribute :spg_graph_version, :string do
+      public?(true)
+    end
+
+    attribute :spg_node_id, :string do
+      public?(true)
+    end
+
+    attribute :spg_edge_id, :string do
       public?(true)
     end
 
