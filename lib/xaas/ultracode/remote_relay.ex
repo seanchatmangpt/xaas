@@ -9,7 +9,15 @@ defmodule Xaas.Ultracode.RemoteRelay do
   """
 
   defmodule Envelope do
-    @enforce_keys [:command_id, :epoch_id, :task_id, :sequence, :intent_digest, :exact_subject, :verb]
+    @enforce_keys [
+      :command_id,
+      :epoch_id,
+      :task_id,
+      :sequence,
+      :intent_digest,
+      :exact_subject,
+      :verb
+    ]
     @type t :: %__MODULE__{
             command_id: String.t(),
             epoch_id: String.t(),
@@ -132,7 +140,11 @@ defmodule Xaas.Ultracode.RemoteRelay do
   """
   @spec acknowledge(State.t(), Envelope.t(), integer()) ::
           {:ok, State.t()} | {:replay, State.t()} | {:error, atom()}
-  def acknowledge(%State{} = state, %Envelope{} = envelope, now_ms \\ System.system_time(:millisecond)) do
+  def acknowledge(
+        %State{} = state,
+        %Envelope{} = envelope,
+        now_ms \\ System.system_time(:millisecond)
+      ) do
     with :ok <- validate_envelope(envelope),
          :ok <- validate_expiry(envelope, now_ms),
          :ok <- validate_manifest(state, envelope),
@@ -185,8 +197,9 @@ defmodule Xaas.Ultracode.RemoteRelay do
   def bind_actuation_idempotency(%Envelope{}, args) when is_map(args), do: {:ok, args}
 
   @spec classify_transport_failure(term()) :: failure_class()
-  def classify_transport_failure(reason) when reason in [:unauthorized, :forbidden, :invalid_token],
-    do: :permanent
+  def classify_transport_failure(reason)
+      when reason in [:unauthorized, :forbidden, :invalid_token],
+      do: :permanent
 
   def classify_transport_failure(reason)
       when reason in [:timeout, :closed, :econnreset, :econnrefused, :dns],
@@ -198,7 +211,10 @@ defmodule Xaas.Ultracode.RemoteRelay do
     schema = descriptor_value(descriptor, "schema", :schema)
     work_order_iri = descriptor_value(descriptor, "work_order_iri", :work_order_iri)
     graph_digest = descriptor_value(descriptor, "graph_digest", :graph_digest)
-    repository_identity = descriptor_value(descriptor, "repository_identity", :repository_identity)
+
+    repository_identity =
+      descriptor_value(descriptor, "repository_identity", :repository_identity)
+
     base_sha = descriptor_value(descriptor, "base_sha", :base_sha)
     epoch_id = descriptor_value(descriptor, "epoch_id", :epoch_id)
 
