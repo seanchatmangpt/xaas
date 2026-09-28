@@ -107,7 +107,11 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
   retaining the separately-computable semantic work identity.
   """
   @spec topology_digest(WorkIdentity.t(), PartPassport.t(), PartPassport.t()) :: String.t()
-  def topology_digest(%WorkIdentity{} = work, %PartPassport{kind: :provider} = provider, %PartPassport{kind: :transport} = transport) do
+  def topology_digest(
+        %WorkIdentity{} = work,
+        %PartPassport{kind: :provider} = provider,
+        %PartPassport{kind: :transport} = transport
+      ) do
     digest(%{
       work_identity_digest: work_identity_digest(work),
       provider: {provider.part_id, provider.exact_subject, provider.part_digest},
