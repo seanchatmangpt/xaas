@@ -4,6 +4,26 @@ Reconstructed 2026-09-26 from `git log v26.9.22..HEAD` (this file did not previo
 exist in the repository). Every entry traces to a witnessed commit or merge; anchors
 supplied without a witnessed commit are marked UNKNOWN.
 
+## [v26.9.27] — In Progress (branch `v26.9.27/closure-runtime`, draft PR #90)
+
+- Lease-reclaim kernel merged (`68315314`, from `origin/feat/v26.9.27-lease-reclaim-kernel`):
+  `Lease.reclaim_epoch/4` is the single reaper for WaveLoop, Engine, Autonomic.
+- Dispatch wedge guard (`68315314`): supervised `Xaas.Ultracode.TaskSupervisor` +
+  `async_stream_nolink` (a linked stream made the DOWN reclaim path unreachable),
+  `on_timeout: :kill_task` -> typed `:dispatch_timeout` reclaim + requeue, serialized
+  Run/Epoch construction, Dispatch `:deadline_at_ms` bounding failover retries.
+- Provider recovery (`045de008`, `3f3a3c95`): typed failure classes, per-provider
+  circuit breaker, registry skips open providers, half-open admits exactly one probe.
+- Capability court execution (`b6faa86a`, `68efe7fa`): unconfigured SA2A no longer
+  blocks; `:reuse` executes as `:known_replay`; `:generate`/`:compose`/`:extend` run
+  the marketplace qualification harness (real `ggen sync run` x2) via `PackGenerator`.
+- Self-dogfood (`b6faa86a`): `mix xaas.self_digest` + daily `SelfDigestWorker`
+  admit recurring frontier clusters as UltraCode self-work orders.
+- FOND recovery policy (`ae522613`): WaveLoop chaining is an ash_pplan strong-cyclic
+  policy admitted at compile time (`Xaas.Ultracode.RecoveryPolicy`).
+- OCEL 2.0 tick evidence (`328f0b8f`): validated per-tick events related to step, run,
+  epoch, receipt, provider.
+
 ## [v26.9.26] — In Progress
 
 - Yolo dispatch posture courts merged into the wave base (merge `dd32425`,
