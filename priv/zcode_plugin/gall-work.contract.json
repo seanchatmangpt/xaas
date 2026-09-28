@@ -6,6 +6,10 @@
     "name": "zcode gall-work",
     "argv": ["gall-work", "--worker-id", "<worker_id>", "--epoch-id", "<epoch_uuid>", "--cwd", "<abs_cwd>", "--json"],
     "argv_lease_form": ["gall-work", "--lease", "<descriptor.json>", "--json"],
+    "argv_optional": {
+      "--provider <id>": "request a specific execution provider (registry still gates enabled-ness)",
+      "--construct-deadline-seconds <n>": "internal construct-turn deadline; 0 disables; default 14400"
+    },
     "process_cwd": "<zcode_cli_dir>",
     "descriptor_schema": "gall.work-lease/1"
   },
@@ -13,29 +17,48 @@
     "XAAS_WORKER": "1",
     "XAAS_LEASE_CWD": "<abs_cwd>",
     "XAAS_MCP_URL": "optional: overrides the fabric MCP endpoint",
-    "XAAS_MCP_TOKEN": "optional: overrides the bearer token secret"
+    "XAAS_MCP_TOKEN": "optional: overrides the bearer token secret",
+    "ZCODE_CONSTRUCT_DEADLINE_SECONDS": "optional: default construct-turn deadline when the flag is absent"
   },
   "fabric": {
     "transport": "stateless JSON-RPC 2.0 over HTTP POST",
     "endpoint_default": "http://localhost:4000/internal-api/execution/mcp",
     "endpoint_resolution_order": ["env XAAS_MCP_URL", "config mcp.servers.xaas-execution.url"],
     "auth_resolution_order": ["env XAAS_MCP_TOKEN as Bearer", "config mcp.servers.xaas-execution.headers.Authorization"],
+    "capability_discovery": {
+      "handshake": ["initialize (client identity; serverInfo recorded)", "tools/list (capability surface)"],
+      "degrade": "a server lacking either leg degrades typed: stages.discovery = {ok:false, code:'tools_list_unsupported'|'initialize_unsupported'} and the static tool vocabulary below stands; discovery failure never fails a dispatch"
+    },
     "tools": {
       "claim_next": {
         "arguments": {
-          "provider": "zcode",
+          "provider": "zcode (resolved from the execution-provider registry; never hard-coded)",
           "provider_worker_id": "<worker_id>",
-          "epoch_id": "<epoch_uuid>"
+          "epoch_id": "<epoch_uuid>",
+          "idempotency_key": "gall-work:<provider>:<worker_id>:<epoch_uuid> (retry-safe re-claim)"
         },
-        "result_fields": ["lease_token", "lease_expires_at", "epoch_id", "cycle", "exact_subject", "goal", "worktree", "verifier_suite"]
+        "result_fields": ["lease_token", "lease_expires_at", "epoch_id", "cycle", "exact_subject", "goal", "worktree", "verifier_suite", "origin_authority (optional)"]
       },
       "heartbeat": {
         "arguments": {"lease_token": "<token>"},
-        "result_fields": ["status"]
+        "result_fields": ["status"],
+        "failure": "heartbeat failures are surfaced in close evidence (heartbeat_failures), never dropped"
+      },
+      "work_status": {
+        "arguments": {"lease_token": "<token>"},
+        "result_fields": ["status"],
+        "status_vocabulary": ["open", "active", "claimed", "running", "constructing", "leased", "closed", "cancelled", "refused", "expired", "not_found"],
+        "open_statuses": ["open", "active", "claimed", "running", "constructing", "leased"]
       },
       "close_candidate": {
         "arguments": {"lease_token": "<token>", "final_head": "<git_sha>", "outcome": "<outcome>", "evidence": {}},
         "result_fields": ["status", "epoch_id", "outcome"]
+      },
+      "cancel_work": {
+        "arguments": {"lease_token": "<token>"},
+        "result_fields": ["status"],
+        "result": {"status": "cancelled"},
+        "used_by": "SIGINT/SIGTERM cancellation, the internal construct deadline, and crash-window reclamation; fallback when unsupported: refuse(reason blocked)"
       },
       "refuse": {
         "arguments": {"lease_token": "<token>", "reason": "<reason>"},
@@ -45,17 +68,36 @@
     "outcome_vocabulary": ["alive", "partial_alive", "blocked", "build_broken", "unsupported", "refused"],
     "refuse_reasons": ["blocked", "build_broken", "no_authority"]
   },
+  "execution_provider_registry": {
+    "config": "~/.zcode/v2/execution_provider_config.json (env ZCODE_EXECUTION_PROVIDER_CONFIG_FILE)",
+    "schema": {
+      "schemaVersion": 1,
+      "executionProviderRules": [{"providerId": "<id>", "enabled": true, "runtime": "<runtime>", "capabilitiesRef": "<ref>", "authRef": "<ref>"}],
+      "defaultExecutionSelection": {"providerId": "<id>"}
+    },
+    "law": "enabled:false on a provider means it cannot be selected; selection is fail-closed (registry_invalid refuses; a disabled default falls through to the next enabled rule, else provider_disabled); with no registry file the built-in zcode provider stands; work-order identity, authority, acceptance and receipt schema carry NO provider identity -- the provider appears only as a capabilityId left-segment plus this descriptor"
+  },
+  "work_order_file": {
+    "path": "<tmpdir>/xaas-fabric/<sha256(realpath(cwd))>.work-order.json",
+    "schema": "gall.work-order/1",
+    "origin_authority": "work-order origin authority, carried from the lease descriptor or claim payload into the file and close evidence; never fabricated"
+  },
   "goal_transport": "work-order file: the goal NEVER travels on argv; gall-work writes <tmpdir>/xaas-fabric/<sha256(realpath(cwd))>.work-order.json and the construct prompt references only that path",
+  "crash_reconciliation": "at startup, stale lease files for the cwd are reconciled with the fabric: expired or fabric-terminal -> cleared; live past the 2x-heartbeat grace -> reclaimed via cancel_work (fallback refuse) with execution.crash + receipt persisted; genuinely live elsewhere -> left untouched; failures never fail the dispatch (the persist conflict guard remains the backstop)",
   "stages": [
+    {"stage": "reconcile", "failure": "never fails the dispatch; outcome recorded in stages.reconcile"},
+    {"stage": "discover", "failure": "typed degrade (tools_list_unsupported / initialize_unsupported); static vocabulary stands"},
     {"stage": "claim", "failure": "typed refusal, exit 1, no receipt"},
     {"stage": "persist", "failure": "exit 65 on live lease_conflict for this cwd"},
-    {"stage": "construct", "failure": "turn failure still closes: outcome blocked with evidence.runtime_exit_code; receipt sealed; exit 0"},
-    {"stage": "close", "failure": "typed refusal, exit 1, close error surfaced"}
+    {"stage": "construct", "failure": "turn failure still closes: outcome blocked with evidence.runtime_exit_code; receipt sealed; exit 0; cancellation (SIGINT/SIGTERM) or internal deadline closes via cancel_work, fallback refuse"},
+    {"stage": "close", "failure": "typed refusal, exit 1, close error surfaced"},
+    {"stage": "cleanup", "failure": "after a sealed terminal receipt the gate lease file is cleared; a clear failure is recorded, never fatal"}
   ],
   "outcome_mapping": {
     "construct_exit_0": "close outcome alive",
     "construct_exit_nonzero": "close outcome blocked (evidence: runtime_exit_code, output_tail)",
     "construct_spawn_failure": "refuse reason blocked",
+    "construct_cancelled_or_deadline": "cancel_work (fallback refuse blocked); receipt sealed; exit 0; code construct_deadline_exceeded or cancelled_<signal>",
     "worktree_head_unavailable": "refuse reason blocked"
   },
   "stdout_final_document": {
@@ -65,6 +107,7 @@
       "standing": "ALIVE",
       "epoch_id": "<epoch_uuid>",
       "worker_id": "<worker_id>",
+      "provider": "<provider_id>",
       "outcome": "alive",
       "final_head": "<git_sha>",
       "runtime_exit_code": 0
@@ -77,15 +120,16 @@
       "code": "no_ready_work",
       "detail": "<server reason text>"
     },
-    "standing_vocabulary": ["ALIVE", "PARTIAL_ALIVE", "BLOCKED", "BUILD_BROKEN", "UNSUPPORTED", "REFUSED", "REFUSED_CLAIM", "REFUSED_CLOSE", "REFUSED_LEASE_CONFLICT", "REFUSED_NO_FABRIC", "REFUSED_NO_HEAD", "REFUSED_SUBJECT_MISMATCH"]
+    "standing_vocabulary": ["ALIVE", "PARTIAL_ALIVE", "BLOCKED", "BUILD_BROKEN", "UNSUPPORTED", "REFUSED", "REFUSED_CLAIM", "REFUSED_CLOSE", "REFUSED_LEASE_CONFLICT", "REFUSED_NO_FABRIC", "REFUSED_NO_HEAD", "REFUSED_PROVIDER_DISABLED", "REFUSED_PROVIDER_REGISTRY", "REFUSED_SUBJECT_MISMATCH"]
   },
   "exit_codes": {
-    "0": "a fabric receipt was sealed (close_candidate or refuse succeeded); the epoch is terminal",
-    "1": "typed failure with no receipt (claim refused, fabric unreachable, close refused)",
+    "0": "a fabric receipt was sealed (close_candidate, refuse, or cancel_work succeeded); the epoch is terminal",
+    "1": "typed failure with no receipt (claim refused, fabric unreachable, close refused, provider selection refused)",
     "2": "usage error",
     "65": "lease_conflict: a different live lease is already saved for this cwd",
     "142": "killed by the external dispatcher deadline; the lease expires by TTL"
   },
+  "replay_binding": "close evidence carries replay_binding {worker, contract_version, contract_sha256, provider, worker_id, epoch_id, idempotency_key, work_order_iri?, base_sha?, origin_authority?}; OCEL receipts bind replay_binding via XAAS_REPLAY_BINDING",
   "failover_grep": "\"code\"\\s*:\\s*\"?1302|HTTP 429|status(Code)?[\": ]+429|Too Many Requests|High concurrency usage",
   "no_fallback_law": "neither side may fall back to the /xaas claim_next prompt protocol for this dispatch; an old CLI without native gall-work exits non-zero and the dispatch is classified failed, never re-dispatched as a prompt"
 }

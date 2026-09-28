@@ -85,7 +85,8 @@
 <urn:zp:toolmap/MultiEdit> a zp:ToolMapping ; zp:fromTool "MultiEdit" ; zp:toTool "Edit" ; zp:order 4 .
 <urn:zp:toolmap/NotebookEdit> a zp:ToolMapping ; zp:fromTool "NotebookEdit" ; zp:toTool "Edit" ; zp:order 5 .
 
-# Bash argv allowlist: git subcommands, then read-only helpers.
+# Bash argv allowlist: git subcommands, then read-only helpers, then the sweep
+# profile's strictly read-only git subcommands.
 <urn:zp:verb/git_sub/add> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "add" ; zp:order 1 .
 <urn:zp:verb/git_sub/commit> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "commit" ; zp:order 2 .
 <urn:zp:verb/git_sub/status> a zp:AllowedBashVerb ; zp:verbSet "git_sub" ; zp:verb "status" ; zp:order 3 .
@@ -99,6 +100,12 @@
 <urn:zp:verb/read_helper/head> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "head" ; zp:order 3 .
 <urn:zp:verb/read_helper/tail> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "tail" ; zp:order 4 .
 <urn:zp:verb/read_helper/wc> a zp:AllowedBashVerb ; zp:verbSet "read_helper" ; zp:verb "wc" ; zp:order 5 .
+<urn:zp:verb/git_sweep_sub/status> a zp:AllowedBashVerb ; zp:verbSet "git_sweep_sub" ; zp:verb "status" ; zp:order 1 .
+<urn:zp:verb/git_sweep_sub/diff> a zp:AllowedBashVerb ; zp:verbSet "git_sweep_sub" ; zp:verb "diff" ; zp:order 2 .
+<urn:zp:verb/git_sweep_sub/log> a zp:AllowedBashVerb ; zp:verbSet "git_sweep_sub" ; zp:verb "log" ; zp:order 3 .
+<urn:zp:verb/git_sweep_sub/rev-parse> a zp:AllowedBashVerb ; zp:verbSet "git_sweep_sub" ; zp:verb "rev-parse" ; zp:order 4 .
+<urn:zp:verb/git_sweep_sub/show> a zp:AllowedBashVerb ; zp:verbSet "git_sweep_sub" ; zp:verb "show" ; zp:order 5 .
+<urn:zp:verb/git_sweep_sub/ls-files> a zp:AllowedBashVerb ; zp:verbSet "git_sweep_sub" ; zp:verb "ls-files" ; zp:order 6 .
 
 # git flags refused under any allowed subcommand.
 <urn:zp:gitflag/1> a zp:ForbiddenGitFlag ; zp:flag "-c" ; zp:order 1 .
@@ -110,14 +117,35 @@
 <urn:zp:gitflag/7> a zp:ForbiddenGitFlag ; zp:flag "-t" ; zp:order 7 .
 <urn:zp:gitflag/8> a zp:ForbiddenGitFlag ; zp:flag "--template" ; zp:order 8 .
 
-# Credential directories under $HOME that Read/Grep/Glob never touch.
-<urn:zp:deniedpath/home/.zcode> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".zcode" ; zp:order 1 .
-<urn:zp:deniedpath/home/.ssh> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".ssh" ; zp:order 2 .
-<urn:zp:deniedpath/home/.aws> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".aws" ; zp:order 3 .
-<urn:zp:deniedpath/home/.gnupg> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".gnupg" ; zp:order 4 .
-<urn:zp:deniedpath/home/.config> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".config" ; zp:order 5 .
-<urn:zp:deniedpath/home/.claude> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".claude" ; zp:order 6 .
-<urn:zp:deniedpath/home/.docker> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".docker" ; zp:order 7 .
-<urn:zp:deniedpath/home/.kube> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".kube" ; zp:order 8 .
-<urn:zp:deniedpath/home/.netrc> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".netrc" ; zp:order 9 .
-<urn:zp:deniedpath/home/.npmrc> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".npmrc" ; zp:order 10 .
+# Credential directories under $HOME that Read/Grep/Glob never touch (and that the
+# sweep profile never reads). Order mirrors gate.sensitive_home_dirs in
+# priv/ultracode/runtime_surface.json.
+<urn:zp:deniedpath/home/.aws> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".aws" ; zp:order 1 .
+<urn:zp:deniedpath/home/.cargo> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".cargo" ; zp:order 2 .
+<urn:zp:deniedpath/home/.claude> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".claude" ; zp:order 3 .
+<urn:zp:deniedpath/home/.config> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".config" ; zp:order 4 .
+<urn:zp:deniedpath/home/.docker> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".docker" ; zp:order 5 .
+<urn:zp:deniedpath/home/.git-credentials> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".git-credentials" ; zp:order 6 .
+<urn:zp:deniedpath/home/.gitconfig> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".gitconfig" ; zp:order 7 .
+<urn:zp:deniedpath/home/.gnupg> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".gnupg" ; zp:order 8 .
+<urn:zp:deniedpath/home/.hex> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".hex" ; zp:order 9 .
+<urn:zp:deniedpath/home/.kube> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".kube" ; zp:order 10 .
+<urn:zp:deniedpath/home/.netrc> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".netrc" ; zp:order 11 .
+<urn:zp:deniedpath/home/.npmrc> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".npmrc" ; zp:order 12 .
+<urn:zp:deniedpath/home/.pgpass> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".pgpass" ; zp:order 13 .
+<urn:zp:deniedpath/home/.ssh> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".ssh" ; zp:order 14 .
+<urn:zp:deniedpath/home/.zcode> a zp:DeniedPath ; zp:pathScope "home" ; zp:relPath ".zcode" ; zp:order 15 .
+
+# Tools denied outright for a leased worker (gate.deny_tools).
+<urn:zp:deniedtool/WebFetch> a zp:DeniedTool ; zp:toolName "WebFetch" ; zp:order 1 .
+<urn:zp:deniedtool/WebSearch> a zp:DeniedTool ; zp:toolName "WebSearch" ; zp:order 2 .
+<urn:zp:porttool/claim_next> a zp:PortTool ; zp:toolName "claim_next" ; zp:order 1 .
+<urn:zp:porttool/heartbeat> a zp:PortTool ; zp:toolName "heartbeat" ; zp:order 2 .
+<urn:zp:porttool/admit_tool> a zp:PortTool ; zp:toolName "admit_tool" ; zp:order 3 .
+<urn:zp:porttool/record_provider_event> a zp:PortTool ; zp:toolName "record_provider_event" ; zp:order 4 .
+<urn:zp:porttool/close_candidate> a zp:PortTool ; zp:toolName "close_candidate" ; zp:order 5 .
+<urn:zp:porttool/refuse> a zp:PortTool ; zp:toolName "refuse" ; zp:order 6 .
+<urn:zp:porttool/cancel_work> a zp:PortTool ; zp:toolName "cancel_work" ; zp:order 7 .
+<urn:zp:porttool/surface> a zp:PortTool ; zp:toolName "surface" ; zp:order 8 .
+<urn:zp:porttool/resolve_capability> a zp:PortTool ; zp:toolName "resolve_capability" ; zp:order 9 .
+<urn:zp:porttool/actuate> a zp:PortTool ; zp:toolName "actuate" ; zp:order 10 .

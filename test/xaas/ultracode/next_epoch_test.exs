@@ -156,4 +156,69 @@ defmodule Xaas.Ultracode.NextEpochTest do
     # only a qualifying terminal court manufactures :alive).
     assert Enum.all?(receipts, &(&1.outcome == :heartbeat))
   end
+
+  test "the tick-constructed next epoch carries the completed epoch's worktree" do
+    subject = exact_subject!()
+
+    # A real directory that is a real git repository -- the exact shape
+    # WorktreeIsSafe admits and a real worker pool cd's into.
+    worktree =
+      Path.join(System.tmp_dir!(), "next-epoch-wt-#{System.unique_integer([:positive])}")
+
+    File.mkdir_p!(worktree)
+    {_, 0} = System.cmd("git", ["init", "-q", worktree])
+
+    run =
+      Run
+      |> Ash.Changeset.for_create(
+        :create,
+        %{goal: "next_epoch_test worktree carry-through", max_cycles: 2},
+        authorize?: false
+      )
+      |> Ash.create!()
+      |> Ash.Changeset.for_update(:transition_state, %{state: :running}, authorize?: false)
+      |> Ash.update!()
+
+    _first_epoch =
+      Epoch
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          run_id: run.id,
+          cycle: 0,
+          exact_subject: subject,
+          worktree: worktree,
+          state: :expected,
+          expected_at: DateTime.utc_now()
+        },
+        authorize?: false
+      )
+      |> Ash.create!()
+
+    run =
+      run
+      |> Ash.Changeset.for_update(:advance_cycle, %{}, authorize?: false)
+      |> Ash.update!()
+
+    # Tick 2 completes epoch 0 and (same tick) constructs epoch 1.
+    {:ok, _tick1} = Reactor.run(Xaas.Ultracode.Reactor)
+    {:ok, _tick2} = Reactor.run(Xaas.Ultracode.Reactor)
+
+    {:ok, [epoch1]} =
+      Epoch
+      |> Ash.Query.for_read(:read_unscoped)
+      |> Ash.Query.filter(run_id == ^run.id and cycle == 1)
+      |> Ash.read(authorize?: false)
+
+    assert epoch1.state == :expected
+
+    # THE regression: a tick-constructed epoch executes in the run's bound
+    # worktree, so Lease.close/4 can verify its final head instead of
+    # sealing every receipt through the :no_worktree partial_alive
+    # downgrade (observed 2026-09-26: all NextEpoch-created epochs sealed
+    # partial_alive with head_verified=false, court unreachable).
+    assert epoch1.worktree == worktree
+
+    File.rm_rf!(worktree)
+  end
 end

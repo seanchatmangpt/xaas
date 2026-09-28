@@ -22,6 +22,19 @@ defmodule XaasWeb.ExecutionFabricController do
       way a provider worker crosses into the admitted `Xaas.Actuation.run/4`
       DO kernel — a wholly separate, narrower surface from `admit_tool`'s
       own construction/consequence fence, which this does not touch.
+      `claim_next` additionally returns the lease's effective runtime
+      `surface` and the tracker-neutral sJira `work` object
+      (`Lease.claim_envelope/3`).
+
+      Two runtime-surface tools (v26.9.27): `surface` returns
+      `Lease.surface/1` (semantic ports `["sa2a","sjira"]`,
+      `direct_external: []`, authority `NONE`), and `resolve_capability`
+      is the agent-facing SA2A capability port
+      (`Lease.lease_context/1 |> Xaas.Ultracode.CapabilityPort.resolve/4`):
+      the subject is always the lease's, never the wire's. Their errors are
+      rendered as the closed `Xaas.Ultracode.RuntimeSurface.Failure`
+      vocabulary (`{"error": CODE, "failure": {"code","details"}}`) --
+      provider/transport detail never leaves `details`.
 
     * `GET /internal-api/execution/epochs/:epoch_id/receipts` — the real
       lawful read path onto `Xaas.Ultracode.Receipt` (see that resource's
@@ -51,7 +64,8 @@ defmodule XaasWeb.ExecutionFabricController do
 
   alias Xaas.Accounts.Org
   alias Xaas.Tunnel.Submit
-  alias Xaas.Ultracode.{Epoch, Lease, Receipt}
+  alias Xaas.Ultracode.{CapabilityPort, Epoch, Lease, Receipt}
+  alias Xaas.Ultracode.RuntimeSurface.Failure
 
   @mcp_tools [
     %{
@@ -129,6 +143,25 @@ defmodule XaasWeb.ExecutionFabricController do
       }
     },
     %{
+      name: "cancel_work",
+      description:
+        "Cancel the leased work: the epoch lands terminal and the sealed receipt carries the " <>
+          "standing outcome `blocked` with cancelled_by evidence (a cancellation is \"work will " <>
+          "not proceed\", not a subject failure). The lease token IS the authority -- a worker " <>
+          "may cancel only its own live lease; a stale/expired/re-claimed token is a typed " <>
+          "refusal, never a clobber of the current holder. Distinct from refuse: refuse reports " <>
+          "why the provider will not do the work; cancel stands the lease down.",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          lease_token: %{type: "string"},
+          reason: %{type: "string"},
+          evidence: %{type: "object"}
+        },
+        required: ["lease_token", "reason"]
+      }
+    },
+    %{
       name: "actuate",
       description:
         "Invoke the admitted Ash.Reactor DO kernel (Xaas.Actuation.run/4) for one " <>
@@ -138,17 +171,53 @@ defmodule XaasWeb.ExecutionFabricController do
           "pair is refused; authority evidence is always attached here and bound to this " <>
           "lease, never an empty/delegated authority map. There is no subject_id argument " <>
           "on purpose -- the registered pair's own config decides which subject (or none) " <>
-          "it may act on, never the caller.",
+          "it may act on, never the caller. `capability` names the SA2A capability this " <>
+          "DO realizes; it is re-resolved server-side for this lease and must carry the " <>
+          "BRCE actuate contract, else UNAUTHORIZED.",
       inputSchema: %{
         type: "object",
         properties: %{
           lease_token: %{type: "string"},
+          capability: %{type: "string"},
           resource: %{type: "string"},
           action: %{type: "string"},
           input: %{type: "object"},
           idempotency_key: %{type: "string"}
         },
-        required: ["lease_token", "resource", "action", "idempotency_key"]
+        required: ["lease_token", "capability", "resource", "action", "idempotency_key"]
+      }
+    },
+    %{
+      name: "resolve_capability",
+      description:
+        "UltraCode -> SA2A capability port: resolve a capability BY NAME for this lease's own " <>
+          "subject through the mandatory capability-resolution court. Returns a bound handle " <>
+          "(capability_id, subject, authority_requirement, invocation_contract, provenance) or " <>
+          "a typed failure (NO_CAPABILITY, CAPABILITY_UNAVAILABLE, PROVENANCE_MISMATCH, " <>
+          "WORK_NOT_FOUND, ...). A consequential capability (publish/push/deploy/merge) is " <>
+          "only invocable through the actuate tool. There is no provider fallback and no " <>
+          "direct external edge; constraints.subject is a claim checked against the lease, " <>
+          "never a replacement for it.",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          lease_token: %{type: "string"},
+          capability: %{type: "string"},
+          constraints: %{type: "object"}
+        },
+        required: ["lease_token", "capability"]
+      }
+    },
+    %{
+      name: "surface",
+      description:
+        "The effective runtime surface of this lease: semantic ports (sa2a, sjira), local " <>
+          "primitives, direct_external (always empty), the policy-admitted agent tools, the " <>
+          "bound subject, the policy digest, and authority (NONE unless granted).",
+      inputSchema: %{
+        type: "object",
+        properties: %{lease_token: %{type: "string"}},
+        required: ["lease_token"]
       }
     }
   ]
@@ -302,7 +371,7 @@ defmodule XaasWeb.ExecutionFabricController do
            id: id,
            result: %{
              isError: true,
-             content: [%{type: "text", text: Jason.encode!(%{error: format_reason(reason)})}]
+             content: [%{type: "text", text: Jason.encode!(tool_error(reason))}]
            }
          }}
     end
@@ -332,7 +401,11 @@ defmodule XaasWeb.ExecutionFabricController do
   defp dispatch_tool("claim_next", args) do
     with {:ok, opts} <- claim_opts(args),
          {:ok, epoch, token, run} <-
-           Lease.claim_next(args["provider"] || "zcode", args["provider_worker_id"], opts) do
+           Lease.claim_next(
+             args["provider"] || Xaas.Ultracode.ProviderRegistry.default_provider(),
+             args["provider_worker_id"],
+             opts
+           ) do
       {:ok,
        %{
          lease_token: token,
@@ -343,7 +416,8 @@ defmodule XaasWeb.ExecutionFabricController do
          goal: run.goal,
          worktree: epoch.worktree,
          verifier_suite: run.verifier_suite
-       }}
+       }
+       |> Map.merge(atomize_envelope(Lease.claim_envelope(epoch, token, run)))}
     end
   end
 
@@ -389,14 +463,78 @@ defmodule XaasWeb.ExecutionFabricController do
 
   defp dispatch_tool("refuse", _), do: {:error, :lease_token_and_reason_required}
 
+  # The wire `reason` is attacker-controlled free text, so it goes through
+  # the SAME existing-atom-only coercion `refuse` uses (an unbounded
+  # String.to_atom/1 would be an atom-table exhaustion DoS).
+  defp dispatch_tool("cancel_work", %{"lease_token" => token, "reason" => reason} = args)
+       when is_binary(token) do
+    case Lease.cancel(token, reason_atom(reason), args["evidence"] || %{}) do
+      {:ok, epoch, receipt} ->
+        {:ok,
+         %{
+           status: "cancelled",
+           epoch_id: epoch.id,
+           outcome: receipt.outcome,
+           cancelled_by: receipt.evidence["cancelled_by"]
+         }}
+
+      {:error, err} ->
+        {:error, err}
+    end
+  end
+
+  defp dispatch_tool("cancel_work", _), do: {:error, :lease_token_and_reason_required}
+
+  # Two-port law: an agent reaches DO only through a capability SA2A resolves
+  # for THIS lease right now (server-side re-resolution -- a wire-supplied
+  # handle is never trusted), and only when that capability's invocation
+  # contract is BRCE actuation. Capability exists != agent authorized: the
+  # registry + Xaas.Actuation.run/4 admission still decide the DO.
   defp dispatch_tool("actuate", %{"lease_token" => token} = args) when is_binary(token) do
-    case Lease.actuate(token, args) do
-      {:ok, envelope} -> {:ok, format_actuation(envelope)}
-      {:error, reason} -> {:error, reason}
+    with {:ok, _handle} <- actuation_capability(token, args["capability"]),
+         {:ok, envelope} <- Lease.actuate(token, args) do
+      {:ok, format_actuation(envelope)}
     end
   end
 
   defp dispatch_tool("actuate", _), do: {:error, :lease_token_required}
+
+  defp dispatch_tool(
+         "resolve_capability",
+         %{"lease_token" => token, "capability" => capability} = args
+       )
+       when is_binary(token) and is_binary(capability) do
+    constraints =
+      case args["constraints"] do
+        %{} = c -> c
+        _ -> %{}
+      end
+
+    with {:ok, ctx} <- lease_context_failure(Lease.lease_context(token)),
+         {:ok, handle} <- CapabilityPort.resolve(ctx, capability, constraints) do
+      {:ok, handle}
+    else
+      {:error, reason} -> {:error, {:surface_failure, surface_failure(reason)}}
+    end
+  end
+
+  defp dispatch_tool("resolve_capability", _),
+    do:
+      {:error,
+       {:surface_failure,
+        Failure.new(:no_capability, %{"reason" => "lease_token_and_capability_required"})}}
+
+  defp dispatch_tool("surface", %{"lease_token" => token}) when is_binary(token) do
+    case lease_context_failure(Lease.surface(token)) do
+      {:ok, surface} -> {:ok, surface}
+      {:error, reason} -> {:error, {:surface_failure, surface_failure(reason)}}
+    end
+  end
+
+  defp dispatch_tool("surface", _),
+    do:
+      {:error,
+       {:surface_failure, Failure.new(:work_not_found, %{"reason" => "lease_token_required"})}}
 
   defp dispatch_tool(other, _), do: {:error, {:unknown_tool, other}}
 
@@ -656,6 +794,67 @@ defmodule XaasWeb.ExecutionFabricController do
   rescue
     ArgumentError -> :unknown
   end
+
+  # `claim_envelope/3` is string-keyed; the claim payload's own keys are
+  # atoms (Jason encodes both identically) -- merge on the atom form so a
+  # key never appears twice in the encoded object.
+  defp atomize_envelope(%{"surface" => surface, "work" => work}),
+    do: %{surface: surface, work: work}
+
+  # Lease-liveness errors come back from `Lease` as tagged tuples
+  # (`{:no_lease, t}`, `{:lease_expired, t}`, `{:lease_not_live, state}`);
+  # the Failure vocabulary maps their BARE atoms to WORK_NOT_FOUND. Normalize
+  # here so a dead/unknown/reclaimed lease is WORK_NOT_FOUND, never a
+  # generic CAPABILITY_UNAVAILABLE.
+  defp actuation_capability(token, capability) when is_binary(capability) and capability != "" do
+    with {:ok, ctx} <- lease_context_failure(Lease.lease_context(token)),
+         {:ok, handle} <- CapabilityPort.resolve(ctx, capability, %{}),
+         :ok <- CapabilityPort.check_handle(handle, Lease.lease_context(token)) do
+      case handle do
+        %{"invocation_contract" => "actuate"} ->
+          {:ok, handle}
+
+        _ ->
+          {:error,
+           {:surface_failure,
+            Failure.new(:unauthorized, %{
+              "reason" => "capability_not_actuating",
+              "capability" => capability
+            })}}
+      end
+    else
+      {:error, reason} -> {:error, {:surface_failure, surface_failure(reason)}}
+    end
+  end
+
+  defp actuation_capability(_token, _capability) do
+    {:error,
+     {:surface_failure,
+      Failure.new(:unauthorized, %{
+        "reason" => "capability_required",
+        "required" => "UltraCode -> SA2A -> resolve_capability -> actuate(capability)"
+      })}}
+  end
+
+  defp lease_context_failure({:ok, _} = ok), do: ok
+
+  defp lease_context_failure({:error, {tag, detail}})
+       when tag in [:no_lease, :lease_expired, :lease_not_live] do
+    {:error,
+     Failure.new(:work_not_found, %{"reason" => Atom.to_string(tag), "detail" => inspect(detail)})}
+  end
+
+  defp lease_context_failure({:error, reason}), do: {:error, reason}
+
+  defp surface_failure(reason), do: Failure.from_term(reason)
+
+  # The runtime-surface tools render the closed Failure vocabulary; every
+  # other tool keeps its existing `format_reason/1` string (unchanged wire
+  # contract for the pre-existing tools).
+  defp tool_error({:surface_failure, %{"code" => code} = failure}),
+    do: %{error: code, failure: failure}
+
+  defp tool_error(reason), do: %{error: format_reason(reason)}
 
   defp refused(conn, status, reason) do
     conn

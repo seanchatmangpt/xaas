@@ -25,6 +25,7 @@ Exact factual contracts:
 - [`reference/actuation-and-semantics.md`](reference/actuation-and-semantics.md) — public-ontology projection, actuation, idempotency, receipts, provider lifecycle, and refusal contracts.
 - [`reference/ash-configuration.md`](reference/ash-configuration.md) — Ash domains/extensions/configuration.
 - [`reference/http-api-surface.md`](reference/http-api-surface.md) — current HTTP exposure and auth boundaries.
+- [`reference/ultracode-runtime-contract.md`](reference/ultracode-runtime-contract.md) — UltraCode two-port runtime law (sJira/SA2A/local/BRCE planes, worker env, falsifier).
 
 ## Explanation
 

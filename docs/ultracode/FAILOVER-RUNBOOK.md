@@ -1,6 +1,6 @@
 # Ultracode Failover Runbook — Claude Code to XaaS/GLM
 
-**Version:** v26.9.17
+**Version:** v26.9.22
 **Date:** 2026-09-18
 **Standing:** PARTIAL_ALIVE — dispatcher exists and was tested against real DB
 state (`--once`, exit 0, true "no ready work" negative); construction-side
@@ -172,8 +172,9 @@ Behavior (all exercised against the real fabric, see section 7):
   the run default `epoch_timeout_seconds` (now 900, was 300 — a real 5-agent trial
   had a worker take 310s).
 - **Host gate.** Each zcode turn is launched with `XAAS_WORKER=1` and
-  `XAAS_LEASE_CWD=<canonical cwd>`, which arms the plugin's PreToolUse gate
-  (§4). The plugin is a ggen projection: edit `priv/zcode_plugin/ontology.ttl`
+  `XAAS_LEASE_CWD=<canonical cwd>`, plus the per-epoch `XAAS_LEASE_ID=<epoch id>`
+  (keyed lease state), which arms the plugin's PreToolUse gate (§4).
+  The plugin is a ggen projection: edit `priv/zcode_plugin/ontology.ttl`
   or `templates/`, run `cd priv/zcode_plugin && ggen sync run`, then
   `zcode plugins marketplace update xaas-fabric-marketplace` and
   `zcode plugins update xaas-fabric@xaas-fabric-marketplace` (the marketplace
@@ -209,6 +210,8 @@ comment at line ~291). A tool that is neither admitted nor refused falls to
 - Read/Grep/Glob across the epoch's worktree.
 - Edit and Write files inside the worktree.
 - Spawn a Task (subagent) and fetch a URL (WebFetch).
+- Run `date` — admitted in the host-side gate's Bash argv allowlist (the
+  worker's only clock).
 - Emit progress via `record_provider_event` (observation only — see §6).
 - Call `close_candidate` (outcome: alive/partial_alive/blocked/
   build_broken/unsupported) or `refuse`, both git-head-verified against the
@@ -252,7 +255,10 @@ ships `hooks/hooks.json` + `scripts/xaas-gate.mjs`. When a session runs with
 `XAAS_WORKER=1` (the dispatcher sets it, plus `XAAS_LEASE_CWD`), every tool
 call is decided before it executes; a deny never runs and the worker sees the
 reason. Observed: plugin hooks fire in a headless `zcode --prompt` run with the
-default `hooks.enabled: false`, so no user-config change is needed. Rules:
+default `hooks.enabled: false`, so no user-config change is needed. The
+dispatcher also sets `XAAS_LEASE_ID`; when set, lease state lives at a
+`-<id>-`-suffixed path which the gate and `xaas-lease.mjs` resolve first,
+falling back to the legacy per-cwd path. Rules:
 
 - `mcp__*xaas-execution__*` (the lease protocol) is deferred.
 - Any other non-Bash tool needs a live saved lease and a real `admit_tool`
@@ -264,10 +270,15 @@ default `hooks.enabled: false`, so no user-config change is needed. Rules:
 - `Bash` is an argv allowlist with no chaining, pipes, redirection,
   substitution or globbing: `git add|commit|status|diff|log|rev-parse|show|ls-files`
   inside the worktree (no `push`, `-c`, `-F`, other repos), the plugin's
-  `xaas-lease.mjs save|get|clear`, `ls|cat|head|tail|wc` on worktree paths, and
-  `pwd|echo`. Exact strings in `lease.verifier`, if a claim ever carries one,
+  `xaas-lease.mjs save|get|clear`, `ls|cat|head|tail|wc` on worktree paths,
+  `pwd|echo`, and `date` (the worker's only clock source). Exact strings in
+  `lease.verifier`, if a claim ever carries one,
   are also allowed; `claim_next` does not populate it today, so
   `mix compile`/`mix test` remain unavailable to a gated worker.
+- Opt-in per dispatch: the `XAAS_SWEEP=1` env profile widens reads only —
+  git read-only subcommands and read helpers may target home-dir checkouts
+  outside the worktree; the sensitive set is still denied and
+  writes/git-state rules are unchanged.
 - It fails closed: unreachable arbiter, unparseable payload, or any internal
   error is a deny. Every decision is appended to
   `<tmpdir>/xaas-fabric/<sha256(cwd)>.gate.ndjson`.

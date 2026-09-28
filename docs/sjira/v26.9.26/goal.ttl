@@ -1,0 +1,139 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix v26: <https://ggen-igniter.dev/sjira/v26.9.26#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# GC-26.9.26: the governing object of the v26.9.26 wave (fabric truth &
+# convergence). Source prose: docs/sjira/v26.9.26/prd-ard.md (skeleton; the
+# v26.9.23 PRD section 10 non-goals carry forward verbatim into this wave).
+# Lane map: docs/sjira/v26.9.26/_RUNBOOK.md (L1-L10).
+#
+# Background (coordinator-supplied provenance, recorded here as history, never
+# asserted as this graph's receipts): branch convergence was already executed
+# by the coordinator — the weekend yolo-dispatch merged dd32425 and
+# substitution-receipt-binding is verified in origin/main; the fabric server
+# was restored 2026-09-26 after a compile-state break. The WorkOrders below
+# cover the wave's remaining truth lanes: changelog truth, README/CLAUDE
+# truth, plugin manifest 26.9.26 + gall-work contract sha pin, config endpoint
+# truth, docs tree truth, marketplace source restore, mix task docs, audit.
+#
+# Vocabulary: the semantic-jira-pack sj: namespace (ggen_igniter
+# priv/ggen/semantic-jira-pack/ontology.ttl) including the Friday
+# GoalCheckpoint contract (sj:GoalCheckpoint, sj:checkpointOf,
+# sj:boundaryClass, sj:courtCommand, sj:stopQuery, sj:successorOf,
+# sj:successorCheckpoint, sj:sourceSha256) and the WorkOrder tuple
+# sj:acceptance / sj:postcondition / sj:requiresCapability /
+# sj:evidenceHorizon / sj:exclusion / sj:consequenceClass /
+# sj:successorPolicy, mirroring docs/sjira/v26.9.23/goal.ttl.
+#
+# Law of this graph (mirrored from GC-26.9.23, unchanged in spirit):
+# - It never asserts a receipt, and any stop court ignores every sj:standing
+#   written here: standing is observed, never declared. The only sj:standing
+#   literals are the "UNKNOWN" placeholders the closed pack WorkOrder shape
+#   requires.
+# - WorkOrders are closed shapes there: they carry no rdfs:comment /
+#   rdfs:seeAlso; cross-links live in this header. Fields this scaffold leaves
+#   out (base sha, gates, stop.rq, court commands) land with their owning
+#   lanes; extending a WorkOrder inside its own lane is the lawful edit, and
+#   wave admission SHACL-validates this graph merged with the pack ontology
+#   (GgenIgniter.SemanticJira.Shacl against shapes/work-order.shacl.ttl).
+# - Discovered work that falsifies no GC-26.9.26 proposition types into the
+#   successor bucket via sj:successorCheckpoint (v26:GC-26.9.27, declared by
+#   the v26.9.27 scaffold) and cannot hold this checkpoint open. This
+#   successor typing is noted here for post-wave finds.
+
+# -- Root and successor bucket ------------------------------------------------
+
+v26:GC-26.9.26 a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-26.9.26" ;
+    rdfs:label "GC-26.9.26 fabric truth & convergence wave stop" ;
+    dcterms:description "STOP_26.9.26 = every lane WorkOrder of GC-26.9.26 holds an ADMITTED receipt on its exact subject (identity.tuple_digest bound), with RequiredUnknown = ∅ and RemainingFrontier ⊆ Successor ∪ Blocked ∪ Unsupported ∪ Refused. Wave purpose: fabric truth & convergence. Preconditions already executed by the coordinator, recorded as provenance only: weekend yolo-dispatch merged dd32425; substitution-receipt-binding verified in origin/main; fabric server restored 2026-09-26 after compile-state break." ;
+    dcterms:source "docs/sjira/v26.9.26/prd-ard.md" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:requiresEvidence sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.9.26:GC-26.9.26" ;
+    sj:successorCheckpoint v26:GC-26.9.27 ;
+    sj:exclusion "Not required by v26.9.26 (carried forward verbatim from v26.9.23 PRD section 10): solving arbitrary program semantics.",
+        "Not required by v26.9.26 (carried forward verbatim from v26.9.23 PRD section 10): arbitrary termination proofs.",
+        "Not required by v26.9.26 (carried forward verbatim from v26.9.23 PRD section 10): exhaustive improvement of every repository.",
+        "Not required by v26.9.26 (carried forward verbatim from v26.9.23 PRD section 10): zero UNKNOWN globally.",
+        "Not required by v26.9.26 (carried forward verbatim from v26.9.23 PRD section 10): replacing every handwritten implementation.",
+        "Not required by v26.9.26 (carried forward verbatim from v26.9.23 PRD section 10): fully autonomous production deployment." .
+
+# -- Wave WorkOrders (one per truth lane; standing observed, never declared) --
+
+v26:WO-26.9.26-L2 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L2" ;
+    rdfs:label "changelog truth (CHANGELOG.md)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "Every CHANGELOG.md entry describes work observable on the wave subject; no entry claims work absent from its diff or history; stale or fabricated entries corrected or removed." ;
+    sj:postcondition "CHANGELOG.md is truthful against the v26.9.26 history with a receipt binding its exact subject." ;
+    sj:requiresCapability "docs-truth" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L3 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L3" ;
+    rdfs:label "README/CLAUDE truth (README.md, CLAUDE.md)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "Every command in README.md and CLAUDE.md runs against the tree; every claim is verified or removed; orientation text matches the current wave." ;
+    sj:postcondition "README.md and CLAUDE.md carry no unverified claim, with a receipt binding their exact subject." ;
+    sj:requiresCapability "docs-truth" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L4 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L4" ;
+    rdfs:label "plugin manifest 26.9.26 + gall-work contract sha pin (priv/zcode_plugin/**)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "The zcode_plugin manifest carries version 26.9.26; the gall-work contract sha256 is pinned and byte-identical on both sides of the coupling (xaas priv/zcode_plugin and the zcode-cli fixture)." ;
+    sj:postcondition "Manifest version and contract sha pin agree across both repos, with a receipt binding the exact contract bytes." ;
+    sj:requiresCapability "contract-sha-pin" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L5 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L5" ;
+    rdfs:label "config endpoint truth (config/**)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "Documented and configured endpoints match the restored fabric server (restored 2026-09-26 after compile-state break); no dead or stale endpoint claims remain in config/**." ;
+    sj:postcondition "config/** endpoint truth is observable against the running fabric server, with a receipt binding the exact config subject." ;
+    sj:requiresCapability "config-truth" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L6 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L6" ;
+    rdfs:label "docs tree truth (docs/** minus docs/sjira/**)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "Claims in docs/** (excluding docs/sjira/**) are verified against the tree or flagged; no doc asserts a receipt or standing it does not hold." ;
+    sj:postcondition "docs/** free of unverified claims, with a receipt binding the exact tree subject." ;
+    sj:requiresCapability "docs-truth" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L8 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L8" ;
+    rdfs:label "marketplace source restore (.ggen/**)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance ".ggen/** is restored from marketplace source: projected files are byte-identical to their owning pack render, hand edits reverted, drift gate green." ;
+    sj:postcondition ".ggen/** is a pure projection again, with a receipt binding the exact rendered subject." ;
+    sj:requiresCapability "projection-restore" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L9 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L9" ;
+    rdfs:label "mix task docs (lib/mix/tasks/**)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "Every mix task under lib/mix/tasks/** carries docs (@moduledoc/shortdoc) matching actual behavior; no documented switch or default that the task does not implement." ;
+    sj:postcondition "mix task docs are truthful against task behavior, with a receipt binding the exact task sources." ;
+    sj:requiresCapability "docs-truth" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .
+
+v26:WO-26.9.26-L10 a sj:WorkOrder ;
+    dcterms:identifier "WO-26.9.26-L10" ;
+    rdfs:label "audit (docs/sjira/v26.9.26/audit/**)" ;
+    sj:standing "UNKNOWN" ;
+    sj:acceptance "Audit records exist per lane under docs/sjira/v26.9.26/audit/, citing observed command output on exact subjects; read-only observation, never actuation." ;
+    sj:postcondition "The audit lane's records let a court recompute each lane's standing from receipts, with the audit's own receipt binding its exact records." ;
+    sj:requiresCapability "audit-observation" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" .

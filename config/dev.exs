@@ -13,13 +13,11 @@ import Config
 port = String.to_integer(System.get_env("PORT") || "4000")
 
 # Configure your database
-# Real fix: username/password/hostname/port now read from env vars with the
-# book's original plaintext defaults as fallback -- needed to point local
-# `mix ash_postgres.generate_migrations`/`mix ecto.migrate` at the real
-# running docker-compose Postgres (whose POSTGRES_PASSWORD_FILE-backed
-# secret and randomly-published host port differ from the book's hardcoded
-# "postgres"/5432 defaults), without hardcoding that real secret into a
-# committed file.
+# Real fix: username/password/hostname/port now read from env vars with
+# plaintext defaults as fallback -- env vars override without hardcoding
+# real credentials into a committed file. Current dev db (observed
+# 2026-09-26): native brew postgresql@14 on localhost:5432, database
+# xaas_dev; a docker-compose Postgres would also work via these vars.
 config :xaas, Xaas.LegacyRepo,
   username: System.get_env("DEV_DB_USERNAME", "postgres"),
   password: System.get_env("DEV_DB_PASSWORD", "postgres"),
@@ -125,6 +123,24 @@ config :swoosh, :api_client, false
 # resolved from this app's priv/ (never from a worktree the worker controls).
 config :xaas, :ultracode_worktree_root, Path.expand("~/xaas/worktrees/runs")
 config :xaas, :ultracode_ticket_dir, Path.expand("~/xaas/worktrees/tickets")
+
+# Wave-loop surfaces for the CRON path (2026-09-26 burn-in wiring): the
+# AshOban `:wave_loop` schedule's action runner calls
+# `Xaas.Ultracode.WaveLoop.tick/1` with NO opts, so the loop's STATE and
+# telemetry paths resolve through these app-env seams (WaveLoop moduledoc).
+# The manual burn-in drivers passed explicit `state_path:`/`telemetry_path:`
+# opts, which the cron path cannot do -- without these, every cron tick
+# lands on the module defaults (~/xaas/tmp/w8-loop/...; last ticked 09-21)
+# and can never advance the live burn-in STATE. Env-overridable per this
+# file's DEV_DB_* convention; unset env keeps the module defaults.
+config :xaas, :ultracode_wave_loop_state_path,
+  System.get_env("ULTRACODE_WAVE_LOOP_STATE_PATH", "/Users/sac/xaas/tmp/w8-loop/STATE.md")
+
+config :xaas, :ultracode_wave_loop_telemetry_path,
+  System.get_env(
+    "ULTRACODE_WAVE_LOOP_TELEMETRY_PATH",
+    "/Users/sac/xaas/tmp/w8-loop/loop.ndjson"
+  )
 
 # Multi-repo registry (Xaas.Ultracode.Repos). This env entry is the
 # code-seeded baseline; durable operator registrations -- other campaign

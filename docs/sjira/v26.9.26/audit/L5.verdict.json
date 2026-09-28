@@ -1,0 +1,9 @@
+{
+  "lane": "L5",
+  "claims_checked": [
+    "commit 4f7c770 landed: config/dev.exs only, 5 insertions 7 deletions (git log --stat) — inside owned paths config/**",
+    "commit message scope matches content: dev.exs db comment reflects observed native postgres path"
+  ],
+  "violations": [],
+  "standing": "ALIVE"
+}

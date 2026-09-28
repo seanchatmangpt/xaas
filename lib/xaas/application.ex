@@ -117,6 +117,14 @@ defmodule Xaas.Application do
         {Phoenix.PubSub, name: Xaas.PubSub},
         # Start Finch
         {Finch, name: Xaas.Finch},
+        # v26.9.27: unlinked task supervisor for UltraCode dispatch fan-out
+        # (Engine.fill / WaveLoop.dispatch_batch). Linked Task.async_stream
+        # propagated a killed worker's exit into the caller, making the
+        # owner-bound DOWN reclaim path unreachable.
+        {Task.Supervisor, name: Xaas.Ultracode.TaskSupervisor},
+        # Runtime provider circuit breaker (typed failure classes + backoff);
+        # Dispatch records into it, ProviderRegistry/WaveLoop read its ETS.
+        Xaas.Ultracode.ProviderRecovery,
         # Real A2A (Agent-to-Agent) agent simulating a Next Read reader
         # persona -- see XaasWeb.A2A.NextReadUserAgent's moduledoc. Started
         # as a supervised GenServer per `use A2A.Agent`'s generated

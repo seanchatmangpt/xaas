@@ -115,8 +115,8 @@ defmodule Xaas.Ultracode.DispatcherPreflightTest do
     )
   end
 
-  test "the real ~/dev/zcode-cli passes the preflight when present" do
-    real = Path.expand("~/dev/zcode-cli")
+  test "the real ~/zcode-cli passes the preflight when present" do
+    real = Path.expand("~/zcode-cli")
 
     if File.regular?(Path.join(real, "package.json")) do
       # The node verdict is a property of the machine's PATH: satisfied (stops

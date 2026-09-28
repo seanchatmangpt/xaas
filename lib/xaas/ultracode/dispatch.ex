@@ -47,20 +47,31 @@ defmodule Xaas.Ultracode.Dispatch do
 
          * a run WITHOUT full semantic identity keeps the generic
            `/xaas` prompt path for non-semantic waves, byte-identical to
-           the bash script's: `<node> bin/zcode.js --prompt "/xaas
-           Call claim_next with provider_worker_id exactly <worker_id>
-           and epoch_id exactly <epoch_id>; do not use any other
-           values." --cwd <cwd> --json`.
+           the bash script's compatibility path. It pins the unattended
+           worker permission posture explicitly: `<node> bin/zcode.js
+           --prompt "/xaas Call claim_next with provider_worker_id exactly
+           <worker_id> and epoch_id exactly <epoch_id>; do not use any other
+           values." --cwd <cwd> --json --mode yolo`. This is the headless
+           equivalent of the interactive TUI's `/mode yolo`; the worker
+           never depends on a prompt broker to approve ordinary construction.
 
        Either way it runs with cwd = the zcode CLI dir and
-       `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` added to the child
-       env -- the two variables that arm the xaas-fabric plugin's
+       `XAAS_WORKER=1` + `XAAS_LEASE_CWD=<real cwd>` + `XAAS_LEASE_ID=<epoch_id>`
+       added to the child env -- the first two arm the xaas-fabric plugin's
        PreToolUse gate (host-enforced admit_tool, worktree-confined
-       writes, Bash allowlist). When the epoch's run names a registered
+       writes, Bash allowlist); the lease id keys the worker's lease state
+       file per epoch (zcode-cli src/gall-work.ts) so two dispatched
+       workers sharing one work surface no longer collide on the per-cwd
+       file (exit 65 lease_conflict). When the epoch's run names a registered
        repo whose `:ultracode_repos` entry pins `toolchain_env`, those
        assignments ride along verbatim (literal values, no shell
        expansion -- see the Worktrees "Worker environment contract"); the
-       caller's `:extra_env` is applied last and wins on duplicates. A
+       caller's `:extra_env` is applied last and wins on duplicates. The
+       fleet lever `config :xaas, :ultracode_subagent_max_turns` (default
+       nil) injects `ZCODE_SUBAGENT_MAX_TURNS` -- the subagent turn cap
+       the vendored runtime reads at its child-session spawn site
+       (zcode-cli src/max-turns.ts) -- as the lowest-precedence injected
+       assignment; nil injects nothing. A
        repo without a pin (the plain string registry shape, e.g. the APS
        entry) dispatches exactly as before. No goal text is ever placed
        on the command
@@ -112,17 +123,30 @@ defmodule Xaas.Ultracode.Dispatch do
     * timeout → the whole process group is killed and the result status is
       `:timeout`, never a hang
 
-  This is not an OS sandbox. The worker runs with this node's inherited
-  environment (the bash dispatcher did the same) and is bounded by the
-  plugin's host-side gate plus the server-side `Lease.admit_tool/2` fence,
-  not by this module. `:extra_env` adds explicit, caller-supplied
-  assignments on top of the inherited environment (used by tests to script
-  the CLI and by operators to pin per-dispatch variables).
+  This is not an OS sandbox. The worker starts from an empty environment
+  (`/usr/bin/env -i`) populated through `Xaas.Ultracode.WorkerEnv`: the
+  node's environment crosses only via the `runtime_surface.json` allowlist,
+  and forge/cloud/tracker credentials never do. It is further bounded by the
+  plugin's host-side gate plus the server-side `Lease.admit_tool/2` fence.
+  `:extra_env` adds explicit, caller-supplied assignments (used by tests to
+  script the CLI and by operators to pin per-dispatch variables); they may
+  name unlisted variables but still pass every deny rule.
   """
 
   require Logger
 
-  alias Xaas.Ultracode.{Epoch, ProcessGroup, Receipt, Run, Worktrees, ZcodePackage}
+  alias Xaas.Ultracode.{
+    Epoch,
+    ProcessGroup,
+    ProviderRecovery,
+    ProviderRegistry,
+    Receipt,
+    Run,
+    RuntimeSurface,
+    WorkerEnv,
+    Worktrees,
+    ZcodePackage
+  }
 
   # Keep below the run default `epoch_timeout_seconds` (900), same bound the
   # bash dispatcher documents: the lease clock is the provider's to spend,
@@ -203,9 +227,21 @@ defmodule Xaas.Ultracode.Dispatch do
     * `:failover_retries` (default #{@default_failover_retries}) -- extra
       attempts on a failover-class outcome, beyond the first
     * `:failover_backoff_ms` (default #{@default_failover_backoff_ms})
+    * `:deadline_at_ms` -- optional ABSOLUTE `System.monotonic_time(:millisecond)`
+      bound owned by the caller (v26.9.27 wedge guard). Every attempt's
+      deadline is `min(now + timeout_seconds, deadline_at_ms)`, and a
+      failover retry is only taken when the backoff plus a minimum useful
+      attempt still fits; otherwise the outcome is the classified
+      `:rate_limited` without retry. The whole dispatch therefore can never
+      outlive the caller's budget (the two-attempt path used to reach
+      ~2x timeout + backoff, past WaveLoop's stream budget).
     * `:log_path` -- full-output log file; defaults to a per-dispatch file
       under the OS temp dir
     * `:extra_env` -- map of additional child-env assignments
+    * `:worker_id` -- optional scheduler-assigned worker identity. When
+      present, the exact value is used in the lease claim protocol so a
+      supervising process can bind a later `DOWN` observation to the
+      owner it actually launched.
     * `:dry_run` -- true builds and returns the plan without executing
       (same as `plan/2`)
 
@@ -217,8 +253,27 @@ defmodule Xaas.Ultracode.Dispatch do
     if Keyword.get(opts, :dry_run, false) do
       plan(epoch_or_id, opts)
     else
-      execute(epoch_or_id, opts)
+      epoch_or_id
+      |> execute(opts)
+      |> record_recovery(opts)
     end
+  end
+
+  # Runtime recovery: every real outcome feeds the provider's circuit
+  # breaker (`Xaas.Ultracode.ProviderRecovery`). `:provider_recovery` names
+  # the server (default the application's). An absent server is skipped --
+  # recording never changes or crashes the dispatch result.
+  defp record_recovery(result, opts) do
+    server = Keyword.get(opts, :provider_recovery, ProviderRecovery)
+
+    if is_atom(server) and Process.whereis(server) do
+      provider = Keyword.get_lazy(opts, :provider, &ProviderRegistry.default_provider/0)
+      _ = ProviderRecovery.record(provider, result, server)
+    end
+
+    result
+  rescue
+    _ -> result
   end
 
   @doc """
@@ -246,7 +301,12 @@ defmodule Xaas.Ultracode.Dispatch do
   """
   @spec autonomic_worker(Epoch.t(), map()) :: :ok | :rate_limited | {:error, term()}
   def autonomic_worker(%Epoch{} = epoch, ctx) do
-    dispatch(epoch, Map.get(ctx, :dispatch_opts, []))
+    dispatch_opts =
+      ctx
+      |> Map.get(:dispatch_opts, [])
+      |> maybe_put_worker_id(Map.get(ctx, :worker_id))
+
+    dispatch(epoch, dispatch_opts)
     |> case do
       {:ok, %{status: :ok}} ->
         :ok
@@ -349,7 +409,8 @@ defmodule Xaas.Ultracode.Dispatch do
 
       {:exit, 0, out} ->
         cond do
-          failover_class?(out) and retries_left > 0 ->
+          failover_class?(out) and retries_left > 0 and
+              retry_fits?(resolved, resolved.failover_backoff_ms) ->
             Logger.warning(
               "[ultracode] dispatch failover-class outcome (attempt #{attempt}); " <>
                 "retrying once after #{resolved.failover_backoff_ms}ms"
@@ -376,14 +437,54 @@ defmodule Xaas.Ultracode.Dispatch do
 
   defp failover_class?(output), do: Regex.match?(@failover_regex, output)
 
+  # Minimum wall-clock an attempt must have left to be worth spawning.
+  @min_attempt_ms 5_000
+
+  @doc false
+  # A retry is admitted only when the caller-owned absolute deadline (if
+  # any) still leaves backoff + a minimum useful attempt.
+  def retry_fits?(%{deadline_at_ms: nil}, _backoff_ms), do: true
+
+  def retry_fits?(%{deadline_at_ms: deadline_at}, backoff_ms) when is_integer(deadline_at),
+    do: System.monotonic_time(:millisecond) + backoff_ms + @min_attempt_ms <= deadline_at
+
+  @doc false
+  # The effective per-attempt deadline: the attempt timeout, clamped to the
+  # caller-owned absolute deadline.
+  def attempt_deadline(%{timeout_seconds: t} = resolved) do
+    own = System.monotonic_time(:millisecond) + t * 1000
+
+    case Map.get(resolved, :deadline_at_ms) do
+      deadline_at when is_integer(deadline_at) -> min(own, deadline_at)
+      _ -> own
+    end
+  end
+
+  @doc false
+  # The exact environment the worker process starts with (name/value pairs);
+  # public so the credential falsifier can inspect the real spawn input.
+  def worker_env(built) do
+    # XAAS_SURFACE_PATH is set here, AFTER every inherited/explicit pair
+    # and outside WorkerEnv (which denies the name): the gate's policy path
+    # is server-owned and cannot be redirected by :extra_env (court bypass2).
+    System.get_env()
+    |> WorkerEnv.build([], built.env_added)
+    |> List.keystore("XAAS_SURFACE_PATH", 0, {"XAAS_SURFACE_PATH", RuntimeSurface.policy_path()})
+    |> Enum.sort()
+  end
+
   defp spawn_and_collect(built, resolved) do
-    alarm_s = resolved.timeout_seconds + @alarm_grace_s
+    deadline = attempt_deadline(resolved)
+    remaining_s = max(div(deadline - System.monotonic_time(:millisecond), 1000), 1)
+    alarm_s = remaining_s + @alarm_grace_s
     code_file = code_file_path()
 
-    # /usr/bin/env takes assignments as plain `K=V` argv strings (a port
-    # args list itself must be all strings); the tuple form stays in the
-    # plan/dry-run shape for evidence.
-    env_args = Enum.map(built.env_added, fn {k, v} -> "#{k}=#{v}" end)
+    # Two-port runtime law (v26.9.27): the worker starts from an EMPTY
+    # environment (`env -i`). The node's environment crosses only through
+    # the `WorkerEnv` allowlist; `env_added` (gate vars, repo toolchain pin,
+    # caller `:extra_env`) is explicit intent and still passes every deny
+    # rule, so no forge/cloud/tracker credential reaches the worker.
+    env_args = WorkerEnv.env_argv(worker_env(built))
 
     args =
       env_args ++
@@ -408,7 +509,6 @@ defmodule Xaas.Ultracode.Dispatch do
       ])
 
     {:os_pid, os_pid} = Port.info(port, :os_pid)
-    deadline = System.monotonic_time(:millisecond) + resolved.timeout_seconds * 1000
 
     try do
       collect(port, os_pid, deadline, "", resolved.max_output_bytes, built.log, code_file)
@@ -520,17 +620,44 @@ defmodule Xaas.Ultracode.Dispatch do
 
   defp build(%Epoch{} = epoch, resolved) do
     epoch_id = epoch.id
-    worker_id = worker_id(epoch_id)
+    worker_id = resolved.worker_id || worker_id(epoch_id)
     {mode, cwd} = pick_cwd(epoch.worktree)
     {:ok, cwd_real} = realpath(cwd)
 
     log_path = resolved.log_path || default_log_path(epoch_id)
 
-    env_added = [
-      {"XAAS_WORKER", "1"},
-      {"XAAS_LEASE_CWD", cwd_real}
-      | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
-    ]
+    # Fleet lever -> env (`config :xaas, :ultracode_subagent_max_turns`,
+    # see config.exs): the vendored runtime reads ZCODE_SUBAGENT_MAX_TURNS
+    # at its subagent spawn site (zcode-cli src/max-turns.ts). Placed
+    # FIRST on purpose -- the lowest-precedence injected assignment, so a
+    # repo `toolchain_env` pin or the caller's `:extra_env` (last wins
+    # under /usr/bin/env) can still override it per worker. nil injects
+    # nothing: the list stays byte-identical to the pre-lever shape.
+    turn_cap_env =
+      case Application.get_env(:xaas, :ultracode_subagent_max_turns) do
+        n when is_integer(n) and n > 0 ->
+          [{"ZCODE_SUBAGENT_MAX_TURNS", Integer.to_string(n)}]
+
+        _ ->
+          []
+      end
+
+    env_added =
+      turn_cap_env ++
+        [
+          {"XAAS_WORKER", "1"},
+          {"XAAS_LEASE_CWD", cwd_real},
+          # Per-epoch lease-state key on the zcode side (src/gall-work.ts): the
+          # worker's lease state file gains a "-<XAAS_LEASE_ID>" suffix so two
+          # dispatched workers sharing one work surface no longer collide on
+          # the per-cwd file (exit 65 lease_conflict).
+          {"XAAS_LEASE_ID", epoch_id},
+          # The worker's OCEL 2.0 tap (zcode-cli src/ocel-tap.ts): without this
+          # every dispatched session is unobserved -- no ocel:eid stream, no
+          # export_run/ocel_validate conformance evidence for the run.
+          {"ZCODE_OCEL", "1"}
+          | repo_toolchain_env(epoch) ++ Map.to_list(resolved.extra_env)
+        ]
 
     {protocol, prompt, argv_tail, descriptor} =
       case semantic_descriptor(epoch, worker_id, cwd_real) do
@@ -551,7 +678,22 @@ defmodule Xaas.Ultracode.Dispatch do
           prompt = prompt(worker_id, epoch_id)
 
           {:xaas_prompt, prompt,
-           [resolved.zcode_bin, "--prompt", prompt, "--cwd", cwd_real, "--json"], nil}
+           [
+             resolved.zcode_bin,
+             # `-p` (the --prompt alias) + stream-json: the one output shape
+             # the worker's OCEL tap records (src/ocel-tap.ts
+             # ocelSourceForArgs). Plain `--json` produced a single envelope
+             # the tap ignores, so dispatched workers were unobserved
+             # (observed 2026-09-26: empty tap dir after a real turn).
+             "-p",
+             prompt,
+             "--cwd",
+             cwd_real,
+             "--output-format",
+             "stream-json",
+             "--mode",
+             "yolo"
+           ], nil}
       end
 
     {:ok,
@@ -782,13 +924,28 @@ defmodule Xaas.Ultracode.Dispatch do
          failover_retries: Keyword.get(opts, :failover_retries, @default_failover_retries),
          failover_backoff_ms:
            Keyword.get(opts, :failover_backoff_ms, @default_failover_backoff_ms),
+         deadline_at_ms: Keyword.get(opts, :deadline_at_ms),
          max_output_bytes: Keyword.get(opts, :max_output_bytes, @default_max_output_bytes),
          log_path: Keyword.get(opts, :log_path),
          extra_env: Keyword.get(opts, :extra_env, %{}),
-         provider: Keyword.get(opts, :provider, "zcode")
+         worker_id: normalize_worker_id(Keyword.get(opts, :worker_id)),
+         # No hardcoded default here: an unsupplied provider resolves through
+         # the registry (`ProviderRegistry.default_provider/0`, config
+         # `:xaas, :ultracode_default_provider`) -- the one place the fabric's
+         # default provider is named. The historical default ("zcode") is
+         # that config's own default, so behavior is unchanged.
+         provider: Keyword.get_lazy(opts, :provider, &ProviderRegistry.default_provider/0)
        }}
     end
   end
+
+  defp maybe_put_worker_id(opts, worker_id) when is_binary(worker_id) and worker_id != "",
+    do: Keyword.put_new(opts, :worker_id, worker_id)
+
+  defp maybe_put_worker_id(opts, _worker_id), do: opts
+
+  defp normalize_worker_id(worker_id) when is_binary(worker_id) and worker_id != "", do: worker_id
+  defp normalize_worker_id(_worker_id), do: nil
 
   defp check_node(nil), do: {:error, {:node_unavailable, "node"}}
 

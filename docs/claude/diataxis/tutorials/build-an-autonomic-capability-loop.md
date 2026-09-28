@@ -230,7 +230,7 @@ its own `json_api do routes do get :read; index :read end end` block (step 2),
 mounted through `XaasWeb.InternalApiRouter` at `/internal-api`
 (`lib/xaas_web/internal_api_router.ex`) — deliberately narrower than the
 customer-facing `XaasWeb.ApiRouter` at `/api`
-(`lib/xaas_web/api_router.ex`), which mounts 6 domains' worth of mechanically
+(`lib/xaas_web/api_router.ex`), which mounts 7 domains' worth of mechanically
 added read-only routes but explicitly excludes `Xaas.Ledger` and `Xaas.Accounts`
 resources pending a real access-control design.
 

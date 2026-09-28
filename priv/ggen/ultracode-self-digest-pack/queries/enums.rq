@@ -1,0 +1,7 @@
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+SELECT ?enumModule ?shortName ?enumValues WHERE {
+  ?enum a ucsd:EnumSpec ;
+        ucsd:enumModule ?enumModule ;
+        ucsd:shortName ?shortName ;
+        ucsd:enumValues ?enumValues .
+} ORDER BY ?enumModule

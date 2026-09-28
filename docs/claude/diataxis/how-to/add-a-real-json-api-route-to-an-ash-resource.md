@@ -12,8 +12,8 @@ if it does, you're done. Confirm which router will serve it:
 
 - `lib/xaas_web/internal_api_router.ex` mounts only `Xaas.Operations`, prefixed
   `/internal-api`, guarded by `XaasWeb.Plugs.RequireInternalApiToken`.
-- `lib/xaas_web/api_router.ex` mounts all 6 domains (`Xaas.Accounts`, `Xaas.Billing`,
-  `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Operations`, `Xaas.Platform`), prefixed `/api`,
+- `lib/xaas_web/api_router.ex` mounts all 7 domains (`Xaas.Accounts`, `Xaas.Billing`,
+  `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Marketplace`, `Xaas.Operations`, `Xaas.Platform`), prefixed `/api`,
   also guarded by the same token plug (see `lib/xaas_web/router.ex`).
 
 ## When NOT to do this
@@ -102,7 +102,7 @@ files under `lib/xaas/**/*.ex`).
 
 Check whether the resource's domain module is already listed in
 `lib/xaas_web/api_router.ex`'s `domains:` list (`Xaas.Accounts`, `Xaas.Billing`,
-`Xaas.Governance`, `Xaas.Ledger`, `Xaas.Operations`, `Xaas.Platform` are already mounted).
+`Xaas.Governance`, `Xaas.Ledger`, `Xaas.Marketplace`, `Xaas.Operations`, `Xaas.Platform` are already mounted).
 If the resource belongs to one of those 6 domains, no router change is needed — mounting a
 domain does not itself expose anything; only resources with their own explicit
 `json_api do routes do ... end end` block are served.

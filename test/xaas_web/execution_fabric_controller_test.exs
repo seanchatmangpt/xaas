@@ -295,11 +295,14 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
       assert Enum.map(tools, & &1["name"]) |> Enum.sort() == [
                "actuate",
                "admit_tool",
+               "cancel_work",
                "claim_next",
                "close_candidate",
                "heartbeat",
                "record_provider_event",
-               "refuse"
+               "refuse",
+               "resolve_capability",
+               "surface"
              ]
     end
 
@@ -564,6 +567,36 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
   end
 
   describe "actuate tool (ZCode-UI-as-actuator seam) over real HTTP" do
+    # A REAL capability source (the court's own Source behaviour) that holds
+    # the consequential capability the actuate seam now requires; installed
+    # through the court's config seam and restored per test.
+    defmodule PublishCapabilitySource do
+      @behaviour Xaas.Ultracode.CapabilityResolver.Source
+      @impl true
+      def candidates(_item, _ctx),
+        do:
+          {:ok,
+           [
+             %{capability_id: "sa2a:publish_change", satisfies: ["sa2a:publish_change"]},
+             %{capability_id: "recipe:mix-format", satisfies: ["recipe:mix-format"]}
+           ]}
+    end
+
+    setup do
+      saved = Application.fetch_env(:xaas, :ultracode_capability_sources)
+
+      Application.put_env(:xaas, :ultracode_capability_sources, %{
+        "local" => PublishCapabilitySource
+      })
+
+      on_exit(fn ->
+        case saved do
+          {:ok, v} -> Application.put_env(:xaas, :ultracode_capability_sources, v)
+          :error -> Application.delete_env(:xaas, :ultracode_capability_sources)
+        end
+      end)
+    end
+
     defp with_actuation_registry(registry, fun) do
       previous = Application.get_env(:xaas, :ultracode_actuation_registry)
       Application.put_env(:xaas, :ultracode_actuation_registry, registry)
@@ -601,6 +634,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
           result =
             tool_call(conn, "actuate", %{
               lease_token: claim["lease_token"],
+              capability: "sa2a:publish_change",
               resource: "Xaas.Marketplace.Provider",
               action: "actuate_status",
               input: %{"status" => "active"},
@@ -647,6 +681,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
           result =
             tool_call(conn, "actuate", %{
               lease_token: claim["lease_token"],
+              capability: "sa2a:publish_change",
               resource: "Xaas.Marketplace.Provider",
               action: "actuate_status",
               subject_id: other_provider.id,
@@ -676,6 +711,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
       assert tool_call(conn, "actuate", %{
                lease_token: claim["lease_token"],
+               capability: "sa2a:publish_change",
                resource: "Xaas.Marketplace.Provider",
                action: "actuate_status",
                idempotency_key: "http-actuate-unregistered"
@@ -683,6 +719,36 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
                "error" =>
                  "unregistered_actuation:{\"Xaas.Marketplace.Provider\", \"actuate_status\"}"
              }
+    end
+
+    test "no capability, or a non-actuating capability, is UNAUTHORIZED before any DO", %{
+      conn: conn
+    } do
+      provider = "zcode-chicago-actuate-nocap-#{System.unique_integer([:positive])}"
+      {_run, _epoch} = provider_run_and_epoch(provider)
+
+      claim =
+        tool_call(conn, "claim_next", %{provider: provider, provider_worker_id: "worker-1"})
+
+      base = %{
+        lease_token: claim["lease_token"],
+        resource: "Xaas.Marketplace.Provider",
+        action: "actuate_status",
+        idempotency_key: "http-actuate-nocap-#{System.unique_integer([:positive])}"
+      }
+
+      assert %{"error" => "UNAUTHORIZED", "failure" => %{"details" => d1}} =
+               tool_call(conn, "actuate", base)
+
+      assert d1["reason"] == "capability_required"
+
+      assert %{"error" => "UNAUTHORIZED", "failure" => %{"details" => d2}} =
+               tool_call(conn, "actuate", Map.put(base, :capability, "recipe:mix-format"))
+
+      assert d2["reason"] == "capability_not_actuating"
+
+      assert %{"error" => "NO_CAPABILITY"} =
+               tool_call(conn, "actuate", Map.put(base, :capability, "sa2a:never_registered"))
     end
 
     test "a non-string lease_token is a typed tool error, never a crash", %{conn: conn} do

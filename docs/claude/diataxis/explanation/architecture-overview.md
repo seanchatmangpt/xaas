@@ -57,13 +57,13 @@ gated by `XaasWeb.Plugs.RequireInternalApiToken` — a real Bearer token check a
    `XaasWeb.StripeWebhookController` itself).
 2. **Plain-JSON controller routes under `/internal-api`**: capability liveness, OCEL
    summary, Prometheus query, health, the AshTypescript `rpc/run`/`rpc/validate` pair, the
-   Ontop SPARQL proxy, and the execution-fabric endpoints (`execution/mcp` with its seven
+   Ontop SPARQL proxy, and the execution-fabric endpoints (`execution/mcp` with its eight
    lease verbs, `execution/hooks/:event`, org-scoped `execution/runs`, and the receipt read
    path) — all registered *before* the catch-all forward below them because Phoenix
    `forward` matches every sub-path under its prefix and would otherwise shadow them.
 3. **Execution fabric**: `POST /internal-api/execution/mcp` is the worker-facing MCP
    surface (`claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`,
-   `close_candidate`, `refuse`, `actuate`); `actuate` is the only provider-worker path into
+   `close_candidate`, `refuse`, `actuate`, `cancel_work`); `actuate` is the only provider-worker path into
    the admitted `Xaas.Actuation.run/4` DO kernel — every consequential worker action is
    lease-gated and receipted.
 4. **Production MCP server** (`/mcp`): generated `XaasWeb.McpScope` forwarding to

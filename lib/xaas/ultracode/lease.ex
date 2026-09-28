@@ -68,12 +68,12 @@ defmodule Xaas.Ultracode.Lease do
   ONE admitted consequential-DO kernel (`Xaas.Actuation`'s moduledoc; also the
   path `Xaas.Marketplace.Changes.ApplyProviderStatusChange` already uses). It
   is not a configurable authority ceiling bolted onto Path B's fence -- it
-  grants no new tool allowance and does not touch `@refused_consequence_tools`.
+  grants no new tool allowance and does not touch the policy refusal rows.
   It is a second, narrower admitted caller of Path A, gated by:
 
     * an explicit, opt-in, per-provider `{resource, action}` registry
       (`actuation_registry/1`) -- empty by default (fail-closed), same
-      real-Application-env convention as `admitted_tools/1`; an unregistered
+      real-Application-env convention as `:ultracode_provider_tools`; an unregistered
       pair is `{:error, {:unregistered_actuation, resource, action}}`, never
       silently admitted because Path A alone would separately accept it;
     * Path A's own unmodified admission court
@@ -90,7 +90,7 @@ defmodule Xaas.Ultracode.Lease do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Xaas.Ultracode.{DurationBudget, Epoch, Receipt, Run, Verifier}
+  alias Xaas.Ultracode.{DurationBudget, Epoch, Receipt, Run, RuntimeSurface, Verifier}
 
   @default_lease_ttl_minutes 30
 
@@ -130,9 +130,9 @@ defmodule Xaas.Ultracode.Lease do
   # under real contention while real ready work remains.
   @default_claim_retries 50
 
-  @default_construction_tools ~w(Edit Write Read Grep Glob Task TodoWrite WebFetch)
-  # Consequence-class tools refused under this domain's no-ceiling fence.
-  @refused_consequence_tools ~w(Bash git_push publish)
+  # The tool floor is policy DATA now: `priv/ultracode/runtime_surface.json`
+  # via `Xaas.Ultracode.RuntimeSurface.admit_tool/2` (refusal rows always
+  # win; a provider override can only narrow). See `admit_tool/2`.
 
   # ------------------------------------------------------------------
   # Claim / renew
@@ -175,6 +175,72 @@ defmodule Xaas.Ultracode.Lease do
       end
 
     do_claim_next(provider, worker_id, ttl, max_retries, Keyword.get(opts, :epoch_id), capacity)
+  end
+
+  @doc """
+  Claims ready work trying a CANDIDATE-PROVIDER LIST in order -- the
+  provider-routing half of selection (`ProviderRegistry.select/2` picks the
+  order; this executes it against the live claim kernel).
+
+  For each provider in `providers` (deduplicated, order preserved), this is
+  exactly `claim_next/3` for that provider -- the same atomic bind, the same
+  per-provider advisory-locked capacity fence, the same bounded lost-bind
+  retries; no new concurrency surface is introduced. First success wins:
+
+    * a provider with no ready work (`:no_ready_work`) is skipped to the
+      next candidate -- work re-routes;
+    * a provider at pool capacity (`:pool_at_capacity`) is likewise skipped,
+      recorded in the failure detail;
+    * a DISABLED or unregistered provider is not special-cased here (the
+      registry gates selection upstream; the claim kernel's own truth is the
+      Run.provider column -- an empty queue under that provider is
+      `:no_ready_work`).
+
+  Every candidate exhausted is the typed
+  `{:error, {:no_ready_work_among, providers, capacity_blocks}}` -- never a
+  silent default and never a wait for a human to pick a provider. A caller
+  wanting fail-closed BLOCKED semantics over an empty result has the typed
+  reason in hand.
+  """
+  @spec claim_next_among([String.t()], String.t() | nil, keyword()) ::
+          {:ok, Epoch.t(), String.t(), Run.t()}
+          | {:error, {:no_ready_work_among, [String.t()], [String.t()]}}
+          | {:error, term()}
+  def claim_next_among(providers, worker_id \\ nil, opts \\ [])
+
+  def claim_next_among([], _worker_id, _opts),
+    do: {:error, {:no_ready_work_among, [], []}}
+
+  def claim_next_among(providers, worker_id, opts) when is_list(providers) do
+    providers
+    |> Enum.uniq()
+    |> Enum.reduce_while({:error, {:no_ready_work_among, [], []}}, fn provider, acc ->
+      case claim_next(provider, worker_id, opts) do
+        {:ok, _epoch, _token, _run} = claimed ->
+          {:halt, claimed}
+
+        {:error, :pool_at_capacity} ->
+          {:error, {:no_ready_work_among, tried, blocked}} = acc
+          {:cont, {:error, {:no_ready_work_among, [provider | tried], [provider | blocked]}}}
+
+        {:error, :no_ready_work} ->
+          {:error, {:no_ready_work_among, tried, blocked}} = acc
+          {:cont, {:error, {:no_ready_work_among, [provider | tried], blocked}}}
+
+        # A provider-specific non-terminal failure (e.g. a malformed
+        # directed epoch_id) is the whole call's failure -- a typed error is
+        # never demoted into "try the next provider".
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:error, {:no_ready_work_among, tried, blocked}} ->
+        {:error, {:no_ready_work_among, Enum.reverse(tried), Enum.reverse(blocked)}}
+
+      claimed ->
+        claimed
+    end
   end
 
   defp do_claim_next(provider, worker_id, ttl, retries_left, epoch_id, capacity) do
@@ -448,6 +514,206 @@ defmodule Xaas.Ultracode.Lease do
   end
 
   # ------------------------------------------------------------------
+  # Ownership reclaim
+  # ------------------------------------------------------------------
+
+  @doc """
+  Reclaims one non-terminal Epoch attempt after its worker ownership is gone.
+
+  This is the single convergence point for worker/process loss. The Epoch
+  attempt becomes terminal and receipted, which releases provider capacity;
+  the higher-level work item remains the scheduler's concern and may be
+  materialized into a fresh attempt. A LIVE lease is never stolen merely
+  because a caller asks to reap it: only direct owner-loss observations
+  (worker exit/down, dispatch timeout, or provider-rate termination) may
+  reclaim a still-live token, and that observation must bind to the exact
+  owner via `:expected_lease_token` or `:expected_leased_to`. A generic
+  "worker died" fact can never revoke somebody else's live capability.
+  Expiry/startup recovery must wait for the lease clock.
+
+  The state change is a single token-guarded UPDATE and the Receipt is
+  created in the same database transaction. Concurrent close/refuse/reclaim
+  races therefore have one winner; losers resolve the observed terminal or
+  handed-off state instead of manufacturing a second terminal fact.
+  """
+  @spec reclaim_epoch(String.t(), atom(), map(), keyword()) ::
+          {:reclaimed, Epoch.t(), Receipt.t()}
+          | {:already_terminal, atom()}
+          | :handed_off
+          | {:settle_race, atom()}
+          | {:error, term()}
+  def reclaim_epoch(epoch_id, reason, evidence \\ %{}, opts \\ [])
+      when is_binary(epoch_id) and is_atom(reason) and is_map(evidence) and is_list(opts) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false) do
+      {:ok, nil} ->
+        {:error, {:epoch_not_found, epoch_id}}
+
+      {:error, error} ->
+        {:error, {:epoch_not_found, epoch_id, inspect(error)}}
+
+      {:ok, %Epoch{} = epoch} ->
+        reclaim_epoch_record(epoch, reason, evidence, opts)
+    end
+  end
+
+  defp reclaim_epoch_record(%Epoch{state: state}, _reason, _evidence, _opts)
+       when state != :expected and state != :running,
+       do: {:already_terminal, state}
+
+  defp reclaim_epoch_record(%Epoch{} = epoch, reason, evidence, opts) do
+    lease_live? = epoch_lease_live?(epoch)
+    owner_loss_proven? = owner_gone_observation?(reason) and observed_owner?(epoch, opts)
+
+    if lease_live? and not owner_loss_proven? do
+      :handed_off
+    else
+      base_query =
+        from(e in Epoch,
+          where: e.id == ^epoch.id and e.state in [:expected, :running]
+        )
+
+      guarded_query =
+        if is_binary(epoch.lease_token) do
+          from(e in base_query, where: e.lease_token == ^epoch.lease_token)
+        else
+          from(e in base_query, where: is_nil(e.lease_token))
+        end
+
+      reclaim_evidence =
+        evidence
+        |> Map.merge(%{
+          "reclaimed_by" => "xaas-lease-kernel",
+          "reclaim_reason" => Atom.to_string(reason),
+          "previous_state" => Atom.to_string(epoch.state),
+          "leased_to" => epoch.leased_to,
+          "lease_was_live" => lease_live?
+        })
+        |> maybe_bind_reclaimed_lease(epoch.lease_token)
+        |> stamp_effective_surface(epoch)
+
+      transaction =
+        Xaas.Repo.transaction(fn ->
+          with {:ok, reclaimed} <-
+                 atomic_row_update(guarded_query,
+                   state: :failed,
+                   terminal_at: DurationBudget.now()
+                 ),
+               {:ok, receipt} <-
+                 Receipt
+                 |> Ash.Changeset.for_create(:seal, %{
+                   epoch_id: reclaimed.id,
+                   subject: reclaimed.exact_subject,
+                   outcome: :refused,
+                   evidence: reclaim_evidence,
+                   sealed_at: DateTime.utc_now()
+                 })
+                 |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
+            {reclaimed, receipt}
+          else
+            {:error, :no_match} -> Xaas.Repo.rollback(:no_match)
+            {:error, error} -> Xaas.Repo.rollback({:reclaim_receipt_failed, error})
+          end
+        end)
+
+      case transaction do
+        {:ok, {%Epoch{} = reclaimed, %Receipt{} = receipt}} ->
+          {:reclaimed, reclaimed, receipt}
+
+        {:error, :no_match} ->
+          resolve_reclaim_race(epoch.id)
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp resolve_reclaim_race(epoch_id) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false) do
+      {:ok, %Epoch{state: state}} when state not in [:expected, :running] ->
+        {:already_terminal, state}
+
+      {:ok, %Epoch{} = observed} ->
+        if epoch_lease_live?(observed), do: :handed_off, else: {:settle_race, observed.state}
+
+      {:ok, nil} ->
+        {:error, {:epoch_not_found, epoch_id}}
+
+      {:error, error} ->
+        {:error, {:epoch_not_found, epoch_id, inspect(error)}}
+    end
+  end
+
+  defp epoch_lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at})
+       when is_binary(token) and not is_nil(expires_at),
+       do: DateTime.compare(expires_at, DurationBudget.now()) != :lt
+
+  defp epoch_lease_live?(_epoch), do: false
+
+  defp owner_gone_observation?(reason),
+    do:
+      reason in [
+        :worker_down,
+        :worker_unclosed,
+        :rate_limited,
+        :dispatch_timeout,
+        :worker_exit,
+        :node_down
+      ]
+
+  # A live lease is a capability. A generic failure observation is not
+  # sufficient authority to revoke it: the observer must bind the DOWN/exit
+  # fact to the worker id or exact token it actually observed.
+  defp observed_owner?(%Epoch{} = epoch, opts) do
+    expected_token = Keyword.get(opts, :expected_lease_token)
+    expected_worker = Keyword.get(opts, :expected_leased_to)
+
+    (is_binary(expected_token) and expected_token == epoch.lease_token) or
+      (is_binary(expected_worker) and expected_worker == epoch.leased_to)
+  end
+
+  defp maybe_bind_reclaimed_lease(evidence, token) when is_binary(token),
+    do: Map.put(evidence, "lease_fingerprint", lease_fingerprint(token))
+
+  defp maybe_bind_reclaimed_lease(evidence, _token), do: evidence
+
+  # Durable evidence of the runtime surface the worker actually ran under:
+  # the fabric -- never the worker -- stamps `RuntimeSurface.effective_surface/1`
+  # into the sealed receipt (a worker-supplied "effective_surface" is
+  # overwritten). The surface carries the epoch id as `lease_id`, never the
+  # bearer lease token (`context_of/2` is called with a nil token and the
+  # token key is dropped before the surface is built).
+  defp stamp_effective_surface(evidence, %Epoch{} = epoch) do
+    ctx =
+      case epoch_with_run(epoch) do
+        %Epoch{run: %Run{}} = loaded ->
+          loaded |> context_of(nil) |> Map.delete("lease_token")
+
+        _no_run ->
+          %{"epoch_id" => epoch.id}
+      end
+
+    Map.put(evidence, "effective_surface", RuntimeSurface.effective_surface(ctx))
+  end
+
+  defp epoch_with_run(%Epoch{run: %Run{}} = epoch), do: epoch
+
+  defp epoch_with_run(%Epoch{} = epoch) do
+    # Same read path as `find_by_lease/2` (`:read_unscoped`, whose `:run`
+    # relationship load is itself routed through Run's `:read_unscoped`).
+    epoch_id = epoch.id
+
+    Epoch
+    |> Ash.Query.for_read(:read_unscoped)
+    |> Ash.Query.filter(id == ^epoch_id)
+    |> Ash.read_one(load: [:run])
+    |> case do
+      {:ok, %Epoch{} = loaded} -> loaded
+      _ -> epoch
+    end
+  end
+
+  # ------------------------------------------------------------------
   # Admission court
   # ------------------------------------------------------------------
 
@@ -455,15 +721,16 @@ defmodule Xaas.Ultracode.Lease do
   Per-consequence admission for one proposed provider tool invocation,
   scoped to the LEASE'S OWN provider (`run.provider`).
 
-  `Run.provider` is an unconstrained string field -- the moduledoc already
-  names "opencode" as a real second provider alongside "zcode" -- so a
-  tool legitimately admitted for one provider must never be silently
-  admitted for a request actually coming from a different, unintended
-  provider's lease. `admitted_tools/1` is the small per-provider registry
-  this fences on; a provider with no explicit entry falls back to
-  `@default_construction_tools` unchanged, so this is additive, not a
-  breaking narrowing (no provider-specific narrowing is evidenced
-  anywhere in this codebase today).
+  The decision is `Xaas.Ultracode.RuntimeSurface.admit_tool/2` over the
+  policy DATA (`priv/ultracode/runtime_surface.json`): refusal rows always
+  win (`Bash`/`git_push`/`publish` are `{:refused_no_authority, tool}`;
+  `WebFetch`/`WebSearch` are `{:forbidden_external_semantic_edge, diag}` --
+  the lawful route is `UltraCode -> SA2A -> resolve_capability`), and only
+  `lease_admit` rows are ever allowed. The per-provider
+  `config :xaas, :ultracode_provider_tools, %{"provider" => [...]}` entry is
+  an override that can only NARROW that set, never add to it: a
+  misconfigured entry naming a refused or non-lease-admitted tool cannot
+  defeat the floor.
 
   `{:ok, %{decision: :allow}}` or a typed refusal the caller MUST treat as
   DENY.
@@ -472,35 +739,192 @@ defmodule Xaas.Ultracode.Lease do
           {:ok, %{decision: :allow}} | {:error, term()}
   def admit_tool(lease_token, tool) when is_binary(lease_token) and is_binary(tool) do
     with {:ok, epoch} <- live_lease(lease_token, [:run]) do
-      cond do
-        # Checked BEFORE the operator-configurable admitted_tools/1 lookup,
-        # on purpose: @refused_consequence_tools is this domain's one
-        # hardcoded, non-configurable floor (moduledoc above). A
-        # misconfigured `:ultracode_provider_tools` entry that happens to
-        # list "Bash"/"git_push"/"publish" must never be able to defeat it
-        # by winning an earlier cond clause -- the refusal always wins.
-        tool in @refused_consequence_tools -> {:error, {:refused_no_authority, tool}}
-        tool in admitted_tools(epoch.run.provider) -> {:ok, %{decision: :allow}}
-        true -> {:error, {:unknown_tool_class, tool}}
-      end
+      RuntimeSurface.admit_tool(tool, provider_override(epoch.run.provider))
     end
   end
 
-  # Per-provider construction-tool vocabulary. Empty by default: no
-  # provider-specific narrowing or extension of `@default_construction_tools`
-  # is evidenced anywhere in this codebase today, so every named provider
-  # ("zcode", "opencode", ...) keeps today's exact admitted-tool behavior
-  # unless a real entry is configured. Real per-provider entries are
-  # supplied via ordinary Application env
-  # (`config :xaas, :ultracode_provider_tools, %{"provider" => [...]}`),
-  # the same real per-environment-config mechanism this repo already uses
-  # elsewhere (see `config :xaas, :ex4pm_ontology_check` in
-  # config/config.exs) -- not a hardcoded guess about a provider's real
-  # tool surface, and not a general plugin system.
-  defp admitted_tools(provider) do
-    :xaas
-    |> Application.get_env(:ultracode_provider_tools, %{})
-    |> Map.get(provider, @default_construction_tools)
+  # Per-provider narrowing override (nil = the policy's full lease-admitted
+  # set). Ordinary Application env, never a grant.
+  defp provider_override(provider) do
+    case Application.get_env(:xaas, :ultracode_provider_tools, %{}) do
+      %{} = per_provider -> Map.get(per_provider, provider)
+      _ -> nil
+    end
+  end
+
+  # ------------------------------------------------------------------
+  # Lease context / surface / subject drift
+  # ------------------------------------------------------------------
+
+  @doc """
+  The live lease's context as a string-keyed map (the shape
+  `Xaas.Ultracode.CapabilityPort` consumes): `"lease_token"`, `"epoch_id"`,
+  `"run_id"`, `"provider"`, `"worker_id"` (the lease's `leased_to`),
+  `"repo"` (`run.repository_identity`, else `run.execution_repo_alias`),
+  `"base_sha"` (`run.base_sha`), `"branch"` (no persisted branch field
+  exists today -- nil), `"cwd"` (`epoch.worktree`), `"work_id"`
+  (`run.work_order_iri`, else the run id). A missing/expired/terminal lease
+  is the same typed error `live_lease/2` returns -- a reclaimed lease has no
+  context, so every handle bound to it is revoked.
+  """
+  @spec lease_context(String.t()) :: {:ok, map()} | {:error, term()}
+  def lease_context(lease_token) when is_binary(lease_token) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+      {:ok, context_of(epoch, lease_token)}
+    end
+  end
+
+  def lease_context(other), do: {:error, {:no_lease, other}}
+
+  defp context_of(%Epoch{run: %Run{} = run} = epoch, lease_token) do
+    %{
+      "lease_token" => lease_token,
+      "epoch_id" => epoch.id,
+      "run_id" => run.id,
+      "provider" => run.provider,
+      "worker_id" => epoch.leased_to,
+      "repo" => run.repository_identity || run.execution_repo_alias,
+      "base_sha" => run.base_sha,
+      "branch" => nil,
+      "cwd" => epoch.worktree,
+      "work_id" => run.work_order_iri || run.id
+    }
+  end
+
+  @doc """
+  The effective runtime surface (`RuntimeSurface.effective_surface/1`) for a
+  live lease: semantic ports `["sa2a", "sjira"]`, `direct_external: []`,
+  the policy-admitted agent tools, bound subject, `authority: "NONE"`.
+  """
+  @spec surface(String.t()) :: {:ok, map()} | {:error, term()}
+  def surface(lease_token) when is_binary(lease_token) do
+    with {:ok, ctx} <- lease_context(lease_token) do
+      {:ok, RuntimeSurface.effective_surface(ctx)}
+    end
+  end
+
+  @doc """
+  The `"surface"` and `"work"` maps a `claim_next` success payload carries,
+  for the leased epoch/run just returned by `claim_next/3`. `"work"` is the
+  normalized sJira work object (`"id"`, `"subject"`, `"objective"`,
+  `"acceptance"`, `"dependencies"`, `"provenance"`) built only from fields
+  the run actually persists -- no tracker-specific keys.
+  """
+  @spec claim_envelope(Epoch.t(), String.t(), Run.t()) :: %{String.t() => map()}
+  def claim_envelope(%Epoch{} = epoch, lease_token, %Run{} = run) when is_binary(lease_token) do
+    ctx = context_of(%{epoch | run: run}, lease_token)
+    court_map = run.court_map || %{}
+
+    %{
+      "surface" => RuntimeSurface.effective_surface(ctx),
+      "work" => %{
+        "id" => ctx["work_id"],
+        "subject" => %{
+          "repo" => ctx["repo"],
+          "base_sha" => ctx["base_sha"],
+          "branch" => ctx["branch"]
+        },
+        "objective" => run.goal,
+        "acceptance" => %{
+          "verifier_suite" => run.verifier_suite,
+          "acceptance" => court_map |> Map.get("acceptance", %{}) |> keys_sorted(),
+          "falsifiers" => court_map |> Map.get("falsifiers", %{}) |> keys_sorted()
+        },
+        "dependencies" => run.dependency_evidence || %{},
+        "provenance" => %{
+          "work_order_iri" => run.work_order_iri,
+          "checkpoint_iri" => run.checkpoint_iri,
+          "graph_digest" => run.graph_digest,
+          "repository_identity" => run.repository_identity,
+          "capability_id" => run.capability_id,
+          "run_id" => run.id,
+          "epoch_id" => epoch.id,
+          "exact_subject" => epoch.exact_subject
+        }
+      }
+    }
+  end
+
+  defp keys_sorted(%{} = m), do: m |> Map.keys() |> Enum.map(&to_string/1) |> Enum.sort()
+  defp keys_sorted(_), do: []
+
+  @doc """
+  Subject-drift court. `:ok` iff the lease's bound `base_sha` is an ancestor
+  of (or equal to) `observed_head` in the lease cwd -- real
+  `git merge-base --is-ancestor`, explicit argv. No bound base_sha is `:ok`
+  (nothing to drift from); a lease cwd that is not a git checkout is `:ok`
+  too (unverifiable here -- `close/4`'s head verifier already downgrades
+  that case). A non-ancestor, or a head/base the checkout does not contain,
+  is `{:error, {:stale_subject, %{"bound" => base, "observed" => head}}}`.
+  """
+  @spec check_subject(String.t(), String.t()) ::
+          :ok | {:error, {:stale_subject, map()}} | {:error, term()}
+  def check_subject(lease_token, observed_head)
+      when is_binary(lease_token) and is_binary(observed_head) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+      subject_drift(epoch, observed_head)
+    end
+  end
+
+  # An option-shaped "head" would be parsed by git as a flag, not a revision.
+  defp subject_drift(%Epoch{run: %Run{base_sha: base}}, "-" <> _ = observed_head)
+       when is_binary(base),
+       do: {:error, {:stale_subject, %{"bound" => base, "observed" => observed_head}}}
+
+  defp subject_drift(%Epoch{run: %Run{base_sha: base}, worktree: cwd}, observed_head)
+       when is_binary(base) and is_binary(cwd) do
+    if git_checkout?(cwd) do
+      case System.cmd("git", ["-C", cwd, "merge-base", "--is-ancestor", base, observed_head],
+             stderr_to_stdout: true
+           ) do
+        {_out, 0} ->
+          :ok
+
+        {_out, _code} ->
+          {:error, {:stale_subject, %{"bound" => base, "observed" => observed_head}}}
+      end
+    else
+      :ok
+    end
+  end
+
+  defp subject_drift(_epoch, _observed_head), do: :ok
+
+  defp git_checkout?(cwd) do
+    File.dir?(cwd) and
+      match?(
+        {_, 0},
+        System.cmd("git", ["-C", cwd, "rev-parse", "--git-dir"], stderr_to_stdout: true)
+      )
+  end
+
+  # actuate/2's observed head. When the lease cwd is a real git checkout
+  # its HEAD is authoritative: a wire-supplied "head" can only AGREE with it
+  # (court F5: a wire head equal to the bound base used to satisfy the drift
+  # court while the checkout sat on an unrelated commit). Without a readable
+  # checkout the wire head is the only observation; nil skips the court.
+  defp actuate_subject(%Epoch{} = epoch, request) do
+    wire =
+      case request["head"] do
+        h when is_binary(h) and h != "" -> h
+        _ -> nil
+      end
+
+    case {worktree_head(epoch.worktree), wire} do
+      {{:ok, real}, w} when w in [nil, real] ->
+        subject_drift(epoch, real)
+
+      {{:ok, real}, w} ->
+        {:error,
+         {:stale_subject,
+          %{"bound" => epoch.run.base_sha || real, "observed" => w, "checkout_head" => real}}}
+
+      {_, nil} ->
+        :ok
+
+      {_, w} ->
+        subject_drift(epoch, w)
+    end
   end
 
   @doc """
@@ -564,6 +988,7 @@ defmodule Xaas.Ultracode.Lease do
   @spec actuate(String.t(), map()) :: {:ok, map()} | {:error, term()}
   def actuate(lease_token, request) when is_binary(lease_token) and is_map(request) do
     with {:ok, epoch} <- live_lease(lease_token, [:run]),
+         :ok <- actuate_subject(epoch, request),
          {:ok, resource, action, subject_id} <-
            resolve_registered(epoch.run.provider, request["resource"], request["action"]) do
       authority = %{
@@ -623,7 +1048,7 @@ defmodule Xaas.Ultracode.Lease do
   #                      {Xaas.Marketplace.Provider, :actuate_status,
   #                       "9c2c0b2e-....-provider-uuid"}}}`
   # -- the same opt-in-only, real per-environment-config mechanism
-  # `admitted_tools/1` already uses, independent from it: registering a pair
+  # `:ultracode_provider_tools` already uses, independent from it: registering a pair
   # here grants no `admit_tool/2` allowance, and vice versa. The third tuple
   # element is `:no_subject` (subject-less/`:create`-shaped actions) or a
   # fixed subject_id string the OPERATOR names at config time -- see
@@ -643,6 +1068,166 @@ defmodule Xaas.Ultracode.Lease do
   end
 
   # ------------------------------------------------------------------
+  # Cancellation
+  # ------------------------------------------------------------------
+
+  @doc """
+  Cancels the leased work. The lease token IS the capability: its holder may
+  cancel its own epoch (a worker standing down, a superseded candidate), and
+  the cancellation is typed, never a silent abandonment.
+
+  Cancellation law (and why there is no new `:cancelled` epoch state): the
+  epoch lands `:failed` through the SAME atomic, lease-token-guarded write
+  `refuse/3` uses (so expiry, re-claim, and the concurrency invariants keep
+  exactly one meaning), and the sealed receipt carries the STANDING outcome
+  `:blocked` with `cancelled_by` evidence -- a cancellation is "work will
+  not proceed", not "the subject failed". Reusing `:failed` + `:blocked`
+  keeps every existing consumer (`MissedEpochs`, `NextEpoch` recovery, the
+  OCEL egress's `epoch_failed` events, run validation) correct without
+  forking the state machine; the receipt evidence is what distinguishes a
+  cancellation from a refusal.
+
+  Same race posture as `close/4`/`refuse/3`: after a TTL expiry + re-claim
+  the stale token's cancel is the typed `{:error, {:lease_stale, _}}`, never
+  a clobber of the new holder's lease.
+  """
+  @spec cancel(String.t(), atom(), map()) :: {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
+  def cancel(lease_token, reason, evidence \\ %{})
+      when is_binary(lease_token) and is_atom(reason) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> Map.merge(%{
+          "cancelled_by" => "lease_holder",
+          "cancellation_reason" => Atom.to_string(reason)
+        })
+
+      seal_cancellation(epoch, lease_token, evidence)
+    end
+  end
+
+  @doc """
+  INTERNAL cancellation -- the lease holder is gone or the episode is being
+  wound down (`DurationBudget` drain, operator stop, reaping an
+  unreclaimable epoch). Authority: an admitted `Xaas.SystemAuthority` whose
+  service is the epoch kernel's canonical one -- resolved through
+  `Xaas.Checks.SystemActor.service_for/2` (the SAME closed capability map
+  the policies use, never a locally re-typed literal), so an actor carrying
+  any other service is the typed `{:error, :refused_no_authority}`. No
+  ambient authority, no actor-free call.
+
+  Cancels the epoch whether or not a lease is bound (an unclaimed epoch of
+  a dead episode is cancellable; a terminal one is not -- the typed
+  `{:error, {:epoch_not_cancellable, state}}`). A bound lease is REVOKED by
+  the same atomic write (token + expiry cleared), so a worker that later
+  surfaces with the old token finds a terminal epoch (`lease_not_live`),
+  never a live capability. The write is one `UPDATE ... WHERE state IN
+  (expected, running) RETURNING *` -- a concurrent close/refuse/cancel that
+  won the row first makes this call the typed loser, exactly like every
+  other lease write here.
+  """
+  @spec cancel_epoch(Epoch.t() | String.t(), Xaas.SystemAuthority.t(), atom(), map()) ::
+          {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
+  def cancel_epoch(epoch_or_id, %Xaas.SystemAuthority{} = actor, reason, evidence \\ %{})
+      when is_atom(reason) do
+    with {:ok, required_service} <- Xaas.Checks.SystemActor.service_for(Epoch, :mark_failed),
+         :ok <- admit_service(actor, required_service),
+         {:ok, epoch} <- fetch_epoch(epoch_or_id) do
+      cancel_epoch_row(epoch, actor, reason, evidence)
+    else
+      :error -> {:error, :refused_no_authority}
+      {:error, _} = err -> err
+    end
+  end
+
+  defp admit_service(%Xaas.SystemAuthority{service: service}, required)
+       when service == required,
+       do: :ok
+
+  defp admit_service(%Xaas.SystemAuthority{}, _required), do: {:error, :refused_no_authority}
+
+  defp cancel_epoch_row(%Epoch{} = epoch, actor, reason, evidence) do
+    if epoch.state not in [:expected, :running] do
+      {:error, {:epoch_not_cancellable, epoch.state}}
+    else
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> Map.merge(%{
+          "cancelled_by" => "internal",
+          "cancellation_reason" => Atom.to_string(reason),
+          "revoked_lease" => not is_nil(epoch.lease_token)
+        })
+
+      result =
+        atomic_row_update(
+          from(e in Epoch,
+            where: e.id == ^epoch.id and (e.state == :expected or e.state == :running)
+          ),
+          state: :failed,
+          terminal_at: DateTime.utc_now(),
+          lease_token: nil,
+          lease_expires_at: nil
+        )
+
+      case result do
+        {:ok, epoch} ->
+          {:ok, receipt} =
+            Receipt
+            |> Ash.Changeset.for_create(:seal, %{
+              epoch_id: epoch.id,
+              subject: epoch.exact_subject,
+              outcome: :blocked,
+              evidence: evidence,
+              sealed_at: DateTime.utc_now()
+            })
+            |> Ash.create(actor: actor)
+
+          {:ok, epoch, receipt}
+
+        # A concurrent close/refuse/cancel won the row first.
+        {:error, :no_match} ->
+          {:error, {:epoch_not_cancellable, epoch.state}}
+      end
+    end
+  end
+
+  # Lease-holder path: the SAME token-guarded atomic write as refuse/3
+  # (state :failed + terminal_at), then the :blocked receipt.
+  defp seal_cancellation(%Epoch{} = epoch, lease_token, evidence) do
+    with {:ok, epoch} <-
+           atomic_lease_write(epoch, lease_token,
+             state: :failed,
+             terminal_at: DateTime.utc_now()
+           ),
+         {:ok, receipt} <-
+           Receipt
+           |> Ash.Changeset.for_create(:seal, %{
+             epoch_id: epoch.id,
+             subject: epoch.exact_subject,
+             outcome: :blocked,
+             evidence: evidence,
+             sealed_at: DateTime.utc_now()
+           })
+           |> Ash.create(actor: Xaas.SystemAuthority.new(:ultracode_reactor)) do
+      {:ok, epoch, receipt}
+    end
+  end
+
+  # ALWAYS re-reads: the cancellation decision (state check, revoked-lease
+  # evidence, lease revocation) must be made against the DB's current row,
+  # never a possibly-stale caller snapshot.
+  defp fetch_epoch(%Epoch{id: id}), do: fetch_epoch(id)
+
+  defp fetch_epoch(epoch_id) when is_binary(epoch_id) do
+    case Ash.get(Epoch, epoch_id, action: :read_unscoped, authorize?: false, load: [:run]) do
+      {:ok, %Epoch{} = epoch} -> {:ok, epoch}
+      {:error, error} -> {:error, {:epoch_not_found, epoch_id, inspect(error)}}
+    end
+  end
+
+  # ------------------------------------------------------------------
   # Closure
   # ------------------------------------------------------------------
 
@@ -654,9 +1239,14 @@ defmodule Xaas.Ultracode.Lease do
           {:ok, Epoch.t(), Receipt.t()} | {:error, term()}
   def close(lease_token, final_head, claimed_outcome, evidence \\ %{})
       when is_binary(lease_token) and is_binary(final_head) and is_atom(claimed_outcome) do
-    with {:ok, epoch} <- live_lease(lease_token, [:run]) do
+    with {:ok, epoch} <- live_lease(lease_token, [:run]),
+         :ok <- subject_drift(epoch, final_head) do
       {outcome, evidence} = verified_outcome(epoch, final_head, claimed_outcome, evidence)
-      evidence = bind_semantic_work_identity(epoch, evidence)
+
+      evidence =
+        epoch
+        |> bind_semantic_work_identity(evidence)
+        |> stamp_effective_surface(epoch)
 
       # Real finding, real-concurrency-tested (see `LeaseConcurrencyStressTest`
       # "concurrent close/refuse on the same lease_token"): the previous

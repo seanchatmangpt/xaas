@@ -83,11 +83,14 @@ defmodule Xaas.Ultracode.DispatchTest do
 
     assert plan.argv_tail == [
              "bin/zcode.js",
-             "--prompt",
+             "-p",
              plan.prompt,
              "--cwd",
              plan.cwd,
-             "--json"
+             "--output-format",
+             "stream-json",
+             "--mode",
+             "yolo"
            ]
   end
 
@@ -154,6 +157,7 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert plan.protocol == :xaas_prompt
     assert plan.prompt =~ epoch.id
     assert plan.descriptor == nil
+    assert Enum.take(plan.argv_tail, -2) == ["--mode", "yolo"]
   end
 
   test "plan refuses a CLI directory that does not hold package.json" do
@@ -226,10 +230,13 @@ defmodule Xaas.Ultracode.DispatchTest do
     {:ok, plain_plan} =
       Dispatch.plan(plain_epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
 
-    # Byte-for-byte the historical env: gate vars only, no toolchain pin.
+    # Byte-for-byte the dispatch env: gate vars + the per-epoch lease id
+    # + the worker OCEL tap, no toolchain pin.
     assert plain_plan.env_added == [
              {"XAAS_WORKER", "1"},
-             {"XAAS_LEASE_CWD", realpath(worktree)}
+             {"XAAS_LEASE_CWD", realpath(worktree)},
+             {"XAAS_LEASE_ID", plain_epoch.id},
+             {"ZCODE_OCEL", "1"}
            ]
   end
 
@@ -404,11 +411,99 @@ defmodule Xaas.Ultracode.DispatchTest do
     logged = File.read!(fake_log)
     assert logged =~ "XAAS_WORKER=1"
     assert logged =~ "XAAS_LEASE_CWD=#{realpath(worktree)}"
-    assert logged =~ "--json"
+    assert logged =~ "--output-format"
+    assert logged =~ "stream-json"
 
     # The sealed receipts of the epoch ride on the dispatch result.
     assert [%{"outcome" => "partial_alive", "head_verified" => false, "sealed_at" => _}] =
              result.receipts
+
+    assert run.id
+  end
+
+  test "plan injects ZCODE_SUBAGENT_MAX_TURNS only when :ultracode_subagent_max_turns is set",
+       %{worktree: worktree} do
+    {_run, epoch} = create_epoch!(worktree)
+    cli_dir = fake_cli_dir("exit 0\n")
+
+    prev = Application.get_env(:xaas, :ultracode_subagent_max_turns)
+
+    on_exit(fn ->
+      if prev,
+        do: Application.put_env(:xaas, :ultracode_subagent_max_turns, prev),
+        else: Application.delete_env(:xaas, :ultracode_subagent_max_turns)
+    end)
+
+    # nil default injects nothing: env_added stays byte-identical to the
+    # pre-lever shape (the exact-equality env test pins that).
+    {:ok, plain} =
+      Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    refute Enum.any?(plain.env_added, fn {k, _} -> k == "ZCODE_SUBAGENT_MAX_TURNS" end)
+
+    Application.put_env(:xaas, :ultracode_subagent_max_turns, 12)
+
+    {:ok, plan} =
+      Dispatch.plan(epoch.id, provider: @provider, cli_dir: cli_dir, node_path: @sh)
+
+    assert {"ZCODE_SUBAGENT_MAX_TURNS", "12"} in plan.env_added
+
+    # Lowest-precedence injection: the caller's :extra_env (applied last)
+    # still wins on duplicates under /usr/bin/env.
+    {:ok, overridden} =
+      Dispatch.plan(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        extra_env: %{"ZCODE_SUBAGENT_MAX_TURNS" => "7"}
+      )
+
+    last =
+      overridden.env_added
+      |> Enum.filter(fn {k, _} -> k == "ZCODE_SUBAGENT_MAX_TURNS" end)
+      |> List.last()
+
+    assert last == {"ZCODE_SUBAGENT_MAX_TURNS", "7"}
+  end
+
+  test "a configured turn cap reaches the worker process as ZCODE_SUBAGENT_MAX_TURNS",
+       %{worktree: worktree} do
+    {run, epoch} = create_epoch!(worktree)
+
+    fake_log = test_path("dispatch-turncap", ".log")
+
+    cli_dir =
+      fake_cli_dir("""
+      printf 'turncap=%s\\n' "$ZCODE_SUBAGENT_MAX_TURNS" > "$FAKE_LOG"
+      exit 0
+      """)
+
+    seal_receipt!(epoch, :partial_alive, %{"head_verified" => false})
+
+    prev = Application.get_env(:xaas, :ultracode_subagent_max_turns)
+
+    on_exit(fn ->
+      if prev,
+        do: Application.put_env(:xaas, :ultracode_subagent_max_turns, prev),
+        else: Application.delete_env(:xaas, :ultracode_subagent_max_turns)
+    end)
+
+    Application.put_env(:xaas, :ultracode_subagent_max_turns, 42)
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        extra_env: %{"FAKE_LOG" => fake_log}
+      )
+
+    assert result.status == :ok
+    assert result.attempts == 1
+
+    # The turn cap really reached the child process environment.
+    assert File.read!(fake_log) =~ "turncap=42"
 
     assert run.id
   end
@@ -572,6 +667,67 @@ defmodule Xaas.Ultracode.DispatchTest do
     assert result.attempts == 2
     assert result.output_tail =~ "429"
     assert File.read!(counter) |> String.trim() == "2"
+  end
+
+  test "a failover retry is REFUSED when the caller-owned deadline cannot fit it (v26.9.27 wedge guard)",
+       %{worktree: worktree} do
+    {_run, epoch} = create_epoch!(worktree)
+
+    counter = test_path("dispatch-count-deadline")
+
+    cli_dir =
+      fake_cli_dir("""
+      n=$(cat "$FAKE_COUNT" 2>/dev/null || echo 0)
+      n=$((n+1))
+      echo "$n" > "$FAKE_COUNT"
+      echo 'Too Many Requests (HTTP 429)'
+      exit 0
+      """)
+
+    # Deadline 3s away: backoff (10ms) + the 5s minimum useful attempt does
+    # not fit, so the classified outcome is returned without a 2nd attempt.
+    deadline_at = System.monotonic_time(:millisecond) + 3_000
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        failover_backoff_ms: 10,
+        deadline_at_ms: deadline_at,
+        extra_env: %{"FAKE_COUNT" => counter}
+      )
+
+    assert result.status == :rate_limited
+    assert result.attempts == 1
+    assert File.read!(counter) |> String.trim() == "1"
+  end
+
+  test "an attempt is clamped to the caller-owned deadline, not its own timeout",
+       %{worktree: worktree} do
+    {_run, epoch} = create_epoch!(worktree)
+
+    cli_dir =
+      fake_cli_dir("""
+      sleep 30
+      exit 0
+      """)
+
+    started = System.monotonic_time(:millisecond)
+
+    {:ok, result} =
+      Dispatch.dispatch(epoch.id,
+        provider: @provider,
+        cli_dir: cli_dir,
+        node_path: @sh,
+        timeout_seconds: 30,
+        deadline_at_ms: started + 1_500
+      )
+
+    elapsed = System.monotonic_time(:millisecond) - started
+    assert result.status == :timeout
+    assert elapsed < 10_000
   end
 
   test "a non-zero exit is :failed with the code, not retried", %{worktree: worktree} do

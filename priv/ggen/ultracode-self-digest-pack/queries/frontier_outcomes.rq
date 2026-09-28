@@ -1,0 +1,5 @@
+PREFIX ucsd: <https://ggen.dev/ontology/ultracode-self-digest#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+SELECT ?name WHERE {
+  ?outcome a ucsd:FrontierOutcome ; dcterms:identifier ?name .
+} ORDER BY ?name

@@ -1,7 +1,7 @@
 defmodule Xaas.Ultracode.ZcodePackage do
   @moduledoc """
   The zcode CLI's own `package.json` is the contract xaas dispatches against
-  (`~/dev/zcode-cli/package.json`: `name` `zcode-app-cli`, `bin.zcode`,
+  (`~/zcode-cli/package.json`: `name` `zcode-app-cli`, `bin.zcode`,
   `engines.node`). Nothing in xaas hard-codes the launcher path or the Node
   floor any more; both are read from that file:
 
@@ -129,7 +129,7 @@ defmodule Xaas.Ultracode.ZcodePackage do
 
   @doc "The CLI checkout xaas dispatches against unless `:cli_dir` / app env says otherwise."
   @spec default_cli_dir() :: String.t()
-  def default_cli_dir, do: "/Users/sac/dev/zcode-cli"
+  def default_cli_dir, do: "/Users/sac/zcode-cli"
 
   @doc "Load the package and check the node in one call (options as `verify_node/3`)."
   @spec check(term(), String.t(), keyword()) :: {:ok, t()} | {:error, term()}

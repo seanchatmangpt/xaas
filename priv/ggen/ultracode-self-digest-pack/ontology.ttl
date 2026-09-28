@@ -1,0 +1,370 @@
+@prefix ucsd: <https://ggen.dev/ontology/ultracode-self-digest#> .
+@prefix gp:  <https://ggen.dev/ns/pack#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+# Pack identity (gp:Core1: graph name == pack.toml [pack].name)
+#################################################################
+
+<urn:ggen:pack:ultracode-self-digest-pack>
+    a gp:Pack ;
+    gp:name "ultracode-self-digest-pack" ;
+    gp:version "0.1.0" ;
+    gp:profile gp:Core1 .
+
+#################################################################
+# Core concepts (the constitution)
+#
+# U_t in Subjects(U_t): the loop Work -> Resolution -> Execution ->
+# OCEL -> Experience -> Gap -> Work_self -> U_{t+1}, with
+# R_t = frontier/total, dR/dt < 0, and
+# RepeatedFrontier(x) => MissingCapability | MissingComposition |
+# MissingGenerator | MissingResolverRule.
+#
+# Ontology is the constitution; Ash is the executable state.
+# Everything the Ash layer expresses below is a FACT here, rendered
+# by Ash's own igniter generators via the generic xaas.ash.gen
+# bridge — never hand-written Elixir.
+#################################################################
+
+ucsd:WorkOrder a rdfs:Class ;
+    rdfs:label "WorkOrder" ;
+    rdfs:comment "A self-work order: the sJira semantic representation of factory ignorance. Observed/Expected/Residual/Classification/CandidateRepair/Falsifier/SuccessCriteria. Admission requires provenance (derivedFromReceipt, falsifier) — missing provenance is an Ash required-attribute refusal." .
+
+ucsd:Experience a rdfs:Class ;
+    rdfs:label "Experience" ;
+    rdfs:comment "One frontier/capacity episode of the manufacture loop. Semantic topology is the triple (required_closure, residual_shape, context): recurrence is equivalence over that triple, never over a failure label alone." .
+
+ucsd:ExperienceCluster a rdfs:Class ;
+    rdfs:label "ExperienceCluster" ;
+    rdfs:comment "An equivalence class of experiences sharing one topology triple." .
+
+ucsd:Requirement a rdfs:Class ;
+    rdfs:label "Requirement" ;
+    rdfs:comment "What a work order required of the factory." .
+
+ucsd:Capability a rdfs:Class ;
+    rdfs:label "Capability" ;
+    rdfs:comment "An admitted, receipted factory capability." .
+
+ucsd:CapabilityGap a rdfs:Class ;
+    rdfs:label "CapabilityGap" ;
+    rdfs:comment "Required minus closure." .
+
+ucsd:ResidualGap a rdfs:Class ;
+    rdfs:label "ResidualGap" ;
+    rdfs:comment "The frontier residue: recurring topology that no composition of admitted capabilities resolves." .
+
+ucsd:Resolution a rdfs:Class ;
+    rdfs:label "Resolution" ;
+    rdfs:comment "Receipt-bound outcome of a work order: resolved | refuted | blocked, never prose." .
+
+ucsd:Falsifier a rdfs:Class ;
+    rdfs:label "Falsifier" ;
+    rdfs:comment "The observation that would kill the classification hypothesis." .
+
+ucsd:PromotionCandidate a rdfs:Class ;
+    rdfs:label "PromotionCandidate" ;
+    rdfs:comment "Judge != Candidate: a constructed U' promoted only after shadow/replay evidence. requiresReplay." .
+
+ucsd:PrimitiveTarget a rdfs:Class ;
+    rdfs:label "PrimitiveTarget" ;
+    rdfs:comment "The manufacturing primitive a recurrence class routes to (the G-table right column)." .
+
+ucsd:RecurrenceClass a rdfs:Class ;
+    rdfs:label "RecurrenceClass" ;
+    rdfs:comment "The G-table left column: how a repeated frontier classifies." .
+
+ucsd:ResidualShape a rdfs:Class ;
+    rdfs:label "ResidualShape" ;
+    rdfs:comment "A named empirical residual shape (open world at runtime; named individuals here are the classified seeds)." .
+
+#################################################################
+# Relations
+#################################################################
+
+ucsd:derivedFromReceipt a rdf:Property ;
+    rdfs:domain ucsd:WorkOrder ;
+    rdfs:comment "Provenance: the receipt/SHA this work order is evidence-derived from. Required attribute — absence is an Ash refusal." .
+
+ucsd:hasRequirement a rdf:Property ; rdfs:domain ucsd:WorkOrder ; rdfs:range ucsd:Requirement .
+ucsd:sharesTopologyWith a rdf:Property ; rdfs:domain ucsd:Experience ; rdfs:range ucsd:Experience ;
+    rdfs:comment "equiv(e_i, e_j) = same required_closure AND same residual_shape AND compatible context." .
+ucsd:hasResidual a rdf:Property ; rdfs:domain ucsd:WorkOrder .
+ucsd:classifiedAs a rdf:Property ; rdfs:domain ucsd:ResidualShape ; rdfs:range ucsd:RecurrenceClass ;
+    rdfs:comment "Classification is a HYPOTHESIS over the topology triple, admitted only by running its falsifier — never a conclusion at detection time." .
+ucsd:targetsPrimitive a rdf:Property ; rdfs:domain ucsd:RecurrenceClass ; rdfs:range ucsd:PrimitiveTarget .
+ucsd:falsifiedBy a rdf:Property ; rdfs:domain ucsd:WorkOrder ; rdfs:range ucsd:Falsifier .
+ucsd:candidateRepair a rdf:Property ; rdfs:domain ucsd:WorkOrder .
+ucsd:requiresReplay a rdf:Property ; rdfs:domain ucsd:PromotionCandidate .
+
+#################################################################
+# The G-table as RDF individuals (retires the hardcoded Elixir map)
+#################################################################
+
+ucsd:class_semantic a ucsd:RecurrenceClass ; dcterms:identifier "semantic" ;
+    ucsd:targetsPrimitive ucsd:target_ontology ; ucsd:gOrder "01" .
+ucsd:class_structural a ucsd:RecurrenceClass ; dcterms:identifier "structural" ;
+    ucsd:targetsPrimitive ucsd:target_marketplace_pack ; ucsd:gOrder "02" .
+ucsd:class_procedural a ucsd:RecurrenceClass ; dcterms:identifier "procedural" ;
+    ucsd:targetsPrimitive ucsd:target_hddl ; ucsd:gOrder "03" .
+ucsd:class_nondeterministic a ucsd:RecurrenceClass ; dcterms:identifier "nondeterministic" ;
+    ucsd:targetsPrimitive ucsd:target_fond ; ucsd:gOrder "04" .
+ucsd:class_projection a ucsd:RecurrenceClass ; dcterms:identifier "projection" ;
+    ucsd:targetsPrimitive ucsd:target_ggen ; ucsd:gOrder "05" .
+ucsd:class_routing a ucsd:RecurrenceClass ; dcterms:identifier "routing" ;
+    ucsd:targetsPrimitive ucsd:target_sa2a ; ucsd:gOrder "06" .
+ucsd:class_observation a ucsd:RecurrenceClass ; dcterms:identifier "observation" ;
+    ucsd:targetsPrimitive ucsd:target_ocel_beam4pm ; ucsd:gOrder "07" .
+ucsd:class_selection a ucsd:RecurrenceClass ; dcterms:identifier "selection" ;
+    ucsd:targetsPrimitive ucsd:target_resolver ; ucsd:gOrder "08" .
+ucsd:class_verification a ucsd:RecurrenceClass ; dcterms:identifier "verification" ;
+    ucsd:targetsPrimitive ucsd:target_court ; ucsd:gOrder "09" .
+ucsd:class_runtime a ucsd:RecurrenceClass ; dcterms:identifier "runtime" ;
+    ucsd:targetsPrimitive ucsd:target_otp_ash_reactor ; ucsd:gOrder "10" .
+
+ucsd:target_ontology a ucsd:PrimitiveTarget ; dcterms:identifier "ontology" .
+ucsd:target_marketplace_pack a ucsd:PrimitiveTarget ; dcterms:identifier "marketplace_pack" .
+ucsd:target_hddl a ucsd:PrimitiveTarget ; dcterms:identifier "hddl" .
+ucsd:target_fond a ucsd:PrimitiveTarget ; dcterms:identifier "fond" .
+ucsd:target_ggen a ucsd:PrimitiveTarget ; dcterms:identifier "ggen" .
+ucsd:target_sa2a a ucsd:PrimitiveTarget ; dcterms:identifier "sa2a" .
+ucsd:target_ocel_beam4pm a ucsd:PrimitiveTarget ; dcterms:identifier "ocel_beam4pm" .
+ucsd:target_resolver a ucsd:PrimitiveTarget ; dcterms:identifier "resolver" .
+ucsd:target_court a ucsd:PrimitiveTarget ; dcterms:identifier "court" .
+ucsd:target_otp_ash_reactor a ucsd:PrimitiveTarget ; dcterms:identifier "otp_ash_reactor" .
+
+# Classified residual-shape seeds (runtime unknowns must refuse, never guess).
+ucsd:shape_toolchain_pin_missing a ucsd:ResidualShape ; dcterms:identifier "toolchain_pin_missing" ;
+    ucsd:classifiedAs ucsd:class_runtime .
+ucsd:shape_generator_unmanufactured a ucsd:ResidualShape ; dcterms:identifier "generator_unmanufactured" ;
+    ucsd:classifiedAs ucsd:class_projection .
+ucsd:shape_gate_without_firing a ucsd:ResidualShape ; dcterms:identifier "gate_without_firing" ;
+    ucsd:classifiedAs ucsd:class_verification .
+
+#################################################################
+# Digest law constants
+#################################################################
+
+ucsd:DigestSpec a rdfs:Class ; rdfs:label "DigestSpec" .
+ucsd:digestSpecDefault a ucsd:DigestSpec ;
+    ucsd:recurrenceThreshold "3"^^xsd:integer ;
+    rdfs:comment "An episode topology recurring >= 3 times opens self-work. Two episodes are noise; the threshold is the anti-vacuity tripwire." .
+
+ucsd:FrontierOutcome a rdfs:Class ; rdfs:label "FrontierOutcome" ;
+    rdfs:comment "Wave-loop outcomes that count as frontier work in R_t = frontier/total." .
+ucsd:outcome_blocked a ucsd:FrontierOutcome ; dcterms:identifier "blocked" .
+ucsd:outcome_dispatch_refused a ucsd:FrontierOutcome ; dcterms:identifier "dispatch_refused" .
+ucsd:outcome_worker_unclosed a ucsd:FrontierOutcome ; dcterms:identifier "worker_unclosed" .
+ucsd:outcome_handed_off a ucsd:FrontierOutcome ; dcterms:identifier "handed_off" .
+ucsd:outcome_refused a ucsd:FrontierOutcome ; dcterms:identifier "refused" .
+ucsd:outcome_error a ucsd:FrontierOutcome ; dcterms:identifier "error" .
+
+#################################################################
+# Manufacturing facts: enums (Ash.Type.Enum modules)
+#################################################################
+
+ucsd:EnumSpec a rdfs:Class ; rdfs:label "EnumSpec" .
+ucsd:enumModule a rdf:Property ; rdfs:domain ucsd:EnumSpec .
+ucsd:enumValues a rdf:Property ; rdfs:domain ucsd:EnumSpec .
+ucsd:shortName a rdf:Property ; rdfs:domain ucsd:EnumSpec .
+
+ucsd:enum_frontier_outcome a ucsd:EnumSpec ;
+    ucsd:enumModule "Xaas.Ultracode.CapitalCensus.Types.FrontierOutcome" ;
+    ucsd:shortName "frontier_outcome" ;
+    ucsd:enumValues "blocked dispatch_refused worker_unclosed handed_off refused error" .
+
+ucsd:enum_recurrence_class a ucsd:EnumSpec ;
+    ucsd:enumModule "Xaas.Ultracode.CapitalCensus.Types.RecurrenceClass" ;
+    ucsd:shortName "recurrence_class" ;
+    ucsd:enumValues "semantic structural procedural nondeterministic projection routing observation selection verification runtime" .
+
+ucsd:enum_primitive_target a ucsd:EnumSpec ;
+    ucsd:enumModule "Xaas.Ultracode.CapitalCensus.Types.PrimitiveTarget" ;
+    ucsd:shortName "primitive_target" ;
+    ucsd:enumValues "ontology marketplace_pack hddl fond ggen sa2a ocel_beam4pm resolver court otp_ash_reactor" .
+
+ucsd:enum_gap_status a ucsd:EnumSpec ;
+    ucsd:enumModule "Xaas.Ultracode.CapitalCensus.Types.GapStatus" ;
+    ucsd:shortName "gap_status" ;
+    ucsd:enumValues "hypothesis admitted refuted" .
+
+ucsd:enum_work_order_status a ucsd:EnumSpec ;
+    ucsd:enumModule "Xaas.Ultracode.CapitalCensus.Types.WorkOrderStatus" ;
+    ucsd:shortName "work_order_status" ;
+    ucsd:enumValues "open admitted refuted resolved" .
+
+ucsd:enum_resolution_outcome a ucsd:EnumSpec ;
+    ucsd:enumModule "Xaas.Ultracode.CapitalCensus.Types.ResolutionOutcome" ;
+    ucsd:shortName "resolution_outcome" ;
+    ucsd:enumValues "resolved refuted blocked" .
+
+#################################################################
+# Manufacturing facts: Ash resources
+# (rendered by `ash.gen.resource` via the xaas.ash.gen bridge —
+# domain registration, uuid primary keys, timestamps and default
+# actions are generator options, not template prose)
+#################################################################
+
+ucsd:AshResource a rdfs:Class ; rdfs:label "AshResource" .
+ucsd:resourceModule a rdf:Property ; rdfs:domain ucsd:AshResource .
+ucsd:resourceDomain a rdf:Property ; rdfs:domain ucsd:AshResource .
+ucsd:defaultActions a rdf:Property ; rdfs:domain ucsd:AshResource .
+ucsd:hasAttr a rdf:Property ; rdfs:domain ucsd:AshResource .
+ucsd:AttrSpec a rdfs:Class ; rdfs:label "AttrSpec" .
+ucsd:attrName a rdf:Property ; rdfs:domain ucsd:AttrSpec .
+ucsd:attrType a rdf:Property ; rdfs:domain ucsd:AttrSpec ;
+    rdfs:comment "Ash-native token (string|integer|boolean|text) or a dotted module name (an Ash.Type.Enum)." .
+ucsd:attrRequired a rdf:Property ; rdfs:domain ucsd:AttrSpec ;
+    rdfs:comment "required => allow_nil? false: the admission constraint IS the provenance law." .
+ucsd:attrPublic a rdf:Property ; rdfs:domain ucsd:AttrSpec .
+ucsd:attrOrder a rdf:Property ; rdfs:domain ucsd:AttrSpec .
+ucsd:hasRel a rdf:Property ; rdfs:domain ucsd:AshResource .
+ucsd:RelSpec a rdfs:Class ; rdfs:label "RelSpec" .
+ucsd:relKind a rdf:Property ; rdfs:domain ucsd:RelSpec .
+ucsd:relName a rdf:Property ; rdfs:domain ucsd:RelSpec .
+ucsd:relTarget a rdf:Property ; rdfs:domain ucsd:RelSpec .
+ucsd:relRequired a rdf:Property ; rdfs:domain ucsd:RelSpec .
+
+### Episode #######################################################
+# FAILED EDGE (recorded, 2026-09-27): the natural name `Experience` is
+# already owned by Xaas.Ultracode.CapitalCensus.Experience — the pure-function
+# machine-experience law (GC-26926-CENSUS: failure_class, SystemDefect, IEC).
+# Distinct semantics: that module is the experience LAW, this resource is one
+# digest EPISODE. Renaming the census module is subsumption work for a later
+# increment; refusing to shadow it is the honest move today.
+
+ucsd:res_experience a ucsd:AshResource ;
+    ucsd:resourceModule "Xaas.Ultracode.CapitalCensus.Episode" ;
+    ucsd:resourceDomain "Xaas.Ultracode" ;
+    ucsd:defaultActions "create,read,update" ;
+    ucsd:hasAttr ucsd:exp_subject, ucsd:exp_outcome, ucsd:exp_closure, ucsd:exp_shape, ucsd:exp_context .
+
+ucsd:exp_subject a ucsd:AttrSpec ; ucsd:attrName "subject" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "01" ;
+    rdfs:comment "The run/worker/epoch the episode came from." .
+ucsd:exp_outcome a ucsd:AttrSpec ; ucsd:attrName "outcome" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.FrontierOutcome" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "02" .
+ucsd:exp_closure a ucsd:AttrSpec ; ucsd:attrName "required_closure" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "03" .
+ucsd:exp_shape a ucsd:AttrSpec ; ucsd:attrName "residual_shape" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "04" .
+ucsd:exp_context a ucsd:AttrSpec ; ucsd:attrName "context" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "05" .
+
+### ExperienceCluster ############################################
+
+ucsd:res_cluster a ucsd:AshResource ;
+    ucsd:resourceModule "Xaas.Ultracode.CapitalCensus.ExperienceCluster" ;
+    ucsd:resourceDomain "Xaas.Ultracode" ;
+    ucsd:defaultActions "create,read,update" ;
+    ucsd:hasAttr ucsd:clu_closure, ucsd:clu_shape, ucsd:clu_context, ucsd:clu_count ;
+    ucsd:hasRel ucsd:clu_rel_gaps .
+
+ucsd:clu_closure a ucsd:AttrSpec ; ucsd:attrName "required_closure" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "01" .
+ucsd:clu_shape a ucsd:AttrSpec ; ucsd:attrName "residual_shape" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "02" .
+ucsd:clu_context a ucsd:AttrSpec ; ucsd:attrName "context" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "03" .
+ucsd:clu_count a ucsd:AttrSpec ; ucsd:attrName "episode_count" ; ucsd:attrType "integer" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "04" .
+ucsd:clu_rel_gaps a ucsd:RelSpec ; ucsd:relKind "has_many" ; ucsd:relName "gaps" ;
+    ucsd:relTarget "Xaas.Ultracode.CapitalCensus.Gap" ; ucsd:relRequired false .
+
+### Gap ##########################################################
+
+ucsd:res_gap a ucsd:AshResource ;
+    ucsd:resourceModule "Xaas.Ultracode.CapitalCensus.Gap" ;
+    ucsd:resourceDomain "Xaas.Ultracode" ;
+    ucsd:defaultActions "create,read,update" ;
+    ucsd:hasAttr ucsd:gap_cluster_id, ucsd:gap_closure, ucsd:gap_shape, ucsd:gap_context,
+                 ucsd:gap_class, ucsd:gap_primitive, ucsd:gap_count, ucsd:gap_falsifier, ucsd:gap_status ;
+    ucsd:hasRel ucsd:gap_rel_work_orders .
+
+ucsd:gap_cluster_id a ucsd:AttrSpec ; ucsd:attrName "experience_cluster_id" ; ucsd:attrType "uuid" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "01" ;
+    rdfs:comment "Named by the has_many destination_attribute convention of ExperienceCluster." .
+ucsd:gap_closure a ucsd:AttrSpec ; ucsd:attrName "required_closure" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "02" .
+ucsd:gap_shape a ucsd:AttrSpec ; ucsd:attrName "residual_shape" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "03" .
+ucsd:gap_context a ucsd:AttrSpec ; ucsd:attrName "context" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "04" .
+ucsd:gap_class a ucsd:AttrSpec ; ucsd:attrName "recurrence_class" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.RecurrenceClass" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "05" ;
+    rdfs:comment "HYPOTHESIS only: unknown class => enum refusal, never a guess." .
+ucsd:gap_primitive a ucsd:AttrSpec ; ucsd:attrName "primitive_target" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.PrimitiveTarget" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "06" .
+ucsd:gap_count a ucsd:AttrSpec ; ucsd:attrName "episode_count" ; ucsd:attrType "integer" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "07" .
+ucsd:gap_falsifier a ucsd:AttrSpec ; ucsd:attrName "falsifier" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "08" ;
+    rdfs:comment "The falsifier named at hypothesis time; classification without one is refused." .
+ucsd:gap_status a ucsd:AttrSpec ; ucsd:attrName "status" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.GapStatus" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "09" .
+
+ucsd:gap_rel_cluster a ucsd:RelSpec ; ucsd:relKind "belongs_to" ; ucsd:relName "cluster" ;
+    ucsd:relTarget "Xaas.Ultracode.CapitalCensus.ExperienceCluster" ; ucsd:relRequired true .
+ucsd:gap_rel_work_orders a ucsd:RelSpec ; ucsd:relKind "has_many" ; ucsd:relName "work_orders" ;
+    ucsd:relTarget "Xaas.Ultracode.CapitalCensus.WorkOrder" ; ucsd:relRequired false .
+
+### WorkOrder ####################################################
+
+ucsd:res_work_order a ucsd:AshResource ;
+    ucsd:resourceModule "Xaas.Ultracode.CapitalCensus.WorkOrder" ;
+    ucsd:resourceDomain "Xaas.Ultracode" ;
+    ucsd:defaultActions "create,read,update" ;
+    ucsd:hasAttr ucsd:wo_ticket, ucsd:wo_subject, ucsd:wo_observed, ucsd:wo_expected, ucsd:wo_residual,
+                 ucsd:wo_classification, ucsd:wo_repair, ucsd:wo_falsifier, ucsd:wo_success,
+                 ucsd:wo_provenance, ucsd:wo_status, ucsd:wo_gap_id ;
+    ucsd:hasRel ucsd:wo_rel_gap, ucsd:wo_rel_resolutions .
+
+ucsd:wo_ticket a ucsd:AttrSpec ; ucsd:attrName "ticket_id" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "01" ;
+    rdfs:comment "dcterms:identifier of the sJira projection; the markdown ticket is a RENDER of this row, never canonical." .
+ucsd:wo_subject a ucsd:AttrSpec ; ucsd:attrName "subject" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "02" .
+ucsd:wo_observed a ucsd:AttrSpec ; ucsd:attrName "observed" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "03" .
+ucsd:wo_expected a ucsd:AttrSpec ; ucsd:attrName "expected" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "04" .
+ucsd:wo_residual a ucsd:AttrSpec ; ucsd:attrName "residual" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "05" .
+ucsd:wo_classification a ucsd:AttrSpec ; ucsd:attrName "classification" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.RecurrenceClass" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "06" .
+ucsd:wo_repair a ucsd:AttrSpec ; ucsd:attrName "candidate_repair" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "07" .
+ucsd:wo_falsifier a ucsd:AttrSpec ; ucsd:attrName "falsifier" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "08" .
+ucsd:wo_success a ucsd:AttrSpec ; ucsd:attrName "success_criteria" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "09" .
+ucsd:wo_provenance a ucsd:AttrSpec ; ucsd:attrName "derived_from_receipt" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "10" ;
+    rdfs:comment "Missing provenance receipt => WorkOrder admission fails (required attribute)." .
+ucsd:wo_status a ucsd:AttrSpec ; ucsd:attrName "status" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.WorkOrderStatus" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "11" .
+ucsd:wo_gap_id a ucsd:AttrSpec ; ucsd:attrName "gap_id" ; ucsd:attrType "uuid" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "12" .
+
+ucsd:wo_rel_resolutions a ucsd:RelSpec ; ucsd:relKind "has_many" ; ucsd:relName "resolutions" ;
+    ucsd:relTarget "Xaas.Ultracode.CapitalCensus.Resolution" ; ucsd:relRequired false .
+
+### Resolution ###################################################
+
+ucsd:res_resolution a ucsd:AshResource ;
+    ucsd:resourceModule "Xaas.Ultracode.CapitalCensus.Resolution" ;
+    ucsd:resourceDomain "Xaas.Ultracode" ;
+    ucsd:defaultActions "create,read,update" ;
+    ucsd:hasAttr ucsd:rs_outcome, ucsd:rs_receipt, ucsd:rs_work_order_id .
+
+ucsd:rs_outcome a ucsd:AttrSpec ; ucsd:attrName "outcome" ; ucsd:attrType "Xaas.Ultracode.CapitalCensus.Types.ResolutionOutcome" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "01" .
+ucsd:rs_receipt a ucsd:AttrSpec ; ucsd:attrName "receipt_ref" ; ucsd:attrType "string" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "02" ;
+    rdfs:comment "No receipt, no resolution: refuted and blocked also bind evidence." .
+ucsd:rs_work_order_id a ucsd:AttrSpec ; ucsd:attrName "work_order_id" ; ucsd:attrType "uuid" ;
+    ucsd:attrRequired true ; ucsd:attrPublic true ; ucsd:attrOrder "03" .

@@ -214,6 +214,30 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert fetch_step(state2, "1").evidence == "see x | y docs"
       assert fetch_step(state2, "1").status == :done
     end
+
+    test "a WORK SURFACE line parses into the work_surface field" do
+      raw = """
+      WORK SURFACE: /Users/sac/xaas/tmp/wt
+
+      | step | status | evidence |
+      |---|---|---|
+      | 1 only step | DONE | ok |
+      """
+
+      assert {:ok, state} = State.parse(raw)
+      assert state.work_surface == "/Users/sac/xaas/tmp/wt"
+    end
+
+    test "no WORK SURFACE line parses work_surface as nil" do
+      raw = """
+      | step | status | evidence |
+      |---|---|---|
+      | 1 only step | DONE | ok |
+      """
+
+      assert {:ok, state} = State.parse(raw)
+      assert state.work_surface == nil
+    end
   end
 
   describe "State.first_actionable" do
@@ -448,6 +472,17 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       state_path: state_path,
       telemetry_path: telemetry_path
     } do
+      # The single-slot law under the concurrency default of 1.
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      on_exit(fn ->
+        if prev,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 1)
+
       File.write!(state_path, @state)
       {:ok, _run, epoch} = loop_run_with_epoch!(live_lease: true)
 
@@ -464,14 +499,192 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert telemetry_lines(telemetry_path) =~ ~s("outcome":"busy")
     end
 
-    test "a stale lease is reaped (receipted) and the tick proceeds; an unclosed worker BLOCKEDs the row",
+    test "with concurrency > 1 a step held by a live lease is skipped and the next independent step dispatches",
+         %{
+           state_path: state_path,
+           telemetry_path: telemetry_path
+         } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      on_exit(fn ->
+        if prev,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 2)
+
+      File.write!(state_path, @state)
+
+      # A live worker already holds step 3 (subject encodes step + state).
+      subject = "wave-loop:step-3@#{state_path}"
+
+      {:ok, held_run} =
+        Run
+        |> Ash.Changeset.for_create(
+          :create,
+          %{
+            goal: "loop fixture (step 3 in flight)",
+            provider: "zcode",
+            max_cycles: 1,
+            execution_policy: :wave_loop_step,
+            epoch_timeout_seconds: 7200
+          },
+          authorize?: false
+        )
+        |> Ash.create()
+
+      {:ok, held_run} =
+        held_run
+        |> Ash.Changeset.for_update(:start, %{exact_subject: subject}, authorize?: false)
+        |> Ash.update()
+
+      {:ok, held_epoch} =
+        Epoch
+        |> Ash.Query.for_read(:read_unscoped)
+        |> Ash.Query.filter(run_id == ^held_run.id and state == :expected)
+        |> Ash.read_one(authorize?: false)
+
+      {:ok, held_epoch} =
+        held_epoch
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update()
+
+      {:ok, _claimed, _token, _claim_run} =
+        Lease.claim_next("zcode", "wave-loop-fixture", epoch_id: held_epoch.id)
+
+      # The tick must NOT re-dispatch step 3: it fans to step 4.
+      test_pid = self()
+
+      assert {:ok, %{outcome: :worker_completed, step: "4"}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: fn epoch_id, _opts ->
+                   send(test_pid, {:dispatched, epoch_id})
+
+                   {:ok, epoch} =
+                     Epoch
+                     |> Ash.get(epoch_id, action: :read_unscoped, authorize?: false)
+
+                   {:ok, _} =
+                     epoch
+                     |> Ash.Changeset.for_update(
+                       :complete,
+                       %{final_head: "sha256:" <> String.duplicate("b", 64)},
+                       authorize?: false
+                     )
+                     |> Ash.update()
+
+                   {:ok, _} =
+                     Receipt
+                     |> Ash.Changeset.for_create(
+                       :seal,
+                       %{
+                         epoch_id: epoch_id,
+                         subject: epoch.exact_subject,
+                         outcome: :partial_alive,
+                         evidence: %{"head_verified" => true, "note" => "step 4 worker closed"}
+                       },
+                       authorize?: false
+                     )
+                     |> Ash.create()
+
+                   {:ok,
+                    %{
+                      status: :ok,
+                      epoch_id: epoch_id,
+                      worker_id: "zcode-test",
+                      mode: :reap,
+                      protocol: :xaas_prompt,
+                      attempts: 1,
+                      exit_code: 0,
+                      duration_ms: 5,
+                      output_tail: "closed",
+                      log_path: "/tmp/unused.log",
+                      epoch_state: :completed,
+                      receipts: [%{"outcome" => "partial_alive", "head_verified" => true}]
+                    }}
+                 end
+               )
+
+      # The dispatched run is a NEW run (step 4's), not the held one.
+      assert_received {:dispatched, new_epoch_id}
+      new_epoch = Ash.get!(Epoch, new_epoch_id, action: :read_unscoped, authorize?: false)
+      refute new_epoch.id == held_epoch.id
+      assert new_epoch.exact_subject == "wave-loop:step-4@#{state_path}"
+    end
+
+    test "provider overload in the telemetry window drains the tick before dispatch", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, @state)
+      ts = DateTime.utc_now() |> DateTime.to_iso8601()
+
+      hits =
+        Enum.map_join(1..3, "\n", fn i ->
+          Jason.encode!(%{
+            kind: "ultracode-wave-loop/1",
+            outcome: "worker_unclosed",
+            step: "3",
+            tick: i,
+            ts: ts,
+            receipt: %{reason: "worker turn failed: z.ai error 1302 rate limit"}
+          })
+        end)
+
+      File.write!(telemetry_path, hits <> "\n")
+
+      assert {:ok, %{outcome: :busy, step: nil}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: flunk_dispatcher()
+               )
+
+      assert File.read!(telemetry_path) =~ "provider overload detected"
+    end
+
+    test "overload signatures outside the window do not drain the tick", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, @state)
+      old_ts = DateTime.add(DateTime.utc_now(), -90 * 60, :second) |> DateTime.to_iso8601()
+
+      hits =
+        Enum.map_join(1..3, "\n", fn i ->
+          Jason.encode!(%{
+            kind: "ultracode-wave-loop/1",
+            outcome: "worker_unclosed",
+            step: "3",
+            tick: i,
+            ts: old_ts,
+            receipt: %{reason: "worker turn failed: z.ai error 1302 rate limit"}
+          })
+        end)
+
+      File.write!(telemetry_path, hits <> "\n")
+
+      assert {:ok, %{outcome: outcome}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: flunk_dispatcher()
+               )
+
+      refute outcome == :busy
+    end
+
+    test "a stale lease is reclaimed and an unclosed worker requeues the work item",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
       {:ok, stale_run, _stale_epoch} = loop_run_with_epoch!(live_lease: false)
 
       fake_dispatch = fn _epoch_id, _opts ->
-        # The worker "exited 0" but never closed the epoch: the loop must
-        # reap it (Engine semantics) and mark the row BLOCKED, never DONE.
+        # The worker "exited 0" but never closed the epoch: the attempt is
+        # reclaimed, but the higher-level work item remains pending.
         {:ok,
          %{
            status: :ok,
@@ -497,7 +710,7 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                  dispatcher: fake_dispatch
                )
 
-      assert outcome == :blocked
+      assert outcome == :requeued
 
       # The stale epoch from the "previous tick" is reaped...
       stale_epoch =
@@ -505,8 +718,8 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert stale_epoch.state == :failed
 
-      # ...and this tick's fresh run exists too; its unclosed epoch is
-      # reaped with a receipt (Engine semantics, never a silent drop).
+      # ...and this tick's fresh run exists too; its unclosed attempt is
+      # reclaimed with a receipt (never a silent drop).
       runs = loop_runs()
       assert length(runs) == 2
       new_run = Enum.find(runs, &(&1.id != stale_run.id))
@@ -522,13 +735,15 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert [%Receipt{} = receipt] = receipts
       assert receipt.outcome == :refused
-      assert receipt.evidence["reaped_by"] == "xaas-wave-loop"
+      assert receipt.evidence["reclaimed_by"] == "xaas-lease-kernel"
+      assert receipt.evidence["reclaim_reason"] == "worker_unclosed"
 
-      # The STATE row is BLOCKED with the tick stamp; telemetry records it.
+      # Attempt failure does not poison the work item: the row stays
+      # pending and telemetry records the requeue.
       {:ok, state} = state_path |> File.read!() |> State.parse()
-      assert fetch_step(state, "3").status == :blocked
-      assert File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
-      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"blocked")
+      assert fetch_step(state, "3").status == :pending
+      refute File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
+      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"requeued")
     end
 
     test "a completed worker advances the STATE row, shrinks the note, and appends telemetry",
@@ -630,6 +845,68 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert telemetry_lines(telemetry_path) |> String.split("\n", trim: true) |> length() == 2
     end
 
+    test "a dispatch task that is KILLED does not take the tick down: typed reclaim + requeue (v26.9.27)",
+         %{state_path: state_path, telemetry_path: telemetry_path} do
+      File.write!(state_path, @state)
+
+      killer = fn _epoch_id, _opts -> Process.exit(self(), :kill) end
+
+      assert {:ok, %{outcome: :requeued, step: "3", receipt: receipt}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: killer
+               )
+
+      assert receipt.outcome =~ "dispatch_task_died"
+      [%Run{} = run] = loop_runs()
+      epoch = only_epoch!(run)
+      assert epoch.state == :failed
+      refute File.read!(state_path) =~ "BLOCKED (wave-loop tick 1"
+      assert telemetry_lines(telemetry_path) =~ ~s("outcome":"requeued")
+    end
+
+    test "a dispatch that overruns the stream budget is killed and reclaimed as :dispatch_timeout (v26.9.27)",
+         %{state_path: state_path, telemetry_path: telemetry_path} do
+      File.write!(state_path, @state)
+
+      prev_timeout = Application.get_env(:xaas, :ultracode_wave_loop_timeout_seconds)
+      prev_grace = Application.get_env(:xaas, :ultracode_wave_loop_dispatch_grace_seconds)
+      Application.put_env(:xaas, :ultracode_wave_loop_timeout_seconds, 1)
+      Application.put_env(:xaas, :ultracode_wave_loop_dispatch_grace_seconds, 0)
+
+      on_exit(fn ->
+        restore_env(:ultracode_wave_loop_timeout_seconds, prev_timeout)
+        restore_env(:ultracode_wave_loop_dispatch_grace_seconds, prev_grace)
+      end)
+
+      parent = self()
+
+      wedged = fn _epoch_id, opts ->
+        send(parent, {:dispatch_opts, opts})
+        Process.sleep(30_000)
+      end
+
+      started = System.monotonic_time(:millisecond)
+
+      assert {:ok, %{outcome: :requeued, receipt: receipt}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: wedged
+               )
+
+      assert System.monotonic_time(:millisecond) - started < 10_000
+      assert receipt.outcome =~ "dispatch_timeout"
+
+      # The caller-owned absolute deadline reached the dispatch boundary.
+      assert_received {:dispatch_opts, opts}
+      assert is_integer(Keyword.fetch!(opts, :deadline_at_ms))
+
+      [%Run{} = run] = loop_runs()
+      assert only_epoch!(run).state == :failed
+    end
+
     test "the loop runs the REAL Dispatch boundary with a scripted CLI worker (hermetic)",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
@@ -644,7 +921,9 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       cli_dir = fake_cli_dir(script)
 
-      assert {:ok, %{outcome: :blocked}} =
+      # The worker exits without closing its epoch: the attempt is reclaimed
+      # through Lease.reclaim_epoch/4 and the work is requeued (v26.9.27).
+      assert {:ok, %{outcome: :requeued}} =
                WaveLoop.tick(
                  state_path: state_path,
                  telemetry_path: telemetry_path,
@@ -673,6 +952,68 @@ defmodule Xaas.Ultracode.WaveLoopTest do
                hd(loop_runs())
     end
 
+    test "a worker that closes blocked leaves the row BLOCKED, never DONE", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, @state)
+
+      fake_dispatch = fn epoch_id, _opts ->
+        {:ok, epoch} = Epoch |> Ash.get(epoch_id, action: :read_unscoped, authorize?: false)
+
+        {:ok, _} =
+          epoch
+          |> Ash.Changeset.for_update(
+            :complete,
+            %{final_head: "sha256:" <> String.duplicate("c", 64)},
+            authorize?: false
+          )
+          |> Ash.update()
+
+        {:ok, _} =
+          Receipt
+          |> Ash.Changeset.for_create(
+            :seal,
+            %{
+              epoch_id: epoch_id,
+              subject: epoch.exact_subject,
+              outcome: :blocked,
+              evidence: %{"head_verified" => true, "note" => "worker typed the work blocked"}
+            },
+            authorize?: false
+          )
+          |> Ash.create()
+
+        {:ok,
+         %{
+           status: :ok,
+           epoch_id: epoch_id,
+           worker_id: "zcode-test",
+           mode: :reap,
+           protocol: :xaas_prompt,
+           attempts: 1,
+           exit_code: 0,
+           duration_ms: 5,
+           output_tail: "closed blocked",
+           log_path: "/tmp/unused.log",
+           prompt: nil,
+           epoch_state: :completed,
+           receipts: [%{"outcome" => "blocked", "head_verified" => true}]
+         }}
+      end
+
+      assert {:ok, %{outcome: :blocked, step: "3"}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: fake_dispatch
+               )
+
+      {:ok, state} = state_path |> File.read!() |> State.parse()
+      assert fetch_step(state, "3").status == :blocked
+      refute fetch_step(state, "3").status == :done
+    end
+
     test "a dispatcher-level typed refusal leaves the row pending for the next tick",
          %{state_path: state_path, telemetry_path: telemetry_path} do
       File.write!(state_path, @state)
@@ -695,6 +1036,37 @@ defmodule Xaas.Ultracode.WaveLoopTest do
   # ------------------------------------------------------------------
   # Consolidated runtime paths
   # ------------------------------------------------------------------
+
+  describe "lease_live?/2 claim grace (v26.9.27)" do
+    test "a constructed, unclaimed epoch inside the claim grace is live; outside it is stale" do
+      now = DateTime.utc_now()
+      fresh = %Epoch{lease_token: nil, inserted_at: DateTime.add(now, -10, :second)}
+      old = %Epoch{lease_token: nil, inserted_at: DateTime.add(now, -301, :second)}
+
+      assert WaveLoop.lease_live?(fresh, now)
+      refute WaveLoop.lease_live?(old, now)
+    end
+
+    test "a claimed epoch is live exactly while its lease is unexpired (grace does not apply)" do
+      now = DateTime.utc_now()
+      constructed = DateTime.add(now, -5, :second)
+
+      live = %Epoch{
+        lease_token: "t",
+        lease_expires_at: DateTime.add(now, 60, :second),
+        inserted_at: constructed
+      }
+
+      expired = %Epoch{
+        lease_token: "t",
+        lease_expires_at: DateTime.add(now, -1, :second),
+        inserted_at: constructed
+      }
+
+      assert WaveLoop.lease_live?(live, now)
+      refute WaveLoop.lease_live?(expired, now)
+    end
+  end
 
   describe "consolidated runtime paths" do
     # Root consolidation (2026-09-21): the loop's STATE + telemetry files
@@ -756,14 +1128,16 @@ defmodule Xaas.Ultracode.WaveLoopTest do
 
       assert entry, "no crontab entry for Xaas.Ultracode.Run.Workers.WaveLoop"
       {cron, _worker, _entry_opts} = entry
-      assert to_string(cron) == "0 * * * *"
+      assert to_string(cron) == "*/5 * * * *"
     end
 
-    test "generated worker is routed to the single-slot queue with incomplete-job uniqueness" do
+    test "generated worker is routed to the loop queue with incomplete-job uniqueness" do
       queues = Application.fetch_env!(:xaas, Oban)[:queues]
       worker_opts = Xaas.Ultracode.Run.Workers.WaveLoop.__opts__()
 
-      assert queues[:ultracode_wave_loop] == 1
+      assert queues[:ultracode_wave_loop] ==
+               Application.get_env(:xaas, :ultracode_wave_loop_concurrency, 1)
+
       assert worker_opts[:queue] == :ultracode_wave_loop
       assert worker_opts[:unique][:period] == :infinity
       assert worker_opts[:unique][:states] == :incomplete
@@ -788,9 +1162,272 @@ defmodule Xaas.Ultracode.WaveLoopTest do
     end
   end
 
+  describe "adaptive concurrency + work-conserving chain (P0.3/P0.4)" do
+    setup do
+      # ExUnit shuffles; width config leaks would poison neighbors. Every
+      # test in this describe starts from the DEFAULT (width 1) config.
+      Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      Application.delete_env(:xaas, :ultracode_wave_loop_concurrency_max)
+
+      on_exit(fn ->
+        Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+        Application.delete_env(:xaas, :ultracode_wave_loop_concurrency_max)
+      end)
+
+      :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+      Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
+
+      %{
+        state_path: tmp_path("state", ".md"),
+        telemetry_path: tmp_path("telemetry", ".ndjson")
+      }
+    end
+
+    test "effective width narrows per in-window pressure signature and ignores aged-out ones", %{
+      telemetry_path: telemetry_path
+    } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      on_exit(fn ->
+        if prev,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 3)
+
+      now = DateTime.utc_now() |> DateTime.to_iso8601()
+      stale = DateTime.add(DateTime.utc_now(), -20 * 60, :second) |> DateTime.to_iso8601()
+
+      File.write!(telemetry_path, "")
+      # Growth is opt-in (:ultracode_wave_loop_concurrency_max defaults to
+      # the configured base), so a clean window at base stays at base.
+      assert 3 == WaveLoop.effective_concurrency(telemetry_path)
+
+      File.write!(
+        telemetry_path,
+        pressure_line(now, "1302") <>
+          pressure_line(now, "429") <>
+          pressure_line(stale, "1302"),
+        [:append]
+      )
+
+      # 2 in-window signatures narrow the effective width by exactly the
+      # in-window count (3 - 2); aged-out signatures count for nothing
+      # (2026-09-27 fleet sweep).
+      assert 1 == WaveLoop.effective_concurrency(telemetry_path)
+    end
+
+    test "setpoint law: grow clean / hold 1-2 / drain -4 at >=3, floor and ceiling clamp", %{
+      telemetry_path: telemetry_path
+    } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      assert WaveLoop.setpoint(3, 0, 10, 1) == 4
+      assert WaveLoop.setpoint(10, 0, 10, 1) == 10
+      assert WaveLoop.setpoint(6, 1, 10, 1) == 6
+      assert WaveLoop.setpoint(6, 2, 10, 1) == 6
+      assert WaveLoop.setpoint(6, 3, 10, 1) == 2
+      assert WaveLoop.setpoint(2, 3, 10, 1) == 1
+      assert WaveLoop.setpoint(2, 5, 10, 4) == 4
+      assert WaveLoop.setpoint(9, 4, 10, 1) == 5
+
+      # Persistence: consecutive clean calls keep growing (+1 per window),
+      # and the setpoint file lives beside the telemetry.
+      File.write!(telemetry_path, "")
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 2)
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency_max, 4)
+
+      on_exit(fn ->
+        for key <- [:ultracode_wave_loop_concurrency, :ultracode_wave_loop_concurrency_max] do
+          if prev_val = Application.get_env(:xaas, key),
+            do: Application.put_env(:xaas, key, prev_val),
+            else: Application.delete_env(:xaas, key)
+        end
+      end)
+
+      assert 3 == WaveLoop.effective_concurrency(telemetry_path)
+      assert 4 == WaveLoop.effective_concurrency(telemetry_path)
+      # ceiling clamps
+      assert 4 == WaveLoop.effective_concurrency(telemetry_path)
+      # The setpoint file is keyed by the telemetry path (setpoint_path/1);
+      # the old fixed "wave-setpoint.txt" name only passed via a stale file.
+      assert File.read!(WaveLoop.setpoint_path(telemetry_path)) == "4"
+    end
+
+    test "one tick dispatches every ready step up to width, settles serially", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      prev = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+
+      on_exit(fn ->
+        if prev,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      prev_max = Application.get_env(:xaas, :ultracode_wave_loop_concurrency_max)
+      prev_base = Application.get_env(:xaas, :ultracode_wave_loop_concurrency)
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency, 3)
+      Application.put_env(:xaas, :ultracode_wave_loop_concurrency_max, 3)
+
+      on_exit(fn ->
+        if prev_max,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency_max, prev_max),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency_max)
+
+        if prev_base,
+          do: Application.put_env(:xaas, :ultracode_wave_loop_concurrency, prev_base),
+          else: Application.delete_env(:xaas, :ultracode_wave_loop_concurrency)
+      end)
+
+      File.write!(state_path, @state)
+
+      {:ok, report} =
+        WaveLoop.tick(
+          state_path: state_path,
+          telemetry_path: telemetry_path,
+          dispatcher: closing_dispatch()
+        )
+
+      assert report.outcome == :worker_completed
+
+      # BOTH no-dep steps (3 and 4) started and closed in this one tick.
+      lines = telemetry_lines(telemetry_path) |> String.split("\n", trim: true)
+      completed = Enum.filter(lines, &(&1 =~ ~s("outcome":"worker_completed")))
+      assert length(completed) == 2
+      assert Enum.any?(completed, &(&1 =~ ~s("step":"3")))
+      assert Enum.any?(completed, &(&1 =~ ~s("step":"4")))
+
+      # Both rows advanced.
+      state = File.read!(state_path)
+      assert state =~ "3 branch integrations | DONE"
+      assert state =~ "4 sole-source fold | DONE"
+    end
+
+    test "chain decision: consumes a step + owes steps + no storm => chain" do
+      assert WaveLoop.chain_decision(:worker_completed, true, false)
+      refute WaveLoop.chain_decision(:busy, true, false)
+      refute WaveLoop.chain_decision(:worker_completed, false, false)
+      refute WaveLoop.chain_decision(:worker_completed, true, true)
+      refute WaveLoop.chain_decision(:complete, false, false)
+    end
+
+    test "a worker_completed tick attempts the chain insert without crashing the settle", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, @state)
+
+      assert {:ok, %{outcome: :worker_completed}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: closing_dispatch()
+               )
+    end
+
+    test "a complete STATE never chains", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      File.write!(state_path, complete_state())
+
+      assert {:ok, %{outcome: :complete}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: flunk_dispatcher()
+               )
+
+      # The decision seam pins the never-chain law; see chain_decision test.
+      refute WaveLoop.chain_decision(:complete, false, false)
+    end
+
+    test "a worker killed mid-turn (SIGKILL) settles the row typed and reclaims the epoch", %{
+      state_path: state_path,
+      telemetry_path: telemetry_path
+    } do
+      import Ecto.Query
+
+      File.write!(state_path, @state)
+
+      # A real dispatch whose worker binary kills its own shell instantly:
+      # the dead-worker family (P0.2) must settle typed, never wedge.
+      kill_dir = fake_cli_dir("kill -9 $$\n")
+
+      # node_path must be a real node (Dispatch probes `--version`); the
+      # fake bin is a shell script killed by its own first line.
+      node = System.get_env("ZCODE_NODE_TEST") || "/opt/homebrew/bin/node"
+
+      dispatcher = fn epoch_id, _opts ->
+        Xaas.Ultracode.Dispatch.dispatch(epoch_id,
+          provider: "zcode",
+          cli_dir: kill_dir,
+          node_path: node,
+          timeout_seconds: 30
+        )
+      end
+
+      assert {:ok, %{outcome: outcome, step: "3"}} =
+               WaveLoop.tick(
+                 state_path: state_path,
+                 telemetry_path: telemetry_path,
+                 dispatcher: dispatcher
+               )
+
+      # A dead worker is either observed after spawn (:requeued) or the
+      # boundary refuses before spawn (:dispatch_refused). Both terminalize
+      # the disposable attempt and leave the work recoverable.
+      assert outcome in [:requeued, :dispatch_refused]
+
+      telemetry = telemetry_lines(telemetry_path)
+
+      assert telemetry =~ ~s("outcome":"requeued") or
+               telemetry =~ ~s("outcome":"dispatch_refused")
+
+      # Reclaim: no epoch of this run is left running/expected with a live
+      # lease — the slot is free for the next tick without manual SQL.
+      assert [%Run{id: run_id}] = loop_runs()
+
+      live =
+        Xaas.Repo.all(
+          from(e in "ultracode_epochs",
+            where: e.run_id == ^Ecto.UUID.dump!(run_id) and e.state in ["running", "expected"],
+            select: e.id
+          )
+        )
+
+      assert [] == live
+    end
+
+    defp pressure_line(ts, code) do
+      Jason.encode!(%{
+        "ts" => ts,
+        "kind" => "ultracode-wave-loop/1",
+        "outcome" => "rate_limited",
+        "receipt" => %{"evidence" => "provider rate-kill code=#{code} too many requests"}
+      }) <> "\n"
+    end
+  end
+
   # ------------------------------------------------------------------
   # Fixtures + helpers
   # ------------------------------------------------------------------
+
+  defp restore_env(key, nil), do: Application.delete_env(:xaas, key)
+  defp restore_env(key, value), do: Application.put_env(:xaas, key, value)
+
+  defp only_epoch!(%Run{id: run_id}) do
+    [epoch] =
+      Epoch
+      |> Ash.Query.for_read(:read_unscoped)
+      |> Ash.Query.filter(run_id == ^run_id)
+      |> Ash.read!(authorize?: false)
+
+    epoch
+  end
 
   defp flunk_dispatcher do
     fn _epoch_id, _opts -> flunk("the loop must not dispatch in this test") end
@@ -984,7 +1621,13 @@ defmodule Xaas.Ultracode.WaveLoopTest do
         "wave-loop-test-#{label}-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive])}#{suffix}"
       )
 
-    on_exit(fn -> File.rm_rf(path) end)
+    # WaveLoop derives its OCEL evidence file from the telemetry path
+    # (<rootname>.ocel.ndjson); remove it with the telemetry file.
+    on_exit(fn ->
+      File.rm_rf(path)
+      File.rm_rf(Path.rootname(path) <> ".ocel.ndjson")
+    end)
+
     path
   end
 end

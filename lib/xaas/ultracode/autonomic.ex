@@ -67,6 +67,7 @@ defmodule Xaas.Ultracode.Autonomic do
   require Logger
 
   alias Xaas.Ultracode.{
+    CapabilityResolver,
     Epoch,
     ItemRuns,
     Lease,
@@ -140,18 +141,133 @@ defmodule Xaas.Ultracode.Autonomic do
     with {:ok, items} <- sense(ctx) do
       ledger(ctx, :sensed, %{items: Enum.map(items, & &1["id"])})
 
+      # THE CAPABILITY-RESOLUTION COURT (between sensing and coding): an
+      # item reaches the coding worker ONLY when the resolver proves no
+      # existing capability or lawful composition satisfies it (`:frontier`).
+      # Non-frontier verdicts are EXECUTED deterministically
+      # (`CapabilityResolver.Execution`): `:reuse` binds the prior subject
+      # as a `:known_replay`; compose/extend/generate are receipted typed
+      # `{:unsupported, _}` (the generation executor is not wired).
+      # `:unresolved` (a configured source errored/skipped) is BLOCKED.
       results =
-        items
-        |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
-          process_item(item, Map.merge(ctx, sem_ctx))
-        end)
-        |> Enum.zip(items)
-        |> Enum.map(fn
-          {{:ok, result}, _item} -> result
-          {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
+        resolve_and_dispatch(items, ctx, fn frontier_items ->
+          frontier_items
+          |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
+            process_item(item, Map.merge(ctx, sem_ctx))
+          end)
+          |> Enum.zip(frontier_items)
+          |> Enum.map(fn
+            {{:ok, result}, _item} -> result
+            {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
+          end)
         end)
 
       finish(ctx, items, results)
+    end
+  end
+
+  @doc """
+  The court + dispatch seam of `run/1`: resolves `items`, executes the
+  non-frontier verdicts, and calls `dispatcher` (a 1-arity function over
+  the frontier item list returning per-item results) ONLY when at least
+  one item is `:frontier`. Returns resolved results followed by the
+  dispatcher's results.
+  """
+  @spec resolve_and_dispatch([map()], map(), ([map()] -> [map()])) :: [map()]
+  def resolve_and_dispatch(items, ctx, dispatcher) when is_function(dispatcher, 1) do
+    {frontier_items, resolved_results} = resolve_capabilities(items, ctx)
+
+    dispatched =
+      case frontier_items do
+        [] -> []
+        frontier -> dispatcher.(frontier)
+      end
+
+    resolved_results ++ dispatched
+  end
+
+  @doc false
+  def resolve_capabilities(items, ctx) do
+    if Map.get(ctx, :capability_resolution, true) == false do
+      Logger.warning(
+        "[ultracode] capability resolution court BYPASSED (capability_resolution: false) -- " <>
+          "items dispatch to workers with no fleet-capability check"
+      )
+
+      ledger(ctx, :capability_resolution_bypassed, %{items: Enum.map(items, & &1["id"])})
+      {items, []}
+    else
+      receipts = CapabilityResolver.resolve_items(items, ctx)
+
+      # The resolution receipt is durable BEFORE the dispatch stage: no
+      # worker can claim an item whose resolution receipt is not on disk.
+      path = Path.join(ctx.out_dir, "capability-resolutions.ndjson")
+      CapabilityResolver.Receipt.persist(receipts, path)
+
+      # Deterministic execution of the non-frontier verdicts, appended to
+      # the SAME receipt file (schema xaas.capability-execution-record/1).
+      executions = CapabilityResolver.Execution.execute_all(receipts)
+      CapabilityResolver.Execution.append(executions, path)
+      by_item = Map.new(executions, &{&1.item_id, &1})
+
+      if executions != [] do
+        ledger(ctx, :capability_execution, %{
+          receipt: path,
+          outcomes:
+            Map.new(executions, fn e ->
+              {e.item_id, CapabilityResolver.Execution.outcome_json(e.outcome)}
+            end)
+        })
+      end
+
+      ledger(ctx, :capability_resolution, %{
+        receipt: path,
+        classes:
+          Map.new(Enum.group_by(receipts, & &1.class), fn {class, rs} ->
+            {Atom.to_string(class), Enum.map(rs, & &1.item_id)}
+          end)
+      })
+
+      Enum.zip(items, receipts)
+      |> Enum.flat_map_reduce([], fn {item, receipt}, acc ->
+        case receipt.class do
+          :frontier ->
+            {[item], acc}
+
+          :unresolved ->
+            {[],
+             [
+               %{
+                 item: item["id"],
+                 status: :blocked,
+                 reason: "capability_resolution_unresolved",
+                 attempts: 0,
+                 history: []
+               }
+               | acc
+             ]}
+
+          class ->
+            execution = Map.get(by_item, item["id"])
+
+            {[],
+             [
+               %{
+                 item: item["id"],
+                 status: :satisfied_existing,
+                 reason:
+                   "satisfied_by_existing_capability (#{class}: " <>
+                     Enum.join(receipt.selected_capabilities, ", ") <> ")",
+                 outcome: execution && execution.outcome,
+                 replay_of: execution && execution.subject,
+                 attempts: 0,
+                 history: []
+               }
+               | acc
+             ]}
+        end
+      end)
+      |> then(fn {frontier, resolved} -> {frontier, Enum.reverse(resolved)} end)
     end
   end
 
@@ -193,8 +309,9 @@ defmodule Xaas.Ultracode.Autonomic do
     # {:ok, result} | {:exit, reason} per item, aligned with `items` by
     # order -- exactly this function's contract.
     results =
-      items
-      |> Task.async_stream(
+      Xaas.Ultracode.TaskSupervisor
+      |> Task.Supervisor.async_stream_nolink(
+        items,
         fn item -> fun.(item, %{sem: sem}) end,
         max_concurrency: max(capacity, 1),
         timeout: :infinity,
@@ -850,58 +967,38 @@ defmodule Xaas.Ultracode.Autonomic do
   defp reap(epoch, ctx) do
     ledger(ctx, :reap, %{epoch_id: epoch.id, leased: not is_nil(epoch.lease_token)})
 
-    if epoch.lease_token do
-      case Lease.refuse(epoch.lease_token, :worker_no_close, %{"reaped_by" => "xaas-autonomic"}) do
-        {:ok, _epoch, _receipt} ->
-          :ok
+    opts =
+      if is_binary(epoch.lease_token),
+        do: [expected_lease_token: epoch.lease_token],
+        else: []
 
-        _refusal_error ->
-          # PERMANENT TRIPWIRE (observed falsifier 2026-09-21, Campaign 3
-          # wave 1 -- run_validate `missing_terminal` on epoch 7b54bd5c):
-          # the worker's lease TTL expired before it vanished, so
-          # `refuse/3` errors with `{:lease_expired, token}` and CANNOT
-          # terminate the epoch. The result used to be discarded (`_ =`),
-          # leaving a stuck-claimed epoch no receipt accounted for. The
-          # `terminal epoch => receipt` invariant is enforced here
-          # unconditionally: whatever the refusal outcome, the epoch ends
-          # terminal with its refused receipt.
-          mark_failed_and_seal(epoch)
-      end
-    else
-      # No live lease to refuse through -- same terminal disposition, and
-      # the SAME receipt invariant (`terminal epoch => receipt`): before
-      # this seal, a worker that died un-claimed left a `:failed` epoch
-      # with no receipt at all.
-      mark_failed_and_seal(epoch)
-    end
+    case Lease.reclaim_epoch(
+           epoch.id,
+           :worker_unclosed,
+           %{"observer" => "xaas-autonomic"},
+           opts
+         ) do
+      {:reclaimed, _failed, _receipt} ->
+        {:failed, "worker ended without closing the lease"}
 
-    {:failed, "worker ended without closing the lease"}
-  end
+      {:already_terminal, :completed} ->
+        # Closure won the race after settle/2's first read. Re-read through
+        # the normal evidence judge; do not turn success into a failure.
+        settle(epoch, ctx)
 
-  # The direct terminal seal (no live lease, or a refusal that could not
-  # terminate the epoch): `:failed` epoch + a refused receipt carrying the
-  # reason.
-  defp mark_failed_and_seal(epoch) do
-    case epoch
-         |> Ash.Changeset.for_update(:mark_failed, %{}, authorize?: false)
-         |> Ash.update() do
-      {:ok, failed} ->
-        Receipt
-        |> Ash.Changeset.for_create(
-          :seal,
-          %{
-            epoch_id: failed.id,
-            subject: failed.exact_subject,
-            outcome: :refused,
-            evidence: %{"reaped_by" => "xaas-autonomic", "refusal_reason" => "worker_no_close"},
-            sealed_at: DateTime.utc_now()
-          },
-          authorize?: false
-        )
-        |> Ash.create()
+      {:already_terminal, _state} ->
+        {:failed, "worker ended without closing the lease"}
 
-      {:error, _} ->
-        {:error, :reap_failed}
+      :handed_off ->
+        # Ownership changed after our observation. Never revoke the new
+        # owner's capability; surface a retryable attempt failure instead.
+        {:failed, "worker ownership changed before reclaim"}
+
+      {:settle_race, observed} ->
+        {:failed, "worker reclaim raced with epoch state #{observed}"}
+
+      {:error, reason} ->
+        {:failed, "worker reclaim failed: #{inspect(reason)}"}
     end
   end
 
@@ -1073,8 +1170,15 @@ defmodule Xaas.Ultracode.Autonomic do
               :receipt_id,
               :executor,
               :fabric_verifier,
-              :reason
+              :reason,
+              :outcome,
+              :replay_of
             ])
+            |> then(fn m ->
+              if Map.has_key?(m, :outcome),
+                do: Map.update!(m, :outcome, &CapabilityResolver.Execution.outcome_json/1),
+                else: m
+            end)
             |> Map.put(:repo, repo_of(r, by_id, ctx))
             |> Map.put(:history, Enum.map(r.history, &stringify/1))
             |> Map.new(fn {k, v} -> {to_string(k), v} end)

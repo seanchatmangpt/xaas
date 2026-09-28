@@ -35,14 +35,33 @@ const [, , cmd, payload, ...rest] = process.argv;
 const force = rest.includes("--force");
 
 const STATE_DIR = path.join(tmpdir(), {{ proto[0].stateDir | json_encode }});
-const file = path.join(
-  STATE_DIR,
-  `${createHash("sha256").update(process.cwd()).digest("hex")}.json`
-);
+// Per-epoch keying: when the dispatcher set XAAS_LEASE_ID, the worker's own
+// state lives at the -<id>-suffixed path (zcode-cli gall-work.ts
+// leaseFilePathsKeyed; the PreToolUse gate reads the same key first). This
+// CLI must address the SAME key or a keyed worker cannot recover its lease
+// across tool calls. The legacy per-cwd path stays as fallback so
+// non-keyed sessions are byte-identical in behavior.
+const hash = createHash("sha256").update(process.cwd()).digest("hex");
+const leaseId = (process.env.XAAS_LEASE_ID ?? "").trim().replace(/[^A-Za-z0-9._-]/g, "_");
+const keyedFile = leaseId ? path.join(STATE_DIR, `${hash}-${leaseId}.json`) : null;
+const legacyFile = path.join(STATE_DIR, `${hash}.json`);
+const file = keyedFile ?? legacyFile;
+
+async function readFirstExisting() {
+  for (const candidate of keyedFile ? [keyedFile, legacyFile] : [legacyFile]) {
+    try {
+      return await readFile(candidate, "utf8");
+    } catch {
+      // try the next candidate key
+    }
+  }
+  return null;
+}
 
 async function readExistingLease() {
   try {
-    return JSON.parse(await readFile(file, "utf8"));
+    const raw = await readFirstExisting();
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -90,13 +109,12 @@ if (cmd === "save") {
   await writeFile(file, payload, { mode: 0o600 });
   process.stdout.write("saved\n");
 } else if (cmd === "get") {
-  try {
-    process.stdout.write(await readFile(file, "utf8"));
-  } catch {
-    process.stdout.write("null\n");
-  }
+  const raw = await readFirstExisting();
+  process.stdout.write(raw ?? "null\n");
 } else if (cmd === "clear") {
-  await rm(file, { force: true });
+  for (const candidate of keyedFile ? [keyedFile, legacyFile] : [legacyFile]) {
+    await rm(candidate, { force: true });
+  }
   process.stdout.write("cleared\n");
 } else {
   process.stderr.write("usage: {{ proto[0].script }} save '<json>' | get | clear\n");

@@ -117,7 +117,7 @@ defmodule Xaas.Ultracode.LeaseTest do
 
       Application.put_env(:xaas, :ultracode_provider_tools, %{
         strict_provider => ~w(Edit Read),
-        broad_provider => ~w(Edit Read WebFetch)
+        broad_provider => ~w(Edit Read Grep)
       })
 
       on_exit(fn ->
@@ -134,14 +134,14 @@ defmodule Xaas.Ultracode.LeaseTest do
       provider_run_and_epoch(broad_provider)
       {:ok, _epoch, broad_token, _run} = Lease.claim_next(broad_provider, "worker-broad")
 
-      # "WebFetch" is legitimately admitted for the broad provider's lease...
-      assert {:ok, %{decision: :allow}} = Lease.admit_tool(broad_token, "WebFetch")
+      # "Grep" is legitimately admitted for the broad provider's lease...
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(broad_token, "Grep")
 
       # ...but the SAME tool name is refused when the request actually
       # comes from a different provider's lease -- never silently allowed
       # just because some other provider's lease would have allowed it.
-      assert {:error, {:unknown_tool_class, "WebFetch"}} =
-               Lease.admit_tool(strict_token, "WebFetch")
+      assert {:error, {:unknown_tool_class, "Grep"}} =
+               Lease.admit_tool(strict_token, "Grep")
 
       # A tool both providers share is still allowed for both.
       assert {:ok, %{decision: :allow}} = Lease.admit_tool(strict_token, "Edit")
@@ -154,7 +154,11 @@ defmodule Xaas.Ultracode.LeaseTest do
       {:ok, _epoch, token, _run} = Lease.claim_next(provider, "worker-1")
 
       assert {:ok, %{decision: :allow}} = Lease.admit_tool(token, "Edit")
-      assert {:ok, %{decision: :allow}} = Lease.admit_tool(token, "WebFetch")
+      assert {:ok, %{decision: :allow}} = Lease.admit_tool(token, "Grep")
+      # WebFetch left the default vocabulary: runtime-surface policy routes
+      # external reads through SA2A, never a direct lease-admitted edge.
+      assert {:error, {:forbidden_external_semantic_edge, %{"to" => "WebFetch"}}} =
+               Lease.admit_tool(token, "WebFetch")
     end
 
     # Falsifier for the fence-order gap the adversarial review found: the

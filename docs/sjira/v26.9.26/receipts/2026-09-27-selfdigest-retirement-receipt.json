@@ -1,0 +1,57 @@
+{
+  "receipt": "self-improvement/1",
+  "id": "GC-26927-SELFDIGEST-RETIREMENT",
+  "issued": "2026-09-27",
+  "title": "First Capital Census self-improvement: handwritten SelfDigest retired to pack-manufactured Ash",
+  "subject": {
+    "repo": "xaas",
+    "branch": "feat/alooop-lane2-autonomic-loop",
+    "base_commit": "4a2e9d11",
+    "head_commit": "0a4e1a0a",
+    "salvage_note": "concurrent merge-day executor committed the in-flight iteration as 0a4e1a0a (preserve/salvage); wrap-up follows on top"
+  },
+  "what_happened": {
+    "diagnosis": "the system violated its own manufacturing doctrine in the code intended to make it self-improving: SelfDigest (4a2e9d1) hardcoded the G-table as an Elixir map, hand-wrote Ash resources, and unit-tested constants — mu on unadmitted literals",
+    "corrections_applied": [
+      "operator correction 1: spike, not implementation — keep only frontier_ratio arithmetic",
+      "operator correction 2: Ash is the runtime spine — ontology is the constitution, Ash the executable state",
+      "operator correction 3: not packs for apps — semantic capital lives in a consumer-owned project pack; search existing packs first",
+      "operator correction 4 (mid-task): look at Ash's own mix generators — compose ash.gen.enum/ash.gen.resource/ash.extend instead of re-rendering Ash DSL in bespoke templates; also ash_r2rml (one subject: SQL/Ash/SPARQL) and ash_oban (digest as a cron trigger, remaining)"
+    ],
+    "manufactured": [
+      "priv/ggen/ultracode-self-digest-pack: ontology.ttl (12 concepts, 9 relations, G-table as 10 RecurrenceClass + 10 PrimitiveTarget individuals, 3 classified ResidualShapes, 6 FrontierOutcomes, DigestSpec threshold 3), 7 SPARQL queries, Facts template, qualification falsifier corpus",
+      "lib/mix/tasks/xaas.ash.gen.ex: GENERIC bridge — ontology rows -> Igniter.compose_task(ash.gen.enum, ash.gen.resource, ash.extend postgres)",
+      "manufactured state: 6 Ash.Type.Enum modules + 5 Ash resources (Xaas.Ultracode.CapitalCensus.{Episode,ExperienceCluster,Gap,WorkOrder,Resolution}) + domain registration (auto) + config enum short-names (auto) + Facts data module (ggen_igniter sync, 20 rows)",
+      "migration 20260927203551 (5 tables; unrelated billing codegen stripped per safe_generate_migrations doctrine) + resource snapshots"
+    ],
+    "retired": [
+      "lib/xaas/ultracode/capital_census/self_digest.ex (112 lines: hardcoded @g_table, classify/1, self_work_order/1)",
+      "test/xaas/ultracode/capital_census/self_digest_test.exs (101 lines: unit tests proving constants)",
+      "handwritten sketches lib/xaas/ultracode/self_digest_{experience,gap}.ex (never committed)"
+    ],
+    "ledgered_residue": [
+      "self_digest_law.ex (law predicates over generated facts)",
+      "self_digest_run.ex (telemetry ingest)",
+      "xaas.ash.gen.ex (the bridge — counted until marketplace promotion)",
+      "ash_typescript_manifest.ex (0.18 drift glue)"
+    ]
+  },
+  "economics": {
+    "deleted_handwritten_lines": 213,
+    "ledgered_residue_lines": 383,
+    "manufactured_from_ontology": "6 enums + 5 resources + domain registration + config + facts (the entire state layer, ~700 DSL lines never typed by hand)",
+    "new_reasoning_required_next_time": "author ontology facts + run 3 commands; the Ash DSL reasoning is never purchased again"
+  },
+  "verification": {
+    "chicago_court": "MIX_BUILD_ROOT=_build-int MIX_ENV=test mix test test/xaas/ultracode/capital_census/self_digest_chicago_test.exs — 7/7 passed on real Postgres (falsifiers: no-cluster on differing topology; threshold-3 negative {2 same,1 different}; unknown-shape refusal; missing-provenance refusal; generated-enum refusal naming bad atom)",
+    "regression": "capital_census + wave_loop suites: 107 passed, 0 failed",
+    "regeneration_court": "re-run bridge + sync after commit: git diff clean (byte-identity ALIVE)",
+    "witnessed_refusals": [
+      "ggen_igniter.sync verify gate failed build_broken on ex4pm 26.9.9 dep warning (fixed transiently in deps/; upstream publish operator-gated)",
+      "ash.codegen crashed on ash_typescript 0.18 manifest drift (fixed: manifest module, ledgered)",
+      "--ignore-if-exists refused to shadow CapitalCensus.Experience (name collision surfaced, Episode named instead)"
+    ]
+  },
+  "standing": "ALIVE (deterministic local vertical); AshOban digest trigger + sJira markdown projection from WorkOrder graph + census-law subsumption remain open",
+  "operator_did_not_write": "the entire Ash state layer, the G-table as RDF, the migration, the domain registration, the TS client regeneration"
+}

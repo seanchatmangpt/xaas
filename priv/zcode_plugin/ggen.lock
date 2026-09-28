@@ -2,8 +2,8 @@
 
 [packs.ultracode_actuation_lease]
 source = "path:packs/ultracode-actuation-lease-pack"
-content_hash = "blake3:01085142c6dbfbc23b79d70448d5203ad3842364c19d6a3457b1df008c1ba610"
+content_hash = "blake3:3c08615e481cc0a484a47b4895d5ba791568585e832083a08ea858f222e4ecc7"
 
 [packs.zcode_plugin]
 source = "path:packs/zcode-plugin-pack"
-content_hash = "blake3:ee49a36734a6771ba45875fb1badbf2c544031a0308039caf54933b4e52277ad"
+content_hash = "blake3:43ab58f0e0015b2ff4af0c320e12d9e4197ef7811f57270b3345dcfb512945ff"

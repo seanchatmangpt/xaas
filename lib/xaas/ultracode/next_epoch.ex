@@ -263,6 +263,13 @@ defmodule Xaas.Ultracode.NextEpoch do
           org_id: run.org_id,
           cycle: run.cycle,
           exact_subject: last_epoch.exact_subject,
+          # Carried, not re-provisioned: the Run's worktree is bound once and
+          # every epoch of the run executes against it. Dropping it here made
+          # every tick-constructed epoch nil-worktree, so Lease.close/4
+          # downgraded its receipt to the :no_worktree path and no close was
+          # ever head-verifiable. WorktreeIsSafe re-fails the transition if
+          # the carried path has since left the filesystem.
+          worktree: last_epoch.worktree,
           state: :expected,
           expected_at: DateTime.utc_now()
         }
