@@ -145,6 +145,54 @@ defmodule Xaas.Ultracode.WorkerEnvTest do
     end
   end
 
+  describe "court env3 regressions" do
+    test "LC_ is no longer an open prefix; standard locale names still cross" do
+      refute WorkerEnv.allowed?("LC_JWT")
+      refute WorkerEnv.allowed?("LC_WEBHOOK")
+      assert WorkerEnv.allowed?("LC_ALL")
+      assert WorkerEnv.allowed?("LC_CTYPE")
+    end
+
+    test "secret-shaped VALUES never cross under an admitted name" do
+      parent = %{
+        "ZCODE_OCEL" => "sk-ant-FIXTURE",
+        "TERM" => "xterm;https://u:p@h",
+        "TMPDIR" => "/tmp/eyJhbGciOiJIUzI1NiJ9/",
+        "LANG" => "en_US.UTF-8",
+        "ANTHROPIC_API_KEY" => "sk-ant-fixture-model-grant"
+      }
+
+      assert WorkerEnv.build(parent, []) == [
+               {"ANTHROPIC_API_KEY", "sk-ant-fixture-model-grant"},
+               {"LANG", "en_US.UTF-8"}
+             ]
+    end
+
+    test "a granted URL name still refuses userinfo" do
+      assert WorkerEnv.build(%{"ANTHROPIC_BASE_URL" => "https://u:p@h"}, []) == []
+    end
+
+    test "explicit secret name classes and loader/trust names are refused" do
+      names = ~w(JWT_SIGNING WEBHOOK_HMAC SERVICE_JWT MFA_OTP TOTP_SEED WALLET_MNEMONIC
+                 WEBHOOK_URL KEYFILE SIGNINGKEY ACCESSKEY TWILIO_SID PRIVKEY CI_JOB_JWT
+                 SIGNER_HMAC ALERT_HOOK CA_BUNDLE CURL_CA_BUNDLE REQUESTS_CA_BUNDLE HEX_MIRROR
+                 HEX_UNSAFE_HTTPS MIX_EXS MIX_DEPS_PATH OPENAI_BASE_URL BOTO_CONFIG ZDOTDIR
+                 PROMPT_COMMAND PERLLIB PERL_MB_OPT)
+
+      assert WorkerEnv.build(%{}, [], Enum.map(names, &{&1, "fixture"})) == []
+    end
+
+    test "explicit innocuous names carrying webhook/JWT values are refused" do
+      explicit = [
+        {"NOTIFY_TARGET", "https://hooks.slack.com/services/T/B/X"},
+        {"BUILD_BLOB", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0"},
+        {"FAKE_LOG", "/tmp/fake-log"}
+      ]
+
+      assert WorkerEnv.build(%{}, [], explicit) == [{"FAKE_LOG", "/tmp/fake-log"}]
+    end
+  end
+
   describe "build/2" do
     test "additions override parent but cannot smuggle a denied credential" do
       parent = %{"PATH" => "/bin", "HOME" => "/h", "GITHUB_TOKEN" => "fixture-gh"}
