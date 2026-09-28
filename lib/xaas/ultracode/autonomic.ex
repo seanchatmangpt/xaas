@@ -67,6 +67,7 @@ defmodule Xaas.Ultracode.Autonomic do
   require Logger
 
   alias Xaas.Ultracode.{
+    CapabilityResolver,
     Epoch,
     ItemRuns,
     Lease,
@@ -140,18 +141,90 @@ defmodule Xaas.Ultracode.Autonomic do
     with {:ok, items} <- sense(ctx) do
       ledger(ctx, :sensed, %{items: Enum.map(items, & &1["id"])})
 
+      # THE CAPABILITY-RESOLUTION COURT (between sensing and coding): an
+      # item reaches the coding worker ONLY when the resolver proves no
+      # existing capability or lawful composition satisfies it (`:frontier`).
+      # Reuse/compose/extend/generate verdicts are receipted and recorded
+      # satisfied-by-existing-capability (their deterministic execution is a
+      # follow-up); `:unresolved` (source error, or a skipped witness under
+      # the default full-closure mode) is BLOCKED: no epoch, no worker.
+      {frontier_items, resolved_results} = resolve_capabilities(items, ctx)
+
       results =
-        items
+        frontier_items
         |> dispatch_bounded(ctx.capacity, fn item, sem_ctx ->
           process_item(item, Map.merge(ctx, sem_ctx))
         end)
-        |> Enum.zip(items)
+        |> Enum.zip(frontier_items)
         |> Enum.map(fn
           {{:ok, result}, _item} -> result
           {{:exit, reason}, item} -> errored(item, {:task_exit, reason})
         end)
 
-      finish(ctx, items, results)
+      finish(ctx, items, resolved_results ++ results)
+    end
+  end
+
+  @doc false
+  def resolve_capabilities(items, ctx) do
+    if Map.get(ctx, :capability_resolution, true) == false do
+      Logger.warning(
+        "[ultracode] capability resolution court BYPASSED (capability_resolution: false) -- " <>
+          "items dispatch to workers with no fleet-capability check"
+      )
+
+      ledger(ctx, :capability_resolution_bypassed, %{items: Enum.map(items, & &1["id"])})
+      {items, []}
+    else
+      receipts = CapabilityResolver.resolve_items(items, ctx)
+
+      # The resolution receipt is durable BEFORE the dispatch stage: no
+      # worker can claim an item whose resolution receipt is not on disk.
+      path = Path.join(ctx.out_dir, "capability-resolutions.ndjson")
+      CapabilityResolver.Receipt.persist(receipts, path)
+
+      ledger(ctx, :capability_resolution, %{
+        receipt: path,
+        classes:
+          Map.new(Enum.group_by(receipts, & &1.class), fn {class, rs} ->
+            {Atom.to_string(class), Enum.map(rs, & &1.item_id)}
+          end)
+      })
+
+      Enum.zip(items, receipts)
+      |> Enum.flat_map_reduce([], fn {item, receipt}, acc ->
+        case receipt.class do
+          :frontier ->
+            {[item], acc}
+
+          :unresolved ->
+            {[], [
+               %{
+                 item: item["id"],
+                 status: :blocked,
+                 reason: "capability_resolution_unresolved",
+                 attempts: 0,
+                 history: []
+               }
+               | acc
+             ]}
+
+          class ->
+            {[], [
+               %{
+                 item: item["id"],
+                 status: :satisfied_existing,
+                 reason:
+                   "satisfied_by_existing_capability (#{class}: " <>
+                     Enum.join(receipt.selected_capabilities, ", ") <> ")",
+                 attempts: 0,
+                 history: []
+               }
+               | acc
+             ]}
+        end
+      end)
+      |> then(fn {frontier, resolved} -> {frontier, Enum.reverse(resolved)} end)
     end
   end
 
