@@ -1,5 +1,5 @@
 defmodule Xaas.Ultracode.CapitalCensus.Episode do
-  use Ash.Resource, otp_app: :xaas, domain: Xaas.Ultracode, data_layer: AshPostgres.DataLayer
+  use Xaas.Resource, otp_app: :xaas, domain: Xaas.Ultracode, data_layer: AshPostgres.DataLayer
 
   attributes do
     uuid_primary_key(:id)

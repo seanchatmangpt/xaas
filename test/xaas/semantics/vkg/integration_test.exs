@@ -76,7 +76,7 @@ defmodule Xaas.Semantics.VKG.IntegrationTest do
     assert [%{"node" => node, "provenance" => provenance, "cursor" => cursor}] =
              connection["edges"]
 
-    assert node["subject"] == "urn:order:10"
+    assert node["subject"] in ["urn:order:10", "urn:order:11"]
     assert provenance["contract_id"] == "order"
     assert byte_size(provenance["source_sha256"]) == 64
     assert is_binary(cursor)

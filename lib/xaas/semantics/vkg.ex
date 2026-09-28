@@ -95,6 +95,7 @@ defmodule Xaas.Semantics.VKG do
       properties_path: Keyword.get(opts, :properties_path),
       max_output_bytes: Keyword.get(opts, :max_output_bytes),
       previous_receipt: Keyword.get(opts, :previous_receipt),
+      rows_by_contract: Keyword.get(opts, :rows_by_contract),
       max_rows: query.max_rows,
       timeout_ms: query.timeout_ms,
       merge: query.merge,

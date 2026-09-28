@@ -15,7 +15,7 @@ defmodule Xaas.Sjira.Atlassian do
       } |> custom(item, Keyword.get(opts,:field_map,%{}))
       key = Keyword.get(opts,:issue_key) || item["provider_key"] || item[:provider_key]
       operation = if key, do: {:update,key}, else: :create
-      digest = digest(%{id: id, operation: operation, fields: fields})
+      digest = digest(%{id: id, operation: (case operation do :create -> "create"; {:update,k} -> %{"update" => to_string(k)} end), fields: fields})
       {method,path} = case operation do
         :create -> {:post,"/rest/api/3/issue"}
         {:update,k} -> {:put,"/rest/api/3/issue/"<>URI.encode(to_string(k))}

@@ -403,7 +403,7 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert goal =~ "/s/STATE.md"
       assert goal =~ "/s/l.ndjson"
       assert goal =~ "ultracode-wave-loop/1"
-      assert goal =~ "DO NOT edit /s/STATE.md"
+      assert goal =~ "Do NOT edit /s/STATE.md"
       assert goal =~ "fabric-owned projections"
       assert String.length(goal) < 50_000
     end

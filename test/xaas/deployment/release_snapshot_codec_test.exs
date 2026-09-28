@@ -73,7 +73,7 @@ defmodule Xaas.Deployment.ReleaseSnapshotCodecTest do
   test "serialized authority cannot be widened" do
     payload = snapshot() |> Codec.to_map() |> Map.put("authority", "admin")
 
-    assert {:error, :release_snapshot_schema_missing} =
+    assert {:error, {:serialized_authority_widened, "admin"}} =
              payload |> Jason.encode!() |> Codec.decode()
   end
 end

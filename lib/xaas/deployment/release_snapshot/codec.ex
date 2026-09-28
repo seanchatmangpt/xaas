@@ -71,6 +71,9 @@ defmodule Xaas.Deployment.ReleaseSnapshot.Codec do
   end
 
   defp schema(%{"schema" => @schema, "authority" => "none"}), do: :ok
+  defp schema(%{"schema" => @schema, "authority" => authority}),
+    do: {:error, {:serialized_authority_widened, authority}}
+
   defp schema(%{"schema" => other}), do: {:error, {:unsupported_release_snapshot_schema, other}}
   defp schema(_), do: {:error, :release_snapshot_schema_missing}
 

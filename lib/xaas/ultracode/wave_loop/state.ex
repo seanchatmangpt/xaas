@@ -276,7 +276,10 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     #{String.trim_trailing(state.law || default_law())}
 
     === ON COMPLETION ===
-    Do NOT edit #{sp} or #{tp}: the loop settles the STATE row and telemetry     itself from your sealed receipt (workers sit outside those files'     authority fence — writes there are refused by design, observed \
+    Do NOT edit #{sp} or #{tp}: they are fabric-owned projections. The loop \
+    settles the STATE row and telemetry itself from your sealed receipt \
+    (workers sit outside those files' authority fence — writes there are \
+    refused by design, observed \
     2026-09-26). Close via the fabric with evidence; carry anything the \
     coordinator must know inside your close evidence.
     """

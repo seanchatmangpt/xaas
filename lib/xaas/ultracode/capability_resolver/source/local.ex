@@ -69,7 +69,7 @@ defmodule Xaas.Ultracode.CapabilityResolver.Source.Local do
       |> Ash.read!(authorize?: false)
       |> Enum.group_by(& &1.capability_id)
       |> Enum.map(fn {id, runs} ->
-        latest = Enum.max_by(runs, &{terminal_key(&1.terminal_at), &1.id})
+        latest = Enum.max_by(runs, &run_rank/1)
         %{capability_id: id, satisfies: [id], witness: "run:completed", run_id: latest.id}
       end)
       |> Enum.sort_by(& &1.capability_id)
@@ -78,6 +78,9 @@ defmodule Xaas.Ultracode.CapabilityResolver.Source.Local do
   rescue
     error -> {:error, {:run_read_failed, Exception.message(error)}}
   end
+
+  # Integer-microsecond key (see terminal_key/1): structural tuple compare is exact.
+  defp run_rank(run), do: {terminal_key(run.terminal_at), run.id}
 
   defp terminal_key(nil), do: 0
   defp terminal_key(%DateTime{} = at), do: DateTime.to_unix(at, :microsecond)

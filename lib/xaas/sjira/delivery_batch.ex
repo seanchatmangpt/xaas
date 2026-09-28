@@ -22,7 +22,11 @@ defmodule Xaas.Sjira.DeliveryBatch do
     {:ok,%{plan|count: length(envs),batches: chunks(envs,max)}}
   end
   def record(cp,id,%{disposition: :accepted}), do: %{cp|completed: Enum.sort(Enum.uniq([id|cp.completed])),pending: List.delete(cp.pending,id),failed: Map.delete(cp.failed,id)}
-  def record(cp,id,outcome), do: %{cp|pending: List.delete(cp.pending,id),failed: Map.put(cp.failed,id,outcome)}
+  def record(cp,id,outcome), do: %{cp|pending: List.delete(cp.pending,id),failed: Map.put(cp.failed,id,json_safe(outcome))}
+  defp json_safe(m) when is_map(m), do: Map.new(m,fn {k,v}->{to_string(k),json_safe(v)} end)
+  defp json_safe(v) when is_atom(v) and v not in [nil,true,false], do: Atom.to_string(v)
+  defp json_safe(v) when is_list(v), do: Enum.map(v,&json_safe/1)
+  defp json_safe(v), do: v
   def complete?(cp), do: cp.pending==[] and map_size(cp.failed)==0
   def checkpoint_json(cp), do: Jason.encode!(cp)
   def checkpoint_from_json(bytes) do

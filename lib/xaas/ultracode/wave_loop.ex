@@ -564,7 +564,7 @@ defmodule Xaas.Ultracode.WaveLoop do
         :ok
 
       length(live) >= max_in_flight ->
-        newest = Enum.max_by(live, & &1.inserted_at)
+        newest = Enum.max_by(live, & &1.inserted_at, DateTime)
         {:busy, newest.run_id, newest.id}
 
       true ->
