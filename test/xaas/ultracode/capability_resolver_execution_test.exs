@@ -191,6 +191,9 @@ defmodule Xaas.Ultracode.CapabilityResolverExecutionTest do
     tmp: tmp
   } do
     Application.put_env(:xaas, :ultracode_capability_sources, %{"fleet" => PackComposeSource})
+    # No marketplace checkout: the generation executor is unavailable.
+    Application.put_env(:xaas, :ultracode_ggen_marketplace_root, Path.join(tmp, "no-marketplace"))
+    on_exit(fn -> Application.delete_env(:xaas, :ultracode_ggen_marketplace_root) end)
     item = %{"id" => "w-compose", "required_capabilities" => ["req-1", "req-2"]}
 
     assert [result] = Autonomic.resolve_and_dispatch([item], ctx, flunking_dispatcher())

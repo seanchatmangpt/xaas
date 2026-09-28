@@ -13,9 +13,13 @@ defmodule Xaas.Ultracode.CapabilityResolver.Execution do
       :no_prior_subject}` -- a replay with nothing to replay is not a replay.
     * `:compose` / `:extend` / `:generate` -- when the resolution names a
       ggen pack id (a candidate's `ggen_pack` witness field, or a
-      `ggen-pack:` capability id), outcome `{:unsupported,
-      :executor_pending}` carrying the pack ids: the generation executor is
-      not wired, so the receipt says so, typed. With no pack named:
+      `ggen-pack:` capability id), every named pack is run through the
+      generation executor (`Xaas.Ultracode.CapabilityResolver.PackGenerator`:
+      the marketplace's canonical qualification harness, real `ggen sync
+      run` twice + byte-identical replay). All packs generated ->
+      `{:generated, pack_ids}`; any harness refusal -> `{:refused, code}`;
+      executor unavailable (no marketplace checkout / no ggen) ->
+      `{:unsupported, :executor_pending}`, typed. With no pack named:
       `{:unsupported, :no_generator_named}`.
     * `:frontier` / `:unresolved` -- no execution record (a frontier item
       goes to a worker; an unresolved one is BLOCKED upstream).
@@ -26,7 +30,7 @@ defmodule Xaas.Ultracode.CapabilityResolver.Execution do
   replay / standing.
   """
 
-  alias Xaas.Ultracode.CapabilityResolver.Receipt
+  alias Xaas.Ultracode.CapabilityResolver.{PackGenerator, Receipt}
 
   @schema "xaas.capability-execution-record/1"
   @authority "capability-resolution-court:construct-ceiling (no DO; no worker lease)"
@@ -47,6 +51,8 @@ defmodule Xaas.Ultracode.CapabilityResolver.Execution do
 
   @type outcome ::
           :known_replay
+          | {:generated, [String.t()]}
+          | {:refused, String.t()}
           | {:unsupported, :executor_pending | :no_generator_named | :no_prior_subject}
 
   @type t :: %__MODULE__{
@@ -69,10 +75,12 @@ defmodule Xaas.Ultracode.CapabilityResolver.Execution do
   Executes one resolution receipt. `nil` for `:frontier`/`:unresolved`
   (no deterministic execution applies).
   """
-  @spec execute(Receipt.t()) :: t() | nil
-  def execute(%Receipt{class: class}) when class in [:frontier, :unresolved], do: nil
+  @spec execute(Receipt.t(), keyword()) :: t() | nil
+  def execute(receipt, opts \\ [])
 
-  def execute(%Receipt{class: :reuse} = receipt) do
+  def execute(%Receipt{class: class}, _opts) when class in [:frontier, :unresolved], do: nil
+
+  def execute(%Receipt{class: :reuse} = receipt, _opts) do
     selected_id = List.first(receipt.selected_capabilities)
     candidate = Enum.find(receipt.candidate_capabilities, &(&1.capability_id == selected_id))
 
@@ -95,31 +103,102 @@ defmodule Xaas.Ultracode.CapabilityResolver.Execution do
     end
   end
 
-  def execute(%Receipt{class: class} = receipt) when class in [:compose, :extend, :generate] do
-    packs = pack_ids(receipt)
+  def execute(%Receipt{class: class} = receipt, opts)
+      when class in [:compose, :extend, :generate] do
+    case pack_ids(receipt) do
+      [] ->
+        record(receipt, {:unsupported, :no_generator_named},
+          subject: nil,
+          consequence: "no_worker_dispatched; no generator named",
+          standing: "UNSUPPORTED",
+          replay: replay(receipt, nil)
+        )
 
-    outcome =
-      if packs == [],
-        do: {:unsupported, :no_generator_named},
-        else: {:unsupported, :executor_pending}
-
-    record(receipt, outcome,
-      subject: nil,
-      consequence: "no_worker_dispatched; generation executor not wired",
-      standing: "UNSUPPORTED",
-      pack_ids: packs,
-      replay: replay(receipt, nil)
-    )
+      packs ->
+        generate_packs(receipt, packs, opts)
+    end
   end
 
+  # Runs every named pack through the generation executor (default
+  # PackGenerator.generate/2; `opts[:generator]` supplies another real
+  # function of the same shape). First refusal wins; an unavailable
+  # executor is typed :executor_pending, never a fake success.
+  defp generate_packs(receipt, packs, opts) do
+    generator = Keyword.get(opts, :generator, &PackGenerator.generate/2)
+    gen_opts = Keyword.get(opts, :generator_opts, [])
+
+    # A pack the marketplace does not contain is a refusal of the verdict,
+    # not an unavailable executor.
+    results =
+      Enum.map(packs, fn pack ->
+        case generator.(pack, gen_opts) do
+          {:error, {:unknown_pack, _}} ->
+            {pack, {:refused, "REFUSED:UNKNOWN_PACK", %{"status" => "REFUSED"}}}
+
+          other ->
+            {pack, other}
+        end
+      end)
+
+    evidence =
+      Map.new(results, fn {pack, result} -> {pack, generation_evidence(result)} end)
+
+    base_replay = Map.put(replay(receipt, nil), "generation", evidence)
+
+    cond do
+      Enum.all?(results, &match?({_, {:generated, _}}, &1)) ->
+        record(receipt, {:generated, packs},
+          subject: "ggen-packs:" <> Enum.join(packs, ","),
+          consequence:
+            "no_worker_dispatched; generated via marketplace qualification harness " <>
+              "(ggen sync run x2, byte-identical)",
+          standing: "PARTIAL_ALIVE",
+          pack_ids: packs,
+          replay: base_replay
+        )
+
+      refused = Enum.find(results, &match?({_, {:refused, _, _}}, &1)) ->
+        {pack, {:refused, code, _}} = refused
+
+        record(receipt, {:refused, code},
+          subject: "ggen-pack:" <> pack,
+          consequence: "no_worker_dispatched; generator refused #{pack}: #{code}",
+          standing: "REFUSED",
+          pack_ids: packs,
+          replay: base_replay
+        )
+
+      true ->
+        record(receipt, {:unsupported, :executor_pending},
+          subject: nil,
+          consequence: "no_worker_dispatched; generation executor unavailable",
+          standing: "UNSUPPORTED",
+          pack_ids: packs,
+          replay: base_replay
+        )
+    end
+  end
+
+  defp generation_evidence({:generated, record}),
+    do: %{"status" => record["status"], "code" => record["code"]}
+
+  defp generation_evidence({:refused, code, record}),
+    do: %{"status" => record["status"] || "REFUSED", "code" => code}
+
+  defp generation_evidence({:error, reason}),
+    do: %{"status" => "ERROR", "reason" => inspect(reason)}
+
   @doc "Executes every receipt, dropping the non-executable classes."
-  @spec execute_all([Receipt.t()]) :: [t()]
-  def execute_all(receipts), do: receipts |> Enum.map(&execute/1) |> Enum.reject(&is_nil/1)
+  @spec execute_all([Receipt.t()], keyword()) :: [t()]
+  def execute_all(receipts, opts \\ []),
+    do: receipts |> Enum.map(&execute(&1, opts)) |> Enum.reject(&is_nil/1)
 
   @doc "JSON-safe outcome: `\"known_replay\"` or `\"unsupported:<reason>\"`."
   @spec outcome_json(outcome() | nil) :: String.t() | nil
   def outcome_json(nil), do: nil
   def outcome_json(:known_replay), do: "known_replay"
+  def outcome_json({:generated, packs}), do: "generated:" <> Enum.join(packs, ",")
+  def outcome_json({:refused, code}), do: "refused:#{code}"
   def outcome_json({:unsupported, reason}), do: "unsupported:#{reason}"
 
   @doc "The JSON-safe projection appended as one NDJSON line."
