@@ -110,11 +110,12 @@ config :xaas, Oban,
     # itself, or capacity accounting races).
     ultracode_engine: 1,
     # `Xaas.Ultracode.Run`'s `:wave_loop` schedule (every 5 minutes) --
-    # the fabric-native wave loop: ONE real zcode worker per tick, dispatched
-    # synchronously by `Xaas.Ultracode.WaveLoop.tick/1` from the loop STATE
-    # file. A tick's dispatch may legitimately run most of an hour, so the
-    # single slot is what makes "one loop worker at a time" real; a second
-    # hourly fire waits here rather than overlapping.
+    # the fabric-native wave loop: the slot serializes tick EXECUTION
+    # (`Xaas.Ultracode.WaveLoop.tick/1` against the loop STATE file), not
+    # worker count -- one tick now dispatches a work-conserving batch of
+    # ready steps in parallel. A tick's dispatch may legitimately run most
+    # of an hour, so the slot is what keeps two ticks from overlapping; a
+    # surplus fire waits here and still records `busy`.
     ultracode_wave_loop: wave_loop_concurrency
   ],
   repo: Xaas.Repo,
@@ -323,6 +324,15 @@ config :xaas, :ultracode_default_provider, "zcode"
 # + step-selection exclusion). Must stay <= `:ultracode_pool_capacity`;
 # declared above next to the Oban queue that shares the same value.
 config :xaas, :ultracode_wave_loop_concurrency, wave_loop_concurrency
+
+# Opt-in adaptive-width ceiling (`Xaas.Ultracode.WaveLoop.effective_concurrency/1`):
+# the persisted setpoint may widen the loop's dispatch width up to this
+# ceiling (+1 per clean pressure window, drain -4 at >=3 rate-kill
+# signatures, floor 1). Default = the base `:ultracode_wave_loop_concurrency`
+# above, so width only grows when an operator sets this key explicitly
+# (never above `:ultracode_pool_capacity`). Intentionally NO default value
+# is declared here: absent the key, growth is off.
+
 
 # The zcode CLI checkout `Dispatch`/`ZcodePackage`/`ProviderHealth` admit the
 # worker launcher from. `/Users/sac/dev/zcode-cli` (the v26.9.22-era default)

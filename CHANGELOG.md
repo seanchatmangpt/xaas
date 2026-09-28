@@ -23,6 +23,27 @@ supplied without a witnessed commit are marked UNKNOWN.
   config keys, cold replay (`96d03e1`).
 - Whole-tree AST-preserving mix format (`051fba3`); ontology import closure declared
   then reverted (`398ca22`, reverted by `d436f94` — net zero).
+- Wave loop concurrency upgrades (`a8e055fc`): [1302] adaptive setpoint
+  (grow +1 per clean 10-minute pressure window, hold on 1-2 rate-kill
+  signatures, drain −4 at ≥3, floor 1; opt-in ceiling
+  `:ultracode_wave_loop_concurrency_max`, setpoint persisted beside the
+  loop telemetry) plus work-conserving batch dispatch (all ready steps per
+  tick via `Task.async_stream`, serial settles, dead dispatch tasks typed
+  `:construction_refused`).
+- Event-driven semantic wave (`541fe5ce`): an admitted frontier transition
+  enqueues its dispatch immediately (`SemanticWaveTrigger.enqueue/1` rides
+  `SemanticWork.materialize/2`'s transaction; one pending wave per
+  `graph_digest`/`repository_identity` pair, Oban uniqueness
+  `period: :infinity`); the `*/30 :semantic_wave` cron demoted to watchdog.
+- CS2 fleet-contract bridge (PR #87): `cs2-fleet-contract/26.9.27` projection
+  (`FleetContract` + `priv/cs2/fleet-contract.json`), `SemanticJiraBridge`
+  consuming authority-free Semantic Jira candidates, `AshA2ABridge.from_a2a/1`,
+  `EngineerWorkflow` — representation boundary only, never runtime authority.
+- SelfDigest kernel + CapitalCensus — Ultracode as a work subject of itself
+  (`4a2e9d11`, `a9e3fa04`, `0a4e1a0a`): self-gap generation from the wave
+  loop's own telemetry, experience clusters and the route lattice, census
+  tables + work orders in the existing Ultracode domain (migration
+  `20260927203551`); work orders are the new work-subject surface.
 - UNKNOWN: substitution-receipt-binding verification (operator anchor; branch already
   in main per dispatch contract, but no commit witnessed in this session's log).
 - In progress: docs/contract/marketplace truth wave (no landed commit witnessed yet).

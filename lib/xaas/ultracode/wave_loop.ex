@@ -36,7 +36,8 @@ defmodule Xaas.Ultracode.WaveLoop do
   @moduledoc """
   The fabric-native hourly wave loop: the Oban scheduler's own clock
   (`:wave_loop`, hourly, single-slot `:ultracode_wave_loop` queue) drives the
-  operator's loop STATE file one REAL zcode worker step at a time.
+  operator's loop STATE file with REAL zcode workers -- a work-conserving
+  batch per tick: the first actionable step PLUS every further ready step.
 
   ## Why this is fabric-native (the verified finding)
 
@@ -54,26 +55,37 @@ defmodule Xaas.Ultracode.WaveLoop do
     1. READ the STATE file (`/Users/sac/xaas/tmp/w8-loop/STATE.md`) and
        parse it through `Xaas.Ultracode.WaveLoop.State` -- a tolerant
        parser whose every unknown shape is a TYPED refusal, never a crash.
-    2. SELECT the first actionable step: first table step that owes work
+    2. SELECT the first actionable step PLUS every further ready step
+       (`extra_ready_jobs/4`): the first table step that owes work
        (pending/blocked, or re-opened by the REMAINING note) whose deps
-       (the note's chain + `BLOCKED-ON-` tokens) are all done.
-    3. EXECUTE it by launching ONE real zcode CLI worker through the
-       admitted `Xaas.Ultracode.Dispatch` boundary: a fresh `Run`
+       (the note's chain + `BLOCKED-ON-` tokens) are all done, then every
+       further step whose deps are met and that is not held by a live
+       worker, within the effective width budget (`:busy` extras simply
+       do not join -- never block).
+    3. DISPATCH the batch as parallel real zcode CLI workers through the
+       admitted `Xaas.Ultracode.Dispatch` boundary (`dispatch_batch/3`:
+       Run/Epoch construction stays serialized, the minutes-long agent
+       calls run concurrently via `Task.async_stream`): each worker gets
+       a fresh `Run`
        (`execution_policy: :wave_loop_step`, `provider: "zcode"`,
        non-semantic, so the generic `/xaas` claim prompt path) whose GOAL
        carries the step id, the step's dispatch instructions VERBATIM from
        STATE.md, the standing table, the law section, and the mandatory
        "update STATE.md + append loop.ndjson" instruction. The worker
        claims the epoch through the fabric, works, and closes with
-       evidence -- the loop never closes on the worker's behalf.
-    4. SETTLE from the database and the sealed receipts (never the
-       worker's exit code alone): a completed epoch advances the STATE
-       row (respecting a worker's own DONE wording) and removes the step
-       from the REMAINING note; a dead worker's stale epoch is reaped
-       (`:mark_failed` + `:refused` receipt, the `Xaas.Ultracode.Engine`
-       semantics) and the row goes BLOCKED with the log path. Every
-       outcome appends EXACTLY ONE telemetry line
-       (`kind: "ultracode-wave-loop/1"`).
+       evidence -- the loop never closes on the worker's behalf. A
+       dispatch task that dies before settling is a typed
+       `:construction_refused` (`:dispatch_task_died` / `:dispatch_raised`)
+       with the STATE row untouched; the next tick retries the step.
+    4. SETTLE serially in table order from the database and the sealed
+       receipts (never the worker's exit code alone; settles are
+       serialized because each one rewrites the shared STATE file): a
+       completed epoch advances the STATE row (respecting a worker's own
+       DONE wording) and removes the step from the REMAINING note; a
+       dead worker's stale epoch is reaped (`:mark_failed` + `:refused`
+       receipt, the `Xaas.Ultracode.Engine` semantics) and the row goes
+       BLOCKED with the log path. Every outcome appends EXACTLY ONE
+       telemetry line (`kind: "ultracode-wave-loop/1"`).
     5. COMPLETE: when the STATE's remaining list is empty, the loop marks
        STATE COMPLETE and every later tick is a `:complete` no-op. The
        post-merge CI check inside that terminal claim is the closing step
@@ -82,8 +94,9 @@ defmodule Xaas.Ultracode.WaveLoop do
 
   ## Capacity and determinism laws
 
-    * At most `:ultracode_wave_loop_concurrency` (default 1) loop workers
-      in flight, and never two on the same step: a step already held by a
+    * At most the effective width (`effective_concurrency/1`, seeded from
+      `:ultracode_wave_loop_concurrency`, default 1) loop workers in
+      flight, and never two on the same step: a step already held by a
       live lease is excluded from this tick's selection, so extra
       concurrency fans across INDEPENDENT steps only. A tick that finds
       every actionable step in flight records `busy` and exits 0. A lease
@@ -109,6 +122,14 @@ defmodule Xaas.Ultracode.WaveLoop do
       #{@default_telemetry_path})
     * `config :xaas, :ultracode_wave_loop_timeout_seconds` (default
       #{@default_timeout_seconds}; under the hourly cadence)
+    * `config :xaas, :ultracode_wave_loop_concurrency_max` -- the opt-in
+      adaptive-width ceiling (default = the base concurrency, so width
+      only widens when an operator raises it; must stay ≤
+      `:ultracode_pool_capacity`). The persisted setpoint grows +1 per
+      clean pressure window, holds on 1-2 rate-kill signatures, drains
+      -4 at >=3 (floor 1) via the pure `setpoint/4` law, stored beside
+      the loop telemetry (honoring the `ULTRACODE_WAVE_LOOP_*_PATH`
+      overrides).
     * `config :xaas, :ultracode_wave_loop_runner` -- the `:wave_loop`
       action's runner, `{Xaas.Ultracode.WaveLoop, :tick}` by default
     * `config :xaas, :ultracode_wave_loop_dispatcher` -- the dispatch

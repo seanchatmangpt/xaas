@@ -172,9 +172,23 @@ Beyond the multi-repo keys above (`:ultracode_repos`,
   `ultracode_engine: 1` are driven by the `:autonomic_wave` /
   `:semantic_wave` schedules (every 30 minutes) and the `:engine_cycle`
   schedule (every 5 minutes); `ultracode_wave_loop: 1` is the every-5-minute
-  fabric-native wave loop (§8). `:ultracode_wave_loop_concurrency` (currently
-  `1`, must stay ≤ `:ultracode_pool_capacity`) bounds loop workers in
-  flight; a surplus fire records `busy` and exits 0.
+  fabric-native wave loop (§8). The `*/30 :semantic_wave` cron is now a
+  WATCHDOG only: the primary clock is event-driven
+  (`Xaas.Ultracode.SemanticWaveTrigger.enqueue/1` @ `541fe5ce` rides
+  `SemanticWork.materialize/2`'s transaction, so an admitted frontier
+  transition enqueues its dispatch immediately; Oban uniqueness over
+  `graph_digest` + `repository_identity` with `period: :infinity` keeps
+  one pending wave per pair, and the cron only backfills).
+  `:ultracode_wave_loop_concurrency` (currently `1`, must stay ≤
+  `:ultracode_pool_capacity`) is the BASE loop-worker bound; a surplus
+  fire records `busy` and exits 0. Width is adaptive but growth is
+  OPT-IN: `config :xaas, :ultracode_wave_loop_concurrency_max` (default =
+  the base, so width only widens when an operator raises it; must stay ≤
+  `:ultracode_pool_capacity`) enables the setpoint law
+  (`WaveLoop.setpoint/4`, applied by `effective_concurrency/1`): +1 per
+  clean 10-minute pressure window, hold on 1-2 rate-kill signatures,
+  drain −4 at ≥3, floor 1. The setpoint is persisted beside the loop
+  telemetry file (honoring the `ULTRACODE_WAVE_LOOP_*_PATH` overrides).
   `:ultracode_subagent_max_turns` (default `nil` = inherit) forwards
   `ZCODE_SUBAGENT_MAX_TURNS` to every dispatched worker — the subagent
   turn cap the vendored zcode runtime reads at its child-session spawn
