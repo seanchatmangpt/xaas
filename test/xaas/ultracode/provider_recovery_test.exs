@@ -149,6 +149,36 @@ defmodule Xaas.Ultracode.ProviderRecoveryTest do
       assert %{"p" => %{backoff_ms: 3_000}} = ProviderRecovery.snapshot(name)
     end
 
+    test "half_open admits exactly ONE probe; a record settles it; a lost probe expires" do
+      %{name: name, advance: advance} = start_recovery!()
+
+      for _ <- 1..3, do: ProviderRecovery.record("p", :rate_limited, name)
+      assert ProviderRecovery.acquire_probe("p", name) == {:error, :breaker_open}
+
+      advance.(1_000)
+      assert ProviderRecovery.state("p", name) == :half_open
+
+      # Concurrent claimers race for the probe: exactly one wins.
+      results =
+        1..8
+        |> Task.async_stream(fn _ -> ProviderRecovery.acquire_probe("p", name) end)
+        |> Enum.map(fn {:ok, r} -> r end)
+
+      assert Enum.count(results, &(&1 == :ok)) == 1
+      assert Enum.count(results, &(&1 == {:error, :probe_in_flight})) == 7
+      refute ProviderRecovery.available?("p", name)
+
+      # A lost probe (no record) cannot pin the breaker: the hold expires.
+      advance.(1_000)
+      assert ProviderRecovery.available?("p", name)
+      assert ProviderRecovery.acquire_probe("p", name) == :ok
+
+      # The probe's outcome settles the slot and closes the breaker.
+      assert ProviderRecovery.record("p", :ok, name) == :closed
+      assert ProviderRecovery.acquire_probe("p", name) == :ok
+      assert ProviderRecovery.available?("p", name)
+    end
+
     test "success resets consecutive count; malformed does not move the breaker" do
       %{name: name} = start_recovery!()
       rl = :rate_limited

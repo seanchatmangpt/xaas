@@ -243,8 +243,20 @@ defmodule Xaas.Ultracode.ProviderRegistry do
   def select_and_claim(required, worker_id, opts \\ []) do
     {select_opts, claim_opts} = Keyword.split(opts, [:policy, :candidates, :provider_recovery])
 
-    with {:ok, provider_id, _entry} <- select(required, select_opts) do
+    recovery = Keyword.get(select_opts, :provider_recovery, Xaas.Ultracode.ProviderRecovery)
+
+    # A half-open provider admits ONE probe: claiming work through it takes
+    # the probe slot first, so concurrent claimers cannot all probe at once.
+    with {:ok, provider_id, _entry} <- select(required, select_opts),
+         :ok <- probe_slot(provider_id, recovery) do
       Xaas.Ultracode.Lease.claim_next(provider_id, worker_id, claim_opts)
+    end
+  end
+
+  defp probe_slot(provider_id, recovery) do
+    case Xaas.Ultracode.ProviderRecovery.acquire_probe(provider_id, recovery) do
+      :ok -> :ok
+      {:error, reason} -> {:error, {reason, provider_id}}
     end
   end
 

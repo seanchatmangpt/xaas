@@ -199,9 +199,53 @@ defmodule Xaas.Ultracode.ProviderRecovery do
     end
   end
 
-  @doc "True unless `provider`'s breaker is `:open` (half-open admits a probe)."
+  @doc """
+  True unless `provider`'s breaker is `:open`, or it is `:half_open` with a
+  probe already in flight (half-open admits exactly ONE probe at a time).
+  """
   @spec available?(String.t(), atom()) :: boolean()
-  def available?(provider, server \\ __MODULE__), do: state(provider, server) != :open
+  def available?(provider, server \\ __MODULE__) do
+    case lookup(server, provider) do
+      {entry, clock} ->
+        now = clock.()
+
+        case effective(entry, now) do
+          :open -> false
+          :half_open -> not probe_held?(entry, now)
+          :closed -> true
+        end
+
+      nil ->
+        true
+    end
+  end
+
+  @doc """
+  Claims the single half-open probe slot for `provider` (v26.9.27). A
+  `:closed` breaker needs no probe (`:ok`); an `:open` one refuses
+  `{:error, :breaker_open}`; a `:half_open` one grants the slot to exactly
+  one caller until the next `record/3` for that provider (or until the
+  probe hold expires after the base backoff, so a lost probe cannot pin
+  the breaker) and refuses everyone else with `{:error, :probe_in_flight}`.
+  An absent server grants (`:ok`).
+  """
+  @spec acquire_probe(String.t(), atom()) :: :ok | {:error, :breaker_open | :probe_in_flight}
+  def acquire_probe(provider, server \\ __MODULE__) do
+    if Process.whereis(server) do
+      GenServer.call(server, {:acquire_probe, provider})
+    else
+      :ok
+    end
+  catch
+    :exit, _ -> :ok
+  end
+
+  defp probe_held?(entry, now) do
+    case Map.get(entry, :probe_until) do
+      until when is_integer(until) -> now < until
+      _ -> false
+    end
+  end
 
   @doc "Every tracked provider's breaker record, with effective state."
   @spec snapshot(atom()) :: %{String.t() => map()}
@@ -280,6 +324,36 @@ defmodule Xaas.Ultracode.ProviderRecovery do
   end
 
   @impl true
+  def handle_call({:acquire_probe, provider}, _from, s) do
+    now = s.clock.()
+
+    case :ets.lookup(s.table, {:provider, provider}) do
+      [] ->
+        {:reply, :ok, s}
+
+      [{_, entry}] ->
+        case effective(entry, now) do
+          :closed ->
+            {:reply, :ok, s}
+
+          :open ->
+            {:reply, {:error, :breaker_open}, s}
+
+          :half_open ->
+            if probe_held?(entry, now) do
+              {:reply, {:error, :probe_in_flight}, s}
+            else
+              :ets.insert(
+                s.table,
+                {{:provider, provider}, Map.put(entry, :probe_until, now + s.base_ms)}
+              )
+
+              {:reply, :ok, s}
+            end
+        end
+    end
+  end
+
   def handle_call({:record, provider, class}, _from, s) do
     now = s.clock.()
 
@@ -299,7 +373,8 @@ defmodule Xaas.Ultracode.ProviderRecovery do
 
     next = step(entry, class, now, s)
     next = if next.state != entry.state, do: transition(provider, entry, next, class), else: next
-    next = Map.merge(next, %{last_class: class, last_at: now})
+    # Any recorded outcome settles the in-flight probe.
+    next = Map.merge(next, %{last_class: class, last_at: now, probe_until: nil})
 
     :ets.insert(s.table, {{:provider, provider}, next})
     {:reply, next.state, s}
