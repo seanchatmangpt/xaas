@@ -4,6 +4,21 @@ Reconstructed 2026-09-26 from `git log v26.9.22..HEAD` (this file did not previo
 exist in the repository). Every entry traces to a witnessed commit or merge; anchors
 supplied without a witnessed commit are marked UNKNOWN.
 
+## [v26.9.28] — Integration (branch `claude/serene-wozniak-jwnj94`)
+
+Requirements: `docs/rfc/REQUIREMENTS-v26.9.28.md`.
+
+- Merged 28 of 37 unmerged remote branches into the integration line (20 clean, 8 with
+  `-X ours`, HEAD winning conflicting hunks). Ledger of the 9 not merged, with reasons, is
+  in the requirements doc (3 unrelated histories; 4 stale early-Sept branches; `backup/*` skipped).
+- `runtime/v26.9.28-execution-closure-r14` replaced the stub `research_runtime` files
+  already on HEAD (add/add) with its 55-file formatted implementation.
+- Integration repair: machine-generated syntax slips (FOND, provider_fabric, trimtab,
+  provider_mesh, sjira), `do: case` parenthesization, `Checkpoint.migrate/2` header,
+  `EngineerWorkflow` guard, `SteeringPolicy` with-clause, `Snapshot` enforce_key vs default,
+  `Lease.@refused_consequence_tools`, `WaveLoop` ClosureController alias.
+- Guard: `test/xaas/release/tree_parse_guard_test.exs` (all sources parse; no fused `ident!=`).
+
 ## [v26.9.27] — In Progress (branch `v26.9.27/closure-runtime`, draft PR #90)
 
 - Lease-reclaim kernel merged (`68315314`, from `origin/feat/v26.9.27-lease-reclaim-kernel`):
