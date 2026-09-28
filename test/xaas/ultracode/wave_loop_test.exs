@@ -1037,6 +1037,37 @@ defmodule Xaas.Ultracode.WaveLoopTest do
   # Consolidated runtime paths
   # ------------------------------------------------------------------
 
+  describe "lease_live?/2 claim grace (v26.9.27)" do
+    test "a constructed, unclaimed epoch inside the claim grace is live; outside it is stale" do
+      now = DateTime.utc_now()
+      fresh = %Epoch{lease_token: nil, inserted_at: DateTime.add(now, -10, :second)}
+      old = %Epoch{lease_token: nil, inserted_at: DateTime.add(now, -301, :second)}
+
+      assert WaveLoop.lease_live?(fresh, now)
+      refute WaveLoop.lease_live?(old, now)
+    end
+
+    test "a claimed epoch is live exactly while its lease is unexpired (grace does not apply)" do
+      now = DateTime.utc_now()
+      constructed = DateTime.add(now, -5, :second)
+
+      live = %Epoch{
+        lease_token: "t",
+        lease_expires_at: DateTime.add(now, 60, :second),
+        inserted_at: constructed
+      }
+
+      expired = %Epoch{
+        lease_token: "t",
+        lease_expires_at: DateTime.add(now, -1, :second),
+        inserted_at: constructed
+      }
+
+      assert WaveLoop.lease_live?(live, now)
+      refute WaveLoop.lease_live?(expired, now)
+    end
+  end
+
   describe "consolidated runtime paths" do
     # Root consolidation (2026-09-21): the loop's STATE + telemetry files
     # live under the repo root's gitignored tmp/ tree. No config key

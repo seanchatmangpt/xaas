@@ -668,10 +668,25 @@ defmodule Xaas.Ultracode.WaveLoop do
 
   defp step_id_from_subject(_, _), do: nil
 
-  defp lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at}) do
-    not is_nil(token) and not is_nil(expires_at) and
-      DateTime.compare(expires_at, DateTime.utc_now()) == :gt
+  # An epoch is live while its lease is unexpired, OR -- v26.9.27 -- while
+  # it is constructed but not yet claimed and still inside the claim grace
+  # window (`:ultracode_wave_loop_claim_grace_seconds`, default 300). Without
+  # the grace an epoch a concurrent tick just constructed (no lease token
+  # yet) read as stale and could be reaped before its worker claimed it.
+  @doc false
+  def lease_live?(epoch, now \\ DateTime.utc_now())
+
+  def lease_live?(%Epoch{lease_token: token, lease_expires_at: expires_at}, now)
+      when is_binary(token) do
+    not is_nil(expires_at) and DateTime.compare(expires_at, now) == :gt
   end
+
+  def lease_live?(%Epoch{inserted_at: %DateTime{} = constructed_at}, now) do
+    grace = Application.get_env(:xaas, :ultracode_wave_loop_claim_grace_seconds, 300)
+    DateTime.diff(now, constructed_at, :second) < grace
+  end
+
+  def lease_live?(%Epoch{}, _now), do: false
 
   # ------------------------------------------------------------------
   # Execution: the Run/Epoch factory + the dispatch boundary
