@@ -1,0 +1,43 @@
+[
+  {
+    "order": "urn:work:atlassian:1001",
+    "iri": "urn:work:atlassian:1001",
+    "checkpoint_of": "urn:checkpoint:cs2:1",
+    "capability": "atlassian:jira.issue",
+    "provider": "atlassian",
+    "tuple_digest": "f9fc4a950c9486750855232990cc378bf5f905ef8b28675ce1a3f47df2dd9f31",
+    "classification": "Successor",
+    "resolve": "ok",
+    "route": "KNOWN",
+    "standing": "UNKNOWN",
+    "reason": "provider_registered",
+    "resolved": {
+      "provider": "atlassian",
+      "recipe_id": "jira.issue"
+    },
+    "summary": "Push qualified CS2 information to engineer workflow",
+    "description": "Materialize qualified semantic work as a Jira issue while preserving semantic identity.",
+    "labels": ["cs2", "semantic-work"]
+  },
+  {
+    "order": "urn:work:atlassian:1002",
+    "iri": "urn:work:atlassian:1002",
+    "checkpoint_of": "urn:checkpoint:cs2:1",
+    "capability": "atlassian:jira.issue",
+    "provider": "atlassian",
+    "tuple_digest": "e662b471645b27cb025595a6b6770b375d73a5658307cafbd81c53a1c3cdb82c",
+    "classification": "Successor",
+    "resolve": "ok",
+    "route": "KNOWN",
+    "standing": "UNKNOWN",
+    "reason": "provider_registered",
+    "resolved": {
+      "provider": "atlassian",
+      "recipe_id": "jira.issue"
+    },
+    "jira_key": "ENG-17",
+    "summary": "Update existing engineer workflow projection",
+    "description": "Exercise stable update addressing and retry-safe semantic identity.",
+    "labels": ["cs2", "semantic-work", "update"]
+  }
+]
