@@ -1,0 +1,41 @@
+{
+  "ocel:global-log": {
+    "ocel:version": "2.0",
+    "ocel:ordering": "timestamp"
+  },
+  "ocel:events": {
+    "bind": {
+      "ocel:type": "factory",
+      "ocel:time": "2026-09-28T13:27:37Z",
+      "ocel:attr": {
+        "repo": "seanchatmangpt/xaas",
+        "base": "37f39e7ce9310563a50523bc788cf7de5c7d095c",
+        "family": "research-execution-federation"
+      }
+    },
+    "construct": {
+      "ocel:type": "manufacture",
+      "ocel:time": "2026-09-28T13:27:38Z",
+      "ocel:attr": {
+        "qualifying_files": 56,
+        "tree": "81deaf8df5177cda282c190d14fe898837220eeb"
+      }
+    },
+    "durable": {
+      "ocel:type": "git",
+      "ocel:time": "2026-09-28T13:27:39Z",
+      "ocel:attr": {
+        "commit": "9018394579b549f9471e29e23ae1860974e1cc3e",
+        "branch": "runtime/v26.9.28-execution-federation-r13"
+      }
+    }
+  },
+  "ocel:objects": {
+    "run": {
+      "ocel:type": "runtime_factory",
+      "ocel:ovmap": {
+        "run_id": "2026-09-28-xaas-execution-federation-r13"
+      }
+    }
+  }
+}
