@@ -42,7 +42,9 @@ defmodule Xaas.Ultracode.GateSurfaceTest do
     %{root: root, tmpdir: tmpdir, repo: repo}
   end
 
-  defp save_lease(%{tmpdir: tmpdir, repo: repo}) do
+  defp save_lease(ctx, extra \\ %{})
+
+  defp save_lease(%{tmpdir: tmpdir, repo: repo}, extra) do
     state_dir = Path.join(tmpdir, "xaas-fabric")
     File.mkdir_p!(state_dir)
     key = :crypto.hash(:sha256, repo) |> Base.encode16(case: :lower)
@@ -54,7 +56,7 @@ defmodule Xaas.Ultracode.GateSurfaceTest do
       "worktree" => repo
     }
 
-    File.write!(Path.join(state_dir, key <> ".json"), Jason.encode!(lease))
+    File.write!(Path.join(state_dir, key <> ".json"), Jason.encode!(Map.merge(lease, extra)))
   end
 
   # Runs the real gate. Returns :allow (empty stdout: deferred to the host) or
@@ -143,6 +145,19 @@ defmodule Xaas.Ultracode.GateSurfaceTest do
       assert {:deny, reason} = gate(ctx, "Bash", %{command: cmd}), cmd
       assert reason =~ "SHELL_IS_NOT_AUTHORITY", cmd
     end
+  end
+
+  # Court bypass3 OBSERVED_ESCAPE: a worker-written lease "verifier" list
+  # short-circuited the gate for any exact string (sh -c, chaining, push).
+  test "a worker-written lease verifier list grants nothing", ctx do
+    planted = ["sh -c 'git push origin main'", "git status; id", "git push origin main"]
+    save_lease(ctx, %{"verifier" => planted})
+
+    for cmd <- planted do
+      assert {:deny, _reason} = gate(ctx, "Bash", %{command: cmd}), cmd
+    end
+
+    assert :allow == gate(ctx, "Bash", %{command: "git status"})
   end
 
   test "only the declared xaas-execution port tools pass; a lookalike is denied", ctx do
