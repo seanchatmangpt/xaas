@@ -1,0 +1,221 @@
+FA
+CASE STUDY 2
+HDD Failure Analysis Agent
+How the five prototype pages answer the brief
+22 Sep 2026
+Proposal + prototype
+00 · ORIENTATION
+Five pages, one system
+P1
+System
+Disclosure rules, email → case → evidence → authorize flow
+P2
+ERRC Brief
+Falsifiers, call record, stand-up mode, write-back
+P3
+Notation
+The reasoning contract, stated formally
+P4
+Space Ω
+180 views: register × layout × depth × audience × states
+P5
+Visual
+Signature map, lot recurrence, test floor
+01 · PROBLEM FRAMING
+Phase one scope
+IN · 90 DAYS
+Triage of a failed drive + symptom → ranked modes, prior cases, one next action
+One product family, one site, English corpus
+Read-only data access; actions only after human authorization
+Morning Brief + case view (P1, P2)
+DEFERRED
+Automatic test scheduling on stations
+Supplier-facing SCAR sending
+Open-ended chat across the corpus
+Root-cause authoring for novel modes
+02 · DEFINE TRIAGE
+Triage output
+P1 · P4
+L0
+State · decision / recommended / unknown / handled
+L1
+One next action: test, teardown, route, close, escalate
+L2
+Ranked modes, applicability n/5, falsifier
+L3
+Closest prior cases + build facts, each cited
+L4
+Receipt: identity, authority, consequence, replay
+triage(A817, "read-retry spike")
+modes: FM-217 0.78 · FM-230 0.19
+applicability: 4 / 5 · c₅ pending
+prior: FA-702, FA-731, FA-655
+action: run T17 on TS-04
+falsifier: τ > 40 → new FA
+03 · MESSY CORPUS
+Ingestion and normalization
+P1 · 2e
+PPT · 15 yr
+Slide → figure-level chunks. Plots: vision model caption + axis/series extraction. SEM: caption + embedding.
+Confluence
+Known-issue pages → FM records. Freshness from last edit vs. last ECO.
+Excel
+Free text → extracted serial, lot, disposition; low-confidence rows queued, not guessed.
+Normalize
+One FA case schema: symptom, signature, mode, evidence[], disposition, source span.
+Hybrid retrieval
+BM25 on IDs/codes + dense on text and figures, then rerank
+Signature index
+Waveform features for nearest-case lookup (P5 map)
+Refresh
+Nightly delta; lake facts queried live
+04 · UNSTRUCTURED ↔ STRUCTURED
+Purpose-built tools over a semantic layer
+P1 · 2e
+REJECTED
+Text-to-SQL
+Flexible, but join errors look like findings. Hard to audit.
+FOUNDATION
+Semantic layer
+Curated entities: drive, lot, supplier, BOM rev, station, test run.
+CHOSEN
+Typed tools
+Deterministic, versioned, cacheable, ACL-checked.
+get_build(serial) → lot, BOM, line, fw
+get_tests(serial) → runs, stations
+lot_recurrence(lot, mode, 7d) → N, Ṅ
+check_applicability(serial, FM) → c₁…c₅
+05 · ARCHITECTURE
+Components and trust boundaries
+P2 · P3
+ZONE A · READ-ONLY
+PPT / Confluence / Excel
+Ingest + vision captions
+Case store + vector index
+Data lake · semantic layer
+ZONE B · AGENT (PROPOSE ONLY)
+Retriever
+Typed tools
+Rules engine · FM applicability
+LLM · rank + explain
+Verifier · every claim cites a span, or it is dropped
+Brief · case view · email (P1, P2)
+ZONE C · ACT
+Human authorize (P1 · 2f)
+Action service
+QMS / MES write-back
+Receipt log · replay
+Buy:
+LLM, vision captioning, vector DB
+Build:
+case schema, tools, rules, verifier, UI
+06 · GROUNDING AND TRUST
+Four guards against a confident wrong root cause
+P1 · P2
+1
+Citation or nothing
+Each claim links a source span + timestamp (2e). Uncited claims are removed.
+2
+Applicability, not probability
+Engineer sees “4 of 5 met” with the missing condition named (2d).
+3
+Stated falsifier
+“T17 > 40 → not FM-217” is on the card, before any action (P2).
+4
+UNKNOWN is allowed
+Missing, stale or conflicting evidence blocks a recommendation (2h).
+Human in the loop:
+every write, every escalation, every novel-mode call. Auto-close only at 5 / 5 with 1-in-10 sampling.
+07 · KNOWN VERSUS NOVEL
+Two gates decide known versus novel
+P3 · P5
+SIGNATURE
+APPLICABILITY
+OUTCOME
+EXAMPLE
+Inside one cluster
+5 / 5
+Close against known
+FA-811
+Between clusters
+4 / 5
+Run discriminating test
+A817 · T17
+Outside all clusters
+0 / 5
+Open full FA
+A790
+No signature
+—
+UNKNOWN · collect
+A822
+The next test is chosen by expected information gain per minute of station time (P3).
+08 · MEASUREMENT
+Metrics we would move
+−40%
+MTTR on known modes
+≥ 90%
+Top-3 mode matches final disposition
+< 1%
+Auto-closures reopened
+0
+Uncited claims shown
+Targets pending a 4-week shadow baseline · also tracked: time-to-first-action, tests avoided, novel-mode recall
+09 · FEEDBACK
+Feedback without extra work
+P2
+DISPOSITION = LABEL
+Closing, reopening or routing a case already records the verdict. Nothing extra to fill in.
+CALL RECORD
+Each auto-close names rule, evidence and a spot-checker. A reopen demotes the rule.
+CREDITED RULES
+A senior call (“always T17 on line 3”) becomes rule R-044, with its hit rate shown.
+Weekly: retrain reranker
+On reopen: suspend rule
+Monthly: review proposed rules
+10 · SECURITY AND GOVERNANCE
+Security and governance
+P1 · 2a · 2h
+ACL propagation
+Source ACLs copied onto every chunk; filtered at retrieval, not at display.
+Access denied state
+Shown with who can grant access, never silently omitted (2h).
+IP and PII
+Private model endpoint; no evidence in email (2a); customer names redacted at ingest.
+Auditability
+Receipt per action: identity, authority, consequence, replay, standing (P4 · L4).
+11 · EVALUATION
+Evaluation plan
+BEFORE LAUNCH
+Golden set: 300 closed cases replayed blind, time-sliced to prevent leakage
+Adversarial set: look-alike modes, stale docs, conflicting lots
+4-week shadow mode alongside engineers
+AFTER LAUNCH
+Reopen rate and engineer override rate, per rule
+UNKNOWN rate: a rise means data pipelines are failing
+Golden set re-run on every model, prompt or rule change
+12 · DELIVERY
+30 / 60 / 90 plan
+30
+Case schema, PPT + Confluence ingest, 4 typed tools, golden set
+60
+Verifier, applicability rules, case view (P1 · 2c–2e), shadow mode
+90
+Morning Brief + email, authorized write-back, call record
+TEAM
+2 ML/data eng · 1 backend · 1 designer · 1 FA SME (50%)
+CUT FIRST
+Stand-up view, visuals (P5), Excel ingest
+NEVER CUT
+Citations, verifier, UNKNOWN state
+13 · RISKS AND OPEN QUESTIONS
+Risks and open questions
+RISKS
+Old PPT plots lack axes; vision extraction may be unreliable
+Known-issue pages lag engineering changes
+Engineers over-trust “Likely”
+NEED FROM YOU
+Current MTTR by mode, and how it is measured
+Who may authorize closure and escalation
+Is QMS write-back via API allowed in phase one?
+Assumed meanwhile: one product family, English corpus, read-only lake access, private model endpoint.

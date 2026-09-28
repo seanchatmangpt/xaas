@@ -1,0 +1,113 @@
+{
+  "identity": {
+    "subject": "xaas:scripts/sjira/wd_claims.py",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "d6fb40e3a6868365c8944625d01c2aa8cc76cdad",
+    "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+    "branch": "v23/V23-W",
+    "work_order": "v23:WO-V23-W (supporting receipt)",
+    "digests": {
+      "scripts/sjira/wd_claims.py": "sha256:e3c05b190df04a74b7ccff237e9b890da210bc063610f60b199a6a86dd31dd05",
+      "scripts/sjira/test_wd_claims.py": "sha256:d7e8801306c374aa11d4b9bdd607cda68d47e8047bb9a37a5be6b55112d65359",
+      "docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh": "sha256:43477a2c3ce2dd3381ba5ddd31a95120603e611b12167943d2a0f7e962208670"
+    }
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "NONE (lane-local construction and tests; mutations run on a scratch copy)",
+    "actor": "claude-opus-5-5 lane V23-W (wave B1c, v26.9.23), workflow subagent"
+  },
+  "consequence": {
+    "commits": [
+      "757be458cf14395b27f90eea5c5f6513dcb9c400",
+      "d6fb40e3a6868365c8944625d01c2aa8cc76cdad"
+    ],
+    "files_changed": [
+      "scripts/sjira/wd_claims.py",
+      "scripts/sjira/test_wd_claims.py",
+      "docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "git diff --quiet d6fb40e3a6868365c8944625d01c2aa8cc76cdad -- scripts/sjira/wd_claims.py scripts/sjira/test_wd_claims.py && python3 -m unittest -k WdClaimsTest scripts/sjira/test_wd_claims.py 2>&1 | tail -3 | tr '\\n' ' '",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "wd_claims.py fixture tests at the subject (WdClaimsTest: real git repos, real validator subprocess; the committed-ledger test runs in the lane gate): Ran 15 tests in 11.949s  OK",
+        "output_sha256": "b48dbadb896df76e7f33e26a886b8af6ef9e4768f05b07c3d2c4538231f77cba"
+      },
+      {
+        "cmd": "rm -rf /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court && mkdir -p /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court && cp scripts/sjira/wd_claims.py scripts/sjira/test_wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/ && sed -i '' 's/if DIGIT.search(sentence) or CLAIM_VERB.search(sentence):/if False:/' /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! cmp -s scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! python3 -m unittest discover -s /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court -p 'test_wd_claims.py' > /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m1.log 2>&1 && tail -1 /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m1.log",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "mutation M1 (unmarked-sentence rule disabled) must fail the suite; scratch copy: FAILED (failures=3, skipped=1)",
+        "output_sha256": "039e5d29f2382ff8bd48910745ab0d3de9cfea139f4058d91b4c4bd45222f276"
+      },
+      {
+        "cmd": "cp scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && sed -i '' 's/    check_guards(ledger, refusals)/    pass/' /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! cmp -s scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! python3 -m unittest discover -s /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court -p 'test_wd_claims.py' > /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m2.log 2>&1 && tail -1 /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m2.log",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "mutation M2 (unsupplied-WD-fact guard disabled) must fail the suite: FAILED (failures=1, skipped=1)",
+        "output_sha256": "3691355c709623b58f1f7b04bcca7378afd5de650e5d9ee5d2e3461e91763530"
+      },
+      {
+        "cmd": "cp scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && sed -i '' 's/    if not existing:/    if True:/' /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! cmp -s scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! python3 -m unittest discover -s /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court -p 'test_wd_claims.py' > /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m3.log 2>&1 && tail -1 /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m3.log",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "mutation M3 (receipt validation skipped) must fail the suite: FAILED (failures=4, skipped=1)",
+        "output_sha256": "0f59b6a62d6cb11a5e2d01b6444233411ba4146eded18035a0edc0cce391cd3a"
+      },
+      {
+        "cmd": "cp scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && sed -i '' 's/if expected is not None and expected.encode(\"utf-8\") != proposal_bytes:/if False:/' /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! cmp -s scripts/sjira/wd_claims.py /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/wd_claims.py && ! python3 -m unittest discover -s /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court -p 'test_wd_claims.py' > /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m4.log 2>&1 && tail -1 /private/tmp/claude-501/v23-scratch/B1c-V23-W/mut-court/m4.log",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "mutation M4 (projection drift check removed) must fail the suite: FAILED (failures=1, skipped=1)",
+        "output_sha256": "3691355c709623b58f1f7b04bcca7378afd5de650e5d9ee5d2e3461e91763530"
+      },
+      {
+        "cmd": "sh docs/sjira/v26.9.23/courts/no_llm_env.sh ANTHROPIC_API_KEY=x -- sh docs/sjira/v26.9.23/wd-fa/courts/wdfa_gate.sh WDFA-2; test $? -eq 3",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "F3 guard of the WDFA gate courts: an LLM credential variable is refused: REFUSED(llm_credential_present) WDFA-2: LLM credential variables set: ANTHROPIC_API_KEY (broken_term mu_on_O)",
+        "output_sha256": "22af66a357706f1e8809a00c7cdec1379d28b9d42ec9e451fd41ba444f68b515"
+      },
+      {
+        "cmd": "! grep -n 'unittest.mock\\|Mock(\\|MagicMock\\|patch(\\|monkeypatch' scripts/sjira/wd_claims.py scripts/sjira/test_wd_claims.py docs/sjira/v26.9.23/wd-fa/probes/*.py && echo 'zero matches'",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "Chicago mock grep over the lane's python: zero matches",
+        "output_sha256": "9e25db661e8dba83624e539f2b69e7f1d24609376477a4aba90b474ae9d8b8d4"
+      }
+    ],
+    "durable_location": "xaas branch v23/V23-W at d6fb40e3a6868365c8944625d01c2aa8cc76cdad"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed at d6fb40e3a6868365c8944625d01c2aa8cc76cdad: the 15 WdClaimsTest fixture tests pass against the real validator; revert-mutations M1 (unmarked-sentence rule), M2 (unsupplied-WD-fact guard), M3 (receipt validation), M4 (projection drift) each make the suite fail; the WDFA gate courts refuse an LLM credential variable with REFUSED(llm_credential_present) (exit 3); mock grep zero matches."
+  },
+  "refusal_codes_witnessed_by_tests": [
+    "projection_drift",
+    "unmarked_claim_sentence",
+    "marker_unresolved",
+    "marker_malformed",
+    "sentence_multi_claim",
+    "sentence_mismatch",
+    "claim_unreferenced",
+    "class_count",
+    "receipt_not_admitted",
+    "proof_not_alive",
+    "quote_not_in_supplied_source",
+    "supplied_source_unbound",
+    "inference_on_unknown",
+    "premise_unresolved",
+    "inference_cycle",
+    "unsupplied_wd_fact",
+    "validator_unavailable",
+    "placeholder_unresolved"
+  ],
+  "notes": [
+    "The test file's CommittedLedgerTest (the committed claims.ttl/proposal.md) is excluded here because those files are committed after this subject; it runs in the V23-W lane gate on the final head."
+  ]
+}
