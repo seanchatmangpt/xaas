@@ -104,6 +104,47 @@ defmodule Xaas.Ultracode.WorkerEnvTest do
     end
   end
 
+  # Court env2 + bypass2 (v26.9.27, second pass) witnessed these crossing.
+  @court2_ambient ~w(LC_SECRETS LC_TOKENS LC_APITOKEN NODE_PATH XAAS_ALLOW_SUBAGENTS)
+  @court2_explicit ~w(SECRETS APP_TOKENS API_KEYS DB_PASSWORDS GITLAB_ACCESSTOKEN MYSECRET
+                      STRIPE_SECRETKEY APITOKEN V2TOKEN NPM_CONFIG__AUTHTOKEN DSN SENTRY_DSN
+                      CONNECTION_STRING MONGO_URI DATABASE_URI STRIPE_SK VAULT_ROLE_ID AGE_IDENTITY
+                      BUNDLE_RUBYGEMS__ORG KUBECONFIG DOCKER_CONFIG DOCKER_HOST CLOUDSDK_CONFIG
+                      GNUPGHOME CURL_HOME XDG_CONFIG_HOME VAULT_ADDR OP_CONNECT_HOST LD_PRELOAD
+                      DYLD_LIBRARY_PATH BASH_ENV ENV PERL5OPT PERL5LIB PYTHONSTARTUP RUBYOPT
+                      XAAS_SURFACE_PATH XAAS_ALLOW_SUBAGENTS)
+
+  describe "court env2/bypass2 regressions" do
+    test "ambient leak names are refused" do
+      assert Enum.filter(@court2_ambient, &WorkerEnv.allowed?/1) == []
+    end
+
+    test "explicit pairs cannot carry credential or loader names" do
+      explicit = Enum.map(@court2_explicit, &{&1, "/fixture"})
+      assert WorkerEnv.build(%{}, [], explicit) == []
+    end
+
+    test "credential-bearing VALUES are refused under any name" do
+      explicit = [
+        {"UPSTREAM_URL", "https://u:fixture-pass@host/x"},
+        {"FOO_CONN", "Server=h;User Id=u;Password=fixture"},
+        {"FAKE_LOG", "/tmp/fake-log"}
+      ]
+
+      assert WorkerEnv.build(%{}, [], explicit) == [{"FAKE_LOG", "/tmp/fake-log"}]
+    end
+
+    test "URL-valued names refuse parser-differential and query/fragment smuggling" do
+      for v <- ~w(https:u:s3cr3t@h/mcp u:SECRET@h:4000/mcp https://h/mcp?token=SECRET
+                  https://h/mcp#SECRET ftp://h/x) do
+        assert WorkerEnv.build(%{"XAAS_MCP_URL" => v}, []) == [], v
+      end
+
+      assert WorkerEnv.build(%{"XAAS_MCP_URL" => "http://localhost:4000/mcp"}, []) ==
+               [{"XAAS_MCP_URL", "http://localhost:4000/mcp"}]
+    end
+  end
+
   describe "build/2" do
     test "additions override parent but cannot smuggle a denied credential" do
       parent = %{"PATH" => "/bin", "HOME" => "/h", "GITHUB_TOKEN" => "fixture-gh"}

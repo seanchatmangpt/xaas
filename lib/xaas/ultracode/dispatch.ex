@@ -464,11 +464,13 @@ defmodule Xaas.Ultracode.Dispatch do
   # The exact environment the worker process starts with (name/value pairs);
   # public so the credential falsifier can inspect the real spawn input.
   def worker_env(built) do
-    WorkerEnv.build(
-      System.get_env(),
-      [{"XAAS_SURFACE_PATH", RuntimeSurface.policy_path()}],
-      built.env_added
-    )
+    # XAAS_SURFACE_PATH is set here, AFTER every inherited/explicit pair
+    # and outside WorkerEnv (which denies the name): the gate's policy path
+    # is server-owned and cannot be redirected by :extra_env (court bypass2).
+    System.get_env()
+    |> WorkerEnv.build([], built.env_added)
+    |> List.keystore("XAAS_SURFACE_PATH", 0, {"XAAS_SURFACE_PATH", RuntimeSurface.policy_path()})
+    |> Enum.sort()
   end
 
   defp spawn_and_collect(built, resolved) do

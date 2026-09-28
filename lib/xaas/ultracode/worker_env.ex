@@ -64,8 +64,13 @@ defmodule Xaas.Ultracode.WorkerEnv do
   @deny_word_source Map.fetch!(@worker_env, "deny_word_regex")
   @name_source Map.fetch!(@worker_env, "name_regex")
   @url_names MapSet.new(Map.get(@worker_env, "url_names_no_userinfo", []))
+  @credential_value_source Map.fetch!(@worker_env, "credential_value_regex")
 
-  for {key, source} <- [deny_word_regex: @deny_word_source, name_regex: @name_source],
+  for {key, source} <- [
+        deny_word_regex: @deny_word_source,
+        name_regex: @name_source,
+        credential_value_regex: @credential_value_source
+      ],
       not match?({:ok, _}, Regex.compile(source)) do
     raise CompileError,
       description: "worker_env.#{key} does not compile: #{inspect(source)}"
@@ -113,14 +118,20 @@ defmodule Xaas.Ultracode.WorkerEnv do
   # without embedded userinfo: `https://user:pass@host` would smuggle a
   # credential through an admitted name.
   defp value_admitted?(name, value) do
-    if MapSet.member?(@url_names, name) do
-      case URI.new(value) do
-        {:ok, %URI{userinfo: nil}} -> true
-        _ -> false
-      end
-    else
-      true
-    end
+    not Regex.match?(Regex.compile!(@credential_value_source), value) and
+      (not MapSet.member?(@url_names, name) or plain_http_url?(value))
+  end
+
+  # Court env2 F1/F2: Elixir's URI and Node's WHATWG URL disagree on inputs
+  # like `https:u:pw@h`, so a URL-valued name must be an unambiguous
+  # http(s) URL with a host, no `@` anywhere, and no query/fragment.
+  defp plain_http_url?(value) do
+    not String.contains?(value, "@") and
+      match?(
+        {:ok, %URI{scheme: scheme, host: host, userinfo: nil, query: nil, fragment: nil}}
+        when scheme in ["http", "https"] and is_binary(host) and host != "",
+        URI.new(value)
+      )
   end
 
   defp admitted_pair?({k, v}),

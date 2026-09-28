@@ -35,8 +35,10 @@ defmodule Xaas.Ultracode.DispatchWorkerEnvTest do
         {"XAAS_WORKER", "1"},
         {"XAAS_LEASE_ID", "epoch-fixture"},
         {"FAKE_LOG", "/tmp/fake-log"},
-        # an explicit smuggling attempt through :extra_env
-        {"GITHUB_TOKEN", "fixture-gh-smuggled"}
+        # explicit smuggling attempts through :extra_env
+        {"GITHUB_TOKEN", "fixture-gh-smuggled"},
+        {"XAAS_SURFACE_PATH", "/tmp/fixture-permissive-policy.json"},
+        {"XAAS_ALLOW_SUBAGENTS", "1"}
       ]
     }
 
@@ -44,6 +46,7 @@ defmodule Xaas.Ultracode.DispatchWorkerEnvTest do
     names = WorkerEnv.key_names(env)
 
     for name <- Map.keys(@fixtures), do: refute(name in names, name)
+    refute "XAAS_ALLOW_SUBAGENTS" in names
     assert {"XAAS_SURFACE_PATH", RuntimeSurface.policy_path()} in env
     assert {"FAKE_LOG", "/tmp/fake-log"} in env
 
