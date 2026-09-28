@@ -98,7 +98,10 @@ defmodule Xaas.MixProject do
       # in this app. See lib/xaas/library/explainer/groq_adapter.ex.
       {:req_llm, "~> 1.18"},
       {:ash_a2a, "~> 26.9.12"},
-      {:ash_r2rml, "~> 26.9.12"},
+      {:ash_r2rml,
+       git: "https://github.com/seanchatmangpt/ash_r2rml.git",
+       ref: "40d181fffdefbb65ee4a83486eae86534690c4d5",
+       override: true},
       {:a2a, "~> 0.2"},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
