@@ -516,7 +516,8 @@ defmodule Xaas.Ultracode.WaveLoop do
   # Keyed by the telemetry path's hash: several loops (and the test suite)
   # share one telemetry DIRECTORY, so a single fixed filename would leak one
   # loop's setpoint into another's width (observed cross-test in wave_loop_test).
-  defp setpoint_path(telemetry_path) do
+  @doc false
+  def setpoint_path(telemetry_path) do
     name =
       "wave-setpoint-" <>
         Integer.to_string(:erlang.phash2(String.to_charlist(telemetry_path))) <> ".txt"

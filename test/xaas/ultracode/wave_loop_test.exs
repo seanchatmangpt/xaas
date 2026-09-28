@@ -1250,7 +1250,9 @@ defmodule Xaas.Ultracode.WaveLoopTest do
       assert 4 == WaveLoop.effective_concurrency(telemetry_path)
       # ceiling clamps
       assert 4 == WaveLoop.effective_concurrency(telemetry_path)
-      assert File.read!(Path.join(Path.dirname(telemetry_path), "wave-setpoint.txt")) == "4"
+      # The setpoint file is keyed by the telemetry path (setpoint_path/1);
+      # the old fixed "wave-setpoint.txt" name only passed via a stale file.
+      assert File.read!(WaveLoop.setpoint_path(telemetry_path)) == "4"
     end
 
     test "one tick dispatches every ready step up to width, settles serially", %{
