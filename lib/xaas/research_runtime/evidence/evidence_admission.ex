@@ -1,5 +1,16 @@
 defmodule Xaas.ResearchRuntime.EvidenceAdmission do
   @moduledoc false
-  def admit(subject, evidence_subject) when subject == evidence_subject, do: {:ok, :admitted}
-  def admit(subject, evidence_subject), do: {:refused, :boundary_violation}
+  @enforce_keys [:evidence_id]
+  defstruct [:evidence_id, status: :unknown, provenance: %{}]
+
+  def new(attrs) when is_list(attrs) do
+    value = struct(__MODULE__, attrs)
+
+    if Map.get(value, :evidence_id) in [nil, ""],
+      do: {:error, :missing_evidence_id},
+      else: {:ok, value}
+  end
+
+  def admit(%__MODULE__{} = value, pred) when is_function(pred, 1),
+    do: if(pred.(value), do: {:ok, %{value | status: :admitted}}, else: {:error, :refused})
 end

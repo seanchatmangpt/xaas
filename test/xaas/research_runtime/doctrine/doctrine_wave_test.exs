@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.DoctrineWaveTest do
-  @moduledoc false
-  def case(intent, authority) when intent != nil and authority == :none, do: {:ok, :intent_not_authority}
-  def case(intent, authority), do: {:refused, :boundary_violation}
+  use ExUnit.Case, async: true
+  alias Xaas.ResearchRuntime.Intent
+  test "refuses missing identity and admits bounded value" do
+    assert {:error, :missing_intent_id} = Intent.new([])
+    assert {:ok, value} = Intent.new(intent_id: "exact")
+    assert {:error, :refused} = Intent.admit(value, fn _ -> false end)
+    assert {:ok, admitted} = Intent.admit(value, fn _ -> true end)
+    assert admitted.status == :admitted
+  end
 end

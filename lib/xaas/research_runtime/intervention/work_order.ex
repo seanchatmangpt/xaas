@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.WorkOrder do
   @moduledoc false
-  def new(id, subject, budget) when budget >= 0, do: {:ok, %{id: id, subject: subject, remaining: budget}}
-  def new(id, subject, budget), do: {:refused, :boundary_violation}
+  @enforce_keys [:work_order_iri]
+  defstruct [:work_order_iri, status: :unknown, provenance: %{}]
+  def new(attrs) when is_list(attrs) do
+    value = struct(__MODULE__, attrs)
+    if Map.get(value, :work_order_iri) in [nil, ""], do: {:error, :missing_work_order_iri}, else: {:ok, value}
+  end
+  def admit(%__MODULE__{} = value, pred) when is_function(pred, 1),
+    do: if(pred.(value), do: {:ok, %{value | status: :admitted}}, else: {:error, :refused})
 end

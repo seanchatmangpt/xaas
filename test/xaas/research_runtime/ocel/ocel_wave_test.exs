@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.OcelWaveTest do
-  @moduledoc false
-  def case(receipt_subject, active_subject) when receipt_subject != active_subject, do: {:ok, :refuse_replay}
-  def case(receipt_subject, active_subject), do: {:refused, :boundary_violation}
+  use ExUnit.Case, async: true
+  alias Xaas.ResearchRuntime.Event
+  test "refuses missing identity and admits bounded value" do
+    assert {:error, :missing_event_id} = Event.new([])
+    assert {:ok, value} = Event.new(event_id: "exact")
+    assert {:error, :refused} = Event.admit(value, fn _ -> false end)
+    assert {:ok, admitted} = Event.admit(value, fn _ -> true end)
+    assert admitted.status == :admitted
+  end
 end

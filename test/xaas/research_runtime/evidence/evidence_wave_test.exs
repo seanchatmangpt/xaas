@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.EvidenceWaveTest do
-  @moduledoc false
-  def case(subject, evidence_subject) when subject != evidence_subject, do: {:ok, :refuse_cross_subject}
-  def case(subject, evidence_subject), do: {:refused, :boundary_violation}
+  use ExUnit.Case, async: true
+  alias Xaas.ResearchRuntime.EvidenceAdmission
+  test "refuses missing identity and admits bounded value" do
+    assert {:error, :missing_evidence_id} = EvidenceAdmission.new([])
+    assert {:ok, value} = EvidenceAdmission.new(evidence_id: "exact")
+    assert {:error, :refused} = EvidenceAdmission.admit(value, fn _ -> false end)
+    assert {:ok, admitted} = EvidenceAdmission.admit(value, fn _ -> true end)
+    assert admitted.status == :admitted
+  end
 end

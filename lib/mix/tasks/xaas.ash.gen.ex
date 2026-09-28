@@ -25,8 +25,7 @@ defmodule Mix.Tasks.Xaas.Ash.Gen do
   def info(_argv, _composing_task) do
     %Igniter.Mix.Task.Info{
       group: :xaas,
-      example:
-        "mix xaas.ash.gen --ontology priv/ggen/ultracode-self-digest-pack/ontology.ttl",
+      example: "mix xaas.ash.gen --ontology priv/ggen/ultracode-self-digest-pack/ontology.ttl",
       schema: [ontology: :string],
       required: [:ontology]
     }
@@ -38,6 +37,7 @@ defmodule Mix.Tasks.Xaas.Ash.Gen do
     queries_dir = Path.join(Path.dirname(ontology_path), "queries")
 
     graph = GgenIgniter.Ontology.load!(ontology_path)
+
     query = fn name ->
       GgenIgniter.Query.Oxigraph.run(graph, File.read!(Path.join(queries_dir, "#{name}.rq")))
     end

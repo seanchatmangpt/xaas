@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.PlanningWaveTest do
-  @moduledoc false
-  def case(edges, failed) when failed in edges, do: {:ok, Enum.reject(edges, &(&1 == failed))}
-  def case(edges, failed), do: {:refused, :boundary_violation}
+  use ExUnit.Case, async: true
+  alias Xaas.ResearchRuntime.HddlTask
+  test "refuses missing identity and admits bounded value" do
+    assert {:error, :missing_task_id} = HddlTask.new([])
+    assert {:ok, value} = HddlTask.new(task_id: "exact")
+    assert {:error, :refused} = HddlTask.admit(value, fn _ -> false end)
+    assert {:ok, admitted} = HddlTask.admit(value, fn _ -> true end)
+    assert admitted.status == :admitted
+  end
 end

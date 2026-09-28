@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.InterventionWaveTest do
-  @moduledoc false
-  def case(remaining, requested) when remaining >= requested, do: {:ok, :within_budget}
-  def case(remaining, requested), do: {:refused, :boundary_violation}
+  use ExUnit.Case, async: true
+  alias Xaas.ResearchRuntime.WorkOrder
+  test "refuses missing identity and admits bounded value" do
+    assert {:error, :missing_work_order_iri} = WorkOrder.new([])
+    assert {:ok, value} = WorkOrder.new(work_order_iri: "exact")
+    assert {:error, :refused} = WorkOrder.admit(value, fn _ -> false end)
+    assert {:ok, admitted} = WorkOrder.admit(value, fn _ -> true end)
+    assert admitted.status == :admitted
+  end
 end

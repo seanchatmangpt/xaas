@@ -1,5 +1,11 @@
 defmodule Xaas.ResearchRuntime.Replay do
   @moduledoc false
-  def verify(receipt, subject) when receipt.subject == subject and receipt.replayable, do: {:ok, :replay_admitted}
-  def verify(receipt, subject), do: {:refused, :boundary_violation}
+  @enforce_keys [:receipt_id]
+  defstruct [:receipt_id, status: :unknown, provenance: %{}]
+  def new(attrs) when is_list(attrs) do
+    value = struct(__MODULE__, attrs)
+    if Map.get(value, :receipt_id) in [nil, ""], do: {:error, :missing_receipt_id}, else: {:ok, value}
+  end
+  def admit(%__MODULE__{} = value, pred) when is_function(pred, 1),
+    do: if(pred.(value), do: {:ok, %{value | status: :admitted}}, else: {:error, :refused})
 end

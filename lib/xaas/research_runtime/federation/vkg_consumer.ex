@@ -1,5 +1,16 @@
 defmodule Xaas.ResearchRuntime.VkgConsumer do
   @moduledoc false
-  def consume(binding, query) when binding != nil and query != nil, do: {:ok, %{binding: binding, query: query}}
-  def consume(binding, query), do: {:refused, :boundary_violation}
+  @enforce_keys [:source_sha]
+  defstruct [:source_sha, status: :unknown, provenance: %{}]
+
+  def new(attrs) when is_list(attrs) do
+    value = struct(__MODULE__, attrs)
+
+    if Map.get(value, :source_sha) in [nil, ""],
+      do: {:error, :missing_source_sha},
+      else: {:ok, value}
+  end
+
+  def admit(%__MODULE__{} = value, pred) when is_function(pred, 1),
+    do: if(pred.(value), do: {:ok, %{value | status: :admitted}}, else: {:error, :refused})
 end
