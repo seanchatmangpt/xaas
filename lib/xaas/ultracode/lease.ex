@@ -134,6 +134,16 @@ defmodule Xaas.Ultracode.Lease do
   # via `Xaas.Ultracode.RuntimeSurface.admit_tool/2` (refusal rows always
   # win; a provider override can only narrow). See `admit_tool/2`.
 
+  @doc """
+  The hardcoded consequence-class tools `admit_tool/2` refuses
+  (`{:refused_no_authority, tool}`), in declaration order. Read-only accessor:
+  `priv/packs/xaas_capability_pack/profiles/ultracode.ttl` declares the same
+  set as REFUSED delivery tools and `test/xaas/pack/pack_ontology_test.exs`
+  asserts equality, so the fence and its ontology cannot drift silently.
+  """
+  @spec refused_consequence_tools() :: [String.t()]
+  def refused_consequence_tools, do: @refused_consequence_tools
+
   # ------------------------------------------------------------------
   # Claim / renew
   # ------------------------------------------------------------------
