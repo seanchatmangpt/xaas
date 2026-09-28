@@ -217,7 +217,14 @@ defmodule Xaas.MixProject do
       # merge or publication standing for ex4pm.
       {:ex4pm,
        git: "https://github.com/seanchatmangpt/ex4pm.git",
-       ref: "17e7761ffff482ff1b2ec936ad9705a99356451a"}
+       ref: "17e7761ffff482ff1b2ec936ad9705a99356451a"},
+      # v26.9.27: ash_pplan owns FOND policy semantics (AshPPlan.FOND +
+      # FOND.Synthesis, strong/strong-cyclic). XaaS consumes it for the
+      # WaveLoop recovery policy instead of growing a second planner.
+      # Immutable ref = origin/main after PR #7 (strong-cyclic synthesis).
+      {:ash_pplan,
+       git: "https://github.com/seanchatmangpt/ash_pplan.git",
+       ref: "d6578c3b9491f9f05eb0c33b157845b11f49857f"}
     ]
   end
 

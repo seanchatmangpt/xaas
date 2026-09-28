@@ -175,11 +175,14 @@ defmodule Xaas.Ultracode.WaveLoop do
   # heartbeat (and the only trigger for busy/blocked refusals); the chain
   # only ever follows a consumed step, so depth is bounded by the step
   # table, never a tight loop.
-  # Pure decision seam (regression-pinned): chain iff the tick just consumed
-  # a step, the STATE still owes steps, and the provider is not in a storm.
+  # Pure decision seam (regression-pinned): chain iff the STATE still owes
+  # steps and the admitted FOND recovery policy
+  # (`Xaas.Ultracode.RecoveryPolicy`, strong-cyclic, admitted by ash_pplan at
+  # compile time) selects `:chain` for the observed outcome -- today exactly
+  # a consumed step with the provider not in a storm.
   @doc false
   def chain_decision(outcome, state_owes?, overloaded?) do
-    outcome in [:worker_completed] and state_owes? and not overloaded?
+    state_owes? and Xaas.Ultracode.RecoveryPolicy.decide(outcome, overloaded?) == :chain
   end
 
   defp maybe_chain_next_tick({:ok, report}, state_path, telemetry_path) do
