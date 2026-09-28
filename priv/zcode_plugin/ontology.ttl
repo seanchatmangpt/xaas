@@ -139,3 +139,13 @@
 # Tools denied outright for a leased worker (gate.deny_tools).
 <urn:zp:deniedtool/WebFetch> a zp:DeniedTool ; zp:toolName "WebFetch" ; zp:order 1 .
 <urn:zp:deniedtool/WebSearch> a zp:DeniedTool ; zp:toolName "WebSearch" ; zp:order 2 .
+<urn:zp:porttool/claim_next> a zp:PortTool ; zp:toolName "claim_next" ; zp:order 1 .
+<urn:zp:porttool/heartbeat> a zp:PortTool ; zp:toolName "heartbeat" ; zp:order 2 .
+<urn:zp:porttool/admit_tool> a zp:PortTool ; zp:toolName "admit_tool" ; zp:order 3 .
+<urn:zp:porttool/record_provider_event> a zp:PortTool ; zp:toolName "record_provider_event" ; zp:order 4 .
+<urn:zp:porttool/close_candidate> a zp:PortTool ; zp:toolName "close_candidate" ; zp:order 5 .
+<urn:zp:porttool/refuse> a zp:PortTool ; zp:toolName "refuse" ; zp:order 6 .
+<urn:zp:porttool/cancel_work> a zp:PortTool ; zp:toolName "cancel_work" ; zp:order 7 .
+<urn:zp:porttool/surface> a zp:PortTool ; zp:toolName "surface" ; zp:order 8 .
+<urn:zp:porttool/resolve_capability> a zp:PortTool ; zp:toolName "resolve_capability" ; zp:order 9 .
+<urn:zp:porttool/actuate> a zp:PortTool ; zp:toolName "actuate" ; zp:order 10 .

@@ -126,6 +126,33 @@ defmodule Xaas.Ultracode.GateSurfaceTest do
     assert :allow == gate(ctx, "Bash", %{command: "cat x"})
   end
 
+  # Court bypass2 OBSERVED_ESCAPE 1: `sh -c 'git push origin main'` was
+  # ALLOWED and landed on a scratch remote. Every shell form is now refused.
+  test "shell interpreters are refused in every form (SHELL_IS_NOT_AUTHORITY)", ctx do
+    save_lease(ctx)
+    File.write!(Path.join(ctx.repo, "s.sh"), "git push origin main\n")
+
+    for cmd <- [
+          "sh -c 'git push origin main'",
+          "bash -c 'curl -s https://example.com'",
+          "bash ./s.sh",
+          "sh s.sh",
+          "zsh -c 'id'",
+          "env git push origin main"
+        ] do
+      assert {:deny, reason} = gate(ctx, "Bash", %{command: cmd}), cmd
+      assert reason =~ "SHELL_IS_NOT_AUTHORITY", cmd
+    end
+  end
+
+  test "only the declared xaas-execution port tools pass; a lookalike is denied", ctx do
+    assert :allow == gate(ctx, "mcp__xaas-execution__resolve_capability", %{})
+    assert :allow == gate(ctx, "mcp__plugin_xaas-fabric_xaas-execution__surface", %{})
+
+    assert {:deny, reason} = gate(ctx, "mcp__xaas-execution__not_a_real_tool", %{})
+    assert reason =~ "not a declared xaas-execution port tool"
+  end
+
   test "XAAS_SURFACE_PATH is actually consulted: read_helpers [] denies cat", ctx do
     save_lease(ctx)
 

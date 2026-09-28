@@ -49,6 +49,7 @@ const DEFAULT_GATE = Object.freeze({
   read_helpers: ["ls", "cat", "head", "tail", "wc"],
   sensitive_home_dirs: [".aws", ".cargo", ".claude", ".config", ".docker", ".git-credentials", ".gitconfig", ".gnupg", ".hex", ".kube", ".netrc", ".npmrc", ".pgpass", ".ssh", ".zcode"],
   deny_tools: ["WebFetch", "WebSearch"],
+  port_tools: ["claim_next", "heartbeat", "admit_tool", "record_provider_event", "close_candidate", "refuse", "cancel_work", "surface", "resolve_capability", "actuate"],
 });
 
 /**
@@ -92,6 +93,7 @@ export function loadGatePolicy(file = surfacePath()) {
 const POLICY = loadGatePolicy();
 const PRE_LEASE_OK = new Set(POLICY.gate.pre_lease_ok);
 const LOCAL_ONLY = new Set(POLICY.gate.local_only);
+const PORT_TOOLS = new Set(POLICY.gate.port_tools);
 const WRITE_TOOLS = new Set(["Write", "Edit", "NotebookEdit", "MultiEdit"]);
 const TOOL_MAP = { Agent: "Task", TaskOutput: "Task", TaskStop: "Task", MultiEdit: "Edit", NotebookEdit: "Edit" };
 const GIT_SUBS = new Set(POLICY.gate.git_subs);
@@ -299,15 +301,14 @@ function bashDecision(command, lease, ctx) {
   // timestamp had no clock available inside the allowlist).
   if (bin === "pwd" || bin === "echo" || bin === "date") return null;
 
-  // `sh`/`bash` script execution, worktree-confined on every non-flag arg
-  // (observed 2026-09-26: a step whose acceptance was "run the script and
-  // confirm its output" had no lawful way to execute any file it wrote).
-  if (bin === "sh" || bin === "bash") {
-    if (!inside(worktree, cwdReal)) return `${bin} is only allowed with the session cwd inside the leased worktree`;
-    for (const a of args.filter((x) => !x.startsWith("-"))) {
-      if (!inside(worktree, realpathLoose(path.resolve(cwdReal, a)))) return `${bin} may only execute inside the leased worktree`;
-    }
-    return null;
+  // `sh`/`bash` are refused outright (court bypass2 witnessed
+  // `sh -c 'git push origin main'` landing on a remote): executing a
+  // worker-written script is arbitrary code, which no argv allowlist can
+  // bound -- shell availability != external authority. Acceptance runs of
+  // worker-built scripts go through the lease verifier suite (server-side,
+  // `env -i`) at close_candidate.
+  if (bin === "sh" || bin === "bash" || bin === "zsh" || bin === "env") {
+    return `SHELL_IS_NOT_AUTHORITY: ${bin} executes arbitrary code; run acceptance through the lease verifier suite (close_candidate)`;
   }
 
   return `${bin} is not an allowed command for a leased worker`;
@@ -450,7 +451,14 @@ async function main() {
       ctx
     );
   }
-  if (/^mcp__(plugin_xaas-fabric_)?xaas-execution__/.test(tool)) return decide("allow", "lease protocol tool", ctx);
+  // Exact port names only (court bypass2): a prefix match trusted any tool a
+  // differently-configured server registered under the xaas-execution name.
+  const port = /^mcp__(?:plugin_xaas-fabric_)?xaas-execution__(.+)$/.exec(tool);
+  if (port) {
+    return PORT_TOOLS.has(port[1])
+      ? decide("allow", "lease protocol tool", ctx)
+      : decide("deny", `${tool} is not a declared xaas-execution port tool`, ctx);
+  }
 
   if (tool === "Agent" && process.env.XAAS_ALLOW_SUBAGENTS !== "1") {
     return decide(
