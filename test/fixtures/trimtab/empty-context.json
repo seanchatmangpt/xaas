@@ -1,0 +1,8 @@
+{
+  "id": "TT-008",
+  "subject": "subject-A",
+  "scenario": "empty-context",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}
