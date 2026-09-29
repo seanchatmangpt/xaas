@@ -1,0 +1,8 @@
+{
+  "id": "TT-011",
+  "subject": "subject-A",
+  "scenario": "evidence-missing-origin",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}

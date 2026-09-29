@@ -1,0 +1,8 @@
+{
+  "id": "TT-013",
+  "subject": "subject-A",
+  "scenario": "provider-missing-capability",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}

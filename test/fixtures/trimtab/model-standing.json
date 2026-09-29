@@ -1,0 +1,8 @@
+{
+  "id": "TT-005",
+  "subject": "subject-A",
+  "scenario": "model-standing",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}

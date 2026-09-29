@@ -1,0 +1,8 @@
+{
+  "id": "TT-018",
+  "subject": "subject-A",
+  "scenario": "all-providers-failed",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}

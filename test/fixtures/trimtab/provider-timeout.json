@@ -1,0 +1,8 @@
+{
+  "id": "TT-016",
+  "subject": "subject-A",
+  "scenario": "provider-timeout",
+  "expected": "recover",
+  "model_authority": "none",
+  "exact_subject": true
+}

@@ -1,0 +1,8 @@
+{
+  "id": "TT-014",
+  "subject": "subject-A",
+  "scenario": "provider-auth-failure",
+  "expected": "recover",
+  "model_authority": "none",
+  "exact_subject": true
+}
