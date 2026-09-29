@@ -99,7 +99,7 @@ defmodule Xaas.MixProject do
       {:req_llm, "~> 1.18"},
       {:ash_a2a,
        git: "https://github.com/seanchatmangpt/ash_a2a.git",
-       ref: "e481bf9bab36183c888883603fe5ee3ca89ab6e6",
+       ref: "be5d9fafe4e212981eec706771820c53da0916d0",
        override: true},
       {:ash_r2rml,
        git: "https://github.com/seanchatmangpt/ash_r2rml.git",

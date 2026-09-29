@@ -1,0 +1,3 @@
+PREFIX sa2a: <https://seanchatmangpt.github.io/sa2a#>
+# XaaS consumes semantic evidence only; this query detects authority smuggling.
+ASK { ?e a sa2a:Evidence . ?e sa2a:authority ?a . FILTER(?a != "NONE") }
