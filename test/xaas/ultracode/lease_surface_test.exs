@@ -7,7 +7,8 @@ defmodule Xaas.Ultracode.LeaseSurfaceTest do
   `actuate/2`) -- real Repo sandbox, real tmp git repositories, real `git`.
   """
 
-  use ExUnit.Case, async: true
+  # async: false -- mutates the global :ultracode_provider_tools app env.
+  use ExUnit.Case, async: false
 
   alias Xaas.Ultracode.{Epoch, Lease, Run}
 

@@ -10,7 +10,8 @@ defmodule Xaas.Ultracode.LeaseTest do
   keep complete-next-cycle reactor semantics.
   """
 
-  use ExUnit.Case, async: true
+  # async: false -- mutates the global :ultracode_provider_tools app env.
+  use ExUnit.Case, async: false
 
   alias Xaas.Ultracode.{Epoch, Lease, Run}
 

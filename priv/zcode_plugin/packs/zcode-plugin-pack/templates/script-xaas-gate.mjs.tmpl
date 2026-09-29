@@ -282,7 +282,10 @@ export function tokenize(cmd) {
 
 function bashDecision(command, lease, ctx) {
   const trimmed = command.trim();
-  if (Array.isArray(lease?.verifier) && lease.verifier.includes(trimmed)) return null;
+  // No lease-file short-circuit (court bypass3 OBSERVED_ESCAPE): the lease
+  // file is worker-written, so a "verifier" list in it let any exact string
+  // -- `sh -c ...`, chained commands, `git push` -- skip tokenize and every
+  // rule below. Acceptance commands run server-side in the lease verifier.
 
   const argv = tokenize(trimmed);
   if (!argv || argv.length === 0) {

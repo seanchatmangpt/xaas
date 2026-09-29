@@ -65,11 +65,13 @@ defmodule Xaas.Ultracode.WorkerEnv do
   @name_source Map.fetch!(@worker_env, "name_regex")
   @url_names MapSet.new(Map.get(@worker_env, "url_names_no_userinfo", []))
   @credential_value_source Map.fetch!(@worker_env, "credential_value_regex")
+  @secret_value_source Map.fetch!(@worker_env, "secret_value_regex")
 
   for {key, source} <- [
         deny_word_regex: @deny_word_source,
         name_regex: @name_source,
-        credential_value_regex: @credential_value_source
+        credential_value_regex: @credential_value_source,
+        secret_value_regex: @secret_value_source
       ],
       not match?({:ok, _}, Regex.compile(source)) do
     raise CompileError,
@@ -117,8 +119,14 @@ defmodule Xaas.Ultracode.WorkerEnv do
   # A URL-valued variable (model endpoint, port endpoint) may cross only
   # without embedded userinfo: `https://user:pass@host` would smuggle a
   # credential through an admitted name.
+  # Court env3: an admitted NAME is no guarantee about its VALUE
+  # (`ZCODE_OCEL=sk-ant-...`, `TERM=xterm;https://u:p@h`). Every value is
+  # checked for credential shapes, except the explicitly granted model/port
+  # credentials, whose values are credentials by definition.
   defp value_admitted?(name, value) do
-    not Regex.match?(Regex.compile!(@credential_value_source), value) and
+    (MapSet.member?(@grant_names, name) or
+       (not Regex.match?(Regex.compile!(@credential_value_source), value) and
+          not Regex.match?(Regex.compile!(@secret_value_source), value))) and
       (not MapSet.member?(@url_names, name) or plain_http_url?(value))
   end
 
