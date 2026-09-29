@@ -468,6 +468,7 @@ defmodule Xaas.Ultracode.WaveLoop do
 
     with {:ok, run} <- create_loop_run(goal),
          {:ok, run} <- start_run(run, subject, state.work_surface),
+         {:ok, %{run: run}} <- record_step_frontier(run, step),
          {:ok, epoch} <- activate_first_epoch(run) do
       {:constructed, epoch}
     else

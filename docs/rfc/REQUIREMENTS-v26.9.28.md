@@ -15,7 +15,7 @@ and its status is reported as observed.
 | REQ-5 | Competing add/add implementations of `Xaas.ResearchRuntime.*` are resolved to one (r14 formatted set) and no HEAD-only consumer breaks | compile + `test/xaas/research_runtime/**` | r14 set taken; `research_runtime` tests pass |
 | REQ-6 | Version metadata consistent: `VERSION`, CHANGELOG entry | CHANGELOG has `[v26.9.28]` | done |
 | REQ-7 | Generated one-line code is normalized by the formatter, not hand-edited | `mix format --check-formatted` on runtime dirs | DONE: `mix format` applied to files changed since 7c3dc68 (236 rewritten); suite unchanged 2489/2490 |
-| REQ-8 | Multi-clause functions declaring defaults use a header (compiler warnings in vkg, atlassian, engineer_workflow, trimtab/subject) | zero `multiple clauses and also declares default values` warnings | OPEN |
+| REQ-8 | Multi-clause functions declaring defaults use a header; `mix compile --force --warnings-as-errors` clean for project code (CI gate `wd-cs2`) | CI compile court | DONE (5 warnings fixed; WaveLoop step-frontier `record_step_frontier` call restored) |
 
 ## Branch ledger (disposition of the 37 non-backup unmerged branches)
 

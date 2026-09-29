@@ -3,7 +3,9 @@ defmodule Xaas.Sjira.Atlassian do
   @required ~w(identity project_key issue_type summary)
   @retryable MapSet.new([408, 409, 425, 429, 500, 502, 503, 504])
 
-  def project(item, opts \\ []) when is_map(item) do
+  def project(item, opts \\ [])
+
+  def project(item, opts) when is_map(item) do
     with :ok <- require_fields(item) do
       id = str(item, "identity")
 

@@ -22,7 +22,9 @@ defmodule Xaas.Sjira.EngineerWorkflow do
   @max_page_size 500
 
   @spec project(map(), keyword()) :: {:ok, map()} | {:refused, atom(), term()}
-  def project(%{} = work, opts \\ []) do
+  def project(work, opts \\ [])
+
+  def project(%{} = work, opts) do
     with {:ok, w} <- normalize(work),
          :ok <- require_identity(w),
          :ok <- require_authority_boundary(w),

@@ -17,7 +17,9 @@ defmodule Xaas.Semantics.VKG do
 
   @doc "Admit and execute one bounded read-only VKG query."
   @spec observe(Query.t() | map(), keyword()) :: observation_result()
-  def observe(%Query{} = query, opts \\ []) do
+  def observe(query_or_attrs, opts \\ [])
+
+  def observe(%Query{} = query, opts) do
     with {:ok, admitted} <- Query.admit(query),
          {:ok, session} <- Runtime.query(admitted.contract_ids, runtime_opts(admitted, opts)),
          {:ok, witness} <- Witness.from_session(admitted, session) do
