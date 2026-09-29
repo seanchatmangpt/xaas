@@ -1,0 +1,3656 @@
+{
+ "eventTypes": [
+  {
+   "attributes": [
+    {
+     "name": "completed",
+     "type": "string"
+    },
+    {
+     "name": "lossless",
+     "type": "string"
+    },
+    {
+     "name": "role",
+     "type": "string"
+    },
+    {
+     "name": "standing",
+     "type": "string"
+    }
+   ],
+   "name": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "type": "string"
+    }
+   ],
+   "name": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "type": "string"
+    }
+   ],
+   "name": "tool_call"
+  }
+ ],
+ "events": [
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    }
+   ],
+   "id": "ev:aab6dd5f3136d8d31:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:aab6dd5f3136d8d31",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:48:56.582Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    }
+   ],
+   "id": "ev:a08d79c924e9d8a03:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a08d79c924e9d8a03",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:48:58.565Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    }
+   ],
+   "id": "ev:a2e4d18f500311aba:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a2e4d18f500311aba",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:48:58.565Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    }
+   ],
+   "id": "ev:aa2a0d0a345d713a3:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:aa2a0d0a345d713a3",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:48:58.566Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    }
+   ],
+   "id": "ev:ab8ea67fa605bc511:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ab8ea67fa605bc511",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:48:58.566Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:aab6dd5f3136d8d31:tool:9:toolu_01X8kWhRmugA2VmoykNWBvMd",
+   "relationships": [
+    {
+     "objectId": "agent:aab6dd5f3136d8d31",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:00.112Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:aa2a0d0a345d713a3:tool:9:toolu_014iT3dZLtYenWCArJM3ouXN",
+   "relationships": [
+    {
+     "objectId": "agent:aa2a0d0a345d713a3",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:02.430Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a2e4d18f500311aba:tool:9:toolu_01WWrp4VmX5dNiZXt17n4uNh",
+   "relationships": [
+    {
+     "objectId": "agent:a2e4d18f500311aba",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:02.642Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ab8ea67fa605bc511:tool:9:toolu_01YVsk5jxUMg6jrueom72sHs",
+   "relationships": [
+    {
+     "objectId": "agent:ab8ea67fa605bc511",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:02.870Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a08d79c924e9d8a03:tool:9:toolu_01XX4jazVR97PuR7ausLN7QS",
+   "relationships": [
+    {
+     "objectId": "agent:a08d79c924e9d8a03",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:03.165Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:aab6dd5f3136d8d31:tool:17:toolu_01SpZZU8pE8hdcdw2ZtqXqMg",
+   "relationships": [
+    {
+     "objectId": "agent:aab6dd5f3136d8d31",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:03.684Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a08d79c924e9d8a03:tool:13:toolu_01Nqh25b1ceqcKVsVRm9meYU",
+   "relationships": [
+    {
+     "objectId": "agent:a08d79c924e9d8a03",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:04.262Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:aa2a0d0a345d713a3:tool:17:toolu_01Shocoa46j8mhdPsp8fiHqv",
+   "relationships": [
+    {
+     "objectId": "agent:aa2a0d0a345d713a3",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:06.483Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ab8ea67fa605bc511:tool:17:toolu_01VJZkjKYkxEy5eBmwM4Pr1B",
+   "relationships": [
+    {
+     "objectId": "agent:ab8ea67fa605bc511",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:06.557Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a2e4d18f500311aba:tool:17:toolu_01L4kPoZn1aM6VMQwzx7GBgy",
+   "relationships": [
+    {
+     "objectId": "agent:a2e4d18f500311aba",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:49:07.970Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:ab8ea67fa605bc511:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ab8ea67fa605bc511",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:55:29.684Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:aab6dd5f3136d8d31:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:aab6dd5f3136d8d31",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:57:05.397Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    }
+   ],
+   "id": "ev:afb489a0294935fb4:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afb489a0294935fb4",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:57:05.400Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afb489a0294935fb4:tool:9:toolu_016BJs27yzjvu9AymRvgvwqM",
+   "relationships": [
+    {
+     "objectId": "agent:afb489a0294935fb4",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:57:08.693Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afb489a0294935fb4:tool:18:toolu_01FzAxvaAwa5v15ZyJ29NEfs",
+   "relationships": [
+    {
+     "objectId": "agent:afb489a0294935fb4",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:57:14.797Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:aa2a0d0a345d713a3:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:aa2a0d0a345d713a3",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:57:32.164Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a2e4d18f500311aba:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a2e4d18f500311aba",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:57:40.282Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "survey"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a08d79c924e9d8a03:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Survey",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a08d79c924e9d8a03",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:58:03.045Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    }
+   ],
+   "id": "ev:afc499ad718403607:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afc499ad718403607",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:58:03.050Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afc499ad718403607:tool:9:toolu_014mM3QoxRoZJLKgcc7Catjk",
+   "relationships": [
+    {
+     "objectId": "agent:afc499ad718403607",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:58:05.308Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afc499ad718403607:tool:13:toolu_01W6r1xhTS37dKPFSQv5PF15",
+   "relationships": [
+    {
+     "objectId": "agent:afc499ad718403607",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:58:06.544Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    }
+   ],
+   "id": "ev:a27a8d942348783b1:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a27a8d942348783b1",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:59:09.993Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a27a8d942348783b1:tool:9:toolu_01TZ5NWtzoT7oX8K3HN26LSh",
+   "relationships": [
+    {
+     "objectId": "agent:a27a8d942348783b1",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:59:12.606Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a27a8d942348783b1:tool:13:toolu_01WHZE7ym1QoafiXiLpKtwYJ",
+   "relationships": [
+    {
+     "objectId": "agent:a27a8d942348783b1",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:59:13.991Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    }
+   ],
+   "id": "ev:a707c3aefef19a5ad:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a707c3aefef19a5ad",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T19:59:57.028Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a707c3aefef19a5ad:tool:9:toolu_01MEDRhDN31Rz9drvMQuajXe",
+   "relationships": [
+    {
+     "objectId": "agent:a707c3aefef19a5ad",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T19:59:59.152Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a707c3aefef19a5ad:tool:13:toolu_01JKz8ow1PXYA3AbJgtDWcdA",
+   "relationships": [
+    {
+     "objectId": "agent:a707c3aefef19a5ad",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T20:00:00.400Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    }
+   ],
+   "id": "ev:a7998aed555ecf56b:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a7998aed555ecf56b",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T20:00:42.069Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a7998aed555ecf56b:tool:9:toolu_01SnPymMDdF1gPyMaUrR1Dee",
+   "relationships": [
+    {
+     "objectId": "agent:a7998aed555ecf56b",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T20:00:45.004Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a7998aed555ecf56b:tool:13:toolu_01GZ29M4hWAQ2xBafTgVWwgc",
+   "relationships": [
+    {
+     "objectId": "agent:a7998aed555ecf56b",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T20:00:45.863Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a27a8d942348783b1:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a27a8d942348783b1",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T20:06:15.882Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:afb489a0294935fb4:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afb489a0294935fb4",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T20:06:49.998Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:afc499ad718403607:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afc499ad718403607",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T20:07:00.470Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a707c3aefef19a5ad:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a707c3aefef19a5ad",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T20:08:32.531Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "verify"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a7998aed555ecf56b:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Verify",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a7998aed555ecf56b",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T20:11:23.320Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    }
+   ],
+   "id": "ev:a2ad34b7d80eaf9a6:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a2ad34b7d80eaf9a6",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:50:11.740Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    }
+   ],
+   "id": "ev:a366eccebc8ddf28f:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a366eccebc8ddf28f",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:50:11.741Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    }
+   ],
+   "id": "ev:a8a32a12cf588ba10:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a8a32a12cf588ba10",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:50:11.741Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    }
+   ],
+   "id": "ev:afa72ee983db60f8c:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afa72ee983db60f8c",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:50:11.741Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    }
+   ],
+   "id": "ev:ad864734a24084948:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ad864734a24084948",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:50:11.742Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a366eccebc8ddf28f:tool:9:toolu_01S75nBLjjyZHW8nGCfSJzQK",
+   "relationships": [
+    {
+     "objectId": "agent:a366eccebc8ddf28f",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:14.885Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ad864734a24084948:tool:9:toolu_01Hyp2vYs2xAnDJCbGVaDFco",
+   "relationships": [
+    {
+     "objectId": "agent:ad864734a24084948",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:15.658Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afa72ee983db60f8c:tool:8:toolu_01AswQsZSrmsmSKKpXpj2R2S",
+   "relationships": [
+    {
+     "objectId": "agent:afa72ee983db60f8c",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:16.046Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a8a32a12cf588ba10:tool:9:toolu_01T9cvTGLvfULN3rYBbX1QuL",
+   "relationships": [
+    {
+     "objectId": "agent:a8a32a12cf588ba10",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:16.310Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a2ad34b7d80eaf9a6:tool:9:toolu_01N3Jn2qmH1itJ7uxcY6QjkR",
+   "relationships": [
+    {
+     "objectId": "agent:a2ad34b7d80eaf9a6",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:16.463Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a366eccebc8ddf28f:tool:18:toolu_01TUaBFrXtg3gWJAVRNnaj45",
+   "relationships": [
+    {
+     "objectId": "agent:a366eccebc8ddf28f",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:18.276Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ad864734a24084948:tool:17:toolu_012p3tojjLKQ1Pj7VACd5d9F",
+   "relationships": [
+    {
+     "objectId": "agent:ad864734a24084948",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:19.611Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afa72ee983db60f8c:tool:17:toolu_01PxmqsPReCXRaaiHFtJjmkf",
+   "relationships": [
+    {
+     "objectId": "agent:afa72ee983db60f8c",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:20.196Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a8a32a12cf588ba10:tool:18:toolu_01BA4eBzsddhE4nqUAocReQy",
+   "relationships": [
+    {
+     "objectId": "agent:a8a32a12cf588ba10",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:21.211Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a2ad34b7d80eaf9a6:tool:18:toolu_01A6nYXshPH2XThffwK5Egat",
+   "relationships": [
+    {
+     "objectId": "agent:a2ad34b7d80eaf9a6",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:50:21.529Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:ad864734a24084948:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ad864734a24084948",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:11.463Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a366eccebc8ddf28f:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a366eccebc8ddf28f",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:11.821Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:afa72ee983db60f8c:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afa72ee983db60f8c",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:12.880Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    }
+   ],
+   "id": "ev:a53bc1ef95507228e:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a53bc1ef95507228e",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:12.882Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a53bc1ef95507228e:tool:8:toolu_017RMVUdEppJWhSPiB7fDBSa",
+   "relationships": [
+    {
+     "objectId": "agent:a53bc1ef95507228e",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:51:15.475Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a53bc1ef95507228e:tool:16:toolu_01K3H9f1BJRTnexKcAisN374",
+   "relationships": [
+    {
+     "objectId": "agent:a53bc1ef95507228e",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:51:17.950Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    }
+   ],
+   "id": "ev:ae1d7fe6d9d04bea9:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ae1d7fe6d9d04bea9",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:24.733Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ae1d7fe6d9d04bea9:tool:8:toolu_011gQjDP8iCc4EVvpT16mVzH",
+   "relationships": [
+    {
+     "objectId": "agent:ae1d7fe6d9d04bea9",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:51:27.410Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ae1d7fe6d9d04bea9:tool:17:toolu_01Wk9bDAzcm3CCpLKdJbAciW",
+   "relationships": [
+    {
+     "objectId": "agent:ae1d7fe6d9d04bea9",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:51:30.653Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a2ad34b7d80eaf9a6:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a2ad34b7d80eaf9a6",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:35.550Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "sync"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a8a32a12cf588ba10:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Preserve+Sync",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a8a32a12cf588ba10",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:51:46.410Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    }
+   ],
+   "id": "ev:a7e8687dc89b833e2:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a7e8687dc89b833e2",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T21:52:44.561Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a7e8687dc89b833e2:tool:8:toolu_019bUv3WcwmjnyYHbLWkRqRb",
+   "relationships": [
+    {
+     "objectId": "agent:a7e8687dc89b833e2",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:52:47.645Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a7e8687dc89b833e2:tool:16:toolu_01SR1myvZcRgq3QRmdjrnB7W",
+   "relationships": [
+    {
+     "objectId": "agent:a7e8687dc89b833e2",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T21:52:51.678Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "standing",
+     "value": "PARTIAL_ALIVE. Everything listed here was already failing at e90928d; none was introduced in this session. The Rust gate passes clippy and tests (908 passed, 0 failed) and fails only fmt, in 1 file. The plugin lane fails ruff (7) and pytest (6 test_receipts failures). No fixes and no commits were made; the int worktree porcelain is clean. Disk was 61 GB free before and 41 GB free after. HEAD drifted to dc327a3 during the run because a concurrent workflow merged a commit (rustfmt only); fmt and clippy results reflect e90928d."
+    },
+    {
+     "name": "role",
+     "value": "baseline"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a53bc1ef95507228e:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a53bc1ef95507228e",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:13:05.986Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    }
+   ],
+   "id": "ev:a40ddbb41f5a6f09b:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a40ddbb41f5a6f09b",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:13:05.996Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "audit"
+    }
+   ],
+   "id": "ev:af9e5be2883e66e1e:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Audit",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:af9e5be2883e66e1e",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:13:05.999Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:af9e5be2883e66e1e:tool:7:toolu_01V8oak3QxyaMwfw96L8Jiw8",
+   "relationships": [
+    {
+     "objectId": "agent:af9e5be2883e66e1e",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:13:20.539Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a40ddbb41f5a6f09b:tool:8:toolu_018gB5a6Qx2ygX2Gc3n3pQkV",
+   "relationships": [
+    {
+     "objectId": "agent:a40ddbb41f5a6f09b",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:13:20.947Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a40ddbb41f5a6f09b:tool:16:toolu_01TtGHb27fmSYGTUP9w1watD",
+   "relationships": [
+    {
+     "objectId": "agent:a40ddbb41f5a6f09b",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:13:39.303Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:af9e5be2883e66e1e:tool:16:toolu_012NP7PTVfvqQ5SbsKqxRRpb",
+   "relationships": [
+    {
+     "objectId": "agent:af9e5be2883e66e1e",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:13:39.571Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "lossless",
+     "value": "True"
+    },
+    {
+     "name": "role",
+     "value": "audit"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:af9e5be2883e66e1e:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Audit",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:af9e5be2883e66e1e",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:14:59.154Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "standing",
+     "value": "PARTIAL_ALIVE. ALIVE at 5969606: cargo hddl_cli --locked, Cargo.lock tracked and clean, deps.get, format. UNKNOWN: the compile and test.all baseline. It is contaminated because (a) release/v26.9.22 moved 5969606 -> 19cd30e mid-run, from a merge by another agent, and (b) a concurrent zcode-cli subagent (subagent_agent_644747f8, OTP 27.2.4) is running `mix test.all` in the same int worktree and shares _build and the :55432 ash_a2a_test Postgres DB. The isolated rerun at /Users/sac/wt/v26922/ash_a2a/w0-baseline (detached 5969606, clean, left in place, unbuilt) is BLOCKED:DISK at 8 GB free. Pre-existing vs introduced: no failure here can be attributed to source. Both compile failures are build-environment races, and the warm compile retry passes with --warnings-as-errors. No fixes, no commits, no push. The int tree has 0 porcelain lines."
+    },
+    {
+     "name": "role",
+     "value": "baseline"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a7e8687dc89b833e2:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a7e8687dc89b833e2",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:35:36.325Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    }
+   ],
+   "id": "ev:a1f61b438926510a2:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a1f61b438926510a2",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:35:36.353Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "audit"
+    }
+   ],
+   "id": "ev:ad161a8bf7b59f6ac:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Audit",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ad161a8bf7b59f6ac",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:35:36.356Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a1f61b438926510a2:tool:8:toolu_01MmUJ99QKmZoEFKY4aWyWof",
+   "relationships": [
+    {
+     "objectId": "agent:a1f61b438926510a2",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:35:39.429Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ad161a8bf7b59f6ac:tool:7:toolu_01FJPmF4axcEjqhzRxS1sRhU",
+   "relationships": [
+    {
+     "objectId": "agent:ad161a8bf7b59f6ac",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:35:39.685Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:ad161a8bf7b59f6ac:tool:15:toolu_01HZJ3uhg76bYiMeXMwvdTii",
+   "relationships": [
+    {
+     "objectId": "agent:ad161a8bf7b59f6ac",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:35:45.334Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a1f61b438926510a2:tool:17:toolu_014xAt1xAexgx2x6ishNQLci",
+   "relationships": [
+    {
+     "objectId": "agent:a1f61b438926510a2",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:35:47.278Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "standing",
+     "value": "BLOCKED:DISK. Only 7 GB is free, below the 15 GB threshold, so no build, lint or test was run. The baseline at this HEAD is UNKNOWN for pre-commit and pytest. The read-only conflict-marker gate is ALIVE with 0 hits. Note that int HEAD (11cd0040) is not the f5cc664b the sync stage reported: 5 merge/fix commits for AFDE-26922-01/04 have landed since. Nothing was fixed and nothing was committed."
+    },
+    {
+     "name": "role",
+     "value": "baseline"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a1f61b438926510a2:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a1f61b438926510a2",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:36:27.534Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "audit"
+    }
+   ],
+   "id": "ev:a3601c5b86bba21c6:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Audit",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a3601c5b86bba21c6",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:36:27.614Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a3601c5b86bba21c6:tool:7:toolu_01WVRSGX5m1VCsNsHr2irS1s",
+   "relationships": [
+    {
+     "objectId": "agent:a3601c5b86bba21c6",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:36:44.175Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a3601c5b86bba21c6:tool:14:toolu_01UbvwhA6hwVr2xjhsUSxQtd",
+   "relationships": [
+    {
+     "objectId": "agent:a3601c5b86bba21c6",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:36:58.370Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "lossless",
+     "value": "True"
+    },
+    {
+     "name": "role",
+     "value": "audit"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:ad161a8bf7b59f6ac:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Audit",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ad161a8bf7b59f6ac",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:37:09.012Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "lossless",
+     "value": "False"
+    },
+    {
+     "name": "role",
+     "value": "audit"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:a3601c5b86bba21c6:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Audit",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a3601c5b86bba21c6",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:39:06.220Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "build"
+    }
+   ],
+   "id": "ev:acc86dc6171e0e6aa:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Construct",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:acc86dc6171e0e6aa",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "wo:FERROPLAN-26922-09",
+     "qualifier": "work_order"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:45:42.762Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "court"
+    }
+   ],
+   "id": "ev:afd6da75b8722cb08:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Court",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afd6da75b8722cb08",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:45:42.796Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "build"
+    }
+   ],
+   "id": "ev:a7ffb08e1cac4a9bb:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Construct",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a7ffb08e1cac4a9bb",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "wo:XAAS-26922-21",
+     "qualifier": "work_order"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:45:45.190Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "build"
+    }
+   ],
+   "id": "ev:a22d0156318a77f88:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Construct",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a22d0156318a77f88",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "wo:ASH_A2A-26922-14",
+     "qualifier": "work_order"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:45:45.191Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "court"
+    }
+   ],
+   "id": "ev:a0b5ace8062ce5c7e:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Court",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a0b5ace8062ce5c7e",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:45:45.341Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afd6da75b8722cb08:tool:9:toolu_01LQuQ7ViA8E1ptNXKrvz3g1",
+   "relationships": [
+    {
+     "objectId": "agent:afd6da75b8722cb08",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:46.793Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:acc86dc6171e0e6aa:tool:9:toolu_012gnqR6PDqQiztHHUtVojiM",
+   "relationships": [
+    {
+     "objectId": "agent:acc86dc6171e0e6aa",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:47.625Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a22d0156318a77f88:tool:9:toolu_01NDN8LfvtdiRb8d54wcGkTa",
+   "relationships": [
+    {
+     "objectId": "agent:a22d0156318a77f88",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:47.990Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a7ffb08e1cac4a9bb:tool:9:toolu_01L3vbSXYs2gw7HfAReZyHTk",
+   "relationships": [
+    {
+     "objectId": "agent:a7ffb08e1cac4a9bb",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:48.053Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a0b5ace8062ce5c7e:tool:9:toolu_01NQYvoV8xmukSKC7HBZPkCg",
+   "relationships": [
+    {
+     "objectId": "agent:a0b5ace8062ce5c7e",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:48.383Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afd6da75b8722cb08:tool:19:toolu_01HCqtruNwCGt5Xze2X6ZRRz",
+   "relationships": [
+    {
+     "objectId": "agent:afd6da75b8722cb08",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:49.522Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a7ffb08e1cac4a9bb:tool:18:toolu_01J5Ru5Jtdo35W7mZWjDNe67",
+   "relationships": [
+    {
+     "objectId": "agent:a7ffb08e1cac4a9bb",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:50.995Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a0b5ace8062ce5c7e:tool:19:toolu_01NmMHFuJp25WCwyeNpLZy1i",
+   "relationships": [
+    {
+     "objectId": "agent:a0b5ace8062ce5c7e",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:51.047Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:acc86dc6171e0e6aa:tool:17:toolu_012cDB9hra3LkvXyvtkhB2QM",
+   "relationships": [
+    {
+     "objectId": "agent:acc86dc6171e0e6aa",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:51.164Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:a22d0156318a77f88:tool:17:toolu_01H63XYm7wCe72XecCrHtggw",
+   "relationships": [
+    {
+     "objectId": "agent:a22d0156318a77f88",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:45:51.216Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "court"
+    },
+    {
+     "name": "completed",
+     "value": "True"
+    }
+   ],
+   "id": "ev:afd6da75b8722cb08:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Court",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afd6da75b8722cb08",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:52:27.094Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "court"
+    }
+   ],
+   "id": "ev:afce96c61967192f7:start",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Court",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afce96c61967192f7",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:52:27.103Z",
+   "type": "agent_started"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afce96c61967192f7:tool:9:toolu_01Q1gG53VWmm2F3EVUuHVPWk",
+   "relationships": [
+    {
+     "objectId": "agent:afce96c61967192f7",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:52:42.352Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "tool",
+     "value": "Bash"
+    }
+   ],
+   "id": "ev:afce96c61967192f7:tool:20:toolu_01TF5YG7AKqMCBaZx3KrpK1m",
+   "relationships": [
+    {
+     "objectId": "agent:afce96c61967192f7",
+     "qualifier": "actor"
+    }
+   ],
+   "time": "2026-09-22T22:52:59.461Z",
+   "type": "tool_call"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:ae1d7fe6d9d04bea9:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:ae1d7fe6d9d04bea9",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T22:58:41.192Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "baseline"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:a40ddbb41f5a6f09b:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Baseline",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a40ddbb41f5a6f09b",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T23:00:11.989Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "court"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:afce96c61967192f7:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Court",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:afce96c61967192f7",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:gymact",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T23:02:28.626Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "court"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:a0b5ace8062ce5c7e:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Court",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a0b5ace8062ce5c7e",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "repo:autofde-lab",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T23:03:00.463Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "build"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:acc86dc6171e0e6aa:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Construct",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:acc86dc6171e0e6aa",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "wo:FERROPLAN-26922-09",
+     "qualifier": "work_order"
+    },
+    {
+     "objectId": "repo:ferroplan",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T23:03:06.535Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "build"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:a22d0156318a77f88:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Construct",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a22d0156318a77f88",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "wo:ASH_A2A-26922-14",
+     "qualifier": "work_order"
+    },
+    {
+     "objectId": "repo:ash_a2a",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T23:03:25.308Z",
+   "type": "agent_completed"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "value": "build"
+    },
+    {
+     "name": "completed",
+     "value": "False"
+    }
+   ],
+   "id": "ev:a7ffb08e1cac4a9bb:end",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    },
+    {
+     "objectId": "phase:Construct",
+     "qualifier": "phase"
+    },
+    {
+     "objectId": "agent:a7ffb08e1cac4a9bb",
+     "qualifier": "actor"
+    },
+    {
+     "objectId": "wo:XAAS-26922-21",
+     "qualifier": "work_order"
+    },
+    {
+     "objectId": "repo:xaas",
+     "qualifier": "repo"
+    }
+   ],
+   "time": "2026-09-22T23:03:25.455Z",
+   "type": "agent_completed"
+  }
+ ],
+ "objectTypes": [
+  {
+   "attributes": [
+    {
+     "name": "label",
+     "type": "string"
+    },
+    {
+     "name": "role",
+     "type": "string"
+    }
+   ],
+   "name": "agent"
+  },
+  {
+   "attributes": [],
+   "name": "phase"
+  },
+  {
+   "attributes": [],
+   "name": "repo"
+  },
+  {
+   "attributes": [],
+   "name": "work_order"
+  },
+  {
+   "attributes": [],
+   "name": "workflow_run"
+  }
+ ],
+ "objects": [
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey:xaas"
+    }
+   ],
+   "id": "agent:a08d79c924e9d8a03",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "court"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "court:autofde-lab"
+    }
+   ],
+   "id": "agent:a0b5ace8062ce5c7e",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline:autofde-lab"
+    }
+   ],
+   "id": "agent:a1f61b438926510a2",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "build"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "build:ASH_A2A-26922-14"
+    }
+   ],
+   "id": "agent:a22d0156318a77f88",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify:ferroplan"
+    }
+   ],
+   "id": "agent:a27a8d942348783b1",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync:xaas"
+    }
+   ],
+   "id": "agent:a2ad34b7d80eaf9a6",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey:autofde-lab"
+    }
+   ],
+   "id": "agent:a2e4d18f500311aba",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "audit"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "audit:autofde-lab"
+    }
+   ],
+   "id": "agent:a3601c5b86bba21c6",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync:gymact"
+    }
+   ],
+   "id": "agent:a366eccebc8ddf28f",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline:xaas"
+    }
+   ],
+   "id": "agent:a40ddbb41f5a6f09b",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline:ferroplan"
+    }
+   ],
+   "id": "agent:a53bc1ef95507228e",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify:autofde-lab"
+    }
+   ],
+   "id": "agent:a707c3aefef19a5ad",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify:xaas"
+    }
+   ],
+   "id": "agent:a7998aed555ecf56b",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline:ash_a2a"
+    }
+   ],
+   "id": "agent:a7e8687dc89b833e2",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "build"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "build:XAAS-26922-21"
+    }
+   ],
+   "id": "agent:a7ffb08e1cac4a9bb",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync:autofde-lab"
+    }
+   ],
+   "id": "agent:a8a32a12cf588ba10",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey:ferroplan"
+    }
+   ],
+   "id": "agent:aa2a0d0a345d713a3",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey:ash_a2a"
+    }
+   ],
+   "id": "agent:aab6dd5f3136d8d31",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "survey:gymact"
+    }
+   ],
+   "id": "agent:ab8ea67fa605bc511",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "build"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "build:FERROPLAN-26922-09"
+    }
+   ],
+   "id": "agent:acc86dc6171e0e6aa",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "audit"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "audit:ash_a2a"
+    }
+   ],
+   "id": "agent:ad161a8bf7b59f6ac",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync:ferroplan"
+    }
+   ],
+   "id": "agent:ad864734a24084948",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "baseline:gymact"
+    }
+   ],
+   "id": "agent:ae1d7fe6d9d04bea9",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "audit"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "audit:ferroplan"
+    }
+   ],
+   "id": "agent:af9e5be2883e66e1e",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "sync:ash_a2a"
+    }
+   ],
+   "id": "agent:afa72ee983db60f8c",
+   "relationships": [
+    {
+     "objectId": "run:wf_36b97888-44b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify:gymact"
+    }
+   ],
+   "id": "agent:afb489a0294935fb4",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "verify:ash_a2a"
+    }
+   ],
+   "id": "agent:afc499ad718403607",
+   "relationships": [
+    {
+     "objectId": "run:wf_5c2db1e9-3e8",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "court"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "court:gymact"
+    }
+   ],
+   "id": "agent:afce96c61967192f7",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [
+    {
+     "name": "role",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "court"
+    },
+    {
+     "name": "label",
+     "time": "1970-01-01T00:00:00Z",
+     "value": "court:ferroplan"
+    }
+   ],
+   "id": "agent:afd6da75b8722cb08",
+   "relationships": [
+    {
+     "objectId": "run:wf_9860a56f-96b",
+     "qualifier": "in_run"
+    }
+   ],
+   "type": "agent"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Audit",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Baseline",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Construct",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Court",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Preserve+Sync",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Survey",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "phase:Verify",
+   "relationships": [],
+   "type": "phase"
+  },
+  {
+   "attributes": [],
+   "id": "repo:ash_a2a",
+   "relationships": [],
+   "type": "repo"
+  },
+  {
+   "attributes": [],
+   "id": "repo:autofde-lab",
+   "relationships": [],
+   "type": "repo"
+  },
+  {
+   "attributes": [],
+   "id": "repo:ferroplan",
+   "relationships": [],
+   "type": "repo"
+  },
+  {
+   "attributes": [],
+   "id": "repo:gymact",
+   "relationships": [],
+   "type": "repo"
+  },
+  {
+   "attributes": [],
+   "id": "repo:xaas",
+   "relationships": [],
+   "type": "repo"
+  },
+  {
+   "attributes": [],
+   "id": "run:wf_36b97888-44b",
+   "relationships": [],
+   "type": "workflow_run"
+  },
+  {
+   "attributes": [],
+   "id": "run:wf_5c2db1e9-3e8",
+   "relationships": [],
+   "type": "workflow_run"
+  },
+  {
+   "attributes": [],
+   "id": "run:wf_9860a56f-96b",
+   "relationships": [],
+   "type": "workflow_run"
+  },
+  {
+   "attributes": [],
+   "id": "wo:ASH_A2A-26922-14",
+   "relationships": [],
+   "type": "work_order"
+  },
+  {
+   "attributes": [],
+   "id": "wo:FERROPLAN-26922-09",
+   "relationships": [],
+   "type": "work_order"
+  },
+  {
+   "attributes": [],
+   "id": "wo:XAAS-26922-21",
+   "relationships": [],
+   "type": "work_order"
+  }
+ ]
+}

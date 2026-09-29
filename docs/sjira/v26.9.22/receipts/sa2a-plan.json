@@ -1,0 +1,193 @@
+{
+  "candidates": [
+    {
+      "description": "Release v26.9.22 plus hygiene: VERSION 26.9.17 -> 26.9.22, the full gate, the first v26.9.x tag, retire backup/errc-semantic-jira-bridge and the merged worktrees",
+      "estimated_cost": 20.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-18",
+      "option_entropy": 6.0,
+      "salience": 0.1675,
+      "yield_basis": {
+        "class": "release/version/tag",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "Cross-repo standing write-back for SJ-006 (autofde-lab) and SJ-008 (gymact) through receipts that bind each target repo's merged SHA, following the dependency protocol (SJ-001 and SJ-002 first)",
+      "estimated_cost": 14.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-09",
+      "option_entropy": 4.0,
+      "salience": 0.15952380952380954,
+      "yield_basis": {
+        "class": "design/capability",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "SA2A in the loop (if the user keeps SA2A in the loop): commit the t3 executor, add a fail-closed Bridge.plan/admit gate before materialize, and make _sa2a_admit able to refuse",
+      "estimated_cost": 14.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-14",
+      "option_entropy": 4.0,
+      "salience": 0.15952380952380954,
+      "yield_basis": {
+        "class": "ci-repair",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "SJ-001: merge errc2/sj001-guard (the superset code), then sjira/sj-001 doc e70da11",
+      "estimated_cost": 11.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-06",
+      "option_entropy": 3.0,
+      "salience": 0.15227272727272728,
+      "yield_basis": {
+        "class": "branch-land",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "SJ-007/ash_atlassian: commit the t6 ARD court, reconcile sjira/sj-007 on the sj-007 line (current ARD, AshAi packs in the REUSE table, a standing that SemanticJira.promote admits), and run the court with --receipt, recording the ash_atlassian SHA",
+      "estimated_cost": 11.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-08",
+      "option_entropy": 3.0,
+      "salience": 0.15227272727272728,
+      "yield_basis": {
+        "class": "design/capability",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "Integrate errc2/zcode-package (plus the committed zcode-package-verify WIP) and auto/t1-register-merge, reconciling repos.ex with main's ba76798 and the `refresh` keys in ultracode-repos.json",
+      "estimated_cost": 11.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-10",
+      "option_entropy": 3.0,
+      "salience": 0.15227272727272728,
+      "yield_basis": {
+        "class": "branch-land",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "Merge errc/semantic-jira-bridge with a durable ggen_igniter dependency (hex 26.9.22 or a pushed git ref), move SemanticCrown off the deleted mix semantic_jira.* calls, and point semantic_crown_test.exs:30 at a real checkout",
+      "estimated_cost": 11.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-11",
+      "option_entropy": 3.0,
+      "salience": 0.15227272727272728,
+      "yield_basis": {
+        "class": "sync/push/ff",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    },
+    {
+      "description": "Scheduled frontier feeder: an AshOban action on Run that goes SemanticJiraBridge.frontier/2 -> descriptor/4 -> SemanticWork.materialize/2 and reconciles receipts into the TransitionLog; either route the committed xaas-sjira sensing fallback (ba76798/2d229c2) through admission and dependencies, or remove it",
+      "estimated_cost": 11.0,
+      "historical_yield": 0.5583333333333333,
+      "item_id": "XAAS-26922-12",
+      "option_entropy": 3.0,
+      "salience": 0.15227272727272728,
+      "yield_basis": {
+        "class": "design/capability",
+        "repo": "xaas",
+        "stage": "Construct"
+      }
+    }
+  ],
+  "machinery_share": 0.0,
+  "plan": {
+    "allocations": [
+      {
+        "experiments": 2,
+        "fraction": 0.12202208018593841,
+        "item_id": "XAAS-26922-06",
+        "lane": 6,
+        "standing": "ADMITTED",
+        "ticks": 610,
+        "tokens": 61011
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.12202208018593841,
+        "item_id": "XAAS-26922-08",
+        "lane": 7,
+        "standing": "ADMITTED",
+        "ticks": 610,
+        "tokens": 61011
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.12783265543288785,
+        "item_id": "XAAS-26922-09",
+        "lane": 1,
+        "standing": "ADMITTED",
+        "ticks": 639,
+        "tokens": 63916
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.12202208018593841,
+        "item_id": "XAAS-26922-10",
+        "lane": 5,
+        "standing": "ADMITTED",
+        "ticks": 610,
+        "tokens": 61011
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.12202208018593841,
+        "item_id": "XAAS-26922-11",
+        "lane": 3,
+        "standing": "ADMITTED",
+        "ticks": 610,
+        "tokens": 61011
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.12202208018593841,
+        "item_id": "XAAS-26922-12",
+        "lane": 4,
+        "standing": "ADMITTED",
+        "ticks": 610,
+        "tokens": 61011
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.12783265543288785,
+        "item_id": "XAAS-26922-14",
+        "lane": 2,
+        "standing": "ADMITTED",
+        "ticks": 639,
+        "tokens": 63916
+      },
+      {
+        "experiments": 2,
+        "fraction": 0.13422428820453225,
+        "item_id": "XAAS-26922-18",
+        "lane": 0,
+        "standing": "ADMITTED",
+        "ticks": 671,
+        "tokens": 67112
+      }
+    ],
+    "ok": true,
+    "plan_hash": "94d270c197f955dc4f6b169ccaddddf0a8ef6fb13a473efb9ac00fff86f0dd16",
+    "plan_id": "sjira-v26.9.22",
+    "total_entropy_preserved": 3.658338175479373
+  },
+  "yield_source": {
+    "path": "/Users/sac/wt/v26922/ocel/v26922.ocel.json",
+    "sha256": "5df65243c18ff5bda9334e9ff8b2b31c23ee216ab41675705156d0ae767598b0"
+  }
+}
