@@ -1,0 +1,8 @@
+{
+  "id": "TT-A2",
+  "subject": "subject-A",
+  "scenario": "missing-subject",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}
