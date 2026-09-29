@@ -323,6 +323,30 @@ row terminal with every wave's epochs terminal, (b) each alive item's
 receipt carries `head_verified`, (c) every wave Run's OCEL log passes steps
 2–4. Any single failure = PARTIAL_ALIVE with the failing part named.
 
+## 5b. Operator tasks around a campaign (reconcile / conformance / learn)
+
+Three operator mix tasks live alongside the validation chain (all fail-closed):
+
+```bash
+# census + repair of wave Run rows vs. worktrees/ledger (no writes with --dry-run)
+mix xaas.ultracode.reconcile_runs [--dry-run]
+
+# judge every OCEL log of a campaign against OCEL 2.0 conformance
+mix xaas.ultracode.ocel_conformance --campaign <campaign-id> [--max-runs N]
+mix xaas.ultracode.ocel_conformance --run <run-id>
+
+# append exactly ONE `learn` event to the campaign ledger for a campaign run
+mix xaas.ultracode.learn [--run <campaign-run-id>]
+```
+
+Relevant `config :xaas` keys (defaults in `config/config.exs`):
+
+- `:ultracode_pool_capacity` (default `5`) — hard fence on every claim path,
+  MCP workers included; the `--capacity` CLI flag cannot raise past it.
+- `:ultracode_judge_accept_court_verified_partial` (default `true`) — the
+  judge accepts court-verified `partial_alive` without re-dispatch; set
+  `false` to restore the strict alive-only predicate (pre-2026-09-19).
+
 ## 6. (e) Prerequisites per repo type
 
 Everything in eight-hour-run §3 holds (toolchain, Postgres, operator dirs,
