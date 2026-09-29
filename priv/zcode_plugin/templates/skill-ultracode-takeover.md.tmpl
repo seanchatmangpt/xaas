@@ -40,8 +40,11 @@ Journal lines (JSON per line):
   value (a string, or the schema-validated object)
 
 There is no explicit "run completed" line. A run is complete when replaying the script
-against the journal reaches `return` without needing any live agent (`ultracode-run.mjs
-run --dry-run` reports `live_agents_needed: 0`).
+against the journal reaches `return` without needing any live agent: `ultracode-run.mjs
+run --dry-run --json` exits 0 and reports `completed: true` (`live_agents_needed: 0` and no
+`error`). `live_agents_needed: 0` with `completed: false` or an `error` (the script throws
+after its last agent, or the runtime refuses it, e.g. `META_NOT_LITERAL`) is a failed or
+refused run, not a completed one.
 
 ## 2. Script format (plain JavaScript, not TypeScript)
 
@@ -111,9 +114,25 @@ not prose for a human).
 
 ## 3. Takeover procedure (ZCode)
 
-1. Find candidates: `node scripts/ultracode-watch.mjs scan` lists handoff records whose
-   transcript dir has had no write for `ULTRACODE_STALE_MINUTES` (default 15) and whose dry-run
-   still needs live agents.
+1. Find candidates: `node scripts/ultracode-watch.mjs scan` lists handoff records (not
+   `completed`/`taken_over`, no `.takeover` lock) that are eligible: the owning Claude session is
+   dead (`~/.claude/sessions/<pid>.json` pid gone or reused per `procStart`; a live pid whose
+   session file has no `procStart` counts as alive) and the transcript dir has had no write for
+   `ULTRACODE_DEAD_GRACE_MIN` (default 2), or the session is alive but silent for
+   `ULTRACODE_STALE_MINUTES` (default 45) with an API-failure marker in its last 200 transcript
+   lines (`rate_limit|overloaded|usage limit|529|503|api_error`; 529/503 count as standalone
+   numbers or after `error`/`status`/`code`/`http`, not as digits inside an id, a timestamp
+   fraction or a JSON number field such as `"durationMs":503`) — and whose dry-run still needs
+   live agents without a static runtime refusal (`DRY_RUN_REFUSED(<code>)` otherwise).
+   A dry-run that proves completion (section 1) makes the watcher replay the run with zero live
+   agents into `~/.zcode/ultracode/runs/<runId>` (agent command = a guard that refuses and
+   records any spawn), so the runtime writes the run's own `result.json` (the return value);
+   only then is the record marked `completed`. Any other `live_agents_needed: 0` dry-run is
+   reported `DRY_RUN_ERROR(<code>)` and the record stays open; a guarded replay that tried to
+   spawn is reported `COMPLETION_REPLAY_FAILED` (its run dir moved aside, not retried until the
+   journal changes).
+   `run-once --auto` does the same and takes over every eligible run; `install` registers it
+   as the launchd agent `dev.zcode.ultracode-watch` (every 300 s).
 2. Take over one run: `node scripts/ultracode-watch.mjs takeover <runId>` — writes the
    `.takeover` lock, then runs
    `node scripts/ultracode-run.mjs run <scriptFile> --args @<handoff args> --resume-from <transcriptDir> --run-dir ~/.zcode/ultracode/runs/<runId>`.

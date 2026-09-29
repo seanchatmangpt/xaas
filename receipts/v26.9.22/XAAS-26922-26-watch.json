@@ -1,0 +1,168 @@
+{
+  "wo": "XAAS-26922-26",
+  "part": "watch",
+  "title": "scripts/ultracode-watch.mjs stall detector + takeover driver as a ggen template body -- repair round 1 (court CONFORMANCE refutation closed: completion requires the runtime's completed:true, result.json is the run's own return value)",
+  "identity": {
+    "subject": "XAAS-26922-26-watch: ultracode-watch.mjs stall detector + takeover driver (ggen-rendered), repair round 1",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "22c51610b7f6a7f85d5d91db3be072ead53c7dd3",
+    "base_sha": "07082367bc46ea2e8757efcca401a974a8f18805",
+    "generated_sha256": {
+      "priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs": "a248708db3ed12f522a0d0e98ac49ccd67f2eaaa0f23d98514fc10c0198fd07d"
+    },
+    "runtimes_exercised": {
+      "rt-A": {
+        "branch": "law/XAAS-26922-26-rt-A",
+        "head": "61098b11184bd2d217bd1cb6085a10aff41ba5b4",
+        "path": "/Users/sac/wt/v26922/xaas/uc-rt-A/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs",
+        "sha256": "f1d74bbe861f8ec264b4dd2238e6520a7c7ecc53edd81f7502a9012636bd76d9"
+      },
+      "rt-B": {
+        "branch": "law/XAAS-26922-26-rt-B",
+        "head": "cbb3c43527a550df131a84858f9a403f1cf9a12b",
+        "path": "/Users/sac/wt/v26922/xaas/uc-rt-B/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs",
+        "sha256": "eaf9e17f7b48ac3e00f98d5bad3e2a23b7d8b0732b9240a8771f123ae89b8f58"
+      }
+    },
+    "toolchain": {
+      "node": "v26.8.1",
+      "ggen": "26.8.18"
+    }
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "workflow task XAAS-26922-26 watch stage: worktree /Users/sac/wt/v26922/xaas/uc-watch on branch law/XAAS-26922-26-watch; local commit only, no push/merge",
+    "actor": "claude-opus-5-5 subagent (workflow-orchestrated)"
+  },
+  "consequence": {
+    "commits": [
+      "22c51610b7f6a7f85d5d91db3be072ead53c7dd3"
+    ],
+    "files_changed": [
+      "priv/zcode_plugin/templates/script-ultracode-watch.mjs.tmpl",
+      "priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs",
+      "priv/zcode_plugin/templates/skill-ultracode-takeover.md.tmpl",
+      "priv/zcode_plugin/marketplace/xaas-fabric/skills/ultracode-takeover/SKILL.md",
+      "HANDWRITTEN.md"
+    ],
+    "remote_effects": [],
+    "behavior_delta": [
+      "judgeDryRun(): complete only on exit 0 + completed:true + no error + live_agents_needed 0; other n=0 dry-runs -> DRY_RUN_ERROR(<code>), record left open; n>0 with a STATIC_HALT code -> DRY_RUN_REFUSED(<code>); error-only stdout -> DRY_RUN_REFUSED(<code>)",
+      "completeByReplay(): .takeover lock (purpose complete, released after), zero-spawn replay into <ultracodeHome>/runs/<runId> with ULTRACODE_AGENT_CMD = refusing guard; runtime-written result.json (raw return value); divergence -> COMPLETION_REPLAY_FAILED, dir moved aside, not retried until the journal mtime changes",
+      "takeover(): re-read record after lock; closed -> REFUSED(ALREADY_<STATUS>), lock released",
+      "API_FAILURE: 529/503 also match as standalone numbers; uuid/.503Z/\"durationMs\":503 still do not"
+    ]
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "cd priv/zcode_plugin && ggen sync run && cd ../.. && git status --porcelain | wc -l",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "ggen 26.8.18 exit 0; 0 porcelain lines at 22c5161 (committed projection == render); two consecutive syncs give identical marketplace tree hash 8472c1037ed6ba39",
+        "output_sha256": "866e204601de9656048f8bf69619593a6bd948eb1597fd8cb01c5eb750b2feb4"
+      },
+      {
+        "cmd": "cp -R ggen.toml ontology.ttl templates <tmp>/ && (cd <tmp> && ggen sync run) && diff -r <tmp>/marketplace priv/zcode_plugin/marketplace",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "fresh render in a clean copy byte-identical to committed marketplace/; template {% raw %} body == generated ultracode-watch.mjs (python equality True)"
+      },
+      {
+        "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs selftest",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "12 passed, 0 failed, 8 skipped (runtime absent at sibling scripts/ultracode-run.mjs on this branch)",
+        "output_sha256": "1d9118d09104978efcf68c1318489c5a4fbe144b335347775a60ac1d7b4bbad8"
+      },
+      {
+        "cmd": "ULTRACODE_RUNTIME=/Users/sac/wt/v26922/xaas/uc-rt-A/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs ULTRACODE_QUIET=1 node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs selftest",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "20 passed, 0 failed, 0 skipped",
+        "output_sha256": "4e29ee1c274e67ed9d60d1a0298e7e3ef7e8fd5891c4da9625b47b5187028d0f"
+      },
+      {
+        "cmd": "ULTRACODE_RUNTIME=/Users/sac/wt/v26922/xaas/uc-rt-B/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs ULTRACODE_QUIET=1 node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs selftest",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "20 passed, 0 failed, 0 skipped",
+        "output_sha256": "9318119b9b730366e49fcff223a2a19fd727fd09cd4cebea71984787609f7f71"
+      },
+      {
+        "cmd": "node $SCRATCH/fx/harness.mjs priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs /Users/sac/wt/v26922/xaas/uc-rt-A/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs rtA",
+        "cwd": "$SCRATCH/fx",
+        "exit": 0,
+        "summary": "court conformance harness: 52 passed, 0 failed (was 49/3 at 7c6cf32): throwafter -> DRY_RUN_ERROR(SCRIPT_ERROR) open, takeover fails not ALREADY_COMPLETED; complete.js result.json = {\"answer\":\"from-claude\",\"n\":42}",
+        "output_sha256": "297f16fd43449e7b3d9976236f71f3278fc54f827ddf16ae68e9b119b0e52148"
+      },
+      {
+        "cmd": "node $SCRATCH/fx/harness.mjs priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs /Users/sac/wt/v26922/xaas/uc-rt-B/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs rtB",
+        "cwd": "$SCRATCH/fx",
+        "exit": 0,
+        "summary": "court conformance harness: 52 passed, 0 failed (was 43/9 at 7c6cf32): metavar/metatpl -> DRY_RUN_ERROR(META_NOT_LITERAL) open and takeover halts zero spawns; contra -> DRY_RUN_REFUSED(SCHEMA_PREFLIGHT); throwafter open; complete.js result.json carries n:42",
+        "output_sha256": "890ec742095032724f20847adefe65360781ffe72f7c288b3bbe653bbb6fc6dd"
+      },
+      {
+        "cmd": "node $SCRATCH/fx/harness2.mjs priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs /Users/sac/wt/v26922/xaas/uc-rt-A/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs rtA",
+        "cwd": "$SCRATCH/fx",
+        "exit": 0,
+        "summary": "watcher mechanics harness: 23 passed, 0 failed, incl. 'upstream returned 529' and 'HTTP/1.1 503 Service Unavailable' now candidates",
+        "output_sha256": "318014f7502fe508bd6f2767e574e874be2b1d0fbba11ce0d5ac96e4bd3da56b"
+      },
+      {
+        "cmd": "node $SCRATCH/fx/harness2.mjs priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs /Users/sac/wt/v26922/xaas/uc-rt-B/priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-run.mjs rtB",
+        "cwd": "$SCRATCH/fx",
+        "exit": 0,
+        "summary": "watcher mechanics harness: 23 passed, 0 failed",
+        "output_sha256": "42164dbd9af9edfcfa312ad9cc3cdb8cb298b91b370e9ac43a381615e6fc75ea"
+      },
+      {
+        "cmd": "bash $SCRATCH/mutants.sh",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "7 source mutants x 2 runtimes: 11 killed, 3 survived: m5 (STATIC_HALT ignored) survives only under rt-A, whose static pre-flight prints an error-only object (n=null) so the n>0 branch is unreachable there; killed under rt-B (contra n=1 + SCHEMA_PREFLIGHT). m7 (no record re-read after winning the lock) survives under both: race-window guard not exercised",
+        "output_sha256": "ec96b1d66fa723ffff35b677129b869fd8726046e6c23766fd8ce660901865b5"
+      },
+      {
+        "cmd": "node priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs print | plutil -lint -",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "<stdin>: OK",
+        "output_sha256": "20f836261f578f30ece49c8a9629c63e719e055602b07ca1cd6b88b4c57c0b7e"
+      },
+      {
+        "cmd": "! grep -nE 'unittest\\.mock|Mock\\(|MagicMock|patch\\(|monkeypatch|jest\\.(mock|fn)' priv/zcode_plugin/marketplace/xaas-fabric/scripts/ultracode-watch.mjs priv/zcode_plugin/templates/script-ultracode-watch.mjs.tmpl",
+        "cwd": "/Users/sac/wt/v26922/xaas/uc-watch",
+        "exit": 0,
+        "summary": "zero mock matches (grep exit 1); the only test double is the scripted agent backend selected by ULTRACODE_AGENT_CMD, justified in the selftest header; the completion guard is production code, not a test double"
+      }
+    ],
+    "durable_location": "receipts/v26.9.22/XAAS-26922-26-watch.json on branch law/XAAS-26922-26-watch; $SCRATCH = /private/tmp/claude-501/-Users-sac/1fecd79a-9323-4b57-a949-d7892a3ea283/scratchpad (court fixtures fx/, evidence/, not committed)"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "at subject_sha 22c5161 with ULTRACODE_RUNTIME = rt-A@61098b1 and rt-B@cbb3c43: selftest 20/20 on each (12/12 + 8 SKIP with no runtime), court harness 52/0 on each runtime (refuting item closed: no false completion, result.json = run return value), harness2 23/0 on each, 11/14 mutants killed (3 survivors named in unverified), ggen sync x2 clean + fresh-render no drift, plutil OK, zero mocks"
+  },
+  "supersedes": {
+    "receipt_commit": "07082367bc46ea2e8757efcca401a974a8f18805",
+    "subject_sha": "7c6cf32fc85b4687d89ca31acacad995563a2019",
+    "standing": "PARTIAL_ALIVE",
+    "why": "court verdict CONFORMANCE refuted 7c6cf32: classify() marked records completed on live_agents_needed 0 while ignoring exit code / completed:false / error (throwafter, metavar, metatpl buried as completed), and result.json carried result:null; repaired forward in 22c5161"
+  },
+  "handwritten": "UNSUPPORTED(generator-capability): workflow runtime logic -- HANDWRITTEN.md row for priv/zcode_plugin/templates/script-ultracode-watch.mjs.tmpl (scope text updated in 22c5161)",
+  "unverified": [
+    "default runtime path: the sibling scripts/ultracode-run.mjs is not on this branch; every runtime case ran with ULTRACODE_RUNTIME pointing at the rt-A / rt-B worktree files (identities above); integration must rerun selftest with the runtime beside the watcher",
+    "m7 survivor: the record re-read after winning the .takeover lock (scan completion racing a takeover) is not exercised by any deterministic test",
+    "m5 under rt-A: the n>0 + STATIC_HALT branch is only reachable with rt-B's dry-run shape",
+    "live execution against the real zcode CLI was not run; live agents only through the scripted backend",
+    "install/uninstall were not run (tests never call install); launchd bootstrap unverified",
+    "mix test test/xaas/zcode_plugin/projection_test.exs not run (no deps/_build in this worktree); its drift assertion replayed with ggen + diff -r",
+    "procStart-absent liveness stays a documented refinement (alive), not the literal contract (kill -0 AND lstart == procStart); SKILL.md section 3 now states it"
+  ],
+  "alternatives": {
+    "rejected": "write result.json from the dry-run report: neither runtime's --dry-run emits the replayed return value, so the file would claim completion with result:null (the refuted shape)",
+    "retained_not_taken": "have the runtimes' --dry-run emit `result`: cross-worktree change to rt-A/rt-B, outside this stage; the watcher would still need the guard to prove zero spawns",
+    "marker": "literal bare-substring 529|503 (contract text) rejected: matches uuids/timestamps in nearly every transcript tail; token-bounded form keeps the contract tokens and the court's two misses"
+  }
+}
