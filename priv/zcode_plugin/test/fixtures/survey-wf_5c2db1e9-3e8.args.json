@@ -1,0 +1,80 @@
+{
+  "repos": [
+    {
+      "name": "ash_a2a",
+      "path": "/Users/sac/ash_a2a"
+    },
+    {
+      "name": "ggen_igniter",
+      "path": "/Users/sac/ggen_igniter"
+    },
+    {
+      "name": "xaas",
+      "path": "/Users/sac/xaas"
+    },
+    {
+      "name": "zcode-cli",
+      "path": "/Users/sac/dev/zcode-cli"
+    },
+    {
+      "name": "autofde-lab",
+      "path": "/Users/sac/autofde-lab"
+    },
+    {
+      "name": "beam4pm",
+      "path": "/Users/sac/beam4pm"
+    },
+    {
+      "name": "frozen-duckdb",
+      "path": "/Users/sac/frozen-duckdb"
+    },
+    {
+      "name": "ggen-marketplace",
+      "path": "/Users/sac/ggen-marketplace"
+    },
+    {
+      "name": "ggen-ecosystem",
+      "path": "/Users/sac/ggen-ecosystem"
+    },
+    {
+      "name": "ash_surface",
+      "path": "/Users/sac/ash_surface"
+    },
+    {
+      "name": "ash_atlassian",
+      "path": "/Users/sac/ash_atlassian"
+    },
+    {
+      "name": "ferroplan",
+      "path": "/Users/sac/ferroplan"
+    },
+    {
+      "name": "chatman-ecosystem",
+      "path": "/Users/sac/chatman-ecosystem"
+    },
+    {
+      "name": "gymact",
+      "path": "/Users/sac/gymact"
+    },
+    {
+      "name": "unjucks",
+      "path": "/Users/sac/unjucks"
+    },
+    {
+      "name": "turbo-fieldfare",
+      "path": "/Users/sac/turbo-fieldfare"
+    },
+    {
+      "name": "remo",
+      "path": "/Users/sac/remo"
+    },
+    {
+      "name": "gitvan",
+      "path": "/Users/sac/gitvan"
+    },
+    {
+      "name": "ggen",
+      "path": "/Users/sac/ggen"
+    }
+  ]
+}
