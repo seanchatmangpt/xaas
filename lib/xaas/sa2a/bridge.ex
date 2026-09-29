@@ -38,7 +38,7 @@ defmodule Xaas.Sa2a.Bridge do
 
   use GenServer
 
-  alias Xaas.Sa2a.Generated.McpDescriptor
+  alias Xaas.Sa2a.{Generated.McpDescriptor, SemanticEvidence}
 
   @port_command "autofde"
   @port_args ["beam-bridge"]
@@ -78,17 +78,21 @@ defmodule Xaas.Sa2a.Bridge do
 
   @spec admit(String.t(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def admit(candidate_id, assertion, opts \\ []) do
-    req =
-      %{
-        "op" => "sa2a_admit",
-        "candidate_id" => candidate_id,
-        "assertion" => assertion,
-        "query_id" => Keyword.get(opts, :query_id, "q0"),
-        "source" => Keyword.get(opts, :source, "xaas-sa2a-bridge"),
-        "evidence" => Keyword.get(opts, :evidence, %{})
-      }
+    with {:ok, semantic_evidence} <-
+           SemanticEvidence.admit_optional(Keyword.get(opts, :semantic_evidence)) do
+      req =
+        %{
+          "op" => "sa2a_admit",
+          "candidate_id" => candidate_id,
+          "assertion" => assertion,
+          "query_id" => Keyword.get(opts, :query_id, "q0"),
+          "source" => Keyword.get(opts, :source, "xaas-sa2a-bridge"),
+          "evidence" => Keyword.get(opts, :evidence, %{})
+        }
+        |> maybe_put("semantic_evidence", semantic_evidence)
 
-    call(req)
+      call(req)
+    end
   end
 
   @spec plan([map()], keyword()) :: {:ok, map()} | {:error, term()}
