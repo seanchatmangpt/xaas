@@ -33,6 +33,7 @@ defmodule Xaas.Ultracode.RecoveryPolicy do
 
   alias AshPPlan.FOND
   alias AshPPlan.FOND.Synthesis
+  alias Xaas.Sa2a.WaveOutcome
 
   @retry_outcomes [
     :requeued,
@@ -129,7 +130,14 @@ defmodule Xaas.Ultracode.RecoveryPolicy do
   def observe(:complete, _overloaded?), do: :complete
   def observe(_outcome, true), do: :provider_open
   def observe(outcome, false) when outcome in @tick_outcomes, do: outcome
-  def observe(_outcome, false), do: :error
+  def observe(outcome, false) do
+    case WaveOutcome.consequence(outcome) do
+      :executed -> if(outcome == :worker_completed, do: :worker_completed, else: :error)
+      :refused -> if(outcome in @retry_outcomes, do: outcome, else: :refused)
+      :failed -> if(outcome in @retry_outcomes, do: outcome, else: :error)
+      :unknown_outcome -> :error
+    end
+  end
 
   @doc """
   The admitted next action for an observed tick outcome. `:complete`

@@ -182,7 +182,8 @@ defmodule Xaas.Ultracode.WaveLoop do
   # a consumed step with the provider not in a storm.
   @doc false
   def chain_decision(outcome, state_owes?, overloaded?) do
-    state_owes? and Xaas.Ultracode.RecoveryPolicy.decide(outcome, overloaded?) == :chain
+    state_owes? and Xaas.Sa2a.WaveOutcome.chainable?(outcome, overloaded?) and
+      Xaas.Ultracode.RecoveryPolicy.decide(outcome, overloaded?) == :chain
   end
 
   defp maybe_chain_next_tick({:ok, report}, state_path, telemetry_path) do
@@ -771,12 +772,12 @@ defmodule Xaas.Ultracode.WaveLoop do
   defp settle(step, epoch_id, result, state_path, telemetry_path, tick_no) do
     case result do
       {:ok, %{status: :ok, epoch_state: :completed} = res} ->
-        case worker_terminal_outcome(res) do
-          outcome when outcome in [:blocked, :refused] ->
-            # The worker closed head-verified but typed the work itself
-            # blocked/refused: the row must NOT advance to DONE (observed
-            # 2026-09-26 — a gate-blocked worker's epoch completed and the
-            # loop marked the step DONE with no work done).
+        outcome = worker_terminal_outcome(res)
+
+        case Xaas.Sa2a.WaveOutcome.settlement(outcome) do
+          :block ->
+            # A typed refusal/blocked consequence is terminal for the
+            # disposable attempt, but never success for the work item.
             apply_blocked(
               step,
               outcome,
@@ -786,7 +787,19 @@ defmodule Xaas.Ultracode.WaveLoop do
               tick_no
             )
 
-          _ ->
+          :requeue ->
+            # Unknown/failed consequences are recoverable SA2A outcomes.
+            # Close/reclaim only this attempt and keep the work item pending.
+            non_terminal(
+              step,
+              epoch_id,
+              res,
+              :sa2a_recovery_required,
+              outcome,
+              %{state_path: state_path, telemetry_path: telemetry_path, tick_no: tick_no}
+            )
+
+          :complete ->
             apply_success(step, epoch_id, res, state_path, telemetry_path, tick_no)
         end
 
@@ -984,16 +997,16 @@ defmodule Xaas.Ultracode.WaveLoop do
   defp worker_terminal_outcome(%{receipts: receipts}) when is_list(receipts) do
     receipts
     |> Enum.reverse()
-    |> Enum.find_value(:unknown, fn
+    |> Enum.find_value(:unknown_outcome, fn
       %{"head_verified" => true, "outcome" => outcome} ->
-        String.to_existing_atom(outcome)
+        Xaas.Sa2a.WaveOutcome.parse(outcome)
 
       _ ->
         nil
     end)
   end
 
-  defp worker_terminal_outcome(_), do: :unknown
+  defp worker_terminal_outcome(_), do: :unknown_outcome
 
   defp apply_blocked(step, outcome, line, state_path, telemetry_path, tick_no) do
     with {:ok, raw} <- read_state(state_path),

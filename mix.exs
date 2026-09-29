@@ -97,7 +97,10 @@ defmodule Xaas.MixProject do
       # own default env-key lookup (GROQ_API_KEY) -- no manual key wiring
       # in this app. See lib/xaas/library/explainer/groq_adapter.ex.
       {:req_llm, "~> 1.18"},
-      {:ash_a2a, "~> 26.9.12"},
+      {:ash_a2a,
+       git: "https://github.com/seanchatmangpt/ash_a2a.git",
+       ref: "e481bf9bab36183c888883603fe5ee3ca89ab6e6",
+       override: true},
       {:ash_r2rml,
        git: "https://github.com/seanchatmangpt/ash_r2rml.git",
        ref: "40d181fffdefbb65ee4a83486eae86534690c4d5",
