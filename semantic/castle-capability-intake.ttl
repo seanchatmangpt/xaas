@@ -1,0 +1,62 @@
+@prefix eco: <https://ggen.dev/ecosystem#> .
+@prefix xaas: <https://xaas.dev/ontology/castle-intake#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# CASTLE capability intake for the XaaS runtime crown.
+# Source projection: seanchatmangpt/ggen-ecosystem@50fdfa20c84205a80c6eb94e916cffbedc4b816e
+# ontology/castle-projection.ttl
+#
+# Projection != admission != execution != standing.
+# XaaS owns runtime existence/composition only. It does not own CASTLE
+# consequential admissibility and cannot manufacture protected DO authority.
+
+xaas:intake
+    a eco:CapabilityProjection ;
+    dcterms:title "CASTLE projected capability intake — XaaS" ;
+    eco:projectionSource "seanchatmangpt/ggen-ecosystem@50fdfa20c84205a80c6eb94e916cffbedc4b816e" ;
+    eco:ownerRepository "seanchatmangpt/xaas" ;
+    eco:ownerCapability "RUNTIME_EXISTENCE" ;
+    eco:projectionStanding "CANDIDATE" ;
+    eco:authorityCeiling "CONSTRUCT" ;
+    eco:forbidsCapability "CONSEQUENTIAL_ADMISSIBILITY" ;
+    eco:forbidsRuntimePlacement "CONSEQUENCE_CROWN" .
+
+xaas:zcode-cli
+    a eco:ProjectedCapability ;
+    eco:sourceRepository "seanchatmangpt/zcode-cli" ;
+    eco:sourceSha "a568c3c3ee4b377e98fe9db0f37fa90da760734f" ;
+    eco:capability "EXTERNAL_WORKER_PROVIDER" ;
+    eco:disposition "WRAP" ;
+    eco:runtimePlacement "PROVIDER_EDGE" ;
+    eco:projectionTarget xaas:intake ;
+    eco:falsifier "Worker possession or successful tool execution becomes CASTLE authority." .
+
+xaas:chatgpt-cloud-elixir
+    a eco:ProjectedCapability ;
+    eco:sourceRepository "seanchatmangpt/chatgpt-cloud-elixir" ;
+    eco:sourceSha "8efaa40b69c8162d22fe2dc5e59657f8dcff529e" ;
+    eco:capability "MODEL_PROVIDER_BRIDGE" ;
+    eco:disposition "WRAP" ;
+    eco:runtimePlacement "PROVIDER_EDGE" ;
+    eco:projectionTarget xaas:intake ;
+    eco:falsifier "A model/provider session gains ambient runtime or consequence sovereignty." .
+
+xaas:dteam
+    a eco:ProjectedCapability ;
+    eco:sourceRepository "seanchatmangpt/dteam" ;
+    eco:sourceSha "5c00d757ebc614e1db1dd0d564dd0c34896d57a0" ;
+    eco:capability "CAPABILITY_KERNEL_RESEARCH" ;
+    eco:disposition "CANDIDATE_ABSORB" ;
+    eco:runtimePlacement "CAPABILITY_DONOR_ONLY" ;
+    eco:projectionTarget xaas:intake ;
+    eco:falsifier "DTeam becomes a second runtime/process/actuation crown instead of donating verified primitives." .
+
+xaas:mcpp
+    a eco:ProjectedCapability ;
+    eco:sourceRepository "seanchatmangpt/mcpp" ;
+    eco:sourceSha "5f5ee2175424c63edc6cdc211d3a5289a1c5556f" ;
+    eco:capability "PROOF_CARRYING_WORK_RUNTIME_RESEARCH" ;
+    eco:disposition "CANDIDATE_ABSORB" ;
+    eco:runtimePlacement "RUNTIME_DOCTRINE_DONOR_ONLY" ;
+    eco:projectionTarget xaas:intake ;
+    eco:falsifier "MCPP becomes an alternate admissible-work runtime crown instead of donating route/proof/receipt doctrine." .
