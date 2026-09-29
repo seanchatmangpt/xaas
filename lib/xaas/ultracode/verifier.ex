@@ -80,16 +80,53 @@ defmodule Xaas.Ultracode.Verifier do
       `"error"` with reason `{:court_receipt_refused, _}` -- a defaulted
       or skipped verdict row would be a fabricated one.
 
+  ## Falsifier probes (a DoD must be able to fail)
+
+  A green suite proves nothing if it is also green on a broken tree (an
+  `exit 0` DoD passes everything). So a suite may declare `probes:` (and a
+  run may add more through `ctx[:probes]` or, for Semantic Jira orders, the
+  `probes` key of its `{ticket}` file -- see `Xaas.Ultracode.OrderProbes`).
+  Each probe (`Xaas.Ultracode.Probes`: a named mutation given as data) is
+  applied to a SCRATCH CLONE of the exact head under test, and the suite's
+  own steps are rerun there. The probe REQUIRES that rerun to FAIL:
+
+    * every probe fails the rerun -> the verdict stands (`pass`);
+    * a probe's rerun still PASSES -> the DoD is VACUOUS: status `"error"`,
+      `result["refusal"] == "vacuous_dod"`, reason `{:vacuous_dod, [ids]}`.
+      `Lease.close/4` maps error to `:partial_alive`, so a vacuous DoD can
+      never seal `:alive` (`AliveRequiresCourt` needs `status == "pass"`);
+    * a probe that cannot be applied, or whose rerun times out / errors,
+      proves nothing: status `"error"`, `result["refusal"] == "probes_refused"`;
+    * `require_probes: true` on a suite with no probes at all is refused the
+      same way (`:probes_required`).
+
+  Probes only run once the real steps passed (a failing suite is already
+  falsified) and never touch the real worktree (the clone and its temp dirs
+  are removed; the head/tree-clean checks still bracket the whole run). The
+  per-probe record is in `result["probes"]`.
+
+  ## Quarantine (suite health court)
+
+  A suite that declares `health:` is measured by `Xaas.Ultracode.SuiteHealth`
+  against a known-green and a known-red fixture; when its latest receipt is
+  stale, red, or bound to a different suite definition, `run/2` refuses it:
+  status `"error"`, `result["refusal"] == "suite_unhealthy"` (Run admission
+  refuses the name too, see `Validations.VerifierSuiteRegistered`). The court
+  itself runs the suite with `ctx[:health_check] == true`, which bypasses
+  quarantine and probes.
+
   ## Result
 
   `run/2` always returns `{:ok, result}`; `result["status"]` is one of
   `"pass" | "fail" | "timeout" | "error"`. `Lease.close/4` maps pass to the
   claimed outcome, fail to `:build_broken`, timeout/error to `:partial_alive`.
+  `result["refusal"]` (when present) types an `"error"`: `"vacuous_dod"`,
+  `"probes_refused"` or `"suite_unhealthy"`.
   """
 
   require Logger
 
-  alias Xaas.Ultracode.CourtReceipt
+  alias Xaas.Ultracode.{CourtReceipt, Probes, SuiteHealth}
 
   @grace_ms 2_000
   @default_max_output 65_536
@@ -101,7 +138,9 @@ defmodule Xaas.Ultracode.Verifier do
           required(:run_id) => String.t(),
           required(:epoch_id) => String.t(),
           optional(:executor) => String.t() | nil,
-          optional(:court_map) => map() | nil
+          optional(:court_map) => map() | nil,
+          optional(:probes) => [map()],
+          optional(:health_check) => boolean()
         }
 
   @doc "True when `name` is a registered suite. Never raises on non-binaries."
@@ -117,6 +156,28 @@ defmodule Xaas.Ultracode.Verifier do
   @spec suite_names() :: [String.t()]
   def suite_names, do: suites() |> Map.keys() |> Enum.sort()
 
+  @doc "The registered suite declaration for `name`, or `:error`."
+  @spec suite(term()) :: {:ok, map()} | :error
+  def suite(name) when is_binary(name), do: Map.fetch(suites(), name)
+  def suite(_), do: :error
+
+  @doc "Stable digest of a suite's steps (id, argv, timeout, receipt_argv)."
+  @spec suite_digest(map()) :: String.t()
+  def suite_digest(suite), do: argv_digest(suite)
+
+  @doc """
+  Health admission for a registered suite name: `:ok` or
+  `{:quarantined, reason}` (see `Xaas.Ultracode.SuiteHealth`). An unknown name
+  is `:ok` here -- refusing unknown names is `registered?/1`'s job.
+  """
+  @spec admission(term()) :: :ok | {:quarantined, term()}
+  def admission(name) do
+    case suite(name) do
+      {:ok, suite} -> SuiteHealth.admission(name, suite)
+      :error -> :ok
+    end
+  end
+
   @doc """
   Runs the named suite against `ctx.worktree` at `ctx.head`. Always returns
   `{:ok, result}` with a JSON-safe string-keyed map.
@@ -131,15 +192,21 @@ defmodule Xaas.Ultracode.Verifier do
           finish(base, :error, "unknown_suite")
 
         {:ok, suite} ->
-          :global.trans(
-            {{__MODULE__, ctx.epoch_id}, self()},
-            fn -> guarded(suite, ctx, base) end,
-            [node()],
-            0
-          )
-          |> case do
-            :aborted -> finish(base, :error, "verification_in_progress")
-            other -> other
+          case quarantine(suite_name, suite, ctx) do
+            :ok ->
+              :global.trans(
+                {{__MODULE__, ctx.epoch_id}, self()},
+                fn -> guarded(suite, ctx, base) end,
+                [node()],
+                0
+              )
+              |> case do
+                :aborted -> finish(base, :error, "verification_in_progress")
+                other -> other
+              end
+
+            {:quarantined, reason} ->
+              refuse(base, "suite_unhealthy", {:suite_unhealthy, reason})
           end
       end
 
@@ -159,7 +226,8 @@ defmodule Xaas.Ultracode.Verifier do
 
     with {:ok, worktree} <- contained_worktree(ctx.worktree),
          :ok <- head_is(worktree, ctx.head, :before),
-         :ok <- tree_clean(worktree, :before) do
+         :ok <- tree_clean(worktree, :before),
+         {:ok, probes} <- declared_probes(suite, ctx) do
       tmp = make_tmp(ctx.epoch_id)
 
       try do
@@ -172,30 +240,176 @@ defmodule Xaas.Ultracode.Verifier do
 
         {base, court_error} = court_receipt(base, suite, steps, court)
 
-        case {court_error, status, head_is(worktree, ctx.head, :after),
+        # Falsifier probes only matter for a verdict that would otherwise
+        # stand: a court refusal or a failing suite is already not-alive.
+        {base, probe_refusal} =
+          if court_error == nil and status == :pass and probes != [] do
+            probe_phase(base, suite, ctx, worktree, probes)
+          else
+            {base, nil}
+          end
+
+        case {court_error, probe_refusal, status, head_is(worktree, ctx.head, :after),
               tree_clean(worktree, :after)} do
-          {{:refused, reason}, _, _, _} ->
+          {{:refused, reason}, _, _, _, _} ->
             finish(base, :error, {:court_receipt_refused, reason})
 
-          {nil, :pass, :ok, :ok} ->
+          {nil, {type, reason}, :pass, _, _} ->
+            refuse(base, type, reason)
+
+          {nil, nil, :pass, :ok, :ok} ->
             finish(base, :pass, nil)
 
-          {nil, :pass, {:error, reason}, _} ->
+          {nil, nil, :pass, {:error, reason}, _} ->
             finish(base, :error, reason)
 
-          {nil, :pass, _, {:error, reason}} ->
+          {nil, nil, :pass, _, {:error, reason}} ->
             finish(base, :error, reason)
 
-          {nil, status, _, _} ->
+          {nil, _, status, _, _} ->
             finish(base, status, first_failure(steps))
         end
       after
         File.rm_rf(tmp)
       end
     else
-      {:error, {:worker_left_uncommitted_changes, _} = reason} -> finish(base, :fail, reason)
-      {:error, reason} -> finish(base, :error, reason)
+      {:error, {:worker_left_uncommitted_changes, _} = reason} ->
+        finish(base, :fail, reason)
+
+      {:error, {:probes_refused, _} = reason} ->
+        refuse(base, "probes_refused", reason)
+
+      {:error, reason} ->
+        finish(base, :error, reason)
     end
+  end
+
+  # ------------------------------------------------------------------
+  # Quarantine and falsifier probes
+  # ------------------------------------------------------------------
+
+  # The suite health court runs the suite itself with `health_check: true`
+  # (it must measure a suite that is currently quarantined).
+  defp quarantine(_name, _suite, %{health_check: true}), do: :ok
+  defp quarantine(name, suite, _ctx), do: SuiteHealth.admission(name, suite)
+
+  # Probes in force for this run: the suite's own, the ctx's, and the ones a
+  # Semantic Jira order carried into the controller-written `{ticket}` file.
+  # A malformed declaration refuses the run before any step executes.
+  defp declared_probes(_suite, %{health_check: true}), do: {:ok, []}
+
+  defp declared_probes(suite, ctx) do
+    with {:ok, from_ticket} <- ticket_probes(ctx),
+         {:ok, probes} <-
+           Probes.admit(Map.get(suite, :probes, []) ++ (ctx[:probes] || []) ++ from_ticket),
+         :ok <- probes_required(suite, probes) do
+      {:ok, probes}
+    else
+      {:error, reason} -> {:error, {:probes_refused, reason}}
+    end
+  end
+
+  defp probes_required(suite, []) do
+    if Map.get(suite, :require_probes, false), do: {:error, :probes_required}, else: :ok
+  end
+
+  defp probes_required(_suite, _probes), do: :ok
+
+  defp ticket_probes(ctx) do
+    dir = Application.get_env(:xaas, :ultracode_ticket_dir)
+
+    with true <- is_binary(dir) and dir != "",
+         true <- Regex.match?(~r/\A[A-Za-z0-9._:-]+\z/, to_string(ctx.run_id)),
+         {:ok, raw} <- File.read(Path.join(dir, "#{ctx.run_id}.json")),
+         {:ok, %{} = ticket} <- Jason.decode(raw) do
+      case ticket do
+        %{"probes_error" => error} when is_binary(error) ->
+          {:error, {:order_probes_invalid, error}}
+
+        %{"probes" => list} when is_list(list) ->
+          {:ok, list}
+
+        _ ->
+          {:ok, []}
+      end
+    else
+      _ -> {:ok, []}
+    end
+  end
+
+  defp probe_phase(base, suite, ctx, worktree, probes) do
+    records = Enum.map(probes, &run_probe(&1, suite, ctx, worktree))
+    survived = for %{"verdict" => "survived", "id" => id} <- records, do: id
+
+    unproven =
+      for %{"verdict" => verdict, "id" => id} = record <- records,
+          verdict in ["unapplicable", "inconclusive"],
+          do: [id, verdict, record["reason"]]
+
+    refusal =
+      cond do
+        survived != [] -> {"vacuous_dod", {:vacuous_dod, survived}}
+        unproven != [] -> {"probes_refused", {:probes_refused, unproven}}
+        true -> nil
+      end
+
+    base =
+      base
+      |> Map.put("probes", records)
+      |> Map.put("probe_summary", %{
+        "declared" => length(records),
+        "killed" => Enum.count(records, &(&1["verdict"] == "killed")),
+        "survived" => length(survived)
+      })
+
+    {base, refusal}
+  end
+
+  # One probe: exact head cloned into its own scratch dir, mutated, and the
+  # suite's plain steps rerun there. The clone and the step tmp dir are
+  # SEPARATE directories (a `--basetemp {tmpdir}` pytest run clears its
+  # tmpdir, which must never be the clone's parent). Everything is removed.
+  defp run_probe(probe, suite, ctx, worktree) do
+    scratch = make_tmp("#{ctx.epoch_id}-probe")
+    step_tmp = make_tmp("#{ctx.epoch_id}-probe-run")
+
+    try do
+      with {:ok, clone} <- Probes.scratch_clone(worktree, ctx.head, Path.join(scratch, "clone")),
+           :ok <- Probes.apply_probe(probe, clone) do
+        steps = run_steps(suite, ctx, clone, step_tmp, false)
+
+        case steps |> Enum.map(& &1["status"]) |> worst_status() do
+          :fail -> probe_record(probe, "killed", nil, steps)
+          :pass -> probe_record(probe, "survived", nil, steps)
+          other -> probe_record(probe, "inconclusive", "rerun_#{other}", steps)
+        end
+      else
+        {:error, reason} -> probe_record(probe, "unapplicable", reason_string(reason), [])
+      end
+    after
+      File.rm_rf(scratch)
+      File.rm_rf(step_tmp)
+    end
+  end
+
+  defp probe_record(probe, verdict, reason, steps) do
+    %{"id" => probe.id, "kind" => probe.kind, "verdict" => verdict}
+    |> then(fn r -> if reason, do: Map.put(r, "reason", reason), else: r end)
+    |> then(fn r ->
+      Enum.reduce([:falsifier, :acceptance], r, fn key, acc ->
+        case Map.fetch(probe, key) do
+          {:ok, value} -> Map.put(acc, Atom.to_string(key), value)
+          :error -> acc
+        end
+      end)
+    end)
+    |> Map.put("steps", Enum.map(steps, &Map.take(&1, ["id", "status", "exit"])))
+  end
+
+  # A typed refusal: an `"error"` verdict (never alive) whose `"refusal"`
+  # names WHY, for machine consumers.
+  defp refuse(base, type, reason) do
+    base |> finish(:error, reason) |> Map.put("refusal", type)
   end
 
   # The court receipt contract in force for this run, if any: the ctx's
