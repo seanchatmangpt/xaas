@@ -1,0 +1,8 @@
+{
+  "id": "TT-017",
+  "subject": "subject-A",
+  "scenario": "provider-refusal",
+  "expected": "recover",
+  "model_authority": "none",
+  "exact_subject": true
+}
