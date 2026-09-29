@@ -1,0 +1,8 @@
+{
+  "id": "TT-007",
+  "subject": "subject-A",
+  "scenario": "budget-overflow",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}
