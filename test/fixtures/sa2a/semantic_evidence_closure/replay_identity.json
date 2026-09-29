@@ -1,0 +1,9 @@
+{
+  "contract": "sa2a/semantic-evidence/v1",
+  "case": "replay_identity",
+  "subject": "urn:sa2a:subject:xaas",
+  "authority": "NONE",
+  "consequence": "EVIDENCE_ONLY",
+  "canonicalization": "RDFC-1.0",
+  "expected": "ADMIT"
+}
