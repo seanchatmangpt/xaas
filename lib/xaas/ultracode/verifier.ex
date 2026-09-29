@@ -131,6 +131,8 @@ defmodule Xaas.Ultracode.Verifier do
   @grace_ms 2_000
   @default_max_output 65_536
   @placeholders ~w({worktree} {head} {run_id} {epoch_id} {executor} {ticket} {verifier_id} {tmpdir})
+  # Keys only `CourtReceipt.produce/6` may write into a court receipt.
+  @fabric_only_receipt_keys ~w(binding)
 
   @type ctx :: %{
           required(:worktree) => String.t(),
@@ -140,7 +142,8 @@ defmodule Xaas.Ultracode.Verifier do
           optional(:executor) => String.t() | nil,
           optional(:court_map) => map() | nil,
           optional(:probes) => [map()],
-          optional(:health_check) => boolean()
+          optional(:health_check) => boolean(),
+          optional(:base_sha) => String.t() | nil
         }
 
   @doc "True when `name` is a registered suite. Never raises on non-binaries."
@@ -232,42 +235,10 @@ defmodule Xaas.Ultracode.Verifier do
 
       try do
         court = court_contract(suite, ctx)
-        steps = run_steps(suite, ctx, worktree, tmp, court != nil)
-        status = steps |> Enum.map(& &1["status"]) |> worst_status()
 
-        base =
-          base |> Map.put("steps", steps) |> Map.put("toolchain", toolchain(suite, worktree, tmp))
-
-        {base, court_error} = court_receipt(base, suite, steps, court)
-
-        # Falsifier probes only matter for a verdict that would otherwise
-        # stand: a court refusal or a failing suite is already not-alive.
-        {base, probe_refusal} =
-          if court_error == nil and status == :pass and probes != [] do
-            probe_phase(base, suite, ctx, worktree, probes)
-          else
-            {base, nil}
-          end
-
-        case {court_error, probe_refusal, status, head_is(worktree, ctx.head, :after),
-              tree_clean(worktree, :after)} do
-          {{:refused, reason}, _, _, _, _} ->
-            finish(base, :error, {:court_receipt_refused, reason})
-
-          {nil, {type, reason}, :pass, _, _} ->
-            refuse(base, type, reason)
-
-          {nil, nil, :pass, :ok, :ok} ->
-            finish(base, :pass, nil)
-
-          {nil, nil, :pass, {:error, reason}, _} ->
-            finish(base, :error, reason)
-
-          {nil, nil, :pass, _, {:error, reason}} ->
-            finish(base, :error, reason)
-
-          {nil, _, status, _, _} ->
-            finish(base, status, first_failure(steps))
+        case verdict_sources_pinned(court, suite, ctx, worktree) do
+          :ok -> verify(suite, ctx, worktree, tmp, base, court, probes)
+          {:error, reason} -> finish(base, :error, {:court_receipt_refused, reason})
         end
       after
         File.rm_rf(tmp)
@@ -412,6 +383,46 @@ defmodule Xaas.Ultracode.Verifier do
     base |> finish(:error, reason) |> Map.put("refusal", type)
   end
 
+  defp verify(suite, ctx, worktree, tmp, base, court, probes) do
+    steps = run_steps(suite, ctx, worktree, tmp, court != nil)
+    status = steps |> Enum.map(& &1["status"]) |> worst_status()
+
+    base =
+      base |> Map.put("steps", steps) |> Map.put("toolchain", toolchain(suite, worktree, tmp))
+
+    {base, court_error} = court_receipt(base, suite, steps, court)
+
+    # Falsifier probes only matter for a verdict that would otherwise
+    # stand: a court refusal or a failing suite is already not-alive.
+    {base, probe_refusal} =
+      if court_error == nil and status == :pass and probes != [] do
+        probe_phase(base, suite, ctx, worktree, probes)
+      else
+        {base, nil}
+      end
+
+    case {court_error, probe_refusal, status, head_is(worktree, ctx.head, :after),
+          tree_clean(worktree, :after)} do
+      {{:refused, reason}, _, _, _, _} ->
+        finish(base, :error, {:court_receipt_refused, reason})
+
+      {nil, {type, reason}, :pass, _, _} ->
+        refuse(base, type, reason)
+
+      {nil, nil, :pass, :ok, :ok} ->
+        finish(base, :pass, nil)
+
+      {nil, nil, :pass, {:error, reason}, _} ->
+        finish(base, :error, reason)
+
+      {nil, nil, :pass, _, {:error, reason}} ->
+        finish(base, :error, reason)
+
+      {nil, _, status, _, _} ->
+        finish(base, status, first_failure(steps))
+    end
+  end
+
   # The court receipt contract in force for this run, if any: the ctx's
   # court_map (validated -- a malformed map is a typed refusal, never a
   # silent "no court") plus the suite's receipt-flagged step. A court_map
@@ -464,16 +475,119 @@ defmodule Xaas.Ultracode.Verifier do
     end
   end
 
+  # Legacy path (no court_map): the receipt step's last output line, when it is a
+  # JSON object, is the suite script's OWN receipt (the APS court script's shape).
+  # It is script output, so it is never fabric evidence: a `"binding"` key is
+  # what marks a receipt PRODUCED by `CourtReceipt.produce/6` (the marker
+  # `Lease.publish_court_receipt/2` and `SemanticReceipt` key on), so a line that
+  # carries one is a forged fabric receipt and is dropped, not recorded. The drop
+  # is visible in the result (`"legacy_court_receipt_refused"`).
   defp maybe_put_receipt(base, suite, steps) do
     with %{id: id} <- Enum.find(suite.steps, &Map.get(&1, :receipt, false)),
          %{"output_tail" => tail} <- Enum.find(steps, &(&1["id"] == to_string(id))),
          line when is_binary(line) <- last_line(tail),
          {:ok, %{} = receipt} <- Jason.decode(line),
          true <- byte_size(line) <= 32_768 do
-      Map.put(base, "court_receipt", receipt)
+      if Enum.any?(@fabric_only_receipt_keys, &Map.has_key?(receipt, &1)) do
+        Map.put(base, "legacy_court_receipt_refused", "fabric_only_key")
+      else
+        Map.put(base, "court_receipt", receipt)
+      end
     else
       _ -> base
     end
+  end
+
+  # Court receipt mode: the verdicts are read from what the receipt step PRINTS,
+  # and the step runs repo-resident code (`sh check.sh`, a pytest file) the worker
+  # can rewrite. So the files that DECIDE a verdict must be the ones the work
+  # order was minted against: every file a mapped test id names (pytest ids are
+  # `path::test`) and every regular-file operand of the receipt step's argv must
+  # be byte-identical between the base SHA and the judged head, else the court
+  # refuses (`{:verdict_source_modified, path}`) and the run is "error" -- the
+  # work may be fine, but the court cannot witness it. A caller that supplies no
+  # `:base_sha` (every Run materialized by `SemanticWork` carries one) has nothing
+  # to compare against and is not pinned. Only the id paths of `pytest_v` ids are
+  # known; a `mix_trace` id is a test description, so a mix suite pins its argv
+  # file operands only.
+  defp verdict_sources_pinned({step, court_map}, suite, %{base_sha: base_sha} = ctx, worktree)
+       when is_binary(base_sha) do
+    paths = pinned_paths(step, court_map, Map.get(suite, :result_format), worktree, base_sha)
+
+    Enum.reduce_while(paths, :ok, fn path, :ok ->
+      case path_changed(worktree, base_sha, ctx.head, path) do
+        :same -> {:cont, :ok}
+        :changed -> {:halt, {:error, {:verdict_source_modified, path}}}
+        :unknown -> {:halt, {:error, {:verdict_source_unverifiable, path}}}
+      end
+    end)
+  end
+
+  defp verdict_sources_pinned(_no_pinned_court, _suite, _ctx, _worktree), do: :ok
+
+  defp pinned_paths(step, court_map, result_format, worktree, base_sha) do
+    id_paths =
+      if result_format == "pytest_v" do
+        for group <- ~w(acceptance falsifiers),
+            {_iri, %{"test" => id}} <- Map.get(court_map, group, %{}) do
+          id |> String.split("::", parts: 2) |> hd()
+        end
+      else
+        []
+      end
+
+    argv_paths =
+      for operand <- CourtReceipt.step_argv(step, true) || [],
+          repo_file_operand?(operand, worktree, base_sha),
+          do: operand
+
+    (id_paths ++ argv_paths) |> Enum.filter(&safe_relative?/1) |> Enum.uniq() |> Enum.sort()
+  end
+
+  defp safe_relative?(path) do
+    path != "" and Path.type(path) == :relative and ".." not in Path.split(path)
+  end
+
+  defp repo_file_operand?(operand, worktree, base_sha) do
+    is_binary(operand) and safe_relative?(operand) and not String.starts_with?(operand, "-") and
+      not String.starts_with?(operand, "priv:") and operand not in @placeholders and
+      (File.regular?(Path.join(worktree, operand)) or blob_at?(worktree, base_sha, operand))
+  end
+
+  defp blob_at?(worktree, rev, path) do
+    case git(worktree, ["cat-file", "-t", rev <> ":" <> path]) do
+      {"blob\n", 0} -> true
+      _ -> false
+    end
+  end
+
+  defp path_changed(worktree, base_sha, head, path) do
+    case git(worktree, [
+           "diff",
+           "--quiet",
+           "--no-renames",
+           "--no-ext-diff",
+           base_sha,
+           head,
+           "--",
+           path
+         ]) do
+      {_, 0} -> :same
+      {_, 1} -> :changed
+      _ -> :unknown
+    end
+  end
+
+  # `refs/replace` lives in the worker-writable repository: read objects as they
+  # are, never as a replace ref says they are. (`path_changed/4` also passes
+  # `--no-renames --no-ext-diff`, without which `git diff --quiet` reports a
+  # replaced blob as unchanged; each defence alone is enough, both are kept, and
+  # `VerifierVerdictSourceTest` kills the mutant that removes both.)
+  defp git(worktree, args) do
+    System.cmd("git", ["-C", worktree | args],
+      stderr_to_stdout: true,
+      env: [{"GIT_NO_REPLACE_OBJECTS", "1"}]
+    )
   end
 
   # Court receipt mode: produce the IRI-keyed receipt from the receipt

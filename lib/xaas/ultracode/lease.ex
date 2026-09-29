@@ -1461,7 +1461,8 @@ defmodule Xaas.Ultracode.Lease do
   # honestly downgrades to :partial_alive: the court could not witness the
   # verdicts, and :alive requires a qualifying court.
   defp fabric_verified(
-         %Epoch{run: %Run{verifier_suite: suite, court_map: court_map}} = epoch,
+         %Epoch{run: %Run{verifier_suite: suite, court_map: court_map, base_sha: base_sha}} =
+           epoch,
          final_head,
          claimed_outcome,
          evidence
@@ -1474,7 +1475,9 @@ defmodule Xaas.Ultracode.Lease do
         run_id: epoch.run_id,
         epoch_id: epoch.id,
         executor: epoch.leased_to,
-        court_map: court_map
+        court_map: court_map,
+        # the fabric-owned base the court pins its verdict sources against
+        base_sha: base_sha
       })
 
     evidence =
@@ -1506,7 +1509,9 @@ defmodule Xaas.Ultracode.Lease do
 
   # Only PRODUCED court receipts (they always carry the "binding" record)
   # publish evidence keys; a legacy JSON-line court receipt (the APS court
-  # script's own shape) stays nested under fabric_verifier unchanged.
+  # script's own shape) stays nested under fabric_verifier unchanged. The marker
+  # is not worker-reachable: `Verifier` drops any legacy script line that carries
+  # a "binding" key, so only `CourtReceipt.produce/6` can put one here.
   defp publish_court_receipt(evidence, %{"court_receipt" => %{"binding" => _} = receipt}) do
     evidence
     |> Map.merge(Map.take(receipt, ["acceptance_results", "falsifier_results", "court_results"]))

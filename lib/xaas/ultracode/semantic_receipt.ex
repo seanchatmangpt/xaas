@@ -1,8 +1,8 @@
 defmodule Xaas.Ultracode.SemanticReceipt do
   @moduledoc """
-  Exports the sealed receipt of a semantic-work Epoch in the contract the
-  canonical work graph's reconciler consumes
-  (`GgenIgniter.SemanticJira.Descriptor.receipt_from_xaas/2`):
+  Exports the sealed receipt of a semantic-work Epoch in the wire contract
+  `Xaas.Ultracode.SemanticJiraBridge.reconciler_receipt/2` maps onto the
+  canonical work graph's reconciler (`GgenIgniter.SemanticJira.Reconciler`):
 
       %{"epoch_id", "run_id", "receipt_id", "receipt_digest", "outcome",
         "final_head", "head_verified",
@@ -17,19 +17,28 @@ defmodule Xaas.Ultracode.SemanticReceipt do
   `bridge` stored on the Run is opaque and echoed byte-for-byte as JSON.
 
   `receipt_digest` is `sha256:` + hex of the canonical JSON of the export
-  without that key. "Canonical" is the graph side's
-  `GgenIgniter.SemanticJira.digest_exact/1`: every map becomes a list of
-  `[key, value]` pairs sorted by key, atoms become strings, and the result is
-  encoded as compact JSON.
+  without that key: every map becomes a list of `[key, value]` pairs sorted by
+  key, atoms become strings, and the result is encoded as compact JSON. On an
+  export this is the graph side's `GgenIgniter.SemanticJira.digest/1`
+  byte-for-byte (proved by `SemanticJiraBridgeTest`), EXCEPT that the kernel
+  digest silently drops seven reserved top-level keys (`work_order_digest`,
+  `transition_digest`, `evidence_digest`, `receipt_digest`, ...), so a foreign
+  export carrying one of them would verify under the kernel digest but not
+  here. That divergence is why this module keeps its own digest instead of
+  delegating (see the same test's falsifier).
 
   Court-specific observations come from an adapter keyed by the Run's
-  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`). A suite
-  without an adapter whose sealed court receipt was PRODUCED by the fabric
-  (`Xaas.Ultracode.CourtReceipt.produce/6` -- it always carries a
-  `"binding"`) passes its IRI-keyed `acceptance_results` /
-  `falsifier_results` / `court_results` and the `binding` through verbatim:
-  those verdicts are already in the consumer's vocabulary. Any other suite
-  exports only step statuses.
+  verifier suite name (`Xaas.Ultracode.SemanticReceipt.ApsDod`), except that a
+  court receipt PRODUCED by the fabric (`Xaas.Ultracode.CourtReceipt`) is
+  exported for any suite, limited to its IRI-keyed verdicts and `binding`
+  (`@passthrough_keys`). Suites with neither export only step statuses.
+
+  "Produced by the fabric" is checked here, not read off the receipt: the Run
+  must carry a court map (only `CourtReceipt.produce/6` runs, and only for a Run
+  that has one), and the receipt's `"binding"` must name this Run's suite, this
+  epoch's sealed head and a step the verifier really ran. A `"binding"` alone is
+  not a trust marker (the suite step's printed output is worker-reachable, and
+  `Verifier` also refuses to record a legacy script line that carries one).
   """
 
   alias Xaas.Ultracode.{Epoch, Receipt, Run}
@@ -101,7 +110,7 @@ defmodule Xaas.Ultracode.SemanticReceipt do
       "outcome" => to_string(closing.outcome),
       "final_head" => epoch.final_head,
       "head_verified" => evidence["head_verified"] == true,
-      "fabric_verifier" => fabric_verifier(verifier, run.verifier_suite, bridge),
+      "fabric_verifier" => fabric_verifier(verifier, run, epoch, bridge),
       "bridge" => bridge
     }
 
@@ -109,7 +118,7 @@ defmodule Xaas.Ultracode.SemanticReceipt do
     Map.put(normalized, "receipt_digest", receipt_digest(normalized))
   end
 
-  defp fabric_verifier(%{} = verifier, suite, bridge) do
+  defp fabric_verifier(%{} = verifier, %Run{verifier_suite: suite} = run, epoch, bridge) do
     steps =
       Enum.map(verifier["steps"] || [], fn step ->
         %{"id" => step["id"], "status" => step["status"]}
@@ -119,13 +128,13 @@ defmodule Xaas.Ultracode.SemanticReceipt do
     aliases = court_steps(suite, steps, courts)
     base = %{"status" => verifier["status"], "steps" => steps ++ aliases}
 
-    case observed(suite, verifier["court_receipt"], bridge) do
+    case observed(run, epoch, steps, verifier["court_receipt"], bridge) do
       nil -> base
       court -> Map.put(base, "court_receipt", court)
     end
   end
 
-  defp fabric_verifier(_none, _suite, _bridge), do: %{"status" => "none", "steps" => []}
+  defp fabric_verifier(_none, _run, _epoch, _bridge), do: %{"status" => "none", "steps" => []}
 
   defp court_steps(suite, steps, courts) do
     case Map.get(@adapters, suite) do
@@ -136,16 +145,38 @@ defmodule Xaas.Ultracode.SemanticReceipt do
 
   @passthrough_keys ~w(acceptance_results falsifier_results court_results binding)
 
-  defp observed(suite, court_receipt, bridge) do
-    case {Map.get(@adapters, suite), court_receipt} do
-      {nil, %{"binding" => %{}} = produced} ->
-        Map.take(produced, @passthrough_keys)
+  # A court receipt PRODUCED by the fabric is fabric-owned evidence: exported
+  # (IRI-keyed verdicts + binding only) so the receipt digest binds the verdicts
+  # the graph side promotes on. A legacy suite-script court receipt still needs its adapter.
+  defp observed(run, epoch, steps, court_receipt, bridge) do
+    if fabric_produced?(court_receipt, run, epoch, steps) do
+      Map.take(court_receipt, @passthrough_keys)
+    else
+      adapted(run.verifier_suite, court_receipt, bridge)
+    end
+  end
 
-      {adapter, %{} = court} when not is_nil(adapter) ->
-        adapter.observe(court, get_in(bridge, ["requires"]) || %{})
+  # Only a Run with a court map has a fabric court, and the receipt must be bound
+  # to THIS run's suite, THIS epoch's sealed head and a step the verifier ran.
+  defp fabric_produced?(
+         %{"binding" => %{} = binding},
+         %Run{court_map: %{} = court_map} = run,
+         epoch,
+         steps
+       )
+       when map_size(court_map) > 0 do
+    binding["suite"] == run.verifier_suite and binding["head"] == epoch.final_head and
+      is_binary(binding["step_id"]) and Enum.any?(steps, &(&1["id"] == binding["step_id"]))
+  end
 
-      _ ->
-        nil
+  defp fabric_produced?(_court_receipt, _run, _epoch, _steps), do: false
+
+  defp adapted(suite, court_receipt, bridge) do
+    with adapter when not is_nil(adapter) <- Map.get(@adapters, suite),
+         %{} = court <- court_receipt do
+      adapter.observe(court, get_in(bridge, ["requires"]) || %{})
+    else
+      _ -> nil
     end
   end
 
