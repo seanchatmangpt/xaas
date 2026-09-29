@@ -136,13 +136,18 @@ defmodule Xaas.Ultracode.CapitalCensus.SelfDigestChicagoTest do
     }
 
     assert {:refused, :missing_provenance} = Law.self_work_order(base)
-    assert {:refused, :missing_provenance} = Law.self_work_order(Map.put(base, :falsifier, "replay"))
 
     assert {:refused, :missing_provenance} =
-             Law.self_work_order(Map.merge(base, %{falsifier: "replay", derived_from_receipt: ""}))
+             Law.self_work_order(Map.put(base, :falsifier, "replay"))
+
+    assert {:refused, :missing_provenance} =
+             Law.self_work_order(
+               Map.merge(base, %{falsifier: "replay", derived_from_receipt: ""})
+             )
 
     assert {:refused, :below_threshold} = %{base | count: 2} |> Law.self_work_order()
   end
+
   test "unclassified class names are refused by the generated enum type" do
     assert_raise Ash.Error.Invalid, ~r/quantum_gravity/i, fn ->
       Gap

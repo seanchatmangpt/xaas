@@ -109,7 +109,6 @@ defmodule Xaas.Repo.Migrations.AddCapitalCensusSelfDigest do
 
     drop table(:gaps)
 
-
     drop table(:resolutions)
 
     drop table(:experience_clusters)

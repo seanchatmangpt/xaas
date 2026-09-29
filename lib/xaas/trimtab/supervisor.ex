@@ -13,5 +13,7 @@ defmodule Xaas.Trimtab.Supervisor do
              name: Keyword.get(opts, :coordinator, Xaas.Trimtab.Coordinator),
              max_attempts: Keyword.get(opts, :max_attempts, 3)
            ]}
-        ], strategy: :one_for_one)
+        ],
+        strategy: :one_for_one
+      )
 end

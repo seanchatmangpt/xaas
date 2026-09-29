@@ -13,6 +13,8 @@ defmodule Xaas.Ultracode.ProviderMesh.Supervisor do
       [
         {Xaas.Ultracode.ProviderMesh.Registry, name: r},
         {Xaas.Ultracode.ProviderMesh.HealthStore, name: h}
-      ], strategy: :rest_for_one)
+      ],
+      strategy: :rest_for_one
+    )
   end
 end
