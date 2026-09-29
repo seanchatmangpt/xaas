@@ -1,0 +1,8 @@
+{
+  "id": "TT-009",
+  "subject": "subject-A",
+  "scenario": "stale-observation",
+  "expected": "refuse",
+  "model_authority": "none",
+  "exact_subject": true
+}
