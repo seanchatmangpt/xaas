@@ -1,0 +1,20 @@
+@prefix sa2a: <https://seanchatmangpt.github.io/sa2a/diataxis#> .
+
+<urn:sa2a:repo:xaas> a sa2a:RepositoryProfile ;
+  sa2a:sourceRepo "seanchatmangpt/xaas" ;
+  sa2a:role "runtime" ;
+  sa2a:authority <https://github.com/seanchatmangpt/engineering-standards/tree/main/semantic/sa2a-diataxis> ;
+  sa2a:generator <https://github.com/seanchatmangpt/ggen-marketplace/tree/main/packs/sa2a-diataxis-pack> ;
+  sa2a:exports
+    <urn:sa2a:capability:runtime-discover>,
+    <urn:sa2a:capability:runtime-select>,
+    <urn:sa2a:capability:runtime-construct>,
+    <urn:sa2a:capability:runtime-do>,
+    <urn:sa2a:capability:runtime-replay> .
+
+<urn:sa2a:law:runtime-no-unreceipted-actuation> a sa2a:ExplanationLaw ;
+  sa2a:falsifier "A consequential DO becomes externally observable without a bound receipt path." .
+
+<urn:sa2a:capability:runtime-do>
+  sa2a:constrainedBy <urn:sa2a:law:runtime-no-unreceipted-actuation> ;
+  sa2a:evidencedBy <https://github.com/seanchatmangpt/affidavit/blob/main/schemas/sa2a-diataxis-receipt.schema.json> .
