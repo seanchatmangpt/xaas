@@ -114,6 +114,9 @@ defmodule Xaas.Castle.Contract do
       castle_paas_source_sha: @castle_paas_source_sha,
       castle_paas_pack_sha: @castle_paas_pack_sha,
       ash_r2rml_sha: @ash_r2rml_sha,
+      capability_projection_source: Xaas.Castle.CapabilityIntake.projection_source(),
+      xaas_runtime_capability: Xaas.Castle.CapabilityIntake.owner_capability(),
+      capability_authority_ceiling: Xaas.Castle.CapabilityIntake.authority_ceiling(),
       xaas_actuation:
         "ontology->durable-admission/prepared-receipt->construct-checkpoint->external-reactor->sealed-receipt->replay",
       castle_actuation:
