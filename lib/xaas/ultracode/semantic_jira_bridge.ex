@@ -1,3 +1,9 @@
+# Compiled only when the resolved ggen_igniter ships the 26.9.20 SemanticJira API
+# (Shacl, TransitionLog.event_digest/1); the published 26.9.15 does not, so this
+# seam is absent from the build until that release is consumed (see mix.exs).
+if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
+     Code.ensure_loaded?(GgenIgniter.SemanticJira.TransitionLog) and
+     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :event_digest, 1) do
 defmodule Xaas.Ultracode.SemanticJiraBridge do
   @moduledoc """
   The seam between the canonical Semantic Jira work graph (`ggen_igniter`,
@@ -1053,4 +1059,5 @@ defmodule Xaas.Ultracode.SemanticJiraBridge do
 
   defp stringify(value) when is_list(value), do: Enum.map(value, &stringify/1)
   defp stringify(value), do: value
+end
 end
