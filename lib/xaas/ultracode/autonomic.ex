@@ -165,6 +165,11 @@ defmodule Xaas.Ultracode.Autonomic do
         end)
 
       finish(ctx, items, results)
+    else
+      # A refused gate or failed sense still leaves a terminal ledger record.
+      other ->
+        ledger(ctx, :final, %{standing: "BLOCKED", error: inspect(other)})
+        other
     end
   end
 

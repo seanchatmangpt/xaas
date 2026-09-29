@@ -5,6 +5,10 @@ as an independent "strategy B" runtime. `main` carries strategy A (`law/XAAS-269
 at the live paths. Both edited the same three files from the same base, so the B versions
 are kept here verbatim instead of overwriting or discarding either side.
 
+Not rendered by `ggen sync` (outside `[templates].dir`). Do not copy the template into
+`templates/` without removing its `to:`/`force: true` frontmatter, which targets the live
+strategy-A output path.
+
 ## Files
 
 - `templates/script-ultracode-run.mjs.tmpl` — strategy B template body
@@ -13,4 +17,4 @@ are kept here verbatim instead of overwriting or discarding either side.
 
 ## See Also
 
-- `HANDWRITTEN.md` — handwritten-residue rows for the ultracode-run runtime
+- `../../../../HANDWRITTEN.md` — handwritten-residue rows for the ultracode-run runtime

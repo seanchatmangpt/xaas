@@ -510,6 +510,9 @@ defmodule Xaas.Ultracode.Verifier do
   # to compare against and is not pinned. Only the id paths of `pytest_v` ids are
   # known; a `mix_trace` id is a test description, so a mix suite pins its argv
   # file operands only.
+  # A refused court contract carries no pinned sources; court_receipt/4 reports it.
+  defp verdict_sources_pinned({:refused, _reason}, _suite, _ctx, _worktree), do: :ok
+
   defp verdict_sources_pinned({step, court_map}, suite, %{base_sha: base_sha} = ctx, worktree)
        when is_binary(base_sha) do
     paths = pinned_paths(step, court_map, Map.get(suite, :result_format), worktree, base_sha)

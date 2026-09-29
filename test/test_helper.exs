@@ -57,6 +57,7 @@ ExUnit.configure(
     :stress,
     :kind,
     :requires_cnv_deploy,
+    :requires_semantic_jira_api,
     :external,
     :external_llm,
     :subprocess,

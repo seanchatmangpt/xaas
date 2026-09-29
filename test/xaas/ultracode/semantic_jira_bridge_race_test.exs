@@ -17,6 +17,9 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeRaceTest do
 
   use ExUnit.Case, async: false
 
+  # Needs ggen_igniter >= 26.9.20 (SemanticJira Shacl/TransitionLog.event_digest/1).
+  @moduletag :requires_semantic_jira_api
+
   @moduletag :subprocess
 
   alias GgenIgniter.SemanticJira.TransitionLog

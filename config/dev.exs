@@ -356,3 +356,7 @@ config :xaas, :ultracode_verifier_suites, %{
 # resolves and merges it at runtime, so config never depends on project
 # compilation. Unset (test/prod) = registry unchanged.
 config :xaas, :ultracode_target_suites, Xaas.Ultracode.TargetSuites
+
+# ash_a2a 26.9.28 boots under a strict security preflight; dev/test have no durable outbox,
+# authority broker or kill-switch class. prod stays :strict (compile_env default).
+config :ash_a2a, :security_profile, :legacy_compat
