@@ -1,0 +1,650 @@
+4
+Adversarial competitive review → ERRC
+RED TEAM BRIEF · SIMULATED
+Four rivals are each trying to make this product unnecessary. Here is how they would try.
+These rivals are archetypes, not named vendors. Each attack is aimed at a specific artboard. Severity is how likely the attack is to cost us the deal
+if we ship t1–t2 as they are
+.
+R1
+■ HIGH
+Incumbent QMS / MES suite
+Already owns the build record, lot genealogy and CAPA workflow. It adds an “AI summary” tab.
+THEIR PITCH
+“Your evidence lives with us. Why copy it into another tool?”
+WHERE IT LANDS
+2e
+Our evidence view looks like a thinner copy of their record.
+2f
+Our authorize step has no CAPA or 8D linkage, so it reads as a side-channel.
+R2
+■ HIGH
+Horizontal workplace copilot
+A general assistant already licensed company-wide. It sits in email and chat and can read shared drives.
+THEIR PITCH
+“It already writes your morning summary. Zero new seats.”
+WHERE IT LANDS
+2a
+Our email looks like a summary anyone could write. The ask bar in
+1a
+and
+2c
+invites a direct comparison with a general chat tool, and we lose on breadth.
+R3
+● MEDIUM
+In-house data team
+Owns the reliability dashboards and has direct warehouse access. Builds cheaply and to order.
+THEIR PITCH
+“We can add a ‘needs attention’ panel to the dashboard by next sprint.”
+WHERE IT LANDS
+1a
+The overnight card and bar are dashboard idioms they already own. The
+1c
+timeline is easy to clone.
+R4
+● MEDIUM
+Status quo
+The 08:30 stand-up, a shared spreadsheet, and the senior engineer who just
+knows
+FM-217.
+THEIR PITCH
+“It works, and nobody has to trust a machine to close a case.”
+WHERE IT LANDS
+2g
+Auto-closure with no reviewer named reads as risk. And no team view exists, so the stand-up keeps its role.
+WHAT NO RIVAL CAN EASILY COPY
+Applicability logic
+We say whether a known failure mode applies
+to this build
+, and which single test would disprove it (
+2d
+). R1 has the records but not the reasoning. R2 has the reasoning but not the domain.
+Acting, not just telling
+T17 gets booked on a test station with the consequence shown up front (
+2f
+). Dashboards and chat tools stop at the recommendation.
+Honest uncertainty
+UNKNOWN is a real state that blocks guessing (
+2h
+). A general copilot will always produce an answer, and in FA a confident wrong answer is a recall.
+STRATEGY CANVAS · HOW MUCH EACH OFFER INVESTS PER FACTOR
+Us, after ERRC
+R1 Suite
+R2 Copilot
+FACTOR
+NONE
+LOW
+MID
+HIGH
+MAX
+Record breadth
+Dashboards & charts
+Open-ended chat
+Applicability reasoning
+Closed-loop action
+Declared uncertainty
+Audit / system of record
+ERRC GRID · CHANGES TO t1–t2
+E
+Eliminate
+things the market treats as standard that don't help us
+1a
+The overnight chart card.
+It's R3's turf, and it's the one card that asks nothing of the user. Fold its counts into the L0 line.
+1a
+The open “Ask anything” bar on the Brief.
+It invites the R2 comparison. Keep asking scoped to a case (
+2c
+) only.
+2e
+Mirrored record fields.
+Stop re-showing build and supplier tables. Link each fact to its record in R1's system.
+R
+Reduce
+well below the industry standard
+2g
+The activity log.
+Show only exceptions and reversible actions. Routine closures collapse into one line.
+2a
+Email prose.
+A generic summary is what R2 does. Email only when there's a real decision; skip days with nothing to decide.
+1c
+Timeline and chart variety.
+Keep one waveform comparison in
+2e
+and drop the rest.
+R
+Raise
+well above the industry standard
+1a
+The falsifier on the Brief itself.
+Show “Count > 40 → new FA” on the A817 card at L1, not only in the drawer.
+2f
+Record write-back.
+Authorizing updates the CAPA/8D in R1's system and shows the record ID. That makes us R1's front door, not its rival.
+2h
+UNKNOWN as a selling point.
+Show it on the Brief with a count, as proof the system won't bluff.
+C
+Create
+what the industry has never offered
+NEW
+Call record.
+Every auto-closure names the rule, the evidence, and a human spot-checker at a 1-in-N sample rate. That answers R4's trust objection.
+NEW
+Stand-up mode.
+A team view of the same Brief for the 08:30 meeting. It takes over the stand-up instead of competing with it.
+NEW
+Senior engineer's take.
+Capture tacit “I've seen this” calls as reviewable applicability rules, credited to their author.
+REPOSITIONED ONE-LINER
+Not another place to look. It's the one place a failure call gets made, tested, and written back to the record, and where it says “I don't know” when that's the truth.
+Open the ERRC-applied Brief →
+· Try: "apply ERRC to 1a as 1d" · "design stand-up mode" · "show the call record in 2g"
+HDD FAILURE ANALYSIS · INTERACTION SYSTEM v0.1
+The system decides what is worth your attention before you ask.
+State first → recommendation second → interaction third → evidence on demand. Visualize the smallest amount needed to understand what changed and choose the next useful interaction.
+ASSUMPTIONS
+User: Maya, FA engineer (L2). Data is fictional; case IDs follow the brief.
+Toyota-aligned discipline, not Toyota-branded: no logo, no Toyota Type. IBM Plex Sans/Mono stand in.
+Palette: white, ink, grays. One red accent marks the single highest-value action per screen.
+Desktop 1200 first; tablet 834 and mobile 390 defined for the Brief (
+2i
+2j
+).
+Flow
+t2
+is built on
+1a
+. Buttons are live anchors between artboards.
+DISCLOSURE LEVELS · NEVER SKIP, NEVER STACK
+L0
+State
+“2 items need your judgment.”
+L1
+Next action
+≤ 3 verbs. Run T17 · Why this?
+L2
+Why this?
+Reasoning, applicability, what would falsify it.
+L3
+Evidence
+Cases, lot, BOM, waveform, sources, timestamps.
+L4
+Consequence
+Exactly what happens if you authorize.
+STATES · SHAPE + WORD, COLOR SECONDARY
+DECISION REQUIRED
+only you can close it
+RECOMMENDED
+system proposes, you approve
+BLOCKED
+cannot proceed without input
+FYI
+no action expected
+HANDLED
+done, receipt kept
+ACTIONS · VERBS ONLY
+Run T17
+Why this?
+Draft escalation
+More
+Primary (red) once per screen · Secondary (ink outline) · Tertiary (fill) · Quiet (underline). Max 3 visible; the rest live under More.
+CONTEXT & PROVENANCE
+← Morning Brief
+·
+from email, 06:52
+Source: TS-04 capture · 22 Sep 04:12 ·
+view
+Ask about current FA state…
+/
+1
+Morning Brief — three treatments of the same state
+1a
+Widget grid · closest to the sketch · recommended
+FA
+FA Copilot
+Brief
+Cases
+Suppliers
+Activity
+MR
+Good morning, Maya
+2 need your judgment
+1 blocked
+4 handled automatically
+Tue 22 Sep
+Brief compiled 06:40
+L0
+DECISION REQUIRED
+1 of 2
+Drive A817
+Likely known failure
+FM-217
+One discriminator remains: diagnostic T17.
+Run T17
+Why this?
+Open case
+L1
+OVERNIGHT · SINCE 18:00
+17
+new FA cases
+Resolved automatically
+12
+Awaiting evidence
+3
+Need your judgment
+2
+RECOMMENDED · SUPPLIER SIGNAL
+2 of 2
+Lot L421 crossed the recurrence threshold
+3 more drives match the pattern since yesterday. Supplier-quality packet is prepared.
+Review affected drives
+Draft escalation
+ALREADY HANDLED · 4
+FA-811
+Closed against FM-102
+FA-814
+Routed to servo team
+L421
+Supplier packet prepared
+FA-809
+Evidence re-collected
+View activity →
+Drive A822 is blocked
+— waveform capture missing; station TS-02 offline since 03:10.
+See what's missing
+Ask anything about current FA state…
+/
+1b
+Priority stack · one column, reads top-down like a handover note
+FA
+FA Copilot
+MR
+Tuesday 22 September · 06:40
+Two things need you this morning. Everything else is handled.
+NEEDS YOUR JUDGMENT
+01
+Drive A817 · likely FM-217
+T17 is the only remaining discriminator.
+Run T17
+Why this?
+02
+Lot L421 recurrence
+3 more drives match. Escalation packet ready.
+Review drives
+Draft escalation
+BLOCKED · 1
+A822 can't be classified — waveform missing.
+See what's missing
+4 handled · 12 of 17 overnight cases resolved themselves
+Show
+Ask anything about current FA state…
+/
+1c
+Shift ledger · decisions left, overnight timeline right
+FA
+FA Copilot
+MR
+2
+decisions waiting
+Maya · Tue 22 Sep · compiled 06:40
+DECISION REQUIRED
+A817 → FM-217?
+4 of 5 applicability conditions met. T17 decides.
+Run T17
+Why this?
+RECOMMENDED
+Escalate L421?
+Recurrence threshold crossed. Packet ready.
+Review drives
+Draft escalation
+Ask anything about current FA state…
+/
+WHILE YOU WERE AWAY
+05:58
+A817 matched FM-217 (partial)
+05:20
+L421 recurrence threshold crossed
+03:10
+TS-02 offline — A822 blocked
+01:44
+FA-811 closed against FM-102
+23:15
+FA-814 routed to servo team
+18:00 → 23:00
+10 more cases resolved
+Full activity →
+Why
+1a
+leads: it keeps judgment, context and receipts co-visible without letting any one dominate.
+1b
+is the best mobile pattern (used in
+2j
+);
+1c
+'s timeline informs Activity (
+2g
+). Try: "1a with 1c's big numeral" · "make 1b the desktop default"
+2
+System flow — email → brief → case → why → evidence → authorize → receipt, plus the state that doesn't bluff
+2a
+Morning email · desktop 640
+FA
+YOUR FA MORNING BRIEF
+Tue 22 Sep · 06:40
+2 items need your judgment
+DECISION REQUIRED
+A817 · Likely known failure
+FM-217 matches the current build and evidence state. One discriminator remains.
+Run T17
+Why this?
+RECOMMENDED
+L421 · Supplier recurrence detected
+Three additional drives now satisfy the pattern. The supplier-quality packet has already been prepared.
+Review affected drives
+Draft escalation
+4 ITEMS HANDLED WITHOUT YOUR ATTENTION
+View activity →
+Links open inside FA Copilot with your context preserved. No evidence travels in this email.
+/copilot?intent=explain-candidate&context=CTX-81493
+2b
+Morning email · mobile 375
+FA MORNING BRIEF
+06:40
+2 items need your judgment
+DECISION REQUIRED
+A817 · Likely known failure
+FM-217 matches. One discriminator remains.
+Run T17
+Why this?
+RECOMMENDED
+L421 · Supplier recurrence
+3 more drives match. Packet prepared.
+Review affected drives
+Draft escalation
+✓ 4 handled for you
+Activity →
+2c
+Deep-linked case · arrived from email, already inside the task
+FA
+FA Copilot
+MR
+← Morning Brief
+Opened from email · 06:52 · “Why this?” on A817
+CTX-81493
+Drive A817
+Likely known failure ·
+FM-217
+PARTIAL MATCH
+WHY YOU'RE HERE
+T17 is the remaining discriminator between closing against the known issue and opening a new FA.
+Run T17
+Compare prior cases
+Why this?
+Failure signature
+matches FM-217
+Supplier lot
+L421 · in range
+BOM revision
+B17 · in range
+Diagnostic T17
+not yet run
+COPILOT · SCOPED TO A817
+Explain why supplier lot L421 matters here.
+FM-217 only applies to drives built with head-stack lot
+L421
+on BOM
+B17
+. A817 has both, so the known cause is plausible — but 2 of the 9 L421 drives that failed T17 turned out to be a different mode.
+Sources: MES build record · FA-702 · FA-731 ·
+open
+Suggested
+Show the three closest cases
+What would falsify FM-217?
+What changed overnight?
+Ask about A817…
+↵
+2d
+Why this? drawer · L2 — reasoning, applicability, falsifiers
+WHY THIS?
+A817 → FM-217
+×
+Likely, not confirmed.
+A817's read-retry signature, build lot and BOM revision all fall inside FM-217's known envelope. T17 separates FM-217 from the similar-looking FM-230.
+APPLICABILITY · 4 OF 5 MET
+✓ Read-retry signature
+within 6% of reference
+✓ Supplier lot L421
+affected range
+✓ BOM revision B17
+affected range
+✓ Firmware 4.2.1
+not a factor
+○ T17 read-retry count
+pending
+WHAT WOULD FALSIFY IT
+T17 count above 40 → not FM-217. A new FA opens and is assigned to you.
+WHAT'S DIFFERENT
+A817 came off line 3; all 11 prior FM-217 cases were line 1. Unlikely to matter, noted.
+Run T17
+See evidence · 12 sources →
+2e
+Evidence & provenance · L3 — tables live here, not on the Brief
+Brief
+›
+A817
+›
+Evidence
+Evidence for A817 → FM-217
+12 sources · newest 04:12 today
+Overview
+Prior cases · 11
+Build & supplier
+Signals
+All sources
+Read-retry signature vs FM-217 reference
+6% deviation
+A817 · TS-04 04:12
+FM-217 median, 11 cases
+Peak and decay track the reference. The shape alone can't separate FM-217 from FM-230 — that's why T17 is needed.
+Build & supplier
+Head-stack lot
+L421
+SQM · 09-14
+BOM revision
+B17
+PLM · 08-30
+Line / station
+L3 / TS-04
+MES · 09-21
+Firmware
+4.2.1
+Log · 09-22
+Supplier
+Head-stack vendor K
+SQM · 09-14
+Closest prior cases
+Sorted by similarity
+CASE
+OUTCOME
+SIMILARITY
+LOT / BOM
+T17
+DIFFERENCE
+FA-702
+Closed · FM-217
+High
+L421 / B17
+18
+Line 1
+FA-731
+Closed · FM-217
+High
+L421 / B17
+22
+Line 1, fw 4.2.0
+FA-655
+New FA · FM-230
+Medium
+L421 / B16
+57
+The counter-example T17 exists for
+2f
+Authorize · L4 — consequence before commitment, plus pending / failed
+CONFIRM ACTION
+Run T17 on Drive A817?
+1
+A817 is reserved on station
+TS-04
+for about
+18 min
+.
+2
+Non-destructive. Media and logs are preserved.
+3
+You'll be notified of the result — no need to watch.
+IF COUNT ≤ 40
+Case closes against FM-217. L421 tally updates to 12.
+IF COUNT > 40
+New FA opens, assigned to you. Nothing closes.
+Not affected: other drives, supplier status, escalation packet.
+Authorized as
+Maya R. · FA Engineer L2
+· logged to activity.
+Cancel
+Run T17
+◌ PENDING
+T17 running on TS-04 · ~14 min left
+You can leave this page.
+✓ VERIFIED
+Count 21 · closed against FM-217
+Undo within 24 h
+■ VERIFICATION FAILED
+TS-04 aborted at 62% — spindle fault
+Retry on TS-06
+2g
+Already handled · receipts, not notifications
+FA
+FA Copilot
+Brief
+Cases
+Suppliers
+Activity
+MR
+Handled without you
+Last 24 hours · 16 actions · every one is reversible or explains why not.
+01:44
+FA-811 closed against FM-102
+5 of 5 conditions met; T09 passed. Rule: auto-close when fully applicable.
+Reopen
+23:15
+FA-814 routed to servo team
+Servo-loop signature; outside your ownership.
+Take back
+05:24
+L421 supplier-quality packet prepared
+Draft only — nothing sent. Waiting on your decision in the Brief.
+Open draft
+02:30
+FA-809 evidence re-collected
+Firmware log was 9 days old; fresh pull from TS-01.
+Not reversible
++ 12 routine closures, grouped
+Expand
+2h
+UNKNOWN / BLOCKED · the system says what it doesn't know
+← Morning Brief
+Blocked item · A822
+Drive A822
+No classification yet
+UNKNOWN
+We won't propose a failure mode until the waveform exists. Two known modes fit the partial data equally; guessing would be worse than waiting.
+MISSING
+Waveform capture — TS-02 offline since 03:10
+STALE
+Firmware log is 9 days old
+CONFLICTING
+MES says lot L421, SQM says L419
+Re-capture on TS-06
+Resolve lot conflict
+OTHER FIRST-CLASS STATES
+ACCESS DENIED
+Supplier cost data needs SQ role.
+Request from J. Tan
+STALE EVIDENCE
+Recommendation held — BOM data older than the last engineering change.
+ACTION PENDING
+Escalation queued by A. Kim — not yet sent.
+VERIFICATION FAILED
+T17 aborted. Case unchanged; nothing was closed.
+2i
+Brief · tablet 834 — judgment full-width, context pairs below
+FA
+Brief
+MR
+Good morning, Maya
+■ 2 need your judgment · 1 blocked · ✓ 4 handled
+DECISION REQUIRED
+Drive A817
+Likely FM-217 · T17 remains
+Run T17
+Why this?
+RECOMMENDED
+Lot L421 crossed recurrence threshold
+Review affected drives
+Draft escalation
+OVERNIGHT
+17
+new cases
+✓ HANDLED · 4
+FA-811 closed · FA-814 routed · L421 packet · FA-809 refreshed
+View activity →
+Ask anything about current FA state…
+2j
+Brief · mobile 390 —
+1b
+stack, sticky ask bar
+FA · BRIEF · 06:40
+MR
+2 things need you.
+Everything else is handled.
+DECISION REQUIRED
+Drive A817
+Likely FM-217 · T17 remains
+Run T17
+Why this?
+RECOMMENDED
+L421 recurrence
+Review drives
+Escalate…
+□ 1 blocked · A822
+›
+✓ 4 handled for you
+›
+17 new overnight · 12 auto-resolved
+›
+Ask about FA state…
+Try: "make 2f an inline confirm instead of a modal" · "add a supplier-escalation flow like 2c–2f" · "show 2c on mobile"
+3
+Self-critique — accessibility, contrast, hierarchy, usability
+✓ PASSES
+Accent #C4111F: white-on-red 5.9:1; red-on-white text 5.9:1.
+Secondary #4A4D52 8.6:1, tertiary #5F6368 6.0:1, blocked #8A4B00 6.4:1, handled #1E6B45 6.6:1.
+States never rely on color alone — each pairs a shape with a word.
+Mobile targets 48px; desktop 44px.
+One red action per screen; ≤ 3 visible actions per situation.
+RISKS FOUND
+1a
+: “17” competes with A817 for first fixation. Reduced to weight 500 and kept in a lighter card; consider 36px.
+1c
+: the dark card puts red on ink — the button passes but the red marker is decorative there.
+Overnight bar colors (green/amber/red) need the legend to stay; don't ship the bar alone (
+2i
+drops it — add counts).
+“Likely” needs a defined vocabulary (Likely / Possible / Unknown) so it isn't read as a probability.
+FOR BUILD
+Focus order = reading order: state → primary → Why this? → More.
+Drawer and modal trap focus; Esc returns to the invoking button.
+Status changes (pending → verified) announce via aria-live=polite.
+Deep links carry only intent + opaque CTX id; server re-checks authority on open.
+Email: table layout, bulletproof buttons, dark-mode safe (no pure-white-only logos).

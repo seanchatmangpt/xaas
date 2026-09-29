@@ -2,7 +2,7 @@ defmodule Xaas.Ultracode.WaveLoop do
   require Logger
   require Ash.Query
 
-  alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Run}
+  alias Xaas.Ultracode.{ClosureController, Dispatch, Epoch, Lease, Run}
   alias Xaas.Ultracode.WaveLoop.State
 
   @kind "ultracode-wave-loop/1"
@@ -138,7 +138,7 @@ defmodule Xaas.Ultracode.WaveLoop do
       inject the seam exactly like every other runner seam in this repo.
   """
 
-  alias Xaas.Ultracode.{Dispatch, Epoch, Lease, Run}
+  alias Xaas.Ultracode.{ClosureController, Dispatch, Epoch, Lease, Run}
   alias Xaas.Ultracode.WaveLoop.State
 
   @doc """
@@ -469,6 +469,7 @@ defmodule Xaas.Ultracode.WaveLoop do
 
     with {:ok, run} <- create_loop_run(goal),
          {:ok, run} <- start_run(run, subject, state.work_surface),
+         {:ok, %{run: run}} <- record_step_frontier(run, step),
          {:ok, epoch} <- activate_first_epoch(run) do
       {:constructed, epoch}
     else
@@ -565,7 +566,7 @@ defmodule Xaas.Ultracode.WaveLoop do
         :ok
 
       length(live) >= max_in_flight ->
-        newest = Enum.max_by(live, & &1.inserted_at)
+        newest = Enum.max_by(live, & &1.inserted_at, DateTime)
         {:busy, newest.run_id, newest.id}
 
       true ->
@@ -721,6 +722,19 @@ defmodule Xaas.Ultracode.WaveLoop do
       authorize?: false
     )
     |> Ash.update()
+  end
+
+  defp record_step_frontier(run, step) do
+    ClosureController.record(run, %{
+      "source" => "wave_loop",
+      "pending_work" => 1,
+      "active_epochs" => 1,
+      "unsettled_epochs" => 0,
+      "unpublished_deltas" => 0,
+      "unsatisfied_dependencies" => 0,
+      "next_work_item" => %{"id" => step.id, "name" => step.name},
+      "metadata" => %{"projection" => "STATE.md"}
+    })
   end
 
   defp activate_first_epoch(run) do
@@ -947,6 +961,31 @@ defmodule Xaas.Ultracode.WaveLoop do
   end
 
   defp apply_success(step, epoch_id, res, state_path, telemetry_path, tick_no) do
+    # The completed epoch is the authority for the step Run's empty frontier.
+    # STATE.md is updated only after this observation and remains a projection.
+    case ClosureController.record_empty_for_epoch(epoch_id, "wave_loop") do
+      {:ok, %{run: run}} ->
+        case ClosureController.reconcile_cycle_exhausted(run) do
+          {:ok, %{outcome: :closed}} ->
+            :ok
+
+          {:ok, decision} ->
+            Logger.warning(
+              "[ultracode-wave-loop] completed step did not close its Run: #{inspect(decision)}"
+            )
+
+          {:error, reason} ->
+            Logger.warning(
+              "[ultracode-wave-loop] Run closure reconciliation refused for epoch #{epoch_id}: #{inspect(reason)}"
+            )
+        end
+
+      {:error, reason} ->
+        Logger.warning(
+          "[ultracode-wave-loop] frontier close record refused for epoch #{epoch_id}: #{inspect(reason)}"
+        )
+    end
+
     line =
       "wave-loop tick #{tick_no}: receipt epoch #{short(epoch_id)} " <> evidence_tail(res)
 

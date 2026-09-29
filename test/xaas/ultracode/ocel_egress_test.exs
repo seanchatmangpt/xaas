@@ -54,6 +54,7 @@ defmodule Xaas.Ultracode.OcelEgressTest do
              ],
              "ocel:eventTypes" => [
                %{"name" => "run_started"},
+               %{"name" => "run_suspended"},
                %{"name" => "epoch_scheduled"},
                %{"name" => "epoch_started"},
                %{"name" => "epoch_claimed"},
@@ -323,6 +324,7 @@ defmodule Xaas.Ultracode.OcelEgressTest do
              ],
              "ocel:eventTypes" => [
                %{"name" => "run_started"},
+               %{"name" => "run_suspended"},
                %{"name" => "epoch_scheduled"},
                %{"name" => "epoch_started"},
                %{"name" => "epoch_claimed"},

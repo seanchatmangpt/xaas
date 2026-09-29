@@ -47,6 +47,7 @@ defmodule Xaas.Semantics.VKG.WorkspaceTest do
     assert workspace.authority == :NONE
 
     index = Workspace.witness_index(workspace)
+
     assert Map.keys(index) |> Enum.sort() ==
              ["workspace-customers", "workspace-orders"]
 

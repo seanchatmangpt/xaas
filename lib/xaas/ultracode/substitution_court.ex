@@ -119,6 +119,17 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
     })
   end
 
+  @doc """
+  Public admission of a single part passport (kind, exact subject, content
+  digests, qualification receipt digests, authority ceiling without DO).
+
+  This is the one passport law; other courts (e.g.
+  `Xaas.Ultracode.SbbRealization`) call it instead of re-implementing it.
+  """
+  @spec validate_part(PartPassport.t()) :: :ok | {:error, atom()}
+  def validate_part(%PartPassport{} = passport), do: validate_passport(passport)
+  def validate_part(_), do: {:error, :implementation_passport_missing}
+
   defp validate_work(work) do
     cond do
       blank?(work.work_order_id) -> {:error, :work_order_identity_missing}
@@ -180,7 +191,15 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
 
   defp validate_qualification_receipt(_), do: {:error, :qualification_receipt_missing}
 
-  defp validate_authority(authorities) when is_list(authorities) do
+  @doc """
+  The passport authority-ceiling law: a duplicate-free list within
+  `[:observe, :select, :construct]`. `:do` is refused as
+  `:do_authority_laundering`; anything else as `:authority_ceiling_invalid`.
+  Public so evidence carriers other than part passports (`Xaas.Pack`) are
+  judged by this one law instead of a copy.
+  """
+  @spec validate_authority(term()) :: :ok | {:error, atom()}
+  def validate_authority(authorities) when is_list(authorities) do
     set = MapSet.new(authorities)
 
     cond do
@@ -191,7 +210,7 @@ defmodule Xaas.Ultracode.SubstitutionCourt do
     end
   end
 
-  defp validate_authority(_), do: {:error, :authority_ceiling_invalid}
+  def validate_authority(_), do: {:error, :authority_ceiling_invalid}
 
   defp same_kind(%PartPassport{kind: kind}, %PartPassport{kind: kind}), do: :ok
   defp same_kind(_, _), do: {:error, :part_kind_mismatch}

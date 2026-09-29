@@ -80,7 +80,7 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
     assert Enum.sort(contract["envelope"]["channels"]) == ["control", "observe"]
     assert "EXECUTION_MANIFEST_DRIFT" in contract["refusals"]
     assert "AUTHORITY_REF_REQUIRED" in contract["refusals"]
-    assert "KNOWN_REPLAY" in contract["replay"]["after_ack"]
+    assert contract["replay"]["after_ack"] =~ "KNOWN_REPLAY"
 
     assert contract["ocel_identity_env"] == [
              "XAAS_LEASE_CWD",
@@ -142,7 +142,7 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
   test "acknowledged transport replay never becomes a fresh command" do
     env = envelope()
     assert {:ok, s0} = RemoteRelay.admit(state(), env, 5)
-    assert {:ok, s1} = RemoteRelay.acknowledge(s0, env)
+    assert {:ok, s1} = RemoteRelay.acknowledge(s0, env, 5)
     assert {:replay, ^s1} = RemoteRelay.admit(s1, env, 5)
   end
 
@@ -192,13 +192,13 @@ defmodule Xaas.Ultracode.RemoteRelayTest do
   end
 
   test "dedup memory is bounded while sequence replay stays refused" do
-    {:ok, s1} = RemoteRelay.acknowledge(state(), envelope())
+    {:ok, s1} = RemoteRelay.acknowledge(state(), envelope(), 5)
 
     e2 = envelope(%{command_id: "cmd-2", sequence: 2})
-    {:ok, s2} = RemoteRelay.acknowledge(s1, e2)
+    {:ok, s2} = RemoteRelay.acknowledge(s1, e2, 5)
 
     e3 = envelope(%{command_id: "cmd-3", sequence: 3})
-    {:ok, s3} = RemoteRelay.acknowledge(s2, e3)
+    {:ok, s3} = RemoteRelay.acknowledge(s2, e3, 5)
 
     assert length(s3.seen_command_ids) == 2
     assert {:replay, ^s3} = RemoteRelay.admit(s3, envelope(), 5)

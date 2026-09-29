@@ -102,13 +102,13 @@ defmodule Xaas.Ultracode.Sensing do
         "items" => [...sorted by id...]}
   """
 
-  alias Xaas.Ultracode.Worktrees
+  alias Xaas.Ultracode.{LegacyRecovery, Worktrees}
 
   @schema_version "xaas-sensing/1"
   @default_max_items 20
   @default_allowed_paths ["*"]
   @default_closed ~w(DONE MERGED LANDED CLOSED RESOLVED ALIVE)
-  @known_types ~w(todo_file jira_dir failing_tests)
+  @known_types ~w(todo_file jira_dir failing_tests legacy_recovery)
   @id_re ~r/\A[A-Za-z0-9._:-]+\z/
 
   @type profile :: map()
@@ -260,6 +260,7 @@ defmodule Xaas.Ultracode.Sensing do
       "todo_file" -> todo_items(prof, path)
       "jira_dir" -> jira_items(prof, path)
       "failing_tests" -> failing_test_items(prof, path)
+      "legacy_recovery" -> LegacyRecovery.items(path, prof.file, prof.allowed_paths)
     end
   end
 

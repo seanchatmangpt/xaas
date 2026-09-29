@@ -35,15 +35,15 @@ defmodule Xaas.Ultracode.NextEpoch do
   require Ash.Query
   require Logger
 
-  alias Xaas.Ultracode.DurationBudget
+  alias Xaas.Ultracode.{ClosureController, DurationBudget}
 
   @doc """
   Scans every `:running` `Run` and, for any with no currently-active
   `Epoch` (none in `:expected`/`:running`), either constructs the next
-  `Epoch` (reusing the prior epoch's `exact_subject` -- the subject the
-  Run is operating against does not change cycle-to-cycle by default) or,
-  if `run.cycle >= run.max_cycles`, transitions the `Run` itself to
-  `:completed`. Returns a real per-run outcome list, not a boolean.
+  `Epoch` (reusing the prior epoch's `exact_subject`) or, when the cycle
+  horizon is exhausted, delegates to `ClosureController`. An empty persisted
+  frontier closes the Run; an open or unknown frontier suspends it. Returns a
+  real per-run outcome list, not a boolean.
   """
   @spec advance_all() :: [map()]
   def advance_all do
@@ -156,18 +156,45 @@ defmodule Xaas.Ultracode.NextEpoch do
         %{run_id: run.id, outcome: :advanced, epoch_id: next_epoch.id, cycle: next_epoch.cycle}
 
       true ->
-        run
-        |> Ash.Changeset.for_update(
-          :transition_state,
-          %{state: :completed, standing: :admitted}
-        )
-        |> Ash.update!(actor: system_actor)
+        reconcile_cycle_exhausted(run)
+    end
+  end
 
+  defp reconcile_cycle_exhausted(run) do
+    case ClosureController.reconcile_cycle_exhausted(run) do
+      {:ok, %{outcome: :closed} = decision} ->
         Logger.info(
-          "[ultracode] run #{run.id} reached max_cycles=#{run.max_cycles} -> Run :completed"
+          "[ultracode] run #{run.id} reached max_cycles=#{run.max_cycles}; " <>
+            "persisted frontier is empty -> Run :completed"
         )
 
-        %{run_id: run.id, outcome: :run_completed}
+        %{
+          run_id: run.id,
+          outcome: :run_completed_frontier_closed,
+          frontier_digest: decision.frontier_digest,
+          frontier_size: decision.frontier_size
+        }
+
+      {:ok, %{outcome: :suspended} = decision} ->
+        Logger.info(
+          "[ultracode] run #{run.id} reached max_cycles=#{run.max_cycles}; " <>
+            "closure not proved (#{inspect(decision.reason)}) -> Run :suspended"
+        )
+
+        %{
+          run_id: run.id,
+          outcome: :run_suspended_frontier_remaining,
+          reason: decision.reason,
+          frontier_digest: decision.frontier_digest,
+          frontier_size: decision.frontier_size
+        }
+
+      {:error, reason} ->
+        Logger.error(
+          "[ultracode] run #{run.id} closure reconciliation refused: #{inspect(reason)}"
+        )
+
+        %{run_id: run.id, outcome: :closure_refused, reason: inspect(reason)}
     end
   end
 

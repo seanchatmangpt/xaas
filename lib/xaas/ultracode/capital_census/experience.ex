@@ -151,12 +151,17 @@ defmodule Xaas.Ultracode.CapitalCensus.Experience do
 
   # ---------------------------------------------------------------------------
 
-  defp outcome_key(outcome) when is_atom(outcome) and not is_nil(outcome), do: Atom.to_string(outcome)
+  defp outcome_key(outcome) when is_atom(outcome) and not is_nil(outcome),
+    do: Atom.to_string(outcome)
+
   defp outcome_key(outcome) when is_binary(outcome), do: outcome
   defp outcome_key(outcome), do: inspect(outcome)
 
   defp action_shape(action) when is_binary(action), do: action
-  defp action_shape(action) when is_atom(action) and not is_nil(action), do: Atom.to_string(action)
+
+  defp action_shape(action) when is_atom(action) and not is_nil(action),
+    do: Atom.to_string(action)
+
   defp action_shape(action), do: inspect(action)
 
   defp to_set(%MapSet{} = set), do: set

@@ -1,0 +1,75 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix xu:     <https://ggen.io/ontology/xaas-ultracode#> .
+@prefix xcp:    <https://xaas.dev/ontology/capability-pack#> .
+
+# XaaS capability pack vocabulary (Xaas.Pack). A pack is EVIDENCE, never
+# authority: it declares which capability ids bind to which Reactor-fenced Ash
+# action, and which are REFUSED / UNSUPPORTED. It confers no authority
+# (xcp:confers "NONE"); the work authority bound comes only from the sJira
+# WorkOrder tuple plus the caller's explicit authority context.
+#
+# Canonical form: no blank nodes anywhere (every node is an IRI), and the only
+# admitted alignment predicate is skos:closeMatch (non-transitive; imports no
+# semantics). Xaas.Pack refuses anything else at load.
+
+<https://xaas.dev/ontology/capability-pack#> a owl:Ontology ;
+  rdfs:label "XaaS capability pack" ;
+  rdfs:comment "Pack -> ggen -> XaaS -> BRCE -> Receipt: declarations read by the ggen_igniter query engine, admitted by Xaas.Pack, actuated only through Xaas.Actuation.run/4." .
+
+# --- classes -------------------------------------------------------------------
+
+xcp:Pack a owl:Class ;
+  rdfs:label "Capability pack" ;
+  skos:closeMatch prov:Plan .
+
+xcp:CapabilityDeclaration a owl:Class ;
+  rdfs:label "Capability declaration" ;
+  rdfs:comment "One capability id with a standing: ADMITTED (bound to a Reactor-fenced resource/action), REFUSED or UNSUPPORTED (refusalReason only)." .
+
+xcp:Facet a owl:Class ;
+  rdfs:label "Pack facet" ;
+  rdfs:comment "A facet of the pack mapped onto an existing ROADMAP.md major plane (1..9); facets are not new planes." .
+
+# --- properties (xu:resourceModule is reused for the bound resource module) ------
+
+xcp:packId a owl:DatatypeProperty ; rdfs:domain xcp:Pack .
+xcp:confers a owl:DatatypeProperty ; rdfs:domain xcp:Pack ;
+  rdfs:comment "Authority conferred by the pack. The only admitted value is NONE." .
+xcp:authorityCeiling a owl:DatatypeProperty ; rdfs:domain xcp:Pack ;
+  rdfs:comment "The pack's own passport ceiling (observe/select/construct); DO is refused as authority laundering." .
+xcp:facet a owl:ObjectProperty ; rdfs:range xcp:Facet .
+xcp:roadmapPlane a owl:DatatypeProperty ; rdfs:domain xcp:Facet ; rdfs:range xsd:integer .
+xcp:capability a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:standing a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:action a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:consequenceClass a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:pathScope a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:requiredExclusion a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:refusalReason a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+xcp:tool a owl:DatatypeProperty ; rdfs:domain xcp:CapabilityDeclaration .
+
+# --- the seven facets, each on an existing ROADMAP.md plane ---------------------
+
+xcp:OntologyFacet a xcp:Facet ; rdfs:label "ontology" ; xcp:roadmapPlane 1 .
+xcp:GenerationFacet a xcp:Facet ; rdfs:label "generation" ; xcp:roadmapPlane 2 .
+xcp:CapabilityFacet a xcp:Facet ; rdfs:label "capability" ; xcp:roadmapPlane 6 .
+xcp:AuthorityFacet a xcp:Facet ; rdfs:label "authority" ; xcp:roadmapPlane 7 .
+xcp:ConsequenceFacet a xcp:Facet ; rdfs:label "consequence" ; xcp:roadmapPlane 7 .
+xcp:DeliveryFacet a xcp:Facet ; rdfs:label "delivery" ; xcp:roadmapPlane 7 ;
+  skos:closeMatch xu:EngineeringEpoch .
+xcp:ReceiptFacet a xcp:Facet ; rdfs:label "receipt" ; xcp:roadmapPlane 8 .
+
+# --- the pack node ---------------------------------------------------------------
+
+<https://xaas.dev/pack/xaas_capability_pack> a xcp:Pack ;
+  xcp:packId "xaas_capability_pack" ;
+  xcp:confers "NONE" ;
+  xcp:authorityCeiling "observe" , "select" ;
+  xcp:facet xcp:OntologyFacet , xcp:GenerationFacet , xcp:CapabilityFacet ,
+            xcp:AuthorityFacet , xcp:ConsequenceFacet , xcp:DeliveryFacet ,
+            xcp:ReceiptFacet .

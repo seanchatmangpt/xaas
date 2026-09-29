@@ -104,6 +104,7 @@ defmodule Xaas.Ultracode.CapitalCensus.RouteTest do
       assert Route.residual_route([]) == {:ok, :reuse}
       assert Route.residual_route([:reuse]) == {:ok, :compose}
       assert Route.residual_route([:compose, :generate]) == {:ok, :reuse}
+
       assert Route.residual_route([:reuse, :compose, :plan, :constraint, :generate]) ==
                {:ok, :rule}
     end

@@ -1,0 +1,22 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xcp: <https://xaas.dev/ontology/capability-pack#>
+PREFIX xu: <https://ggen.io/ontology/xaas-ultracode#>
+
+# Every capability declaration with every field it carries. All fields are
+# OPTIONAL so that an incomplete declaration is returned (and refused by
+# Xaas.Pack with a typed reason) rather than silently dropped by the join.
+SELECT ?declaration ?capability ?standing ?facet ?resource ?action ?consequenceClass
+       ?pathScope ?requiredExclusion ?refusalReason ?tool
+WHERE {
+  ?declaration rdf:type xcp:CapabilityDeclaration .
+  OPTIONAL { ?declaration xcp:capability ?capability }
+  OPTIONAL { ?declaration xcp:standing ?standing }
+  OPTIONAL { ?declaration xcp:facet ?facet }
+  OPTIONAL { ?declaration xu:resourceModule ?resource }
+  OPTIONAL { ?declaration xcp:action ?action }
+  OPTIONAL { ?declaration xcp:consequenceClass ?consequenceClass }
+  OPTIONAL { ?declaration xcp:pathScope ?pathScope }
+  OPTIONAL { ?declaration xcp:requiredExclusion ?requiredExclusion }
+  OPTIONAL { ?declaration xcp:refusalReason ?refusalReason }
+  OPTIONAL { ?declaration xcp:tool ?tool }
+}

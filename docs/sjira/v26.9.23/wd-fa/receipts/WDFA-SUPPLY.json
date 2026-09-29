@@ -1,0 +1,86 @@
+{
+  "identity": {
+    "subject": "wd-fa:supplied-deck-texts",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "757be458cf14395b27f90eea5c5f6513dcb9c400",
+    "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+    "branch": "v23/V23-W",
+    "work_order": "v23:WO-V23-W (supporting receipt; the lane receipt is receipts/v26.9.23/V23-W.json)"
+  },
+  "supplied": {
+    "zip": {
+      "path": "/Users/sac/Downloads/FA Morning Brief System.zip",
+      "sha256": "sha256:0c4f056187376fc78fe9ee4c1ca8e137537281f4adcd5721b0adb8992be3c8e6",
+      "bytes": 124009,
+      "supplied_by": "operator (named in the B1c V23-W task text)"
+    },
+    "members": {
+      "FA Agent Case Study Deck.dc.html": "sha256:9323eec665fd028576697b220e4b2c8dfd049df6ed1afdcb6398a110309155f5",
+      "FA Morning Brief System.dc.html": "sha256:2fa53684345d7558d1ce74c4292ed4c8afb477eb153bdfa30d90a0c5989c72eb"
+    },
+    "texts": {
+      "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt": "sha256:fbe97e01450dabdba2213d956936537ee729d3b63e0a051a788a0c22d0fd9838",
+      "docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt": "sha256:60f91249ca168d631a7c9af53abefc71246bcf4613e20085eb2ca6dd5d57f71d"
+    },
+    "projector": {
+      "docs/sjira/v26.9.23/wd-fa/probes/deck_text.py": "sha256:6dcd7fc4cb4973a0977df31b2c4226e893f70816ef27fe97cfb73bf6ebd16461"
+    }
+  },
+  "authority": {
+    "ceiling": "OBSERVE",
+    "grant": "NONE (operator-supplied input read locally; no Western Digital authority, no remote effect)",
+    "actor": "claude-opus-5-5 lane V23-W (wave B1c, v26.9.23), workflow subagent"
+  },
+  "consequence": {
+    "commits": [
+      "757be458cf14395b27f90eea5c5f6513dcb9c400"
+    ],
+    "files_changed": [
+      "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt",
+      "docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt",
+      "docs/sjira/v26.9.23/wd-fa/probes/deck_text.py"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "shasum -a 256 '/Users/sac/Downloads/FA Morning Brief System.zip'",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "supplied zip identity: 0c4f056187376fc78fe9ee4c1ca8e137537281f4adcd5721b0adb8992be3c8e6  /Users/sac/Downloads/FA Morning Brief System.zip",
+        "output_sha256": "0c5a847b3cede4c532cc54617803c063cbfd4557ec2516007b4633b157190f1b"
+      },
+      {
+        "cmd": "python3 docs/sjira/v26.9.23/wd-fa/probes/deck_text.py --zip '/Users/sac/Downloads/FA Morning Brief System.zip' --member 'FA Agent Case Study Deck.dc.html' --out /private/tmp/claude-501/v23-scratch/B1c-V23-W/supply-replay/case-study-2.txt && cmp /private/tmp/claude-501/v23-scratch/B1c-V23-W/supply-replay/case-study-2.txt docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt && echo REPLAY_IDENTICAL",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "Case Study 2 text projection replays byte-identically: REPLAY_IDENTICAL",
+        "output_sha256": "150305905b2d7cab618f19544780f947ad31255a703eafe9464331125a2014f4"
+      },
+      {
+        "cmd": "python3 docs/sjira/v26.9.23/wd-fa/probes/deck_text.py --zip '/Users/sac/Downloads/FA Morning Brief System.zip' --member 'FA Morning Brief System.dc.html' --out /private/tmp/claude-501/v23-scratch/B1c-V23-W/supply-replay/morning-brief-system.txt && cmp /private/tmp/claude-501/v23-scratch/B1c-V23-W/supply-replay/morning-brief-system.txt docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt && echo REPLAY_IDENTICAL",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "Morning Brief System text projection replays byte-identically: REPLAY_IDENTICAL",
+        "output_sha256": "4f31960aeffb9f4a5ef62c8d68ab9b13c2f74e811087d89380db11b4302c23d0"
+      },
+      {
+        "cmd": "git ls-tree -r 757be458cf14395b27f90eea5c5f6513dcb9c400 docs/sjira/v26.9.23/wd-fa/supplied && shasum -a 256 docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "committed supplied texts at the subject: 60f91249ca168d631a7c9af53abefc71246bcf4613e20085eb2ca6dd5d57f71d  docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt",
+        "output_sha256": "542088946325bbf415a32f5aabfeb45527814d4663b380b8af5b16dd26026b20"
+      }
+    ],
+    "durable_location": "xaas branch v23/V23-W: docs/sjira/v26.9.23/wd-fa/supplied/ and probes/deck_text.py at 757be458cf14395b27f90eea5c5f6513dcb9c400"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed at 757be458cf14395b27f90eea5c5f6513dcb9c400: deck_text.py re-projects both supplied deck pages from the zip (sha256:0c4f0561...) byte-identically to the committed texts (replay commands 2-3 exit 0, REPLAY_IDENTICAL)."
+  },
+  "notes": [
+    "The zip is the operator's proposal/prototype deck, not Western Digital data. Its drive, lot, station, case and person identifiers (A817, FM-217, L421, TS-04, FA-702, Maya R., ...) are illustrative fixtures: as facts about Western Digital they are WD_DEPENDENT_UNKNOWN in wd-fa/claims.ttl; only statements about what the deck says are SUPPLIED.",
+    "The Downloads path is the operator's copy; the durable, digest-bound record is the committed text projection."
+  ]
+}

@@ -1,0 +1,30 @@
+@prefix xu:     <https://ggen.io/ontology/xaas-ultracode#> .
+@prefix xcp:    <https://xaas.dev/ontology/capability-pack#> .
+@prefix uc:     <https://xaas.dev/pack/xaas_capability_pack/profile/ultracode#> .
+
+# UltraCode delivery profile. The REFUSED delivery-tool set is the TTL source
+# of truth for Xaas.Ultracode.Lease.refused_consequence_tools/0 (Path B's
+# hardcoded consequence fence; xcp:DeliveryFacet skos:closeMatch
+# xu:EngineeringEpoch). test/xaas/pack/pack_ontology_test.exs asserts the two
+# are equal exactly, with an anti-vacuity mutation.
+
+uc:delivery-bash a xcp:CapabilityDeclaration ;
+  xcp:capability "tool:bash" ;
+  xcp:tool "Bash" ;
+  xcp:standing "REFUSED" ;
+  xcp:facet xcp:DeliveryFacet ;
+  xcp:refusalReason "refused_no_authority" .
+
+uc:delivery-git-push a xcp:CapabilityDeclaration ;
+  xcp:capability "tool:git_push" ;
+  xcp:tool "git_push" ;
+  xcp:standing "REFUSED" ;
+  xcp:facet xcp:DeliveryFacet ;
+  xcp:refusalReason "refused_no_authority" .
+
+uc:delivery-publish a xcp:CapabilityDeclaration ;
+  xcp:capability "tool:publish" ;
+  xcp:tool "publish" ;
+  xcp:standing "REFUSED" ;
+  xcp:facet xcp:DeliveryFacet ;
+  xcp:refusalReason "refused_no_authority" .

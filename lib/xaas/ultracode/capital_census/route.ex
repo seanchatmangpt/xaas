@@ -28,7 +28,8 @@ defmodule Xaas.Ultracode.CapitalCensus.Route do
   @lattice [:reuse, :compose, :rule, :plan, :constraint, :generate, :specialized_model, :llm]
 
   @typedoc "A rung of the route lattice, lowest (most-capital) first."
-  @type route :: :reuse | :compose | :rule | :plan | :constraint | :generate | :specialized_model | :llm
+  @type route ::
+          :reuse | :compose | :rule | :plan | :constraint | :generate | :specialized_model | :llm
 
   @doc "The route lattice, lowest rung first. `:llm` is the TOP — never the default."
   @spec lattice() :: [route(), ...]

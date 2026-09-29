@@ -1,0 +1,775 @@
+@prefix wdc: <https://ggen-igniter.dev/sjira/v26.9.23/wd-fa/claims#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# WD FA claims ledger (lane V23-W, wave B1c; PRD section 9.2, the Friday G12
+# deliverable). CANONICAL: docs/sjira/v26.9.23/wd-fa/proposal.md is rendered
+# from this graph by `python3 scripts/sjira/wd_claims.py render` and checked by
+# `wd_claims.py check` (ARD AR-002: the Markdown is a projection). Edit this
+# file, re-render, re-check; never edit proposal.md by hand.
+#
+# Classes (PRD section 9.2): SUPPLIED | PUBLICLY_OBSERVABLE |
+# ARCHITECTURAL_INFERENCE | WD_DEPENDENT_UNKNOWN, exactly one per claim.
+#   SUPPLIED            evidenceKind "supplied-input" (wdc:quote verified in a
+#                       wdc:suppliedSource whose sha256 a cited receipt names)
+#                       or "observed-proof" (receipt standing ALIVE); every
+#                       cited receipt must be ADMITTED by validate_receipt.py.
+#   PUBLICLY_OBSERVABLE wdc:publicRef https URLs (PR, commit, CI run, standard).
+#   ARCHITECTURAL_INFERENCE  wdc:premise claims (none WD_DEPENDENT_UNKNOWN,
+#                       acyclic) + a wdc:reasoning chain.
+#   WD_DEPENDENT_UNKNOWN  wdc:missingInput naming a declared wdc:MissingInput.
+# A sentence matching a missing input's wdc:guardPattern must be
+# WD_DEPENDENT_UNKNOWN naming that input, or a verified supplied quote.
+#
+# LLM edge (recorded): the claim sentences and their classification were
+# written by llm:claude-opus-5-5@wave-B1c/V23-W (wdc:classifiedBy); the court
+# that admits them (wd_claims.py check) is deterministic and runs no LLM.
+
+wdc:ClaimClass a rdfs:Class ; rdfs:label "PRD section 9.2 claim class" .
+wdc:SUPPLIED a wdc:ClaimClass ; rdfs:label "SUPPLIED" .
+wdc:PUBLICLY_OBSERVABLE a wdc:ClaimClass ; rdfs:label "PUBLICLY_OBSERVABLE" .
+wdc:ARCHITECTURAL_INFERENCE a wdc:ClaimClass ; rdfs:label "ARCHITECTURAL_INFERENCE" .
+wdc:WD_DEPENDENT_UNKNOWN a wdc:ClaimClass ; rdfs:label "WD_DEPENDENT_UNKNOWN" .
+
+# -- Missing Western Digital inputs (each claim that touches one is unknown) --
+
+wdc:MI-mttr a wdc:MissingInput ;
+    rdfs:label "Current MTTR by failure mode and how it is measured (the baseline)" ;
+    wdc:guardPattern "\\bMTTR\\b|mean time to resolution" .
+wdc:MI-data-access a wdc:MissingInput ;
+    rdfs:label "Read access to the pilot corpus and the data lake (live data)" ;
+    wdc:guardPattern "\\blive data\\b|data lake|\\bproduction data\\b" .
+wdc:MI-qms a wdc:MissingInput ;
+    rdfs:label "Whether QMS/MES write-back through an API is allowed in phase one" ;
+    wdc:guardPattern "\\bQMS\\b|\\bMES\\b|quality[- ]system write-back" .
+wdc:MI-brief-2a-2h a wdc:MissingInput ;
+    rdfs:label "Real case content behind the internal brief sections 2a-2h (drives, lots, stations, cases, people)" ;
+    wdc:guardPattern "\\b2[a-h]\\b|\\bA8[0-9]{2}\\b|\\bFM-[0-9]+|\\bL4[0-9]{2}\\b|\\bTS-[0-9]+|\\bFA-[0-9]{3}\\b|\\bMaya\\b" .
+wdc:MI-authz-roles a wdc:MissingInput ;
+    rdfs:label "Who may authorize closure and escalation" ;
+    wdc:guardPattern "authori[sz]e closure|authorization roles|who may authori[sz]e" .
+wdc:MI-rules a wdc:MissingInput ;
+    rdfs:label "Western Digital's failure-mode catalogue with applicability conditions and falsifiers" ;
+    wdc:guardPattern "failure-mode catalogue|Western Digital failure modes" .
+wdc:MI-corpus a wdc:MissingInput ;
+    rdfs:label "Size, age, formats and access rules of the Western Digital FA corpus" ;
+    wdc:guardPattern "fifteen years|\\b15\\b[^.]*(years|yr)" .
+wdc:MI-golden a wdc:MissingInput ;
+    rdfs:label "A golden set of closed Western Digital FA cases and its time-slicing rule" ;
+    wdc:guardPattern "golden set" .
+wdc:MI-sponsor a wdc:MissingInput ;
+    rdfs:label "A Western Digital sponsor's acceptance of the WBPR" ;
+    wdc:guardPattern "Western Digital sponsor" .
+wdc:MI-pilot-scope a wdc:MissingInput ;
+    rdfs:label "Pilot product family, site and start date" ;
+    wdc:guardPattern "pilot start date|pilot site" .
+
+# -- Document skeleton ---------------------------------------------------------
+
+wdc:proposal a wdc:Proposal ;
+    dcterms:title "Western Digital FA Morning Brief: a bounded first-mile proposal" ;
+    wdc:status "Status: DRAFT for operator review. The document render and the operator text freeze follow acceptance." ;
+    wdc:preamble "Prepared for Western Digital failure analysis leadership. Every factual sentence below carries a ledger marker; the ledger says how each one is known." .
+
+wdc:S01 a wdc:Section ; wdc:order 1 ; rdfs:label "Summary" ;
+    wdc:body """{C1} {C2} {C3}
+
+The rest of this summary states the open question. {C4} {C5} {C6}""" .
+
+wdc:S02 a wdc:Section ; wdc:order 2 ; rdfs:label "How to read this proposal" ;
+    wdc:body """Each sentence that states a fact, a count or an outcome ends with a marker that names one entry of the claims ledger. {C7} {C8}
+
+- SUPPLIED: the claim is carried by an artifact supplied into this record and bound by a receipt that the fleet validator admits, either a quote checked against a digest-bound supplied text or an observed run whose receipt standing is ALIVE.
+- PUBLICLY_OBSERVABLE: any reader can check the claim from a public pull request, commit or CI run, cited by URL.
+- ARCHITECTURAL_INFERENCE: the claim follows from other ledger claims by a stated chain of reasoning, and none of its premises is unknown.
+- WD_DEPENDENT_UNKNOWN: the claim depends on a Western Digital input that has not been supplied, and the ledger names that input.
+
+{C9} {C10}""" .
+
+wdc:S03 a wdc:Section ; wdc:order 3 ; rdfs:label "The problem as supplied" ;
+    wdc:body """This section restates the problem as the supplied deck frames it. {C11} {C12} {C13}
+
+{C14} {C15} {C16}
+
+{C17} {C18}""" .
+
+wdc:S04 a wdc:Section ; wdc:order 4 ; rdfs:label "The system the deck proposes" ;
+    wdc:body """This section restates the design the deck proposes. {C19} {C20} {C21}
+
+{C22} {C23} {C24} {C25}""" .
+
+wdc:S05 a wdc:Section ; wdc:order 5 ; rdfs:label "The bounded future" ;
+    wdc:body """This section summarizes the draft WBPR. {C26} {C27} {C28}
+
+{C29} {C30} {C31} {C32}
+
+{C33} {C34}""" .
+
+wdc:S06 a wdc:Section ; wdc:order 6 ; rdfs:label "The reference loop" ;
+    wdc:body """This section places the draft inside the release pipeline. {C35} {C36} {C37}
+
+{C38} {C39} {C40}
+
+{C41} {C42} {C43}
+
+{C44} {C45}""" .
+
+wdc:S07 a wdc:Section ; wdc:order 7 ; rdfs:label "What has been observed, with receipts" ;
+    wdc:body """This section lists the runs made for this proposal and their receipts. {C46} {C47} {C48} {C49}
+
+{C50} {C51}
+
+{C52} {C53} {C54}""" .
+
+wdc:S08 a wdc:Section ; wdc:order 8 ; rdfs:label "What is publicly observable" ;
+    wdc:body """This section lists what any reader can check in public repositories without a receipt of ours. {C55} {C56} {C57} {C58} {C59} {C60}""" .
+
+wdc:S09 a wdc:Section ; wdc:order 9 ; rdfs:label "What is inferred" ;
+    wdc:body """The following statements are reasoning, not observation, and each names its premises in the ledger. {C61} {C62} {C63} {C64} {C65}""" .
+
+wdc:S10 a wdc:Section ; wdc:order 10 ; rdfs:label "What Western Digital must supply" ;
+    wdc:body """Each item below is typed unknown in the ledger until Western Digital supplies it.
+
+- {C66}
+- {C67}
+- {C68}
+- {C69}
+- {C70}
+- {C71}
+- {C72}
+
+{C73}""" .
+
+wdc:S11 a wdc:Section ; wdc:order 11 ; rdfs:label "A bounded pilot with a stop condition" ;
+    wdc:body """This section bounds the pilot and states when it stops. {C74} {C75} {C76} {C77}
+
+{C78} {C79} {C80}
+
+{C81}""" .
+
+wdc:S12 a wdc:Section ; wdc:order 12 ; rdfs:label "What this proposal does not claim" ;
+    wdc:body """This section lists what is not claimed. {C82} {C83} {C84} {C85} {C86}""" .
+
+wdc:S13 a wdc:Section ; wdc:order 13 ; rdfs:label "Decisions requested" ;
+    wdc:body """This section states the decisions that would move the proposal forward. {C87} {C88} {C89}""" .
+
+# -- Claims ----------------------------------------------------------------------
+
+wdc:C1 a wdc:Claim ; dcterms:identifier "C1" ;
+    wdc:sentence "The supplied Case Study 2 deck proposes an HDD failure analysis agent and presents it as five prototype pages that form one system." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "CASE STUDY 2", "HDD Failure Analysis Agent", "Five pages, one system" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C2 a wdc:Claim ; dcterms:identifier "C2" ;
+    wdc:sentence "This proposal restates that system as a draft WBPR and compiles it through the first-mile pipeline that produced the v26.9.23 semantic work graph." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json", "receipts/v26.9.23/V23-K.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C3 a wdc:Claim ; dcterms:identifier "C3" ;
+    wdc:sentence "The compiler admitted 61 candidate propositions from the draft and manufactured 37 work orders under seven gates, with no LLM after candidate extraction." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C4 a wdc:Claim ; dcterms:identifier "C4" ;
+    wdc:sentence "Whether the system shortens failure analysis at Western Digital cannot be judged until Western Digital supplies its MTTR baseline, read access to the pilot corpus and data lake, its authorization roles and its quality-system write-back decision." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-mttr, wdc:MI-data-access, wdc:MI-authz-roles, wdc:MI-qms ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C5 a wdc:Claim ; dcterms:identifier "C5" ;
+    wdc:sentence "The supplied deck lists the same needs in its request to Western Digital: current MTTR by mode and how it is measured, who may authorize closure and escalation, and whether QMS write-back via API is allowed in phase one." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "NEED FROM YOU", "Current MTTR by mode, and how it is measured", "Who may authorize closure and escalation", "Is QMS write-back via API allowed in phase one?" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C6 a wdc:Claim ; dcterms:identifier "C6" ;
+    wdc:sentence "What this proposal can show today is a reference loop that runs on synthetic failure cases and on a format-drift work class, not an improvement measured at Western Digital." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C46, wdc:C41, wdc:C82 ;
+    wdc:reasoning "C46 and C82: every Western Digital reference run cited here used synthetic fixtures only. C41: the only complete KNOWN episode of the loop is the format-drift class. No claim in the ledger observes a Western Digital case, so nothing measured at Western Digital can be shown." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C7 a wdc:Claim ; dcterms:identifier "C7" ;
+    wdc:sentence "The ledger lives in docs/sjira/v26.9.23/wd-fa/claims.ttl, and this document is rendered from it by scripts/sjira/wd_claims.py, so a hand edit of the prose is refused as projection drift." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COURT.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C8 a wdc:Claim ; dcterms:identifier "C8" ;
+    wdc:sentence "Section 9.2 of the accepted v26.9.23 product contract names four classes for the Western Digital scenario and requires unsupplied internal Western Digital facts to stay typed unknown." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/prd-ard.md" ;
+    wdc:quote "## 9.2 Western Digital FA", "ARCHITECTURAL_INFERENCE", "Internal WD facts that have not been supplied shall remain typed UNKNOWN rather than being manufactured." ;
+    wdc:receipt "receipts/v26.9.23/V23-P.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C9 a wdc:Claim ; dcterms:identifier "C9" ;
+    wdc:sentence "The claims court refuses an unresolved marker, a claim with two classes, a sentence that contains a number or a will, prove or reduce verb without a marker, and an unsupplied Western Digital fact typed as anything but unknown." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COURT.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C10 a wdc:Claim ; dcterms:identifier "C10" ;
+    wdc:sentence "A reader can therefore separate what was observed from what is argued without trusting the author of the prose." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C7, wdc:C9 ;
+    wdc:reasoning "C7: the prose is a projection of the ledger and hand edits are refused. C9: every claim-bearing sentence carries exactly one class and observed claims need admitted receipts. Hence each sentence's epistemic status is read from the ledger and its receipts, not from the author's wording." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C11 a wdc:Claim ; dcterms:identifier "C11" ;
+    wdc:sentence "The supplied deck describes the evidence as slide decks spanning 15 years, Confluence known-issue pages and Excel sheets whose low-confidence rows are queued rather than guessed." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "PPT · 15 yr", "Known-issue pages → FM records.", "Free text → extracted serial, lot, disposition; low-confidence rows queued, not guessed." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C12 a wdc:Claim ; dcterms:identifier "C12" ;
+    wdc:sentence "The actual size, age, format mix and access rules of the Western Digital corpus are not known to us, because no corpus inventory and no data lake access have been supplied." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-corpus, wdc:MI-data-access ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C13 a wdc:Claim ; dcterms:identifier "C13" ;
+    wdc:sentence "The deck names three risks: old slide plots lack axes, known-issue pages lag engineering changes, and engineers may over-trust a label such as Likely." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Old PPT plots lack axes; vision extraction may be unreliable", "Known-issue pages lag engineering changes", "Engineers over-trust “Likely”" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C14 a wdc:Claim ; dcterms:identifier "C14" ;
+    wdc:sentence "For structured data the deck rejects free-form text-to-SQL, because join errors look like findings, and chooses deterministic, versioned, access-checked typed tools over a semantic layer." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Text-to-SQL", "Flexible, but join errors look like findings. Hard to audit.", "Deterministic, versioned, cacheable, ACL-checked.", "Semantic layer" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C15 a wdc:Claim ; dcterms:identifier "C15" ;
+    wdc:sentence "The deck's trust design rests on four guards: citation or nothing, applicability rather than probability, a stated falsifier on every card, and an allowed UNKNOWN state." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Four guards against a confident wrong root cause", "Citation or nothing", "Applicability, not probability", "Stated falsifier", "UNKNOWN is allowed" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C16 a wdc:Claim ; dcterms:identifier "C16" ;
+    wdc:sentence "It keeps a human in the loop for every write, escalation and novel-mode call, allows automatic closure only when five of five applicability conditions hold with one closure in ten sampled, and suspends a rule when one of its closures is reopened." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "every write, every escalation, every novel-mode call. Auto-close only at 5 / 5 with 1-in-10 sampling.", "On reopen: suspend rule" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C17 a wdc:Claim ; dcterms:identifier "C17" ;
+    wdc:sentence "The supplied Morning Brief System page draws the flow as artboards 2a to 2h: a desktop and a mobile email, a deep-linked case, a why-this drawer, an evidence view, an authorization step, a handled-items log and an unknown or blocked state." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/morning-brief-system.txt" ;
+    wdc:quote "Morning email · desktop 640", "Morning email · mobile 375", "Deep-linked case · arrived from email, already inside the task", "Evidence & provenance · L3 — tables live here, not on the Brief", "Authorize · L4 — consequence before commitment, plus pending / failed", "Already handled · receipts, not notifications", "UNKNOWN / BLOCKED · the system says what it doesn't know" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C18 a wdc:Claim ; dcterms:identifier "C18" ;
+    wdc:sentence "The drives, lots, stations, cases and people in those artboards, such as drive A817, mode FM-217 and lot L421, are illustrative, and their counterparts in Western Digital's real case data are unknown to us." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-brief-2a-2h ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C19 a wdc:Claim ; dcterms:identifier "C19" ;
+    wdc:sentence "The deck separates three trust zones: a read-only zone for the corpus, case store and data lake, a propose-only agent zone, and an act zone reached through human authorization." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "ZONE A · READ-ONLY", "Data lake · semantic layer", "ZONE B · AGENT (PROPOSE ONLY)", "ZONE C · ACT", "Human authorize (P1 · 2f)" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C20 a wdc:Claim ; dcterms:identifier "C20" ;
+    wdc:sentence "Inside the agent zone a retriever, typed tools, a rules engine for failure-mode applicability and an LLM that ranks and explains feed a verifier that drops any claim without a cited span." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Retriever", "Rules engine · FM applicability", "LLM · rank + explain", "Verifier · every claim cites a span, or it is dropped" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C21 a wdc:Claim ; dcterms:identifier "C21" ;
+    wdc:sentence "The deck proposes to buy the LLM, vision captioning and vector database, and to build the case schema, tools, rules, verifier and user interface." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "LLM, vision captioning, vector DB", "case schema, tools, rules, verifier, UI" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C22 a wdc:Claim ; dcterms:identifier "C22" ;
+    wdc:sentence "Its triage output has five layers, from the L0 state through the L1 next action, L2 ranked modes with applicability and falsifier, and L3 cited prior cases, to an L4 receipt." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "State · decision / recommended / unknown / handled", "One next action: test, teardown, route, close, escalate", "Ranked modes, applicability n/5, falsifier", "Closest prior cases + build facts, each cited", "Receipt: identity, authority, consequence, replay" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C23 a wdc:Claim ; dcterms:identifier "C23" ;
+    wdc:sentence "Known versus novel is decided by two gates, signature and applicability: a drive inside one cluster closes against the known mode, one between clusters gets a discriminating test chosen by information gain per station minute, one outside all clusters opens a full investigation, and one without a signature stays UNKNOWN." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Two gates decide known versus novel", "Inside one cluster", "Between clusters", "Outside all clusters", "No signature", "The next test is chosen by expected information gain per minute of station time (P3)." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C24 a wdc:Claim ; dcterms:identifier "C24" ;
+    wdc:sentence "Feedback costs the engineer nothing extra: a disposition is the label, a senior engineer's recurring call becomes a credited rule with its hit rate shown, and proposed rules are reviewed monthly." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "DISPOSITION = LABEL", "Closing, reopening or routing a case already records the verdict. Nothing extra to fill in.", "CREDITED RULES", "Monthly: review proposed rules" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C25 a wdc:Claim ; dcterms:identifier "C25" ;
+    wdc:sentence "For governance the deck copies source access control lists onto every chunk, uses a private model endpoint, keeps evidence out of email, redacts customer names at ingest and records a receipt per action with identity, authority, consequence, replay and standing." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Source ACLs copied onto every chunk; filtered at retrieval, not at display.", "Private model endpoint; no evidence in email (2a); customer names redacted at ingest.", "Receipt per action: identity, authority, consequence, replay, standing (P4 · L4)." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C26 a wdc:Claim ; dcterms:identifier "C26" ;
+    wdc:sentence "The WBPR bounds phase one to triage of a failed drive and its reported symptom for one product family at one site over an English corpus." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Phase one covers triage of a failed hard disk drive and its reported symptom for one product family at one site over an English corpus." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C27 a wdc:Claim ; dcterms:identifier "C27" ;
+    wdc:sentence "Its completion statement is an engineer's working day that starts from a brief of decisions, recommendations, unknowns and handled items, every statement of which is traceable to a cited source." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "The goal is complete when an FA engineer starts the working day from a brief that states what needs a decision, what is recommended, what is unknown and what was already handled, and every statement in that brief is traceable to a cited source." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C28 a wdc:Claim ; dcterms:identifier "C28" ;
+    wdc:sentence "Completion is defined by that finite description rather than an open-ended search for a better assistant, and improvements discovered after acceptance become successor goals." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Completion is defined by this finite description, not by continued search for a better assistant.", "Improvements discovered after acceptance become successor goals unless they falsify a proposition of this WBPR." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C29 a wdc:Claim ; dcterms:identifier "C29" ;
+    wdc:sentence "In the WBPR a failure mode is admitted as known only when every applicability condition holds and no falsifier fires, and a candidate ranking from a language model never admits a mode by itself." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "A failure mode is admitted as known only when every applicability condition holds and no falsifier fires.", "A candidate ranking from a language model or a learned ranker never admits a known failure mode by itself." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C30 a wdc:Claim ; dcterms:identifier "C30" ;
+    wdc:sentence "A drive with missing, stale or conflicting evidence is shown as unknown, and a drive outside every known cluster opens a full investigation instead of taking the nearest known mode." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "A drive with missing, stale or conflicting evidence is shown as unknown, and no failure mode is proposed for it.", "A drive whose signature lies outside all known clusters opens a full FA investigation instead of the nearest known mode." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C31 a wdc:Claim ; dcterms:identifier "C31" ;
+    wdc:sentence "Every write, escalation and novel-mode call needs a named human's authorization, and every authorized action produces a receipt with identity, authority, consequence, replay and standing." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Every write, every escalation and every novel-mode call requires an authorization by a named human.", "An authorized action produces a receipt with identity, authority, consequence, replay and standing." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C32 a wdc:Claim ; dcterms:identifier "C32" ;
+    wdc:sentence "The brief is a projection of admitted case state, never a separate source of truth, and every claim in it links a source span and a timestamp or is removed before display." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "The morning brief is a projection of admitted case state, never a separate source of truth.", "Every claim in the brief links to a source span and a timestamp, and an uncited claim is removed before display." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C33 a wdc:Claim ; dcterms:identifier "C33" ;
+    wdc:sentence "The WBPR excludes automatic test scheduling, supplier-facing corrective action requests, open-ended chat across the corpus and root-cause authoring for novel failure modes, as the deck defers them." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Phase one excludes automatic test scheduling on stations.", "Phase one excludes supplier-facing corrective action requests.", "Phase one excludes open-ended chat across the corpus.", "Phase one excludes root-cause authoring for novel failure modes." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C34 a wdc:Claim ; dcterms:identifier "C34" ;
+    wdc:sentence "It also excludes live integration with Western Digital systems until Western Digital authorizes it." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Phase one excludes live integration with Western Digital systems until Western Digital authorizes it." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C35 a wdc:Claim ; dcterms:identifier "C35" ;
+    wdc:sentence "The v26.9.23 product contract describes a loop in which prose defines a bounded future, admitted semantics become canonical, and KNOWN work leaves the LLM path entirely." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/prd-ard.md" ;
+    wdc:quote "prose defines the bounded future, semantics become canonical, and KNOWN work is expected to leave the LLM path entirely" ;
+    wdc:receipt "receipts/v26.9.23/V23-P.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C36 a wdc:Claim ; dcterms:identifier "C36" ;
+    wdc:sentence "For the Western Digital draft, an LLM extracted 61 candidate propositions, each bound to its exact byte span in the WBPR, and that extraction is the only LLM edge in the compile." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C37 a wdc:Claim ; dcterms:identifier "C37" ;
+    wdc:sentence "The ggen_igniter compiler then admitted all 61 candidates against the pack shapes and manufactured 37 work orders, one per required postcondition, invariant or falsifier." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C38 a wdc:Claim ; dcterms:identifier "C38" ;
+    wdc:sentence "The goal graph GC-WDFA-PILOT has seven gates, WDFA-0 to WDFA-6, for the accepted future, the evidence first mile, deterministic triage, the brief, authorized consequence, learning, and the shadow baseline." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C39 a wdc:Claim ; dcterms:identifier "C39" ;
+    wdc:sentence "Re-running the compiler reproduced both compiled files byte for byte, so the work graph is a function of the prose, the candidates, the goal graph and the pack." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C40 a wdc:Claim ; dcterms:identifier "C40" ;
+    wdc:sentence "Four of the eight capabilities in the goal graph are marked Provider UNKNOWN, and the goal graph names the Western Digital input that three of them wait on." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/goal.ttl" ;
+    wdc:quote "Provider UNKNOWN: needs the Western Digital corpus and data lake access.", "Provider UNKNOWN: needs Western Digital authorization roles and the write-back decision.", "Provider UNKNOWN: needs the Western Digital MTTR baseline and measurement method.", "Provider UNKNOWN (prototype pages only)." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C41 a wdc:Claim ; dcterms:identifier "C41" ;
+    wdc:sentence "In this release the same machinery ran one complete KNOWN episode, a format-drift repair, through SA2A routing, a deterministic recipe worker, independent verification, a receipt and OCEL events with 0 LLM-provider events." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "receipts/v26.9.23/V23-D.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C42 a wdc:Claim ; dcterms:identifier "C42" ;
+    wdc:sentence "A second episode of the same failure class routed as KNOWN from admitted MachineExperience with no exploration, after the first episode had started as UNKNOWN and was resolved within its exploration budget." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "receipts/v26.9.23/V23-M.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C43 a wdc:Claim ; dcterms:identifier "C43" ;
+    wdc:sentence "A cold replay in fresh processes reproduced the episode's recorded standing digest from committed artifacts, without the conversation that produced them." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "receipts/v26.9.23/V23-R.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C44 a wdc:Claim ; dcterms:identifier "C44" ;
+    wdc:sentence "In the terms of the product contract, the deck's LLM ranking belongs to candidate generation, while applicability admission, the verifier and the receipt log belong to the deterministic KNOWN path." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C20, wdc:C35, wdc:C29 ;
+    wdc:reasoning "C35: KNOWN work leaves the LLM path once semantics are admitted. C20: the deck's LLM only ranks and explains, and a verifier drops uncited claims. C29: ranking never admits a mode; admission is by applicability and falsifiers. So the LLM output is a candidate and admission, verification and receipts are deterministic." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C45 a wdc:Claim ; dcterms:identifier "C45" ;
+    wdc:sentence "Because the deck's per-action receipt names the same five fields as the receipts cited here, a pilot action receipt could be checked by the same fleet validator." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C25, wdc:C9 ;
+    wdc:reasoning "C25: the deck's receipt per action has identity, authority, consequence, replay and standing. C9: the claims court admits observed claims only through the fleet validator, whose schema requires exactly those five dimensions. A receipt with the same dimensions is therefore in the validator's domain; whether a WD action service emits it is not claimed." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C46 a wdc:Claim ; dcterms:identifier "C46" ;
+    wdc:sentence "The autofde-lab failure-analysis kernel at merge commit eb93405c passed 10 of 10 probe checks, twice with byte-identical output, on its deterministic path without the TPOT ranker." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C47 a wdc:Claim ; dcterms:identifier "C47" ;
+    wdc:sentence "On its synthetic fixtures the kernel admitted the known firmware case, kept a misleadingly similar supplier case on its own mode, marked the incomplete case PARTIAL_ALIVE and left the novel case UNKNOWN with an escalation to failure analysis." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C48 a wdc:Claim ; dcterms:identifier "C48" ;
+    wdc:sentence "The same probe observed the kernel refusing self-certification, rejecting tampered and unbound receipts, and keeping SELECT_ONLY authority with an engineer disposition gate on its work order and API responses." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C49 a wdc:Claim ; dcterms:identifier "C49" ;
+    wdc:sentence "A verified disposition of the novel case compiled reusable experience, after which the equivalent replay case was admitted as known with 0 exploratory steps instead of 3." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C50 a wdc:Claim ; dcterms:identifier "C50" ;
+    wdc:sentence "A copy of the kernel mutated to admit the novel case and to allow self-certification failed 4 of the 10 checks, so the probe detects the defects it guards against." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C51 a wdc:Claim ; dcterms:identifier "C51" ;
+    wdc:sentence "The 4 tests of the pull request's own court that need no TPOT ranker passed unmodified on the exact commit." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C52 a wdc:Claim ; dcterms:identifier "C52" ;
+    wdc:sentence "The ggen-marketplace wd-failure-analysis-pack at merge commit 420bc91e passed a semantic witness court rendered by ggen, in which each of its 5 gates accepted its pass witness and refused its fail witness." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C53 a wdc:Claim ; dcterms:identifier "C53" ;
+    wdc:sentence "When a pass witness was replaced by a zero-candidate case typed KNOWN, the court refused it, so the novel-is-unknown gate is not vacuous." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C54 a wdc:Claim ; dcterms:identifier "C54" ;
+    wdc:sentence "Together these runs show the proposal's admission rules existing as executable code and as semantic gates, on synthetic data only." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C47, wdc:C52, wdc:C82 ;
+    wdc:reasoning "C47: the kernel enforces applicability-before-admission and UNKNOWN for novel cases in code. C52: the pack enforces the same rules as SPARQL gates with witnesses. C82: all cases were synthetic. So the rules are executable; their fit to Western Digital data is not shown." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C55 a wdc:Claim ; dcterms:identifier "C55" ;
+    wdc:sentence "Pull request 170 of seanchatmangpt/autofde-lab, which adds the failure-analysis court, was merged as commit eb93405c." ;
+    wdc:claimClass wdc:PUBLICLY_OBSERVABLE ;
+    wdc:publicRef "https://github.com/seanchatmangpt/autofde-lab/pull/170", "https://github.com/seanchatmangpt/autofde-lab/commit/eb93405cab20dd9dfa7b3742caa6e1997be51269" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C56 a wdc:Claim ; dcterms:identifier "C56" ;
+    wdc:sentence "Its full court, including the TPOT ranker install, the Python court, the Next.js build and the served browser test, concluded success in CI run 35797506789 at head a78d7742." ;
+    wdc:claimClass wdc:PUBLICLY_OBSERVABLE ;
+    wdc:publicRef "https://github.com/seanchatmangpt/autofde-lab/actions/runs/35797506789" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C57 a wdc:Claim ; dcterms:identifier "C57" ;
+    wdc:sentence "Pull request 474 of seanchatmangpt/ggen-marketplace, merged as commit 420bc91e, adds the wd-failure-analysis-pack and a WD failure-analysis work graph of 20 work orders." ;
+    wdc:claimClass wdc:PUBLICLY_OBSERVABLE ;
+    wdc:publicRef "https://github.com/seanchatmangpt/ggen-marketplace/pull/474", "https://github.com/seanchatmangpt/ggen-marketplace/commit/420bc91e7c1e291be73ab749b7e443252bc7bab8" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C58 a wdc:Claim ; dcterms:identifier "C58" ;
+    wdc:sentence "That pull request's own text records its repository tests and ggen courts as planned rather than executed." ;
+    wdc:claimClass wdc:PUBLICLY_OBSERVABLE ;
+    wdc:publicRef "https://github.com/seanchatmangpt/ggen-marketplace/pull/474" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C59 a wdc:Claim ; dcterms:identifier "C59" ;
+    wdc:sentence "Pull request 61 of seanchatmangpt/xaas, the WD Case Study 2 quality loop, is an open draft whose exact-head court run 35791935089 concluded failure, so this proposal cites none of its claims as observed." ;
+    wdc:claimClass wdc:PUBLICLY_OBSERVABLE ;
+    wdc:publicRef "https://github.com/seanchatmangpt/xaas/pull/61", "https://github.com/seanchatmangpt/xaas/actions/runs/35791935089" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C60 a wdc:Claim ; dcterms:identifier "C60" ;
+    wdc:sentence "OCEL 2.0 is a published standard for object-centric event logs." ;
+    wdc:claimClass wdc:PUBLICLY_OBSERVABLE ;
+    wdc:publicRef "https://www.ocel-standard.org/" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C61 a wdc:Claim ; dcterms:identifier "C61" ;
+    wdc:sentence "Because the admission rule does not depend on the data source, the same applicability-and-falsifier gate that admits synthetic cases could admit Western Digital cases once their rules are encoded." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C29, wdc:C47, wdc:C52 ;
+    wdc:reasoning "C29: admission is defined by applicability conditions and falsifiers. C47 and C52: the kernel and the pack gates evaluate exactly those conditions over case facts, whatever produced the facts. So encoded WD rules over WD facts would be evaluated the same way; the rules themselves remain an unsupplied WD input." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C62 a wdc:Claim ; dcterms:identifier "C62" ;
+    wdc:sentence "A recurring failure class that is verified once could route as KNOWN afterwards without an LLM, as the format-drift class does in the reference loop and the novel fixture does in the kernel." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C41, wdc:C42, wdc:C49 ;
+    wdc:reasoning "C42 and C49: a verified resolution of an UNKNOWN case becomes admitted experience and an equivalent later case routes KNOWN with less exploration. C41: KNOWN routes execute without LLM participation. So a recurring class could follow the same path; which WD classes recur is unknown." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C63 a wdc:Claim ; dcterms:identifier "C63" ;
+    wdc:sentence "Rendering the brief from admitted case state and refusing uncited statements at render time makes citation-or-nothing a property of the generator rather than a review habit." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C32, wdc:C7 ;
+    wdc:reasoning "C32: the brief is a projection of admitted state and uncited claims are removed. C7: this proposal is itself rendered from a ledger and hand edits are refused. The same construction applied to the brief places the citation check in the renderer." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C64 a wdc:Claim ; dcterms:identifier "C64" ;
+    wdc:sentence "Sampling one automatic closure in ten, with a rule suspended on reopen, bounds the harm of a wrong rule to the closures it makes before its first detected reopen." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C16 ;
+    wdc:reasoning "C16: automatic closure requires full applicability, one closure in ten is sampled, and a reopen suspends the producing rule. A wrong rule therefore stops closing at its first detected reopen, whether detected by sampling or by an engineer; closures before that point remain exposed." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C65 a wdc:Claim ; dcterms:identifier "C65" ;
+    wdc:sentence "The TPOT-ranked paths that this lane could not execute locally are covered by the public CI run but not by a receipt of ours." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C51, wdc:C56 ;
+    wdc:reasoning "C51: only the tests that need no TPOT ranker were executed here. C56: the full court including TPOT succeeded in public CI. So TPOT-ranked evidence is publicly observable, not SUPPLIED." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C66 a wdc:Claim ; dcterms:identifier "C66" ;
+    wdc:sentence "Western Digital's current MTTR for each failure mode, and the method used to measure it, is unknown to us." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-mttr ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C67 a wdc:Claim ; dcterms:identifier "C67" ;
+    wdc:sentence "Read access to the pilot product family's corpus and data lake, and an inventory of that corpus, have not been supplied." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-data-access, wdc:MI-corpus ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C68 a wdc:Claim ; dcterms:identifier "C68" ;
+    wdc:sentence "Who may authorize closure and escalation during a pilot is a Western Digital decision that has not been made known to us." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-authz-roles ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C69 a wdc:Claim ; dcterms:identifier "C69" ;
+    wdc:sentence "Whether QMS or MES write-back through an API is allowed in phase one stays undecided until Western Digital decides it." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-qms ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C70 a wdc:Claim ; dcterms:identifier "C70" ;
+    wdc:sentence "Western Digital's failure-mode catalogue, with the applicability conditions and falsifiers of each mode, is needed before any real case can be admitted as known." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-rules ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C71 a wdc:Claim ; dcterms:identifier "C71" ;
+    wdc:sentence "A golden set of closed Western Digital cases for blind replay, and the rule for slicing it by time, has not been supplied." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-golden ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C72 a wdc:Claim ; dcterms:identifier "C72" ;
+    wdc:sentence "The pilot product family, the pilot site and the pilot start date are Western Digital choices that remain open." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-pilot-scope ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C73 a wdc:Claim ; dcterms:identifier "C73" ;
+    wdc:sentence "No Western Digital sponsor has accepted the WBPR yet, so no pilot obligation exists on either side." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-sponsor ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C74 a wdc:Claim ; dcterms:identifier "C74" ;
+    wdc:sentence "The deck plans the build in three thirty-day steps: case schema, slide and Confluence ingest, 4 typed tools and a golden set; then the verifier, applicability rules, case view and shadow mode; then the brief, email, authorized write-back and call record." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "30 / 60 / 90 plan", "Case schema, PPT + Confluence ingest, 4 typed tools, golden set", "Verifier, applicability rules, case view (P1 · 2c–2e), shadow mode", "Morning Brief + email, authorized write-back, call record" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C75 a wdc:Claim ; dcterms:identifier "C75" ;
+    wdc:sentence "It sizes the team at two ML or data engineers, one backend engineer, one designer and one FA subject-matter expert at half time." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "2 ML/data eng · 1 backend · 1 designer · 1 FA SME (50%)" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C76 a wdc:Claim ; dcterms:identifier "C76" ;
+    wdc:sentence "Its evaluation plan replays 300 closed cases blind, time-sliced to prevent leakage, and runs 4 weeks in shadow mode alongside engineers before launch." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "Golden set: 300 closed cases replayed blind, time-sliced to prevent leakage", "4-week shadow mode alongside engineers", "BEFORE LAUNCH" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C77 a wdc:Claim ; dcterms:identifier "C77" ;
+    wdc:sentence "Its target metrics are 40 percent lower MTTR on known modes, at least 90 percent top-three agreement with the final disposition, under 1 percent of automatic closures reopened and 0 uncited claims shown, all pending a 4-week shadow baseline." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/supplied/case-study-2.txt" ;
+    wdc:quote "−40%", "MTTR on known modes", "≥ 90%", "Top-3 mode matches final disposition", "< 1%", "Auto-closures reopened", "Uncited claims shown", "Targets pending a 4-week shadow baseline" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-SUPPLY.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C78 a wdc:Claim ; dcterms:identifier "C78" ;
+    wdc:sentence "A defensible pilot therefore has three stages: a blind replay of closed cases through deterministic triage, a four-week shadow period that records the baseline, and only then an assisted period with authorized actions." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C76, wdc:C77, wdc:C31, wdc:C29 ;
+    wdc:reasoning "C76 and C77: the deck's own evaluation replays closed cases blind and holds every target until a shadow baseline exists. C29: admission is deterministic, so a blind replay tests it without consequence. C31: actions require authorization and receipts, so they belong after the baseline, when their effect can be compared." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C79 a wdc:Claim ; dcterms:identifier "C79" ;
+    wdc:sentence "The WBPR's stop condition is met when a golden set of closed cases replays blind through triage, the shadow period has produced a baseline, and every falsifier has been exercised without firing." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Phase one stops when a golden set of closed cases replays blind through triage, the shadow period has produced a baseline, and every falsifier above has been exercised without firing." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C80 a wdc:Claim ; dcterms:identifier "C80" ;
+    wdc:sentence "Its falsifiers are a brief claim without a resolvable source span, a case admitted as known while a condition is unmet or a falsifier fires, a consequential action without a named human authorization and a receipt, and an unsupplied Western Digital fact presented as anything but unknown." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "The goal is falsified if a brief shows a claim without a resolvable source span.", "The goal is falsified if a case is admitted as known while an applicability condition is unmet or a falsifier fires.", "The goal is falsified if a consequential action executes without a named human authorization and a receipt.", "The goal is falsified if an unsupplied Western Digital fact appears in a proposal as anything other than unknown." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C81 a wdc:Claim ; dcterms:identifier "C81" ;
+    wdc:sentence "Work discovered during the pilot that falsifies no proposition of the WBPR enters a successor goal instead of extending the pilot." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/wd-fa/wbpr.md" ;
+    wdc:quote "Work discovered during the pilot that falsifies no proposition of this WBPR enters a successor goal." ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C82 a wdc:Claim ; dcterms:identifier "C82" ;
+    wdc:sentence "No Western Digital data was used in any run cited here; every observed case is a synthetic fixture." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-KERNEL-PROBE.json", "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-PACK-COURT.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C83 a wdc:Claim ; dcterms:identifier "C83" ;
+    wdc:sentence "Live WD integration is a non-goal of the v26.9.23 release." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "supplied-input" ;
+    wdc:suppliedSource "docs/sjira/v26.9.23/prd-ard.md" ;
+    wdc:quote "* live WD integration;" ;
+    wdc:receipt "receipts/v26.9.23/V23-P.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C84 a wdc:Claim ; dcterms:identifier "C84" ;
+    wdc:sentence "No change in MTTR at Western Digital is claimed, because no baseline exists to compare against." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-mttr ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C85 a wdc:Claim ; dcterms:identifier "C85" ;
+    wdc:sentence "The WBPR is a draft that awaits operator acceptance, so the compiled work graph is a candidate future rather than an accepted one." ;
+    wdc:claimClass wdc:SUPPLIED ; wdc:evidenceKind "observed-proof" ;
+    wdc:receipt "docs/sjira/v26.9.23/wd-fa/receipts/WDFA-COMPILE.json" ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C86 a wdc:Claim ; dcterms:identifier "C86" ;
+    wdc:sentence "The rendered document for Western Digital and the operator's text freeze follow acceptance and are regenerated from this ledger rather than edited by hand." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C85, wdc:C7 ;
+    wdc:reasoning "C85: nothing here is accepted yet. C7: the proposal is a projection of the ledger and hand edits are refused. So any later render or text freeze is a change to the ledger followed by a new render and check." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C87 a wdc:Claim ; dcterms:identifier "C87" ;
+    wdc:sentence "The first decision is the operator's acceptance of the WBPR text, which fixes its digest and makes the compiled work graph an accepted future instead of a candidate one." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C85, wdc:C35, wdc:C39 ;
+    wdc:reasoning "C85: the graph is a candidate because the WBPR is a draft. C35: accepted prose defines the bounded future and admitted semantics become canonical. C39: the graph is a function of the prose bytes, so accepting those exact bytes fixes the graph." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C88 a wdc:Claim ; dcterms:identifier "C88" ;
+    wdc:sentence "The second decision belongs to Western Digital: whether a sponsor accepts the bounded future and names the pilot product family, site and start date." ;
+    wdc:claimClass wdc:WD_DEPENDENT_UNKNOWN ;
+    wdc:missingInput wdc:MI-sponsor, wdc:MI-pilot-scope ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .
+
+wdc:C89 a wdc:Claim ; dcterms:identifier "C89" ;
+    wdc:sentence "After both decisions, the first measurable step is a blind replay of closed cases through the deterministic triage that this proposal has so far exercised only on synthetic fixtures." ;
+    wdc:claimClass wdc:ARCHITECTURAL_INFERENCE ;
+    wdc:premise wdc:C78, wdc:C46, wdc:C82 ;
+    wdc:reasoning "C78: the pilot starts with a blind replay through deterministic triage. C46 and C82: that triage has been exercised, on synthetic fixtures only. So the replay is the first step that can measure it on real cases." ;
+    wdc:classifiedBy "llm:claude-opus-5-5@wave-B1c/V23-W" .

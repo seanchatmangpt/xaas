@@ -1,0 +1,24 @@
+{
+  "schema": "xaas.cross-product-reconciliation/1",
+  "calver": "v26.9.25",
+  "base_sha": "e039967dac9f88961873b6a958f3979a106854f2",
+  "legacy_candidate": {"pr": 70, "sha": "9820fe3bfe2cf0fecd2b13b598681cd1ec3b094f"},
+  "admitted_fabric": {"pr": 72, "sha": "99de79bbf3eadefa15f5bbe52be9d4403b52b84d"},
+  "residual_capability": "remote_relay_envelope_admission",
+  "reuse": ["Xaas.Tunnel.Capabilities", "Xaas.Tunnel.Fabric", "Xaas.Tunnel.Receipt", "Xaas.Tunnel.Submit"],
+  "must_not_duplicate": ["receipt_canonicalization", "run_submit_idempotency", "fabric_capability_allowlist", "authority_ceiling"],
+  "acceptance": [
+    "relay admission binds execution manifest, exact subject, epoch, task and semantic intent",
+    "transport replay never creates a fresh consequence identity",
+    "DO authority remains outside transport and fabric",
+    "HTTP and future WSS transports converge on xaas-fabric/1 semantics"
+  ],
+  "falsifiers": [
+    "stale_manifest",
+    "forged_authority_ref",
+    "sequence_gap",
+    "duplicate_command_new_consequence",
+    "transport_specific_receipt_digest"
+  ],
+  "standing": "SPECIFIED_NOT_EXECUTED"
+}

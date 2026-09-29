@@ -42,6 +42,10 @@ defmodule Xaas.Operations.ActuationIntent do
         :subject_id,
         :ontology_class_iri,
         :ontology_projection_hash,
+        :spg_graph_id,
+        :spg_graph_version,
+        :spg_node_id,
+        :spg_edge_id,
         :input_hash,
         :actor_ref,
         :tenant_ref,
@@ -90,6 +94,22 @@ defmodule Xaas.Operations.ActuationIntent do
 
     attribute :ontology_projection_hash, :string do
       allow_nil?(false)
+      public?(true)
+    end
+
+    attribute :spg_graph_id, :string do
+      public?(true)
+    end
+
+    attribute :spg_graph_version, :string do
+      public?(true)
+    end
+
+    attribute :spg_node_id, :string do
+      public?(true)
+    end
+
+    attribute :spg_edge_id, :string do
       public?(true)
     end
 

@@ -82,7 +82,9 @@ defmodule Xaas.Semantics.VKG.Query do
         refusal(:purpose, "VKG query purpose is not admitted", %{purpose: query.purpose})
 
       not is_integer(query.max_rows) or query.max_rows <= 0 ->
-        refusal(:max_rows, "VKG query row bound must be a positive integer", %{max_rows: query.max_rows})
+        refusal(:max_rows, "VKG query row bound must be a positive integer", %{
+          max_rows: query.max_rows
+        })
 
       not is_integer(query.timeout_ms) or query.timeout_ms <= 0 ->
         refusal(
@@ -95,7 +97,9 @@ defmodule Xaas.Semantics.VKG.Query do
         refusal(:merge, "VKG query merge policy is unsupported", %{merge: query.merge})
 
       not is_atom(query.capability) ->
-        refusal(:capability, "VKG query capability must be an atom", %{capability: query.capability})
+        refusal(:capability, "VKG query capability must be an atom", %{
+          capability: query.capability
+        })
 
       query.authority != :NONE ->
         refusal(

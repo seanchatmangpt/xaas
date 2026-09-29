@@ -189,7 +189,7 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   @doc """
   Rewrites step `id`'s row in the LAST step table. `new_status` (a binary)
   replaces the status cell when the row's current status is not already
-  `:done` -- a worker's own DONE wording is never clobbered; pass `nil` to
+  `:done` -- existing DONE wording is never clobbered; pass `nil` to
   leave the status untouched. `evidence_append` (a binary) is appended to
   the evidence cell unless the cell already contains it (idempotent
   re-ticks); pass `nil` to leave evidence untouched.
@@ -248,9 +248,9 @@ defmodule Xaas.Ultracode.WaveLoop.State do
   end
 
   @doc """
-  The loop worker's goal: step id + the step's dispatch instructions
-  VERBATIM from STATE.md, the standing section (repo/branch facts), the law
-  section (the evidence law), and the mandatory state-update instruction.
+  The loop worker's goal: step id + dispatch instructions VERBATIM from
+  STATE.md, standing, and law. STATE.md and loop telemetry are fabric-owned
+  projections: the worker is explicitly forbidden from editing either one.
   Capped below Run.goal's 50_000-character constraint.
   """
   @spec build_goal(t(), step(), %{
@@ -276,7 +276,10 @@ defmodule Xaas.Ultracode.WaveLoop.State do
     #{String.trim_trailing(state.law || default_law())}
 
     === ON COMPLETION ===
-    Do NOT edit #{sp} or #{tp}: the loop settles the STATE row and telemetry     itself from your sealed receipt (workers sit outside those files'     authority fence — writes there are refused by design, observed \
+    Do NOT edit #{sp} or #{tp}: they are fabric-owned projections. The loop \
+    settles the STATE row and telemetry itself from your sealed receipt \
+    (workers sit outside those files' authority fence — writes there are \
+    refused by design, observed \
     2026-09-26). Close via the fabric with evidence; carry anything the \
     coordinator must know inside your close evidence.
     """

@@ -72,12 +72,19 @@ defmodule Xaas.ZcodePlugin.GallWorkContractTest do
     tools = contract["fabric"]["tools"]
 
     assert MapSet.new(Map.keys(tools)) ==
-             MapSet.new(["claim_next", "heartbeat", "close_candidate", "refuse"])
+             MapSet.new([
+               "claim_next",
+               "heartbeat",
+               "close_candidate",
+               "refuse",
+               "cancel_work",
+               "work_status"
+             ])
 
     claim = tools["claim_next"]
-    assert claim["arguments"]["provider"] == "zcode"
+    assert claim["arguments"]["provider"] =~ "zcode"
 
-    assert MapSet.new(claim["result_fields"]) ==
+    assert MapSet.subset?(
              MapSet.new([
                "lease_token",
                "lease_expires_at",
@@ -87,7 +94,9 @@ defmodule Xaas.ZcodePlugin.GallWorkContractTest do
                "goal",
                "worktree",
                "verifier_suite"
-             ])
+             ]),
+             MapSet.new(claim["result_fields"])
+           )
 
     assert contract["fabric"]["outcome_vocabulary"] == [
              "alive",

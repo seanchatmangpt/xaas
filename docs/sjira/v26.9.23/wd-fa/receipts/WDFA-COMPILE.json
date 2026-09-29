@@ -1,0 +1,84 @@
+{
+  "identity": {
+    "subject": "wd-fa:first-mile-compile",
+    "repo": "/Users/sac/xaas",
+    "subject_sha": "757be458cf14395b27f90eea5c5f6513dcb9c400",
+    "base_sha": "b4ef5d664cb5afa2ab5456ac20d28500f5b00144",
+    "branch": "v23/V23-W",
+    "work_order": "v23:WO-V23-W (supporting receipt)",
+    "graph_side": {
+      "judge": "/Users/sac/wt/v26922/fri/ggen_igniter-int",
+      "ggen_igniter_sha": "3937a4f89ecf2b7fa12068406377c05ec1a1b8fc",
+      "judge_dirty": "?? .oclnr-cache/ only (untracked cache, not source)"
+    },
+    "digests": {
+      "docs/sjira/v26.9.23/wd-fa/wbpr.md": "sha256:6df43627027c20e360af34d6f68d7857104bc7441f1dcd58dbc20753b7c949d4",
+      "docs/sjira/v26.9.23/wd-fa/wbpr.extract.json": "sha256:f826179edc1dfec90d0205d825afd88af5aa59b3f91daa207a94efe7cb57670c",
+      "docs/sjira/v26.9.23/wd-fa/candidates.ttl": "sha256:52d273fd3d93fcaf84a0404871989f5e3dbb0379f783c65adde3b2e2d756aa25",
+      "docs/sjira/v26.9.23/wd-fa/goal.ttl": "sha256:bac8656177779a0fabd098eec95c2830ba7ad5015efe42e26c27558916e59b4d",
+      "docs/sjira/v26.9.23/wd-fa/compiled/propositions.ttl": "sha256:102dd86afec130ea9272c69423d8b5403ebcb5e21ef3bce80fb178f4bbd435f3",
+      "docs/sjira/v26.9.23/wd-fa/compiled/orders.ttl": "sha256:8c67c50961f1894f91c6c2a0bf1983dc0a2713041fee52c1e12f1b8b0a65be4e"
+    }
+  },
+  "authority": {
+    "ceiling": "CONSTRUCT",
+    "grant": "NONE (lane V23-W constructs projections inside its own worktree; the judged ggen_igniter checkout is read through gi_mix.sh's private MIX_BUILD_PATH)",
+    "actor": "claude-opus-5-5 lane V23-W (wave B1c, v26.9.23), workflow subagent"
+  },
+  "consequence": {
+    "commits": [
+      "757be458cf14395b27f90eea5c5f6513dcb9c400"
+    ],
+    "files_changed": [
+      "docs/sjira/v26.9.23/wd-fa/wbpr.md",
+      "docs/sjira/v26.9.23/wd-fa/wbpr.extract.json",
+      "docs/sjira/v26.9.23/wd-fa/candidates.ttl",
+      "docs/sjira/v26.9.23/wd-fa/goal.ttl",
+      "docs/sjira/v26.9.23/wd-fa/compiled/propositions.ttl",
+      "docs/sjira/v26.9.23/wd-fa/compiled/orders.ttl"
+    ],
+    "remote_effects": []
+  },
+  "replay": {
+    "commands": [
+      {
+        "cmd": "python3 scripts/sjira/prose_spans.py check --source docs/sjira/v26.9.23/wd-fa/wbpr.md --candidates docs/sjira/v26.9.23/wd-fa/candidates.ttl --extract docs/sjira/v26.9.23/wd-fa/wbpr.extract.json | tail -1",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "candidates bound to the WBPR bytes, re-emit byte-equal: TALLY: required 57 + not_required 4 = 61 (multi_required 0); requiredBy GC-WDFA-PILOT=4 WDFA-0=5 WDFA-1=6 WDFA-2=12 WDFA-3=8 WDFA-4=12 WDFA-5=5 WDFA-6=5",
+        "output_sha256": "fc74c286d3319d75b5f16839836f3a64bffa0692d72782d970f14414b49e6d70"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int TMPDIR=/private/tmp/claude-501/v23-scratch/B1c-V23-W sh docs/sjira/v26.9.23/courts/gi_mix.sh semantic_jira.compile_prose --source /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/wbpr.md --candidates /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/candidates.ttl --goal /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/goal.ttl --out-dir /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/compiled --check > /private/tmp/claude-501/v23-scratch/B1c-V23-W/compile-check.log 2>&1; rc=$?; grep -E '^(ADMITTED|DELTA|CHECK)' /private/tmp/claude-501/v23-scratch/B1c-V23-W/compile-check.log; exit $rc",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "compile_prose --check at ggen_igniter-int 3937a4f (F3 no-LLM env via gi_mix.sh): CHECK: /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/compiled outputs recompute byte-identically",
+        "output_sha256": "f5927ce5b2a5a54194666aa953849615f611f910990752c1ad9144fec036cc15"
+      },
+      {
+        "cmd": "GGEN_IGNITER_DIR=/Users/sac/wt/v26922/fri/ggen_igniter-int TMPDIR=/private/tmp/claude-501/v23-scratch/B1c-V23-W sh docs/sjira/v26.9.23/courts/gi_mix.sh semantic_jira.compile_prose --admit-goal --goal /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/goal.ttl > /private/tmp/claude-501/v23-scratch/B1c-V23-W/admit-goal.log 2>&1; rc=$?; grep -E 'GOAL ADMITTED|REFUSED' /private/tmp/claude-501/v23-scratch/B1c-V23-W/admit-goal.log; exit $rc",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "goal graph admission (pack shapes) at ggen_igniter-int 3937a4f: GOAL ADMITTED: /Users/sac/wt/v26922/v23/V23-W/docs/sjira/v26.9.23/wd-fa/goal.ttl sha256:bac8656177779a0fabd098eec95c2830ba7ad5015efe42e26c27558916e59b4d (99 triples, 8 GoalCheckpoints, 0 WorkOrders)",
+        "output_sha256": "79d181a7409f9bec2a7b22d1f482ab9f4edcc3cdff8986aef507d9f989f0fba9"
+      },
+      {
+        "cmd": "git -C /Users/sac/wt/v26922/fri/ggen_igniter-int rev-parse HEAD && git -C /Users/sac/wt/v26922/fri/ggen_igniter-int status --porcelain | wc -l | tr -d ' '",
+        "cwd": "/Users/sac/wt/v26922/v23/V23-W",
+        "exit": 0,
+        "summary": "judge identity: 1",
+        "output_sha256": "2ddfea9a10c54580667218fb142015da878f0970ac84e6e60b27f781f79e3ce0"
+      }
+    ],
+    "durable_location": "xaas branch v23/V23-W at 757be458cf14395b27f90eea5c5f6513dcb9c400: docs/sjira/v26.9.23/wd-fa/"
+  },
+  "standing": {
+    "value": "ALIVE",
+    "derived_from": "observed at 757be458cf14395b27f90eea5c5f6513dcb9c400: prose_spans check (61 candidates, re-emit byte-equal), mix semantic_jira.compile_prose --check under the F3 no-LLM env against ggen_igniter-int 3937a4f (61 admitted, 57 required, 37 work orders, outputs recompute byte-identically), --admit-goal (8 GoalCheckpoints admitted)."
+  },
+  "llm_edge": {
+    "edge": "candidate extraction only (wbpr.extract.json)",
+    "extracted_by": "llm:claude-opus-5-5@wave-B1c/V23-W",
+    "note": "emit, check, admission and delta manufacture ran with no LLM; the WBPR is DRAFT (not operator-accepted), so the compiled projection is a candidate future, not an accepted one."
+  }
+}

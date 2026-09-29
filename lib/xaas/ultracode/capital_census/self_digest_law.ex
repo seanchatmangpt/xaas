@@ -39,7 +39,12 @@ defmodule Xaas.Ultracode.CapitalCensus.SelfDigest.Law do
 
   @doc "Cluster experiences by topology triple; `recurring?` at the ontology threshold."
   @spec cluster([map()], pos_integer() | nil) :: [
-          %{topology: topology(), episodes: [map()], count: non_neg_integer(), recurring?: boolean()}
+          %{
+            topology: topology(),
+            episodes: [map()],
+            count: non_neg_integer(),
+            recurring?: boolean()
+          }
         ]
   def cluster(experiences, threshold \\ nil) do
     threshold = threshold || Facts.recurrence_threshold()

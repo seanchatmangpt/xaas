@@ -40,14 +40,21 @@ defmodule Xaas.Ultracode.CapitalCensus.ExperienceTest do
                evidence: ^evidence
              } = tuple
 
-      assert MapSet.new(Map.keys(tuple)) == MapSet.new([:state, :action, :observation, :outcome, :evidence])
+      assert MapSet.new(Map.keys(tuple)) ==
+               MapSet.new([:state, :action, :observation, :outcome, :evidence])
     end
   end
 
   describe "failure_class/1 -- stable class keys" do
     test "the same outcome + action shape is the same class whatever the observation, evidence or state" do
       first = exp(:failure, "mix_compile")
-      second = exp(:failure, "mix_compile", %{state: %{branch: "other"}, observation: %{exit: 2}, evidence: %{receipt: "r-2"}})
+
+      second =
+        exp(:failure, "mix_compile", %{
+          state: %{branch: "other"},
+          observation: %{exit: 2},
+          evidence: %{receipt: "r-2"}
+        })
 
       assert Experience.failure_class(first) == Experience.failure_class(second)
       assert Experience.failure_class(first) == "failure:mix_compile"
@@ -56,8 +63,11 @@ defmodule Xaas.Ultracode.CapitalCensus.ExperienceTest do
     test "a different outcome or a different action moves the class" do
       failure = exp(:failure, "mix_compile")
 
-      refute Experience.failure_class(failure) == Experience.failure_class(exp(:alive, "mix_compile"))
-      refute Experience.failure_class(failure) == Experience.failure_class(exp(:failure, "mix_format"))
+      refute Experience.failure_class(failure) ==
+               Experience.failure_class(exp(:alive, "mix_compile"))
+
+      refute Experience.failure_class(failure) ==
+               Experience.failure_class(exp(:failure, "mix_format"))
     end
 
     test "atom and binary actions shape the same; structured actions are deterministic" do
@@ -128,7 +138,9 @@ defmodule Xaas.Ultracode.CapitalCensus.ExperienceTest do
       iec = ~w(route:llm plan:htn constraint:sat generate:ggen)a
 
       after_one = Experience.advance(iec, [:"plan:htn"])
-      assert MapSet.to_list(after_one) |> Enum.sort() == ~w(constraint:sat generate:ggen route:llm)a
+
+      assert MapSet.to_list(after_one) |> Enum.sort() ==
+               ~w(constraint:sat generate:ggen route:llm)a
 
       after_all = Experience.advance(iec, ~w(route:llm plan:htn constraint:sat generate:ggen)a)
       assert MapSet.size(after_all) == 0
@@ -137,10 +149,13 @@ defmodule Xaas.Ultracode.CapitalCensus.ExperienceTest do
     test "promoted keys absent from the index are no-ops; the rest of the index is untouched" do
       iec = ~w(plan:htn generate:ggen)a
 
-      assert Experience.advance(iec, ~w(route:llm recipe:mix-format)a) |> MapSet.to_list() |> Enum.sort() ==
+      assert Experience.advance(iec, ~w(route:llm recipe:mix-format)a)
+             |> MapSet.to_list()
+             |> Enum.sort() ==
                ~w(generate:ggen plan:htn)a
 
-      assert Experience.advance(iec, []) |> MapSet.to_list() |> Enum.sort() == ~w(generate:ggen plan:htn)a
+      assert Experience.advance(iec, []) |> MapSet.to_list() |> Enum.sort() ==
+               ~w(generate:ggen plan:htn)a
     end
 
     test "accepts MapSet or list for the index and a single key for promoted" do

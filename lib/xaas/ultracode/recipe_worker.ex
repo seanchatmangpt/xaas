@@ -93,9 +93,7 @@ defmodule Xaas.Ultracode.RecipeWorker do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Xaas.Ultracode.{DurationBudget, Epoch, Lease, Run, TargetSuites, Verifier}
+  alias Xaas.Ultracode.{DurableClose, Epoch, Lease, Run, TargetSuites, Verifier}
 
   @executor "recipe-worker"
   @default_provider "recipe"
@@ -390,6 +388,10 @@ defmodule Xaas.Ultracode.RecipeWorker do
 
   defp redact(other, _token), do: other
 
+  defp fence_reason(:no_lease, token), do: {:no_lease, token}
+  defp fence_reason(:lease_expired, token), do: {:lease_expired, token}
+  defp fence_reason(other, _token), do: other
+
   defp fingerprint(token), do: :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
 
   defp step_result(step, outcome, duration_ms) do
@@ -418,7 +420,10 @@ defmodule Xaas.Ultracode.RecipeWorker do
     base_head = evidence["base_head"]
 
     with {:ok, commit} <- candidate_commit(worktree, tmp, message_file, base_head),
-         :ok <- fenced_ref_update(token, worktree, commit, base_head),
+         :ok <-
+           DurableClose.publish(token, worktree, commit, base_head,
+             message: "recipe-worker: fenced commit"
+           ),
          {:ok, head} <- git_head(worktree) do
       evidence = sync_index(worktree, evidence)
 
@@ -441,6 +446,11 @@ defmodule Xaas.Ultracode.RecipeWorker do
       end
     else
       {:lease_lost, reason, commit} ->
+        # The shared durable-close fence reports a bare `:no_lease` /
+        # `:lease_expired`; restore the token-bearing shape `Lease` uses so
+        # the single `redact/2` boundary yields the same fingerprinted loss on
+        # every path (the raw token still never leaves this worker).
+        reason = reason |> fence_reason(token) |> redact(token)
         lease_lost(token, worktree, reason, Map.put(evidence, "unreferenced_commit", commit))
 
       {:refuse, reason, extra} ->
@@ -479,60 +489,9 @@ defmodule Xaas.Ultracode.RecipeWorker do
       else: {:error, {:not_an_object_id, out}}
   end
 
-  # THE FENCE: `HEAD` moves (compare-and-swap on `base_head`) only inside a
-  # transaction holding the epoch row `FOR UPDATE` while that row still
-  # binds `token`, is `:running` and is not past `lease_expires_at` -- the
-  # same liveness `Lease.renew/1` proves, on the same clock
-  # (`DurationBudget.now/0`), but held across the write instead of checked
-  # before it.
-  defp fenced_ref_update(token, worktree, commit, base_head) do
-    fenced =
-      Xaas.Repo.transaction(fn ->
-        row = Xaas.Repo.one(from(e in Epoch, where: e.lease_token == ^token, lock: "FOR UPDATE"))
-
-        with :ok <- live_row(row, token),
-             {_, 0} <-
-               git(worktree, [
-                 "update-ref",
-                 "-m",
-                 "recipe-worker: fenced commit",
-                 "HEAD",
-                 commit,
-                 base_head
-               ]) do
-          :ok
-        else
-          {:lost, reason} -> Xaas.Repo.rollback({:lost, reason})
-          {out, code} -> Xaas.Repo.rollback({:ref_update_failed, "#{code}: #{out}"})
-        end
-      end)
-
-    case fenced do
-      {:ok, :ok} ->
-        :ok
-
-      {:error, {:lost, reason}} ->
-        {:lease_lost, redact(reason, token), commit}
-
-      {:error, {:ref_update_failed, git_out}} ->
-        {:refuse, :ref_update_failed, %{"git" => git_out, "unreferenced_commit" => commit}}
-
-      {:error, other} ->
-        {:refuse, :fence_failed,
-         %{"fence" => inspect(redact(other, token)), "unreferenced_commit" => commit}}
-    end
-  end
-
-  defp live_row(nil, token), do: {:lost, {:no_lease, token}}
-
-  defp live_row(%Epoch{state: :running, lease_expires_at: %DateTime{} = expires_at}, token) do
-    if DateTime.compare(expires_at, DurationBudget.now()) == :lt,
-      do: {:lost, {:lease_expired, token}},
-      else: :ok
-  end
-
-  defp live_row(%Epoch{state: :running}, token), do: {:lost, {:lease_expired, token}}
-  defp live_row(%Epoch{state: state}, _token), do: {:lost, {:lease_not_live, state}}
+  # The lease-fenced ref publication is shared runtime machinery now:
+  # Xaas.Ultracode.DurableClose owns the row lock, lease liveness proof and
+  # compare-and-swap ref move for every construction provider.
 
   # After the fenced publish the worktree's own index still holds the base
   # tree; `read-tree HEAD` makes it the published tree (index only, the
