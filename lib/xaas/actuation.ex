@@ -228,7 +228,9 @@ defmodule Xaas.Actuation do
   defp normalize_transaction_result(%{status: :succeeded} = envelope), do: {:ok, envelope}
   defp normalize_transaction_result(%{status: :replayed} = envelope), do: {:ok, envelope}
 
-  defp normalize_transaction_result(%{status: :failed, error: error}), do: {:error, error}
+  defp normalize_transaction_result(%{status: status, error: error})
+       when status in [:failed, :refused],
+       do: {:error, error}
 
   defp normalize_transaction_result(other),
     do: {:error, {:unexpected_actuation_result, other}}
@@ -247,6 +249,7 @@ defmodule Xaas.Actuation do
        ) do
     case step_error do
       {:idempotency_conflict, _key} -> step_error
+      {:idempotency_not_replayable, _key, _status} -> step_error
       _ -> reason
     end
   end
@@ -480,23 +483,34 @@ defmodule Xaas.Actuation.Kernel do
 
   def seal(%{admission: admission, execution: {:error, reason}}, _context) do
     completed_at = DateTime.utc_now()
-    error = json_safe(reason)
+
+    # A typed `Xaas.Actuation.Refusal` raised by the action's own admission court is a
+    # policy REFUSED, recorded with the `:refused` status both ledger resources declare;
+    # any other error stays an execution `:failed`.
+    {status, error} =
+      case Xaas.Actuation.Refusal.find(reason) do
+        nil ->
+          {:failed, json_safe(reason)}
+
+        %{code: code, detail: detail} ->
+          {:refused, %{"refused" => Atom.to_string(code), "detail" => json_safe(detail)}}
+      end
 
     with {:ok, receipt} <-
            Ash.update(
              admission.receipt,
-             %{status: :failed, error: error, completed_at: completed_at},
+             %{status: status, error: error, completed_at: completed_at},
              action: :seal,
              authorize?: false
            ),
          {:ok, intent} <-
-           Ash.update(admission.intent, %{status: :failed},
+           Ash.update(admission.intent, %{status: status},
              action: :transition,
              authorize?: false
            ) do
       {:ok,
        %{
-         status: :failed,
+         status: status,
          replay?: false,
          error: reason,
          intent: intent,

@@ -135,12 +135,20 @@ defmodule Xaas.Checks.SystemActor do
     {Xaas.Operations.AutofdePlannerCandidate, :request_candidate}
   ]
 
-  @action_services Enum.reduce(@xaas_2601_actions ++ @ultracode_wave_actions, %{}, fn {resource,
-                                                                                       action,
-                                                                                       service},
-                                                                                      acc ->
-                     Map.put(acc, {resource, action}, service)
-                   end)
+  # The SA2A `sa2a_execute` DO edge (generated EdgeCatalog `s2b:edge40`,
+  # `do_boundary?: true`). Autonomic only through `Xaas.Actuation.run/4` under the
+  # scoped `:sa2a_executor` machine capability; no other service may run it.
+  @sa2a_actions [
+    {Xaas.Sa2a.Execution, :execute, :sa2a_executor}
+  ]
+
+  @action_services Enum.reduce(
+                     @xaas_2601_actions ++ @ultracode_wave_actions ++ @sa2a_actions,
+                     %{},
+                     fn {resource, action, service}, acc ->
+                       Map.put(acc, {resource, action}, service)
+                     end
+                   )
                    |> Map.merge(Map.new(@internal_api_actions, &{&1, :internal_api}))
                    |> Map.merge(Map.new(@autofde_actions, &{&1, :autofde_coverage_monitor}))
                    |> Map.put(

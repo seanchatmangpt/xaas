@@ -28,6 +28,22 @@ config :xaas,
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   base_resources: [Xaas.Resource]
 
+# Machine admission policy for the SA2A `sa2a_execute` DO edge
+# (Xaas.Sa2a.Court / Xaas.Sa2a.Executor). No human approves an execution; a query runs
+# only if it matches a declared class here. Empty `classes` admits nothing.
+config :xaas, Xaas.Sa2a.ExecutionPolicy,
+  classes: [
+    %{
+      id: "sjira-workorder-resolution",
+      match: {:prefix, "workorder:"},
+      bind_work_order: true,
+      max_query_bytes: 512
+    }
+  ],
+  admitted_standings: ["KNOWN"],
+  min_llm_avoidance_ratio: 1.0,
+  max_compiled_rules: 64
+
 # ash-migration Phase 3: real Ash-ecosystem config ported verbatim from
 # ~/dev-fresh/xaas/config/config.exs (the source the 89 resource files were
 # actually written against) -- the resource files use short type codes
