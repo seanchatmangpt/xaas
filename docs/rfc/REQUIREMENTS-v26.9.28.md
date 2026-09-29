@@ -41,8 +41,8 @@ and its status is reported as observed.
 
 ## Observed verification (2026-09-28, pinned elixir 1.20.2-otp-28 installed from builds.hex.pm; postgres 16 + pgvector)
 
-- `mix compile` exit 0. `mix test`: 2489/2490 passed (2483/2484 tests, 6/6 doctests; 105 skipped, 76 excluded by tags).
-- OPEN failure: `Xaas.Ultracode.RecipeWorkerTest` "a lease lost between steps ..." expects
+- `mix compile` exit 0. `mix test`: 2490/2490 passed (2484 tests, 6 doctests; 105 skipped, 76 excluded by tags), CI-equivalent `--max-failures 1`.
+- RESOLVED: `RecipeWorkerTest` lease-lost redaction — the durable-close fence reported a bare `:no_lease`; `RecipeWorker` now restores the token-bearing shape so the single `redact/2` boundary yields `{:no_lease, "lease:sha256:..."}` on every path. Test assertion unchanged.
   `{:lease_lost, {:no_lease, redacted}}` with the redacted lease-token digest; the `DurableClose`
   fence (7e4d6a1) now returns `{:lease_lost, :no_lease}` with no token. Reconciling requires deciding
   whether the token-redaction assertion is retained (security-relevant) - deliberately NOT edited here.

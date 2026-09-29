@@ -388,6 +388,10 @@ defmodule Xaas.Ultracode.RecipeWorker do
 
   defp redact(other, _token), do: other
 
+  defp fence_reason(:no_lease, token), do: {:no_lease, token}
+  defp fence_reason(:lease_expired, token), do: {:lease_expired, token}
+  defp fence_reason(other, _token), do: other
+
   defp fingerprint(token), do: :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
 
   defp step_result(step, outcome, duration_ms) do
@@ -442,6 +446,11 @@ defmodule Xaas.Ultracode.RecipeWorker do
       end
     else
       {:lease_lost, reason, commit} ->
+        # The shared durable-close fence reports a bare `:no_lease` /
+        # `:lease_expired`; restore the token-bearing shape `Lease` uses so
+        # the single `redact/2` boundary yields the same fingerprinted loss on
+        # every path (the raw token still never leaves this worker).
+        reason = reason |> fence_reason(token) |> redact(token)
         lease_lost(token, worktree, reason, Map.put(evidence, "unreferenced_commit", commit))
 
       {:refuse, reason, extra} ->
