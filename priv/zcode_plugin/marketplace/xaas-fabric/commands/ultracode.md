@@ -1,0 +1,20 @@
+---
+description: Run, resume, or take over a Claude Code Workflow script (ultracode) from ZCode
+argument-hint: scan | takeover <runId> | run <script.js> [--args ...] | resume <runId>
+---
+
+# UltraCode takeover
+
+`${CLAUDE_PLUGIN_ROOT}` is this plugin's install dir (the same variable the plugin hooks use). The unattended
+watcher runs from its installed copy at `~/.zcode/ultracode/bin/` (see `ultracode-watch.mjs install`).
+
+Load the `ultracode-takeover` skill first; it is the file-format spec. Then, with `$ARGUMENTS`:
+
+- `scan` → `node ${CLAUDE_PLUGIN_ROOT}/scripts/ultracode-watch.mjs scan` and report each stale run (runId, script, pending labels).
+- `takeover <runId>` → `node ${CLAUDE_PLUGIN_ROOT}/scripts/ultracode-watch.mjs takeover <runId>`; report the run dir, agents resumed from Claude's journal vs run live, and the final result path.
+- `run <script.js> [--args <json|text|@file>]` → `node ${CLAUDE_PLUGIN_ROOT}/scripts/ultracode-run.mjs run <script.js> --args ...`.
+- `resume <runId>` → `node ${CLAUDE_PLUGIN_ROOT}/scripts/ultracode-run.mjs run <scriptFile> --resume-from <transcriptDir> --run-dir ~/.zcode/ultracode/runs/<runId>` using the handoff record.
+
+Never push, merge, or tag from a takeover unless the run's own agents do so under the court gate in
+`/Users/sac/wt/v26922/COORDINATION.md` (or the run's equivalent); report BLOCKED/REFUSED results
+exactly as the journal records them.
