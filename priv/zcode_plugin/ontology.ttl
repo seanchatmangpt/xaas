@@ -9,6 +9,8 @@
 # the gate's allowlists and the lease state-file protocol are the individuals
 # below. Prose bodies (command/agent/skill) are the irreducible handwritten
 # residue (see HANDWRITTEN.md).
+# The UltraCode runtime script body (ultracode-run) is handwritten residue
+# (see HANDWRITTEN.md).
 
 <urn:zp:marketplace/xaas-fabric-marketplace> a zp:Marketplace ;
     zp:marketplaceName "xaas-fabric-marketplace" ;

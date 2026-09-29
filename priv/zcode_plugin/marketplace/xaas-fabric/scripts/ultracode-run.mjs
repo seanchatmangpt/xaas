@@ -1,0 +1,2064 @@
+#!/usr/bin/env node
+// ultracode-run.mjs -- ZCode runtime for Claude Code Workflow scripts ("ultracode").
+//
+// PROJECTED FILE: rendered by `cd priv/zcode_plugin && ggen sync run` from
+// templates/script-ultracode-run.mjs.tmpl (the JS body sits inside a Tera raw
+// block). Never hand-edit the marketplace copy. The body is irreducible
+// handwritten residue: HANDWRITTEN.md, UNSUPPORTED(generator-capability):
+// workflow runtime logic.
+//
+// Spec: skills/ultracode-takeover/SKILL.md. Node >= 22, node: builtins only.
+//
+//   node ultracode-run.mjs run <script.js> [--args <json|text|@file>] [--run-dir <dir>]
+//        [--resume-from <claudeTranscriptDir|zcodeRunDir>]... [--cwd <dir>]
+//        [--concurrency N] [--dry-run] [--json]
+//   node ultracode-run.mjs selftest
+//
+// Loader (Strategy A, source transformation): `export` is stripped from
+// meta/run/other top-level declarations, `import {...} from "claude"` becomes a
+// destructure of the injected primitives (any other static import becomes a
+// hoisted dynamic import), and the body is wrapped in an AsyncFunction, so
+// top-level await works and a top-level `return` is the run result. Module form
+// (an exported run()) is called as run(args).
+//
+// Environment:
+//   ULTRACODE_AGENT_CMD      agent command (shell words or a JSON argv array);
+//                            default: node ${ZCODE_CLI_DIR:-/Users/sac/dev/zcode-cli}/bin/zcode.js
+//   ULTRACODE_HOME           default ~/.zcode/ultracode (run dirs under runs/)
+//   ULTRACODE_CLAUDE_HOME    default ~/.claude (named workflows under workflows/)
+//   ULTRACODE_CONCURRENCY    agent concurrency cap (default min(16, cpus-2))
+//   MAX_STRUCTURED_OUTPUT_RETRIES   schema re-asks before an agent resolves null (default 5)
+//   ULTRACODE_RATE_LIMIT_RETRIES    rate-limit retries per invocation (default 6)
+//   ULTRACODE_BACKOFF_MS / ULTRACODE_BACKOFF_MAX_MS   backoff base / cap (default 5000 / 300000)
+//   ULTRACODE_AGENT_TIMEOUT_MS      per-invocation kill timeout (default 14400000, 0 = none)
+//   ULTRACODE_RERUN_NULL=1   re-run recorded null results live (default: a recorded null is
+//                            a finished agent, replayed like any other result, never re-spawned)
+//   ULTRACODE_QUIET=1        no progress lines on stderr
+//
+// Schema pre-flight is two-layered, both before any spawn: a static scan of the
+// source (every pure-literal `schema` passed to agent(...), wherever it sits,
+// plus literal workflow() children) and a probe that walks control flow with
+// synthetic agent results (schemas built at runtime).
+import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const SELF = fileURLToPath(import.meta.url);
+const HERE = path.dirname(SELF);
+const MAX_AGENTS = 1000;
+const PRIMITIVES = ["agent", "parallel", "pipeline", "phase", "log", "args", "budget", "workflow"];
+const KNOWN_TYPES = new Set(["object", "array", "string", "number", "integer", "boolean", "null"]);
+const REGEX_PREFIX_WORDS = new Set([
+  "return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "throw", "case", "do",
+  "else", "yield", "await",
+]);
+// Typed errors that halt a run (and, found during the pre-flight probe, halt it
+// before any agent is spawned).
+const FATAL = new Set([
+  "SCHEMA_CONTRADICTION", "NONDETERMINISTIC_CALL", "META_NOT_LITERAL", "META_MISSING",
+  "META_INVALID", "SCRIPT_SYNTAX", "SCRIPT_PARSE", "UNKNOWN_IMPORT", "WORKFLOW_DEPTH", "AGENT_CAP",
+]);
+const PROBE_FATAL = new Set([...FATAL].filter((c) => c !== "AGENT_CAP"));
+const RATE_LIMIT_RE = /\b429\b|rate[ _-]?limit|\b1302\b|too many requests/i;
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+class UltracodeError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "UltracodeError";
+    this.code = code;
+  }
+}
+
+// ---------------------------------------------------------------- utilities
+
+const env = (k, d) => (process.env[k] !== undefined && process.env[k] !== "" ? process.env[k] : d);
+const intEnv = (k, d) => {
+  const v = Number.parseInt(env(k, ""), 10);
+  return Number.isFinite(v) ? v : d;
+};
+const claudeHome = () => env("ULTRACODE_CLAUDE_HOME", path.join(os.homedir(), ".claude"));
+const ultracodeHome = () => env("ULTRACODE_HOME", path.join(os.homedir(), ".zcode", "ultracode"));
+const sha256 = (s) => createHash("sha256").update(s).digest("hex");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const lineOf = (src, idx) => src.slice(0, idx).split("\n").length;
+const slug = (s) => String(s ?? "agent").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "agent";
+const tail = (s, n = 600) => (String(s ?? "").length > n ? "..." + String(s).slice(-n) : String(s ?? ""));
+
+function canonical(v) {
+  if (v === undefined || typeof v === "function") return "null";
+  if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
+  if (Array.isArray(v)) return "[" + v.map((x) => canonical(x)).join(",") + "]";
+  const keys = Object.keys(v).filter((k) => v[k] !== undefined && typeof v[k] !== "function").sort();
+  return "{" + keys.map((k) => JSON.stringify(k) + ":" + canonical(v[k])).join(",") + "}";
+}
+
+function typeOf(v) {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return "array";
+  if (typeof v === "number") return Number.isInteger(v) ? "integer" : "number";
+  return typeof v;
+}
+
+function progress(msg) {
+  if (env("ULTRACODE_QUIET", "") !== "1") process.stderr.write(`[ultracode] ${msg}\n`);
+}
+
+function git(cwd, ...args) {
+  const r = spawnSync("git", args, { cwd, encoding: "utf8" });
+  return { ok: r.status === 0, out: (r.stdout || "").trim(), err: (r.stderr || "").trim() };
+}
+
+// ------------------------------------------------------------ source scanner
+// Classifies every char of a script: code[i] = 1 executable code, 2 comment,
+// 0 string/template text/regex literal; top[i] = 1 when at bracket depth 0.
+
+function scanSource(src) {
+  const n = src.length;
+  const code = new Uint8Array(n);
+  const top = new Uint8Array(n);
+  const tpl = [];
+  let depth = 0;
+  let last = "";
+  let i = 0;
+  const fail = (msg) => {
+    throw new UltracodeError("SCRIPT_PARSE", `${msg} at line ${lineOf(src, i)}`);
+  };
+  const mark = (a, b) => {
+    for (let k = a; k < b; k++) {
+      code[k] = 1;
+      if (depth === 0) top[k] = 1;
+    }
+  };
+  const templateText = (j) => {
+    while (j < n) {
+      const c = src[j];
+      if (c === "\\") { j += 2; continue; }
+      if (c === "`") { last = "tpl"; return j + 1; }
+      if (c === "$" && src[j + 1] === "{") { depth++; tpl.push(depth); last = "{"; return j + 2; }
+      j++;
+    }
+    i = j;
+    return fail("unterminated template literal");
+  };
+  while (i < n) {
+    const c = src[i];
+    if (c === "/" && src[i + 1] === "/") {
+      const s = i;
+      while (i < n && src[i] !== "\n") i++;
+      code.fill(2, s, i);
+      continue;
+    }
+    if (c === "/" && src[i + 1] === "*") {
+      const e = src.indexOf("*/", i + 2);
+      if (e < 0) fail("unterminated block comment");
+      code.fill(2, i, e + 2);
+      i = e + 2;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < n && src[j] !== c) {
+        if (src[j] === "\\") j++;
+        else if (src[j] === "\n") { i = j; fail("unterminated string"); }
+        j++;
+      }
+      i = j + 1;
+      last = "str";
+      continue;
+    }
+    if (c === "`") { i = templateText(i + 1); continue; }
+    if (c === "/" && (last === "" || /^[(,=:[!&|?{};+\-*%<>~^]$/.test(last) || REGEX_PREFIX_WORDS.has(last))) {
+      let j = i + 1;
+      let cls = false;
+      while (j < n) {
+        const d = src[j];
+        if (d === "\\") { j += 2; continue; }
+        if (d === "\n") { i = j; fail("unterminated regex literal"); }
+        if (cls) { if (d === "]") cls = false; } else if (d === "[") cls = true; else if (d === "/") break;
+        j++;
+      }
+      j++;
+      while (j < n && /[a-z]/i.test(src[j])) j++;
+      i = j;
+      last = "re";
+      continue;
+    }
+    if (c === "{" || c === "(" || c === "[") { mark(i, i + 1); depth++; last = c; i++; continue; }
+    if (c === "}" || c === ")" || c === "]") {
+      if (c === "}" && tpl.length && tpl[tpl.length - 1] === depth) {
+        tpl.pop();
+        depth--;
+        i = templateText(i + 1);
+        continue;
+      }
+      depth--;
+      if (depth < 0) fail(`unbalanced '${c}'`);
+      mark(i, i + 1);
+      last = c;
+      i++;
+      continue;
+    }
+    if (/[A-Za-z0-9_$]/.test(c)) {
+      let j = i;
+      while (j < n && /[A-Za-z0-9_$]/.test(src[j])) j++;
+      mark(i, j);
+      last = /^[0-9]/.test(c) ? "num" : src.slice(i, j);
+      i = j;
+      continue;
+    }
+    mark(i, i + 1);
+    if (!/\s/.test(c)) last = c;
+    i++;
+  }
+  if (depth !== 0 || tpl.length) fail("unbalanced brackets at end of script");
+  return { code, top };
+}
+
+// --------------------------------------------------------- meta literal parse
+// meta must be a PURE literal: objects, arrays, strings (no interpolation),
+// numbers, true/false/null. Anything else is META_NOT_LITERAL. The same strict
+// parser reads literal agent schemas for the static pre-flight scan.
+
+function parseLiteral(src, start, onFail) {
+  let i = start;
+  const fail = (why) => onFail(why, i);
+  const ws = () => {
+    for (;;) {
+      while (i < src.length && /\s/.test(src[i])) i++;
+      if (src.startsWith("//", i)) { while (i < src.length && src[i] !== "\n") i++; continue; }
+      if (src.startsWith("/*", i)) {
+        const e = src.indexOf("*/", i + 2);
+        if (e < 0) fail("unterminated comment");
+        i = e + 2;
+        continue;
+      }
+      return;
+    }
+  };
+  const str = () => {
+    const q = src[i++];
+    let out = "";
+    while (i < src.length && src[i] !== q) {
+      const c = src[i++];
+      if (q === "`" && c === "$" && src[i] === "{") fail("template interpolation");
+      if (c === "\\") {
+        const e = src[i++];
+        const simple = { n: "\n", t: "\t", r: "\r", b: "\b", f: "\f", v: "\v", 0: "\0" };
+        if (simple[e] !== undefined) out += simple[e];
+        else if (e === "u") {
+          if (src[i] === "{") {
+            const end = src.indexOf("}", i);
+            if (end < 0) fail("bad \\u{...} escape");
+            out += String.fromCodePoint(Number.parseInt(src.slice(i + 1, end), 16));
+            i = end + 1;
+          } else {
+            out += String.fromCharCode(Number.parseInt(src.slice(i, i + 4), 16));
+            i += 4;
+          }
+        } else if (e === "x") {
+          out += String.fromCharCode(Number.parseInt(src.slice(i, i + 2), 16));
+          i += 2;
+        } else if (e === "\n") {
+          // line continuation
+        } else out += e;
+        continue;
+      }
+      if (c === "\n" && q !== "`") fail("newline in string");
+      out += c;
+    }
+    if (i >= src.length) fail("unterminated string");
+    i++;
+    return out;
+  };
+  const value = () => {
+    ws();
+    const c = src[i];
+    if (c === "{") {
+      i++;
+      const o = {};
+      for (;;) {
+        ws();
+        if (src[i] === "}") { i++; return o; }
+        let k;
+        if (src[i] === '"' || src[i] === "'") k = str();
+        else {
+          const m = /^(?:[A-Za-z_$][\w$]*|\d+)/.exec(src.slice(i, i + 256));
+          if (!m) fail(`unexpected ${JSON.stringify(src[i] ?? "EOF")} where an object key was expected`);
+          k = m[0];
+          i += k.length;
+        }
+        ws();
+        if (src[i] !== ":") fail(`property ${JSON.stringify(k)} is not 'key: literal' (shorthand, method, spread and computed properties are not literals)`);
+        i++;
+        o[k] = value();
+        ws();
+        if (src[i] === ",") { i++; continue; }
+        if (src[i] === "}") { i++; return o; }
+        fail(`unexpected ${JSON.stringify(src[i] ?? "EOF")} in object literal`);
+      }
+    }
+    if (c === "[") {
+      i++;
+      const a = [];
+      for (;;) {
+        ws();
+        if (src[i] === "]") { i++; return a; }
+        if (src[i] === ",") fail("array hole");
+        a.push(value());
+        ws();
+        if (src[i] === ",") { i++; continue; }
+        if (src[i] === "]") { i++; return a; }
+        fail(`unexpected ${JSON.stringify(src[i] ?? "EOF")} in array literal`);
+      }
+    }
+    if (c === '"' || c === "'" || c === "`") return str();
+    const num = /^[-+]?(?:0[xX][0-9a-fA-F_]+|0[oO][0-7_]+|0[bB][01_]+|(?:\d[\d_]*)?\.?\d[\d_]*(?:[eE][-+]?\d+)?)/.exec(src.slice(i, i + 64));
+    if (num && /\d/.test(num[0])) {
+      i += num[0].length;
+      const t = num[0].replace(/_/g, "");
+      const neg = t.startsWith("-");
+      const body = t.replace(/^[-+]/, "");
+      const v = /^0[xob]/i.test(body) ? Number(body) : Number(body);
+      return neg ? -v : v;
+    }
+    for (const [w, v] of [["true", true], ["false", false], ["null", null]]) {
+      if (src.startsWith(w, i) && !/[\w$]/.test(src[i + w.length] ?? "")) { i += w.length; return v; }
+    }
+    return fail(`non-literal expression ${JSON.stringify(src.slice(i, i + 24))}`);
+  };
+  const v = value();
+  return { value: v, end: i };
+}
+
+function parseMetaLiteral(src, start, file) {
+  const fail = (why, at) => {
+    throw new UltracodeError("META_NOT_LITERAL", `meta must be a pure literal: ${why} (${file}:${lineOf(src, at)})`);
+  };
+  const { value: v, end: i } = parseLiteral(src, start, fail);
+  let j = i;
+  while (j < src.length && /[ \t]/.test(src[j])) j++;
+  if (j < src.length && !(src[j] === ";" || src[j] === "\n" || src[j] === "\r" || src.startsWith("//", j) || src.startsWith("/*", j))) {
+    fail("the expression continues after the literal", j);
+  }
+  // an expression continued on the next line (e.g. `\n  .concat(x)`) is not a literal either
+  let k = j;
+  for (;;) {
+    while (k < src.length && /\s/.test(src[k])) k++;
+    if (src.startsWith("//", k)) { while (k < src.length && src[k] !== "\n") k++; continue; }
+    if (src.startsWith("/*", k)) { const e = src.indexOf("*/", k + 2); k = e < 0 ? src.length : e + 2; continue; }
+    break;
+  }
+  if (src[j] !== ";" && k < src.length && /[.(`?+\-*%&|^,=<>]/.test(src[k])) {
+    fail("the expression continues on the next line", k);
+  }
+  if (!v || typeof v !== "object" || Array.isArray(v)) fail("meta must be an object literal", start);
+  return v;
+}
+
+function checkMeta(meta, file) {
+  const bad = (why) => {
+    throw new UltracodeError("META_INVALID", `${file}: meta ${why}`);
+  };
+  if (typeof meta.name !== "string" || !meta.name) bad("needs a non-empty string name");
+  if (typeof meta.description !== "string") bad("needs a string description");
+  if (meta.phases !== undefined) {
+    if (!Array.isArray(meta.phases)) bad("phases must be an array");
+    for (const p of meta.phases) {
+      if (typeof p === "string") continue;
+      if (p && typeof p === "object" && typeof p.title === "string") continue;
+      bad("phases entries must be strings or {title, detail}");
+    }
+  }
+}
+
+// ------------------------------------------------------- static source scan
+// The pre-flight probe only reaches agent() calls that its synthetic control
+// flow reaches (a schema'd agent inside `plan.targets.map(...)`, behind
+// `if (r.go)` or on a value-dependent pipeline branch can stay unreached). The
+// static scan closes that gap from the source text: every `schema` option that
+// is a pure literal (inline, or a top-level `const NAME = <literal>` named by
+// the option) in an object literal passed directly to agent(...) is
+// pre-flighted wherever it sits, and literal workflow() references are
+// collected so their children can be loaded (and scanned) before any spawn.
+// Schemas that are not pure literals are left to the probe.
+
+function bracketTree(src, scan) {
+  const encl = new Int32Array(src.length).fill(-1);
+  const stack = [];
+  for (let i = 0; i < src.length; i++) {
+    encl[i] = stack.length ? stack[stack.length - 1] : -1;
+    if (scan.code[i] !== 1) continue;
+    const c = src[i];
+    if (c === "{" || c === "(" || c === "[") stack.push(i);
+    else if (c === "}" || c === ")" || c === "]") stack.pop();
+  }
+  return encl;
+}
+
+const isGap = (src, scan, k) => scan.code[k] === 2 || (scan.code[k] === 1 && /\s/.test(src[k]));
+
+function prevSig(src, scan, i) {
+  let k = i - 1;
+  while (k >= 0 && isGap(src, scan, k)) k--;
+  return k;
+}
+
+function nextSig(src, scan, i) {
+  let k = i;
+  while (k < src.length && isGap(src, scan, k)) k++;
+  return k;
+}
+
+// The callee of the call whose argument list opens at `paren`: {name, obj}.
+function calleeAt(src, scan, paren) {
+  const k = prevSig(src, scan, paren);
+  if (k < 0 || scan.code[k] !== 1 || !/[\w$]/.test(src[k])) return null;
+  let s = k;
+  while (s > 0 && scan.code[s - 1] === 1 && /[\w$]/.test(src[s - 1])) s--;
+  const name = src.slice(s, k + 1);
+  const d = prevSig(src, scan, s);
+  if (d < 0 || src[d] !== "." || scan.code[d] !== 1) return { name, obj: null };
+  const e = prevSig(src, scan, d);
+  if (e < 0 || scan.code[e] !== 1 || !/[\w$]/.test(src[e])) return { name, obj: "?" };
+  let s2 = e;
+  while (s2 > 0 && scan.code[s2 - 1] === 1 && /[\w$]/.test(src[s2 - 1])) s2--;
+  return { name, obj: src.slice(s2, e + 1) };
+}
+
+// A pure literal starting at `at` that ends where a list element / property
+// ends (the next significant char is one of `closers`), else undefined.
+function literalAt(src, scan, at, closers) {
+  let r;
+  try {
+    r = parseLiteral(src, at, (why) => { throw new UltracodeError("NOT_LITERAL", why); });
+  } catch {
+    return undefined;
+  }
+  const nx = nextSig(src, scan, r.end);
+  if (nx < src.length && !(scan.code[nx] === 1 && closers.includes(src[nx]))) return undefined;
+  return r.value;
+}
+
+// Top-level `const NAME = <object|array literal>` declarations, by name.
+function topLevelLiteralConsts(src, scan) {
+  const out = new Map();
+  for (const m of src.matchAll(/\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*/g)) {
+    const p = m.index;
+    if (scan.code[p] !== 1 || !scan.top[p] || (p > 0 && /[\w$.]/.test(src[p - 1]))) continue;
+    const at = p + m[0].length;
+    if (src[at] !== "{" && src[at] !== "[") continue;
+    let r;
+    try {
+      r = parseLiteral(src, at, (why) => { throw new UltracodeError("NOT_LITERAL", why); });
+    } catch {
+      continue;
+    }
+    const nx = nextSig(src, scan, r.end);
+    const ends = nx >= src.length || src[nx] === ";" || (/\n/.test(src.slice(r.end, nx)) && !/[.(`?+\-*%&|^,=<>[]/.test(src[nx]));
+    if (ends) out.set(m[1], r.value);
+  }
+  return out;
+}
+
+function staticScan(src, scan, file, aliases) {
+  const encl = bracketTree(src, scan);
+  const consts = topLevelLiteralConsts(src, scan);
+  const isAgent = (c) => c && (c.obj === null ? aliases.agent.has(c.name) : c.name === "agent" && aliases.ns.has(c.obj));
+  const isWorkflow = (c) => c && (c.obj === null ? aliases.workflow.has(c.name) : c.name === "workflow" && aliases.ns.has(c.obj));
+  const schemas = [];
+  for (const m of src.matchAll(/\bschema\b|(["'])schema\1/g)) {
+    const p = m.index;
+    const quoted = m[1] !== undefined;
+    if (!quoted && (scan.code[p] !== 1 || (p > 0 && /[\w$.]/.test(src[p - 1])))) continue;
+    const pv = prevSig(src, scan, p);
+    if (pv < 0 || scan.code[pv] !== 1 || (src[pv] !== "{" && src[pv] !== ",")) continue;
+    const obj = encl[p];
+    if (obj < 0 || src[obj] !== "{") continue;
+    const call = encl[obj];
+    if (call < 0 || src[call] !== "(" || !isAgent(calleeAt(src, scan, call))) continue;
+    const nx = nextSig(src, scan, p + m[0].length);
+    if (nx >= src.length || scan.code[nx] !== 1) continue;
+    let value;
+    let how;
+    if (src[nx] === ":") {
+      const at = nextSig(src, scan, nx + 1);
+      if (src[at] === "{") {
+        value = literalAt(src, scan, at, ",}");
+        how = "inline literal";
+      } else {
+        const id = /^[A-Za-z_$][\w$]*/.exec(src.slice(at, at + 256));
+        const after = id ? nextSig(src, scan, at + id[0].length) : -1;
+        if (id && after < src.length && (src[after] === "," || src[after] === "}")) {
+          value = consts.get(id[0]);
+          how = `top-level const ${id[0]}`;
+        }
+      }
+    } else if (!quoted && (src[nx] === "," || src[nx] === "}")) {
+      value = consts.get("schema");
+      how = "top-level const schema";
+    }
+    if (value === undefined) continue;
+    schemas.push({ line: lineOf(src, p), how, schema: value });
+    const errs = preflightSchema(value);
+    if (errs.length) {
+      throw new UltracodeError("SCHEMA_CONTRADICTION", `static pre-flight, agent() schema at ${file}:${lineOf(src, p)} (${how}): ${errs.join("; ")}`);
+    }
+  }
+  const workflowRefs = [];
+  for (let q = 0; q < src.length; q++) {
+    if (src[q] !== "(" || scan.code[q] !== 1 || !isWorkflow(calleeAt(src, scan, q))) continue;
+    const at = nextSig(src, scan, q + 1);
+    const ref = literalAt(src, scan, at, ",)");
+    if (typeof ref === "string" || (ref && typeof ref === "object" && !Array.isArray(ref) && typeof (ref.scriptPath ?? ref.path) === "string")) {
+      workflowRefs.push({ line: lineOf(src, q), ref });
+    }
+  }
+  return { schemas, workflowRefs };
+}
+
+// ---------------------------------------------------------- script transform
+
+function parseNamedImports(list, file, src, at) {
+  return list.split(",").map((s) => s.trim()).filter(Boolean).map((s) => {
+    const m = /^([A-Za-z_$][\w$]*|default)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/.exec(s);
+    if (!m) throw new UltracodeError("SCRIPT_PARSE", `unsupported import specifier ${JSON.stringify(s)} (${file}:${lineOf(src, at)})`);
+    return { imported: m[1], local: m[2] ?? m[1] };
+  });
+}
+
+function transformSource(rawSrc, file) {
+  const src = rawSrc.replace(/^#![^\n]*/, "");
+  const scan = scanSource(src);
+  for (const re of [/\bDate\s*\.\s*now\s*\(/g, /\bMath\s*\.\s*random\s*\(/g, /\bnew\s+Date\s*\(\s*\)/g]) {
+    for (const m of src.matchAll(re)) {
+      if (scan.code[m.index] === 1) {
+        throw new UltracodeError("NONDETERMINISTIC_CALL", `${m[0].replace(/\s+/g, "")}...) at ${file}:${lineOf(src, m.index)}: workflow scripts must be deterministic for replay`);
+      }
+    }
+  }
+  const edits = [];
+  const hoisted = [];
+  let meta = null;
+  let hasRun = false;
+  let hasDefault = false;
+  let modIdx = 0;
+  const aliases = { agent: new Set(["agent"]), workflow: new Set(["workflow"]), ns: new Set() };
+  for (const m of src.matchAll(/\b(import|export)\b/g)) {
+    const p = m.index;
+    if (scan.code[p] !== 1 || !scan.top[p]) continue;
+    if (p > 0 && /[A-Za-z0-9_$.]/.test(src[p - 1])) continue;
+    const rest = src.slice(p);
+    if (m[1] === "import") {
+      if (/^import\s*[(.]/.test(rest)) continue; // dynamic import() / import.meta
+      const im = /^import\s+(?:([A-Za-z_$][\w$]*)\s*(?:,\s*)?)?(?:\{([^}]*)\}\s*|\*\s*as\s+([A-Za-z_$][\w$]*)\s*)?from\s*(["'])([^"']+)\4[ \t]*;?/.exec(rest);
+      const side = /^import\s*(["'])([^"']+)\1[ \t]*;?/.exec(rest);
+      if (im) {
+        const [whole, def, named, ns, , spec] = im;
+        const names = named !== undefined ? parseNamedImports(named, file, src, p) : [];
+        const lines = [];
+        if (spec === "claude") {
+          for (const n of names) {
+            if (!PRIMITIVES.includes(n.imported)) throw new UltracodeError("UNKNOWN_IMPORT", `"claude" has no export ${JSON.stringify(n.imported)} (${file}:${lineOf(src, p)}); available: ${PRIMITIVES.join(", ")}`);
+          }
+          for (const n of names) if (n.imported === "agent" || n.imported === "workflow") aliases[n.imported].add(n.local);
+          if (def) { lines.push(`const ${def} = __claude;`); aliases.ns.add(def); }
+          if (ns) { lines.push(`const ${ns} = __claude;`); aliases.ns.add(ns); }
+          if (names.length) lines.push(`const { ${names.map((n) => (n.imported === n.local ? n.local : `${n.imported}: ${n.local}`)).join(", ")} } = __claude;`);
+        } else {
+          const mod = `__ucmod${modIdx++}`;
+          lines.push(`const ${mod} = await __import(${JSON.stringify(spec)});`);
+          if (def) lines.push(`const ${def} = ${mod}.default;`);
+          if (ns) lines.push(`const ${ns} = ${mod};`);
+          if (names.length) lines.push(`const { ${names.map((n) => (n.imported === n.local ? n.local : `${n.imported}: ${n.local}`)).join(", ")} } = ${mod};`);
+        }
+        hoisted.push(lines.join(" "));
+        edits.push({ start: p, end: p + whole.length, text: "" });
+      } else if (side) {
+        hoisted.push(`await __import(${JSON.stringify(side[2])});`);
+        edits.push({ start: p, end: p + side[0].length, text: "" });
+      } else {
+        throw new UltracodeError("SCRIPT_PARSE", `unsupported import form at ${file}:${lineOf(src, p)}`);
+      }
+      continue;
+    }
+    let mm;
+    if ((mm = /^export\s+const\s+meta\s*=\s*/.exec(rest))) {
+      if (meta) throw new UltracodeError("META_INVALID", `${file}: meta exported twice`);
+      meta = parseMetaLiteral(src, p + mm[0].length, file);
+      edits.push({ start: p, end: p + "export".length, text: "" });
+    } else if ((mm = /^export\s+default\s+/.exec(rest))) {
+      hasDefault = true;
+      edits.push({ start: p, end: p + mm[0].length, text: "__exports.default = " });
+    } else if ((mm = /^export\s*\{[^}]*\}\s*(?:from\s*(["'])[^"']*\1)?[ \t]*;?/.exec(rest))) {
+      edits.push({ start: p, end: p + mm[0].length, text: "" });
+    } else if ((mm = /^export\s+(?=(?:async\s+)?function\b|const\b|let\b|var\b|class\b)/.exec(rest))) {
+      if (/^export\s+(?:async\s+)?function\s*\*?\s*run\s*\(/.test(rest) || /^export\s+(?:const|let|var)\s+run\s*=/.test(rest)) hasRun = true;
+      edits.push({ start: p, end: p + mm[0].length, text: "" });
+    } else {
+      throw new UltracodeError("SCRIPT_PARSE", `unsupported export form at ${file}:${lineOf(src, p)}`);
+    }
+  }
+  if (!meta) throw new UltracodeError("META_MISSING", `${file}: no top-level \`export const meta = {...}\``);
+  checkMeta(meta, file);
+  const statics = staticScan(src, scan, file, aliases);
+  let body = src;
+  for (const e of edits.sort((a, b) => b.start - a.start)) body = body.slice(0, e.start) + e.text + body.slice(e.end);
+  let tailCode = "";
+  if (hasRun) tailCode = ";return await run(__claude.args);";
+  else if (hasDefault) tailCode = ';return typeof __exports.default === "function" ? await __exports.default(__claude.args) : __exports.default;';
+  const code = [
+    `const { ${PRIMITIVES.join(", ")} } = __claude;`,
+    "const __exports = {};",
+    "return await (async function () {",
+    hoisted.join("\n"),
+    body,
+    tailCode,
+    "}).call(undefined);",
+  ].join("\n");
+  return { meta, code, moduleForm: hasRun || hasDefault, staticSchemas: statics.schemas.length, workflowRefs: statics.workflowRefs };
+}
+
+function loadScript(file) {
+  let src;
+  try {
+    src = fs.readFileSync(file, "utf8");
+  } catch (e) {
+    throw new UltracodeError("SCRIPT_NOT_FOUND", `cannot read ${file}: ${e.message}`);
+  }
+  const t = transformSource(src, file);
+  let fn;
+  try {
+    fn = new AsyncFunction("__claude", "__import", t.code);
+  } catch (e) {
+    throw new UltracodeError("SCRIPT_SYNTAX", `${file}: ${e.message}`);
+  }
+  const importer = (spec) => (spec.startsWith(".") || spec.startsWith("/")
+    ? import(pathToFileURL(path.resolve(path.dirname(file), spec)).href)
+    : import(spec));
+  return { path: file, meta: t.meta, moduleForm: t.moduleForm, fn, importer, staticSchemas: t.staticSchemas, workflowRefs: t.workflowRefs };
+}
+
+// ------------------------------------------------------------ JSON Schema
+
+function preflightSchema(schema) {
+  const errs = [];
+  const walk = (s, p, root) => {
+    if (typeof s === "boolean") {
+      if (root) errs.push(`${p}: root schema must be an object schema with type "object"`);
+      return;
+    }
+    if (!s || typeof s !== "object" || Array.isArray(s)) { errs.push(`${p}: a schema must be an object`); return; }
+    if (s.type !== undefined) {
+      const ts = Array.isArray(s.type) ? s.type : [s.type];
+      if (!ts.length) errs.push(`${p}.type: empty type list`);
+      for (const t of ts) if (typeof t !== "string" || !KNOWN_TYPES.has(t)) errs.push(`${p}.type: unknown type ${JSON.stringify(t)}`);
+    }
+    if (root && s.type !== "object") errs.push(`${p}: root schema must have type "object" (got ${JSON.stringify(s.type)})`);
+    const propsOk = s.properties === undefined || (s.properties && typeof s.properties === "object" && !Array.isArray(s.properties));
+    if (!propsOk) errs.push(`${p}.properties: must be an object`);
+    if (s.required !== undefined) {
+      if (!Array.isArray(s.required) || s.required.some((k) => typeof k !== "string")) errs.push(`${p}.required: must be an array of strings`);
+      else {
+        const props = propsOk && s.properties ? s.properties : {};
+        for (const k of s.required) {
+          if (!Object.prototype.hasOwnProperty.call(props, k)) errs.push(`${p}.required: ${JSON.stringify(k)} is not declared in properties (required must be a subset of properties)`);
+        }
+      }
+    }
+    if (s.enum !== undefined && (!Array.isArray(s.enum) || s.enum.length === 0)) errs.push(`${p}.enum: must be a non-empty array`);
+    for (const k of ["minItems", "maxItems", "minLength", "maxLength"]) {
+      if (s[k] !== undefined && !(Number.isInteger(s[k]) && s[k] >= 0)) errs.push(`${p}.${k}: must be a non-negative integer`);
+    }
+    for (const k of ["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"]) {
+      if (s[k] !== undefined && typeof s[k] !== "number") errs.push(`${p}.${k}: must be a number`);
+    }
+    if (Number.isInteger(s.minItems) && Number.isInteger(s.maxItems) && s.minItems > s.maxItems) errs.push(`${p}: minItems > maxItems`);
+    if (Number.isInteger(s.minLength) && Number.isInteger(s.maxLength) && s.minLength > s.maxLength) errs.push(`${p}: minLength > maxLength`);
+    if (typeof s.minimum === "number" && typeof s.maximum === "number" && s.minimum > s.maximum) errs.push(`${p}: minimum > maximum`);
+    if (s.pattern !== undefined) {
+      if (typeof s.pattern !== "string") errs.push(`${p}.pattern: must be a string`);
+      else {
+        try { new RegExp(s.pattern); } catch (e) { errs.push(`${p}.pattern: ${e.message}`); }
+      }
+    }
+    if (propsOk && s.properties) for (const [k, v] of Object.entries(s.properties)) walk(v, `${p}.properties.${k}`, false);
+    if (s.items !== undefined) {
+      if (Array.isArray(s.items)) s.items.forEach((v, i) => walk(v, `${p}.items[${i}]`, false));
+      else walk(s.items, `${p}.items`, false);
+    }
+    if (s.additionalProperties !== undefined && typeof s.additionalProperties !== "boolean") walk(s.additionalProperties, `${p}.additionalProperties`, false);
+  };
+  walk(schema, "schema", true);
+  return errs;
+}
+
+function validate(v, s, p = "$", errs = []) {
+  if (s === undefined || s === true) return errs;
+  if (s === false) { errs.push(`${p}: no value is allowed here`); return errs; }
+  const t = typeOf(v);
+  if (s.type !== undefined) {
+    const ts = Array.isArray(s.type) ? s.type : [s.type];
+    if (!ts.some((x) => x === t || (x === "number" && t === "integer"))) {
+      errs.push(`${p}: expected ${ts.join("|")}, got ${t}`);
+      return errs;
+    }
+  }
+  if (Array.isArray(s.enum) && !s.enum.some((e) => canonical(e) === canonical(v))) errs.push(`${p}: must be one of ${JSON.stringify(s.enum)}`);
+  if (s.const !== undefined && canonical(s.const) !== canonical(v)) errs.push(`${p}: must equal ${JSON.stringify(s.const)}`);
+  if (t === "object") {
+    for (const k of s.required || []) if (!Object.prototype.hasOwnProperty.call(v, k)) errs.push(`${p}: missing required property ${JSON.stringify(k)}`);
+    const props = s.properties || {};
+    for (const [k, val] of Object.entries(v)) {
+      if (Object.prototype.hasOwnProperty.call(props, k)) validate(val, props[k], `${p}.${k}`, errs);
+      else if (s.additionalProperties === false) errs.push(`${p}: unexpected property ${JSON.stringify(k)} (additionalProperties is false)`);
+      else if (s.additionalProperties && typeof s.additionalProperties === "object") validate(val, s.additionalProperties, `${p}.${k}`, errs);
+    }
+  } else if (t === "array") {
+    if (Number.isInteger(s.minItems) && v.length < s.minItems) errs.push(`${p}: needs at least ${s.minItems} items (got ${v.length})`);
+    if (Number.isInteger(s.maxItems) && v.length > s.maxItems) errs.push(`${p}: allows at most ${s.maxItems} items (got ${v.length})`);
+    if (Array.isArray(s.items)) s.items.forEach((is, i) => { if (i < v.length) validate(v[i], is, `${p}[${i}]`, errs); });
+    else if (s.items !== undefined) v.forEach((x, i) => validate(x, s.items, `${p}[${i}]`, errs));
+  } else if (t === "string") {
+    const len = [...v].length;
+    if (Number.isInteger(s.minLength) && len < s.minLength) errs.push(`${p}: shorter than ${s.minLength}`);
+    if (Number.isInteger(s.maxLength) && len > s.maxLength) errs.push(`${p}: longer than ${s.maxLength}`);
+    if (typeof s.pattern === "string" && !new RegExp(s.pattern).test(v)) errs.push(`${p}: does not match pattern ${s.pattern}`);
+  } else if (t === "number" || t === "integer") {
+    if (typeof s.minimum === "number" && v < s.minimum) errs.push(`${p}: below minimum ${s.minimum}`);
+    if (typeof s.maximum === "number" && v > s.maximum) errs.push(`${p}: above maximum ${s.maximum}`);
+    if (typeof s.exclusiveMinimum === "number" && v <= s.exclusiveMinimum) errs.push(`${p}: must be > ${s.exclusiveMinimum}`);
+    if (typeof s.exclusiveMaximum === "number" && v >= s.exclusiveMaximum) errs.push(`${p}: must be < ${s.exclusiveMaximum}`);
+  }
+  return errs;
+}
+
+// A minimal instance of a schema, used by the pre-flight probe to walk the
+// script's control flow without spawning anything. Arrays get at least one
+// item (capped by maxItems) so `.map(...)` / for-of bodies over an agent's
+// array result are probed too.
+function synthesize(s, depth = 0) {
+  if (!s || typeof s !== "object" || depth > 12) return null;
+  if (Array.isArray(s.enum) && s.enum.length) return s.enum[0];
+  if (s.const !== undefined) return s.const;
+  const t = Array.isArray(s.type) ? (s.type.find((x) => x !== "null") ?? "null") : s.type;
+  switch (t) {
+    case "object": {
+      const o = {};
+      for (const k of s.required || []) o[k] = synthesize((s.properties || {})[k], depth + 1);
+      return o;
+    }
+    case "array": {
+      const n = Math.min(Math.max(Number.isInteger(s.minItems) ? s.minItems : 0, 1), Number.isInteger(s.maxItems) ? s.maxItems : Infinity, 8);
+      return Array.from({ length: n }, () => synthesize(Array.isArray(s.items) ? s.items[0] : s.items, depth + 1));
+    }
+    case "string": return "";
+    case "number": case "integer": return typeof s.minimum === "number" ? s.minimum : 0;
+    case "boolean": return false;
+    default: return null;
+  }
+}
+
+// whole message JSON, else the last fenced json block, else the outermost {...}
+function extractJSON(text) {
+  if (text !== null && typeof text === "object") return { ok: true, value: text };
+  const t = String(text ?? "").trim();
+  try { return { ok: true, value: JSON.parse(t) }; } catch {}
+  const blocks = [...t.matchAll(/```[ \t]*(?:json|JSON)?[ \t]*\r?\n([\s\S]*?)```/g)];
+  for (let k = blocks.length - 1; k >= 0; k--) {
+    try { return { ok: true, value: JSON.parse(blocks[k][1].trim()) }; } catch {}
+  }
+  const a = t.indexOf("{");
+  const b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) {
+    try { return { ok: true, value: JSON.parse(t.slice(a, b + 1)) }; } catch {}
+  }
+  return { ok: false };
+}
+
+// ----------------------------------------------------------- agent process
+
+function shellSplit(s) {
+  const out = [];
+  let cur = "";
+  let q = null;
+  let has = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (q) {
+      if (c === q) q = null;
+      else if (c === "\\" && q === '"' && i + 1 < s.length) cur += s[++i];
+      else cur += c;
+    } else if (c === "'" || c === '"') { q = c; has = true; }
+    else if (/\s/.test(c)) { if (cur || has) { out.push(cur); cur = ""; has = false; } }
+    else if (c === "\\" && i + 1 < s.length) cur += s[++i];
+    else cur += c;
+  }
+  if (cur || has) out.push(cur);
+  return out;
+}
+
+function agentCommand() {
+  const raw = env("ULTRACODE_AGENT_CMD", "");
+  if (raw) {
+    if (raw.trim().startsWith("[")) {
+      try {
+        const a = JSON.parse(raw);
+        if (Array.isArray(a) && a.length && a.every((x) => typeof x === "string")) return a;
+      } catch {}
+    }
+    return shellSplit(raw);
+  }
+  return [process.execPath, path.join(env("ZCODE_CLI_DIR", "/Users/sac/dev/zcode-cli"), "bin", "zcode.js")];
+}
+
+function spawnOnce(argv, cwd, timeoutMs) {
+  return new Promise((resolve) => {
+    let out = "";
+    let errText = "";
+    let done = false;
+    let child;
+    const finish = (r) => { if (!done) { done = true; if (timer) clearTimeout(timer); resolve(r); } };
+    try {
+      child = spawn(argv[0], argv.slice(1), { cwd, env: process.env, stdio: ["ignore", "pipe", "pipe"] });
+    } catch (e) {
+      resolve({ code: 127, stdout: "", stderr: String(e) });
+      return;
+    }
+    const timer = timeoutMs > 0 ? setTimeout(() => { try { child.kill("SIGTERM"); } catch {} }, timeoutMs) : null;
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (d) => { if (out.length < 64 * 1024 * 1024) out += d; });
+    child.stderr.on("data", (d) => { if (errText.length < 1024 * 1024) errText += d; });
+    child.on("error", (e) => finish({ code: 127, stdout: out, stderr: errText + String(e) }));
+    child.on("close", (code, signal) => finish({ code: code ?? 128, signal, stdout: out, stderr: errText }));
+  });
+}
+
+function parseAgentOutput(stdout) {
+  const norm = (j) => ({
+    sessionId: typeof j.sessionId === "string" && j.sessionId ? j.sessionId : null,
+    traceId: j.traceId ?? null,
+    response: j.response,
+  });
+  const t = String(stdout ?? "").trim();
+  if (!t) return null;
+  try {
+    const j = JSON.parse(t);
+    if (j && typeof j === "object" && "response" in j) return norm(j);
+  } catch {}
+  const lines = t.split("\n");
+  for (let k = lines.length - 1; k >= 0; k--) {
+    const l = lines[k].trim();
+    if (!l.startsWith("{")) continue;
+    try {
+      const j = JSON.parse(l);
+      if (j && typeof j === "object" && "response" in j) return norm(j);
+    } catch {}
+  }
+  return null;
+}
+
+// One zcode invocation, with bounded exponential backoff on rate limits
+// (exit 75, 429, 1302, "rate limit").
+async function invokeAgent(cmd, { prompt, cwd, resume }) {
+  const maxRate = intEnv("ULTRACODE_RATE_LIMIT_RETRIES", 6);
+  const base = intEnv("ULTRACODE_BACKOFF_MS", 5000);
+  const cap = intEnv("ULTRACODE_BACKOFF_MAX_MS", 300000);
+  const timeout = intEnv("ULTRACODE_AGENT_TIMEOUT_MS", 4 * 3600 * 1000);
+  const argv = [...cmd, "--prompt", prompt, "--json", "--cwd", cwd, "--mode", "yolo", ...(resume ? ["--resume", resume] : [])];
+  for (let attempt = 0; ; attempt++) {
+    const r = await spawnOnce(argv, cwd, timeout);
+    const parsed = r.code === 0 ? parseAgentOutput(r.stdout) : null;
+    if (parsed) return { ok: true, ...parsed };
+    const rateLimited = r.code === 75 || RATE_LIMIT_RE.test(r.stderr) || (r.code !== 0 && RATE_LIMIT_RE.test(r.stdout.slice(-4000)));
+    if (rateLimited && attempt < maxRate) {
+      const wait = Math.min(cap, base * 2 ** attempt);
+      progress(`rate limited (exit ${r.code}); retry ${attempt + 1}/${maxRate} in ${wait}ms`);
+      await sleep(wait);
+      continue;
+    }
+    return { ok: false, code: r.code, rateLimited, stderr: r.stderr, stdout: r.stdout };
+  }
+}
+
+function harness(c) {
+  const where = c.label ? ` (label: ${c.label}${c.phase ? `, phase: ${c.phase}` : ""})` : "";
+  const lines = [
+    "[UltraCode subagent harness: ZCode runtime for a Claude Code Workflow script]",
+    `You are one subagent of a multi-agent workflow run${where}. You have no conversation context beyond this prompt.`,
+    "Your FINAL message IS the return value handed back to the orchestrating script: raw data, not prose for a human. No greeting, no recap of what you did, no framing around it.",
+  ];
+  if (c.opts.agentType === "Explore") {
+    lines.push("READ-ONLY (Explore agent): only read, search and inspect. Do not create, edit, move or delete files, and do not run commands that change state (no git commit/checkout/reset/stash/merge, no installs, no builds or formatters that write files).");
+  } else if (typeof c.opts.agentType === "string" && c.opts.agentType !== "general-purpose") {
+    lines.push(`Agent type: ${c.opts.agentType}.`);
+  }
+  if (c.opts.schema !== undefined) {
+    lines.push("Your final message must be exactly one JSON object that validates against this JSON Schema (Draft-07). Output only that JSON object: no prose, no code fences.");
+    lines.push(JSON.stringify(c.opts.schema));
+  }
+  lines.push("", "--- task ---", c.prompt);
+  return lines.join("\n");
+}
+
+function reaskPrompt(errs, schema) {
+  return [
+    "Your previous final message did not validate against the required JSON Schema.",
+    "Validator errors:",
+    ...errs.slice(0, 40).map((e) => `- ${e}`),
+    "Reply again with ONLY the corrected JSON object (no prose, no code fences). Schema:",
+    JSON.stringify(schema),
+  ].join("\n");
+}
+
+function freshReask(response, errs) {
+  return [
+    "--- previous attempt ---",
+    "A previous attempt at this task ended with this final message:",
+    tail(typeof response === "string" ? response : JSON.stringify(response), 4000),
+    "It failed schema validation:",
+    ...errs.slice(0, 40).map((e) => `- ${e}`),
+    "Return ONLY a corrected JSON object.",
+  ].join("\n");
+}
+
+// ------------------------------------------------------------ resume sources
+// A Claude transcript dir (journal keys v2:...) or a ZCode run dir (zc1:...).
+
+function loadResumeSource(p, own = false) {
+  let st;
+  try { st = fs.statSync(p); } catch { throw new UltracodeError("RESUME_SOURCE", `resume source ${p} does not exist`); }
+  const dir = st.isDirectory() ? p : path.dirname(p);
+  const file = st.isDirectory() ? path.join(p, "journal.jsonl") : p;
+  if (!fs.existsSync(file)) throw new UltracodeError("RESUME_SOURCE", `no journal.jsonl in ${p}`);
+  const entries = [];
+  const byAgent = new Map();
+  const byKey = new Map();
+  const index = (e) => {
+    entries.push(e);
+    if (e.agentId) byAgent.set(e.agentId, e);
+    if (!byKey.has(e.key)) byKey.set(e.key, []);
+    byKey.get(e.key).push(e);
+  };
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    let j;
+    try { j = JSON.parse(line); } catch { continue; }
+    if (j.type === "started") {
+      index({ key: j.key, agentId: j.agentId ?? null, label: j.label ?? null, phase: j.phase ?? null, done: false, result: undefined, consumed: false });
+    } else if (j.type === "result") {
+      let e = (j.agentId && byAgent.get(j.agentId)) || (byKey.get(j.key) || []).find((x) => !x.done);
+      if (!e || e.done) {
+        e = { key: j.key, agentId: j.agentId ?? null, label: null, phase: null, done: false, result: undefined, consumed: false };
+        index(e);
+      }
+      e.done = true;
+      e.result = j.result;
+    }
+  }
+  for (const e of entries) {
+    if (e.label || !e.agentId) continue;
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(dir, `agent-${e.agentId}.meta.json`), "utf8"));
+      if (typeof m.description === "string" && m.description) e.label = m.description;
+    } catch {}
+  }
+  const byLabel = new Map();
+  for (const e of entries) {
+    if (!e.label) continue;
+    if (!byLabel.has(e.label)) byLabel.set(e.label, []);
+    byLabel.get(e.label).push(e);
+  }
+  const kind = entries.some((e) => String(e.key).startsWith("v2:")) ? "claude" : entries.some((e) => String(e.key).startsWith("zc1:")) ? "zcode" : "unknown";
+  return { dir, file, kind, own, entries, byKey, byLabel };
+}
+
+// A recorded result, null included, is a finished agent: replayed, never
+// re-spawned (SKILL.md: a run is complete when replay needs no live agent).
+// ULTRACODE_RERUN_NULL=1 opts into re-running recorded nulls live.
+const usable = (e) => e.done && !e.consumed && (e.result !== null || env("ULTRACODE_RERUN_NULL", "") !== "1");
+
+function resolveResumed(sources, key, label, labelIndex) {
+  for (const src of sources) {
+    const e = (src.byKey.get(key) || []).find(usable);
+    if (e) { e.consumed = true; return { src, e, how: "key" }; }
+  }
+  if (label !== null) {
+    for (const src of sources) {
+      const e = (src.byLabel.get(label) || [])[labelIndex];
+      if (e && usable(e)) { e.consumed = true; return { src, e, how: "label" }; }
+    }
+  }
+  return null;
+}
+
+// --------------------------------------------------------------------- run
+
+function semaphore(n) {
+  let active = 0;
+  const q = [];
+  return {
+    async acquire() {
+      if (active < n) { active++; return; }
+      await new Promise((r) => q.push(r)); // the releasing holder hands its slot over
+    },
+    release() {
+      const next = q.shift();
+      if (next) next();
+      else active--;
+    },
+  };
+}
+
+function resolveWorkflowRef(ref, cwd, parentFile) {
+  const p = ref && typeof ref === "object" ? (ref.scriptPath ?? ref.path ?? null) : ref;
+  if (typeof p !== "string" || !p) throw new UltracodeError("WORKFLOW_REF", "workflow() needs a name or {scriptPath}");
+  const cands = [];
+  if (path.isAbsolute(p)) cands.push(p);
+  else if (/[\\/]/.test(p) || /\.m?js$/.test(p)) cands.push(path.resolve(path.dirname(parentFile), p), path.resolve(cwd, p));
+  else {
+    const n = `${p}.js`;
+    cands.push(path.join(cwd, ".claude", "workflows", n), path.join(claudeHome(), "workflows", n), path.join(path.dirname(parentFile), n));
+  }
+  for (const c of cands) if (fs.existsSync(c)) return c;
+  throw new UltracodeError("WORKFLOW_NOT_FOUND", `workflow ${JSON.stringify(p)} not found (looked in ${cands.join(", ")})`);
+}
+
+class Run {
+  constructor({ mode, runId, runDir, cwd, sources = [], concurrency = 1 }) {
+    this.mode = mode; // "probe" | "dry" | "live"
+    this.runId = runId;
+    this.runDir = runDir;
+    this.cwd = cwd;
+    this.sources = sources;
+    this.journalPath = mode === "live" && runDir ? path.join(runDir, "journal.jsonl") : null;
+    this.sem = semaphore(concurrency);
+    this.cmd = agentCommand();
+    this.calls = 0;
+    this.labelCounts = new Map();
+    this.currentPhase = null;
+    this.fatal = null;
+    this.inflight = new Set();
+    this.stats = { live: 0, resumed: 0, nulls: 0, liveNeeded: 0 };
+    this.capHit = null;
+    this.capPromise = new Promise((r) => { this.capHit = r; });
+  }
+
+  journal(obj) {
+    if (this.journalPath) fs.appendFileSync(this.journalPath, JSON.stringify(obj) + "\n");
+  }
+
+  say(msg) {
+    if (this.mode !== "probe") progress(msg);
+  }
+
+  noteError(e) {
+    const probeMode = this.mode === "probe";
+    if (e instanceof UltracodeError && (probeMode ? PROBE_FATAL : FATAL).has(e.code)) {
+      this.fatal = this.fatal || e;
+    } else if (!probeMode) {
+      this.say(`dropped to null: ${e && e.message ? e.message : String(e)}`);
+    }
+  }
+
+  primitives(depth, args, file) {
+    return {
+      agent: (a, b) => this.agent(a, b),
+      parallel: (...xs) => this.parallel(xs.length === 1 ? xs[0] : xs),
+      pipeline: (items, ...stages) => this.pipeline(items, stages),
+      phase: (t) => this.phase(t),
+      log: (m) => this.log(m),
+      args,
+      budget: Object.freeze({ total: null, spent: () => 0, remaining: () => Infinity }),
+      workflow: (ref, childArgs) => this.workflow(ref, childArgs, depth, file),
+    };
+  }
+
+  phase(title) {
+    this.currentPhase = String(title);
+    this.say(`phase: ${this.currentPhase}`);
+  }
+
+  log(msg) {
+    const m = typeof msg === "string" ? msg : JSON.stringify(msg);
+    if (this.mode === "probe") return;
+    this.journal({ type: "log", msg: m });
+    this.say(`log: ${m}`);
+  }
+
+  async parallel(items) {
+    const list = Array.isArray(items) ? items : items && typeof items !== "string" && typeof items[Symbol.iterator] === "function" ? [...items] : [items];
+    return Promise.all(list.map(async (it) => {
+      try {
+        return await (typeof it === "function" ? it() : it);
+      } catch (e) {
+        this.noteError(e);
+        return null;
+      }
+    }));
+  }
+
+  async pipeline(items, stages) {
+    const list = Array.from(items ?? []);
+    return Promise.all(list.map(async (item, index) => {
+      let prev = item;
+      for (const stage of stages) {
+        try {
+          prev = await stage(prev, item, index);
+        } catch (e) {
+          this.noteError(e);
+          return null;
+        }
+      }
+      return prev;
+    }));
+  }
+
+  async workflow(ref, childArgs, depth, parentFile) {
+    if (depth >= 1) throw new UltracodeError("WORKFLOW_DEPTH", "workflow() may only be nested one level deep");
+    const file = resolveWorkflowRef(ref, this.cwd, parentFile);
+    const child = loadScript(file);
+    this.say(`workflow: ${child.meta.name} (${file})`);
+    return child.fn(this.primitives(depth + 1, childArgs ?? null, file), child.importer);
+  }
+
+  agent(a, b) {
+    let prompt;
+    let opts;
+    if (a && typeof a === "object" && !Array.isArray(a)) {
+      const { prompt: pr, ...rest } = a;
+      prompt = pr;
+      opts = { ...rest, ...(b && typeof b === "object" ? b : {}) };
+    } else {
+      prompt = a;
+      opts = { ...(b && typeof b === "object" ? b : {}) };
+    }
+    if (this.fatal) return Promise.reject(this.fatal);
+    this.calls += 1;
+    if (this.calls > MAX_AGENTS) {
+      if (this.mode === "probe") { this.capHit(); return new Promise(() => {}); }
+      this.fatal = this.fatal || new UltracodeError("AGENT_CAP", `more than ${MAX_AGENTS} agent() calls in one run`);
+      return Promise.reject(this.fatal);
+    }
+    if (typeof prompt !== "string") return Promise.reject(new UltracodeError("AGENT_PROMPT", "agent() needs a string prompt"));
+    const label = typeof opts.label === "string" ? opts.label : null;
+    const labelIndex = label === null ? -1 : (this.labelCounts.get(label) ?? 0);
+    if (label !== null) this.labelCounts.set(label, labelIndex + 1);
+    const phase = typeof opts.phase === "string" ? opts.phase : this.currentPhase;
+    const ordinal = this.calls;
+    const name = label ?? `#${ordinal}`;
+    if (opts.schema !== undefined) {
+      const errs = preflightSchema(opts.schema);
+      if (errs.length) {
+        this.fatal = this.fatal || new UltracodeError("SCHEMA_CONTRADICTION", `agent ${name}: ${errs.join("; ")}`);
+        return Promise.reject(this.fatal);
+      }
+    }
+    if (this.mode === "probe") return Promise.resolve(opts.schema !== undefined ? synthesize(opts.schema) : "");
+    const key = "zc1:" + sha256(canonical({ prompt, opts }));
+    const hit = resolveResumed(this.sources, key, label, labelIndex);
+    if (hit) {
+      this.stats.resumed++;
+      if (!hit.src.own) {
+        this.journal({ type: "started", key, agentId: hit.e.agentId, label, phase, resumed_from: hit.e.key });
+        this.journal({ type: "result", key, agentId: hit.e.agentId, result: hit.e.result });
+      }
+      if (hit.e.result === null) this.stats.nulls++;
+      this.say(`agent ${name}: resumed (${hit.how} match, ${hit.src.kind} ${hit.e.agentId ?? hit.e.key})`);
+      return Promise.resolve(hit.e.result === undefined ? null : structuredClone(hit.e.result));
+    }
+    if (this.mode === "dry") {
+      this.stats.liveNeeded++;
+      this.stats.nulls++;
+      this.say(`agent ${name}: needs a live run`);
+      return Promise.resolve(null);
+    }
+    const p = this.runLive({ prompt, opts, key, label, phase, ordinal, name });
+    this.inflight.add(p);
+    p.finally(() => this.inflight.delete(p)).catch(() => {});
+    return p;
+  }
+
+  finish(c, agentId, result, why, startedWritten) {
+    if (!startedWritten) this.journal({ type: "started", key: c.key, agentId, label: c.label, phase: c.phase });
+    this.journal({ type: "result", key: c.key, agentId, result });
+    if (result === null) {
+      this.stats.nulls++;
+      this.say(`agent ${c.name}: null (${why})`);
+    } else {
+      this.say(`agent ${c.name}: done (${agentId})`);
+    }
+    return result;
+  }
+
+  makeWorktree(c) {
+    const top = git(this.cwd, "rev-parse", "--show-toplevel");
+    if (!top.ok) {
+      this.say(`agent ${c.name}: isolation requested but ${this.cwd} is not a git repo; running in place`);
+      return null;
+    }
+    const rel = path.relative(top.out, fs.realpathSync(this.cwd));
+    const base = `${c.ordinal}-${slug(c.label ?? "agent")}`;
+    const root = path.join(this.runDir || fs.mkdtempSync(path.join(os.tmpdir(), "ultracode-wt-")), "worktrees");
+    // A kept worktree/branch from an earlier run (same run-dir basename, or an
+    // interrupted run re-entered) must not turn this agent into a null: take
+    // the next free -rN suffix instead.
+    let s = base;
+    for (let k = 2; fs.existsSync(path.join(root, s)) || git(top.out, "rev-parse", "--verify", "--quiet", `refs/heads/ultracode/${slug(this.runId)}/${s}`).ok; k++) {
+      if (k > 100) return { error: `no free worktree name for ${base}` };
+      s = `${base}-r${k}`;
+    }
+    const dir = path.join(root, s);
+    const branch = `ultracode/${slug(this.runId)}/${s}`;
+    fs.mkdirSync(path.dirname(dir), { recursive: true });
+    const add = git(top.out, "worktree", "add", "-b", branch, dir, "HEAD");
+    if (!add.ok) return { error: add.err || "git worktree add failed" };
+    const head = git(dir, "rev-parse", "HEAD").out;
+    return { dir, branch, top: top.out, head, cwd: path.join(dir, rel) };
+  }
+
+  cleanupWorktree(wt, c) {
+    const st = git(wt.dir, "status", "--porcelain");
+    const head = git(wt.dir, "rev-parse", "HEAD");
+    if (st.ok && st.out === "" && head.ok && head.out === wt.head) {
+      git(wt.top, "worktree", "remove", wt.dir);
+      git(wt.top, "branch", "-D", wt.branch);
+      this.say(`agent ${c.name}: worktree unchanged, removed`);
+    } else {
+      this.journal({ type: "log", msg: `worktree kept for ${c.name}: ${wt.dir} (branch ${wt.branch})` });
+      this.say(`agent ${c.name}: worktree kept at ${wt.dir} (branch ${wt.branch})`);
+    }
+  }
+
+  async runLive(c) {
+    await this.sem.acquire();
+    let wt = null;
+    try {
+      if (this.fatal) return null;
+      this.stats.live++;
+      let cwd = this.cwd;
+      if (c.opts.isolation === "worktree") {
+        wt = this.makeWorktree(c);
+        if (wt && wt.error) {
+          const why = `worktree isolation failed: ${wt.error}`;
+          wt = null;
+          return this.finish(c, `zc-${c.ordinal}`, null, why, false);
+        }
+        if (wt) cwd = wt.cwd;
+      }
+      const prompt = harness(c);
+      this.journal({ type: "log", msg: `spawn ${c.name}` });
+      let r = await invokeAgent(this.cmd, { prompt, cwd });
+      if (!r.ok) return this.finish(c, `zc-${c.ordinal}`, null, `agent failed (exit ${r.code}${r.rateLimited ? ", rate limited" : ""}): ${tail(r.stderr, 300)}`, false);
+      const agentId = r.sessionId || `zc-${c.ordinal}`;
+      this.journal({ type: "started", key: c.key, agentId, label: c.label, phase: c.phase });
+      if (c.opts.schema === undefined) {
+        const text = typeof r.response === "string" ? r.response : JSON.stringify(r.response ?? "");
+        return this.finish(c, agentId, text, null, true);
+      }
+      const max = intEnv("MAX_STRUCTURED_OUTPUT_RETRIES", 5);
+      for (let attempt = 0; ; attempt++) {
+        const cand = extractJSON(r.response);
+        const errs = cand.ok ? validate(cand.value, c.opts.schema) : ["the final message is not JSON (no whole-message JSON, no fenced json block, no parseable {...} span)"];
+        if (!errs.length) return this.finish(c, agentId, cand.value, null, true);
+        if (attempt >= max) return this.finish(c, agentId, null, `structured output still invalid after ${max} re-asks: ${errs.slice(0, 3).join("; ")}`, true);
+        this.say(`agent ${c.name}: invalid structured output, re-ask ${attempt + 1}/${max}`);
+        const sid = r.sessionId;
+        let next = sid
+          ? await invokeAgent(this.cmd, { prompt: reaskPrompt(errs, c.opts.schema), cwd, resume: sid })
+          : await invokeAgent(this.cmd, { prompt: `${prompt}\n\n${freshReask(r.response, errs)}`, cwd });
+        if (!next.ok && sid) next = await invokeAgent(this.cmd, { prompt: `${prompt}\n\n${freshReask(r.response, errs)}`, cwd });
+        if (!next.ok) return this.finish(c, agentId, null, `re-ask failed (exit ${next.code})`, true);
+        r = { ...next, sessionId: next.sessionId || sid };
+      }
+    } catch (e) {
+      return this.finish(c, `zc-${c.ordinal}`, null, `runtime error: ${e.message}`, false);
+    } finally {
+      if (wt) this.cleanupWorktree(wt, c);
+      this.sem.release();
+    }
+  }
+
+  async drain() {
+    while (this.inflight.size) await Promise.allSettled([...this.inflight]);
+  }
+}
+
+// Static pre-flight over literal workflow() children: each reference that
+// resolves is loaded (meta, nondeterminism and static schema checks) before any
+// spawn, even when the call sits behind control flow the probe does not reach.
+// Unresolvable references are left to runtime (WORKFLOW_NOT_FOUND there).
+function staticChildren(loaded, cwd) {
+  const seen = new Set([loaded.path]);
+  for (const { ref } of loaded.workflowRefs) {
+    let file;
+    try {
+      file = resolveWorkflowRef(ref, cwd, loaded.path);
+    } catch {
+      continue;
+    }
+    if (seen.has(file)) continue;
+    seen.add(file);
+    loadScript(file);
+  }
+}
+
+// Pre-flight: walk the control flow with synthetic agent results (no spawns)
+// so contradictory schemas and structural script errors halt the run before
+// the first agent is spawned.
+async function preflight(loaded, args, cwd) {
+  const run = new Run({ mode: "probe", runId: "probe", runDir: null, cwd });
+  let timer;
+  const deadline = new Promise((r) => { timer = setTimeout(r, intEnv("ULTRACODE_PROBE_MS", 5000)); });
+  const body = loaded.fn(run.primitives(0, args, loaded.path), loaded.importer).catch((e) => run.noteError(e));
+  await Promise.race([body, deadline, run.capPromise]);
+  clearTimeout(timer);
+  if (run.fatal) throw run.fatal;
+  return run.calls;
+}
+
+// -------------------------------------------------------------------- CLI
+
+function parseCli(argv) {
+  const o = { resumeFrom: [], dryRun: false, json: false };
+  const pos = [];
+  const takes = new Set(["--args", "--run-dir", "--resume-from", "--cwd", "--concurrency"]);
+  for (let i = 0; i < argv.length; i++) {
+    let a = argv[i];
+    let v;
+    if (a.startsWith("--") && a.includes("=")) { v = a.slice(a.indexOf("=") + 1); a = a.slice(0, a.indexOf("=")); }
+    if (a === "--dry-run") { o.dryRun = true; continue; }
+    if (a === "--json") { o.json = true; continue; }
+    if (takes.has(a)) {
+      if (v === undefined) {
+        if (i + 1 >= argv.length) throw new UltracodeError("USAGE", `${a} needs a value`);
+        v = argv[++i];
+      }
+      if (a === "--args") o.args = v;
+      else if (a === "--run-dir") o.runDir = v;
+      else if (a === "--resume-from") o.resumeFrom.push(v);
+      else if (a === "--cwd") o.cwd = v;
+      else if (a === "--concurrency") {
+        const n = Number.parseInt(v, 10);
+        if (!(n >= 1)) throw new UltracodeError("USAGE", "--concurrency needs a positive integer");
+        o.concurrency = n;
+      }
+      continue;
+    }
+    if (a.startsWith("--")) throw new UltracodeError("USAGE", `unknown option ${a}`);
+    pos.push(a);
+  }
+  o.script = pos[0];
+  if (!o.script || pos.length > 1) throw new UltracodeError("USAGE", "usage: ultracode-run.mjs run <script.js> [--args <json|text|@file>] [--run-dir <dir>] [--resume-from <dir>] [--cwd <dir>] [--concurrency N] [--dry-run] [--json]");
+  return o;
+}
+
+function readArgs(spec) {
+  if (spec === undefined) return null;
+  let text = spec;
+  if (spec.startsWith("@")) {
+    try { text = fs.readFileSync(spec.slice(1), "utf8"); } catch (e) { throw new UltracodeError("ARGS", `cannot read args file ${spec.slice(1)}: ${e.message}`); }
+  }
+  try { return JSON.parse(text); } catch { return spec.startsWith("@") ? text.replace(/\r?\n$/, "") : text; }
+}
+
+function defaultConcurrency() {
+  const e = intEnv("ULTRACODE_CONCURRENCY", 0);
+  if (e >= 1) return e;
+  return Math.max(1, Math.min(16, os.cpus().length - 2));
+}
+
+function stamp() {
+  return new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "").replace("T", "-");
+}
+
+async function cmdRun(argv) {
+  const t0 = Date.now();
+  const o = parseCli(argv);
+  const scriptPath = path.resolve(o.script);
+  const loaded = loadScript(scriptPath);
+  const args = readArgs(o.args);
+  const cwd = path.resolve(o.cwd ?? process.cwd());
+  const concurrency = o.concurrency ?? defaultConcurrency();
+  const sources = [];
+  const seen = new Set();
+  let runDir = null;
+  let runId = null;
+  if (!o.dryRun) {
+    runDir = path.resolve(o.runDir ?? path.join(ultracodeHome(), "runs", `${slug(loaded.meta.name)}-${stamp()}-${process.pid}`));
+    runId = path.basename(runDir);
+    fs.mkdirSync(runDir, { recursive: true });
+    if (fs.existsSync(path.join(runDir, "journal.jsonl"))) {
+      sources.push(loadResumeSource(runDir, true));
+      seen.add(fs.realpathSync(runDir));
+    }
+  }
+  for (const rf of o.resumeFrom) {
+    const real = fs.existsSync(rf) ? fs.realpathSync(rf) : rf;
+    if (seen.has(real)) continue;
+    seen.add(real);
+    sources.push(loadResumeSource(path.resolve(rf)));
+  }
+  staticChildren(loaded, cwd);
+  await preflight(loaded, args, cwd);
+  const run = new Run({ mode: o.dryRun ? "dry" : "live", runId, runDir, cwd, sources, concurrency });
+  if (!o.dryRun) {
+    fs.writeFileSync(path.join(runDir, "run.json"), JSON.stringify({
+      run_id: runId, script: scriptPath, meta: loaded.meta, args, cwd, concurrency,
+      resume_from: sources.map((s) => ({ dir: s.dir, kind: s.kind, own: s.own })), pid: process.pid,
+      started_at: new Date(t0).toISOString(),
+    }, null, 2) + "\n");
+    run.journal({ type: "launched" });
+    progress(`run ${runId}: ${loaded.meta.name} (${loaded.moduleForm ? "module" : "body"} form), run dir ${runDir}`);
+  }
+  let result;
+  let error = null;
+  try {
+    result = await loaded.fn(run.primitives(0, args, scriptPath), loaded.importer);
+  } catch (e) {
+    error = e;
+  }
+  await run.drain();
+  if (run.fatal) error = run.fatal;
+  const errObj = error ? { code: error.code ?? "SCRIPT_ERROR", message: error.message ?? String(error) } : null;
+  if (o.dryRun) {
+    const out = {
+      live_agents_needed: run.stats.liveNeeded,
+      resumed: run.stats.resumed,
+      completed: run.stats.liveNeeded === 0 && !error,
+      agent_calls: run.calls,
+      ...(errObj ? { error: errObj } : {}),
+    };
+    process.stdout.write(JSON.stringify(out, null, o.json ? 0 : 2) + "\n");
+    return run.fatal ? 2 : 0;
+  }
+  const summary = {
+    run_id: runId,
+    script: scriptPath,
+    status: error ? "failed" : "completed",
+    live_agents: run.stats.live,
+    resumed_agents: run.stats.resumed,
+    null_agents: run.stats.nulls,
+    duration_ms: Date.now() - t0,
+    ...(errObj ? { error: errObj } : {}),
+  };
+  if (!error) fs.writeFileSync(path.join(runDir, "result.json"), JSON.stringify(result ?? null, null, 2) + "\n");
+  fs.writeFileSync(path.join(runDir, "summary.json"), JSON.stringify(summary, null, 2) + "\n");
+  if (o.json) process.stdout.write(JSON.stringify({ run_dir: runDir, status: summary.status, result: error ? null : (result ?? null), summary }) + "\n");
+  else if (!error) process.stdout.write(JSON.stringify(result ?? null, null, 2) + "\n");
+  if (error) progress(`run failed: ${errObj.code}: ${errObj.message}`);
+  if (!error) return 0;
+  return error instanceof UltracodeError && FATAL.has(error.code) ? 2 : 1;
+}
+
+// --------------------------------------------------------------- selftest
+// Chicago-style: every case runs this runtime as a real subprocess against a
+// real tmp git repo, real fixture scripts and real journal files. The agent
+// backend is priv/zcode_plugin/test/ultracode-scripted-agent.mjs, a real
+// executable selected through ULTRACODE_AGENT_CMD (the one allowed double: it
+// pins model nondeterminism; see its header).
+
+function findBackend() {
+  const cands = [
+    env("ULTRACODE_SELFTEST_AGENT", ""),
+    path.resolve(HERE, "../../../test/ultracode-scripted-agent.mjs"),
+    path.resolve(HERE, "../../../../../test/zcode_plugin/ultracode-scripted-agent.mjs"),
+  ].filter(Boolean);
+  return cands.find((c) => fs.existsSync(c)) ?? null;
+}
+
+class SelftestFailure extends Error {
+  constructor(message, detail) {
+    super(message);
+    this.detail = detail;
+  }
+}
+
+function selftestContext(root, backend) {
+  const repo = path.join(root, "repo");
+  const scripts = path.join(root, "scripts");
+  const home = path.join(root, "home");
+  fs.mkdirSync(repo, { recursive: true });
+  fs.mkdirSync(scripts, { recursive: true });
+  fs.mkdirSync(home, { recursive: true });
+  fs.writeFileSync(path.join(root, "gitconfig"), "[user]\n\tname = ultracode selftest\n\temail = selftest@ultracode.invalid\n[commit]\n\tgpgsign = false\n[init]\n\tdefaultBranch = main\n");
+  // HOME is a fresh tmp dir too: even a runtime that ignored ULTRACODE_HOME /
+  // ULTRACODE_CLAUDE_HOME would land in it, never in the real ~/.claude or ~/.zcode.
+  const baseEnv = {
+    ...process.env,
+    HOME: home,
+    GIT_CONFIG_GLOBAL: path.join(root, "gitconfig"),
+    GIT_CONFIG_NOSYSTEM: "1",
+    ULTRACODE_AGENT_CMD: backend,
+    ULTRACODE_CLAUDE_HOME: path.join(root, "claude-home"),
+    ULTRACODE_HOME: path.join(root, "zcode-home"),
+    ULTRACODE_BACKOFF_MS: "10",
+    ULTRACODE_BACKOFF_MAX_MS: "50",
+  };
+  delete baseEnv.ULTRACODE_CONCURRENCY;
+  delete baseEnv.ULTRACODE_RERUN_NULL;
+  delete baseEnv.ULTRACODE_QUIET;
+  delete baseEnv.ULTRACODE_SELFTEST_AGENT;
+  delete baseEnv.MAX_STRUCTURED_OUTPUT_RETRIES;
+  const sh = (cwd, ...a) => {
+    const r = spawnSync("git", a, { cwd, env: baseEnv, encoding: "utf8" });
+    if (r.status !== 0) throw new SelftestFailure(`git ${a.join(" ")} failed`, r.stderr);
+    return r.stdout.trim();
+  };
+  sh(repo, "init", "-q");
+  fs.writeFileSync(path.join(repo, "README.md"), "selftest repo\n");
+  sh(repo, "add", "README.md");
+  sh(repo, "commit", "-q", "-m", "init");
+  let n = 0;
+  const ctx = {
+    root, repo, home, backend, env: baseEnv, git: sh,
+    write(name, lines) {
+      const p = path.join(scripts, name);
+      fs.writeFileSync(p, Array.isArray(lines) ? lines.join("\n") + "\n" : lines);
+      return p;
+    },
+    state() {
+      const d = path.join(root, "state", String(++n));
+      fs.mkdirSync(d, { recursive: true });
+      return d;
+    },
+    runDir(name) {
+      return path.join(root, "runs", name);
+    },
+    run(argv, { state, extraEnv = {}, unset = [] } = {}) {
+      const e = { ...baseEnv, ULTRACODE_SCRIPTED_STATE: state ?? path.join(root, "state", "unused"), ...extraEnv };
+      for (const k of unset) delete e[k];
+      const r = spawnSync(process.execPath, [SELF, ...argv], {
+        cwd: repo,
+        env: e,
+        encoding: "utf8",
+        timeout: 180000,
+      });
+      let json = null;
+      try { json = JSON.parse(r.stdout); } catch {}
+      return { code: r.status, stdout: r.stdout, stderr: r.stderr, json };
+    },
+    calls(state) {
+      const f = path.join(state, "calls.jsonl");
+      if (!fs.existsSync(f)) return [];
+      return fs.readFileSync(f, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    },
+    journal(dir) {
+      return fs.readFileSync(path.join(dir, "journal.jsonl"), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    },
+    readJSON(p) {
+      return JSON.parse(fs.readFileSync(p, "utf8"));
+    },
+  };
+  return ctx;
+}
+
+function check(cond, msg, detail) {
+  if (!cond) throw new SelftestFailure(msg, detail);
+}
+
+function eq(actual, expected, what, detail) {
+  if (canonical(actual) !== canonical(expected)) {
+    throw new SelftestFailure(`${what}: expected ${canonical(expected)} got ${canonical(actual)}`, detail);
+  }
+}
+
+const BODY_FIXTURE = [
+  "export const meta = {",
+  "  name: 'st-body',",
+  "  description: 'body form fixture', // comment inside the literal",
+  "  phases: [{ title: 'One', detail: 'first' }, { title: 'Two' }],",
+  "}",
+  "const note = 'Date.now() and Math.random() inside a string are data, not calls'",
+  "phase('One')",
+  "log('hello from body')",
+  "const a = await agent('[[scripted:echo alpha]]', { label: 'a' })",
+  "const piped = await pipeline([1, 2], (x) => agent(`[[scripted:echo p${x}]]`, { label: `p:${x}` }), (prev, item, i) => prev + '|' + item + '|' + i)",
+  "phase('Two')",
+  "const par = await parallel([",
+  "  () => agent('[[scripted:echo q1]]', { label: 'q:1' }),",
+  "  () => { throw new Error('thunk boom') },",
+  "  () => agent('[[scripted:json {\"n\":7}]]', { label: 'q:2', schema: { type: 'object', properties: { n: { type: 'integer' } }, required: ['n'] } }),",
+  "])",
+  "return { a, piped, par, args, budgetTotal: budget.total, remainingInfinite: budget.remaining() === Infinity, phases: meta.phases.length, note: note.length > 0 }",
+];
+const BODY_EXPECTED = {
+  a: "alpha", piped: ["p1|1|0", "p2|2|1"], par: ["q1", null, { n: 7 }], args: { x: 1 },
+  budgetTotal: null, remainingInfinite: true, phases: 2, note: true,
+};
+
+const SELFTEST_CASES = [
+  ["body form: globals, top-level await/return, pipeline, parallel thunks, phase/log, budget, args @file, journal", (t) => {
+    const script = t.write("body.js", BODY_FIXTURE);
+    const argsFile = t.write("args.json", '{"x":1}');
+    const state = t.state();
+    const dir = t.runDir("body");
+    const r = t.run(["run", script, "--args", `@${argsFile}`, "--run-dir", dir, "--cwd", t.repo, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, BODY_EXPECTED, "result", r.stderr);
+    eq(t.readJSON(path.join(dir, "result.json")), BODY_EXPECTED, "result.json");
+    const sum = t.readJSON(path.join(dir, "summary.json"));
+    eq([sum.live_agents, sum.resumed_agents, sum.null_agents, typeof sum.duration_ms], [5, 0, 0, "number"], "summary");
+    const j = t.journal(dir);
+    eq(j[0], { type: "launched" }, "first journal line");
+    const started = j.filter((x) => x.type === "started");
+    const results = j.filter((x) => x.type === "result");
+    eq([started.length, results.length], [5, 5], "started/result line counts");
+    check(started.every((x) => /^zc1:[0-9a-f]{64}$/.test(x.key) && /^sess-/.test(x.agentId)), "started lines carry zc1 keys and session agentIds", JSON.stringify(started));
+    eq(started.map((x) => [x.label, x.phase]).sort(), [["a", "One"], ["p:1", "One"], ["p:2", "One"], ["q:1", "Two"], ["q:2", "Two"]], "labels/phases");
+    check(j.some((x) => x.type === "log" && x.msg === "hello from body"), "log line journaled", JSON.stringify(j));
+    const calls = t.calls(state);
+    eq(calls.length, 5, "spawn count");
+    check(calls.every((c) => c.mode === "yolo" && c.json === true && c.harness === true && fs.realpathSync(c.cwd) === fs.realpathSync(t.repo)), "argv contract: --json --mode yolo --cwd <cwd>, harness preamble", JSON.stringify(calls));
+    t.bodyRun = { script, dir, argsFile };
+  }],
+  ["module form: import from \"claude\", node: import, agent({prompt, schema}), parallel over promises, string phases, text args, default run dir", (t) => {
+    const script = t.write("module.js", [
+      "import { agent, parallel, pipeline } from \"claude\";",
+      "import path from \"node:path\";",
+      "export const meta = { name: \"st-module\", description: \"module form fixture\", phases: [\"discover\", \"build\"] };",
+      "export async function run(promptContext) {",
+      "  const plan = await agent({ prompt: `[[scripted:json {\"targets\":[\"a.txt\",\"b.txt\"]}]] ctx=${promptContext}`, label: \"plan\", schema: { type: \"object\", required: [\"targets\"], properties: { targets: { type: \"array\", items: { type: \"string\" }, minItems: 1 } }, additionalProperties: false } });",
+      "  if (!plan) throw new Error(\"dropped\");",
+      "  const results = await parallel(plan.targets.map((t) => agent({ prompt: `[[scripted:echo built-${t}]]`, label: `build:${t}` })));",
+      "  return { ctx: promptContext, ext: plan.targets.map((t) => path.extname(t)), results, pipelineIsFn: typeof pipeline === \"function\" };",
+      "}",
+    ]);
+    const state = t.state();
+    const r = t.run(["run", script, "--args", "hello world", "--cwd", t.repo, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, { ctx: "hello world", ext: [".txt", ".txt"], results: ["built-a.txt", "built-b.txt"], pipelineIsFn: true }, "result", r.stderr);
+    check(r.json.run_dir.startsWith(path.join(t.root, "zcode-home", "runs") + path.sep), `default run dir under ULTRACODE_HOME/runs (got ${r.json.run_dir})`);
+    check(fs.existsSync(path.join(r.json.run_dir, "result.json")), "result.json in default run dir");
+    eq(t.calls(state).length, 3, "spawn count");
+  }],
+  ["meta must be a pure literal: typed META_NOT_LITERAL, zero spawns", (t) => {
+    const script = t.write("meta-bad.js", ["const NAME = 'x'", "export const meta = { name: NAME, description: 'd' }", "return await agent('[[scripted:echo nope]]')"]);
+    const state = t.state();
+    const r = t.run(["run", script, "--run-dir", t.runDir("meta-bad"), "--json"], { state });
+    check(r.code === 2, `exit ${r.code} (want 2)`, r.stderr);
+    eq(r.json && r.json.error && r.json.error.code, "META_NOT_LITERAL", "error code", r.stdout + r.stderr);
+    eq(t.calls(state).length, 0, "spawns");
+    const r2 = t.run(["run", t.write("meta-spread.js", ["const base = {}", "export const meta = { ...base, name: 'n', description: 'd' }", "return 1"]), "--run-dir", t.runDir("meta-spread"), "--json"], { state });
+    eq(r2.json && r2.json.error && r2.json.error.code, "META_NOT_LITERAL", "spread in meta", r2.stdout + r2.stderr);
+  }],
+  ["schema pre-flight: contradictory schema after a good agent halts with SCHEMA_CONTRADICTION and zero spawns", (t) => {
+    const variants = {
+      "required-not-in-properties": "{ type: 'object', properties: { a: { type: 'integer' } }, required: ['a', 'b'], additionalProperties: false }",
+      "non-object-root": "{ type: 'array', items: { type: 'string' } }",
+      "bad-type": "{ type: 'object', properties: { a: { type: 'strng' } }, required: ['a'] }",
+    };
+    for (const [name, schema] of Object.entries(variants)) {
+      const script = t.write(`schema-${name}.js`, [
+        "export const meta = { name: 'st-schema', description: 'contradictory schema after a good agent' }",
+        "const first = await agent('[[scripted:echo first]]', { label: 'first' })",
+        `const second = await agent('[[scripted:json {"a":1}]]', { label: 'second', schema: ${schema} })`,
+        "return { first, second }",
+      ]);
+      const state = t.state();
+      const r = t.run(["run", script, "--run-dir", t.runDir(`schema-${name}`), "--json"], { state });
+      check(r.code === 2, `${name}: exit ${r.code} (want 2)`, r.stderr);
+      eq(r.json && r.json.error && r.json.error.code, "SCHEMA_CONTRADICTION", `${name}: error code`, r.stdout + r.stderr);
+      eq(t.calls(state).length, 0, `${name}: spawns`);
+    }
+  }],
+  ["schema pre-flight behind value-dependent control flow (map over an agent result, boolean branch, pipeline branch, named const, aliased/namespace import, computed schema, literal workflow child): zero spawns; schema-shaped non-agent code still runs", (t) => {
+    const BAD = "{ type: 'object', required: ['missing'], properties: { a: { type: 'string' } }, additionalProperties: false }";
+    const GO = "{ type: 'object', required: ['go'], properties: { go: { type: 'boolean' } } }";
+    const PLAN = "{ type: 'object', required: ['targets'], properties: { targets: { type: 'array', items: { type: 'string' } } }, additionalProperties: false }";
+    t.write("sf-bad-child.js", [
+      "export const meta = { name: 'st-sf-bad-child', description: 'child with a contradictory literal schema' }",
+      `return await agent('[[scripted:json {"a":"c"}]]', { label: 'child-bad', schema: ${BAD} })`,
+    ]);
+    const variants = {
+      "map-over-agent-result (SKILL 2b module form)": ["static", [
+        "import { agent, parallel } from \"claude\";",
+        "export const meta = { name: 'st-sf-map', description: 'bad schema reached only through plan.targets.map' };",
+        "export async function run(promptContext) {",
+        `  const plan = await agent({ prompt: '[[scripted:json {"targets":["t1","t2"]}]]', label: 'plan', schema: ${PLAN} });`,
+        "  if (!plan) throw new Error('dropped');",
+        `  return await parallel(plan.targets.map((t) => agent({ prompt: '[[scripted:json {"a":"' + t + '"}]]', label: 'apply:' + t, schema: ${BAD} })));`,
+        "}",
+      ]],
+      "boolean-branch": ["static", [
+        "export const meta = { name: 'st-sf-branch', description: 'bad schema behind if (r.go)' }",
+        `const r = await agent('[[scripted:json {"go":true}]]', { label: 'gate', schema: ${GO} })`,
+        `if (r && r.go) return await agent('[[scripted:json {"a":"q"}]]', { label: 'gated', schema: ${BAD} })`,
+        "return 'skipped'",
+      ]],
+      "pipeline-value-branch": ["static", [
+        "export const meta = { name: 'st-sf-pipe', description: 'bad schema on a value-dependent pipeline stage' }",
+        `return await pipeline(['i1'], (item) => agent('[[scripted:echo GO]]', { label: 'go:' + item }), (prev, item) => prev === 'GO' ? agent('[[scripted:json {"a":"z"}]]', { label: 'z:' + item, schema: ${BAD} }) : prev)`,
+      ]],
+      "named-top-level-const": ["static", [
+        "export const meta = { name: 'st-sf-const', description: 'bad schema held in a top-level const' }",
+        `const BAD = ${BAD}`,
+        `const r = await agent('[[scripted:json {"go":true}]]', { label: 'gate', schema: ${GO} })`,
+        `if (r.go) await agent('[[scripted:json {"a":"q"}]]', { label: 'named', schema: BAD })`,
+        "return 'done'",
+      ]],
+      "aliased-import": ["static", [
+        "import { agent as spawnAgent } from \"claude\";",
+        "export const meta = { name: 'st-sf-alias', description: 'bad schema on an aliased agent import' };",
+        `const r = await spawnAgent('[[scripted:json {"go":true}]]', { label: 'gate', schema: ${GO} });`,
+        `if (r.go) await spawnAgent('[[scripted:json {"a":"q"}]]', { label: 'aliased', schema: ${BAD} });`,
+        "return 'done';",
+      ]],
+      "namespace-import": ["static", [
+        "import * as claude from \"claude\";",
+        "export const meta = { name: 'st-sf-ns', description: 'bad schema on claude.agent' };",
+        `const r = await claude.agent('[[scripted:json {"go":true}]]', { label: 'gate', schema: ${GO} });`,
+        `if (r.go) await claude.agent('[[scripted:json {"a":"q"}]]', { label: 'ns', schema: ${BAD} });`,
+        "return 'done';",
+      ]],
+      "computed-schema-in-map (probe: arrays synthesize >= 1 item)": ["probe", [
+        "export const meta = { name: 'st-sf-computed', description: 'non-literal bad schema inside a map over an agent array' }",
+        "const mk = (k) => ({ type: 'object', required: [k], properties: {} })",
+        `const plan = await agent('[[scripted:json {"targets":["t1"]}]]', { label: 'plan', schema: ${PLAN} })`,
+        "return await parallel(plan.targets.map((t) => () => agent('[[scripted:echo x]]', { label: 'mk:' + t, schema: mk('missing') })))",
+      ]],
+      "literal-workflow-child-behind-branch": ["static", [
+        "export const meta = { name: 'st-sf-child', description: 'bad child workflow behind a branch' }",
+        `const r = await agent('[[scripted:json {"go":true}]]', { label: 'gate', schema: ${GO} })`,
+        "if (r && r.go) return await workflow({ scriptPath: 'sf-bad-child.js' }, {})",
+        "return 'skipped'",
+      ]],
+    };
+    let k = 0;
+    for (const [name, [layer, lines]] of Object.entries(variants)) {
+      const script = t.write(`sf-${++k}.js`, lines);
+      const state = t.state();
+      const r = t.run(["run", script, "--run-dir", t.runDir(`sf-${k}`), "--cwd", t.repo, "--json"], { state });
+      check(r.code === 2, `${name}: exit ${r.code} (want 2)`, r.stdout + r.stderr);
+      eq(r.json && r.json.error && r.json.error.code, "SCHEMA_CONTRADICTION", `${name}: error code`, r.stdout + r.stderr);
+      eq(t.calls(state).length, 0, `${name}: spawns`, r.stdout);
+      eq(/static pre-flight/.test(r.json.error.message) ? "static" : "probe", layer, `${name}: pre-flight layer`, r.json.error.message);
+      if (k === 2) {
+        const dry = t.run(["run", script, "--dry-run", "--json"], { state });
+        check(dry.code === 2 && dry.json && dry.json.error && dry.json.error.code === "SCHEMA_CONTRADICTION", `${name}: --dry-run refuses too`, dry.stdout + dry.stderr);
+        eq(t.calls(state).length, 0, `${name}: dry-run spawns`);
+      }
+    }
+    const ok = t.write("sf-ok.js", [
+      "export const meta = { name: 'st-sf-ok', description: 'schema-shaped non-agent code is not an agent schema' }",
+      "const tool = { name: 'tool', schema: { type: 'string' } }",
+      "const note = \"schema: { type: 'array', required: ['zz'] }\"",
+      "const describe = (x) => ({ schema: { type: 'number' }, x })",
+      `const plan = await agent('[[scripted:json {"targets":["t1","t2"]}]]', { label: 'plan', schema: ${PLAN} })`,
+      "const out = await parallel(plan.targets.map((t) => agent('[[scripted:json {\"a\":\"' + t + '\"}]]', { label: 'ok:' + t, schema: { type: 'object', required: ['a'], properties: { a: { type: 'string' } } } })))",
+      "return { tool: tool.schema.type, note: note.length > 0, d: describe(1).schema.type, out }",
+    ]);
+    const state = t.state();
+    const r = t.run(["run", ok, "--run-dir", t.runDir("sf-ok"), "--json"], { state });
+    check(r.code === 0, `negative control: exit ${r.code}`, r.stdout + r.stderr);
+    eq(r.json.result, { tool: "string", note: true, d: "number", out: [{ a: "t1" }, { a: "t2" }] }, "negative control result", r.stderr);
+    eq(t.calls(state).length, 3, "negative control spawns");
+  }],
+  ["structured output: re-ask resumes the zcode session, no sessionId -> fresh re-ask carrying the errors, fenced and outermost-brace parses, bounded retries then null", (t) => {
+    const script = t.write("reask.js", [
+      "export const meta = { name: 'st-reask', description: 're-ask on invalid structured output' }",
+      "const S = { type: 'object', properties: { ok: { type: 'boolean' }, tag: { type: 'string', enum: ['x', 'y'] } }, required: ['ok', 'tag'], additionalProperties: false }",
+      "const fixed = await agent('[[scripted:bad-then {\"ok\":true,\"tag\":\"y\"}]]', { label: 'fixed', schema: S })",
+      "const fenced = await agent('[[scripted:fenced {\"ok\":false,\"tag\":\"x\"}]]', { label: 'fenced', schema: S })",
+      "const prose = await agent('[[scripted:prose-object {\"ok\":true,\"tag\":\"x\"}]]', { label: 'prose', schema: S })",
+      "const wrongEnum = await agent('[[scripted:bad-then {\"ok\":true,\"tag\":\"x\"}]]', { label: 'enum', schema: S })",
+      "const hopeless = await agent('[[scripted:always-bad]]', { label: 'hopeless', schema: S })",
+      "const nosess = await agent('[[scripted:nosession-bad-then {\"ok\":true,\"tag\":\"x\"}]]', { label: 'nosess', schema: S })",
+      "return { fixed, fenced, prose, wrongEnum, hopeless, nosess }",
+    ]);
+    const state = t.state();
+    const dir = t.runDir("reask");
+    const r = t.run(["run", script, "--run-dir", dir, "--json"], { state, extraEnv: { MAX_STRUCTURED_OUTPUT_RETRIES: "2" } });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, { fixed: { ok: true, tag: "y" }, fenced: { ok: false, tag: "x" }, prose: { ok: true, tag: "x" }, wrongEnum: { ok: true, tag: "x" }, hopeless: null, nosess: { ok: true, tag: "x" } }, "result", r.stderr);
+    const calls = t.calls(state);
+    const fixed = calls.filter((c) => c.arg === '{"ok":true,"tag":"y"}');
+    eq(fixed.length, 2, "fixed: invocations");
+    eq([fixed[0].resume, fixed[1].resume], [null, fixed[0].session], "fixed: second call resumes the first session");
+    check(/did not validate/.test(fixed[1].prompt_head), "re-ask prompt carries the validator verdict", fixed[1].prompt_head);
+    eq(calls.filter((c) => c.verb === "always-bad").length, 3, "hopeless: 1 + MAX_STRUCTURED_OUTPUT_RETRIES invocations");
+    const ns = calls.filter((c) => c.verb === "nosession-bad-then");
+    eq(ns.map((c) => [c.resume, c.fresh_reask, c.carries_errors]), [[null, false, false], [null, true, true]], "no sessionId -> fresh re-ask carrying the validator errors");
+    eq(t.readJSON(path.join(dir, "summary.json")).null_agents, 1, "null_agents");
+  }],
+  ["rate limit (exit 75 / 429 / 1302) backs off and retries; unrecoverable failure resolves null without retry", (t) => {
+    const script = t.write("rate.js", [
+      "export const meta = { name: 'st-rate', description: 'rate-limit backoff and unrecoverable failure' }",
+      "const r = await agent('[[scripted:ratelimit-once recovered]]', { label: 'rl' })",
+      "const d = await agent('[[scripted:die]]', { label: 'dead' })",
+      "return { r, d }",
+    ]);
+    const state = t.state();
+    const dir = t.runDir("rate");
+    const r = t.run(["run", script, "--run-dir", dir, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, { r: "recovered", d: null }, "result", r.stderr);
+    const calls = t.calls(state);
+    eq(calls.filter((c) => c.verb === "ratelimit-once").map((c) => c.exit), [75, 0], "rate-limited then ok");
+    eq(calls.filter((c) => c.verb === "die").map((c) => c.exit), [1], "die: single attempt");
+    const j = t.journal(dir);
+    check(j.some((x) => x.type === "result" && x.agentId === "zc-2" && x.result === null), "failed agent journaled with a null result", JSON.stringify(j));
+  }],
+  ["agentType Explore gets the read-only instruction; isolation 'worktree' runs in a fresh worktree, removed if unchanged, kept if changed, never blocked by an earlier kept branch", (t) => {
+    const script = t.write("iso.js", [
+      "export const meta = { name: 'st-iso', description: 'Explore read-only instruction and worktree isolation' }",
+      "const ro = await agent('[[scripted:readonly-check]]', { label: 'ro', agentType: 'Explore' })",
+      "const rw = await agent('[[scripted:readonly-check]]', { label: 'rw' })",
+      "const clean = await agent('[[scripted:pwd]]', { label: 'wt-clean', isolation: 'worktree' })",
+      "const dirty = await agent('[[scripted:write-file made.txt hello]]', { label: 'wt-dirty', isolation: 'worktree' })",
+      "return { ro, rw, clean, dirty }",
+    ]);
+    const state = t.state();
+    const dir = t.runDir("iso");
+    const r = t.run(["run", script, "--run-dir", dir, "--cwd", t.repo, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    const res = r.json.result;
+    eq([res.ro, res.rw], ["READONLY", "WRITABLE"], "read-only instruction only for Explore", r.stderr);
+    const wtRoot = fs.realpathSync(path.join(dir, "worktrees"));
+    check(fs.realpathSync(path.dirname(res.dirty)) === wtRoot && path.dirname(res.clean) === path.dirname(res.dirty), "isolated agents ran under <run-dir>/worktrees", JSON.stringify(res));
+    check(!fs.existsSync(res.clean), "unchanged worktree removed", res.clean);
+    check(fs.readFileSync(path.join(res.dirty, "made.txt"), "utf8") === "hello\n", "changed worktree kept with its file");
+    check(!fs.existsSync(path.join(t.repo, "made.txt")), "main checkout untouched");
+    const list = t.git(t.repo, "worktree", "list", "--porcelain");
+    check(list.includes(fs.realpathSync(res.dirty)) && !list.includes(path.basename(res.clean)), "git worktree list: dirty kept, clean gone", list);
+    const branches = t.git(t.repo, "branch", "--list", "ultracode/*");
+    check(/wt-dirty/.test(branches) && !/wt-clean/.test(branches), "branch kept only for the changed worktree", branches);
+    const r2 = t.run(["run", script, "--run-dir", path.join(t.root, "runs2", "iso"), "--cwd", t.repo, "--json"], { state: t.state() });
+    check(r2.code === 0, `same run-dir basename, second run: exit ${r2.code}`, r2.stderr);
+    check(typeof r2.json.result.dirty === "string" && /\/4-wt-dirty-r2$/.test(r2.json.result.dirty), `a kept branch from an earlier run does not null the isolated agent (got ${r2.json.result.dirty})`, r2.stderr);
+    check(/4-wt-dirty-r2/.test(t.git(t.repo, "branch", "--list", "ultracode/*")), "the second kept branch takes the -r2 suffix");
+  }],
+  ["concurrency cap: --concurrency and ULTRACODE_CONCURRENCY bound live spawns (the flag wins); default min(16, cpus-2)", (t) => {
+    const script = t.write("conc.js", [
+      "export const meta = { name: 'st-conc', description: 'concurrency cap' }",
+      "return await parallel([1, 2, 3, 4, 5, 6].map((i) => () => agent('[[scripted:sleep 600 s' + i + ']]', { label: 's:' + i })))",
+    ]);
+    const peakOf = (state) => {
+      const iv = t.calls(state).map((c) => [c.t_start, c.t_end]);
+      let peak = 0;
+      for (const [s] of iv) peak = Math.max(peak, iv.filter(([a, b]) => a <= s && s < b).length);
+      return peak;
+    };
+    const cases = [
+      ["--concurrency 2", ["--concurrency", "2"], {}, 2],
+      ["ULTRACODE_CONCURRENCY=3", [], { ULTRACODE_CONCURRENCY: "3" }, 3],
+      ["--concurrency 2 with ULTRACODE_CONCURRENCY=3", ["--concurrency", "2"], { ULTRACODE_CONCURRENCY: "3" }, 2],
+    ];
+    let k = 0;
+    for (const [name, flags, extraEnv, want] of cases) {
+      const state = t.state();
+      const dir = t.runDir(`conc-${++k}`);
+      const r = t.run(["run", script, "--run-dir", dir, ...flags, "--json"], { state, extraEnv });
+      check(r.code === 0, `${name}: exit ${r.code}`, r.stderr);
+      eq(r.json.result, ["s1", "s2", "s3", "s4", "s5", "s6"], `${name}: result`);
+      eq(t.readJSON(path.join(dir, "run.json")).concurrency, want, `${name}: run.json concurrency`);
+      eq(peakOf(state), want, `${name}: peak concurrent agents`);
+    }
+    const dir = t.runDir("conc-default");
+    const r = t.run(["run", t.write("conc-default.js", ["export const meta = { name: 'st-conc-default', description: 'default cap' }", "return 1"]), "--run-dir", dir, "--json"]);
+    check(r.code === 0, `default: exit ${r.code}`, r.stderr);
+    eq(t.readJSON(path.join(dir, "run.json")).concurrency, Math.max(1, Math.min(16, os.cpus().length - 2)), "default concurrency");
+  }],
+  ["workflow({scriptPath}), by project name and by ULTRACODE_CLAUDE_HOME name, runs a child inline one level deep; a nested workflow() is WORKFLOW_DEPTH", (t) => {
+    const child = t.write("child.js", [
+      "export const meta = { name: 'st-child', description: 'child workflow' }",
+      "const c = await agent('[[scripted:echo child-' + args.n + ']]', { label: 'child' })",
+      "let nested = 'not-attempted'",
+      "try { await workflow({ scriptPath: 'child.js' }, {}); nested = 'allowed' } catch (e) { nested = e.code || String(e) }",
+      "return { c, nested }",
+    ]);
+    const parent = t.write("parent.js", [
+      "export const meta = { name: 'st-parent', description: 'parent workflow' }",
+      `const sub = await workflow({ scriptPath: ${JSON.stringify(child)} }, { n: 5 })`,
+      "const byName = await workflow('child', { n: 6 })",
+      "const fromHome = await workflow('home-only', { n: 8 })",
+      "return { sub, byName, fromHome }",
+    ]);
+    fs.mkdirSync(path.join(t.repo, ".claude", "workflows"), { recursive: true });
+    fs.copyFileSync(child, path.join(t.repo, ".claude", "workflows", "child.js"));
+    const homeWf = path.join(t.root, "claude-home", "workflows");
+    fs.mkdirSync(homeWf, { recursive: true });
+    fs.writeFileSync(path.join(homeWf, "home-only.js"), "export const meta = { name: 'st-home-only', description: 'resolved from ULTRACODE_CLAUDE_HOME/workflows' }\nreturn await agent('[[scripted:echo home-' + args.n + ']]', { label: 'home' })\n");
+    fs.writeFileSync(path.join(homeWf, "child.js"), "export const meta = { name: 'st-home-child', description: 'shadowed by the project copy' }\nreturn 'home-child-must-not-run'\n");
+    const state = t.state();
+    const r = t.run(["run", parent, "--run-dir", t.runDir("wf"), "--cwd", t.repo, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, { sub: { c: "child-5", nested: "WORKFLOW_DEPTH" }, byName: { c: "child-6", nested: "WORKFLOW_DEPTH" }, fromHome: "home-8" }, "result (project name wins over ULTRACODE_CLAUDE_HOME name)", r.stderr);
+  }],
+  ["1000-agent cap: the 1001st agent() call is a typed AGENT_CAP error", (t) => {
+    const script = t.write("cap.js", [
+      "export const meta = { name: 'st-cap', description: 'agent cap' }",
+      "for (let i = 0; i < 1000; i++) agent('n' + i, { label: 'n:' + i })",
+      "await agent('one too many', { label: 'overflow' })",
+      "return 'unreachable'",
+    ]);
+    const state = t.state();
+    const r = t.run(["run", script, "--dry-run", "--json"], { state });
+    check(r.code === 2, `exit ${r.code} (want 2)`, r.stdout + r.stderr);
+    eq([r.json.live_agents_needed, r.json.completed, r.json.error && r.json.error.code], [1000, false, "AGENT_CAP"], "dry-run report");
+    eq(t.calls(state).length, 0, "spawns");
+  }],
+  ["nondeterministic calls in script code are rejected (NONDETERMINISTIC_CALL)", (t) => {
+    const script = t.write("nondet.js", ["export const meta = { name: 'st-nondet', description: 'nondeterminism' }", "const t0 = Date.now()", "return t0"]);
+    const r = t.run(["run", script, "--dry-run", "--json"]);
+    check(r.code === 2, `exit ${r.code} (want 2)`, r.stdout + r.stderr);
+    eq(r.json && r.json.error && r.json.error.code, "NONDETERMINISTIC_CALL", "error code", r.stdout + r.stderr);
+  }],
+  ["resume from a ZCode run dir: own zc1 keys match exactly, zero spawns, same result; dry-run reports completed", (t) => {
+    const { script, dir, argsFile } = t.bodyRun;
+    const dry = t.run(["run", script, "--args", `@${argsFile}`, "--resume-from", dir, "--dry-run", "--json"]);
+    check(dry.code === 0, `dry-run exit ${dry.code}`, dry.stderr);
+    eq(dry.json, { live_agents_needed: 0, resumed: 5, completed: true, agent_calls: 5 }, "dry-run report");
+    const state = t.state();
+    const dir2 = t.runDir("body-resumed");
+    const r = t.run(["run", script, "--args", `@${argsFile}`, "--resume-from", dir, "--run-dir", dir2, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, BODY_EXPECTED, "replayed result");
+    eq([r.json.summary.live_agents, r.json.summary.resumed_agents], [0, 5], "live/resumed");
+    eq(t.calls(state).length, 0, "spawns");
+    check(/key match/.test(r.stderr), "matched by own key", r.stderr);
+  }],
+  ["resume from a Claude transcript dir: v2 journal matched by label (nth call <-> nth result), meta.json label fallback, a recorded null replays (never re-spawned), only unfinished agents run live; ULTRACODE_RERUN_NULL=1 opts into re-running nulls", (t) => {
+    const cdir = path.join(t.root, "claude-home", "projects", "p", "s", "subagents", "workflows", "wf_selftest-001");
+    fs.mkdirSync(cdir, { recursive: true });
+    const v2 = (s) => "v2:" + sha256(s);
+    const lines = [
+      { type: "launched" },
+      { type: "started", key: v2("a"), agentId: "a1", label: "survey:r1", phase: "Survey" },
+      { type: "started", key: v2("b"), agentId: "a2", label: "survey:r2", phase: "Survey" },
+      { type: "result", key: v2("b"), agentId: "a2", result: "claude-r2" },
+      { type: "result", key: v2("a"), agentId: "a1", result: "claude-r1" },
+      { type: "started", key: v2("c"), agentId: "a3", label: "dup" },
+      { type: "result", key: v2("c"), agentId: "a3", result: "claude-dup-first" },
+      { type: "started", key: v2("d"), agentId: "a4", label: "dup" },
+      { type: "result", key: v2("d"), agentId: "a4", result: "claude-dup-second" },
+      { type: "started", key: v2("e"), agentId: "a5" },
+      { type: "result", key: v2("e"), agentId: "a5", result: { v: 42 } },
+      { type: "started", key: v2("f"), agentId: "a6", label: "unfinished" },
+      { type: "started", key: v2("g"), agentId: "a7", label: "was-null" },
+      { type: "result", key: v2("g"), agentId: "a7", result: null },
+    ];
+    fs.writeFileSync(path.join(cdir, "journal.jsonl"), lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
+    fs.writeFileSync(path.join(cdir, "agent-a5.meta.json"), JSON.stringify({ agentType: "general-purpose", description: "meta-labelled", workflowPhase: "X" }));
+    const script = t.write("claude-resume.js", [
+      "export const meta = { name: 'st-claude-resume', description: 'resume from a Claude journal by label' }",
+      "const xs = await parallel(['r1', 'r2'].map((n) => () => agent('[[scripted:echo live-' + n + ']]', { label: 'survey:' + n })))",
+      "const dup1 = await agent('[[scripted:echo live-dup1]]', { label: 'dup' })",
+      "const dup2 = await agent('[[scripted:echo live-dup2]]', { label: 'dup' })",
+      "const fromMeta = await agent('[[scripted:json {\"v\":1}]]', { label: 'meta-labelled', schema: { type: 'object', properties: { v: { type: 'integer' } }, required: ['v'] } })",
+      "const missing = await agent('[[scripted:echo live-missing]]', { label: 'unfinished' })",
+      "const wasNull = await agent('[[scripted:echo must-not-run]]', { label: 'was-null' })",
+      "return { xs, dup1, dup2, fromMeta, missing, wasNull }",
+    ]);
+    const dry = t.run(["run", script, "--resume-from", cdir, "--dry-run", "--json"]);
+    eq(dry.json, { live_agents_needed: 1, resumed: 6, completed: false, agent_calls: 7 }, "dry-run against the Claude journal", dry.stderr);
+    const rerun = t.run(["run", script, "--resume-from", cdir, "--dry-run", "--json"], { extraEnv: { ULTRACODE_RERUN_NULL: "1" } });
+    eq(rerun.json, { live_agents_needed: 2, resumed: 5, completed: false, agent_calls: 7 }, "ULTRACODE_RERUN_NULL=1 dry-run", rerun.stderr);
+    const state = t.state();
+    const dir = t.runDir("claude-resume");
+    const r = t.run(["run", script, "--resume-from", cdir, "--run-dir", dir, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, { xs: ["claude-r1", "claude-r2"], dup1: "claude-dup-first", dup2: "claude-dup-second", fromMeta: { v: 42 }, missing: "live-missing", wasNull: null }, "result", r.stderr);
+    eq([r.json.summary.live_agents, r.json.summary.resumed_agents, r.json.summary.null_agents], [1, 6, 1], "live/resumed/null");
+    eq(t.calls(state).map((c) => c.arg), ["live-missing"], "only the unfinished agent spawned");
+    const again = t.run(["run", script, "--resume-from", dir, "--dry-run", "--json"]);
+    eq(again.json, { live_agents_needed: 0, resumed: 7, completed: true, agent_calls: 7 }, "the ZCode journal is itself a complete resume source");
+  }],
+  ["re-running into the same --run-dir continues from its own journal", (t) => {
+    const { script, argsFile } = t.bodyRun;
+    const state = t.state();
+    const dir = t.runDir("body-continue");
+    const r1 = t.run(["run", script, "--args", `@${argsFile}`, "--run-dir", dir, "--json"], { state });
+    const r2 = t.run(["run", script, "--args", `@${argsFile}`, "--run-dir", dir, "--json"], { state });
+    check(r1.code === 0 && r2.code === 0, `exits ${r1.code}/${r2.code}`, r1.stderr + r2.stderr);
+    eq([r2.json.summary.live_agents, r2.json.summary.resumed_agents], [0, 5], "second run replays");
+    eq(t.calls(state).length, 5, "spawns across both runs");
+    eq(t.journal(dir).filter((x) => x.type === "result").length, 5, "own-journal replays are not re-journaled");
+  }],
+  ["real ~/.claude and ~/.zcode untouched: runs land under ULTRACODE_HOME, named workflows resolve from ULTRACODE_CLAUDE_HOME; unset, both default under HOME", (t) => {
+    const script = t.write("home.js", [
+      "export const meta = { name: 'st-home', description: 'default run dir and home-resolved workflow' }",
+      "return await workflow('home-only', { n: 9 })",
+    ]);
+    const state = t.state();
+    const r = t.run(["run", script, "--cwd", t.repo, "--json"], { state });
+    check(r.code === 0, `exit ${r.code}`, r.stderr);
+    eq(r.json.result, "home-9", "workflow resolved from ULTRACODE_CLAUDE_HOME/workflows");
+    check(r.json.run_dir.startsWith(path.join(t.root, "zcode-home", "runs") + path.sep), `run dir under ULTRACODE_HOME/runs (got ${r.json.run_dir})`);
+    eq([".claude", ".zcode"].filter((d) => fs.existsSync(path.join(t.home, d))), [], "nothing written under HOME by any selftest case");
+    const home2 = path.join(t.root, "home-defaults");
+    fs.mkdirSync(path.join(home2, ".claude", "workflows"), { recursive: true });
+    fs.writeFileSync(path.join(home2, ".claude", "workflows", "home-only.js"), "export const meta = { name: 'st-home-default', description: 'resolved from HOME/.claude/workflows' }\nreturn 'default-home-' + args.n\n");
+    const d = t.run(["run", script, "--cwd", t.repo, "--json"], { state, extraEnv: { HOME: home2 }, unset: ["ULTRACODE_HOME", "ULTRACODE_CLAUDE_HOME"] });
+    check(d.code === 0, `defaults: exit ${d.code}`, d.stderr);
+    eq(d.json.result, "default-home-9", "unset ULTRACODE_CLAUDE_HOME -> HOME/.claude/workflows");
+    check(d.json.run_dir.startsWith(path.join(home2, ".zcode", "ultracode", "runs") + path.sep), `unset ULTRACODE_HOME -> HOME/.zcode/ultracode/runs (got ${d.json.run_dir})`);
+  }],
+];
+
+async function cmdSelftest() {
+  const backend = findBackend();
+  if (!backend) {
+    process.stdout.write("FAIL setup: scripted agent backend not found (priv/zcode_plugin/test/ultracode-scripted-agent.mjs); set ULTRACODE_SELFTEST_AGENT\n");
+    return 1;
+  }
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "ultracode-selftest-")));
+  let t;
+  try {
+    t = selftestContext(root, backend);
+  } catch (e) {
+    process.stdout.write(`FAIL setup: ${e.message}\n${e.detail ?? ""}\n`);
+    return 1;
+  }
+  let failed = 0;
+  for (const [name, fn] of SELFTEST_CASES) {
+    try {
+      await fn(t);
+      process.stdout.write(`PASS ${name}\n`);
+    } catch (e) {
+      failed++;
+      process.stdout.write(`FAIL ${name}: ${e.message}\n`);
+      if (e.detail) process.stdout.write(tail(e.detail, 2000).replace(/^/gm, "    ") + "\n");
+    }
+  }
+  process.stdout.write(`selftest: ${SELFTEST_CASES.length - failed} passed, ${failed} failed (backend ${backend})\n`);
+  if (env("ULTRACODE_SELFTEST_KEEP", "") === "1") process.stdout.write(`selftest: kept ${root}\n`);
+  else fs.rmSync(root, { recursive: true, force: true });
+  return failed ? 1 : 0;
+}
+
+// ------------------------------------------------------------------- main
+
+async function main(argv) {
+  const [cmd, ...rest] = argv;
+  if (cmd === "run") return cmdRun(rest);
+  if (cmd === "selftest") return cmdSelftest();
+  process.stderr.write([
+    "usage:",
+    "  node ultracode-run.mjs run <script.js> [--args <json|text|@file>] [--run-dir <dir>]",
+    "       [--resume-from <claudeTranscriptDir|zcodeRunDir>]... [--cwd <dir>] [--concurrency N] [--dry-run] [--json]",
+    "  node ultracode-run.mjs selftest",
+    "",
+  ].join("\n"));
+  return cmd === undefined || cmd === "help" || cmd === "--help" ? 0 : 2;
+}
+
+process.on("unhandledRejection", (e) => {
+  progress(`unawaited rejection: ${e && e.message ? e.message : String(e)}`);
+});
+
+const wantsJson = process.argv.includes("--json");
+main(process.argv.slice(2)).then(
+  (code) => { process.exitCode = code; },
+  (e) => {
+    const typed = e instanceof UltracodeError;
+    const out = { error: { code: typed ? e.code : "INTERNAL", message: e.message ?? String(e) } };
+    if (wantsJson) process.stdout.write(JSON.stringify(out) + "\n");
+    process.stderr.write(`ultracode: ${out.error.code}: ${out.error.message}\n`);
+    process.exitCode = typed ? 2 : 1;
+  },
+);
