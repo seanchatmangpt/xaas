@@ -38,8 +38,10 @@ publish-image / deploy: unchanged operator-gated actuation (now also needs dialy
 Shared logic is one composite action, `.github/actions/beam`: pinned toolchain from
 `.tool-versions`, cache keyed `mix-<env>-<os>-<erlang+elixir digest>-<hash(mix.lock)>`
 with a same-toolchain prefix fallback (a lockfile change recompiles only the dependencies
-that changed instead of the full 28 min), `mix deps.get --check-locked`, `mix deps.compile`,
-and a cache save immediately after dependencies compile (so failing runs still seed it).
+that changed instead of the full 28 min), `mix deps.get --check-locked`, `mix deps.loadpaths`
+(compiles only missing/stale dependencies; MEASURED 1.2 s no-op warm; an explicit `mix deps.compile`
+rebuilds everything and cost 6.5-7 min per lane on a cache hit in the first run), and a cache
+save immediately after dependencies compile (so failing runs still seed it).
 Only the erlang/elixir lines of `.tool-versions` enter the key; editing terraform/awscli
 no longer invalidates it.
 

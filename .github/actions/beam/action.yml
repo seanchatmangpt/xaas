@@ -53,11 +53,14 @@ runs:
         MIX_ENV: ${{ inputs.mix-env }}
       run: mix deps.get --check-locked
 
-    - name: Compile dependencies
+    # deps.loadpaths compiles only missing/stale dependencies and is a ~1 s no-op on a
+    # warm build (measured). An explicit `mix deps.compile` rebuilds every dependency
+    # unconditionally (it cost 6.5-7 min per lane on an exact cache hit) and must not be used.
+    - name: Compile stale dependencies
       shell: bash
       env:
         MIX_ENV: ${{ inputs.mix-env }}
-      run: mix deps.compile
+      run: mix deps.loadpaths
 
     - name: Save dependency cache
       if: steps.cache.outputs.cache-hit != 'true'
