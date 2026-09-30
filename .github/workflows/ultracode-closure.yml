@@ -22,6 +22,7 @@ on:
       - "test/xaas/ultracode/wave_loop_test.exs"
       - "test/xaas/ultracode/ocel_egress_test.exs"
       - "test/xaas/ultracode/recipe_worker_test.exs"
+      - ".github/actions/beam/**"
   workflow_dispatch:
 
 permissions:
@@ -43,7 +44,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -60,14 +61,10 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
 
-      - name: Setup Elixir
-        uses: erlef/setup-beam@v1.24.1
+      - name: Toolchain, locked deps, dependency cache
+        uses: ./.github/actions/beam
         with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - name: Resolve locked dependencies
-        run: mix deps.get --check-locked
+          mix-env: test
 
       - name: Compile exact closure subject
         run: mix compile --force --warnings-as-errors

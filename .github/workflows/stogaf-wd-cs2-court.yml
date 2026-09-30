@@ -5,6 +5,25 @@ on:
     branches:
       - main
       - feat/stogaf-wd-cs2-v26.9.22
+    paths:
+      - "docs/rfc/RFC-STOGAF-v26.9.22.md"
+      - "docs/case-studies/wd-fa/**"
+      - "docs/sjira/v26.9.22/**"
+      - "priv/packs/wd_cs2_pack/**"
+      - "priv/packs/wd_cs2_case_study_pack/**"
+      - "scripts/stogaf_semantic_court.py"
+      - "test/*.py"
+      - "release/v26.9.25/receipts/**"
+      - "tools/wd_deck/**"
+      - "lib/xaas/case_studies/wd_fa/**"
+      - "lib/xaas_web/live/wd_fa/**"
+      - "lib/xaas_web/controllers/wd_fa_stogaf_controller.ex"
+      - "lib/mix/tasks/xaas.wd.*"
+      - "test/xaas/case_studies/**"
+      - "test/xaas_web/controllers/wd_fa_stogaf_controller_test.exs"
+      - "e2e/wd-fa-cs2.spec.cjs"
+      - ".github/workflows/stogaf-wd-cs2-court.yml"
+      - ".github/actions/beam/**"
   pull_request:
     paths:
       - "docs/rfc/RFC-STOGAF-v26.9.22.md"
@@ -24,6 +43,7 @@ on:
       - "test/xaas_web/controllers/wd_fa_stogaf_controller_test.exs"
       - "e2e/wd-fa-cs2.spec.cjs"
       - ".github/workflows/stogaf-wd-cs2-court.yml"
+      - ".github/actions/beam/**"
   workflow_dispatch:
 
 permissions:
@@ -71,23 +91,22 @@ jobs:
       - name: Assert exact subject
         run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
 
-      - uses: erlef/setup-beam@v1.24.1
+      - name: Toolchain, locked deps, dependency cache
+        uses: ./.github/actions/beam
         with:
-          version-file: .tool-versions
-          version-type: strict
+          mix-env: test
 
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
+          cache: npm
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
-      - name: Resolve dependencies
-        run: |
-          mix deps.get --check-locked
-          npm ci
+      - name: Install node dependencies
+        run: npm ci
 
       - name: Prepare database
         run: mix ecto.create && mix ecto.migrate

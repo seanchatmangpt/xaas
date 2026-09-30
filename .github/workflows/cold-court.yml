@@ -1,0 +1,73 @@
+name: Cold court
+
+# The fast courts in ci_cd.yaml restore lock-keyed caches. A cache is an optimization,
+# never a correctness dependency, so this workflow re-establishes every cached claim
+# from nothing on a schedule: clean dependency resolution, clean compile with warnings
+# as errors (test and prod), and an uncached container build. A cache that masks a
+# real break is caught here within a week, not never.
+
+on:
+  schedule:
+    - cron: "17 4 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: xaas-cold-court
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  clean-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    name: Clean compile (${{ matrix.mix_env }})
+    strategy:
+      fail-fast: false
+      matrix:
+        mix_env: [test, prod]
+    env:
+      MIX_ENV: ${{ matrix.mix_env }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Resolve and compile from clean state
+        run: |
+          set -euo pipefail
+          rm -rf deps _build
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
+
+  clean-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    name: Container build without layer cache
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Parse versions from .tool-versions
+        run: ./scripts/versions.sh
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build candidate image with no cache
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          no-cache: true
+          build-args: |
+            ELIXIR_VERSION=${{ env.ELIXIR_VERSION }}
+            OTP_VERSION=${{ env.ERLANG_VERSION }}
