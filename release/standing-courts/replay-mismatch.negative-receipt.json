@@ -1,0 +1,31 @@
+{
+  "schema": "standing-courts/inherited-negative-receipt/v1",
+  "receipt_kind": "EXPECTED_NEGATIVE_EXECUTION",
+  "failure_class": "REPLAY_MISMATCH",
+  "guard": "REPLAY_DIVERGED",
+  "subject": {
+    "repository": "seanchatmangpt/xaas",
+    "base_sha": "9ff91c6fd3e205398d082a6be366f21e9ec7777c",
+    "adversary_commit": "c10bd025a4e569e086ba2c8d76627a30b75ddeea",
+    "adversary_blob": "7da7574db0d0cbc4bb05c89da6123ad248c76460"
+  },
+  "inheritance": {
+    "canonical_repository": "seanchatmangpt/chatman-ecosystem",
+    "canonical_commit": "31dcb53edf026cce9a297fd08924b0b5d5ff2b94",
+    "falsifier": "dm_replay_mismatch"
+  },
+  "executor": "GgenIgniter.SemanticJira.replay_check/2",
+  "expected": {
+    "ok": false,
+    "reason": "REPLAY_DIVERGED"
+  },
+  "observation": {
+    "status": "PENDING_RUNTIME_EXECUTION",
+    "credit_prevention": false
+  },
+  "authority": "NONE",
+  "metric": {
+    "failures_originally_observed": 1,
+    "failures_prevented_in_other_subjects": 0
+  }
+}
