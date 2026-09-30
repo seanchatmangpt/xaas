@@ -1,0 +1,19 @@
+{
+  "schema": "standing-courts/replay-adversary/v1",
+  "failure_class": "REPLAY_MISMATCH",
+  "expected": {
+    "subject": "factory-b-inherited-witness",
+    "transition": "admit",
+    "standing": "ALIVE",
+    "sequence": 1
+  },
+  "observed": {
+    "subject": "factory-b-inherited-witness",
+    "transition": "admit",
+    "standing": "ALIVE",
+    "sequence": 2
+  },
+  "expected_guard": "REPLAY_DIVERGED",
+  "executor": "GgenIgniter.SemanticJira.replay_check/2",
+  "authority": "NONE"
+}
