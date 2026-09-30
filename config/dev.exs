@@ -315,7 +315,12 @@ config :xaas, :ultracode_repos, %{
 config :xaas, :ultracode_backlog_scripts, %{
   "spr" => "spr_backlog.py",
   "eds" => "eds_backlog.py",
-  "nounverb" => "nounverb_backlog.py"
+  "nounverb" => "nounverb_backlog.py",
+  # Profile-owned sensing: the default aps_backlog.py exits 0 with no items on
+  # these repos and would shadow their failing-court profiles. This sentinel
+  # exits 2 so sense_one/4 falls back to the registry entry's profile.
+  "ggen-ecosystem" => "profile_sensing_only.py",
+  "gym-ecosystem" => "profile_sensing_only.py"
 }
 
 # Sensing-profile names -> deterministic profiles (`Xaas.Ultracode.Sensing.
@@ -369,7 +374,8 @@ config :xaas, :ultracode_sensing_profiles, %{
     "type" => "failing_tests",
     "command" => ["bash", "scripts/verify-provenance.sh"],
     "parser" => "regex",
-    "pattern" => "^(?<id>(?:vendor/)?\\S+: .+)$",
+    "pattern" =>
+      "^(?<id>(?:vendor/\\S+|[a-z0-9_-]+): (?:missing|locked|declared|mode=|gitlink=|checkout=).*)$",
     "timeout_ms" => 120_000
   }
 }
