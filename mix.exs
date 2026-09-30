@@ -102,11 +102,11 @@ defmodule Xaas.MixProject do
       {:req_llm, "~> 1.18"},
       {:ash_a2a,
        git: "https://github.com/seanchatmangpt/ash_a2a.git",
-       ref: "be5d9fafe4e212981eec706771820c53da0916d0",
+       ref: "3325032d9dea201e6deb82ef242c534aacb3b420",
        override: true},
       {:ash_r2rml,
        git: "https://github.com/seanchatmangpt/ash_r2rml.git",
-       ref: "40d181fffdefbb65ee4a83486eae86534690c4d5",
+       ref: "36f25a30f2f60acde7da1a965626451dbc40b6f8",
        override: true},
       {:a2a, "~> 0.2"},
       {:bandit, "~> 1.5"},
@@ -233,10 +233,10 @@ defmodule Xaas.MixProject do
       # v26.9.27: ash_pplan owns FOND policy semantics (AshPPlan.FOND +
       # FOND.Synthesis, strong/strong-cyclic). XaaS consumes it for the
       # WaveLoop recovery policy instead of growing a second planner.
-      # Immutable ref = origin/main after PR #7 (strong-cyclic synthesis).
+      # Immutable ref = origin/main at b9da1ad (26.9.8 hardening + SA2A provider; includes PR #7 strong-cyclic synthesis).
       {:ash_pplan,
        git: "https://github.com/seanchatmangpt/ash_pplan.git",
-       ref: "d6578c3b9491f9f05eb0c33b157845b11f49857f"}
+       ref: "b9da1ad7590d70afac5eace3bd7ba1a644f7249f"}
     ]
   end
 
