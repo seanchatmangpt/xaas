@@ -146,7 +146,7 @@ jobs:
             lib/xaas/case_studies/wd_fa test/xaas/case_studies e2e/wd-fa-cs2.spec.cjs
 
       - name: Build LiveView assets (priv/static/assets is untracked)
-        run: mix assets.setup && mix assets.build
+        run: mix do app.config + assets.setup + assets.build
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
