@@ -207,6 +207,25 @@ config :xaas, :ultracode_repos, %{
     suite: "ggen-igniter-dod",
     canonical_suite: "ggen-igniter-canonical",
     refresh: true
+  },
+  # Composition roots (2026-09-30). `ggen-ecosystem` is the ggen manufacturer
+  # root; `gym-ecosystem` the gym composition root that pins it (plus gymact,
+  # autofde-lab, beam4pm) as gitlinks. Sensing is failing-court derived (their
+  # tickets carry no `## Status` section); suites are declared in
+  # Xaas.Ultracode.TargetSuites.sj_program_suites/0.
+  "ggen-ecosystem" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ggen-ecosystem"),
+    sensing: "ggen-ecosystem-courts",
+    suite: "ggen-ecosystem-dod",
+    canonical_suite: "ggen-ecosystem-canonical",
+    refresh: true
+  },
+  "gym-ecosystem" => %{
+    path: Path.expand("~/xaas/worktrees/repos/gym-ecosystem"),
+    sensing: "gym-ecosystem-courts",
+    suite: "gym-ecosystem-dod",
+    canonical_suite: "gym-ecosystem-canonical",
+    refresh: true
   }
 }
 
@@ -245,6 +264,36 @@ config :xaas, :ultracode_sensing_profiles, %{
     "dir" => "docs/jira",
     "closed" =>
       ~w(DONE MERGED LANDED CLOSED RESOLVED ALIVE COMPLETE. **EXECUTED **EXECUTED.** **REWRITTEN **IMPLEMENTED)
+  },
+  # ggen-ecosystem: one item per failing unittest in its own discover surface
+  # (stdlib unittest, no network, ~2s; non-zero exit is the expected "failing"
+  # signal). Parameterized subtests carry their `(case='...')` in the id.
+  "ggen-ecosystem-courts" => %{
+    "type" => "failing_tests",
+    "command" => [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-t",
+      ".",
+      "-p",
+      "test_*.py"
+    ],
+    "parser" => "regex",
+    "pattern" => "^(?:FAIL|ERROR): (?<id>.+)$",
+    "timeout_ms" => 300_000
+  },
+  # gym-ecosystem: gitlink/lock provenance court. Every reported line is
+  # `<vendor path>: <reason>` after a PROVENANCE_BLOCKED header; ALIVE => no items.
+  "gym-ecosystem-courts" => %{
+    "type" => "failing_tests",
+    "command" => ["bash", "scripts/verify-provenance.sh"],
+    "parser" => "regex",
+    "pattern" => "^(?<id>(?:vendor/)?\\S+: .+)$",
+    "timeout_ms" => 120_000
   }
 }
 
