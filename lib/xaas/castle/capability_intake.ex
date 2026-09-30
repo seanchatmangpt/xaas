@@ -12,10 +12,30 @@ defmodule Xaas.Castle.CapabilityIntake do
   @authority_ceiling :construct
 
   @donors [
-    %{repository: "seanchatmangpt/zcode-cli", sha: "a568c3c3ee4b377e98fe9db0f37fa90da760734f", capability: :external_worker_provider, disposition: :wrap},
-    %{repository: "seanchatmangpt/chatgpt-cloud-elixir", sha: "8efaa40b69c8162d22fe2dc5e59657f8dcff529e", capability: :model_provider_bridge, disposition: :wrap},
-    %{repository: "seanchatmangpt/dteam", sha: "5c00d757ebc614e1db1dd0d564dd0c34896d57a0", capability: :capability_kernel_research, disposition: :candidate_absorb},
-    %{repository: "seanchatmangpt/mcpp", sha: "5f5ee2175424c63edc6cdc211d3a5289a1c5556f", capability: :proof_carrying_work_runtime_research, disposition: :candidate_absorb}
+    %{
+      repository: "seanchatmangpt/zcode-cli",
+      sha: "a568c3c3ee4b377e98fe9db0f37fa90da760734f",
+      capability: :external_worker_provider,
+      disposition: :wrap
+    },
+    %{
+      repository: "seanchatmangpt/chatgpt-cloud-elixir",
+      sha: "8efaa40b69c8162d22fe2dc5e59657f8dcff529e",
+      capability: :model_provider_bridge,
+      disposition: :wrap
+    },
+    %{
+      repository: "seanchatmangpt/dteam",
+      sha: "5c00d757ebc614e1db1dd0d564dd0c34896d57a0",
+      capability: :capability_kernel_research,
+      disposition: :candidate_absorb
+    },
+    %{
+      repository: "seanchatmangpt/mcpp",
+      sha: "5f5ee2175424c63edc6cdc211d3a5289a1c5556f",
+      capability: :proof_carrying_work_runtime_research,
+      disposition: :candidate_absorb
+    }
   ]
 
   @spec projection_source() :: String.t()

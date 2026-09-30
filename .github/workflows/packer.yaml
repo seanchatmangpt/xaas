@@ -3,6 +3,9 @@ name: CI packer
 on:
   push:
     branches: [main]
+    paths:
+      - "packer/**"
+      - ".github/workflows/packer.yaml"
   pull_request:
     branches: [main]
     paths:

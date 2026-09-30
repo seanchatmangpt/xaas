@@ -97,8 +97,13 @@ COPY priv priv
 COPY lib lib
 COPY assets assets
 
-RUN mix assets.deploy
+# Compile first (Phoenix's own generated Dockerfile order), then build assets. The asset
+# tasks need `app.config` so OTP's :public_key/:ssl stay on the code path: tailwind and
+# esbuild are declared runtime: false outside :dev and Elixir 1.15+ prunes code paths to
+# the declared closure, so a bare `mix assets.deploy` dies with
+# ":public_key.pkix_verify_hostname_match_fun/1 is undefined" (observed in CI).
 RUN mix compile --warnings-as-errors
+RUN mix do app.config + assets.deploy
 
 COPY config/runtime.exs config/
 COPY rel rel

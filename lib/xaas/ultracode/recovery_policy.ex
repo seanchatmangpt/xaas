@@ -130,9 +130,12 @@ defmodule Xaas.Ultracode.RecoveryPolicy do
   def observe(:complete, _overloaded?), do: :complete
   def observe(_outcome, true), do: :provider_open
   def observe(outcome, false) when outcome in @tick_outcomes, do: outcome
+
   def observe(outcome, false) do
     case WaveOutcome.consequence(outcome) do
-      :executed -> if(outcome == :worker_completed, do: :worker_completed, else: :error)
+      # :worker_completed is in @tick_outcomes and matched above, so any other executed
+      # outcome is not a modelled completion: fail-safe retry class.
+      :executed -> :error
       :refused -> if(outcome in @retry_outcomes, do: outcome, else: :refused)
       :failed -> if(outcome in @retry_outcomes, do: outcome, else: :error)
       :unknown_outcome -> :error

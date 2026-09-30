@@ -5,8 +5,44 @@ on:
     branches:
       - main
       - feat/wd-cs2-quality-loop-v26.9.21
+    paths:
+      - "lib/xaas/case_studies/**"
+      - "lib/xaas_web/**"
+      - "assets/**"
+      - "e2e/**"
+      - "test/xaas/case_studies/**"
+      - "docs/case-studies/wd-fa/**"
+      - "config/**"
+      - "mix.exs"
+      - "mix.lock"
+      - ".tool-versions"
+      - "package.json"
+      - "package-lock.json"
+      - "playwright.config.cjs"
+      - ".github/workflows/wd-cs2-exact-head.yml"
+      - ".github/actions/beam/**"
   pull_request:
     branches: [main]
+    paths:
+      - "lib/xaas/case_studies/**"
+      - "lib/xaas_web/**"
+      - "assets/**"
+      - "e2e/**"
+      - "test/xaas/case_studies/**"
+      - "docs/case-studies/wd-fa/**"
+      - "config/**"
+      - "mix.exs"
+      - "mix.lock"
+      - ".tool-versions"
+      - "package.json"
+      - "package-lock.json"
+      - "playwright.config.cjs"
+      - ".github/workflows/wd-cs2-exact-head.yml"
+      - ".github/actions/beam/**"
+  # Path filters skip this court on unrelated changes; the daily run bounds how long
+  # an unrelated-looking change could hide a regression here.
+  schedule:
+    - cron: "37 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -44,24 +80,19 @@ jobs:
       - name: Assert exact subject
         shell: bash
         run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
-      - uses: erlef/setup-beam@v1.24.1
+      - name: Toolchain, locked deps, dependency cache
+        uses: ./.github/actions/beam
         with:
-          version-file: .tool-versions
-          version-type: strict
+          mix-env: test
+
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - name: Cache exact-toolchain deps and build
-        uses: actions/cache@v6
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
-      - name: Resolve dependencies
-        run: |
-          mix deps.get --check-locked
-          npm ci
+          cache: npm
+
+      - name: Install node dependencies
+        run: npm ci
+
       - name: Prepare database
         run: mix ecto.create && mix ecto.migrate
       - name: Compile exact subject
@@ -75,7 +106,7 @@ jobs:
           ! grep -rnE 'unittest\.mock|Mock\(|MagicMock|monkeypatch|Mox\b|:meck|meck\.' \
             lib/xaas/case_studies lib/xaas_web/live/wd_fa test/xaas/case_studies e2e/wd-fa-cs2.spec.cjs
       - name: Build LiveView assets (priv/static/assets is untracked)
-        run: mix assets.setup && mix assets.build
+        run: mix do app.config + assets.setup + assets.build
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Start real Phoenix server

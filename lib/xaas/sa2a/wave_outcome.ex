@@ -5,7 +5,16 @@ defmodule Xaas.Sa2a.WaveOutcome do
   retains scheduling policy such as chain/await/backoff.
   """
 
-  @success [:worker_completed, :complete, :completed, :success, :alive, :partial_alive, :reconciled, :compensated]
+  @success [
+    :worker_completed,
+    :complete,
+    :completed,
+    :success,
+    :alive,
+    :partial_alive,
+    :reconciled,
+    :compensated
+  ]
   @refused [:blocked, :refused]
   @failed [
     :failed,
@@ -19,10 +28,15 @@ defmodule Xaas.Sa2a.WaveOutcome do
     :worker_exit,
     :reclaim_failed
   ]
-  @known Enum.uniq(@success ++ @refused ++ @failed ++ [:busy, :waiting_deps, :handed_off, :unknown_outcome])
+  @known Enum.uniq(
+           @success ++
+             @refused ++ @failed ++ [:busy, :waiting_deps, :handed_off, :unknown_outcome]
+         )
   @strings Map.new(@known, &{Atom.to_string(&1), &1})
 
-  def parse(outcome) when is_atom(outcome), do: if(outcome in @known, do: outcome, else: :unknown_outcome)
+  def parse(outcome) when is_atom(outcome),
+    do: if(outcome in @known, do: outcome, else: :unknown_outcome)
+
   def parse(outcome) when is_binary(outcome), do: Map.get(@strings, outcome, :unknown_outcome)
   def parse(_), do: :unknown_outcome
 

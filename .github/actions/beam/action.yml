@@ -1,0 +1,72 @@
+name: BEAM toolchain and dependency cache
+description: >-
+  Pinned OTP/Elixir from .tool-versions, then deps/ and _build/<env> restored from the
+  nearest lock-compatible cache (exact key, else the newest cache for the same toolchain
+  and MIX_ENV, so a lockfile change recompiles only the dependencies that changed),
+  resolved with --check-locked and compiled. The cache is saved as soon as dependencies
+  are compiled, so a run that later fails still seeds the next one. Caching is an
+  optimization only: every path is correct on a total miss.
+
+inputs:
+  mix-env:
+    description: MIX_ENV whose _build is restored and whose dependencies are compiled
+    required: true
+
+outputs:
+  cache-hit:
+    description: "'true' only for an exact key hit; 'false' for a prefix restore or a miss"
+    value: ${{ steps.cache.outputs.cache-hit }}
+  toolchain:
+    description: Digest of the erlang/elixir lines of .tool-versions (other tools excluded)
+    value: ${{ steps.key.outputs.toolchain }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Elixir
+      uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # same pin project-measure-extension already ran
+      with:
+        version-file: .tool-versions
+        version-type: strict
+
+    - name: Derive cache key
+      id: key
+      shell: bash
+      # Only erlang/elixir select compiled BEAM output; terraform/awscli/etc. in
+      # .tool-versions must not bust the cache.
+      run: echo "toolchain=$(grep -E '^(erlang|elixir) ' .tool-versions | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore dependency cache
+      id: cache
+      uses: actions/cache/restore@v6
+      with:
+        path: |
+          deps
+          _build
+        key: mix-${{ inputs.mix-env }}-${{ runner.os }}-${{ steps.key.outputs.toolchain }}-${{ hashFiles('mix.lock') }}
+        restore-keys: |
+          mix-${{ inputs.mix-env }}-${{ runner.os }}-${{ steps.key.outputs.toolchain }}-
+
+    - name: Resolve locked dependencies
+      shell: bash
+      env:
+        MIX_ENV: ${{ inputs.mix-env }}
+      run: mix deps.get --check-locked
+
+    # deps.loadpaths compiles only missing/stale dependencies and is a ~1 s no-op on a
+    # warm build (measured). An explicit `mix deps.compile` rebuilds every dependency
+    # unconditionally (it cost 6.5-7 min per lane on an exact cache hit) and must not be used.
+    - name: Compile stale dependencies
+      shell: bash
+      env:
+        MIX_ENV: ${{ inputs.mix-env }}
+      run: mix deps.loadpaths
+
+    - name: Save dependency cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: |
+          deps
+          _build
+        key: mix-${{ inputs.mix-env }}-${{ runner.os }}-${{ steps.key.outputs.toolchain }}-${{ hashFiles('mix.lock') }}

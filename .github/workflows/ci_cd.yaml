@@ -1,12 +1,17 @@
 name: CI/CD Elixir
 
+# Architecture (measured basis: docs/ci/CI-ARCHITECTURE.md)
+#   - one lane per MIX_ENV, each restoring a lock-keyed, prefix-restorable cache
+#     (.github/actions/beam) instead of rebuilding ~28 min of dependencies;
+#   - lanes run concurrently from t0 (no serial image-check tail);
+#   - push triggers only on main (PRs cover branches) so a sha is not run twice;
+#   - PR runs are cancelled when superseded; main runs are never cancelled because
+#     they seed the caches every PR restores.
+
 on:
   push:
     branches:
       - main
-      - feat/**
-      - fix/**
-      - epoch/**
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -28,8 +33,8 @@ on:
         type: string
 
 concurrency:
-  group: xaas-ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: xaas-ci-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -38,116 +43,14 @@ env:
   SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
-  deps-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    name: Warm exact test dependency graph
-    env:
-      MIX_ENV: test
-    steps:
-      - name: Checkout exact subject
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ env.SUBJECT_SHA }}
-          persist-credentials: false
-
-      - name: Assert exact subject identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          actual="$(git rev-parse HEAD)"
-          test "$actual" = "$SUBJECT_SHA" || {
-            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
-            exit 2
-          }
-
-      - name: Setup Elixir
-        uses: erlef/setup-beam@v1.24.1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - name: Restore or seed exact-toolchain dependency cache
-        uses: actions/cache@v6
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
-
-      - name: Resolve locked dependencies
-        run: mix deps.get --check-locked
-
-      - name: Compile dependency graph once
-        run: mix deps.compile
-
-  autonomic-wave-contract:
-    needs: deps-test
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    name: Exact-head autonomic-wave contract
-    env:
-      MIX_ENV: test
-    services:
-      postgres:
-        image: pgvector/pgvector:0.8.0-pg15
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - name: Checkout exact subject
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ env.SUBJECT_SHA }}
-          persist-credentials: false
-
-      - name: Assert exact subject identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          actual="$(git rev-parse HEAD)"
-          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$actual"
-          test "$actual" = "$SUBJECT_SHA" || {
-            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
-            exit 2
-          }
-
-      - name: Setup Elixir
-        uses: erlef/setup-beam@v1.24.1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - name: Cache exact-toolchain deps and build
-        uses: actions/cache@v6
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
-
-      - name: Resolve locked dependencies
-        run: mix deps.get --check-locked
-
-      - name: Run focused autonomic-wave court
-        run: >-
-          mix test test/xaas/ultracode/autonomic_wave_schedule_test.exs
-          --only autonomic_wave_contract
-          --max-failures 1
-          --trace
-
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     name: Exact-head test court
     env:
       MIX_ENV: test
+    outputs:
+      cache_hit: ${{ steps.beam.outputs.cache-hit }}
     services:
       postgres:
         image: pgvector/pgvector:0.8.0-pg15
@@ -156,7 +59,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -178,37 +81,76 @@ jobs:
             exit 2
           fi
 
-      - name: Setup Elixir
-        uses: erlef/setup-beam@v1.24.1
+      - name: Toolchain, locked deps, dependency cache
+        id: beam
+        uses: ./.github/actions/beam
         with:
-          version-file: .tool-versions
-          version-type: strict
+          mix-env: test
 
-      - name: Cache exact-toolchain deps and build
-        uses: actions/cache@v6
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
-
-      - name: Resolve locked dependencies
-        run: mix deps.get --check-locked
-
+      # Cheap deterministic failures first: a lock, format or warning defect now
+      # stops this lane in about a minute instead of after the test suite.
       - name: Check formatting
         run: mix format --check-formatted
 
       - name: Compile with warnings as errors
         run: mix compile --force --warnings-as-errors
 
+      # No --trace (it forces max_cases: 1 and serializes the async modules) and no
+      # --max-failures 1 (the suite is ~2 min; a full failure list beats one-at-a-time
+      # red cycles).
       - name: Run tests
-        run: mix test --max-failures 1 --trace
-
-      - name: Dialyzer static analysis
-        run: MIX_ENV=dev mix dialyzer --format github
+        run: mix test --slowest 10
 
       - name: Check unused dependencies
         run: mix deps.unlock --check-unused
+
+  dialyzer:
+    runs-on: ubuntu-latest
+    # Cold (lock changed with no usable cache) is ~26 min; warm is analysis only.
+    timeout-minutes: 60
+    name: Dialyzer static analysis
+    env:
+      MIX_ENV: dev
+    outputs:
+      cache_hit: ${{ steps.beam.outputs.cache-hit }}
+      plt_hit: ${{ steps.plt.outputs.cache-hit }}
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Toolchain, locked deps, dev dependency cache
+        id: beam
+        uses: ./.github/actions/beam
+        with:
+          mix-env: dev
+
+      - name: Restore PLTs
+        id: plt
+        uses: actions/cache/restore@v6
+        with:
+          path: priv/plts
+          key: plt-${{ runner.os }}-${{ steps.beam.outputs.toolchain }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            plt-${{ runner.os }}-${{ steps.beam.outputs.toolchain }}-
+
+      - name: Dialyzer static analysis
+        run: mix dialyzer --format github
+
+      # Saved even when dialyzer reports warnings (the PLT is still valid); never
+      # from a cancelled run, which could leave a partial PLT.
+      - name: Save PLTs
+        if: ${{ !cancelled() && steps.plt.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: priv/plts
+          key: plt-${{ runner.os }}-${{ steps.beam.outputs.toolchain }}-${{ hashFiles('mix.lock') }}
 
   asyncapi:
     runs-on: ubuntu-latest
@@ -251,13 +193,16 @@ jobs:
 
   production:
     runs-on: ubuntu-latest
-    # Clean-state prod compile: sparql's generated .erl parser (~5 min) and
-    # ggen_igniter's Rustler NIF in release mode (oxigraph + RocksDB C++) do
-    # not fit in 12 minutes on a hosted runner.
+    # Cold prod dependency graph: sparql's generated parser plus ggen_igniter's
+    # release-mode Rustler NIF (~21 min). Warm restores compiled dependencies and
+    # still force-compiles the whole application with warnings as errors. The
+    # from-scratch claim is re-established weekly by cold-court.yml.
     timeout-minutes: 45
     name: Exact-head production compile court
     env:
       MIX_ENV: prod
+    outputs:
+      cache_hit: ${{ steps.beam.outputs.cache-hit }}
     steps:
       - name: Checkout exact subject
         uses: actions/checkout@v7
@@ -267,34 +212,23 @@ jobs:
 
       - name: Assert exact subject identity
         shell: bash
-        run: |
-          set -euo pipefail
-          actual="$(git rev-parse HEAD)"
-          test "$actual" = "$SUBJECT_SHA" || {
-            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
-            exit 2
-          }
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
 
-      - name: Setup Elixir
-        uses: erlef/setup-beam@v1.24.1
+      - name: Toolchain, locked deps, prod dependency cache
+        id: beam
+        uses: ./.github/actions/beam
         with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - name: Resolve production dependencies from clean state
-        run: |
-          set -euo pipefail
-          rm -rf deps _build
-          mix deps.get --check-locked
+          mix-env: prod
 
       - name: Compile production candidate with warnings as errors
         run: mix compile --force --warnings-as-errors
 
   image-check:
     runs-on: ubuntu-latest
-    # Same clean prod dependency graph as `production`, plus assets and release.
+    # Starts at t0 (was serialized behind every other job, ~24 min on the critical
+    # path). The Docker deps layer is reused through the GitHub Actions layer cache
+    # whenever mix.lock/mix.exs/VERSION are unchanged.
     timeout-minutes: 60
-    needs: [ci, production, asyncapi, workbench]
     name: Build container without publication
     permissions:
       contents: read
@@ -320,6 +254,8 @@ jobs:
           context: .
           platforms: linux/amd64
           push: false
+          cache-from: type=gha,scope=xaas-image
+          cache-to: type=gha,scope=xaas-image,mode=max
           build-args: |
             ELIXIR_VERSION=${{ env.ELIXIR_VERSION }}
             OTP_VERSION=${{ env.ERLANG_VERSION }}
@@ -328,7 +264,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.expected_head_sha == github.sha && inputs.reason != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [ci, production, asyncapi, workbench]
+    needs: [ci, dialyzer, production, asyncapi, workbench]
     name: Publish main image
     permissions:
       contents: read
@@ -473,33 +409,63 @@ jobs:
           retention-days: 90
 
   receipt:
-    if: always()
+    # Not on cancellation: a superseded PR run must not report a failure for work
+    # that was deliberately stopped.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [ci, production, image-check]
+    needs: [ci, dialyzer, production, asyncapi, workbench, image-check]
     name: Bound CI receipt
     permissions:
       contents: read
     steps:
       - name: Manufacture bounded receipt
         shell: bash
+        env:
+          R_CI: ${{ needs.ci.result }}
+          R_DIALYZER: ${{ needs.dialyzer.result }}
+          R_PRODUCTION: ${{ needs.production.result }}
+          R_ASYNCAPI: ${{ needs.asyncapi.result }}
+          R_WORKBENCH: ${{ needs.workbench.result }}
+          R_IMAGE: ${{ needs.image-check.result }}
+          H_CI: ${{ needs.ci.outputs.cache_hit }}
+          H_DIALYZER: ${{ needs.dialyzer.outputs.cache_hit }}
+          H_PLT: ${{ needs.dialyzer.outputs.plt_hit }}
+          H_PRODUCTION: ${{ needs.production.outputs.cache_hit }}
         run: |
           set -euo pipefail
           mkdir -p receipt
           cat > receipt/ci.json <<JSON
           {
             "subject_sha": "${SUBJECT_SHA}",
-            "ci": "${{ needs.ci.result }}",
-            "production": "${{ needs.production.result }}",
-            "image_check": "${{ needs.image-check.result }}",
+            "ci": "${R_CI}",
+            "dialyzer": "${R_DIALYZER}",
+            "production": "${R_PRODUCTION}",
+            "asyncapi": "${R_ASYNCAPI}",
+            "workbench": "${R_WORKBENCH}",
+            "image_check": "${R_IMAGE}",
+            "exact_cache_hit": {
+              "test": "${H_CI}", "dev": "${H_DIALYZER}", "plt": "${H_PLT}", "prod": "${H_PRODUCTION}"
+            },
             "publication": "not_attempted_by_candidate_court",
             "standing": "candidate_evidence_only"
           }
           JSON
           python3 -m json.tool receipt/ci.json
-          test "${{ needs.ci.result }}" = success
-          test "${{ needs.production.result }}" = success
-          test "${{ needs.image-check.result }}" = success
+          {
+            echo '### CI receipt'
+            echo '| lane | result | exact cache hit |'
+            echo '|---|---|---|'
+            echo "| test court | ${R_CI} | ${H_CI} |"
+            echo "| dialyzer | ${R_DIALYZER} | deps ${H_DIALYZER} / plt ${H_PLT} |"
+            echo "| production compile | ${R_PRODUCTION} | ${H_PRODUCTION} |"
+            echo "| asyncapi | ${R_ASYNCAPI} | - |"
+            echo "| workbench | ${R_WORKBENCH} | - |"
+            echo "| image build | ${R_IMAGE} | docker layer cache (gha) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for r in "$R_CI" "$R_DIALYZER" "$R_PRODUCTION" "$R_ASYNCAPI" "$R_WORKBENCH" "$R_IMAGE"; do
+            test "$r" = success
+          done
 
       - name: Preserve CI receipt
         if: always()
