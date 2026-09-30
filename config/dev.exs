@@ -226,6 +226,83 @@ config :xaas, :ultracode_repos, %{
     suite: "gym-ecosystem-dod",
     canonical_suite: "gym-ecosystem-canonical",
     refresh: true
+  },
+  # Owned public Ash packages (2026-09-30). RESERVED targets: the registry
+  # entries are real; `sensing` and suite names are deliberate Reservation-law
+  # gaps (see Xaas.Ultracode.Repos) -- none of these repos' tickets carry a
+  # `## Status` section (jira_dir would sense nothing) and no suite argv has
+  # been executed yet, so dispatch fails closed at `VerifierSuiteRegistered`
+  # until each is registered with an observed-exit argv. Construction of any
+  # Ash surface stays on the ggen_igniter ash-manufacture-pack route.
+  "ash_a2a" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_a2a"),
+    sensing: "ash_a2a-courts",
+    suite: "ash_a2a-dod",
+    canonical_suite: "ash_a2a-canonical",
+    refresh: true
+  },
+  "ash_graphlaw" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_graphlaw"),
+    sensing: "ash_graphlaw-courts",
+    suite: "ash_graphlaw-dod",
+    canonical_suite: "ash_graphlaw-canonical",
+    refresh: true
+  },
+  "ash_pplan" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_pplan"),
+    sensing: "ash_pplan-courts",
+    suite: "ash_pplan-dod",
+    canonical_suite: "ash_pplan-canonical",
+    refresh: true
+  },
+  "ash_r2rml" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_r2rml"),
+    sensing: "ash_r2rml-courts",
+    suite: "ash_r2rml-dod",
+    canonical_suite: "ash_r2rml-canonical",
+    refresh: true
+  },
+  "ash_surface" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_surface"),
+    sensing: "ash_surface-courts",
+    suite: "ash_surface-dod",
+    canonical_suite: "ash_surface-canonical",
+    refresh: true
+  },
+  "ash_n8n" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_n8n"),
+    sensing: "ash_n8n-courts",
+    suite: "ash_n8n-dod",
+    canonical_suite: "ash_n8n-canonical",
+    refresh: true
+  },
+  "ash_planning_center" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_planning_center"),
+    sensing: "ash_planning_center-courts",
+    suite: "ash_planning_center-dod",
+    canonical_suite: "ash_planning_center-canonical",
+    refresh: true
+  },
+  "ash_expo" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_expo"),
+    sensing: "ash_expo-courts",
+    suite: "ash_expo-dod",
+    canonical_suite: "ash_expo-canonical",
+    refresh: true
+  },
+  "ash_dspy" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_dspy"),
+    sensing: "ash_dspy-courts",
+    suite: "ash_dspy-dod",
+    canonical_suite: "ash_dspy-canonical",
+    refresh: true
+  },
+  "ash_ex4pm" => %{
+    path: Path.expand("~/xaas/worktrees/repos/ash_ex4pm"),
+    sensing: "ash_ex4pm-courts",
+    suite: "ash_ex4pm-dod",
+    canonical_suite: "ash_ex4pm-canonical",
+    refresh: true
   }
 }
 
