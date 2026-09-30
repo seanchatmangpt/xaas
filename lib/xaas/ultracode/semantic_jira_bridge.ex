@@ -1,6 +1,7 @@
-# Compiled only when the resolved ggen_igniter ships the 26.9.20 SemanticJira API
-# (Shacl, TransitionLog.event_digest/1); the published 26.9.15 does not, so this
-# seam is absent from the build until that release is consumed (see mix.exs).
+# Compiled only when the resolved ggen_igniter ships a *public*
+# TransitionLog.event_digest/1 plus SemanticJira.Shacl. Observed 2026-09-30: the
+# published 26.9.29 still defines event_digest as `defp`, so this seam stays absent
+# from the build until an upstream release exposes it (see mix.exs).
 if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
      Code.ensure_loaded?(GgenIgniter.SemanticJira.TransitionLog) and
      function_exported?(GgenIgniter.SemanticJira.TransitionLog, :event_digest, 1) do
