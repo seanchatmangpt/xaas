@@ -88,7 +88,11 @@ defmodule Xaas.Ultracode.TargetSuitesTest do
                "gymact-canonical",
                "ggen-igniter-dod",
                "ggen-igniter-canonical",
-               "ggen-igniter-format"
+               "ggen-igniter-format",
+               "ggen-ecosystem-dod",
+               "ggen-ecosystem-canonical",
+               "gym-ecosystem-dod",
+               "gym-ecosystem-canonical"
              ])
 
     assert TargetSuites.validate(devs) == :ok

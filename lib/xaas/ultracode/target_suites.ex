@@ -544,7 +544,47 @@ defmodule Xaas.Ultracode.TargetSuites do
       "gymact-canonical" =>
         python_suite("~/gymact/.venv/bin/python", "gymact", 3_000_000, gymact_canonical_args(),
           env: gymact_env()
-        )
+        ),
+
+      # ggen-ecosystem / gym-ecosystem (composition roots, stdlib Python +
+      # bash only -- no venv, no seed, no network). Both argvs were executed
+      # against fresh shallow clones under `env -i` with a throwaway HOME on
+      # 2026-09-30: mfact unittest court exit 0 (8 tests, clean tree);
+      # gym-ecosystem `verify-provenance.sh` exit 0 (PROVENANCE_ALIVE, clean
+      # tree). The FULL `unittest discover` surface of ggen-ecosystem is
+      # deliberately NOT the judge: observed 5 real failures at 6137d20
+      # (4x test_ecosystem_alive_cases, test_release_lock_contracts expects
+      # lock version 2 vs 3) -- those are sensed as loop work by the
+      # "ggen-ecosystem-courts" profile, and the judge widens once they land.
+      "ggen-ecosystem-dod" => ecosystem_suite(ggen_ecosystem_court()),
+      "ggen-ecosystem-canonical" => ecosystem_suite(ggen_ecosystem_court()),
+      "gym-ecosystem-dod" => ecosystem_suite(gym_ecosystem_court()),
+      "gym-ecosystem-canonical" => ecosystem_suite(gym_ecosystem_court())
+    }
+  end
+
+  defp ggen_ecosystem_court do
+    %{
+      id: "mfact-court",
+      timeout_ms: 300_000,
+      argv: ["python3", "-m", "unittest", "tests.test_mfact_certification"]
+    }
+  end
+
+  defp gym_ecosystem_court do
+    %{id: "provenance", timeout_ms: 120_000, argv: ["bash", "scripts/verify-provenance.sh"]}
+  end
+
+  # A stdlib-only composition-root suite: minimal PATH, no seed/deps/network.
+  defp ecosystem_suite(step) do
+    %{
+      env: %{
+        "PATH" => "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "LANG" => "en_US.UTF-8"
+      },
+      max_output_bytes: 65_536,
+      toolchain: [["python3", "--version"], ["git", "--version"]],
+      steps: [step]
     }
   end
 
