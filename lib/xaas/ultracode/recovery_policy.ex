@@ -130,6 +130,7 @@ defmodule Xaas.Ultracode.RecoveryPolicy do
   def observe(:complete, _overloaded?), do: :complete
   def observe(_outcome, true), do: :provider_open
   def observe(outcome, false) when outcome in @tick_outcomes, do: outcome
+
   def observe(outcome, false) do
     case WaveOutcome.consequence(outcome) do
       # :worker_completed is in @tick_outcomes and matched above, so any other executed
