@@ -36,6 +36,27 @@ Conceptual architecture and rationale:
 - [`explanation/architecture-overview.md`](explanation/architecture-overview.md) — broader system architecture.
 - Existing research/design documents in this quadrant remain explanation/evidence, not operational instruction.
 
+### Evidence and research (non-operational)
+
+Decision records, research notes, scan reports, and design proposals. They record what was observed or decided on the date each page states; they are not operational instruction and do not grant authority.
+
+- [`explanation/ash-typescript-adoption.md`](explanation/ash-typescript-adoption.md) — decision record: `ash_typescript` adopted, with generated TypeScript for 3 resources.
+- [`explanation/ashiam-create-update-limitation.md`](explanation/ashiam-create-update-limitation.md) — root-cause note on `AshIam.Check` returning `Ash.Error.Forbidden` for `:create`/`:update` actions.
+- [`explanation/beam4pm-ex4pm-dependency-decision.md`](explanation/beam4pm-ex4pm-dependency-decision.md) — decision: no mix dependency on `beam4pm`/`ex4pm`; the HTTP network boundary is the sole integration surface.
+- [`explanation/errc-innovation-grid.md`](explanation/errc-innovation-grid.md) — evolving ERRC (Eliminate-Reduce-Raise-Create) grid of the real xaas feature surface.
+- [`explanation/k8s-fault-scan-report.md`](explanation/k8s-fault-scan-report.md) — scan-and-report security/fault scan of the `kind-xaas` cluster (2026-08-20).
+- [`explanation/ocel-egress-forwarder.md`](explanation/ocel-egress-forwarder.md) — how `Xaas.Telemetry.OcelForwarder` forwards OCEL v2 events to ex4pm/beam4pm.
+- [`explanation/ontology-first-reactor-actuation.md`](explanation/ontology-first-reactor-actuation.md) — control-plane architecture introduced in v26.8.22 (ontology-first Ash resources, Reactor actuation).
+- [`explanation/r2rml-ontop-prototype.md`](explanation/r2rml-ontop-prototype.md) — prototype of R2RML + Ontop virtual-graph SPARQL over the Postgres schema.
+- [`explanation/reactor-autofde-planners-design.md`](explanation/reactor-autofde-planners-design.md) — proposal (unimplemented) for orchestrating autofde-lab planners from xaas via Reactor.
+- [`explanation/security-and-testing-decisions.md`](explanation/security-and-testing-decisions.md) — reasoning behind the deny-by-default policy floor and Chicago-style testing in the Ash migration.
+- [`explanation/wasm4pm-process-intelligence-research.md`](explanation/wasm4pm-process-intelligence-research.md) — research note (GitHub issue #19) on wasm4pm and process intelligence in Ash; implements nothing.
+
+Reference pages not previously indexed:
+
+- [`reference/ex4pm-ontology-pin.md`](reference/ex4pm-ontology-pin.md) — config surface behind `Xaas.Ontology.Ex4pmStaleness` and `mix xaas.telemetry.check_ontology_staleness`.
+- [`reference/sa2a-computation-boundary.md`](reference/sa2a-computation-boundary.md) — SA2A computation boundary: runtime-neutral artifacts and candidate claims that cannot authorize actuation.
+
 ## Case Studies
 
 Demonstrations of the XaaS architectural model in end-to-end applications:
