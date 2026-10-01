@@ -175,7 +175,7 @@ defmodule Xaas.Ultracode.SequencedDrain do
         env = [{"MIX_ENV", "test"}]
         changed = changed_tests(main)
 
-        with {_, 0} <- cmd("mix", ["compile"], main, [{"MIX_ENV", "dev"}]),
+        with {_, 0} <- cmd("mix", ["compile"], main, [{"MIX_ENV", "test"}]),
              :ok <- run_tests(changed, main, env) do
           {:ok, %{verified: true, tests: changed, head: rev(main)}}
         else
