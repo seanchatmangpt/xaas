@@ -11,8 +11,11 @@ against `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
 
 `lib/xaas_web/router.ex` (re-verified 2026-09-22) defines these scopes:
 
-- **Browser** (`pipe_through :browser`): `GET /` (`PageController.home`) and the
-  `GET /next-read` Next Read LiveView.
+- **Browser** (`pipe_through :browser`, unauthenticated): `GET /` (`PageController.home`),
+  the `GET /next-read` Next Read LiveView, and the WdFa case-study routes
+  (`router.ex:58-60`): `GET /case-studies/wd-fa` (`WdFa.CaseStudyLive`),
+  `GET /case-studies/wd-fa/stogaf.json` (`WdFaStogafController.show`) and
+  `GET /case-studies/wd-fa/context/:case_id` (`WdFaContextController.show`).
 - **`/webhooks`** (`:api` only — deliberately NOT behind the internal-api token, because
   Stripe is the caller and cannot supply it): `POST /webhooks/stripe`, authenticated by
   Stripe-signature verification inside `XaasWeb.StripeWebhookController`.
@@ -115,7 +118,7 @@ Recounted 2026-09-22 by the same grep method this doc has used before
   `/mcp` tools and AshAdmin, not raw JSON:API).
 - **45 of the 56 `/api` resources expose a real mutation route** (`post(...)`,
   `patch(...)`, or `delete(...)` beyond `get`/`index`; routes use paren-call style). The
-  remaining 11 are read-only. `docs/ASH-MIGRATION-PLAN.md` Phase 5 item 2 (a real
+  remaining 11 are read-only. `docs/archive/ASH-MIGRATION-PLAN.md` (historical) Phase 5 item 2 (a real
   customer-facing mutation surface) is accordingly **substantially addressed**, not fully
   resolved — the deliberately-unwired sensitive resources (`Ledger.Balance`/`Account`/
   `Transfer`, `Accounts.User`/`Token`) still have zero route regardless of mutation status,
@@ -300,7 +303,7 @@ reject path, not just the accept path.
 ### Second real mutation route (issue #20): `Xaas.Governance.ApprovalBackupRetentionChange`
 
 Ported from platform-console's real `PUT /api/orgs/[id]/backup-policy` maker-checker flow
-(`docs/ASH-MIGRATION-PLAN.md`'s recommended next step: reimplement the governance/owner/
+(`docs/archive/ASH-MIGRATION-PLAN.md` (historical)'s recommended next step: reimplement the governance/owner/
 compliance route cluster, which already has same-named Ash resource stubs). Real `PATCH
 /api/approval_backup_retention_change/:id` route on a new `:approve` update action:
 
@@ -592,8 +595,9 @@ submitted → executing → sealed → replayed — with typed illegal transitio
   agent). Both token-gated.
 - **`GET /api/workbench/ggen/health`, `POST /api/workbench/ggen`** — CONSTRUCT-only GGen
   workbench forward to a private Fly worker; ordinary authenticated JSON, not JSON:API.
-- **Browser surface** — `GET /` and the `GET /next-read` LiveView (public, browser
-  pipeline). Dev-only routes (`/dev/dashboard`, `/dev/mailbox`,
+- **Browser surface** — `GET /`, the `GET /next-read` LiveView and the three WdFa
+  `/case-studies/wd-fa` routes (`/case-studies/wd-fa`, `.../stogaf.json`,
+  `.../context/:case_id`) (public, browser pipeline). Dev-only routes (`/dev/dashboard`, `/dev/mailbox`,
   `/dev/dashboards/autofde-lab`, `/admin`) mount only under
   `Application.compile_env(:xaas, :dev_routes)`.
 
@@ -614,7 +618,7 @@ submitted → executing → sealed → replayed — with typed illegal transitio
   `/internal-api/capability_liveness_receipts` and `/internal-api/capability_liveness_regressions`
 - `lib/xaas/telemetry/ocel_ash_emitter.ex` — the real OCEL v2 emitter backing `/internal-api/ocel_summary`
 - `priv/ggen_igniter/mcp_a2a/xaas-surface.ttl` → `XaasWeb.McpScope` — the generated `/mcp` scope
-- `docs/ASH-MIGRATION-PLAN.md` — Phase 5 item 2, the still-open decision on a real
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — Phase 5 item 2, the still-open decision on a real
   customer-facing mutation surface
 - `test/xaas_web/controllers/capability_regressions_controller_test.exs`,
   `test/xaas_web/controllers/ocel_summary_controller_test.exs` — real Chicago-style tests this

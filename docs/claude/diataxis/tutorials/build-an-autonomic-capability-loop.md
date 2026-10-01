@@ -315,7 +315,7 @@ code — nothing in the Ash layer invents or upgrades a status.
   backs the `/internal-api/ocel_summary` endpoint above
 - `~/xaas/lib/xaas_web/router.ex`, `internal_api_router.ex`, `api_router.ex`,
   `plugs/require_internal_api_token.ex` — the HTTP exposure and auth gate (step 6)
-- `~/xaas/docs/ASH-MIGRATION-PLAN.md` — the broader migration plan this loop is
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — the broader migration plan this loop is
   part of, including the still-open Phase 5 customer-facing mutation-surface decision
 - `~/xaas/test/xaas/operations/capability_liveness_receipt_test.exs`,
   `capability_liveness_regressions_property_test.exs`,

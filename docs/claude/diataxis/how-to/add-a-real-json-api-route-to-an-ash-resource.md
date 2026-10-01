@@ -159,5 +159,5 @@ router being hit, or the route block wasn't added.
   requirement that `/internal-api`'s explicit routes be declared before the catch-all
   `forward "/internal-api"`
 - `lib/xaas_web/plugs/require_internal_api_token.ex` — the real auth gate
-- `docs/ASH-MIGRATION-PLAN.md` — Phase 5 deny-by-default floor and the still-open
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — Phase 5 deny-by-default floor and the still-open
   customer-facing mutation-surface decision (Phase 5 item 2)

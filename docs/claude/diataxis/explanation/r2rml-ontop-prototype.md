@@ -363,7 +363,7 @@ docker compose -f docker-compose.ontop.yaml down
 ## See Also
 
 - `docs/claude/diataxis/explanation/architecture-overview.md` — whole-system map this doc is one narrow piece of
-- `docs/ASH-MIGRATION-PLAN.md` — migration history and standing deferred decisions this
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — migration history and standing deferred decisions this
   prototype does not touch (Phase 5 customer-facing mutation API, per-resource policies).
 - `docs/claude/diataxis/reference/ash-configuration.md` — real current `config/*.exs` facts.
 - [Ontop Docker endpoint tutorial](https://ontop-vkg.org/tutorial/endpoint/endpoint-docker.html)

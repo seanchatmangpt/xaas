@@ -305,7 +305,7 @@ not asserted as done here.
 - `docs/claude/diataxis/reference/ash-configuration.md` — real, current domain/extension setup
 - `docs/claude/diataxis/reference/http-api-surface.md` — real HTTP route precedent this design
   would follow if a `PlanningRun` resource is ever added
-- `docs/ASH-MIGRATION-PLAN.md` — standing deferred-decision discipline this doc follows
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — standing deferred-decision discipline this doc follows
 - `~/autofde-lab/src/autofde_lab/CLAUDE.md` — the source-of-truth "compute plans, don't
   actuate" invariant this design's §3 depends on
 - `~/autofde-lab/docs/STATUS.md` — real, dated status of autofde-lab's planners and the

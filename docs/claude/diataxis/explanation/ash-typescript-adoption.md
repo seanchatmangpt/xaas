@@ -151,5 +151,5 @@ warning; zero errors, zero new warnings from this change).
   these 3 resources already had before this pass
 - `docs/claude/diataxis/how-to/add-a-real-json-api-route-to-an-ash-resource.md` -- the
   read-only-route convention this pass's `rpc_action ..., :read` choice mirrors
-- `docs/ASH-MIGRATION-PLAN.md` -- Phase 5 deferred customer-facing mutation-surface decision,
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) -- Phase 5 deferred customer-facing mutation-surface decision,
   which a future live-`/rpc` mutation RPC action would also need to resolve

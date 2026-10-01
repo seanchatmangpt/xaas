@@ -11,7 +11,7 @@ exists.
 
 ### The floor
 
-`docs/ASH-MIGRATION-PLAN.md` Phase 5 put a real, explicit deny-by-default policy block on
+`docs/archive/ASH-MIGRATION-PLAN.md` (historical) Phase 5 put a real, explicit deny-by-default policy block on
 every one of the 47 previously-unauthorized Ash resources ported into `~/xaas`. The pattern,
 seen verbatim in `lib/xaas/operations/capability_liveness_receipt.ex`:
 
@@ -206,5 +206,5 @@ succeeded.
   pattern quoted in section 2
 - `test/test_helper.exs` — the real global `Ecto.Adapters.SQL.Sandbox.mode(..., :manual)`
   setup
-- `docs/ASH-MIGRATION-PLAN.md` — Phase 5 deny-by-default floor plan and the deferred
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — Phase 5 deny-by-default floor plan and the deferred
   customer-facing API surface decision referenced in section 1

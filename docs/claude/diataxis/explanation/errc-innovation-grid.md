@@ -2572,7 +2572,7 @@ sequence cover these):
   `Operations` instead, which if anything strengthens the case that this orphaned file
   should be deleted or merged into that real home rather than kept as a second, unwired
   `autofde` surface.
-- **`lib/xaas/aws_repo/fixture_adapter.ex`** — unchanged, still the one disclosed
+- **`lib/xaas/aws_repo_adapters/fixture_adapter.ex`** — unchanged, still the one disclosed
   permanent no-mocking exception (`docs/AWS-CHAPTERS-SUBSTITUTION.md`); no new sibling
   introduced this pass (checked: no new file under `lib/xaas/aws_repo/`).
 
@@ -3230,7 +3230,7 @@ sequence cover these):
   disclosed cross-table migration hazard and the now-FMEA-hardened (`6fdca0c`) forward-
   looking guard against its recurrence; the migration itself is historical, not a live edit
   target (see "Eighth-pass update")
-- `docs/ASH-MIGRATION-PLAN.md` — the real 7-phase migration history and standing deferred
+- `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — the real 7-phase migration history and standing deferred
   decisions this grid builds on
 - `docs/claude/diataxis/reference/http-api-surface.md` — the real, current HTTP route
   enumeration referenced above; its own line 75 "44 of 49" count is the real, traced source

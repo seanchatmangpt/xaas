@@ -60,7 +60,7 @@ custom_types: [
 All 13 domains live directly under `lib/xaas/*.ex` (one file per domain), each
 `use Ash.Domain, otp_app: :xaas, extensions: [...]`, each with `admin do show? true end`
 where extensions permit. Resource counts are read directly from each domain's real
-`resources do ... end` block (re-verified 2026-09-22; 92 resources total).
+`resources do ... end` block (re-verified 2026-09-30 at HEAD fb5df43b; 98 resources total).
 
 | Domain module | File | Extensions | Resource count |
 |---|---|---|---|
@@ -73,10 +73,10 @@ where extensions permit. Resource counts are read directly from each domain's re
 | `Xaas.Ledger` | `lib/xaas/ledger.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 4 |
 | `Xaas.Marketplace` | `lib/xaas/marketplace.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 2 |
 | `Xaas.Ocel` | `lib/xaas/ocel.ex` | `AshAdmin.Domain` | 5 |
-| `Xaas.Operations` | `lib/xaas/operations.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc`, `Xaas.Operations.ProjectMeasure.Extension` | 20 |
+| `Xaas.Operations` | `lib/xaas/operations.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc`, `Xaas.Operations.ProjectMeasure.Extension` | 21 |
 | `Xaas.Platform` | `lib/xaas/platform.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 7 |
 | `Xaas.TemporalMemory` | `lib/xaas/temporal_memory.ex` | (none) | 1 |
-| `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 3 |
+| `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 8 |
 
 What the domains added since the original eight own:
 
@@ -92,7 +92,8 @@ What the domains added since the original eight own:
 - `Xaas.TemporalMemory` — bitemporal process memory (`Observation`,
   `Xaas.TemporalMemory.Query.as_of/2`, deterministic replay verifier).
 - `Xaas.Ultracode` — Run/Epoch/Receipt control plane for the execution fabric
-  (`Run`, `Epoch`, `Receipt`; see `docs/ultracode/`).
+  (`Run`, `Epoch`, `Receipt`, plus the five `CapitalCensus.*` resources
+  `ExperienceCluster`, `Gap`, `Resolution`, `WorkOrder`, `Episode`; see `docs/ultracode/`).
 
 ## Next Read Library Domain Specification (`Xaas.Library`)
 
