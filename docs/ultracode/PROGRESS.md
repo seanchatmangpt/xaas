@@ -1129,3 +1129,17 @@ agent wave. Executed via the manufactured machine, not session fan-out.
 **Standing**: PARTIAL_ALIVE at launch (live dispatches observed; wave/campaign
 terminal standing derives from `mix xaas.ultracode.audit` after budget
 discharge). Log: `/tmp/xaas-campaign-v26922b.log`.
+
+## 2026-09-30 — tmp_out/ scratch untracked (XA-3003)
+
+The four `tmp_out/*.ex` probe outputs cited above as evidence in the
+2026-09-14/15 sections (`tmp_out/ultracode_probe_manifest.ex`,
+`tmp_out/ultracode_probe_epoch_reactor.ex`, `tmp_out/real_resource_manifest.ex`,
+`tmp_out/real_epoch_reactor_generated.ex`) are now **untracked**
+(`git rm --cached`), not deleted: `.gitignore:104` already ignores `tmp_out/`,
+so the files remain on disk exactly as generated — the hashes recorded in
+`.ggen_igniter/receipts/*.jsonl` stay verifiable — and their four stale
+recipe entries were removed from `.ggen_igniter/manifest.json` (JSON still
+parses, zero `tmp_out` references remain in it). Falsifier check ran first:
+no test, court, CI workflow, or script reads `tmp_out/*` as a fixture; every
+citation in this file and the wave receipts is narrative evidence only.
