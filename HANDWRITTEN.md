@@ -303,4 +303,5 @@ invented parallel ExecutionWorker/WorkContract/Execution resources and was
 reverted — `backup/execution-fabric-v1` — in favor of extending the
 existing Ultracode seam)
 
-| `scripts/ultracode_sequenced_drain.sh` | Sequenced ultracode drain: wave -> merge integration branch into main -> compile/test verify -> refresh clone -> next wave; stops on conflict/build/test failure | UNSUPPORTED(generator-capability): control-flow script over `mix xaas.ultracode.start`; no active ggen-marketplace pack (12 active packs) covers campaign sequencing |
+
+| `lib/xaas/ultracode/sequenced_drain.ex`, `lib/mix/tasks/xaas.ultracode.drain.ex` | In-process Reactor DAG: wave -> merge into canonical -> verify -> next wave | UNSUPPORTED(generator-capability): no active ggen-marketplace pack (12) generates Reactor sequencing of ultracode campaigns |
