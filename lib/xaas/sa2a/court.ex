@@ -12,12 +12,17 @@ defmodule Xaas.Sa2a.Court do
      (`:query_not_allowlisted`, `:query_too_long`, `:query_not_bound_to_work_order`);
   3. the compiled rules are `[[pattern, output], ...]` strings within the policy bound
      (`:malformed_compiled_rules`, `:too_many_compiled_rules`);
-  4. a prior SA2A admit receipt exists for the same candidate and work-order digest
+  4. when the plan carries a preimage fence (`admitted_preimage_hash` and/or `preimage`),
+     the plan is fresh: the observed digest of `preimage` (via
+     `Xaas.Planning.StalePlanGate.fingerprint/1`) equals the admitted preimage hash
+     (`:stale_plan_refusal` with `:malformed_hash` or both hashes as detail). Plans
+     without a preimage fence are unaffected -- the fence is opt-in.
+  5. a prior SA2A admit receipt exists for the same candidate and work-order digest
      (`:admit_receipt_missing`, `:admit_receipt_not_admitted`,
      `:admit_receipt_digest_mismatch`) AND it is reproducible: re-running the real
      `sa2a_admit` on the receipt's own inputs yields the same `candidate_hash`
      (`:admit_receipt_not_reproducible`) -- a forged or tampered receipt cannot pass;
-  5. a plan hash from `sa2a_plan` is bound and reproducible: re-running the real
+  6. a plan hash from `sa2a_plan` is bound and reproducible: re-running the real
      `sa2a_plan` on the plan's candidates yields that hash and an `ADMITTED` allocation
      for the work order (`:plan_hash_missing`, `:plan_missing`, `:plan_hash_mismatch`,
      `:plan_does_not_cover_work_order`).
@@ -30,6 +35,8 @@ defmodule Xaas.Sa2a.Court do
   cannot skip it).
   """
 
+  alias Xaas.Actuation.Refusal
+  alias Xaas.Planning.StalePlanGate
   alias Xaas.Sa2a.{Bridge, ExecutionPolicy}
 
   @type refusal :: {:refused, atom(), term()}
@@ -73,6 +80,7 @@ defmodule Xaas.Sa2a.Court do
          :ok <- required(req),
          {:ok, class} <- ExecutionPolicy.admit_query(req["query"], req["work_order_id"], policy),
          {:ok, rules} <- rules(req["compiled_rules"], policy),
+         :ok <- stale_plan(req),
          {:ok, admit} <- admit_static(req, policy),
          {:ok, plan} <- plan_static(req),
          {:ok, candidate_hash} <- admit_reproduce(req, admit, policy),
@@ -119,6 +127,32 @@ defmodule Xaas.Sa2a.Court do
 
   defp rules(_other, _policy),
     do: {:error, {:refused, :malformed_compiled_rules, "expected a list"}}
+
+  # -- stale-plan preimage fence -----------------------------------------------------
+
+  # Preimage-fenced plans (XA-3007): when the plan carries an admitted preimage
+  # digest and/or the preimage itself, freshness is checked BEFORE any port call.
+  # A plan without preimage fields takes the unchanged path; a fence that is
+  # present but unusable (missing/malformed digest or preimage) refuses closed.
+  defp stale_plan(req) do
+    plan = req["plan"]
+    admitted = safe_get(plan, "admitted_preimage_hash")
+    preimage = safe_get(plan, "preimage")
+
+    if is_nil(admitted) and is_nil(preimage) do
+      :ok
+    else
+      observed = if is_nil(preimage), do: nil, else: StalePlanGate.fingerprint(preimage)
+
+      case StalePlanGate.check(admitted, observed) do
+        {:ok, :fresh} -> :ok
+        {:error, %Refusal{code: code, detail: detail}} -> {:error, {:refused, code, detail}}
+      end
+    end
+  end
+
+  defp safe_get(plan, key) when is_map(plan), do: plan[key]
+  defp safe_get(_other, _key), do: nil
 
   # -- prior admit receipt ----------------------------------------------------------
 
