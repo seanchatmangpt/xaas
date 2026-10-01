@@ -112,6 +112,7 @@ defmodule Xaas.MixProject do
       # Fabric planes (law, evidence/process). Test/dev only: path deps would break the
       # Docker prod build (see the ex4pm note below); fabric adapters call them via apply/3.
       {:ash_graphlaw, path: "../ash_graphlaw", only: [:dev, :test]},
+      {:ash_surface, path: "../ash_surface", only: [:dev, :test]},
       {:ash_affidavit, path: "../ash_affidavit", only: [:dev, :test]},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
@@ -247,6 +248,7 @@ defmodule Xaas.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      "chicago.render": ["xaas.chicago.render"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
