@@ -23,8 +23,17 @@ defmodule Xaas.Demo.PradyotSurfaceTest do
     assert Enum.any?(episode.layers, &(&1.state == :partial))
   end
 
-  test "typed refusals never gain DO and unknown dispatch never blind replays" do\n    cases = PradyotSurface.chicago().cases\n    assert Enum.all?(Enum.filter(cases, &(&1.outcome == :refused)), &(&1.do == :none))\n    unknown = Enum.find(cases, &(&1.outcome == :unknown_after_dispatch))\n    assert unknown.recovery == :reconcile_original\n    assert unknown.replay == :forbidden\n  end\n\n  test "system projection is read only" do
-    assert PradyotSurface.system().execution.mode == :read_only\n    assert PradyotSurface.system().execution.unknown_after_dispatch == :reconcile_never_replay
+  test "typed refusals never gain DO and unknown dispatch never blind replays" do
+    cases = PradyotSurface.chicago().cases
+    assert Enum.all?(Enum.filter(cases, &(&1.outcome == :refused)), &(&1.do == :none))
+    unknown = Enum.find(cases, &(&1.outcome == :unknown_after_dispatch))
+    assert unknown.recovery == :reconcile_original
+    assert unknown.replay == :forbidden
+  end
+
+  test "system projection is read only" do
+    assert PradyotSurface.system().execution.mode == :read_only
+    assert PradyotSurface.system().execution.unknown_after_dispatch == :reconcile_never_replay
     assert PradyotSurface.system().authority == :none
   end
 end
