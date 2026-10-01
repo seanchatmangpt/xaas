@@ -199,3 +199,29 @@ Operator order: close unused branches. Every branch below is an ancestor of main
 | branch | tip |
 |---|---|
 | origin | tip SHA not separately recorded (tracking reflog pruned); verified merged into main before deletion (`git branch -r --no-merged main` = 0), content reachable from main |
+
+## Addendum — first-batch survivors (deleted in a later batch pass; tip SHAs unrecoverable locally — no reflogs, not in packed-refs)
+
+Each was verified merged into main (`git branch -r --no-merged main` = 0) before deletion, so content is reachable from main. Branch-name suffixes are SHA fragments of their run subjects.
+
+| branch |
+|---|
+| ash-migration |
+| backup/v26.9.24/pr61-wd-cs2-2a595315 |
+| backup/v26.9.24/pr62-stogaf-696f2af3 |
+| backup/v26.9.25/tmp_xaas-w6-xaas-read |
+| backup/v26.9.25/tmp_xaas-w7-roundtrip |
+| backup/v26.9.25/xaas_worktrees_runs_eds-7cb2468d8031d93203ef |
+| backup/v26.9.25/xaas_worktrees_runs_gall-eds-20e653c3aab9ab69547a |
+| backup/v26.9.25/xaas_worktrees_runs_gall-eds-3a15a67c08b948dded97 |
+| backup/v26.9.25/xaas_worktrees_runs_gall-eds-3a22a4d49164658f3ff7 |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-a21561df1e41b17453a8 |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-integration-bc04aa |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability-alive-0461b6 |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability-alive-bc04aa |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability-derive_standing-0461b6 |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability-derive_standing-bc04aa |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability-with_default_verb-bc04aa |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability_registry-contains-bc04aa |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability_registry-count-bc04aa |
+| backup/v26.9.25/xaas_worktrees_runs_nounverb-nounverb-neg-capability_registry-empty-bc04aa |
