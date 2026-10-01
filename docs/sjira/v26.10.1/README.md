@@ -31,6 +31,8 @@ The load-bearing rules used here are:
 - XaaS source base: seanchatmangpt/xaas@593f8e1965d9f4be91e9f4cd85a2b30fa0b9205e
 - ggen-marketplace observed base while defining this source:
   seanchatmangpt/ggen-marketplace@05233917e903cb64a3bfdf297d677fd404253ac2
+  (recorded at authoring time; not resolvable in the local clone as of 2026-10-01, whose head
+  had moved on — pack-existence and corpus claims were re-verified at the live head)
 - Semantic Jira implementation authority: ggen_igniter semantic-jira-pack
 - Demo exact subject: urn:chicago:agentic-payment:purchase-001
 

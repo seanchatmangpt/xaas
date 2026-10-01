@@ -18,7 +18,9 @@ Target owner:
 
 ## Current observed marketplace state
 
-At marketplace base 05233917e903cb64a3bfdf297d677fd404253ac2:
+At marketplace base 05233917e903cb64a3bfdf297d677fd404253ac2 (recorded at authoring time; the
+local clone head has since moved — claims below re-verified at the live head, where the
+renderer pack `chicago-xaas-surface-pack` now owns this contract):
 
 - chicago-graphlaw-court-pack exists, but it is GraphLaw-specific and its README reports the
   current corpus as REFUSED / UNVERIFIED; it is not the general XaaS Chicago renderer.
@@ -100,3 +102,25 @@ sJira RDF -> ggen-marketplace render -> XaaS -> AshSurface
 
 The renderer may later generate LiveView/JS descriptors, but that is an extension of the same
 semantic source, not a reason to author a second Chicago model.
+
+## Executable form (verified against the live ggen CLI)
+
+The renderer is the `ggen.toml` manifest of `ggen-marketplace/packs/chicago-xaas-surface-pack`
+(owned there; this file records the contract, not a second copy):
+
+- ggen reads `ggen.toml` from its cwd only; every path resolves relative to the manifest dir
+  (parent escapes are refused).
+- Projection rules are `[[generation.rules]]` with `query.file`, `template.file`,
+  `output_file`, `mode`; every SPARQL query is a SELECT ending in `ORDER BY`
+  (strict mode refuses otherwise); templates are Tera.
+- The canonical source graphs are this directory's `goal.ttl`, `chicago.ttl`,
+  `projections.ttl`; the pack vendors them byte-identically with SHA-256 provenance
+  (`source/provenance.ttl`) — drift is caught consumer-side, never hand-copied.
+- Byte identity = two `ggen sync run` invocations over identical source + tool identity,
+  outputs diffed empty; the printed render receipt (`graph_hash_hex`, `written`) is the
+  render evidence. All four projections are JSON (`sj:extension "json"`); every output
+  carries `generated: true`, `authorityClaim: "NONE"`, the exact subject literal,
+  source digests, and generator identity.
+- Fail-closed gates live in the pack's `gates/` (SPARQL ASK, true = violation) with a
+  witnessed pass/fail corpus per gate; the consumer commit of `priv/chicago/*.json` must
+  be byte-reproducible by the pack render.

@@ -145,7 +145,14 @@ chi:layer-sjira
     sj:requiresCapability chi:cap-sjira ;
     sj:evidenceHorizon "ADMITTED_SEMANTIC_SOURCE" ;
     sj:postcondition "Chicago requirement and acceptance state are carried by canonical RDF; prose and generated tickets remain projections." ;
-    sj:falsifier "A Markdown, chat or generated projection becomes work authority or changes the exact Chicago subject." .
+    sj:falsifier "A Markdown, chat or generated projection becomes work authority or changes the exact Chicago subject." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-sjira sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-graphlaw
     a sj:GoalCheckpoint ;
@@ -158,7 +165,14 @@ chi:layer-graphlaw
     sj:requiresCapability chi:cap-graphlaw ;
     sj:evidenceHorizon "ADMISSION_EVIDENCE" ;
     sj:postcondition "Semantic law produces digest-bound typed admission or refusal evidence for the exact Chicago subject without granting DO." ;
-    sj:falsifier "A GraphLaw or ash_graphlaw result actuates directly, or semantic state is duplicated with different meaning in XaaS." .
+    sj:falsifier "A GraphLaw or ash_graphlaw result actuates directly, or semantic state is duplicated with different meaning in XaaS." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-graphlaw sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-sa2a
     a sj:GoalCheckpoint ;
@@ -171,7 +185,14 @@ chi:layer-sa2a
     sj:requiresCapability chi:cap-sa2a ;
     sj:evidenceHorizon "CAPABILITY_AND_AUTHORITY_EVIDENCE" ;
     sj:postcondition "SA2A carries the exact subject, capability and delegated authority facts without transport possession widening authority." ;
-    sj:falsifier "Routing, delivery, message metadata or capability possession grants DO or changes subject identity." .
+    sj:falsifier "Routing, delivery, message metadata or capability possession grants DO or changes subject identity." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-sa2a sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-pplan
     a sj:GoalCheckpoint ;
@@ -184,7 +205,14 @@ chi:layer-pplan
     sj:requiresCapability chi:cap-pplan ;
     sj:evidenceHorizon "PLAN_AND_POLICY_EVIDENCE" ;
     sj:postcondition "The desired outcome has independently checkable plans and recovery alternatives; planner output remains candidate state, not execution authority." ;
-    sj:falsifier "Planner equals policy/executor/authority, stale plans survive semantic drift, or recovery silently widens authority." .
+    sj:falsifier "Planner equals policy/executor/authority, stale plans survive semantic drift, or recovery silently widens authority." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-pplan sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-xaas
     a sj:GoalCheckpoint ;
@@ -197,7 +225,14 @@ chi:layer-xaas
     sj:requiresCapability chi:cap-xaas ;
     sj:evidenceHorizon "EXECUTED_VERIFIED" ;
     sj:postcondition "XaaS exposes the exact Chicago runtime state, including executed, refused and unknown-after-dispatch outcomes, without fabric control becoming ambient DO authority." ;
-    sj:falsifier "XaaS fabric bypasses the admitted consequence boundary, retries UNKNOWN_AFTER_DISPATCH blindly, or reports execution not observed." .
+    sj:falsifier "XaaS fabric bypasses the admitted consequence boundary, retries UNKNOWN_AFTER_DISPATCH blindly, or reports execution not observed." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-xaas sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-ocel
     a sj:GoalCheckpoint ;
@@ -210,7 +245,14 @@ chi:layer-ocel
     sj:requiresCapability chi:cap-ocel ;
     sj:evidenceHorizon "OBSERVED_PROCESS_EVIDENCE" ;
     sj:postcondition "Observed Chicago execution produces object-centric event evidence correlated to the exact subject and receipts." ;
-    sj:falsifier "A projected or inferred event is presented as observed execution, or OCEL identity cannot reconcile to the runtime subject." .
+    sj:falsifier "A projected or inferred event is presented as observed execution, or OCEL identity cannot reconcile to the runtime subject." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-ocel sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-beam4pm
     a sj:GoalCheckpoint ;
@@ -223,7 +265,14 @@ chi:layer-beam4pm
     sj:requiresCapability chi:cap-beam4pm ;
     sj:evidenceHorizon "PROCESS_CONFORMANCE_EVIDENCE" ;
     sj:postcondition "Observed OCEL evidence can be compared to the intended Chicago process and replayed without process analytics becoming authority." ;
-    sj:falsifier "Conformance inference is promoted to observed fact or standing, or replay changes the semantic outcome without a typed divergence." .
+    sj:falsifier "Conformance inference is promoted to observed fact or standing, or replay changes the semantic outcome without a typed divergence." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-beam4pm sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-affidavit
     a sj:GoalCheckpoint ;
@@ -236,7 +285,14 @@ chi:layer-affidavit
     sj:requiresCapability chi:cap-affidavit ;
     sj:evidenceHorizon "CRYPTOGRAPHIC_EVIDENCE" ;
     sj:postcondition "Chicago evidence is cryptographically bound to the exact operation/subject; evidence standing does not itself execute consequence." ;
-    sj:falsifier "Evidence can be replayed across subjects, forged from runtime computation, or treated as execution authority." .
+    sj:falsifier "Evidence can be replayed across subjects, forged from runtime computation, or treated as execution authority." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-affidavit sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-surface
     a sj:GoalCheckpoint ;
@@ -249,7 +305,14 @@ chi:layer-surface
     sj:requiresCapability chi:cap-surface ;
     sj:evidenceHorizon "FAITHFUL_HUMAN_PROJECTION" ;
     sj:postcondition "Operator, Chicago and seller views project the same exact XaaS subject/evidence with different presentation and no second application model." ;
-    sj:falsifier "AshSurface invents business semantics, grants DO, fabricates ALIVE, or seller/buyer/operator projections disagree on subject identity." .
+    sj:falsifier "AshSurface invents business semantics, grants DO, fabricates ALIVE, or seller/buyer/operator projections disagree on subject identity." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-surface sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-marketplace
     a sj:GoalCheckpoint ;
@@ -262,7 +325,14 @@ chi:layer-marketplace
     sj:requiresCapability chi:cap-marketplace ;
     sj:evidenceHorizon "DETERMINISTIC_MANUFACTURE" ;
     sj:postcondition "A marketplace-owned generator renders the Chicago projections from this RDF source with byte-identical replay and authority NONE." ;
-    sj:falsifier "Generated Chicago artifacts are hand edited, generator output changes without source/tool identity change, or a generated view acquires authority." .
+    sj:falsifier "Generated Chicago artifacts are hand edited, generator output changes without source/tool identity change, or a generated view acquires authority." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-marketplace sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-wasm4pm
     a sj:GoalCheckpoint ;
@@ -275,7 +345,14 @@ chi:layer-wasm4pm
     sj:requiresCapability chi:cap-wasm4pm ;
     sj:evidenceHorizon "OPTIONAL_MONDAY" ;
     sj:postcondition "Equivalent realizations may qualify against the same Chicago capability contract without implementation identity becoming semantic identity." ;
-    sj:falsifier "Provider/runtime substitution changes semantic subject, consequence contract or admitted invariants." .
+    sj:falsifier "Provider/runtime substitution changes semantic subject, consequence contract or admitted invariants." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-wasm4pm sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .
 
 chi:layer-castle
     a sj:GoalCheckpoint ;
@@ -288,4 +365,11 @@ chi:layer-castle
     sj:requiresCapability chi:cap-castle ;
     sj:evidenceHorizon "OPTIONAL_MONDAY" ;
     sj:postcondition "CASTLE may govern consequential realization without becoming XaaS runtime or changing the Chicago subject." ;
-    sj:falsifier "CASTLE becomes the runtime monolith or introduces a second protected DO path." .
+    sj:falsifier "CASTLE becomes the runtime monolith or introduces a second protected DO path." ;
+    sj:stopQuery """PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+ASK {
+  chi:layer-castle sj:receipt ?receipt .
+  ?receipt a sj:Receipt ;
+           sj:standing "ALIVE" .
+}""" .

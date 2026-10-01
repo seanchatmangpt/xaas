@@ -24,7 +24,7 @@ chi:case-authorized-bounded
     dcterms:identifier "CHI-CASE-001" ;
     rdfs:label "Bounded authorized purchase" ;
     dcterms:description "A bounded purchase with valid identity and delegation is the positive path; execution/ALIVE must still be established by the owning runtime/evidence courts." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -34,7 +34,7 @@ chi:case-over-limit
     dcterms:identifier "CHI-CASE-002" ;
     rdfs:label "Amount exceeds delegated limit" ;
     dcterms:description "The requested amount exceeds the admitted delegated limit and must produce a typed refusal with no protected DO." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -44,7 +44,7 @@ chi:case-wrong-principal
     dcterms:identifier "CHI-CASE-003" ;
     rdfs:label "Wrong principal" ;
     dcterms:description "The principal does not match the delegated authority subject and must be refused before protected DO." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -54,7 +54,7 @@ chi:case-expired-delegation
     dcterms:identifier "CHI-CASE-004" ;
     rdfs:label "Expired delegation" ;
     dcterms:description "An expired delegation is stale authority and must be refused rather than refreshed implicitly." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -64,7 +64,7 @@ chi:case-provider-unavailable
     dcterms:identifier "CHI-CASE-005" ;
     rdfs:label "Provider unavailable before dispatch" ;
     dcterms:description "Pre-dispatch provider unavailability preserves other admitted realizations and may trigger bounded replanning without changing authority." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -74,7 +74,7 @@ chi:case-unknown-after-dispatch
     dcterms:identifier "CHI-CASE-006" ;
     rdfs:label "Unknown after dispatch" ;
     dcterms:description "A timeout or disconnect after dispatch is UNKNOWN_AFTER_DISPATCH; reconcile the original consequence and never blind replay." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -84,7 +84,7 @@ chi:case-missing-evidence
     dcterms:identifier "CHI-CASE-007" ;
     rdfs:label "Missing evidence cannot promote standing" ;
     dcterms:description "A consequence may be claimed or inferred, but absent the required exact-subject evidence and receipt the layer cannot promote to ALIVE." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -94,7 +94,7 @@ chi:case-stale-subject
     dcterms:identifier "CHI-CASE-008" ;
     rdfs:label "Stale or mismatched subject" ;
     dcterms:description "A receipt, plan or evidence object bound to a different subject or stale semantic identity is refused rather than generalized." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -104,7 +104,7 @@ chi:case-policy-drift
     dcterms:identifier "CHI-CASE-009" ;
     rdfs:label "Semantic policy drift invalidates stale plan" ;
     dcterms:description "When relevant semantic/policy premises change, a stale plan loses applicability and the planner must re-enter bounded selection/replanning." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
@@ -114,7 +114,7 @@ chi:case-surface-no-authority
     dcterms:identifier "CHI-CASE-010" ;
     rdfs:label "Human projection cannot mint authority" ;
     dcterms:description "Operator, buyer, seller and engineer views may differ in presentation but none may grant DO or change the exact semantic subject/evidence." ;
-    sj:subject chi:purchase-001 ;
+    sj:subject "urn:chicago:agentic-payment:purchase-001" ;
     sj:candidateOnly true ;
     sj:authorityClaim "NONE" ;
     sj:observedStanding "UNKNOWN" .
