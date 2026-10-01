@@ -5,7 +5,7 @@ defmodule Xaas.Demo.PradyotSurface do
   The contained Chicago seed is evidence for surface behavior, not runtime
   authority or a claim that unavailable ecosystem services executed.
   """
-  @subject "chicago-agentic-payments/demo-v26.10.1"
+  @subject "urn:chicago:agentic-payment:purchase-001"
 
   @layers [
     {:sjira, "Requirement", :contained, "Agentic payment requirement admitted for the demo episode."},
@@ -31,7 +31,8 @@ defmodule Xaas.Demo.PradyotSurface do
       standing: :partial,
       freshness: :seeded,
       layers: Enum.map(@layers, &layer/1),
-      receipts: [%{id: "demo-seed", state: :contained, replay: :deterministic}]
+      receipts: [%{id: "demo-seed", state: :contained, replay: :deterministic}],
+      cases: demo_cases()
     }
   end
 
@@ -45,7 +46,7 @@ defmodule Xaas.Demo.PradyotSurface do
       capabilities: ["read semantic state", "render exact subjects", "render typed evidence gaps"],
       obligations: ["preserve exact subject identity", "never infer runtime authority from UI standing"],
       candidates: ["attach live OCEL evidence", "attach Affidavit evidence", "project planner realization"],
-      execution: :read_only,
+      execution: %{mode: :read_only, unknown_after_dispatch: :reconcile_never_replay},
       receipts: [],
       evidence: %{ocel: :partial, affidavit: :partial},
       standing: :partial,
@@ -68,6 +69,16 @@ defmodule Xaas.Demo.PradyotSurface do
       hypothetical: "Live external layers remain partial/unsupported until exact evidence is attached.",
       delivery_status: :demo_ready_surface
     }
+  end
+
+  defp demo_cases do
+    [
+      %{id: "CHI-CASE-001", outcome: :admitted, do: :bounded},
+      %{id: "CHI-CASE-002", outcome: :refused, reason: :amount_exceeds_delegated_limit, do: :none},
+      %{id: "CHI-CASE-003", outcome: :refused, reason: :wrong_principal, do: :none},
+      %{id: "CHI-CASE-004", outcome: :refused, reason: :expired_delegation, do: :none},
+      %{id: "CHI-CASE-006", outcome: :unknown_after_dispatch, recovery: :reconcile_original, replay: :forbidden}
+    ]
   end
 
   defp layer({id, label, state, evidence}),
