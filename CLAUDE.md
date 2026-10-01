@@ -43,13 +43,15 @@ Historical migration material lives in `docs/archive/` and is non-authoritative 
 
 Use real Postgres via `Ecto.Adapters.SQL.Sandbox`, real Ash actions, and real HTTP requests via `ConnCase`. Do not add mocking libraries or owned-collaborator interaction fakes.
 
-Before claiming the test tree is clean, run:
+Before claiming the test tree is clean, run the mock gate (skips comment lines and its own source/test; `patch(` is not a banned pattern):
 
 ```bash
-grep -rn "unittest.mock\|Mock(\|MagicMock\|patch(\|monkeypatch\|Mox\b\|:meck\|meck\." test/ lib/
+mix run -e 'IO.inspect(Mix.Tasks.Xaas.VerifyAndCommit.scan_mock_usage(["test", "lib"]))'  # expect []
 ```
 
-The disclosed pre-existing `Xaas.AwsRepo.FixtureAdapter` remains the one historical AWS-substitution exception.
+The same check runs as the `mock-grep` stage of `mix xaas.verify_and_commit`.
+
+The disclosed pre-existing `Xaas.AwsRepo.FixtureAdapter` (`lib/xaas/aws_repo_adapters/fixture_adapter.ex`) remains the one historical AWS-substitution exception. `Xaas.Library.ILSRepo.FixtureAdapter` (`lib/xaas/library/ils_repo/fixture_adapter.ex`) is a hand-written real interface implementation, not a mock.
 
 ### Claims require execution
 

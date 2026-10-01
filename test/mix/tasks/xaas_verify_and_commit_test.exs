@@ -202,7 +202,10 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommitTest do
     # A real banned pattern the mock-grep stage's own grep command matches --
     # exercised as a real subprocess grep, not asserted against grep in
     # isolation the way the file's earlier version tested it.
-    File.write!(Path.join(tmp, "lib/uses_monkeypatch.ex"), "# calls monkeypatch here\n")
+    File.write!(
+      Path.join(tmp, "lib/uses_monkeypatch.ex"),
+      "defmodule UsesMonkeypatch do\n  def note, do: \"monkeypatch\"\nend\n"
+    )
 
     message_file = write_message_file!(tmp, "should never be committed\n")
     before_head = git!(tmp, ["rev-parse", "HEAD"])
@@ -366,6 +369,29 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommitTest do
 
     after_head = git!(tmp, ["rev-parse", "HEAD"])
     assert before_head == after_head
+
+    File.rm_rf!(tmp)
+  end
+
+  test "scan_mock_usage flags an injected `import Mox` line and passes a clean fixture" do
+    Code.require_file(@task_source)
+    tmp = unique_tmp("scan_mock_usage")
+    File.mkdir_p!(Path.join(tmp, "lib"))
+
+    File.write!(Path.join(tmp, "lib/clean.ex"), """
+    defmodule Clean do
+      # import Mox in a comment is not usage
+      def patch(conn, _path, _params), do: conn
+    end
+    """)
+
+    assert Mix.Tasks.Xaas.VerifyAndCommit.scan_mock_usage([Path.join(tmp, "lib")]) == []
+
+    File.write!(Path.join(tmp, "lib/dirty.ex"), "defmodule Dirty do\n  import Mox\nend\n")
+
+    assert [hit] = Mix.Tasks.Xaas.VerifyAndCommit.scan_mock_usage([Path.join(tmp, "lib")])
+    assert hit =~ "dirty.ex:2:"
+    assert hit =~ "import Mox"
 
     File.rm_rf!(tmp)
   end

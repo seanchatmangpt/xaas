@@ -122,36 +122,52 @@ defmodule Mix.Tasks.Xaas.VerifyAndCommit do
     Mix.shell().info("xaas.verify_and_commit: all stages passed")
   end
 
-  # Real grep, real files, real exit code. `-E` (extended regex) is passed
-  # explicitly rather than relying on ambient alternation support that
-  # varies between grep binaries (GNU grep's default BRE mode does not
-  # support unescaped `|` alternation the way a ugrep/ripgrep-compatible
-  # binary might) -- with `-E`, unescaped `|` alternation is portable across
-  # GNU and BSD/POSIX grep. This stage invokes the system `grep` binary via
-  # `System.cmd/3`, not ripgrep.
-  defp mock_grep_stage do
-    {_output, grep_status} =
-      System.cmd(
-        "grep",
-        [
-          "-rnE",
-          "--include=*.ex",
-          "--include=*.exs",
-          "unittest\\.mock|Mock\\(|MagicMock|monkeypatch|Mox\\b|:meck|meck\\.",
-          "test/",
-          "lib/"
-        ],
-        into: IO.stream(:stdio, :line),
-        stderr_to_stdout: true
-      )
+  # Banned-mock detector. Real files, real regex, real exit code. Comment
+  # lines (first non-blank char `#`) are skipped, and this task's own source
+  # and test file are skipped (they necessarily contain the pattern text).
+  # `patch(` is intentionally not matched: Phoenix ConnTest `patch/3` and
+  # Ash `patch(:update)` are legitimate. Mox is detected via `import Mox`,
+  # `use Mox`, `Mox.` or `alias Mox`.
+  @banned_mock_regex ~r/unittest\.mock|\bMock\(|MagicMock|monkeypatch|\b(?:import|use|alias)\s+Mox\b|\bMox\.|:meck\b|\bmeck\./
+  @self_files ["xaas.verify_and_commit.ex", "xaas_verify_and_commit_test.exs"]
 
-    # grep: 0 = matches found (banned pattern present -> this gate fails),
-    #       1 = no matches (clean -> this gate passes),
-    #      >1 = grep itself errored (bad path/args -> propagate as failure)
-    case grep_status do
-      0 -> 1
-      1 -> 0
-      other -> other
+  @doc false
+  def scan_mock_usage(dirs) do
+    for dir <- dirs,
+        pattern <- ["**/*.ex", "**/*.exs"],
+        path <- Path.wildcard(Path.join(dir, pattern)),
+        File.regular?(path),
+        Path.basename(path) not in @self_files,
+        {line, n} <- code_lines(path),
+        Regex.match?(@banned_mock_regex, line) do
+      "#{path}:#{n}:#{String.trim_trailing(line)}"
+    end
+  end
+
+  # Code lines only: skips `#` comment lines and prose inside `"""`
+  # heredocs (moduledoc/doc text), which may legitimately name banned tools.
+  defp code_lines(path) do
+    path
+    |> File.stream!()
+    |> Stream.with_index(1)
+    |> Stream.transform(false, fn {line, n}, in_doc ->
+      toggles = line |> String.split(~s(""")) |> length() |> Kernel.-(1) |> rem(2) == 1
+      now_in_doc = if toggles, do: not in_doc, else: in_doc
+
+      skip? = in_doc or toggles or String.starts_with?(String.trim_leading(line), "#")
+      {if(skip?, do: [], else: [{line, n}]), now_in_doc}
+    end)
+    |> Enum.to_list()
+  end
+
+  defp mock_grep_stage do
+    case scan_mock_usage(["test", "lib"]) do
+      [] ->
+        0
+
+      hits ->
+        Enum.each(hits, fn hit -> Mix.shell().info(hit) end)
+        1
     end
   end
 
