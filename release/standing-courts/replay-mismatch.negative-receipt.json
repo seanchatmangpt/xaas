@@ -6,15 +6,14 @@
   "subject": {
     "repository": "seanchatmangpt/xaas",
     "base_sha": "9ff91c6fd3e205398d082a6be366f21e9ec7777c",
-    "adversary_commit": "c10bd025a4e569e086ba2c8d76627a30b75ddeea",
-    "adversary_blob": "7da7574db0d0cbc4bb05c89da6123ad248c76460"
+    "adversary_commit": "b0558ad8d4c20eca9c6de71f5b12ac6b9b165c31",
+    "adversary_blob": "a8b6c5fde89a876e92d35e32a5ec808d3385b672"
   },
   "inheritance": {
     "canonical_repository": "seanchatmangpt/chatman-ecosystem",
-    "canonical_commit": "31dcb53edf026cce9a297fd08924b0b5d5ff2b94",
+    "canonical_commit": "1bfcd6764ad714e9771f7dc82cbe69b87abe14c9",
     "falsifier": "dm_replay_mismatch"
   },
-  "executor": "GgenIgniter.SemanticJira.replay_check/2",
   "expected": {
     "ok": false,
     "reason": "REPLAY_DIVERGED"
