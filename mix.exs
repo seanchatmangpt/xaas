@@ -109,6 +109,10 @@ defmodule Xaas.MixProject do
        ref: "36f25a30f2f60acde7da1a965626451dbc40b6f8",
        override: true},
       {:a2a, "~> 0.2"},
+      # Fabric planes (law, evidence/process). Test/dev only: path deps would break the
+      # Docker prod build (see the ex4pm note below); fabric adapters call them via apply/3.
+      {:ash_graphlaw, path: "../ash_graphlaw", only: [:dev, :test]},
+      {:ash_affidavit, path: "../ash_affidavit", only: [:dev, :test]},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
       {:ash_iam, "~> 2.0"},

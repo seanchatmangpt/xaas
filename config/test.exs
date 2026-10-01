@@ -135,3 +135,7 @@ config :opentelemetry,
 # ash_a2a 26.9.28 boots under a strict security preflight; dev/test have no durable outbox,
 # authority broker or kill-switch class. prod stays :strict (compile_env default).
 config :ash_a2a, :security_profile, :legacy_compat
+
+# Fabric planes (law, evidence/process): run the real WASM engines in-process.
+config :ash_graphlaw, start_pool: true, pool: [size: 2]
+config :ash_affidavit, start_pool: true, pool: [size: 2]
