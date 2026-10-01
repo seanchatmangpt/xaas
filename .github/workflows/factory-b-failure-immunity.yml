@@ -4,18 +4,31 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  # Exact-subject law: pull_request events deliver a merge ref in github.sha;
+  # the admitted subject is the PR head. workflow_dispatch has no PR, so it
+  # falls back to the dispatched sha.
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 jobs:
   replay-mismatch:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout consumer
+      - name: Checkout exact consumer subject
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+      - name: Assert exact consumer subject identity
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+      - name: Check standing-court canonical pins
+        run: python3 scripts/check_standing_court_pins.py
       - name: Checkout canonical court
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: seanchatmangpt/chatman-ecosystem
           ref: 1bfcd6764ad714e9771f7dc82cbe69b87abe14c9
           path: canonical
+          persist-credentials: false
       - name: Execute canonical inherited replay-mismatch witness
         run: |
           python3 canonical/scripts/release_train/verify_failure_immunity_consumer.py \
@@ -23,6 +36,17 @@ jobs:
             --projection release/standing-courts/failure-immunity.generated.json \
             --adversary release/standing-courts/replay-mismatch.adversary.json \
             --consumer-repository seanchatmangpt/xaas \
-            --consumer-head "$GITHUB_SHA" \
+            --consumer-head "$SUBJECT_SHA" \
             --output /tmp/inherited-negative-receipt.json
           cat /tmp/inherited-negative-receipt.json
+      - name: Preserve inherited negative receipt
+        if: always()
+        run: cp /tmp/inherited-negative-receipt.json inherited-negative-receipt.json
+      - name: Upload inherited negative receipt artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: inherited-negative-receipt-${{ env.SUBJECT_SHA }}
+          path: inherited-negative-receipt.json
+          if-no-files-found: error
+          retention-days: 14
