@@ -54,6 +54,9 @@ defmodule XaasWeb.Router do
     pipe_through(:browser)
 
     get("/", PageController, :home)
+    live("/system", Pradyot.SurfaceLive, :system)
+    live("/chicago", Pradyot.SurfaceLive, :chicago)
+    live("/seller", Pradyot.SurfaceLive, :seller)
     live("/next-read", NextRead.ReaderLive)
     live("/case-studies/wd-fa", WdFa.CaseStudyLive)
     get("/case-studies/wd-fa/stogaf.json", WdFaStogafController, :show)
