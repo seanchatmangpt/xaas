@@ -302,3 +302,5 @@ test/xaas/ultracode/{repos_refresh,autonomic_profile_sense,sj_program_registry}_
 invented parallel ExecutionWorker/WorkContract/Execution resources and was
 reverted — `backup/execution-fabric-v1` — in favor of extending the
 existing Ultracode seam)
+
+| `scripts/ultracode_sequenced_drain.sh` | Sequenced ultracode drain: wave -> merge integration branch into main -> compile/test verify -> refresh clone -> next wave; stops on conflict/build/test failure | UNSUPPORTED(generator-capability): control-flow script over `mix xaas.ultracode.start`; no active ggen-marketplace pack (12 active packs) covers campaign sequencing |
