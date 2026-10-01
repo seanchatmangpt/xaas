@@ -25,7 +25,7 @@ defmodule Xaas.Sa2a.BridgeTest do
       via `start_link/1` and under a real `Supervisor.start_link/2` --
       never a silently-passing no-op.
   """
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Xaas.Sa2a.Bridge
 
@@ -39,54 +39,54 @@ defmodule Xaas.Sa2a.BridgeTest do
   end
 
   describe "validate/1 against the real GenServer" do
-    test "real round trip when autofde is on PATH, real honest failure when it is not" do
+    @tag :requires_autofde
+    test "real round trip when autofde is on PATH" do
       if Bridge.available?() do
-        # Real branch: real autofde binary present. Start the real GenServer
-        # under a real ExUnit-managed Supervisor and call it for real.
         pid = start_supervised!({Bridge, []})
         assert Process.alive?(pid)
 
-        assert {:ok, %{"ok" => true} = resp} = Bridge.validate([])
-        assert is_map(resp)
+        assert {:ok, %{"ok" => true}} = Bridge.validate([])
       else
-        # Real branch, and the one this environment actually hits (verified
-        # live: `System.find_executable("autofde")` is `nil` here, matching
-        # a real `which autofde` non-zero exit). Assert the real, honest
-        # failure mode end to end, not a successful round trip.
-        #
-        # `init/1` returning `{:stop, reason}` is a real, documented OTP
-        # race for a *linked* start (`GenServer.start_link/2,3`, which is
-        # what `Bridge.start_link/1` and `Supervisor.start_link/2` both use
-        # under the hood): `proc_lib`'s init-ack message and the child's
-        # linked EXIT signal can arrive in either order, and without
-        # `trap_exit` the caller can be killed by the signal before it ever
-        # observes the clean `{:error, reason}` return -- confirmed live in
-        # this exact Elixir/OTP toolchain with a throwaway script before
-        # writing this test. `start_supervised/2` (assertion 3, below)
-        # doesn't need this, since ExUnit's own supervisor -- not this test
-        # process -- is what's linked to the failing child.
-        Process.flag(:trap_exit, true)
-
-        # 1. Direct start_link/1 (what Xaas.Application's supervisor calls
-        #    under the hood via the {Xaas.Sa2a.Bridge, []} child spec):
-        #    OTP turns init/1's {:stop, reason} into {:error, reason} here.
-        assert {:error, {:executable_not_found, "autofde"}} = Bridge.start_link([])
-
-        # 2. Under a real, standalone Supervisor (per the gap's own
-        #    "start it directly under a real Supervisor/start_supervised!"
-        #    instruction) -- Supervisor.start_link/2's own documented
-        #    contract wraps a failing initial child start as
-        #    {:error, {:shutdown, {:failed_to_start_child, id, reason}}}.
-        assert {:error, {:shutdown, {:failed_to_start_child, Bridge, reason}}} =
-                 Supervisor.start_link([{Bridge, []}], strategy: :one_for_one)
-
-        assert reason == {:executable_not_found, "autofde"}
-
-        # 3. Under ExUnit's own start_supervised/2 -- the same real,
-        #    documented "child failed to start -> {:error, reason}"
-        #    contract, this time via the harness the gap explicitly named.
-        assert {:error, _reason} = start_supervised({Bridge, []})
+        # Environment-dependent: absent-path behavior is covered by the
+        # unconditional test below; nothing to round-trip without the binary.
+        assert Bridge.available?() == false
       end
+    end
+  end
+
+  describe "autofde absent from PATH" do
+    # PATH is process-global; restore in on_exit. Not async-safe, so this
+    # module runs serially (see `use ExUnit.Case` above).
+    setup do
+      original = System.get_env("PATH")
+
+      empty =
+        System.tmp_dir!() |> Path.join("bridge_test_empty_#{System.unique_integer([:positive])}")
+
+      File.mkdir_p!(empty)
+      System.put_env("PATH", empty)
+
+      on_exit(fn ->
+        if original, do: System.put_env("PATH", original), else: System.delete_env("PATH")
+        File.rm_rf(empty)
+      end)
+
+      :ok
+    end
+
+    test "available?/0 is false and start fails with executable_not_found" do
+      refute Bridge.available?()
+
+      # init/1 {:stop, reason} on a linked start can kill the caller; trap exits.
+      Process.flag(:trap_exit, true)
+
+      assert {:error, {:executable_not_found, "autofde"}} = Bridge.start_link([])
+
+      assert {:error, {:shutdown, {:failed_to_start_child, Bridge, reason}}} =
+               Supervisor.start_link([{Bridge, []}], strategy: :one_for_one)
+
+      assert reason == {:executable_not_found, "autofde"}
+      assert {:error, _reason} = start_supervised({Bridge, []})
     end
   end
 end

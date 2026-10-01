@@ -30,7 +30,11 @@ defmodule Xaas.Ultracode.RecoveryPolicyTest do
 
     assert {:ok, synthesized} = Synthesis.synthesize(domain, :ready, :strong_cyclic)
     assert Map.fetch!(synthesized, :ready) == :dispatch
-    assert is_map(report)
+    assert report.semantics == :strong_cyclic
+    assert report.initial == :ready
+    expected = Enum.sort([:ready | RecoveryPolicy.tick_outcomes()])
+    assert report.reachable_states == expected
+    assert report.reachable_count == length(expected)
   end
 
   test "the admission receipt binds the exact policy digest" do
