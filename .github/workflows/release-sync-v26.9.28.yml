@@ -30,11 +30,11 @@ jobs:
             fi
           done
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
-      - uses: erlef/setup-beam@v1
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1 (same pin cold-court.yml runs)
         if: steps.upstream.outputs.ready == 'true'
         with:
-          elixir-version: "1.18.4"
-          otp-version: "27.3.4"
+          version-file: .tool-versions
+          version-type: strict
       - name: Refresh exact release locks
         if: steps.upstream.outputs.ready == 'true'
         run: |
@@ -45,6 +45,12 @@ jobs:
           grep -F '"ggen_igniter": {:hex, :ggen_igniter, "26.9.28"' mix.lock
           grep -F '"ash_a2a": {:hex, :ash_a2a, "26.9.28"' mix.lock
           grep -F '"ash_r2rml": {:git, "https://github.com/seanchatmangpt/ash_r2rml.git", "40d181fffdefbb65ee4a83486eae86534690c4d5"' mix.lock
+      - name: Gate refreshed graph (locked resolve + compile, warnings as errors)
+        if: steps.upstream.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
       - name: Commit lock receipt
         if: steps.upstream.outputs.ready == 'true'
         run: |
