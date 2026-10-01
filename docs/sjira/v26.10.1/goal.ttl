@@ -1,0 +1,291 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# v26.10.1 Chicago governing goal graph.
+#
+# This graph intentionally authors NO sj:WorkOrder and NO sj:Receipt.
+# WorkOrders are compiler projections. Receipts are observations.
+# All human/machine renderings remain authority NONE.
+# BRCE / admitted runtime consequence boundaries remain external to this graph.
+
+chi:GC-XAAS-26.10.1-CHICAGO
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "GC-XAAS-26.10.1-CHICAGO" ;
+    rdfs:label "XaaS v26.10.1 Chicago ecosystem demo" ;
+    dcterms:description "One exact Agentic Payments subject projected across sJira, semantic law, SA2A, planning, runtime, OCEL, process conformance, evidence standing and AshSurface without changing subject identity or granting UI authority." ;
+    dcterms:source "docs/sjira/v26.10.1/" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "593f8e1965d9f4be91e9f4cd85a2b30fa0b9205e" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:requiresEvidence sj:source-evidence, sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.1:GC-XAAS-26.10.1-CHICAGO" ;
+    sj:projection chi:projection-machine, chi:projection-verification, chi:projection-executive, chi:projection-replay ;
+    dcterms:hasPart
+        chi:layer-sjira,
+        chi:layer-graphlaw,
+        chi:layer-sa2a,
+        chi:layer-pplan,
+        chi:layer-xaas,
+        chi:layer-ocel,
+        chi:layer-beam4pm,
+        chi:layer-affidavit,
+        chi:layer-surface,
+        chi:layer-marketplace,
+        chi:layer-wasm4pm,
+        chi:layer-castle ;
+    sj:acceptance chi:root-acceptance ;
+    sj:falsifier chi:falsifier-subject-drift, chi:falsifier-authority-widening, chi:falsifier-standing-by-adjacency ;
+    sj:exclusion
+        "No real payment rail or financial settlement is implied by the Chicago demo subject.",
+        "No ticket, plan, model output, semantic-law result, process finding, generated artifact or UI projection gains DO authority.",
+        "No layer inherits ALIVE from a neighboring layer.",
+        "No AshSurface or seller projection owns business semantics.",
+        "No authored WorkOrder or Receipt belongs in this source graph." ;
+    sj:successorPolicy "Residual capability gaps route to the owning repository or marketplace capability delta while preserving the Chicago subject; they do not fork a second demo world." ;
+    sj:stopQuery """PREFIX sj: <https://ggen-igniter.dev/ontology/semantic-jira#>
+PREFIX chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+ASK {
+  chi:GC-XAAS-26.10.1-CHICAGO dcterms:hasPart
+    chi:layer-sjira,
+    chi:layer-graphlaw,
+    chi:layer-sa2a,
+    chi:layer-pplan,
+    chi:layer-xaas,
+    chi:layer-ocel,
+    chi:layer-beam4pm,
+    chi:layer-affidavit,
+    chi:layer-surface,
+    chi:layer-marketplace .
+
+  VALUES ?required {
+    chi:layer-sjira
+    chi:layer-graphlaw
+    chi:layer-sa2a
+    chi:layer-pplan
+    chi:layer-xaas
+    chi:layer-ocel
+    chi:layer-beam4pm
+    chi:layer-affidavit
+    chi:layer-surface
+    chi:layer-marketplace
+  }
+
+  FILTER NOT EXISTS {
+    VALUES ?required2 {
+      chi:layer-sjira
+      chi:layer-graphlaw
+      chi:layer-sa2a
+      chi:layer-pplan
+      chi:layer-xaas
+      chi:layer-ocel
+      chi:layer-beam4pm
+      chi:layer-affidavit
+      chi:layer-surface
+      chi:layer-marketplace
+    }
+    FILTER NOT EXISTS {
+      ?required2 sj:receipt ?receipt .
+      ?receipt a sj:Receipt ;
+               sj:standing "ALIVE" .
+    }
+  }
+}""" .
+
+chi:root-acceptance
+    a sj:AcceptanceCriterion ;
+    rdfs:label "Chicago root acceptance" ;
+    dcterms:description "One exact subject is visible through all required layers; each layer carries its own evidence and standing; positive and negative scenarios remain distinguishable; generated views are deterministic and authority NONE." .
+
+chi:falsifier-subject-drift
+    a sj:Falsifier ;
+    rdfs:label "Cross-layer subject drift" ;
+    dcterms:description "Any required layer reports a different semantic subject without an explicit receipted projection relation." .
+
+chi:falsifier-authority-widening
+    a sj:Falsifier ;
+    rdfs:label "Projection or analysis gains authority" ;
+    dcterms:description "A requirement, transport, plan, semantic admission, process finding, evidence result, generated artifact or AshSurface view grants or implies protected DO." .
+
+chi:falsifier-standing-by-adjacency
+    a sj:Falsifier ;
+    rdfs:label "Standing inherited by adjacency" ;
+    dcterms:description "A layer is shown ALIVE solely because an upstream or neighboring layer is ALIVE, without its own exact-subject court and receipt." .
+
+# Capabilities are provider-neutral requirements. Naming them grants no authority.
+
+chi:cap-sjira a sj:Capability ; sj:capabilityId "sjira:goal-graph" .
+chi:cap-graphlaw a sj:Capability ; sj:capabilityId "graphlaw:semantic-admission" .
+chi:cap-sa2a a sj:Capability ; sj:capabilityId "sa2a:capability-route" .
+chi:cap-pplan a sj:Capability ; sj:capabilityId "ash_pplan:plan" .
+chi:cap-xaas a sj:Capability ; sj:capabilityId "xaas:runtime" .
+chi:cap-ocel a sj:Capability ; sj:capabilityId "ex4pm:ocel" .
+chi:cap-beam4pm a sj:Capability ; sj:capabilityId "beam4pm:conformance" .
+chi:cap-affidavit a sj:Capability ; sj:capabilityId "affidavit:standing" .
+chi:cap-surface a sj:Capability ; sj:capabilityId "ash_surface:projection" .
+chi:cap-marketplace a sj:Capability ; sj:capabilityId "ggen_marketplace:render" .
+chi:cap-wasm4pm a sj:Capability ; sj:capabilityId "wasm4pm:qri" .
+chi:cap-castle a sj:Capability ; sj:capabilityId "castle:consequence" .
+
+# Standalone GoalCheckpoints are parts of the root via public dcterms:hasPart.
+# They deliberately omit sj:checkpointOf, so the RFC does not require a fabricated
+# runnable sj:courtCommand before the owning repo exposes one.
+
+chi:layer-sjira
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-101-SJIRA" ;
+    rdfs:label "Semantic Jira requirement graph" ;
+    sj:repository "seanchatmangpt/ggen_igniter" ;
+    sj:pathScope "docs/rfc/RFC-SEMANTIC-JIRA-v26.9.19.md priv/ggen/semantic-jira-pack" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-sjira ;
+    sj:evidenceHorizon "ADMITTED_SEMANTIC_SOURCE" ;
+    sj:postcondition "Chicago requirement and acceptance state are carried by canonical RDF; prose and generated tickets remain projections." ;
+    sj:falsifier "A Markdown, chat or generated projection becomes work authority or changes the exact Chicago subject." .
+
+chi:layer-graphlaw
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-102-GRAPHLAW" ;
+    rdfs:label "GraphLaw semantic admission and refusal" ;
+    sj:repository "seanchatmangpt/ash_graphlaw" ;
+    sj:pathScope "ash_graphlaw membrane -> pinned GraphLaw engine" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-graphlaw ;
+    sj:evidenceHorizon "ADMISSION_EVIDENCE" ;
+    sj:postcondition "Semantic law produces digest-bound typed admission or refusal evidence for the exact Chicago subject without granting DO." ;
+    sj:falsifier "A GraphLaw or ash_graphlaw result actuates directly, or semantic state is duplicated with different meaning in XaaS." .
+
+chi:layer-sa2a
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-103-SA2A" ;
+    rdfs:label "SA2A capability and delegation transport" ;
+    sj:repository "seanchatmangpt/ash_a2a" ;
+    sj:pathScope "capability discovery, identity, delegation, consequence contract, CommandBus boundary" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-sa2a ;
+    sj:evidenceHorizon "CAPABILITY_AND_AUTHORITY_EVIDENCE" ;
+    sj:postcondition "SA2A carries the exact subject, capability and delegated authority facts without transport possession widening authority." ;
+    sj:falsifier "Routing, delivery, message metadata or capability possession grants DO or changes subject identity." .
+
+chi:layer-pplan
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-104-PPLAN" ;
+    rdfs:label "ash_pplan and ferroplan planning" ;
+    sj:repository "seanchatmangpt/ash_pplan" ;
+    sj:pathScope "ash_pplan planning semantics -> ferroplan HDDL/FOND search -> realization candidates" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-pplan ;
+    sj:evidenceHorizon "PLAN_AND_POLICY_EVIDENCE" ;
+    sj:postcondition "The desired outcome has independently checkable plans and recovery alternatives; planner output remains candidate state, not execution authority." ;
+    sj:falsifier "Planner equals policy/executor/authority, stale plans survive semantic drift, or recovery silently widens authority." .
+
+chi:layer-xaas
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-105-XAAS" ;
+    rdfs:label "XaaS runtime existence and execution state" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:pathScope "Ash domains, runs, epochs, leases, execution fabric, actuation, receipts" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-xaas ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:postcondition "XaaS exposes the exact Chicago runtime state, including executed, refused and unknown-after-dispatch outcomes, without fabric control becoming ambient DO authority." ;
+    sj:falsifier "XaaS fabric bypasses the admitted consequence boundary, retries UNKNOWN_AFTER_DISPATCH blindly, or reports execution not observed." .
+
+chi:layer-ocel
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-106-OCEL" ;
+    rdfs:label "ex4pm / ash_ex4pm OCEL evidence" ;
+    sj:repository "seanchatmangpt/ash_ex4pm" ;
+    sj:pathScope "Ash action -> ex4pm ingestion -> OCEL 2.0 event/evidence projection" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-ocel ;
+    sj:evidenceHorizon "OBSERVED_PROCESS_EVIDENCE" ;
+    sj:postcondition "Observed Chicago execution produces object-centric event evidence correlated to the exact subject and receipts." ;
+    sj:falsifier "A projected or inferred event is presented as observed execution, or OCEL identity cannot reconcile to the runtime subject." .
+
+chi:layer-beam4pm
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-107-BEAM4PM" ;
+    rdfs:label "beam4pm process conformance and replay" ;
+    sj:repository "seanchatmangpt/beam4pm" ;
+    sj:pathScope "process model, conformance, replay, deviation and recovery analysis" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-beam4pm ;
+    sj:evidenceHorizon "PROCESS_CONFORMANCE_EVIDENCE" ;
+    sj:postcondition "Observed OCEL evidence can be compared to the intended Chicago process and replayed without process analytics becoming authority." ;
+    sj:falsifier "Conformance inference is promoted to observed fact or standing, or replay changes the semantic outcome without a typed divergence." .
+
+chi:layer-affidavit
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-108-AFFIDAVIT" ;
+    rdfs:label "Affidavit evidence and standing" ;
+    sj:repository "seanchatmangpt/ash_affidavit" ;
+    sj:pathScope "affidavit WASM engine + Ash membrane + receipt/provenance/standing projection" ;
+    sj:boundaryClass sj:Core ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-affidavit ;
+    sj:evidenceHorizon "CRYPTOGRAPHIC_EVIDENCE" ;
+    sj:postcondition "Chicago evidence is cryptographically bound to the exact operation/subject; evidence standing does not itself execute consequence." ;
+    sj:falsifier "Evidence can be replayed across subjects, forged from runtime computation, or treated as execution authority." .
+
+chi:layer-surface
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-109-SURFACE" ;
+    rdfs:label "AshSurface human projection" ;
+    sj:repository "seanchatmangpt/ash_surface" ;
+    sj:pathScope "AshSurface IR, CommandCenter, observations, obligations, planning episodes, evidence and standing" ;
+    sj:boundaryClass sj:LastMile ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-surface ;
+    sj:evidenceHorizon "FAITHFUL_HUMAN_PROJECTION" ;
+    sj:postcondition "Operator, Chicago and seller views project the same exact XaaS subject/evidence with different presentation and no second application model." ;
+    sj:falsifier "AshSurface invents business semantics, grants DO, fabricates ALIVE, or seller/buyer/operator projections disagree on subject identity." .
+
+chi:layer-marketplace
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-110-MARKETPLACE" ;
+    rdfs:label "ggen-marketplace deterministic Chicago renderer" ;
+    sj:repository "seanchatmangpt/ggen-marketplace" ;
+    sj:pathScope "marketplace pack: canonical query/templates -> generated Chicago machine/verification/executive/replay views" ;
+    sj:boundaryClass sj:LastMile ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-marketplace ;
+    sj:evidenceHorizon "DETERMINISTIC_MANUFACTURE" ;
+    sj:postcondition "A marketplace-owned generator renders the Chicago projections from this RDF source with byte-identical replay and authority NONE." ;
+    sj:falsifier "Generated Chicago artifacts are hand edited, generator output changes without source/tool identity change, or a generated view acquires authority." .
+
+chi:layer-wasm4pm
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-111-WASM4PM" ;
+    rdfs:label "wasm4pm qualified realization" ;
+    sj:repository "seanchatmangpt/wasm4pm" ;
+    sj:pathScope "qualified runtime interchangeability and portable deterministic realization" ;
+    sj:boundaryClass sj:Successor ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-wasm4pm ;
+    sj:evidenceHorizon "OPTIONAL_MONDAY" ;
+    sj:postcondition "Equivalent realizations may qualify against the same Chicago capability contract without implementation identity becoming semantic identity." ;
+    sj:falsifier "Provider/runtime substitution changes semantic subject, consequence contract or admitted invariants." .
+
+chi:layer-castle
+    a sj:GoalCheckpoint ;
+    dcterms:identifier "CHI-112-CASTLE" ;
+    rdfs:label "CASTLE consequence governance" ;
+    sj:repository "seanchatmangpt/castle" ;
+    sj:pathScope "consequence admissibility, strategic command and protected BRCE path" ;
+    sj:boundaryClass sj:Successor ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresCapability chi:cap-castle ;
+    sj:evidenceHorizon "OPTIONAL_MONDAY" ;
+    sj:postcondition "CASTLE may govern consequential realization without becoming XaaS runtime or changing the Chicago subject." ;
+    sj:falsifier "CASTLE becomes the runtime monolith or introduces a second protected DO path." .
