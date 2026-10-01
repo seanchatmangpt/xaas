@@ -183,3 +183,19 @@ Operator order: close unused branches. Every branch below is an ancestor of main
 | v23/V23-W | de51e88f |
 | v23/V23-X | 5fef0ac7 |
 | v26.9.27/closure-runtime | ceca8e1c |
+
+## Addendum — stale tracking refs (remote `clone` no longer configured; all merged into main)
+
+| branch | tip |
+|---|---|
+| clone/xa-3001 | 3e6c4501 |
+| clone/xa-3002 | 7c28805a |
+| clone/xa-3003 | 1801669c |
+| clone/xa-3007 | 39570262 |
+| clone/xa-3009 | c249c00d |
+
+## Addendum — branch named `origin` (deleted via `:refs/heads/origin`)
+
+| branch | tip |
+|---|---|
+| origin | tip SHA not separately recorded (tracking reflog pruned); verified merged into main before deletion (`git branch -r --no-merged main` = 0), content reachable from main |
