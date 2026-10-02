@@ -1,0 +1,38 @@
+{
+  "generated": true,
+  "authorityClaim": "NONE",
+  "subject": "urn:chicago:agentic-payment:purchase-001",
+  "projectionType": "replay",
+  "sourceDigests": [
+    { "path": "docs/sjira/v26.10.1/chicago.ttl", "sha256": "cd38fe16b421b3aa2656944498021fdf2a0473cd697143100819763f2f01e853" },
+    { "path": "docs/sjira/v26.10.1/goal.ttl", "sha256": "7eb920b31942ea6269cc42fcde7cace896eb7bcae32fc535fbbb697ce4acc1f8" },
+    { "path": "docs/sjira/v26.10.1/projections.ttl", "sha256": "f74018a27d1b2ea16bca19ab919b1e2408b1dad0be51a6f8afdb03dbc9b4e18e" },
+    { "path": "source/narrative.ttl", "sha256": "f9e60b12defaa6f7ec34cc38d4f94c5d7289e2d5368570fd255f3f31bbe0fb61" }
+  ],
+  "generatorIdentity": "ggen-marketplace/chicago-xaas-surface-pack@26.10.1",
+  "replayIdentity": "semantic-jira:v26.10.1:GC-XAAS-26.10.1-CHICAGO",
+  "rootGoal": {
+    "identifier": "GC-XAAS-26.10.1-CHICAGO",
+    "repository": "seanchatmangpt/xaas",
+    "baseSha": "593f8e1965d9f4be91e9f4cd85a2b30fa0b9205e"
+  },
+  "sources": [
+    { "path": "docs/sjira/v26.10.1/chicago.ttl", "sha256": "cd38fe16b421b3aa2656944498021fdf2a0473cd697143100819763f2f01e853" },
+    { "path": "docs/sjira/v26.10.1/goal.ttl", "sha256": "7eb920b31942ea6269cc42fcde7cace896eb7bcae32fc535fbbb697ce4acc1f8" },
+    { "path": "docs/sjira/v26.10.1/projections.ttl", "sha256": "f74018a27d1b2ea16bca19ab919b1e2408b1dad0be51a6f8afdb03dbc9b4e18e" },
+    { "path": "source/narrative.ttl", "sha256": "f9e60b12defaa6f7ec34cc38d4f94c5d7289e2d5368570fd255f3f31bbe0fb61" }
+  ],
+  "inputFiles": [
+    "source/chicago.ttl",
+    "source/goal.ttl",
+    "source/projections.ttl",
+    "source/narrative.ttl"
+  ],
+  "outputs": [
+    "chicago.machine.json",
+    "chicago.verification.json",
+    "chicago.executive.json",
+    "chicago.replay.json"
+  ],
+  "renderCommand": "ggen sync run"
+}

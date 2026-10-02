@@ -109,3 +109,8 @@ tmp_out/
 
 # Held-while-running mutex of .claude/workflow-compile-lock.sh
 .claude/.workflow-compile.lock
+
+# ggen/CLI tool state from the chicago consumer render (priv/chicago/ggen.toml)
+priv/chicago/.ggen/
+priv/chicago/.ggen-v2/
+priv/chicago/.clap-noun-verb/
