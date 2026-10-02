@@ -25,4 +25,24 @@ defmodule Xaas.Demo.PradyotProjectionContractTest do
     assert seller.boundaries.ui_authority == :none
     assert seller.boundaries.consequential_do == "XaaS/BRCE only"
   end
+  test "generic AshSurface projection preserves subject, separation and replay identity" do
+    projection = PradyotSurface.ash_surface_projection()
+
+    assert projection.subject == @subject
+    assert projection.authority == :none
+    assert projection.requirement != projection.capability
+    assert projection.planning_episode.do_authority == :none
+    assert projection.execution.authority == :none
+    assert projection.contracts == [:command_center, :observation, :obligation, :planning_episode, :standing]
+    assert PradyotSurface.replay_valid?(projection)
+  end
+
+  test "projection replay rejects authority widening and digest mutation" do
+    projection = PradyotSurface.ash_surface_projection()
+
+    refute PradyotSurface.replay_valid?(%{projection | authority: :operator})
+    refute PradyotSurface.replay_valid?(%{projection | projection_digest: "forged"})
+    refute PradyotSurface.replay_valid?(put_in(projection, [:planning_episode, :do_authority], :do))
+    refute PradyotSurface.replay_valid?(put_in(projection, [:standing, :state], :unknown_after_dispatch))
+  end
 end
