@@ -30,9 +30,12 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
                    Repository Commit MachineExperience)
   # Classes beyond the ARD section 13 minimum, observed only by the
   # MachineExperience episodes (lane V23-M, PRD PR-014/PR-016, ARD section
-  # 15): the router's decision and the bounded UNKNOWN exploration. A drive
+  # 15): the router's decision and the bounded UNKNOWN exploration; and by
+  # the plan-next step (lane X3): the journaled FOND PolicyCandidate of a
+  # promoted standing transition (emitted, never auto-admitted). A drive
   # renders them only when its caller declares them (`court_form/2`).
-  @extension_classes ~w(RouteDecided ExplorationStarted ExplorationCompleted)
+  @extension_classes ~w(RouteDecided ExplorationStarted ExplorationCompleted
+                        PolicyCandidateEmitted)
   @epoch_time "1970-01-01T00:00:00Z"
 
   @typedoc "One observed event."
@@ -57,7 +60,9 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
   @doc """
   The event classes beyond the ARD section 13 minimum (ARD section 13 names
   a minimum set): `RouteDecided`, `ExplorationStarted`,
-  `ExplorationCompleted` (the MachineExperience episodes, lane V23-M).
+  `ExplorationCompleted` (the MachineExperience episodes, lane V23-M) and
+  `PolicyCandidateEmitted` (the plan-next journaled FOND PolicyCandidate,
+  lane X3).
   """
   @spec extension_classes() :: [String.t()]
   def extension_classes, do: @extension_classes
