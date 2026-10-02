@@ -22,6 +22,16 @@ defmodule Xaas.Demo.PradyotSurface do
 
   def subject, do: @subject
 
+  def projection_digest(data) when is_map(data) do
+    data
+    |> :erlang.term_to_binary([:deterministic])
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.encode16(case: :lower)
+  end
+
+  def replay_identity(data) when is_map(data),
+    do: "xaas-pradyot:" <> @subject <> ":" <> projection_digest(data)
+
   def chicago do
     %{
       subject: @subject,
@@ -32,6 +42,9 @@ defmodule Xaas.Demo.PradyotSurface do
       freshness: :seeded,
       layers: Enum.map(@layers, &layer/1),
       receipts: [%{id: "demo-seed", state: :contained, replay: :deterministic}],
+      evidence_refs: [],
+      ocel_refs: [],
+      refusal_state: :none,
       cases: demo_cases()
     }
   end
