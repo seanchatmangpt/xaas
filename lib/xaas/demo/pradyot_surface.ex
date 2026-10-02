@@ -32,6 +32,24 @@ defmodule Xaas.Demo.PradyotSurface do
   def replay_identity(data) when is_map(data),
     do: "xaas-pradyot:" <> @subject <> ":" <> projection_digest(data)
 
+  def projection_relation(data) when is_map(data) do
+    payload = %{
+      subject: @subject,
+      source_system: :xaas,
+      target_projection: :ash_surface,
+      authority: :none,
+      source_digest: projection_digest(data)
+    }
+    Map.put(payload, :relation_digest, projection_digest(payload))
+  end
+
+  def projection_relation_valid?(relation) when is_map(relation) do
+    payload = Map.drop(relation, [:relation_digest])
+    relation.subject == @subject and relation.source_system == :xaas and
+      relation.target_projection == :ash_surface and relation.authority == :none and
+      relation.relation_digest == projection_digest(payload)
+  end
+
   def ash_surface_projection do
     episode = chicago()
 
