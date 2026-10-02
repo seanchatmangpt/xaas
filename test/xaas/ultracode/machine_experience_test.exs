@@ -1079,6 +1079,14 @@ defmodule Xaas.Ultracode.MachineExperienceEpisodeTest do
                   ) ->
                     "GGEN_IGNITER_DIR #{@ggen_dir} lacks the restored mix semantic_jira.* surface (FRI-T6)"
 
+                  # The episode drive compiles the ggen_igniter checkout under
+                  # judgement (dep :ggen_igniter carries the Rustler NIF
+                  # native/ggen_graph_nif); a forced rebuild dies :enoent
+                  # without cargo (observed; TargetSuites pins the cargo
+                  # PATH for exactly this). Skip by name, never fake red.
+                  System.find_executable("cargo") == nil ->
+                    "cargo absent from PATH: the ggen-igniter graph-side court's Rustler NIF (native/ggen_graph_nif) cannot rebuild (observed :enoent)"
+
                   true ->
                     false
                 end)
