@@ -10,6 +10,16 @@ defmodule Xaas.Receipt.RProjection do
       replay      {commands: [{cmd, cwd, exit, summary}], durable_location}
       standing    {value, derived_from, broken_term when BLOCKED/BUILD_BROKEN/REFUSED}
 
+  plus the fleet-R-v2 execution-provenance fields: `work_order_id`
+  (the same resolved order identity as `identity.subject`, so they agree by
+  construction), `origin_authority` (a verbatim copy of `authority`),
+  `provider.name` (`:provider` opt, else the observed actor, else
+  `xaas-fabric`), `provider_execution_id` (the native `run_id`, omitted when
+  the fabric did not observe one), and the namespaced extension object
+  `provider_ext.xaas` carrying `native`/`court` provenance (the bare
+  top-level `native`/`court` keys are refused by the fleet validator's
+  extension-namespace gate).
+
   `write/2` reads the native receipt JSON and writes `<stem>.r.json` next to
   it. The native receipt is the semantic export
   (`Xaas.Ultracode.SemanticReceipt.export/1`, `mix xaas.semantic.receipt`).
@@ -108,7 +118,10 @@ defmodule Xaas.Receipt.RProjection do
     verifier = map_or_empty(native["fabric_verifier"])
     court = map_or_empty(verifier["court_receipt"])
 
-    identity = identity(native, bridge, verifier, opts)
+    # The order id is resolved once and emitted twice (identity.subject and
+    # work_order_id), so the v2 identity law holds by construction.
+    subject = opts[:subject] || bridge["identity"] || native["work_order_iri"]
+    identity = identity(native, bridge, verifier, subject, opts)
     repo_path = repo_path(identity["repo"], opts)
     authority = authority(native, opts)
     suite = opts[:suite] || verifier["suite"] || get_in(court, ["binding", "suite"])
@@ -123,11 +136,14 @@ defmodule Xaas.Receipt.RProjection do
       compact(%{
         "identity" => identity,
         "authority" => authority,
+        "origin_authority" => Map.take(authority, ["ceiling", "grant", "actor"]),
         "consequence" => consequence(repo_path, identity),
         "replay" => replay,
         "standing" => standing(native, seal, verifier, identity, authority, commands),
-        "native" => native_provenance(native),
-        "court" => court_projection(court)
+        "work_order_id" => subject,
+        "provider" => provider(opts, authority),
+        "provider_execution_id" => string_or_nil(native["run_id"]),
+        "provider_ext.xaas" => provider_ext(native, court)
       })
 
     {:ok, r}
@@ -185,6 +201,22 @@ defmodule Xaas.Receipt.RProjection do
 
   `{:ok, facts}` (standing, subject, observed commits/files, the bound
   command) when every law holds.
+
+  Fleet-R-v2 execution-provenance laws (judged after law 1, first failure
+  wins; every refusal typed):
+
+    * V2-1: `work_order_id` is a non-empty string equal to the order's
+      `identity` and to `identity.subject` --
+      `REFUSED(receipt_not_for_order)` (`R_missing_identity`).
+    * V2-2: `provider_execution_id` is present and, when the xaas extension
+      carries a native copy (`provider_ext.xaas.native.run_id`), equal to
+      it; an absent copy refuses (fail-closed) --
+      `REFUSED(provider_execution_unbound)` (`R_missing_identity`).
+    * V2-3: `origin_authority` is a verbatim mirror of `authority`
+      (ceiling, grant, actor) --
+      `REFUSED(origin_authority_diverged)` (`R_missing_authority`).
+    * V2-4: `provider.name` is a non-empty string --
+      `REFUSED(provider_unattributed)` (`R_missing_authority`).
   """
   @spec consistency(map(), keyword()) :: {:ok, map()} | {:refused, map()}
   def consistency(%{} = r, opts) do
@@ -194,8 +226,9 @@ defmodule Xaas.Receipt.RProjection do
     identity = map_or_empty(r["identity"])
 
     with :ok <- for_order(identity, order),
+         :ok <- fleet_v2(r, order),
          :ok <- subject_reachable(repo, identity),
-         :ok <- acceptance_witnessed(standing, map_or_empty(r["court"]), order),
+         :ok <- acceptance_witnessed(standing, court_map(r), order),
          {:ok, observed} <- consequence_of_subject(repo, identity, r["consequence"], order),
          {:ok, command} <- replay_bound(r, identity, opts) do
       {:ok,
@@ -241,6 +274,77 @@ defmodule Xaas.Receipt.RProjection do
         :ok
     end
   end
+
+  # -- fleet-R-v2 consistency laws (V2-1..V2-4) ------------------------------
+
+  # The v2 execution-provenance fields must agree with the rest of the R and
+  # with the order. First failure wins; every refusal is typed.
+  defp fleet_v2(r, order) do
+    identity = map_or_empty(r["identity"])
+    work_order_id = r["work_order_id"]
+
+    cond do
+      not is_binary(work_order_id) or work_order_id == "" or
+        work_order_id != order["identity"] or
+          work_order_id != identity["subject"] ->
+        inconsistent("receipt_not_for_order", "R_missing_identity", %{
+          "field" => "work_order_id",
+          "expected" => order["identity"],
+          "observed" => work_order_id
+        })
+
+      not provider_execution_bound?(r) ->
+        inconsistent("provider_execution_unbound", "R_missing_identity", %{
+          "field" => "provider_execution_id",
+          "observed" => r["provider_execution_id"],
+          "ext_native_run_id" => get_in(r, ["provider_ext.xaas", "native", "run_id"])
+        })
+
+      origin_authority_diverged?(r) ->
+        inconsistent("origin_authority_diverged", "R_missing_authority", %{
+          "origin_authority" => r["origin_authority"],
+          "authority" => map_or_empty(r["authority"])
+        })
+
+      not provider_named?(r) ->
+        inconsistent("provider_unattributed", "R_missing_authority", %{
+          "field" => "provider.name",
+          "observed" => get_in(r, ["provider", "name"])
+        })
+
+      true ->
+        :ok
+    end
+  end
+
+  # provider_execution_id must be present and, when the xaas extension rides
+  # a native run_id copy, equal to it; a missing copy refuses (fail-closed).
+  defp provider_execution_bound?(r) do
+    execution_id = r["provider_execution_id"]
+
+    cond do
+      not is_binary(execution_id) or execution_id == "" ->
+        false
+
+      match?(%{"run_id" => _}, map_or_empty(get_in(r, ["provider_ext.xaas", "native"]))) ->
+        get_in(r, ["provider_ext.xaas", "native", "run_id"]) == execution_id
+
+      true ->
+        false
+    end
+  end
+
+  defp origin_authority_diverged?(r) do
+    authority = map_or_empty(r["authority"])
+    origin = map_or_empty(r["origin_authority"])
+
+    Map.take(authority, ~w(ceiling grant actor)) != Map.take(origin, ~w(ceiling grant actor))
+  end
+
+  defp provider_named?(r),
+    do: is_binary(get_in(r, ["provider", "name"])) and get_in(r, ["provider", "name"]) != ""
+
+  defp court_map(r), do: r |> get_in(["provider_ext.xaas", "court"]) |> map_or_empty()
 
   defp subject_reachable(repo, %{"subject_sha" => head, "base_sha" => base}) do
     cond do
@@ -373,7 +477,7 @@ defmodule Xaas.Receipt.RProjection do
   end
 
   defp replay_bound(r, identity, opts) do
-    court = map_or_empty(r["court"])
+    court = court_map(r)
     binding = map_or_empty(court["binding"])
     commands = get_in(r, ["replay", "commands"])
     suite = binding["suite"]
@@ -471,13 +575,27 @@ defmodule Xaas.Receipt.RProjection do
 
   # -- identity / authority -------------------------------------------------
 
-  defp identity(native, bridge, verifier, opts) do
+  defp identity(native, bridge, verifier, subject, opts) do
     compact(%{
-      "subject" => opts[:subject] || bridge["identity"] || native["work_order_iri"],
+      "subject" => subject,
       "repo" => opts[:repo] || bridge["repository"] || native["repository_identity"],
       "subject_sha" => native["final_head"] || verifier["head"],
       "base_sha" => opts[:base_sha] || bridge["base_sha"] || native["base_sha"]
     })
+  end
+
+  # `:provider` names the execution provider explicitly; the fallback chain is
+  # observed identities only (the fabric-sealed actor, else the sealer), never
+  # a fabricated name and never nil.
+  defp provider(opts, authority) do
+    %{"name" => opts[:provider] || authority["actor"] || "xaas-fabric"}
+  end
+
+  # XaaS's provider extension rides under the single namespaced top-level key
+  # the fleet validator's extension gate admits (`provider_ext.<provider>`);
+  # bare top-level `native`/`court` keys are refused by it.
+  defp provider_ext(native, court) do
+    %{"native" => native_provenance(native), "court" => court_projection(court)}
   end
 
   defp identity_complete?(identity) do

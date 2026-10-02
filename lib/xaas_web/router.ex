@@ -58,6 +58,8 @@ defmodule XaasWeb.Router do
     live("/case-studies/wd-fa", WdFa.CaseStudyLive)
     get("/case-studies/wd-fa/stogaf.json", WdFaStogafController, :show)
     get("/case-studies/wd-fa/context/:case_id", WdFaContextController, :show)
+    live("/chicago", Chicago.DrillDownLive)
+    live("/chicago/seller", Chicago.SellerLive)
   end
 
   # Real public external Stripe webhook receiver -- deliberately NOT
@@ -278,6 +280,15 @@ defmodule XaasWeb.Router do
       live_dashboard("/dashboard", metrics: XaasWeb.Telemetry)
       forward("/mailbox", Plug.Swoosh.MailboxPreview)
       live("/dashboards/autofde-lab", XaasWeb.AutofdeLab.StatusLive)
+    end
+
+    # /system observation surface (XaasWeb.System.CommandCenterLive): dev-routes
+    # gated — 404 in production, demo-legible path locally. Read-only: the view
+    # performs zero mutation and mints no authority.
+    scope "/", XaasWeb do
+      pipe_through(:browser)
+
+      live("/system", System.CommandCenterLive)
     end
 
     # ash-admin: real AshAdmin.Router mount, dev-only (guarded by the same

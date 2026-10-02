@@ -54,6 +54,14 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
                   ) ->
                     "GGEN_IGNITER_DIR #{@ggen_dir} lacks the restored mix semantic_jira.* surface (FRI-T6)"
 
+                  # The drive compiles the ggen_igniter checkout under
+                  # judgement (dep :ggen_igniter carries the Rustler NIF
+                  # native/ggen_graph_nif); a forced rebuild dies :enoent
+                  # without cargo (observed; TargetSuites pins the cargo
+                  # PATH for exactly this). Skip by name, never fake red.
+                  System.find_executable("cargo") == nil ->
+                    "cargo absent from PATH: the ggen-igniter graph-side court's Rustler NIF (native/ggen_graph_nif) cannot rebuild (observed :enoent)"
+
                   true ->
                     false
                 end)
@@ -593,16 +601,38 @@ defmodule Xaas.Ultracode.SemanticDriveToolchainTest do
   # ggen_igniter pin 1.18.4-otp-27 judged from an OTP 28 xaas node).
   @asdf Path.expand(System.get_env("ASDF_DATA_DIR") || "~/.asdf")
   @node_otp to_string(:erlang.system_info(:otp_release))
-  @foreign (for erl <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/erlang/*/releases/*"))),
-                otp = Path.basename(erl),
+
+  # The fixture MUST mirror `SemanticDrive.build_erts/2`'s resolution, not the
+  # machine's install set: the fixture checkout writes no .tool-versions, so
+  # the lib takes the FIRST install in ascending Enum.sort order holding
+  # `releases/<otp>` plus an executable `bin/erl` (regular file, any exec
+  # bit -- the lib's executable?/1) -- NEVER the newest. Observed red
+  # 2026-10-02: with 29.0 and 29.1.1 both installed, the lib resolved 29.0
+  # while this fixture's List.last named 29.1.1. Enum.uniq_by keeps the
+  # first install per OTP release (the lib's pick); List.last keeps the
+  # test's original intent, the newest foreign release with a matching
+  # Elixir install (built_toolchain/2 resolves the manifest's exact
+  # `<vsn>-otp-<otp>` install first, so the newest one is the fixture's).
+  @foreign (for install <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/erlang/*"))),
+                File.dir?(install),
+                release <- Path.wildcard(Path.join([install, "releases", "*"])),
+                File.dir?(release),
+                otp = Path.basename(release),
                 otp != @node_otp,
-                File.exists?(Path.join([Path.dirname(Path.dirname(erl)), "bin", "erl"])),
-                ex <- Enum.sort(Path.wildcard(Path.join(@asdf, "installs/elixir/*-otp-#{otp}"))),
+                {:ok, %File.Stat{type: :regular, mode: mode}} <-
+                  [File.stat(Path.join([install, "bin", "erl"]))],
+                Bitwise.band(mode, 0o111) != 0,
+                ex <-
+                  @asdf
+                  |> Path.join("installs/elixir/*-otp-#{otp}")
+                  |> Path.wildcard()
+                  |> Enum.sort()
+                  |> List.last()
+                  |> List.wrap(),
                 File.exists?(Path.join([ex, "bin", "mix"])) do
-              {Path.dirname(Path.dirname(erl)), otp,
-               ex |> Path.basename() |> String.split("-otp-") |> hd()}
+              {install, otp, ex |> Path.basename() |> String.split("-otp-") |> hd()}
             end)
-           |> List.last()
+  @foreign Enum.uniq_by(@foreign, fn {_install, otp, _elixir} -> otp end) |> List.last()
 
   @tag skip:
          if(@foreign == nil,

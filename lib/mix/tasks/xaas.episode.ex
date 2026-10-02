@@ -58,6 +58,12 @@ defmodule Mix.Tasks.Xaas.Episode do
   frontier recompute uses the same resolution as the drive. It resolves
   paths only; nothing is executed.
 
+  `--plan-next` (default OFF, lane X3) adds the plan-next step after the
+  promoted standing transition: one real `AshA2A.Replan.Loop` run whose
+  FOND PolicyCandidate is journaled to `plan_next.json` and recorded as a
+  `PolicyCandidateEmitted` OCEL event -- emitted, never auto-admitted.
+  Without the flag the episode reproduces bit-identically.
+
   ## The no-LLM guard (F3)
 
   Every mode except `--verify-hops`, `--verify-receipt` and
@@ -115,7 +121,8 @@ defmodule Mix.Tasks.Xaas.Episode do
     verify_receipt: :string,
     graph_toolchain: :boolean,
     order: :string,
-    subject_repo: :string
+    subject_repo: :string,
+    plan_next: :boolean
   ]
 
   @default_out_root "docs/sjira/v26.9.23/episodes"
@@ -311,6 +318,10 @@ defmodule Mix.Tasks.Xaas.Episode do
             order: opts[:order] || "EP-A",
             out_dir: dir,
             ggen_build_path: opts[:ggen_build_path] && Path.expand(opts[:ggen_build_path]),
+            # plan-next (lane X3): default OFF -- committed episodes must
+            # reproduce bit-identically; the flag adds the plan_next step,
+            # plan_next.json and the PolicyCandidateEmitted event.
+            plan_next: Keyword.get(opts, :plan_next, false),
             pin_ref:
               if(Keyword.get(opts, :pin, true), do: Episode.branch(opts[:name]) <> "-receipt")
           )

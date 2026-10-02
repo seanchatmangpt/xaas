@@ -1,0 +1,34 @@
+{
+  "note": "synthesized fixture - not a render. Consumer-lane test input only.",
+  "generated": true,
+  "authorityClaim": "NONE",
+  "subject": "urn:chicago:agentic-payment:purchase-001",
+  "projectionType": "executive",
+  "sourceDigests": [
+    {
+      "path": "docs/sjira/v26.10.1/narrative.ttl",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "generatorIdentity": "ggen-marketplace/chicago-xaas-surface-pack@26.10.1",
+  "narrative": {
+    "audience": "executive",
+    "headline": "Agentic payments you can watch work",
+    "customerProblem": "Autonomous purchases need provable guardrails before anyone signs off.",
+    "desiredOutcome": "A contained purchase episode with typed guardrails and evidence-backed standing.",
+    "semanticPath": "requirement -> capability -> plan -> execution -> evidence -> projection"
+  },
+  "capabilities": [],
+  "demonstrated": [],
+  "scenarios": [],
+  "authorityBoundaries": [],
+  "failureRecovery": [],
+  "evidence": [],
+  "deliveryState": {
+    "requiredLayers": 10,
+    "demonstratedLayers": 0,
+    "candidateLayers": 10,
+    "successorLayers": 0,
+    "overallStanding": "UNKNOWN"
+  }
+}

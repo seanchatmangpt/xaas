@@ -1,0 +1,47 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix chi: <https://ggen-igniter.dev/sjira/v26.10.1/chicago#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Desired deterministic views over the same Chicago source.
+#
+# The generator identity is deliberately typed UNSUPPORTED until a
+# ggen-marketplace pack with this exact identity exists and qualifies.
+# This source file is therefore a target contract, not a fabricated generator
+# claim. Every projection authority claim is NONE.
+
+chi:projection-machine
+    a sj:ProjectionSpec ;
+    rdfs:label "Chicago machine index" ;
+    dcterms:description "Machine-readable root, exact subject, ecosystem layers, capability ids, evidence horizons and candidate case identities for XaaS/AshSurface consumption." ;
+    sj:projectionType "machine" ;
+    sj:extension "json" ;
+    sj:generatorIdentity "UNSUPPORTED(generator-capability):ggen-marketplace/chicago-xaas-surface-pack@26.10.1" ;
+    sj:authorityClaim "NONE" .
+
+chi:projection-verification
+    a sj:ProjectionSpec ;
+    rdfs:label "Chicago verification matrix" ;
+    dcterms:description "Evidence-oriented view showing each layer and candidate case without inheriting standing across layers." ;
+    sj:projectionType "verification" ;
+    sj:extension "json" ;
+    sj:generatorIdentity "UNSUPPORTED(generator-capability):ggen-marketplace/chicago-xaas-surface-pack@26.10.1" ;
+    sj:authorityClaim "NONE" .
+
+chi:projection-executive
+    a sj:ProjectionSpec ;
+    rdfs:label "Chicago executive seller view" ;
+    dcterms:description "Business-facing projection for Pradyot: problem, outcome, capabilities, demonstrated evidence, boundaries and current standing; no repo-internal authority or second sales model." ;
+    sj:projectionType "executive" ;
+    sj:extension "json" ;
+    sj:generatorIdentity "UNSUPPORTED(generator-capability):ggen-marketplace/chicago-xaas-surface-pack@26.10.1" ;
+    sj:authorityClaim "NONE" .
+
+chi:projection-replay
+    a sj:ProjectionSpec ;
+    rdfs:label "Chicago replay manifest" ;
+    dcterms:description "Replay-oriented projection binding source subject, required layers and evidence identities for deterministic re-render/reconciliation." ;
+    sj:projectionType "replay" ;
+    sj:extension "json" ;
+    sj:generatorIdentity "UNSUPPORTED(generator-capability):ggen-marketplace/chicago-xaas-surface-pack@26.10.1" ;
+    sj:authorityClaim "NONE" .

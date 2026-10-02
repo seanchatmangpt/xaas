@@ -156,13 +156,15 @@ defmodule Xaas.Ultracode.SemanticWork.AdmissionBinding do
       embeds_definition_digest: false
     },
     # ggen_igniter 33c8e86 (FRI-T6) and later: `@definition_fields` +
-    # `definition_digest_of/1` = admitted |> Map.take(@definition_fields) |> digest()
+    # `definition_digest_of/1` = admitted |> Map.take(@definition_fields) |> digest().
+    # origin_authority added by ADR-012 (ggen): an origin change moves the
+    # definition digest, so the form must take it too.
     "sjira-digest/2" => %{
       snapshot_drop: ["definition_digest" | @legacy_digest_fields],
       definition: {:take, ~w(identity title description subject repository base_sha
             evidence_ceiling authority_requirement promotion_rule replay_identity
             dependencies required_courts required_evidence required_receipt_classes
-            acceptance falsifiers projections path_scope)},
+            acceptance falsifiers projections path_scope origin_authority)},
       embeds_definition_digest: true
     }
   }

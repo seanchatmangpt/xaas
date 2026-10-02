@@ -85,6 +85,7 @@ defmodule Xaas.Ultracode.SemanticDrive do
   alias Xaas.Ultracode.{Epoch, Receipt, RecipeWorker, Run, SemanticReceipt, SemanticWork}
   alias Xaas.Ultracode.{NoLlmPolicy, Verifier, Worktrees}
   alias Xaas.Ultracode.SemanticDrive.Ocel
+  alias Xaas.Ultracode.SemanticDrive.PlanNext
 
   @hops ~w(sjira sa2a xaas provider receipt)
   @request_fields ~w(work_order subject postcondition capability evidence_horizon authority_ceiling
@@ -677,8 +678,10 @@ defmodule Xaas.Ultracode.SemanticDrive do
   @spec drive(keyword()) :: {:ok, map()} | {:refused, map()}
   def drive(opts) do
     with {:ok, ctx} <- context(opts) do
+      steps = if ctx.plan_next, do: @steps ++ [:plan_next], else: @steps
+
       result =
-        Enum.reduce_while(@steps, {:ok, ctx}, fn step, {:ok, ctx} ->
+        Enum.reduce_while(steps, {:ok, ctx}, fn step, {:ok, ctx} ->
           case run_step(step, ctx) do
             {:ok, ctx} -> {:cont, {:ok, ctx}}
             {:refused, typed, ctx} -> {:halt, {:refused, typed, ctx}}
@@ -730,6 +733,7 @@ defmodule Xaas.Ultracode.SemanticDrive do
       timeout_s: Keyword.get(opts, :ggen_timeout_s, 900),
       pin_ref: Keyword.get(opts, :pin_ref),
       route: Keyword.get(opts, :route),
+      plan_next: Keyword.get(opts, :plan_next, false),
       sa2a_script:
         Keyword.get(opts, :sa2a_script) ||
           Path.join(File.cwd!(), "scripts/sa2a_route_task.exs"),
@@ -1618,6 +1622,83 @@ defmodule Xaas.Ultracode.SemanticDrive do
     end
   end
 
+  # plan-next (lane X3): after the promoted standing transition of :reconcile
+  # is committed to the ledger, journal ONE FOND PolicyCandidate through the
+  # real `AshA2A.Replan.Loop` -- emitted, never auto-admitted. The promote is
+  # already committed, so planning failure is an observation, never a drive
+  # verdict: this step ALWAYS returns {:ok, ctx} (even on a crash, recorded
+  # as an observation in plan_next.json) and emits its OCEL event on success
+  # only.
+  defp step(:plan_next, ctx) do
+    {doc, emitted} =
+      try do
+        case PlanNext.plan(plan_next_event(ctx)) do
+          {:ok, %{"emitted" => true} = doc} -> {doc, true}
+          {:ok, doc} -> {doc, false}
+        end
+      rescue
+        error ->
+          {%{
+             "schema" => PlanNext.schema(),
+             "domain_source" => PlanNext.domain_source(),
+             "identity" => ctx.order_id,
+             "standing" => "REFUSED(plan_next_crashed)",
+             "reason" => "plan_next_crashed",
+             "broken_term" => "mu_on_O",
+             "detail" => %{"error" => Exception.message(error)},
+             "emitted" => false
+           }, false}
+      end
+
+    ctx = ctx |> artifact("plan_next.json", doc) |> Map.put(:plan_next_doc, doc)
+
+    if emitted do
+      loop = doc["loop"]
+
+      {:ok,
+       ctx
+       |> Map.put(:plan_next_emitted, true)
+       |> event(
+         "PolicyCandidateEmitted",
+         %{
+           "identity" => ctx.order_id,
+           "from" => ctx.transition["from"],
+           "to" => ctx.transition["to"],
+           "event_digest" => ctx.transition["event_digest"],
+           "provider" => loop["provider"],
+           "attempt" => loop["attempt"],
+           "replay_key" => loop["replay_key"],
+           "policy_binding_digest" => doc["policy_binding_digest"]
+         },
+         [
+           {wo(ctx.order_id), "work-order"},
+           {"receipt:" <> ctx.export["receipt_id"], "receipt"}
+         ]
+       )}
+    else
+      {:ok, ctx}
+    end
+  end
+
+  # The standing-transition event plan-next plans from: the promoted
+  # transition (:reconcile) bound to the sealed receipt it was earned with.
+  # `base_sha` / `repository` ride along (the order's snapshot context) so
+  # the journaled candidate can later be bounded-consumed
+  # (`PlanNext.to_work_order/2`) without leaving the doc's own provenance.
+  defp plan_next_event(ctx) do
+    %{
+      "identity" => ctx.order_id,
+      "from" => ctx.transition["from"],
+      "to" => ctx.transition["to"],
+      "event_digest" => ctx.transition["event_digest"],
+      "transition_digest" => ctx.transition["transition_digest"],
+      "receipt_digest" => ctx.export["receipt_digest"],
+      "authority" => "NONE",
+      "base_sha" => ctx.order["base_sha"],
+      "repository" => ctx.order["repository"]
+    }
+  end
+
   # -- actuation outcome ------------------------------------------------------
 
   defp actuation_outcome(
@@ -1911,8 +1992,15 @@ defmodule Xaas.Ultracode.SemanticDrive do
     File.mkdir_p!(ctx.out_dir)
     {:ok, digests} = verify_hops(hops_document(ctx))
     observations = {ctx.events, ctx.objects}
-    court = Ocel.court_form(observations)
-    standard = Ocel.standard_form(observations)
+    # The extension class is declared only when a candidate was actually
+    # emitted (the OCEL validator refuses undeclared event types).
+    event_types =
+      if Map.get(ctx, :plan_next_emitted, false),
+        do: Ocel.event_classes() ++ ["PolicyCandidateEmitted"],
+        else: Ocel.event_classes()
+
+    court = Ocel.court_form(observations, event_types)
+    standard = Ocel.standard_form(observations, event_types)
 
     summary = %{
       "schema" => @drive_schema,
@@ -1956,6 +2044,17 @@ defmodule Xaas.Ultracode.SemanticDrive do
     }
 
     summary = if ctx.route, do: Map.put(summary, "route", ctx.route), else: summary
+
+    # plan-next rides only when its flag is on: a committed episode driven
+    # without --plan-next reproduces byte-identically.
+    summary =
+      if ctx.plan_next,
+        do:
+          Map.put(summary, "plan_next", %{
+            "standing" => plan_next_standing(ctx),
+            "result" => ctx.plan_next_doc
+          }),
+        else: summary
 
     ctx =
       ctx
@@ -2008,6 +2107,15 @@ defmodule Xaas.Ultracode.SemanticDrive do
   defp cleanup(ctx) do
     Enum.each(ctx.cleanup, fn path -> Worktrees.cleanup(ctx.repo_alias, path) end)
     File.rm_rf(ctx.scratch)
+  end
+
+  # The candidate is journaled, never admitted: "CANDIDATE" is the emitted
+  # candidate's own standing; anything else is the recorded observation
+  # (refusal or crash doc), never a drive verdict.
+  defp plan_next_standing(ctx) do
+    if Map.get(ctx, :plan_next_emitted, false),
+      do: "CANDIDATE",
+      else: (ctx.plan_next_doc && ctx.plan_next_doc["standing"]) || "REFUSED(plan_next_unobserved)"
   end
 
   # -- helpers --------------------------------------------------------------------

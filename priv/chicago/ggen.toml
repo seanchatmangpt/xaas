@@ -1,0 +1,67 @@
+# Consumer manifest: install/run at the XaaS repository root (canonical
+# checkout ~/xaas). Source graphs are the xaas-CANONICAL docs/sjira/v26.10.1/
+# TTLs — never the vendored pack copies — so consumer-side drift checks compare
+# rendered sourceDigests against the live canonical files. Narrative and
+# provenance graphs, queries and templates are read from the sibling
+# ggen-marketplace checkout. Outputs land at priv/chicago/chicago.*.json
+# (RESOLUTIONS R1); the consumer commit must stay byte-reproducible by
+# `ggen sync run` from this manifest.
+[project]
+name = "xaas-chicago-surface"
+version = "26.10.1"
+description = "Generated Chicago surface projections for XaaS: chicago.machine, chicago.verification, chicago.executive, chicago.replay (authority NONE)"
+authors = ["Sean Chatman"]
+license = "MIT"
+
+[ontology]
+source = "../../docs/sjira/v26.10.1/goal.ttl"
+base_iri = "https://ggen-igniter.dev/sjira/v26.10.1/chicago#"
+imports = [
+  "../../docs/sjira/v26.10.1/chicago.ttl",
+  "../../docs/sjira/v26.10.1/projections.ttl",
+  "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/source/narrative.ttl",
+  "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/source/provenance.ttl",
+]
+
+[ontology.prefixes]
+sj = "https://ggen-igniter.dev/ontology/semantic-jira#"
+chi = "https://ggen-igniter.dev/sjira/v26.10.1/chicago#"
+dcterms = "http://purl.org/dc/terms/"
+prov = "http://www.w3.org/ns/prov#"
+rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+xsd = "http://www.w3.org/2001/XMLSchema#"
+
+[generation]
+output_dir = "."
+
+[[generation.rules]]
+name = "chicago-machine"
+query = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/queries/machine.rq" }
+template = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/templates/chicago_machine.json.tmpl" }
+output_file = "chicago.machine.json"
+skip_empty = false
+mode = "Overwrite"
+
+[[generation.rules]]
+name = "chicago-verification"
+query = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/queries/verification.rq" }
+template = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/templates/chicago_verification.json.tmpl" }
+output_file = "chicago.verification.json"
+skip_empty = false
+mode = "Overwrite"
+
+[[generation.rules]]
+name = "chicago-executive"
+query = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/queries/executive.rq" }
+template = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/templates/chicago_executive.json.tmpl" }
+output_file = "chicago.executive.json"
+skip_empty = false
+mode = "Overwrite"
+
+[[generation.rules]]
+name = "chicago-replay"
+query = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/queries/replay.rq" }
+template = { file = "../../../ggen-marketplace/packs/chicago-xaas-surface-pack/templates/chicago_replay.json.tmpl" }
+output_file = "chicago.replay.json"
+skip_empty = false
+mode = "Overwrite"

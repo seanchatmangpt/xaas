@@ -1,0 +1,267 @@
+{
+  "note": "synthesized fixture - not a render. Consumer-lane test input only; the real artifact is priv/chicago/chicago.machine.json produced by the pack render.",
+  "generated": true,
+  "authorityClaim": "NONE",
+  "subject": "urn:chicago:agentic-payment:purchase-001",
+  "projectionType": "machine",
+  "sourceDigests": [
+    {
+      "path": "docs/sjira/v26.10.1/chicago.ttl",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "generatorIdentity": "ggen-marketplace/chicago-xaas-surface-pack@26.10.1",
+  "rootGoal": {
+    "identifier": "GC-XAAS-26.10.1-CHICAGO",
+    "label": "Chicago agentic payment contained demo",
+    "repository": "xaas",
+    "baseSha": "fixture-base-not-a-commit",
+    "authorityCeiling": "NONE",
+    "evidenceHorizon": "render",
+    "replayIdentity": "chicago-replay-001"
+  },
+  "layers": [
+    {
+      "id": "sjira",
+      "identifier": "chi:layer-sjira",
+      "label": "SJIRA layer",
+      "repository": "xaas",
+      "pathScope": "docs/sjira/v26.10.1",
+      "boundaryClass": "surface",
+      "authorityCeiling": "NONE",
+      "capabilityId": "sjira:work-order",
+      "evidenceHorizon": "render",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "graphlaw",
+      "identifier": "chi:layer-graphlaw",
+      "label": "GRAPHLAW layer",
+      "repository": "ash_a2a",
+      "pathScope": "priv/graphlaw",
+      "boundaryClass": "kernel",
+      "authorityCeiling": "NONE",
+      "capabilityId": "graphlaw:praxis",
+      "evidenceHorizon": "admission",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "sa2a",
+      "identifier": "chi:layer-sa2a",
+      "label": "SA2A layer",
+      "repository": "ash_a2a",
+      "pathScope": "priv/sa2a",
+      "boundaryClass": "capability",
+      "authorityCeiling": "NONE",
+      "capabilityId": "sa2a:capability",
+      "evidenceHorizon": "actuation",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "pplan",
+      "identifier": "chi:layer-pplan",
+      "label": "PPLAN layer",
+      "repository": "ferroplan",
+      "pathScope": "crates/ferroplan",
+      "boundaryClass": "planner",
+      "authorityCeiling": "NONE",
+      "capabilityId": "pplan:hddl",
+      "evidenceHorizon": "plan",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "xaas",
+      "identifier": "chi:layer-xaas",
+      "label": "XAAS layer",
+      "repository": "xaas",
+      "pathScope": "lib/xaas/fabric",
+      "boundaryClass": "fabric",
+      "authorityCeiling": "NONE",
+      "capabilityId": "xaas:execution",
+      "evidenceHorizon": "run",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "ex4pm",
+      "identifier": "chi:layer-ex4pm",
+      "label": "EX4PM layer",
+      "repository": "ex4pm",
+      "pathScope": "lib",
+      "boundaryClass": "process",
+      "authorityCeiling": "NONE",
+      "capabilityId": "ex4pm:ocel",
+      "evidenceHorizon": "event",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "beam4pm",
+      "identifier": "chi:layer-beam4pm",
+      "label": "BEAM4PM layer",
+      "repository": "beam4pm",
+      "pathScope": "src",
+      "boundaryClass": "process",
+      "authorityCeiling": "NONE",
+      "capabilityId": "beam4pm:mine",
+      "evidenceHorizon": "event",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "affidavit",
+      "identifier": "chi:layer-affidavit",
+      "label": "AFFIDAVIT layer",
+      "repository": "xaas",
+      "pathScope": "lib/xaas/receipt",
+      "boundaryClass": "receipt",
+      "authorityCeiling": "NONE",
+      "capabilityId": "affidavit:core",
+      "evidenceHorizon": "receipt",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "ashsurface",
+      "identifier": "chi:layer-ashsurface",
+      "label": "ASHSURFACE layer",
+      "repository": "ash_surface",
+      "pathScope": "lib",
+      "boundaryClass": "surface",
+      "authorityCeiling": "NONE",
+      "capabilityId": "ashsurface:render",
+      "evidenceHorizon": "render",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    },
+    {
+      "id": "marketplace",
+      "identifier": "chi:layer-marketplace",
+      "label": "MARKETPLACE layer",
+      "repository": "ggen-marketplace",
+      "pathScope": "packs",
+      "boundaryClass": "admission",
+      "authorityCeiling": "NONE",
+      "capabilityId": "marketplace:admit",
+      "evidenceHorizon": "gate",
+      "required": true,
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": []
+    }
+  ],
+  "cases": [
+    {
+      "id": "CHI-CASE-001",
+      "label": "Bounded authorized purchase",
+      "description": "Bounded authorized purchase (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-002",
+      "label": "Amount exceeds delegated limit",
+      "description": "Amount exceeds delegated limit (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-003",
+      "label": "Wrong principal",
+      "description": "Wrong principal (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-004",
+      "label": "Expired delegation",
+      "description": "Expired delegation (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-005",
+      "label": "Provider unavailable before dispatch",
+      "description": "Provider unavailable before dispatch (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-006",
+      "label": "Unknown after dispatch",
+      "description": "Unknown after dispatch (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-007",
+      "label": "Missing evidence cannot promote standing",
+      "description": "Missing evidence cannot promote standing (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-008",
+      "label": "Stale or mismatched subject",
+      "description": "Stale or mismatched subject (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-009",
+      "label": "Semantic policy drift invalidates stale plan",
+      "description": "Semantic policy drift invalidates stale plan (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-010",
+      "label": "Human projection cannot mint authority",
+      "description": "Human projection cannot mint authority (candidate acceptance/falsifier scenario; never an observation).",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    }
+  ]
+}

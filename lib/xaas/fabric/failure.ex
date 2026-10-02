@@ -46,10 +46,8 @@ defmodule Xaas.Fabric.Failure do
 
   defp classify(%{class: c}), do: classify_struct_class(c, :error)
   defp classify(%{__struct__: AshR2RML.Refusal}), do: :semantic_refusal
-  defp classify({:unsupported, _}), do: :unsupported
   defp classify({:trap, _}), do: :realization_failed
   defp classify(:unsupported), do: :unsupported
-  defp classify({:capability_unavailable, _}), do: :capability_unavailable
   defp classify(raw) when is_binary(raw) or is_atom(raw) or is_tuple(raw), do: classify_text(inspect(raw))
   defp classify(_), do: :realization_failed
 

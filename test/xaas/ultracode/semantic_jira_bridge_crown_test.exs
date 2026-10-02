@@ -25,7 +25,6 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeCrownTest do
   use Xaas.Ultracode.SemanticCase, async: false
 
   # Needs ggen_igniter >= 26.9.20 (SemanticJira Shacl/TransitionLog.event_digest/1).
-  @moduletag :requires_semantic_jira_api
 
   alias GgenIgniter.SemanticJira
   alias GgenIgniter.SemanticJira.TransitionLog
@@ -136,7 +135,7 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeCrownTest do
 
     {v1, execution} = descriptor!(ctx, "FIX-BROKEN")
     assert v1["definition_digest"] == execution["bridge"]["definition_digest"]
-    assert v1["snapshot_digest"] == execution["bridge"]["snapshot_digest"]
+    assert v1["snapshot_digest"] == execution["bridge"]["source_snapshot_digest"]
 
     # 6. real Run/Epoch/worktree at the exact base SHA
     assert {:ok, %{run: run, epoch: epoch, worktree: worktree}} =

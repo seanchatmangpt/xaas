@@ -1,0 +1,268 @@
+{
+  "generated": true,
+  "authorityClaim": "NONE",
+  "subject": "urn:chicago:agentic-payment:purchase-001",
+  "projectionType": "verification",
+  "sourceDigests": [
+    { "path": "docs/sjira/v26.10.1/chicago.ttl", "sha256": "cd38fe16b421b3aa2656944498021fdf2a0473cd697143100819763f2f01e853" },
+    { "path": "docs/sjira/v26.10.1/goal.ttl", "sha256": "7eb920b31942ea6269cc42fcde7cace896eb7bcae32fc535fbbb697ce4acc1f8" },
+    { "path": "docs/sjira/v26.10.1/projections.ttl", "sha256": "f74018a27d1b2ea16bca19ab919b1e2408b1dad0be51a6f8afdb03dbc9b4e18e" },
+    { "path": "source/narrative.ttl", "sha256": "f9e60b12defaa6f7ec34cc38d4f94c5d7289e2d5368570fd255f3f31bbe0fb61" }
+  ],
+  "generatorIdentity": "ggen-marketplace/chicago-xaas-surface-pack@26.10.1",
+  "rootGoal": {
+    "identifier": "GC-XAAS-26.10.1-CHICAGO",
+    "label": "XaaS v26.10.1 Chicago ecosystem demo",
+    "authorityCeiling": "CONSTRUCT",
+    "evidenceHorizon": "EXECUTED_VERIFIED",
+    "replayIdentity": "semantic-jira:v26.10.1:GC-XAAS-26.10.1-CHICAGO"
+  },
+  "layers": [
+    {
+      "id": "sjira",
+      "identifier": "CHI-101-SJIRA",
+      "label": "Semantic Jira requirement graph",
+      "repository": "seanchatmangpt/ggen_igniter",
+      "pathScope": "docs/rfc/RFC-SEMANTIC-JIRA-v26.9.19.md priv/ggen/semantic-jira-pack",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "ADMITTED_SEMANTIC_SOURCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "A Markdown, chat or generated projection becomes work authority or changes the exact Chicago subject."
+    },
+    {
+      "id": "graphlaw",
+      "identifier": "CHI-102-GRAPHLAW",
+      "label": "GraphLaw semantic admission and refusal",
+      "repository": "seanchatmangpt/ash_graphlaw",
+      "pathScope": "ash_graphlaw membrane -> pinned GraphLaw engine",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "ADMISSION_EVIDENCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "A GraphLaw or ash_graphlaw result actuates directly, or semantic state is duplicated with different meaning in XaaS."
+    },
+    {
+      "id": "sa2a",
+      "identifier": "CHI-103-SA2A",
+      "label": "SA2A capability and delegation transport",
+      "repository": "seanchatmangpt/ash_a2a",
+      "pathScope": "capability discovery, identity, delegation, consequence contract, CommandBus boundary",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "CAPABILITY_AND_AUTHORITY_EVIDENCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "Routing, delivery, message metadata or capability possession grants DO or changes subject identity."
+    },
+    {
+      "id": "pplan",
+      "identifier": "CHI-104-PPLAN",
+      "label": "ash_pplan and ferroplan planning",
+      "repository": "seanchatmangpt/ash_pplan",
+      "pathScope": "ash_pplan planning semantics -> ferroplan HDDL/FOND search -> realization candidates",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "PLAN_AND_POLICY_EVIDENCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "Planner equals policy/executor/authority, stale plans survive semantic drift, or recovery silently widens authority."
+    },
+    {
+      "id": "xaas",
+      "identifier": "CHI-105-XAAS",
+      "label": "XaaS runtime existence and execution state",
+      "repository": "seanchatmangpt/xaas",
+      "pathScope": "Ash domains, runs, epochs, leases, execution fabric, actuation, receipts",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "EXECUTED_VERIFIED",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "XaaS fabric bypasses the admitted consequence boundary, retries UNKNOWN_AFTER_DISPATCH blindly, or reports execution not observed."
+    },
+    {
+      "id": "ex4pm",
+      "identifier": "CHI-106-OCEL",
+      "label": "ex4pm / ash_ex4pm OCEL evidence",
+      "repository": "seanchatmangpt/ash_ex4pm",
+      "pathScope": "Ash action -> ex4pm ingestion -> OCEL 2.0 event/evidence projection",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "OBSERVED_PROCESS_EVIDENCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "A projected or inferred event is presented as observed execution, or OCEL identity cannot reconcile to the runtime subject."
+    },
+    {
+      "id": "beam4pm",
+      "identifier": "CHI-107-BEAM4PM",
+      "label": "beam4pm process conformance and replay",
+      "repository": "seanchatmangpt/beam4pm",
+      "pathScope": "process model, conformance, replay, deviation and recovery analysis",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "PROCESS_CONFORMANCE_EVIDENCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "Conformance inference is promoted to observed fact or standing, or replay changes the semantic outcome without a typed divergence."
+    },
+    {
+      "id": "affidavit",
+      "identifier": "CHI-108-AFFIDAVIT",
+      "label": "Affidavit evidence and standing",
+      "repository": "seanchatmangpt/ash_affidavit",
+      "pathScope": "affidavit WASM engine + Ash membrane + receipt/provenance/standing projection",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "CRYPTOGRAPHIC_EVIDENCE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "Evidence can be replayed across subjects, forged from runtime computation, or treated as execution authority."
+    },
+    {
+      "id": "ashsurface",
+      "identifier": "CHI-109-SURFACE",
+      "label": "AshSurface human projection",
+      "repository": "seanchatmangpt/ash_surface",
+      "pathScope": "AshSurface IR, CommandCenter, observations, obligations, planning episodes, evidence and standing",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "FAITHFUL_HUMAN_PROJECTION",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "AshSurface invents business semantics, grants DO, fabricates ALIVE, or seller/buyer/operator projections disagree on subject identity."
+    },
+    {
+      "id": "marketplace",
+      "identifier": "CHI-110-MARKETPLACE",
+      "label": "ggen-marketplace deterministic Chicago renderer",
+      "repository": "seanchatmangpt/ggen-marketplace",
+      "pathScope": "marketplace pack: canonical query/templates -> generated Chicago machine/verification/executive/replay views",
+      "authorityCeiling": "CONSTRUCT",
+      "evidenceHorizon": "DETERMINISTIC_MANUFACTURE",
+      "status": "UNKNOWN",
+      "evidenceRefs": [],
+      "receiptRefs": [],
+      "falsifier": "Generated Chicago artifacts are hand edited, generator output changes without source/tool identity change, or a generated view acquires authority."
+    }
+  ],
+  "falsifiers": [
+    {
+      "label": "Cross-layer subject drift",
+      "description": "Any required layer reports a different semantic subject without an explicit receipted projection relation."
+    },
+    {
+      "label": "Projection or analysis gains authority",
+      "description": "A requirement, transport, plan, semantic admission, process finding, evidence result, generated artifact or AshSurface view grants or implies protected DO."
+    },
+    {
+      "label": "Standing inherited by adjacency",
+      "description": "A layer is shown ALIVE solely because an upstream or neighboring layer is ALIVE, without its own exact-subject court and receipt."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "CHI-CASE-001",
+      "label": "Bounded authorized purchase",
+      "polarity": "positive",
+      "description": "A bounded purchase with valid identity and delegation is the positive path; execution/ALIVE must still be established by the owning runtime/evidence courts.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-002",
+      "label": "Amount exceeds delegated limit",
+      "polarity": "negative",
+      "description": "The requested amount exceeds the admitted delegated limit and must produce a typed refusal with no protected DO.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-003",
+      "label": "Wrong principal",
+      "polarity": "negative",
+      "description": "The principal does not match the delegated authority subject and must be refused before protected DO.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-004",
+      "label": "Expired delegation",
+      "polarity": "negative",
+      "description": "An expired delegation is stale authority and must be refused rather than refreshed implicitly.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-005",
+      "label": "Provider unavailable before dispatch",
+      "polarity": "negative",
+      "description": "Pre-dispatch provider unavailability preserves other admitted realizations and may trigger bounded replanning without changing authority.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-006",
+      "label": "Unknown after dispatch",
+      "polarity": "negative",
+      "description": "A timeout or disconnect after dispatch is UNKNOWN_AFTER_DISPATCH; reconcile the original consequence and never blind replay.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-007",
+      "label": "Missing evidence cannot promote standing",
+      "polarity": "negative",
+      "description": "A consequence may be claimed or inferred, but absent the required exact-subject evidence and receipt the layer cannot promote to ALIVE.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-008",
+      "label": "Stale or mismatched subject",
+      "polarity": "negative",
+      "description": "A receipt, plan or evidence object bound to a different subject or stale semantic identity is refused rather than generalized.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-009",
+      "label": "Semantic policy drift invalidates stale plan",
+      "polarity": "negative",
+      "description": "When relevant semantic/policy premises change, a stale plan loses applicability and the planner must re-enter bounded selection/replanning.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    },
+    {
+      "id": "CHI-CASE-010",
+      "label": "Human projection cannot mint authority",
+      "polarity": "negative",
+      "description": "Operator, buyer, seller and engineer views may differ in presentation but none may grant DO or change the exact semantic subject/evidence.",
+      "subject": "urn:chicago:agentic-payment:purchase-001",
+      "candidateOnly": true,
+      "authorityClaim": "NONE",
+      "observedStanding": "UNKNOWN"
+    }
+  ]
+}

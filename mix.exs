@@ -112,6 +112,7 @@ defmodule Xaas.MixProject do
       # Fabric planes (law, evidence/process). Test/dev only: path deps would break the
       # Docker prod build (see the ex4pm note below); fabric adapters call them via apply/3.
       {:ash_graphlaw, path: "../ash_graphlaw", only: [:dev, :test]},
+      {:ash_surface, path: "../ash_surface", only: [:dev, :test]},
       {:ash_affidavit, path: "../ash_affidavit", only: [:dev, :test]},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
@@ -213,7 +214,13 @@ defmodule Xaas.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # XaasWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, "~> 26.9.15"},
+      # Semantic Jira bridge seam (v26.10.1-loop lane X1): hex 26.9.29 defined
+      # TransitionLog.event_digest/1 as `defp`, so the bridge was pinned to the
+      # post-G1 git ref. ggen_igniter 26.10.1 (hex) ships the seam: public
+      # `event_digest/1` + `legacy_event_digest/1`, the snapshot-bound
+      # descriptor contract, sj:targetPack, execute target_pack enforcement,
+      # and the receipts v2 law. The git pin is reverted per its own contract.
+      {:ggen_igniter, "~> 26.10.1"},
       {:faker, "~> 0.18", only: [:dev, :test]},
       # Real dependency on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a
@@ -247,6 +254,7 @@ defmodule Xaas.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      "chicago.render": ["xaas.chicago.render"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],

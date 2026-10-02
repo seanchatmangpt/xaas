@@ -1,0 +1,258 @@
+{
+  "generated": true,
+  "authorityClaim": "NONE",
+  "subject": "urn:chicago:agentic-payment:purchase-001",
+  "projectionType": "executive",
+  "sourceDigests": [
+    { "path": "docs/sjira/v26.10.1/chicago.ttl", "sha256": "cd38fe16b421b3aa2656944498021fdf2a0473cd697143100819763f2f01e853" },
+    { "path": "docs/sjira/v26.10.1/goal.ttl", "sha256": "7eb920b31942ea6269cc42fcde7cace896eb7bcae32fc535fbbb697ce4acc1f8" },
+    { "path": "docs/sjira/v26.10.1/projections.ttl", "sha256": "f74018a27d1b2ea16bca19ab919b1e2408b1dad0be51a6f8afdb03dbc9b4e18e" },
+    { "path": "source/narrative.ttl", "sha256": "f9e60b12defaa6f7ec34cc38d4f94c5d7289e2d5368570fd255f3f31bbe0fb61" }
+  ],
+  "generatorIdentity": "ggen-marketplace/chicago-xaas-surface-pack@26.10.1",
+  "narrative": {
+    "audience": "Executive seller audience (non-technical stakeholder); no repository mechanics are required for this narrative.",
+    "headline": "XaaS v26.10.1 Chicago ecosystem demo: one exact Agentic Payments subject, projected across every ecosystem layer",
+    "customerProblem": "Requirement tracking, semantic admission, delegated capability, planning, runtime execution, process evidence, evidence standing and human projection usually live in different systems that each hold a different copy of the subject, so nobody can see one deal end to end without hand-stitching tools that were never designed to agree.",
+    "desiredOutcome": "One exact Agentic Payments subject, urn:chicago:agentic-payment:purchase-001, is visible through sJira, semantic law, SA2A, planning, runtime, OCEL, process conformance, evidence standing and human projection without changing subject identity, and no projection, analysis or UI surface gains DO authority.",
+    "semanticPath": "docs/sjira/v26.10.1/ goal graph (RDF source) -> ggen-marketplace chicago-xaas-surface-pack deterministic render -> XaaS consumer projection -> AshSurface operator/Chicago/seller views"
+  },
+  "capabilities": [
+    {
+      "id": "affidavit",
+      "label": "Affidavit evidence and standing",
+      "capabilityId": "affidavit:standing",
+      "repository": "seanchatmangpt/ash_affidavit",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "ashsurface",
+      "label": "AshSurface human projection",
+      "capabilityId": "ash_surface:projection",
+      "repository": "seanchatmangpt/ash_surface",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "beam4pm",
+      "label": "beam4pm process conformance and replay",
+      "capabilityId": "beam4pm:conformance",
+      "repository": "seanchatmangpt/beam4pm",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "castle",
+      "label": "CASTLE consequence governance",
+      "capabilityId": "castle:consequence",
+      "repository": "seanchatmangpt/castle",
+      "role": "successor",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "ex4pm",
+      "label": "ex4pm / ash_ex4pm OCEL evidence",
+      "capabilityId": "ex4pm:ocel",
+      "repository": "seanchatmangpt/ash_ex4pm",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "graphlaw",
+      "label": "GraphLaw semantic admission and refusal",
+      "capabilityId": "graphlaw:semantic-admission",
+      "repository": "seanchatmangpt/ash_graphlaw",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "marketplace",
+      "label": "ggen-marketplace deterministic Chicago renderer",
+      "capabilityId": "ggen_marketplace:render",
+      "repository": "seanchatmangpt/ggen-marketplace",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "pplan",
+      "label": "ash_pplan and ferroplan planning",
+      "capabilityId": "ash_pplan:plan",
+      "repository": "seanchatmangpt/ash_pplan",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "sa2a",
+      "label": "SA2A capability and delegation transport",
+      "capabilityId": "sa2a:capability-route",
+      "repository": "seanchatmangpt/ash_a2a",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "sjira",
+      "label": "Semantic Jira requirement graph",
+      "capabilityId": "sjira:goal-graph",
+      "repository": "seanchatmangpt/ggen_igniter",
+      "role": "required",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "wasm4pm",
+      "label": "wasm4pm qualified realization",
+      "capabilityId": "wasm4pm:qri",
+      "repository": "seanchatmangpt/wasm4pm",
+      "role": "successor",
+      "status": "UNKNOWN"
+    },
+    {
+      "id": "xaas",
+      "label": "XaaS runtime existence and execution state",
+      "capabilityId": "xaas:runtime",
+      "repository": "seanchatmangpt/xaas",
+      "role": "required",
+      "status": "UNKNOWN"
+    }
+  ],
+  "demonstrated": [
+  ],
+  "scenarios": [
+    {
+      "id": "CHI-CASE-001",
+      "label": "Bounded authorized purchase",
+      "polarity": "positive",
+      "failureRecovery": "Execution and ALIVE must still be established by the owning runtime and evidence courts; the positive path remains a prediction until a real exact-subject receipt exists."
+    },
+    {
+      "id": "CHI-CASE-002",
+      "label": "Amount exceeds delegated limit",
+      "polarity": "negative",
+      "failureRecovery": "Produce a typed refusal above the delegated limit with no protected DO; never silently split or re-price the request to fit the limit."
+    },
+    {
+      "id": "CHI-CASE-003",
+      "label": "Wrong principal",
+      "polarity": "negative",
+      "failureRecovery": "Refuse before any protected DO when the principal does not match the delegated authority subject."
+    },
+    {
+      "id": "CHI-CASE-004",
+      "label": "Expired delegation",
+      "polarity": "negative",
+      "failureRecovery": "Refuse as stale authority; an expired delegation is never refreshed implicitly."
+    },
+    {
+      "id": "CHI-CASE-005",
+      "label": "Provider unavailable before dispatch",
+      "polarity": "negative",
+      "failureRecovery": "Preserve the other admitted realizations, allow bounded replanning, and change no authority; pre-dispatch unavailability is a routing outcome, not a standing."
+    },
+    {
+      "id": "CHI-CASE-006",
+      "label": "Unknown after dispatch",
+      "polarity": "negative",
+      "failureRecovery": "Treat as UNKNOWN_AFTER_DISPATCH: reconcile the original consequence and never blind replay."
+    },
+    {
+      "id": "CHI-CASE-007",
+      "label": "Missing evidence cannot promote standing",
+      "polarity": "negative",
+      "failureRecovery": "Without the required exact-subject evidence and receipt the layer cannot promote to ALIVE, whatever consequence is claimed or inferred."
+    },
+    {
+      "id": "CHI-CASE-008",
+      "label": "Stale or mismatched subject",
+      "polarity": "negative",
+      "failureRecovery": "Refuse any receipt, plan or evidence object bound to a different or stale subject rather than generalizing it onto this one."
+    },
+    {
+      "id": "CHI-CASE-009",
+      "label": "Semantic policy drift invalidates stale plan",
+      "polarity": "negative",
+      "failureRecovery": "When relevant semantic or policy premises change, the stale plan loses applicability and the planner must re-enter bounded selection and replanning."
+    },
+    {
+      "id": "CHI-CASE-010",
+      "label": "Human projection cannot mint authority",
+      "polarity": "negative",
+      "failureRecovery": "Operator, buyer, seller and engineer views may differ in presentation, but none may grant DO or change the exact semantic subject or evidence."
+    }
+  ],
+  "authorityBoundaries": [
+    "No AshSurface or seller projection owns business semantics.",
+    "No authored WorkOrder or Receipt belongs in this source graph.",
+    "No layer inherits ALIVE from a neighboring layer.",
+    "No real payment rail or financial settlement is implied by the Chicago demo subject.",
+    "No ticket, plan, model output, semantic-law result, process finding, generated artifact or UI projection gains DO authority."
+  ],
+  "evidence": [
+    {
+      "layer": "affidavit",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "CRYPTOGRAPHIC_EVIDENCE"
+    },
+    {
+      "layer": "ashsurface",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "FAITHFUL_HUMAN_PROJECTION"
+    },
+    {
+      "layer": "beam4pm",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "PROCESS_CONFORMANCE_EVIDENCE"
+    },
+    {
+      "layer": "castle",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "OPTIONAL_MONDAY"
+    },
+    {
+      "layer": "ex4pm",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "OBSERVED_PROCESS_EVIDENCE"
+    },
+    {
+      "layer": "graphlaw",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "ADMISSION_EVIDENCE"
+    },
+    {
+      "layer": "marketplace",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "DETERMINISTIC_MANUFACTURE"
+    },
+    {
+      "layer": "pplan",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "PLAN_AND_POLICY_EVIDENCE"
+    },
+    {
+      "layer": "sa2a",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "CAPABILITY_AND_AUTHORITY_EVIDENCE"
+    },
+    {
+      "layer": "sjira",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "ADMITTED_SEMANTIC_SOURCE"
+    },
+    {
+      "layer": "wasm4pm",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "OPTIONAL_MONDAY"
+    },
+    {
+      "layer": "xaas",
+      "standing": "UNKNOWN",
+      "evidenceHorizon": "EXECUTED_VERIFIED"
+    }
+  ],
+  "deliveryState": {
+    "requiredLayers": 10,
+    "demonstratedLayers": 0,
+    "candidateLayers": 10,
+    "successorLayers": 2,
+    "overallStanding": "UNKNOWN"
+  }
+}

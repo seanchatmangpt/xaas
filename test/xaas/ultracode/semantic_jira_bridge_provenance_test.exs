@@ -17,7 +17,6 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeProvenanceTest do
   use Xaas.Ultracode.SemanticCase, async: false
 
   # Needs ggen_igniter >= 26.9.20 (SemanticJira Shacl/TransitionLog.event_digest/1).
-  @moduletag :requires_semantic_jira_api
 
   alias Xaas.Ultracode.{Lease, Receipt, SemanticReceipt, SemanticWork}
   alias Xaas.Ultracode.SemanticJiraBridge, as: Bridge
