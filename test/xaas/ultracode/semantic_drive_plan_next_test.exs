@@ -17,8 +17,14 @@ defmodule Xaas.Ultracode.SemanticDrivePlanNextTest do
   alias Xaas.Ultracode.SemanticDrive
   alias Xaas.Ultracode.SemanticDrive.Ocel
   alias Xaas.Ultracode.SemanticDrive.PlanNext
+  alias Xaas.Ultracode.SemanticJiraBridge, as: Bridge
+  alias Xaas.Ultracode.SemanticJiraBridgeFixtures, as: F
 
   @ports [{"ash_pplan", AshA2A.Replan.Port.AshPPlan}]
+
+  # The admitted sj:CodeWorkAuthority the fixtures bind (SJ-002: an order's
+  # origin authority is bound at the seam, never derived).
+  @authority "https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority"
 
   # A full real-shape standing-transition event (the shape the drive's
   # plan_next_event/1 builds from ctx.transition + the sealed receipt).
@@ -33,6 +39,15 @@ defmodule Xaas.Ultracode.SemanticDrivePlanNextTest do
     "authority" => "NONE",
     "event_digest" => "sha256:" <> String.duplicate("e", 64)
   }
+
+  # The full fixture: the standing-transition event WITH its snapshot context
+  # (base_sha / repository), the shape the drive's plan_next_event/1 now emits.
+  @base F.sha("base")
+
+  @full_event Map.merge(@event, %{
+                "base_sha" => @base,
+                "repository" => "seanchatmangpt/xaas"
+              })
 
   describe "domain/1 -- the standing-progression projection" do
     test "UNKNOWN -> PARTIAL_ALIVE: the promote may stick (states, transitions, goals)" do
@@ -240,4 +255,148 @@ defmodule Xaas.Ultracode.SemanticDrivePlanNextTest do
       assert Enum.any?(violations, &String.contains?(&1.reason, "PolicyCandidateEmitted"))
     end
   end
+
+  # -- lane F4: the bounded consumption seam (default-OFF) -----------------------
+
+  describe "to_work_order/2 -- candidate -> admittable sj:WorkOrder" do
+    test "the full fixture derives a work order the real kernel and SHACL court admit" do
+      assert {:ok, doc} = PlanNext.plan(@full_event)
+      assert {:ok, wo} = PlanNext.to_work_order(doc, origin_authority: @authority)
+
+      # the derivation table, on the real derived map
+      assert wo["identity"] == @full_event["identity"]
+      assert wo["repository"] == @full_event["repository"]
+      assert wo["base_sha"] == @base
+      assert wo["standing"] == "UNKNOWN"
+      assert wo["projections"] == ["fond"]
+      assert wo["origin_authority"] == @authority
+      assert wo["subject"] == doc["loop"]["candidate"]["planner_subject"]["id"]
+      assert wo["replay_identity"] == doc["loop"]["replay_key"]
+      assert is_binary(wo["evidence_ceiling"]) and wo["evidence_ceiling"] != ""
+      assert wo["required_courts"] == ["fond_policy_validation"]
+      assert Enum.any?(wo["falsifiers"], &String.contains?(&1, "mode=strong"))
+
+      # the REAL kernel admission (the pinned ggen_igniter dep), no weakening
+      assert {:ok, admitted} = Bridge.admit_candidate(wo)
+      assert admitted["authority"] == "NONE"
+      assert is_binary(admitted["work_order_digest"])
+      assert is_binary(admitted["definition_digest"])
+
+      # and the real SHACL candidate court over the same map
+      assert {:ok, _} = Bridge.admit_candidate(wo, shapes: F.shapes())
+    end
+
+    test "underdetermined candidate: every sourceless required field is named, none defaulted" do
+      assert {:ok, doc} = PlanNext.plan(@event)
+
+      assert {:refused, :candidate_underdetermined, missing} =
+               PlanNext.to_work_order(doc, origin_authority: @authority)
+
+      assert "repository" in missing
+      assert "base_sha" in missing
+
+      # and the origin authority is seam-bound only: absent opts, it is missing too
+      assert {:refused, :candidate_underdetermined, missing} = PlanNext.to_work_order(doc)
+      assert "origin_authority" in missing
+      assert missing == Enum.sort(missing)
+    end
+
+    test "a REFUSED journal doc has no candidate to consume" do
+      assert {:ok, doc} = PlanNext.plan(%{@event | "to" => "BLOCKED"})
+
+      assert {:refused, :candidate_underdetermined, missing} =
+               PlanNext.to_work_order(doc, origin_authority: @authority)
+
+      assert "standing=CANDIDATE" in missing
+      assert "loop.candidate" in missing
+    end
+
+    @tag :purity
+    test "purity falsifier: the compiled PlanNext beam performs no File/IO calls" do
+      beam = :code.which(PlanNext)
+      assert is_list(beam)
+
+      {:ok, {_module, chunks}} = :beam_lib.chunks(beam, [:abstract_code])
+      {:raw_abstract_v1, forms} = chunks[:abstract_code]
+
+      io_calls = collect_io_calls(forms)
+
+      assert io_calls == []
+    end
+  end
+
+  describe "admit/2 -- the opt-in consumption seam" do
+    test "admits a full journaled candidate through the real kernel" do
+      assert {:ok, doc} = PlanNext.plan(@full_event)
+
+      assert {:ok, admitted} = PlanNext.admit(doc, origin_authority: @authority)
+      assert admitted["authority"] == "NONE"
+      assert admitted["standing"] == "UNKNOWN"
+      assert is_binary(admitted["work_order_digest"])
+    end
+
+    test "an underdetermined candidate is a typed error, never a crash" do
+      assert {:ok, doc} = PlanNext.plan(@event)
+
+      assert {:error, {:refused, :candidate_underdetermined, missing}} =
+               PlanNext.admit(doc, origin_authority: @authority)
+
+      assert "base_sha" in missing
+    end
+
+    test "an invalid field the kernel refuses comes back typed, never raised" do
+      assert {:ok, doc} = PlanNext.plan(%{@full_event | "base_sha" => "main"})
+
+      assert {:error, {:refused_bridge, {:unadmitted, {:invalid_sha, :base_sha, "main"}}}} =
+               PlanNext.admit(doc, origin_authority: @authority)
+    end
+
+    test "the drive's :plan_next step does NOT call admit (grep-level falsifier)" do
+      source = File.read!("lib/xaas/ultracode/semantic_drive.ex")
+
+      assert String.contains?(source, "defp step(:plan_next")
+
+      step_source = step_clause(source, "defp step(:plan_next")
+      refute step_source =~ ~r/admit\(/
+
+      # and nowhere in the drive is the seam invoked at all
+      refute source =~ "PlanNext.admit"
+    end
+  end
+
+  # Extracts the body of one `defp` clause: from the anchor to the next
+  # top-level `defp` (or end of file).
+  defp step_clause(source, anchor) do
+    start = String.split(source, anchor) |> Enum.at(1) |> then(&"#{anchor}#{&1}")
+
+    case Regex.run(~r/\n  defp /, start, return: :index) do
+      [{index, _} | _] -> binary_part(start, 0, index - 1)
+      nil -> start
+    end
+  end
+
+  # Recursive walk of the beam's abstract format, collecting remote calls
+  # into File/IO (the purity boundary the moduledoc claims).
+  defp collect_io_calls(term, acc \\ [])
+
+  defp collect_io_calls(term, acc) when is_tuple(term) do
+    acc = maybe_io_call(term, acc)
+    Enum.reduce(Tuple.to_list(term), acc, &collect_io_calls/2)
+  end
+
+  defp collect_io_calls(term, acc) when is_list(term) do
+    Enum.reduce(term, acc, &collect_io_calls/2)
+  end
+
+  defp collect_io_calls(_term, acc), do: acc
+
+  defp maybe_io_call(
+         {:call, _, {:remote, _, {_, _, mod}, {_, _, fun}}, _},
+         acc
+       )
+       when mod in [:"Elixir.File", :file, :"Elixir.IO", :io] do
+    [{mod, fun} | acc]
+  end
+
+  defp maybe_io_call(_node, acc), do: acc
 end

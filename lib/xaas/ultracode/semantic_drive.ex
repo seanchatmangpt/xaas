@@ -1682,6 +1682,9 @@ defmodule Xaas.Ultracode.SemanticDrive do
 
   # The standing-transition event plan-next plans from: the promoted
   # transition (:reconcile) bound to the sealed receipt it was earned with.
+  # `base_sha` / `repository` ride along (the order's snapshot context) so
+  # the journaled candidate can later be bounded-consumed
+  # (`PlanNext.to_work_order/2`) without leaving the doc's own provenance.
   defp plan_next_event(ctx) do
     %{
       "identity" => ctx.order_id,
@@ -1690,7 +1693,9 @@ defmodule Xaas.Ultracode.SemanticDrive do
       "event_digest" => ctx.transition["event_digest"],
       "transition_digest" => ctx.transition["transition_digest"],
       "receipt_digest" => ctx.export["receipt_digest"],
-      "authority" => "NONE"
+      "authority" => "NONE",
+      "base_sha" => ctx.order["base_sha"],
+      "repository" => ctx.order["repository"]
     }
   end
 
