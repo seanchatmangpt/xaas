@@ -1,0 +1,257 @@
+name: Semantic crown
+
+# ============================================================================
+# What this job proves
+# ============================================================================
+# Machine evidence under the execute hop: the full autonomics crown loop —
+# observe -> SHACL admit -> frontier -> descriptor -> Run/Epoch -> worker ->
+# real fabric court -> sealed receipt -> ledger transition -> dependent
+# eligibility -> fresh-OS-process replay — runs to standing ALIVE on real
+# infrastructure (real Postgres, real git worktrees, real `mix semantic_jira.*`
+# OS subprocesses in a ggen_igniter checkout, the real Python
+# definition-of-done court from priv/verifiers/aps_dod_court.py), plus the
+# negative control: a claimed-ALIVE vacuous candidate is sealed build_broken,
+# refused by the reconciler, and leaves the work order on the frontier.
+#
+# FORM — the subprocess test suite, not `mix xaas.semantic.crown`:
+# the crown mix task has no worker-injection flag. `worker:` is a
+# `Xaas.Ultracode.SemanticCrown.run/1` option, and the scripted protocol
+# worker exists only inside test/xaas/ultracode/semantic_crown_test.exs
+# (its `scripted/1` closure). The task's default worker is the hardened
+# dispatcher, which needs a running XaaS server plus INTERNAL_API_TOKEN — not
+# available on a hosted runner. The test drives the SAME loop through the real
+# mix OS processes and is the honest CI form. `:subprocess` is excluded by
+# default in test/test_helper.exs, hence `--include subprocess`.
+#
+# ENVIRONMENTAL GATE 1 — APS clone. The test hardcodes the operator clone path
+# ~/xaas/worktrees/repos/aps; its remote IS discoverable
+# (docs/ultracode/multi-repo-run.md: github.com/seanchatmangpt/
+# agile-protocol-specification, branch main), so this workflow clones it
+# directly to that exact literal path. A step below asserts every one of the
+# test's named-skip conditions is cleared, so a missing collaborator fails the
+# job loudly instead of green-skipping.
+#
+# ENVIRONMENTAL GATE 2 — cargo/rust toolchain. ggen_igniter's ggen_graph_nif
+# (Rustler) compiles from source during `mix compile`, and mdbook (the court's
+# CHI-CANONICAL gate) is installed via `cargo install`. Hosted ubuntu-latest
+# runners ship rustup/cargo; ggen_igniter's own CI relies on the same
+# preinstalled toolchain.
+#
+# TWO PINNED TOOLCHAINS, ONE PATH: the graph side is a separate project with
+# its own .tool-versions pin (ggen_igniter: elixir 1.18.4-otp-27 / erlang
+# 27.2.4; xaas: elixir 1.20.2-otp-28 / erlang 28.5.0.2). Locally asdf resolves
+# them dir-scoped, and Xaas.Ultracode.SemanticCrown.mix_bin/0 explicitly
+# prefers ~/.asdf/shims/mix and unsets ASDF_*_VERSION so the graph-side `mix`
+# subprocess resolves per-directory, "never through this VM's Elixir". Hosted
+# CI has no asdf, so this workflow installs BOTH toolchains (erlef/setup-beam
+# x2) and writes its own dir-scoped `mix` shim at ~/.asdf/shims/mix — the
+# exact path mix_bin/0 prefers — dispatching on the working directory. A step
+# below asserts the dispatch is real before anything is built.
+#
+# GRAPH-SIDE REF: xaas's mix.exs pins ggen_igniter as a HEX dep
+# `{:ggen_igniter, "~> 26.10.1"}` — a version range, not a git SHA — so the
+# graph side is checked out at the v26.10.1 TAG.
+#
+# Cache note: ggen_igniter's CI documents a real _build-cache defect where a
+# restored _build marks the Rustler NIF up-to-date with the .so missing; the
+# ggen build step mirrors ggen_igniter's own fix (rm -rf the app build dirs)
+# so a cache hit can never yield a tree whose NIF-backed tasks fail to load.
+# ============================================================================
+
+on:
+  schedule:
+    # Weekly, Mondays 06:17 UTC.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: semantic-crown
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  MIX_ENV: test
+
+jobs:
+  crown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    name: receipts-are-the-clock crown (subprocess suite)
+
+    # Mirrors .github/workflows/ci_cd.yaml's service/env block exactly
+    # (pgvector/pgvector:0.8.0-pg15; config/test.exs defaults read
+    # postgres/postgres@localhost:5432 via DEV_DB_*).
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout xaas (exact subject)
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: xaas toolchain, locked deps, dependency cache
+        id: beam
+        uses: ./.github/actions/beam
+        with:
+          mix-env: test
+
+      - name: Record the xaas toolchain binaries
+        run: |
+          echo "XAAS_MIX_BIN=$(command -v mix)" >> "$GITHUB_ENV"
+          echo "XAAS_ERL_BIN=$(dirname "$(command -v erl)")" >> "$GITHUB_ENV"
+
+      # Same pin and version inputs ggen_igniter's own CI uses (its ci.yml:
+      # elixir 1.18.4 / otp 27.2.4 / rebar3 3.24.0, matching ggen_igniter's
+      # .tool-versions).
+      - name: Install the graph-side toolchain (ggen_igniter pin)
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1, same pin as .github/actions/beam
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.2.4'
+          rebar3-version: '3.24.0'
+
+      - name: Record the graph toolchain binaries
+        run: |
+          echo "GGEN_MIX_BIN=$(command -v mix)" >> "$GITHUB_ENV"
+          echo "GGEN_ERL_BIN=$(dirname "$(command -v erl)")" >> "$GITHUB_ENV"
+
+      - name: Checkout ggen_igniter at the pinned ref (tag v26.10.1)
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ggen_igniter
+          ref: v26.10.1
+          path: ggen_igniter
+          persist-credentials: false
+
+      # Dir-scoped `mix`, replicating asdf's per-directory resolution under the
+      # exact path Xaas.Ultracode.SemanticCrown.mix_bin/0 prefers
+      # (~/.asdf/shims/mix). Each branch must prepend its own toolchain's erl:
+      # Elixir's bin scripts find erl on PATH, and without this the graph-side
+      # mix would boot the OTP 28 VM against OTP 27-compiled beams.
+      - name: Install the dir-scoped mix shim
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.asdf/shims"
+          cat > "$HOME/.asdf/shims/mix" <<SHIM
+          #!/usr/bin/env bash
+          # CI stand-in for asdf's dir-scoped mix shim (see this workflow's
+          # header: SemanticCrown.mix_bin/0 prefers this exact path).
+          set -e
+          case "\$(pwd -P)" in
+            */ggen_igniter)
+              export PATH="$GGEN_ERL_BIN:$(dirname "$GGEN_MIX_BIN"):\$PATH"
+              exec "$GGEN_MIX_BIN" "\$@" ;;
+            *)
+              export PATH="$XAAS_ERL_BIN:$(dirname "$XAAS_MIX_BIN"):\$PATH"
+              exec "$XAAS_MIX_BIN" "\$@" ;;
+          esac
+          SHIM
+          chmod +x "$HOME/.asdf/shims/mix"
+          echo "$HOME/.asdf/shims" >> "$GITHUB_PATH"
+
+      - name: Assert the shim dispatches both toolchains
+        run: |
+          set -euo pipefail
+          echo "-- xaas side (from $GITHUB_WORKSPACE):"
+          mix --version
+          mix --version | grep -q "Elixir 1.20.2" || {
+            echo "REFUSED: the xaas-side mix is not Elixir 1.20.2"; exit 2; }
+          echo "-- graph side (from $GITHUB_WORKSPACE/ggen_igniter):"
+          cd "$GITHUB_WORKSPACE/ggen_igniter"
+          mix --version
+          mix --version | grep -q "Elixir 1.18.4" || {
+            echo "REFUSED: the graph-side mix is not Elixir 1.18.4"; exit 2; }
+
+      # The graph side needs its own compiled deps + NIF (ggen_igniter's own
+      # CI budgets ~14 min cold). Cached per ggen_igniter's own locks.
+      - name: Cache graph-side deps
+        uses: actions/cache@v6
+        with:
+          path: ggen_igniter/deps
+          key: semantic-crown-ggi-deps-${{ runner.os }}-${{ hashFiles('ggen_igniter/mix.lock') }}
+          restore-keys: |
+            semantic-crown-ggi-deps-${{ runner.os }}-
+
+      - name: Cache graph-side cargo target
+        uses: actions/cache@v6
+        with:
+          path: ggen_igniter/native/ggen_graph_nif/target
+          key: semantic-crown-ggi-cargo-${{ runner.os }}-${{ hashFiles('ggen_igniter/native/ggen_graph_nif/Cargo.lock') }}
+          restore-keys: |
+            semantic-crown-ggi-cargo-${{ runner.os }}-
+
+      - name: Build the graph side (deps + NIF, MIX_ENV=test)
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/ggen_igniter"
+          # Mirrors ggen_igniter ci.yml's fix for the _build-cache/NIF-staleness
+          # defect: a restored _build marks the Rustler loader module up-to-date
+          # with the .so absent, so the app build dirs are always removed.
+          rm -rf _build/test/lib/ggen_igniter
+          mix deps.get
+          mix compile
+          # Real evidence the NIF exists before the crown depends on it.
+          test -f _build/test/lib/ggen_igniter/priv/native/ggen_graph_nif.so
+
+      - name: Install mdbook (the APS court's CHI-CANONICAL gate requires it)
+        run: |
+          set -euo pipefail
+          if ! command -v mdbook >/dev/null; then
+            cargo install mdbook --locked
+          fi
+          mdbook --version
+
+      - name: Clone the APS subject repo to the test's hardcoded path
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/xaas/worktrees/repos"
+          git clone https://github.com/seanchatmangpt/agile-protocol-specification \
+            "$HOME/xaas/worktrees/repos/aps"
+          git -C "$HOME/xaas/worktrees/repos/aps" rev-parse HEAD
+
+      # Quality bar: the test skips by name when a collaborator is missing; in
+      # CI a skip is a green lie, so every skip condition is asserted here as a
+      # hard failure instead. (Test skip list: semantic_crown_test.exs
+      # @moduletag skip — APS clone, recorded bundle, ggen_igniter checkout
+      # with semantic_jira.descriptor, python3, mdbook.)
+      - name: Assert every named-skip condition is cleared
+        run: |
+          set -euo pipefail
+          test -d "$HOME/xaas/worktrees/repos/aps/.git" || {
+            echo "REFUSED: APS clone missing at ~/xaas/worktrees/repos/aps"; exit 2; }
+          test -f docs/ultracode/wave-v26.9.17-receipts/aps-autonomic-dod/aps-autonomic-3e46cf.bundle || {
+            echo "REFUSED: recorded live-run bundle missing"; exit 2; }
+          test -f ggen_igniter/lib/mix/tasks/semantic_jira.descriptor.ex || {
+            echo "REFUSED: ggen_igniter checkout lacks semantic_jira.descriptor"; exit 2; }
+          command -v python3 >/dev/null || { echo "REFUSED: python3 not on PATH"; exit 2; }
+          command -v mdbook >/dev/null || { echo "REFUSED: mdbook not on PATH"; exit 2; }
+
+      - name: Create and migrate the test database
+        run: |
+          set -euo pipefail
+          mix ecto.create --quiet
+          mix ecto.migrate --quiet
+
+      - name: Run the crown (subprocess suite — real loop, real subprocesses)
+        env:
+          GGEN_IGNITER_DIR: ${{ github.workspace }}/ggen_igniter
+        run: |
+          set -euo pipefail
+          # The scripted worker and local-transport negative controls live in
+          # the test; :subprocess is excluded by default (test_helper.exs), so
+          # --include re-includes it. The suite's moduletag timeout is 30 min;
+          # the job budget is 90.
+          mix test --include subprocess test/xaas/ultracode/semantic_crown_test.exs
