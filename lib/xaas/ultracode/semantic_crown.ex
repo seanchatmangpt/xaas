@@ -73,17 +73,17 @@ defmodule Xaas.Ultracode.SemanticCrown do
   @test_file "tests/test_contract_standing.py"
 
   # Digest contract of the descriptors `mix semantic_jira.descriptor` emits,
-  # declared HERE by the trusted caller (never by the descriptor's content): its
-  # `graph_digest` is graph-wide (a digest over every definition digest, the same
-  # for SJ-CROWN-A and SJ-CROWN-B in the recorded receipts), not the per-work-order
-  # snapshot digest, and it carries no `admitted_work_order` for XaaS to recompute
-  # from. So `AdmissionBinding`'s fail-closed `:snapshot` default would refuse every
-  # real descriptor, and `:graph` leaves `graph_digest` UNBOUND: a descriptor
-  # rewritten between emission and materialize is NOT detected on this path.
-  # SJ-001 stays PARTIAL_ALIVE / UNSUPPORTED(graph side) until the emitter sends
-  # `admitted_work_order` (then declare `:snapshot`) or the crown supplies a
-  # trusted pin (`expected_graph_digest:` / `expected_snapshot_digest:`).
-  @descriptor_binding :graph
+  # declared HERE by the trusted caller (never by the descriptor's content).
+  # THE FLIP HAPPENED (P1-X1, sJira v26.10.1): the emitter now carries
+  # `admitted_work_order` + `digest_form` ("sjira-digest/2") on every descriptor
+  # (ggen_igniter e9c7afa, the exact SHA pinned in mix.lock), so the fail-closed
+  # `:snapshot` binding HOLDS: XaaS recomputes the per-work-order digest from the
+  # admitted snapshot and refuses a descriptor rewritten between emission and
+  # materialize -- the hole `:graph` left open (`graph_digest` is graph-wide, so
+  # a rewritten descriptor went undetected on that path). Trusted pins
+  # (`expected_graph_digest:` / `expected_snapshot_digest:`) remain available to
+  # the caller and are untouched.
+  @descriptor_binding :snapshot
 
   @vacuous_test """
   import unittest
@@ -120,10 +120,8 @@ defmodule Xaas.Ultracode.SemanticCrown do
 
   defp context(opts) do
     dir = Keyword.fetch!(opts, :ggen_igniter_dir)
-    ticket_dir = Application.fetch_env!(:xaas, :ultracode_ticket_dir)
-    nonce = :crypto.strong_rand_bytes(3) |> Base.encode16(case: :lower)
-    work_dir = Keyword.get(opts, :work_dir) || Path.join(ticket_dir, "crown-#{nonce}")
     items = Keyword.get(opts, :items, ["contract-standing", "contract-evidence-receipt"])
+    nonce = :crypto.strong_rand_bytes(3) |> Base.encode16(case: :lower)
 
     cond do
       not File.regular?(Path.join(dir, "mix.exs")) ->
@@ -132,7 +130,20 @@ defmodule Xaas.Ultracode.SemanticCrown do
       length(items) != 2 ->
         {:error, {:items_must_be_two, items}}
 
+      is_nil(Application.get_env(:xaas, :ultracode_ticket_dir)) ->
+        # The crown writes run tickets under `ctx.ticket_dir` (via
+        # `Autonomic.new_ctx/1`), so it is required even when `:work_dir` is
+        # supplied; `config/test.exs` leaves it unset on purpose (tests install
+        # their own), hence the named refusal instead of a nil `Path.join/2`
+        # ArgumentError deep in materialize.
+        {:error,
+         {:ticket_dir_missing,
+          "pass --work-dir or set config :xaas, :ultracode_ticket_dir " <>
+            "(nil under MIX_ENV=test; the crown writes run tickets under it)"}}
+
       true ->
+        ticket_dir = Application.get_env(:xaas, :ultracode_ticket_dir)
+        work_dir = Keyword.get(opts, :work_dir) || Path.join(ticket_dir, "crown-#{nonce}")
         File.mkdir_p!(work_dir)
 
         base =
