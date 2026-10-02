@@ -1,0 +1,147 @@
+{
+  "_fixture": "synthesized fixture — not a render",
+  "generated": true,
+  "authorityClaim": "NONE",
+  "subject": "urn:chicago:agentic-payment:purchase-001",
+  "projectionType": "executive",
+  "sourceDigests": [
+    {
+      "path": "docs/sjira/v26.10.1/chicago.ttl",
+      "sha256": "9f2c1a7d5b3e8f6041a2c3d4e5f60718293a4b5c6d7e8f9012345678abcdef90"
+    },
+    {
+      "path": "docs/sjira/v26.10.1/projections.ttl",
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "generatorIdentity": "ggen-marketplace/chicago-xaas-surface-pack@26.10.1",
+  "narrative": {
+    "audience": "seller",
+    "headline": "Agentic purchase completes under a delegated, receipted payment authority",
+    "customerProblem": "Buyers cannot see, before checkout, which platform capabilities actually stand behind an automated payment and which are still candidates.",
+    "desiredOutcome": "A purchase closes end to end with every layer's standing visible and every refusal carrying a typed recovery path.",
+    "semanticPath": "semantic work order -> capability admission -> delegated payment actuation -> receipt -> replay -> standing"
+  },
+  "capabilities": [
+    { "id": "sjira", "label": "Semantic Jira work orders", "role": "required" },
+    { "id": "graphlaw", "label": "Graphlaw admission kernel", "role": "required" },
+    { "id": "sa2a", "label": "SA2A capability ports", "role": "required" },
+    { "id": "pplan", "label": "FOND/HTN planner", "role": "required" },
+    { "id": "xaas", "label": "XaaS execution fabric", "role": "required" },
+    { "id": "ex4pm", "label": "OCEL event stream", "role": "required" },
+    { "id": "beam4pm", "label": "BEAM process mining", "role": "required" },
+    { "id": "affidavit", "label": "Affidavit receipt seal", "role": "required" },
+    { "id": "ashsurface", "label": "Ash surface resources", "role": "required" },
+    { "id": "marketplace", "label": "ggen marketplace projection", "role": "required" },
+    { "id": "wasm4pm", "label": "WASM process-mining kernel", "role": "successor" },
+    { "id": "castle", "label": "Castle consequence engine", "role": "successor" }
+  ],
+  "demonstrated": [],
+  "scenarios": [
+    {
+      "id": "CHI-CASE-001",
+      "polarity": "positive",
+      "label": "Single charge under valid delegation",
+      "description": "A single card charge inside the delegation limit completes and a receipt seals the run."
+    },
+    {
+      "id": "CHI-CASE-002",
+      "polarity": "positive",
+      "label": "Dispatch outcome unknown, evidence binds later",
+      "description": "Dispatch returns unknown; the case recovers when a later receipt binds the observed execution."
+    },
+    {
+      "id": "CHI-CASE-003",
+      "polarity": "positive",
+      "label": "Multi-item cart within budget",
+      "description": "A multi-item cart totals under the delegated budget and closes in one settled payment."
+    },
+    {
+      "id": "CHI-CASE-004",
+      "polarity": "negative",
+      "label": "Cart exceeds delegation ceiling",
+      "description": "A cart total above the delegated limit is refused before any payment leaves the account."
+    },
+    {
+      "id": "CHI-CASE-005",
+      "polarity": "negative",
+      "label": "Wrong principal",
+      "description": "A payment requested by a principal other than the delegated one is refused without dispatch."
+    },
+    {
+      "id": "CHI-CASE-006",
+      "polarity": "positive",
+      "label": "Retry after transient provider failure",
+      "description": "A transient provider failure is retried idempotently and the second attempt completes."
+    },
+    {
+      "id": "CHI-CASE-007",
+      "polarity": "negative",
+      "label": "Provider unavailable",
+      "description": "No enabled provider can take the charge, so the case stops with a typed refusal."
+    },
+    {
+      "id": "CHI-CASE-008",
+      "polarity": "positive",
+      "label": "Expired delegation is renewed then charged",
+      "description": "An expired delegation is renewed by the operator and the purchase then completes lawfully."
+    },
+    {
+      "id": "CHI-CASE-009",
+      "polarity": "positive",
+      "label": "Receipt replay reproduces the same head",
+      "description": "Replaying the receipted purchase reproduces a byte-identical outcome on the same subject."
+    },
+    {
+      "id": "CHI-CASE-010",
+      "polarity": "negative",
+      "label": "Policy drift detected mid-flight",
+      "description": "A policy digest drift is detected between admission and dispatch and the case is refused."
+    }
+  ],
+  "authorityBoundaries": [
+    "authorityClaim NONE — this surface observes and never actuates",
+    "cases are candidate predictions, never pre-judged outcomes",
+    "standing stays UNKNOWN until a real receipt binds observed execution",
+    "no provider identity enters the work order identity"
+  ],
+  "failureRecovery": [
+    {
+      "caseId": "CHI-CASE-002",
+      "refusal": "unknown_after_dispatch",
+      "recovery": "Wait for the provider event stream to bind a receipt, then re-observe standing on the exact subject."
+    },
+    {
+      "caseId": "CHI-CASE-004",
+      "refusal": "above_delegated_limit",
+      "recovery": "Split the cart below the ceiling or request a raised delegation, then re-run the case."
+    },
+    {
+      "caseId": "CHI-CASE-005",
+      "refusal": "wrong_principal",
+      "recovery": "Re-request the payment under the delegated principal; the surface never substitutes one."
+    },
+    {
+      "caseId": "CHI-CASE-007",
+      "refusal": "provider_unavailable",
+      "recovery": "Enable another provider on the routing table; work order identity survives the provider change."
+    },
+    {
+      "caseId": "CHI-CASE-010",
+      "refusal": "policy_drift",
+      "recovery": "Re-render the projection from the source graph, re-admit the case, and retry on the fresh digest."
+    }
+  ],
+  "evidence": [
+    { "layer": "sjira", "standing": "UNKNOWN", "receipt": null },
+    { "layer": "sa2a", "standing": "UNKNOWN", "receipt": null },
+    { "layer": "marketplace", "standing": "UNKNOWN", "receipt": null }
+  ],
+  "deliveryState": {
+    "requiredLayers": 10,
+    "demonstratedLayers": 0,
+    "candidateLayers": 10,
+    "successorLayers": 2,
+    "overallStanding": "UNKNOWN"
+  }
+}
