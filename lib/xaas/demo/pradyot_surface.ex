@@ -32,6 +32,42 @@ defmodule Xaas.Demo.PradyotSurface do
   def replay_identity(data) when is_map(data),
     do: "xaas-pradyot:" <> @subject <> ":" <> projection_digest(data)
 
+  def ash_surface_projection do
+    episode = chicago()
+
+    payload = %{
+      subject: episode.subject,
+      source: %{system: :xaas, projection: :ash_surface},
+      contracts: [:command_center, :observation, :obligation, :planning_episode, :standing],
+      requirement: %{subject: episode.subject, state: :admitted},
+      capability: %{subject: episode.subject, state: :contained},
+      planning_episode: %{subject: episode.subject, phase: :select_construct, do_authority: :none},
+      execution: %{subject: episode.subject, state: :contained, authority: :none},
+      receipts: episode.receipts,
+      ocel_refs: episode.ocel_refs,
+      evidence_refs: episode.evidence_refs,
+      standing: %{subject: episode.subject, state: episode.standing},
+      refusal_state: episode.refusal_state,
+      authority: :none
+    }
+
+    Map.merge(payload, %{
+      projection_digest: projection_digest(payload),
+      replay_identity: replay_identity(payload)
+    })
+  end
+
+  def replay_valid?(projection) when is_map(projection) do
+    payload = Map.drop(projection, [:projection_digest, :replay_identity])
+
+    projection.subject == @subject and
+      projection.authority == :none and
+      projection.planning_episode.do_authority == :none and
+      projection.projection_digest == projection_digest(payload) and
+      projection.replay_identity == replay_identity(payload) and
+      projection.standing.state != :unknown_after_dispatch
+  end
+
   def chicago do
     %{
       subject: @subject,
