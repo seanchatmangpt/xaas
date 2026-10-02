@@ -66,8 +66,9 @@ defmodule Xaas.Receipt.RProjectionTest do
   test "a sealed ALIVE receipt projects to an R the real validator ADMITS",
        %{sha: sha, base: base, repo: repo} do
     {native_path, head} = sealed_native(sha, base, "r-court")
+    native = native_path |> File.read!() |> Jason.decode!()
 
-    assert {:ok, r_path, r} = RProjection.write(native_path, repo: repo)
+    assert {:ok, r_path, r} = RProjection.write(native_path, repo: repo, provider: @provider)
     assert r_path == Path.join(base, "native-r-court.r.json")
     assert File.read!(r_path) |> Jason.decode!() == r
 
@@ -77,6 +78,23 @@ defmodule Xaas.Receipt.RProjectionTest do
              "subject_sha" => head,
              "base_sha" => sha
            }
+
+    assert r["work_order_id"] == "RP-1"
+    assert r["provider"]["name"] == @provider
+    assert r["provider_execution_id"] == native["run_id"]
+    assert r["origin_authority"] == r["authority"]
+
+    # XaaS provenance rides under the namespaced extension key; the bare
+    # top-level native/court keys are gone (the validator refuses them).
+    ext = r["provider_ext.xaas"]
+    assert ext["native"]["receipt_id"] == native["receipt_id"]
+    assert ext["native"]["epoch_id"] == native["epoch_id"]
+    assert ext["native"]["run_id"] == native["run_id"]
+    assert ext["native"]["receipt_digest"] == native["receipt_digest"]
+    assert is_map(ext["court"]["binding"])
+    assert ext["court"]["acceptance_results"] == %{@acc => true}
+    refute Map.has_key?(r, "native")
+    refute Map.has_key?(r, "court")
 
     assert r["authority"]["ceiling"] == "CONSTRUCT"
     assert "xaas-lease:epoch:" <> _ = r["authority"]["grant"]
@@ -89,7 +107,19 @@ defmodule Xaas.Receipt.RProjectionTest do
 
     assert r["replay"]["durable_location"] == native_path
     assert r["standing"]["value"] == "ALIVE"
-    assert r["court"]["acceptance_results"] == %{@acc => true}
+
+    assert {out, 0} = validate(r_path)
+    assert out =~ "ADMITTED " <> r_path
+  end
+
+  @tag skip: @needs_validator
+  test "without :provider or :actor the provider name falls back to the sealer and the validator still ADMITS",
+       %{sha: sha, base: base, repo: repo} do
+    {native_path, _head} = sealed_native(sha, base, "r-court")
+
+    assert {:ok, r_path, r} = RProjection.write(native_path, repo: repo)
+    assert r["provider"]["name"] == "xaas-fabric"
+    assert r["origin_authority"] == r["authority"]
 
     assert {out, 0} = validate(r_path)
     assert out =~ "ADMITTED " <> r_path
@@ -146,7 +176,8 @@ defmodule Xaas.Receipt.RProjectionTest do
     # evidence (`test -f` of a missing file exits 1), not derived from status.
     assert [%{"exit" => 1, "summary" => summary}] = r["replay"]["commands"]
     assert summary == "r-fail/court: status=fail"
-    assert r["court"]["acceptance_results"] == %{@acc => false}
+
+    assert get_in(r, ["provider_ext.xaas", "court", "acceptance_results"]) == %{@acc => false}
 
     assert {out, 0} = validate(r_path)
     assert out =~ "ADMITTED"

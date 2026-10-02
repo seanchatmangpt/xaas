@@ -5,7 +5,10 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
   and 26): an R projection the fleet validator ADMITS can still be
   internally inconsistent -- ALIVE over a false acceptance, a consequence
   commit that is not the subject's, files outside the order's path scope, a
-  replay command the court never ran. Each is refused, typed.
+  replay command the court never ran, or (fleet-R-v2) a `work_order_id`
+  naming another order, a `provider_execution_id` not bound to the xaas
+  native run, an `origin_authority` diverged from `authority`, or an
+  unattributed provider. Each is refused, typed.
 
   Every collaborator is real: a real git repository in a tmp dir (a base
   commit, an in-scope subject commit, an out-of-scope subject commit on a
@@ -79,6 +82,12 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
 
     binding = %{"suite" => @suite, "step_id" => "format", "head" => head, "argv_sha256" => digest}
 
+    authority = %{
+      "ceiling" => "CONSTRUCT",
+      "grant" => "xaas-lease:epoch:t",
+      "actor" => "recipe-worker"
+    }
+
     %{
       "identity" => %{
         "subject" => "EP-T",
@@ -86,11 +95,11 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
         "subject_sha" => head,
         "base_sha" => ctx.base
       },
-      "authority" => %{
-        "ceiling" => "CONSTRUCT",
-        "grant" => "xaas-lease:epoch:t",
-        "actor" => "recipe-worker"
-      },
+      "authority" => authority,
+      "origin_authority" => authority,
+      "work_order_id" => "EP-T",
+      "provider" => %{"name" => "recipe"},
+      "provider_execution_id" => "run-1",
       "consequence" => %{"commits" => [head], "files_changed" => files, "remote_effects" => []},
       "replay" => %{
         "commands" => [
@@ -103,11 +112,14 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
         ]
       },
       "standing" => %{"value" => "ALIVE", "derived_from" => "test"},
-      "court" => %{
-        "binding" => binding,
-        "acceptance_results" => %{@acc => true},
-        "falsifier_results" => %{@fal => "survived"},
-        "court_results" => %{@court => Map.put(binding, "passed", true)}
+      "provider_ext.xaas" => %{
+        "native" => %{"run_id" => "run-1"},
+        "court" => %{
+          "binding" => binding,
+          "acceptance_results" => %{@acc => true},
+          "falsifier_results" => %{@fal => "survived"},
+          "court_results" => %{@court => Map.put(binding, "passed", true)}
+        }
       }
     }
   end
@@ -132,10 +144,13 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
 
   test "ALIVE over a false acceptance, a refuted falsifier, a failed court or a missing acceptance IRI is REFUSED(alive_acceptance_false)",
        ctx do
-    false_acc = put_in(r(ctx), ["court", "acceptance_results", @acc], false)
-    refuted = put_in(r(ctx), ["court", "falsifier_results", @fal], "failed")
-    failed_court = put_in(r(ctx), ["court", "court_results", @court, "passed"], false)
-    missing = put_in(r(ctx), ["court", "acceptance_results"], %{})
+    false_acc = put_in(r(ctx), ["provider_ext.xaas", "court", "acceptance_results", @acc], false)
+    refuted = put_in(r(ctx), ["provider_ext.xaas", "court", "falsifier_results", @fal], "failed")
+
+    failed_court =
+      put_in(r(ctx), ["provider_ext.xaas", "court", "court_results", @court, "passed"], false)
+
+    missing = put_in(r(ctx), ["provider_ext.xaas", "court", "acceptance_results"], %{})
 
     for mutant <- [false_acc, refuted, failed_court, missing] do
       typed = refused!(judge(mutant, ctx), "alive_acceptance_false", "admission_vacuous")
@@ -234,10 +249,20 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
 
   test "a court binding on another head, another declaration digest, a disagreeing court result or no binding is REFUSED(replay_command_unbound)",
        ctx do
-    other_head = put_in(r(ctx), ["court", "binding", "head"], ctx.side)
-    other_argv = put_in(r(ctx), ["court", "binding", "argv_sha256"], String.duplicate("a", 64))
-    result_drift = put_in(r(ctx), ["court", "court_results", @court, "head"], ctx.side)
-    unbound = update_in(r(ctx), ["court"], &Map.delete(&1, "binding"))
+    other_head = put_in(r(ctx), ["provider_ext.xaas", "court", "binding", "head"], ctx.side)
+
+    other_argv =
+      put_in(
+        r(ctx),
+        ["provider_ext.xaas", "court", "binding", "argv_sha256"],
+        String.duplicate("a", 64)
+      )
+
+    result_drift =
+      put_in(r(ctx), ["provider_ext.xaas", "court", "court_results", @court, "head"], ctx.side)
+
+    unbound =
+      update_in(r(ctx), ["provider_ext.xaas", "court"], &Map.delete(&1, "binding"))
 
     for mutant <- [other_head, other_argv, result_drift, unbound] do
       refused!(judge(mutant, ctx), "replay_command_unbound", "R_missing_replay")
@@ -259,6 +284,56 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
     order = Map.put(ctx.order, "base_sha", ctx.side)
     mutant = put_in(r(ctx), ["identity", "base_sha"], ctx.side)
     assert {:refused, %{"reason" => "subject_not_descended"}} = judge(mutant, ctx, order)
+  end
+
+  describe "fleet-R-v2 execution-provenance laws" do
+    test "a work_order_id naming another order, or absent, is REFUSED(receipt_not_for_order)",
+         ctx do
+      other = put_in(r(ctx), ["work_order_id"], "EP-OTHER")
+      absent = Map.delete(r(ctx), "work_order_id")
+
+      for mutant <- [other, absent] do
+        refused!(judge(mutant, ctx), "receipt_not_for_order", "R_missing_identity")
+      end
+    end
+
+    test "a provider_execution_id bound to another run, or whose xaas copy is absent, is REFUSED(provider_execution_unbound)",
+         ctx do
+      other_run = put_in(r(ctx), ["provider_execution_id"], "other-run")
+      no_ext_native = put_in(r(ctx), ["provider_ext.xaas", "native"], %{})
+      no_ext = Map.delete(r(ctx), "provider_ext.xaas")
+      absent = Map.delete(r(ctx), "provider_execution_id")
+
+      for mutant <- [other_run, no_ext_native, no_ext, absent] do
+        refused!(judge(mutant, ctx), "provider_execution_unbound", "R_missing_identity")
+      end
+    end
+
+    test "an origin_authority that diverges from authority is REFUSED(origin_authority_diverged)",
+         ctx do
+      grant = put_in(r(ctx), ["origin_authority", "grant"], "xaas-lease:epoch:other")
+      ceiling = put_in(r(ctx), ["origin_authority", "ceiling"], "DO")
+      actor = put_in(r(ctx), ["origin_authority", "actor"], "someone-else")
+      absent = Map.delete(r(ctx), "origin_authority")
+
+      for mutant <- [grant, ceiling, actor, absent] do
+        refused!(judge(mutant, ctx), "origin_authority_diverged", "R_missing_authority")
+      end
+    end
+
+    test "an unattributed provider -- empty or absent name -- is REFUSED(provider_unattributed)",
+         ctx do
+      empty = put_in(r(ctx), ["provider", "name"], "")
+      absent = update_in(r(ctx), ["provider"], &Map.delete(&1, "name"))
+
+      for mutant <- [empty, absent] do
+        refused!(judge(mutant, ctx), "provider_unattributed", "R_missing_authority")
+      end
+    end
+
+    test "a v2-consistent projection passes all four laws and stays CONSISTENT", ctx do
+      assert {:ok, %{"standing" => "CONSISTENT"}} = judge(r(ctx), ctx)
+    end
   end
 
   describe "the committed reference episode fmt-1" do
@@ -289,7 +364,11 @@ defmodule Xaas.Receipt.RProjectionConsistencyTest do
     test "the four MSA mutants that escaped every court are refused, typed", %{fmt: r, row: row} do
       mutants = [
         {"alive_acceptance_false",
-         update_in(r, ["court", "acceptance_results"], &Map.new(&1, fn {k, _} -> {k, false} end))},
+         update_in(
+           r,
+           ["provider_ext.xaas", "court", "acceptance_results"],
+           &Map.new(&1, fn {k, _} -> {k, false} end)
+         )},
         {"consequence_not_subject",
          put_in(r, ["consequence", "commits"], [r["identity"]["base_sha"]])},
         {"consequence_outside_path_scope",
