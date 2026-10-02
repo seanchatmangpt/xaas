@@ -467,8 +467,9 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
       case Descriptor.build(work_orders, identity, attrs, events: events) do
         {:ok, v1} -> {:ok, v1}
         {:error, {:refused_descriptor, :not_found}} -> refuse(:unknown_work_order)
+        # hex 26.10.1 narrowed the spec to {:ok, map} | {:error, {:refused_descriptor, _}};
+        # the old catch-all is compiler-provably dead under it.
         {:error, {:refused_descriptor, reason}} -> refuse(reason)
-        {:error, reason} -> refuse({:descriptor, reason})
       end
     end
 
@@ -916,8 +917,8 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
     defp reconcile(work_order, receipt, log_dir) do
       case Reconciler.reconcile(work_order, receipt, log_dir) do
         {:ok, event, disposition} -> acknowledged(event, disposition, receipt)
+        # hex 26.10.1 spec: {:ok, ...} | {:error, {:refused, _}} — no other shape.
         {:error, {:refused, reason}} -> refuse(reason)
-        {:error, other} -> refuse({:reconciler, json_safe(other)})
       end
     end
 
@@ -1027,8 +1028,8 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
     defp kernel(work_order) do
       case SemanticJira.admit_work_order(work_order) do
         {:ok, admitted} -> {:ok, admitted}
+        # hex 26.10.1: the kernel refuses only as {:refused_work_order, _}.
         {:error, {:refused_work_order, reason}} -> refuse({:unadmitted, reason})
-        {:error, reason} -> refuse({:unadmitted, reason})
       end
     end
 
