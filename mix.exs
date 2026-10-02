@@ -214,7 +214,19 @@ defmodule Xaas.MixProject do
       # Stripe.Webhook.construct_event/3 signature verification (see
       # XaasWeb.StripeWebhookController).
       {:stripity_stripe, "~> 2.17"},
-      {:ggen_igniter, "~> 26.9.15"},
+      # Semantic Jira bridge seam (v26.10.1-loop lane X1): the published hex
+      # 26.9.29 still defines TransitionLog.event_digest/1 as `defp`, so the
+      # bridge can only compile against the post-G1 source. Pinned to the exact
+      # immutable post-G1 ref (origin/main at 2cb4519) that exposes the PUBLIC
+      # digest pair `event_digest/1` + `legacy_event_digest/1` (verified via
+      # `git show <ref>:lib/ggen_igniter/semantic_jira/transition_log.ex`).
+      # Same precedent as ex4pm/ash_pplan above: a path dep is forbidden (the
+      # Docker build context is `xaas/` only), and the immutable ref gives
+      # source identity for the seam court; it does not imply release standing.
+      # Revert to hex on the next ggen_igniter release that ships the seam.
+      {:ggen_igniter,
+       git: "https://github.com/seanchatmangpt/ggen_igniter.git",
+       ref: "e9c7afadee33a19e5c37d28bf7de2e72df98cc06"},
       {:faker, "~> 0.18", only: [:dev, :test]},
       # Real dependency on ex4pm's Ex4pm.OCEL, so OcelForwarder validates
       # the envelope with the actual downstream validator instead of a

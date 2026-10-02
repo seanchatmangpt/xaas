@@ -18,7 +18,6 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeIntegrityTest do
   use ExUnit.Case, async: false
 
   # Needs ggen_igniter >= 26.9.20 (SemanticJira Shacl/TransitionLog.event_digest/1).
-  @moduletag :requires_semantic_jira_api
 
   alias GgenIgniter.SemanticJira
   alias GgenIgniter.SemanticJira.TransitionLog
@@ -100,7 +99,9 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeIntegrityTest do
     ["bridge"],
     ["bridge", "identity"],
     ["bridge", "definition_digest"],
-    ["bridge", "snapshot_digest"],
+    ["bridge", "source_snapshot_digest"],
+    ["bridge", "ledger_tail"],
+    ["bridge", "replay_identity"],
     ["bridge", "repository"],
     ["bridge", "base_sha"],
     ["bridge", "subject"],

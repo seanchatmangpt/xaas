@@ -75,6 +75,11 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeFixtures do
       "projections" => ["jira", "receipt"],
       "required_receipt_classes" => ["verification"],
       "path_scope" => ["src/#{String.downcase(identity)}"],
+      # Post-G1 origin law (ggen 2cb4519): origin_authority is a required
+      # work-order field; fixtures use the pack's admitted sj:CodeWorkAuthority,
+      # the same IRI ggen's own reconciler tests resolve.
+      "origin_authority" =>
+        "https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority",
       "dependencies" =>
         Enum.map(
           deps,

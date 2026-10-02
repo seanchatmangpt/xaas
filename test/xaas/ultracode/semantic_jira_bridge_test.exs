@@ -15,7 +15,6 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeTest do
   use ExUnit.Case, async: false
 
   # Needs ggen_igniter >= 26.9.20 (SemanticJira Shacl/TransitionLog.event_digest/1).
-  @moduletag :requires_semantic_jira_api
 
   alias GgenIgniter.{SemanticA2A, SemanticJira}
   alias GgenIgniter.SemanticJira.{Reconciler, TransitionLog}
@@ -78,7 +77,7 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeTest do
 
       # the same identity travels, verbatim, in the XaaS bridge that the sealed export echoes
       assert execution["bridge"]["definition_digest"] == definition
-      assert execution["bridge"]["snapshot_digest"] == admitted["work_order_digest"]
+      assert execution["bridge"]["source_snapshot_digest"] == admitted["work_order_digest"]
       assert execution["bridge"]["graph_digest"] == F.graph_digest()
       assert execution["work_order_iri"] == @prefix <> "FIX-BROKEN"
 
@@ -202,7 +201,7 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeTest do
       assert receipt["target"] == "ALIVE"
       assert receipt["candidate_sha"] == export["final_head"]
       assert receipt["definition_digest"] == export["bridge"]["definition_digest"]
-      assert receipt["snapshot_digest"] == export["bridge"]["snapshot_digest"]
+      assert receipt["snapshot_digest"] == export["bridge"]["source_snapshot_digest"]
       assert receipt["evidence"]["court_results"] == %{F.court_iri() => %{"passed" => true}}
 
       assert receipt["evidence"]["acceptance_results"] == %{
@@ -357,7 +356,7 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeTest do
     test "a stale snapshot alone stays admissible (sibling transitions are not invalidated)",
          ctx do
       export = root_export(ctx)
-      stale = F.reseal(export, &put_in(&1, ["bridge", "snapshot_digest"], F.graph_digest()))
+      stale = F.reseal(export, &put_in(&1, ["bridge", "source_snapshot_digest"], F.graph_digest()))
 
       assert {:ok, %{disposition: :appended}} =
                Bridge.admit(ctx.graph, "FIX-BROKEN", stale, ctx.dir, fabric_check: false)

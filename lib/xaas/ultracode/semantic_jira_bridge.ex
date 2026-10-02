@@ -1,10 +1,17 @@
-# Compiled only when the resolved ggen_igniter ships a *public*
-# TransitionLog.event_digest/1 plus SemanticJira.Shacl. Observed 2026-09-30: the
-# published 26.9.29 still defines event_digest as `defp`, so this seam stays absent
-# from the build until an upstream release exposes it (see mix.exs).
+# Compiled only when the resolved ggen_igniter ships the post-G1 seam: a *public*
+# TransitionLog.digest pair (event_digest/1 + legacy_event_digest/1) plus
+# SemanticJira.Shacl. Since the ref-fill, mix.exs pins ggen_igniter to an immutable
+# post-G1 git ref (2cb4519dbb8e3b4be0b6a4c0a72ca1d89c3a1da5) whose TransitionLog
+# defines BOTH functions as public `def`s; path deps are forbidden (Docker build
+# context), and the dep reverts to hex on the next ggen_igniter release. The guard
+# is the fail-closed runtime check on that contract: BOTH digest functions are
+# required, because derives?/1 below calls TransitionLog.legacy_event_digest/1
+# unconditionally (logs written before `event_digest` committed to the cited
+# receipt verify under the legacy rule).
 if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
      Code.ensure_loaded?(GgenIgniter.SemanticJira.TransitionLog) and
-     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :event_digest, 1) do
+     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :event_digest, 1) and
+     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :legacy_event_digest, 1) do
   defmodule Xaas.Ultracode.SemanticJiraBridge do
     @moduledoc """
     The seam between the canonical Semantic Jira work graph (`ggen_igniter`,
@@ -115,7 +122,11 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
     @sha ~r/\A[0-9a-f]{40}\z/
     @digest ~r/\Asha256:[0-9a-f]{64}\z/
 
-    @bridge_keys ~w(identity definition_digest snapshot_digest repository base_sha subject)
+    # The echoed bridge map's keys (R6): the ggen ten-key list. The receipt
+    # contract key `snapshot_digest` (what `mapped_receipt/4` emits) and the
+    # descriptor-v1 keys are NOT renamed — only the bridge-map key is
+    # `source_snapshot_digest`.
+    @bridge_keys ~w(identity definition_digest source_snapshot_digest ledger_tail repository base_sha subject evidence_ceiling replay_identity requires)
 
     @outcomes %{
       "alive" => "ALIVE",
@@ -465,7 +476,13 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
       %{
         "work_order_iri" => ctx.prefix <> admitted["identity"],
         "checkpoint_iri" => @checkpoint_prefix <> ctx.tail <> attempt_suffix(ctx.opts[:attempt]),
-        "graph_digest" => v1["graph_digest"],
+        # Fail-closed :snapshot admission binding (SemanticWork.AdmissionBinding):
+        # the graph digest IS the per-order snapshot digest, and the admitted
+        # snapshot is carried + form-declared so every anchor names the same
+        # subject (v1["snapshot_digest"] == admitted["work_order_digest"]).
+        "graph_digest" => v1["snapshot_digest"],
+        "digest_form" => "sjira-digest/2",
+        "admitted_work_order" => admitted,
         "repository_identity" => v1["repository"],
         "execution_repo_alias" => ctx.exec_alias,
         "base_sha" => v1["base_sha"],
@@ -488,7 +505,7 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
       %{
         "identity" => admitted["identity"],
         "definition_digest" => v1["definition_digest"],
-        "snapshot_digest" => v1["snapshot_digest"],
+        "source_snapshot_digest" => v1["snapshot_digest"],
         "graph_digest" => v1["graph_digest"],
         "ledger_tail" => tail,
         "repository" => admitted["repository"],
@@ -501,11 +518,13 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
     end
 
     defp requires(admitted) do
+      # Exactly the snapshot's three lists (AdmissionBinding.bridge_requires_checks/2
+      # law: "exactly the snapshot's three lists, no more"); required_evidence
+      # is carried on the work order itself.
       %{
         "courts" => admitted["required_courts"],
         "acceptance" => admitted["acceptance"],
-        "falsifiers" => admitted["falsifiers"],
-        "evidence" => admitted["required_evidence"]
+        "falsifiers" => admitted["falsifiers"]
       }
     end
 
@@ -719,7 +738,7 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
 
       %{
         "definition_digest" => bridge["definition_digest"],
-        "snapshot_digest" => bridge["snapshot_digest"],
+        "snapshot_digest" => bridge["source_snapshot_digest"],
         "target" => target,
         "candidate_sha" => export["final_head"],
         "evidence" => %{
@@ -948,7 +967,10 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
         {:error, detail} -> refuse({:log_untrusted, detail})
       end
     rescue
-      error in [Jason.DecodeError, File.Error] ->
+      error in [Jason.DecodeError, File.Error, ArgumentError] ->
+        # TransitionLog.read/1 raises ArgumentError "ledger refused: {tag,
+        # detail}" for tampered/undecodable/claim-orphaned logs — a log that
+        # does not verify is a refusal, never a raise through the bridge.
         refuse({:log_untrusted, %{"unreadable" => Exception.message(error)}})
     end
 
