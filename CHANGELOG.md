@@ -4,6 +4,87 @@ Reconstructed 2026-09-26 from `git log v26.9.22..HEAD` (this file did not previo
 exist in the repository). Every entry traces to a witnessed commit or merge; anchors
 supplied without a witnessed commit are marked UNKNOWN.
 
+## [v26.10.2]
+
+- Live SemanticJiraBridge on hex ggen_igniter 26.10.1 (`2517f626`, `7dc90027`): the
+  post-G1 seam is real — mix.exs drops the post-G1 git pin for
+  `{:ggen_igniter, "~> 26.10.1"}` (hex ships public `event_digest/1` +
+  `legacy_event_digest/1`, the snapshot-bound descriptor contract carrying
+  `admitted_work_order`/`digest_form`, 3-key requires, receipts-v2 law); the compile
+  guard requires only the current digest function — `derives?/1` probes the
+  deprecated `legacy_event_digest/1` at run time (`function_exported?/3` +
+  `apply/3`), so pre-v26.10.1 logs still verify inside the shrinking window and
+  refuse typed (`legacy_digest_rule`) after it closes; the echoed bridge map
+  full-aligns to ggen's
+  ten-key list (`snapshot_digest` → `source_snapshot_digest` in the bridge map only —
+  the receipt-contract key is unchanged); `verified_events/1` converts TransitionLog
+  refusals into `{:log_untrusted, _}` instead of raising; 101-test bridge suite green.
+- fleet-R v2 execution keys in RProjection (`a3613404`): receipts now carry
+  `work_order_id` (same resolution as identity.subject), `origin_authority` (mirror of
+  authority), `provider`, and `provider_execution_id` (native run_id, fail-closed to
+  the ext native run_id); `native/court` moved under `provider_ext.xaas`, no legacy
+  fallback; laws V2-1..V2-4 each with a typed refusal and a mutant test; the three
+  committed episode `.r.json` fixtures hand-extended (epochs gone from both fabric
+  DBs — regeneration would falsify the reference; seal chains intact), fleet
+  validator ADMITTED x3 (was REFUSED x3).
+- plan-next (`ff40f495`, `4b848624`): a promote event drives one real
+  `AshA2A.Replan.Loop` over the ash_pplan FOND port. `Xaas.Ultracode.SemanticDrive.PlanNext`
+  is pure across `domain/1`, `plan/2`, and `to_work_order/2`; the `admit/2` seam is
+  the opt-in bounded-consumption step (`SemanticJira.admit_work_order/1` + optional
+  SHACL) — the drive does not call it; the drive's `:plan_next` step stays
+  journal-only (`plan_next.json` + `PolicyCandidateEmitted` OCEL event, emitted never
+  auto-admitted), underdetermined candidates refuse, non-progressable to-standings
+  refuse. `mix xaas.episode --plan-next` is default OFF — committed episodes reproduce
+  bit-identically.
+- crown binds `:snapshot` (`2928abd4`): `@descriptor_binding :graph` → `:snapshot` —
+  the pinned emitter (ggen_igniter e9c7afa) carries `admitted_work_order` +
+  `digest_form` on every descriptor, so XaaS now refuses a descriptor rewritten
+  between emission and materialize (the hole `:graph` left open); ticket-dir nil now
+  raises the named `{:ticket_dir_missing, ...}` error (nil is deliberate under
+  MIX_ENV=test — no config default).
+- semantic-crown CI job (`bd7c0ad9`): weekly `.github/workflows/semantic-crown.yml` —
+  the full crown loop (observe → SHACL admit → frontier → descriptor → Run/Epoch →
+  worker → real fabric court → sealed receipt → ledger transition → dependent
+  eligibility → fresh-OS-process replay) runs to standing ALIVE on real
+  infrastructure, plus the negative control: a claimed-ALIVE vacuous candidate is
+  sealed build_broken, refused by the reconciler, and leaves the work order on the
+  frontier.
+- env-honest drive tests (`eb5928eb`): `@foreign` now mirrors `build_erts/2`'s actual
+  resolution (pin-first, then first ascending install holding `releases/<otp>` +
+  executable `bin/erl` — never newest); cargo-absent skip arms with named reasons
+  added to the two gated module conds — an under-provisioned runner yields a named
+  skip, never a fake red (46 tests: 1 failure → 0).
+- chore(release): ggen_igniter hex floor `~> 26.10.1`; VERSION 26.10.2 (`7dc90027`).
+
+## [Unreleased]
+
+- In-process sequenced drain (`4daf2f98`): `mix xaas.ultracode.drain` runs the
+  `SequencedDrain` Reactor — wave → merge into the canonical checkout → verify →
+  next wave, typed stop on conflict, build break, or test failure — replacing the
+  removed `scripts/ultracode_sequenced_drain.sh` (verify compiles in
+  `MIX_ENV=test`, `f2ebfde6`).
+- OCPM analysis over OCEL 2.0 logs (`c249c00d`): `Xaas.Ocel.Ocpm` +
+  `mix xaas.ocel.ocpm` compute object-type interactions and per-object-type
+  activity frequency over one OCEL 2.0 JSON log (interaction/frequency only — no
+  Petri-net synthesis).
+- SA2A bridge `admit/3` admits optional semantic evidence before transport
+  (`7ea89055`, `3730d761`): `Xaas.Sa2a.SemanticEvidence.admit_optional/1` runs
+  first and only admitted evidence attaches to the wire request as
+  `semantic_evidence` — malformed evidence is a typed refusal, never a transport
+  attempt. Typed consumer-refusal corpus: provenance digest (`bc9b5ed8`),
+  canonicalization (`27f341c7`), contract revision (`a2224dc9`).
+- `Xaas.Fabric` module family (`7f0ac93d`, `eab1920a`): thin facade +
+  `Fabric.Plane` behaviour over five plane adapters (projection, process, law,
+  evidence, actuation) and the CASTLE bridge, `Fabric.Failure` taxonomy, derived
+  standing (`:evidenced`/`:refused`/`:unknown`); `ash_graphlaw`/`ash_affidavit`
+  join as dev/test path deps.
+- Stale-plan gate (`382bb9f7`): `Xaas.Sa2a.Court.admit/2` can pre-check a plan's
+  preimage fence (`admitted_preimage_hash`/`preimage`, fingerprinted via
+  `Xaas.Planning.StalePlanGate.fingerprint/1`) before any port call, refusing
+  `:stale_plan_refusal`; fenceless plans are unaffected (opt-in).
+- `run_suspended` OCEL event (`2a7d80df`, `67f46392`): ultracode OCEL egress
+  projects `Run.suspended_at` as a `run_suspended` event.
+
 ## [v26.9.28] — Integration (branch `claude/serene-wozniak-jwnj94`)
 
 Requirements: `docs/rfc/REQUIREMENTS-v26.9.28.md`.

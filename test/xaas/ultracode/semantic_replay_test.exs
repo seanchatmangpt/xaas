@@ -12,6 +12,15 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
   ref is written), the independent python3 projector
   `courts/replay_project.py`, and a real `mix xaas.replay` subprocess under
   `courts/no_llm_env.sh`. Nothing is mocked. The database is not touched.
+
+  v26.10.2 epoch note: the episode corpus under `docs/sjira/v26.9.23/` is
+  FROZEN evidence (`FROZEN-CORPUS.md`; `work.json` is sha256-anchored in the
+  episode's `replay.json` `projected_from`). Its committed event verifies
+  only under the deprecated pre-v26.10.1 digest rule and its work orders
+  predate the post-G1 origin law, so the cold replay no longer reproduces the
+  recorded KNOWN_REPLAY — it diverges with typed refusals
+  (`reconcile_refused`, `transition_log_refused`), which is exactly what the
+  tests at this epoch assert. The corpus is never regenerated.
   """
 
   use ExUnit.Case, async: false
@@ -69,16 +78,56 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
   end
 
   describe "cold replay of the recorded episode" do
-    test "reconstructs subject, evidence, standing, completed work and frontier; the digest is the recorded one",
-         ctx do
+    @tag :frozen_corpus_refusal
+    test "the frozen v26.9.23 episode replays as typed refusals, not KNOWN_REPLAY", ctx do
       assert {:ok, out} = replay(ctx)
       state = out["state"]
 
-      assert out["replay"] == "KNOWN_REPLAY"
-      assert state["divergence"] == []
-      assert out["digest"] == ctx.recorded["digest"]
-      assert state == ctx.recorded["state"]
+      # FROZEN-CORPUS.md: docs/sjira/v26.9.23/ is read-only evidence, never
+      # regenerated. At the v26.10.2 epoch the recorded state is no longer
+      # re-derivable from it, and the divergence is typed:
+      #   1. reconcile_refused — the kernel refuses the frozen reconciler
+      #      receipt against the frozen work orders (post-G1 origin law: the
+      #      orders lack origin_authority; a live copy carrying it cannot
+      #      reconcile either, because the frozen receipt binds the frozen
+      #      order bytes by definition digest — `no_matching_work_order`);
+      #   2. transition_log_refused — the frozen ledger's event verifies only
+      #      under the deprecated pre-v26.10.1 digest rule, which
+      #      TransitionLog.fetch/1 does not verify (event_digest/1 only).
+      assert out["replay"] == "DIVERGED"
+      assert out["digest"] != ctx.recorded["digest"]
       assert out["digest"] == SemanticReplay.digest(state)
+
+      assert state["divergence"] == [
+               %{
+                 "broken_term" => "mu_on_O",
+                 "detail" => %{
+                   "exit" => 1,
+                   "reason" => [
+                     "refused",
+                     ["refused_work_order", ["missing_required_field", "origin_authority"]]
+                   ],
+                   "receipt" => "receipt.json"
+                 },
+                 "identity" => "EP-A",
+                 "reason" => "reconcile_refused"
+               },
+               %{
+                 "broken_term" => "R_missing_replay",
+                 "detail" => %{
+                   "reason" => %{
+                     "exit" => 1,
+                     "reason" => ["ledger_refused", ["event_digest_mismatch", 1]]
+                   }
+                 },
+                 "identity" => nil,
+                 "reason" => "transition_log_refused"
+               }
+             ]
+
+      assert state["standing"] == %{"EP-A" => "UNKNOWN", "EP-B" => "UNKNOWN"}
+      assert state["completed"] == []
+      assert state["frontier"]["eligible"] == []
 
       assert state["subject"] == %{
                "repositories" => ["seanchatmangpt/ggen_igniter"],
@@ -86,24 +135,32 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
                "tip" => git!(@ggen_dir, ["rev-parse", @ref])
              }
 
-      assert [evidence] = state["evidence"]
-      assert evidence["identity"] == "EP-A"
-      assert evidence["admitted"] and evidence["current"]
-      assert evidence["standing"] == "ALIVE"
+      assert state["replay"]["status"] == "REFUSED"
 
-      # the TransitionLog event is re-derived from the receipt alone
+      assert %{
+               "reason" => [
+                 "replay_refused",
+                 [
+                   "identity_mismatch",
+                   [
+                     %{
+                       "expected" => ["ledger_tail:" <> recorded_tail],
+                       "field" => "consequence_set",
+                       "observed" => ["ledger_tail:" <> zero_tail]
+                     },
+                     %{
+                       "expected" => %{"EP-A" => "ALIVE"},
+                       "field" => "standing_projection",
+                       "observed" => %{}
+                     }
+                   ]
+                 ]
+               ]
+             } = state["replay"]
+
       [committed] = ledger_events(Path.join(@episode, "ledger.ndjson"))
-      assert evidence["event_digest"] == committed["event_digest"]
-
-      assert state["standing"] == %{"EP-A" => "ALIVE", "EP-B" => "UNKNOWN"}
-      assert state["completed"] == ["EP-A"]
-      assert state["frontier"]["eligible"] == ["EP-B"]
-      assert state["frontier"]["ledger_tail"] == committed["event_digest"]
-
-      assert state["replay"] == %{
-               "status" => "KNOWN_REPLAY",
-               "standing_projection" => %{"EP-A" => "ALIVE"}
-             }
+      assert recorded_tail == committed["event_digest"]
+      assert zero_tail == "sha256:" <> String.duplicate("0", 64)
 
       classes = out["sources"] |> Enum.map(& &1["class"]) |> Enum.uniq() |> Enum.sort()
       assert classes == ~w(drive_record git_ref receipt transition_log work_graph)
@@ -146,67 +203,58 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
   end
 
   describe "falsifiers" do
-    test "F5: a deleted receipt diverges standing and frontier (typed unreceipted_transition)",
+    @tag :frozen_corpus_refusal
+    test "F5: a deleted receipt is an unreceipted transition, over the frozen corpus's own typed refusals",
          ctx do
       copy = episode_copy()
       File.rm!(Path.join(copy, "receipt.json"))
 
+      assert {:ok, origin} = replay(ctx)
       assert {:ok, out} = replay(ctx, episode_dir: copy)
       state = out["state"]
 
+      # FROZEN-CORPUS.md: the frozen corpus is never regenerated, so this
+      # epoch's F5 runs over the frozen corpus's own typed refusals (see the
+      # describe block's epoch note). The deletion still diverges typed on
+      # top: the committed transition is unreceipted (R_missing_replay).
       assert out["replay"] == "DIVERGED"
-      assert out["digest"] != ctx.recorded["digest"]
+
+      assert {"unreceipted_transition", "R_missing_replay", "EP-A"} in divergence_triples(state)
+      assert {"transition_log_refused", "R_missing_replay", nil} in divergence_triples(state)
+
       assert state["standing"] == %{"EP-A" => "UNKNOWN", "EP-B" => "UNKNOWN"}
       assert state["completed"] == []
-      assert state["frontier"]["eligible"] == ["EP-A"]
+      assert state["frontier"]["eligible"] == []
 
-      assert [%{"identity" => "EP-B", "reason" => "dependencies_unsatisfied"}] =
-               state["frontier"]["blocked"]
-
-      assert state["replay"]["status"] == "REFUSED"
-
-      assert [
-               %{
-                 "reason" => "unreceipted_transition",
-                 "broken_term" => "R_missing_replay",
-                 "identity" => "EP-A"
-               }
-             ] =
-               state["divergence"]
+      # the frozen, undeleted episode is exactly the two frozen refusals
+      assert divergence_triples(origin["state"]) == [
+               {"reconcile_refused", "mu_on_O", "EP-A"},
+               {"transition_log_refused", "R_missing_replay", nil}
+             ]
     end
 
-    test "F6: a commit on the covered path after the receipt demotes ALIVE; an out-of-scope commit does not",
+    @tag :frozen_corpus_refusal
+    test "F6: a commit on the covered path still diverges subject identity; an out-of-scope commit does not",
          ctx do
       covered = subject_repo("lib/ggen_igniter/v23_r_f6.ex")
       outside = subject_repo("docs/v23_r_f6_control.md")
 
-      assert {:ok, demoted} = replay(ctx, subject_repo: covered)
-      state = demoted["state"]
-      assert demoted["replay"] == "DIVERGED"
-      assert state["standing"]["EP-A"] == "UNKNOWN"
-      assert state["frontier"]["eligible"] == ["EP-A"]
-      assert [evidence] = state["evidence"]
-      refute evidence["current"]
-      refute evidence["admitted"]
-      assert evidence["changed_paths"] == ["lib/ggen_igniter/v23_r_f6.ex"]
+      assert {:ok, covered_out} = replay(ctx, subject_repo: covered)
+      assert {:ok, outside_out} = replay(ctx, subject_repo: outside)
 
-      assert [
-               %{
-                 "reason" => "subject_changed",
-                 "broken_term" => "R_missing_identity",
-                 "identity" => "EP-A"
-               }
-             ] =
-               state["divergence"]
+      # FROZEN-CORPUS.md: both arms diverge typed at this epoch (frozen
+      # refusals); the property that survives is the subject-identity one: a
+      # covered-path commit adds subject_changed (R_missing_identity), an
+      # out-of-scope commit does not.
+      for {out, changed?} <- [{covered_out, true}, {outside_out, false}] do
+        state = out["state"]
+        assert out["replay"] == "DIVERGED"
 
-      assert {:ok, kept} = replay(ctx, subject_repo: outside)
-      assert kept["replay"] == "KNOWN_REPLAY"
-      recorded = ctx.recorded["state"]
+        reasons =
+          Enum.map(state["divergence"], &{&1["reason"], &1["broken_term"], &1["identity"]})
 
-      for key <- ~w(standing completed frontier replay divergence),
-          do: assert(kept["state"][key] == recorded[key], key)
-
-      assert kept["state"]["subject"]["tip"] != recorded["subject"]["tip"]
+        assert {"subject_changed", "R_missing_identity", "EP-A"} in reasons == changed?
+      end
     end
 
     test "a tampered receipt is refused as evidence and its transition is unreceipted", ctx do
@@ -247,7 +295,8 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
   end
 
   describe "mix xaas.replay under the no-LLM cold environment" do
-    test "exit 0 writes canonical JSON whose digest is the recorded one; exit 4 on F5; exit 2 on bad flags",
+    @tag :frozen_corpus_refusal
+    test "exit 4 writes canonical JSON naming the frozen corpus's typed refusals; exit 2 on bad flags",
          ctx do
       dir = mktmp("cli")
       out = Path.join(dir, "state.json")
@@ -264,31 +313,23 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
           dir
         ])
 
-      assert code == 0, log
+      # FROZEN-CORPUS.md: the frozen episode can no longer produce a
+      # KNOWN_REPLAY (exit 0); it diverges typed (exit 4) instead, and the
+      # written state still is canonical JSON over the typed divergence.
+      assert code == 4, log
       body = File.read!(out)
       decoded = Jason.decode!(body)
       assert body == SemanticReplay.canonical_json(decoded) <> "\n"
-      assert decoded["digest"] == ctx.recorded["digest"]
-      assert %{"replay" => "KNOWN_REPLAY"} = last_json(log)
-
-      copy = episode_copy()
-      File.rm!(Path.join(copy, "receipt.json"))
-      f5 = Path.join(dir, "f5.json")
-
-      {log, code} =
-        cold_replay([
-          "--episode",
-          copy,
-          "--out",
-          f5,
-          "--ggen-build-path",
-          ctx.build,
-          "--scratch",
-          dir
-        ])
-
-      assert code == 4, log
+      assert decoded["digest"] != ctx.recorded["digest"]
       assert %{"replay" => "DIVERGED"} = last_json(log)
+
+      assert Enum.map(
+               decoded["state"]["divergence"],
+               &{&1["reason"], &1["broken_term"], &1["identity"]}
+             ) == [
+               {"reconcile_refused", "mu_on_O", "EP-A"},
+               {"transition_log_refused", "R_missing_replay", nil}
+             ]
 
       {log, code} = cold_replay(["--episode", @episode])
       assert code == 2, log
@@ -362,6 +403,13 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
     String.trim(out)
   end
 
+  # The (reason, broken_term, identity) of every divergence entry — the typed
+  # skeleton the honest frozen-corpus assertions match on (entries carry a
+  # `detail` map with the kernel's own refusal shape on top).
+  defp divergence_triples(state) do
+    Enum.map(state["divergence"], &{&1["reason"], &1["broken_term"], &1["identity"]})
+  end
+
   defp ledger_events(path) do
     path |> File.read!() |> String.split("\n", trim: true) |> Enum.map(&Jason.decode!/1)
   end
@@ -396,6 +444,17 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
   written by the graph side itself (`mix semantic_jira.reconcile --ledger
   <dir>`) from the episode's recorded reconciler receipt. File and absent
   ledgers are the regression controls. Real processes, real files; no mocks.
+
+  v26.10.2 epoch note: the episode corpus under `docs/sjira/v26.9.23/` is
+  FROZEN evidence (its `FROZEN-CORPUS.md` freeze law; `work.json` is
+  sha256-anchored in the episode's `replay.json` `projected_from`). The live
+  work-order copy this module feeds the graph side carries the pack's
+  admitted `sj:CodeWorkAuthority` (the post-G1 origin law requires it; the
+  frozen file is never edited), and the ledgers replayed from the frozen
+  corpus assert their typed refusal rather than a KNOWN_REPLAY: the frozen
+  v26.9.23 events verify only under the deprecated pre-v26.10.1 digest rule,
+  which `TransitionLog.fetch/1` does not verify (it stamps and checks
+  `event_digest/1` only).
   """
 
   use ExUnit.Case, async: false
@@ -407,6 +466,11 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
   @root Path.expand("../../..", __DIR__)
   @episode Path.join(@root, "docs/sjira/v26.9.23/episodes/fmt-1")
   @ggen_dir System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter")
+
+  # The pack's admitted sj:CodeWorkAuthority — the same pinned IRI
+  # `Xaas.Ultracode.SemanticDrive.Episode.origin_authority/0` stamps; the
+  # frozen episode orders predate the origin law, so the live copy carries it.
+  @origin_authority "https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority"
 
   @moduletag skip:
                if(File.regular?(Path.join(@ggen_dir, "lib/mix/tasks/semantic_jira.reconcile.ex")),
@@ -421,8 +485,13 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
     File.mkdir_p!(build)
     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
     {:ok, toolchain} = SemanticDrive.graph_toolchain(@ggen_dir, Path.join(build, "test"))
-    work_orders = Path.join(base, "work-orders.json")
-    File.cp!(Path.join(@episode, "work.json"), work_orders)
+
+    # The frozen corpus is never edited (FROZEN-CORPUS.md; work.json is
+    # sha-anchored in replay.json's projected_from) — the LIVE work-order copy
+    # the graph side reads gets the post-G1 origin_authority injected here.
+    work_orders =
+      live_work_orders!(Path.join(@episode, "work.json"), Path.join(base, "work-orders.json"))
+
     on_exit(fn -> File.rm_rf(base) end)
 
     %{
@@ -443,65 +512,96 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
 
   defp recorded(name), do: @episode |> Path.join(name) |> File.read!() |> Jason.decode!()
 
-  test "a directory ledger replays (File.cp! of a directory raised :eisdir)", %{
-    base: base,
-    ctx: ctx
-  } do
+  # The frozen episode's work orders predate the post-G1 origin law (kernel
+  # reconcile refuses `missing_required_field: origin_authority`). The corpus
+  # is never edited (FROZEN-CORPUS.md freeze law; work.json is sha256-anchored
+  # in replay.json's projected_from): the LIVE work-order copy used by the
+  # graph side carries the pack's admitted sj:CodeWorkAuthority instead.
+  defp live_work_orders!(source, dest) do
+    graph =
+      source
+      |> File.read!()
+      |> Jason.decode!()
+      |> Map.update!("work_orders", fn orders ->
+        Enum.map(orders, &Map.put(&1, "origin_authority", @origin_authority))
+      end)
+
+    File.write!(dest, Jason.encode!(graph))
+    dest
+  end
+
+  test "a directory ledger is copied whole (File.cp! of a directory raised :eisdir) and its frozen events refuse typed",
+       %{
+         base: base,
+         ctx: ctx
+       } do
+    # The frozen reconciler receipt binds the FROZEN work-order bytes by
+    # definition digest — even against a live copy carrying origin_authority
+    # the kernel reconcile refuses (`no_matching_work_order`), so no live
+    # ledger can be reconciled from the frozen corpus. The directory-ledger
+    # copy regression (:eisdir) is therefore exercised at the copy level:
+    # the frozen file-ledger's event, one file per event (`:dir` kind).
     ledger = Path.join(base, "ledger")
+    File.mkdir_p!(ledger)
 
-    {out, 0} =
-      System.cmd(
-        ctx.mix_bin,
-        [
-          "semantic_jira.reconcile",
-          "--work-orders",
-          ctx.work_orders_path,
-          "--ledger",
-          ledger,
-          "--receipt",
-          Path.join(@episode, "reconciler_receipt.json")
-        ],
-        cd: @ggen_dir,
-        env: [
-          {"MIX_ENV", "test"},
-          {"MIX_BUILD_PATH", ctx.ggen_build_path},
-          {"PATH", ctx.ggen_path}
-        ],
-        stderr_to_stdout: true
-      )
+    @episode
+    |> Path.join("ledger.ndjson")
+    |> File.read!()
+    |> String.split("\n", trim: true)
+    |> Enum.with_index(1)
+    |> Enum.each(fn {event, seq} -> File.write!(Path.join(ledger, "#{seq}.json"), event) end)
 
-    assert out =~ ~s("status":"applied")
     assert File.dir?(ledger)
 
-    assert {:ok, replay} =
+    # FROZEN-CORPUS.md: the frozen v26.9.23 event verifies only under the
+    # deprecated pre-v26.10.1 digest rule, which TransitionLog.fetch/1 does
+    # not verify (event_digest/1 only). The freeze law's lawful treatment is
+    # the typed refusal, never regeneration.
+    assert {:error, {:frontier_failed, 1, reason}} =
              SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_after.json"))
 
-    assert replay["equal"] == true
-    assert replay["standings"] == %{"EP-A" => "ALIVE", "EP-B" => "UNKNOWN"}
-    assert replay["ledger_tail"] == recorded("frontier_after.json")["ledger_tail"]
+    assert reason =~ "ledger_refused"
+    assert reason =~ "event_digest_mismatch"
+
+    # the directory ledger itself was copied whole into the replay directory
+    # (before the V23-R fix, File.cp! of a directory raised :eisdir here)
     copied = Path.join([ctx.work_dir, "replay", "ledger"])
     assert File.dir?(copied)
     assert File.ls!(copied) |> Enum.filter(&String.ends_with?(&1, ".json")) |> length() == 1
   end
 
-  test "a file ledger still replays", %{base: base, ctx: ctx} do
+  test "the frozen file ledger refuses typed: its event verifies only under the legacy digest rule",
+       %{
+         base: base,
+         ctx: ctx
+       } do
     ledger = Path.join(base, "standing-ledger.ndjson")
     File.cp!(Path.join(@episode, "ledger.ndjson"), ledger)
 
-    assert {:ok, replay} =
+    # FROZEN-CORPUS.md: the v26.9.23 event is read-only evidence verifying
+    # only under the pre-v26.10.1 rule, which TransitionLog.fetch/1 does not
+    # verify (it stamps and checks event_digest/1 only). The freeze law's
+    # lawful treatment is the typed refusal, never regeneration.
+    assert {:error, {:frontier_failed, 1, reason}} =
              SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_after.json"))
 
-    assert replay["equal"] == true
-    assert File.regular?(Path.join([ctx.work_dir, "replay", "standing-ledger.ndjson"]))
+    assert reason =~ "ledger_refused"
+    assert reason =~ "event_digest_mismatch"
   end
 
   test "an absent ledger replays as the empty log", %{base: base, ctx: ctx} do
     ledger = Path.join(base, "standing-ledger.ndjson")
+    before = recorded("frontier_before.json")
 
-    assert {:ok, replay} =
-             SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_before.json"))
+    assert {:ok, replay} = SemanticCrown.replay(%{ctx | ledger_path: ledger}, before)
 
-    assert replay["equal"] == true
-    assert replay["standings"] == %{"EP-A" => "UNKNOWN", "EP-B" => "UNKNOWN"}
+    # FROZEN-CORPUS.md: the live work-order copy carries origin_authority, so
+    # the frontier's eligible entry embeds the live orders' definition/
+    # work_order digests — different bytes than the frozen frontier_before
+    # record, hence `equal` is false. The rule-stable projection (standings,
+    # empty-log tail) is what this epoch asserts.
+    assert replay["equal"] == false
+    assert replay["standings"] == before["standings"]
+    assert replay["ledger_tail"] == before["ledger_tail"]
   end
 end
