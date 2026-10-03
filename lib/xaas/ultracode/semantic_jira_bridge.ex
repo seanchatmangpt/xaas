@@ -1,17 +1,21 @@
 # Compiled only when the resolved ggen_igniter ships the post-G1 seam: a *public*
-# TransitionLog.digest pair (event_digest/1 + legacy_event_digest/1) plus
-# SemanticJira.Shacl. Since the ref-fill, mix.exs pins ggen_igniter to an immutable
-# post-G1 git ref (2cb4519dbb8e3b4be0b6a4c0a72ca1d89c3a1da5) whose TransitionLog
-# defines BOTH functions as public `def`s; path deps are forbidden (Docker build
-# context), and the dep reverts to hex on the next ggen_igniter release. The guard
-# is the fail-closed runtime check on that contract: BOTH digest functions are
-# required, because derives?/1 below calls TransitionLog.legacy_event_digest/1
-# unconditionally (logs written before `event_digest` committed to the cited
-# receipt verify under the legacy rule).
+# TransitionLog `event_digest/1` plus SemanticJira.Shacl. Since the ref-fill,
+# mix.exs pins ggen_igniter to hex "~> 26.10.1", whose TransitionLog defines
+# both digest functions as public `def`s; path deps are forbidden (Docker build
+# context). The guard is the fail-closed runtime check on that contract. The
+# legacy digest rule is a SHRINKING compatibility window, not a second trust
+# root (ggen marks `TransitionLog.legacy_event_digest/1` @deprecated with a
+# v26.11.1 removal milestone — the D1 census of 2026-10-02 found the three
+# committed xaas episode ledgers docs/sjira/v26.9.23/episodes/{fmt-1,me-1,me-2}
+# verify ONLY under it, and every other committed ledger current or dead): the
+# guard no longer requires the legacy export, because derives?/1 below probes
+# its availability at run time (function_exported?/3 + apply/3, so a dep that
+# has dropped the pre-v26.10.1 function compiles warning-free and verifies
+# current-only, and an old-rule log then refuses as typed untrusted instead of
+# crashing at first log read or vanishing from the build).
 if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
      Code.ensure_loaded?(GgenIgniter.SemanticJira.TransitionLog) and
-     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :event_digest, 1) and
-     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :legacy_event_digest, 1) do
+     function_exported?(GgenIgniter.SemanticJira.TransitionLog, :event_digest, 1) do
   defmodule Xaas.Ultracode.SemanticJiraBridge do
     @moduledoc """
     The seam between the canonical Semantic Jira work graph (`ggen_igniter`,
@@ -89,7 +93,9 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
     read through this module first checks that each event's `event_digest`
     re-derives from the event's own content (`TransitionLog.event_digest/1`, which
     commits to the receipt the event cites; logs written before that rule verify
-    under `TransitionLog.legacy_event_digest/1`) and that each work order's
+    under the deprecated `TransitionLog.legacy_event_digest/1` — a shrinking
+    compatibility window probed at run time, removed at ggen v26.11.1) and that
+    each work order's
     standing chain is unbroken. This detects a tampered or hand-written event; it
     cannot detect a forger who can write the directory and recomputes digests. The
     check-then-append admission runs under `Xaas.Ultracode.LogLock`, an OS-level
@@ -977,19 +983,57 @@ if Code.ensure_loaded?(GgenIgniter.SemanticJira.Shacl) and
 
     defp events_derive(events) do
       case Enum.find(events, &(not derives?(&1))) do
-        nil -> :ok
-        %{} = bad -> {:error, %{"seq" => bad["seq"], "event_digest" => bad["event_digest"]}}
-        _not_an_event -> {:error, %{"unreadable" => "not an event"}}
+        nil ->
+          :ok
+
+        %{"event_digest" => digest} = bad when is_binary(digest) ->
+          if legacy_digest?(bad) do
+            {:error,
+             %{
+               "legacy_digest_rule" => true,
+               "remedy" =>
+                 "regenerate the ledger through the current pipeline " <>
+                   "(TransitionLog.append/2, the event_digest rule); the pre-v26.10.1 " <>
+                   "digest window is removed at ggen_igniter v26.11.1",
+               "seq" => bad["seq"],
+               "event_digest" => digest
+             }}
+          else
+            {:error, %{"seq" => bad["seq"], "event_digest" => digest}}
+          end
+
+        _not_an_event ->
+          {:error, %{"unreadable" => "not an event"}}
       end
     end
 
-    # Current rule first; logs written before `event_digest` committed to the cited
-    # receipt verify under the legacy rule.
+    # Current rule first. The legacy arm is a shrinking compatibility window,
+    # not a parallel trust root: it is probed at run time (function_exported?/3
+    # + apply/3, so there is no compile-time binding to the deprecated export
+    # and no undefined-function warning when a future ggen_igniter drops it)
+    # and verifies only while the resolved ggen_igniter still ships it. Once
+    # the export is gone, a log written under the old rule refuses typed
+    # (`legacy_digest_rule`, remedy: regenerate through the current pipeline).
     defp derives?(%{"event_digest" => digest} = event) when is_binary(digest) do
-      digest in [TransitionLog.event_digest(event), TransitionLog.legacy_event_digest(event)]
+      digest == TransitionLog.event_digest(event) or legacy_derive?(event)
     end
 
     defp derives?(_event), do: false
+
+    defp legacy_derive?(event) do
+      function_exported?(TransitionLog, :legacy_event_digest, 1) and
+        apply(TransitionLog, :legacy_event_digest, [event]) == event["event_digest"]
+    end
+
+    # A refusing event whose `event_digest` recomputes ONLY under the
+    # pre-v26.10.1 rule — recomputed locally from `SemanticJira.digest/1` so
+    # the classification holds even after the deprecated export is dropped
+    # from the dep: a log written under the old rule, not a tampered one.
+    defp legacy_digest?(%{"event_digest" => digest} = event) when is_binary(digest) do
+      digest == SemanticJira.digest(Map.drop(event, ["seq", "event_digest"]))
+    end
+
+    defp legacy_digest?(_event), do: false
 
     defp events_chain(events) do
       events
