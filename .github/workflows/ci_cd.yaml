@@ -44,7 +44,10 @@ env:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    # ubuntu-24.04, not ubuntu-latest: identical on GitHub-hosted runners today, and
+    # act (local actuation) hardcodes ImageOS=ubuntu20 for the ubuntu-latest label,
+    # which sends erlef/setup-beam to a discontinued OTP build channel (20.04).
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     name: Exact-head test court
     env:
@@ -69,6 +72,10 @@ jobs:
         with:
           ref: ${{ env.SUBJECT_SHA }}
           persist-credentials: false
+          # Fresh runners make this a no-op; under act the workspace is the live
+          # canonical checkout, and the default clean would `git clean -ffdx`
+          # every untracked artifact (deps/, _build/) between runs.
+          clean: false
 
       - name: Assert exact subject identity
         shell: bash
@@ -80,6 +87,46 @@ jobs:
             echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
             exit 2
           fi
+
+      # The test env activates the dev/test-only path deps (../ash_graphlaw,
+      # ../ash_surface, ../ash_affidavit; see mix.exs). A fresh runner has no
+      # ../ siblings, so the court could never admit a subject: GitHub run
+      # 37073966291 failed here exactly like the local act run. Pin the
+      # siblings, check them out into the workspace, and link them one level
+      # up (a runner-local path, never persisted).
+      - name: Checkout path-dependency siblings
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ash_graphlaw
+          ref: 03dbb36ac28b3160a1c378c3f31b6624b5f6bc05
+          path: .ci-siblings/ash_graphlaw
+          persist-credentials: false
+
+      - name: Checkout ash_surface (path dep)
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ash_surface
+          ref: 5d3e69524410054fae2ee7c45fe5e50b0e065904
+          path: .ci-siblings/ash_surface
+          persist-credentials: false
+
+      - name: Checkout ash_affidavit (path dep)
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ash_affidavit
+          ref: eda98d3867a35aeccd45eb17ce0204c59c2d0b4d
+          token: ${{ secrets.GH_PAT }}
+          path: .ci-siblings/ash_affidavit
+          persist-credentials: false
+
+      - name: Link path-dependency siblings
+        shell: bash
+        run: |
+          set -euo pipefail
+          for s in ash_graphlaw ash_surface ash_affidavit; do
+            ln -s "$GITHUB_WORKSPACE/.ci-siblings/$s" "../$s"
+          done
+          ls -la ..
 
       - name: Toolchain, locked deps, dependency cache
         id: beam
