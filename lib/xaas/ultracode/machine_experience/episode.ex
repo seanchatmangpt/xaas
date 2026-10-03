@@ -837,8 +837,27 @@ defmodule Xaas.Ultracode.MachineExperience.Episode do
           "route #{typed["reason"]} of order #{ctx.row["identity"]} at subject #{ctx.row["base_sha"]} (route.json)",
         "reason" => typed["reason"]
       },
-      "unknown" => typed,
-      "steps" => ctx.steps
+      # fleet-R v2 execution provenance (ALOOP execution fields): the
+      # origin authority is the router's own routing authority (the same
+      # grant/ceiling the receipt carries under `authority`), the provider
+      # is this machine-experience runner, and the execution id is the
+      # episode name — the same identity the OCEL event chain is keyed by.
+      "work_order_id" => ctx.row["identity"],
+      "origin_authority" => %{
+        "grant" => grant,
+        "actor" => "xaas-machine-experience-router",
+        "ceiling" => ctx.row["authority_ceiling"] || "CONSTRUCT"
+      },
+      "provider" => %{"name" => "xaas-machine-experience"},
+      "provider_execution_id" => ctx.name,
+      # The episode's own diagnostics ride the receipt only through the
+      # validator's namespaced extension channel: un-namespaced top-level
+      # keys are REFUSED (unattributed extension data), so the typed UNKNOWN
+      # and the step list live under provider_ext.<provider>.
+      "provider_ext.xaas-machine-experience" => %{
+        "unknown" => typed,
+        "steps" => ctx.steps
+      }
     }
 
     write_json(path, receipt)
