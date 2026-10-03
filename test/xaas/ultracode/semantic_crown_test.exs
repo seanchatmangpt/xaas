@@ -31,7 +31,14 @@ defmodule Xaas.Ultracode.SemanticCrownTest do
   @bundle Path.expand(
             "docs/ultracode/wave-v26.9.17-receipts/aps-autonomic-dod/aps-autonomic-3e46cf.bundle"
           )
-  @provider "zcode"
+  # The provider the materialized Run carries. The graph side
+  # (`mix semantic_jira.descriptor`, ggen_igniter Descriptor `@default_provider`)
+  # binds "recipe" -- the deterministic XaaS RecipeWorker -- whenever `--provider`
+  # is absent, and `SemanticCrown.execute/6` never passes `--provider`, so the
+  # claimed provider MUST match the descriptor's, or `Lease.claim_next/3`'s
+  # `run.provider == ^provider` filter (lease.ex `select_and_bind/5`) finds no
+  # candidate and the claim is the typed `{:error, :no_ready_work}`.
+  @provider "recipe"
   @prefix "urn:semantic-jira:work-order:"
 
   @moduletag skip:
@@ -114,6 +121,17 @@ defmodule Xaas.Ultracode.SemanticCrownTest do
              SemanticCrown.run(
                ggen_igniter_dir: @ggen_dir,
                work_dir: work_dir,
+               # The negative control's claim (`SemanticCrown.close_bad_candidate/4`)
+               # claims `ctx.provider`, which must match the descriptor-materialized
+               # Run's provider or the control dies on the same :no_ready_work.
+               provider: @provider,
+               # Pin the graph side's MIX_BUILD_PATH: the lane's
+               # `MIX_BUILD_ROOT=_build-a8` would otherwise be inherited by the
+               # `mix semantic_jira.*` subprocesses, which would then build a
+               # fresh `_build-a8` inside the ggen_igniter checkout (and hit its
+               # dep-convergence conflict) instead of using the compiled
+               # `_build/test` every other graph-side consumer uses.
+               ggen_build_path: Path.join(@ggen_dir, "_build/test"),
                worker: scripted(tests),
                controls: %{transport: :local},
                max_attempts: 1
@@ -143,7 +161,34 @@ defmodule Xaas.Ultracode.SemanticCrownTest do
     assert [%{"receipt_digest" => dep_digest, "required_standing" => "ALIVE"}] =
              b_descriptor["dependencies"]
 
-    assert dep_digest == a["receipt_digest"]
+    # The dependency edge names the receipt the GRAPH SIDE recorded for A: the
+    # ledger event's `receipt_digest` is `SemanticJira.digest/1` over the mapped
+    # reconciler receipt (ggen_igniter Reconciler.reconcile/4), not the XaaS
+    # export's own self-digest -- exactly the identity the in-process bridge
+    # crown asserts (`edge["receipt_digest"] == event["receipt_digest"]`).
+    ledger_event_digest =
+      work_dir
+      |> Path.join("standing-ledger.ndjson")
+      |> File.read!()
+      |> String.split("\n", trim: true)
+      |> Enum.map(&Jason.decode!/1)
+      |> Enum.filter(&(&1["identity"] == "SJ-CROWN-A" and &1["to"] == "ALIVE"))
+      |> List.last()
+      |> Map.fetch!("receipt_digest")
+
+    assert dep_digest == ledger_event_digest
+
+    # ... and the XaaS export's self-digest crossed the bridge intact: the
+    # mapped reconciler receipt carries it verbatim (it is what the graph side
+    # `digest_ok/1`-verified at map time). Together: the dependent's dependency
+    # names A's actual receipt, under each layer's own digest law.
+    a_reconciler_receipt =
+      work_dir
+      |> Path.join("SJ-CROWN-A-1-0/reconciler-receipt.json")
+      |> File.read!()
+      |> Jason.decode!()
+
+    assert a_reconciler_receipt["receipt_digest"] == a["receipt_digest"]
 
     # final projected state, from receipts only
     assert report["final_standings"] == %{"SJ-CROWN-A" => "ALIVE", "SJ-CROWN-B" => "ALIVE"}
@@ -181,8 +226,11 @@ defmodule Xaas.Ultracode.SemanticCrownTest do
       identity = String.replace_prefix(run.work_order_iri, @prefix, "")
       {path, content} = Map.fetch!(tests, identity)
 
+      # Claim the provider the descriptor actually materialized (the Run row is
+      # already in hand above) -- never a hardcoded assumption about what the
+      # graph side bound.
       {:ok, claimed, token, _run} =
-        Lease.claim_next(@provider, "crown-worker-#{identity}", epoch_id: epoch.id)
+        Lease.claim_next(run.provider, "crown-worker-#{identity}", epoch_id: epoch.id)
 
       worktree = claimed.worktree
       file = Path.join(worktree, path)
