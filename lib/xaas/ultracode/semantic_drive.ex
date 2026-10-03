@@ -78,11 +78,28 @@ defmodule Xaas.Ultracode.SemanticDrive do
   the tuple's capability, and records the route on `CapabilityResolved`: a
   `machine_experience` route relates the event to its `MachineExperience`
   object by IRI, an `exploration` route to the candidate's proposer).
+
+  Epistemic horizon (loops-of-loops spec L4): `:k_max` (default nil --
+  unbounded, today's behavior) bounds the per-order CONSECUTIVE
+  non-advancing cycles; the counter starts at `:non_advancing` (default 0,
+  the caller's count from the frontier projections of prior runs) and each
+  run that ends with the order NOT advanced (still eligible / standing not
+  ALIVE) is one more non-advancing cycle. When the count exceeds `:k_max`
+  the drive HALTS the order's loop: it mints a
+  `Xaas.Ultracode.ConvergenceReceipt`, records the OCEL `ConvergenceFailed`
+  event (a declared extension class), writes `convergence-failed.json`
+  through the artifact channel (a refusal that observed something writes
+  its observations next to `refused.json`), trips the `Xaas.Ultracode.Andon`
+  cord and returns the typed refusal
+  `BLOCKED:epistemic_horizon_exceeded`. NOT a supervisor trip: the drive
+  process stops the order's loop; the supervision tree is untouched (see
+  `Xaas.Ultracode.Andon`'s scoping note).
   """
 
   alias Xaas.Receipt.RProjection
   alias Xaas.Sa2a.Route
-  alias Xaas.Ultracode.{Epoch, Receipt, RecipeWorker, Run, SemanticReceipt, SemanticWork}
+  alias Xaas.Ultracode.Andon
+  alias Xaas.Ultracode.{ConvergenceReceipt, Epoch, Receipt, RecipeWorker, Run, SemanticReceipt, SemanticWork}
   alias Xaas.Ultracode.{NoLlmPolicy, Verifier, Worktrees}
   alias Xaas.Ultracode.SemanticDrive.Ocel
   alias Xaas.Ultracode.SemanticDrive.PlanNext
@@ -734,6 +751,8 @@ defmodule Xaas.Ultracode.SemanticDrive do
       pin_ref: Keyword.get(opts, :pin_ref),
       route: Keyword.get(opts, :route),
       plan_next: Keyword.get(opts, :plan_next, false),
+      k_max: Keyword.get(opts, :k_max),
+      non_advancing: Keyword.get(opts, :non_advancing, 0),
       sa2a_script:
         Keyword.get(opts, :sa2a_script) ||
           Path.join(File.cwd!(), "scripts/sa2a_route_task.exs"),
@@ -1586,18 +1605,19 @@ defmodule Xaas.Ultracode.SemanticDrive do
 
       cond do
         ctx.order_id in after_eligible or standing != "ALIVE" ->
-          {:refused,
-           typed(
-             "REFUSED(frontier_not_closed)",
-             "frontier_not_closed",
-             "R_not_fed_back",
-             "frontier",
-             %{
-               "order" => ctx.order_id,
-               "standing" => standing,
-               "eligible" => after_eligible
-             }
-           ), ctx}
+          horizon_halts?(ctx, standing, after_eligible) ||
+            {:refused,
+             typed(
+               "REFUSED(frontier_not_closed)",
+               "frontier_not_closed",
+               "R_not_fed_back",
+               "frontier",
+               %{
+                 "order" => ctx.order_id,
+                 "standing" => standing,
+                 "eligible" => after_eligible
+               }
+             ), ctx}
 
         true ->
           relationships =
@@ -1697,6 +1717,63 @@ defmodule Xaas.Ultracode.SemanticDrive do
       "base_sha" => ctx.order["base_sha"],
       "repository" => ctx.order["repository"]
     }
+  end
+
+  # The epistemic-horizon halt (L4): a non-advancing run whose consecutive
+  # non-advancing cycle count exceeds :k_max stops the order's loop with a
+  # minted FAILED_CONVERGENCE receipt, the OCEL ConvergenceFailed event
+  # (rendered into the ocel.json court form), the convergence-failed.json
+  # artifact and one Andon cord trip. nil = no halt (no horizon set, or not
+  # yet exhausted) and the ordinary frontier_not_closed refusal applies.
+  defp horizon_halts?(%{k_max: nil}, _standing, _after_eligible), do: nil
+
+  defp horizon_halts?(ctx, standing, after_eligible) do
+    consecutive = ctx.non_advancing + 1
+
+    if consecutive > ctx.k_max do
+      receipt =
+        ConvergenceReceipt.mint(%{
+          identity: ctx.order_id,
+          k_max: ctx.k_max,
+          attempts: [
+            %{
+              "cycle" => consecutive,
+              "non_advancing" => true,
+              "standing" => standing,
+              "still_eligible" => ctx.order_id in after_eligible
+            }
+          ],
+          source: "semantic_drive"
+        })
+
+      event = ConvergenceReceipt.ocel_event(receipt)
+
+      :ok =
+        Andon.trip("drive:" <> ctx.order_id, %{
+          "reason" => ConvergenceReceipt.standing(),
+          "receipt_digest" => receipt["horizon_witness"]
+        })
+
+      court = Ocel.court_form({[event], %{}}, Ocel.event_classes() ++ ["ConvergenceFailed"])
+
+      refusal =
+        typed(ConvergenceReceipt.standing(), "epistemic_horizon_exceeded", "mu_on_O", "frontier", %{
+          "order" => ctx.order_id,
+          "cycle" => consecutive,
+          "standing" => standing,
+          "still_eligible" => ctx.order_id in after_eligible,
+          "receipt" => receipt,
+          "ocel_event" => event.type
+        })
+
+      {:refused, refusal,
+       ctx
+       |> Map.put(:events, ctx.events ++ [event])
+       |> artifact("ocel.json", court)
+       |> artifact("convergence-failed.json", receipt)}
+    else
+      nil
+    end
   end
 
   # -- actuation outcome ------------------------------------------------------
@@ -2073,6 +2150,14 @@ defmodule Xaas.Ultracode.SemanticDrive do
 
   defp conclude({:refused, typed, ctx}) do
     File.mkdir_p!(ctx.out_dir)
+
+    # A refusal that OBSERVED something writes its observations (today: the
+    # L4 convergence halt records ocel.json + convergence-failed.json before
+    # refusing). Ordinary refusals record no artifacts, so their on-disk
+    # contract is unchanged: refused.json only.
+    Enum.each(ctx.artifacts, fn {name, value} ->
+      File.write!(Path.join(ctx.out_dir, name), Jason.encode!(value, pretty: true) <> "\n")
+    end)
 
     refusal = %{
       "schema" => @drive_schema,

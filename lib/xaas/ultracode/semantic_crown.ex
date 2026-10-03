@@ -31,10 +31,19 @@ defmodule Xaas.Ultracode.SemanticCrown do
   `:work_dir`, `:mix_bin`, `:ggen_timeout_s`, `:ggen_build_path` (a private
   `MIX_BUILD_PATH` for the graph side), `:ggen_path` (the graph side's
   `PATH`), `:worker` (2-arity, same protocol as `Autonomic`), `:max_attempts`,
+  `:k_max` (the epistemic horizon, default 2 = today's cap: when the
+  per-identity attempt budget exhausts -- attempt > max_attempts, or past
+  `:k_max` when set lower -- the loop STOPS with a minted
+  `Xaas.Ultracode.ConvergenceReceipt` (`BLOCKED:epistemic_horizon_exceeded`,
+  declared as the OCEL `ConvergenceFailed` extension class, one `Andon`
+  cord trip) instead of the old silent `{:blocked, %{"status" => "blocked"}}`;
+  the loop is stopped, not the supervisor),
   `:rate_retries`, `:rate_backoff_ms`, `:controls` (`%{transport: :local}` or
   `%{transport: :http, endpoint: url, token: token}`), `:project_root`.
   """
 
+  alias Xaas.Ultracode.Andon
+  alias Xaas.Ultracode.ConvergenceReceipt
   alias Xaas.Ultracode.{Autonomic, Epoch, Lease, Receipt, SemanticReceipt, SemanticWork}
   alias Xaas.Ultracode.SemanticReceipt.ApsDod
   alias Xaas.Ultracode.Worktrees
@@ -153,6 +162,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
             suite: Keyword.get(opts, :suite, "aps-dod"),
             capacity: 1,
             max_attempts: Keyword.get(opts, :max_attempts, 2),
+            k_max: Keyword.get(opts, :k_max, 2),
             rate_retries: Keyword.get(opts, :rate_retries, 3),
             rate_backoff_ms: Keyword.get(opts, :rate_backoff_ms, 60_000),
             base_sha: opts[:base_sha],
@@ -372,10 +382,27 @@ defmodule Xaas.Ultracode.SemanticCrown do
     end
   end
 
+  # Horizon exhaustion (L4): the loop stops with a minted FAILED_CONVERGENCE
+  # receipt, one Andon cord trip and a ledger observation -- never a bare
+  # blocked map again. NOT a supervisor trip: the process returns, the tree
+  # is untouched (see Xaas.Ultracode.Andon's scoping note).
   defp execute(ctx, _seeded, identity, attempt, history, _rate_used)
-       when attempt > ctx.max_attempts do
-    log(ctx, :blocked, %{identity: identity, history: history})
-    {:blocked, %{"identity" => identity, "status" => "blocked", "history" => history}}
+       when attempt > ctx.max_attempts or attempt > ctx.k_max do
+    receipt =
+      ConvergenceReceipt.mint(%{
+        identity: identity,
+        k_max: min(ctx.max_attempts, ctx.k_max),
+        attempts: Enum.map(history, &%{"note" => &1}),
+        source: "semantic_crown"
+      })
+
+    Andon.trip("crown:" <> identity, %{
+      "reason" => ConvergenceReceipt.standing(),
+      "receipt_digest" => receipt["horizon_witness"]
+    })
+
+    log(ctx, :convergence_failed, receipt)
+    {:blocked, receipt}
   end
 
   defp execute(ctx, seeded, identity, attempt, history, rate_used) do
@@ -793,12 +820,20 @@ defmodule Xaas.Ultracode.SemanticCrown do
 
   # -- report -----------------------------------------------------------------------
 
+  # The FAILED_CONVERGENCE receipt of the horizon the run hit, if any (the
+  # minted map, exactly as it rides the blocked cycle).
+  defp convergence_receipt(cycles) do
+    Enum.find(cycles, &(&1["receipt_class"] == ConvergenceReceipt.receipt_class()))
+  end
+
   defp report(ctx, seeded, cycles, halted, live, replay, controls) do
     done = Enum.filter(cycles, &(&1["status"] == "done"))
 
     standing =
       cond do
-        halted != nil or Enum.any?(cycles, &(&1["status"] == "blocked")) -> "PARTIAL_ALIVE"
+        halted != nil or Enum.any?(cycles, &(&1["status"] == "blocked")) or
+            Enum.any?(cycles, &(&1["receipt_class"] == ConvergenceReceipt.receipt_class())) ->
+          "PARTIAL_ALIVE"
         length(done) != 2 -> "PARTIAL_ALIVE"
         not replay["equal"] -> "BUILD_BROKEN"
         controls && not controls["pass"] -> "BUILD_BROKEN"
@@ -813,6 +848,7 @@ defmodule Xaas.Ultracode.SemanticCrown do
       "work_dir" => ctx.work_dir,
       "shacl" => seeded.shacl,
       "cycles" => cycles,
+      "convergence_receipt" => convergence_receipt(cycles),
       "final_standings" => live["standings"],
       "final_eligible" => Enum.map(live["eligible"], & &1["identity"]),
       "ledger_tail" => live["ledger_tail"],

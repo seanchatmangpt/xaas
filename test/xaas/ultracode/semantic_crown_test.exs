@@ -218,6 +218,65 @@ defmodule Xaas.Ultracode.SemanticCrownTest do
     assert "SJ-CROWN-A" in control["still_eligible"]
   end
 
+  # L4 (loops-of-loops spec): a synthetic never-converging order stops at
+  # exactly the epistemic horizon with ONE minted FAILED_CONVERGENCE receipt.
+  # The negative control is the happy-path test above: the same crown, the
+  # same fixtures, a converging worker -- unaffected (no receipt, ALIVE).
+  # Andon is started here so the enabled path of the cord is witnessed on
+  # the real trip; the disabled path is falsified in
+  # convergence_receipt_test.exs (no Andon -> :ok no-op, tripped? false).
+  test "a never-converging order exhausts to exactly one FAILED_CONVERGENCE receipt at k_max, one Andon trip",
+       %{base: base} do
+    start_supervised!(Xaas.Ultracode.Andon)
+
+    assert {:ok, report} =
+             SemanticCrown.run(
+               ggen_igniter_dir: @ggen_dir,
+               work_dir: Path.join(base, "crown-horizon"),
+               provider: @provider,
+               ggen_build_path: Path.join(@ggen_dir, "_build/test"),
+               # The synthetic never-converging worker: it manufactures the
+               # real epoch (descriptor -> materialize -> lease), then walks
+               # away -- every attempt fails to close, the budget exhausts.
+               worker: fn _epoch, _ctx -> :no_such_recipe end,
+               max_attempts: 1,
+               k_max: 1
+             )
+
+    receipts =
+      Enum.filter(report["cycles"], &(&1["receipt_class"] == "FAILED_CONVERGENCE"))
+
+    assert length(receipts) == 1
+    receipt = List.first(receipts)
+
+    assert %{
+             "identity" => "SJ-CROWN-A",
+             "k_max" => 1,
+             "standing" => "BLOCKED:epistemic_horizon_exceeded"
+           } = receipt
+
+    assert [%{"note" => note}] = receipt["attempts"]
+    assert note =~ "attempt 1"
+    assert is_binary(receipt["horizon_witness"]) and receipt["horizon_witness"] != ""
+    assert Xaas.Ultracode.ConvergenceReceipt.valid?(receipt)
+
+    # the report carries the receipt; the run is honestly PARTIAL_ALIVE
+    assert report["convergence_receipt"] == receipt
+    assert report["standing"] == "PARTIAL_ALIVE"
+
+    # one Andon cord trip, with the receipt's own digest
+    assert Xaas.Ultracode.Andon.tripped?("crown:SJ-CROWN-A")
+
+    assert {:ok, trip} = Xaas.Ultracode.Andon.trip_record("crown:SJ-CROWN-A")
+    assert trip.reason == "BLOCKED:epistemic_horizon_exceeded"
+    assert trip.receipt_digest == receipt["horizon_witness"]
+
+    # the ledger carries the observation
+    ledger = report["work_dir"] |> Path.join("crown-events.ndjson") |> File.read!()
+    assert ledger =~ "convergence_failed"
+    assert ledger =~ "BLOCKED:epistemic_horizon_exceeded"
+  end
+
   # -- scripted protocol worker --------------------------------------------------------
 
   defp scripted(tests) do

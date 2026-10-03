@@ -35,7 +35,7 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
   # promoted standing transition (emitted, never auto-admitted). A drive
   # renders them only when its caller declares them (`court_form/2`).
   @extension_classes ~w(RouteDecided ExplorationStarted ExplorationCompleted
-                        PolicyCandidateEmitted)
+                        PolicyCandidateEmitted ConvergenceFailed)
   @epoch_time "1970-01-01T00:00:00Z"
 
   @typedoc "One observed event."
@@ -60,9 +60,11 @@ defmodule Xaas.Ultracode.SemanticDrive.Ocel do
   @doc """
   The event classes beyond the ARD section 13 minimum (ARD section 13 names
   a minimum set): `RouteDecided`, `ExplorationStarted`,
-  `ExplorationCompleted` (the MachineExperience episodes, lane V23-M) and
+  `ExplorationCompleted` (the MachineExperience episodes, lane V23-M),
   `PolicyCandidateEmitted` (the plan-next journaled FOND PolicyCandidate,
-  lane X3).
+  lane X3) and `ConvergenceFailed` (the L4 epistemic-horizon exhaustion,
+  carrying a `Xaas.Ultracode.ConvergenceReceipt`'s k_max / horizon_witness /
+  standing).
   """
   @spec extension_classes() :: [String.t()]
   def extension_classes, do: @extension_classes

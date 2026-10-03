@@ -134,6 +134,20 @@ defmodule Xaas.Application do
         # {Xaas.Worker, arg}
       ] ++ sa2a_bridge_children
 
+    # Loops-of-loops L4: the Andon cord (epistemic-horizon trip record),
+    # OPT-IN via `config :xaas, :andon_enabled, true`. Default boots are
+    # unchanged: without the flag no Andon process exists, `Andon.trip/2` is
+    # a no-op and `Andon.tripped?/1` reads false. The AndonSupervisor is a
+    # sibling of the runtime supervisors in this tree (the runtime
+    # supervisor itself is started by an embedding caller, not here), so the
+    # cord is owned by the application tree that runs the loops.
+    andon_children =
+      if Application.get_env(:xaas, :andon_enabled, false),
+        do: [Xaas.Ultracode.AndonSupervisor],
+        else: []
+
+    children = children ++ andon_children
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Xaas.Supervisor]
