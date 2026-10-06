@@ -24,7 +24,7 @@ defmodule Xaas.AshTypescriptManifest do
   @manifest_env_key :ash_domains
   @manifest_otp_app :xaas
 
-  @original_ash_domains Application.get_env(@manifest_otp_app, @manifest_env_key, [])
+  @original_ash_domains Application.compile_env(@manifest_otp_app, @manifest_env_key, [])
 
   {resolved_ash_domains, skipped_ash_domains} =
     Enum.reduce(@original_ash_domains, {[], []}, fn
