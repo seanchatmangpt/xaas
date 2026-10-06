@@ -77,10 +77,11 @@ test("(b) searching \"aaif\" narrows to the matching real pack", async ({
     'matching “aaif”',
   );
 
-  // The single remaining row is the real AAIF pack.
-  const name = (
-    await page.locator("#pack-table [data-pack-name]").innerText()
-  ).trim();
+  // The single remaining row is the real AAIF pack. The name cell also
+  // contains the description div, so read the data-pack-name attribute.
+  const name = await page
+    .locator("#pack-table [data-pack-name]")
+    .getAttribute("data-pack-name");
   expect(name).toBe("aaif-vanilla-pack");
 });
 
@@ -94,9 +95,10 @@ test("(c) rendered pack count equals the ingested catalog pack count", async ({
   expect(rendered).toBeGreaterThan(0);
 
   // The catalog summary is the LiveView's own count over the same read path.
-  await expect(page.locator("#catalog-summary")).toHaveText(
-    new RegExp(`^${rendered} packs? in the catalog$`),
-  );
+  const summary = (await page.locator("#catalog-summary").innerText())
+    .replace(/\s+/g, " ")
+    .trim();
+  expect(summary).toBe(`${rendered} packs in the catalog`);
 
   // And that count matches the ingested source catalog exactly.
   const expected = Number(process.env.PW3_EXPECTED_PACK_COUNT ?? "0");
@@ -118,12 +120,15 @@ test("(d) pack detail fields (name / version / digest) render", async ({
   await expect.poll(async () => await rows.count(), { timeout: 10_000 }).toBe(1);
 
   const detail = rows.first();
-  const name = (await detail.locator("[data-pack-name]").innerText()).trim();
+  const name = await detail
+    .locator("[data-pack-name]")
+    .getAttribute("data-pack-name");
   const version = (await detail.locator("td").nth(1).innerText()).trim();
   const digest = (await detail.locator("td").nth(4).innerText()).trim();
 
   expect(name).toBe("aaif-vanilla-pack");
   expect(version).toBe("0.3.0");
-  expect(digest).toMatch(/^sha256:[0-9a-f]{16}/); // truncated to 16 hex chars + ellipsis by the LiveView
+  // truncate_digest/1 keeps the first 16 chars of the digest + ellipsis.
+  expect(digest).toMatch(/^sha256:[0-9a-f]+…$/);
   await expect(page.locator("#catalog-summary")).toContainText("1 pack matching");
 });
