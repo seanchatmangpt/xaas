@@ -26,6 +26,7 @@ config :xaas,
     Xaas.Ocel,
     Xaas.Operations,
     Xaas.Platform,
+    Xaas.Security,
     Xaas.TemporalMemory,
     Xaas.Ultracode,
     Xaas.Witness
