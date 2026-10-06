@@ -27,7 +27,6 @@ defmodule XaasWeb.MarketplaceCatalogLive do
   actions), but the surface is not wired at runtime because `ash_surface`
   is pinned `only: [:dev, :test]` in mix.exs, so the LiveView would not
   compile under `MIX_ENV=prod`; promoting requires either
-  LiveView would not compile under `MIX_ENV=prod`; promoting requires either
   publishing `ash_surface` (or re-pointing the path dep to all envs) plus a
   build-time generation step (a mix task that runs the compiler + projector
   and writes the table/form contract the LiveView then consumes). Until that
