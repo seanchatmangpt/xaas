@@ -112,7 +112,7 @@ defmodule Xaas.MixProject do
       # Fabric planes (law, evidence/process). Test/dev only: path deps would break the
       # Docker prod build (see the ex4pm note below); fabric adapters call them via apply/3.
       {:ash_graphlaw, path: "../ash_graphlaw", only: [:dev, :test]},
-      {:ash_surface, path: "../ash_surface", only: [:dev, :test]},
+      {:ash_surface, path: "../ash_surface"},
       {:ash_affidavit, path: "../ash_affidavit", only: [:dev, :test]},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
@@ -141,8 +141,11 @@ defmodule Xaas.MixProject do
       # ash_admin, commit 062f3d0) -- re-attempting for real, Ash-maximal
       # per explicit user direction (prefer real Ash-ecosystem libraries
       # over hand-rolled/non-Ash equivalents, e.g. Petal's plain
-      # Ecto-based auth-adjacent components).
-      {:petal_components, "~> 2.0"},
+      # Ecto-based auth-adjacent components). 2.9.3 -> 4.17.0 (2026-10-04):
+      # upstream v3 moved to Tailwind 4 and v4 removed Alpine.js and ships
+      # JS hooks -- app.css/@config wiring and app.js hook registration
+      # follow the upstream UPGRADE_GUIDE.
+      {:petal_components, "~> 4.0"},
       # Security floor: 2.17.4 fixes EEF-CVE-2026-86533 (CRITICAL, revoked session
       # accepted) and EEF-CVE-2026-81632 (HIGH) reported by `mix deps.get`.
       {:ash_authentication_phoenix, "~> 2.17 and >= 2.17.4"},
@@ -192,7 +195,7 @@ defmodule Xaas.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.3"},
-      {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:prom_ex, "~> 1.9.0"},
@@ -247,13 +250,25 @@ defmodule Xaas.MixProject do
       # Immutable ref = origin/main at b9da1ad (26.9.8 hardening + SA2A provider; includes PR #7 strong-cyclic synthesis).
       {:ash_pplan,
        git: "https://github.com/seanchatmangpt/ash_pplan.git",
-       ref: "b9da1ad7590d70afac5eace3bd7ba1a644f7249f"}
+       ref: "b9da1ad7590d70afac5eace3bd7ba1a644f7249f"},
+      # MarketplacePplanExplorerLive parses priv/gcp/marketplace_lifecycle.ttl
+      # (p-plan/prov workflow ontology) with RDF.Turtle and queries it with
+      # SPARQL.ex. Both were already resolved transitively via ggen_igniter
+      # (rdf 3.0.1 / sparql 0.3.12 in mix.lock); declared directly so the
+      # LiveView compiles against a stable API contract.
+      {:rdf, "~> 3.0"},
+      {:sparql, "~> 0.3"}
     ]
   end
 
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      # Regenerate the ash_surface projection into priv/ash_surface/ (served
+      # statically at /ash_surface by XaasWeb.Endpoint). Re-runnable at any
+      # time, including under MIX_ENV=prod now that the ash_surface path dep
+      # is available in all environments.
+      "ash_surface": ["xaas.ash_surface"],
       "chicago.render": ["xaas.chicago.render"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],

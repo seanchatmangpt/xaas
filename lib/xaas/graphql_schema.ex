@@ -2,7 +2,7 @@ defmodule Xaas.GraphqlSchema do
   use Absinthe.Schema
 
   use AshGraphql,
-    domains: [Xaas.Operations, Xaas.Library]
+    domains: [Xaas.Operations, Xaas.Library, Xaas.Marketplace]
 
   import_types(Absinthe.Plug.Types)
 
