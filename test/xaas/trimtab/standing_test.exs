@@ -1,8 +1,9 @@
-defmodule XaaS.Trimtab.StandingTest do
+defmodule Xaas.Trimtab.StandingTest do
   use ExUnit.Case, async: true
-  alias XaaS.Trimtab.Standing
+  alias Xaas.Trimtab.Standing
 
   test "unobserved subject is not alive" do
-    refute Standing.alive?(%{observed: false})
+    assert Standing.derive([], 1) == {:partial, %{observed: 0, required: 1}}
+    assert Standing.derive([%{id: 1}, %{id: 2}], 2) == {:alive, %{observed: 2, required: 2}}
   end
 end

@@ -1,11 +1,15 @@
-defmodule XaaS.Trimtab.SubjectTest do
+defmodule Xaas.Trimtab.SubjectTest do
   use ExUnit.Case, async: true
-  alias XaaS.Trimtab.Subject
+  alias Xaas.Trimtab.Subject
 
   test "identity is exact and deterministic" do
-    a = Subject.new("repo", "abc123")
-    b = Subject.new("repo", "abc123")
-    assert a == b
-    refute a == Subject.new("repo", "def456")
+    {:ok, a} = Subject.new("repo", "abc123")
+    {:ok, b} = Subject.new("repo", "abc123")
+    assert Subject.same?(a, b)
+    refute Subject.same?(a, elem(Subject.new("repo", "def456"), 1))
+  end
+
+  test "invalid subject is refused" do
+    assert Subject.new("", "abc123") == {:error, :invalid_subject}
   end
 end
