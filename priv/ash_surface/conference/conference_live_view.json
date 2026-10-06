@@ -1,0 +1,789 @@
+{
+  "digest": "52eb4c01ae3a497189e2165335a369c58faff3d5bd804d35193b475c5c2e521c",
+  "ir_version": "26.10.1",
+  "kind": "ash_admin",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Resources",
+        "order": 0,
+        "resources": [
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-attendee",
+            "resource": "Xaas.Conference.Attendee"
+          },
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-event",
+            "resource": "Xaas.Conference.Event"
+          },
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-registration",
+            "resource": "Xaas.Conference.Registration"
+          },
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-session",
+            "resource": "Xaas.Conference.Session"
+          },
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-speaker",
+            "resource": "Xaas.Conference.Speaker"
+          },
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-sponsor",
+            "resource": "Xaas.Conference.Sponsor"
+          },
+          {
+            "label": "Create",
+            "order": 0,
+            "path": "/xaas-conference-track",
+            "resource": "Xaas.Conference.Track"
+          }
+        ]
+      }
+    ]
+  },
+  "resources": {
+    "Xaas.Conference.Attendee": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Attendee#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Attendee#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Attendee#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Attendee#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Attendee#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Attendee#read"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "affiliation",
+              "required": false,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "email",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "name",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Attendee#create"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Attendee",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Attendee#read"
+      }
+    },
+    "Xaas.Conference.Event": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Event#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Event#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Event#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Event#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Event#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Event#read"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "ends_at",
+              "required": false,
+              "type": "utc_datetime",
+              "widget": "default"
+            },
+            {
+              "name": "location",
+              "required": false,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "name",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "slug",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "starts_at",
+              "required": false,
+              "type": "utc_datetime",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Event#create"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Event",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Event#read"
+      }
+    },
+    "Xaas.Conference.Registration": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Registration#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Registration#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Registration#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Registration#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Registration#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Registration#read"
+        },
+        {
+          "action": "update",
+          "action_type": "update",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Registration#update",
+            "kind": "intent"
+          },
+          "label": "Update",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Registration#update"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "attendee_id",
+              "required": true,
+              "type": "uuid",
+              "widget": "default"
+            },
+            {
+              "name": "session_id",
+              "required": true,
+              "type": "uuid",
+              "widget": "default"
+            },
+            {
+              "name": "status",
+              "required": true,
+              "type": "enum",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Registration#create"
+        },
+        {
+          "action": "update",
+          "action_type": "update",
+          "fields": [
+            {
+              "name": "status",
+              "required": true,
+              "type": "enum",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Update",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Registration#update"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Registration",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Registration#read"
+      }
+    },
+    "Xaas.Conference.Session": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Session#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Session#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Session#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Session#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Session#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Session#read"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "description",
+              "required": false,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "ends_at",
+              "required": false,
+              "type": "utc_datetime",
+              "widget": "default"
+            },
+            {
+              "name": "slug",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "speaker_id",
+              "required": true,
+              "type": "uuid",
+              "widget": "default"
+            },
+            {
+              "name": "starts_at",
+              "required": false,
+              "type": "utc_datetime",
+              "widget": "default"
+            },
+            {
+              "name": "title",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "track_id",
+              "required": true,
+              "type": "uuid",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Session#create"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Session",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Session#read"
+      }
+    },
+    "Xaas.Conference.Speaker": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Speaker#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Speaker#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Speaker#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Speaker#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Speaker#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Speaker#read"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "bio",
+              "required": false,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "keynote?",
+              "required": true,
+              "type": "boolean",
+              "widget": "default"
+            },
+            {
+              "name": "name",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "slug",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Speaker#create"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Speaker",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Speaker#read"
+      }
+    },
+    "Xaas.Conference.Sponsor": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Sponsor#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Sponsor#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Sponsor#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Sponsor#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Sponsor#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Sponsor#read"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "name",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "slug",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "tier",
+              "required": true,
+              "type": "enum",
+              "widget": "default"
+            },
+            {
+              "name": "url",
+              "required": false,
+              "type": "string",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Sponsor#create"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Sponsor",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Sponsor#read"
+      }
+    },
+    "Xaas.Conference.Track": {
+      "actions": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Track#create",
+            "kind": "intent"
+          },
+          "label": "Create",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Track#create"
+        },
+        {
+          "action": "destroy",
+          "action_type": "destroy",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Track#destroy",
+            "kind": "intent"
+          },
+          "label": "Destroy",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Track#destroy"
+        },
+        {
+          "action": "read",
+          "action_type": "read",
+          "authority_required": false,
+          "consequence_class": null,
+          "control": {
+            "authority_gate": "NOT_REQUIRED",
+            "gated": false,
+            "intent_target": "Xaas.Conference.Track#read",
+            "kind": "intent"
+          },
+          "label": "Read",
+          "order": 0,
+          "receipt_required": false,
+          "surface_action_id": "Xaas.Conference.Track#read"
+        }
+      ],
+      "forms": [
+        {
+          "action": "create",
+          "action_type": "create",
+          "fields": [
+            {
+              "name": "description",
+              "required": false,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "event_id",
+              "required": true,
+              "type": "uuid",
+              "widget": "default"
+            },
+            {
+              "name": "name",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            },
+            {
+              "name": "slug",
+              "required": true,
+              "type": "string",
+              "widget": "default"
+            }
+          ],
+          "format": null,
+          "label": "Create",
+          "order": 0,
+          "surface_action_id": "Xaas.Conference.Track#create"
+        }
+      ],
+      "group": "Resources",
+      "label": "Create",
+      "order": 0,
+      "relationships": [],
+      "resource": "Xaas.Conference.Track",
+      "table": {
+        "columns": [],
+        "format": null,
+        "surface_action_id": "Xaas.Conference.Track#read"
+      }
+    }
+  }
+}

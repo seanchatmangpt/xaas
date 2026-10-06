@@ -1,0 +1,301 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix prd: <https://ggen-igniter.dev/sjira/v26.10.3/ard-prd#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# XaaS v26.10.3 Product Requirements Document (RDF/Turtle).
+#
+# This graph is the canonical PRD source. Any prose or generated rendering of
+# it is a projection with authority NONE. It authors no sj:WorkOrder and no
+# sj:Receipt and grants no execution authority.
+#
+# Capability descriptions are grounded in real repository artifacts:
+#   - README.md capability snapshot (main@c2a7ea9fbefc9e45d89c30fad36afb3fee96fabd)
+#   - VERSION = 26.10.2
+#   - receipts/v26.9.23/ and docs/sjira/v26.9.23/wd-fa/receipts/
+#   - lib/xaas/{chicago,ultracode,telemetry,trimtab,semantic}/
+#   - priv/no_llm/policy.json
+#   - lib/mix/tasks/xaas.verify_and_commit.ex (scan_mock_usage/1)
+#   - test/ — 468 *_test.exs Chicago test files
+
+# ── Project identity ────────────────────────────────────────────────────────
+
+prd:project a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-XAAS-26.10.3" ;
+    rdfs:label "XaaS platform product requirements" ;
+    dcterms:title "XaaS: semantic actuation platform product requirements" ;
+    dcterms:description "Elixir/Phoenix platform on Ash resources with public-ontology projections, a synchronous Ash.Reactor actuation path with durable intent/receipt records and idempotent replay, an autonomous execution fabric (leases, campaigns, receipted worker actuation), OCEL 2.0 telemetry egress, and a generated ZCode integration plugin." ;
+    dcterms:source "README.md" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "c2a7ea9fbefc9e45d89c30fad36afb3fee96fabd" ;
+    sj:version "26.10.2" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:requiresEvidence sj:source-evidence, sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-XAAS-26.10.3" ;
+    dcterms:hasPart
+        prd:goal-semantic-crown,
+        prd:goal-stop-court,
+        prd:goal-receipt-validation,
+        prd:goal-trimtab-budget,
+        prd:goal-suite-health,
+        prd:goal-machine-experience,
+        prd:goal-ocel,
+        prd:goal-semantic-jira-bridge,
+        prd:goal-no-llm-court,
+        prd:goal-mock-ban ;
+    sj:acceptance prd:root-acceptance ;
+    sj:falsifier
+        prd:falsifier-authority-widening,
+        prd:falsifier-standing-by-adjacency,
+        prd:falsifier-claim-without-artifact,
+        prd:limitation-sibling-drift,
+        prd:limitation-wd-fa-shape .
+
+# ── G1. Semantic crown cycle ────────────────────────────────────────────────
+# observe -> admit -> execute -> seal -> reconcile -> unlock -> replay,
+# tested end to end including refusal of a bad candidate.
+
+prd:goal-semantic-crown a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G1-SEMANTIC-CROWN" ;
+    rdfs:label "Semantic crown cycle" ;
+    dcterms:description "One exact subject passes through observe, admit, execute, seal, reconcile, unlock, and replay under the semantic crown; a bad candidate is refused rather than actuated." ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "c2a7ea9fbefc9e45d89c30fad36afb3fee96fabd" ;
+    sj:pathScope "lib/xaas/chicago lib/xaas/chicago.ex mix xaas.semantic.crown" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:evidenceHorizon "EXECUTED_VERIFIED" ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G1" ;
+    sj:acceptance prd:acc-crown-e2e, prd:acc-crown-refusal ;
+    sj:falsifier prd:fals-crown-bad-candidate-actuates .
+
+prd:acc-crown-e2e a sj:AcceptanceCriterion ;
+    rdfs:label "Crown cycle runs end to end" ;
+    dcterms:description "The observe-admit-execute-seal-reconcile-unlock-replay cycle completes for one exact subject with durable receipts at each consequential transition." .
+
+prd:acc-crown-refusal a sj:AcceptanceCriterion ;
+    rdfs:label "Refused bad candidate" ;
+    dcterms:description "A bad candidate is refused by the crown cycle; the refusal carries a typed reason and no mutation occurs." .
+
+prd:fals-crown-bad-candidate-actuates a sj:Falsifier ;
+    rdfs:label "Bad candidate actuates" ;
+    dcterms:description "Observing the crown admit a candidate that should be refused, or execute without a durable receipt, falsifies the claim." .
+
+# ── G2. StopCourt gate machinery (ALOOP validator fields) ───────────────────
+
+prd:goal-stop-court a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G2-STOP-COURT" ;
+    rdfs:label "StopCourt gate machinery" ;
+    dcterms:description "StopCourt gate machinery emits ALOOP validator fields including work_order_id, origin_authority, and provider_ext.* keys, so the stop decision is judged on receipted fields rather than prose. mix xaas.stop_court exits 0 = STOP." ;
+    sj:pathScope "mix xaas.stop_court" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G2" ;
+    sj:acceptance prd:acc-stopcourt-fields ;
+    sj:falsifier prd:fals-stopcourt-missing-field .
+
+prd:acc-stopcourt-fields a sj:AcceptanceCriterion ;
+    rdfs:label "ALOOP validator fields present" ;
+    dcterms:description "A StopCourt emission carries work_order_id, origin_authority, and provider_ext.* fields resolvable to the underlying receipt identity." .
+
+prd:fals-stopcourt-missing-field a sj:Falsifier ;
+    rdfs:label "StopCourt emission lacks a required field" ;
+    dcterms:description "A StopCourt decision emitted without work_order_id, origin_authority, or provider_ext.* binding is a falsifying observation." .
+
+# ── G3. R-projection receipt validation via validate_receipt.py ─────────────
+
+prd:goal-receipt-validation a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G3-RECEIPT-VALIDATION" ;
+    rdfs:label "R-projection receipt validation" ;
+    dcterms:description "R-projection receipts (including the receipt sets under receipts/v26.9.23/ and docs/sjira/v26.9.23/wd-fa/receipts/) are refusable by the real validate_receipt.py; refusals are typed, not exceptions." ;
+    sj:pathScope "tools validate_receipt.py receipts/v26.9.23 docs/sjira/v26.9.23/wd-fa/receipts" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G3" ;
+    sj:acceptance prd:acc-receipt-refusal-typed ;
+    sj:falsifier prd:fals-receipt-refused-but-actuates .
+
+prd:acc-receipt-refusal-typed a sj:AcceptanceCriterion ;
+    rdfs:label "Typed receipt refusals" ;
+    dcterms:description "validate_receipt.py refuses a malformed receipt with a typed reason, and an admitted receipt replays deterministically." .
+
+prd:fals-receipt-refused-but-actuates a sj:Falsifier ;
+    rdfs:label "Refused receipt still actuates" ;
+    dcterms:description "A receipt refused by validate_receipt.py is used to admit or actuate a consequence; that observation falsifies the receipt law." .
+
+# ── G4. Trimtab budget admission (ContextBudget.fit?/2) ────────────────────
+
+prd:goal-trimtab-budget a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G4-TRIMTAB-BUDGET" ;
+    rdfs:label "Trimtab budget admission" ;
+    dcterms:description "Budget admission is judged by ContextBudget.fit?/2 over real context-window data (lib/xaas/trimtab/context_budget.ex, lib/xaas/trimtab/context_window.ex); admission fails closed." ;
+    sj:pathScope "lib/xaas/trimtab" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:local-execution-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G4" ;
+    sj:acceptance prd:acc-trimtab-fail-closed ;
+    sj:falsifier prd:fals-trimtab-over-budget-admits .
+
+prd:acc-trimtab-fail-closed a sj:AcceptanceCriterion ;
+    rdfs:label "Budget admission fails closed" ;
+    dcterms:description "An over-budget payload is refused with a typed reason; fit?/2 is pure and replayable." .
+
+prd:fals-trimtab-over-budget-admits a sj:Falsifier ;
+    rdfs:label "Over-budget payload admitted" ;
+    dcterms:description "An over-budget request is admitted by ContextBudget.fit?/2; that observation falsifies the budget law." .
+
+# ── G5. Autonomic suite-health gating (raw_opts precedence) ─────────────────
+
+prd:goal-suite-health a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G5-SUITE-HEALTH" ;
+    rdfs:label "Autonomic suite-health gating" ;
+    dcterms:description "Suite-health gating is autonomic with raw_opts precedence: an explicitly supplied raw_opts source wins over the default suite gate configuration, and the gate emits a typed stop/continue decision under mix xaas.ultracode.tick_health." ;
+    sj:pathScope "lib/xaas/ultracode mix xaas.ultracode.tick_health" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:local-execution-evidence, sj:receipt-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G5" ;
+    sj:acceptance prd:acc-rawopts-precedence ;
+    sj:falsifier prd:fals-rawopts-ignored .
+
+prd:acc-rawopts-precedence a sj:AcceptanceCriterion ;
+    rdfs:label "raw_opts precedence holds" ;
+    dcterms:description "An explicitly supplied raw_opts value overrides the default suite gate; the gate's decision is receipted." .
+
+prd:fals-rawopts-ignored a sj:Falsifier ;
+    rdfs:label "raw_opts ignored" ;
+    dcterms:description "A supplied raw_opts value is ignored by the suite-health gate; that observation falsifies the precedence law." .
+
+# ── G6. Machine-experience fleet-R v2 keys ──────────────────────────────────
+
+prd:goal-machine-experience a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G6-MACHINE-EXPERIENCE" ;
+    rdfs:label "Machine-experience fleet-R v2 keys" ;
+    dcterms:description "Fleet-R v2 execution keys in RProjection: receipts carry work_order_id (same resolution as identity.subject), origin_authority (mirror of authority), provider, and provider_execution_id (native run_id, fail-closed to the ext native run_id); native/court lives under provider_ext.xaas with no legacy fallback; laws V2-1..V2-4 each carry a typed refusal and a mutant test." ;
+    sj:pathScope "lib/xaas mix xaas.machine_experience" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:receipt-evidence, sj:replay-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G6" ;
+    sj:acceptance prd:acc-fleet-v2-keys ;
+    sj:falsifier prd:fals-fleet-v2-legacy-fallback .
+
+prd:acc-fleet-v2-keys a sj:AcceptanceCriterion ;
+    rdfs:label "Fleet-R v2 keys present on receipts" ;
+    dcterms:description "Every RProjection receipt carries the four v2 keys and binds native court data under provider_ext.xaas without legacy fallback." .
+
+prd:fals-fleet-v2-legacy-fallback a sj:Falsifier ;
+    rdfs:label "Legacy fallback returns" ;
+    dcterms:description "A receipt missing v2 keys passes validation, or native/court data is accepted outside provider_ext.xaas; that observation falsifies the v2 law." .
+
+# ── G7. OCEL egress + OCPM mining ───────────────────────────────────────────
+
+prd:goal-ocel a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G7-OCEL" ;
+    rdfs:label "OCEL egress and OCPM mining" ;
+    dcterms:description "Every real Ash action emits an OCEL 2.0 event log correlated to the real OpenTelemetry span (lib/xaas/telemetry/ocel_ash_emitter.ex); rotation-bounded NDJSON validated by the conformance court (lib/xaas/telemetry/ocel_ndjson.ex); mix xaas.ocel.ocpm prints OCPM object-type interactions and per-object-type activity frequency; mix xaas.ocel_validate is a CI-usable gate (exit 0 = pass, exit 1 = one line per violation)." ;
+    sj:pathScope "lib/xaas/telemetry mix xaas.ocel_validate mix xaas.ocel.ocpm" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:telemetry-evidence, sj:process-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G7" ;
+    sj:acceptance prd:acc-ocel-conformance ;
+    sj:falsifier prd:fals-ocel-fabricated-event .
+
+prd:acc-ocel-conformance a sj:AcceptanceCriterion ;
+    rdfs:label "OCEL conformance gate usable in CI" ;
+    dcterms:description "mix xaas.ocel_validate exits 0 on a conformant log and 1 with one line per violation." .
+
+prd:fals-ocel-fabricated-event a sj:Falsifier ;
+    rdfs:label "Projected event presented as observed" ;
+    dcterms:description "A projected or inferred event is presented as observed execution; that observation falsifies the telemetry boundary." .
+
+# ── G8. Semantic-jira bridge to pinned ggen_igniter ─────────────────────────
+
+prd:goal-semantic-jira-bridge a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G8-SJIRA-BRIDGE" ;
+    rdfs:label "Semantic-jira bridge" ;
+    dcterms:description "The semantic-jira bridge runs on hex ggen_igniter ~> 26.10.1; the compile guard probes deprecated legacy_event_digest/1 at run time so pre-v26.10.1 logs still verify inside a shrinking window and refuse typed (legacy_digest_rule) after it closes; verified_events/1 converts TransitionLog refusals into {:log_untrusted, _} instead of raising; the echoed bridge map full-aligns to ggen's ten-key list." ;
+    sj:pathScope "lib/xaas/semantic" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:source-evidence, sj:receipt-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G8" ;
+    sj:acceptance prd:acc-bridge-refusals-typed ;
+    sj:falsifier prd:fals-bridge-legacy-forever .
+
+prd:acc-bridge-refusals-typed a sj:AcceptanceCriterion ;
+    rdfs:label "Bridge refusals are typed" ;
+    dcterms:description "The bridge refuses untrusted TransitionLog data as {:log_untrusted, _} and refuses legacy digest forms with typed legacy_digest_rule after the compat window closes." .
+
+prd:fals-bridge-legacy-forever a sj:Falsifier ;
+    rdfs:label "Legacy digest accepted forever" ;
+    dcterms:description "Pre-v26.10.1 logs verify indefinitely with no shrinking window; that observation falsifies the bridge law." .
+
+# ── G9. No-LLM court policy ─────────────────────────────────────────────────
+
+prd:goal-no-llm-court a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G9-NO-LLM-COURT" ;
+    rdfs:label "No-LLM court policy" ;
+    dcterms:description "The no-LLM court policy is a real artifact at priv/no_llm/policy.json and gates which judgments must not be delegated to a model." ;
+    sj:pathScope "priv/no_llm/policy.json" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:source-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G9" ;
+    sj:acceptance prd:acc-policy-binds ;
+    sj:falsifier prd:fals-policy-ignored .
+
+prd:acc-policy-binds a sj:AcceptanceCriterion ;
+    rdfs:label "Policy binds" ;
+    dcterms:description "priv/no_llm/policy.json is loaded by the court machinery and refusal paths honor it." .
+
+prd:fals-policy-ignored a sj:Falsifier ;
+    rdfs:label "Policy ignored" ;
+    dcterms:description "A court delegation to a model bypasses priv/no_llm/policy.json; that observation falsifies the policy claim." .
+
+# ── G10. Machine-enforced mock-ban gate ─────────────────────────────────────
+
+prd:goal-mock-ban a sj:GoalCheckpoint ;
+    dcterms:identifier "PRD-G10-MOCK-BAN" ;
+    rdfs:label "Machine-enforced mock-ban gate" ;
+    dcterms:description "468 Chicago test files live under test/ with a machine-enforced mock-ban gate: scan_mock_usage/1 in mix xaas.verify_and_commit (lib/mix/tasks/xaas.verify_and_commit.ex) scans test/ and lib/ and fails the gate on mock usage." ;
+    sj:pathScope "test lib/mix/tasks/xaas.verify_and_commit.ex" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:requiresEvidence sj:local-execution-evidence ;
+    sj:replayIdentity "semantic-jira:v26.10.3:PRD-G10" ;
+    sj:acceptance prd:acc-mock-scan-fails-gate ;
+    sj:falsifier prd:fals-mock-passes-gate .
+
+prd:acc-mock-scan-fails-gate a sj:AcceptanceCriterion ;
+    rdfs:label "Mock usage fails the gate" ;
+    dcterms:description "scan_mock_usage/1 over test/ and lib/ reports zero matches on the current subject; a planted mock usage makes the gate fail." .
+
+prd:fals-mock-passes-gate a sj:Falsifier ;
+    rdfs:label "Mock usage passes the gate" ;
+    dcterms:description "A file with mock usage passes xaas.verify_and_commit; that observation falsifies the mock-ban claim." .
+
+# ── Known limitations (stated in this graph, not omitted) ───────────────────
+
+prd:limitation-sibling-drift a sj:Falsifier ;
+    rdfs:label "7 sibling-drift test failures (pre-existing)" ;
+    dcterms:description "Current suite state is 3068 tests with 7 failures, all documented sibling drift: ash-atlassian ARD ledger, ggen_igniter compile_prose absence, and ggen FM-PACK-013 pack gate. These are cross-repo drift, not XaaS defects; they are tracked as sibling work, not claimed fixed." .
+
+prd:limitation-wd-fa-shape a sj:Falsifier ;
+    rdfs:label "wd-fa case study is TOGAF-shaped, not Celonis-shaped" ;
+    dcterms:description "The wd-fa case-study receipts (docs/sjira/v26.9.23/wd-fa/receipts/: WDFA-COMPILE, WDFA-COURT, WDFA-KERNEL-PROBE, WDFA-PACK-COURT, WDFA-SUPPLY) witness a TOGAF-shaped case study; it is not Celonis-shaped process mining." .
+
+# ── Root acceptance and cross-cutting falsifiers ────────────────────────────
+
+prd:root-acceptance a sj:AcceptanceCriterion ;
+    rdfs:label "PRD root acceptance" ;
+    dcterms:description "Each goal names real repository artifacts at real paths; every claim carries a falsifier; limitations (7 sibling-drift failures, wd-fa TOGAF-shaped case study) are stated in this graph rather than omitted; no statement in this graph grants or implies execution authority." .
+
+prd:falsifier-authority-widening a sj:Falsifier ;
+    rdfs:label "Projection gains authority" ;
+    dcterms:description "This PRD graph or any rendering of it grants, implies, or is treated as execution (DO) authority." .
+
+prd:falsifier-standing-by-adjacency a sj:Falsifier ;
+    rdfs:label "Standing inherited by adjacency" ;
+    dcterms:description "A capability is described as ALIVE because a neighboring repository is ALIVE, without its own exact-subject court and receipt." .
+
+prd:falsifier-claim-without-artifact a sj:Falsifier ;
+    rdfs:label "Claim without artifact" ;
+    dcterms:description "A described capability has no real repository artifact at the named path on the exact subject." .

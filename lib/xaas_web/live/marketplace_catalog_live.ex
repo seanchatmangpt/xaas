@@ -21,9 +21,12 @@ defmodule XaasWeb.MarketplaceCatalogLive do
   TODO(ash_surface): the generated surface path is
   `AshSurface.Compiler.compile(Xaas.Marketplace)` -> one `%AshSurface.IR{}`
   per public action -> `AshSurface.Projectors.LiveView.project_ir/2` -> the
-  ash-admin structure map this table hand-renders. It is not wired yet
-  because `ash_surface` is pinned `only: [:dev, :test]` in mix.exs, so the
-  LiveView would not compile under `MIX_ENV=prod`; promoting requires either
+  ash-admin structure map this table hand-renders. The generation path is
+  WITNESSED in dev (compiler returns 10 IRs over `Xaas.Marketplace`;
+  `project_ir/2` folds them into an `ash_admin` view over 3 resources / 10
+  actions), but the surface is not wired at runtime because `ash_surface`
+  is pinned `only: [:dev, :test]` in mix.exs, so the LiveView would not
+  compile under `MIX_ENV=prod`; promoting requires either
   publishing `ash_surface` (or re-pointing the path dep to all envs) plus a
   build-time generation step (a mix task that runs the compiler + projector
   and writes the table/form contract the LiveView then consumes). Until that
@@ -55,13 +58,20 @@ defmodule XaasWeb.MarketplaceCatalogLive do
   defp ingest_best_effort(socket, nil), do: socket
 
   defp ingest_best_effort(socket, source) do
-    case Catalog.ingest(source) do
-      {:ok, _count} ->
-        socket
+    # Best-effort: the surface renders, surfacing any typed refusal in the
+    # UI rather than crashing mount. Catalog.ingest/1 returns
+    # {:error, %Catalog.Error{}} for malformed catalogs, but per-pack Ash
+    # validation failures raise; both become the same visible refusal.
+    try do
+      case Catalog.ingest(source) do
+        {:ok, _count} ->
+          socket
 
-      {:error, %Catalog.Error{} = error} ->
-        # Typed refusal surfaces in the UI rather than crashing mount.
-        assign(socket, :ingest_refusal, Exception.message(error))
+        {:error, %Catalog.Error{} = error} ->
+          assign(socket, :ingest_refusal, Exception.message(error))
+      end
+    rescue
+      error -> assign(socket, :ingest_refusal, Exception.message(error))
     end
   end
 

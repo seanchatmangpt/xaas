@@ -13,17 +13,23 @@ config :xaas,
   ash_domains: [
     Xaas.Library,
     Xaas.Accounts,
+    Xaas.A2a,
     Xaas.Billing,
+    Xaas.Conference,
     Xaas.Coupling,
     Xaas.Generation,
+    Xaas.Graphlaw,
     Xaas.Governance,
+    Xaas.Igniter,
     Xaas.Ledger,
     Xaas.Marketplace,
     Xaas.Ocel,
     Xaas.Operations,
     Xaas.Platform,
+    Xaas.Security,
     Xaas.TemporalMemory,
-    Xaas.Ultracode
+    Xaas.Ultracode,
+    Xaas.Witness
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   base_resources: [Xaas.Resource]
@@ -268,10 +274,11 @@ config :esbuild,
   ]
 
 config :tailwind,
-  version: "3.2.4",
+  # Tailwind 4 is required by petal_components ~> 4.0. The legacy JS config
+  # loads via `@config` in app.css -- v4 dropped the --config CLI flag.
+  version: "4.0.9",
   default: [
     args: ~w(
-      --config=tailwind.config.js
       --input=css/app.css
       --output=../priv/static/assets/app.css
     ),

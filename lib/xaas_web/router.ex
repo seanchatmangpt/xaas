@@ -60,6 +60,8 @@ defmodule XaasWeb.Router do
     get("/case-studies/wd-fa/context/:case_id", WdFaContextController, :show)
     live("/chicago", Chicago.DrillDownLive)
     live("/chicago/seller", Chicago.SellerLive)
+    live("/marketplace-pplan", MarketplacePplanExplorerLive)
+    live("/marketplace-catalog", MarketplaceCatalogLive)
   end
 
   # Real public external Stripe webhook receiver -- deliberately NOT

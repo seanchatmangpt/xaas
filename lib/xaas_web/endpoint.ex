@@ -23,6 +23,15 @@ defmodule XaasWeb.Endpoint do
 
   socket("/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])
 
+  # Serve generated ash_surface artifacts (JS client, contract, live view,
+  # ARIA) at /ash_surface from priv/ash_surface. Regenerate any time with
+  # `mix xaas.ash_surface` (alias: `mix ash_surface`).
+  plug(Plug.Static,
+    at: "/ash_surface",
+    from: {:xaas, "priv/ash_surface"},
+    gzip: false
+  )
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phx.digest

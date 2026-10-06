@@ -21,7 +21,8 @@ defmodule Xaas.Marketplace.Pack do
   use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.Marketplace,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
 
   ets do
     private?(true)
@@ -65,12 +66,37 @@ defmodule Xaas.Marketplace.Pack do
     update_timestamp(:updated_at)
   end
 
+  graphql do
+    type(:marketplace_pack)
+  end
+
+  json_api do
+    type("marketplace_pack")
+
+    routes do
+      base("/marketplace/packs")
+      get(:get_by_id)
+      index(:read)
+    end
+  end
+
   identities do
     identity(:unique_name, [:name])
   end
 
   actions do
     defaults([:read, :destroy])
+
+    # AshJsonApi's `get` route feeds the path segment to the action as an
+    # `:id` input (the plain `:read` default declares no such argument, so
+    # `GET /api/marketplace/packs/:id` on `:read` raises a real
+    # `NoSuchInput` -- same failure class as Xaas.Library.Book's
+    # `get_by_id`, caught via a real HTTP court, not inspection).
+    read :get_by_id do
+      argument(:id, :string, allow_nil?: false)
+      get?(true)
+      filter(expr(name == ^arg(:id)))
+    end
 
     create :create do
       accept([
