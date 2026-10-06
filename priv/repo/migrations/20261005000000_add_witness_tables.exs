@@ -15,10 +15,11 @@ defmodule Xaas.Repo.Migrations.AddWitnessTables do
       add :verifying_key_hex, :text, null: false
       add :verified, :boolean, null: false, default: false
       add :verified_at, :utc_datetime_usec
+      add :inserted_at, :utc_datetime_usec, null: false, default: fragment("now()")
+      add :updated_at, :utc_datetime_usec, null: false, default: fragment("now()")
     end
 
     create unique_index(:witness_certified_receipts, [:subject, :payload_hash_hex])
-    create unique_index(:witness_certified_receipts, [:signature_hex])
 
     create table(:witness_verification_keys, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true

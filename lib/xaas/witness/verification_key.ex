@@ -36,6 +36,7 @@ defmodule Xaas.Witness.VerificationKey do
     defaults([:read])
 
     create :register do
+      primary?(true)
       accept([:kid, :algorithm, :key_material_hex])
 
       change(fn changeset, _context ->

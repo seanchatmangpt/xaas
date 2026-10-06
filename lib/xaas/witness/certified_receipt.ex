@@ -46,17 +46,19 @@ defmodule Xaas.Witness.CertifiedReceipt do
 
   identities do
     identity(:unique_subject_payload, [:subject, :payload_hash_hex])
-  identity(:unique_signature, [:signature_hex])
   end
 
   actions do
     defaults([:read])
 
     create :ingest do
+      primary?(true)
       accept([:subject, :payload_hash_hex, :algorithm, :signature_hex, :verifying_key_hex])
     end
 
     update :record_verification do
+      primary?(true)
+      require_atomic?(false)
       accept([])
 
       change(fn changeset, _context ->

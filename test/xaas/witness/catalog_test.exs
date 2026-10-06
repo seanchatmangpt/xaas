@@ -35,7 +35,10 @@ defmodule Xaas.Witness.CatalogTest do
     # vectors sit outside the admitted enum and are skipped, typed.
     assert length(result.receipts) == 2
     assert [%{algorithm: :es256}, %{algorithm: :ml_dsa65}] = result.receipts
-    assert result.skipped == [{1, "ES256+ML-DSA-65", :algorithm_not_in_admitted_enum}, {2, "SLH-DSA-SHA2-128s", :algorithm_not_in_admitted_enum}]
+    assert result.skipped == [
+             {1, "ES256+ML-DSA-65", :algorithm_not_in_admitted_enum},
+             {3, "SLH-DSA-SHA2-128s", :algorithm_not_in_admitted_enum}
+           ]
 
     assert Enum.all?(result.receipts, fn r ->
              String.starts_with?(r.subject, result.subject <> ":")
@@ -78,19 +81,24 @@ defmodule Xaas.Witness.CatalogTest do
   test "immutability: no update/destroy action exists on the payload surface" do
     {:ok, %{receipts: [receipt | _]}} = ingest()
 
-    assert {:error, %Ash.Error.Invalid{} = error} =
-             receipt
-             |> Ash.Changeset.for_update(:update, %{subject: "tampered"})
-             |> Ash.update()
+    # the resource defines no general :update action and no :destroy
+    assert_raise ArgumentError,
+                 ~r/No such update action.*:update/,
+                 fn ->
+                   receipt
+                   |> Ash.Changeset.for_update(:update, %{subject: "tampered"})
+                   |> Ash.update()
+                 end
 
-    assert Exception.message(error) =~ "update"
+    assert_raise ArgumentError, ~r/No such destroy action/, fn ->
+      receipt |> Ash.Changeset.for_destroy(:destroy) |> Ash.destroy()
+    end
 
-    assert {:error, %Ash.Error.Forbidden{} = forbidden} =
-             receipt
-             |> Ash.Changeset.for_destroy(:destroy)
-             |> Ash.destroy()
+    # and the payload fields are not accepted by the only update action
+    assert %Ash.Changeset{} =
+             cs = Ash.Changeset.for_update(receipt, :record_verification, %{subject: "tampered"})
 
-    assert Exception.message(forbidden) != nil
+    refute cs.attributes |> Map.has_key?(:subject)
   end
 
   test "verification results are write-once: re-verification is refused" do

@@ -39,6 +39,8 @@ defmodule Xaas.Witness.Catalog do
   are returned under `:skipped` with the reason -- never silently
   dropped.
   """
+  def ingest(input) when is_list(input), do: ingest(Map.new(input))
+
   def ingest(%{} = input) do
     raw_baseline = input[:baseline] || input["baseline"]
     vectors = input[:signing_surface] || input["signing_surface"] || []
@@ -69,8 +71,8 @@ defmodule Xaas.Witness.Catalog do
   """
   def record_verification(%CertifiedReceipt{} = receipt, verified?, at \\ DateTime.utc_now()) do
     receipt
-    |> Ash.Changeset.for_update(:record_verification, %{})
-    |> Ash.update(annotations: %{verification_result: verified?, verified_at: at})
+    |> Ash.Changeset.for_update(:record_verification, %{}, context: %{verification_result: verified?, verified_at: at})
+    |> Ash.update()
   end
 
   @doc "Lists ingested receipts filtered to one admitted algorithm."
@@ -105,8 +107,15 @@ defmodule Xaas.Witness.Catalog do
           }
 
           case Ash.create(CertifiedReceipt, attrs, action: :ingest) do
-            {:ok, receipt} -> {:cont, {:ok, [receipt | acc]}}
-            {:error, error} -> {:halt, {:error, {:ingest_refused, index, error}}}
+            {:ok, receipt} ->
+              {:cont, {:ok, [receipt | acc]}}
+
+            # already ingested (subject, payload_hash) is unique: idempotent
+            {:error, _error} ->
+              case existing_receipt(attrs) do
+                nil -> {:halt, {:error, {:ingest_refused, index, attrs.subject}}}
+                receipt -> {:cont, {:ok, [receipt | acc]}}
+              end
           end
 
         :skip ->
@@ -135,8 +144,16 @@ defmodule Xaas.Witness.Catalog do
                    algorithm: algorithm,
                    key_material_hex: material
                  }) do
-              {:ok, _key} -> {:cont, {:ok, MapSet.put(seen, kid)}}
-              {:error, error} -> {:halt, {:error, {:key_registration_refused, kid, error}}}
+              {:ok, _key} ->
+                {:cont, {:ok, MapSet.put(seen, kid)}}
+
+              # already registered by an earlier ingest: idempotent on kid
+              {:error, error} ->
+                if key_exists?(kid) do
+                  {:cont, {:ok, MapSet.put(seen, kid)}}
+                else
+                  {:halt, {:error, {:key_registration_refused, kid, error}}}
+                end
             end
           end
 
@@ -148,6 +165,20 @@ defmodule Xaas.Witness.Catalog do
       {:ok, _seen} -> {:ok, :registered}
       other -> other
     end
+  end
+
+  defp existing_receipt(attrs) do
+    CertifiedReceipt
+    |> Ash.Query.filter(subject: attrs.subject)
+    |> Ash.read!()
+    |> Enum.find(&(&1.payload_hash_hex == attrs.payload_hash_hex))
+  end
+
+  defp key_exists?(kid) do
+    VerificationKey
+    |> Ash.Query.filter(kid: kid)
+    |> Ash.read!()
+    |> Enum.any?()
   end
 
   defp algorithm_for(vector) do
