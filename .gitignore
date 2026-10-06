@@ -114,3 +114,5 @@ tmp_out/
 priv/chicago/.ggen/
 priv/chicago/.ggen-v2/
 priv/chicago/.clap-noun-verb/
+# Playwright artifacts
+playwright-report/
