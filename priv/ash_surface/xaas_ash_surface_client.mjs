@@ -17,8 +17,1674 @@ import { z } from "zod";
  * @property {Record<string, unknown>} input - boundary-validated by the action Zod schema when present
  */
 
-/** Zod boundary schema for `Pack.create` (input schema of the compiled IR.Schema.zod program). */
-export const Pack_create_schema = z.object({
+/** Zod boundary schema for `XaasAccount.lock_accounts` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAccount_lock_accounts_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAccount.open` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAccount_open_schema = z.object({
+  currency: z.string(),
+  identifier: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAccount.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAccount_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAgent.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAgent_create_schema = z.object({
+  description: z.string(),
+  name: z.string(),
+  skills: z.array(z.unknown()),
+  transport_bindings: z.array(z.unknown()),
+  url: z.string(),
+  version: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAgent.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAgent_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAgent.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAgent_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAgent.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAgent_update_schema = z.object({
+  description: z.string(),
+  skills: z.array(z.unknown()),
+  transport_bindings: z.array(z.unknown()),
+  url: z.string(),
+  version: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalBackupRetentionChange.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalBackupRetentionChange_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalBackupRetentionChange.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalBackupRetentionChange_create_schema = z.object({
+  org_id: z.string(),
+  requested_by: z.string(),
+  requested_retention_days: z.number().int(),
+  tier: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalBackupRetentionChange.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalBackupRetentionChange_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalBreakGlassJustificationReview.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalBreakGlassJustificationReview_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalBreakGlassJustificationReview.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalBreakGlassJustificationReview_create_schema = z.object({
+  grant_id: z.string(),
+  justification: z.string(),
+  org_id: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalBreakGlassJustificationReview.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalBreakGlassJustificationReview_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalCastleVerbSchedule.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalCastleVerbSchedule_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalCastleVerbSchedule.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalCastleVerbSchedule_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalCastleVerbSchedule.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalCastleVerbSchedule_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalChangeOfControlNotify.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalChangeOfControlNotify_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalChangeOfControlNotify.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalChangeOfControlNotify_create_schema = z.object({
+  description: z.string(),
+  event_type: z.unknown(),
+  notice_window_days: z.number().int().optional().nullable(),
+  notification_method: z.string(),
+  org_id: z.string(),
+  requested_by: z.string(),
+  trigger_date: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalChangeOfControlNotify.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalChangeOfControlNotify_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalCmekKeyBinding.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalCmekKeyBinding_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalCmekKeyBinding.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalCmekKeyBinding_create_schema = z.object({
+  key_ref: z.string(),
+  org_id: z.string(),
+  provider: z.unknown(),
+  reason: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalCmekKeyBinding.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalCmekKeyBinding_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalComplianceRotationBlock.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalComplianceRotationBlock_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalComplianceRotationBlock.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalComplianceRotationBlock_create_schema = z.object({
+  org_id: z.string(),
+  reason: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalComplianceRotationBlock.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalComplianceRotationBlock_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDeniedPartyOverride.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDeniedPartyOverride_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDeniedPartyOverride.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDeniedPartyOverride_create_schema = z.object({
+  decision: z.unknown(),
+  justification: z.string(),
+  org_id: z.string(),
+  requested_by: z.string(),
+  screening_record_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDeniedPartyOverride.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDeniedPartyOverride_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDeploymentQuarantine.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDeploymentQuarantine_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDeploymentQuarantine.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDeploymentQuarantine_create_schema = z.object({
+  deployment_name: z.string(),
+  environment: z.unknown(),
+  org_id: z.string(),
+  reason: z.unknown(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDeploymentQuarantine.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDeploymentQuarantine_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDrFailover.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDrFailover_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDrFailover.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDrFailover_create_schema = z.object({
+  from_region: z.string(),
+  org_id: z.string(),
+  reason: z.string(),
+  requested_by: z.string(),
+  to_region: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDrFailover.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDrFailover_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDsarErasure.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDsarErasure_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDsarErasure.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDsarErasure_create_schema = z.object({
+  org_id: z.string(),
+  requested_by: z.string(),
+  subject_email: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalDsarErasure.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalDsarErasure_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalEnvironmentPromote.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalEnvironmentPromote_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalEnvironmentPromote.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalEnvironmentPromote_create_schema = z.object({
+  from_environment: z.unknown(),
+  org_id: z.string(),
+  project_name: z.string(),
+  requested_by: z.string(),
+  to_environment: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalEnvironmentPromote.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalEnvironmentPromote_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalEnvironmentPromote.reject` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalEnvironmentPromote_reject_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalExportSubscriptionUpdate.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalExportSubscriptionUpdate_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalExportSubscriptionUpdate.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalExportSubscriptionUpdate_create_schema = z.object({
+  access_key_id: z.string(),
+  bucket_endpoint: z.string(),
+  bucket_name: z.string(),
+  cadence: z.unknown(),
+  enabled: z.boolean(),
+  org_id: z.string(),
+  prefix: z.string().optional().nullable(),
+  requested_by: z.string(),
+  scope: z.unknown(),
+  secret_access_key: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalExportSubscriptionUpdate.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalExportSubscriptionUpdate_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalFreezeOverride.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalFreezeOverride_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalFreezeOverride.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalFreezeOverride_create_schema = z.object({
+  freeze_window_id: z.string(),
+  org_id: z.string(),
+  reason: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalFreezeOverride.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalFreezeOverride_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalGeofenceExceptionGrant.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalGeofenceExceptionGrant_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalGeofenceExceptionGrant.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalGeofenceExceptionGrant_create_schema = z.object({
+  identifier_or_cidr: z.string(),
+  org_id: z.string(),
+  reason: z.string(),
+  requested_by: z.string(),
+  ttl_hours: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalGeofenceExceptionGrant.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalGeofenceExceptionGrant_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalInsurancePolicyUpdate.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalInsurancePolicyUpdate_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalInsurancePolicyUpdate.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalInsurancePolicyUpdate_create_schema = z.object({
+  am_best_rating: z.string().optional().nullable(),
+  carrier: z.string(),
+  coverage_limit_usd: z.number(),
+  coverage_type: z.unknown(),
+  effective_date: z.unknown(),
+  expiry_date: z.unknown(),
+  org_id: z.string(),
+  policy_number: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalInsurancePolicyUpdate.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalInsurancePolicyUpdate_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalInvoiceReconciliationApprove.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalInvoiceReconciliationApprove_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalInvoiceReconciliationApprove.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalInvoiceReconciliationApprove_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalInvoiceReconciliationApprove.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalInvoiceReconciliationApprove_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalK8sFaultRemediateSuggest.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalK8sFaultRemediateSuggest_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalK8sFaultRemediateSuggest.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalK8sFaultRemediateSuggest_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalK8sFaultRemediateSuggest.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalK8sFaultRemediateSuggest_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalLeRequestRespond.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalLeRequestRespond_approve_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  response_summary: z.string().optional().nullable(),
+  status: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalLeRequestRespond.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalLeRequestRespond_create_schema = z.object({
+  jurisdiction: z.string(),
+  org_id: z.string().optional().nullable(),
+  reference_number: z.string().optional().nullable(),
+  request_type: z.unknown(),
+  requested_by: z.string(),
+  requesting_authority: z.string(),
+  summary: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalLeRequestRespond.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalLeRequestRespond_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalLegalHoldRelease.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalLegalHoldRelease_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalLegalHoldRelease.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalLegalHoldRelease_create_schema = z.object({
+  hold_id: z.string(),
+  org_id: z.string().optional().nullable(),
+  release_reason: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalLegalHoldRelease.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalLegalHoldRelease_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalOrgDelete.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalOrgDelete_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalOrgDelete.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalOrgDelete_create_schema = z.object({
+  org_id: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalOrgDelete.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalOrgDelete_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPatchSlaCreditApply.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPatchSlaCreditApply_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPatchSlaCreditApply.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPatchSlaCreditApply_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  credit_amount_cents: z.number().int(),
+  org_id: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPatchSlaCreditApply.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPatchSlaCreditApply_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPentestFindingResolve.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPentestFindingResolve_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPentestFindingResolve.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPentestFindingResolve_create_schema = z.object({
+  finding_id: z.string().uuid(),
+  org_id: z.string(),
+  requested_by: z.string(),
+  resolution: z.unknown(),
+  resolution_notes: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPentestFindingResolve.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPentestFindingResolve_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPersonnelAttestationRecord.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPersonnelAttestationRecord_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPersonnelAttestationRecord.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPersonnelAttestationRecord_create_schema = z.object({
+  attestation_statement: z.string(),
+  org_id: z.string(),
+  overrides: z.array(z.unknown()).optional().nullable(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPersonnelAttestationRecord.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPersonnelAttestationRecord_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPricingOverride.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPricingOverride_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPricingOverride.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPricingOverride_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalPricingOverride.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalPricingOverride_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalProviderStatusChange.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalProviderStatusChange_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalProviderStatusChange.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalProviderStatusChange_create_schema = z.object({
+  org_id: z.string(),
+  provider_id: z.string().uuid(),
+  requested_by: z.string(),
+  requested_status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalProviderStatusChange.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalProviderStatusChange_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalQuotaOverride.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalQuotaOverride_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalQuotaOverride.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalQuotaOverride_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalQuotaOverride.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalQuotaOverride_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSlaCreditApply.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSlaCreditApply_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSlaCreditApply.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSlaCreditApply_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  credit_amount_cents: z.number().int(),
+  org_id: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSlaCreditApply.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSlaCreditApply_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSourceEscrowSnapshot.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSourceEscrowSnapshot_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSourceEscrowSnapshot.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSourceEscrowSnapshot_create_schema = z.object({
+  namespace: z.string(),
+  org_id: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSourceEscrowSnapshot.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSourceEscrowSnapshot_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSsoRoleMappingUpdate.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSsoRoleMappingUpdate_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSsoRoleMappingUpdate.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSsoRoleMappingUpdate_create_schema = z.object({
+  org_id: z.string(),
+  requested_by: z.string(),
+  requested_mappings: z.array(z.unknown())
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSsoRoleMappingUpdate.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSsoRoleMappingUpdate_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSubprocessorRegistryUpdate.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSubprocessorRegistryUpdate_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSubprocessorRegistryUpdate.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSubprocessorRegistryUpdate_create_schema = z.object({
+  category: z.unknown(),
+  change_action: z.unknown(),
+  data_categories: z.array(z.unknown()).optional().nullable(),
+  name: z.string(),
+  purpose: z.string(),
+  regions: z.array(z.unknown()).optional().nullable(),
+  requested_by: z.string(),
+  subprocessor_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalSubprocessorRegistryUpdate.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalSubprocessorRegistryUpdate_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalTierDowngrade.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalTierDowngrade_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalTierDowngrade.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalTierDowngrade_create_schema = z.object({
+  approved_by: z.string().optional().nullable(),
+  requested_by: z.string(),
+  requested_tier: z.unknown(),
+  subscription_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalTierDowngrade.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalTierDowngrade_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalVendorOffboardingAttestationIssue.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalVendorOffboardingAttestationIssue_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalVendorOffboardingAttestationIssue.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalVendorOffboardingAttestationIssue_create_schema = z.object({
+  contractual_sla_days: z.number().int(),
+  org_id: z.string(),
+  requested_by: z.string(),
+  termination_date: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasApprovalVendorOffboardingAttestationIssue.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasApprovalVendorOffboardingAttestationIssue_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAttendee.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAttendee_create_schema = z.object({
+  affiliation: z.string().optional().nullable(),
+  email: z.string(),
+  name: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAttendee.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAttendee_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAttendee.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAttendee_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAuditExportToken.issue` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAuditExportToken_issue_schema = z.object({
+  created_by: z.string(),
+  org_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAuditExportToken.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAuditExportToken_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAuditExportToken.revoke` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAuditExportToken_revoke_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAuditLogEntry.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAuditLogEntry_create_schema = z.object({
+  action: z.string(),
+  actor_description: z.string().optional().nullable(),
+  actor_id: z.string().optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+  occurred_at: z.unknown(),
+  org_id: z.string().optional().nullable(),
+  resource_id: z.string(),
+  resource_type: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAuditLogEntry.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAuditLogEntry_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCacheHotset.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCacheHotset_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCacheHotset.request_cache_hotset` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCacheHotset_request_cache_hotset_schema = z.object({
+  query: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCacheStats.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCacheStats_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCacheStats.request_cache_stats` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCacheStats_request_cache_stats_schema = z.object({
+  query: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCandidate.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCandidate_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCandidate.request_candidate` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCandidate_request_candidate_schema = z.object({
+  domain: z.string().optional().nullable(),
+  query: z.string(),
+  solver: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCatalog.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCatalog_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerCatalog.request_catalog` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerCatalog_request_catalog_schema = z.object({
+  query: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerMatch.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerMatch_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAutofdePlannerMatch.request_match` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAutofdePlannerMatch_request_match_schema = z.object({
+  query: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBalance.adjust_balance` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBalance_adjust_balance_schema = z.object({
+  delta: z.unknown(),
+  from_account_id: z.string().uuid(),
+  to_account_id: z.string().uuid(),
+  transfer_id: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBalance.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBalance_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasBalance.upsert_balance` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBalance_upsert_balance_schema = z.object({
+  account_id: z.string().uuid(),
+  balance: z.unknown().optional().nullable(),
+  transfer_id: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.ash_ai_update_embeddings` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_ash_ai_update_embeddings_schema = z.object({
+  embedding: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.borrow_copy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_borrow_copy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.by_grade_band` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_by_grade_band_schema = z.object({
+  max_grade: z.number().int(),
+  min_grade: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_create_schema = z.object({
+  author: z.string(),
+  available_copies: z.number().int(),
+  cover_color: z.string(),
+  formats: z.array(z.unknown()),
+  genres: z.array(z.unknown()),
+  grade_level: z.number(),
+  isbn: z.string().optional().nullable(),
+  review_status: z.unknown(),
+  synopsis: z.string().optional().nullable(),
+  title: z.string(),
+  total_copies: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.generate_recommendation_explanation` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_generate_recommendation_explanation_schema = z.object({
+  book_author: z.string(),
+  book_genres: z.array(z.unknown()).optional().nullable(),
+  book_grade_level: z.string(),
+  book_title: z.string(),
+  factor_summary: z.string(),
+  past_titles: z.array(z.unknown()).optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.get_by_id` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_get_by_id_schema = z.object({
+  id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.return_copy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_return_copy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasBook.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasBook_update_schema = z.object({
+  author: z.string(),
+  available_copies: z.number().int(),
+  cover_color: z.string(),
+  formats: z.array(z.unknown()),
+  genres: z.array(z.unknown()),
+  grade_level: z.number(),
+  isbn: z.string().optional().nullable(),
+  review_status: z.unknown(),
+  synopsis: z.string().optional().nullable(),
+  title: z.string(),
+  total_copies: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapability.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapability_create_schema = z.object({
+  algorithm: z.string(),
+  name: z.string(),
+  profile: z.string(),
+  supported_in: z.array(z.unknown())
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapability.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapability_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapability.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapability_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapabilityLivenessReceipt.check_regressions` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapabilityLivenessReceipt_check_regressions_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapabilityLivenessReceipt.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapabilityLivenessReceipt_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapabilityLivenessReceipt.ingest` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapabilityLivenessReceipt_ingest_schema = z.object({
+  authority: z.string(),
+  capability: z.string(),
+  detail: z.string().optional().nullable(),
+  executed: z.boolean(),
+  exit_code: z.number().int().optional().nullable(),
+  status: z.string(),
+  subject: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCapabilityLivenessReceipt.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCapabilityLivenessReceipt_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCastleVerbFortune5Requirements.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCastleVerbFortune5Requirements_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCastleVerbInventoryComponents.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCastleVerbInventoryComponents_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCastleVerbInventoryGoals.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCastleVerbInventoryGoals_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCertifiedReceipt.ingest` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCertifiedReceipt_ingest_schema = z.object({
+  algorithm: z.unknown(),
+  payload_hash_hex: z.string(),
+  signature_hex: z.string(),
+  subject: z.string(),
+  verifying_key_hex: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCertifiedReceipt.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCertifiedReceipt_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCertifiedReceipt.record_verification` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCertifiedReceipt_record_verification_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.borrow` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_borrow_schema = z.object({
+  book_id: z.string().uuid(),
+  school_id: z.string(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_create_schema = z.object({
+  book_id: z.string().uuid(),
+  borrowed_at: z.unknown(),
+  renewed_count: z.number().int(),
+  returned_at: z.unknown().optional().nullable(),
+  school_id: z.string(),
+  status: z.unknown(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.for_user` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_for_user_schema = z.object({
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.return` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_return_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCheckout.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCheckout_update_schema = z.object({
+  renewed_count: z.number().int(),
+  returned_at: z.unknown().optional().nullable(),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasConferenceEvent.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasConferenceEvent_create_schema = z.object({
+  ends_at: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+  name: z.string(),
+  slug: z.string(),
+  starts_at: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasConferenceEvent.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasConferenceEvent_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasConferenceEvent.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasConferenceEvent_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCouplingRun.couple` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCouplingRun_couple_schema = z.object({
+  constraints: z.record(z.string(), z.unknown()),
+  proposals: z.array(z.unknown())
+}).passthrough();
+
+/** Zod boundary schema for `XaasCouplingRun.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCouplingRun_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCuration.active_for_grade` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCuration_active_for_grade_schema = z.object({
+  grade_level: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCuration.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCuration_create_schema = z.object({
+  active: z.boolean(),
+  book_id: z.string().uuid(),
+  curated_by: z.string(),
+  grade_band: z.string(),
+  reason: z.string().optional().nullable(),
+  state: z.unknown(),
+  student_id: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasCuration.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCuration_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCuration.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCuration_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasCuration.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasCuration_update_schema = z.object({
+  active: z.boolean(),
+  grade_band: z.string(),
+  reason: z.string().optional().nullable(),
+  state: z.unknown(),
+  student_id: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasDataDestructionCertificateIssue.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasDataDestructionCertificateIssue_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasDataDestructionCertificateIssue.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasDataDestructionCertificateIssue_create_schema = z.object({
+  org_id: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasDataDestructionCertificateIssue.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasDataDestructionCertificateIssue_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEngineLimit.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEngineLimit_create_schema = z.object({
+  name: z.string(),
+  refusal_name: z.string().optional().nullable(),
+  scope: z.string(),
+  source: z.string(),
+  unit: z.string(),
+  value: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEngineLimit.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEngineLimit_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEngineLimit.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEngineLimit_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpisode.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpisode_create_schema = z.object({
+  context: z.string(),
+  outcome: z.unknown(),
+  required_closure: z.string(),
+  residual_shape: z.string(),
+  subject: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpisode.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpisode_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpisode.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpisode_update_schema = z.object({
+  context: z.string(),
+  outcome: z.unknown(),
+  required_closure: z.string(),
+  residual_shape: z.string(),
+  subject: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.complete` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_complete_schema = z.object({
+  final_head: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_create_schema = z.object({
+  cycle: z.number().int(),
+  exact_subject: z.string(),
+  expected_at: z.unknown().optional().nullable(),
+  org_id: z.string().optional().nullable(),
+  run_id: z.string().uuid(),
+  started_at: z.unknown().optional().nullable(),
+  state: z.unknown(),
+  worktree: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.lease` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_lease_schema = z.object({
+  lease_expires_at: z.unknown().optional().nullable(),
+  lease_token: z.string().optional().nullable(),
+  leased_to: z.string().optional().nullable(),
+  worktree: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.mark_failed` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_mark_failed_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.mark_missed` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_mark_missed_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.read_unscoped` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_read_unscoped_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.record_final_head` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_record_final_head_schema = z.object({
+  final_head: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.renew_lease` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_renew_lease_schema = z.object({
+  lease_expires_at: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEpoch.start` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEpoch_start_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEventLog.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEventLog_create_schema = z.object({
+  action: z.unknown(),
+  action_type: z.unknown(),
+  changed_attributes: z.record(z.string(), z.unknown()),
+  data: z.record(z.string(), z.unknown()),
+  metadata: z.record(z.string(), z.unknown()),
+  occurred_at: z.unknown(),
+  record_id: z.string(),
+  resource: z.unknown(),
+  user_id: z.string().uuid().optional().nullable(),
+  version: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEventLog.replay` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEventLog_replay_schema = z.object({
+  last_event_id: z.string().uuid().optional().nullable(),
+  point_in_time: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasEventObject.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEventObject_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEventObject.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEventObject_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasEventObject.relate` (input schema of the compiled IR.Schema.zod program). */
+export const XaasEventObject_relate_schema = z.object({
+  event_id: z.string().uuid(),
+  object_id: z.string().uuid(),
+  qualifier: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasExecution.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasExecution_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasExperienceCluster.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasExperienceCluster_create_schema = z.object({
+  context: z.string(),
+  episode_count: z.number().int(),
+  required_closure: z.string(),
+  residual_shape: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasExperienceCluster.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasExperienceCluster_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasExperienceCluster.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasExperienceCluster_update_schema = z.object({
+  context: z.string(),
+  episode_count: z.number().int(),
+  required_closure: z.string(),
+  residual_shape: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasFinding.ingest` (input schema of the compiled IR.Schema.zod program). */
+export const XaasFinding_ingest_schema = z.object({
+  court_ref: z.string().optional().nullable(),
+  description: z.string(),
+  discovered_at: z.string().optional().nullable(),
+  disposition: z.unknown(),
+  file: z.string(),
+  line: z.number().int().optional().nullable(),
+  severity: z.unknown(),
+  source: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasFinding.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasFinding_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasFreezeWindow.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasFreezeWindow_create_schema = z.object({
+  allow_emergency_override: z.boolean(),
+  created_by: z.string(),
+  ends_at: z.string(),
+  org_id: z.string(),
+  reason: z.string(),
+  starts_at: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasFreezeWindow.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasFreezeWindow_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasFreezeWindow.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasFreezeWindow_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGap.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGap_create_schema = z.object({
+  context: z.string(),
+  episode_count: z.number().int(),
+  experience_cluster_id: z.string().uuid(),
+  falsifier: z.string(),
+  primitive_target: z.unknown(),
+  recurrence_class: z.unknown(),
+  required_closure: z.string(),
+  residual_shape: z.string(),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGap.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGap_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGap.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGap_update_schema = z.object({
+  context: z.string(),
+  episode_count: z.number().int(),
+  experience_cluster_id: z.string().uuid(),
+  falsifier: z.string(),
+  primitive_target: z.unknown(),
+  recurrence_class: z.unknown(),
+  required_closure: z.string(),
+  residual_shape: z.string(),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalBackupRetentionChangeVersion.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalBackupRetentionChangeVersion_create_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalBackupRetentionChangeVersion.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalBackupRetentionChangeVersion_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalBackupRetentionChangeVersion.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalBackupRetentionChangeVersion_update_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalDeploymentQuarantineVersion.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalDeploymentQuarantineVersion_create_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalDeploymentQuarantineVersion.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalDeploymentQuarantineVersion_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalDeploymentQuarantineVersion.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalDeploymentQuarantineVersion_update_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalDrFailoverVersion.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalDrFailoverVersion_create_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalDrFailoverVersion.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalDrFailoverVersion_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalDrFailoverVersion.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalDrFailoverVersion_update_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalFreezeOverrideVersion.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalFreezeOverrideVersion_create_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalFreezeOverrideVersion.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalFreezeOverrideVersion_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalFreezeOverrideVersion.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalFreezeOverrideVersion_update_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalLegalHoldReleaseVersion.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalLegalHoldReleaseVersion_create_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalLegalHoldReleaseVersion.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalLegalHoldReleaseVersion_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceApprovalLegalHoldReleaseVersion.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceApprovalLegalHoldReleaseVersion_update_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceFreezeWindowVersion.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceFreezeWindowVersion_create_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceFreezeWindowVersion.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceFreezeWindowVersion_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasGovernanceFreezeWindowVersion.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasGovernanceFreezeWindowVersion_update_schema = z.object({
+  changes: z.record(z.string(), z.unknown()).optional().nullable(),
+  version_action_type: z.unknown(),
+  version_source_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.active` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_active_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.cancel` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_cancel_schema = z.object({
+  changeset: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_create_schema = z.object({
+  book_id: z.string().uuid(),
+  expires_at: z.unknown().optional().nullable(),
+  position: z.number().int(),
+  school_id: z.string(),
+  status: z.unknown(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.expirable` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_expirable_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.expire` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_expire_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.expire_stale` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_expire_stale_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.for_book` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_for_book_schema = z.object({
+  book_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.for_user` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_for_user_schema = z.object({
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.fulfill` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_fulfill_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.oldest_active_for_book` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_oldest_active_for_book_schema = z.object({
+  book_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.place` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_place_schema = z.object({
+  book_id: z.string().uuid(),
+  school_id: z.string(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasHoldRequest.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasHoldRequest_update_schema = z.object({
+  position: z.number().int(),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasIncident.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasIncident_create_schema = z.object({
+  description: z.string().optional().nullable(),
+  opened_at: z.string(),
+  org_id: z.string(),
+  region: z.string(),
+  severity: z.unknown(),
+  status: z.unknown(),
+  title: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasIncident.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasIncident_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasIncident.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasIncident_update_schema = z.object({
+  description: z.string().optional().nullable(),
+  postmortem_remediation: z.string().optional().nullable(),
+  postmortem_root_cause: z.string().optional().nullable(),
+  postmortem_status: z.unknown().optional().nullable(),
+  resolved_at: z.string().optional().nullable(),
+  severity: z.unknown(),
+  status: z.unknown(),
+  title: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasInternalApiToken.by_hash` (input schema of the compiled IR.Schema.zod program). */
+export const XaasInternalApiToken_by_hash_schema = z.object({
+  token_hash: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasInternalApiToken.issue` (input schema of the compiled IR.Schema.zod program). */
+export const XaasInternalApiToken_issue_schema = z.object({
+  created_by: z.string(),
+  expires_at: z.unknown().optional().nullable(),
+  org_id: z.string().uuid().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasInternalApiToken.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasInternalApiToken_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasInternalApiToken.revoke` (input schema of the compiled IR.Schema.zod program). */
+export const XaasInternalApiToken_revoke_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasMeasurement.measure` (input schema of the compiled IR.Schema.zod program). */
+export const XaasMeasurement_measure_schema = z.object({
+  since: z.string(),
+  subject_sha: z.unknown(),
+  until: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasMeasurement.measure_json` (input schema of the compiled IR.Schema.zod program). */
+export const XaasMeasurement_measure_json_schema = z.object({
+  since: z.string(),
+  subject_sha: z.unknown(),
+  until: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasObject.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObject_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasObject.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObject_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasObject.register` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObject_register_schema = z.object({
+  ash_resource: z.string().optional().nullable(),
+  ash_resource_id: z.string().optional().nullable(),
+  object_type: z.string(),
+  ocel_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasObjectObject.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObjectObject_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasObjectObject.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObjectObject_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasObjectObject.relate` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObjectObject_relate_schema = z.object({
+  qualifier: z.string(),
+  source_object_id: z.string().uuid(),
+  target_object_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasObjectStateDelta.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObjectStateDelta_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasObjectStateDelta.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObjectStateDelta_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasObjectStateDelta.record_delta` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObjectStateDelta_record_delta_schema = z.object({
+  attribute: z.string(),
+  event_id: z.string().uuid().optional().nullable(),
+  new_value: z.string().optional().nullable(),
+  object_id: z.string().uuid(),
+  occurred_at: z.unknown(),
+  previous_value: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasObservation.observe` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObservation_observe_schema = z.object({
+  fact: z.record(z.string(), z.unknown()),
+  subject_id: z.string(),
+  subject_type: z.string(),
+  supersedes_id: z.string().uuid().optional().nullable(),
+  valid_from: z.unknown(),
+  valid_to: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasObservation.supersede` (input schema of the compiled IR.Schema.zod program). */
+export const XaasObservation_supersede_schema = z.object({
+  fact: z.record(z.string(), z.unknown()),
+  subject_id: z.string(),
+  subject_type: z.string(),
+  supersedes_id: z.string().uuid().optional().nullable(),
+  valid_from: z.unknown(),
+  valid_to: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasOcelEvent.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOcelEvent_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasOcelEvent.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOcelEvent_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasOcelEvent.record` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOcelEvent_record_schema = z.object({
+  attributes: z.record(z.string(), z.unknown()).optional().nullable(),
+  event_type: z.string(),
+  object_relations: z.array(z.unknown()),
+  occurred_at: z.unknown(),
+  ocel_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrg.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrg_create_schema = z.object({
+  name: z.string(),
+  slug: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrg.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrg_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrg.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrg_update_schema = z.object({
+  name: z.string(),
+  status: z.unknown(),
+  suspension_reason: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrgMembership.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrgMembership_create_schema = z.object({
+  org_id: z.string().uuid(),
+  role: z.unknown(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrgMembership.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrgMembership_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrgMembership.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrgMembership_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasOrgMembership.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasOrgMembership_update_schema = z.object({
+  role: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPack.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPack_create_schema = z.object({
   deprecated: z.boolean(),
   description: z.string(),
   digest: z.string(),
@@ -31,18 +1697,23 @@ export const Pack_create_schema = z.object({
   version: z.string()
 }).passthrough();
 
-/** Zod boundary schema for `Pack.destroy` (input schema of the compiled IR.Schema.zod program). */
-export const Pack_destroy_schema = z.object({
+/** Zod boundary schema for `XaasPack.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPack_destroy_schema = z.object({
 
 }).passthrough();
 
-/** Zod boundary schema for `Pack.read` (input schema of the compiled IR.Schema.zod program). */
-export const Pack_read_schema = z.object({
+/** Zod boundary schema for `XaasPack.get_by_id` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPack_get_by_id_schema = z.object({
+  id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPack.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPack_read_schema = z.object({
 
 }).passthrough();
 
-/** Zod boundary schema for `Pack.update` (input schema of the compiled IR.Schema.zod program). */
-export const Pack_update_schema = z.object({
+/** Zod boundary schema for `XaasPack.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPack_update_schema = z.object({
   deprecated: z.boolean(),
   description: z.string(),
   digest: z.string(),
@@ -54,18 +1725,5176 @@ export const Pack_update_schema = z.object({
   version: z.string()
 }).passthrough();
 
+/** Zod boundary schema for `XaasPackManifest.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPackManifest_create_schema = z.object({
+  gate_count: z.number().int(),
+  misfiled_count: z.number().int(),
+  pack_name: z.string(),
+  profile: z.string().optional().nullable(),
+  verify_count: z.number().int(),
+  version: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPackManifest.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPackManifest_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPackManifest.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPackManifest_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPackManifest.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPackManifest_update_schema = z.object({
+  gate_count: z.number().int(),
+  misfiled_count: z.number().int(),
+  profile: z.string().optional().nullable(),
+  verify_count: z.number().int(),
+  version: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPentestFinding.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPentestFinding_create_schema = z.object({
+  description: z.string().optional().nullable(),
+  engagement_id: z.string(),
+  filed_by: z.string(),
+  org_id: z.string(),
+  severity: z.unknown(),
+  title: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPentestFinding.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPentestFinding_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPentestFinding.remediate` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPentestFinding_remediate_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPersonaGrant.grant` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPersonaGrant_grant_schema = z.object({
+  caller_id: z.string(),
+  granted_by: z.string().optional().nullable(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPersonaGrant.list_active` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPersonaGrant_list_active_schema = z.object({
+  caller_id: z.string(),
+  user_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasPersonaGrant.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPersonaGrant_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPersonaGrant.revoke` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPersonaGrant_revoke_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPosture.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPosture_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasPosture.register` (input schema of the compiled IR.Schema.zod program). */
+export const XaasPosture_register_schema = z.object({
+  critical_count: z.number().int(),
+  dispositioned_count: z.number().int(),
+  green: z.boolean(),
+  high_count: z.number().int(),
+  info_count: z.number().int(),
+  low_count: z.number().int(),
+  medium_count: z.number().int(),
+  repo: z.string(),
+  scan_date: z.string().optional().nullable(),
+  total_findings: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasProjectionRecord.admit` (input schema of the compiled IR.Schema.zod program). */
+export const XaasProjectionRecord_admit_schema = z.object({
+  generator_id: z.string(),
+  projection_path: z.string(),
+  recorded_hash: z.string(),
+  source_path: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasProjectionRecord.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasProjectionRecord_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasProvider.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasProvider_create_schema = z.object({
+  description: z.string().optional().nullable(),
+  name: z.string(),
+  org_id: z.string(),
+  slug: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasProvider.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasProvider_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasProvider.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasProvider_update_schema = z.object({
+  description: z.string().optional().nullable(),
+  name: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasReceipt.for_epoch` (input schema of the compiled IR.Schema.zod program). */
+export const XaasReceipt_for_epoch_schema = z.object({
+  epoch_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRecommendationLog.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRecommendationLog_create_schema = z.object({
+  accepted: z.boolean(),
+  candidate_pool_size: z.number().int(),
+  ranked_items: z.array(z.unknown()),
+  user_id: z.string().uuid(),
+  weights: z.record(z.string(), z.unknown())
+}).passthrough();
+
+/** Zod boundary schema for `XaasRecommendationLog.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRecommendationLog_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRecommendationLog.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRecommendationLog_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRecommendationLog.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRecommendationLog_update_schema = z.object({
+  accepted: z.boolean()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRefusalCode.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRefusalCode_create_schema = z.object({
+  broken_term: z.string().optional().nullable(),
+  code: z.string(),
+  family: z.string(),
+  fix_hint: z.string().optional().nullable(),
+  owner: z.string().optional().nullable(),
+  retryable: z.boolean()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRefusalCode.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRefusalCode_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRefusalCode.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRefusalCode_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRefusalCode.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRefusalCode_update_schema = z.object({
+  broken_term: z.string().optional().nullable(),
+  family: z.string(),
+  fix_hint: z.string().optional().nullable(),
+  owner: z.string().optional().nullable(),
+  retryable: z.boolean()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRegistration.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRegistration_create_schema = z.object({
+  attendee_id: z.string().uuid(),
+  session_id: z.string().uuid(),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRegistration.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRegistration_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRegistration.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRegistration_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRegistration.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRegistration_update_schema = z.object({
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasResolution.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasResolution_create_schema = z.object({
+  outcome: z.unknown(),
+  receipt_ref: z.string(),
+  work_order_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasResolution.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasResolution_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasResolution.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasResolution_update_schema = z.object({
+  outcome: z.unknown(),
+  receipt_ref: z.string(),
+  work_order_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRevenueRecognition.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRevenueRecognition_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRevokeNonce.claim` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRevokeNonce_claim_schema = z.object({
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRevokeNonce.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRevokeNonce_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteCastleDeploy.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteCastleDeploy_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteCastleRun.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteCastleRun_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteCastleSchedule.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteCastleSchedule_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteCastleSunset.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteCastleSunset_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteFeatureFlags.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteFeatureFlags_create_schema = z.object({
+  enabled: z.boolean(),
+  flag_key: z.string(),
+  requested_by: z.string(),
+  required_tier: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteFeatureFlags.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteFeatureFlags_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteFeatureFlags.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteFeatureFlags_update_schema = z.object({
+  enabled: z.boolean()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteOrgsCustomDomain.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteOrgsCustomDomain_create_schema = z.object({
+  hostname: z.string(),
+  org_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteOrgsCustomDomain.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteOrgsCustomDomain_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteOrgsCustomDomain.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteOrgsCustomDomain_update_schema = z.object({
+  certificate_message: z.string().optional().nullable(),
+  certificate_reason: z.string().optional().nullable(),
+  certificate_secret_name: z.string().optional().nullable(),
+  status: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteProjects.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteProjects_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteProjectsBackups.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteProjectsBackups_create_schema = z.object({
+  job_name: z.string(),
+  namespace: z.string(),
+  org_id: z.string(),
+  project_name: z.string(),
+  retain_until: z.string(),
+  size_bytes: z.number().int(),
+  status: z.unknown(),
+  taken_at: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteProjectsBackups.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteProjectsBackups_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteSecrets.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteSecrets_create_schema = z.object({
+  name: z.string(),
+  namespace: z.string(),
+  requested_by: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteSecrets.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteSecrets_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteSecrets.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteSecrets_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.advance_cycle` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_advance_cycle_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.autonomic_wave` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_autonomic_wave_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.begin_wave_session` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_begin_wave_session_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_create_schema = z.object({
+  base_sha: z.string().optional().nullable(),
+  capability_id: z.string().optional().nullable(),
+  checkpoint_iri: z.string().optional().nullable(),
+  court_map: z.record(z.string(), z.unknown()).optional().nullable(),
+  deadline_at: z.unknown().optional().nullable(),
+  dependency_evidence: z.record(z.string(), z.unknown()),
+  duration_budget_seconds: z.number().int(),
+  epoch_timeout_seconds: z.number().int(),
+  execution_policy: z.unknown().optional().nullable(),
+  execution_repo_alias: z.string().optional().nullable(),
+  goal: z.string(),
+  graph_digest: z.string().optional().nullable(),
+  max_cycles: z.number().int(),
+  org_id: z.string().optional().nullable(),
+  provider: z.string().optional().nullable(),
+  repository_identity: z.string().optional().nullable(),
+  semantic_bridge: z.record(z.string(), z.unknown()).optional().nullable(),
+  verifier_suite: z.string().optional().nullable(),
+  work_order_iri: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.engine_cycle` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_engine_cycle_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.mark_completed_epoch` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_mark_completed_epoch_schema = z.object({
+  last_completed_epoch_at: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.mark_expected_epoch` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_mark_expected_epoch_schema = z.object({
+  last_expected_epoch_at: z.unknown().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.read_unscoped` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_read_unscoped_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.record_frontier` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_record_frontier_schema = z.object({
+  frontier: z.record(z.string(), z.unknown()),
+  frontier_digest: z.string().optional().nullable(),
+  frontier_size: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.record_wave` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_record_wave_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.resume` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_resume_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.resume_frontier` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_resume_frontier_schema = z.object({
+  additional_cycles: z.number().int()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.semantic_wave` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_semantic_wave_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.start` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_start_schema = z.object({
+  exact_subject: z.string(),
+  worktree: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.stop` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_stop_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.submit` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_submit_schema = z.object({
+  deadline_at: z.unknown().optional().nullable(),
+  duration_budget_seconds: z.number().int(),
+  epoch_timeout_seconds: z.number().int(),
+  goal: z.string(),
+  max_cycles: z.number().int(),
+  org_id: z.string().optional().nullable(),
+  provider: z.string().optional().nullable(),
+  verifier_suite: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.tick` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_tick_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.transition_state` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_transition_state_schema = z.object({
+  standing: z.unknown(),
+  state: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRun.wave_loop` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRun_wave_loop_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSchool.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSchool_create_schema = z.object({
+  "default?": z.boolean(),
+  domain: z.string(),
+  name: z.string(),
+  slug: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSchool.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSchool_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSchool.get_default` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSchool_get_default_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSchool.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSchool_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSchool.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSchool_update_schema = z.object({
+  "default?": z.boolean(),
+  domain: z.string(),
+  name: z.string(),
+  slug: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSession.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSession_create_schema = z.object({
+  description: z.string().optional().nullable(),
+  ends_at: z.string().optional().nullable(),
+  slug: z.string(),
+  speaker_id: z.string().uuid(),
+  starts_at: z.string().optional().nullable(),
+  title: z.string(),
+  track_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSession.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSession_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSession.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSession_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSpeaker.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSpeaker_create_schema = z.object({
+  bio: z.string().optional().nullable(),
+  "keynote?": z.boolean(),
+  name: z.string(),
+  slug: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSpeaker.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSpeaker_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSpeaker.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSpeaker_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSponsor.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSponsor_create_schema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  tier: z.unknown(),
+  url: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSponsor.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSponsor_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSponsor.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSponsor_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSubscription.change_tier` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSubscription_change_tier_schema = z.object({
+  tier: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSubscription.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSubscription_create_schema = z.object({
+  current_period_end: z.string().optional().nullable(),
+  org_id: z.string(),
+  status: z.unknown(),
+  stripe_customer_id: z.string(),
+  stripe_subscription_id: z.string().optional().nullable(),
+  tier: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasSubscription.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSubscription_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasSubscription.sync_from_stripe` (input schema of the compiled IR.Schema.zod program). */
+export const XaasSubscription_sync_from_stripe_schema = z.object({
+  current_period_end: z.string().optional().nullable(),
+  status: z.unknown(),
+  stripe_subscription_id: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasTask.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTask_create_schema = z.object({
+  agent_id: z.string(),
+  artifacts: z.array(z.unknown()),
+  context_id: z.string(),
+  status: z.unknown(),
+  task_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasTask.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTask_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasTask.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTask_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasTask.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTask_update_schema = z.object({
+  artifacts: z.array(z.unknown()),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.expired` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_expired_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.expunge_expired` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_expunge_expired_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.get_confirmation_changes` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_get_confirmation_changes_schema = z.object({
+  jti: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.get_token` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_get_token_schema = z.object({
+  jti: z.string().optional().nullable(),
+  purpose: z.string().optional().nullable(),
+  token: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.is_revoked` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_is_revoked_schema = z.object({
+  jti: z.string().optional().nullable(),
+  token: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.read_expired` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_read_expired_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.revoke_all_stored_for_subject` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_revoke_all_stored_for_subject_schema = z.object({
+  extra_data: z.record(z.string(), z.unknown()).optional().nullable(),
+  subject: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.revoke_jti` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_revoke_jti_schema = z.object({
+  extra_data: z.record(z.string(), z.unknown()).optional().nullable(),
+  jti: z.string(),
+  subject: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.revoke_token` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_revoke_token_schema = z.object({
+  extra_data: z.record(z.string(), z.unknown()).optional().nullable(),
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.store_confirmation_changes` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_store_confirmation_changes_schema = z.object({
+  extra_data: z.record(z.string(), z.unknown()).optional().nullable(),
+  purpose: z.string(),
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasToken.store_token` (input schema of the compiled IR.Schema.zod program). */
+export const XaasToken_store_token_schema = z.object({
+  extra_data: z.record(z.string(), z.unknown()).optional().nullable(),
+  purpose: z.string(),
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasTrack.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTrack_create_schema = z.object({
+  description: z.string().optional().nullable(),
+  event_id: z.string().uuid(),
+  name: z.string(),
+  slug: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasTrack.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTrack_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasTrack.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTrack_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasTransfer.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTransfer_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasTransfer.read_transfers` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTransfer_read_transfers_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasTransfer.transfer` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTransfer_transfer_schema = z.object({
+  amount: z.unknown(),
+  from_account_id: z.string().uuid().optional().nullable(),
+  timestamp: z.unknown(),
+  to_account_id: z.string().uuid().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.change_password` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_change_password_schema = z.object({
+  current_password: z.string(),
+  password: z.string(),
+  password_confirmation: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.confirm` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_confirm_schema = z.object({
+  confirm: z.string(),
+  email: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.get_by_email` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_get_by_email_schema = z.object({
+  email: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.get_by_subject` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_get_by_subject_schema = z.object({
+  subject: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.log_out_everywhere` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_log_out_everywhere_schema = z.object({
+  user: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.register_with_password` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_register_with_password_schema = z.object({
+  email: z.unknown(),
+  password: z.string(),
+  password_confirmation: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.request_magic_link` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_request_magic_link_schema = z.object({
+  email: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.request_password_reset_token` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_request_password_reset_token_schema = z.object({
+  email: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.reset_password_with_token` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_reset_password_with_token_schema = z.object({
+  password: z.string(),
+  password_confirmation: z.string(),
+  reset_token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.sign_in_with_magic_link` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_sign_in_with_magic_link_schema = z.object({
+  remember_me: z.boolean().optional().nullable(),
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.sign_in_with_password` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_sign_in_with_password_schema = z.object({
+  email: z.unknown(),
+  password: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.sign_in_with_remember_me` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_sign_in_with_remember_me_schema = z.object({
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasUser.sign_in_with_token` (input schema of the compiled IR.Schema.zod program). */
+export const XaasUser_sign_in_with_token_schema = z.object({
+  token: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasVerificationKey.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasVerificationKey_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasVerificationKey.register` (input schema of the compiled IR.Schema.zod program). */
+export const XaasVerificationKey_register_schema = z.object({
+  algorithm: z.unknown(),
+  key_material_hex: z.string(),
+  kid: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhook.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhook_create_schema = z.object({
+  enabled: z.boolean(),
+  event_types: z.array(z.unknown()),
+  org_id: z.string(),
+  secret: z.string(),
+  url: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhook.destroy` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhook_destroy_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhook.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhook_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhook.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhook_update_schema = z.object({
+  enabled: z.boolean(),
+  event_types: z.array(z.unknown()),
+  secret: z.string().optional().nullable(),
+  url: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhookDelivery.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhookDelivery_create_schema = z.object({
+  attempt_count: z.number().int(),
+  event_type: z.string(),
+  last_attempted_at: z.string().optional().nullable(),
+  payload: z.record(z.string(), z.unknown()),
+  status: z.unknown(),
+  webhook_id: z.string().uuid()
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhookDelivery.deliver` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhookDelivery_deliver_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhookDelivery.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhookDelivery_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhookDelivery.record_attempt` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhookDelivery_record_attempt_schema = z.object({
+  attempt_count: z.number().int(),
+  last_attempted_at: z.string().optional().nullable(),
+  status: z.unknown()
+}).passthrough();
+
+/** Zod boundary schema for `XaasWebhookDelivery.retry_failed_deliveries` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWebhookDelivery_retry_failed_deliveries_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasWorkOrder.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWorkOrder_create_schema = z.object({
+  candidate_repair: z.string(),
+  classification: z.unknown(),
+  derived_from_receipt: z.string(),
+  expected: z.string(),
+  falsifier: z.string(),
+  gap_id: z.string().uuid(),
+  observed: z.string(),
+  residual: z.string(),
+  status: z.unknown(),
+  subject: z.string(),
+  success_criteria: z.string(),
+  ticket_id: z.string()
+}).passthrough();
+
+/** Zod boundary schema for `XaasWorkOrder.read` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWorkOrder_read_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasWorkOrder.update` (input schema of the compiled IR.Schema.zod program). */
+export const XaasWorkOrder_update_schema = z.object({
+  candidate_repair: z.string(),
+  classification: z.unknown(),
+  derived_from_receipt: z.string(),
+  expected: z.string(),
+  falsifier: z.string(),
+  gap_id: z.string().uuid(),
+  observed: z.string(),
+  residual: z.string(),
+  status: z.unknown(),
+  subject: z.string(),
+  success_criteria: z.string(),
+  ticket_id: z.string()
+}).passthrough();
+
 /**
- * JSDoc-typed namespace for resource `Pack` (4 actions: create, destroy, read, update).
- * @typedef {Object} PackNamespace
- * @property {Object} create - `Pack.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
- * @property {Object} destroy - `Pack.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
- * @property {Object} read - `Pack.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
- * @property {Object} update - `Pack.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * JSDoc-typed namespace for resource `Account` (3 actions: lock_accounts, open, read).
+ * @typedef {Object} XaasAccountNamespace
+ * @property {Object} lock_accounts - `XaasAccount.lock_accounts` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} open - `XaasAccount.open` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasAccount.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
-export const Pack = Object.freeze({
-  /** `Pack.create` — not delegated; no dispatch intent. */
+export const XaasAccount = Object.freeze({
+  /** `XaasAccount.lock_accounts` — not delegated; no dispatch intent. */
+  lock_accounts: Object.freeze({
+    id: "XaasAccount.lock_accounts",
+    resource: "Account",
+    action: "lock_accounts",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Lock accounts",
+    schema: XaasAccount_lock_accounts_schema
+  }),
+  /** `XaasAccount.open` — not delegated; no dispatch intent. */
+  open: Object.freeze({
+    id: "XaasAccount.open",
+    resource: "Account",
+    action: "open",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Open",
+    schema: XaasAccount_open_schema
+  }),
+  /** `XaasAccount.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAccount.read",
+    resource: "Account",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAccount_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Agent` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasAgentNamespace
+ * @property {Object} create - `XaasAgent.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasAgent.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasAgent.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasAgent.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAgent = Object.freeze({
+  /** `XaasAgent.create` — not delegated; no dispatch intent. */
   create: Object.freeze({
-    id: "Pack.create",
+    id: "XaasAgent.create",
+    resource: "Agent",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasAgent_create_schema
+  }),
+  /** `XaasAgent.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasAgent.destroy",
+    resource: "Agent",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasAgent_destroy_schema
+  }),
+  /** `XaasAgent.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAgent.read",
+    resource: "Agent",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAgent_read_schema
+  }),
+  /** `XaasAgent.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasAgent.update",
+    resource: "Agent",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasAgent_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalBackupRetentionChange` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalBackupRetentionChangeNamespace
+ * @property {Object} approve - `XaasApprovalBackupRetentionChange.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalBackupRetentionChange.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalBackupRetentionChange.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalBackupRetentionChange = Object.freeze({
+  /** `XaasApprovalBackupRetentionChange.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalBackupRetentionChange.approve",
+    resource: "ApprovalBackupRetentionChange",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalBackupRetentionChange_approve_schema
+  }),
+  /** `XaasApprovalBackupRetentionChange.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalBackupRetentionChange.create",
+    resource: "ApprovalBackupRetentionChange",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalBackupRetentionChange_create_schema
+  }),
+  /** `XaasApprovalBackupRetentionChange.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalBackupRetentionChange.read",
+    resource: "ApprovalBackupRetentionChange",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalBackupRetentionChange_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalBreakGlassJustificationReview` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalBreakGlassJustificationReviewNamespace
+ * @property {Object} approve - `XaasApprovalBreakGlassJustificationReview.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalBreakGlassJustificationReview.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalBreakGlassJustificationReview.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalBreakGlassJustificationReview = Object.freeze({
+  /** `XaasApprovalBreakGlassJustificationReview.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalBreakGlassJustificationReview.approve",
+    resource: "ApprovalBreakGlassJustificationReview",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalBreakGlassJustificationReview_approve_schema
+  }),
+  /** `XaasApprovalBreakGlassJustificationReview.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalBreakGlassJustificationReview.create",
+    resource: "ApprovalBreakGlassJustificationReview",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalBreakGlassJustificationReview_create_schema
+  }),
+  /** `XaasApprovalBreakGlassJustificationReview.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalBreakGlassJustificationReview.read",
+    resource: "ApprovalBreakGlassJustificationReview",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalBreakGlassJustificationReview_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalCastleVerbSchedule` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalCastleVerbScheduleNamespace
+ * @property {Object} approve - `XaasApprovalCastleVerbSchedule.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalCastleVerbSchedule.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalCastleVerbSchedule.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalCastleVerbSchedule = Object.freeze({
+  /** `XaasApprovalCastleVerbSchedule.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalCastleVerbSchedule.approve",
+    resource: "ApprovalCastleVerbSchedule",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalCastleVerbSchedule_approve_schema
+  }),
+  /** `XaasApprovalCastleVerbSchedule.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalCastleVerbSchedule.create",
+    resource: "ApprovalCastleVerbSchedule",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalCastleVerbSchedule_create_schema
+  }),
+  /** `XaasApprovalCastleVerbSchedule.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalCastleVerbSchedule.read",
+    resource: "ApprovalCastleVerbSchedule",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalCastleVerbSchedule_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalChangeOfControlNotify` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalChangeOfControlNotifyNamespace
+ * @property {Object} approve - `XaasApprovalChangeOfControlNotify.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalChangeOfControlNotify.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalChangeOfControlNotify.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalChangeOfControlNotify = Object.freeze({
+  /** `XaasApprovalChangeOfControlNotify.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalChangeOfControlNotify.approve",
+    resource: "ApprovalChangeOfControlNotify",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalChangeOfControlNotify_approve_schema
+  }),
+  /** `XaasApprovalChangeOfControlNotify.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalChangeOfControlNotify.create",
+    resource: "ApprovalChangeOfControlNotify",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalChangeOfControlNotify_create_schema
+  }),
+  /** `XaasApprovalChangeOfControlNotify.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalChangeOfControlNotify.read",
+    resource: "ApprovalChangeOfControlNotify",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalChangeOfControlNotify_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalCmekKeyBinding` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalCmekKeyBindingNamespace
+ * @property {Object} approve - `XaasApprovalCmekKeyBinding.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalCmekKeyBinding.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalCmekKeyBinding.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalCmekKeyBinding = Object.freeze({
+  /** `XaasApprovalCmekKeyBinding.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalCmekKeyBinding.approve",
+    resource: "ApprovalCmekKeyBinding",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalCmekKeyBinding_approve_schema
+  }),
+  /** `XaasApprovalCmekKeyBinding.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalCmekKeyBinding.create",
+    resource: "ApprovalCmekKeyBinding",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalCmekKeyBinding_create_schema
+  }),
+  /** `XaasApprovalCmekKeyBinding.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalCmekKeyBinding.read",
+    resource: "ApprovalCmekKeyBinding",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalCmekKeyBinding_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalComplianceRotationBlock` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalComplianceRotationBlockNamespace
+ * @property {Object} approve - `XaasApprovalComplianceRotationBlock.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalComplianceRotationBlock.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalComplianceRotationBlock.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalComplianceRotationBlock = Object.freeze({
+  /** `XaasApprovalComplianceRotationBlock.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalComplianceRotationBlock.approve",
+    resource: "ApprovalComplianceRotationBlock",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalComplianceRotationBlock_approve_schema
+  }),
+  /** `XaasApprovalComplianceRotationBlock.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalComplianceRotationBlock.create",
+    resource: "ApprovalComplianceRotationBlock",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalComplianceRotationBlock_create_schema
+  }),
+  /** `XaasApprovalComplianceRotationBlock.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalComplianceRotationBlock.read",
+    resource: "ApprovalComplianceRotationBlock",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalComplianceRotationBlock_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalDeniedPartyOverride` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalDeniedPartyOverrideNamespace
+ * @property {Object} approve - `XaasApprovalDeniedPartyOverride.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalDeniedPartyOverride.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalDeniedPartyOverride.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalDeniedPartyOverride = Object.freeze({
+  /** `XaasApprovalDeniedPartyOverride.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalDeniedPartyOverride.approve",
+    resource: "ApprovalDeniedPartyOverride",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalDeniedPartyOverride_approve_schema
+  }),
+  /** `XaasApprovalDeniedPartyOverride.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalDeniedPartyOverride.create",
+    resource: "ApprovalDeniedPartyOverride",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalDeniedPartyOverride_create_schema
+  }),
+  /** `XaasApprovalDeniedPartyOverride.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalDeniedPartyOverride.read",
+    resource: "ApprovalDeniedPartyOverride",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalDeniedPartyOverride_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalDeploymentQuarantine` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalDeploymentQuarantineNamespace
+ * @property {Object} approve - `XaasApprovalDeploymentQuarantine.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalDeploymentQuarantine.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalDeploymentQuarantine.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalDeploymentQuarantine = Object.freeze({
+  /** `XaasApprovalDeploymentQuarantine.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalDeploymentQuarantine.approve",
+    resource: "ApprovalDeploymentQuarantine",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalDeploymentQuarantine_approve_schema
+  }),
+  /** `XaasApprovalDeploymentQuarantine.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalDeploymentQuarantine.create",
+    resource: "ApprovalDeploymentQuarantine",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalDeploymentQuarantine_create_schema
+  }),
+  /** `XaasApprovalDeploymentQuarantine.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalDeploymentQuarantine.read",
+    resource: "ApprovalDeploymentQuarantine",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalDeploymentQuarantine_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalDrFailover` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalDrFailoverNamespace
+ * @property {Object} approve - `XaasApprovalDrFailover.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalDrFailover.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalDrFailover.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalDrFailover = Object.freeze({
+  /** `XaasApprovalDrFailover.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalDrFailover.approve",
+    resource: "ApprovalDrFailover",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalDrFailover_approve_schema
+  }),
+  /** `XaasApprovalDrFailover.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalDrFailover.create",
+    resource: "ApprovalDrFailover",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalDrFailover_create_schema
+  }),
+  /** `XaasApprovalDrFailover.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalDrFailover.read",
+    resource: "ApprovalDrFailover",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalDrFailover_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalDsarErasure` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalDsarErasureNamespace
+ * @property {Object} approve - `XaasApprovalDsarErasure.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalDsarErasure.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalDsarErasure.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalDsarErasure = Object.freeze({
+  /** `XaasApprovalDsarErasure.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalDsarErasure.approve",
+    resource: "ApprovalDsarErasure",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalDsarErasure_approve_schema
+  }),
+  /** `XaasApprovalDsarErasure.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalDsarErasure.create",
+    resource: "ApprovalDsarErasure",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalDsarErasure_create_schema
+  }),
+  /** `XaasApprovalDsarErasure.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalDsarErasure.read",
+    resource: "ApprovalDsarErasure",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalDsarErasure_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalEnvironmentPromote` (4 actions: approve, create, read, reject).
+ * @typedef {Object} XaasApprovalEnvironmentPromoteNamespace
+ * @property {Object} approve - `XaasApprovalEnvironmentPromote.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalEnvironmentPromote.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalEnvironmentPromote.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} reject - `XaasApprovalEnvironmentPromote.reject` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalEnvironmentPromote = Object.freeze({
+  /** `XaasApprovalEnvironmentPromote.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalEnvironmentPromote.approve",
+    resource: "ApprovalEnvironmentPromote",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalEnvironmentPromote_approve_schema
+  }),
+  /** `XaasApprovalEnvironmentPromote.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalEnvironmentPromote.create",
+    resource: "ApprovalEnvironmentPromote",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalEnvironmentPromote_create_schema
+  }),
+  /** `XaasApprovalEnvironmentPromote.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalEnvironmentPromote.read",
+    resource: "ApprovalEnvironmentPromote",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalEnvironmentPromote_read_schema
+  }),
+  /** `XaasApprovalEnvironmentPromote.reject` — not delegated; no dispatch intent. */
+  reject: Object.freeze({
+    id: "XaasApprovalEnvironmentPromote.reject",
+    resource: "ApprovalEnvironmentPromote",
+    action: "reject",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Reject",
+    schema: XaasApprovalEnvironmentPromote_reject_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalExportSubscriptionUpdate` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalExportSubscriptionUpdateNamespace
+ * @property {Object} approve - `XaasApprovalExportSubscriptionUpdate.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalExportSubscriptionUpdate.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalExportSubscriptionUpdate.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalExportSubscriptionUpdate = Object.freeze({
+  /** `XaasApprovalExportSubscriptionUpdate.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalExportSubscriptionUpdate.approve",
+    resource: "ApprovalExportSubscriptionUpdate",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalExportSubscriptionUpdate_approve_schema
+  }),
+  /** `XaasApprovalExportSubscriptionUpdate.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalExportSubscriptionUpdate.create",
+    resource: "ApprovalExportSubscriptionUpdate",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalExportSubscriptionUpdate_create_schema
+  }),
+  /** `XaasApprovalExportSubscriptionUpdate.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalExportSubscriptionUpdate.read",
+    resource: "ApprovalExportSubscriptionUpdate",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalExportSubscriptionUpdate_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalFreezeOverride` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalFreezeOverrideNamespace
+ * @property {Object} approve - `XaasApprovalFreezeOverride.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalFreezeOverride.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalFreezeOverride.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalFreezeOverride = Object.freeze({
+  /** `XaasApprovalFreezeOverride.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalFreezeOverride.approve",
+    resource: "ApprovalFreezeOverride",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalFreezeOverride_approve_schema
+  }),
+  /** `XaasApprovalFreezeOverride.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalFreezeOverride.create",
+    resource: "ApprovalFreezeOverride",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalFreezeOverride_create_schema
+  }),
+  /** `XaasApprovalFreezeOverride.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalFreezeOverride.read",
+    resource: "ApprovalFreezeOverride",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalFreezeOverride_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalGeofenceExceptionGrant` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalGeofenceExceptionGrantNamespace
+ * @property {Object} approve - `XaasApprovalGeofenceExceptionGrant.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalGeofenceExceptionGrant.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalGeofenceExceptionGrant.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalGeofenceExceptionGrant = Object.freeze({
+  /** `XaasApprovalGeofenceExceptionGrant.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalGeofenceExceptionGrant.approve",
+    resource: "ApprovalGeofenceExceptionGrant",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalGeofenceExceptionGrant_approve_schema
+  }),
+  /** `XaasApprovalGeofenceExceptionGrant.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalGeofenceExceptionGrant.create",
+    resource: "ApprovalGeofenceExceptionGrant",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalGeofenceExceptionGrant_create_schema
+  }),
+  /** `XaasApprovalGeofenceExceptionGrant.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalGeofenceExceptionGrant.read",
+    resource: "ApprovalGeofenceExceptionGrant",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalGeofenceExceptionGrant_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalInsurancePolicyUpdate` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalInsurancePolicyUpdateNamespace
+ * @property {Object} approve - `XaasApprovalInsurancePolicyUpdate.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalInsurancePolicyUpdate.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalInsurancePolicyUpdate.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalInsurancePolicyUpdate = Object.freeze({
+  /** `XaasApprovalInsurancePolicyUpdate.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalInsurancePolicyUpdate.approve",
+    resource: "ApprovalInsurancePolicyUpdate",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalInsurancePolicyUpdate_approve_schema
+  }),
+  /** `XaasApprovalInsurancePolicyUpdate.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalInsurancePolicyUpdate.create",
+    resource: "ApprovalInsurancePolicyUpdate",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalInsurancePolicyUpdate_create_schema
+  }),
+  /** `XaasApprovalInsurancePolicyUpdate.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalInsurancePolicyUpdate.read",
+    resource: "ApprovalInsurancePolicyUpdate",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalInsurancePolicyUpdate_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalInvoiceReconciliationApprove` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalInvoiceReconciliationApproveNamespace
+ * @property {Object} approve - `XaasApprovalInvoiceReconciliationApprove.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalInvoiceReconciliationApprove.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalInvoiceReconciliationApprove.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalInvoiceReconciliationApprove = Object.freeze({
+  /** `XaasApprovalInvoiceReconciliationApprove.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalInvoiceReconciliationApprove.approve",
+    resource: "ApprovalInvoiceReconciliationApprove",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalInvoiceReconciliationApprove_approve_schema
+  }),
+  /** `XaasApprovalInvoiceReconciliationApprove.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalInvoiceReconciliationApprove.create",
+    resource: "ApprovalInvoiceReconciliationApprove",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalInvoiceReconciliationApprove_create_schema
+  }),
+  /** `XaasApprovalInvoiceReconciliationApprove.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalInvoiceReconciliationApprove.read",
+    resource: "ApprovalInvoiceReconciliationApprove",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalInvoiceReconciliationApprove_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalK8sFaultRemediateSuggest` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalK8sFaultRemediateSuggestNamespace
+ * @property {Object} approve - `XaasApprovalK8sFaultRemediateSuggest.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalK8sFaultRemediateSuggest.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalK8sFaultRemediateSuggest.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalK8sFaultRemediateSuggest = Object.freeze({
+  /** `XaasApprovalK8sFaultRemediateSuggest.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalK8sFaultRemediateSuggest.approve",
+    resource: "ApprovalK8sFaultRemediateSuggest",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalK8sFaultRemediateSuggest_approve_schema
+  }),
+  /** `XaasApprovalK8sFaultRemediateSuggest.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalK8sFaultRemediateSuggest.create",
+    resource: "ApprovalK8sFaultRemediateSuggest",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalK8sFaultRemediateSuggest_create_schema
+  }),
+  /** `XaasApprovalK8sFaultRemediateSuggest.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalK8sFaultRemediateSuggest.read",
+    resource: "ApprovalK8sFaultRemediateSuggest",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalK8sFaultRemediateSuggest_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalLeRequestRespond` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalLeRequestRespondNamespace
+ * @property {Object} approve - `XaasApprovalLeRequestRespond.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalLeRequestRespond.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalLeRequestRespond.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalLeRequestRespond = Object.freeze({
+  /** `XaasApprovalLeRequestRespond.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalLeRequestRespond.approve",
+    resource: "ApprovalLeRequestRespond",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalLeRequestRespond_approve_schema
+  }),
+  /** `XaasApprovalLeRequestRespond.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalLeRequestRespond.create",
+    resource: "ApprovalLeRequestRespond",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalLeRequestRespond_create_schema
+  }),
+  /** `XaasApprovalLeRequestRespond.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalLeRequestRespond.read",
+    resource: "ApprovalLeRequestRespond",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalLeRequestRespond_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalLegalHoldRelease` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalLegalHoldReleaseNamespace
+ * @property {Object} approve - `XaasApprovalLegalHoldRelease.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalLegalHoldRelease.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalLegalHoldRelease.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalLegalHoldRelease = Object.freeze({
+  /** `XaasApprovalLegalHoldRelease.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalLegalHoldRelease.approve",
+    resource: "ApprovalLegalHoldRelease",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalLegalHoldRelease_approve_schema
+  }),
+  /** `XaasApprovalLegalHoldRelease.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalLegalHoldRelease.create",
+    resource: "ApprovalLegalHoldRelease",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalLegalHoldRelease_create_schema
+  }),
+  /** `XaasApprovalLegalHoldRelease.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalLegalHoldRelease.read",
+    resource: "ApprovalLegalHoldRelease",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalLegalHoldRelease_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalOrgDelete` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalOrgDeleteNamespace
+ * @property {Object} approve - `XaasApprovalOrgDelete.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalOrgDelete.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalOrgDelete.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalOrgDelete = Object.freeze({
+  /** `XaasApprovalOrgDelete.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalOrgDelete.approve",
+    resource: "ApprovalOrgDelete",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalOrgDelete_approve_schema
+  }),
+  /** `XaasApprovalOrgDelete.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalOrgDelete.create",
+    resource: "ApprovalOrgDelete",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalOrgDelete_create_schema
+  }),
+  /** `XaasApprovalOrgDelete.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalOrgDelete.read",
+    resource: "ApprovalOrgDelete",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalOrgDelete_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalPatchSlaCreditApply` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalPatchSlaCreditApplyNamespace
+ * @property {Object} approve - `XaasApprovalPatchSlaCreditApply.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalPatchSlaCreditApply.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalPatchSlaCreditApply.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalPatchSlaCreditApply = Object.freeze({
+  /** `XaasApprovalPatchSlaCreditApply.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalPatchSlaCreditApply.approve",
+    resource: "ApprovalPatchSlaCreditApply",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalPatchSlaCreditApply_approve_schema
+  }),
+  /** `XaasApprovalPatchSlaCreditApply.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalPatchSlaCreditApply.create",
+    resource: "ApprovalPatchSlaCreditApply",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalPatchSlaCreditApply_create_schema
+  }),
+  /** `XaasApprovalPatchSlaCreditApply.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalPatchSlaCreditApply.read",
+    resource: "ApprovalPatchSlaCreditApply",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalPatchSlaCreditApply_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalPentestFindingResolve` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalPentestFindingResolveNamespace
+ * @property {Object} approve - `XaasApprovalPentestFindingResolve.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalPentestFindingResolve.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalPentestFindingResolve.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalPentestFindingResolve = Object.freeze({
+  /** `XaasApprovalPentestFindingResolve.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalPentestFindingResolve.approve",
+    resource: "ApprovalPentestFindingResolve",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalPentestFindingResolve_approve_schema
+  }),
+  /** `XaasApprovalPentestFindingResolve.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalPentestFindingResolve.create",
+    resource: "ApprovalPentestFindingResolve",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalPentestFindingResolve_create_schema
+  }),
+  /** `XaasApprovalPentestFindingResolve.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalPentestFindingResolve.read",
+    resource: "ApprovalPentestFindingResolve",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalPentestFindingResolve_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalPersonnelAttestationRecord` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalPersonnelAttestationRecordNamespace
+ * @property {Object} approve - `XaasApprovalPersonnelAttestationRecord.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalPersonnelAttestationRecord.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalPersonnelAttestationRecord.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalPersonnelAttestationRecord = Object.freeze({
+  /** `XaasApprovalPersonnelAttestationRecord.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalPersonnelAttestationRecord.approve",
+    resource: "ApprovalPersonnelAttestationRecord",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalPersonnelAttestationRecord_approve_schema
+  }),
+  /** `XaasApprovalPersonnelAttestationRecord.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalPersonnelAttestationRecord.create",
+    resource: "ApprovalPersonnelAttestationRecord",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalPersonnelAttestationRecord_create_schema
+  }),
+  /** `XaasApprovalPersonnelAttestationRecord.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalPersonnelAttestationRecord.read",
+    resource: "ApprovalPersonnelAttestationRecord",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalPersonnelAttestationRecord_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalPricingOverride` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalPricingOverrideNamespace
+ * @property {Object} approve - `XaasApprovalPricingOverride.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalPricingOverride.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalPricingOverride.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalPricingOverride = Object.freeze({
+  /** `XaasApprovalPricingOverride.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalPricingOverride.approve",
+    resource: "ApprovalPricingOverride",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalPricingOverride_approve_schema
+  }),
+  /** `XaasApprovalPricingOverride.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalPricingOverride.create",
+    resource: "ApprovalPricingOverride",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalPricingOverride_create_schema
+  }),
+  /** `XaasApprovalPricingOverride.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalPricingOverride.read",
+    resource: "ApprovalPricingOverride",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalPricingOverride_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalProviderStatusChange` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalProviderStatusChangeNamespace
+ * @property {Object} approve - `XaasApprovalProviderStatusChange.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalProviderStatusChange.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalProviderStatusChange.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalProviderStatusChange = Object.freeze({
+  /** `XaasApprovalProviderStatusChange.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalProviderStatusChange.approve",
+    resource: "ApprovalProviderStatusChange",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalProviderStatusChange_approve_schema
+  }),
+  /** `XaasApprovalProviderStatusChange.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalProviderStatusChange.create",
+    resource: "ApprovalProviderStatusChange",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalProviderStatusChange_create_schema
+  }),
+  /** `XaasApprovalProviderStatusChange.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalProviderStatusChange.read",
+    resource: "ApprovalProviderStatusChange",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalProviderStatusChange_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalQuotaOverride` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalQuotaOverrideNamespace
+ * @property {Object} approve - `XaasApprovalQuotaOverride.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalQuotaOverride.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalQuotaOverride.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalQuotaOverride = Object.freeze({
+  /** `XaasApprovalQuotaOverride.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalQuotaOverride.approve",
+    resource: "ApprovalQuotaOverride",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalQuotaOverride_approve_schema
+  }),
+  /** `XaasApprovalQuotaOverride.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalQuotaOverride.create",
+    resource: "ApprovalQuotaOverride",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalQuotaOverride_create_schema
+  }),
+  /** `XaasApprovalQuotaOverride.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalQuotaOverride.read",
+    resource: "ApprovalQuotaOverride",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalQuotaOverride_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalSlaCreditApply` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalSlaCreditApplyNamespace
+ * @property {Object} approve - `XaasApprovalSlaCreditApply.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalSlaCreditApply.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalSlaCreditApply.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalSlaCreditApply = Object.freeze({
+  /** `XaasApprovalSlaCreditApply.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalSlaCreditApply.approve",
+    resource: "ApprovalSlaCreditApply",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalSlaCreditApply_approve_schema
+  }),
+  /** `XaasApprovalSlaCreditApply.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalSlaCreditApply.create",
+    resource: "ApprovalSlaCreditApply",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalSlaCreditApply_create_schema
+  }),
+  /** `XaasApprovalSlaCreditApply.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalSlaCreditApply.read",
+    resource: "ApprovalSlaCreditApply",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalSlaCreditApply_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalSourceEscrowSnapshot` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalSourceEscrowSnapshotNamespace
+ * @property {Object} approve - `XaasApprovalSourceEscrowSnapshot.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalSourceEscrowSnapshot.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalSourceEscrowSnapshot.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalSourceEscrowSnapshot = Object.freeze({
+  /** `XaasApprovalSourceEscrowSnapshot.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalSourceEscrowSnapshot.approve",
+    resource: "ApprovalSourceEscrowSnapshot",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalSourceEscrowSnapshot_approve_schema
+  }),
+  /** `XaasApprovalSourceEscrowSnapshot.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalSourceEscrowSnapshot.create",
+    resource: "ApprovalSourceEscrowSnapshot",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalSourceEscrowSnapshot_create_schema
+  }),
+  /** `XaasApprovalSourceEscrowSnapshot.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalSourceEscrowSnapshot.read",
+    resource: "ApprovalSourceEscrowSnapshot",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalSourceEscrowSnapshot_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalSsoRoleMappingUpdate` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalSsoRoleMappingUpdateNamespace
+ * @property {Object} approve - `XaasApprovalSsoRoleMappingUpdate.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalSsoRoleMappingUpdate.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalSsoRoleMappingUpdate.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalSsoRoleMappingUpdate = Object.freeze({
+  /** `XaasApprovalSsoRoleMappingUpdate.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalSsoRoleMappingUpdate.approve",
+    resource: "ApprovalSsoRoleMappingUpdate",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalSsoRoleMappingUpdate_approve_schema
+  }),
+  /** `XaasApprovalSsoRoleMappingUpdate.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalSsoRoleMappingUpdate.create",
+    resource: "ApprovalSsoRoleMappingUpdate",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalSsoRoleMappingUpdate_create_schema
+  }),
+  /** `XaasApprovalSsoRoleMappingUpdate.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalSsoRoleMappingUpdate.read",
+    resource: "ApprovalSsoRoleMappingUpdate",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalSsoRoleMappingUpdate_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalSubprocessorRegistryUpdate` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalSubprocessorRegistryUpdateNamespace
+ * @property {Object} approve - `XaasApprovalSubprocessorRegistryUpdate.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalSubprocessorRegistryUpdate.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalSubprocessorRegistryUpdate.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalSubprocessorRegistryUpdate = Object.freeze({
+  /** `XaasApprovalSubprocessorRegistryUpdate.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalSubprocessorRegistryUpdate.approve",
+    resource: "ApprovalSubprocessorRegistryUpdate",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalSubprocessorRegistryUpdate_approve_schema
+  }),
+  /** `XaasApprovalSubprocessorRegistryUpdate.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalSubprocessorRegistryUpdate.create",
+    resource: "ApprovalSubprocessorRegistryUpdate",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalSubprocessorRegistryUpdate_create_schema
+  }),
+  /** `XaasApprovalSubprocessorRegistryUpdate.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalSubprocessorRegistryUpdate.read",
+    resource: "ApprovalSubprocessorRegistryUpdate",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalSubprocessorRegistryUpdate_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalTierDowngrade` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalTierDowngradeNamespace
+ * @property {Object} approve - `XaasApprovalTierDowngrade.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalTierDowngrade.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalTierDowngrade.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalTierDowngrade = Object.freeze({
+  /** `XaasApprovalTierDowngrade.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalTierDowngrade.approve",
+    resource: "ApprovalTierDowngrade",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalTierDowngrade_approve_schema
+  }),
+  /** `XaasApprovalTierDowngrade.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalTierDowngrade.create",
+    resource: "ApprovalTierDowngrade",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalTierDowngrade_create_schema
+  }),
+  /** `XaasApprovalTierDowngrade.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalTierDowngrade.read",
+    resource: "ApprovalTierDowngrade",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalTierDowngrade_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ApprovalVendorOffboardingAttestationIssue` (3 actions: approve, create, read).
+ * @typedef {Object} XaasApprovalVendorOffboardingAttestationIssueNamespace
+ * @property {Object} approve - `XaasApprovalVendorOffboardingAttestationIssue.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasApprovalVendorOffboardingAttestationIssue.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasApprovalVendorOffboardingAttestationIssue.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasApprovalVendorOffboardingAttestationIssue = Object.freeze({
+  /** `XaasApprovalVendorOffboardingAttestationIssue.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasApprovalVendorOffboardingAttestationIssue.approve",
+    resource: "ApprovalVendorOffboardingAttestationIssue",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasApprovalVendorOffboardingAttestationIssue_approve_schema
+  }),
+  /** `XaasApprovalVendorOffboardingAttestationIssue.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasApprovalVendorOffboardingAttestationIssue.create",
+    resource: "ApprovalVendorOffboardingAttestationIssue",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasApprovalVendorOffboardingAttestationIssue_create_schema
+  }),
+  /** `XaasApprovalVendorOffboardingAttestationIssue.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasApprovalVendorOffboardingAttestationIssue.read",
+    resource: "ApprovalVendorOffboardingAttestationIssue",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasApprovalVendorOffboardingAttestationIssue_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Attendee` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasAttendeeNamespace
+ * @property {Object} create - `XaasAttendee.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasAttendee.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasAttendee.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAttendee = Object.freeze({
+  /** `XaasAttendee.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasAttendee.create",
+    resource: "Attendee",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasAttendee_create_schema
+  }),
+  /** `XaasAttendee.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasAttendee.destroy",
+    resource: "Attendee",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasAttendee_destroy_schema
+  }),
+  /** `XaasAttendee.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAttendee.read",
+    resource: "Attendee",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAttendee_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AuditExportToken` (3 actions: issue, read, revoke).
+ * @typedef {Object} XaasAuditExportTokenNamespace
+ * @property {Object} issue - `XaasAuditExportToken.issue` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasAuditExportToken.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} revoke - `XaasAuditExportToken.revoke` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAuditExportToken = Object.freeze({
+  /** `XaasAuditExportToken.issue` — not delegated; no dispatch intent. */
+  issue: Object.freeze({
+    id: "XaasAuditExportToken.issue",
+    resource: "AuditExportToken",
+    action: "issue",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Issue",
+    schema: XaasAuditExportToken_issue_schema
+  }),
+  /** `XaasAuditExportToken.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAuditExportToken.read",
+    resource: "AuditExportToken",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAuditExportToken_read_schema
+  }),
+  /** `XaasAuditExportToken.revoke` — not delegated; no dispatch intent. */
+  revoke: Object.freeze({
+    id: "XaasAuditExportToken.revoke",
+    resource: "AuditExportToken",
+    action: "revoke",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Revoke",
+    schema: XaasAuditExportToken_revoke_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AuditLogEntry` (2 actions: create, read).
+ * @typedef {Object} XaasAuditLogEntryNamespace
+ * @property {Object} create - `XaasAuditLogEntry.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasAuditLogEntry.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAuditLogEntry = Object.freeze({
+  /** `XaasAuditLogEntry.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasAuditLogEntry.create",
+    resource: "AuditLogEntry",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasAuditLogEntry_create_schema
+  }),
+  /** `XaasAuditLogEntry.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAuditLogEntry.read",
+    resource: "AuditLogEntry",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAuditLogEntry_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AutofdePlannerCacheHotset` (2 actions: read, request_cache_hotset).
+ * @typedef {Object} XaasAutofdePlannerCacheHotsetNamespace
+ * @property {Object} read - `XaasAutofdePlannerCacheHotset.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_cache_hotset - `XaasAutofdePlannerCacheHotset.request_cache_hotset` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAutofdePlannerCacheHotset = Object.freeze({
+  /** `XaasAutofdePlannerCacheHotset.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAutofdePlannerCacheHotset.read",
+    resource: "AutofdePlannerCacheHotset",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAutofdePlannerCacheHotset_read_schema
+  }),
+  /** `XaasAutofdePlannerCacheHotset.request_cache_hotset` — not delegated; no dispatch intent. */
+  request_cache_hotset: Object.freeze({
+    id: "XaasAutofdePlannerCacheHotset.request_cache_hotset",
+    resource: "AutofdePlannerCacheHotset",
+    action: "request_cache_hotset",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request cache hotset",
+    schema: XaasAutofdePlannerCacheHotset_request_cache_hotset_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AutofdePlannerCacheStats` (2 actions: read, request_cache_stats).
+ * @typedef {Object} XaasAutofdePlannerCacheStatsNamespace
+ * @property {Object} read - `XaasAutofdePlannerCacheStats.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_cache_stats - `XaasAutofdePlannerCacheStats.request_cache_stats` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAutofdePlannerCacheStats = Object.freeze({
+  /** `XaasAutofdePlannerCacheStats.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAutofdePlannerCacheStats.read",
+    resource: "AutofdePlannerCacheStats",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAutofdePlannerCacheStats_read_schema
+  }),
+  /** `XaasAutofdePlannerCacheStats.request_cache_stats` — not delegated; no dispatch intent. */
+  request_cache_stats: Object.freeze({
+    id: "XaasAutofdePlannerCacheStats.request_cache_stats",
+    resource: "AutofdePlannerCacheStats",
+    action: "request_cache_stats",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request cache stats",
+    schema: XaasAutofdePlannerCacheStats_request_cache_stats_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AutofdePlannerCandidate` (2 actions: read, request_candidate).
+ * @typedef {Object} XaasAutofdePlannerCandidateNamespace
+ * @property {Object} read - `XaasAutofdePlannerCandidate.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_candidate - `XaasAutofdePlannerCandidate.request_candidate` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAutofdePlannerCandidate = Object.freeze({
+  /** `XaasAutofdePlannerCandidate.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAutofdePlannerCandidate.read",
+    resource: "AutofdePlannerCandidate",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAutofdePlannerCandidate_read_schema
+  }),
+  /** `XaasAutofdePlannerCandidate.request_candidate` — not delegated; no dispatch intent. */
+  request_candidate: Object.freeze({
+    id: "XaasAutofdePlannerCandidate.request_candidate",
+    resource: "AutofdePlannerCandidate",
+    action: "request_candidate",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request candidate",
+    schema: XaasAutofdePlannerCandidate_request_candidate_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AutofdePlannerCatalog` (2 actions: read, request_catalog).
+ * @typedef {Object} XaasAutofdePlannerCatalogNamespace
+ * @property {Object} read - `XaasAutofdePlannerCatalog.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_catalog - `XaasAutofdePlannerCatalog.request_catalog` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAutofdePlannerCatalog = Object.freeze({
+  /** `XaasAutofdePlannerCatalog.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAutofdePlannerCatalog.read",
+    resource: "AutofdePlannerCatalog",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAutofdePlannerCatalog_read_schema
+  }),
+  /** `XaasAutofdePlannerCatalog.request_catalog` — not delegated; no dispatch intent. */
+  request_catalog: Object.freeze({
+    id: "XaasAutofdePlannerCatalog.request_catalog",
+    resource: "AutofdePlannerCatalog",
+    action: "request_catalog",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request catalog",
+    schema: XaasAutofdePlannerCatalog_request_catalog_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `AutofdePlannerMatch` (2 actions: read, request_match).
+ * @typedef {Object} XaasAutofdePlannerMatchNamespace
+ * @property {Object} read - `XaasAutofdePlannerMatch.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_match - `XaasAutofdePlannerMatch.request_match` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasAutofdePlannerMatch = Object.freeze({
+  /** `XaasAutofdePlannerMatch.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasAutofdePlannerMatch.read",
+    resource: "AutofdePlannerMatch",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasAutofdePlannerMatch_read_schema
+  }),
+  /** `XaasAutofdePlannerMatch.request_match` — not delegated; no dispatch intent. */
+  request_match: Object.freeze({
+    id: "XaasAutofdePlannerMatch.request_match",
+    resource: "AutofdePlannerMatch",
+    action: "request_match",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request match",
+    schema: XaasAutofdePlannerMatch_request_match_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Balance` (3 actions: adjust_balance, read, upsert_balance).
+ * @typedef {Object} XaasBalanceNamespace
+ * @property {Object} adjust_balance - `XaasBalance.adjust_balance` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasBalance.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} upsert_balance - `XaasBalance.upsert_balance` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasBalance = Object.freeze({
+  /** `XaasBalance.adjust_balance` — not delegated; no dispatch intent. */
+  adjust_balance: Object.freeze({
+    id: "XaasBalance.adjust_balance",
+    resource: "Balance",
+    action: "adjust_balance",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Adjust balance",
+    schema: XaasBalance_adjust_balance_schema
+  }),
+  /** `XaasBalance.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasBalance.read",
+    resource: "Balance",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasBalance_read_schema
+  }),
+  /** `XaasBalance.upsert_balance` — not delegated; no dispatch intent. */
+  upsert_balance: Object.freeze({
+    id: "XaasBalance.upsert_balance",
+    resource: "Balance",
+    action: "upsert_balance",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Upsert balance",
+    schema: XaasBalance_upsert_balance_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Book` (10 actions: ash_ai_update_embeddings, borrow_copy, by_grade_band, create, destroy, generate_recommendation_explanation, get_by_id, read, return_copy, update).
+ * @typedef {Object} XaasBookNamespace
+ * @property {Object} ash_ai_update_embeddings - `XaasBook.ash_ai_update_embeddings` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} borrow_copy - `XaasBook.borrow_copy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} by_grade_band - `XaasBook.by_grade_band` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasBook.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasBook.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} generate_recommendation_explanation - `XaasBook.generate_recommendation_explanation` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_by_id - `XaasBook.get_by_id` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasBook.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} return_copy - `XaasBook.return_copy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasBook.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasBook = Object.freeze({
+  /** `XaasBook.ash_ai_update_embeddings` — not delegated; no dispatch intent. */
+  ash_ai_update_embeddings: Object.freeze({
+    id: "XaasBook.ash_ai_update_embeddings",
+    resource: "Book",
+    action: "ash_ai_update_embeddings",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Ash ai update embeddings",
+    schema: XaasBook_ash_ai_update_embeddings_schema
+  }),
+  /** `XaasBook.borrow_copy` — not delegated; no dispatch intent. */
+  borrow_copy: Object.freeze({
+    id: "XaasBook.borrow_copy",
+    resource: "Book",
+    action: "borrow_copy",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Borrow copy",
+    schema: XaasBook_borrow_copy_schema
+  }),
+  /** `XaasBook.by_grade_band` — not delegated; no dispatch intent. */
+  by_grade_band: Object.freeze({
+    id: "XaasBook.by_grade_band",
+    resource: "Book",
+    action: "by_grade_band",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "By grade band",
+    schema: XaasBook_by_grade_band_schema
+  }),
+  /** `XaasBook.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasBook.create",
+    resource: "Book",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasBook_create_schema
+  }),
+  /** `XaasBook.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasBook.destroy",
+    resource: "Book",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasBook_destroy_schema
+  }),
+  /** `XaasBook.generate_recommendation_explanation` — not delegated; no dispatch intent. */
+  generate_recommendation_explanation: Object.freeze({
+    id: "XaasBook.generate_recommendation_explanation",
+    resource: "Book",
+    action: "generate_recommendation_explanation",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Generate recommendation explanation",
+    schema: XaasBook_generate_recommendation_explanation_schema
+  }),
+  /** `XaasBook.get_by_id` — not delegated; no dispatch intent. */
+  get_by_id: Object.freeze({
+    id: "XaasBook.get_by_id",
+    resource: "Book",
+    action: "get_by_id",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get by id",
+    schema: XaasBook_get_by_id_schema
+  }),
+  /** `XaasBook.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasBook.read",
+    resource: "Book",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasBook_read_schema
+  }),
+  /** `XaasBook.return_copy` — not delegated; no dispatch intent. */
+  return_copy: Object.freeze({
+    id: "XaasBook.return_copy",
+    resource: "Book",
+    action: "return_copy",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Return copy",
+    schema: XaasBook_return_copy_schema
+  }),
+  /** `XaasBook.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasBook.update",
+    resource: "Book",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasBook_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Capability` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasCapabilityNamespace
+ * @property {Object} create - `XaasCapability.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasCapability.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasCapability.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCapability = Object.freeze({
+  /** `XaasCapability.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasCapability.create",
+    resource: "Capability",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasCapability_create_schema
+  }),
+  /** `XaasCapability.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasCapability.destroy",
+    resource: "Capability",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasCapability_destroy_schema
+  }),
+  /** `XaasCapability.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCapability.read",
+    resource: "Capability",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCapability_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `CapabilityLivenessReceipt` (4 actions: check_regressions, destroy, ingest, read).
+ * @typedef {Object} XaasCapabilityLivenessReceiptNamespace
+ * @property {Object} check_regressions - `XaasCapabilityLivenessReceipt.check_regressions` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasCapabilityLivenessReceipt.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} ingest - `XaasCapabilityLivenessReceipt.ingest` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasCapabilityLivenessReceipt.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCapabilityLivenessReceipt = Object.freeze({
+  /** `XaasCapabilityLivenessReceipt.check_regressions` — not delegated; no dispatch intent. */
+  check_regressions: Object.freeze({
+    id: "XaasCapabilityLivenessReceipt.check_regressions",
+    resource: "CapabilityLivenessReceipt",
+    action: "check_regressions",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Check regressions",
+    schema: XaasCapabilityLivenessReceipt_check_regressions_schema
+  }),
+  /** `XaasCapabilityLivenessReceipt.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasCapabilityLivenessReceipt.destroy",
+    resource: "CapabilityLivenessReceipt",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasCapabilityLivenessReceipt_destroy_schema
+  }),
+  /** `XaasCapabilityLivenessReceipt.ingest` — not delegated; no dispatch intent. */
+  ingest: Object.freeze({
+    id: "XaasCapabilityLivenessReceipt.ingest",
+    resource: "CapabilityLivenessReceipt",
+    action: "ingest",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Ingest",
+    schema: XaasCapabilityLivenessReceipt_ingest_schema
+  }),
+  /** `XaasCapabilityLivenessReceipt.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCapabilityLivenessReceipt.read",
+    resource: "CapabilityLivenessReceipt",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCapabilityLivenessReceipt_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `CastleVerbFortune5Requirements` (1 action: read).
+ * @typedef {Object} XaasCastleVerbFortune5RequirementsNamespace
+ * @property {Object} read - `XaasCastleVerbFortune5Requirements.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCastleVerbFortune5Requirements = Object.freeze({
+  /** `XaasCastleVerbFortune5Requirements.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCastleVerbFortune5Requirements.read",
+    resource: "CastleVerbFortune5Requirements",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCastleVerbFortune5Requirements_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `CastleVerbInventoryComponents` (1 action: read).
+ * @typedef {Object} XaasCastleVerbInventoryComponentsNamespace
+ * @property {Object} read - `XaasCastleVerbInventoryComponents.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCastleVerbInventoryComponents = Object.freeze({
+  /** `XaasCastleVerbInventoryComponents.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCastleVerbInventoryComponents.read",
+    resource: "CastleVerbInventoryComponents",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCastleVerbInventoryComponents_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `CastleVerbInventoryGoals` (1 action: read).
+ * @typedef {Object} XaasCastleVerbInventoryGoalsNamespace
+ * @property {Object} read - `XaasCastleVerbInventoryGoals.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCastleVerbInventoryGoals = Object.freeze({
+  /** `XaasCastleVerbInventoryGoals.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCastleVerbInventoryGoals.read",
+    resource: "CastleVerbInventoryGoals",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCastleVerbInventoryGoals_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `CertifiedReceipt` (3 actions: ingest, read, record_verification).
+ * @typedef {Object} XaasCertifiedReceiptNamespace
+ * @property {Object} ingest - `XaasCertifiedReceipt.ingest` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasCertifiedReceipt.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record_verification - `XaasCertifiedReceipt.record_verification` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCertifiedReceipt = Object.freeze({
+  /** `XaasCertifiedReceipt.ingest` — not delegated; no dispatch intent. */
+  ingest: Object.freeze({
+    id: "XaasCertifiedReceipt.ingest",
+    resource: "CertifiedReceipt",
+    action: "ingest",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Ingest",
+    schema: XaasCertifiedReceipt_ingest_schema
+  }),
+  /** `XaasCertifiedReceipt.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCertifiedReceipt.read",
+    resource: "CertifiedReceipt",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCertifiedReceipt_read_schema
+  }),
+  /** `XaasCertifiedReceipt.record_verification` — not delegated; no dispatch intent. */
+  record_verification: Object.freeze({
+    id: "XaasCertifiedReceipt.record_verification",
+    resource: "CertifiedReceipt",
+    action: "record_verification",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record verification",
+    schema: XaasCertifiedReceipt_record_verification_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Checkout` (7 actions: borrow, create, destroy, for_user, read, return, update).
+ * @typedef {Object} XaasCheckoutNamespace
+ * @property {Object} borrow - `XaasCheckout.borrow` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasCheckout.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasCheckout.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} for_user - `XaasCheckout.for_user` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasCheckout.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} return - `XaasCheckout.return` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasCheckout.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCheckout = Object.freeze({
+  /** `XaasCheckout.borrow` — not delegated; no dispatch intent. */
+  borrow: Object.freeze({
+    id: "XaasCheckout.borrow",
+    resource: "Checkout",
+    action: "borrow",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Borrow",
+    schema: XaasCheckout_borrow_schema
+  }),
+  /** `XaasCheckout.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasCheckout.create",
+    resource: "Checkout",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasCheckout_create_schema
+  }),
+  /** `XaasCheckout.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasCheckout.destroy",
+    resource: "Checkout",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasCheckout_destroy_schema
+  }),
+  /** `XaasCheckout.for_user` — not delegated; no dispatch intent. */
+  for_user: Object.freeze({
+    id: "XaasCheckout.for_user",
+    resource: "Checkout",
+    action: "for_user",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "For user",
+    schema: XaasCheckout_for_user_schema
+  }),
+  /** `XaasCheckout.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCheckout.read",
+    resource: "Checkout",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCheckout_read_schema
+  }),
+  /** `XaasCheckout.return` — not delegated; no dispatch intent. */
+  return: Object.freeze({
+    id: "XaasCheckout.return",
+    resource: "Checkout",
+    action: "return",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Return",
+    schema: XaasCheckout_return_schema
+  }),
+  /** `XaasCheckout.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasCheckout.update",
+    resource: "Checkout",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasCheckout_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Event` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasConferenceEventNamespace
+ * @property {Object} create - `XaasConferenceEvent.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasConferenceEvent.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasConferenceEvent.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasConferenceEvent = Object.freeze({
+  /** `XaasConferenceEvent.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasConferenceEvent.create",
+    resource: "Event",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasConferenceEvent_create_schema
+  }),
+  /** `XaasConferenceEvent.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasConferenceEvent.destroy",
+    resource: "Event",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasConferenceEvent_destroy_schema
+  }),
+  /** `XaasConferenceEvent.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasConferenceEvent.read",
+    resource: "Event",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasConferenceEvent_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `CouplingRun` (2 actions: couple, read).
+ * @typedef {Object} XaasCouplingRunNamespace
+ * @property {Object} couple - `XaasCouplingRun.couple` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasCouplingRun.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCouplingRun = Object.freeze({
+  /** `XaasCouplingRun.couple` — not delegated; no dispatch intent. */
+  couple: Object.freeze({
+    id: "XaasCouplingRun.couple",
+    resource: "CouplingRun",
+    action: "couple",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Couple",
+    schema: XaasCouplingRun_couple_schema
+  }),
+  /** `XaasCouplingRun.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCouplingRun.read",
+    resource: "CouplingRun",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCouplingRun_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Curation` (5 actions: active_for_grade, create, destroy, read, update).
+ * @typedef {Object} XaasCurationNamespace
+ * @property {Object} active_for_grade - `XaasCuration.active_for_grade` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasCuration.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasCuration.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasCuration.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasCuration.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasCuration = Object.freeze({
+  /** `XaasCuration.active_for_grade` — not delegated; no dispatch intent. */
+  active_for_grade: Object.freeze({
+    id: "XaasCuration.active_for_grade",
+    resource: "Curation",
+    action: "active_for_grade",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Active for grade",
+    schema: XaasCuration_active_for_grade_schema
+  }),
+  /** `XaasCuration.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasCuration.create",
+    resource: "Curation",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasCuration_create_schema
+  }),
+  /** `XaasCuration.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasCuration.destroy",
+    resource: "Curation",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasCuration_destroy_schema
+  }),
+  /** `XaasCuration.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasCuration.read",
+    resource: "Curation",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasCuration_read_schema
+  }),
+  /** `XaasCuration.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasCuration.update",
+    resource: "Curation",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasCuration_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `DataDestructionCertificateIssue` (3 actions: approve, create, read).
+ * @typedef {Object} XaasDataDestructionCertificateIssueNamespace
+ * @property {Object} approve - `XaasDataDestructionCertificateIssue.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasDataDestructionCertificateIssue.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasDataDestructionCertificateIssue.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasDataDestructionCertificateIssue = Object.freeze({
+  /** `XaasDataDestructionCertificateIssue.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasDataDestructionCertificateIssue.approve",
+    resource: "DataDestructionCertificateIssue",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasDataDestructionCertificateIssue_approve_schema
+  }),
+  /** `XaasDataDestructionCertificateIssue.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasDataDestructionCertificateIssue.create",
+    resource: "DataDestructionCertificateIssue",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasDataDestructionCertificateIssue_create_schema
+  }),
+  /** `XaasDataDestructionCertificateIssue.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasDataDestructionCertificateIssue.read",
+    resource: "DataDestructionCertificateIssue",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasDataDestructionCertificateIssue_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `EngineLimit` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasEngineLimitNamespace
+ * @property {Object} create - `XaasEngineLimit.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasEngineLimit.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasEngineLimit.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasEngineLimit = Object.freeze({
+  /** `XaasEngineLimit.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasEngineLimit.create",
+    resource: "EngineLimit",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasEngineLimit_create_schema
+  }),
+  /** `XaasEngineLimit.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasEngineLimit.destroy",
+    resource: "EngineLimit",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasEngineLimit_destroy_schema
+  }),
+  /** `XaasEngineLimit.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasEngineLimit.read",
+    resource: "EngineLimit",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasEngineLimit_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Episode` (3 actions: create, read, update).
+ * @typedef {Object} XaasEpisodeNamespace
+ * @property {Object} create - `XaasEpisode.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasEpisode.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasEpisode.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasEpisode = Object.freeze({
+  /** `XaasEpisode.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasEpisode.create",
+    resource: "Episode",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasEpisode_create_schema
+  }),
+  /** `XaasEpisode.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasEpisode.read",
+    resource: "Episode",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasEpisode_read_schema
+  }),
+  /** `XaasEpisode.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasEpisode.update",
+    resource: "Episode",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasEpisode_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Epoch` (10 actions: complete, create, lease, mark_failed, mark_missed, read, read_unscoped, record_final_head, renew_lease, start).
+ * @typedef {Object} XaasEpochNamespace
+ * @property {Object} complete - `XaasEpoch.complete` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasEpoch.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} lease - `XaasEpoch.lease` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} mark_failed - `XaasEpoch.mark_failed` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} mark_missed - `XaasEpoch.mark_missed` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasEpoch.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read_unscoped - `XaasEpoch.read_unscoped` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record_final_head - `XaasEpoch.record_final_head` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} renew_lease - `XaasEpoch.renew_lease` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} start - `XaasEpoch.start` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasEpoch = Object.freeze({
+  /** `XaasEpoch.complete` — not delegated; no dispatch intent. */
+  complete: Object.freeze({
+    id: "XaasEpoch.complete",
+    resource: "Epoch",
+    action: "complete",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Complete",
+    schema: XaasEpoch_complete_schema
+  }),
+  /** `XaasEpoch.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasEpoch.create",
+    resource: "Epoch",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasEpoch_create_schema
+  }),
+  /** `XaasEpoch.lease` — not delegated; no dispatch intent. */
+  lease: Object.freeze({
+    id: "XaasEpoch.lease",
+    resource: "Epoch",
+    action: "lease",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Lease",
+    schema: XaasEpoch_lease_schema
+  }),
+  /** `XaasEpoch.mark_failed` — not delegated; no dispatch intent. */
+  mark_failed: Object.freeze({
+    id: "XaasEpoch.mark_failed",
+    resource: "Epoch",
+    action: "mark_failed",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Mark failed",
+    schema: XaasEpoch_mark_failed_schema
+  }),
+  /** `XaasEpoch.mark_missed` — not delegated; no dispatch intent. */
+  mark_missed: Object.freeze({
+    id: "XaasEpoch.mark_missed",
+    resource: "Epoch",
+    action: "mark_missed",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Mark missed",
+    schema: XaasEpoch_mark_missed_schema
+  }),
+  /** `XaasEpoch.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasEpoch.read",
+    resource: "Epoch",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasEpoch_read_schema
+  }),
+  /** `XaasEpoch.read_unscoped` — not delegated; no dispatch intent. */
+  read_unscoped: Object.freeze({
+    id: "XaasEpoch.read_unscoped",
+    resource: "Epoch",
+    action: "read_unscoped",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read unscoped",
+    schema: XaasEpoch_read_unscoped_schema
+  }),
+  /** `XaasEpoch.record_final_head` — not delegated; no dispatch intent. */
+  record_final_head: Object.freeze({
+    id: "XaasEpoch.record_final_head",
+    resource: "Epoch",
+    action: "record_final_head",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record final head",
+    schema: XaasEpoch_record_final_head_schema
+  }),
+  /** `XaasEpoch.renew_lease` — not delegated; no dispatch intent. */
+  renew_lease: Object.freeze({
+    id: "XaasEpoch.renew_lease",
+    resource: "Epoch",
+    action: "renew_lease",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Renew lease",
+    schema: XaasEpoch_renew_lease_schema
+  }),
+  /** `XaasEpoch.start` — not delegated; no dispatch intent. */
+  start: Object.freeze({
+    id: "XaasEpoch.start",
+    resource: "Epoch",
+    action: "start",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Start",
+    schema: XaasEpoch_start_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `EventLog` (2 actions: create, replay).
+ * @typedef {Object} XaasEventLogNamespace
+ * @property {Object} create - `XaasEventLog.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} replay - `XaasEventLog.replay` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasEventLog = Object.freeze({
+  /** `XaasEventLog.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasEventLog.create",
+    resource: "EventLog",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasEventLog_create_schema
+  }),
+  /** `XaasEventLog.replay` — not delegated; no dispatch intent. */
+  replay: Object.freeze({
+    id: "XaasEventLog.replay",
+    resource: "EventLog",
+    action: "replay",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Replay",
+    schema: XaasEventLog_replay_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `EventObject` (3 actions: destroy, read, relate).
+ * @typedef {Object} XaasEventObjectNamespace
+ * @property {Object} destroy - `XaasEventObject.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasEventObject.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} relate - `XaasEventObject.relate` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasEventObject = Object.freeze({
+  /** `XaasEventObject.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasEventObject.destroy",
+    resource: "EventObject",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasEventObject_destroy_schema
+  }),
+  /** `XaasEventObject.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasEventObject.read",
+    resource: "EventObject",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasEventObject_read_schema
+  }),
+  /** `XaasEventObject.relate` — not delegated; no dispatch intent. */
+  relate: Object.freeze({
+    id: "XaasEventObject.relate",
+    resource: "EventObject",
+    action: "relate",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Relate",
+    schema: XaasEventObject_relate_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Execution` (1 action: read).
+ * @typedef {Object} XaasExecutionNamespace
+ * @property {Object} read - `XaasExecution.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasExecution = Object.freeze({
+  /** `XaasExecution.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasExecution.read",
+    resource: "Execution",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasExecution_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ExperienceCluster` (3 actions: create, read, update).
+ * @typedef {Object} XaasExperienceClusterNamespace
+ * @property {Object} create - `XaasExperienceCluster.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasExperienceCluster.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasExperienceCluster.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasExperienceCluster = Object.freeze({
+  /** `XaasExperienceCluster.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasExperienceCluster.create",
+    resource: "ExperienceCluster",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasExperienceCluster_create_schema
+  }),
+  /** `XaasExperienceCluster.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasExperienceCluster.read",
+    resource: "ExperienceCluster",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasExperienceCluster_read_schema
+  }),
+  /** `XaasExperienceCluster.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasExperienceCluster.update",
+    resource: "ExperienceCluster",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasExperienceCluster_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Finding` (2 actions: ingest, read).
+ * @typedef {Object} XaasFindingNamespace
+ * @property {Object} ingest - `XaasFinding.ingest` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasFinding.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasFinding = Object.freeze({
+  /** `XaasFinding.ingest` — not delegated; no dispatch intent. */
+  ingest: Object.freeze({
+    id: "XaasFinding.ingest",
+    resource: "Finding",
+    action: "ingest",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Ingest",
+    schema: XaasFinding_ingest_schema
+  }),
+  /** `XaasFinding.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasFinding.read",
+    resource: "Finding",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasFinding_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `FreezeWindow` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasFreezeWindowNamespace
+ * @property {Object} create - `XaasFreezeWindow.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasFreezeWindow.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasFreezeWindow.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasFreezeWindow = Object.freeze({
+  /** `XaasFreezeWindow.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasFreezeWindow.create",
+    resource: "FreezeWindow",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasFreezeWindow_create_schema
+  }),
+  /** `XaasFreezeWindow.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasFreezeWindow.destroy",
+    resource: "FreezeWindow",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasFreezeWindow_destroy_schema
+  }),
+  /** `XaasFreezeWindow.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasFreezeWindow.read",
+    resource: "FreezeWindow",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasFreezeWindow_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Gap` (3 actions: create, read, update).
+ * @typedef {Object} XaasGapNamespace
+ * @property {Object} create - `XaasGap.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGap.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGap.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGap = Object.freeze({
+  /** `XaasGap.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGap.create",
+    resource: "Gap",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGap_create_schema
+  }),
+  /** `XaasGap.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGap.read",
+    resource: "Gap",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGap_read_schema
+  }),
+  /** `XaasGap.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGap.update",
+    resource: "Gap",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGap_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Version` (3 actions: create, read, update).
+ * @typedef {Object} XaasGovernanceApprovalBackupRetentionChangeVersionNamespace
+ * @property {Object} create - `XaasGovernanceApprovalBackupRetentionChangeVersion.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGovernanceApprovalBackupRetentionChangeVersion.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGovernanceApprovalBackupRetentionChangeVersion.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGovernanceApprovalBackupRetentionChangeVersion = Object.freeze({
+  /** `XaasGovernanceApprovalBackupRetentionChangeVersion.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGovernanceApprovalBackupRetentionChangeVersion.create",
+    resource: "Version",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGovernanceApprovalBackupRetentionChangeVersion_create_schema
+  }),
+  /** `XaasGovernanceApprovalBackupRetentionChangeVersion.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGovernanceApprovalBackupRetentionChangeVersion.read",
+    resource: "Version",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGovernanceApprovalBackupRetentionChangeVersion_read_schema
+  }),
+  /** `XaasGovernanceApprovalBackupRetentionChangeVersion.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGovernanceApprovalBackupRetentionChangeVersion.update",
+    resource: "Version",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGovernanceApprovalBackupRetentionChangeVersion_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Version` (3 actions: create, read, update).
+ * @typedef {Object} XaasGovernanceApprovalDeploymentQuarantineVersionNamespace
+ * @property {Object} create - `XaasGovernanceApprovalDeploymentQuarantineVersion.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGovernanceApprovalDeploymentQuarantineVersion.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGovernanceApprovalDeploymentQuarantineVersion.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGovernanceApprovalDeploymentQuarantineVersion = Object.freeze({
+  /** `XaasGovernanceApprovalDeploymentQuarantineVersion.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGovernanceApprovalDeploymentQuarantineVersion.create",
+    resource: "Version",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGovernanceApprovalDeploymentQuarantineVersion_create_schema
+  }),
+  /** `XaasGovernanceApprovalDeploymentQuarantineVersion.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGovernanceApprovalDeploymentQuarantineVersion.read",
+    resource: "Version",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGovernanceApprovalDeploymentQuarantineVersion_read_schema
+  }),
+  /** `XaasGovernanceApprovalDeploymentQuarantineVersion.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGovernanceApprovalDeploymentQuarantineVersion.update",
+    resource: "Version",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGovernanceApprovalDeploymentQuarantineVersion_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Version` (3 actions: create, read, update).
+ * @typedef {Object} XaasGovernanceApprovalDrFailoverVersionNamespace
+ * @property {Object} create - `XaasGovernanceApprovalDrFailoverVersion.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGovernanceApprovalDrFailoverVersion.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGovernanceApprovalDrFailoverVersion.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGovernanceApprovalDrFailoverVersion = Object.freeze({
+  /** `XaasGovernanceApprovalDrFailoverVersion.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGovernanceApprovalDrFailoverVersion.create",
+    resource: "Version",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGovernanceApprovalDrFailoverVersion_create_schema
+  }),
+  /** `XaasGovernanceApprovalDrFailoverVersion.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGovernanceApprovalDrFailoverVersion.read",
+    resource: "Version",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGovernanceApprovalDrFailoverVersion_read_schema
+  }),
+  /** `XaasGovernanceApprovalDrFailoverVersion.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGovernanceApprovalDrFailoverVersion.update",
+    resource: "Version",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGovernanceApprovalDrFailoverVersion_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Version` (3 actions: create, read, update).
+ * @typedef {Object} XaasGovernanceApprovalFreezeOverrideVersionNamespace
+ * @property {Object} create - `XaasGovernanceApprovalFreezeOverrideVersion.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGovernanceApprovalFreezeOverrideVersion.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGovernanceApprovalFreezeOverrideVersion.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGovernanceApprovalFreezeOverrideVersion = Object.freeze({
+  /** `XaasGovernanceApprovalFreezeOverrideVersion.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGovernanceApprovalFreezeOverrideVersion.create",
+    resource: "Version",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGovernanceApprovalFreezeOverrideVersion_create_schema
+  }),
+  /** `XaasGovernanceApprovalFreezeOverrideVersion.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGovernanceApprovalFreezeOverrideVersion.read",
+    resource: "Version",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGovernanceApprovalFreezeOverrideVersion_read_schema
+  }),
+  /** `XaasGovernanceApprovalFreezeOverrideVersion.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGovernanceApprovalFreezeOverrideVersion.update",
+    resource: "Version",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGovernanceApprovalFreezeOverrideVersion_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Version` (3 actions: create, read, update).
+ * @typedef {Object} XaasGovernanceApprovalLegalHoldReleaseVersionNamespace
+ * @property {Object} create - `XaasGovernanceApprovalLegalHoldReleaseVersion.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGovernanceApprovalLegalHoldReleaseVersion.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGovernanceApprovalLegalHoldReleaseVersion.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGovernanceApprovalLegalHoldReleaseVersion = Object.freeze({
+  /** `XaasGovernanceApprovalLegalHoldReleaseVersion.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGovernanceApprovalLegalHoldReleaseVersion.create",
+    resource: "Version",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGovernanceApprovalLegalHoldReleaseVersion_create_schema
+  }),
+  /** `XaasGovernanceApprovalLegalHoldReleaseVersion.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGovernanceApprovalLegalHoldReleaseVersion.read",
+    resource: "Version",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGovernanceApprovalLegalHoldReleaseVersion_read_schema
+  }),
+  /** `XaasGovernanceApprovalLegalHoldReleaseVersion.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGovernanceApprovalLegalHoldReleaseVersion.update",
+    resource: "Version",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGovernanceApprovalLegalHoldReleaseVersion_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Version` (3 actions: create, read, update).
+ * @typedef {Object} XaasGovernanceFreezeWindowVersionNamespace
+ * @property {Object} create - `XaasGovernanceFreezeWindowVersion.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasGovernanceFreezeWindowVersion.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasGovernanceFreezeWindowVersion.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasGovernanceFreezeWindowVersion = Object.freeze({
+  /** `XaasGovernanceFreezeWindowVersion.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasGovernanceFreezeWindowVersion.create",
+    resource: "Version",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasGovernanceFreezeWindowVersion_create_schema
+  }),
+  /** `XaasGovernanceFreezeWindowVersion.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasGovernanceFreezeWindowVersion.read",
+    resource: "Version",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasGovernanceFreezeWindowVersion_read_schema
+  }),
+  /** `XaasGovernanceFreezeWindowVersion.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasGovernanceFreezeWindowVersion.update",
+    resource: "Version",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasGovernanceFreezeWindowVersion_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `HoldRequest` (14 actions: active, cancel, create, destroy, expirable, expire, expire_stale, for_book, for_user, fulfill, oldest_active_for_book, place, read, update).
+ * @typedef {Object} XaasHoldRequestNamespace
+ * @property {Object} active - `XaasHoldRequest.active` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} cancel - `XaasHoldRequest.cancel` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasHoldRequest.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasHoldRequest.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} expirable - `XaasHoldRequest.expirable` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} expire - `XaasHoldRequest.expire` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} expire_stale - `XaasHoldRequest.expire_stale` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} for_book - `XaasHoldRequest.for_book` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} for_user - `XaasHoldRequest.for_user` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} fulfill - `XaasHoldRequest.fulfill` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} oldest_active_for_book - `XaasHoldRequest.oldest_active_for_book` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} place - `XaasHoldRequest.place` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasHoldRequest.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasHoldRequest.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasHoldRequest = Object.freeze({
+  /** `XaasHoldRequest.active` — not delegated; no dispatch intent. */
+  active: Object.freeze({
+    id: "XaasHoldRequest.active",
+    resource: "HoldRequest",
+    action: "active",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Active",
+    schema: XaasHoldRequest_active_schema
+  }),
+  /** `XaasHoldRequest.cancel` — not delegated; no dispatch intent. */
+  cancel: Object.freeze({
+    id: "XaasHoldRequest.cancel",
+    resource: "HoldRequest",
+    action: "cancel",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Cancel",
+    schema: XaasHoldRequest_cancel_schema
+  }),
+  /** `XaasHoldRequest.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasHoldRequest.create",
+    resource: "HoldRequest",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasHoldRequest_create_schema
+  }),
+  /** `XaasHoldRequest.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasHoldRequest.destroy",
+    resource: "HoldRequest",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasHoldRequest_destroy_schema
+  }),
+  /** `XaasHoldRequest.expirable` — not delegated; no dispatch intent. */
+  expirable: Object.freeze({
+    id: "XaasHoldRequest.expirable",
+    resource: "HoldRequest",
+    action: "expirable",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Expirable",
+    schema: XaasHoldRequest_expirable_schema
+  }),
+  /** `XaasHoldRequest.expire` — not delegated; no dispatch intent. */
+  expire: Object.freeze({
+    id: "XaasHoldRequest.expire",
+    resource: "HoldRequest",
+    action: "expire",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Expire",
+    schema: XaasHoldRequest_expire_schema
+  }),
+  /** `XaasHoldRequest.expire_stale` — not delegated; no dispatch intent. */
+  expire_stale: Object.freeze({
+    id: "XaasHoldRequest.expire_stale",
+    resource: "HoldRequest",
+    action: "expire_stale",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Expire stale",
+    schema: XaasHoldRequest_expire_stale_schema
+  }),
+  /** `XaasHoldRequest.for_book` — not delegated; no dispatch intent. */
+  for_book: Object.freeze({
+    id: "XaasHoldRequest.for_book",
+    resource: "HoldRequest",
+    action: "for_book",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "For book",
+    schema: XaasHoldRequest_for_book_schema
+  }),
+  /** `XaasHoldRequest.for_user` — not delegated; no dispatch intent. */
+  for_user: Object.freeze({
+    id: "XaasHoldRequest.for_user",
+    resource: "HoldRequest",
+    action: "for_user",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "For user",
+    schema: XaasHoldRequest_for_user_schema
+  }),
+  /** `XaasHoldRequest.fulfill` — not delegated; no dispatch intent. */
+  fulfill: Object.freeze({
+    id: "XaasHoldRequest.fulfill",
+    resource: "HoldRequest",
+    action: "fulfill",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Fulfill",
+    schema: XaasHoldRequest_fulfill_schema
+  }),
+  /** `XaasHoldRequest.oldest_active_for_book` — not delegated; no dispatch intent. */
+  oldest_active_for_book: Object.freeze({
+    id: "XaasHoldRequest.oldest_active_for_book",
+    resource: "HoldRequest",
+    action: "oldest_active_for_book",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Oldest active for book",
+    schema: XaasHoldRequest_oldest_active_for_book_schema
+  }),
+  /** `XaasHoldRequest.place` — not delegated; no dispatch intent. */
+  place: Object.freeze({
+    id: "XaasHoldRequest.place",
+    resource: "HoldRequest",
+    action: "place",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Place",
+    schema: XaasHoldRequest_place_schema
+  }),
+  /** `XaasHoldRequest.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasHoldRequest.read",
+    resource: "HoldRequest",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasHoldRequest_read_schema
+  }),
+  /** `XaasHoldRequest.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasHoldRequest.update",
+    resource: "HoldRequest",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasHoldRequest_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Incident` (3 actions: create, read, update).
+ * @typedef {Object} XaasIncidentNamespace
+ * @property {Object} create - `XaasIncident.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasIncident.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasIncident.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasIncident = Object.freeze({
+  /** `XaasIncident.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasIncident.create",
+    resource: "Incident",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasIncident_create_schema
+  }),
+  /** `XaasIncident.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasIncident.read",
+    resource: "Incident",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasIncident_read_schema
+  }),
+  /** `XaasIncident.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasIncident.update",
+    resource: "Incident",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasIncident_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `InternalApiToken` (4 actions: by_hash, issue, read, revoke).
+ * @typedef {Object} XaasInternalApiTokenNamespace
+ * @property {Object} by_hash - `XaasInternalApiToken.by_hash` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} issue - `XaasInternalApiToken.issue` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasInternalApiToken.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} revoke - `XaasInternalApiToken.revoke` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasInternalApiToken = Object.freeze({
+  /** `XaasInternalApiToken.by_hash` — not delegated; no dispatch intent. */
+  by_hash: Object.freeze({
+    id: "XaasInternalApiToken.by_hash",
+    resource: "InternalApiToken",
+    action: "by_hash",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "By hash",
+    schema: XaasInternalApiToken_by_hash_schema
+  }),
+  /** `XaasInternalApiToken.issue` — not delegated; no dispatch intent. */
+  issue: Object.freeze({
+    id: "XaasInternalApiToken.issue",
+    resource: "InternalApiToken",
+    action: "issue",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Issue",
+    schema: XaasInternalApiToken_issue_schema
+  }),
+  /** `XaasInternalApiToken.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasInternalApiToken.read",
+    resource: "InternalApiToken",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasInternalApiToken_read_schema
+  }),
+  /** `XaasInternalApiToken.revoke` — not delegated; no dispatch intent. */
+  revoke: Object.freeze({
+    id: "XaasInternalApiToken.revoke",
+    resource: "InternalApiToken",
+    action: "revoke",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Revoke",
+    schema: XaasInternalApiToken_revoke_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Measurement` (2 actions: measure, measure_json).
+ * @typedef {Object} XaasMeasurementNamespace
+ * @property {Object} measure - `XaasMeasurement.measure` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} measure_json - `XaasMeasurement.measure_json` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasMeasurement = Object.freeze({
+  /** `XaasMeasurement.measure` — not delegated; no dispatch intent. */
+  measure: Object.freeze({
+    id: "XaasMeasurement.measure",
+    resource: "Measurement",
+    action: "measure",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Measure",
+    schema: XaasMeasurement_measure_schema
+  }),
+  /** `XaasMeasurement.measure_json` — not delegated; no dispatch intent. */
+  measure_json: Object.freeze({
+    id: "XaasMeasurement.measure_json",
+    resource: "Measurement",
+    action: "measure_json",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Measure json",
+    schema: XaasMeasurement_measure_json_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Object` (3 actions: destroy, read, register).
+ * @typedef {Object} XaasObjectNamespace
+ * @property {Object} destroy - `XaasObject.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasObject.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} register - `XaasObject.register` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasObject = Object.freeze({
+  /** `XaasObject.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasObject.destroy",
+    resource: "Object",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasObject_destroy_schema
+  }),
+  /** `XaasObject.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasObject.read",
+    resource: "Object",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasObject_read_schema
+  }),
+  /** `XaasObject.register` — not delegated; no dispatch intent. */
+  register: Object.freeze({
+    id: "XaasObject.register",
+    resource: "Object",
+    action: "register",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Register",
+    schema: XaasObject_register_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ObjectObject` (3 actions: destroy, read, relate).
+ * @typedef {Object} XaasObjectObjectNamespace
+ * @property {Object} destroy - `XaasObjectObject.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasObjectObject.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} relate - `XaasObjectObject.relate` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasObjectObject = Object.freeze({
+  /** `XaasObjectObject.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasObjectObject.destroy",
+    resource: "ObjectObject",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasObjectObject_destroy_schema
+  }),
+  /** `XaasObjectObject.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasObjectObject.read",
+    resource: "ObjectObject",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasObjectObject_read_schema
+  }),
+  /** `XaasObjectObject.relate` — not delegated; no dispatch intent. */
+  relate: Object.freeze({
+    id: "XaasObjectObject.relate",
+    resource: "ObjectObject",
+    action: "relate",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Relate",
+    schema: XaasObjectObject_relate_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ObjectStateDelta` (3 actions: destroy, read, record_delta).
+ * @typedef {Object} XaasObjectStateDeltaNamespace
+ * @property {Object} destroy - `XaasObjectStateDelta.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasObjectStateDelta.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record_delta - `XaasObjectStateDelta.record_delta` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasObjectStateDelta = Object.freeze({
+  /** `XaasObjectStateDelta.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasObjectStateDelta.destroy",
+    resource: "ObjectStateDelta",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasObjectStateDelta_destroy_schema
+  }),
+  /** `XaasObjectStateDelta.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasObjectStateDelta.read",
+    resource: "ObjectStateDelta",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasObjectStateDelta_read_schema
+  }),
+  /** `XaasObjectStateDelta.record_delta` — not delegated; no dispatch intent. */
+  record_delta: Object.freeze({
+    id: "XaasObjectStateDelta.record_delta",
+    resource: "ObjectStateDelta",
+    action: "record_delta",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record delta",
+    schema: XaasObjectStateDelta_record_delta_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Observation` (2 actions: observe, supersede).
+ * @typedef {Object} XaasObservationNamespace
+ * @property {Object} observe - `XaasObservation.observe` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} supersede - `XaasObservation.supersede` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasObservation = Object.freeze({
+  /** `XaasObservation.observe` — not delegated; no dispatch intent. */
+  observe: Object.freeze({
+    id: "XaasObservation.observe",
+    resource: "Observation",
+    action: "observe",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Observe",
+    schema: XaasObservation_observe_schema
+  }),
+  /** `XaasObservation.supersede` — not delegated; no dispatch intent. */
+  supersede: Object.freeze({
+    id: "XaasObservation.supersede",
+    resource: "Observation",
+    action: "supersede",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Supersede",
+    schema: XaasObservation_supersede_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Event` (3 actions: destroy, read, record).
+ * @typedef {Object} XaasOcelEventNamespace
+ * @property {Object} destroy - `XaasOcelEvent.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasOcelEvent.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record - `XaasOcelEvent.record` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasOcelEvent = Object.freeze({
+  /** `XaasOcelEvent.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasOcelEvent.destroy",
+    resource: "Event",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasOcelEvent_destroy_schema
+  }),
+  /** `XaasOcelEvent.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasOcelEvent.read",
+    resource: "Event",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasOcelEvent_read_schema
+  }),
+  /** `XaasOcelEvent.record` — not delegated; no dispatch intent. */
+  record: Object.freeze({
+    id: "XaasOcelEvent.record",
+    resource: "Event",
+    action: "record",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record",
+    schema: XaasOcelEvent_record_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Org` (3 actions: create, read, update).
+ * @typedef {Object} XaasOrgNamespace
+ * @property {Object} create - `XaasOrg.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasOrg.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasOrg.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasOrg = Object.freeze({
+  /** `XaasOrg.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasOrg.create",
+    resource: "Org",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasOrg_create_schema
+  }),
+  /** `XaasOrg.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasOrg.read",
+    resource: "Org",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasOrg_read_schema
+  }),
+  /** `XaasOrg.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasOrg.update",
+    resource: "Org",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasOrg_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `OrgMembership` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasOrgMembershipNamespace
+ * @property {Object} create - `XaasOrgMembership.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasOrgMembership.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasOrgMembership.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasOrgMembership.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasOrgMembership = Object.freeze({
+  /** `XaasOrgMembership.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasOrgMembership.create",
+    resource: "OrgMembership",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasOrgMembership_create_schema
+  }),
+  /** `XaasOrgMembership.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasOrgMembership.destroy",
+    resource: "OrgMembership",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasOrgMembership_destroy_schema
+  }),
+  /** `XaasOrgMembership.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasOrgMembership.read",
+    resource: "OrgMembership",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasOrgMembership_read_schema
+  }),
+  /** `XaasOrgMembership.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasOrgMembership.update",
+    resource: "OrgMembership",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasOrgMembership_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Pack` (5 actions: create, destroy, get_by_id, read, update).
+ * @typedef {Object} XaasPackNamespace
+ * @property {Object} create - `XaasPack.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasPack.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_by_id - `XaasPack.get_by_id` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasPack.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasPack.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasPack = Object.freeze({
+  /** `XaasPack.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasPack.create",
     resource: "Pack",
     action: "create",
     actionType: "create",
@@ -74,11 +6903,11 @@ export const Pack = Object.freeze({
     descriptorKind: "DESCRIPTOR",
     capabilityIri: null,
     label: "Create",
-    schema: Pack_create_schema
+    schema: XaasPack_create_schema
   }),
-  /** `Pack.destroy` — not delegated; no dispatch intent. */
+  /** `XaasPack.destroy` — not delegated; no dispatch intent. */
   destroy: Object.freeze({
-    id: "Pack.destroy",
+    id: "XaasPack.destroy",
     resource: "Pack",
     action: "destroy",
     actionType: "destroy",
@@ -87,11 +6916,24 @@ export const Pack = Object.freeze({
     descriptorKind: "DESCRIPTOR",
     capabilityIri: null,
     label: "Destroy",
-    schema: Pack_destroy_schema
+    schema: XaasPack_destroy_schema
   }),
-  /** `Pack.read` — not delegated; no dispatch intent. */
+  /** `XaasPack.get_by_id` — not delegated; no dispatch intent. */
+  get_by_id: Object.freeze({
+    id: "XaasPack.get_by_id",
+    resource: "Pack",
+    action: "get_by_id",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get by id",
+    schema: XaasPack_get_by_id_schema
+  }),
+  /** `XaasPack.read` — not delegated; no dispatch intent. */
   read: Object.freeze({
-    id: "Pack.read",
+    id: "XaasPack.read",
     resource: "Pack",
     action: "read",
     actionType: "read",
@@ -100,11 +6942,11 @@ export const Pack = Object.freeze({
     descriptorKind: "DESCRIPTOR",
     capabilityIri: null,
     label: "Read",
-    schema: Pack_read_schema
+    schema: XaasPack_read_schema
   }),
-  /** `Pack.update` — not delegated; no dispatch intent. */
+  /** `XaasPack.update` — not delegated; no dispatch intent. */
   update: Object.freeze({
-    id: "Pack.update",
+    id: "XaasPack.update",
     resource: "Pack",
     action: "update",
     actionType: "update",
@@ -113,7 +6955,2254 @@ export const Pack = Object.freeze({
     descriptorKind: "DESCRIPTOR",
     capabilityIri: null,
     label: "Update",
-    schema: Pack_update_schema
+    schema: XaasPack_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `PackManifest` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasPackManifestNamespace
+ * @property {Object} create - `XaasPackManifest.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasPackManifest.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasPackManifest.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasPackManifest.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasPackManifest = Object.freeze({
+  /** `XaasPackManifest.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasPackManifest.create",
+    resource: "PackManifest",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasPackManifest_create_schema
+  }),
+  /** `XaasPackManifest.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasPackManifest.destroy",
+    resource: "PackManifest",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasPackManifest_destroy_schema
+  }),
+  /** `XaasPackManifest.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasPackManifest.read",
+    resource: "PackManifest",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasPackManifest_read_schema
+  }),
+  /** `XaasPackManifest.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasPackManifest.update",
+    resource: "PackManifest",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasPackManifest_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `PentestFinding` (3 actions: create, read, remediate).
+ * @typedef {Object} XaasPentestFindingNamespace
+ * @property {Object} create - `XaasPentestFinding.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasPentestFinding.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} remediate - `XaasPentestFinding.remediate` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasPentestFinding = Object.freeze({
+  /** `XaasPentestFinding.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasPentestFinding.create",
+    resource: "PentestFinding",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasPentestFinding_create_schema
+  }),
+  /** `XaasPentestFinding.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasPentestFinding.read",
+    resource: "PentestFinding",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasPentestFinding_read_schema
+  }),
+  /** `XaasPentestFinding.remediate` — not delegated; no dispatch intent. */
+  remediate: Object.freeze({
+    id: "XaasPentestFinding.remediate",
+    resource: "PentestFinding",
+    action: "remediate",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Remediate",
+    schema: XaasPentestFinding_remediate_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `PersonaGrant` (4 actions: grant, list_active, read, revoke).
+ * @typedef {Object} XaasPersonaGrantNamespace
+ * @property {Object} grant - `XaasPersonaGrant.grant` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} list_active - `XaasPersonaGrant.list_active` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasPersonaGrant.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} revoke - `XaasPersonaGrant.revoke` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasPersonaGrant = Object.freeze({
+  /** `XaasPersonaGrant.grant` — not delegated; no dispatch intent. */
+  grant: Object.freeze({
+    id: "XaasPersonaGrant.grant",
+    resource: "PersonaGrant",
+    action: "grant",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Grant",
+    schema: XaasPersonaGrant_grant_schema
+  }),
+  /** `XaasPersonaGrant.list_active` — not delegated; no dispatch intent. */
+  list_active: Object.freeze({
+    id: "XaasPersonaGrant.list_active",
+    resource: "PersonaGrant",
+    action: "list_active",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "List active",
+    schema: XaasPersonaGrant_list_active_schema
+  }),
+  /** `XaasPersonaGrant.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasPersonaGrant.read",
+    resource: "PersonaGrant",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasPersonaGrant_read_schema
+  }),
+  /** `XaasPersonaGrant.revoke` — not delegated; no dispatch intent. */
+  revoke: Object.freeze({
+    id: "XaasPersonaGrant.revoke",
+    resource: "PersonaGrant",
+    action: "revoke",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Revoke",
+    schema: XaasPersonaGrant_revoke_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Posture` (2 actions: read, register).
+ * @typedef {Object} XaasPostureNamespace
+ * @property {Object} read - `XaasPosture.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} register - `XaasPosture.register` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasPosture = Object.freeze({
+  /** `XaasPosture.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasPosture.read",
+    resource: "Posture",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasPosture_read_schema
+  }),
+  /** `XaasPosture.register` — not delegated; no dispatch intent. */
+  register: Object.freeze({
+    id: "XaasPosture.register",
+    resource: "Posture",
+    action: "register",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Register",
+    schema: XaasPosture_register_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `ProjectionRecord` (2 actions: admit, read).
+ * @typedef {Object} XaasProjectionRecordNamespace
+ * @property {Object} admit - `XaasProjectionRecord.admit` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasProjectionRecord.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasProjectionRecord = Object.freeze({
+  /** `XaasProjectionRecord.admit` — not delegated; no dispatch intent. */
+  admit: Object.freeze({
+    id: "XaasProjectionRecord.admit",
+    resource: "ProjectionRecord",
+    action: "admit",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Admit",
+    schema: XaasProjectionRecord_admit_schema
+  }),
+  /** `XaasProjectionRecord.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasProjectionRecord.read",
+    resource: "ProjectionRecord",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasProjectionRecord_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Provider` (3 actions: create, read, update).
+ * @typedef {Object} XaasProviderNamespace
+ * @property {Object} create - `XaasProvider.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasProvider.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasProvider.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasProvider = Object.freeze({
+  /** `XaasProvider.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasProvider.create",
+    resource: "Provider",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasProvider_create_schema
+  }),
+  /** `XaasProvider.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasProvider.read",
+    resource: "Provider",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasProvider_read_schema
+  }),
+  /** `XaasProvider.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasProvider.update",
+    resource: "Provider",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasProvider_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Receipt` (1 action: for_epoch).
+ * @typedef {Object} XaasReceiptNamespace
+ * @property {Object} for_epoch - `XaasReceipt.for_epoch` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasReceipt = Object.freeze({
+  /** `XaasReceipt.for_epoch` — not delegated; no dispatch intent. */
+  for_epoch: Object.freeze({
+    id: "XaasReceipt.for_epoch",
+    resource: "Receipt",
+    action: "for_epoch",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "For epoch",
+    schema: XaasReceipt_for_epoch_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RecommendationLog` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasRecommendationLogNamespace
+ * @property {Object} create - `XaasRecommendationLog.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasRecommendationLog.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRecommendationLog.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasRecommendationLog.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRecommendationLog = Object.freeze({
+  /** `XaasRecommendationLog.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRecommendationLog.create",
+    resource: "RecommendationLog",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRecommendationLog_create_schema
+  }),
+  /** `XaasRecommendationLog.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasRecommendationLog.destroy",
+    resource: "RecommendationLog",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasRecommendationLog_destroy_schema
+  }),
+  /** `XaasRecommendationLog.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRecommendationLog.read",
+    resource: "RecommendationLog",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRecommendationLog_read_schema
+  }),
+  /** `XaasRecommendationLog.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasRecommendationLog.update",
+    resource: "RecommendationLog",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasRecommendationLog_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RefusalCode` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasRefusalCodeNamespace
+ * @property {Object} create - `XaasRefusalCode.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasRefusalCode.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRefusalCode.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasRefusalCode.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRefusalCode = Object.freeze({
+  /** `XaasRefusalCode.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRefusalCode.create",
+    resource: "RefusalCode",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRefusalCode_create_schema
+  }),
+  /** `XaasRefusalCode.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasRefusalCode.destroy",
+    resource: "RefusalCode",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasRefusalCode_destroy_schema
+  }),
+  /** `XaasRefusalCode.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRefusalCode.read",
+    resource: "RefusalCode",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRefusalCode_read_schema
+  }),
+  /** `XaasRefusalCode.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasRefusalCode.update",
+    resource: "RefusalCode",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasRefusalCode_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Registration` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasRegistrationNamespace
+ * @property {Object} create - `XaasRegistration.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasRegistration.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRegistration.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasRegistration.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRegistration = Object.freeze({
+  /** `XaasRegistration.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRegistration.create",
+    resource: "Registration",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRegistration_create_schema
+  }),
+  /** `XaasRegistration.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasRegistration.destroy",
+    resource: "Registration",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasRegistration_destroy_schema
+  }),
+  /** `XaasRegistration.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRegistration.read",
+    resource: "Registration",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRegistration_read_schema
+  }),
+  /** `XaasRegistration.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasRegistration.update",
+    resource: "Registration",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasRegistration_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Resolution` (3 actions: create, read, update).
+ * @typedef {Object} XaasResolutionNamespace
+ * @property {Object} create - `XaasResolution.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasResolution.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasResolution.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasResolution = Object.freeze({
+  /** `XaasResolution.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasResolution.create",
+    resource: "Resolution",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasResolution_create_schema
+  }),
+  /** `XaasResolution.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasResolution.read",
+    resource: "Resolution",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasResolution_read_schema
+  }),
+  /** `XaasResolution.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasResolution.update",
+    resource: "Resolution",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasResolution_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RevenueRecognition` (1 action: read).
+ * @typedef {Object} XaasRevenueRecognitionNamespace
+ * @property {Object} read - `XaasRevenueRecognition.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRevenueRecognition = Object.freeze({
+  /** `XaasRevenueRecognition.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRevenueRecognition.read",
+    resource: "RevenueRecognition",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRevenueRecognition_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RevokeNonce` (2 actions: claim, read).
+ * @typedef {Object} XaasRevokeNonceNamespace
+ * @property {Object} claim - `XaasRevokeNonce.claim` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRevokeNonce.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRevokeNonce = Object.freeze({
+  /** `XaasRevokeNonce.claim` — not delegated; no dispatch intent. */
+  claim: Object.freeze({
+    id: "XaasRevokeNonce.claim",
+    resource: "RevokeNonce",
+    action: "claim",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Claim",
+    schema: XaasRevokeNonce_claim_schema
+  }),
+  /** `XaasRevokeNonce.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRevokeNonce.read",
+    resource: "RevokeNonce",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRevokeNonce_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteCastleDeploy` (1 action: read).
+ * @typedef {Object} XaasRouteCastleDeployNamespace
+ * @property {Object} read - `XaasRouteCastleDeploy.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteCastleDeploy = Object.freeze({
+  /** `XaasRouteCastleDeploy.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteCastleDeploy.read",
+    resource: "RouteCastleDeploy",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteCastleDeploy_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteCastleRun` (1 action: read).
+ * @typedef {Object} XaasRouteCastleRunNamespace
+ * @property {Object} read - `XaasRouteCastleRun.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteCastleRun = Object.freeze({
+  /** `XaasRouteCastleRun.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteCastleRun.read",
+    resource: "RouteCastleRun",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteCastleRun_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteCastleSchedule` (1 action: read).
+ * @typedef {Object} XaasRouteCastleScheduleNamespace
+ * @property {Object} read - `XaasRouteCastleSchedule.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteCastleSchedule = Object.freeze({
+  /** `XaasRouteCastleSchedule.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteCastleSchedule.read",
+    resource: "RouteCastleSchedule",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteCastleSchedule_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteCastleSunset` (1 action: read).
+ * @typedef {Object} XaasRouteCastleSunsetNamespace
+ * @property {Object} read - `XaasRouteCastleSunset.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteCastleSunset = Object.freeze({
+  /** `XaasRouteCastleSunset.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteCastleSunset.read",
+    resource: "RouteCastleSunset",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteCastleSunset_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteFeatureFlags` (3 actions: create, read, update).
+ * @typedef {Object} XaasRouteFeatureFlagsNamespace
+ * @property {Object} create - `XaasRouteFeatureFlags.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRouteFeatureFlags.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasRouteFeatureFlags.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteFeatureFlags = Object.freeze({
+  /** `XaasRouteFeatureFlags.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRouteFeatureFlags.create",
+    resource: "RouteFeatureFlags",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRouteFeatureFlags_create_schema
+  }),
+  /** `XaasRouteFeatureFlags.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteFeatureFlags.read",
+    resource: "RouteFeatureFlags",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteFeatureFlags_read_schema
+  }),
+  /** `XaasRouteFeatureFlags.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasRouteFeatureFlags.update",
+    resource: "RouteFeatureFlags",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasRouteFeatureFlags_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteOrgsCustomDomain` (3 actions: create, read, update).
+ * @typedef {Object} XaasRouteOrgsCustomDomainNamespace
+ * @property {Object} create - `XaasRouteOrgsCustomDomain.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRouteOrgsCustomDomain.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasRouteOrgsCustomDomain.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteOrgsCustomDomain = Object.freeze({
+  /** `XaasRouteOrgsCustomDomain.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRouteOrgsCustomDomain.create",
+    resource: "RouteOrgsCustomDomain",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRouteOrgsCustomDomain_create_schema
+  }),
+  /** `XaasRouteOrgsCustomDomain.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteOrgsCustomDomain.read",
+    resource: "RouteOrgsCustomDomain",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteOrgsCustomDomain_read_schema
+  }),
+  /** `XaasRouteOrgsCustomDomain.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasRouteOrgsCustomDomain.update",
+    resource: "RouteOrgsCustomDomain",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasRouteOrgsCustomDomain_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteProjects` (1 action: read).
+ * @typedef {Object} XaasRouteProjectsNamespace
+ * @property {Object} read - `XaasRouteProjects.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteProjects = Object.freeze({
+  /** `XaasRouteProjects.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteProjects.read",
+    resource: "RouteProjects",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteProjects_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteProjectsBackups` (2 actions: create, read).
+ * @typedef {Object} XaasRouteProjectsBackupsNamespace
+ * @property {Object} create - `XaasRouteProjectsBackups.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRouteProjectsBackups.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteProjectsBackups = Object.freeze({
+  /** `XaasRouteProjectsBackups.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRouteProjectsBackups.create",
+    resource: "RouteProjectsBackups",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRouteProjectsBackups_create_schema
+  }),
+  /** `XaasRouteProjectsBackups.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteProjectsBackups.read",
+    resource: "RouteProjectsBackups",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteProjectsBackups_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `RouteSecrets` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasRouteSecretsNamespace
+ * @property {Object} create - `XaasRouteSecrets.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasRouteSecrets.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRouteSecrets.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRouteSecrets = Object.freeze({
+  /** `XaasRouteSecrets.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRouteSecrets.create",
+    resource: "RouteSecrets",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRouteSecrets_create_schema
+  }),
+  /** `XaasRouteSecrets.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasRouteSecrets.destroy",
+    resource: "RouteSecrets",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasRouteSecrets_destroy_schema
+  }),
+  /** `XaasRouteSecrets.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRouteSecrets.read",
+    resource: "RouteSecrets",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRouteSecrets_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Run` (20 actions: advance_cycle, autonomic_wave, begin_wave_session, create, engine_cycle, mark_completed_epoch, mark_expected_epoch, read, read_unscoped, record_frontier, record_wave, resume, resume_frontier, semantic_wave, start, stop, submit, tick, transition_state, wave_loop).
+ * @typedef {Object} XaasRunNamespace
+ * @property {Object} advance_cycle - `XaasRun.advance_cycle` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} autonomic_wave - `XaasRun.autonomic_wave` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} begin_wave_session - `XaasRun.begin_wave_session` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasRun.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} engine_cycle - `XaasRun.engine_cycle` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} mark_completed_epoch - `XaasRun.mark_completed_epoch` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} mark_expected_epoch - `XaasRun.mark_expected_epoch` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasRun.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read_unscoped - `XaasRun.read_unscoped` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record_frontier - `XaasRun.record_frontier` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record_wave - `XaasRun.record_wave` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} resume - `XaasRun.resume` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} resume_frontier - `XaasRun.resume_frontier` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} semantic_wave - `XaasRun.semantic_wave` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} start - `XaasRun.start` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} stop - `XaasRun.stop` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} submit - `XaasRun.submit` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} tick - `XaasRun.tick` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} transition_state - `XaasRun.transition_state` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} wave_loop - `XaasRun.wave_loop` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasRun = Object.freeze({
+  /** `XaasRun.advance_cycle` — not delegated; no dispatch intent. */
+  advance_cycle: Object.freeze({
+    id: "XaasRun.advance_cycle",
+    resource: "Run",
+    action: "advance_cycle",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Advance cycle",
+    schema: XaasRun_advance_cycle_schema
+  }),
+  /** `XaasRun.autonomic_wave` — not delegated; no dispatch intent. */
+  autonomic_wave: Object.freeze({
+    id: "XaasRun.autonomic_wave",
+    resource: "Run",
+    action: "autonomic_wave",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Autonomic wave",
+    schema: XaasRun_autonomic_wave_schema
+  }),
+  /** `XaasRun.begin_wave_session` — not delegated; no dispatch intent. */
+  begin_wave_session: Object.freeze({
+    id: "XaasRun.begin_wave_session",
+    resource: "Run",
+    action: "begin_wave_session",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Begin wave session",
+    schema: XaasRun_begin_wave_session_schema
+  }),
+  /** `XaasRun.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRun.create",
+    resource: "Run",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRun_create_schema
+  }),
+  /** `XaasRun.engine_cycle` — not delegated; no dispatch intent. */
+  engine_cycle: Object.freeze({
+    id: "XaasRun.engine_cycle",
+    resource: "Run",
+    action: "engine_cycle",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Engine cycle",
+    schema: XaasRun_engine_cycle_schema
+  }),
+  /** `XaasRun.mark_completed_epoch` — not delegated; no dispatch intent. */
+  mark_completed_epoch: Object.freeze({
+    id: "XaasRun.mark_completed_epoch",
+    resource: "Run",
+    action: "mark_completed_epoch",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Mark completed epoch",
+    schema: XaasRun_mark_completed_epoch_schema
+  }),
+  /** `XaasRun.mark_expected_epoch` — not delegated; no dispatch intent. */
+  mark_expected_epoch: Object.freeze({
+    id: "XaasRun.mark_expected_epoch",
+    resource: "Run",
+    action: "mark_expected_epoch",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Mark expected epoch",
+    schema: XaasRun_mark_expected_epoch_schema
+  }),
+  /** `XaasRun.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasRun.read",
+    resource: "Run",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasRun_read_schema
+  }),
+  /** `XaasRun.read_unscoped` — not delegated; no dispatch intent. */
+  read_unscoped: Object.freeze({
+    id: "XaasRun.read_unscoped",
+    resource: "Run",
+    action: "read_unscoped",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read unscoped",
+    schema: XaasRun_read_unscoped_schema
+  }),
+  /** `XaasRun.record_frontier` — not delegated; no dispatch intent. */
+  record_frontier: Object.freeze({
+    id: "XaasRun.record_frontier",
+    resource: "Run",
+    action: "record_frontier",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record frontier",
+    schema: XaasRun_record_frontier_schema
+  }),
+  /** `XaasRun.record_wave` — not delegated; no dispatch intent. */
+  record_wave: Object.freeze({
+    id: "XaasRun.record_wave",
+    resource: "Run",
+    action: "record_wave",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record wave",
+    schema: XaasRun_record_wave_schema
+  }),
+  /** `XaasRun.resume` — not delegated; no dispatch intent. */
+  resume: Object.freeze({
+    id: "XaasRun.resume",
+    resource: "Run",
+    action: "resume",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Resume",
+    schema: XaasRun_resume_schema
+  }),
+  /** `XaasRun.resume_frontier` — not delegated; no dispatch intent. */
+  resume_frontier: Object.freeze({
+    id: "XaasRun.resume_frontier",
+    resource: "Run",
+    action: "resume_frontier",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Resume frontier",
+    schema: XaasRun_resume_frontier_schema
+  }),
+  /** `XaasRun.semantic_wave` — not delegated; no dispatch intent. */
+  semantic_wave: Object.freeze({
+    id: "XaasRun.semantic_wave",
+    resource: "Run",
+    action: "semantic_wave",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Semantic wave",
+    schema: XaasRun_semantic_wave_schema
+  }),
+  /** `XaasRun.start` — not delegated; no dispatch intent. */
+  start: Object.freeze({
+    id: "XaasRun.start",
+    resource: "Run",
+    action: "start",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Start",
+    schema: XaasRun_start_schema
+  }),
+  /** `XaasRun.stop` — not delegated; no dispatch intent. */
+  stop: Object.freeze({
+    id: "XaasRun.stop",
+    resource: "Run",
+    action: "stop",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Stop",
+    schema: XaasRun_stop_schema
+  }),
+  /** `XaasRun.submit` — not delegated; no dispatch intent. */
+  submit: Object.freeze({
+    id: "XaasRun.submit",
+    resource: "Run",
+    action: "submit",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Submit",
+    schema: XaasRun_submit_schema
+  }),
+  /** `XaasRun.tick` — not delegated; no dispatch intent. */
+  tick: Object.freeze({
+    id: "XaasRun.tick",
+    resource: "Run",
+    action: "tick",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Tick",
+    schema: XaasRun_tick_schema
+  }),
+  /** `XaasRun.transition_state` — not delegated; no dispatch intent. */
+  transition_state: Object.freeze({
+    id: "XaasRun.transition_state",
+    resource: "Run",
+    action: "transition_state",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Transition state",
+    schema: XaasRun_transition_state_schema
+  }),
+  /** `XaasRun.wave_loop` — not delegated; no dispatch intent. */
+  wave_loop: Object.freeze({
+    id: "XaasRun.wave_loop",
+    resource: "Run",
+    action: "wave_loop",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Wave loop",
+    schema: XaasRun_wave_loop_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `School` (5 actions: create, destroy, get_default, read, update).
+ * @typedef {Object} XaasSchoolNamespace
+ * @property {Object} create - `XaasSchool.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasSchool.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_default - `XaasSchool.get_default` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasSchool.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasSchool.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasSchool = Object.freeze({
+  /** `XaasSchool.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasSchool.create",
+    resource: "School",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasSchool_create_schema
+  }),
+  /** `XaasSchool.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasSchool.destroy",
+    resource: "School",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasSchool_destroy_schema
+  }),
+  /** `XaasSchool.get_default` — not delegated; no dispatch intent. */
+  get_default: Object.freeze({
+    id: "XaasSchool.get_default",
+    resource: "School",
+    action: "get_default",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get default",
+    schema: XaasSchool_get_default_schema
+  }),
+  /** `XaasSchool.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasSchool.read",
+    resource: "School",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasSchool_read_schema
+  }),
+  /** `XaasSchool.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasSchool.update",
+    resource: "School",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasSchool_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Session` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasSessionNamespace
+ * @property {Object} create - `XaasSession.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasSession.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasSession.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasSession = Object.freeze({
+  /** `XaasSession.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasSession.create",
+    resource: "Session",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasSession_create_schema
+  }),
+  /** `XaasSession.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasSession.destroy",
+    resource: "Session",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasSession_destroy_schema
+  }),
+  /** `XaasSession.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasSession.read",
+    resource: "Session",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasSession_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Speaker` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasSpeakerNamespace
+ * @property {Object} create - `XaasSpeaker.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasSpeaker.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasSpeaker.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasSpeaker = Object.freeze({
+  /** `XaasSpeaker.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasSpeaker.create",
+    resource: "Speaker",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasSpeaker_create_schema
+  }),
+  /** `XaasSpeaker.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasSpeaker.destroy",
+    resource: "Speaker",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasSpeaker_destroy_schema
+  }),
+  /** `XaasSpeaker.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasSpeaker.read",
+    resource: "Speaker",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasSpeaker_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Sponsor` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasSponsorNamespace
+ * @property {Object} create - `XaasSponsor.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasSponsor.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasSponsor.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasSponsor = Object.freeze({
+  /** `XaasSponsor.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasSponsor.create",
+    resource: "Sponsor",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasSponsor_create_schema
+  }),
+  /** `XaasSponsor.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasSponsor.destroy",
+    resource: "Sponsor",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasSponsor_destroy_schema
+  }),
+  /** `XaasSponsor.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasSponsor.read",
+    resource: "Sponsor",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasSponsor_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Subscription` (4 actions: change_tier, create, read, sync_from_stripe).
+ * @typedef {Object} XaasSubscriptionNamespace
+ * @property {Object} change_tier - `XaasSubscription.change_tier` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasSubscription.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasSubscription.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} sync_from_stripe - `XaasSubscription.sync_from_stripe` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasSubscription = Object.freeze({
+  /** `XaasSubscription.change_tier` — not delegated; no dispatch intent. */
+  change_tier: Object.freeze({
+    id: "XaasSubscription.change_tier",
+    resource: "Subscription",
+    action: "change_tier",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Change tier",
+    schema: XaasSubscription_change_tier_schema
+  }),
+  /** `XaasSubscription.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasSubscription.create",
+    resource: "Subscription",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasSubscription_create_schema
+  }),
+  /** `XaasSubscription.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasSubscription.read",
+    resource: "Subscription",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasSubscription_read_schema
+  }),
+  /** `XaasSubscription.sync_from_stripe` — not delegated; no dispatch intent. */
+  sync_from_stripe: Object.freeze({
+    id: "XaasSubscription.sync_from_stripe",
+    resource: "Subscription",
+    action: "sync_from_stripe",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Sync from stripe",
+    schema: XaasSubscription_sync_from_stripe_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Task` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasTaskNamespace
+ * @property {Object} create - `XaasTask.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasTask.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasTask.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasTask.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasTask = Object.freeze({
+  /** `XaasTask.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasTask.create",
+    resource: "Task",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasTask_create_schema
+  }),
+  /** `XaasTask.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasTask.destroy",
+    resource: "Task",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasTask_destroy_schema
+  }),
+  /** `XaasTask.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasTask.read",
+    resource: "Task",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasTask_read_schema
+  }),
+  /** `XaasTask.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasTask.update",
+    resource: "Task",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasTask_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Token` (12 actions: expired, expunge_expired, get_confirmation_changes, get_token, is_revoked, read, read_expired, revoke_all_stored_for_subject, revoke_jti, revoke_token, store_confirmation_changes, store_token).
+ * @typedef {Object} XaasTokenNamespace
+ * @property {Object} expired - `XaasToken.expired` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} expunge_expired - `XaasToken.expunge_expired` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_confirmation_changes - `XaasToken.get_confirmation_changes` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_token - `XaasToken.get_token` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} is_revoked - `XaasToken.is_revoked` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasToken.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read_expired - `XaasToken.read_expired` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} revoke_all_stored_for_subject - `XaasToken.revoke_all_stored_for_subject` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} revoke_jti - `XaasToken.revoke_jti` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} revoke_token - `XaasToken.revoke_token` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} store_confirmation_changes - `XaasToken.store_confirmation_changes` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} store_token - `XaasToken.store_token` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasToken = Object.freeze({
+  /** `XaasToken.expired` — not delegated; no dispatch intent. */
+  expired: Object.freeze({
+    id: "XaasToken.expired",
+    resource: "Token",
+    action: "expired",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Expired",
+    schema: XaasToken_expired_schema
+  }),
+  /** `XaasToken.expunge_expired` — not delegated; no dispatch intent. */
+  expunge_expired: Object.freeze({
+    id: "XaasToken.expunge_expired",
+    resource: "Token",
+    action: "expunge_expired",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Expunge expired",
+    schema: XaasToken_expunge_expired_schema
+  }),
+  /** `XaasToken.get_confirmation_changes` — not delegated; no dispatch intent. */
+  get_confirmation_changes: Object.freeze({
+    id: "XaasToken.get_confirmation_changes",
+    resource: "Token",
+    action: "get_confirmation_changes",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get confirmation changes",
+    schema: XaasToken_get_confirmation_changes_schema
+  }),
+  /** `XaasToken.get_token` — not delegated; no dispatch intent. */
+  get_token: Object.freeze({
+    id: "XaasToken.get_token",
+    resource: "Token",
+    action: "get_token",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get token",
+    schema: XaasToken_get_token_schema
+  }),
+  /** `XaasToken.is_revoked` — not delegated; no dispatch intent. */
+  is_revoked: Object.freeze({
+    id: "XaasToken.is_revoked",
+    resource: "Token",
+    action: "is_revoked",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Is revoked",
+    schema: XaasToken_is_revoked_schema
+  }),
+  /** `XaasToken.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasToken.read",
+    resource: "Token",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasToken_read_schema
+  }),
+  /** `XaasToken.read_expired` — not delegated; no dispatch intent. */
+  read_expired: Object.freeze({
+    id: "XaasToken.read_expired",
+    resource: "Token",
+    action: "read_expired",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read expired",
+    schema: XaasToken_read_expired_schema
+  }),
+  /** `XaasToken.revoke_all_stored_for_subject` — not delegated; no dispatch intent. */
+  revoke_all_stored_for_subject: Object.freeze({
+    id: "XaasToken.revoke_all_stored_for_subject",
+    resource: "Token",
+    action: "revoke_all_stored_for_subject",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Revoke all stored for subject",
+    schema: XaasToken_revoke_all_stored_for_subject_schema
+  }),
+  /** `XaasToken.revoke_jti` — not delegated; no dispatch intent. */
+  revoke_jti: Object.freeze({
+    id: "XaasToken.revoke_jti",
+    resource: "Token",
+    action: "revoke_jti",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Revoke jti",
+    schema: XaasToken_revoke_jti_schema
+  }),
+  /** `XaasToken.revoke_token` — not delegated; no dispatch intent. */
+  revoke_token: Object.freeze({
+    id: "XaasToken.revoke_token",
+    resource: "Token",
+    action: "revoke_token",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Revoke token",
+    schema: XaasToken_revoke_token_schema
+  }),
+  /** `XaasToken.store_confirmation_changes` — not delegated; no dispatch intent. */
+  store_confirmation_changes: Object.freeze({
+    id: "XaasToken.store_confirmation_changes",
+    resource: "Token",
+    action: "store_confirmation_changes",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Store confirmation changes",
+    schema: XaasToken_store_confirmation_changes_schema
+  }),
+  /** `XaasToken.store_token` — not delegated; no dispatch intent. */
+  store_token: Object.freeze({
+    id: "XaasToken.store_token",
+    resource: "Token",
+    action: "store_token",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Store token",
+    schema: XaasToken_store_token_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Track` (3 actions: create, destroy, read).
+ * @typedef {Object} XaasTrackNamespace
+ * @property {Object} create - `XaasTrack.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasTrack.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasTrack.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasTrack = Object.freeze({
+  /** `XaasTrack.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasTrack.create",
+    resource: "Track",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasTrack_create_schema
+  }),
+  /** `XaasTrack.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasTrack.destroy",
+    resource: "Track",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasTrack_destroy_schema
+  }),
+  /** `XaasTrack.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasTrack.read",
+    resource: "Track",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasTrack_read_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Transfer` (3 actions: read, read_transfers, transfer).
+ * @typedef {Object} XaasTransferNamespace
+ * @property {Object} read - `XaasTransfer.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read_transfers - `XaasTransfer.read_transfers` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} transfer - `XaasTransfer.transfer` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasTransfer = Object.freeze({
+  /** `XaasTransfer.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasTransfer.read",
+    resource: "Transfer",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasTransfer_read_schema
+  }),
+  /** `XaasTransfer.read_transfers` — not delegated; no dispatch intent. */
+  read_transfers: Object.freeze({
+    id: "XaasTransfer.read_transfers",
+    resource: "Transfer",
+    action: "read_transfers",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read transfers",
+    schema: XaasTransfer_read_transfers_schema
+  }),
+  /** `XaasTransfer.transfer` — not delegated; no dispatch intent. */
+  transfer: Object.freeze({
+    id: "XaasTransfer.transfer",
+    resource: "Transfer",
+    action: "transfer",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Transfer",
+    schema: XaasTransfer_transfer_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `User` (15 actions: change_password, confirm, destroy, get_by_email, get_by_subject, log_out_everywhere, read, register_with_password, request_magic_link, request_password_reset_token, reset_password_with_token, sign_in_with_magic_link, sign_in_with_password, sign_in_with_remember_me, sign_in_with_token).
+ * @typedef {Object} XaasUserNamespace
+ * @property {Object} change_password - `XaasUser.change_password` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} confirm - `XaasUser.confirm` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasUser.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_by_email - `XaasUser.get_by_email` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} get_by_subject - `XaasUser.get_by_subject` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} log_out_everywhere - `XaasUser.log_out_everywhere` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasUser.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} register_with_password - `XaasUser.register_with_password` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_magic_link - `XaasUser.request_magic_link` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} request_password_reset_token - `XaasUser.request_password_reset_token` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} reset_password_with_token - `XaasUser.reset_password_with_token` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} sign_in_with_magic_link - `XaasUser.sign_in_with_magic_link` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} sign_in_with_password - `XaasUser.sign_in_with_password` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} sign_in_with_remember_me - `XaasUser.sign_in_with_remember_me` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} sign_in_with_token - `XaasUser.sign_in_with_token` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasUser = Object.freeze({
+  /** `XaasUser.change_password` — not delegated; no dispatch intent. */
+  change_password: Object.freeze({
+    id: "XaasUser.change_password",
+    resource: "User",
+    action: "change_password",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Change password",
+    schema: XaasUser_change_password_schema
+  }),
+  /** `XaasUser.confirm` — not delegated; no dispatch intent. */
+  confirm: Object.freeze({
+    id: "XaasUser.confirm",
+    resource: "User",
+    action: "confirm",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Confirm",
+    schema: XaasUser_confirm_schema
+  }),
+  /** `XaasUser.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasUser.destroy",
+    resource: "User",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasUser_destroy_schema
+  }),
+  /** `XaasUser.get_by_email` — not delegated; no dispatch intent. */
+  get_by_email: Object.freeze({
+    id: "XaasUser.get_by_email",
+    resource: "User",
+    action: "get_by_email",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get by email",
+    schema: XaasUser_get_by_email_schema
+  }),
+  /** `XaasUser.get_by_subject` — not delegated; no dispatch intent. */
+  get_by_subject: Object.freeze({
+    id: "XaasUser.get_by_subject",
+    resource: "User",
+    action: "get_by_subject",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Get by subject",
+    schema: XaasUser_get_by_subject_schema
+  }),
+  /** `XaasUser.log_out_everywhere` — not delegated; no dispatch intent. */
+  log_out_everywhere: Object.freeze({
+    id: "XaasUser.log_out_everywhere",
+    resource: "User",
+    action: "log_out_everywhere",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Log out everywhere",
+    schema: XaasUser_log_out_everywhere_schema
+  }),
+  /** `XaasUser.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasUser.read",
+    resource: "User",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasUser_read_schema
+  }),
+  /** `XaasUser.register_with_password` — not delegated; no dispatch intent. */
+  register_with_password: Object.freeze({
+    id: "XaasUser.register_with_password",
+    resource: "User",
+    action: "register_with_password",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Register with password",
+    schema: XaasUser_register_with_password_schema
+  }),
+  /** `XaasUser.request_magic_link` — not delegated; no dispatch intent. */
+  request_magic_link: Object.freeze({
+    id: "XaasUser.request_magic_link",
+    resource: "User",
+    action: "request_magic_link",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request magic link",
+    schema: XaasUser_request_magic_link_schema
+  }),
+  /** `XaasUser.request_password_reset_token` — not delegated; no dispatch intent. */
+  request_password_reset_token: Object.freeze({
+    id: "XaasUser.request_password_reset_token",
+    resource: "User",
+    action: "request_password_reset_token",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Request password reset token",
+    schema: XaasUser_request_password_reset_token_schema
+  }),
+  /** `XaasUser.reset_password_with_token` — not delegated; no dispatch intent. */
+  reset_password_with_token: Object.freeze({
+    id: "XaasUser.reset_password_with_token",
+    resource: "User",
+    action: "reset_password_with_token",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Reset password with token",
+    schema: XaasUser_reset_password_with_token_schema
+  }),
+  /** `XaasUser.sign_in_with_magic_link` — not delegated; no dispatch intent. */
+  sign_in_with_magic_link: Object.freeze({
+    id: "XaasUser.sign_in_with_magic_link",
+    resource: "User",
+    action: "sign_in_with_magic_link",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Sign in with magic link",
+    schema: XaasUser_sign_in_with_magic_link_schema
+  }),
+  /** `XaasUser.sign_in_with_password` — not delegated; no dispatch intent. */
+  sign_in_with_password: Object.freeze({
+    id: "XaasUser.sign_in_with_password",
+    resource: "User",
+    action: "sign_in_with_password",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Sign in with password",
+    schema: XaasUser_sign_in_with_password_schema
+  }),
+  /** `XaasUser.sign_in_with_remember_me` — not delegated; no dispatch intent. */
+  sign_in_with_remember_me: Object.freeze({
+    id: "XaasUser.sign_in_with_remember_me",
+    resource: "User",
+    action: "sign_in_with_remember_me",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Sign in with remember me",
+    schema: XaasUser_sign_in_with_remember_me_schema
+  }),
+  /** `XaasUser.sign_in_with_token` — not delegated; no dispatch intent. */
+  sign_in_with_token: Object.freeze({
+    id: "XaasUser.sign_in_with_token",
+    resource: "User",
+    action: "sign_in_with_token",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Sign in with token",
+    schema: XaasUser_sign_in_with_token_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `VerificationKey` (2 actions: read, register).
+ * @typedef {Object} XaasVerificationKeyNamespace
+ * @property {Object} read - `XaasVerificationKey.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} register - `XaasVerificationKey.register` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasVerificationKey = Object.freeze({
+  /** `XaasVerificationKey.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasVerificationKey.read",
+    resource: "VerificationKey",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasVerificationKey_read_schema
+  }),
+  /** `XaasVerificationKey.register` — not delegated; no dispatch intent. */
+  register: Object.freeze({
+    id: "XaasVerificationKey.register",
+    resource: "VerificationKey",
+    action: "register",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Register",
+    schema: XaasVerificationKey_register_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `Webhook` (4 actions: create, destroy, read, update).
+ * @typedef {Object} XaasWebhookNamespace
+ * @property {Object} create - `XaasWebhook.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} destroy - `XaasWebhook.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasWebhook.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasWebhook.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasWebhook = Object.freeze({
+  /** `XaasWebhook.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasWebhook.create",
+    resource: "Webhook",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasWebhook_create_schema
+  }),
+  /** `XaasWebhook.destroy` — not delegated; no dispatch intent. */
+  destroy: Object.freeze({
+    id: "XaasWebhook.destroy",
+    resource: "Webhook",
+    action: "destroy",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Destroy",
+    schema: XaasWebhook_destroy_schema
+  }),
+  /** `XaasWebhook.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasWebhook.read",
+    resource: "Webhook",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasWebhook_read_schema
+  }),
+  /** `XaasWebhook.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasWebhook.update",
+    resource: "Webhook",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasWebhook_update_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `WebhookDelivery` (5 actions: create, deliver, read, record_attempt, retry_failed_deliveries).
+ * @typedef {Object} XaasWebhookDeliveryNamespace
+ * @property {Object} create - `XaasWebhookDelivery.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} deliver - `XaasWebhookDelivery.deliver` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasWebhookDelivery.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} record_attempt - `XaasWebhookDelivery.record_attempt` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} retry_failed_deliveries - `XaasWebhookDelivery.retry_failed_deliveries` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasWebhookDelivery = Object.freeze({
+  /** `XaasWebhookDelivery.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasWebhookDelivery.create",
+    resource: "WebhookDelivery",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasWebhookDelivery_create_schema
+  }),
+  /** `XaasWebhookDelivery.deliver` — not delegated; no dispatch intent. */
+  deliver: Object.freeze({
+    id: "XaasWebhookDelivery.deliver",
+    resource: "WebhookDelivery",
+    action: "deliver",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Deliver",
+    schema: XaasWebhookDelivery_deliver_schema
+  }),
+  /** `XaasWebhookDelivery.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasWebhookDelivery.read",
+    resource: "WebhookDelivery",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasWebhookDelivery_read_schema
+  }),
+  /** `XaasWebhookDelivery.record_attempt` — not delegated; no dispatch intent. */
+  record_attempt: Object.freeze({
+    id: "XaasWebhookDelivery.record_attempt",
+    resource: "WebhookDelivery",
+    action: "record_attempt",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Record attempt",
+    schema: XaasWebhookDelivery_record_attempt_schema
+  }),
+  /** `XaasWebhookDelivery.retry_failed_deliveries` — not delegated; no dispatch intent. */
+  retry_failed_deliveries: Object.freeze({
+    id: "XaasWebhookDelivery.retry_failed_deliveries",
+    resource: "WebhookDelivery",
+    action: "retry_failed_deliveries",
+    actionType: "action",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Retry failed deliveries",
+    schema: XaasWebhookDelivery_retry_failed_deliveries_schema
+  })
+});
+
+/**
+ * JSDoc-typed namespace for resource `WorkOrder` (3 actions: create, read, update).
+ * @typedef {Object} XaasWorkOrderNamespace
+ * @property {Object} create - `XaasWorkOrder.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} read - `XaasWorkOrder.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} update - `XaasWorkOrder.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ */
+export const XaasWorkOrder = Object.freeze({
+  /** `XaasWorkOrder.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasWorkOrder.create",
+    resource: "WorkOrder",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasWorkOrder_create_schema
+  }),
+  /** `XaasWorkOrder.read` — not delegated; no dispatch intent. */
+  read: Object.freeze({
+    id: "XaasWorkOrder.read",
+    resource: "WorkOrder",
+    action: "read",
+    actionType: "read",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Read",
+    schema: XaasWorkOrder_read_schema
+  }),
+  /** `XaasWorkOrder.update` — not delegated; no dispatch intent. */
+  update: Object.freeze({
+    id: "XaasWorkOrder.update",
+    resource: "WorkOrder",
+    action: "update",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Update",
+    schema: XaasWorkOrder_update_schema
   })
 });
 
@@ -124,23 +9213,948 @@ export const Pack = Object.freeze({
  * descriptor identity is shared.
  */
 export const ACTIONS = Object.freeze([
-  Pack.create,
-  Pack.destroy,
-  Pack.read,
-  Pack.update
+  XaasAccount.lock_accounts,
+  XaasAccount.open,
+  XaasAccount.read,
+  XaasAgent.create,
+  XaasAgent.destroy,
+  XaasAgent.read,
+  XaasAgent.update,
+  XaasApprovalBackupRetentionChange.approve,
+  XaasApprovalBackupRetentionChange.create,
+  XaasApprovalBackupRetentionChange.read,
+  XaasApprovalBreakGlassJustificationReview.approve,
+  XaasApprovalBreakGlassJustificationReview.create,
+  XaasApprovalBreakGlassJustificationReview.read,
+  XaasApprovalCastleVerbSchedule.approve,
+  XaasApprovalCastleVerbSchedule.create,
+  XaasApprovalCastleVerbSchedule.read,
+  XaasApprovalChangeOfControlNotify.approve,
+  XaasApprovalChangeOfControlNotify.create,
+  XaasApprovalChangeOfControlNotify.read,
+  XaasApprovalCmekKeyBinding.approve,
+  XaasApprovalCmekKeyBinding.create,
+  XaasApprovalCmekKeyBinding.read,
+  XaasApprovalComplianceRotationBlock.approve,
+  XaasApprovalComplianceRotationBlock.create,
+  XaasApprovalComplianceRotationBlock.read,
+  XaasApprovalDeniedPartyOverride.approve,
+  XaasApprovalDeniedPartyOverride.create,
+  XaasApprovalDeniedPartyOverride.read,
+  XaasApprovalDeploymentQuarantine.approve,
+  XaasApprovalDeploymentQuarantine.create,
+  XaasApprovalDeploymentQuarantine.read,
+  XaasApprovalDrFailover.approve,
+  XaasApprovalDrFailover.create,
+  XaasApprovalDrFailover.read,
+  XaasApprovalDsarErasure.approve,
+  XaasApprovalDsarErasure.create,
+  XaasApprovalDsarErasure.read,
+  XaasApprovalEnvironmentPromote.approve,
+  XaasApprovalEnvironmentPromote.create,
+  XaasApprovalEnvironmentPromote.read,
+  XaasApprovalEnvironmentPromote.reject,
+  XaasApprovalExportSubscriptionUpdate.approve,
+  XaasApprovalExportSubscriptionUpdate.create,
+  XaasApprovalExportSubscriptionUpdate.read,
+  XaasApprovalFreezeOverride.approve,
+  XaasApprovalFreezeOverride.create,
+  XaasApprovalFreezeOverride.read,
+  XaasApprovalGeofenceExceptionGrant.approve,
+  XaasApprovalGeofenceExceptionGrant.create,
+  XaasApprovalGeofenceExceptionGrant.read,
+  XaasApprovalInsurancePolicyUpdate.approve,
+  XaasApprovalInsurancePolicyUpdate.create,
+  XaasApprovalInsurancePolicyUpdate.read,
+  XaasApprovalInvoiceReconciliationApprove.approve,
+  XaasApprovalInvoiceReconciliationApprove.create,
+  XaasApprovalInvoiceReconciliationApprove.read,
+  XaasApprovalK8sFaultRemediateSuggest.approve,
+  XaasApprovalK8sFaultRemediateSuggest.create,
+  XaasApprovalK8sFaultRemediateSuggest.read,
+  XaasApprovalLeRequestRespond.approve,
+  XaasApprovalLeRequestRespond.create,
+  XaasApprovalLeRequestRespond.read,
+  XaasApprovalLegalHoldRelease.approve,
+  XaasApprovalLegalHoldRelease.create,
+  XaasApprovalLegalHoldRelease.read,
+  XaasApprovalOrgDelete.approve,
+  XaasApprovalOrgDelete.create,
+  XaasApprovalOrgDelete.read,
+  XaasApprovalPatchSlaCreditApply.approve,
+  XaasApprovalPatchSlaCreditApply.create,
+  XaasApprovalPatchSlaCreditApply.read,
+  XaasApprovalPentestFindingResolve.approve,
+  XaasApprovalPentestFindingResolve.create,
+  XaasApprovalPentestFindingResolve.read,
+  XaasApprovalPersonnelAttestationRecord.approve,
+  XaasApprovalPersonnelAttestationRecord.create,
+  XaasApprovalPersonnelAttestationRecord.read,
+  XaasApprovalPricingOverride.approve,
+  XaasApprovalPricingOverride.create,
+  XaasApprovalPricingOverride.read,
+  XaasApprovalProviderStatusChange.approve,
+  XaasApprovalProviderStatusChange.create,
+  XaasApprovalProviderStatusChange.read,
+  XaasApprovalQuotaOverride.approve,
+  XaasApprovalQuotaOverride.create,
+  XaasApprovalQuotaOverride.read,
+  XaasApprovalSlaCreditApply.approve,
+  XaasApprovalSlaCreditApply.create,
+  XaasApprovalSlaCreditApply.read,
+  XaasApprovalSourceEscrowSnapshot.approve,
+  XaasApprovalSourceEscrowSnapshot.create,
+  XaasApprovalSourceEscrowSnapshot.read,
+  XaasApprovalSsoRoleMappingUpdate.approve,
+  XaasApprovalSsoRoleMappingUpdate.create,
+  XaasApprovalSsoRoleMappingUpdate.read,
+  XaasApprovalSubprocessorRegistryUpdate.approve,
+  XaasApprovalSubprocessorRegistryUpdate.create,
+  XaasApprovalSubprocessorRegistryUpdate.read,
+  XaasApprovalTierDowngrade.approve,
+  XaasApprovalTierDowngrade.create,
+  XaasApprovalTierDowngrade.read,
+  XaasApprovalVendorOffboardingAttestationIssue.approve,
+  XaasApprovalVendorOffboardingAttestationIssue.create,
+  XaasApprovalVendorOffboardingAttestationIssue.read,
+  XaasAttendee.create,
+  XaasAttendee.destroy,
+  XaasAttendee.read,
+  XaasAuditExportToken.issue,
+  XaasAuditExportToken.read,
+  XaasAuditExportToken.revoke,
+  XaasAuditLogEntry.create,
+  XaasAuditLogEntry.read,
+  XaasAutofdePlannerCacheHotset.read,
+  XaasAutofdePlannerCacheHotset.request_cache_hotset,
+  XaasAutofdePlannerCacheStats.read,
+  XaasAutofdePlannerCacheStats.request_cache_stats,
+  XaasAutofdePlannerCandidate.read,
+  XaasAutofdePlannerCandidate.request_candidate,
+  XaasAutofdePlannerCatalog.read,
+  XaasAutofdePlannerCatalog.request_catalog,
+  XaasAutofdePlannerMatch.read,
+  XaasAutofdePlannerMatch.request_match,
+  XaasBalance.adjust_balance,
+  XaasBalance.read,
+  XaasBalance.upsert_balance,
+  XaasBook.ash_ai_update_embeddings,
+  XaasBook.borrow_copy,
+  XaasBook.by_grade_band,
+  XaasBook.create,
+  XaasBook.destroy,
+  XaasBook.generate_recommendation_explanation,
+  XaasBook.get_by_id,
+  XaasBook.read,
+  XaasBook.return_copy,
+  XaasBook.update,
+  XaasCapability.create,
+  XaasCapability.destroy,
+  XaasCapability.read,
+  XaasCapabilityLivenessReceipt.check_regressions,
+  XaasCapabilityLivenessReceipt.destroy,
+  XaasCapabilityLivenessReceipt.ingest,
+  XaasCapabilityLivenessReceipt.read,
+  XaasCastleVerbFortune5Requirements.read,
+  XaasCastleVerbInventoryComponents.read,
+  XaasCastleVerbInventoryGoals.read,
+  XaasCertifiedReceipt.ingest,
+  XaasCertifiedReceipt.read,
+  XaasCertifiedReceipt.record_verification,
+  XaasCheckout.borrow,
+  XaasCheckout.create,
+  XaasCheckout.destroy,
+  XaasCheckout.for_user,
+  XaasCheckout.read,
+  XaasCheckout.return,
+  XaasCheckout.update,
+  XaasConferenceEvent.create,
+  XaasConferenceEvent.destroy,
+  XaasConferenceEvent.read,
+  XaasCouplingRun.couple,
+  XaasCouplingRun.read,
+  XaasCuration.active_for_grade,
+  XaasCuration.create,
+  XaasCuration.destroy,
+  XaasCuration.read,
+  XaasCuration.update,
+  XaasDataDestructionCertificateIssue.approve,
+  XaasDataDestructionCertificateIssue.create,
+  XaasDataDestructionCertificateIssue.read,
+  XaasEngineLimit.create,
+  XaasEngineLimit.destroy,
+  XaasEngineLimit.read,
+  XaasEpisode.create,
+  XaasEpisode.read,
+  XaasEpisode.update,
+  XaasEpoch.complete,
+  XaasEpoch.create,
+  XaasEpoch.lease,
+  XaasEpoch.mark_failed,
+  XaasEpoch.mark_missed,
+  XaasEpoch.read,
+  XaasEpoch.read_unscoped,
+  XaasEpoch.record_final_head,
+  XaasEpoch.renew_lease,
+  XaasEpoch.start,
+  XaasEventLog.create,
+  XaasEventLog.replay,
+  XaasEventObject.destroy,
+  XaasEventObject.read,
+  XaasEventObject.relate,
+  XaasExecution.read,
+  XaasExperienceCluster.create,
+  XaasExperienceCluster.read,
+  XaasExperienceCluster.update,
+  XaasFinding.ingest,
+  XaasFinding.read,
+  XaasFreezeWindow.create,
+  XaasFreezeWindow.destroy,
+  XaasFreezeWindow.read,
+  XaasGap.create,
+  XaasGap.read,
+  XaasGap.update,
+  XaasGovernanceApprovalBackupRetentionChangeVersion.create,
+  XaasGovernanceApprovalBackupRetentionChangeVersion.read,
+  XaasGovernanceApprovalBackupRetentionChangeVersion.update,
+  XaasGovernanceApprovalDeploymentQuarantineVersion.create,
+  XaasGovernanceApprovalDeploymentQuarantineVersion.read,
+  XaasGovernanceApprovalDeploymentQuarantineVersion.update,
+  XaasGovernanceApprovalDrFailoverVersion.create,
+  XaasGovernanceApprovalDrFailoverVersion.read,
+  XaasGovernanceApprovalDrFailoverVersion.update,
+  XaasGovernanceApprovalFreezeOverrideVersion.create,
+  XaasGovernanceApprovalFreezeOverrideVersion.read,
+  XaasGovernanceApprovalFreezeOverrideVersion.update,
+  XaasGovernanceApprovalLegalHoldReleaseVersion.create,
+  XaasGovernanceApprovalLegalHoldReleaseVersion.read,
+  XaasGovernanceApprovalLegalHoldReleaseVersion.update,
+  XaasGovernanceFreezeWindowVersion.create,
+  XaasGovernanceFreezeWindowVersion.read,
+  XaasGovernanceFreezeWindowVersion.update,
+  XaasHoldRequest.active,
+  XaasHoldRequest.cancel,
+  XaasHoldRequest.create,
+  XaasHoldRequest.destroy,
+  XaasHoldRequest.expirable,
+  XaasHoldRequest.expire,
+  XaasHoldRequest.expire_stale,
+  XaasHoldRequest.for_book,
+  XaasHoldRequest.for_user,
+  XaasHoldRequest.fulfill,
+  XaasHoldRequest.oldest_active_for_book,
+  XaasHoldRequest.place,
+  XaasHoldRequest.read,
+  XaasHoldRequest.update,
+  XaasIncident.create,
+  XaasIncident.read,
+  XaasIncident.update,
+  XaasInternalApiToken.by_hash,
+  XaasInternalApiToken.issue,
+  XaasInternalApiToken.read,
+  XaasInternalApiToken.revoke,
+  XaasMeasurement.measure,
+  XaasMeasurement.measure_json,
+  XaasObject.destroy,
+  XaasObject.read,
+  XaasObject.register,
+  XaasObjectObject.destroy,
+  XaasObjectObject.read,
+  XaasObjectObject.relate,
+  XaasObjectStateDelta.destroy,
+  XaasObjectStateDelta.read,
+  XaasObjectStateDelta.record_delta,
+  XaasObservation.observe,
+  XaasObservation.supersede,
+  XaasOcelEvent.destroy,
+  XaasOcelEvent.read,
+  XaasOcelEvent.record,
+  XaasOrg.create,
+  XaasOrg.read,
+  XaasOrg.update,
+  XaasOrgMembership.create,
+  XaasOrgMembership.destroy,
+  XaasOrgMembership.read,
+  XaasOrgMembership.update,
+  XaasPack.create,
+  XaasPack.destroy,
+  XaasPack.get_by_id,
+  XaasPack.read,
+  XaasPack.update,
+  XaasPackManifest.create,
+  XaasPackManifest.destroy,
+  XaasPackManifest.read,
+  XaasPackManifest.update,
+  XaasPentestFinding.create,
+  XaasPentestFinding.read,
+  XaasPentestFinding.remediate,
+  XaasPersonaGrant.grant,
+  XaasPersonaGrant.list_active,
+  XaasPersonaGrant.read,
+  XaasPersonaGrant.revoke,
+  XaasPosture.read,
+  XaasPosture.register,
+  XaasProjectionRecord.admit,
+  XaasProjectionRecord.read,
+  XaasProvider.create,
+  XaasProvider.read,
+  XaasProvider.update,
+  XaasReceipt.for_epoch,
+  XaasRecommendationLog.create,
+  XaasRecommendationLog.destroy,
+  XaasRecommendationLog.read,
+  XaasRecommendationLog.update,
+  XaasRefusalCode.create,
+  XaasRefusalCode.destroy,
+  XaasRefusalCode.read,
+  XaasRefusalCode.update,
+  XaasRegistration.create,
+  XaasRegistration.destroy,
+  XaasRegistration.read,
+  XaasRegistration.update,
+  XaasResolution.create,
+  XaasResolution.read,
+  XaasResolution.update,
+  XaasRevenueRecognition.read,
+  XaasRevokeNonce.claim,
+  XaasRevokeNonce.read,
+  XaasRouteCastleDeploy.read,
+  XaasRouteCastleRun.read,
+  XaasRouteCastleSchedule.read,
+  XaasRouteCastleSunset.read,
+  XaasRouteFeatureFlags.create,
+  XaasRouteFeatureFlags.read,
+  XaasRouteFeatureFlags.update,
+  XaasRouteOrgsCustomDomain.create,
+  XaasRouteOrgsCustomDomain.read,
+  XaasRouteOrgsCustomDomain.update,
+  XaasRouteProjects.read,
+  XaasRouteProjectsBackups.create,
+  XaasRouteProjectsBackups.read,
+  XaasRouteSecrets.create,
+  XaasRouteSecrets.destroy,
+  XaasRouteSecrets.read,
+  XaasRun.advance_cycle,
+  XaasRun.autonomic_wave,
+  XaasRun.begin_wave_session,
+  XaasRun.create,
+  XaasRun.engine_cycle,
+  XaasRun.mark_completed_epoch,
+  XaasRun.mark_expected_epoch,
+  XaasRun.read,
+  XaasRun.read_unscoped,
+  XaasRun.record_frontier,
+  XaasRun.record_wave,
+  XaasRun.resume,
+  XaasRun.resume_frontier,
+  XaasRun.semantic_wave,
+  XaasRun.start,
+  XaasRun.stop,
+  XaasRun.submit,
+  XaasRun.tick,
+  XaasRun.transition_state,
+  XaasRun.wave_loop,
+  XaasSchool.create,
+  XaasSchool.destroy,
+  XaasSchool.get_default,
+  XaasSchool.read,
+  XaasSchool.update,
+  XaasSession.create,
+  XaasSession.destroy,
+  XaasSession.read,
+  XaasSpeaker.create,
+  XaasSpeaker.destroy,
+  XaasSpeaker.read,
+  XaasSponsor.create,
+  XaasSponsor.destroy,
+  XaasSponsor.read,
+  XaasSubscription.change_tier,
+  XaasSubscription.create,
+  XaasSubscription.read,
+  XaasSubscription.sync_from_stripe,
+  XaasTask.create,
+  XaasTask.destroy,
+  XaasTask.read,
+  XaasTask.update,
+  XaasToken.expired,
+  XaasToken.expunge_expired,
+  XaasToken.get_confirmation_changes,
+  XaasToken.get_token,
+  XaasToken.is_revoked,
+  XaasToken.read,
+  XaasToken.read_expired,
+  XaasToken.revoke_all_stored_for_subject,
+  XaasToken.revoke_jti,
+  XaasToken.revoke_token,
+  XaasToken.store_confirmation_changes,
+  XaasToken.store_token,
+  XaasTrack.create,
+  XaasTrack.destroy,
+  XaasTrack.read,
+  XaasTransfer.read,
+  XaasTransfer.read_transfers,
+  XaasTransfer.transfer,
+  XaasUser.change_password,
+  XaasUser.confirm,
+  XaasUser.destroy,
+  XaasUser.get_by_email,
+  XaasUser.get_by_subject,
+  XaasUser.log_out_everywhere,
+  XaasUser.read,
+  XaasUser.register_with_password,
+  XaasUser.request_magic_link,
+  XaasUser.request_password_reset_token,
+  XaasUser.reset_password_with_token,
+  XaasUser.sign_in_with_magic_link,
+  XaasUser.sign_in_with_password,
+  XaasUser.sign_in_with_remember_me,
+  XaasUser.sign_in_with_token,
+  XaasVerificationKey.read,
+  XaasVerificationKey.register,
+  XaasWebhook.create,
+  XaasWebhook.destroy,
+  XaasWebhook.read,
+  XaasWebhook.update,
+  XaasWebhookDelivery.create,
+  XaasWebhookDelivery.deliver,
+  XaasWebhookDelivery.read,
+  XaasWebhookDelivery.record_attempt,
+  XaasWebhookDelivery.retry_failed_deliveries,
+  XaasWorkOrder.create,
+  XaasWorkOrder.read,
+  XaasWorkOrder.update
 ]);
 
 /** Zod boundary schemas by action id, present only where the IR delegated one. */
 export const SCHEMAS = Object.freeze({
-  "Pack.create": Pack_create_schema,
-  "Pack.destroy": Pack_destroy_schema,
-  "Pack.read": Pack_read_schema,
-  "Pack.update": Pack_update_schema
+  "XaasAccount.lock_accounts": XaasAccount_lock_accounts_schema,
+  "XaasAccount.open": XaasAccount_open_schema,
+  "XaasAccount.read": XaasAccount_read_schema,
+  "XaasAgent.create": XaasAgent_create_schema,
+  "XaasAgent.destroy": XaasAgent_destroy_schema,
+  "XaasAgent.read": XaasAgent_read_schema,
+  "XaasAgent.update": XaasAgent_update_schema,
+  "XaasApprovalBackupRetentionChange.approve": XaasApprovalBackupRetentionChange_approve_schema,
+  "XaasApprovalBackupRetentionChange.create": XaasApprovalBackupRetentionChange_create_schema,
+  "XaasApprovalBackupRetentionChange.read": XaasApprovalBackupRetentionChange_read_schema,
+  "XaasApprovalBreakGlassJustificationReview.approve": XaasApprovalBreakGlassJustificationReview_approve_schema,
+  "XaasApprovalBreakGlassJustificationReview.create": XaasApprovalBreakGlassJustificationReview_create_schema,
+  "XaasApprovalBreakGlassJustificationReview.read": XaasApprovalBreakGlassJustificationReview_read_schema,
+  "XaasApprovalCastleVerbSchedule.approve": XaasApprovalCastleVerbSchedule_approve_schema,
+  "XaasApprovalCastleVerbSchedule.create": XaasApprovalCastleVerbSchedule_create_schema,
+  "XaasApprovalCastleVerbSchedule.read": XaasApprovalCastleVerbSchedule_read_schema,
+  "XaasApprovalChangeOfControlNotify.approve": XaasApprovalChangeOfControlNotify_approve_schema,
+  "XaasApprovalChangeOfControlNotify.create": XaasApprovalChangeOfControlNotify_create_schema,
+  "XaasApprovalChangeOfControlNotify.read": XaasApprovalChangeOfControlNotify_read_schema,
+  "XaasApprovalCmekKeyBinding.approve": XaasApprovalCmekKeyBinding_approve_schema,
+  "XaasApprovalCmekKeyBinding.create": XaasApprovalCmekKeyBinding_create_schema,
+  "XaasApprovalCmekKeyBinding.read": XaasApprovalCmekKeyBinding_read_schema,
+  "XaasApprovalComplianceRotationBlock.approve": XaasApprovalComplianceRotationBlock_approve_schema,
+  "XaasApprovalComplianceRotationBlock.create": XaasApprovalComplianceRotationBlock_create_schema,
+  "XaasApprovalComplianceRotationBlock.read": XaasApprovalComplianceRotationBlock_read_schema,
+  "XaasApprovalDeniedPartyOverride.approve": XaasApprovalDeniedPartyOverride_approve_schema,
+  "XaasApprovalDeniedPartyOverride.create": XaasApprovalDeniedPartyOverride_create_schema,
+  "XaasApprovalDeniedPartyOverride.read": XaasApprovalDeniedPartyOverride_read_schema,
+  "XaasApprovalDeploymentQuarantine.approve": XaasApprovalDeploymentQuarantine_approve_schema,
+  "XaasApprovalDeploymentQuarantine.create": XaasApprovalDeploymentQuarantine_create_schema,
+  "XaasApprovalDeploymentQuarantine.read": XaasApprovalDeploymentQuarantine_read_schema,
+  "XaasApprovalDrFailover.approve": XaasApprovalDrFailover_approve_schema,
+  "XaasApprovalDrFailover.create": XaasApprovalDrFailover_create_schema,
+  "XaasApprovalDrFailover.read": XaasApprovalDrFailover_read_schema,
+  "XaasApprovalDsarErasure.approve": XaasApprovalDsarErasure_approve_schema,
+  "XaasApprovalDsarErasure.create": XaasApprovalDsarErasure_create_schema,
+  "XaasApprovalDsarErasure.read": XaasApprovalDsarErasure_read_schema,
+  "XaasApprovalEnvironmentPromote.approve": XaasApprovalEnvironmentPromote_approve_schema,
+  "XaasApprovalEnvironmentPromote.create": XaasApprovalEnvironmentPromote_create_schema,
+  "XaasApprovalEnvironmentPromote.read": XaasApprovalEnvironmentPromote_read_schema,
+  "XaasApprovalEnvironmentPromote.reject": XaasApprovalEnvironmentPromote_reject_schema,
+  "XaasApprovalExportSubscriptionUpdate.approve": XaasApprovalExportSubscriptionUpdate_approve_schema,
+  "XaasApprovalExportSubscriptionUpdate.create": XaasApprovalExportSubscriptionUpdate_create_schema,
+  "XaasApprovalExportSubscriptionUpdate.read": XaasApprovalExportSubscriptionUpdate_read_schema,
+  "XaasApprovalFreezeOverride.approve": XaasApprovalFreezeOverride_approve_schema,
+  "XaasApprovalFreezeOverride.create": XaasApprovalFreezeOverride_create_schema,
+  "XaasApprovalFreezeOverride.read": XaasApprovalFreezeOverride_read_schema,
+  "XaasApprovalGeofenceExceptionGrant.approve": XaasApprovalGeofenceExceptionGrant_approve_schema,
+  "XaasApprovalGeofenceExceptionGrant.create": XaasApprovalGeofenceExceptionGrant_create_schema,
+  "XaasApprovalGeofenceExceptionGrant.read": XaasApprovalGeofenceExceptionGrant_read_schema,
+  "XaasApprovalInsurancePolicyUpdate.approve": XaasApprovalInsurancePolicyUpdate_approve_schema,
+  "XaasApprovalInsurancePolicyUpdate.create": XaasApprovalInsurancePolicyUpdate_create_schema,
+  "XaasApprovalInsurancePolicyUpdate.read": XaasApprovalInsurancePolicyUpdate_read_schema,
+  "XaasApprovalInvoiceReconciliationApprove.approve": XaasApprovalInvoiceReconciliationApprove_approve_schema,
+  "XaasApprovalInvoiceReconciliationApprove.create": XaasApprovalInvoiceReconciliationApprove_create_schema,
+  "XaasApprovalInvoiceReconciliationApprove.read": XaasApprovalInvoiceReconciliationApprove_read_schema,
+  "XaasApprovalK8sFaultRemediateSuggest.approve": XaasApprovalK8sFaultRemediateSuggest_approve_schema,
+  "XaasApprovalK8sFaultRemediateSuggest.create": XaasApprovalK8sFaultRemediateSuggest_create_schema,
+  "XaasApprovalK8sFaultRemediateSuggest.read": XaasApprovalK8sFaultRemediateSuggest_read_schema,
+  "XaasApprovalLeRequestRespond.approve": XaasApprovalLeRequestRespond_approve_schema,
+  "XaasApprovalLeRequestRespond.create": XaasApprovalLeRequestRespond_create_schema,
+  "XaasApprovalLeRequestRespond.read": XaasApprovalLeRequestRespond_read_schema,
+  "XaasApprovalLegalHoldRelease.approve": XaasApprovalLegalHoldRelease_approve_schema,
+  "XaasApprovalLegalHoldRelease.create": XaasApprovalLegalHoldRelease_create_schema,
+  "XaasApprovalLegalHoldRelease.read": XaasApprovalLegalHoldRelease_read_schema,
+  "XaasApprovalOrgDelete.approve": XaasApprovalOrgDelete_approve_schema,
+  "XaasApprovalOrgDelete.create": XaasApprovalOrgDelete_create_schema,
+  "XaasApprovalOrgDelete.read": XaasApprovalOrgDelete_read_schema,
+  "XaasApprovalPatchSlaCreditApply.approve": XaasApprovalPatchSlaCreditApply_approve_schema,
+  "XaasApprovalPatchSlaCreditApply.create": XaasApprovalPatchSlaCreditApply_create_schema,
+  "XaasApprovalPatchSlaCreditApply.read": XaasApprovalPatchSlaCreditApply_read_schema,
+  "XaasApprovalPentestFindingResolve.approve": XaasApprovalPentestFindingResolve_approve_schema,
+  "XaasApprovalPentestFindingResolve.create": XaasApprovalPentestFindingResolve_create_schema,
+  "XaasApprovalPentestFindingResolve.read": XaasApprovalPentestFindingResolve_read_schema,
+  "XaasApprovalPersonnelAttestationRecord.approve": XaasApprovalPersonnelAttestationRecord_approve_schema,
+  "XaasApprovalPersonnelAttestationRecord.create": XaasApprovalPersonnelAttestationRecord_create_schema,
+  "XaasApprovalPersonnelAttestationRecord.read": XaasApprovalPersonnelAttestationRecord_read_schema,
+  "XaasApprovalPricingOverride.approve": XaasApprovalPricingOverride_approve_schema,
+  "XaasApprovalPricingOverride.create": XaasApprovalPricingOverride_create_schema,
+  "XaasApprovalPricingOverride.read": XaasApprovalPricingOverride_read_schema,
+  "XaasApprovalProviderStatusChange.approve": XaasApprovalProviderStatusChange_approve_schema,
+  "XaasApprovalProviderStatusChange.create": XaasApprovalProviderStatusChange_create_schema,
+  "XaasApprovalProviderStatusChange.read": XaasApprovalProviderStatusChange_read_schema,
+  "XaasApprovalQuotaOverride.approve": XaasApprovalQuotaOverride_approve_schema,
+  "XaasApprovalQuotaOverride.create": XaasApprovalQuotaOverride_create_schema,
+  "XaasApprovalQuotaOverride.read": XaasApprovalQuotaOverride_read_schema,
+  "XaasApprovalSlaCreditApply.approve": XaasApprovalSlaCreditApply_approve_schema,
+  "XaasApprovalSlaCreditApply.create": XaasApprovalSlaCreditApply_create_schema,
+  "XaasApprovalSlaCreditApply.read": XaasApprovalSlaCreditApply_read_schema,
+  "XaasApprovalSourceEscrowSnapshot.approve": XaasApprovalSourceEscrowSnapshot_approve_schema,
+  "XaasApprovalSourceEscrowSnapshot.create": XaasApprovalSourceEscrowSnapshot_create_schema,
+  "XaasApprovalSourceEscrowSnapshot.read": XaasApprovalSourceEscrowSnapshot_read_schema,
+  "XaasApprovalSsoRoleMappingUpdate.approve": XaasApprovalSsoRoleMappingUpdate_approve_schema,
+  "XaasApprovalSsoRoleMappingUpdate.create": XaasApprovalSsoRoleMappingUpdate_create_schema,
+  "XaasApprovalSsoRoleMappingUpdate.read": XaasApprovalSsoRoleMappingUpdate_read_schema,
+  "XaasApprovalSubprocessorRegistryUpdate.approve": XaasApprovalSubprocessorRegistryUpdate_approve_schema,
+  "XaasApprovalSubprocessorRegistryUpdate.create": XaasApprovalSubprocessorRegistryUpdate_create_schema,
+  "XaasApprovalSubprocessorRegistryUpdate.read": XaasApprovalSubprocessorRegistryUpdate_read_schema,
+  "XaasApprovalTierDowngrade.approve": XaasApprovalTierDowngrade_approve_schema,
+  "XaasApprovalTierDowngrade.create": XaasApprovalTierDowngrade_create_schema,
+  "XaasApprovalTierDowngrade.read": XaasApprovalTierDowngrade_read_schema,
+  "XaasApprovalVendorOffboardingAttestationIssue.approve": XaasApprovalVendorOffboardingAttestationIssue_approve_schema,
+  "XaasApprovalVendorOffboardingAttestationIssue.create": XaasApprovalVendorOffboardingAttestationIssue_create_schema,
+  "XaasApprovalVendorOffboardingAttestationIssue.read": XaasApprovalVendorOffboardingAttestationIssue_read_schema,
+  "XaasAttendee.create": XaasAttendee_create_schema,
+  "XaasAttendee.destroy": XaasAttendee_destroy_schema,
+  "XaasAttendee.read": XaasAttendee_read_schema,
+  "XaasAuditExportToken.issue": XaasAuditExportToken_issue_schema,
+  "XaasAuditExportToken.read": XaasAuditExportToken_read_schema,
+  "XaasAuditExportToken.revoke": XaasAuditExportToken_revoke_schema,
+  "XaasAuditLogEntry.create": XaasAuditLogEntry_create_schema,
+  "XaasAuditLogEntry.read": XaasAuditLogEntry_read_schema,
+  "XaasAutofdePlannerCacheHotset.read": XaasAutofdePlannerCacheHotset_read_schema,
+  "XaasAutofdePlannerCacheHotset.request_cache_hotset": XaasAutofdePlannerCacheHotset_request_cache_hotset_schema,
+  "XaasAutofdePlannerCacheStats.read": XaasAutofdePlannerCacheStats_read_schema,
+  "XaasAutofdePlannerCacheStats.request_cache_stats": XaasAutofdePlannerCacheStats_request_cache_stats_schema,
+  "XaasAutofdePlannerCandidate.read": XaasAutofdePlannerCandidate_read_schema,
+  "XaasAutofdePlannerCandidate.request_candidate": XaasAutofdePlannerCandidate_request_candidate_schema,
+  "XaasAutofdePlannerCatalog.read": XaasAutofdePlannerCatalog_read_schema,
+  "XaasAutofdePlannerCatalog.request_catalog": XaasAutofdePlannerCatalog_request_catalog_schema,
+  "XaasAutofdePlannerMatch.read": XaasAutofdePlannerMatch_read_schema,
+  "XaasAutofdePlannerMatch.request_match": XaasAutofdePlannerMatch_request_match_schema,
+  "XaasBalance.adjust_balance": XaasBalance_adjust_balance_schema,
+  "XaasBalance.read": XaasBalance_read_schema,
+  "XaasBalance.upsert_balance": XaasBalance_upsert_balance_schema,
+  "XaasBook.ash_ai_update_embeddings": XaasBook_ash_ai_update_embeddings_schema,
+  "XaasBook.borrow_copy": XaasBook_borrow_copy_schema,
+  "XaasBook.by_grade_band": XaasBook_by_grade_band_schema,
+  "XaasBook.create": XaasBook_create_schema,
+  "XaasBook.destroy": XaasBook_destroy_schema,
+  "XaasBook.generate_recommendation_explanation": XaasBook_generate_recommendation_explanation_schema,
+  "XaasBook.get_by_id": XaasBook_get_by_id_schema,
+  "XaasBook.read": XaasBook_read_schema,
+  "XaasBook.return_copy": XaasBook_return_copy_schema,
+  "XaasBook.update": XaasBook_update_schema,
+  "XaasCapability.create": XaasCapability_create_schema,
+  "XaasCapability.destroy": XaasCapability_destroy_schema,
+  "XaasCapability.read": XaasCapability_read_schema,
+  "XaasCapabilityLivenessReceipt.check_regressions": XaasCapabilityLivenessReceipt_check_regressions_schema,
+  "XaasCapabilityLivenessReceipt.destroy": XaasCapabilityLivenessReceipt_destroy_schema,
+  "XaasCapabilityLivenessReceipt.ingest": XaasCapabilityLivenessReceipt_ingest_schema,
+  "XaasCapabilityLivenessReceipt.read": XaasCapabilityLivenessReceipt_read_schema,
+  "XaasCastleVerbFortune5Requirements.read": XaasCastleVerbFortune5Requirements_read_schema,
+  "XaasCastleVerbInventoryComponents.read": XaasCastleVerbInventoryComponents_read_schema,
+  "XaasCastleVerbInventoryGoals.read": XaasCastleVerbInventoryGoals_read_schema,
+  "XaasCertifiedReceipt.ingest": XaasCertifiedReceipt_ingest_schema,
+  "XaasCertifiedReceipt.read": XaasCertifiedReceipt_read_schema,
+  "XaasCertifiedReceipt.record_verification": XaasCertifiedReceipt_record_verification_schema,
+  "XaasCheckout.borrow": XaasCheckout_borrow_schema,
+  "XaasCheckout.create": XaasCheckout_create_schema,
+  "XaasCheckout.destroy": XaasCheckout_destroy_schema,
+  "XaasCheckout.for_user": XaasCheckout_for_user_schema,
+  "XaasCheckout.read": XaasCheckout_read_schema,
+  "XaasCheckout.return": XaasCheckout_return_schema,
+  "XaasCheckout.update": XaasCheckout_update_schema,
+  "XaasConferenceEvent.create": XaasConferenceEvent_create_schema,
+  "XaasConferenceEvent.destroy": XaasConferenceEvent_destroy_schema,
+  "XaasConferenceEvent.read": XaasConferenceEvent_read_schema,
+  "XaasCouplingRun.couple": XaasCouplingRun_couple_schema,
+  "XaasCouplingRun.read": XaasCouplingRun_read_schema,
+  "XaasCuration.active_for_grade": XaasCuration_active_for_grade_schema,
+  "XaasCuration.create": XaasCuration_create_schema,
+  "XaasCuration.destroy": XaasCuration_destroy_schema,
+  "XaasCuration.read": XaasCuration_read_schema,
+  "XaasCuration.update": XaasCuration_update_schema,
+  "XaasDataDestructionCertificateIssue.approve": XaasDataDestructionCertificateIssue_approve_schema,
+  "XaasDataDestructionCertificateIssue.create": XaasDataDestructionCertificateIssue_create_schema,
+  "XaasDataDestructionCertificateIssue.read": XaasDataDestructionCertificateIssue_read_schema,
+  "XaasEngineLimit.create": XaasEngineLimit_create_schema,
+  "XaasEngineLimit.destroy": XaasEngineLimit_destroy_schema,
+  "XaasEngineLimit.read": XaasEngineLimit_read_schema,
+  "XaasEpisode.create": XaasEpisode_create_schema,
+  "XaasEpisode.read": XaasEpisode_read_schema,
+  "XaasEpisode.update": XaasEpisode_update_schema,
+  "XaasEpoch.complete": XaasEpoch_complete_schema,
+  "XaasEpoch.create": XaasEpoch_create_schema,
+  "XaasEpoch.lease": XaasEpoch_lease_schema,
+  "XaasEpoch.mark_failed": XaasEpoch_mark_failed_schema,
+  "XaasEpoch.mark_missed": XaasEpoch_mark_missed_schema,
+  "XaasEpoch.read": XaasEpoch_read_schema,
+  "XaasEpoch.read_unscoped": XaasEpoch_read_unscoped_schema,
+  "XaasEpoch.record_final_head": XaasEpoch_record_final_head_schema,
+  "XaasEpoch.renew_lease": XaasEpoch_renew_lease_schema,
+  "XaasEpoch.start": XaasEpoch_start_schema,
+  "XaasEventLog.create": XaasEventLog_create_schema,
+  "XaasEventLog.replay": XaasEventLog_replay_schema,
+  "XaasEventObject.destroy": XaasEventObject_destroy_schema,
+  "XaasEventObject.read": XaasEventObject_read_schema,
+  "XaasEventObject.relate": XaasEventObject_relate_schema,
+  "XaasExecution.read": XaasExecution_read_schema,
+  "XaasExperienceCluster.create": XaasExperienceCluster_create_schema,
+  "XaasExperienceCluster.read": XaasExperienceCluster_read_schema,
+  "XaasExperienceCluster.update": XaasExperienceCluster_update_schema,
+  "XaasFinding.ingest": XaasFinding_ingest_schema,
+  "XaasFinding.read": XaasFinding_read_schema,
+  "XaasFreezeWindow.create": XaasFreezeWindow_create_schema,
+  "XaasFreezeWindow.destroy": XaasFreezeWindow_destroy_schema,
+  "XaasFreezeWindow.read": XaasFreezeWindow_read_schema,
+  "XaasGap.create": XaasGap_create_schema,
+  "XaasGap.read": XaasGap_read_schema,
+  "XaasGap.update": XaasGap_update_schema,
+  "XaasGovernanceApprovalBackupRetentionChangeVersion.create": XaasGovernanceApprovalBackupRetentionChangeVersion_create_schema,
+  "XaasGovernanceApprovalBackupRetentionChangeVersion.read": XaasGovernanceApprovalBackupRetentionChangeVersion_read_schema,
+  "XaasGovernanceApprovalBackupRetentionChangeVersion.update": XaasGovernanceApprovalBackupRetentionChangeVersion_update_schema,
+  "XaasGovernanceApprovalDeploymentQuarantineVersion.create": XaasGovernanceApprovalDeploymentQuarantineVersion_create_schema,
+  "XaasGovernanceApprovalDeploymentQuarantineVersion.read": XaasGovernanceApprovalDeploymentQuarantineVersion_read_schema,
+  "XaasGovernanceApprovalDeploymentQuarantineVersion.update": XaasGovernanceApprovalDeploymentQuarantineVersion_update_schema,
+  "XaasGovernanceApprovalDrFailoverVersion.create": XaasGovernanceApprovalDrFailoverVersion_create_schema,
+  "XaasGovernanceApprovalDrFailoverVersion.read": XaasGovernanceApprovalDrFailoverVersion_read_schema,
+  "XaasGovernanceApprovalDrFailoverVersion.update": XaasGovernanceApprovalDrFailoverVersion_update_schema,
+  "XaasGovernanceApprovalFreezeOverrideVersion.create": XaasGovernanceApprovalFreezeOverrideVersion_create_schema,
+  "XaasGovernanceApprovalFreezeOverrideVersion.read": XaasGovernanceApprovalFreezeOverrideVersion_read_schema,
+  "XaasGovernanceApprovalFreezeOverrideVersion.update": XaasGovernanceApprovalFreezeOverrideVersion_update_schema,
+  "XaasGovernanceApprovalLegalHoldReleaseVersion.create": XaasGovernanceApprovalLegalHoldReleaseVersion_create_schema,
+  "XaasGovernanceApprovalLegalHoldReleaseVersion.read": XaasGovernanceApprovalLegalHoldReleaseVersion_read_schema,
+  "XaasGovernanceApprovalLegalHoldReleaseVersion.update": XaasGovernanceApprovalLegalHoldReleaseVersion_update_schema,
+  "XaasGovernanceFreezeWindowVersion.create": XaasGovernanceFreezeWindowVersion_create_schema,
+  "XaasGovernanceFreezeWindowVersion.read": XaasGovernanceFreezeWindowVersion_read_schema,
+  "XaasGovernanceFreezeWindowVersion.update": XaasGovernanceFreezeWindowVersion_update_schema,
+  "XaasHoldRequest.active": XaasHoldRequest_active_schema,
+  "XaasHoldRequest.cancel": XaasHoldRequest_cancel_schema,
+  "XaasHoldRequest.create": XaasHoldRequest_create_schema,
+  "XaasHoldRequest.destroy": XaasHoldRequest_destroy_schema,
+  "XaasHoldRequest.expirable": XaasHoldRequest_expirable_schema,
+  "XaasHoldRequest.expire": XaasHoldRequest_expire_schema,
+  "XaasHoldRequest.expire_stale": XaasHoldRequest_expire_stale_schema,
+  "XaasHoldRequest.for_book": XaasHoldRequest_for_book_schema,
+  "XaasHoldRequest.for_user": XaasHoldRequest_for_user_schema,
+  "XaasHoldRequest.fulfill": XaasHoldRequest_fulfill_schema,
+  "XaasHoldRequest.oldest_active_for_book": XaasHoldRequest_oldest_active_for_book_schema,
+  "XaasHoldRequest.place": XaasHoldRequest_place_schema,
+  "XaasHoldRequest.read": XaasHoldRequest_read_schema,
+  "XaasHoldRequest.update": XaasHoldRequest_update_schema,
+  "XaasIncident.create": XaasIncident_create_schema,
+  "XaasIncident.read": XaasIncident_read_schema,
+  "XaasIncident.update": XaasIncident_update_schema,
+  "XaasInternalApiToken.by_hash": XaasInternalApiToken_by_hash_schema,
+  "XaasInternalApiToken.issue": XaasInternalApiToken_issue_schema,
+  "XaasInternalApiToken.read": XaasInternalApiToken_read_schema,
+  "XaasInternalApiToken.revoke": XaasInternalApiToken_revoke_schema,
+  "XaasMeasurement.measure": XaasMeasurement_measure_schema,
+  "XaasMeasurement.measure_json": XaasMeasurement_measure_json_schema,
+  "XaasObject.destroy": XaasObject_destroy_schema,
+  "XaasObject.read": XaasObject_read_schema,
+  "XaasObject.register": XaasObject_register_schema,
+  "XaasObjectObject.destroy": XaasObjectObject_destroy_schema,
+  "XaasObjectObject.read": XaasObjectObject_read_schema,
+  "XaasObjectObject.relate": XaasObjectObject_relate_schema,
+  "XaasObjectStateDelta.destroy": XaasObjectStateDelta_destroy_schema,
+  "XaasObjectStateDelta.read": XaasObjectStateDelta_read_schema,
+  "XaasObjectStateDelta.record_delta": XaasObjectStateDelta_record_delta_schema,
+  "XaasObservation.observe": XaasObservation_observe_schema,
+  "XaasObservation.supersede": XaasObservation_supersede_schema,
+  "XaasOcelEvent.destroy": XaasOcelEvent_destroy_schema,
+  "XaasOcelEvent.read": XaasOcelEvent_read_schema,
+  "XaasOcelEvent.record": XaasOcelEvent_record_schema,
+  "XaasOrg.create": XaasOrg_create_schema,
+  "XaasOrg.read": XaasOrg_read_schema,
+  "XaasOrg.update": XaasOrg_update_schema,
+  "XaasOrgMembership.create": XaasOrgMembership_create_schema,
+  "XaasOrgMembership.destroy": XaasOrgMembership_destroy_schema,
+  "XaasOrgMembership.read": XaasOrgMembership_read_schema,
+  "XaasOrgMembership.update": XaasOrgMembership_update_schema,
+  "XaasPack.create": XaasPack_create_schema,
+  "XaasPack.destroy": XaasPack_destroy_schema,
+  "XaasPack.get_by_id": XaasPack_get_by_id_schema,
+  "XaasPack.read": XaasPack_read_schema,
+  "XaasPack.update": XaasPack_update_schema,
+  "XaasPackManifest.create": XaasPackManifest_create_schema,
+  "XaasPackManifest.destroy": XaasPackManifest_destroy_schema,
+  "XaasPackManifest.read": XaasPackManifest_read_schema,
+  "XaasPackManifest.update": XaasPackManifest_update_schema,
+  "XaasPentestFinding.create": XaasPentestFinding_create_schema,
+  "XaasPentestFinding.read": XaasPentestFinding_read_schema,
+  "XaasPentestFinding.remediate": XaasPentestFinding_remediate_schema,
+  "XaasPersonaGrant.grant": XaasPersonaGrant_grant_schema,
+  "XaasPersonaGrant.list_active": XaasPersonaGrant_list_active_schema,
+  "XaasPersonaGrant.read": XaasPersonaGrant_read_schema,
+  "XaasPersonaGrant.revoke": XaasPersonaGrant_revoke_schema,
+  "XaasPosture.read": XaasPosture_read_schema,
+  "XaasPosture.register": XaasPosture_register_schema,
+  "XaasProjectionRecord.admit": XaasProjectionRecord_admit_schema,
+  "XaasProjectionRecord.read": XaasProjectionRecord_read_schema,
+  "XaasProvider.create": XaasProvider_create_schema,
+  "XaasProvider.read": XaasProvider_read_schema,
+  "XaasProvider.update": XaasProvider_update_schema,
+  "XaasReceipt.for_epoch": XaasReceipt_for_epoch_schema,
+  "XaasRecommendationLog.create": XaasRecommendationLog_create_schema,
+  "XaasRecommendationLog.destroy": XaasRecommendationLog_destroy_schema,
+  "XaasRecommendationLog.read": XaasRecommendationLog_read_schema,
+  "XaasRecommendationLog.update": XaasRecommendationLog_update_schema,
+  "XaasRefusalCode.create": XaasRefusalCode_create_schema,
+  "XaasRefusalCode.destroy": XaasRefusalCode_destroy_schema,
+  "XaasRefusalCode.read": XaasRefusalCode_read_schema,
+  "XaasRefusalCode.update": XaasRefusalCode_update_schema,
+  "XaasRegistration.create": XaasRegistration_create_schema,
+  "XaasRegistration.destroy": XaasRegistration_destroy_schema,
+  "XaasRegistration.read": XaasRegistration_read_schema,
+  "XaasRegistration.update": XaasRegistration_update_schema,
+  "XaasResolution.create": XaasResolution_create_schema,
+  "XaasResolution.read": XaasResolution_read_schema,
+  "XaasResolution.update": XaasResolution_update_schema,
+  "XaasRevenueRecognition.read": XaasRevenueRecognition_read_schema,
+  "XaasRevokeNonce.claim": XaasRevokeNonce_claim_schema,
+  "XaasRevokeNonce.read": XaasRevokeNonce_read_schema,
+  "XaasRouteCastleDeploy.read": XaasRouteCastleDeploy_read_schema,
+  "XaasRouteCastleRun.read": XaasRouteCastleRun_read_schema,
+  "XaasRouteCastleSchedule.read": XaasRouteCastleSchedule_read_schema,
+  "XaasRouteCastleSunset.read": XaasRouteCastleSunset_read_schema,
+  "XaasRouteFeatureFlags.create": XaasRouteFeatureFlags_create_schema,
+  "XaasRouteFeatureFlags.read": XaasRouteFeatureFlags_read_schema,
+  "XaasRouteFeatureFlags.update": XaasRouteFeatureFlags_update_schema,
+  "XaasRouteOrgsCustomDomain.create": XaasRouteOrgsCustomDomain_create_schema,
+  "XaasRouteOrgsCustomDomain.read": XaasRouteOrgsCustomDomain_read_schema,
+  "XaasRouteOrgsCustomDomain.update": XaasRouteOrgsCustomDomain_update_schema,
+  "XaasRouteProjects.read": XaasRouteProjects_read_schema,
+  "XaasRouteProjectsBackups.create": XaasRouteProjectsBackups_create_schema,
+  "XaasRouteProjectsBackups.read": XaasRouteProjectsBackups_read_schema,
+  "XaasRouteSecrets.create": XaasRouteSecrets_create_schema,
+  "XaasRouteSecrets.destroy": XaasRouteSecrets_destroy_schema,
+  "XaasRouteSecrets.read": XaasRouteSecrets_read_schema,
+  "XaasRun.advance_cycle": XaasRun_advance_cycle_schema,
+  "XaasRun.autonomic_wave": XaasRun_autonomic_wave_schema,
+  "XaasRun.begin_wave_session": XaasRun_begin_wave_session_schema,
+  "XaasRun.create": XaasRun_create_schema,
+  "XaasRun.engine_cycle": XaasRun_engine_cycle_schema,
+  "XaasRun.mark_completed_epoch": XaasRun_mark_completed_epoch_schema,
+  "XaasRun.mark_expected_epoch": XaasRun_mark_expected_epoch_schema,
+  "XaasRun.read": XaasRun_read_schema,
+  "XaasRun.read_unscoped": XaasRun_read_unscoped_schema,
+  "XaasRun.record_frontier": XaasRun_record_frontier_schema,
+  "XaasRun.record_wave": XaasRun_record_wave_schema,
+  "XaasRun.resume": XaasRun_resume_schema,
+  "XaasRun.resume_frontier": XaasRun_resume_frontier_schema,
+  "XaasRun.semantic_wave": XaasRun_semantic_wave_schema,
+  "XaasRun.start": XaasRun_start_schema,
+  "XaasRun.stop": XaasRun_stop_schema,
+  "XaasRun.submit": XaasRun_submit_schema,
+  "XaasRun.tick": XaasRun_tick_schema,
+  "XaasRun.transition_state": XaasRun_transition_state_schema,
+  "XaasRun.wave_loop": XaasRun_wave_loop_schema,
+  "XaasSchool.create": XaasSchool_create_schema,
+  "XaasSchool.destroy": XaasSchool_destroy_schema,
+  "XaasSchool.get_default": XaasSchool_get_default_schema,
+  "XaasSchool.read": XaasSchool_read_schema,
+  "XaasSchool.update": XaasSchool_update_schema,
+  "XaasSession.create": XaasSession_create_schema,
+  "XaasSession.destroy": XaasSession_destroy_schema,
+  "XaasSession.read": XaasSession_read_schema,
+  "XaasSpeaker.create": XaasSpeaker_create_schema,
+  "XaasSpeaker.destroy": XaasSpeaker_destroy_schema,
+  "XaasSpeaker.read": XaasSpeaker_read_schema,
+  "XaasSponsor.create": XaasSponsor_create_schema,
+  "XaasSponsor.destroy": XaasSponsor_destroy_schema,
+  "XaasSponsor.read": XaasSponsor_read_schema,
+  "XaasSubscription.change_tier": XaasSubscription_change_tier_schema,
+  "XaasSubscription.create": XaasSubscription_create_schema,
+  "XaasSubscription.read": XaasSubscription_read_schema,
+  "XaasSubscription.sync_from_stripe": XaasSubscription_sync_from_stripe_schema,
+  "XaasTask.create": XaasTask_create_schema,
+  "XaasTask.destroy": XaasTask_destroy_schema,
+  "XaasTask.read": XaasTask_read_schema,
+  "XaasTask.update": XaasTask_update_schema,
+  "XaasToken.expired": XaasToken_expired_schema,
+  "XaasToken.expunge_expired": XaasToken_expunge_expired_schema,
+  "XaasToken.get_confirmation_changes": XaasToken_get_confirmation_changes_schema,
+  "XaasToken.get_token": XaasToken_get_token_schema,
+  "XaasToken.is_revoked": XaasToken_is_revoked_schema,
+  "XaasToken.read": XaasToken_read_schema,
+  "XaasToken.read_expired": XaasToken_read_expired_schema,
+  "XaasToken.revoke_all_stored_for_subject": XaasToken_revoke_all_stored_for_subject_schema,
+  "XaasToken.revoke_jti": XaasToken_revoke_jti_schema,
+  "XaasToken.revoke_token": XaasToken_revoke_token_schema,
+  "XaasToken.store_confirmation_changes": XaasToken_store_confirmation_changes_schema,
+  "XaasToken.store_token": XaasToken_store_token_schema,
+  "XaasTrack.create": XaasTrack_create_schema,
+  "XaasTrack.destroy": XaasTrack_destroy_schema,
+  "XaasTrack.read": XaasTrack_read_schema,
+  "XaasTransfer.read": XaasTransfer_read_schema,
+  "XaasTransfer.read_transfers": XaasTransfer_read_transfers_schema,
+  "XaasTransfer.transfer": XaasTransfer_transfer_schema,
+  "XaasUser.change_password": XaasUser_change_password_schema,
+  "XaasUser.confirm": XaasUser_confirm_schema,
+  "XaasUser.destroy": XaasUser_destroy_schema,
+  "XaasUser.get_by_email": XaasUser_get_by_email_schema,
+  "XaasUser.get_by_subject": XaasUser_get_by_subject_schema,
+  "XaasUser.log_out_everywhere": XaasUser_log_out_everywhere_schema,
+  "XaasUser.read": XaasUser_read_schema,
+  "XaasUser.register_with_password": XaasUser_register_with_password_schema,
+  "XaasUser.request_magic_link": XaasUser_request_magic_link_schema,
+  "XaasUser.request_password_reset_token": XaasUser_request_password_reset_token_schema,
+  "XaasUser.reset_password_with_token": XaasUser_reset_password_with_token_schema,
+  "XaasUser.sign_in_with_magic_link": XaasUser_sign_in_with_magic_link_schema,
+  "XaasUser.sign_in_with_password": XaasUser_sign_in_with_password_schema,
+  "XaasUser.sign_in_with_remember_me": XaasUser_sign_in_with_remember_me_schema,
+  "XaasUser.sign_in_with_token": XaasUser_sign_in_with_token_schema,
+  "XaasVerificationKey.read": XaasVerificationKey_read_schema,
+  "XaasVerificationKey.register": XaasVerificationKey_register_schema,
+  "XaasWebhook.create": XaasWebhook_create_schema,
+  "XaasWebhook.destroy": XaasWebhook_destroy_schema,
+  "XaasWebhook.read": XaasWebhook_read_schema,
+  "XaasWebhook.update": XaasWebhook_update_schema,
+  "XaasWebhookDelivery.create": XaasWebhookDelivery_create_schema,
+  "XaasWebhookDelivery.deliver": XaasWebhookDelivery_deliver_schema,
+  "XaasWebhookDelivery.read": XaasWebhookDelivery_read_schema,
+  "XaasWebhookDelivery.record_attempt": XaasWebhookDelivery_record_attempt_schema,
+  "XaasWebhookDelivery.retry_failed_deliveries": XaasWebhookDelivery_retry_failed_deliveries_schema,
+  "XaasWorkOrder.create": XaasWorkOrder_create_schema,
+  "XaasWorkOrder.read": XaasWorkOrder_read_schema,
+  "XaasWorkOrder.update": XaasWorkOrder_update_schema
 });
 
 /** Resource namespaces, sorted by resource name. */
 export const NAMESPACES = Object.freeze({
-  Pack
+  XaasAccount,
+  XaasAgent,
+  XaasApprovalBackupRetentionChange,
+  XaasApprovalBreakGlassJustificationReview,
+  XaasApprovalCastleVerbSchedule,
+  XaasApprovalChangeOfControlNotify,
+  XaasApprovalCmekKeyBinding,
+  XaasApprovalComplianceRotationBlock,
+  XaasApprovalDeniedPartyOverride,
+  XaasApprovalDeploymentQuarantine,
+  XaasApprovalDrFailover,
+  XaasApprovalDsarErasure,
+  XaasApprovalEnvironmentPromote,
+  XaasApprovalExportSubscriptionUpdate,
+  XaasApprovalFreezeOverride,
+  XaasApprovalGeofenceExceptionGrant,
+  XaasApprovalInsurancePolicyUpdate,
+  XaasApprovalInvoiceReconciliationApprove,
+  XaasApprovalK8sFaultRemediateSuggest,
+  XaasApprovalLeRequestRespond,
+  XaasApprovalLegalHoldRelease,
+  XaasApprovalOrgDelete,
+  XaasApprovalPatchSlaCreditApply,
+  XaasApprovalPentestFindingResolve,
+  XaasApprovalPersonnelAttestationRecord,
+  XaasApprovalPricingOverride,
+  XaasApprovalProviderStatusChange,
+  XaasApprovalQuotaOverride,
+  XaasApprovalSlaCreditApply,
+  XaasApprovalSourceEscrowSnapshot,
+  XaasApprovalSsoRoleMappingUpdate,
+  XaasApprovalSubprocessorRegistryUpdate,
+  XaasApprovalTierDowngrade,
+  XaasApprovalVendorOffboardingAttestationIssue,
+  XaasAttendee,
+  XaasAuditExportToken,
+  XaasAuditLogEntry,
+  XaasAutofdePlannerCacheHotset,
+  XaasAutofdePlannerCacheStats,
+  XaasAutofdePlannerCandidate,
+  XaasAutofdePlannerCatalog,
+  XaasAutofdePlannerMatch,
+  XaasBalance,
+  XaasBook,
+  XaasCapability,
+  XaasCapabilityLivenessReceipt,
+  XaasCastleVerbFortune5Requirements,
+  XaasCastleVerbInventoryComponents,
+  XaasCastleVerbInventoryGoals,
+  XaasCertifiedReceipt,
+  XaasCheckout,
+  XaasCouplingRun,
+  XaasCuration,
+  XaasDataDestructionCertificateIssue,
+  XaasEngineLimit,
+  XaasEpisode,
+  XaasEpoch,
+  XaasConferenceEvent,
+  XaasEventLog,
+  XaasEventObject,
+  XaasExecution,
+  XaasExperienceCluster,
+  XaasFinding,
+  XaasFreezeWindow,
+  XaasGap,
+  XaasHoldRequest,
+  XaasIncident,
+  XaasInternalApiToken,
+  XaasMeasurement,
+  XaasObject,
+  XaasObjectObject,
+  XaasObjectStateDelta,
+  XaasObservation,
+  XaasOrg,
+  XaasOrgMembership,
+  XaasPack,
+  XaasPackManifest,
+  XaasPentestFinding,
+  XaasPersonaGrant,
+  XaasPosture,
+  XaasProjectionRecord,
+  XaasProvider,
+  XaasReceipt,
+  XaasRecommendationLog,
+  XaasRefusalCode,
+  XaasRegistration,
+  XaasResolution,
+  XaasRevenueRecognition,
+  XaasRevokeNonce,
+  XaasRouteCastleDeploy,
+  XaasRouteCastleRun,
+  XaasRouteCastleSchedule,
+  XaasRouteCastleSunset,
+  XaasRouteFeatureFlags,
+  XaasRouteOrgsCustomDomain,
+  XaasRouteProjects,
+  XaasRouteProjectsBackups,
+  XaasRouteSecrets,
+  XaasRun,
+  XaasSchool,
+  XaasSession,
+  XaasSpeaker,
+  XaasSponsor,
+  XaasSubscription,
+  XaasTask,
+  XaasToken,
+  XaasTrack,
+  XaasTransfer,
+  XaasUser,
+  XaasVerificationKey,
+  XaasGovernanceApprovalBackupRetentionChangeVersion,
+  XaasWebhook,
+  XaasWebhookDelivery,
+  XaasWorkOrder
 });
 
 /** Descriptor lookup by action id; null when unknown. */

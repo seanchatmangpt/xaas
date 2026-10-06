@@ -6,6 +6,14 @@ defmodule Xaas.Accounts.Token do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication.TokenResource, AshCloak]
 
+  token do
+    revocation do
+      # JS-unsafe name (`?` suffix): renamed for ash_surface JS projection;
+      # AshAuthentication resolves it via is_revoked_action_name.
+      is_revoked_action_name :is_revoked
+    end
+  end
+
   cloak do
     vault(Xaas.Vault)
     attributes([:extra_data])
@@ -34,7 +42,7 @@ defmodule Xaas.Accounts.Token do
       prepare(AshAuthentication.TokenResource.GetTokenPreparation)
     end
 
-    action :revoked?, :boolean do
+    action :is_revoked, :boolean do
       description("Returns true if a revocation token is found for the provided token")
       argument(:token, :string, sensitive?: true)
       argument(:jti, :string, sensitive?: true)
