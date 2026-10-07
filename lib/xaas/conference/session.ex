@@ -48,6 +48,12 @@ defmodule Xaas.Conference.Session do
     attribute(:starts_at, :utc_datetime, public?: true)
     attribute(:ends_at, :utc_datetime, public?: true)
 
+    attribute :capacity, :integer do
+      allow_nil?(true)
+      public?(true)
+      constraints(min: 1)
+    end
+
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
@@ -60,7 +66,7 @@ defmodule Xaas.Conference.Session do
     defaults([:read, :destroy])
 
     create :create do
-      accept([:title, :slug, :description, :track_id, :speaker_id, :starts_at, :ends_at])
+      accept([:title, :slug, :description, :track_id, :speaker_id, :starts_at, :ends_at, :capacity])
     end
   end
 end

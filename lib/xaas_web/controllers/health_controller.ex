@@ -100,16 +100,56 @@ defmodule XaasWeb.HealthController do
     end)
   end
 
+  # Per-check wall-clock ceiling (W860). Every check runs in a bounded
+  # `Task` reaped by `Task.await/2` after this many ms; on timeout the
+  # check reports the typed `{:timeout, ceiling}` failure (an `"error"`
+  # check with a `"timeout: ..."` string `detail`, same fail-closed
+  # aggregate semantics as any other error) instead of hanging the whole
+  # health request on a stuck collaborator (e.g. an Ontop that accepts
+  # the TCP connection but never answers). 2000ms is comfortably above
+  # every check's healthy latency (a `SELECT 1`, a local HTTP probe,
+  # indexed `Ash.count!`s, one `oban_jobs` query -- all single-digit-ms
+  # in practice) while bounding a hung request to ~2s.
+  @check_timeout_ms 2000
+
   defp timed(fun) do
     start = System.monotonic_time(:microsecond)
 
     result =
       try do
-        fun.()
+        # Bounded execution (W860): the check body runs in a Task owned
+        # by this request process; a check that never returns is given
+        # up on after `@check_timeout_ms` (typed `{:timeout, ceiling}`
+        # below). The task body itself classifies raise/exit/throw, so a
+        # crashing check arrives as a *value* -- the original typed
+        # shapes (structured {exception, message} / "exit: ..." strings)
+        # are preserved exactly, and the task never exits abnormally.
+        # `Process.unlink/1` before `await` is belt-and-braces so any
+        # residual task death cannot kill the request ahead of the
+        # handlers. The abandoned hung task dies with the request
+        # process (a Task monitors its owner), so nothing leaks past the
+        # ceiling.
+        task =
+          Task.async(fn ->
+            try do
+              fun.()
+            rescue
+              error -> {:raised, error}
+            catch
+              kind, reason -> {:caught, kind, reason}
+            end
+          end)
+
+        Process.unlink(task.pid)
+        Task.await(task, @check_timeout_ms)
       rescue
         error ->
           {:error, %{exception: inspect(error.__struct__), message: Exception.message(error)}}
       catch
+        # `Task.await/2` exits `{:timeout, {Task, timeout}}` on expiry.
+        :exit, {:timeout, {Task, timeout_ms}} ->
+          {:timeout, timeout_ms}
+
         kind, reason -> {:error, "#{kind}: #{inspect(reason)}"}
       end
 
@@ -133,6 +173,29 @@ defmodule XaasWeb.HealthController do
 
       {:error, reason} ->
         %{status: "error", latency_ms: latency_ms, detail: reason}
+
+      # W860 typed timeout shape: same `"error"` + string `detail`
+      # convention as the transport-error branch, with the real ceiling
+      # in the detail.
+      {:timeout, timeout_ms} ->
+        %{
+          status: "error",
+          latency_ms: latency_ms,
+          detail: "timeout: check exceeded #{timeout_ms}ms"
+        }
+
+      # Task-classified raise/exit/throw, normalized back to the exact
+      # pre-W860 shapes (this clause pair replaces what the outer
+      # rescue/catch used to type directly).
+      {:raised, error} ->
+        %{
+          status: "error",
+          latency_ms: latency_ms,
+          detail: %{exception: inspect(error.__struct__), message: Exception.message(error)}
+        }
+
+      {:caught, kind, reason} ->
+        %{status: "error", latency_ms: latency_ms, detail: "#{kind}: #{inspect(reason)}"}
     end
   end
 

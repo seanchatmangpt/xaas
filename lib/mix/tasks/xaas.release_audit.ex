@@ -82,8 +82,23 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     "REFUSED(#{code}, detail: #{inspect(detail)})"
   end
 
+  # W872: VERSION/.tool-versions/Dockerfile are REQUIRED release-audit inputs.
+  # Their absence is not a soft finding — it is a loud typed refusal that
+  # terminates the audit immediately (fail closed), unlike the scanned-doc
+  # sites which record a typed finding and continue.
+  defp required_input!(path) do
+    case File.read(path) do
+      {:ok, body} -> body
+      {:error, reason} ->
+        Mix.raise(
+          "REFUSED(release_audit, detail: %{finding: \"required release-audit input " <>
+            "#{path} unreadable: #{inspect(reason)}\"})"
+        )
+    end
+  end
+
   defp check_version(failures) do
-    version_file = File.read!("VERSION") |> String.trim()
+    version_file = required_input!("VERSION") |> String.trim()
     mix_version = Mix.Project.config()[:version]
 
     failures
@@ -98,8 +113,8 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
   end
 
   defp check_runtime_identity(failures) do
-    tool_versions = File.read!(".tool-versions")
-    dockerfile = File.read!("Dockerfile")
+    tool_versions = required_input!(".tool-versions")
+    dockerfile = required_input!("Dockerfile")
 
     failures
     |> require_true(
@@ -150,21 +165,33 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
       |> Enum.flat_map(&Ash.Domain.Info.resources/1)
       |> MapSet.new()
 
-    source_modules =
+    {source_module_list, absent_findings} =
       Path.wildcard("lib/xaas/**/*.ex")
-      |> Enum.flat_map(fn path ->
-        source = File.read!(path)
+      |> Enum.flat_map_reduce([], fn path, acc ->
+        case File.read(path) do
+          {:ok, source} ->
+            modules =
+              if String.contains?(source, "use Xaas.Resource") do
+                case Regex.run(~r/defmodule\s+([A-Za-z0-9_.]+)/, source, capture: :all_but_first) do
+                  [module] -> [Module.concat([module])]
+                  _ -> []
+                end
+              else
+                []
+              end
 
-        if String.contains?(source, "use Xaas.Resource") do
-          case Regex.run(~r/defmodule\s+([A-Za-z0-9_.]+)/, source, capture: :all_but_first) do
-            [module] -> [Module.concat([module])]
-            _ -> []
-          end
-        else
-          []
+            {modules, acc}
+
+          # Typed finding instead of a raise: a tracked-but-deleted-in-worktree
+          # file is an audit finding, not a crash (same pattern as the rpc
+          # check's :enoent arm below).
+          {:error, :enoent} ->
+            {[], ["tracked source file absent in worktree: #{path}" | acc]}
         end
       end)
-      |> MapSet.new()
+
+    source_modules = MapSet.new(source_module_list)
+    failures = Enum.reverse(absent_findings, failures)
 
     missing = MapSet.difference(source_modules, registered) |> MapSet.to_list()
     absent_source = MapSet.difference(registered, source_modules) |> MapSet.to_list()
@@ -181,14 +208,26 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
   end
 
   defp check_migration_uniqueness(failures) do
-    declarations =
+    {declarations, absent_findings} =
       Path.wildcard("priv/repo/migrations/*.exs")
-      |> Enum.flat_map(fn path ->
-        up_source = path |> File.read!() |> String.split("def down do", parts: 2) |> hd()
+      |> Enum.flat_map_reduce([], fn path, acc ->
+        case File.read(path) do
+          {:ok, source} ->
+            up_source = String.split(source, "def down do", parts: 2) |> hd()
 
-        Regex.scan(~r/create\s+table\(:([a-zA-Z0-9_]+)/, up_source, capture: :all_but_first)
-        |> Enum.map(fn [table] -> {table, path} end)
+            tables =
+              Regex.scan(~r/create\s+table\(:([a-zA-Z0-9_]+)/, up_source, capture: :all_but_first)
+              |> Enum.map(fn [table] -> {table, path} end)
+
+            {tables, acc}
+
+          # Typed finding instead of a raise on absent-in-worktree migrations.
+          {:error, :enoent} ->
+            {[], ["tracked migration absent in worktree: #{path}" | acc]}
+        end
       end)
+
+    failures = Enum.reverse(absent_findings, failures)
 
     duplicates =
       declarations
@@ -228,9 +267,16 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     files
     |> Enum.filter(&String.ends_with?(&1, ".json"))
     |> Enum.reduce(failures, fn path, acc ->
-      case path |> File.read!() |> Jason.decode() do
-        {:ok, _} -> acc
-        {:error, error} -> ["invalid JSON #{path}: #{Exception.message(error)}" | acc]
+      case File.read(path) do
+        {:ok, body} ->
+          case Jason.decode(body) do
+            {:ok, _} -> acc
+            {:error, error} -> ["invalid JSON #{path}: #{Exception.message(error)}" | acc]
+          end
+
+        # Typed finding instead of a raise on absent-in-worktree JSON files.
+        {:error, :enoent} ->
+          ["tracked JSON file absent in worktree: #{path}" | acc]
       end
     end)
   end
@@ -253,10 +299,20 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     files
     |> Enum.filter(&String.ends_with?(&1, ".md"))
     |> Enum.reduce(failures, fn path, acc ->
-      source = File.read!(path)
+      case File.read(path) do
+        {:ok, source} ->
+          scan_markdown_links(path, source, acc)
 
-      Regex.scan(~r/\[[^\]]*\]\(([^)]+)\)/, source, capture: :all_but_first)
-      |> Enum.reduce(acc, fn [raw_target], inner_acc ->
+        # Typed finding instead of a raise on absent-in-worktree markdown.
+        {:error, :enoent} ->
+          ["tracked markdown file absent in worktree: #{path}" | acc]
+      end
+    end)
+  end
+
+  defp scan_markdown_links(path, source, acc) do
+    Regex.scan(~r/\[[^\]]*\]\(([^)]+)\)/, source, capture: :all_but_first)
+    |> Enum.reduce(acc, fn [raw_target], inner_acc ->
         target =
           raw_target
           |> String.trim()
@@ -280,7 +336,6 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
           |> require_true(File.exists?(resolved), "broken Markdown link in #{path}: #{target}")
         end
       end)
-    end)
   end
 
   defp check_stale_claims(failures, files) do
@@ -288,11 +343,18 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     |> Enum.filter(&text_file?/1)
     |> Enum.reject(&(&1 == "lib/mix/tasks/xaas.release_audit.ex"))
     |> Enum.reduce(failures, fn path, acc ->
-      source = File.read!(path)
+      case File.read(path) do
+        {:ok, source} ->
+          Enum.reduce(@stale_claims, acc, fn {label, pattern}, inner_acc ->
+            require_true(inner_acc, not Regex.match?(pattern, source), "#{label} remains in #{path}")
+          end)
 
-      Enum.reduce(@stale_claims, acc, fn {label, pattern}, inner_acc ->
-        require_true(inner_acc, not Regex.match?(pattern, source), "#{label} remains in #{path}")
-      end)
+        # Typed finding instead of a raise on absent-in-worktree files: the
+        # stale-claim contract for that path cannot be checked, so the audit
+        # fails closed on a typed finding rather than crashing (W814 F1).
+        {:error, :enoent} ->
+          ["stale-claim scan: tracked file absent in worktree: #{path}" | acc]
+      end
     end)
   end
 
@@ -306,17 +368,37 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
       File.exists?(prd) and String.contains?(File.read!(prd), "XaaS v26.8.21"),
       "PRD does not identify XaaS v26.8.21"
     )
-    |> require_true(
-      String.contains?(File.read!(architecture), "**70**"),
-      "architecture overview does not carry the canonical 70-resource total"
-    )
+    |> then(&append_architecture_finding(&1, architecture))
+  end
+
+  # W872: the architecture overview is a SCANNED doc, not a required input —
+  # its absence is a typed audit finding feeding the fail-closed refusal
+  # path, never a File.Error crash (same pattern as the rpc check).
+  defp append_architecture_finding(failures, architecture) do
+    case File.read(architecture) do
+      {:ok, source} ->
+        require_true(
+          failures,
+          String.contains?(source, "**70**"),
+          "architecture overview does not carry the canonical 70-resource total"
+        )
+
+      {:error, reason} ->
+        ["cannot read #{architecture}: #{inspect(reason)}" | failures]
+    end
   end
 
   defp check_rpc_alignment(failures) do
-    config = File.read!("config/config.exs")
+    # Typed finding instead of a raise when the tracked config is absent in
+    # the worktree (same pattern as the router arm below).
+    {config, config_findings} =
+      case File.read("config/config.exs") do
+        {:ok, config} -> {config, []}
+        {:error, :enoent} -> {"", ["tracked config absent in worktree: config/config.exs"]}
+      end
 
     failures =
-      failures
+      Enum.reverse(config_findings, failures)
       |> require_true(
         String.contains?(config, ~s(run_endpoint: "/internal-api/rpc/run")),
         "AshTypescript run endpoint is not canonical"

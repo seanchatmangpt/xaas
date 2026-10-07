@@ -67,6 +67,23 @@ defmodule Xaas.Ultracode.Epoch do
   postgres do
     table("ultracode_epochs")
     repo(Xaas.Repo)
+
+    # W737 — the org-less half of `identity(:unique_run_cycle, ...)`:
+    # Postgres UNIQUE treats NULLs as distinct, so the three-column
+    # `UNIQUE (org_id, run_id, cycle)` index never fired for org-less
+    # Runs/Epochs (NULL org_id). This partial unique index (created by
+    # 20261007010000) closes that gap, and declaring it here makes
+    # ash_postgres declare the matching Ecto `unique_constraint` on every
+    # changeset — so a duplicate org-less (run_id, cycle) surfaces as a
+    # typed identity refusal, not an unhandled Ecto.ConstraintError.
+    custom_indexes do
+      index [:run_id, :cycle],
+        unique: true,
+        name: "ultracode_epochs_orgless_run_cycle_index",
+        where: "org_id IS NULL",
+        error_fields: [:run_id, :cycle],
+        message: "has already been taken"
+    end
   end
 
   multitenancy do

@@ -56,6 +56,7 @@ defmodule Xaas.A2a.Task do
     update :update do
       accept([:status, :artifacts])
       require_atomic?(false)
+      validate(Xaas.A2a.Validations.ForwardOnlyTransition)
     end
   end
 end
