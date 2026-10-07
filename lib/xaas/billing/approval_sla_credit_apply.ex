@@ -118,6 +118,19 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
     update :approve do
       accept([:approved_by])
       require_atomic?(false)
+
+      # Real, DB-level idempotency guard (W746, gap 2 from
+      # docs/sjira/v26.10.6/plans/w729-billing-deepening.md): only a row
+      # whose PERSISTED approved_by is still nil may be approved. Unlike
+      # the in-memory changeset.data reads downstream, this filter lands
+      # in the UPDATE's WHERE clause (Ash.Changeset.filter/2), so a
+      # repeat :approve through a stale in-memory record -- approved_by
+      # still nil in the caller's struct, already set in Postgres --
+      # matches zero rows and is refused typed (Ash.Error.Invalid with
+      # NotFound) instead of double-crediting the org's Ledger account.
+      # Same builtin `filter(expr(...))` change shape already used by
+      # Xaas.Library.Book / Xaas.Library.HoldRequest / Xaas.Ultracode.Receipt.
+      change(filter(expr(is_nil(approved_by))))
       change(Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove)
       validate(Xaas.Billing.Validations.ApprovalSlaCreditApplyRequiresApprover)
     end

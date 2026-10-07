@@ -182,12 +182,22 @@ defmodule Xaas.Billing.Changes.SubscriptionProrateTierChange do
 
   defp transfer(amount, from_account_id, to_account_id) do
     Xaas.Ledger.Transfer
-    |> Ash.Changeset.for_create(:transfer, %{
-      amount: amount,
-      timestamp: DateTime.utc_now(),
-      from_account_id: from_account_id,
-      to_account_id: to_account_id
-    })
+    |> Ash.Changeset.for_create(
+      :transfer,
+      %{
+        amount: amount,
+        timestamp: DateTime.utc_now(),
+        from_account_id: from_account_id,
+        to_account_id: to_account_id
+      },
+      # W785 (docs/sjira/v26.10.6/plans/w785-overdraft-policy.md): a
+      # prorated tier change may charge from an unfunded org account
+      # (receivable). Explicit per-call-site overdraft opt-in via the
+      # for_create/4 context opt (set_context/2 after for_create/4 does
+      # not survive to validations -- observed live); the ledger
+      # sufficiency invariant still refuses every non-exempt call.
+      context: %{xaas_ledger: %{allow_overdraft: true}}
+    )
     |> Ash.create(authorize?: false)
   end
 

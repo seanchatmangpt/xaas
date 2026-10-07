@@ -117,10 +117,16 @@ defmodule Xaas.Billing.ApprovalSlaCreditApplyTest do
 
     approved = approve!(request, "approver-3")
 
-    # A second real :approve call against an already-approved record
-    # (re-confirming the same approved_by) must not credit a second real
-    # ledger amount.
-    _ = approve!(approved, "approver-3")
+    # W746 corrected contract: a second real :approve call against an
+    # already-approved record (re-confirming the same approved_by) is now
+    # refused typed by the action's DB-level
+    # `filter(expr(is_nil(approved_by)))` guard -- even though this caller
+    # happens to hold a fresh post-update record -- and credits no second
+    # real ledger amount.
+    assert {:error, %Ash.Error.Invalid{}} =
+             approved
+             |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-3"})
+             |> Ash.update(authorize?: false)
 
     org_balance = real_balance_for(org_id)
 

@@ -40,6 +40,9 @@ defmodule Xaas.Ledger.Transfer do
 
     create :transfer do
       accept([:amount, :timestamp, :from_account_id, :to_account_id])
+
+      # W762: refuse over-balance transfers (W738 UNSUPPORTED(invariant-absent)).
+      validate(Xaas.Ledger.Validations.TransferSourceSufficiency)
     end
   end
 

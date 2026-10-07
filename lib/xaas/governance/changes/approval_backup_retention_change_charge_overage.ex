@@ -83,12 +83,23 @@ defmodule Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage do
     with {:ok, org_account} <- open_or_get_account(record.org_id),
          {:ok, revenue_account} <- open_or_get_account(@platform_revenue_account_identifier) do
       Xaas.Ledger.Transfer
-      |> Ash.Changeset.for_create(:transfer, %{
-        amount: amount,
-        timestamp: DateTime.utc_now(),
-        from_account_id: org_account.id,
-        to_account_id: revenue_account.id
-      })
+      |> Ash.Changeset.for_create(
+        :transfer,
+        %{
+          amount: amount,
+          timestamp: DateTime.utc_now(),
+          from_account_id: org_account.id,
+          to_account_id: revenue_account.id
+        },
+        # W785 (docs/sjira/v26.10.6/plans/w785-overdraft-policy.md):
+        # overage fees charge from the org's real (possibly unfunded)
+        # ledger account -- the negative balance IS the receivable.
+        # Explicit per-call-site overdraft opt-in via the for_create/4
+        # context opt (set_context/2 after for_create/4 does not survive
+        # to validations -- observed live); the ledger sufficiency
+        # invariant still refuses every non-exempt call.
+        context: %{xaas_ledger: %{allow_overdraft: true}}
+      )
       |> Ash.create(authorize?: false)
     end
   end

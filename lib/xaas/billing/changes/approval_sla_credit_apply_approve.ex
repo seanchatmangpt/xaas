@@ -96,12 +96,28 @@ defmodule Xaas.Billing.Changes.ApprovalSlaCreditApplyApprove do
            open_or_get_account(@platform_sla_credits_account_identifier),
          {:ok, org_account} <- open_or_get_account(record.org_id) do
       Xaas.Ledger.Transfer
-      |> Ash.Changeset.for_create(:transfer, %{
-        amount: amount,
-        timestamp: DateTime.utc_now(),
-        from_account_id: sla_credits_account.id,
-        to_account_id: org_account.id
-      })
+      |> Ash.Changeset.for_create(
+        :transfer,
+        %{
+          amount: amount,
+          timestamp: DateTime.utc_now(),
+          from_account_id: sla_credits_account.id,
+          to_account_id: org_account.id
+        },
+        # W785/W799/W835: the SLA credit transfers FROM the dedicated
+        # `platform:revenue:sla-credits` platform account, which starts at
+        # zero and is not pre-funded — platform revenue accounts are
+        # receivable-style by design (they report outflows without requiring
+        # a positive balance). W785's TransferSourceSufficiency exemption
+        # list covered the charge paths but omitted this credit path, so the
+        # live approve flow failed `insufficient funds`. Explicit per-caller
+        # overdraft opt-in via the for_create/4 `context:` opt (set_context/2
+        # after for_create/4 does not survive to validations -- observed
+        # live; see TransferSourceSufficiency moduledoc), same as
+        # ApprovalBackupRetentionChangeChargeOverage /
+        # SubscriptionChargeOnActivate / SubscriptionProrateTierChange.
+        context: %{xaas_ledger: %{allow_overdraft: true}}
+      )
       |> Ash.create(authorize?: false)
     end
   end
