@@ -10,17 +10,31 @@ defmodule Xaas.Platform.Validations.RouteProjectsBackupsRetainUntilPassed do
   pruned through the Ash surface (W770's typed gap, pinned by
   `Xaas.Platform.PlatformRouteDeepeningTest` (4b)).
 
-  The destroy changeset's `data` is the real persisted row, so
-  `retain_until` is read from there. A record whose `retain_until` is
-  still in the future is refused with a typed `Ash.Error.Invalid`, and the
-  row survives on disk. Fail-closed: an absent `retain_until` (not
-  possible under the current `allow_nil?(false)` schema, but the schema is
-  allowed to evolve) denies the prune.
+  W981d (strict-sweep Exclusion 2 removal): the validation now also
+  implements `atomic/3`, so `:purge_expired` can run as a single set-based
+  bulk destroy (no per-row operator read). The atomic expression
+  re-derives the same rule server-side in SQL: refuse when `retain_until`
+  is absent (fail closed) or still in the future (`retain_until > now()`).
   """
   use Ash.Resource.Validation
 
+  alias Ash.Error.Changes.InvalidAttribute
+
   @impl true
   def init(opts), do: {:ok, opts}
+
+  @impl true
+  def atomic(_changeset, _opts, _context) do
+    {:atomic, [:retain_until],
+     expr(is_nil(retain_until) or retain_until > now()),
+     expr(
+       error(^InvalidAttribute, %{
+         field: :retain_until,
+         value: ^atomic_ref(:retain_until),
+         message: "retain_until must have passed before purging (fail closed when absent)"
+       })
+     )}
+  end
 
   @impl true
   def validate(changeset, _opts, _context) do
