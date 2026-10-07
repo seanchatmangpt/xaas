@@ -183,7 +183,17 @@ provocation premise itself is dead, not the execution.**
 
 ## Status / Changelog (pointer lines only — content lives in CYCLE-LOG.md)
 
-- **Last cycle**: `CYCLE-1-PREP` (2026-10-07) — `docs/cro/CYCLE-LOG.md`.
+- **Last cycle**: `CYCLE-5` (2026-10-07, v26.10.7 campaign open, lane W620) —
+  `docs/cro/CYCLE-LOG.md`. Define stage: charter = the six v26.10.7 work
+  packages with per-WP Measure baselines cited to on-disk receipts
+  (statutory OS-14/15/16, OS-18, agentgateway PEP + goose fuzz, OS-20
+  four-repo Map.update sweep, fixtureOnly/version-bump fleet surface).
+  Prior evidence pointer: `CYCLE-1-PREP` and the CYCLE-2/3/4 + CYCLE-4
+  addendum fold entries below. The v26.10.7 statute/fuzz/deepening receipts
+  (w605/w608/w609/w613/w614/w610/w618) strengthen the S1/S3 evidence corpus
+  consumed by this loop; no account contact was made in CYCLE-5. Receipt:
+  `docs/sjira/v26.10.7/plans/w620-cro-entry.md`.
+- Prior cycle: `CYCLE-1-PREP` (2026-10-07) — `docs/cro/CYCLE-LOG.md`.
   Consolidation wave W640–W780 prep: S3 evidence strengthened, S1/S2
   refreshed in place; overall HOLD on terminal claims. Headline: 8 repairs
   landed ALIVE (W676/W679/W708/W726/W732/W737/W739/W740; W746 NO_RECEIPT)

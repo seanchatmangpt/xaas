@@ -335,3 +335,244 @@ w971b migration versions vs untracked migrations on disk.
    count delta); receipt: `plans/w982w-tag-projection-reconcile.md`.
 
 Receipt: `docs/sjira/v26.10.6/plans/w982n-cro-cycle-advance.md`.
+
+   **ADDENDUM (2026-10-07, lane W984ac): CYCLE-3's MISSING_RECEIPT(IN_FLIGHT_LANES)
+   flag RESOLVED.** `plans/w982b-integration-commits.md` and
+   `plans/w982k-spec07-integration.md` both now exist on disk (test -f, this
+   session). The w982b/w982k integration lanes landed; CYCLE-3(e) is
+   superseded by CYCLE-4(a) below.
+
+## CYCLE-4 — CRO loop bookkeeping advance (2026-10-07, lane W984ac)
+
+Read-fresh + disk-verified fold of the post-W982n arc (W983–W984 waves). Prior
+entries: CYCLE-3 W982n (+W982q/W982w addenda). No mix commands; no commit made;
+all claims re-read from disk this session.
+
+(a) **Typed-gap register** (`plans/w859-typed-gap-register.md`), row-level awk
+tally on disk today: **39 REPAIRED / 10 OPEN / 2 TYPED-OPEN = 51 rows** (footer
+still shows a stale 50-row/17-OPEN close-out note — superseded by the row-level
+tally). Since CYCLE-3's 32 REPAIRED: W982t re-witnessed W722-gap2 (flip applied
+by W983d), W983d flipped 2 (W722-gap2 + W793 NO_CROSS_REFERENCE), W983p flipped
+4 (W731 limits, W750-G2, W765 GAP-D, W802/W819 mounted), W983o flipped SPEC-07,
+W984v flipped W849-2. **DRIFT(REGISTER_COUNT):** 32 + these flips predicts ~40
+REPAIRED / ~11 OPEN; disk measures 39/10 — a one-row gap between claimed flips
+and on-disk rows (likely one overlap counted twice across w983d/w983p), needs a
+one-row reconcile next lane. Exact numbers above supersede the dispatch's
+"~40-41/~11".
+
+(b) **Census gate** settled at ≥1352 passed / 0 failed
+(`--include eu_ai_act --exclude eu_ai_act_open_gap`; W982w
+`plans/w982w-tag-projection-reconcile.md`, witnessed at 6f235905-era head by
+w981x; W981v's ≥1385 projection retired). 49.3 corpus open-gap anatomy typed
+external by W983n (`plans/w983n-typed-open-493.md`): the OPEN_GAP verdict is a
+declaration-driven generated flunk row; closure requires the Commission-operated
+Article 71 EU database — genuinely external, TYPED-OPEN stands, sole typed
+open gap.
+
+(c) **Pushes.** W981y landed: `plans/w981y-push.md` — xaas `a0723bf6..6f235905`
+fast-forward, local==remote at `6f235905`, exit 0. W984d second wave **IN-FLIGHT:
+no w984d receipt on disk; `origin/feat/playwright-surface` = `6f235905` while
+local HEAD = `5f7f70d9` — 9 commits unpushed** (read-only rev-parse this
+session). No drift: W981y's claim matches remote exactly.
+
+(d) **Integration commit stack landed** — 9 real commits since `1f2a2b23`
+(git log, this session): w983m's 4 (`79af0623` transfer-reverse court,
+`7722091f` purge-expired atomicity, `33da1cbe` DONE-lane receipt landing,
+`7de083e2` w983m receipt), w983o's 2 (`e1d986e2` SPEC-07 flip,
+`e12615af` collision disclosure), w984r's 3 (`5e21e87c` AIRo wiring corpus,
+`8abb03be` reference pages, `5f7f70d9` w984r receipt). Matches the dispatch's
+4+2+3 enumeration exactly; also resolves CYCLE-3's w982b/w982k flag (receipts
+now on disk, see CYCLE-3 addendum).
+
+(e) **Depth-suite residuals.** W973b leg GREEN: 5/5 passed, exit 0, fresh lane
+build root (`plans/w984c-terminal-guard.md`). Checkout stale-contract pair
+fixed: 2 failed pre-edit → 13 passed / 0 failed post-edit
+(`plans/w984b-checkout-leak.md`). Avatar-2 cascade stale contract fixed
+forward, ALIVE at 3× "Result: 5 passed" (`plans/w984i-avatar2-cascade.md`).
+Route-castle W984f **IN-FLIGHT: no w984f receipt on disk**.
+
+(f) **Operator handoff refined** (W984s, `plans/w984s-o1-correction.md`):
+runbook step O1's plain `mix ecto.migrate` REFUTED by W984o's live-DB precheck
+(`plans/w984o-devdb-precheck.md`) — migration 20261007010000 sorts before its
+own dedup repair 20261007120000, and live xaas_dev holds 90 dup groups /
+109 doomed epochs / 42 receipts referencing doomed epochs, so plain migrate
+aborts and self-repeats. Dated correction note appended to O1 in
+`_INTEGRATION_RUNBOOK.md` (uncommitted); replacement 3-step handoff recorded.
+
+**Standing.** ALIVE: register tally (39/10/2 on disk), census gate, 49.3
+external anatomy, W981y push, 9-commit integration stack, w984c/w984b/w984i
+depth-suite fixes, w984s correction. IN-FLIGHT: W984d second-wave push (no
+receipt, 9 commits unpushed), route-castle W984f (no receipt). DRIFT:
+DRIFT(REGISTER_COUNT) one-row gap (~40 claimed vs 39 measured);
+register footer totals stale. PARTIAL: depth-suite residuals (two IN-FLIGHT
+legs above). All standing on the uncommitted tree at HEAD `5f7f70d9`.
+
+Receipt: `docs/sjira/v26.10.6/plans/w984ac-cycle-advance.md`.
+
+**CORRECTION (2026-10-07, lane W984ae): CYCLE-4 DRIFT(REGISTER_COUNT)
+RESOLVED.** Fresh awk tally: 51 rows = 40 REPAIRED / 9 OPEN / 2 TYPED-OPEN
+after one flip applied. Root cause: W984ac's arithmetic double-counted W722
+gap-2 (claimed by w982t, applied by w983d — one row, two receipts); the
+predicted 41 was wrong by that +1, and the true claim was 40. The remaining
+39-vs-40 gap was W849 backlog-2: w984v flipped the row in the per-row verdict
+table of `w983p-register-flips.md` but never edited the register itself.
+Flip now applied to `w859-typed-gap-register.md` citing w982g (SPEC-34
+regen_check) + w984v (CI leg, ci_cd.yaml:107-115); evidence verified on tree.
+Register footer refreshed. Receipt:
+`docs/sjira/v26.10.6/plans/w984ae-register-reconcile-2.md`.
+
+## CYCLE-4 ADDENDUM — graphql-removal arc + post-removal witnesses (2026-10-07, lane W984br)
+
+Operator directive "no GraphQL" executed fix-forward. Removal arc: W984ao
+(code) **MISSING_RECEIPT** (`w984ao-graphql-removal.md` not on disk; work
+corroborated indirectly via w984ax/w984x/w984az — IN-FLIGHT, owner must
+re-emit); W984ap e2e ALIVE (`plans/w984ap-e2e-removal.md` — deleted untracked
+`e2e/graphql-http.spec.cjs`, grep-zero across e2e+playwright config);
+W984aq docs ALIVE (`plans/w984aq-graphql-docs-removal.md` — 94-line
+/api/graphql section deleted, 2 register rows flipped
+OUT-OF-SCOPE(removed-by-operator, 2026-10-07)); W984aw register sweep
+0 additional flips (`plans/w984aw-graphql-rows.md`, 51 rows, all surviving
+evidence graphql-independent); W984ay straggler sweep PARTIAL_ALIVE
+(`plans/w984ay-code-graphql-sweep.md` — zero live graphql code surfaces, 1
+load-bearing straggler: pack template
+`priv/packs/xaas_library_pack/templates/manufacture.ex.eex` still renders
+AshGraphql extensions + six `graphql do` blocks, plus mix.lock mechanical +
+5 stale SPEC-31 comment sites); W984bk straggler removal **MISSING_RECEIPT**
+(`w984bk*` absent — straggler-removal standing UNKNOWN on disk).
+
+Post/during-removal gates: W984am 1352/0/1-excluded @ `5f7f70d9`
+(`plans/w984am-census-rewitness.md`); W984ax same gate on the dirty
+mid-removal tree (182 dirty files), corpus graphql-independence confirmed
+(`plans/w984ax-euaia-rewitness.md`). Both ALIVE, exit 0.
+
+Push waves 3+4: W984at `6f235905..5f7f70d9` (17 commits, ff, SHA equality
+verified, `plans/w984at-push3.md`); W984bh `5f7f70d9..b5d677b3` (1 commit,
+`plans/w984bh-push4.md`). Origin == local == `b5d677b3`.
+
+SPEC-07 complete 8/8 (`plans/w983o-spec07-complete.md`): second half landed
+by `ddb19522`, compile --force --warnings-as-errors exit 0, court 5/5,
+billing 40 passed; register row → REPAIRED. Register tally evolution: 39
+(W984ae reconcile) → 40 REPAIRED + 2 OUT-OF-SCOPE after W984aq's flips;
+W984aw fresh awk tally on disk 40/7/2/2 (receipted lineage, each flip
+cited).
+
+SPEC-08 staged + BLOCKED(billing-tree-hot) ×2: W984az
+(`plans/w984az-w729-spec08.md`, corrected W984w's in-flight attribution to
+graphql removal; its w984u MISSING_RECEIPT flag is now RESOLVED —
+`w984u-billing-commits.md` on disk, commits 32487e08 + d7beb066) and W984bd
+(`plans/w984bd-atomic-retrofit.md`, per-site classification: 3 ATOMICIZABLE,
+5 NON-ATOMICIZABLE(disclose); disclosure-only falsifier warning carried —
+after_action is already in-transaction, disclosure-only conversion is not a
+correctness repair).
+
+Mutation waves: w981p 3×KILL (`plans/w981p-open-gap-mutation-hardening.md`),
+w984x 4×KILL (`plans/w984x-mutation-wave2.md`; W802 leg witnessed pre-removal,
+row since OUT-OF-SCOPE), w984au 4×KILL over 3 rows
+(`plans/w984au-mutation-wave3.md`). Cumulative 11 legs, 11 KILL, **0
+VACUOUS-GUARD**.
+
+W984bm typed flags (`plans/w984bm-receipts-verify.md`, PARTIAL_ALIVE 4/6):
+w984ai + w984al MISSING_RECEIPT(claimed-landed), both still absent on disk;
+**w984al additionally uncorroborated** (zero disk references outside the
+coordinator log).
+
+**Standing.** ALIVE: e2e/docs removal, register sweep + tally 40/7/2/2,
+gates 1352/0 ×2, pushes to `b5d677b3`, SPEC-07 8/8, SPEC-08 staging,
+11/11 mutation kills, receipt-verify 4/6. PARTIAL_ALIVE: w984ay straggler
+sweep. IN-FLIGHT/DRIFT: w984ao (load-bearing missing receipt, forward-cited
+by w984aq) and w984bk (straggler removal UNKNOWN); w984ai/w984al owner
+re-emits pending.
+
+Receipt: `docs/sjira/v26.10.6/plans/w984br-cycle4-addendum.md`.
+
+## CYCLE-5 — v26.10.7 campaign open, Define stage (2026-10-07, lane W620)
+
+Read-fresh + disk-verified Define entry opening the v26.10.7 CRO cycle. Prior
+entries: CYCLE-4 addendum (W984br). No mix commands; no commit made; all
+claims re-read from disk this session.
+
+**Charter.** The v26.10.7 directive's six work packages. Per-WP Measure
+baselines below are on-disk receipts only; anything without a receipt is
+IN-FLIGHT, not done.
+
+(a) **WP-1 — statutory EU-AI-Act surfaces (OS-14/15/16). Measure baseline
+(re-read fresh from `_CLOSURE_PLAN.md` §4 rows, this session):** OS-14
+LANDED (W620, Art. 12(3) export endpoint, `plans/w620-os14-export-endpoint.md`);
+OS-15 CLOSED (doc-class; standing caveat carried since w694: the cited receipt
+`w423` does not exist on disk — closure witnessed by the artifact itself,
+`docs/cro/artifacts/bias-awareness-measures-v26.10.6.md`); OS-16 marking leg
+ALIVE (w665 7/7, w703 plug-order court, w806 verification) with the
+end-user-facing disclosure surface still a retained typed GAP (v26.10.7+
+NEW FEATURE). The graphql OUT-OF-SCOPE flips (W984aq, 2 rows) did not touch
+these statutory rows; W984aw's sweep flipped 0 additional rows — statutory
+rows are graphql-independent on disk. The v26.10.7 WP-1 addition is in
+flight: W605's ProvOriginHeader plug (Art. 50(2), PROV-O `x-prov-o` header,
+`plans/w605-prov-o-plug.md`) — code on tree, uncommitted, no independent
+court run receipt in this cycle's baseline snapshot → IN-FLIGHT(W605).
+
+(b) **WP-2 — OS-18 tautology row. Measure baseline:** OS-18 DONE (W546,
+`plans/w546-os18-fix.md`) — tautological `checkpoint_external/2` clause
+replaced with a LIVE comparison, forged foreign admission pairs refused
+`:external_admission_identity_mismatch`, witness flipped, mutant killed,
+corpus 80/80 contention-adjusted. No v26.10.7 WP-2 receipt exists on disk →
+WP-2 lane IN-FLIGHT against this baseline.
+
+(c) **WP-3 — agentgateway PEP filter + goose fuzzing harness. Measure
+baseline:** w613 PARTIAL_ALIVE (spec-only; `plans/w613-pep-filter-spec.md`;
+no local agentgateway checkout, no Rust skeleton, disclosed); w614 ALIVE at
+its own gate (`plans/w614-goose-harness.md` + `plans/w614-gate-log.json`:
+10 cases, 8 intercepted, interception rate on nonconforming 1.0, all_ok
+true, GOOSE-ABSENT, echo-stub agent leg).
+
+(d) **WP-4 — OS-20 four-repo Map.update sweep. Measure baseline:**
+ash_a2a W608 (`plans/w608-a2a-map-update.md`): **no-manifestation finding**
+— on OTP 29.1.1 + Elixir 1.20.4 the absent-key deviation is NOT observed
+(documented-standard semantics across small/large maps); 42 sites / 22 files
+classified, 0 lib patches (all dual-safe, idempotent-fun, or
+presence-guaranteed), court-only diff. ash_pplan W609
+(`plans/w609-pplan-map-update.md`): deviation CONFIRMED live on the pinned
+toolchain; after 7eeaaa1 exactly 1 residual `Map.update/4` (synthesis.ex:217,
+class-(b) invariant), census court green; standing PARTIAL_ALIVE (second
+fresh root `_build-laneW609b` and affected-module gates show "(filled on
+completion)" — unfilled). beam4pm and wasm4pm sweep legs: **no receipts on
+disk** → IN-FLIGHT (wasm4pm main itself BLOCKED(main-diverged) per
+`plans/w601p-phase0-seal.md`). **Citation drift flagged:** the dispatch's
+"w606/607" sweep citations resolve to v26.10.6 receipts of a different
+subject (`w606-corpus-coverage-audit-2.md`, `w607-349-41-closures.md`), not
+Map.update sweeps; the on-disk sweep receipts are w608/w609 only.
+
+(e) **WP-5 — fleet marketplace/version surface. Measure baseline:** w610
+PARTIAL_ALIVE (`plans/w610-fixtureonly-markers.md` — `aex:fixtureOnly`
+marker surface verified ALIVE on disk across both packs per family;
+finding: nothing new to add); w618 uncommitted working-tree edits
+(`plans/w618-fleet-version-bump.md` — 8 repos bumped to 26.10.7, grep/
+tomllib/json.load validation only, no commits).
+
+(f) **WP-6.** No WP-6 receipt and no WP-6 mention anywhere under `docs/`
+(grep, this session) → IN-FLIGHT(UNRECEIPTED); charter text lives in the
+operator directive, which is not on disk in this repo.
+
+**Drift flags vs prior cycle entries.**
+1. RESOLVED-on-disk: every MISSING_RECEIPT flagged by CYCLE-4 addendum
+   (w984br) now exists: w984ai-w1-dim0.md, w984al-corpus-deepening-5.md,
+   w984ao-graphql-removal.md, w984bk-straggler-removal.md — plus
+   w984bv-removal-commit.md, w984ca-gate5-repairs.md,
+   w984cl-semantics-commit.md. The graphql-removal code commits
+   (12d5f6d3, 04a153f6) are in local history.
+2. Branch state moved: CYCLE-4 addendum stood at `b5d677b3` (origin ==
+   local). Now HEAD = `cf228da6` (W984ca gate-5 repairs), local is 9 commits
+   ahead of `origin/feat/playwright-surface` (04a153f6), remote is an
+   ancestor — fast-forward push pending, no divergence.
+3. The v26.10.6 seal exists: annotated tag `v26.10.6` → `cf228da6` (NOT
+   pushed) and branch `release/v26.10.7` created from HEAD, per
+   `plans/w601q-tag-prep.md` (census gate 1352 passed / 1 excluded / 0
+   failed on the sealed subject).
+
+**Standing.** ALIVE: w614 gate, w608 court finding, w601q seal/tag, register
+lineage per w984aw. PARTIAL_ALIVE: w613, w610, w609 (unfilled second-root
+gates). IN-FLIGHT: W605 court receipt, WP-2/WP-6 lanes, beam4pm/wasm4pm sweep
+legs, 9-commit push. UNRECEIPTED: WP-6 charter. No account contact; loop
+stays in Define/Measure — S1 account precondition (operator picks targets)
+remains unmet. No commit made this lane (coordinator owns integration).
+
+Receipt: `docs/sjira/v26.10.7/plans/w620-cro-entry.md`.
