@@ -15,6 +15,11 @@ defmodule Xaas.EuAiAct.AiroGroundingTest do
 
   use ExUnit.Case, async: true
 
+  # W962b tag reconcile: same defect class as counterfactual_test.exs —
+  # eu_ai_act census tests invisible to the gated run for want of the
+  # :eu_ai_act module tag. See W962b receipt for the count reconciliation.
+  @moduletag :eu_ai_act
+
   alias Xaas.Semantics.AiroRiskMapping
   alias Xaas.Semantics.EuAiActAdmission
 

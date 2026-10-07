@@ -63,6 +63,21 @@ defmodule Xaas.Semantics.ComputationArtifact do
     end
   end
 
+  @doc """
+  Stable SHA-256 identity of the artifact's full identity surface.
+
+      iex> {:ok, artifact} = Xaas.Semantics.ComputationArtifact.new(%{
+      ...>   artifact_identity: "comp-artifact-001",
+      ...>   capability_iri: "https://schema.org/ComputeAction",
+      ...>   runtime: "NX",
+      ...>   input_schema_identity: "schema-in-001",
+      ...>   output_schema_identity: "schema-out-001",
+      ...>   input_projection_identity: "proj-in-001",
+      ...>   deterministic: true
+      ...> })
+      iex> Xaas.Semantics.ComputationArtifact.hash(artifact)
+      "14c69125e2dd6a21ed2376cf9008af551aee0706de94ab02999597f14f26b0d7"
+  """
   @spec hash(t()) :: String.t()
   def hash(%__MODULE__{} = artifact) do
     artifact
@@ -88,6 +103,12 @@ end
 defmodule Xaas.Semantics.ComputationHash do
   @moduledoc false
 
+  @doc """
+  Deterministic SHA-256 over the canonical form of any term.
+
+      iex> Xaas.Semantics.ComputationHash.hash(%{a: 1, b: :x})
+      "2bd10397da30531af1cd6a14cf90c58ffdf61440c288ff409db3f616cb1e5b7d"
+  """
   @spec hash(term()) :: String.t()
   def hash(value) do
     value
@@ -149,8 +170,7 @@ defmodule Xaas.Semantics.ComputationClaim do
          {:ok, predicate_iri} <- required_binary(attrs, :predicate_iri),
          true <- Registry.public_iri?(predicate_iri) || {:error, :non_public_predicate_iri},
          %ComputationArtifact{} = artifact <- Map.get(attrs, :artifact),
-         evidence_class when evidence_class in @evidence_classes <-
-           Map.get(attrs, :evidence_class),
+         {:ok, evidence_class} <- validate_evidence_class(Map.get(attrs, :evidence_class)),
          "CANDIDATE" <- Map.get(attrs, :standing, "CANDIDATE"),
          false <- Map.get(attrs, :authorizes_actuation, false) do
       {:ok,
@@ -178,6 +198,34 @@ defmodule Xaas.Semantics.ComputationClaim do
     end
   end
 
+  defp validate_evidence_class(evidence_class) when evidence_class in @evidence_classes,
+    do: {:ok, evidence_class}
+
+  defp validate_evidence_class(evidence_class),
+    do: {:error, {:computation_claim_invalid_evidence_class, evidence_class}}
+
+  @doc """
+  Stable SHA-256 identity of the claim's candidate content.
+
+      iex> {:ok, artifact} = Xaas.Semantics.ComputationArtifact.new(%{
+      ...>   artifact_identity: "comp-artifact-001",
+      ...>   capability_iri: "https://schema.org/ComputeAction",
+      ...>   runtime: "NX",
+      ...>   input_schema_identity: "schema-in-001",
+      ...>   output_schema_identity: "schema-out-001",
+      ...>   input_projection_identity: "proj-in-001",
+      ...>   deterministic: true
+      ...> })
+      iex> {:ok, claim} = Xaas.Semantics.ComputationClaim.new(%{
+      ...>   subject_identity: "subject-001",
+      ...>   predicate_iri: "https://schema.org/score",
+      ...>   value: 0.5,
+      ...>   artifact: artifact,
+      ...>   evidence_class: "GENERATED"
+      ...> })
+      iex> Xaas.Semantics.ComputationClaim.hash(claim)
+      "c252f6a5ddc64f23c4e34f37e180b2a8fca996c76b25547fbf46f430cb461f6c"
+  """
   @spec hash(t()) :: String.t()
   def hash(%__MODULE__{} = claim) do
     ComputationHash.hash(%{
@@ -281,6 +329,28 @@ defmodule Xaas.Semantics.PlanningAdvice do
     end
   end
 
+  @doc """
+  Stable SHA-256 identity of the advice's candidate content.
+
+      iex> {:ok, artifact} = Xaas.Semantics.ComputationArtifact.new(%{
+      ...>   artifact_identity: "comp-artifact-001",
+      ...>   capability_iri: "https://schema.org/ComputeAction",
+      ...>   runtime: "NX",
+      ...>   input_schema_identity: "schema-in-001",
+      ...>   output_schema_identity: "schema-out-001",
+      ...>   input_projection_identity: "proj-in-001",
+      ...>   deterministic: true
+      ...> })
+      iex> {:ok, advice} = Xaas.Semantics.PlanningAdvice.new(%{
+      ...>   planning_subject_identity: "plan-001",
+      ...>   formal_projection_identity: "proj-001",
+      ...>   artifact: artifact,
+      ...>   kind: "FRONTIER",
+      ...>   candidates: [%{candidate_ref: "c1", score: 2}, %{candidate_ref: "c2", score: 5}]
+      ...> })
+      iex> Xaas.Semantics.PlanningAdvice.hash(advice)
+      "488187d431e24e42ca4066f2703b109bdf5f0fbd52b8f5f7900e45bbdc122b52"
+  """
   @spec hash(t()) :: String.t()
   def hash(%__MODULE__{} = advice) do
     ComputationHash.hash(%{

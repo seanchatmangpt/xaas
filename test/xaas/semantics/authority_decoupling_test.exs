@@ -171,9 +171,15 @@ defmodule Xaas.Semantics.AuthorityDecouplingTest do
 
     # With a NON-EMPTY authority map (the gate's only predicate besides
     # authorize?), the SAME authority-claiming candidate passes the gate and
-    # fails later at the DO step on action-input validation (NoSuchInput,
-    # receipted) — never on authority. Outcome is a pure function of opts.
-    assert {:error, {:reactor_failed, %Reactor.Error.Invalid{}}} =
+    # fails later at the DO step — never on authority. Outcome is a pure
+    # function of opts. W953 adjudication (citing W773's landed seal-boundary
+    # normalization in `Xaas.Actuation.Kernel.seal/2`, lib/xaas/actuation.ex:
+    # execution errors no longer roll back as a wrapped
+    # `{:reactor_failed, %Reactor.Error.Invalid{}}`; they seal a real
+    # `:failed` receipt and surface as `{:error, raw_reason}` — here
+    # `:subject_id_required` from `get_subject/5` because the candidate
+    # carries no `subject_id`).
+    assert {:error, :subject_id_required} =
              run_candidate(candidate,
                authority: %{"kind" => "operator_grant", "source" => "w512_test"}
              )

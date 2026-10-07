@@ -38,6 +38,12 @@ defmodule Xaas.EuAiAct.CounterfactualTest do
 
   use ExUnit.Case, async: true
 
+  # W962b tag reconcile: this module's tests are eu_ai_act census tests but
+  # carried no :eu_ai_act tag, so the gated run (--include eu_ai_act) never
+  # counted them and they leaked into the open-gap census invocation's
+  # collected count (33 of the misattributed "34 open-gap-tagged").
+  @moduletag :eu_ai_act
+
   alias Xaas.Actuation.QuiescentStop
   alias Xaas.Semantics.AutomationBiasCountermeasure
   alias Xaas.Semantics.Counterfactual

@@ -102,7 +102,28 @@ defmodule Xaas.Semantics.Counterfactual do
     end
   end
 
-  @doc "Run the admission pipeline on `input` (no recorded decision needed)."
+  @doc """
+  Run the admission pipeline on `input` (no recorded decision needed).
+
+  Returns the counterfactual `outcome` (`:admitted` or `{:refused, reason}`,
+  decided by the FIRST refusal in check order) plus the full ordered per-check
+  verdict log.
+
+      iex> checks = [
+      ...>   age: fn i -> if i.age >= 18, do: :ok, else: {:refused, :under_age} end,
+      ...>   consent: fn i -> if i.consent, do: :ok, else: {:refused, :no_consent} end
+      ...> ]
+      iex> Xaas.Semantics.Counterfactual.run(%{age: 30, consent: true}, checks)
+      %{checks: [%{name: :age, refusal: nil, verdict: :pass}, %{name: :consent, refusal: nil, verdict: :pass}], outcome: :admitted}
+      iex> Xaas.Semantics.Counterfactual.run(%{age: 17, consent: true}, checks)
+      %{checks: [%{name: :age, refusal: :under_age, verdict: :fail}, %{name: :consent, refusal: nil, verdict: :pass}], outcome: {:refused, :under_age}}
+      iex> Xaas.Semantics.Counterfactual.run(%{age: 17, consent: false}, checks)
+      %{checks: [%{name: :age, refusal: :under_age, verdict: :fail}, %{name: :consent, refusal: :no_consent, verdict: :fail}], outcome: {:refused, :under_age}}
+
+  The decision is the first refusal in check order, but every downstream check
+  is still evaluated and witnessed (`both-fail` case: `:consent` records
+  `:no_consent` even though `:age` already refused).
+  """
   @spec run(term(), [check()]) :: %{outcome: :admitted | {:refused, atom()}, checks: [recorded_check()]}
   def run(input, checks) when is_list(checks) do
     cf = run_pipeline(input, checks)
@@ -161,8 +182,14 @@ defmodule Xaas.Semantics.Counterfactual do
   defp normalize_check({name, fun}) when (is_atom(name) or is_binary(name)) and is_function(fun, 1),
     do: {normalize_name(name), fun}
 
+  # Bare fun: Function.info/2 returns a {:name, atom} *tuple* (e.g.
+  # {:name, :"-run/2-fun-0-"}), so it can't flow through normalize_name/1 —
+  # and the atom itself carries a compilation-dependent fun counter, so it is
+  # not a stable name. Fall back to the deterministic `:check` atom so that
+  # the same check-list always produces the same per-check log (the
+  # determinism Theorem 7.1 depends on).
   defp normalize_check(fun) when is_function(fun, 1),
-    do: {normalize_name(Function.info(fun, :name)), fun}
+    do: {:check, fun}
 
   defp normalize_name(name) when is_atom(name), do: name
   defp normalize_name(name) when is_binary(name), do: String.to_atom(name)
