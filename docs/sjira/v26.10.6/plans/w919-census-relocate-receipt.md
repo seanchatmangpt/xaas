@@ -16,5 +16,6 @@
   1. Target: NEW `reference/generated-surfaces.md` (standing-vocabulary.md thematically wrong; README index forbidden by its own no-duplication rule).
   2. Census artifact home: `docs/cro/artifacts/generated-surface-census-v26.10.6.md` per campaign artifact convention.
   3. Deletion from generated page rides the same integration step as `ggen sync`, before the runbook's drift check.
-- **Replay**: plan is self-contained at `docs/claude/diataxis/reference/w849-census-relocate-plan.md`.
+- **Replay**: plan is self-contained at `docs/claude/diataxis/reference/w849-census-relocate-plan.md`; the dispatch-named copy W954's operator spec references now exists at `docs/claude/diataxis/reference/w919-census-relocate-plan.md` (added W957, 2026-10-07).
 - **Not claimed**: no relocation executed; census section still present in the generated page on disk.
+- **Resolution note (W956, 2026-10-07)**: line dispute vs w918 resolved by grep at HEAD — `grep -n "SIBLING generated projections coverage" docs/claude/diataxis/reference/generated-castle-bridge-errc.md` → line **23**; file's last content line is **41**. Exact section bounds: **23-41** (this receipt's original figures; w918's "22-41" is off by one on the start). Numbers may shift ±1 if another lane edits the page — W954's locate-by-H2-text instruction governs.

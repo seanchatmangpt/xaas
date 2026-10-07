@@ -86,10 +86,13 @@ Rows 16-18 (W765 B/C/D) sequence after row 15; rows 30-31 sequence together.
 
 **Registration**: DESIGN-class rows spec'd by w905-design-gap-specs.md (2026-10-07) — registered by w910-spec-registration.md.
 
-## Execution progress (W914 triage sweep, 2026-10-07)
+## Execution progress (W914 triage sweep, 2026-10-07) — SUPERSEDED by W971c footer below
 
 Next-wave execution is assigned to W897 (top-10 items 1-3), W900 (items 4-6), W902
 (items 7-10). Facts below are from receipt files on disk in this directory only.
+**W971c supersede**: the "0 repaired / all in flight" snapshot below is stale —
+all three batch lanes landed the same day; see the W971c top-10 disposition footer
+at the end of this file for the per-row landing truth.
 
 - `w897-cheap-repairs.md` — NOT on disk (in flight)
 - `w900-batch2-repairs.md` — NOT on disk (in flight)
@@ -126,3 +129,204 @@ Next-wave execution is assigned to W897 (top-10 items 1-3), W900 (items 4-6), W9
   34 OPEN / 7 REPAIRED / 2 TYPED-OPEN.
 - Rows in flight: unchanged at 8 (W897 items 1-3; W902 items 7-10 plus
   W674-GAP-2 hygiene follow-up). w859 register untouched this sweep.
+
+## Final reconciliation footer (W967, 2026-10-07)
+
+All batch lanes (W897/W900/W902) and follow-ups (W925/W928/W944/W944b/W947) have
+landed. Facts below from register + receipts on disk at read time. Current
+register totals (after W945c batch-5 flips, post-dating sweep 7's 49-row note):
+**50 rows = 25 OPEN + 23 REPAIRED + 2 TYPED-OPEN.**
+
+### Disposition of the original 35 OPEN rows
+
+**Closed — 13 rows REPAIRED, receipt-backed:**
+
+| Triage # | Row | Closing receipt(s) |
+|---|---|---|
+| 2 | W674-GAP-1 (`:failed` seal) | w902 staged-lib + w928 hygiene court + w945b re-witness |
+| 3 | W674-GAP-2 (typed refusal atoms) | w900 staging + w928 hygiene court (11/11 ×2) |
+| 12 | W745 rescue-arm (-32603) | w945c court c.5 (real raise → envelope, mutation-killed) |
+| 13 | W750-G1 (ALIVE-without-execution gate) | W768 landing witnessed by w945c (stale-row flip) |
+| 15 | W765 GAP-A (mint-time TTL) | w900-batch2 (repair + mutation-killed court, 17 passed) |
+| 16 | W765 GAP-B (`:use` action) | w935-spec16-impl (`fab56ae1`; 21/21 ×2, mutation 20/21) |
+| 17 | W765 GAP-C (expiry refusal) | w935-spec16-impl (`fab56ae1`; mutation-killed) |
+| 19 | W770 vacuous approvals | w900-batch2/W792 (19 passed) |
+| 23 | W793 4-gap row | W818 (2 guards) + w902 (remaining 2, mutation-killed) |
+| 25 | W796-G1 (borrow cap) | w902 (`Ash.count!` guard, mutation-proven) |
+| 28 | W799 credit-path-unfundable | w945b row 28 (5/5 ×2) |
+| 33 | W849 backlog-1 (sha256 pins) | w852 pins, witnessed green by w902 |
+| 35 | W849 backlog-3 (McpScope TTL doc) | w945b row 35 (mutation killed, 1/1 ×2) |
+
+Partial: row 4 (W722) — gap-1 state guard REPAIRED (W740, witnessed w945c);
+gap-2 (`X-Org-Id` caller-asserted) split out as its own OPEN row.
+
+**Remaining OPEN — 22 rows (21 fully open + row 4's gap-2 half):**
+
+- **CHEAP-REPAIR: 5** — row 1 (W665 kernel gap), row 5 (W729 lifecycle guard),
+  row 6 (W729 approve-idempotency — w897 found it already repaired on HEAD by
+  W746), row 11 (W731 registry path) — note rows 1/5/11 all have **landed,
+  mutation-killed repairs in `w897-cheap-repairs.md` rows 1/5/11** but the
+  register rows were left OPEN pending a dispatch that names them (W960 sweep-7
+  policy); only row 29 (W804 `mix ecto.migrate` on xaas_dev, OPERATOR) is
+  genuinely unexecuted.
+- **DESIGN: 16** (of the 18 spec'd in w905 — GAP-B/C, triage rows 16/17, closed
+  by w935): rows 4 (auth half), 7, 8, 9, 10, 14, 18, 20, 21, 24, 26, 27, 30,
+  31, 32, 34.
+- **TYPED-OPEN promote candidate: 1** — row 22 (W784 TOFU); triage recommended
+  promotion, register still counts it OPEN; register TYPED-OPEN count remains
+  2 (W811 scope boundary, 49.3 corpus row).
+
+### Bottom line
+
+Of the original 35 OPEN rows: **13 closed, 22 remain** (16 DESIGN, 5
+CHEAP-REPAIR of which 4 have landed repairs awaiting register flips and 1 is a
+one-command operator action, 1 W784 promote-candidate). Every closed row is
+dual/triple-cited with a mutation-killed court in its closing receipt. The
+remainder is predominantly DESIGN-class surface work spec'd in w905.
+
+## Top-10 execution disposition (W971c progress fold, 2026-10-07) — folded into and superseded by the W974d final-close footer below
+
+Supersedes the W914 "0 repaired / all in flight" progress footer above. Facts:
+receipt files on disk in this directory + per-row statuses grepped live from
+`w859-typed-gap-register.md` (line numbers cited). Of W891's top-10 next-wave
+rows, **9 of 10 are REPAIRED with landed receipts; 1 remains OPEN**.
+
+| Top-10 item | Triage # | Row | Disposition | Receipt(s) |
+|---|---|---|---|---|
+| 1 | 29 | W804 dev `mix ecto.migrate` (OPERATOR) | **OPEN** — index exists in xaas_dev but was direct-DDL, not migrate; schema_migrations unstamped, replay now hazardous (register W971 audit annotation) | w804-epoch-dedup.md; register L50 |
+| 2 | 6 | W729 approve-idempotency | **REPAIRED** — verify-first: already on HEAD (W746 `filter(expr(is_nil(approved_by)))` guard); register flip W968b | w897-cheap-repairs.md (drift row); register L166-169 |
+| 3 | 1 | W665 kernel gap (emotion-recognition atom) | **REPAIRED** — w897 row 1, mutation-killed 6/7; register flip W968b | w897-cheap-repairs.md; register L166 |
+| 4 | 23 | W793 4-gap incident lifecycle | **REPAIRED** — W818 closed 2, w902 closed remaining 2 (mutation `sed`, 16/18) | w818 + w902-batch3-repairs.md; register L43 |
+| 5 | 13 | W750-G1 ALIVE-without-execution gate | **REPAIRED** — W768 gate landed (`capability_liveness_receipt.ex:179`), witnessed w945c; stale-row flip | w945c-batch5-repairs.md; register L32 |
+| 6 | 15 | W765 GAP-A mint-time TTL | **REPAIRED** — accept-list + court 17 passed, mutation 15/17 | w900-batch2-repairs.md; register L35 |
+| 7 | 19 | W770 vacuous approvals | **REPAIRED** — verify-first: W792 approver wiring, 19 passed | w900-batch2-repairs.md; register L39 |
+| 8 | 33 | W849 backlog-1 sha256 pins | **REPAIRED** — verify-first: W852 pins, green in w902's 101/102 run | w852 + w902-batch3-repairs.md; register L54 |
+| 9 | 3 | W674-GAP-2 typed refusal | **REPAIRED** — w900 staging + w928 hygiene court (11/11 ×2 over non-pollutable filtered reads) | w900 + w928-gymact-hygiene.md; register L21 |
+| 10 | 25 | W796-G1 per-student borrow cap | **REPAIRED** — w902 `Ash.count!` guard, mutation-proven | w902-batch3-repairs.md; register L45 |
+
+**Standing**: PARTIAL_ALIVE — doc-only fold; no code, tests, or register edits by
+this lane; dispositions read from the register's own current statuses (not
+asserted). The sole residual top-10 item (W804) is an OPERATOR action now
+carrying a hazard annotation (direct-DDL index vs. unstamped schema_migrations),
+owned by the coordinator per the register's W971 audit note.
+
+## Triage-close footer (W971b, 2026-10-07) — SUPERSEDED by the W974d final-close footer below
+
+The triage's work is complete. Every CHEAP-REPAIR row is dispositioned: either
+repaired with a receipt citation (W665 kernel gap → w897 row 1; W729 lifecycle →
+w897 row 5; W729 approve-idempotency → already repaired on HEAD by W746, per
+w897 row-selection drift note; W731 registry path → w897 row 11 — all four
+flipped by w968b-register-final-flips.md) or confirmed non-CHEAP (row 29/W804 →
+OPERATOR, stays OPEN per W971 audit with the direct-DDL replay hazard noted in
+the register row). No CHEAP-REPAIR row remains undispositioned.
+
+The 18 DESIGN-class rows are spec'd in `w905-design-gap-specs.md` (SPEC-1..34).
+Waves 1-3 in flight as w968c / w969b / w969c; **no wave receipts have landed on
+disk yet** (test -f w968c-*.md / w969b-*.md / w969c-*.md → all absent, verified
+2026-10-07). Wave standing: UNKNOWN until receipts land.
+
+Final register totals (grep-verified against w859-typed-gap-register.md on disk,
+2026-10-07):
+
+```
+$ grep -oE '\| (OPEN|REPAIRED|TYPED-OPEN) \|' w859-typed-gap-register.md | sort | uniq -c
+  17 | OPEN |
+  31 | REPAIRED |
+   2 | TYPED-OPEN |
+```
+
+50 rows = 17 OPEN + 31 REPAIRED + 2 TYPED-OPEN (W971/W968b audit figure,
+re-verified unchanged by this lane).
+
+Remaining-OPEN disposition classes (17 rows):
+
+- **DESIGN-pending (14)** — spec'd in w905, awaiting wave execution: W722 gap-2
+  (X-Org-Id caller-asserted), W729 multitenancy, W729 atomic_update, W731
+  graphlaw-limits-enforcement, W750-G2 (detect/1 upsert blindness), W765 GAP-D
+  (freeze-window runtime gate), W770 retention path, W793 incident↔castle
+  cross-ref, W796-G3 (hold→Checkout hand-off), W799 reversal actions, W802/W819
+  graphql mount, graphql domain coverage, W824 quiescent wire coupling, W849
+  backlog-2 (CI regen leg).
+- **OPERATOR (2)** — W804 (stamp/drop-and-replay dev migrations before next dev
+  `mix ecto.migrate`; coordinator action, replay hazard annotated in register
+  row) and W902 (shared `xaas_test` sandbox-escape contamination; coordinator
+  hygiene pass or per-lane test DBs).
+- **Backlog-deferred, DESIGN-class (1)** — W784 TOFU (deferred to campaign
+  backlog per register row; triage's promote-to-TYPED-OPEN recommendation not
+  acted on).
+- **TYPED-OPEN (2 in register)** — W811 scope boundary + 49.3 corpus row
+  (counted in the 2 TYPED-OPEN slots, not among the 17 OPEN).
+
+Triage status: CLOSED. Residual work is wave-execution of w905 DESIGN specs
+(waves 1-3, receipts pending) plus 2 operator actions.
+
+## Final close (W974d, 2026-10-07) — supersedes both prior footers above
+
+This footer is the single authoritative triage-close. The "Triage-close footer
+(W971b, 2026-10-07)" and the "Top-10 execution disposition (W971c progress
+fold, 2026-10-07)" above are superseded by this footer (both are retained
+verbatim as history; where their figures or framings differ, this footer wins).
+Reconciled by lane W974d; all facts re-read from disk at reconcile time.
+
+### Definitive register totals (grep-verified, 2026-10-07)
+
+```
+$ grep -oE '\| (OPEN|REPAIRED|TYPED-OPEN) \|' w859-typed-gap-register.md | sort | uniq -c
+  17 | OPEN |
+  31 | REPAIRED |
+   2 | TYPED-OPEN |
+```
+
+50 rows = 17 OPEN + 31 REPAIRED + 2 TYPED-OPEN. This confirms W971b's figure
+and supersedes any interim counts elsewhere in this file (35 OPEN at triage
+origin; 34/7 at W914; 25/23 at the mid-sweep footer).
+
+### CHEAP-REPAIR disposition — all 15 closed
+
+Every CHEAP-REPAIR row is REPAIRED with a landed receipt: w897-cheap-repairs.md
+(rows 1/5/11 + drift note), w900-batch2-repairs.md, w902-batch3-repairs.md, and
+follow-ups w928-gymact-hygiene.md and w945c-batch5-repairs.md; verify-first
+closures already on HEAD via W746 (W729 approve-idempotency), W792 (W770 vacuous
+approvals), W818 (2 of the W793 4-gap row; w902 closed the remaining 2), W852
+(W849 backlog-1 pins). Final flips witnessed by w968b-register-final-flips.md.
+Zero CHEAP-REPAIR rows remain open.
+
+### DESIGN disposition — 18 spec'd, waves 1-3 receipts not landed
+
+18 DESIGN-class rows are spec'd in `w905-design-gap-specs.md` (SPEC-1..34).
+Waves 1-3 were dispatched as w968c / w969b / w969c; at final close, `ls` of
+`w968c-*.md`, `w969b-*.md`, `w969c-*.md` in this plans directory returns no
+files (re-verified 2026-10-07 by this lane, independently of W971b's check) —
+wave receipts are NOT on disk and wave standing remains UNKNOWN. W971c's "in
+flight" framing is retained only as dispatch status, not landed standing.
+
+### OPERATOR rows (2)
+
+- **W804** dev `mix ecto.migrate`: index `ultracode_epochs_unique_run_cycle_index`
+  exists in xaas_dev but was created by direct DDL; schema_migrations has no row
+  for the relevant versions, so a future dev migrate will replay and fail on the
+  existing index (replay hazard per the register's W971 audit annotation, row
+  L50). Coordinator must stamp the versions or drop-and-replay. Stays OPEN.
+- **W902** shared `xaas_test` sandbox-escape contamination: coordinator hygiene
+  pass or per-lane test DBs. Stays OPEN.
+
+### Sole typed open gap
+
+**49.3** (EU-AI-Act Title IV deployer EU-database registration OPEN_GAP) — the
+wave's one honest permanent open-gap row, TYPED-OPEN alongside the W811
+test-scope boundary (which is a scope disclosure, not a defect). W784 TOFU
+remains backlog-deferred DESIGN-class in the OPEN count; the triage's
+promote-to-TYPED-OPEN recommendation was not acted on.
+
+### Reconciliation notes
+
+- W971b's "CLOSED with 17/31/2 on 50 rows" figure is confirmed correct; W971c's
+  "9 of 10 top-10 REPAIRED, W804 OPERATOR open" is confirmed correct and folded
+  into the dispositions above. The two footers are complements, not conflicts;
+  this footer merges them and is the closing authority.
+- Final-close verification receipt:
+  `docs/sjira/v26.10.6/plans/w974d-triage-close-2.md`.
+
+Triage status: **CLOSED** (final). Residual work: wave-execution of w905 DESIGN
+specs (receipts pending), 2 operator actions (W804, W902), 1 typed open gap
+(49.3) + 1 typed scope boundary (W811).

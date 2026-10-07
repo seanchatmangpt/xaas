@@ -171,6 +171,59 @@ sibling checkout. The registry lists it as a `:bridge` with standing `UNKNOWN`
   own `fond_validate` example as a smoke call), `invoke/1` (arbitrary op), each returning
   a `Xaas.Bridges` envelope with `engine_sha256` provenance and an `evidence_ref`.
 
+## Graphlaw bridge admission gate (`Xaas.Graphlaw.LimitGate`)
+
+`Xaas.Bridges.Graphlaw.assess/2` gates caller-controlled claim structure against the
+graphlaw engine's recorded `EngineLimit` rows BEFORE any engine dispatch
+(`lib/xaas/graphlaw/limit_gate.ex`; W976 design-wave 5, SPEC-10 / W731-GAP-2 —
+`docs/sjira/v26.10.6/plans/w976-design-wave5.md`):
+
+- `LimitGate.enforce/2` reads `Catalog.limits_by_scope/1` and refuses the first measured
+  exceedance with a typed `{:refused, info}` (`code: :limit_exceeded`) carrying the row's
+  `refusal_name`, the limit value, and the actual. Equal-to-limit admits.
+- Wire 1: `assess/2` measures the claim's real JSON nesting depth
+  (`LimitGate.json_depth/1`) against the `abi`-scope `max_json_depth` (engine truth 64,
+  `src/abi.rs`). A depth-65 claim refuses at the seam with the engine's `refusal_name`,
+  `class: :refused_admission`, `broken_term: :mu_on_O` — the engine is never reached.
+- Wire 2: `Xaas.Bridges.Registry.engine_limits/0` surfaces the real `abi`-scope rows —
+  the first registry function to read an `EngineLimit` row.
+- Byte-limit wires (lane W981k, `docs/sjira/v26.10.6/plans/w981k-registry-limits-seams.md`):
+  `do_assess/3` renders facts/data/steps, then `gate_engine_limits/3` measures three
+  rendered payloads and runs `LimitGate.enforce/2` on each before any engine dispatch —
+  the first exceedance wins, all-`:ok` admits:
+  - `max_request_bytes` (`abi` scope, engine truth 16 MiB, `src/abi.rs`) — `byte_size`
+    of the JSON request (data + steps) rendered for `AshGraphLaw.law/3`.
+  - `n3_max_term_bytes` (`n3` scope, engine truth 64 KiB, `src/law.rs`) — the largest
+    single N-Triples line (terms) in the rendered facts.
+  - `n3_max_total_bytes` (`n3` scope, engine truth 256 MiB, `src/law.rs`) — total bytes
+    of the facts fed to the n3 step.
+  Each refusal maps through the same typed envelope as the depth gate
+  (`:limit_exceeded`, `class: :refused_admission`, `broken_term: :mu_on_O`, the engine's
+  `refusal_name` carried verbatim).
+- Fail-open semantic (disclosed design decision, NOT fail-closed): a limit read that
+  *errors*, or a row that is absent, admits (`limit_gate.ex` moduledoc). Rationale: the
+  gate is deliberately DB-independent at this seam — the `Xaas.Chicago.Bridges.GraphlawTest`
+  dead-host court pins that its verdict is never a database verdict (`:host_not_started`
+  is the host layer, not the gate), so an unreadable limit store is a monitored gap,
+  not a refusal condition. A live exceedance still refuses. W981k court-pinned the same
+  semantic at the new byte seams (row-absent ⇒ pass-through to the engine).
+- Registry disposition: of the 15 graphlaw registry limits (15 scope+meta rows in
+  `/Users/sac/graphlaw/registry/capability-registry.json`), exactly 4 are enforced with
+  a true consumption seam — `max_json_depth` (W976) plus the 3 byte limits (W981k); the
+  remaining 11 (plan/hooks/wasm/policy scopes) have no xaas consumer that produces their
+  quantities. They stay recorded and gateable via `enforce/2`, unmeasured by design —
+  no artificial plumb-through. Disclosed remaining gap: `Registry.engine_limits/0`
+  still surfaces `abi`-scope rows only, not the `n3` scope.
+- Court: `test/xaas/graphlaw_limit_gate_test.exs` (13 Chicago tests — real Postgres rows,
+  real `Catalog.ingest/1`, real bridge calls; the W976 falsifier is verbatim: depth-65
+  refuses typed, equal/below admits, and reverting the `assess/2` wiring flips the court
+  red) plus `test/xaas/graphlaw_limit_seams_test.exs` (9 W981k Chicago tests — one
+  exceedance + one within-limit court per byte limit, row-absent fail-open, wrong-scope
+  isolation; deleting `gate_engine_limits/3` flips all three exceedance courts red).
+  W981k's first wiring run was 48/51 — the courts caught a real first-defect
+  (`gate_engine_limits/3` returned the first `:ok` instead of the first refusal). Standing:
+  PARTIAL_ALIVE — 4 of 15 limits measured at true seams, 11 unmeasured-no-consumer.
+
 ## Gymact surface adapter (external DO, fail-closed config)
 
 `Xaas.Operations.GymactSurface` is a thin, fail-closed HTTP adapter over gymact's FastAPI
@@ -321,6 +374,15 @@ actuation ledger.
   `Xaas.Semantics.EuAiActAdmission` is registered as an enforcing module in the
   mapping (`airo_risk_mapping.ex:79`), and the euaia refusal strings seed
   `Xaas.Semantics.IncidentReport` (`incident_report.ex:38`).
+- Fleet wiring ledger: `docs/cro/artifacts/airo-wiring-ledger.md` is the consolidated
+  cross-repo AIRo wiring ledger (16 wave rows, W639). Extended 2026-10-07 to 25 repos by
+  two survey waves: W981e added ash_graphlaw, ggen-ecosystem, chatman-ecosystem
+  (`docs/sjira/v26.10.6/plans/w981e-airo-wiring-extension.md`) and W981f added
+  ash_atlassian, ash_dspy, ash_kudzu, ash_planning_center, ash_expo, ash_autofde
+  (`docs/sjira/v26.10.6/plans/w981f-airo-wiring-wave2.md`). Every added row is standing
+  UNKNOWN: real `git rev-parse HEAD` per repo, on-disk `find -iname '*airo*'` returned
+  zero matches (absence confirmed, nothing invented), and each row names its pin court
+  falsifier. Per-repo reference stubs live at `docs/airo/<repo>/airo-reference.md`.
 
 ### Export endpoint: `GET /internal-api/eu-ai-act/pack` (OS-14)
 

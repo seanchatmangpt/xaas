@@ -148,8 +148,10 @@ Recounted 2026-10-06 by the same grep method this doc has used before
   by the same deliberate design this doc's own "Deliberately unwired" section documents
   below.
 - Mutation verbs now go beyond the original `post(:create)`/`patch(:approve)`/
-  `patch(:update)` pattern — e.g. `post(:issue)`/`patch(:revoke)` on
-  `Xaas.Governance.AuditExportToken`, `patch(:remediate)` on
+  `patch(:update)` pattern — e.g. `post(:issue)`/`patch(:use, route: "/:id/use")`/
+  `patch(:revoke, route: "/:id/revoke")` on
+  `Xaas.Governance.AuditExportToken` (SPEC-16, lane W935; collision court W944b,
+  controller repoint W959), `patch(:remediate)` on
   `Xaas.Governance.PentestFinding`, `patch(:record_attempt)` on
   `Xaas.Platform.WebhookDelivery`, and `delete(:destroy)` on Platform resources.
 
@@ -210,7 +212,7 @@ Governance (`lib/xaas/governance/`):
 | `/approval_sso_role_mapping_update` | `Xaas.Governance.ApprovalSsoRoleMappingUpdate` |
 | `/approval_subprocessor_registry_update` | `Xaas.Governance.ApprovalSubprocessorRegistryUpdate` |
 | `/approval_vendor_offboarding_attestation_issue` | `Xaas.Governance.ApprovalVendorOffboardingAttestationIssue` |
-| `/audit_export_tokens` | `Xaas.Governance.AuditExportToken` (`post(:issue)`/`patch(:revoke)`) |
+| `/audit_export_tokens` | `Xaas.Governance.AuditExportToken` (`post(:issue)`/`patch(:use, route: "/:id/use")`/`patch(:revoke, route: "/:id/revoke")`; no bare `patch(:update)` — PATCH on bare `/:id` is 404 `no_route_found` at HEAD). `:use` stamps `used_at` once and increments `use_count` atomically, refuses second use (`AuditExportTokenNotAlreadyUsed`) and expired tokens (`AuditExportTokenExpiredTokenRefused`); both PATCH routes gate on `AuditExportTokenActorOrgMatches`. Route-collision court `test/xaas_web/audit_export_token_route_collision_court_test.exs` (W944b), controller-test repoint W959 |
 | `/data_destruction_certificate_issue` | `Xaas.Governance.DataDestructionCertificateIssue` |
 | `/freeze_window` | `Xaas.Governance.FreezeWindow` |
 | `/pentest_findings` | `Xaas.Governance.PentestFinding` (`post(:create)`/`patch(:remediate)`) |
@@ -267,8 +269,7 @@ today; the Library surface is served through the `/mcp` tools, the `/next-read` 
 and AshAdmin.
 
 The wired resources share the same DSL shape, though the route sets now vary per resource
-(paren-call style throughout, re-verified 2026-09-22). Read-only resources (e.g.
-`Xaas.Platform.RouteProjects`):
+(paren-call style throughout, re-verified 2026-09-22). Read-only resources:
 
 ```elixir
 json_api do
@@ -281,6 +282,17 @@ json_api do
   end
 end
 ```
+
+`Xaas.Platform.RouteProjects` is no longer purely read-only: SPEC-21 (W969c, W770-GAP-3)
+added a real `create :create` action — the create half of the maker-checker pair, with
+`bypass {Xaas.Checks.SystemActor}` gates (W792's `:approve` bypass is the checker half) —
+and `patch(:approve)` is routed. The `:create` action itself is system-actor-gated, not
+JSON:API-routed; `fc14f10b` completed the SPEC-21 integration by adding
+`{Xaas.Platform.RouteProjects, :create}` to the `Xaas.Checks.SystemActor` service map
+(the hunk had been omitted from the b2758300 integration commit, so the committed courts
+failed at HEAD while the working tree was green). Receipts:
+`docs/sjira/v26.10.6/plans/w969c-design-wave3.md` (SPEC-21) and
+`docs/sjira/v26.10.6/plans/w969d-spec21-completion.md` (the `fc14f10b` completion hunk).
 
 The maker-checker approval cluster (23 Governance + 6 Billing + 2 Operations + 1
 Marketplace `Approval*` resources) uses `get(:read)`/`index(:read)`/`post(:create)`/
@@ -494,6 +506,19 @@ Reachable at `GET /internal-api/capability_liveness_receipts` and
 ingested MAPE-K receipt rows (see `lib/xaas/operations/capability_liveness_receipt.ex` and
 `lib/mix/tasks/xaas.ingest_capability_receipts.ex` for how these rows are populated).
 
+Each row carries `previous_status` (W968c / SPEC-14; receipt
+`docs/sjira/v26.10.6/plans/w978b-previous-status.md`): the immediately-prior observed
+status at the same capability+subject, written ONLY by the `:ingest` upsert path —
+`change {Xaas.Operations.Changes.SetPreviousStatus, []}` captures the prior row's status
+before the identity upsert overwrites it, and the attribute is deliberately absent from
+the `:ingest` accept list so a caller cannot forge it. It backs the in-place regression
+detection in `Xaas.Operations.CapabilityLivenessRegressions` (a non-ALIVE latest row whose
+`previous_status` was `ALIVE` is a regression even without a retained prior row) surfaced
+by the regressions endpoint below. Persisted by migration
+`20261007231000_add_previous_status_to_capability_liveness_receipts.exs`; standing ALIVE
+on subject `fc14f10b` (mutation-verified: removing the `SetPreviousStatus` change flips
+the court red, `capability_liveness_deepening_test.exs:201`).
+
 ## Plain-JSON controller endpoints (not `AshJsonApi`, not the JSON:API envelope)
 
 These are registered directly on `XaasWeb.Router` under `/internal-api`, ahead of the
@@ -613,6 +638,101 @@ Each action first admits its own capability through `Xaas.Tunnel.Capabilities` (
 Fabric state is a pure state machine in `Xaas.Tunnel.Fabric` — new → probed → admitted →
 submitted → executing → sealed → replayed — with typed illegal transitions and crash-window
 `reconcile/1` decisions.
+
+## `/api/graphql` — GraphQL (SPEC-30, W975b design-wave 4)
+
+`lib/xaas_web/router.ex` (`scope "/api/graphql"` → `forward("/", Absinthe.Plug,
+schema: Xaas.GraphqlSchema)`) mounts the GraphQL surface behind
+`[:require_internal_api_token, :api]` — same `XaasWeb.Plugs.RequireInternalApiToken`
+floor as the rest of `/api` (CLAUDE.md API-auth floor: no unauthenticated sibling
+route). The scope is registered BEFORE the catch-all `forward "/api"` so the graphql
+prefix wins the shadowing rule this router already documents for `/sparql` and
+`/internal-api/fabric`. `{:absinthe_plug, "~> 1.5"}` is a direct dep in `mix.exs`.
+
+- Schema: `Xaas.GraphqlSchema` (`lib/xaas/graphql_schema.ex`) — all 19 domains
+  listed in `domains:` (SPEC-31, lane W973c, landed at `39e9d77f`). Domain
+  membership alone generates no root fields: AshGraphql generates query root
+  fields only from resource-level `graphql do ... queries do` blocks
+  (`AshGraphql.Resource` extension). Census re-read on disk (lane W984m):
+  **16/19 domains** expose at least one query root field; **32 query root
+  fields** (15 `get` + 15 `list` + 1 custom action + `say_hello`); **0
+  mutations** (no resource declares a `mutations do` block), **0
+  subscriptions**.
+
+### GraphQL census (domain → resource → root fields)
+
+Re-read from `lib/xaas/graphql_schema.ex` + resource files on disk
+(`feat/playwright-surface` in-flight tree, lane W984m).
+
+Resource names drop the `Xaas.<Domain>.` prefix (domain column supplies it).
+Field column: `X` = `get(:x)` + `list(:xs)` pair unless noted.
+
+| Domain | Resource | Root fields | Batch |
+|---|---|---|---|
+| Operations | `ProjectMeasure.Measurement` | `projectMeasureJson` (custom action) | W973c |
+| Library | `Book` | `libraryBook`, `libraryBooks` | W973c |
+| Marketplace | `Pack` | `marketplacePack`, `marketplacePacks` | W973c |
+| Accounts | `Org` | `org`, `orgs` | W973c |
+| Billing | `ApprovalPricingOverride` | `approvalPricingOverride(s)` | W973c |
+| Conference | `Event` | `conferenceEvent(s)` | W973c |
+| Governance | `FreezeWindow` | `freezeWindow(s)` | W973c |
+| Platform | `Webhook` | `webhook(s)` | W973c |
+| Ocel | `Event` | `ocelEvent(s)` | w982a |
+| Security | `Finding` | `securityFinding(s)` | w982a |
+| Witness | `CertifiedReceipt` | `witnessCertifiedReceipt(s)` | w982u |
+| Igniter | `RefusalCode` | `igniterRefusalCode(s)` | w982u |
+| Coupling | `CouplingRun` | `couplingRun(s)` | w983h |
+| Generation | `ProjectionRecord` | `generationProjectionRecord(s)` | w983h |
+| Graphlaw | `Capability` | `graphlawCapability(s)` | w984l IN-FLIGHT |
+| TemporalMemory | `Observation` | `temporalMemoryObservation(s)` | w984l IN-FLIGHT |
+
+Batch receipts: `docs/sjira/v26.10.6/plans/w973c-design-wave8.md` (landed,
+`39e9d77f`), `w982a-conference-graphql-deepening.md` (PARTIAL_ALIVE,
+uncommitted), `w982u-graphql-batch3.md` (batch 3, 10→12/19),
+`w983h-graphql-batch4.md` (batch 4, 12→14/19). Batch 5 (w984l: Graphlaw +
+TemporalMemory) has no receipt file on disk at write time — IN-FLIGHT, both
+rows above verified directly in the resource files (`git status` shows
+`lib/xaas/graphlaw/capability.ex` modified).
+
+### Auth floor and policy floor
+
+- Auth: the `/api/graphql` scope sits behind `[:require_internal_api_token,
+  :api]` — the same `XaasWeb.Plugs.RequireInternalApiToken` floor as the rest
+  of `/api` (fails closed when `INTERNAL_API_TOKEN` is unset; no
+  unauthenticated sibling route). Domain membership in `Xaas.GraphqlSchema`
+  never bypasses it.
+- Policy floor (W982a-precedent pattern, applied to every newly-wired domain):
+  deny-by-default `policy always() do forbid_if always()` with a scoped
+  `bypass action_type(:read) do authorize_if always() end` carve-out (plus
+  narrow `bypass action(...)` carve-outs for existing authorized write
+  actions, e.g. Witness `:ingest`, Coupling `:couple`, TemporalMemory
+  `:observe`, Graphlaw `:create`). Never replace the floor with ambient
+  allow-all (CLAUDE.md Ash policy floor).
+- Zero custom mutation root fields exist; consequential mutations stay behind
+  the Ash.Reactor control plane / admitted approval flows, not GraphQL.
+
+### Typed-skip list (domains listed in schema, no query surface)
+
+| Domain | Reason |
+|---|---|
+| Ledger | Sensitive (`Balance`/`Account`/`Transfer` are deliberate exposure decisions per
+  CLAUDE.md); no resource declares a graphql block; batches disclose "Ledger untouched".
+| Ultracode | Receipt/lease surface read-closed for GraphQL; no `AshGraphql.Resource`
+  extension (lane-hot during batches 3-5, disclosed skip in w982u/w983h).
+| A2a | Protocol surface is the `/a2a` + `/a2a/v1` transport (AshA2A plug), not a GraphQL
+  read census; no resource declares a graphql block. |
+
+- Standing: LANDED-UNCOMMITTED on `feat/playwright-surface` (court
+  `test/xaas_web/graphql_http_surface_test.exs` — 401 unauthenticated probe,
+  real-HTTP `libraryBooks` round trip, shadowing pin, Absinthe envelope pin;
+  mutation kill 4/5 fail on scope removal). Batch 3/4 receipts are
+  PARTIAL_ALIVE uncommitted; batch 5 (w984l) is IN-FLIGHT. This flips the
+  `UNSUPPORTED(graphql-http-surface)` standing recorded in
+  `docs/claude/diataxis/reference/ash-configuration.md` (GraphQL surface status
+  subsection) once the W975b/W973c integration commit lands; receipts:
+  `docs/sjira/v26.10.6/plans/w975b-design-wave4.md`, `w973c-design-wave8.md`,
+  `w982a-conference-graphql-deepening.md`, `w982u-graphql-batch3.md`,
+  `w983h-graphql-batch4.md`.
 
 ## Other HTTP surfaces
 
