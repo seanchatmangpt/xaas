@@ -65,6 +65,18 @@ defmodule Xaas.Conference.Registration do
       require_atomic?(false)
       validate(Xaas.Conference.Validations.RegistrationStatusTransition)
     end
+
+    # W947 / W893 GAP(NoServerActionForCancel): named cancel action so callers
+    # do not reach for the bare `:update`. The W795 forward-only transition
+    # validation on the shared guard covers this action too.
+    update :cancel do
+      accept([])
+      require_atomic?(false)
+      validate(Xaas.Conference.Validations.RegistrationStatusTransition)
+      change(fn changeset, _ctx ->
+        Ash.Changeset.force_change_attribute(changeset, :status, :cancelled)
+      end)
+    end
   end
 end
 
