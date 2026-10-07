@@ -30,16 +30,6 @@ defmodule XaasWeb.SensitiveResourceRouteAbsenceTest do
     end
   end
 
-  test "sensitive resources have zero AshGraphql queries or mutations" do
-    for {resource, domain} <- @sensitive do
-      assert AshGraphql.Resource.Info.queries(resource, domain) == [],
-             "#{inspect(resource)} gained an AshGraphql query"
-
-      assert AshGraphql.Resource.Info.mutations(resource, domain) == [],
-             "#{inspect(resource)} gained an AshGraphql mutation"
-    end
-  end
-
   test "sensitive resources are absent from the Xaas.Library AshAi tool list" do
     tools = AshAi.Info.tools(Xaas.Library)
     assert tools != []

@@ -192,22 +192,37 @@ defmodule Xaas.Operations.RouteCastleRunSurfaceTest do
       assert %{"errors" => [%{"code" => "no_route_found"}]} = json_response(conn, 404)
     end
 
-    test "the private :execute action is still unroutable via the GraphQL surface too (type-only)", %{
+    test "the GraphQL surface is removed: /api/graphql is unrouted", %{
       conn: conn
     } do
-      # graphql do type(:route_castle_run) end declares a type, but the
-      # resource declares no mutation routes; pin that /api content-negotiates
-      # json-api ONLY (the :internal_api pipeline), so no GraphQL document is
-      # even constructible on this scope -- the request refuses 406 before any
-      # route/body evaluation.
-      assert_raise Phoenix.NotAcceptableError,
-                   ~r/Expected one of \["json-api"\]/,
-                   fn ->
-                     conn
-                     |> auth()
-                     |> put_req_header("accept", "application/json")
-                     |> post("/api/graphql", %{"query" => "query { routeCastleRuns { id } }"})
-                   end
+      # W984ao (operator directive 2026-10-07): the SPEC-30 GraphQL-over-HTTP
+      # surface was removed fix-forward -- the /api/graphql scope and
+      # Xaas.GraphqlSchema are gone. The route must now be unrouted (the
+      # catch-all /api forward returns its real 404 envelope), and the
+      # attempt writes no durable actuation evidence.
+      conn =
+        conn
+        |> auth()
+        |> jsonapi()
+        |> post("/api/graphql", %{"query" => "query { routeCastleRuns { id } }"})
+
+      assert conn.status == 404
+      assert %{"errors" => [%{"code" => "no_route_found"}]} = json_response(conn, 404)
+
+      # the unrouted attempt wrote no durable actuation evidence (scoped to
+      # the attempt's own subject -- the shared test tables carry unrelated
+      # rows inside the sandbox)
+      subject = "system:w858-web-execute-attempt"
+
+      refute Enum.any?(
+               Ash.read!(ActuationReceipt, authorize?: false),
+               &(&1.resource_module == inspect(RouteCastleRun) and &1.action == "execute")
+             )
+
+      refute Enum.any?(
+               Ash.read!(ActuationIntent, authorize?: false),
+               &(&1.subject_id == subject)
+             )
     end
   end
 

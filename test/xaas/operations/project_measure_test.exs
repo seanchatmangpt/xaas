@@ -105,17 +105,11 @@ defmodule Xaas.Operations.ProjectMeasureTest do
     refute Enum.any?(action_names, &(&1 in [:create, :update, :destroy]))
   end
 
-  test "JSON API projection is GET-only and GraphQL projection is a query" do
+  test "JSON API projection is GET-only" do
     routes = AshJsonApi.Resource.Info.routes(Measurement, Xaas.Operations)
-    queries = AshGraphql.Resource.Info.queries(Measurement, Xaas.Operations)
 
     assert Enum.any?(routes, &(&1.method == :get and &1.action == :measure))
     refute Enum.any?(routes, &(&1.method in [:post, :put, :patch, :delete]))
-
-    assert Enum.any?(
-             queries,
-             &(&1.name == :project_measure_json and &1.action == :measure_json)
-           )
   end
 
   test "exact-subject half-open census excludes foreign heads and until boundary" do

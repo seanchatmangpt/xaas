@@ -22,7 +22,11 @@ defmodule Xaas.Generated.RegistryDriftGuardTest do
   # Keys: repo-relative paths (pre-W852 entries kept under lib/xaas/generated/).
   @regen_commands %{
     "lib/xaas/generated/zcode_event_registry.ex" =>
-      "mix ggen_igniter.sync --pack-dir priv/packs/xaas_zcode_ocel_pack --template priv/packs/xaas_zcode_ocel_pack/templates/zcode_event_registry.ex.eex --out lib/xaas/generated/zcode_event_registry.ex",
+      # W984g correction (per W983c triage): discovery is gates/-only in
+      # deps/ggen_igniter pack.ex discover_queries/1 — the zcode queries live
+      # in queries/, so all four --query flags are explicit; --on-stale
+      # preserve is required or the sync refuses on the stale-manifest entry.
+      "mix ggen_igniter.sync --pack-dir priv/packs/xaas_zcode_ocel_pack --query event_types=priv/packs/xaas_zcode_ocel_pack/queries/010_event_types.rq --query object_types=priv/packs/xaas_zcode_ocel_pack/queries/020_object_types.rq --query qualifiers=priv/packs/xaas_zcode_ocel_pack/queries/030_qualifiers.rq --query transitions=priv/packs/xaas_zcode_ocel_pack/queries/040_transitions.rq --template priv/packs/xaas_zcode_ocel_pack/templates/zcode_event_registry.ex.eex --out lib/xaas/generated/zcode_event_registry.ex --on-stale preserve",
     "lib/xaas/generated/sa2a_bridge_contract.ex" =>
       "ggen-marketplace/sa2a-bridge-pack (ggen_igniter renderer)",
     "lib/xaas/generated/sa2a_bridge_edges.ex" =>
@@ -36,12 +40,20 @@ defmodule Xaas.Generated.RegistryDriftGuardTest do
     # --- W852: provenance-only surfaces, hand-edit detection pins ---
     "lib/xaas_web/mcp_scope.ex" =>
       "ggen_igniter from priv/ggen_igniter/mcp_a2a/xaas-surface.ttl (moduledoc provenance, repo-relative regen command — W945b normalized from W849 backlog item 3; pack-dir migration is a deliberate non-goal to avoid forking the ontology)",
+    # W984g: actuation form pending owner policy-floor upgrade (see
+    # lib/xaas/generated/regen_check.ex BLOCKED skip). During any trial use an
+    # explicit in-repo scratch --out; the bare command actuates the tracked file.
     "lib/mix/tasks/xaas.library.manufacture.ex" =>
-      "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack",
+      "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack --out <in-repo-scratch-or-tracked>  # BLOCKED(policy-floor-upgrade-pending): bare form actuates the tracked surface; owner decision",
+    # W984g correction (per W983c triage): the template resolves against cwd and
+    # the facts_spec.rq query is MANDATORY (single-row bare recurrence_threshold
+    # binding) — all four --query flags + root-relative template.
     "lib/xaas/generated/capital_census/facts.ex" =>
-      "mix ggen_igniter.sync --pack-dir priv/ggen/ultracode-self-digest-pack --template templates/facts.ex.eex --yes",
+      "mix ggen_igniter.sync --ontology priv/ggen/ultracode-self-digest-pack/ontology.ttl --query g_table=priv/ggen/ultracode-self-digest-pack/queries/g_table.rq --query facts=priv/ggen/ultracode-self-digest-pack/queries/facts.rq --query facts_spec=priv/ggen/ultracode-self-digest-pack/queries/facts_spec.rq --query frontier_outcomes=priv/ggen/ultracode-self-digest-pack/queries/frontier_outcomes.rq --template priv/ggen/ultracode-self-digest-pack/templates/facts.ex.eex --out lib/xaas/generated/capital_census/facts.ex",
+    # W984g correction (per W983c triage): same gates/-only discovery issue +
+    # --on-stale preserve requirement as the zcode pin.
     "lib/xaas/telemetry/ocel_envelope.ex" =>
-      "mix ggen_igniter.sync --pack-dir priv/packs/xaas_telemetry_pack --template priv/packs/xaas_telemetry_pack/templates/ocel_envelope.ex.eex --out lib/xaas/telemetry/ocel_envelope.ex"
+      "mix ggen_igniter.sync --pack-dir priv/packs/xaas_telemetry_pack --query envelope_fields=priv/packs/xaas_telemetry_pack/queries/001_envelope_fields.rq --template priv/packs/xaas_telemetry_pack/templates/ocel_envelope.ex.eex --out lib/xaas/telemetry/ocel_envelope.ex --on-stale preserve"
   }
 
   # Each sha256 is a hand-edit detection pin over the committed bytes at
@@ -62,8 +74,11 @@ defmodule Xaas.Generated.RegistryDriftGuardTest do
     # --- W852: provenance-only surfaces, hand-edit detection pins ---
     "lib/xaas_web/mcp_scope.ex" =>
       "8713a4bc8486a9459d94d1779aa338f79f4071cb7155114b8fce6747e20d6c52",
+    # W984ao re-pin: graphql surface removal swept AshGraphql extension
+    # tokens + graphql blocks out of the manufacture template (receipt
+    # docs/sjira/v26.10.6/plans/w984ao-graphql-removal.md).
     "lib/mix/tasks/xaas.library.manufacture.ex" =>
-      "5796cae051757de949bc543f20564809f0e453dd4916eeac7e94beb71c56eb21",
+      "902b8af89c8be3a098a8f3a525650ccd1a7b3333c32e1690bc850578f990c9b5",
     "lib/xaas/generated/capital_census/facts.ex" =>
       "be12c29a29b2e32335de0a46757574f6575e4614825c1936e1e200ff928070c4",
     "lib/xaas/telemetry/ocel_envelope.ex" =>
