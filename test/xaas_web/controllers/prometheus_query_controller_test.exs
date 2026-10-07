@@ -22,7 +22,32 @@ defmodule XaasWeb.PrometheusQueryControllerTest do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
   end
 
+  # w155 typed-skip convention (w408): when no real live Prometheus is
+  # reachable at PROMETHEUS_URL (default http://localhost:9090), the
+  # `:kind`-tagged test emits a typed skip (named reason, visible in
+  # the ExUnit summary) instead of failing loudly with a real 502
+  # prometheus_unreachable. Probed at module-compile time via a real
+  # TCP connect, mirroring the existing
+  # `System.find_executable("node")` idiom in
+  # test/xaas/ultracode/dispatcher_preflight_test.exs (a remote-call
+  # expression inline in the attribute -- local defp calls are not
+  # resolvable at module-attribute position). A reachable Prometheus
+  # never skips (do: false).
   @tag :kind
+  @tag skip:
+         if(
+           match?(
+             {:ok, _resp},
+             Req.get(System.get_env("PROMETHEUS_URL") || "http://localhost:9090",
+               retry: false,
+               connect_options: [timeout: 1_000],
+               receive_timeout: 1_000
+             )
+           ),
+           do: false,
+           else:
+             "no real live Prometheus reachable at #{System.get_env("PROMETHEUS_URL") || "http://localhost:9090"} (HTTP probe failed) -- machinery absent, typed skip per w155"
+         )
   test "GET /internal-api/prometheus/query proxies a real query to a real live Prometheus", %{
     conn: conn
   } do

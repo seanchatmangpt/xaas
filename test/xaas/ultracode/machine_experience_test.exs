@@ -1004,10 +1004,18 @@ defmodule Xaas.Ultracode.MachineExperienceTest do
   end
 
   defp task(assignments, args) do
+    # W297d: the nested mix subprocess must not write into the shared
+    # _build/test tree (consolidation race with the concurrently running outer
+    # suite). Clone the current build into a per-invocation MIX_BUILD_ROOT
+    # (APFS clonefile via cp -c, same pattern as the episode qualification
+    # below) and clean it up on exit.
+    build_root = Path.join(mktmp("w297d-buildroot"), "build")
+    {_, 0} = System.cmd("cp", ["-cRp", Path.join(File.cwd!(), "_build/test"), build_root])
+
     System.cmd(
       "sh",
       [@no_llm_env | assignments] ++ ["--", "mix", "xaas.machine_experience" | args],
-      env: [{"MIX_ENV", "test"}],
+      env: [{"MIX_ENV", "test"}, {"MIX_BUILD_ROOT", build_root}],
       stderr_to_stdout: true,
       cd: File.cwd!()
     )

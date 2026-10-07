@@ -66,7 +66,12 @@ defmodule Xaas.Planning.StalePlanGateTest do
 
       assert {:error, %Refusal{} = refusal} = StalePlanGate.check(admitted, observed)
       assert refusal.code == :stale_plan_refusal
-      assert refusal.detail == %{admitted_preimage_hash: admitted, observed_preimage_hash: observed}
+
+      assert refusal.detail == %{
+               admitted_preimage_hash: admitted,
+               observed_preimage_hash: observed
+             }
+
       assert Refusal.message(refusal) =~ ~r/stale_plan_refusal/
     end
 

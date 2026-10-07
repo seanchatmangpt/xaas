@@ -30,7 +30,10 @@ defmodule Mix.Tasks.Xaas.SelfDigestTest do
       for i <- 1..3 do
         Jason.encode!(%{
           "ts" => DateTime.add(now, -i * 60, :second) |> DateTime.to_iso8601(),
-          "outcome" => "worker_unclosed",
+          # Literal atom reference: guarantees :worker_unclosed exists in the
+          # VM before the task's String.to_existing_atom/1 sees the line,
+          # independent of whether the FrontierOutcome type module has loaded.
+          "outcome" => Atom.to_string(:worker_unclosed),
           "step" => "dispatch",
           "residual_shape" => "gate_without_firing"
         }) <> "\n"
@@ -66,7 +69,7 @@ defmodule Mix.Tasks.Xaas.SelfDigestTest do
       for i <- 1..3 do
         Jason.encode!(%{
           "ts" => DateTime.add(DateTime.utc_now(), -i * 60, :second) |> DateTime.to_iso8601(),
-          "outcome" => "blocked",
+          "outcome" => Atom.to_string(:blocked),
           "step" => "dispatch",
           "residual_shape" => "generator_unmanufactured"
         }) <> "\n"

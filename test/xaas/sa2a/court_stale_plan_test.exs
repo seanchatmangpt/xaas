@@ -54,8 +54,9 @@ defmodule Xaas.Sa2a.CourtStalePlanTest do
 
       # The fence fires even though the request also has no admit receipt:
       # it is a pre-check that runs before the receipt steps.
-      assert {:error, {:refused, :stale_plan_refusal,
-                       %{admitted_preimage_hash: ^drifted, observed_preimage_hash: ^observed}}} =
+      assert {:error,
+              {:refused, :stale_plan_refusal,
+               %{admitted_preimage_hash: ^drifted, observed_preimage_hash: ^observed}}} =
                Court.admit(stale, @policy)
     end
 
@@ -112,5 +113,26 @@ defmodule Xaas.Sa2a.CourtStalePlanTest do
         "candidates" => [%{"item_id" => id}]
       }
     }
+  end
+
+  describe "normalize/1 malformed-request refusal" do
+    test "a JSON-unencodable value refuses with a structured detail map, not a raw message string" do
+      # A pid cannot be Jason-encoded, so normalize/1 rescues Jason.EncodeError.
+      assert {:error, {:refused, :malformed_request, detail}} =
+               Court.normalize(%{"query" => self(), "work_order_id" => "wo-1"})
+
+      assert is_map(detail)
+      assert Map.keys(detail) |> Enum.sort() == [:exception_type, :original, :reason]
+      assert detail.reason == :not_json_encodable
+      # Jason raises Protocol.UndefinedError for unencodable terms (the
+      # Jason.Encoder protocol is what's missing).
+      assert detail.exception_type == "Protocol.UndefinedError"
+      assert is_binary(detail.original) and detail.original != ""
+    end
+
+    test "a non-map request still refuses malformed_request (inspect detail path)" do
+      assert {:error, {:refused, :malformed_request, detail}} = Court.normalize(:not_a_map)
+      assert is_binary(detail)
+    end
   end
 end

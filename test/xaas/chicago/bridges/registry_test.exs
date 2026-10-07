@@ -12,8 +12,8 @@ defmodule Xaas.Chicago.Bridges.RegistryTest do
   alias Xaas.Bridges
   alias Xaas.Bridges.Registry
 
-  @bridge_ids [:pplan, :graphlaw, :ex4pm, :sa2a]
-  @absence_ids [:beam4pm, :ferroplan, :graphlaw_rust, :affidavit_cli, :ash_r2rml, :wasm4pm]
+  @bridge_ids [:pplan, :graphlaw, :ex4pm, :sa2a, :ferroplan]
+  @absence_ids [:beam4pm, :graphlaw_rust, :affidavit_cli, :ash_r2rml, :wasm4pm]
 
   test "registry carries exactly ten layer ids, all unique" do
     entries = Registry.all()
@@ -58,13 +58,13 @@ defmodule Xaas.Chicago.Bridges.RegistryTest do
       Registry.all()
       |> Enum.count(&match?(%{capability: {:unsupported, _}}, &1))
 
-    assert absence_count == 6
+    assert absence_count == 5
   end
 
   test "absences map is auditable and covers the named missing capabilities" do
     absences = Registry.absences()
 
-    assert map_size(absences) == 6
+    assert map_size(absences) == 5
     for {id, reason} <- absences, do: assert(is_atom(id) and is_binary(reason))
   end
 end

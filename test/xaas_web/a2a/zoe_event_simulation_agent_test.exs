@@ -80,4 +80,33 @@ defmodule XaasWeb.A2A.ZoeEventSimulationAgentTest do
 
     assert report["routed_to"] == ["church_event_lead", "security_management"]
   end
+
+  test "invalid simulation JSON fails with a structured, machine-readable refusal", %{
+    agent: agent
+  } do
+    assert {:ok, task} = A2A.call(agent, "simulate {not json")
+    assert task.status.state == :failed
+
+    # The runtime renders {:error, reason} as "Error: #{inspect(reason)}"
+    # carried on task.status.message; the refusal must carry structured
+    # fields, not a stringified message.
+    status_text =
+      case task.status.message do
+        nil ->
+          ""
+
+        msg ->
+          Enum.map_join(msg.parts, " ", fn
+            %A2A.Part.Text{text: t} -> t
+            _ -> ""
+          end)
+      end
+
+    # The runtime renders {:error, reason} as "Error: #{inspect(reason)}";
+    # the refusal must carry structured fields, not a stringified message.
+    assert status_text =~ "invalid_simulation_json"
+    assert status_text =~ "Jason.DecodeError"
+    assert status_text =~ "position:"
+    refute status_text =~ "invalid simulation JSON:"
+  end
 end

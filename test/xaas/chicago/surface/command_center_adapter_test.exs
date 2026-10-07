@@ -182,6 +182,7 @@ defmodule XaasWeb.System.CommandCenterAdapterTest do
   test "receipt-backed ALIVE for the subject is the only admitted-capability source" do
     run = create_run!()
     epoch = create_epoch!(run)
+
     seal_receipt!(epoch, :alive, %{
       "head_verified" => true,
       "fabric_verifier" => %{"status" => "pass"}
@@ -251,7 +252,13 @@ defmodule XaasWeb.System.CommandCenterAdapterTest do
         receipt_refs: ["receipt-1"],
         required: "true"
       },
-      %{id: "optional", capability_id: "cap:optional", evidence_refs: [], receipt_refs: [], required: false}
+      %{
+        id: "optional",
+        capability_id: "cap:optional",
+        evidence_refs: [],
+        receipt_refs: [],
+        required: false
+      }
     ]
 
     [obligation, same_identity] =
@@ -287,7 +294,13 @@ defmodule XaasWeb.System.CommandCenterAdapterTest do
 
     refused =
       CommandCenterAdapter.planning_episode_for_run(
-        struct(Run, %{id: "run-2", standing: :refused, state: :failed, execution_policy: nil, frontier_digest: "abc"})
+        struct(Run, %{
+          id: "run-2",
+          standing: :refused,
+          state: :failed,
+          execution_policy: nil,
+          frontier_digest: "abc"
+        })
       )
 
     assert refused.policy_standing == :REFUSED
@@ -295,7 +308,13 @@ defmodule XaasWeb.System.CommandCenterAdapterTest do
 
     admitted =
       CommandCenterAdapter.planning_episode_for_run(
-        struct(Run, %{id: "run-3", standing: :admitted, state: :completed, execution_policy: nil, frontier_digest: nil})
+        struct(Run, %{
+          id: "run-3",
+          standing: :admitted,
+          state: :completed,
+          execution_policy: nil,
+          frontier_digest: nil
+        })
       )
 
     assert admitted.policy_standing == :VALID_STRONG

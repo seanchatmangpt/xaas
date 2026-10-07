@@ -356,7 +356,9 @@ defmodule Xaas.Ultracode.SemanticJiraBridgeTest do
     test "a stale snapshot alone stays admissible (sibling transitions are not invalidated)",
          ctx do
       export = root_export(ctx)
-      stale = F.reseal(export, &put_in(&1, ["bridge", "source_snapshot_digest"], F.graph_digest()))
+
+      stale =
+        F.reseal(export, &put_in(&1, ["bridge", "source_snapshot_digest"], F.graph_digest()))
 
       assert {:ok, %{disposition: :appended}} =
                Bridge.admit(ctx.graph, "FIX-BROKEN", stale, ctx.dir, fabric_check: false)

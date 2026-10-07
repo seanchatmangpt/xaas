@@ -75,8 +75,9 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
     File.mkdir_p!(build)
     {_, 0} = System.cmd("cp", ["-cRp", Path.join(@ggen_dir, "_build/test"), build])
     head = git!(@ggen_dir, ["rev-parse", "HEAD"])
+    base_sha = normalize_formatter!(subject, head)
     on_exit(fn -> File.rm_rf(base) end)
-    %{subject: subject, build: Path.join(build, "test"), base_sha: head}
+    %{subject: subject, build: Path.join(build, "test"), base_sha: base_sha}
   end
 
   setup %{subject: subject} do
@@ -426,6 +427,54 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
   # ------------------------------------------------------------------
   # helpers
   # ------------------------------------------------------------------
+
+  # W227 root cause (v26.10.6 convergence): the `ggen-igniter-format` court
+  # pins its toolchain to Elixir 1.18.4 (TargetSuites.elixir_format_suite),
+  # while the ggen_igniter checkout under judgement is formatted by a newer
+  # formatter (1.19.5+/1.20.2). The two formatters disagree on at least one
+  # line (`lib/ggen_igniter/semantic_jira/execute.ex:134` -- a `{:ok, front}
+  # <- hop(...)` one-liner 1.18.4 wants folded), so every epoch worktree was
+  # BORN unformatted under the court's own toolchain and the fabric court
+  # reported BUILD_BROKEN before the drive could even refuse. The court is
+  # deterministic only if the sandbox is normalized with the court's own
+  # toolchain first: checkout the base head, run that toolchain's
+  # `mix format` (write mode), and commit the result as the episode base.
+  # The subsequent drift commit touches only @drift (cli.ex), so the drift
+  # contract (`git diff --name-only subject_sha head == @drift`) holds and
+  # the revert falsifier still kills (the cli.ex drift is unformatted under
+  # any formatter version).
+  defp normalize_formatter!(subject, head) do
+    {_, 0} = System.cmd("git", ["-C", subject, "checkout", "-q", "--detach", head])
+
+    suite = Mix.Tasks.Xaas.Episode.court_suite()
+    env = %{"PATH" => suite.env["PATH"], "MIX_ENV" => "test"}
+
+    {out, code} =
+      System.cmd("mix", ["format"], cd: subject, env: env, stderr_to_stdout: true)
+
+    if code != 0 do
+      raise "formatter normalization (court toolchain `mix format`) failed in #{subject}: " <>
+              String.slice(out, -600, 600)
+    end
+
+    git_env = [
+      {"GIT_AUTHOR_NAME", "xaas-episode"},
+      {"GIT_AUTHOR_EMAIL", "episode@xaas.invalid"},
+      {"GIT_COMMITTER_NAME", "xaas-episode"},
+      {"GIT_COMMITTER_EMAIL", "episode@xaas.invalid"}
+    ]
+
+    {_, 0} = System.cmd("git", ["-C", subject, "add", "-A"])
+
+    {_, 0} =
+      System.cmd(
+        "git",
+        ["-C", subject, "commit", "-q", "-m", "format: court-toolchain normalization"],
+        env: git_env
+      )
+
+    git!(subject, ["rev-parse", "HEAD"])
+  end
 
   defp prepare!(ctx, name) do
     out = mktmp("episode-" <> name)

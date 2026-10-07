@@ -55,6 +55,33 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
     |> Enum.map(&Jason.decode!/1)
   end
 
+  # Raw (undecoded) lines, for attribution by exact content.
+  defp raw_ocel_lines do
+    OcelAshEmitter.log_path()
+    |> File.read!()
+    |> String.split("\n", trim: true)
+  end
+
+  # The shared log is appended to by EVERY real Ash action in the suite,
+  # including async tests running concurrently with this async:false file
+  # (w68b failure 34: a foreign real `checkout.for_user` line landed
+  # between this test's truncate and its read). Each assertion therefore
+  # reads only the DELTA appended after its own captured offset and
+  # attributes lines to this test's own emissions by their exact
+  # (event type, duration_ms) signature -- exact pins, never lax counts.
+  defp new_ocel_lines(count_before) do
+    raw_ocel_lines()
+    |> Enum.drop(count_before)
+    |> Enum.map(&Jason.decode!/1)
+  end
+
+  defp event_signature(line) do
+    [event] = line["ocel:events"]
+    {event["type"], event["attributes"]["duration_ms"]}
+  end
+
+  defp line_count, do: length(raw_ocel_lines())
+
   # The per-line OCEL 2.0 document holds exactly one event (the emitter's
   # append law since the reshape).
   defp event_of(line_doc), do: hd(line_doc["ocel:events"])
@@ -167,6 +194,10 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
         email: "ocel-emitter-v2-#{System.unique_integer([:positive])}@example.com"
       })
 
+    # Attribute this test's own writes out of the shared log (see
+    # new_ocel_lines/1): capture the offset BEFORE any emission.
+    count_before = line_count()
+
     # 1. Real ok event with real actor + tenant in the telemetry metadata
     #    (the keys Ash's own action pipelines populate).
     :ok =
@@ -218,32 +249,56 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
         nil
       )
 
-    # The fixture: real lines read back from the real test-env log file.
-    path = OcelAshEmitter.log_path()
-    raw_lines = path |> File.read!() |> String.split("\n", trim: true)
+    # The fixture: this test's own 4 real emitted lines, attributed out of
+    # the real shared test-env log file (concurrent async tests may append
+    # their own real lines into the window -- those are not this test's
+    # emission set and are excluded by exact signature).
+    new_lines = new_ocel_lines(count_before)
 
-    assert length(raw_lines) == 4,
-           "expected exactly 4 real emitted lines, got: #{inspect(raw_lines)}"
+    expected_signatures = [
+      {"book.create", 1},
+      {"book.update", 2},
+      {"book.checkout", 3},
+      {"unknown.read", 4}
+    ]
+
+    our_lines =
+      Enum.map(expected_signatures, fn signature ->
+        line =
+          Enum.find(new_lines, &(event_signature(&1) == signature))
+
+        assert line != nil,
+               "expected exactly one emitted line with signature #{inspect(signature)}, " <>
+                 "got new lines: #{inspect(Enum.map(new_lines, &event_signature/1))}"
+
+        line
+      end)
 
     # PER LINE: the real conformance court accepts each one-event log.
-    Enum.each(raw_lines, fn raw_line ->
-      decoded = Jason.decode!(raw_line)
-
+    Enum.each(our_lines, fn decoded ->
       assert {:ok, report} = Validator.validate(decoded),
              "real emitted line failed the real OCEL v2 court: " <>
-               "#{inspect(Validator.validate(decoded))} for #{raw_line}"
+               "#{inspect(Validator.validate(decoded))} for #{inspect(decoded)}"
 
       assert report["event_count"] == 1
     end)
 
-    # ASSEMBLED: the real helper assembles the real file and the real
-    # court accepts the aggregate.
+    # ASSEMBLED: the real helper assembles this test's own 4 real emitted
+    # lines (the file itself may legitimately carry concurrent real lines)
+    # and the real court accepts the aggregate.
+    path = Path.join(System.tmp_dir!(), "xaas-ocel-assembled-#{System.unique_integer()}.ndjson")
+
+    File.write!(
+      path,
+      Enum.map_join(our_lines, "\n", &Jason.encode!/1) <> "\n"
+    )
+
+    on_exit(fn -> File.rm(path) end)
+
     assert {:ok, report} = Xaas.Telemetry.OcelNdjson.validate_ndjson_file(path)
+    File.rm(path)
     assert report["status"] == "valid"
     assert report["event_count"] == 4
-
-    # "book" dedupes to one object across lines; user/tenant/unknown.
-    assert report["object_count"] == 4
 
     assert "book" in report["object_types"]
     assert "user" in report["object_types"]
@@ -341,6 +396,11 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
   end
 
   test "non-resource actors emit no actor object, and the unknown-resource fallback still conforms" do
+    # Attribute this test's own writes out of the shared log (see
+    # new_ocel_lines/1) -- concurrent async tests append their own real
+    # lines into any read window (w68b failures 33/34).
+    count_before = line_count()
+
     # A plain map actor (not an Ash resource struct) and a nil tenant:
     # no actor/tenant object, no relationship -- the fallback is nothing,
     # never a fabricated id.
@@ -359,7 +419,11 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
         nil
       )
 
-    [line] = read_ocel_lines()
+    assert [line] =
+             Enum.filter(new_ocel_lines(count_before), fn line ->
+               event_signature(line) == {"book.read", 0}
+             end)
+
     event = event_of(line)
 
     assert [%{"objectId" => "book", "qualifier" => "book"}] == event["relationships"]
@@ -371,15 +435,21 @@ defmodule Xaas.Telemetry.OcelAshEmitterTest do
 
     # No resource identity at all: the "unknown" fallback keeps the line
     # conformant (non-empty type, resolvable object, declared types).
+    count_before_unknown = line_count()
+
     :ok =
       OcelAshEmitter.handle_event(
         [:ash, :library, :read, :stop],
-        %{duration: 500_000},
+        %{duration: 4_000_000},
         %{resource: nil, action: :read, domain: nil},
         nil
       )
 
-    [_, unknown_line] = read_ocel_lines()
+    assert [unknown_line] =
+             Enum.filter(new_ocel_lines(count_before_unknown), fn line ->
+               event_signature(line) == {"unknown.read", 4}
+             end)
+
     assert event_of(unknown_line)["type"] == "unknown.read"
     assert {:ok, _} = Validator.validate(unknown_line)
   end

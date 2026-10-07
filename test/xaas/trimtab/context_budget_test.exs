@@ -14,6 +14,7 @@ defmodule Xaas.Trimtab.ContextBudgetTest do
     assert ContextBudget.new(8, 0) == {:error, :invalid_budget}
     assert {:ok, %ContextBudget{}} = ContextBudget.new(8, 10_000)
   end
+
   test "budget rejects byte overflow" do
     budget = %ContextBudget{max_items: 100, max_bytes: 8}
 

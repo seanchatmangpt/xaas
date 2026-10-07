@@ -83,8 +83,11 @@ defmodule Xaas.Eds.FalsifierTest do
           predicate: fn %{required_key: v} -> v end
         })
 
-      assert {:error, message} = Falsifier.run(broken, %{})
-      assert message =~ "raised"
+      assert {:error, error} = Falsifier.run(broken, %{})
+      assert is_map(error)
+      assert error[:phase] == :predicate_execution
+      assert error[:error] == "FunctionClauseError"
+      assert is_binary(error[:message]) and byte_size(error[:message]) > 0
     end
 
     test "a predicate returning a non-verdict value is surfaced as an error" do

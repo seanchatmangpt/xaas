@@ -35,6 +35,17 @@ defmodule XaasWeb.HealthControllerTest do
     def request(_opts), do: {:error, %{reason: :econnrefused}}
   end
 
+  defmodule FakeOntopRaisingClient do
+    @moduledoc """
+    Real, simple stand-in that raises -- same disclosed stand-in pattern as
+    `FakeOntopClient`/`FakeOntopDownClient`, exercising the controller's real
+    rescue path so the resulting error detail is machine-readable structure,
+    not a flat stringified `Exception.message/1`.
+    """
+
+    def request(_opts), do: raise("ontop client exploded")
+  end
+
   setup do
     Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     Ecto.Adapters.SQL.Sandbox.checkout(Xaas.LegacyRepo)
@@ -43,6 +54,14 @@ defmodule XaasWeb.HealthControllerTest do
 
   defp auth(conn) do
     put_req_header(conn, "authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+  end
+
+  # Configure the Ontop sub-check for tests that exercise its real
+  # probe path (`config :xaas, :ontop_endpoint` gates the check).
+  defp configure_ontop! do
+    Application.put_env(:xaas, :ontop_endpoint, "http://ontop:8080")
+    on_exit(fn -> Application.delete_env(:xaas, :ontop_endpoint) end)
+    :ok
   end
 
   # Real fresh completed tick job so the happy-path test below reflects a
@@ -78,6 +97,7 @@ defmodule XaasWeb.HealthControllerTest do
        %{
          conn: conn
        } do
+    configure_ontop!()
     Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopClient)
     on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
     insert_fresh_tick_job!()
@@ -111,14 +131,54 @@ defmodule XaasWeb.HealthControllerTest do
     end
   end
 
-  test "GET /internal-api/health real-reports 503 when the ultracode :tick cron has never fired",
+  test "GET /internal-api/health real-reports ultracode_tick as skipped (:warming_up), aggregate 200, when the tick cron has not yet fired since boot",
        %{conn: conn} do
+    configure_ontop!()
     Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopClient)
     on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
 
     # Deliberately no insert_fresh_tick_job!() -- the real, empty
     # `oban_jobs` table (in this sandboxed transaction) is exactly the
-    # "cron never fired" case `Xaas.Ultracode.TickHealth` exists to catch.
+    # freshly-booted-server case (W310g x3 deterministic 503): the cron
+    # has had no fire opportunity yet, so per W174's law (unconfigured /
+    # no-opportunity != down) this is a typed `skipped (:warming_up)`,
+    # not an aggregate failure.
+    conn =
+      conn
+      |> auth()
+      |> get("/internal-api/health")
+
+    assert conn.status == 200
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["status"] == "ok"
+
+    tick = body["checks"]["ultracode_tick"]
+    assert tick["status"] == "skipped"
+    assert tick["reason"] == "warming_up"
+    assert tick["last_tick_at"] == nil
+    assert is_binary(tick["node_boot_at"])
+    assert is_binary(tick["warmup_until"])
+    assert body["checks"]["repo"]["status"] == "ok"
+  end
+
+  test "GET /internal-api/health real-reports 503 once the warmup window has passed with no post-boot tick evidence (dead cron, not warming up)",
+       %{conn: conn} do
+    configure_ontop!()
+    Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopClient)
+    on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
+
+    # Deterministically move node boot past the grace window via the
+    # controller's test-only boot-time seam -- no sleeping out the real
+    # `stale_after_minutes + 2` minutes.
+    Application.put_env(
+      :xaas,
+      :health_node_boot_at_override,
+      DateTime.add(DateTime.utc_now(), -3600, :second)
+    )
+
+    on_exit(fn -> Application.delete_env(:xaas, :health_node_boot_at_override) end)
+
     conn =
       conn
       |> auth()
@@ -128,13 +188,16 @@ defmodule XaasWeb.HealthControllerTest do
 
     body = Jason.decode!(conn.resp_body)
     assert body["status"] == "error"
-    assert body["checks"]["ultracode_tick"]["status"] == "error"
-    assert body["checks"]["ultracode_tick"]["detail"]["last_tick_at"] == nil
+
+    tick = body["checks"]["ultracode_tick"]
+    assert tick["status"] == "error"
+    assert tick["detail"]["reason"] =~ "since node boot"
     assert body["checks"]["repo"]["status"] == "ok"
   end
 
-  test "GET /internal-api/health real-reports 503 and the real failing check when Ontop is unreachable",
+  test "GET /internal-api/health real-reports 503 and the real failing check when Ontop is configured but unreachable",
        %{conn: conn} do
+    configure_ontop!()
     Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopDownClient)
     on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
 
@@ -151,8 +214,57 @@ defmodule XaasWeb.HealthControllerTest do
     assert body["checks"]["repo"]["status"] == "ok"
   end
 
+  test "GET /internal-api/health returns 200 with ontop skipped (not failing) when Ontop is not configured",
+       %{conn: conn} do
+    # Deliberately no configure_ontop!() -- native dev leaves
+    # `config :xaas, :ontop_endpoint` absent, and the fail-closed
+    # aggregate treats a config-gated skipped check as not down.
+    Application.delete_env(:xaas, :ontop_endpoint)
+    insert_fresh_tick_job!()
+
+    conn =
+      conn
+      |> auth()
+      |> get("/internal-api/health")
+
+    assert conn.status == 200
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["status"] == "ok"
+
+    ontop = body["checks"]["ontop"]
+    assert ontop["status"] == "skipped"
+    assert ontop["reason"] == "not_configured"
+  end
+
+  test "GET /internal-api/health renders a raised check as structured error detail, not a flat string",
+       %{conn: conn} do
+    configure_ontop!()
+    Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopRaisingClient)
+    on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
+
+    conn =
+      conn
+      |> auth()
+      |> get("/internal-api/health")
+
+    assert conn.status == 503
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["status"] == "error"
+
+    ontop = body["checks"]["ontop"]
+    assert ontop["status"] == "error"
+    assert is_map(ontop["detail"])
+    assert ontop["detail"]["exception"] == "RuntimeError"
+    assert is_binary(ontop["detail"]["message"])
+    assert ontop["detail"]["message"] =~ "ontop client exploded"
+    assert body["checks"]["repo"]["status"] == "ok"
+  end
+
   test "an Ash resource-count check succeeds even though the underlying resources deny-by-default authorize",
        %{conn: conn} do
+    configure_ontop!()
     Application.put_env(:xaas, :ontop_proxy_http_client, FakeOntopClient)
     on_exit(fn -> Application.delete_env(:xaas, :ontop_proxy_http_client) end)
 

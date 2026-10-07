@@ -252,18 +252,24 @@ defmodule Xaas.Sa2a.RouteTest do
     end
   end
 
-  # The closed GALL vocabulary, as `AshA2A.Gall.Capability.labels/0` returns it
-  # in ash_a2a 26.9.21 (lib/ash_a2a/gall/capability.ex). It is written out here
-  # because the ash_a2a xaas pins (26.9.12) does not ship `AshA2A.Gall`; the
-  # first test below fails the day it does, so this mirror is replaced by the
-  # module rather than left to drift.
-  @gall_labels ~w(Read Write Edit Commit Push Publish Deploy Merge)
+  # The closed GALL vocabulary, sourced from the real pinned dependency:
+  # the ash_a2a xaas pin now SHIPS `AshA2A.Gall.Capability` (the exact
+  # drift this describe block's first test was written to catch), so the
+  # hand mirror is retired in favor of `AshA2A.Gall.Capability.labels/0`.
+  @gall_labels AshA2A.Gall.Capability.labels()
 
   describe "capability typing: GALL labels are not sj:capabilityId values" do
-    test "the pinned ash_a2a does not ship AshA2A.Gall.Capability" do
-      refute Code.ensure_loaded?(AshA2A.Gall.Capability),
-             "ash_a2a now ships AshA2A.Gall.Capability: replace @gall_labels with " <>
-               "AshA2A.Gall.Capability.labels/0 and assert its decode/1 refuses \"recipe:mix-format\""
+    test "the pinned ash_a2a ships the closed GALL vocabulary" do
+      assert Code.ensure_loaded?(AshA2A.Gall.Capability)
+
+      assert AshA2A.Gall.Capability.labels() ==
+               ~w(Read Write Edit Commit Push Publish Deploy Merge)
+
+      # Upstream decode is closed and un-normalized: a foreign scheme and
+      # a downcased label are both refusals, never aliasing into authority.
+      assert AshA2A.Gall.Capability.decode("recipe:mix-format") == :error
+      assert AshA2A.Gall.Capability.decode("push") == :error
+      assert AshA2A.Gall.Capability.decode("Push") == {:ok, :push}
     end
 
     for label <- @gall_labels, spelling <- [label, String.downcase(label)] do

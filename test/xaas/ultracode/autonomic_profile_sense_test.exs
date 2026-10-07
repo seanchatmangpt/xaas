@@ -93,6 +93,36 @@ defmodule Xaas.Ultracode.AutonomicProfileSenseTest do
   end
 
   # ------------------------------------------------------------------
+  # Single-repo suite precedence (W194/W229 regression)
+  # ------------------------------------------------------------------
+
+  test "single-repo ctx uses the repo's REGISTERED suite when opts omit :suite", %{
+    clone: clone
+  } do
+    Application.put_env(:xaas, :ultracode_repos, %{
+      "fix" => %{
+        path: clone,
+        sensing: "fix-jira",
+        suite: "fix-dod",
+        canonical_suite: "fix-canonical",
+        refresh: false
+      }
+    })
+
+    ctx = Autonomic.new_ctx(repo: "fix")
+    assert ctx.repos["fix"].suite == "fix-dod"
+    assert ctx.repos["fix"].canonical_suite == "fix-canonical"
+
+    # Explicit opts still win over the registry.
+    ctx2 = Autonomic.new_ctx(repo: "fix", suite: "aps-dod")
+    assert ctx2.repos["fix"].suite == "aps-dod"
+
+    # An EXPLICIT nil canonical_suite still skips the canonical suite.
+    ctx3 = Autonomic.new_ctx(repo: "fix", canonical_suite: nil)
+    assert ctx3.repos["fix"].canonical_suite == nil
+  end
+
+  # ------------------------------------------------------------------
   # Profile resolution
   # ------------------------------------------------------------------
 
@@ -203,9 +233,30 @@ defmodule Xaas.Ultracode.AutonomicProfileSenseTest do
 
     register(clone, true)
 
+    # Config truth moved this wave (v26.10.6): `:ultracode_verifier_suites`
+    # baseline is now `%{}` in config.exs, so the wave's suite must be
+    # registered here for the suite-health gate to see it (and unmanaged --
+    # no `:health` key -- so the gate passes it untouched). The single-repo
+    # suite-precedence law resolves explicit options first, so the run names
+    # its suites explicitly.
+    Application.put_env(:xaas, :ultracode_verifier_suites, %{
+      "fix-dod" => %{
+        env: %{},
+        max_output_bytes: 16_384,
+        steps: [%{id: "verify", timeout_ms: 60_000, argv: ["true"]}]
+      }
+    })
+
     # `only` selects no sensed item, so the wave exercises sense + ledger +
     # receipt for real without dispatching a worker.
-    assert {:ok, _report} = Autonomic.run(repo: "fix", only: ["no-such-item"], capacity: 1)
+    assert {:ok, _report} =
+             Autonomic.run(
+               repo: "fix",
+               suite: "fix-dod",
+               canonical_suite: nil,
+               only: ["no-such-item"],
+               capacity: 1
+             )
 
     [ledger_path] =
       Application.fetch_env!(:xaas, :ultracode_ticket_dir)

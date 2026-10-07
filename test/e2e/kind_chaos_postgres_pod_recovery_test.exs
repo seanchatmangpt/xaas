@@ -59,7 +59,6 @@ defmodule Xaas.E2E.KindChaosPostgresPodRecoveryTest do
   assertion failure) once the recovered pod is reachable again.
   """
   use ExUnit.Case, async: false
-  @moduletag :kind
 
   @kind_context "kind-xaas"
   @namespace "default"
@@ -67,6 +66,31 @@ defmodule Xaas.E2E.KindChaosPostgresPodRecoveryTest do
   @recovery_timeout_ms 90_000
   @poll_interval_ms 1_000
   @marker_table "chaos_test_markers"
+
+  # w155 typed-skip convention (w408): when the `kind-xaas` cluster is
+  # not reachable, the whole module emits a typed skip (named reason,
+  # visible in the ExUnit summary) instead of failing loudly on the
+  # missing cluster. The probe runs at module-compile time, mirroring
+  # the existing `System.find_executable("node")` idiom in
+  # test/xaas/ultracode/dispatcher_preflight_test.exs (a remote-call
+  # expression inline in the attribute -- local defp calls are not
+  # resolvable at module-attribute position). A reachable cluster
+  # never skips (do: false).
+  @moduletag :kind
+  @moduletag skip:
+                if(
+                  match?(
+                    {_, 0},
+                    System.cmd(
+                      "kubectl",
+                      ["--context", "kind-xaas", "get", "nodes", "--request-timeout=5s"],
+                      stderr_to_stdout: true
+                    )
+                  ),
+                  do: false,
+                  else:
+                    "kind-xaas cluster not reachable (`kubectl --context kind-xaas get nodes --request-timeout=5s` probe failed) -- machinery absent, typed skip per w155"
+                )
 
   test "killing the live postgres pod: data survives recreation because a real PVC backs it" do
     original_pod = live_pod_name!()

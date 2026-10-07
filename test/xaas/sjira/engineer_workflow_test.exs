@@ -3,6 +3,31 @@ defmodule Xaas.Sjira.EngineerWorkflowTest do
   alias Xaas.Sjira.EngineerWorkflow
   alias Xaas.Sjira.EngineerWorkflow.Codec
 
+  describe "mix xaas.sjira.engineer_work invalid_jsonl refusal" do
+    @describetag :tmp_dir
+    test "refusal detail is structured (line + error type + position), not a stringified message",
+         %{tmp_dir: tmp_dir} do
+      input = Path.join(tmp_dir, "bad.jsonl")
+      File.write!(input, "{not json\n")
+
+      error =
+        assert_raise Mix.Error, fn ->
+          Mix.Task.rerun("xaas.sjira.engineer_work", [input])
+        end
+
+      message = Exception.message(error)
+
+      assert message =~ "REFUSED(invalid_jsonl)"
+      # Structured detail: the refusal must carry the line number, the real
+      # error type, and the parse position as inspectable fields — not a
+      # stringified exception message.
+      assert message =~ "line: 1"
+      assert message =~ "Jason.DecodeError"
+      assert message =~ "position:"
+      refute message =~ "unexpected byte"
+    end
+  end
+
   defp work(id, overrides \\ %{}) do
     Map.merge(
       %{

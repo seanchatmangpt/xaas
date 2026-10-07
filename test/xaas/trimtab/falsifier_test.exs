@@ -7,7 +7,10 @@ defmodule Xaas.Trimtab.FalsifierTest do
 
     ev = Evidence.new(s, :admitted, :drifted, fn w -> w == :drifted end)
     assert Falsifier.evaluate(ev) == :falsified
-    assert Falsifier.evaluate(Evidence.new(s, :admitted, :ok, fn w -> w == :drifted end)) == :not_falsified
+
+    assert Falsifier.evaluate(Evidence.new(s, :admitted, :ok, fn w -> w == :drifted end)) ==
+             :not_falsified
+
     assert Falsifier.evaluate(Evidence.new(s, :admitted, :ok)) == :not_falsified
   end
 end

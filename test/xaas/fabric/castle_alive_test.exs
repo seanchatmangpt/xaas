@@ -64,7 +64,10 @@ defmodule Xaas.Fabric.CastleAliveTest do
     on_exit(fn ->
       File.rm(key)
       File.rm_rf(root)
-      for k <- ~w(CASTLE_BIN CASTLE_BIN_SHA256 CASTLE_SIGNING_KEY_PATH CASTLE_KEY_ID CASTLE_EVIDENCE_ROOT), do: System.delete_env(k)
+
+      for k <-
+            ~w(CASTLE_BIN CASTLE_BIN_SHA256 CASTLE_SIGNING_KEY_PATH CASTLE_KEY_ID CASTLE_EVIDENCE_ROOT),
+          do: System.delete_env(k)
 
       if is_nil(previous),
         do: Application.delete_env(:xaas, :castle_adapter_profiles),
@@ -108,14 +111,22 @@ defmodule Xaas.Fabric.CastleAliveTest do
   end
 
   defp planes(amount, overrides \\ %{}) do
-    rows = %{"order" => [%{"subject" => "urn:order:10", "customer" => "urn:party:1", "amount" => to_string(amount)}]}
+    rows = %{
+      "order" => [
+        %{"subject" => "urn:order:10", "customer" => "urn:party:1", "amount" => to_string(amount)}
+      ]
+    }
 
     base = %{
-      projection: [{Planes.Projection, vkg: [engine: Xaas.Test.VKGObservationEngine, rows_by_contract: rows]}],
+      projection: [
+        {Planes.Projection, vkg: [engine: Xaas.Test.VKGObservationEngine, rows_by_contract: rows]}
+      ],
       process: [{Planes.Process, []}],
       law: [{Planes.Law, max_amount_minor: 500_000}],
       evidence: [{Planes.Evidence, []}],
-      actuation: [{Planes.Actuation, intent: castle_intent(), allowed_authorities: ["bounded-do"]}]
+      actuation: [
+        {Planes.Actuation, intent: castle_intent(), allowed_authorities: ["bounded-do"]}
+      ]
     }
 
     Map.merge(base, overrides)
@@ -126,12 +137,30 @@ defmodule Xaas.Fabric.CastleAliveTest do
     out = Fabric.run(e, planes(470_000))
 
     assert out.refusal == nil, inspect(out.refusal)
-    assert out.stages == [:requested, :qualified, :constructed, :executed, :observed, :receipted, :reconciled]
+
+    assert out.stages == [
+             :requested,
+             :qualified,
+             :constructed,
+             :executed,
+             :observed,
+             :receipted,
+             :reconciled
+           ]
+
     assert out.standing == :evidenced
     assert out.do_crossings == 1
     assert out.facts["actuation.result"].status == :succeeded
     assert out.facts["actuation.observed"]["receipt_durable"] == true
-    assert Map.keys(out.served_by) |> Enum.sort() == [:actuation, :evidence, :law, :process, :projection]
+
+    assert Map.keys(out.served_by) |> Enum.sort() == [
+             :actuation,
+             :evidence,
+             :law,
+             :process,
+             :projection
+           ]
+
     assert [_ | _] = Ash.read!(ActuationReceipt, authorize?: false)
   end
 
@@ -226,14 +255,23 @@ defmodule Xaas.Fabric.CastleAliveTest do
   test "four refusal shapes normalize to one taxonomy" do
     assert %{class: :semantic_refusal} = Failure.normalize(%{class: :refused_admission}, :law)
     assert %{class: :authority_refusal} = Failure.normalize(%{class: :refused_authority}, :law)
-    assert %{class: :realization_failed, transient?: true} = Failure.normalize({:trap, %{class: :trap}}, :evidence)
-    assert %{class: :unsupported} = Failure.normalize({:unsupported, %{class: :unsupported}}, :evidence)
+
+    assert %{class: :realization_failed, transient?: true} =
+             Failure.normalize({:trap, %{class: :trap}}, :evidence)
+
+    assert %{class: :unsupported} =
+             Failure.normalize({:unsupported, %{class: :unsupported}}, :evidence)
+
     assert %{class: :semantic_refusal} = Failure.normalize("REFUSED:PAYMENT_AMOUNT_ZERO", :castle)
-    assert %{class: :realization_failed} = Failure.normalize({:BLOCKED_CASTLE_RUNTIME_CONFIGURATION, nil}, :castle)
+
+    assert %{class: :realization_failed} =
+             Failure.normalize({:BLOCKED_CASTLE_RUNTIME_CONFIGURATION, nil}, :castle)
   end
 
   test "castle's envelope source names no concrete realization" do
     src = File.read!(Path.expand("~/castle/src/operation_envelope.rs"))
-    for banned <- ["payments::", "Fixture", "ash_", "Registry", "Orchestrator"], do: refute(src =~ banned)
+
+    for banned <- ["payments::", "Fixture", "ash_", "Registry", "Orchestrator"],
+        do: refute(src =~ banned)
   end
 end

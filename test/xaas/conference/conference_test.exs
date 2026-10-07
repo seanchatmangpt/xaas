@@ -108,7 +108,15 @@ defmodule Xaas.ConferenceTest do
     diamond = ["Anthropic", "OpenAI", "Google DeepMind", "Microsoft"]
 
     for {name, tier} <-
-          Enum.zip(diamond ++ ["Vercel", "Fly.io", "Tailwind Labs"], [:diamond, :diamond, :diamond, :diamond, :gold, :silver, :bronze]) do
+          Enum.zip(diamond ++ ["Vercel", "Fly.io", "Tailwind Labs"], [
+            :diamond,
+            :diamond,
+            :diamond,
+            :diamond,
+            :gold,
+            :silver,
+            :bronze
+          ]) do
       create!(Sponsor, %{
         name: name,
         slug: slug(name),
@@ -190,6 +198,7 @@ defmodule Xaas.ConferenceTest do
       |> Ash.read!(authorize?: false)
 
     assert length(diamond) == 4
+
     assert Enum.map(diamond, & &1.name) |> Enum.sort() == [
              "Anthropic",
              "Google DeepMind",

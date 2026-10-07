@@ -11,6 +11,7 @@ defmodule Xaas.Trimtab.RecoveryTest do
 
     fs = fs1 = [f, elem(Failure.new(:b, :transient, :timeout), 1)]
     assert Recovery.next(ps, :plan, fs) == {:error, :no_lawful_provider}
+
     assert Recovery.record(fs1, :b, :transient, :timeout) ==
              {:ok, fs1 ++ [struct(Failure, provider_id: :b, class: :transient, reason: :timeout)]}
   end

@@ -63,7 +63,6 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChangeStressTest do
           name: "Stress Target Provider #{run_tag}",
           slug: "stress-target-provider-#{run_tag}",
           description: "real concurrent maker-checker race target",
-          status: :pending,
           org_id: org_id
         },
         action: :create,

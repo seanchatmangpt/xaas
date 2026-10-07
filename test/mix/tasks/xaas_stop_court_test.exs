@@ -33,6 +33,24 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
 
   @rdflib System.cmd("python3", ["-c", "import rdflib"], stderr_to_stdout: true) |> elem(1) == 0
 
+  # The real goal.ttl's G0 court (GC23-0) witnesses ggen_igniter's prose
+  # admission machinery (`mix semantic_jira.compile_prose`), retired upstream by
+  # ggen_igniter@dc27242; without the task the court exits UNKNOWN(75)
+  # machinery-absent and the corpus is only ALIVE at machinery-bearing
+  # ggen_igniter SHAs (e.g. cb399128). Named skip, same convention as
+  # test/sjira/v26_9_23_goal_test.exs.
+  @compile_prose_task Path.join(
+                        System.get_env("GGEN_IGNITER_DIR") || Path.expand("~/ggen_igniter"),
+                        "lib/mix/tasks/semantic_jira.compile_prose.ex"
+                      )
+
+  @compile_prose_skip (if File.regular?(@compile_prose_task) do
+                         false
+                       else
+                         "needs ggen_igniter mix semantic_jira.compile_prose (retired upstream by ggen_igniter@dc27242; " <>
+                           "the goal.ttl court corpus is ALIVE at machinery-bearing ggen_igniter SHAs, e.g. cb399128)"
+                       end)
+
   @q3 ~s(""")
 
   # STOP(GC-FRI-0800) contract: byte-equal (trimmed) to docs/sjira/v26.9.22/friday/stop.rq,
@@ -615,6 +633,7 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     assert String.trim(File.read!(@stop_rq)) == String.trim(@contract_stop_rq)
   end
 
+  @tag skip: @compile_prose_skip
   test "the real goal.ttl: 13 gates G0..G12, stop.rq in sync, FRI-T5 tuple-complete, STOP=false" do
     receipts =
       Path.join(System.tmp_dir!(), "stop_court_real_#{System.unique_integer([:positive])}")
@@ -641,8 +660,13 @@ defmodule Mix.Tasks.Xaas.StopCourtTest do
     assert tuple["consequence_class"] == "manufacture"
     assert digest == python_digest(tuple)
     # Only G0 ran; G1..G12 have no receipt in this fresh dir, so STOP cannot hold.
+    # Anti-vacuity (W195 class): the negative is only meaningful with proof the
+    # ran gate truly passed — an ERRORING G0 (UNKNOWN exit 75) would also give
+    # stop == false / ran == 1, so pin the ran gate's positive ALIVE standing.
     assert report.stop == false
     assert Enum.count(report.gates, & &1.ran) == 1
+
+    assert [%{id: "G0", standing: "ALIVE"}] = Enum.filter(report.gates, & &1.ran)
   end
 
   # ------------------------------------------------------------------ release evidence (lane V23-S)

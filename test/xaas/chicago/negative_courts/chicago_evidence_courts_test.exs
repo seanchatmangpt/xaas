@@ -77,7 +77,9 @@ defmodule Xaas.Chicago.NegativeCourts.EvidenceCourtsTest do
   test "CHI-CASE-008 exact-subject positive control: evidence bound to THE exact Chicago subject admits" do
     exact =
       Court.decide(
-        Court.bounded_purchase(%{evidence: %{subject: M.subject(), kind: :exact_subject_observation}}),
+        Court.bounded_purchase(%{
+          evidence: %{subject: M.subject(), kind: :exact_subject_observation}
+        }),
         Court.baseline_policy()
       )
 
@@ -111,7 +113,9 @@ defmodule Xaas.Chicago.NegativeCourts.EvidenceCourtsTest do
     M.reconcile_unknown_after_dispatch()
 
     assert run_count() == runs_before, "decide/reconcile must not create Xaas.Ultracode.Run rows"
-    assert epoch_count() == epochs_before, "decide/reconcile must not create Xaas.Ultracode.Epoch rows"
+
+    assert epoch_count() == epochs_before,
+           "decide/reconcile must not create Xaas.Ultracode.Epoch rows"
   end
 
   # Run/Epoch are tenant-:enforced by default; the row-count invariant needs

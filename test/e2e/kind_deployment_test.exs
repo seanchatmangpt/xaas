@@ -62,20 +62,55 @@ defmodule Xaas.E2E.KindDeploymentTest do
   migration manually this session.
   """
   use ExUnit.Case, async: false
-  @moduletag :kind
 
   @kind_context "kind-xaas"
   @local_port 4001
   @base_url "http://localhost:#{@local_port}"
 
+  # w155 typed-skip convention (w408): when the `kind-xaas` cluster is
+  # not reachable, the whole module emits a typed skip (named reason,
+  # visible in the ExUnit summary) instead of failing loudly on the
+  # missing cluster. The probe runs at module-compile time, mirroring
+  # the existing `System.find_executable("node")` idiom in
+  # test/xaas/ultracode/dispatcher_preflight_test.exs (a remote-call
+  # expression inline in the attribute -- local defp calls are not
+  # resolvable at module-attribute position). A reachable cluster
+  # never skips (do: false).
+  @moduletag :kind
+  @moduletag skip:
+                if(
+                  match?(
+                    {_, 0},
+                    System.cmd(
+                      "kubectl",
+                      ["--context", "kind-xaas", "get", "nodes", "--request-timeout=5s"],
+                      stderr_to_stdout: true
+                    )
+                  ),
+                  do: false,
+                  else:
+                    "kind-xaas cluster tests skipped: `kubectl --context kind-xaas get nodes --request-timeout=5s` probe failed -- machinery absent, typed skip per w155"
+                )
+
   setup_all do
+    # Guarded so a module skipped by the w155 typed-skip tag above does
+    # not fail loudly here: when the cluster is offline there is nothing
+    # to set up and no test will run against it. Online path unchanged.
     unless port_forward_reachable?() do
-      start_port_forward!()
-      wait_for_reachable!()
+      if match?({_, 0}, System.cmd("kubectl", ["--context", "kind-xaas", "get", "nodes", "--request-timeout=5s"], stderr_to_stdout: true)) do
+        start_port_forward!()
+        wait_for_reachable!()
+      else
+        :ok
+      end
     end
 
-    token = live_internal_api_token!()
-    {:ok, token: token}
+    if port_forward_reachable?() do
+      token = live_internal_api_token!()
+      {:ok, token: token}
+    else
+      :ok
+    end
   end
 
   test "real deployed pod is reachable and returns a real 200", %{token: _token} do

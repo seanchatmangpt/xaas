@@ -242,8 +242,11 @@ defmodule Xaas.Ultracode.SemanticDrivePlanNextTest do
            "workorder:EP-A" => %{type: "WorkOrder", attributes: %{}, relationships: []},
            "receipt:r1" => %{type: "Receipt", attributes: %{}, relationships: []}
          }}
+
       court = Ocel.court_form(observations, Ocel.event_classes() ++ ["PolicyCandidateEmitted"])
-      standard = Ocel.standard_form(observations, Ocel.event_classes() ++ ["PolicyCandidateEmitted"])
+
+      standard =
+        Ocel.standard_form(observations, Ocel.event_classes() ++ ["PolicyCandidateEmitted"])
 
       assert {:ok, %{"status" => "valid"}} = Validator.validate(court)
       assert Ocel.equivalent?(court, standard)

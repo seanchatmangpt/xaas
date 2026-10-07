@@ -17,13 +17,8 @@ defmodule Xaas.Receipt.RProjectionTest do
   @provider "zcode-r-projection"
   @validator Path.expand("~/.claude/dfcm/validate_receipt.py")
 
-  # Only the tests that shell out to the fleet validator depend on it; the
-  # fabric-only refusal tests still run where the validator is absent.
-  @needs_validator if File.regular?(@validator),
-                     do: false,
-                     else:
-                       "needs ~/.claude/dfcm/validate_receipt.py (the fleet R-schema validator)"
-
+  # Closure row 27 (P1-5): presence is asserted, never skipped. A missing
+  # fleet validator is a hard flunk naming the path and the one-command fix.
   @acc "https://ggen-igniter.dev/ontology/semantic-jira#r-projection-acceptance"
   @court "https://ggen-igniter.dev/ontology/semantic-jira#r-projection-court"
 
@@ -62,7 +57,19 @@ defmodule Xaas.Receipt.RProjectionTest do
     %{sha: sha, base: base, repo: repo}
   end
 
-  @tag skip: @needs_validator
+  test "the fleet R-schema validator is present, non-empty, and readable" do
+    fix =
+      "export GGEN_IGNITER_DIR or install: cp <ggen_igniter>/priv/dfcm/validate_receipt.py ~/.claude/dfcm/"
+
+    assert File.regular?(@validator),
+           "missing fleet validator #{inspect(@validator)} — fix: #{fix}"
+
+    assert File.stat!(@validator).size > 0, "validator is empty: #{inspect(@validator)}"
+
+    assert match?({:ok, _}, File.read(@validator)),
+           "validator not readable: #{inspect(@validator)} — fix: #{fix}"
+  end
+
   test "a sealed ALIVE receipt projects to an R the real validator ADMITS",
        %{sha: sha, base: base, repo: repo} do
     {native_path, head} = sealed_native(sha, base, "r-court")
@@ -112,7 +119,6 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert out =~ "ADMITTED " <> r_path
   end
 
-  @tag skip: @needs_validator
   test "without :provider or :actor the provider name falls back to the sealer and the validator still ADMITS",
        %{sha: sha, base: base, repo: repo} do
     {native_path, _head} = sealed_native(sha, base, "r-court")
@@ -125,7 +131,6 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert out =~ "ADMITTED " <> r_path
   end
 
-  @tag skip: @needs_validator
   test "a projection with a missing subject_sha is REFUSED by the real validator",
        %{sha: sha, base: base, repo: repo} do
     {native_path, _head} = sealed_native(sha, base, "r-court")
@@ -143,7 +148,6 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert out =~ "subject_sha"
   end
 
-  @tag skip: @needs_validator
   test "a subject_sha that is not a commit in the local repo is REFUSED by the real validator",
        %{sha: sha, base: base, repo: repo} do
     {native_path, _head} = sealed_native(sha, base, "r-court")
@@ -164,7 +168,6 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert out =~ "R_missing_identity"
   end
 
-  @tag skip: @needs_validator
   test "a court-refuted close projects BUILD_BROKEN with its broken term, still a valid R",
        %{sha: sha, base: base, repo: repo} do
     {native_path, _head} = sealed_native(sha, base, "r-fail")
@@ -203,7 +206,6 @@ defmodule Xaas.Receipt.RProjectionTest do
     assert r["standing"]["broken_term"] == "R_missing_identity"
   end
 
-  @tag skip: @needs_validator
   test "a native receipt with its digest stripped is refused, never defaulted to sealed",
        %{sha: sha, base: base, repo: repo} do
     {native_path, _head} = sealed_native(sha, base, "r-fail")

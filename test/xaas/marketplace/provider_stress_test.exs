@@ -47,7 +47,6 @@ defmodule Xaas.Marketplace.ProviderStressTest do
               name: "Stress Provider #{run_tag}-#{i}",
               slug: "stress-provider-#{run_tag}-#{i}",
               description: "real concurrent-create stress test row",
-              status: :pending,
               org_id: "stress-org-#{run_tag}"
             },
             action: :create,
@@ -96,7 +95,6 @@ defmodule Xaas.Marketplace.ProviderStressTest do
               name: "Stress Provider Race #{run_tag}-#{i}",
               slug: shared_slug,
               description: "real concurrent-create race stress test row",
-              status: :pending,
               org_id: "stress-org-#{run_tag}"
             },
             action: :create,

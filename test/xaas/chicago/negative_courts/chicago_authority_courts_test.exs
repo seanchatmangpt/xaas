@@ -18,7 +18,11 @@ defmodule Xaas.Chicago.NegativeCourts.AuthorityCourtsTest do
       (anti-vacuity). Needs no `Xaas.Chicago.Court`.
   """
 
-  use XaasWeb.ConnCase, async: true
+  # async: false — CHI-CASE-010 mutates the VM-global INTERNAL_API_TOKEN
+  # System env (delete/restore); async execution poisons sibling tests
+  # hitting the auth gate with spurious 503s. Env mutation requires
+  # serialization (W280 / W158 async-env-isolation).
+  use XaasWeb.ConnCase, async: false
 
   Code.require_file("support/mutants.ex", __DIR__)
   alias Xaas.Chicago.Court
@@ -35,7 +39,10 @@ defmodule Xaas.Chicago.NegativeCourts.AuthorityCourtsTest do
 
     # positive controls: the delegated limit is exactly admissible and the
     # bounded baseline admits — the limit law can actually pass
-    M.assert_admitted(Court.decide(Court.bounded_purchase(%{amount: 100}), Court.baseline_policy()))
+    M.assert_admitted(
+      Court.decide(Court.bounded_purchase(%{amount: 100}), Court.baseline_policy())
+    )
+
     M.assert_admitted(M.decide_case("CHI-CASE-001"))
 
     M.assert_deterministic(fn -> M.decide_case("CHI-CASE-002") end)
@@ -81,7 +88,8 @@ defmodule Xaas.Chicago.NegativeCourts.AuthorityCourtsTest do
 
   test "CHI-CASE-010 consumer court: no claimed grant mints DO (:authority_none for every variant)" do
     for claim <- ["DO", "OPERATOR-GRANT", "SURFACE-MINTED", true] do
-      refused = Court.decide(Court.bounded_purchase(%{authority_claim: claim}), Court.baseline_policy())
+      refused =
+        Court.decide(Court.bounded_purchase(%{authority_claim: claim}), Court.baseline_policy())
 
       M.assert_refusal(refused, :authority_none)
       M.assert_no_standing_promotion(refused)

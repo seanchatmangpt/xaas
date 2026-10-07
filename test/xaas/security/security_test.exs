@@ -56,10 +56,20 @@ defmodule Xaas.SecurityTest do
     fully_dispositioned = %{
       "repo" => "green-repo",
       "findings" => [
-        %{"severity" => "high", "source" => "trivy", "file" => "a.txt",
-         "description" => "d", "disposition" => "fixed"},
-        %{"severity" => "low", "source" => "mutation", "file" => "b.txt",
-         "description" => "d2", "disposition" => "refused_by_design"}
+        %{
+          "severity" => "high",
+          "source" => "trivy",
+          "file" => "a.txt",
+          "description" => "d",
+          "disposition" => "fixed"
+        },
+        %{
+          "severity" => "low",
+          "source" => "mutation",
+          "file" => "b.txt",
+          "description" => "d2",
+          "disposition" => "refused_by_design"
+        }
       ]
     }
 
@@ -73,8 +83,7 @@ defmodule Xaas.SecurityTest do
       Security.ingest(%{
         "repo" => "bad",
         "findings" => [
-          %{"severity" => "apocalyptic", "source" => "trivy", "file" => "x",
-           "description" => "d"}
+          %{"severity" => "apocalyptic", "source" => "trivy", "file" => "x", "description" => "d"}
         ]
       })
     end

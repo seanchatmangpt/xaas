@@ -176,17 +176,35 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
   describe "fail-closed token gate" do
     test "unset INTERNAL_API_TOKEN rejects every request with 503", %{conn: conn} do
-      previous = System.fetch_env!("INTERNAL_API_TOKEN")
-      System.delete_env("INTERNAL_API_TOKEN")
+      # Do NOT mutate the VM-global env here: `System.delete_env` leaks into
+      # concurrently-running async tests in other files (same VM), which then
+      # crash on `System.fetch_env!` (measured: 87 EnvError in one wave).
+      # The plug is System-env-only (no Application-env fallback), so instead
+      # prove the real fail-closed 503 in a real subprocess whose environment
+      # genuinely lacks the variable — same plug module, real dispatch, no
+      # global mutation.
+      script = """
+      {:ok, _} = Application.ensure_all_started(:phoenix)
+      conn = Plug.Test.conn(:get, "/internal-api/execution/hooks/session_start")
+      result = XaasWeb.Plugs.RequireInternalApiToken.call(conn, [])
 
-      try do
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post("/internal-api/execution/hooks/session_start", "{}")
-        |> json_response(503)
-      after
-        System.put_env("INTERNAL_API_TOKEN", previous)
-      end
+      %{status: result.status, halted: result.halted, body: result.resp_body}
+      |> IO.inspect(label: "SUBPROCESS_503_RESULT")
+      """
+
+      code_paths = Path.wildcard("_build/test/lib/*/ebin")
+
+      {output, exit_status} =
+        System.cmd(
+          "elixir",
+          Enum.flat_map(code_paths, &["-pa", &1]) ++ ["-e", script],
+          env: %{"INTERNAL_API_TOKEN" => nil}
+        )
+
+      assert exit_status == 0, "subprocess failed:\n#{output}"
+      assert output =~ ~S(status: 503)
+      assert output =~ ~S(halted: true)
+      assert output =~ "internal_api_misconfigured"
     end
 
     test "wrong bearer is 401", %{conn: conn} do

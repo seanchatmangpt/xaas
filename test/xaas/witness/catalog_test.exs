@@ -8,8 +8,15 @@ defmodule Xaas.Witness.CatalogTest do
   @baseline_path Path.join(__DIR__, "fixtures/BASELINE.json")
   @kat_path Path.join(__DIR__, "fixtures/crypto_trust_kat.json")
 
+  # Xaas.Repo runs in :manual sandbox mode; the checkout isolates writes made
+  # during this test, but rows persisted by prior runs (e2e-w55 seeds, earlier
+  # non-wrapped writes) are still visible to reads. Clear the witness tables
+  # inside the checked-out sandbox (same pattern as witness_live_test) so the
+  # catalog assertions are hermetic across runs.
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
+    Xaas.Repo.delete_all(CertifiedReceipt)
+    Xaas.Repo.delete_all(VerificationKey)
     :ok
   end
 
@@ -35,6 +42,7 @@ defmodule Xaas.Witness.CatalogTest do
     # vectors sit outside the admitted enum and are skipped, typed.
     assert length(result.receipts) == 2
     assert [%{algorithm: :es256}, %{algorithm: :ml_dsa65}] = result.receipts
+
     assert result.skipped == [
              {1, "ES256+ML-DSA-65", :algorithm_not_in_admitted_enum},
              {3, "SLH-DSA-SHA2-128s", :algorithm_not_in_admitted_enum}
@@ -46,7 +54,10 @@ defmodule Xaas.Witness.CatalogTest do
 
     # verification keys registered idempotently per unique key material
     key_ids =
-      VerificationKey |> Ash.read!() |> Enum.map(&{&1.algorithm, &1.key_material_hex}) |> MapSet.new()
+      VerificationKey
+      |> Ash.read!()
+      |> Enum.map(&{&1.algorithm, &1.key_material_hex})
+      |> MapSet.new()
 
     assert MapSet.size(key_ids) == 2
     assert Enum.all?(Ash.read!(VerificationKey), &(&1.created_at != nil))

@@ -1,5 +1,5 @@
 {
-  "admission_digest": "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+  "admission_digest": "sha256:04be3224c5c642d85686c57b77a1811a99a65a76a4d67bc5cb6b6e96056bb1dc",
   "admitted_work_order": {
     "acceptance": [
       "one SJ-00x work order from this dir is admitted by GgenIgniter.SemanticJira.admit_work_order/1",
@@ -11,7 +11,7 @@
     "authority_requirement": "NONE",
     "base_sha": "8e72cfcb85bd901ad067589295598eb7580a1442",
     "candidate_sha": null,
-    "definition_digest": "sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58",
+    "definition_digest": "sha256:7c3d4e2ee501c7c6dd01101e2178e8879eec8acf6b9c142cfb918a29013b794a",
     "dependencies": [],
     "description": "xaas already shells to `mix semantic_jira.*` (semantic_crown.ex, mix xaas.semantic.materialize/receipt), but no committed proof shows an admitted WorkOrder from this directory flowing admit -> materialize -> receipt -> replay. Produce that proof.",
     "dimensions": {
@@ -35,6 +35,8 @@
       "receipt seals without the required courts passing"
     ],
     "identity": "SJ-001",
+    "origin_authority": "https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority",
+    "origin_observation": null,
     "path_scope": [
       "lib/xaas/ultracode/**",
       "lib/mix/tasks/xaas.semantic.*",
@@ -65,12 +67,13 @@
     ],
     "standing": "ALIVE",
     "subject": "xaas-semantic-jira-e2e",
+    "target_pack": null,
     "title": "xaas consumes a real Semantic Jira WorkOrder end to end",
-    "work_order_digest": "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7"
+    "work_order_digest": "sha256:04be3224c5c642d85686c57b77a1811a99a65a76a4d67bc5cb6b6e96056bb1dc"
   },
   "base_sha": "8e72cfcb85bd901ad067589295598eb7580a1442",
   "bridge": {
-    "definition_digest": "sha256:c0cc3a2e7d428c29c296d10d85c68cdbcfc241aa4adc0c03cb29048b32921f58",
+    "definition_digest": "sha256:7c3d4e2ee501c7c6dd01101e2178e8879eec8acf6b9c142cfb918a29013b794a",
     "identity": "SJ-001",
     "repository": "seanchatmangpt/xaas",
     "requires": {
@@ -89,16 +92,16 @@
         "receipt seals without the required courts passing"
       ]
     },
-    "source_snapshot_digest": "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+    "source_snapshot_digest": "sha256:04be3224c5c642d85686c57b77a1811a99a65a76a4d67bc5cb6b6e96056bb1dc",
     "subject": "xaas-semantic-jira-e2e"
   },
-  "checkpoint_iri": "urn:semantic-jira:checkpoint:SJ-001@sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+  "checkpoint_iri": "urn:semantic-jira:checkpoint:SJ-001@sha256:04be3224c5c642d85686c57b77a1811a99a65a76a4d67bc5cb6b6e96056bb1dc",
   "dependencies": [],
   "digest_form": "sjira-digest/2",
   "execution_policy": "autonomic_wave_attempt",
   "execution_repo_alias": "sj001",
   "goal": "xaas consumes a real Semantic Jira WorkOrder end to end: xaas already shells to `mix semantic_jira.*` (semantic_crown.ex, mix xaas.semantic.materialize/receipt), but no committed proof shows an admitted WorkOrder from this directory flowing admit -> materialize -> receipt -> replay. Produce that proof.",
-  "graph_digest": "sha256:2da4d98751fa9a9b9c263179d272bda822ff6bdd09b853f44249e651088910d7",
+  "graph_digest": "sha256:04be3224c5c642d85686c57b77a1811a99a65a76a4d67bc5cb6b6e96056bb1dc",
   "provider": "zcode",
   "repository_identity": "seanchatmangpt/xaas",
   "verifier_suite": "sjira-e2e",

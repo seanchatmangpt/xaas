@@ -6,8 +6,6 @@ defmodule Xaas.Igniter.CatalogTest do
   """
   use ExUnit.Case, async: false
 
-  require Ash.Query
-
   alias Xaas.Igniter.Catalog
   alias Xaas.Igniter.PackManifest
   alias Xaas.Igniter.RefusalCode
@@ -49,45 +47,50 @@ defmodule Xaas.Igniter.CatalogTest do
     }
   end
 
+  # 138 as of ggen_igniter 7dbcdb3 (SPARQL_EXISTS_UNSUPPORTED was the wave-added refusal code).
+  @refusal_count 138
+
   @tag :igniter_catalog
-  test "ingesting the REAL refusals schema projects exactly 137 codes" do
-    assert {:ok, 137} = Catalog.ingest(@schema_path)
-    assert 137 = Catalog.list_refusals() |> length()
+  test "ingesting the REAL refusals schema projects exactly 138 codes" do
+    assert {:ok, @refusal_count} = Catalog.ingest(@schema_path)
+    assert @refusal_count = Catalog.list_refusals() |> length()
   end
 
   @tag :igniter_catalog
   test "re-ingest is idempotent (upsert on code)" do
-    assert {:ok, 137} = Catalog.ingest(@schema_path)
-    assert {:ok, 137} = Catalog.ingest(@schema_path)
-    assert 137 = Catalog.list_refusals() |> length()
+    assert {:ok, @refusal_count} = Catalog.ingest(@schema_path)
+    assert {:ok, @refusal_count} = Catalog.ingest(@schema_path)
+    assert @refusal_count = Catalog.list_refusals() |> length()
   end
 
   @tag :igniter_catalog
   test "count_by_family covers every code exactly once" do
-    {:ok, 137} = Catalog.ingest(@schema_path)
+    {:ok, @refusal_count} = Catalog.ingest(@schema_path)
 
     families = Catalog.count_by_family()
-    assert 137 = families |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+    assert @refusal_count = families |> Enum.map(&elem(&1, 1)) |> Enum.sum()
 
     # real family names from the schema itself
-    real_families = real_schema()["refusals"] |> Enum.map(& &1["family"]) |> Enum.uniq() |> Enum.sort()
+    real_families =
+      real_schema()["refusals"] |> Enum.map(& &1["family"]) |> Enum.uniq() |> Enum.sort()
+
     assert real_families == Enum.map(families, &elem(&1, 0))
   end
 
   @tag :igniter_catalog
   test "retryable filter splits the real corpus" do
-    {:ok, 137} = Catalog.ingest(@schema_path)
+    {:ok, @refusal_count} = Catalog.ingest(@schema_path)
 
     expected_retryable =
       real_schema()["refusals"] |> Enum.count(& &1["retryable"])
 
     assert expected_retryable == Catalog.refusals_by_retryable(true) |> length()
-    assert 137 - expected_retryable == Catalog.refusals_by_retryable(false) |> length()
+    assert @refusal_count - expected_retryable == Catalog.refusals_by_retryable(false) |> length()
   end
 
   @tag :igniter_catalog
   test "owner filter returns the owner's real codes" do
-    {:ok, 137} = Catalog.ingest(@schema_path)
+    {:ok, @refusal_count} = Catalog.ingest(@schema_path)
 
     owner =
       real_schema()["refusals"]
@@ -106,7 +109,7 @@ defmodule Xaas.Igniter.CatalogTest do
 
   @tag :igniter_catalog
   test "ingested fields round-trip from the real schema" do
-    {:ok, 137} = Catalog.ingest(@schema_path)
+    {:ok, @refusal_count} = Catalog.ingest(@schema_path)
 
     entry = real_schema()["refusals"] |> Enum.find(& &1["broken_term"])
     code = Catalog.refusals_by_owner(entry["owner"]) |> Enum.find(&(&1.code == entry["code"]))

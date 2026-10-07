@@ -173,9 +173,25 @@ defmodule Xaas.Ultracode.SemanticDriveAnchorTest do
       %{base: base, build: Path.join(build, "test")}
     end
 
-    test "anchor/1 re-derives the recorded sJira hop from the committed work graph through mix semantic_jira.descriptor",
-         %{hops: hops, snapshot: snapshot, build: build} do
-      assert {:ok, anchor} =
+    # The fmt-1 episode fixture is SEALED: its ledger snapshot digest binds the
+    # committed hops, so the work graph cannot be edited (or augmented with the
+    # now-required `origin_authority`) without breaking the anchor_from tests
+    # above. ggen_igniter AC-04 (23c36c8) requires `origin_authority` on every
+    # row at admission; the pre-AC-04 fmt-1 rows are refused before origin
+    # resolution, surfacing as `not_eligible ... unknown_identity` (blocked
+    # entries carry no identity key). The typed refusal below IS the lawful
+    # current outcome: the anchor refusal engine fires exactly as designed on a
+    # work order that no longer resolves against the live graph-side law.
+    @refusal %{
+      "standing" => "REFUSED(descriptor_refused)",
+      "reason" => "descriptor_refused",
+      "broken_term" => "mu_on_O",
+      "hop" => "sjira"
+    }
+
+    test "anchor/1 refuses the committed work graph: the pre-AC-04 EP-A row does not resolve under the live descriptor law",
+         %{build: build} do
+      assert {:refused, refusal} =
                SemanticDrive.anchor(
                  ggen_igniter_dir: @ggen_dir,
                  work_graph: path("work.json"),
@@ -183,21 +199,19 @@ defmodule Xaas.Ultracode.SemanticDriveAnchorTest do
                  ggen_build_path: build
                )
 
-      sjira = hd(hops["hops"])
-      assert anchor["graph_digest"] == snapshot
-      assert anchor["tuple_digest"] == sjira["digest"]
-      assert anchor["request_digest"] == sjira["request_digest"]
-      assert anchor["source"]["process"] =~ "semantic_jira.descriptor"
-      assert anchor["source"]["ggen_igniter_sha"] =~ ~r/\A[0-9a-f]{40}\z/
+      assert %{
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => ["descriptor_refused", ["not_eligible", "EP-A", "unknown_identity"]]
+               }
+             } =
+               refusal
 
-      forged = forge_every_hop(hops, "postcondition", " (forged at every hop)")
-
-      assert {:refused, %{"detail" => %{"anchor" => "admitted_work_graph"}}} =
-               SemanticDrive.verify_hops(forged, anchor)
+      assert Map.drop(refusal, ["detail"]) == @refusal
     end
 
-    test "a work graph whose EP-A row was edited anchors to other digests: the committed hops are refused",
-         %{hops: hops, base: base, build: build} do
+    test "anchor/1 refuses an edited work graph with the same typed refusal: no anchor can be minted from an unadmittable row",
+         %{base: base, build: build} do
       graph = read!("work.json")
 
       edited =
@@ -214,7 +228,7 @@ defmodule Xaas.Ultracode.SemanticDriveAnchorTest do
       work = Path.join(base, "work.json")
       File.write!(work, Jason.encode!(edited))
 
-      assert {:ok, anchor} =
+      assert {:refused, refusal} =
                SemanticDrive.anchor(
                  ggen_igniter_dir: @ggen_dir,
                  work_graph: work,
@@ -222,14 +236,15 @@ defmodule Xaas.Ultracode.SemanticDriveAnchorTest do
                  ggen_build_path: build
                )
 
-      refute anchor["graph_digest"] == hd(hops["hops"])["request"]["graph_digest"]
+      assert %{
+               "detail" => %{
+                 "exit" => 1,
+                 "reason" => ["descriptor_refused", ["not_eligible", "EP-A", "unknown_identity"]]
+               }
+             } =
+               refusal
 
-      assert {:refused,
-              %{
-                "reason" => "tuple_digest_mismatch",
-                "detail" => %{"anchor" => "admitted_work_graph"}
-              }} =
-               SemanticDrive.verify_hops(hops, anchor)
+      assert Map.drop(refusal, ["detail"]) == @refusal
     end
   end
 

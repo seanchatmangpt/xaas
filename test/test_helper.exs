@@ -62,7 +62,10 @@ ExUnit.configure(
     :external_llm,
     :subprocess,
     :property,
-    :castle_kernel
+    :castle_kernel,
+    # EU AI Act compliance suite (test/eu_ai_act/, lane W526): structure gate +
+    # per-title obligation tests. Runs via `mix test --include eu_ai_act`.
+    :eu_ai_act
   ]
 )
 

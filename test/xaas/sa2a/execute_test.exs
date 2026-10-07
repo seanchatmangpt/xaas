@@ -458,7 +458,11 @@ defmodule Xaas.Sa2a.ExecuteTest do
     bad_path = Path.join(dir, "sa2a-bad-#{System.unique_integer([:positive])}.json")
     File.write!(ok_path, Jason.encode!(req))
     File.write!(bad_path, Jason.encode!(%{req | query: "not allowlisted"}))
-    on_exit(fn -> File.rm(ok_path) && File.rm(bad_path) end)
+
+    on_exit(fn ->
+      File.rm(ok_path)
+      File.rm(bad_path)
+    end)
 
     out = ExUnit.CaptureIO.capture_io(fn -> Mix.Tasks.Xaas.Sa2a.Execute.run([ok_path]) end)
     assert %{"status" => "succeeded", "llm_avoidance_ratio" => 1.0} = Jason.decode!(out)

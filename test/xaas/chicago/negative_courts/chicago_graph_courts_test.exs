@@ -38,9 +38,10 @@ defmodule Xaas.Chicago.NegativeCourts.GraphCourtsTest do
     assert Enum.sort(atoms) == Enum.sort(M.refusal_values())
   end
 
-  test "every case is candidateOnly true / authorityClaim NONE / observedStanding UNKNOWN / exact subject literal", %{
-    chicago: chicago
-  } do
+  test "every case is candidateOnly true / authorityClaim NONE / observedStanding UNKNOWN / exact subject literal",
+       %{
+         chicago: chicago
+       } do
     for subject <- M.prediction_subjects(chicago) do
       assert M.literal_object(chicago, subject, M.sj(:candidateOnly)) == RDF.literal(true)
       assert M.literal_object(chicago, subject, M.sj(:authorityClaim)) == RDF.literal("NONE")
@@ -52,11 +53,16 @@ defmodule Xaas.Chicago.NegativeCourts.GraphCourtsTest do
     end
   end
 
-  test "static graph court is conformant on the admitted source (no violations)", %{chicago: chicago} do
+  test "static graph court is conformant on the admitted source (no violations)", %{
+    chicago: chicago
+  } do
     assert M.chicago_graph_violations(chicago) == []
   end
 
-  test "zero authored sj:WorkOrder and sj:Receipt in either source graph", %{chicago: chicago, goal: goal} do
+  test "zero authored sj:WorkOrder and sj:Receipt in either source graph", %{
+    chicago: chicago,
+    goal: goal
+  } do
     assert M.workorder_subjects(chicago) == []
     assert M.receipt_subjects(chicago) == []
     assert M.workorder_subjects(goal) == []
@@ -114,6 +120,10 @@ defmodule Xaas.Chicago.NegativeCourts.GraphCourtsTest do
 
   test "mutant: authority ceiling widened past CONSTRUCT is flagged", %{chicago: chicago} do
     mutant = M.mutate_ceiling(M.read_goal())
-    assert {:authority_ceiling, "GC-XAAS-26.10.1-CHICAGO", "DO"} in M.goal_graph_violations(mutant, chicago)
+
+    assert {:authority_ceiling, "GC-XAAS-26.10.1-CHICAGO", "DO"} in M.goal_graph_violations(
+             mutant,
+             chicago
+           )
   end
 end

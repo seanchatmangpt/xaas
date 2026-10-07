@@ -38,6 +38,25 @@ defmodule Xaas.Sjira.V26923GoalTest do
     @moduletag skip: "needs ~/.claude/dfcm/validate_receipt.py (the fleet R-schema validator)"
   end
 
+  # The GC23-0/GC23-2/GC23-3 courts witness ggen_igniter's prose admission
+  # machinery (`mix semantic_jira.compile_prose`). ggen_igniter main retired
+  # that task (dc27242 "prose is observation-only — compile_prose becomes
+  # observe_prose"; the successor only observes: no WorkOrder delta), so on a
+  # ggen_igniter checkout without the task the courts answer
+  # UNKNOWN(75) machinery-absent and the corpus is only ALIVE at the
+  # machinery-bearing SHAs (the committed STOP receipt is at cb399128).
+  # Named skip, same convention as the rdflib witness above.
+  @compile_prose_task Path.expand("~/ggen_igniter/lib/mix/tasks/semantic_jira.compile_prose.ex")
+
+  @compile_prose_skip (if File.regular?(@compile_prose_task) do
+                         false
+                       else
+                         "needs ggen_igniter mix semantic_jira.compile_prose (retired upstream by ggen_igniter@dc27242; " <>
+                           "the v26.9.23 corpus is ALIVE at machinery-bearing ggen_igniter SHAs, e.g. cb399128)"
+                       end)
+
+  @ggen_igniter_dir Path.expand("~/ggen_igniter")
+
   @rdflib System.cmd("python3", ["-c", "import rdflib"], stderr_to_stdout: true) |> elem(1) == 0
 
   # Gate -> boundary class (V23-P task), Friday gates it subsumes, ARD section 26 falsifiers.
@@ -411,6 +430,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
   # docs/sjira/v26.9.23/successor/ACCEPTED naming the successor prose digest
   # its one open item is BLOCKED(operator_acceptance) (exit 77).
   @tag timeout: 900_000
+  if not File.regular?(@compile_prose_task) do
+    @tag skip: @compile_prose_skip
+  end
+
   test "the registry resolves GC-26.9.23: graph, order receipts and court env; required orders are tuple-complete" do
     receipts = tmp_dir("v23_registry")
 
@@ -432,10 +455,12 @@ defmodule Xaas.Sjira.V26923GoalTest do
     ggen =
       case System.get_env("GGEN_IGNITER_DIR") do
         dir when is_binary(dir) and dir != "" -> Path.expand(dir)
-        _ -> StopCourt.checkpoints()["GC-26.9.23"].ggen_igniter_dir
+        # the checkpoint spec stores `~/ggen_igniter` unexpanded; the court
+        # env is the raw spec, courts expand it themselves
+        _ -> Path.expand(StopCourt.checkpoints()["GC-26.9.23"].ggen_igniter_dir)
       end
 
-    assert report.court_env["GGEN_IGNITER_DIR"] == ggen
+    assert Path.expand(report.court_env["GGEN_IGNITER_DIR"]) == ggen
     assert Enum.map(report.gates, & &1.id) == Enum.map(0..12, &"GC23-#{&1}")
     assert report.stop == false
 
@@ -471,6 +496,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
   # The real GC23-0 court (lane V23-K): prose_spans.py check + ggen_igniter
   # compile_prose --check over the committed projection, under the no-LLM env.
   @tag timeout: 600_000
+  if not File.regular?(@compile_prose_task) do
+    @tag skip: @compile_prose_skip
+  end
+
   test "mix xaas.stop_court --checkpoint GC-26.9.23 --only GC23-0 (real subprocess): ADMITTED ALIVE receipt, STOP=false" do
     receipts = tmp_dir("v23_subprocess")
 
@@ -808,6 +837,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
   end
 
   @tag timeout: 600_000
+  if not File.regular?(@compile_prose_task) do
+    @tag skip: @compile_prose_skip
+  end
+
   test "GC23-0 (real sh + ggen_igniter compile_prose --check) refuses a hand-edited compiled/orders.ttl" do
     repo =
       court_repo(fn dir ->
@@ -824,6 +857,10 @@ defmodule Xaas.Sjira.V26923GoalTest do
   end
 
   @tag timeout: 600_000
+  if not File.regular?(@compile_prose_task) do
+    @tag skip: @compile_prose_skip
+  end
+
   test "GC23-3 (real sh + ggen_igniter --admit-goal) refuses a goal.ttl whose lane order lost sj:postcondition (F1)" do
     repo =
       court_repo(fn dir ->
@@ -1114,8 +1151,14 @@ defmodule Xaas.Sjira.V26923GoalTest do
     assert code == 1
     assert out =~ "unlinked=:tuple_digest_mismatch"
 
+    # Anti-vacuity (W195 class): an UNKNOWN order standing keeps STOP open, but
+    # exit 1 alone cannot distinguish that lawfully-linked UNKNOWN receipt from
+    # the machinery never linking anything — pin the typed printed line.
     write_order_receipt(repo, "WO-A", digest, "UNKNOWN")
-    assert {1, _} = fixture_court(repo)
+
+    {code, out} = fixture_court(repo)
+    assert code == 1
+    assert out =~ "order WO-A standing=UNKNOWN receipt=ADMITTED digest=#{digest}"
 
     write_order_receipt(repo, "WO-A", digest, "ALIVE")
     {code, out} = fixture_court(repo)
@@ -1757,7 +1800,29 @@ defmodule Xaas.Sjira.V26923GoalTest do
       assert counters[name]["value"] == nil, name
       assert counters[name]["why"] =~ "#{me2} is not JSON", name
       assert is_binary(counters[name]["source"]) and is_binary(counters[name]["rule"])
+
+      # The raw Jason decode error is structured, not stringified at the top
+      # level: "why" stays free of exception text and "detail" machine-reads.
+      detail = counters[name]["detail"]
+      assert is_map(detail), name
+
+      assert Map.keys(detail) |> Enum.sort() == ~w(exception_type message original path reason),
+             name
+
+      assert detail["reason"] == "not_json", name
+      assert detail["path"] == me2, name
+      assert detail["exception_type"] == "Jason.DecodeError", name
+      assert is_binary(detail["original"]) and detail["original"] != "", name
+      refute counters[name]["why"] =~ "unexpected byte", name
+      refute counters[name]["why"] =~ "Jason", name
     end
+
+    # Success and string-failure counters expose the same shape, detail nil.
+    File.write!(me2, ~s({"ocel:events": [], "ocel:objects": []}))
+    counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])
+    assert counters["LLM_INVOCATIONS_ON_KNOWN_REFERENCE_PATH"]["detail"] == nil
+
+    File.write!(me2, ~s({"ocel:events": [))
 
     File.write!(me2, ~s({"events": []}))
     counters = StopCourt.episode_counters(dir, ["fmt-1", "me-2"])

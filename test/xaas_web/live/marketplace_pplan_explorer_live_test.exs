@@ -29,7 +29,9 @@ defmodule XaasWeb.MarketplacePplanExplorerLiveTest do
 
     # Petal Components is live on this page: the domain pill is petal's
     # <.badge> (pc-badge classes), rendered through use XaasWeb, :live_view.
-    assert view |> has_element?("#avatar-grid .pc-badge.pc-badge--sm.pc-badge--primary-light", "ISV")
+    assert view
+           |> has_element?("#avatar-grid .pc-badge.pc-badge--sm.pc-badge--primary-light", "ISV")
+
     assert html =~ ~s(role="note")
     assert html =~ "Step 1: Supplier Enrollment"
     assert html =~ "System Dynamics"

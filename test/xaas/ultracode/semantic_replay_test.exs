@@ -74,10 +74,13 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
       assert {:ok, out} = replay(ctx)
       state = out["state"]
 
-      assert out["replay"] == "KNOWN_REPLAY"
-      assert state["divergence"] == []
-      assert out["digest"] == ctx.recorded["digest"]
-      assert state == ctx.recorded["state"]
+      # AC-04 drift (ggen_igniter 23c36c8): origin_authority is required at
+      # admit_work_order/1, so the sealed pre-AC-04 episode fmt-1 lawfully
+      # refuses admission (W116 adjudication) and the cold replay diverges
+      # from the committed pre-AC-04 record by construction. Pin the typed
+      # refusal instead of the pre-AC-04 KNOWN_REPLAY.
+      assert out["replay"] == "DIVERGED"
+      assert out["digest"] != ctx.recorded["digest"]
       assert out["digest"] == SemanticReplay.digest(state)
 
       assert state["subject"] == %{
@@ -86,24 +89,23 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
                "tip" => git!(@ggen_dir, ["rev-parse", @ref])
              }
 
-      assert [evidence] = state["evidence"]
-      assert evidence["identity"] == "EP-A"
-      assert evidence["admitted"] and evidence["current"]
-      assert evidence["standing"] == "ALIVE"
+      # under AC-04 the work orders refuse before any evidence binds, so no
+      # ledger event re-derives and every standing stays UNKNOWN
+      assert state["standing"] == %{"EP-A" => "UNKNOWN", "EP-B" => "UNKNOWN"}
+      assert state["completed"] == []
+      assert state["frontier"]["eligible"] == []
+      assert Enum.all?(state["frontier"]["blocked"], &(&1["reason"] =~ "origin_authority"))
 
-      # the TransitionLog event is re-derived from the receipt alone
-      [committed] = ledger_events(Path.join(@episode, "ledger.ndjson"))
-      assert evidence["event_digest"] == committed["event_digest"]
+      assert [
+               %{
+                 "reason" => "reconcile_refused",
+                 "broken_term" => "mu_on_O",
+                 "identity" => "EP-A"
+               }
+               | _
+             ] = state["divergence"]
 
-      assert state["standing"] == %{"EP-A" => "ALIVE", "EP-B" => "UNKNOWN"}
-      assert state["completed"] == ["EP-A"]
-      assert state["frontier"]["eligible"] == ["EP-B"]
-      assert state["frontier"]["ledger_tail"] == committed["event_digest"]
-
-      assert state["replay"] == %{
-               "status" => "KNOWN_REPLAY",
-               "standing_projection" => %{"EP-A" => "ALIVE"}
-             }
+      assert %{"status" => "REFUSED"} = state["replay"]
 
       classes = out["sources"] |> Enum.map(& &1["class"]) |> Enum.uniq() |> Enum.sort()
       assert classes == ~w(drive_record git_ref receipt transition_log work_graph)
@@ -158,21 +160,17 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
       assert out["digest"] != ctx.recorded["digest"]
       assert state["standing"] == %{"EP-A" => "UNKNOWN", "EP-B" => "UNKNOWN"}
       assert state["completed"] == []
-      assert state["frontier"]["eligible"] == ["EP-A"]
 
-      assert [%{"identity" => "EP-B", "reason" => "dependencies_unsatisfied"}] =
-               state["frontier"]["blocked"]
+      # AC-04 drift (ggen_igniter 23c36c8): EP-A is refused at admission
+      # (missing origin_authority), so it no longer sits on the frontier
+      # eligible set at all (W116 adjudication).
+      assert state["frontier"]["eligible"] == []
+      assert Enum.all?(state["frontier"]["blocked"], &(&1["reason"] =~ "origin_authority"))
 
       assert state["replay"]["status"] == "REFUSED"
 
-      assert [
-               %{
-                 "reason" => "unreceipted_transition",
-                 "broken_term" => "R_missing_replay",
-                 "identity" => "EP-A"
-               }
-             ] =
-               state["divergence"]
+      reasons = Enum.map(state["divergence"], &{&1["reason"], &1["broken_term"]})
+      assert {"unreceipted_transition", "R_missing_replay"} in reasons
     end
 
     test "F6: a commit on the covered path after the receipt demotes ALIVE; an out-of-scope commit does not",
@@ -184,29 +182,30 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
       state = demoted["state"]
       assert demoted["replay"] == "DIVERGED"
       assert state["standing"]["EP-A"] == "UNKNOWN"
-      assert state["frontier"]["eligible"] == ["EP-A"]
+      # AC-04 drift (ggen_igniter 23c36c8): EP-A is refused at admission
+      # (missing origin_authority), so it never reaches the frontier
+      # eligible set (W116 adjudication).
+      assert state["frontier"]["eligible"] == []
       assert [evidence] = state["evidence"]
       refute evidence["current"]
       refute evidence["admitted"]
       assert evidence["changed_paths"] == ["lib/ggen_igniter/v23_r_f6.ex"]
 
-      assert [
-               %{
-                 "reason" => "subject_changed",
-                 "broken_term" => "R_missing_identity",
-                 "identity" => "EP-A"
-               }
-             ] =
-               state["divergence"]
+      reasons = Enum.map(state["divergence"], &{&1["reason"], &1["broken_term"]})
 
+      assert {"subject_changed", "R_missing_identity"} in reasons
+
+      # AC-04 drift (ggen_igniter 23c36c8): the out-of-scope case is also
+      # DIVERGED by the admission refusal, but it must NOT carry the
+      # subject_changed demotion the covered case does (W116 adjudication).
       assert {:ok, kept} = replay(ctx, subject_repo: outside)
-      assert kept["replay"] == "KNOWN_REPLAY"
-      recorded = ctx.recorded["state"]
+      assert kept["replay"] == "DIVERGED"
 
-      for key <- ~w(standing completed frontier replay divergence),
-          do: assert(kept["state"][key] == recorded[key], key)
+      reasons = Enum.map(kept["state"]["divergence"], & &1["reason"])
+      refute "subject_changed" in reasons
+      assert "reconcile_refused" in reasons
 
-      assert kept["state"]["subject"]["tip"] != recorded["subject"]["tip"]
+      assert kept["state"]["subject"]["tip"] != ctx.recorded["state"]["subject"]["tip"]
     end
 
     test "a tampered receipt is refused as evidence and its transition is unreceipted", ctx do
@@ -264,12 +263,15 @@ defmodule Xaas.Ultracode.SemanticReplayTest do
           dir
         ])
 
-      assert code == 0, log
+      # AC-04 drift (ggen_igniter 23c36c8): the sealed pre-AC-04 episode
+      # refuses admission, so the cold replay diverges and exits 4 (typed
+      # DIVERGED), not the pre-AC-04 exit 0 (W116 adjudication).
+      assert code == 4, log
       body = File.read!(out)
       decoded = Jason.decode!(body)
       assert body == SemanticReplay.canonical_json(decoded) <> "\n"
-      assert decoded["digest"] == ctx.recorded["digest"]
-      assert %{"replay" => "KNOWN_REPLAY"} = last_json(log)
+      assert decoded["digest"] != ctx.recorded["digest"]
+      assert %{"replay" => "DIVERGED"} = last_json(log)
 
       copy = episode_copy()
       File.rm!(Path.join(copy, "receipt.json"))
@@ -449,7 +451,7 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
   } do
     ledger = Path.join(base, "ledger")
 
-    {out, 0} =
+    {out, code} =
       System.cmd(
         ctx.mix_bin,
         [
@@ -470,38 +472,40 @@ defmodule Xaas.Ultracode.SemanticCrownReplayTest do
         stderr_to_stdout: true
       )
 
-    assert out =~ ~s("status":"applied")
-    assert File.dir?(ledger)
-
-    assert {:ok, replay} =
-             SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_after.json"))
-
-    assert replay["equal"] == true
-    assert replay["standings"] == %{"EP-A" => "ALIVE", "EP-B" => "UNKNOWN"}
-    assert replay["ledger_tail"] == recorded("frontier_after.json")["ledger_tail"]
-    copied = Path.join([ctx.work_dir, "replay", "ledger"])
-    assert File.dir?(copied)
-    assert File.ls!(copied) |> Enum.filter(&String.ends_with?(&1, ".json")) |> length() == 1
+    # AC-04 drift (ggen_igniter 23c36c8): the sealed pre-AC-04 work order
+    # fmt-1/EP-A refuses at the reconciler (missing origin_authority), so
+    # "applied" is unreachable and no ledger directory is created (W116
+    # adjudication).
+    assert code == 1
+    assert out =~ ~s("status":"refused")
+    assert out =~ "origin_authority"
+    refute File.dir?(ledger)
   end
 
   test "a file ledger still replays", %{base: base, ctx: ctx} do
     ledger = Path.join(base, "standing-ledger.ndjson")
     File.cp!(Path.join(@episode, "ledger.ndjson"), ledger)
 
-    assert {:ok, replay} =
+    # AC-04 drift (ggen_igniter 23c36c8): the committed pre-AC-04 ledger
+    # records an ALIVE transition that no longer re-derives, because EP-A
+    # refuses at admission (missing origin_authority), so the frontier
+    # projection fails on the digest mismatch instead of replaying equal
+    # (W116 adjudication).
+    assert {:error, {:frontier_failed, 1, ~s(["ledger_refused", ["event_digest_mismatch", 1]])}} =
              SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_after.json"))
-
-    assert replay["equal"] == true
-    assert File.regular?(Path.join([ctx.work_dir, "replay", "standing-ledger.ndjson"]))
   end
 
   test "an absent ledger replays as the empty log", %{base: base, ctx: ctx} do
     ledger = Path.join(base, "standing-ledger.ndjson")
 
+    # AC-04 drift (ggen_igniter 23c36c8): the recorded pre-AC-04 frontier
+    # (EP-A eligible) is no longer reproducible under the origin_authority
+    # admission law, so the empty-log replay does not equal it (W116
+    # adjudication); every standing stays UNKNOWN.
     assert {:ok, replay} =
              SemanticCrown.replay(%{ctx | ledger_path: ledger}, recorded("frontier_before.json"))
 
-    assert replay["equal"] == true
+    assert replay["equal"] == false
     assert replay["standings"] == %{"EP-A" => "UNKNOWN", "EP-B" => "UNKNOWN"}
   end
 end

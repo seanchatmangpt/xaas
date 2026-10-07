@@ -61,21 +61,33 @@ defmodule Xaas.Ocel.OcpmTest do
           "type" => "epoch_scheduled",
           "time" => "2026-09-30T09:00:01Z",
           "attributes" => %{"cycle" => 0},
-          "relationships" => [rel("run-1", "run"), rel("epoch-1", "epoch"), rel("/wt/demo", "worktree")]
+          "relationships" => [
+            rel("run-1", "run"),
+            rel("epoch-1", "epoch"),
+            rel("/wt/demo", "worktree")
+          ]
         },
         %{
           "id" => "epoch_scheduled:epoch-2",
           "type" => "epoch_scheduled",
           "time" => "2026-09-30T09:00:02Z",
           "attributes" => %{"cycle" => 0},
-          "relationships" => [rel("run-1", "run"), rel("epoch-2", "epoch"), rel("/wt/demo", "worktree")]
+          "relationships" => [
+            rel("run-1", "run"),
+            rel("epoch-2", "epoch"),
+            rel("/wt/demo", "worktree")
+          ]
         },
         %{
           "id" => "epoch_started:epoch-1",
           "type" => "epoch_started",
           "time" => "2026-09-30T09:01:00Z",
           "attributes" => %{"cycle" => 0},
-          "relationships" => [rel("run-1", "run"), rel("epoch-1", "epoch"), rel("/wt/demo", "worktree")]
+          "relationships" => [
+            rel("run-1", "run"),
+            rel("epoch-1", "epoch"),
+            rel("/wt/demo", "worktree")
+          ]
         },
         %{
           "id" => "epoch_claimed:epoch-1",
@@ -106,7 +118,11 @@ defmodule Xaas.Ocel.OcpmTest do
           "type" => "epoch_missed",
           "time" => "2026-09-30T09:06:00Z",
           "attributes" => %{"cycle" => 0},
-          "relationships" => [rel("run-1", "run"), rel("epoch-2", "epoch"), rel("/wt/demo", "worktree")]
+          "relationships" => [
+            rel("run-1", "run"),
+            rel("epoch-2", "epoch"),
+            rel("/wt/demo", "worktree")
+          ]
         },
         %{
           "id" => "receipt_closed:receipt-1",
@@ -379,7 +395,9 @@ defmodule Xaas.Ocel.OcpmTest do
           "relationships" => [rel("run-1", "run"), rel("run-1", "run")]
         }
       ],
-      "ocel:objects" => [%{"id" => "run-1", "type" => "Run", "attributes" => %{}, "relationships" => []}]
+      "ocel:objects" => [
+        %{"id" => "run-1", "type" => "Run", "attributes" => %{}, "relationships" => []}
+      ]
     }
 
     assert Ocpm.object_type_interactions(document) == %{["Run"] => 1}

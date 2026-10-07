@@ -99,6 +99,7 @@ defmodule Xaas.Chicago.ViewTest do
     assert length(episode.layers) == 10
     assert Enum.all?(episode.layers, fn l -> l.standing == "UNKNOWN" end)
     assert Enum.all?(episode.layers, fn l -> l.lifecycle == :candidate end)
+
     assert Enum.all?(episode.layers, fn l -> is_binary(l.label) and is_binary(l.what_happened) end)
   end
 end

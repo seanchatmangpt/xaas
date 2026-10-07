@@ -38,6 +38,9 @@ defmodule Mix.Tasks.Xaas.IngestCapabilityReceiptsTest do
   end
 
   @tag :subprocess
+  # A cold mix subprocess (real deps load + real Postgres writes) can exceed
+  # the ExUnit default 60s; give the real work room instead of shrinking it.
+  @tag timeout: 180_000
   test "mix xaas.ingest_capability_receipts ingests a real receipt.jsonl into real Postgres" do
     tmp_dir =
       Path.join(System.tmp_dir!(), "xaas_ingest_e2e_#{System.unique_integer([:positive])}")

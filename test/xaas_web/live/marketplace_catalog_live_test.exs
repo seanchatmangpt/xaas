@@ -159,6 +159,10 @@ defmodule XaasWeb.MarketplaceCatalogLiveTest do
       # mount must not raise
       {:ok, _view, html} = live(conn, "/marketplace-catalog")
       assert html =~ "catalog ingest refused"
+
+      # Structured refusal: machine-readable attributes, not a bare string.
+      assert html =~ ~s(data-refusal="catalog_ingest")
+      assert html =~ ~s(data-reason="invalid_catalog")
     end)
   end
 end

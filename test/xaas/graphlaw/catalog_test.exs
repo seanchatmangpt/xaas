@@ -67,7 +67,10 @@ defmodule Xaas.Graphlaw.CatalogTest do
     end)
 
     named = Enum.count(stored, fn {_n, row} -> not is_nil(row.refusal_name) end)
-    source_named = Enum.count(reg["limit_meta"], fn {_n, m} -> Map.has_key?(m, "refusal_name") end)
+
+    source_named =
+      Enum.count(reg["limit_meta"], fn {_n, m} -> Map.has_key?(m, "refusal_name") end)
+
     assert named == source_named
     assert named > 0
   end
@@ -85,6 +88,7 @@ defmodule Xaas.Graphlaw.CatalogTest do
         reg["limit_meta"]
         |> Enum.filter(fn {_n, m} -> m["scope"] == scope end)
         |> MapSet.new(fn {n, _m} -> n end)
+
       got = MapSet.new(Catalog.limits_by_scope(scope), & &1.name)
       assert got == expected
     end)

@@ -178,4 +178,38 @@ defmodule Xaas.ActuationTest do
                authority: %{kind: "test_authority"}
              )
   end
+
+  test "actuate/2 rescue carries a structured exception detail, not a raw stringified message" do
+    # The exception tuple keeps its TYPE (:exception, struct, detail) but the
+    # detail slot is a machine-readable map with stable keys — never a bare
+    # Exception.message/1 string at the top level.
+    admission = %{
+      resource: Xaas.Actuation.NoSuchResource,
+      action: :actuate_status,
+      subject_id: nil,
+      raw_input: %{},
+      intent: %{id: "intent-structured-detail", idempotency_key: "k-structured-detail"},
+      receipt: %{id: "receipt-structured-detail"},
+      projection_hash: "proj-structured-detail"
+    }
+
+    assert {:ok, {:error, {:exception, struct, detail}}} =
+             Xaas.Actuation.Kernel.actuate(
+               %{admission: admission, actor: nil, tenant: nil, authorize?: false},
+               %{}
+             )
+
+    assert is_atom(struct) and struct != nil
+    assert is_map(detail)
+
+    assert MapSet.subset?(
+             MapSet.new([:module, :message, :readable?]),
+             MapSet.new(Map.keys(detail))
+           )
+
+    assert detail.module == inspect(struct)
+    assert is_binary(detail.message) and detail.message != ""
+    assert is_boolean(detail.readable?)
+    refute is_binary(detail)
+  end
 end

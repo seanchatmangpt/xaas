@@ -71,7 +71,10 @@ defmodule Xaas.Chicago.NegativeCourts.ConsequenceCourtsTest do
     refused = M.decide_case("CHI-CASE-009")
 
     M.assert_refusal(refused, :policy_drift)
-    assert %{plan_digest: "stale-policy-digest", policy_digest: "policy-digest-001"} = elem(refused, 2)
+
+    assert %{plan_digest: "stale-policy-digest", policy_digest: "policy-digest-001"} =
+             elem(refused, 2)
+
     M.assert_no_standing_promotion(refused)
 
     # anti-vacuity pairing: the same case shape with FRESH (matching) digests

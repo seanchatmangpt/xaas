@@ -28,7 +28,14 @@ defmodule Xaas.Chicago.Bridges.Ex4PmTest do
     assert String.starts_with?(envelope.evidence_ref, "ex4pm.subject_hash:")
 
     assert envelope.provenance.value.fitness == 1.0
-    assert envelope.provenance.sibling_standing in [:alive, :partial_alive, :ALIVE, :PARTIAL_ALIVE]
+
+    assert envelope.provenance.sibling_standing in [
+             :alive,
+             :partial_alive,
+             :ALIVE,
+             :PARTIAL_ALIVE
+           ]
+
     assert is_binary(envelope.provenance.subject_hash)
   end
 
@@ -80,7 +87,9 @@ defmodule Xaas.Chicago.Bridges.Ex4PmTest do
     assert mutated_subject != @subject
 
     assert {:ok, original} = Ex4Pm.conform_purchase(Ex4Pm.purchase_log())
-    assert {:ok, mutated} = Ex4Pm.conform_purchase(Ex4Pm.purchase_log(mutated_subject), subject: mutated_subject)
+
+    assert {:ok, mutated} =
+             Ex4Pm.conform_purchase(Ex4Pm.purchase_log(mutated_subject), subject: mutated_subject)
 
     original_hash = original.provenance.subject_hash
     mutated_hash = mutated.provenance.subject_hash

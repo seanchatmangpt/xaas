@@ -138,4 +138,74 @@ defmodule Xaas.Operations.CapabilityLivenessReceiptTest do
     assert regression.now.status == "BLOCKED"
     assert regression.now.subject == "commit-now-blocked"
   end
+
+  # -- Real :ingest policy tests (XAAS: authorize?: false bypass removal) --
+
+  @ingest_attrs %{
+    capability: "weaver.policy.check",
+    authority: "otel-weaver-v2",
+    status: "ALIVE",
+    executed: true,
+    exit_code: 0,
+    subject: "commit-policy",
+    detail: "real policy-scoped ingest"
+  }
+
+  test ":ingest with NO actor is refused by the real policy (typed Ash.ForbiddenField/Forbidden error)" do
+    error =
+      assert_raise Ash.Error.Forbidden,
+                   ~r/forbidden/,
+                   fn ->
+                     CapabilityLivenessReceipt
+                     |> Ash.Changeset.for_create(:ingest, @ingest_attrs)
+                     |> Ash.create!(authorize?: true)
+                   end
+
+    # Real, typed Ash authorization failure (not a crash, not a validation miss).
+    assert %Ash.Error.Forbidden{} = error
+  end
+
+  test ":ingest with a WRONG-SERVICE system authority is refused" do
+    unauthorized_actor = Xaas.SystemAuthority.new(:internal_api)
+
+    assert_raise Ash.Error.Forbidden, ~r/forbidden/, fn ->
+      CapabilityLivenessReceipt
+      |> Ash.Changeset.for_create(:ingest, @ingest_attrs)
+      |> Ash.create!(actor: unauthorized_actor, authorize?: true)
+    end
+  end
+
+  test ":ingest with the :oban_scheduler system authority (the task's real path) succeeds" do
+    actor = Xaas.SystemAuthority.new(:oban_scheduler)
+
+    receipt =
+      CapabilityLivenessReceipt
+      |> Ash.Changeset.for_create(:ingest, @ingest_attrs)
+      |> Ash.create!(actor: actor, authorize?: true)
+
+    assert receipt.capability == "weaver.policy.check"
+    assert receipt.status == "ALIVE"
+    assert receipt.subject == "commit-policy"
+
+    # Real persisted state through the authorized path.
+    persisted =
+      CapabilityLivenessReceipt
+      |> Ash.read!(authorize?: false)
+      |> Enum.filter(&(&1.id == receipt.id))
+
+    assert [%{capability: "weaver.policy.check"}] = persisted
+  end
+
+  test ":destroy remains forbidden to EVERY actor, including the system authority" do
+    actor = Xaas.SystemAuthority.new(:oban_scheduler)
+
+    receipt =
+      CapabilityLivenessReceipt
+      |> Ash.Changeset.for_create(:ingest, @ingest_attrs)
+      |> Ash.create!(actor: actor, authorize?: true)
+
+    assert_raise Ash.Error.Forbidden, ~r/forbidden/, fn ->
+      Ash.destroy!(receipt, actor: actor, authorize?: true)
+    end
+  end
 end

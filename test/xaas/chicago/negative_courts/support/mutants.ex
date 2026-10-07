@@ -80,7 +80,9 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
 
   ## Graph IO + vocabulary ####################################################
 
-  def read_chicago, do: RDF.Turtle.read_file!(Path.join(@repo_root, "docs/sjira/v26.10.1/chicago.ttl"))
+  def read_chicago,
+    do: RDF.Turtle.read_file!(Path.join(@repo_root, "docs/sjira/v26.10.1/chicago.ttl"))
+
   def read_goal, do: RDF.Turtle.read_file!(Path.join(@repo_root, "docs/sjira/v26.10.1/goal.ttl"))
 
   def sj(name), do: RDF.iri(@sj <> Atom.to_string(name))
@@ -104,7 +106,10 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
   def checkpoint_subjects(graph), do: typed_subjects(graph, sj(:GoalCheckpoint))
 
   def identifier(graph, subject) do
-    graph |> RDF.Graph.get(subject) |> RDF.Description.first(dcterms(:identifier)) |> RDF.Literal.value()
+    graph
+    |> RDF.Graph.get(subject)
+    |> RDF.Description.first(dcterms(:identifier))
+    |> RDF.Literal.value()
   end
 
   @doc "Single-valued literal object of `{subject, predicate}`, or nil."
@@ -271,9 +276,11 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
   def mutate_subject_to_iri(graph, local),
     do: replace_literal(graph, chi(local), sj(:subject), RDF.iri(@foreign_subject))
 
-  def inject_workorder(graph, local), do: RDF.Graph.add(graph, {chi(local), rdf_type(), sj(:WorkOrder)})
+  def inject_workorder(graph, local),
+    do: RDF.Graph.add(graph, {chi(local), rdf_type(), sj(:WorkOrder)})
 
-  def inject_receipt(graph, local), do: RDF.Graph.add(graph, {chi(local), rdf_type(), sj(:Receipt)})
+  def inject_receipt(graph, local),
+    do: RDF.Graph.add(graph, {chi(local), rdf_type(), sj(:Receipt)})
 
   def mutate_ceiling(graph, new \\ "DO", local \\ @root_checkpoint),
     do: replace_literal(graph, chi(local), sj(:authorityCeiling), RDF.literal(new))
@@ -294,7 +301,8 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
   end
 
   @doc "Per-case (request, policy): exactly one flipped input per negative case id, baseline otherwise."
-  def case_request_and_policy("CHI-CASE-001"), do: {Court.bounded_purchase(), Court.baseline_policy()}
+  def case_request_and_policy("CHI-CASE-001"),
+    do: {Court.bounded_purchase(), Court.baseline_policy()}
 
   def case_request_and_policy("CHI-CASE-002"),
     do: {Court.bounded_purchase(%{amount: 150}), Court.baseline_policy()}
@@ -309,8 +317,11 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
 
   def case_request_and_policy("CHI-CASE-005"),
     do:
-      {Court.bounded_purchase(%{provider_available: false, dispatch: nil, alternative_available: false}),
-       Court.baseline_policy()}
+      {Court.bounded_purchase(%{
+         provider_available: false,
+         dispatch: nil,
+         alternative_available: false
+       }), Court.baseline_policy()}
 
   def case_request_and_policy("CHI-CASE-006"),
     do: {Court.bounded_purchase(%{dispatch: :unknown}), Court.baseline_policy()}
@@ -320,11 +331,14 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
 
   def case_request_and_policy("CHI-CASE-008"),
     do:
-      {Court.bounded_purchase(%{evidence: %{subject: @foreign_subject, kind: :exact_subject_observation}}),
-       Court.baseline_policy()}
+      {Court.bounded_purchase(%{
+         evidence: %{subject: @foreign_subject, kind: :exact_subject_observation}
+       }), Court.baseline_policy()}
 
   def case_request_and_policy("CHI-CASE-009"),
-    do: {Court.bounded_purchase(%{plan_policy_digest: "stale-policy-digest"}), Court.baseline_policy()}
+    do:
+      {Court.bounded_purchase(%{plan_policy_digest: "stale-policy-digest"}),
+       Court.baseline_policy()}
 
   def case_request_and_policy("CHI-CASE-010"),
     do: {Court.bounded_purchase(%{authority_claim: "DO"}), Court.baseline_policy()}
@@ -332,7 +346,8 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
   @doc "CHI-CASE-005 alternative branch: provider down BEFORE dispatch, an admitted alternative remains."
   def decide_provider_unavailable_alternative_preserved do
     {request, policy} =
-      {Court.bounded_purchase(%{provider_available: false, dispatch: nil}), Court.baseline_policy()}
+      {Court.bounded_purchase(%{provider_available: false, dispatch: nil}),
+       Court.baseline_policy()}
 
     Court.decide(request, policy)
   end
@@ -391,6 +406,7 @@ defmodule Xaas.Chicago.NegativeCourts.Mutants do
     refute match?({:ok, %{observedStanding: "ALIVE"}}, result)
 
     inspected = inspect(result)
+
     refute String.contains?(inspected, "ALIVE"),
            "court result must never mint ALIVE standing, got: #{inspected}"
 

@@ -304,10 +304,9 @@ defmodule XaasWeb.Chicago.SellerLiveTest do
     end)
   end
 
-  # route/projection landed at integration (tag removed)
-  @tag skip: "R6: the /chicago/seller route lands at integration (lanes do not touch router.ex); un-skip then"
+  # route landed: lib/xaas_web/router.ex:62 (un-skipped 2026-10-06, coordinator)
   test "router mounts Chicago.SellerLive at /chicago/seller" do
     router = File.read!("lib/xaas_web/router.ex")
-    assert router =~ ~s(live "/chicago/seller", Chicago.SellerLive)
+    assert router =~ ~s[live("/chicago/seller", Chicago.SellerLive)]
   end
 end
