@@ -127,3 +127,8 @@ _buildW*/
 GGEN-SH-*
 disk-audit.jsonocel
 snapshot-thin-receipt*.json
+
+# lane-lease build roots (fan-out campaign)
+target/
+_build-lane*/
+target-lane*/
