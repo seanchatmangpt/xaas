@@ -13,8 +13,9 @@ Date: 2026-10-07 · Lane: W650g2 · Branch: `feat/playwright-surface` @ 87dc84de
 | `test/xaas/semantics/w640_differential_shacl_test.exs` | new | W640 | green ×1 as-is, landed in `a5f81439` |
 | `test/xaas/semantics/w640_differential_shacl_test.exs` | new | W640 | green ×1 as-is |
 | `docs/sjira/v26.10.6/plans/w650x-spg-findings.md` | new | W650x | receipt landed |
-| `docs/sjira/v26.10.6/plans/w984dj4-ultracode.md` | new | W984dj4 | receipt landed |
-| `docs/sjira/v26.10.7/plans/w984dj4-ultracode.md` | new | W984dj4 | receipt landed (v26.10.7 copy) |
+| `docs/sjira/v26.10.6/plans/w984dj4-ultracode.md` | new | W984dj4 | receipt landed in `d01db3c5` |
+| `docs/sjira/v26.10.7/plans/w984dj4-ultracode.md` | — | W984dj4 | **vanished mid-flight** (another lane's scratch audit removed it) — pathspec dropped, v26.10.6 copy landed |
+| `docs/sjira/v26.10.6/plans/w984dj3-parse-dt.md` | new | W984dj3 | **landed mid-flight** in `ab0f3870` — skipped, no double-land |
 | `docs/sjira/v26.10.7/plans/w650f-unification-verify.md` | new | W650f | completed-lane receipt, untracked stray → landed |
 | `docs/sjira/v26.10.7/plans/w650o-ashsurface-bump.md` | new | W650o | completed-lane receipt, untracked stray → landed |
 | `docs/sjira/v26.10.7/plans/w650g2-commit.md` | new | W650g2 | this receipt |
