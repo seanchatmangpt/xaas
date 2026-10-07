@@ -188,14 +188,14 @@ config :xaas, :ultracode_repos, %{
     refresh: true
   },
   "autofde-lab" => %{
-    path: Path.expand("~/xaas/worktrees/repos/autofde-lab"),
+    path: Path.expand("~/autofde-lab"),
     sensing: "autofde-lab-jira",
     suite: "autofde-lab-dod",
     canonical_suite: "autofde-lab-canonical",
     refresh: true
   },
   "gymact" => %{
-    path: Path.expand("~/xaas/worktrees/repos/gymact"),
+    path: Path.expand("~/gymact"),
     sensing: "gymact-jira",
     suite: "gymact-dod",
     canonical_suite: "gymact-canonical",
@@ -489,6 +489,39 @@ config :xaas, :ultracode_verifier_suites, %{
 # compilation. Unset (test/prod) = registry unchanged.
 config :xaas, :ultracode_target_suites, Xaas.Ultracode.TargetSuites
 
-# ash_a2a 26.9.28 boots under a strict security preflight; dev/test have no durable outbox,
-# authority broker or kill-switch class. prod stays :strict (compile_env default).
-config :ash_a2a, :security_profile, :legacy_compat
+# ash_a2a strict posture (W701). Dev fills every AshA2A.SecurityProfile.Boot
+# strict-violation class with durable, non-tmp config so the profile runs
+# :strict and the legacy_compat warnings never fire:
+config :ash_a2a,
+  security_profile: :strict,
+  receipt_store: AshA2A.ReceiptStore.Ekv,
+  receipt_store_ekv_opts: [
+    name: AshA2A.ReceiptStore.Ekv,
+    data_dir: Path.expand("~/.local/share/xaas/ash_a2a/receipt_store_ekv"),
+    cluster_size: 1
+  ],
+  receipt_outbox_dir: Path.expand("~/.local/share/xaas/ash_a2a/receipt_outbox"),
+  # Dev-only literal keys (>= 32 bytes); override with XAAS_A2A_OUTBOX_KEY /
+  # XAAS_A2A_BINDING_KEY / XAAS_A2A_CLAIM_STORE_KEY env vars when needed.
+  receipt_outbox_key:
+    System.get_env("XAAS_A2A_OUTBOX_KEY") ||
+      "xaas-dev-outbox-hmac-key-0123456789abcdef0123456789abcdef",
+  receipt_binding_key:
+    System.get_env("XAAS_A2A_BINDING_KEY") ||
+      "xaas-dev-binding-hmac-key-0123456789abcdef0123456789abcdef",
+  claim_store: AshA2A.ConsequenceKernel.EffectClaimStore.DurableFile,
+  claim_store_dir: Path.expand("~/.local/share/xaas/ash_a2a/claim_store"),
+  claim_store_key:
+    System.get_env("XAAS_A2A_CLAIM_STORE_KEY") ||
+      "xaas-dev-claimstore-hmac-key-0123456789abcdef0123456789abcdef",
+  authority_broker:
+    {AshA2A.Authority.Broker.Ekv,
+     data_dir: Path.expand("~/.local/share/xaas/ash_a2a/authority_broker_ekv"),
+     cluster_size: 1},
+  kill_switch_class: :xaas_a2a,
+  kill_switch_path: Path.expand("~/.local/share/xaas/ash_a2a/kill_switch.dets")
+  # capability_release_mode is set to :strict in config/runtime.exs (dev),
+  # NOT in compile-time config: setting :strict in compile-time config fails
+  # the ash_a2a dep's own compile (the B11Wire bench agent's card expansion
+  # refuses :capability_release_closure_missing at compile time). Runtime
+  # env keeps the compile path clean while the boot court still sees :strict.

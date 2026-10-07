@@ -224,6 +224,12 @@ config :ash,
     work_order_status: Xaas.Ultracode.CapitalCensus.Types.WorkOrderStatus
   ]
 
+# W270 (v26.10.6): register text/event-stream so SSE responses (A2A v1
+# `message/stream` via AshA2A.Protocol.Plug) negotiate cleanly. The plug sets
+# its own content-type header, but unregistered MIME types fall back to
+# application/octet-stream in any Phoenix-side negotiation path.
+config :mime, :types, %{"text/event-stream" => ["sse"]}
+
 # Configures the endpoint
 config :xaas, XaasWeb.Endpoint,
   url: [host: "localhost"],
@@ -290,6 +296,14 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :phoenix, :json_library, Jason
+
+# Ontop SPARQL endpoint (docker-compose.ontop.yaml stack). Absent by
+# default: the /internal-api/health Ontop sub-check is config-gated on
+# this key and reports "skipped" (:not_configured) without it, so native
+# dev is not degraded. Set it (e.g. "http://ontop:8080") only when the
+# Ontop stack is actually running -- configured-but-down still fails
+# the health aggregate (fail-closed).
+# config :xaas, :ontop_endpoint, "http://ontop:8080"
 
 # Fabric-executed definition of done (`Xaas.Ultracode.Verifier`). Fail closed:
 # no suites are registered by default, and a suite only ever runs in a worktree
@@ -479,3 +493,19 @@ config :xaas, :ultracode_construction_recipes, %{
 config :xaas, :ultracode_judge_accept_court_verified_partial, true
 
 import_config "#{config_env()}.exs"
+
+# The P-PLAN payment-spine bridge (Xaas.Bridges.PPlan) binds its two plan
+# steps to real step modules through ash_pplan's durable engine via this
+# adapter (registered under ash_pplan's `:extra_adapters` seam).
+config :ash_pplan, :extra_adapters, %{xaas_pplan: Xaas.Bridges.PPlan.DurableAdapter}
+
+# Durable-run store process for the P-PLAN bridge: the application tree starts
+# `AshPPlan.Reactor.Durable.Store.Ets` under this registered name (see
+# Xaas.Application); the bridge reads the name from this env key.
+config :xaas, :pplan_durable_store, Xaas.Bridges.PPlan.Store
+
+# XaaS -> gymact actuation bridge (Xaas.Operations.GymactSurface). Unset or
+# tokenless = every call refuses typed with :gymact_not_configured
+# (fail-closed). Bearer token comes from INTERNAL_API_TOKEN (the same one
+# RequireInternalApiToken accepts) or a `token:` entry in this list.
+config :xaas, :gymact_surface, base_url: "http://127.0.0.1:8000"

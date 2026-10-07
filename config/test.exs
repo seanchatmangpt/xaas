@@ -20,7 +20,16 @@ config :xaas, Xaas.LegacyRepo,
   port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
   database: "xaas_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 20
+  # W167 headroom math (2026-10-06): Postgres max_connections=200 and each
+  # concurrent `mix test` lane opens pool_size here + Xaas.Repo's + 2
+  # (ash_graphlaw) + 2 (ash_affidavit). At 20+20 that is 44/lane, so the 5th
+  # concurrent lane overflows the server (FATAL 53300 too_many_connections,
+  # seen in W163/W120). 10+10+2+2 = 24/lane leaves room for ~6-7 lanes under
+  # the 200 cap (other beam processes on this box held ~36). ExUnit
+  # max_cases (schedulers*2 = 32 here) exceeds the pool deliberately: the
+  # Repo's queue_target 5_000 / queue_interval 10_000 below absorb the
+  # checkout queueing (guarded by test/xaas/repo_test_pool_config_test.exs).
+  pool_size: 10
 
 config :xaas, Xaas.Repo,
   username: System.get_env("DEV_DB_USERNAME", "postgres"),
@@ -29,7 +38,9 @@ config :xaas, Xaas.Repo,
   port: String.to_integer(System.get_env("DEV_DB_PORT", "5432")),
   database: "xaas_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 20,
+  # W167: 10, not 20 -- see the LegacyRepo headroom-math comment above; the
+  # two pools are sized together (10+10+2+2 = 24 per concurrent test lane).
+  pool_size: 10,
   # Real fix: under the SQL Sandbox in shared mode every process shares ONE connection, so
   # concurrent Task.async_stream slot workers (Xaas.Ultracode.Engine.fill/1) queue on it.
   # DBConnection's defaults (queue_target 50ms / queue_interval 1000ms) drop those waiters
@@ -132,9 +143,18 @@ config :opentelemetry,
     {:otel_simple_processor, %{exporter: {:otel_exporter_pid, self()}}}
   ]
 
-# ash_a2a 26.9.28 boots under a strict security preflight; dev/test have no durable outbox,
-# authority broker or kill-switch class. prod stays :strict (compile_env default).
-config :ash_a2a, :security_profile, :legacy_compat
+# ash_a2a (W701): tests stay on :legacy_compat by design — the profile court
+# runs the real AshA2A.SecurityProfile.Boot machinery without requiring a
+# durable filesystem contract (memory receipt store, tmp outbox). The
+# authority half is still filled: a real Broker.InMemory and a kill-switch
+# class clear the authority_broker_missing / kill_switch_class_missing
+# violation classes under the legacy_compat court as well.
+config :ash_a2a,
+  security_profile: :legacy_compat,
+  authority_broker: AshA2A.Authority.Broker.InMemory,
+  kill_switch_class: :xaas_a2a_test
+  # W701: tests fill the authority half only; the receipt-durability half
+  # stays deliberately legacy (memory store + tmp outbox), documented above.
 
 # Fabric planes (law, evidence/process): run the real WASM engines in-process.
 config :ash_graphlaw, start_pool: true, pool: [size: 2]

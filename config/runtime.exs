@@ -163,3 +163,61 @@ config :xaas,
   ex4pm_ocel_ingest_url: System.get_env("EX4PM_OCEL_INGEST_URL"),
   ex4pm_ocel_ingest_timeout_ms:
     String.to_integer(System.get_env("EX4PM_OCEL_INGEST_TIMEOUT_MS") || "2000")
+
+# ash_a2a strict posture in production (W701). Mirrors the ash_a2a production
+# checklist (docs/reference/configuration.md): durable EKV receipt store,
+# persistent outbox + HMAC keys, durable-file claim store, durable EKV
+# authority broker, kill-switch class, strict capability release. Keys come
+# from the environment (base64, >= 32 raw bytes); durable state lives under
+# XAAS_A2A_DATA_DIR (persistent storage, never tmp). Fails closed: a prod
+# boot without the required env raises here instead of silently degrading to
+# the library's volatile tmp-dir defaults.
+if config_env() == :prod do
+  a2a_data_dir =
+    System.get_env("XAAS_A2A_DATA_DIR") ||
+      raise("""
+      XAAS_A2A_DATA_DIR is required in prod: ash_a2a durable state (receipt
+      store EKV, outbox, claim store, authority broker EKV, kill switch)
+      needs a persistent directory.
+      """)
+
+  decode_key = fn name, raw ->
+    case raw do
+      nil -> raise("#{name} is required in prod (base64, >= 32 raw bytes)")
+      raw -> 
+        key = Base.decode64!(raw)
+        if byte_size(key) < 32, do: raise("#{name} must decode to >= 32 bytes")
+        key
+    end
+  end
+
+  config :ash_a2a,
+    receipt_store: AshA2A.ReceiptStore.Ekv,
+    receipt_store_ekv_opts: [
+      name: AshA2A.ReceiptStore.Ekv,
+      data_dir: Path.join(a2a_data_dir, "receipt_store_ekv"),
+      cluster_size: 1
+    ],
+    receipt_outbox_dir: Path.join(a2a_data_dir, "receipt_outbox"),
+    receipt_outbox_key: decode_key.("XAAS_A2A_OUTBOX_KEY", System.get_env("XAAS_A2A_OUTBOX_KEY")),
+    receipt_binding_key: decode_key.("XAAS_A2A_BINDING_KEY", System.get_env("XAAS_A2A_BINDING_KEY")),
+    claim_store: AshA2A.ConsequenceKernel.EffectClaimStore.DurableFile,
+    claim_store_dir: Path.join(a2a_data_dir, "claim_store"),
+    claim_store_key:
+      decode_key.("XAAS_A2A_CLAIM_STORE_KEY", System.get_env("XAAS_A2A_CLAIM_STORE_KEY")),
+    authority_broker:
+      {AshA2A.Authority.Broker.Ekv,
+       data_dir: Path.join(a2a_data_dir, "authority_broker_ekv"), cluster_size: 1},
+    kill_switch_class: :xaas_a2a,
+    kill_switch_path: Path.join(a2a_data_dir, "kill_switch.dets"),
+    capability_release_mode: :strict
+end
+
+if config_env() == :dev do
+  # W701: dev fills the capability-release class at RUNTIME, not compile time —
+  # :strict in compile-time config fails the ash_a2a dep's own compile (its
+  # bench agents refuse :capability_release_closure_missing while expanding
+  # agent cards). The boot court reads the runtime env, so the strict profile
+  # still sees :strict.
+  config :ash_a2a, capability_release_mode: :strict
+end
