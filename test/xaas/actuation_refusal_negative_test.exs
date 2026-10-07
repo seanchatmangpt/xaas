@@ -66,7 +66,7 @@ defmodule Xaas.ActuationRefusalNegativeTest do
     # attribute). Instead it seals a real `:failed` receipt via
     # `sealed_error/1` and surfaces `{:error, raw_reason}` — the raw atom,
     # not a wrapper.
-    assert {:error, {:reactor_failed, %Reactor.Error.Invalid{}}} =
+    assert {:error, :subject_id_required} =
              Xaas.Actuation.run(
                Provider,
                :actuate_status,
@@ -282,5 +282,80 @@ defmodule Xaas.ActuationRefusalNegativeTest do
     assert receipt_after.input_hash == "forged-input-hash"
 
     assert Ash.get!(Provider, provider.id, authorize?: false).status == provider.status
+  end
+
+  # W601 (OS-18 residual): the receipt row carries its own copies of
+  # resource/action/subject. Before this leg the identity clause compared
+  # those fields against the INTENT row only, so a pair whose receipt fields
+  # diverged from both the intent and the admission still checkpointed.
+  describe "W601 field-by-field receipt identity" do
+    test "receipt row with a tampered subject_id is refused :external_admission_identity_mismatch" do
+      provider = create_provider!()
+      key = "refusal-w601-receipt-subject-#{System.unique_integer([:positive])}"
+      admission = prepare_external!(provider, key)
+
+      receipt = Ash.get!(ActuationReceipt, admission.receipt.id, authorize?: false)
+
+      assert {:ok, _} =
+               Xaas.Repo.update(
+                 Ecto.Changeset.change(receipt, subject_id: "forged-foreign-subject")
+               )
+
+      assert {:error, {:external_checkpoint_failed, :external_admission_identity_mismatch}} =
+               Xaas.Actuation.checkpoint_external(admission, %{"construct" => "inert"})
+
+      # Zero state yield: the tampered receipt stays inert :prepared.
+      receipt_after = Ash.get!(ActuationReceipt, admission.receipt.id, authorize?: false)
+      assert receipt_after.status == :prepared
+      assert receipt_after.result == %{}
+      assert is_nil(receipt_after.result_hash)
+      assert receipt_after.subject_id == "forged-foreign-subject"
+
+      assert Ash.get!(Provider, provider.id, authorize?: false).status == provider.status
+    end
+
+    test "receipt row with a tampered action is refused :external_admission_identity_mismatch" do
+      provider = create_provider!()
+      key = "refusal-w601-receipt-action-#{System.unique_integer([:positive])}"
+      admission = prepare_external!(provider, key)
+
+      receipt = Ash.get!(ActuationReceipt, admission.receipt.id, authorize?: false)
+
+      assert {:ok, _} =
+               Xaas.Repo.update(Ecto.Changeset.change(receipt, action: "actuate_status_forged"))
+
+      assert {:error, {:external_checkpoint_failed, :external_admission_identity_mismatch}} =
+               Xaas.Actuation.checkpoint_external(admission, %{"construct" => "inert"})
+
+      receipt_after = Ash.get!(ActuationReceipt, admission.receipt.id, authorize?: false)
+      assert receipt_after.status == :prepared
+      assert receipt_after.result == %{}
+      assert is_nil(receipt_after.result_hash)
+
+      assert Ash.get!(Provider, provider.id, authorize?: false).status == provider.status
+    end
+
+    test "honest fresh admission still checkpoints and seals (happy path unchanged)" do
+      provider = create_provider!()
+      key = "refusal-w601-happy-#{System.unique_integer([:positive])}"
+      admission = prepare_external!(provider, key)
+
+      assert {:ok, %{resumed?: false, receipt: receipt}} =
+               Xaas.Actuation.checkpoint_external(admission, %{"construct" => "inert"})
+
+      assert receipt.result == %{"construct" => "inert"}
+      assert is_binary(receipt.result_hash)
+
+      assert {:ok, %{status: :succeeded}} =
+               Xaas.Actuation.seal_external(admission, {:ok, %{"ok" => true}})
+
+      receipt_after = Ash.get!(ActuationReceipt, admission.receipt.id, authorize?: false)
+      assert receipt_after.status == :succeeded
+
+      intent_after = Ash.get!(ActuationIntent, admission.intent.id, authorize?: false)
+      assert intent_after.status == :succeeded
+
+      assert Ash.get!(Provider, provider.id, authorize?: false).status == provider.status
+    end
   end
 end

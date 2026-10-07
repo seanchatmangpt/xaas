@@ -584,9 +584,20 @@ defmodule Xaas.Actuation.Kernel do
       # a forged {intent, receipt} pair that is internally consistent but does
       # not belong to the admission the caller actually holds (different
       # resource, action, subject, or input) is refused here.
+      # Field-by-field (not load-key) equality of the admission-carried
+      # context against BOTH loaded rows independently. Each row is loaded by
+      # the admission's PKs, so id equality alone is tautological (W546/OS-18);
+      # the semantic fields are the independent state that a forged pair
+      # cannot keep consistent with a foreign admission. W601: the receipt's
+      # own resource/action/subject copies were previously left unchecked —
+      # a pair whose receipt fields diverged from both the intent and the
+      # admission passed on the intent-only comparison.
       inspect(admission.resource) != intent.resource_module or
+        inspect(admission.resource) != receipt.resource_module or
         Atom.to_string(admission.action) != intent.action or
+        Atom.to_string(admission.action) != receipt.action or
         stringify(admission.subject_id) != intent.subject_id or
+        stringify(admission.subject_id) != receipt.subject_id or
         carried_input_hash(admission) != intent.input_hash or
           carried_input_hash(admission) != receipt.input_hash ->
         {:error, :external_admission_identity_mismatch}
