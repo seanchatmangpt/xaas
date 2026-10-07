@@ -14,7 +14,7 @@ defmodule Xaas.Library.HoldRequest do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshOban]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   require Ash.Query
 
@@ -72,10 +72,6 @@ defmodule Xaas.Library.HoldRequest do
       get(:read)
       index(:read)
     end
-  end
-
-  graphql do
-    type(:library_hold)
   end
 
   actions do
@@ -155,18 +151,40 @@ defmodule Xaas.Library.HoldRequest do
       # (:borrowed) for the holding student, created in the same
       # after_action transaction as the inventory decrement -- a Checkout
       # create failure fails the fulfillment and rolls back both.
+      #
+      # W984ad (closing W982j's pinned finding): the mint previously went
+      # through the primary `create :create`, which carries no per-student
+      # borrow cap, so a capped patron received a 4th open checkout
+      # unrefused. The shared `Xaas.Library.Changes.EnforceBorrowCap.check/2`
+      # guard now runs on this path too, BEFORE the mint: at/over cap the
+      # fulfillment is refused with the same typed `InvalidArgument` the
+      # `:borrow` path uses, and the after_action error rolls back the
+      # hold status and inventory decrement (the hold stays :active).
       change(fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, hold ->
-          checkout =
-            Xaas.Library.Checkout
-            |> Ash.Changeset.for_create(:create, %{
-              book_id: hold.book_id,
-              user_id: hold.user_id,
-              school_id: hold.school_id
-            })
-            |> Ash.create!(authorize?: false)
+          case Xaas.Library.Changes.EnforceBorrowCap.check(changeset, hold.user_id) do
+            %{errors: []} = _clean_changeset ->
+              checkout =
+                Xaas.Library.Checkout
+                |> Ash.Changeset.for_create(:create, %{
+                  book_id: hold.book_id,
+                  user_id: hold.user_id,
+                  school_id: hold.school_id
+                })
+                |> Ash.create!(authorize?: false)
 
-          {:ok, hold}
+              {:ok, hold}
+
+            _capped_changeset ->
+              {:error,
+               Ash.Error.Changes.InvalidArgument.exception(
+                 field: :user_id,
+                 message:
+                   "per-student borrow cap exceeded: cannot fulfill hold into a new open " <>
+                     "checkout (limit #{Xaas.Library.Changes.EnforceBorrowCap.max_open_checkouts()}); " <>
+                     "return one before fulfilling this hold"
+               )}
+          end
         end)
       end)
     end
