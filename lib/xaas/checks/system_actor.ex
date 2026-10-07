@@ -73,6 +73,9 @@ defmodule Xaas.Checks.SystemActor do
     {Xaas.Platform.RouteSecrets, :create},
     {Xaas.Platform.RouteSecrets, :approve},
     {Xaas.Platform.RouteProjects, :approve},
+    # W969c / SPEC-21: the create half of the maker-checker pair carries
+    # the same :internal_api authority as the approve half.
+    {Xaas.Platform.RouteProjects, :create},
     {Xaas.Platform.RouteFeatureFlags, :approve},
     {Xaas.Platform.RouteSecrets, :destroy},
     {Xaas.Platform.RouteFeatureFlags, :create},
