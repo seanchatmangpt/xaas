@@ -120,6 +120,13 @@ defmodule Xaas.Operations.Incident do
     create :create do
       description("Open a real incident, matching platform-console's incidents row shape.")
 
+      # W818 (closing W793's GAP(RESOLVED_AT_GUARD_ONLY_ON_UPDATE)): the
+      # resolved-at invariant holds on :create too. Note :create does not
+      # accept :resolved_at, so through the real action surface a
+      # :resolved-at-birth incident is refused outright -- resolution
+      # requires a dateable update, never a creation-time mint.
+      validate(Xaas.Operations.Validations.IncidentResolvedRequiresResolvedAt)
+
       accept([
         :org_id,
         :title,
@@ -141,6 +148,23 @@ defmodule Xaas.Operations.Incident do
       require_atomic?(false)
 
       validate(Xaas.Operations.Validations.IncidentResolvedRequiresResolvedAt)
+
+      # W818 (closing W793's GAP(NO_REOPEN_GUARD)): :resolved is terminal
+      # through :update -- no silent reopen, so the stale resolved_at
+      # retention W793 pinned cannot occur.
+      validate(Xaas.Operations.Validations.IncidentResolvedIsTerminal)
+
+      # W902 batch 3 (closing W793's GAP(NO_RESOLVED_AT_GUARD)): resolved_at
+      # requires status :resolved -- together with
+      # IncidentResolvedRequiresResolvedAt this makes
+      # `status == :resolved <=> resolved_at != nil` a real invariant of the
+      # :update surface, not a one-sided implication.
+      validate(Xaas.Operations.Validations.IncidentResolvedAtRequiresResolved)
+
+      # W902 batch 3 (closing W793's GAP(NO_POSTMORTEM_STATUS_GUARD)): a
+      # postmortem may be finalized only on a resolved incident. :draft
+      # annotation while :open stays legal; :final is the close-out gate.
+      validate(Xaas.Operations.Validations.IncidentPostmortemFinalRequiresResolved)
 
       accept([
         :title,

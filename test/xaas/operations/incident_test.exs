@@ -118,15 +118,23 @@ defmodule Xaas.Operations.IncidentTest do
         opened_at: now
       })
 
+    # W818: :create can no longer mint :resolved at all (the resolved-at
+    # guard now holds on :create and :create never accepted :resolved_at),
+    # so this fixture resolves a real open incident through the real
+    # :update action -- the corrected lifecycle contract.
     _resolved_in_region =
       create!(%{
         org_id: target_org,
         title: "already resolved incident in same region",
         region: region,
         severity: :minor,
-        status: :resolved,
+        status: :open,
         opened_at: now
       })
+      |> Ash.Changeset.for_update(:update, %{status: :resolved, resolved_at: now},
+        authorize?: false
+      )
+      |> Ash.update!()
 
     _open_in_other_region =
       create!(%{

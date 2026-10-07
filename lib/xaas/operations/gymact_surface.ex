@@ -148,7 +148,12 @@ defmodule Xaas.Operations.GymactSurface do
   (the court-manufactured gymact cut). With the default `authorize?: false`
   external posture a non-empty `:authority` map is required by the kernel.
   The typed `:gymact_not_configured` refusal fires BEFORE any ledger or
-  HTTP transition.
+  HTTP transition. After prepare, a missing/empty `:episode_id` or `:cut`
+  is a typed `:episode_id_required` / `:cut_required` refusal that IS
+  durably sealed as `:refused`; a non-2xx or transport remote failure is
+  durably sealed as `:failed` with a json-safe error map
+  (`%{class: :gymact_http_error | :gymact_transport_error, ...}`) — the
+  ledger always learns the outcome (W674-GAP-1/GAP-2).
   """
   @spec actuate(module(), atom(), map(), keyword()) :: {:ok, map()} | {:error, term()}
   def actuate(resource, action, input, opts)
@@ -203,18 +208,62 @@ defmodule Xaas.Operations.GymactSurface do
     KeyError -> {:error, :idempotency_key_required}
   end
 
+  # Sealed DO failure classes. The ledger's `ActuationReceipt.error` is a
+  # `:map` attribute, so every sealed error is a json-safe map (a raw
+  # `{:gymact_http_error, status, body}` tuple renders as a LIST under
+  # `Xaas.Actuation`'s `json_safe/1` and the `:seal` action rejects it —
+  # W674-GAP-1).
   defp do_and_seal(admission, opts) do
     result =
-      with {:ok, episode_id} <- Keyword.fetch(opts, :episode_id),
-           {:ok, cut} <- Keyword.fetch(opts, :cut),
+      with {:ok, episode_id} <- external_opt(opts, :episode_id),
+           {:ok, cut} <- external_opt(opts, :cut),
            {:ok, body} <- submit_action(episode_id, cut) do
         {:ok, body}
       else
-        {:error, reason} -> {:error, reason}
+        {:error, %Refusal{}} = sealed_refusal ->
+          # Typed refusal (e.g. missing :episode_id/:cut) — `Kernel.seal`
+          # classifies a `Xaas.Actuation.Refusal` as a durable `:refused`.
+          sealed_refusal
+
+        {:error, {:gymact_http_error, status, body}} ->
+          {:error, %{class: :gymact_http_error, status: status, body: json_safe(body)}}
+
+        {:error, {:gymact_transport_error, exception}} ->
+          {:error, %{
+            class: :gymact_transport_error,
+            message: exception |> Exception.message() |> json_safe()
+          }}
       end
 
     Xaas.Actuation.seal_external(admission, result)
   end
+
+  # A missing required external-DO opt is a typed refusal (W674-GAP-2),
+  # not a raw `WithClauseError` from `Keyword.fetch/2`.
+  defp external_opt(opts, :episode_id) do
+    case Keyword.fetch(opts, :episode_id) do
+      {:ok, id} when is_binary(id) and id != "" -> {:ok, id}
+      _ -> {:error, Refusal.new(:episode_id_required, %{opt: :episode_id})}
+    end
+  end
+
+  defp external_opt(opts, :cut) do
+    case Keyword.fetch(opts, :cut) do
+      {:ok, cut} when is_map(cut) -> {:ok, cut}
+      _ -> {:error, Refusal.new(:cut_required, %{opt: :cut})}
+    end
+  end
+
+  defp json_safe(%_{} = struct), do: Map.delete(Map.from_struct(struct), :__struct__)
+
+  defp json_safe(map) when is_map(map),
+    do: Map.new(map, fn {k, v} -> {to_string(k), json_safe(v)} end)
+
+  defp json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
+
+  defp json_safe(atom) when is_atom(atom), do: Atom.to_string(atom)
+
+  defp json_safe(value), do: value
 
   defp token(opts) do
     case Keyword.get(opts, :token) || System.get_env(@token_env) do
