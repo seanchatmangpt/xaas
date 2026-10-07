@@ -370,7 +370,10 @@ defmodule Xaas.Ultracode.Lease do
   """
   @spec live_leases(String.t()) :: non_neg_integer()
   def live_leases(provider) when is_binary(provider) do
-    now = DateTime.utc_now()
+    # Through the DurationBudget clock seam (W840): the capacity meter and
+    # the claim kernel must judge expiry on ONE clock -- a kernel-expired
+    # lease releases its slot even while the seam is fast-forwarded.
+    now = DurationBudget.now()
 
     query =
       from(e in Epoch,
@@ -509,7 +512,11 @@ defmodule Xaas.Ultracode.Lease do
   @spec renew(String.t()) :: :ok | {:error, term()}
   def renew(lease_token) when is_binary(lease_token) do
     with {:ok, epoch} <- live_lease(lease_token) do
-      now = DateTime.utc_now()
+      # Through the DurationBudget clock seam (W840): the extension base
+      # and the heartbeat stamp move on the SAME clock the live-lease
+      # court judges expiry with, so a renewal is observable against a
+      # fast-forwarded seam (new expiry = advanced now + TTL).
+      now = DurationBudget.now()
       expires_at = DateTime.add(now, @default_lease_ttl_minutes * 60, :second)
 
       case atomic_lease_write(epoch, lease_token,

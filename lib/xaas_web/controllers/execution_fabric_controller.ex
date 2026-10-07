@@ -515,7 +515,7 @@ defmodule XaasWeb.ExecutionFabricController do
   defp dispatch_tool("actuate", %{"lease_token" => token} = args) when is_binary(token) do
     with {:ok, _handle} <- actuation_capability(token, args["capability"]),
          {:ok, envelope} <- Lease.actuate(token, args) do
-      {:ok, format_actuation(envelope)}
+      {:ok, format_actuation(envelope, quiescent?: quiescent_intent?(args))}
     end
   end
 
@@ -725,15 +725,49 @@ defmodule XaasWeb.ExecutionFabricController do
   # regression coverage) -- not JSON-safe, so the transport uses
   # `receipt.result` instead, the already-`json_safe/1`-processed snapshot
   # `Xaas.Actuation.Kernel.seal/2` persisted.
-  defp format_actuation(envelope) do
-    %{
+  # Wire-surface formatting. When the actuate intent targets the quiescent
+  # attractor, the module's typed envelope (W824's absent-envelope finding)
+  # is surfaced additively: `target` and `already_stopped` on every response,
+  # plus `refusal` when the kernel refused/failed — never a shape change to
+  # the generic actuation response for non-quiescent intents.
+  defp format_actuation(envelope, opts) do
+    base = %{
       status: Atom.to_string(envelope.status),
       replay: envelope.replay?,
       intent_id: envelope.intent.id,
       receipt_id: envelope.receipt.id,
       result: envelope.receipt.result
     }
+
+    if Keyword.get(opts, :quiescent?, false) do
+      base
+      |> Map.put(:target, "quiescent")
+      |> Map.put(:already_stopped, envelope.status == :replayed)
+      |> maybe_refusal(envelope)
+    else
+      base
+    end
   end
+
+  defp maybe_refusal(formatted, %{status: status} = envelope)
+       when status in [:refused, :failed] do
+    Map.put(formatted, :refusal, refusal_code(envelope.error))
+  end
+
+  defp maybe_refusal(formatted, _envelope), do: formatted
+
+  # Kernel refusal codes surface as strings on the wire (atoms are never
+  # JSON-encodable); non-atom reasons inspect losslessly-enough for a wire tag.
+  defp refusal_code(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp refusal_code(reason), do: inspect(reason)
+
+  # The fabric has no dedicated halt verb: the halt is `action:
+  # "actuate_status"` + `input.status == "suspended"` — exactly
+  # `Xaas.Actuation.QuiescentStop`'s @quiescent_status over the same kernel.
+  defp quiescent_intent?(%{"action" => "actuate_status", "input" => %{"status" => "suspended"}}),
+    do: true
+
+  defp quiescent_intent?(_args), do: false
 
   defp format_receipt(%Receipt{} = receipt) do
     %{
