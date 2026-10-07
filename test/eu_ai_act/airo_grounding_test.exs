@@ -70,7 +70,10 @@ defmodule Xaas.EuAiAct.AiroGroundingTest do
       "REFUSED_EUAIA_FACIAL_SCRAPING" => "PRIVACY_RISK",
       "REFUSED_EUAIA_EMOTION_RECOGNITION" => "MENTAL_PRIVACY_RISK",
       "REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION" => "DISCRIMINATION_RISK",
-      "REFUSED_EUAIA_REALTIME_RBI" => "SURVEILLANCE_RISK"
+      "REFUSED_EUAIA_REALTIME_RBI" => "SURVEILLANCE_RISK",
+      # W732 closure repair: the malformed fallback verdict, grounded by the
+      # W657 MALFORMED family (not an Art. 5(1) partition concept).
+      "REFUSED_EUAIA_MALFORMED_CANDIDATE" => "MALFORMED_INPUT_CANDIDATE"
     }
 
     atoms = EuAiActAdmission.refusal_atoms()

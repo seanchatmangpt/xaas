@@ -61,7 +61,7 @@ defmodule Xaas.EUAIAct.TitleIVV.Deepenings do
                  Xaas.Semantics.EuAiActAdmission.admit(%{data_domains: [:affective], setting: :workplace})
 
         atoms = Xaas.Semantics.EuAiActAdmission.refusal_atoms()
-        assert length(atoms) == 8
+        assert length(atoms) == 9  # W732: 8 Art. 5(1) atoms + malformed fallback
         assert Enum.all?(atoms, &(is_binary(Xaas.Semantics.EuAiActAdmission.describe(&1)) and Xaas.Semantics.EuAiActAdmission.describe(&1) != ""))
       end
     end
@@ -238,8 +238,13 @@ defmodule Xaas.EUAIAct.TitleIVVTest do
 
       case Jason.decode(body) do
         {:ok, %{"titles" => titles}} when is_list(titles) ->
+          # W779: scope by ARTICLE RANGE ONLY (`n in 28..56`), not by corpus
+          # title num — the corpus places Art. 49 under title num "III", so
+          # the previous `title["num"] in ["IV", "V"]` filter silently dropped
+          # every Art. 49 line, including the declared open gap 49.3 (EU
+          # database registration duty, @open_gaps below). Dead-declaration
+          # receipt: docs/sjira/v26.10.6/plans/w779-opengap-tag.md.
           for title <- titles,
-              title["num"] in ["IV", "V"],
               article <- title["articles"] || [],
               line <- article["lines"] || [],
               is_map(line),

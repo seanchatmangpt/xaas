@@ -38,7 +38,7 @@ defmodule Xaas.EUAIAct.TitleITest do
   @decoupling_test "test/xaas/semantics/authority_decoupling_test.exs"
   @incident_source "lib/xaas/semantics/incident_report.ex"
   @incident_test "test/xaas/semantics/incident_report_test.exs"
-  @incident_test_count 6
+  @incident_test_count 9
 
   titles_i_lines =
     if File.exists?(@corpus_relpath) do
@@ -201,9 +201,10 @@ defmodule Xaas.EUAIAct.TitleITest do
                Xaas.Semantics.EuAiActAdmission.admit(%{clean | techniques: [:deceptive]})
     end,
     "3.2" => quote do
-      # risk is a typed vocabulary: 8 refusal atoms, each with a describe/2
+      # risk is a typed vocabulary: 9 refusal atoms (8 Art. 5(1) + malformed
+      # fallback, W732 closure), each with a describe/2
       atoms = Xaas.Semantics.EuAiActAdmission.refusal_atoms()
-      assert is_list(atoms) and length(atoms) == 8
+      assert is_list(atoms) and length(atoms) == 9
       for atom <- atoms, do: assert(is_binary(Xaas.Semantics.EuAiActAdmission.describe(atom)))
     end,
     "3.12" => quote do
@@ -454,7 +455,9 @@ defmodule Xaas.EUAIAct.TitleITest do
 
       assert {:ok, report} = Xaas.Semantics.IncidentReport.build([receipt])
       assert :INFRINGES_UNION_LAW in report.classification
-      assert :MALFUNCTION in report.classification
+      # W679: a lawful REFUSED_EUAIA_* admission refusal is the receipt-
+      # integrity family, not a malfunction — partition-exact classification.
+      refute :MALFUNCTION in report.classification
       assert {:ok, %{status: :PREPARED_NOT_TRANSMITTED}} =
                Xaas.Semantics.IncidentReport.transmit(report)
     end,

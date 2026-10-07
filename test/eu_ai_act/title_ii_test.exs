@@ -144,7 +144,7 @@ defmodule Xaas.EUAIAct.TitleIITest do
 
     # and every declared refusal atom is typed in the module's public list
     atoms = Xaas.Semantics.EuAiActAdmission.refusal_atoms()
-    assert length(atoms) == 8
+    assert length(atoms) == 9  # W732: 8 Art. 5(1) atoms + malformed fallback
     for {_, atom, _, _} <- @partitions, do: assert(atom in atoms)
   end
 

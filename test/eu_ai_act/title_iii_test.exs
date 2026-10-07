@@ -1022,9 +1022,30 @@ defmodule Xaas.EUAIAct.TitleIIITest do
 
     assert :DETECTED in VulnerabilityLifecycle.states()
 
+    # Happy path: the legal walk DETECTED -> TRIAGED -> RESPONDED with the
+    # typed evidence each edge requires (W540 contract). respond/2 confirms
+    # with {:ok, %VulnerabilityLifecycle{state: :RESPONDED}}.
     {:ok, ticket} = VulnerabilityLifecycle.new(%{detector: "euai-iii", finding: "f1"})
+    assert {:ok, triaged = %VulnerabilityLifecycle{state: :TRIAGED}} =
+             VulnerabilityLifecycle.triage(ticket, %{analysis: "gap at 15.5.s3"})
+
+    assert {:ok, %VulnerabilityLifecycle{state: :RESPONDED} = responded} =
+             VulnerabilityLifecycle.respond(triaged, %{receipt: "diff w540 fix"})
+
+    # history is chronological; reversed take(2) is newest-first.
+    assert responded.history |> Enum.reverse() |> Enum.take(2) ==
+             [{:advance, :RESPONDED}, {:advance, :TRIAGED}]
+
+    # Same legal edge WITHOUT the required evidence record -> typed refusal
+    # (:REFUSED_LIFECYCLE_EVIDENCE, not a skip — the edge order is lawful).
+    assert {:error, :REFUSED_LIFECYCLE_EVIDENCE} =
+             VulnerabilityLifecycle.respond(triaged, %{})
+
+    # Skipping the triage edge entirely is still refused typed (respond from
+    # a fresh DETECTED ticket).
+    {:ok, detected} = VulnerabilityLifecycle.new(%{detector: "euai-iii", finding: "f1"})
     assert {:error, :REFUSED_LIFECYCLE_SKIP} =
-             VulnerabilityLifecycle.respond(ticket, %{})
+             VulnerabilityLifecycle.respond(detected, %{receipt: "diff w540 fix"})
   end
 
   defp deepen_kind(:oversight_governance) do

@@ -18,15 +18,15 @@ defmodule Xaas.Accounts.TokenRevocationTest do
     3. Real revocation row: a `purpose == "revocation"` row keyed on the
        JWT's jti lands in the real tokens table.
 
-  Disclosed pre-existing BLOCKED (not rename-related, not fixed here --
-  lib is out of this lane's scope): `:revoke_token` (the JWT path, gated
-  by `EnforceSingleRevoke` -> `RevokeNonce`'s ash_onetime `:claim`)
-  fails with `AshOnetime.Error` `:store_invariant` /
-  "authoritative admission store failed" on the FIRST call under
-  MIX_ENV=test (observed 2026-10-06 via direct `RevokeNonce.claim`
-  probe, sandboxed and unsandboxed). Revocation is therefore exercised
-  through `:revoke_jti`, which shares the same `:is_revoked` check
-  action and really inserts a revocation row.
+  History: `:revoke_token` (the JWT path, gated by `EnforceSingleRevoke`
+  -> `RevokeNonce`'s ash_onetime `:claim`) was disclosed BLOCKED
+  (W727/W757): ash_onetime 1.2.3 inserts a `logical_partition` column the
+  DB lacked, so the claim INSERT failed `:store_invariant` under
+  MIX_ENV=test (observed 2026-10-06 via direct `RevokeNonce.claim` probe).
+  W786 generated and applied the prescribed upgrade migration
+  (priv/repo/migrations/20261007111457_add_ash_onetime_logical_partitions.exs);
+  the JWT revocation path is now exercised directly as a real-pass
+  assertion (see the `:revoke_token` lifecycle test).
   """
   use ExUnit.Case, async: true
 
@@ -90,6 +90,42 @@ defmodule Xaas.Accounts.TokenRevocationTest do
   end
 
   describe "real revocation lifecycle via the real consumer helpers" do
+    test ":revoke_token (JWT path, ash_onetime RevokeNonce claim) really revokes — W727 BLOCKED pin flipped by W786" do
+      user = create_user!()
+      jwt = jwt_for!(user)
+      jti = jti_of!(jwt)
+      clear_stored_token_row!(jti)
+
+      assert false ==
+               AshAuthentication.TokenResource.token_revoked?(Token, jwt, authorize?: false)
+
+      # The JWT path routes through EnforceSingleRevoke -> RevokeNonce.claim
+      # (ash_onetime one_time_nonce) — the exact path that failed
+      # `:store_invariant` before the logical-partition migration.
+      Token
+      |> Ash.Changeset.for_create(:revoke_token, %{token: jwt}, authorize?: false)
+      |> Ash.create!()
+
+      assert true == AshAuthentication.TokenResource.token_revoked?(Token, jwt, authorize?: false)
+    end
+
+    test ":revoke_token refuses replay of an already-revoked JWT (single-revoke nonce holds)" do
+      user = create_user!()
+      jwt = jwt_for!(user)
+      jti = jti_of!(jwt)
+      clear_stored_token_row!(jti)
+
+      Token
+      |> Ash.Changeset.for_create(:revoke_token, %{token: jwt}, authorize?: false)
+      |> Ash.create!()
+
+      # Second spend of the same nonce must be refused, not silently OK.
+      assert {:error, _error} =
+               Token
+               |> Ash.Changeset.for_create(:revoke_token, %{token: jwt}, authorize?: false)
+               |> Ash.create()
+    end
+
     test "token_revoked?/3 flips false -> true across a real :revoke_jti" do
       user = create_user!()
       jwt = jwt_for!(user)

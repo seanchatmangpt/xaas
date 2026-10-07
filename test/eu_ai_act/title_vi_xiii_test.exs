@@ -514,9 +514,11 @@ defmodule Xaas.EUAIAct.TitleVIXIII.Deepenings do
 
       assert {:ok, report} = Xaas.Semantics.IncidentReport.build([receipt])
 
-      # :refused status on a REFUSED_EUAIA_* receipt derives both the
-      # Union-law infringement class and the malfunction class.
-      assert Enum.sort(report.classification) == [:INFRINGES_UNION_LAW, :MALFUNCTION]
+      # W708: :refused status on a REFUSED_EUAIA_* receipt derives only the
+      # Union-law infringement class. W679 made build/2 suppress :MALFUNCTION
+      # for EUAIA-family refusal atoms (receipt-integrity family, not a
+      # malfunction) — partition-exact, matching the art12 court.
+      assert Enum.sort(report.classification) == [:INFRINGES_UNION_LAW]
 
       assert report.originating_receipt_digests == ["sha256:deadbeef"]
       assert report.incident_id =~ ~r/^INC-[0-9A-F]+$/
@@ -536,7 +538,9 @@ defmodule Xaas.EUAIAct.TitleVIXIII.Deepenings do
       receipt = unquote(refused_receipt())
 
       assert {:ok, report} = Xaas.Semantics.IncidentReport.build([receipt])
-      assert Enum.sort(report.classification) == [:INFRINGES_UNION_LAW, :MALFUNCTION]
+      # W708: partition-exact classification (W679 suppresses :MALFUNCTION
+      # for REFUSED_EUAIA_* atoms) — same rationale as art73_duty above.
+      assert Enum.sort(report.classification) == [:INFRINGES_UNION_LAW]
 
       # Authority channel: honest typed-open caveat, never a silent "sent".
       assert {:ok, prepared} =

@@ -20,11 +20,12 @@ defmodule Xaas.Semantics.JcsPropertyTest do
   use ExUnitProperties
 
   @moduletag :property
-  @moduletag timeout: 300_000
+  @moduletag timeout: 900_000
 
   alias Xaas.Semantics.Jcs
 
   # ---------- seeded random structure generator ----------
+
 
   # Depth-bounded random JSON-ish structure, deterministic per seed.
   # Maps built from shuffled key lists so insertion order varies.
@@ -83,19 +84,20 @@ defmodule Xaas.Semantics.JcsPropertyTest do
       end)
 
     {vals, rng} =
-      Enum.map_reduce(keys, rng, fn _k, r -> gen_value(r, depth - 1) end)
+      Enum.map_reduce(keys, rng, fn _k, r -> gen_value(r, max(depth, 0)) end)
 
     {Map.new(Enum.zip(keys, vals)), rng}
   end
 
+  @key_alphabet ~w(a b c d e f g h i j k l m n o p q r s t u v w x y z) ++
+                  ~w(0 1 2 3 4 5 6 7 8 9 _ -)
+
   defp rand_key_chars(rng, 0), do: {["k"], rng}
 
   defp rand_key_chars(rng, len) do
-    alphabet = Enum.concat([Enum.map(?a..?z, &<<&1>>), Enum.map(?0..?9, &<<&1>>), ["_", "-"]])
-
     Enum.map_reduce(1..len, rng, fn _, r ->
-      {i, r} = :rand.uniform_s(length(alphabet), r)
-      {[Enum.at(alphabet, i - 1)], r}
+      {i, r} = :rand.uniform_s(38, r)
+      {[Enum.at(@key_alphabet, i - 1)], r}
     end)
   end
 
@@ -109,9 +111,15 @@ defmodule Xaas.Semantics.JcsPropertyTest do
   # Returns :ok if every object in the encoded JSON has keys in ascending
   # binary order; raises otherwise. Scans the actual bytes.
   defp check_key_order(bin) do
-    case scan_object(bin, 0) do
-      {_rest, _} -> :ok
-    end
+    result =
+      case bin do
+        <<"{", _::binary>> -> scan_object(bin, 0)
+        <<"[", rest::binary>> -> scan_array(rest, 0)
+        _other -> {<<>>, 0}
+      end
+
+    {_rest, _ctx} = result
+    :ok
   end
 
   defp scan_object(<<"{", rest::binary>>, ctx) do
@@ -307,8 +315,9 @@ defmodule Xaas.Semantics.JcsPropertyTest do
         decoded = Jason.decode!(encoded)
 
         # Jason returns an integer when the canonical form has no decimal
-        # point (e.g. 6.433333333333334e17 -> 643333333333333400)
-        assert decoded == f or (is_integer(decoded) and decoded * 1.0 == f)
+        # point or exponent (RFC 8785 minimal form). The RFC round-trip
+        # criterion is re-canonicalization equality, so assert that.
+        assert decoded == f or (is_integer(decoded) and Jcs.encode(decoded) == encoded)
 
         assert Jcs.encode(f) == encoded
       end

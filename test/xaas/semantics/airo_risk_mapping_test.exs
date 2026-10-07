@@ -3,7 +3,7 @@ defmodule Xaas.Semantics.AiroRiskMappingTest do
 
   alias Xaas.Semantics.AiroRiskMapping
 
-  @ledger_count 63
+  @ledger_count 71
 
   test "emits a graph string" do
     graph = AiroRiskMapping.risk_graph()
@@ -27,9 +27,9 @@ defmodule Xaas.Semantics.AiroRiskMappingTest do
     end
   end
 
-  test "62 REFUSED_* + 1 BLOCKED_* in the ledger" do
+  test "70 REFUSED_* + 1 BLOCKED_* in the ledger" do
     vs = AiroRiskMapping.variants()
-    assert Enum.count(vs, & &1.refused?) == 62
+    assert Enum.count(vs, & &1.refused?) == 70
     assert Enum.count(vs, &(not &1.refused?)) == 1
   end
 

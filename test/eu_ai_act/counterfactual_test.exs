@@ -382,6 +382,22 @@ defmodule Xaas.EuAiAct.CounterfactualTest do
     # No side effect: the struct is unchanged by the refused transition.
     assert detected.state == :DETECTED
     assert detected.history == [{:detect, :DETECTED}]
+
+    # Lifecycle invariant (W540): history stays forward-only — the rank of each
+    # recorded state on the state lattice is non-decreasing, so a refused skip
+    # can never appear as a completed edge.
+    ranks =
+      VulnerabilityLifecycle.states()
+      |> Enum.with_index()
+      |> Map.new()
+
+    assert ranks[detected.state] == ranks[:DETECTED]
+
+    walk =
+      detected.history
+      |> Enum.map(fn {_kind, st} -> Map.fetch!(ranks, st) end)
+
+    assert walk == Enum.sort(walk)
   end
 
   # -- Art 14(4)(e) — stop authority (fail-closed) --------------------------------------
