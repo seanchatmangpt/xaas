@@ -56,8 +56,8 @@ defmodule Xaas.Governance.AuditExportToken do
       get(:read)
       index(:read)
       post(:issue)
-      patch(:use)
-      patch(:revoke)
+      patch(:use, route: "/:id/use")
+      patch(:revoke, route: "/:id/revoke")
     end
   end
 
@@ -118,7 +118,7 @@ defmodule Xaas.Governance.AuditExportToken do
       validate(Xaas.Governance.Validations.AuditExportTokenNotAlreadyUsed)
 
       change(set_attribute(:used_at, &DateTime.utc_now/0))
-      change(increment(:use_count, 1))
+      change(increment(:use_count, amount: 1))
     end
   end
 
