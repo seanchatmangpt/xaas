@@ -139,15 +139,17 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChangeTest do
       )
       |> Ash.update!(authorize?: false)
 
-    # A second real :approve call against an already-approved record
-    # (re-confirming the same approved_by) must not charge a second real
-    # overage fee.
-    _ =
-      approved
-      |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"},
-        tenant: org_id
-      )
-      |> Ash.update!(authorize?: false)
+    # A second real :approve call against an already-approved record is now a
+    # real typed refusal (W740 ApprovalNotAlreadyApproved state guard) -- the
+    # overage fee can never be charged twice because the second approve never
+    # reaches the ChargeOverage change at all (the change's own
+    # `newly_approved?/2` guard remains as defense-in-depth).
+    assert {:error, %Ash.Error.Invalid{}} =
+             approved
+             |> Ash.Changeset.for_update(:approve, %{approved_by: "approver-noduplicate"},
+               tenant: org_id
+             )
+             |> Ash.update(authorize?: false)
 
     org_balance = real_balance_for(org_id)
 

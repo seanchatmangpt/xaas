@@ -119,6 +119,7 @@ defmodule Xaas.Governance.ApprovalLegalHoldRelease do
       accept([:approved_by])
       require_atomic?(false)
       validate(Xaas.Governance.Validations.ApprovalLegalHoldReleaseRequiresApprover)
+      validate(Xaas.Governance.Validations.ApprovalNotAlreadyApproved)
 
       change(
         {Xaas.Governance.Changes.EnqueueWebhookDeliveries,

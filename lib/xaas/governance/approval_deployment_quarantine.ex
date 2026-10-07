@@ -123,6 +123,7 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
       accept([:approved_by])
       require_atomic?(false)
       validate(Xaas.Governance.Validations.ApprovalDeploymentQuarantineRequiresApprover)
+      validate(Xaas.Governance.Validations.ApprovalNotAlreadyApproved)
     end
   end
 

@@ -131,6 +131,7 @@ defmodule Xaas.Governance.ApprovalBackupRetentionChange do
       )
 
       validate(Xaas.Governance.Validations.ApprovalBackupRetentionChangeRequiresApprover)
+      validate(Xaas.Governance.Validations.ApprovalNotAlreadyApproved)
     end
   end
 

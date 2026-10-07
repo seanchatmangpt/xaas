@@ -116,6 +116,7 @@ defmodule Xaas.Governance.ApprovalDrFailover do
       require_atomic?(false)
       validate(Xaas.Governance.Validations.ApprovalDrFailoverRequiresApprover)
       validate(Xaas.Governance.Validations.ApprovalDrFailoverRequiresOpenIncident)
+      validate(Xaas.Governance.Validations.ApprovalNotAlreadyApproved)
 
       change(
         {Xaas.Governance.Changes.EnqueueWebhookDeliveries,
