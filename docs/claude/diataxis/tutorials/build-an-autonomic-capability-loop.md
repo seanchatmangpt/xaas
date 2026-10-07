@@ -54,6 +54,7 @@ actions do
   create :ingest do
     description "Upsert one real weaver-live-matrix.sh receipt row (idempotent on capability+subject)."
     accept [:capability, :authority, :status, :executed, :exit_code, :subject, :detail]
+    validate {Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate, []}
     upsert? true
     upsert_identity :capability_subject
   end
@@ -76,14 +77,39 @@ authorizes, later policies are skipped entirely.
 ```elixir
 policies do
   bypass action_type(:read) do
-    authorize_if always()
+    authorize_if(always())
+  end
+
+  bypass action(:check_regressions) do
+    authorize_if({Xaas.Checks.SystemActor, []})
+  end
+
+  bypass action(:ingest) do
+    authorize_if({Xaas.Checks.SystemActor, service: :oban_scheduler})
   end
 
   policy always() do
-    forbid_if always()
+    forbid_if(always())
   end
 end
 ```
+
+Beyond the read bypass, the resource now carries two more scoped `bypass`
+blocks and a status-vocabulary gate, each with file:line anchors in
+`lib/xaas/operations/capability_liveness_receipt.ex`:
+
+- An `oban` scheduled action `:check_regressions` runs the regression
+  detector every 15 minutes on a cron (`*/15 * * * *`,
+  `capability_liveness_receipt.ex:45-59`), authorized as the real system
+  authority `%Xaas.SystemAuthority{service: :oban_scheduler}` — the Analyze
+  step no longer runs only when the Mix task or the HTTP route is polled.
+- `bypass action(:ingest)` admits only the `:oban_scheduler` system
+  authority (`capability_liveness_receipt.ex:100-102`), so the deny floor
+  still refuses every other actor.
+- The `:ingest` action validates status through
+  `Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate`
+  (`capability_liveness_receipt.ex:179`, added by W768 G1) — the mechanical
+  ALIVE-requires-execution gate over the standing status vocabulary.
 
 **Every attribute is a straight copy of a receipt field** — `capability`,
 `authority`, `status`, `executed`, `exit_code`, `subject`, `detail`. This resource
@@ -104,23 +130,32 @@ path =
   end
 ```
 
-Note the `authorize?: false` on the create call:
+Note how the create call authorizes — it runs THROUGH authorization as the
+`:oban_scheduler` system authority, never with `authorize?: false`:
 
 ```elixir
 Xaas.Operations.CapabilityLivenessReceipt
 |> Ash.Changeset.for_create(:ingest, %{...})
-|> Ash.create(authorize?: false)
+|> Ash.create(actor: Xaas.SystemAuthority.new(:oban_scheduler), authorize?: true)
 ```
 
 This is deliberate and documented, not a shortcut: the ingest task is a
 system-internal step (real telemetry becoming real Ash state), not a user-facing
-action, so it explicitly bypasses the resource's deny-by-default policy floor
-rather than weakening the floor itself. Every user-facing read of this resource
-still goes through the real `bypass action_type(:read)` policy from step 2.
+action, so it acts AS the real `:oban_scheduler` system authority, which the
+resource's scoped `bypass action(:ingest)` policy from step 2 admits
+(`capability_liveness_receipt.ex:100-102`) — the deny-by-default floor still
+refuses every other actor. No `authorize?: false` bypass remains anywhere on
+this path (an earlier version of this tutorial showed `authorize?: false`
+here; that path was removed — see the task's own comment,
+`xaas.ingest_capability_receipts.ex:55-60`). Every user-facing read of this
+resource still goes through the real `bypass action_type(:read)` policy from
+step 2.
 
 After ingesting, the task immediately calls the regression detector (step 4) and
-prints its result — this is what makes the loop autonomic rather than a one-shot
-batch import: every ingest run also re-checks history for a regression.
+prints its result — and the resource's own AshOban cron schedule (step 2) also
+re-runs the detector every 15 minutes with or without an ingest: every ingest
+run re-checks history for a regression, and the Analyze step now fires on a
+schedule too.
 
 ## Step 4: Read the Analyze step — `CapabilityLivenessRegressions`
 
@@ -230,9 +265,12 @@ its own `json_api do routes do get :read; index :read end end` block (step 2),
 mounted through `XaasWeb.InternalApiRouter` at `/internal-api`
 (`lib/xaas_web/internal_api_router.ex`) — deliberately narrower than the
 customer-facing `XaasWeb.ApiRouter` at `/api`
-(`lib/xaas_web/api_router.ex`), which mounts 7 domains' worth of mechanically
-added read-only routes but explicitly excludes `Xaas.Ledger` and `Xaas.Accounts`
-resources pending a real access-control design.
+(`lib/xaas_web/api_router.ex`), which mounts all 7 domains (`api_router.ex:12-20`,
+including `Xaas.Accounts` and `Xaas.Ledger`) but serves only resource-declared
+routes: the sensitive `Xaas.Ledger` and `Xaas.Accounts.User`/`Token` resources
+declare no JSON:API routes and remain unserved there, while `Xaas.Accounts.Org`
+is the exception that declares routes (`lib/xaas/accounts/org.ex:178-188`,
+read + create + update under `/api/orgs`).
 
 ## Step 7: Verify it worked
 
@@ -293,9 +331,11 @@ You traced a real MAPE-K loop:
 2. **Knowledge**: `Xaas.Operations.CapabilityLivenessReceipt` persists it, upserting
    on `(capability, subject)`, gated by a `bypass action_type(:read)` policy against
    an otherwise deny-by-default floor.
-3. **Analyze/Plan/Execute**: `mix xaas.ingest_capability_receipts` ingests (bypassing
-   authorization deliberately, as a documented system-internal exception) and
-   immediately calls `CapabilityLivenessRegressions.detect/1`.
+3. **Analyze/Plan/Execute**: `mix xaas.ingest_capability_receipts` ingests AS
+   the real `:oban_scheduler` system authority (through the scoped
+   `bypass action(:ingest)` policy — no `authorize?: false` remains) and
+   immediately calls `CapabilityLivenessRegressions.detect/1`; the resource's
+   AshOban cron also re-runs the detector every 15 minutes.
 4. **Exposure**: two token-gated HTTP endpoints
    (`/internal-api/capability_liveness_regressions`,
    `/internal-api/capability_liveness_receipts`) make both the Knowledge and the
@@ -303,6 +343,52 @@ You traced a real MAPE-K loop:
 
 Every status value in this loop traces back to a real shell command's real exit
 code — nothing in the Ash layer invents or upgrades a status.
+
+## Courts backing this tutorial (v26.10.6)
+
+Dated 2026-10-07, at branch `feat/playwright-surface`, HEAD `a0723bf6`
+(+ this lane's working-tree diff). Each entry names the court suite that
+pins the claim and the wave receipt that witnessed it.
+
+- **Token floor (the auth gate in step 6)** — W723 token-floor court:
+  `test/xaas_web/require_internal_api_token_deepening_test.exs`, 16/16 ALIVE;
+  receipt `docs/sjira/v26.10.6/plans/w723-token-floor-court.md`.
+- **JSON:API content negotiation on the same mounted surface** (the
+  `/internal-api` capability-liveness routes ride this stack) — W817
+  negotiation court: `test/xaas_web/jsonapi_content_negotiation_test.exs`,
+  which probes `capability_liveness_receipts` on both routers and pins the
+  401-floor-first ordering and the 406/415 split; receipt
+  `docs/sjira/v26.10.6/plans/w817-negotiation-court.md`.
+- **Status vocabulary gate on `:ingest` (step 2)** — W768 G1:
+  `Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate`
+  (`capability_liveness_receipt.ex:179`); receipt
+  `docs/sjira/v26.10.6/plans/w768-liveness-alive-gate.md`.
+- **Lease kernel clock seam (the loop's wider ultracode capacity/lease
+  sensing)** — W840: `live_leases/1` and `renew/1` in
+  `lib/xaas/ultracode/lease.ex` judge expiry on `DurationBudget.now/0`
+  (one clock for the capacity meter and the claim kernel); regression
+  courts in `test/xaas/ultracode/lease_kernel_deepening_test.exs`
+  (describe block `"W840 clock-seam regression courts"`); receipts
+  `docs/sjira/v26.10.6/plans/w840-clock-seam.md` and
+  `w811-lease-kernel-deepening.md` (W840 amended 3 W811 gap-asserting
+  courts to the fixed semantics).
+- **Execution-fabric worker verbs (the loop's actuation surface)** —
+  10 MCP verbs on `POST /internal-api/execution/mcp`
+  (`claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`,
+  `close_candidate`, `refuse`, `cancel_work`, `actuate`,
+  `resolve_capability`, `surface` —
+  `lib/xaas_web/controllers/execution_fabric_controller.ex:72-220`);
+  refusal/idempotency contracts pinned by the W745/W747 deepening suites
+  (`test/xaas_web/execution_fabric_deepening_test.exs`,
+  `test/xaas/actuation/run_idempotency_deepening_test.exs`); receipt
+  `docs/sjira/v26.10.6/plans/w749-runtime-contract-refresh.md` (verdict
+  table row 2: brief said 8 verbs, code has 10).
+- **OCEL-gated learning evidence (the emitter behind
+  `/internal-api/ocel_summary`)** — W666 egress deepening courts:
+  `test/xaas/telemetry/ocel_egress_deepening_test.exs`, 6 passed on the
+  real emitter -> real ndjson bytes -> `Xaas.Ultracode.Ocel.Validator`
+  path (correlation replayed from disk, rotation bound, no-fabricated-record
+  law); receipt `docs/sjira/v26.10.6/plans/w666-ocel-egress-deepening.md`.
 
 ## See Also
 

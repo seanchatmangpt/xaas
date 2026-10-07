@@ -52,7 +52,7 @@ key = "tutorial-provider-activate-v1"
   )
 ```
 
-Expect `first.status == :succeeded`, `first.replay? == false`, and a sealed receipt carrying the ontology projection hash plus consequence evidence.
+Expect `first.status == :succeeded`, `first.replay? == false`, and a sealed receipt carrying consequence evidence (result snapshot plus `result_hash`). The ontology projection hash rides on the returned intent (`intent.ontology_projection_hash`), not on the receipt body.
 
 ## 5. Verify the consequence
 

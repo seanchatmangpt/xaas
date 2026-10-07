@@ -9,6 +9,74 @@ active; this ERRC cron is now the sole standing activity on this repo. Last Upda
 2026-08-21 (twenty-third pass, analysis-only — implementation deferred to the separate Create
 phase).
 
+## Pointer refresh — 2026-10-07 (v26.10.6 consolidation wave, lane W870)
+
+Three security-relevant repairs from the v26.10.6 consolidation wave landed on surfaces this
+grid tracks. Each was re-verified on-disk at HEAD `a0723bf6` (branch `feat/playwright-surface`)
+before this block was written; receipts live under `docs/sjira/v26.10.6/plans/`:
+
+- **W780 claim-shaped authority guard** — `lib/xaas/actuation.ex:613-614`
+  (`admit_authority/2`) now refuses any struct-shaped authority evidence with the closed-set
+  atom `:claim_shaped_authority_refused`, closing the W763 gap where a candidate
+  `Xaas.Semantics.ComputationClaim` could authorize actuation. Receipt:
+  `docs/sjira/v26.10.6/plans/w780-claim-authority-guard.md`.
+- **W818 incident guards** — `lib/xaas/operations/incident.ex:128,150` wire
+  `IncidentResolvedRequiresResolvedAt` onto `:create` (a `:resolved`-at-birth incident is
+  refused outright) and `incident.ex:155` wires the new `IncidentResolvedIsTerminal` onto
+  `:update` (`resolved → open` reopen refused, stale `resolved_at` retention dies with the
+  path). This extends the grid's own incident-guard item (twenty-third pass, lines
+  ~872-885): both W793 gaps (a) and (b) are closed. Receipt:
+  `docs/sjira/v26.10.6/plans/w818-incident-guards.md`.
+- **W835 SLA-credit overdraft exemption** — both SLA-credit approve change modules
+  (`lib/xaas/billing/changes/approval_sla_credit_apply_approve.ex:119`,
+  `lib/xaas/billing/changes/approval_patch_sla_credit_apply_approve.ex:114`) now pass
+  `context: %{xaas_ledger: %{allow_overdraft: true}}` on the `:transfer` create, adding the
+  SLA-credit path to W785's platform-revenue overdraft exemption list (the one flow that
+  transfers FROM the never-funded `platform:revenue:sla-credits` account). Receipt:
+  `docs/sjira/v26.10.6/plans/w835-sla-exemption.md`.
+
+Unchanged claims elsewhere in this grid stand as written by their own passes; this block
+refreshes pointers only.
+
+## Twenty-fourth-pass update — v26.10.6 consolidation wave (lane W882)
+
+**Real HEAD confirmed: `a0723bf6`** (branch `feat/playwright-surface`). This pass is the
+24th-pass-equivalent for the consolidation wave. Every claim below was re-verified against
+its receipt on disk at this HEAD before inclusion; the claims→receipts table is
+`docs/sjira/v26.10.6/plans/w882-errc-pass-entry.md`.
+
+- **ELIMINATE — seven defect classes the wave removed, each closed by a real run on its exact
+  surface** (receipts under `docs/sjira/v26.10.6/plans/`): double-approve (`:approve` guarded,
+  replacement behavior-pinning tests, `w740-double-approve-guard.md`); SLA double-credit
+  (DB-level `:approve` idempotency guard, `w746-sla-credit-idempotency.md`); the
+  `/internal-api` 406-before-auth leak (floor 401 + exact body, leak pins flipped to
+  regression courts, `w739-406-leak-fix.md`); the claim-shaped-authority hole
+  (`admit_authority/2` typed `:claim_shaped_authority_refused`, `w780-claim-authority-guard.md`);
+  ALIVE-without-execution (liveness gate requires `status == "ALIVE"` ⟹ `executed == true`,
+  else typed refusal, `w768-liveness-alive-gate.md`); the magic-link store partition break
+  (ash_onetime 1.1 logical-partition migration + maintenance queues + BLOCKED pin flipped to
+  a real round-trip pass, `w786-onetime-partition.md` per `w757-magic-link-store.md`);
+  return-inflation (`:return` guard reads the DB, refuses typed unless checkout OPEN,
+  `w809-return-guard.md`).
+- **REDUCE — the ad hoc typed-gap disclosure sprawl consolidated into one register**:
+  `w859-typed-gap-register.md` (42 rows across 22 disclosing receipts, each row's current
+  status re-read from its status-bearing receipt, never transcribed from the disclosure line):
+  36 OPEN / 4 REPAIRED / 2 TYPED-OPEN, count-verified by real grep
+  (`w859-register-receipt.md`). The 36 still-open rows are honestly typed OPEN, not silently
+  retired.
+- **RAISE — the green gate and its evidence discipline**: terminal census certified
+  deterministic (1348 census − 1347 green-gate pass = exactly the one honestly typed open-gap
+  test, repeated identically after settle), `w821-terminal-census-2.md` (register context:
+  `w815-gap-registration.md`); priority e2e revalidated ALIVE at current strength (24 passed /
+  1 skipped / 0 failed, fresh playwright boot), `w842-e2e-revalidation.md`.
+- **CREATE — the wave's standing new machinery**: ~25 new court/regression suites across the
+  W7xx–W8xx court receipts (representative: `w763-sa2a-boundary-court.md`,
+  `w703-plug-order-court.md`, `w774-dev-routes-court.md`, `w829-sensitive-routing-court.md`,
+  `w837-ts-drift-court.md`; indexed by the register); the consolidated `mix xaas.doctor`
+  tree-health task (one JSON `{checks}` document, PARTIAL_ALIVE on exact subject,
+  `w791-doctor-task.md`, tuned `w825-doctor-tune.md` / `w847-doctor-recal.md`); and the
+  typed-gap register itself (W859, above) as the standing index over the remaining open surface.
+
 ## Twenty-third-pass update
 
 **Real HEAD confirmed: `4ae55ab`.** `git rev-parse HEAD` →
