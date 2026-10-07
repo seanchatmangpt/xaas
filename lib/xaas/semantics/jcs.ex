@@ -40,6 +40,24 @@ defmodule Xaas.Semantics.Jcs do
 
   """
 
+  @doc """
+  Encodes a term as RFC 8785 canonical JSON.
+
+  ## Examples
+
+      iex> Xaas.Semantics.Jcs.encode(%{"b" => %{"d" => 2, "c" => [true, nil]}, "a" => 1})
+      "{\\"a\\":1,\\"b\\":{\\"c\\":[true,null],\\"d\\":2}}"
+
+      iex> Xaas.Semantics.Jcs.encode(9_007_199_254_740_992)
+      "9007199254740992"
+
+      iex> Xaas.Semantics.Jcs.encode(1.0e30)
+      "1e+30"
+
+      iex> Xaas.Semantics.Jcs.encode(-0.0)
+      "0"
+
+  """
   @spec encode(term()) :: String.t()
   def encode(data), do: Jcs.encode(data)
 end

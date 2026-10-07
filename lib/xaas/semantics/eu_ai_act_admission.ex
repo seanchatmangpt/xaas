@@ -18,7 +18,7 @@ defmodule Xaas.Semantics.EuAiActAdmission do
   | (b) social scoring | `REFUSED_EUAIA_SOCIAL_SCORING` | no join of `:social_behavior` data into an unrelated decision context |
   | (c) predictive policing | `REFUSED_EUAIA_PREDICTIVE_POLICING` | no individualized join under a `:predict_offending` purpose |
   | (d) untargeted facial scraping | `REFUSED_EUAIA_FACIAL_SCRAPING` | `:facial_images` domain admits only `:consented` provenance |
-  | (e) emotion recognition | `REFUSED_EUAIA_EMOTION_RECOGNITION` | no `:affective` data domain in `:workplace`/`:education` settings |
+  | (e) emotion recognition | `REFUSED_EUAIA_EMOTION_RECOGNITION` | no `:affective` data domain in `:workplace`/`:education` settings, and no bare `:emotion_recognition` technique atom (W897, closing w665's kernel gap) |
   | (f) biometric categorization | `REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION` | biometric match tokens are boolean-only; no sensitive `:inferences` |
   | (g)/(h) realtime RBI | `REFUSED_EUAIA_REALTIME_RBI` | no `:realtime` latency goal under biometric identification in `:public_space` |
 
@@ -26,8 +26,9 @@ defmodule Xaas.Semantics.EuAiActAdmission do
   regardless of its content. The check never inspects free text, model
   output, or user data — only the declared intent schema.
 
-  This module is an admission surface only. It never grants authority, never
-  actuates, and is wired into no live route (integration is a later lane).
+  This module is an admission surface only. It never grants authority and
+  never actuates. Wired at runtime intake via `XaasWeb.Plugs.EuAiActAdmissionPlug`
+  on `/a2a` POSTs (endpoint plug, W521) — refusal envelopes only, no DO authority.
   """
 
   @typedref_atoms [
@@ -38,7 +39,10 @@ defmodule Xaas.Semantics.EuAiActAdmission do
     :REFUSED_EUAIA_FACIAL_SCRAPING,
     :REFUSED_EUAIA_EMOTION_RECOGNITION,
     :REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION,
-    :REFUSED_EUAIA_REALTIME_RBI
+    :REFUSED_EUAIA_REALTIME_RBI,
+    # W732 closure repair (W713 typed finding): the admit/1 fallback verdict
+    # is a declared refusal atom, not an undeclared literal.
+    :REFUSED_EUAIA_MALFORMED_CANDIDATE
   ]
 
   @type refusal_atom ::
@@ -50,6 +54,7 @@ defmodule Xaas.Semantics.EuAiActAdmission do
           | :REFUSED_EUAIA_EMOTION_RECOGNITION
           | :REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION
           | :REFUSED_EUAIA_REALTIME_RBI
+          | :REFUSED_EUAIA_MALFORMED_CANDIDATE
 
   @typedoc "Structural intent schema. Only these fields are inspected."
   @type candidate :: %{
@@ -68,7 +73,11 @@ defmodule Xaas.Semantics.EuAiActAdmission do
 
   @type verdict :: {:ok, :admitted} | {:error, refusal_atom()}
 
-  @doc "The eight typed Art. 5(1) refusal atoms, in article order."
+  @doc """
+  The typed refusal atoms, in article order: the eight Art. 5(1)
+  prohibited-practice atoms plus `REFUSED_EUAIA_MALFORMED_CANDIDATE` (the
+  `admit/1` fallback verdict for non-map candidates; W732 closure repair).
+  """
   @spec refusal_atoms() :: [refusal_atom(), ...]
   def refusal_atoms, do: @typedref_atoms
 
@@ -97,6 +106,9 @@ defmodule Xaas.Semantics.EuAiActAdmission do
 
   def describe(:REFUSED_EUAIA_REALTIME_RBI),
     do: "Art. 5(1)(g)-(h) realtime remote biometric identification in public space"
+
+  def describe(:REFUSED_EUAIA_MALFORMED_CANDIDATE),
+    do: "Malformed candidate intent map (schema-shape refusal, not an Art. 5(1) partition)"
 
   @doc """
   Admit one candidate intent map. Checks run in article order (a)-(h) and the
@@ -129,7 +141,9 @@ defmodule Xaas.Semantics.EuAiActAdmission do
       {fn c -> predictive_policing_join?(c) end, :REFUSED_EUAIA_PREDICTIVE_POLICING},
       # (d) facial images of non-consented (scraped) provenance
       {fn c -> scraped_facial?(c) end, :REFUSED_EUAIA_FACIAL_SCRAPING},
-      # (e) affective-state domain present in workplace/education settings
+      # (e) affective-state domain present in workplace/education settings,
+      #     or a bare :emotion_recognition technique atom (W665 kernel gap
+      #     closed by W897: the bare atom used to admit)
       {fn c -> affective_in_context?(c) end, :REFUSED_EUAIA_EMOTION_RECOGNITION},
       # (f) biometric surface with sensitive inference fields or non-boolean match tokens
       {fn c -> biometric_inference?(c) end, :REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION},
@@ -167,9 +181,13 @@ defmodule Xaas.Semantics.EuAiActAdmission do
       Map.get(c, :provenance) != :consented
   end
 
+  # W897 (w665 kernel-gap repair): a bare `:emotion_recognition` technique
+  # atom is itself an Art. 5(1)(e) trigger — previously it admitted unless
+  # joined with an affective-domain + workplace/education conjunction.
   defp affective_in_context?(c) do
-    :affective in wrap_field(Map.get(c, :data_domains, [])) and
-      Map.get(c, :setting) in [:workplace, :education]
+    :emotion_recognition in wrap_field(Map.get(c, :techniques, [])) or
+      (:affective in wrap_field(Map.get(c, :data_domains, [])) and
+         Map.get(c, :setting) in [:workplace, :education])
   end
 
   defp biometric_inference?(c) do

@@ -32,6 +32,13 @@ defmodule Xaas.Semantics.IncidentReport do
 
   @refusal_prefix "REFUSED_EUAIA_"
 
+  # The closed Art. 5(1) admission-refusal set, reused (never duplicated) from
+  # the admission module's exposed surface. These atoms are the admission layer
+  # working as designed and must never classify as :MALFUNCTION.
+  @euaia_refusal_strings MapSet.new(Xaas.Semantics.EuAiActAdmission.refusal_atoms(),
+                           &Atom.to_string/1
+                         )
+
   @type classification ::
           :INFRINGES_UNION_LAW
           | :HARM_TO_RIGHTS
@@ -146,10 +153,11 @@ defmodule Xaas.Semantics.IncidentReport do
   end
 
   defp maybe_add_malfunction(acc, refusal, receipt) do
+    euaia_refusal? = is_binary(refusal) and MapSet.member?(@euaia_refusal_strings, refusal)
+
     malfunction? =
-      (is_binary(refusal) and not String.starts_with?(refusal, @refusal_prefix) and
-         refusal != "") or
-        receipt[:status] in [:refused, :error]
+      (is_binary(refusal) and refusal != "" and not euaia_refusal?) or
+        (receipt[:status] in [:refused, :error] and not euaia_refusal?)
 
     if malfunction?, do: [:MALFUNCTION | acc], else: acc
   end

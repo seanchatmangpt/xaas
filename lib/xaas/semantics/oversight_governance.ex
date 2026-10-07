@@ -20,9 +20,14 @@ defmodule Xaas.Semantics.OversightGovernance do
   The receipt corpus + OCEL event stream ARE the notification record to the
   operator: every consequential transition is emitted through
   `Xaas.Telemetry.OcelAshEmitter`, so the durable corpus is the
-  operator-facing record. Serious-incident reporting to authorities (the
-  3.49 family) stays **OPEN_GAP** honestly — no incident-reporting seam
-  exists (W525b).
+  operator-facing record. Serious-incident reporting (the 3.49 family): the
+  report *builder* is real — `Xaas.Semantics.IncidentReport` derives Art 73
+  classifications over the witnessed receipt corpus (malfunction suppression
+  per W679) — while the authority transmission channel remains typed OPEN
+  (`transmit/1` returns `:PREPARED_NOT_TRANSMITTED`, never a silent send).
+  The `worker_notification/0` surface below still carries this as typed
+  `{:OPEN_GAP, ...}` (W525b). (Doc refreshed by W833; previously claimed
+  "no incident-reporting seam exists", stale since IncidentReport landed.)
 
   ## Art. 27 — FRIA (deployer-class, structured data)
 

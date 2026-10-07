@@ -98,7 +98,8 @@ defmodule Xaas.Semantics.RobustMargin do
   end
 
   def admit(margin, l_h, l_e, epsilon)
-      when is_number(l_h) and is_number(l_e) and is_number(epsilon) and
+      when (is_number(margin) or is_function(margin, 0)) and
+             is_number(l_h) and is_number(l_e) and is_number(epsilon) and
              l_h >= 0 and l_e >= 0 and epsilon >= 0 do
     # Gate-boundary arithmetic rescue (W630): float overflow in the penalty
     # product or the margin subtraction is a typed refusal, not a badarith raise.

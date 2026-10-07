@@ -75,12 +75,18 @@ defmodule Xaas.Semantics.DatasetAdmission do
       if completeness < 1 - eta do
         {:error, {:REFUSED_INCOMPLETE_DATASET, %{completeness: completeness, threshold: 1 - eta}}}
       else
-        w1 = sliced_w1(samples, seed, k)
+        case sliced_w1(samples, seed, k) do
+          # W865: the helper carries its own typed overflow refusal; pass it
+          # through verbatim instead of term-comparing a tuple against epsilon.
+          {:error, :REFUSED_ARITHMETIC_OVERFLOW} = refusal ->
+            refusal
 
-        if w1 > epsilon do
-          {:error, {:REFUSED_BIAS_THRESHOLD, %{w1_proxy: w1, epsilon_bias: epsilon}}}
-        else
-          {:ok, :ADMITTED, %{w1_proxy: w1, completeness: completeness, projections: k}}
+          w1 ->
+            if w1 > epsilon do
+              {:error, {:REFUSED_BIAS_THRESHOLD, %{w1_proxy: w1, epsilon_bias: epsilon}}}
+            else
+              {:ok, :ADMITTED, %{w1_proxy: w1, completeness: completeness, projections: k}}
+            end
         end
       end
     rescue
@@ -128,27 +134,45 @@ defmodule Xaas.Semantics.DatasetAdmission do
   of the exact 1-D W1 (sorted-quantile mean absolute deviation) between the
   A=0 and A=1 populations.
   """
-  @spec sliced_w1([sample()], integer(), pos_integer()) :: float()
+  @doc """
+  Seeded, deterministic sliced W1: mean over `k` pseudo-random unit directions
+  of the exact 1-D W1 (sorted-quantile mean absolute deviation) between the
+  A=0 and A=1 populations.
+
+  W865 helper-side overflow closure: extreme-magnitude features can overflow
+  the quantile interpolation (`a + (b - a) * frac`) or the W1 aggregation.
+  When called directly (outside `admit/2`'s gate-boundary rescue), that raise
+  is converted to the same typed refusal atom the gate returns — never a raw
+  ArithmeticError. Fail-closed, through the existing closed atom set.
+  """
+  @spec sliced_w1([sample()], integer(), pos_integer()) ::
+          float() | :inf | {:error, :REFUSED_ARITHMETIC_OVERFLOW}
   def sliced_w1(samples, seed, k) do
-    a0 = for(s = %{} <- samples, s.sensitive == 0, do: vector(s))
-    a1 = for(s = %{} <- samples, s.sensitive == 1, do: vector(s))
+    # Helper-boundary rescue (W865, same house pattern as the admit/2 gate
+    # rescue from W630/W676): direct helper callers get the typed atom.
+    try do
+      a0 = for(s = %{} <- samples, s.sensitive == 0, do: vector(s))
+      a1 = for(s = %{} <- samples, s.sensitive == 1, do: vector(s))
 
-    cond do
-      a0 == [] or a1 == [] ->
-        # One population unobservable: no transport certificate is decidable,
-        # so return infinity to force the bias refusal (fail-closed).
-        :inf
+      cond do
+        a0 == [] or a1 == [] ->
+          # One population unobservable: no transport certificate is decidable,
+          # so return infinity to force the bias refusal (fail-closed).
+          :inf
 
-      true ->
-        dim = max_feature_dim(a0 ++ a1)
-        1..k
-        |> Enum.map(fn i ->
-          dir = random_unit_direction(dim, {seed, i})
-          w1_1d(Enum.map(a0, &project(&1, dir)), Enum.map(a1, &project(&1, dir)))
-        end)
-        |> Enum.map(&to_float/1)
-        |> Enum.sum()
-        |> Kernel./(k)
+        true ->
+          dim = max_feature_dim(a0 ++ a1)
+          1..k
+          |> Enum.map(fn i ->
+            dir = random_unit_direction(dim, {seed, i})
+            w1_1d(Enum.map(a0, &project(&1, dir)), Enum.map(a1, &project(&1, dir)))
+          end)
+          |> Enum.map(&to_float/1)
+          |> Enum.sum()
+          |> Kernel./(k)
+      end
+    rescue
+      ArithmeticError -> {:error, :REFUSED_ARITHMETIC_OVERFLOW}
     end
   end
 
