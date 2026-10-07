@@ -145,6 +145,7 @@ defmodule Xaas.MixProject do
       {:ash_oban, "~> 0.8"},
       {:ash_admin, "~> 1.3"},
       {:ash_graphql, "~> 1.0"},
+      {:absinthe_plug, "~> 1.5"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
       {:ash_typescript, "~> 0.17"},

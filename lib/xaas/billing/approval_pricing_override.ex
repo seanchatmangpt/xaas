@@ -53,17 +53,6 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
 
   graphql do
     type(:approval_pricing_override)
-
-    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
-    # Billing domain on Xaas.GraphqlSchema via this resource (the
-    # Subscription resource itself is lane-collided with W975b's in-flight
-    # SPEC-07 edits and is deliberately untouched). Read-only; the
-    # resource's real Ash policies are unchanged and still gate every
-    # resolution.
-    queries do
-      get(:approval_pricing_override, :read)
-      list(:approval_pricing_overrides, :read)
-    end
   end
 
   json_api do
@@ -82,29 +71,11 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
     repo(Xaas.Repo)
   end
 
-  # SPEC-07 (W905 W729-GAP-3, lane W970a): real Ash attribute-strategy
-  # multitenancy backstop, converging on the convention lane W975b landed
-  # on the sibling Xaas.Billing resources (subscription, sla_credit_apply,
-  # patch_sla_credit_apply, revenue_recognition): `global?(true)` because
-  # every existing caller runs tenant-less today AND because Ash 3.34's
-  # update path (Ash.Actions.Update.set_tenant/1) enforces tenant presence
-  # from the RESOURCE flag regardless of per-action `:allow_global` -- so
-  # resource-level global? is the only shape that keeps every existing
-  # tenant-less mutation working. Tenant-less operations behave exactly as
-  # before; any operation that DOES bind a tenant is hard-filtered to that
-  # org's rows -- the isolation backstop W729 disclosed. See
-  # test/xaas/billing/billing_multitenancy_court_test.exs.
-  multitenancy do
-    strategy(:attribute)
-    attribute(:org_id)
-    global?(true)
-  end
-
   actions do
     defaults([:read])
 
     create :create do
-      accept([:requested_by, :approved_by, :org_id])
+      accept([:requested_by, :approved_by])
     end
 
     # Real mutation route (issue #20): approve a pending pricing-override
@@ -128,13 +99,6 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
     end
 
     attribute :approved_by, :string do
-      public?(true)
-    end
-
-    # SPEC-07: tenant attribute backing the `multitenancy` block above.
-    # Nullable by design: rows minted without a tenant stay global rows
-    # (nil org_id matches global reads); a supplied tenant stamps it.
-    attribute :org_id, :string do
       public?(true)
     end
   end

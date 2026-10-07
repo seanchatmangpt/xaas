@@ -299,15 +299,6 @@ defmodule XaasWeb.Router do
     plug(XaasWeb.Plugs.AuthenticateOrg)
   end
 
-  # SPEC-30 (W819/W802-GAP-1; lane W975b design-wave 4): GraphQL over HTTP.
-  # `Xaas.GraphqlSchema` compiled but was never mounted -- the disclosed
-  # UNSUPPORTED(graphql-http-surface) gap. Mounted here behind the same
-  # `:require_internal_api_token` floor as every other machine surface
-  # (CLAUDE.md API-auth floor: no unauthenticated sibling route).
-  # Registered BEFORE the catch-all `forward "/api"` below -- `forward`
-  # matches every sub-path under its prefix and would otherwise shadow
-  # this route (same real reason as the /internal-api/fabric and /sparql
-  # scopes above).
   scope "/api/graphql" do
     pipe_through([:require_internal_api_token, :api])
 
@@ -317,6 +308,15 @@ defmodule XaasWeb.Router do
     )
   end
 
+  # SPEC-30 (W819/W802-GAP-1; lane W975b design-wave 4): GraphQL over HTTP.
+  # `Xaas.GraphqlSchema` compiled but was never mounted -- the disclosed
+  # UNSUPPORTED(graphql-http-surface) gap. Mounted here behind the same
+  # `:require_internal_api_token` floor as every other machine surface
+  # (CLAUDE.md API-auth floor: no unauthenticated sibling route).
+  # Registered BEFORE the catch-all `forward "/api"` below -- `forward`
+  # matches every sub-path under its prefix and would otherwise shadow
+  # this route (same real reason as the /internal-api/fabric and /sparql
+  # scopes above).
   scope "/" do
     # W299c (same class as W150): the token floor must precede content
     # negotiation here too. `:internal_api` carries `plug(:accepts,
