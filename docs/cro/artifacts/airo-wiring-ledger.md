@@ -19,7 +19,7 @@ Wave-commit column annotates the commit landed by W937
 | ggen-marketplace | feat/aaif-gcp-roadmap-v26.10.5 | `b58d7854142bacbd3aeffb83501646cae56c858a` | b58d78541 | plans/w602-airo-marketplace.md |
 | ggen | feat/v26.10.5-release-cut | `ba837d7437367dd84543c07b5179c88e214cbff4` | ba837d743 | plans/w614-ggen-airo.md |
 | beam4pm | main | `560202484f5f61568e74fb0bfde13f6f6a67fdd2` | 56020248 | plans/w634-beam4pm-airo.md |
-| beam4pm/vendor/ggen-marketplace (submodule) | main | `6e4de9765e36392c09539afb1464e1eae4f9b2d8` | 6e4de9765 | plans/w658b (via w937) |
+| beam4pm/vendor/ggen-marketplace (submodule) | main | `6e93441406684f6270a90c7f44660cbadbe0500d` | 6e9344140 | plans/w658b (via w937; rebased per w980b, equivalence verified per w982h) |
 | ash_surface | main | `b70da9e1c2f5c3ff0bc61299b5a0dcc65bcdd1d3` | b70da9e1c | plans/w637-affidavit-surface-airo.md |
 | gymact | v26926/gymact-land-aloop-execution-kernel | `2fa947cb71f91b6cfbc7f86cc5d69efc9f349337` | 2fa947c | plans/w603-gymact-airo.md |
 | autofde-lab | feat/doctrine-lab | `31e3decfbbbd2d0df8f5fb9085d5d9de32042911` | 31e3decf | plans/w604-autofde-airo.md |
@@ -30,7 +30,9 @@ Wave-commit column annotates the commit landed by W937
 | ferroplan | main | `e2c48d339cb084a94f0c5d6ae4cccc1904b74b1f` | e2c48d3 | plans/w638-ferroplan-airo.md |
 
 beam4pm gitlink check: `git -C beam4pm rev-parse HEAD:vendor/ggen-marketplace`
-= `6e4de9765e36392c09539afb1464e1eae4f9b2d8` = submodule HEAD — not dangling.
+= `6e93441406684f6270a90c7f44660cbadbe0500d` = submodule HEAD — not dangling.
+(Updated by W982h: 6e4de9765 was rebased to 6e9344140 by W980b during the
+NON_FAST_FORWARD repair; patch-ids identical, no content lost.)
 Repos not touched by W937 (ash_a2a, ash_r2rml, ggen_igniter, ash_affidavit)
 retain their pre-wave HEADs; no post-pin commit was reported for them.
 
@@ -67,6 +69,7 @@ are sha256-identical at
 | w637 | ash_affidavit | `ontology/airo_risk_description.ttl` (12,084 B) | 4-test ExUnit court; path-exists assertions; vocab per w600 pin | 4 passed | plans/w637-affidavit-surface-airo.md |
 | w637 | ash_surface | `priv/airo_risk_description.ttl` (11,271 B) | 4-test ExUnit court after 57-file compile; path-exists assertions | 4 passed | plans/w637-affidavit-surface-airo.md |
 | w638 | ferroplan | `docs/airo-risk-description.ttl` (5,417 B) + `scripts/check_airo.sh` | 592 triples after vocab union; 15/15 vocab terms; 5/5 cited paths | script PASS | plans/w638-ferroplan-airo.md |
+| w982m | xaas | `priv/airo_risk_description.ttl` (10,323 B, own-sha c85de1b8…, header pins canonical vocab 6274d2d8…) — **ALIVE** | RDF.ex parse: 95 triples, 4 RiskSources / 5 RiskControls / 1 Risk; 26 distinct airo: IRIs, all canonical-vocab members (`missing_from_vocab: []`); 6/6 cited paths on disk | 6 passed (pin court ×2) | plans/w982m-airo-xaas-ttl.md |
 
 ## Cross-repo sha consistency check
 
@@ -81,6 +84,52 @@ byte-verbatim vendored copy:
 | /tmp/airo.ttl (shared cache behind w614/w638 checks) | 6274d2d8711e046cf38f1b5b2980188094d4aa87b5af79804005a06468fd8469 |
 
 All four copies match the w600/w621b pin byte-for-byte.
+
+## Extension — W981e (2026-10-07): repos present on disk, absent from this ledger
+
+Cross-check of `~/` sibling checkouts against the coverage table. Three
+fleet repos found on disk with no ledger row; verified SHAs via real
+`git -C <repo> rev-parse HEAD`; reference docs at `docs/airo/<repo>/`.
+All rows UNKNOWN — no AIRo artifact exists in any of the three repos yet
+(filesystem-verified); each row's falsifier names the pin court that
+would have to exist for ALIVE.
+
+| repo | branch | HEAD (2026-10-07) | AIRo risk dimension | cited surface | falsifier (ALIVE gate) | standing |
+|---|---|---|---|---|---|---|
+| ash_graphlaw | main | `1d89ba5f9a56f79e2c0b04cf1ca307d1086d3137` | Control/guardrail enforcement over agentic actions | `lib/ash_graphlaw/admissions.ex`, `authority.ex`, `evidence.ex` (WASM admission kernel) | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses w/ RiskSource/Control/Risk triples | UNKNOWN |
+| ggen-ecosystem | main | `7e107f18c43b8cf2266da68f310e878cd37a8577` | Human-oversight/governance over autonomous actuation | `admission/` (`courts/ws1-*.rq`, `policies.ttl`, `exclusions.ttl`), `ecosystem.ttl` (`eco:doesNotOwn eco:AmbientActuation`) | pin court at SHA: `admission/airo_risk_description.ttl` w/ vocab sha, cited paths exist, 10 courts execute over emitted graph | UNKNOWN |
+| chatman-ecosystem | docs/v27927-closed-manufacture-loop | `83ceef8a862a423917e84a8713500745ab162dad` | Control over autonomous-agent actuation authority | `crates/gall` (governed actuator, authority boundary; same pattern as zcode-cli gall-work) | pin court at SHA: `crates/gall/airo_risk_description.ttl` w/ vocab sha, cited paths exist, `cargo test -p gall` passes | UNKNOWN |
+
+No-refusals: no repo in this extension was recorded UNSUPPORTED(no-referent) —
+all three have a concrete, cited surface. Other on-disk repos surveyed and
+excluded as non-fleet or non-Ash/BEAM: `ash_atlassian` (43e3d21b), `ex4pm_engine`
+(not a git repo), `ash_dspy`/`ash_kudzu`/`ash_planning_center`/`ash_expo`/`ash_autofde`
+(not surveyed this lane; candidates for a future extension).
+
+## Extension — W981f (2026-10-07): Wave-2 wiring of excluded candidate repos
+
+W981e left six Ash-sibling repos as future-extension candidates. All six
+checkouts exist under `$HOME`; HEADs verified via real
+`git -C <repo> rev-parse HEAD` on 2026-10-07. Note: the ash_atlassian
+number W981e flagged as possibly stale (`43e3d21b…`) was re-verified and
+is **current** at HEAD on main. Filesystem check per repo: no `*airo*`
+artifact exists (excluding `.git`/`_build`/`deps`) — all rows UNKNOWN,
+none invented. Reference docs: `docs/airo/<repo>/airo-reference.md` (new
+paths, no duplication with W981e's three).
+
+| repo | branch | HEAD (2026-10-07) | AIRo risk dimension | cited surface | falsifier (ALIVE gate) | standing |
+|---|---|---|---|---|---|---|
+| ash_atlassian | main | `43e3d21b7c4e4571493fcf3757392ed16f2dd967` | Human-oversight/governance over architectural transitions | `lib/ash_atlassian/governance/` (architecture_decision/requirement/receipt, sbb_qualification, transition_obligation), `architecture_governance.ex` | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses w/ RiskSource/Control/Risk | UNKNOWN |
+| ash_dspy | feat/v26926-ashdspy-abb-sbb-seed | `5d985d5332e86d663ba554d249498ba5bd9a0306` | Verification/admission integrity for AI-program evaluation outcomes | `lib/ash_dspy/court.ex` + `court/`, `receipt.ex`, `verify.ex`, `metric.ex`, `ocel.ex` | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses | UNKNOWN |
+| ash_kudzu | main | `2d600ffd4a6721ed5534c753bd4031cd2bf77500` | Evidence-admission integrity for ontology extraction from untrusted sources | `lib/ash_kudzu/shacl_admission.ex`, `sa2a_evidence_admission.ex`, `sa2a_candidate.ex`, `unified_source/` | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses | UNKNOWN |
+| ash_planning_center | main | `5ee26cbdc8fef26c92c7691355c76f5aed2e7b2c` | Data-integrity/access-control over a generated external-API client | `lib/ash_planning_center/client.ex`, `json_api.ex`, `open_api.ex`, `generated/`, `people/` | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses | UNKNOWN |
+| ash_expo | test/end-to-end-codegen | `59a80d5e9a18208d8b25c47e02de6e714e0b8e8c` | Generated-artifact integrity (codegen/manifest drift in mobile builds) | `lib/ash_expo/codegen.ex`, `manifest.ex`, `resource/`, `info.ex` | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses | UNKNOWN |
+| ash_autofde | main | `65cd05e1bd884383456423af3e516981d8747560` | Resource-allocation control + actuation receipts in WASM CMCA cascade | `lib/ash_autofde/cascade_allocator.ex`, `wasm_cmca.ex`, `resources/actuation_receipt.ex`, `resources/cmca_cascade_plan.ex` | pin court at SHA: `priv/airo_risk_description.ttl` w/ vocab sha `6274d2d8…`, cited paths exist, graph parses | UNKNOWN |
+
+No UNSUPPORTED(no-referent) rows: all six repos have a concrete, cited
+surface (paths verified on disk at their SHAs). After this extension, the
+ledger covers 25 repos (16 + 3 W981e + 6 W981f); no on-disk `$HOME` fleet
+repo remains unwired to lane knowledge.
 
 ## Carry-forwards
 

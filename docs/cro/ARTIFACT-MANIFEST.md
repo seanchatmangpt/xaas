@@ -107,3 +107,34 @@ All paths verified on disk 2026-10-07. Provenance receipts live under
 No repo artifact may be created *for* a cycle inside the closure tree. If a
 cycle needs evidence that does not exist above, the cycle entry records
 `BLOCKED(NO_EVIDENCE_ARTIFACT)` — it does not generate one.
+
+### W980–W982 wave additions (`test -f`-verified 2026-10-07, lane W982n)
+
+Receipts below were created after the W850–W980 manifest sweep (w970c/w970d)
+and were not previously indexed. All paths verified on disk 2026-10-07.
+
+| Artifact | Stage(s) | Evidence path | Provenance receipt |
+|---|---|---|---|
+| Typed-gap register finalization (0 flips, 17 OPEN confirmed) | S3 | `docs/sjira/v26.10.6/plans/w859-typed-gap-register.md` (register, pre-existing; finalization receipt new) | `docs/sjira/v26.10.6/plans/w980j-register-close.md` |
+| AIRo pin court | S2, S3 | `docs/sjira/v26.10.6/plans/w981j-airo-pin-court.md` | same |
+| AIRo pin court followup | S2, S3 | `docs/sjira/v26.10.6/plans/w981w-airo-pin-court-followup.md` | same |
+| Marketplace pin-drift check (w982h) | S2, S3 | `docs/sjira/v26.10.6/plans/w982h-marketplace-pin-drift.md` + `docs/airo/pin_drift_check.exs` | same |
+| AIRo wiring ledger 25-repo extension | S2 | `docs/cro/artifacts/airo-wiring-ledger.md` (extended this session; previously indexed only via w668 verification row) | `docs/sjira/v26.10.6/plans/w981e-airo-wiring-extension.md`, `docs/sjira/v26.10.6/plans/w981f-airo-wiring-wave2.md` |
+| AIRo repo reference set — 9 repos (`docs/airo/<repo>/airo-reference.md`) | S2 | `docs/airo/{ash_atlassian,ash_autofde,ash_dspy,ash_expo,ash_graphlaw,ash_kudzu,ash_planning_center,chatman-ecosystem,ggen-ecosystem}/airo-reference.md` | `docs/sjira/v26.10.6/plans/w981e-airo-wiring-extension.md` + `w981f-airo-wiring-wave2.md` |
+| AIRo pin-court vocabulary | S2 | `docs/airo/pin-court-vocab.md` | `docs/sjira/v26.10.6/plans/w981j-airo-pin-court.md` |
+| xaas push (a0723bf6→6f235905, fast-forward, SHA equality) | S5 | `docs/sjira/v26.10.6/plans/w981y-push.md` | same |
+| Fleet push, 5 repos (2 pushed + 3 tracking-only) | S5 | `docs/sjira/v26.10.6/plans/w982d-fleet-push.md` | same |
+| Push audit (W981z) | S5 | `docs/sjira/v26.10.6/plans/w981z-push-audit.md` | same |
+| Manifest v3 staging | S5 | `docs/sjira/v26.10.6/plans/w981u-manifest-v3-staging.md` | same |
+| EU-AI-Act tag audit | S3 | `docs/sjira/v26.10.6/plans/w981v-euaia-tag-audit.md` | same |
+| Open-gap mutation hardening (3×KILL) | S3 | `docs/sjira/v26.10.6/plans/w981p-open-gap-mutation-hardening.md` | same |
+| OS register sweep | S3 | `docs/sjira/v26.10.6/plans/w981g-os-register-sweep.md` | same |
+| Registration identity scope court | S3 | `docs/sjira/v26.10.6/plans/w981s-registration-identity-scope.md` | same |
+| Migration replay/idempotency triage | S3 | `docs/sjira/v26.10.6/plans/w971b-migration-replay.md`, `docs/sjira/v26.10.6/plans/w981n-migration-triage.md` | same |
+| Integration commit 6f235905 (@doc dedup) | S5 | `docs/sjira/v26.10.6/plans/w981h-integration-commit.md` | same |
+| Residue commits + sync exec/commit + gitlink commit + relocation exec | S5 | `docs/sjira/v26.10.6/plans/w980f-residue-commits.md`, `w980g-sync-exec.md`, `w980h-sync-commit.md`, `w980d-gitlink-commit.md`, `w980c-relocation-exec.md` | each its own receipt |
+| Depth batch + health/e2e sync | S3 | `docs/sjira/v26.10.6/plans/w980i-depth-batch.md`, `w980l-health-e2e-sync.md` | each its own receipt |
+| ash-surface commit + Playwright revalidation | S3 | `docs/sjira/v26.10.6/plans/w980k-ashsurface-commit.md`, `w981r-ashsurface-playwright-revalidate.md` | each its own receipt |
+| Fleet push fold (W980/W980b) + submodule push | S5 | `docs/sjira/v26.10.6/plans/w980-fleet-push.md`, `w980b-submodule-push.md` | each its own receipt |
+| ENOENT commit + parse-inline-idents fix + diataxis deepening | S3 | `docs/sjira/v26.10.6/plans/w981-enoent-commit.md`, `w981c-parse-inline-idents-fix.md`, `w981m-diataxis-deepening.md` | each its own receipt |
+| CRO cycle advance entry (this fold) | S5 | `docs/cro/CYCLE-LOG.md` §CYCLE-3 | `docs/sjira/v26.10.6/plans/w982n-cro-cycle-advance.md` |

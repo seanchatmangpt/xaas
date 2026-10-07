@@ -257,3 +257,81 @@ W952 fold; W971 flipped 8 stale), 18 DESIGN-class spec'd for the DESIGN wave per
 `plans/w955-push-gate-spec.md`: lane-lease cleanup, dev migrate, ggen sync, pin
 advance, push (gated in that order). Standing: written on the uncommitted tree at
 `fab56ae1`; no commit, no push from this lane. Receipt `plans/w977-closing-entry.md`.
+
+## CYCLE-3 — CRO loop bookkeeping advance (2026-10-07, lane W982n)
+
+Read-fresh + disk-verified fold of the W980–W982 session (prior entries:
+CYCLE-2-FOLD W952, CYCLE-CLOSE W977, counts corrected W979). No mix commands
+run; no commit made. All claims below re-read from disk this session.
+
+**Terminal state as witnessed.**
+
+(a) **Typed-gap register** (`plans/w859-typed-gap-register.md`), row-level
+grep on disk today: **17 OPEN / 32 REPAIRED / 2 TYPED-OPEN** (51 rows total).
+Drift flag: W980j's receipt and the W977 CYCLE-CLOSE entry both state
+31 REPAIRED; the on-disk register now shows **32 REPAIRED** — one row has
+flipped (or been added) since W980j's snapshot without a receipt-cited fold.
+Registered as DRIFT(REGISTER_COUNT) — not papered over; needs a one-row
+reconcile against its repair receipt next lane.
+
+   **CORRECTION (2026-10-07, lane W982q): DRIFT(REGISTER_COUNT) RESOLVED.**
+   Row-level tally re-run on the register: 17 OPEN / 32 REPAIRED / 2
+   TYPED-OPEN across 51 rows. The +1 REPAIRED is W969e
+   GAP(same-attendee-re-register-blocked-by-identity), appended and flipped
+   after W980j's snapshot citing w981s-registration-identity-scope.md; receipt,
+   court test (enrollment_journey_court_test.exs step 6), and the
+   `EnforceActiveRegistrationIdentity` change all verified on tree. The 32nd
+   REPAIRED is legitimate; register footer updated to 51 rows total
+   (receipt: plans/w982q-register-count-reconcile.md).
+
+(b) **AIRo wiring ledger 25-repo wave** (w981e/w981f): ledger
+`docs/cro/artifacts/airo-wiring-ledger.md` extended on disk this session
+(13,947 bytes, mtime 09:04). New reference surface at `docs/airo/` — 9 repos
+(ash_atlassian, ash_autofde, ash_dspy, ash_expo, ash_graphlaw, ash_kudzu,
+ash_planning_center, chatman-ecosystem, ggen-ecosystem) each with
+`airo-reference.md`, plus `pin_drift_check.exs` and `pin-court-vocab.md`.
+Untracked; uncommitted.
+
+(c) **Pin + drift courts** (w981j/w981w/w982h): AIRo pin court + followup
++ marketplace pin-drift receipts present on disk (test -f, this session).
+
+(d) **Push receipts**: `plans/w981y-push.md` — xaas `a0723bf6..6f235905`
+fast-forward, post-push SHA equality `6f235905` local == remote, exit 0.
+`plans/w982d-fleet-push.md` — 5-repo fleet push table: ash_graphlaw,
+ash_autofde pushed (SHA equality, ALIVE); ash_a2a, ggen_igniter, ash_affidavit
+already synced, upstream tracking configured; corrects W981z's NO-UPSTREAM
+flagging for those three.
+
+(e) **Integration**: `plans/w981h-integration-commit.md` — commit `6f235905`
+(W946d @doc dedup) LANDED and (per w981y) PUSHED. w982b/w982k named in the
+dispatch as integration lanes — **no receipt files w982b/w982k exist on
+disk**; marked IN-FLIGHT (also: no w982b/w982k files at all — flag as
+MISSING_RECEIPT(IN_FLIGHT_LANES)).
+
+(f) **Other landed this session** (receipts test -f verified):
+w981u manifest v3 staging; w981v EU-AI-Act tag audit; w981p open-gap mutation
+hardening 3×KILL; w981g OS register sweep; w981s registration identity scope;
+w971b/w981n migration replay/idempotency triage (note per w981h: the three
+untracked migrations on disk do not match W971b's stated versions — disclosed
+in w981h, still unreconciled); w980j register close-out (0 flips).
+
+(g) **Standing**: everything above written on the uncommitted working tree at
+HEAD `6f235905` (branch `feat/playwright-surface`, pushed). Operator steps
+(lane-lease cleanup, dev migrate, ggen sync, pin advance) remain NOT YET per
+`plans/w946d-runbook-final.md` §FINAL.
+
+**Status vocabulary**: ALIVE — register close-out (17/32/2 on disk), xaas push
+(a0723bf6→6f235905), 5-repo fleet push, manifest v3 staging, tag audit,
+mutation hardening, pin/drift courts (receipts on disk). PARTIAL — AIRo 25-repo
+ledger wave (ledger + 9 repo references on disk, untracked/uncommitted; pin
+court receipts present). IN-FLIGHT — w982b/w982k integration lanes (receipts
+absent). DRIFT — register REPAIRED count 31(receipt) vs 32(disk);
+w971b migration versions vs untracked migrations on disk.
+
+   **CENSUS-GATE NOTE (2026-10-07, lane W982w): eu_ai_act gate settled at ≥1352
+   passed / 0 failed, `--include eu_ai_act --exclude eu_ai_act_open_gap`, witnessed at
+   6f235905-era head by w981x.** W981v's ≥1385 projection retired — ba9703fb's
+   moduletag fix reclassified 33 already-running tests as gated-visible (visibility ≠
+   count delta); receipt: `plans/w982w-tag-projection-reconcile.md`.
+
+Receipt: `docs/sjira/v26.10.6/plans/w982n-cro-cycle-advance.md`.
