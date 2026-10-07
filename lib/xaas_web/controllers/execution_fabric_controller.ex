@@ -917,6 +917,14 @@ defmodule XaasWeb.ExecutionFabricController do
   defp format_reason(reason) when is_binary(reason), do: reason
   defp format_reason({tag, detail}) when is_atom(tag), do: "#{tag}:#{inspect(detail)}"
 
+  # W984ca: bare-atom deny reasons (e.g. `:no_lease` from the hook
+  # endpoints' refused/3 arms) previously fell through to the
+  # `inspect/1` catch-all and leaked an atom-inspected `":no_lease"`
+  # on the wire; the string reason is the contract (the `stop` arm's
+  # own `not_closeable` payload and every hook-depth court assert the
+  # bare `"no_lease"` shape).
+  defp format_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+
   # Real, typed extraction for the common Ash validation-failure shape
   # (`Xaas.Ultracode.Validations.WorktreeIsSafe`, `Run.goal`'s
   # `max_length` constraint, ...): surfaces the actual `field`/`message`

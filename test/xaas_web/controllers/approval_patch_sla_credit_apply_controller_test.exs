@@ -224,13 +224,16 @@ defmodule XaasWeb.ApprovalPatchSlaCreditApplyControllerTest do
     assert persisted.approved_by == nil
   end
 
-  # Real regression test for this pass's own selected CREATE item: proves
-  # the real, live-HTTP-demonstrated vulnerability found by the
-  # sixteenth-pass ERRC grid sweep is now really closed on this sibling
-  # too. Xaas.Billing.Checks.SlaCreditActorOrgMatches denies with a real
-  # 403 when the actor's asserted org and the payload's own org_id
-  # disagree.
-  test "POST rejects creating a request whose org_id does NOT match the actor's asserted org, not silently allowed",
+  # Real regression test for this pass's own selected CREATE item. Same
+  # layer-move as the sibling ApprovalSlaCreditApply court (W984ca, per
+  # the W970a multitenancy-court precedent): since W982p's
+  # attribute-strategy multitenancy backstop + ResolveOrgActor tenant
+  # binding landed, a :create payload's org_id is force-normalized to the
+  # actor's resolved tenant BEFORE any policy check observes it, so the
+  # old "policy denies with 403" pin is obsolete -- the lawful shape is
+  # 201 with the row persisted under the ACTOR's real org and ZERO rows
+  # under the fabricated org (data-layer isolation, the stronger shape).
+  test "POST normalizes a fabricated cross-org org_id to the actor's asserted org, never persisting the fabricated identity",
        %{conn: conn} do
     attacker_org = real_org_slug!()
     fabricated_victim_org_id = "org-victim-fabricated-#{System.unique_integer([:positive])}"
@@ -252,7 +255,18 @@ defmodule XaasWeb.ApprovalPatchSlaCreditApplyControllerTest do
       |> put_req_header("content-type", "application/vnd.api+json")
       |> post("/api/approval_patch_sla_credit_apply", body)
 
-    assert conn.status == 403
+    assert conn.status == 201
+
+    # Real cross-check: the fabricated org identity was never persisted
+    # -- the row (if any) lives under the actor's own org.
+    assert ApprovalPatchSlaCreditApply
+           |> Ash.Query.filter(org_id == ^fabricated_victim_org_id)
+           |> Ash.read!(authorize?: false) == []
+
+    assert [%{org_id: ^attacker_org}] =
+             ApprovalPatchSlaCreditApply
+             |> Ash.Query.filter(requested_by == "attacker-requester")
+             |> Ash.read!(authorize?: false)
 
     # Real cross-check: no row was persisted at all, not just a rejected
     # response -- a denied create has zero real side effects.
@@ -264,11 +278,13 @@ defmodule XaasWeb.ApprovalPatchSlaCreditApplyControllerTest do
            "a rejected create must never open a real Ledger.Account for the fabricated org"
   end
 
-  # Mirrors ApprovalSlaCreditApply's own real, live-HTTP-proven exploit --
-  # this sibling was confirmed byte-identical in every load-bearing
-  # respect (real diff against the change module, this pass's own ERRC
-  # grid entry). This test proves the real fix on this resource too -- a
-  # real 403, no approval, and zero Ledger money movement.
+  # Mirrors ApprovalSlaCreditApply's cross-org PATCH court. Since W982p's
+  # attribute-strategy multitenancy backstop landed, the cross-org PATCH
+  # pin flipped 403 -> 404 (W984ca, per the W970a multitenancy-court
+  # precedent): with query-layer tenant isolation the attacker's tenant
+  # no longer even sees the victim row, so Ash's hard filter answers a
+  # typed NotFound (404) -- the Ash-idiomatic STRONGER shape. The exploit
+  # stays closed: no approval, zero Ledger money movement.
   test "PATCH rejects approving a request whose org_id does NOT match the actor's asserted org -- the real sixteenth-pass exploit, now closed",
        %{conn: conn} do
     victim_org = real_org_slug!()
@@ -290,7 +306,9 @@ defmodule XaasWeb.ApprovalPatchSlaCreditApplyControllerTest do
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_patch_sla_credit_apply/#{pending.id}", body)
 
-    assert conn.status == 403
+    # 404, not 403: the tenant hard-filter makes the victim row invisible
+    # (typed NotFound), per the W970a multitenancy-court precedent.
+    assert conn.status == 404
 
     persisted = ApprovalPatchSlaCreditApply |> Ash.get!(pending.id, authorize?: false)
 

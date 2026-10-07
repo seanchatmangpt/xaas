@@ -228,15 +228,19 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
     assert persisted.approved_by == nil
   end
 
-  # Real regression test for this pass's own selected CREATE item: proves
-  # the real, live-HTTP-demonstrated vulnerability found by the
-  # sixteenth-pass ERRC grid sweep is now really closed. Before this pass:
-  # an actor asserting ANY X-Org-Id (or a fabricated org_id payload with
-  # no relationship to the actor's own asserted org at all) could create a
-  # pending SLA credit request under any org identifier it invented. Now:
-  # Xaas.Billing.Checks.SlaCreditActorOrgMatches denies with a real 403
-  # when the actor's asserted org and the payload's own org_id disagree.
-  test "POST rejects creating a request whose org_id does NOT match the actor's asserted org, not silently allowed",
+  # Real regression test for this pass's own selected CREATE item. The
+  # original exploit shape (fabricated payload org_id landing a pending
+  # request under an invented org) is still closed -- but the closure
+  # moved layers. Since W982p added the attribute-strategy multitenancy
+  # backstop (strategy :attribute, attribute :org_id, global? true) plus
+  # the route's ResolveOrgActor tenant binding, a :create payload's
+  # org_id is force-normalized to the actor's resolved tenant BEFORE any
+  # policy check observes it, so the old "policy denies with 403" pin is
+  # obsolete: the lawful shape (W984ca, per the W970a multitenancy-court
+  # precedent) is now 201 with the row persisted under the ACTOR's real
+  # org and ZERO rows under the fabricated org -- data-layer isolation,
+  # the stronger shape, no fabricated identity ever persisted.
+  test "POST normalizes a fabricated cross-org org_id to the actor's asserted org, never persisting the fabricated identity",
        %{conn: conn} do
     attacker_org = real_org_slug!()
     fabricated_victim_org_id = "org-victim-fabricated-#{System.unique_integer([:positive])}"
@@ -258,13 +262,18 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
       |> put_req_header("content-type", "application/vnd.api+json")
       |> post("/api/approval_sla_credit_apply", body)
 
-    assert conn.status == 403
+    assert conn.status == 201
 
-    # Real cross-check: no row was persisted at all, not just a rejected
-    # response -- a denied create has zero real side effects.
+    # Real cross-check: the fabricated org identity was never persisted
+    # -- the row (if any) lives under the actor's own org.
     assert ApprovalSlaCreditApply
            |> Ash.Query.filter(org_id == ^fabricated_victim_org_id)
            |> Ash.read!(authorize?: false) == []
+
+    assert [%{org_id: ^attacker_org}] =
+             ApprovalSlaCreditApply
+             |> Ash.Query.filter(requested_by == "attacker-requester")
+             |> Ash.read!(authorize?: false)
 
     assert real_balance_for(fabricated_victim_org_id) == nil,
            "a rejected create must never open a real Ledger.Account for the fabricated org"
@@ -274,8 +283,14 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
   # sweep found and disclosed: an actor could fabricate a victim org_id,
   # create a request under it, and self-approve as its own invented
   # approver -- real money landed in a real Ledger account for an org that
-  # was never authenticated, never even created. This test proves the
-  # real fix -- a real 403, no approval, and zero Ledger money movement.
+  # was never authenticated, never even created. Since W982p's
+  # attribute-strategy multitenancy backstop landed, the cross-org PATCH
+  # pin flipped 403 -> 404 (W984ca, per the W970a multitenancy-court
+  # precedent): with query-layer tenant isolation the attacker's tenant
+  # no longer even sees the victim row, so Ash's hard filter answers a
+  # typed NotFound (404) -- the Ash-idiomatic STRONGER shape (no
+  # existence leak, no policy admission path at all). The exploit stays
+  # closed: no approval, zero Ledger money movement.
   test "PATCH rejects approving a request whose org_id does NOT match the actor's asserted org -- the real sixteenth-pass exploit, now closed",
        %{conn: conn} do
     victim_org = real_org_slug!()
@@ -297,7 +312,9 @@ defmodule XaasWeb.ApprovalSlaCreditApplyControllerTest do
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_sla_credit_apply/#{pending.id}", body)
 
-    assert conn.status == 403
+    # 404, not 403: the tenant hard-filter makes the victim row invisible
+    # (typed NotFound), per the W970a multitenancy-court precedent.
+    assert conn.status == 404
 
     persisted = ApprovalSlaCreditApply |> Ash.get!(pending.id, authorize?: false)
 
