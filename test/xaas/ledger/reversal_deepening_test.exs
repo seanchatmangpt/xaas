@@ -97,7 +97,9 @@ defmodule Xaas.Ledger.ReversalDeepeningTest do
   # -- real write helpers --------------------------------------------------
 
   defp open_account!(identifier) do
-    case account_id_for(identifier) do
+    case Account
+         |> Ash.Query.filter(identifier: identifier)
+         |> Ash.read_one!(authorize?: false) do
       nil ->
         Account
         |> Ash.Changeset.for_create(:open, %{identifier: identifier, currency: "USD"})
@@ -379,10 +381,10 @@ defmodule Xaas.Ledger.ReversalDeepeningTest do
       # transfer from the guard's perspective, so re-reversing it (restoring
       # the credit) is lawful and marked against the REVERSAL, not the
       # original -- one compensating transfer per original, never two.
-      assert {:ok, %Transfer{} = re_reversal} =
-               Transfer
-               |> Ash.Changeset.for_create(:reverse, %{transfer_id: reversal.id})
-               |> Ash.create!(authorize?: false)
+      re_reversal =
+        Transfer
+        |> Ash.Changeset.for_create(:reverse, %{transfer_id: reversal.id})
+        |> Ash.create!(authorize?: false)
 
       assert re_reversal.reverses_transfer_id == reversal.id
       assert Money.equal?(real_balance_for(org_id), Money.new(:USD, "10.00"))
