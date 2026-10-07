@@ -18,21 +18,25 @@ Per the beam4pm-rf3-ocel and beam4pm-ash-domain findings (see
 and no reusable OCEL codec API — it cannot be integrated with over the
 network. `ex4pm_web` does expose one: a real controller action,
 `Ex4pmWeb.OcelController.ingest/2`
-(`/Users/sac/ex4pm/apps/ex4pm_web/lib/ex4pm_web/controllers/ocel_controller.ex`),
+(`/Users/sac/ex4pm/test/demo_web/lib/ex4pm_web/controllers/ocel_controller.ex`),
 routed at `POST /api/v1/ocel/events`
-(`/Users/sac/ex4pm/apps/ex4pm_web/lib/ex4pm_web/router.ex`). That action
+(`/Users/sac/ex4pm/test/demo_web/lib/ex4pm_web/router.ex`). That action
 calls `Ex4pm.Stream.Ingest.ingest_envelope/2`
-(`/Users/sac/ex4pm/apps/ex4pm_stream/lib/ex4pm/stream/ingest.ex`), which
+(`/Users/sac/ex4pm/lib/ex4pm/stream/ingest.ex`), which
 validates the envelope via `Ex4pm.OCEL.validate_envelope/1`
-(`/Users/sac/ex4pm/apps/ex4pm_core/lib/ex4pm/ocel.ex`), normalizes it, feeds
+(`/Users/sac/ex4pm/lib/ex4pm/ocel.ex`), normalizes it, feeds
 it to `Ex4pm.Engine.OnlineMiner`, records an evidence receipt, and — via the
 controller's own broadcaster callback — projects it through
 `Ex4pm.Domain.Projector.project_log/1` and broadcasts it over
 `Phoenix.PubSub` on topic `"process_intelligence:live"` for real-time
 LiveView listeners (`Ex4pmWeb.ProcessIntelligenceLive`).
 
-xaas does not reimplement any of that. `OcelForwarder` only builds the
-envelope shape `validate_envelope/1` requires and POSTs it.
+xaas does not reimplement any of that. `OcelForwarder` builds the
+envelope shape `validate_envelope/1` requires, validates it against the
+real `Ex4pm.OCEL.validate_envelope/1` (xaas consumes ex4pm as a real
+pinned git dependency, `{:ex4pm, git: ...}` in `mix.exs`), and only
+POSTs if that validation passes — a shape drift is refused at
+construction time, not discovered as a silent non-2xx.
 
 ## Real envelope shape (read field-for-field, not assumed)
 
@@ -50,13 +54,16 @@ the per-event `"ocel:omap"` id list, so they are omitted from the forwarded
 envelope.
 
 Each event record inside `"events"` is normalized by
-`Ex4pm.OCEL.normalize_event/2`, which accepts either bare OCEL-2.0-JSON keys
-(`"id"`, `"activity"`, `"timestamp"`) or the prefixed JSON-OCEL keys xaas
-already produces (`"ocel:eid"`, `"ocel:activity"`, `"ocel:timestamp"`) via
-its key-alias lookup — so `OcelAshEmitter`'s existing per-event map is
-forwarded unchanged, with no reshaping needed at the event level.
+`Ex4pm.OCEL.normalize_event/2`, whose key-alias lookup accepts both the
+prefixed JSON-OCEL keys (`"ocel:eid"`, `"ocel:activity"`,
+`"ocel:timestamp"`) and the plain OCEL 2.0 keys (`"id"`, `"type"`,
+`"time"`). `OcelAshEmitter` now emits the plain OCEL 2.0 shape
+(`"id"`/`"type"`/`"time"`/`"attributes"`/`"relationships"`, per its own
+moduledoc's reshape), so the per-event map is forwarded unchanged.
 
-`OcelForwarder.forward/1` wraps that unchanged event map in:
+`OcelForwarder.forward/1` delegates envelope construction to
+`Xaas.Telemetry.OcelEnvelope.build/3`
+(`lib/xaas/telemetry/ocel_envelope.ex`), which wraps the event in:
 
 ```elixir
 %{
@@ -67,6 +74,9 @@ forwarded unchanged, with no reshaping needed at the event level.
 }
 ```
 
+then validates the envelope with the real `Ex4pm.OCEL.validate_envelope/1`
+before POSTing (see above).
+
 ## Configuration
 
 - `config :xaas, :ex4pm_ocel_ingest_url` — the full ingest URL (e.g.
@@ -76,8 +86,8 @@ forwarded unchanged, with no reshaping needed at the event level.
 - `config :xaas, :ex4pm_ocel_ingest_timeout_ms` — Req's `receive_timeout`,
   via `EX4PM_OCEL_INGEST_TIMEOUT_MS` (default `2000`).
 
-HTTP client: `Req` (already a transitive/direct dependency per
-`mix.lock`, backed by `Finch`) — no new HTTP dependency was added.
+HTTP client: `Req` (`{:req, "~> 0.5"}` is a direct dependency in
+`mix.exs`, backed by `Finch`).
 
 ## Failure handling
 
@@ -97,6 +107,8 @@ process-mining work — DFG discovery, conformance checking, and beam4pm's
 ex4pm_engine's and beam4pm's job, not xaas's. xaas does not reimplement OCEL
 validation, DFG discovery, or conformance logic anywhere in this codebase;
 `Xaas.Telemetry.OcelForwarder` is exclusively an egress/transport concern.
+(It *calls* the real ex4pm validator on the envelope it builds — see the
+git dependency above — but the validation logic itself lives in ex4pm.)
 
 ## Testing
 
@@ -110,8 +122,10 @@ cases.
 
 ## See also
 
-- `beam4pm-ex4pm-dependency-decision.md` — why no mix path/hex dependency on
-  beam4pm/ex4pm exists; this forwarder is the "batch 2" HTTP integration
-  that document anticipates.
+- `beam4pm-ex4pm-dependency-decision.md` — the original decision document.
+  Superseded on one point: xaas now consumes ex4pm as a real pinned git
+  dependency (`{:ex4pm, git: "https://github.com/seanchatmangpt/ex4pm.git", ...}`
+  in `mix.exs`), used for real `Ex4pm.OCEL.validate_envelope/1`
+  pre-POST validation. beam4pm itself still has no mix dependency.
 - `lib/xaas/telemetry/ocel_ash_emitter.ex` — the real Ash-action telemetry
   source this forwarder's input comes from.

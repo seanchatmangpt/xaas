@@ -41,8 +41,8 @@ Separately, generated `.ex` files were not auto-formatted by `mix ggen_igniter.s
 this session — the sync tool's own `mix compile --warnings-as-errors` gate does not catch
 formatting drift, so hand-running `mix format` after every sync was required. This is now
 fixed for real: `~/ggen_igniter/lib/ggen_igniter/reactors/reconcile_reactor.ex`'s
-`format_generated_content/2` (called from `render_target/3` around line 1440, defined at
-line 1486) runs every rendered `.ex`/`.exs` body through `Code.format_string!/1` before it
+`format_generated_content/2` (called from `render_target/3` at line 1717, defined at
+line 1744) runs every rendered `.ex`/`.exs` body through `Code.format_string!/1` before it
 reaches `PendingActuation.for_file`/`for_inject`, with a rescue that falls back to the
 original unformatted content on a `Code.format_string!/1` failure — so a formatting bug
 never fails an otherwise-successful sync. Non-Elixir output paths are never touched. Treat
@@ -62,7 +62,7 @@ purely-generated-file gate can see across the macro-expansion boundary.
 correct. Manually wire the generated macro into a real call site (a real router, a real
 module) and run `mix compile --warnings-as-errors` on **that** call site, not just on the
 generated file in isolation, before trusting the template. `XaasWeb.McpScope.mount/0` being
-actually `require`d and `import`ed at `lib/xaas_web/router.ex:173-174` and invoked inside a
+actually `require`d and `import`ed at `lib/xaas_web/router.ex:180-181` and invoked inside a
 real `scope "/mcp" do ... end` block is the concrete verification step that caught this
 exact defect class for this template.
 
@@ -83,7 +83,7 @@ exposed as an MCP tool at all.
 
 ### The fix
 
-`ggen-marketplace/packs/elixir-mcp-a2a-pack/ontology.ttl` (line 56) now declares
+`ggen-marketplace/packs/elixir-mcp-a2a-pack/ontology.ttl` (line 65) now declares
 `ema:exposedVia` as a closed-vocabulary property on `ema:Capability`: `"mcp"` | `"a2a"` |
 `"both"`. The pack's comment on that property states the correction explicitly and names the
 two real id lists above as the falsifying evidence. Consuming templates
@@ -119,7 +119,7 @@ capability row, not a one-off fix scoped only to this pack.
   `plug`-inside-`scope` limitation, and the real tool list.
 - `lib/xaas_web/a2a/next_read_user_agent_skills.ex` — the real generated A2A skills list and
   its regeneration command.
-- `lib/xaas_web/router.ex:49-50,173-174` — the real `pipeline :audit_mcp_tool_call` definition
+- `lib/xaas_web/router.ex:49-50,180-181` — the real `pipeline :audit_mcp_tool_call` definition
   and the real macro call site that verifies `mcp_scope.eex`'s output.
 - `~/ggen_igniter/lib/ggen_igniter/reactors/reconcile_reactor.ex` (`format_generated_content/2`,
   called from `render_target/3`) — the real in-process `Code.format_string!/1` auto-format

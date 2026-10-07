@@ -37,7 +37,9 @@ Do not reuse a key for a different target consequence. The control plane refuses
 ## Diagnose refusals
 
 - `{:error, :idempotency_key_required}` — supply a non-empty key.
-- Direct `Ash.update` of `:actuate_status` fails — expected; only `Xaas.Actuation.Reactor` manufactures the required context.
+- `{:error, :delegated_actuation_requires_authority_evidence}` — when `authorize?: false`, a non-empty `authority:` map is required (`Xaas.Actuation.run/4` admits authority at `lib/xaas/actuation.ex:576-582`).
+- `{:error, {:idempotency_not_replayable, key, status}}` — the key matches an intent that is not `:succeeded` (e.g. still `:executing`); retry only after the intent reaches a terminal status (`lib/xaas/actuation.ex:677`).
+- Direct `Ash.update` of `:actuate_status` fails — expected; the action is `public?(false)` and guarded by the `Xaas.Actuation.Validations.ReactorContext` validation; only `Xaas.Actuation.Reactor` manufactures the required context.
 - Projection/admission failure — inspect `Xaas.Semantics.Registry` output; public-ontology admission must succeed before consequential DO.
 - Reactor failure/halt — treat the operation as failed; the transaction is rolled back rather than committing an unreceipted mutation.
 

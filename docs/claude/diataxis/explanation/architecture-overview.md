@@ -1,17 +1,17 @@
 # Architecture Overview
 
-This is the whole-system map for xaas: what the 13 Ash domains own, how the
+This is the whole-system map for xaas: what the 19 Ash domains own, how the
 `/internal-api` / `/api` / `/mcp` / `/a2a` / `/webhooks` routing splits requests, and how the
 cross-cutting mechanisms — actor/tenant resolution, system-actor injection, audit trail,
 webhooks, Reactor actuation, and the Ontop SPARQL bridge — compose on top of that resource
 set. It links out to the narrower existing explainers rather than re-deriving their content;
 read this first, then follow the links for depth on any one topic.
 
-## The 13 Ash domains
+## The 19 Ash domains
 
-Defined in `lib/xaas/*.ex` (`use Ash.Domain`), configured in `config/config.exs:13-27`,
-resources counted directly from each domain's real `resources do ... end` block (92 total,
-re-verified 2026-09-22):
+Defined in `lib/xaas/*.ex` (`use Ash.Domain`), configured in `config/config.exs:13-33`,
+resources counted directly from each domain's real `resources do ... end` block (116 total,
+re-verified 2026-10-07):
 
 | Domain | Module | Resources | What it owns |
 |---|---|---|---|
@@ -20,14 +20,20 @@ re-verified 2026-09-22):
 | Coupling | `Xaas.Coupling` (`lib/xaas/coupling.ex`) | 1 | Admission path for the formal proposal coupling engine: `CouplingRun` wires proposal sets into a box-constrained weighted-least-squares solver |
 | Generation | `Xaas.Generation` (`lib/xaas/generation.ex`) | 1 | Deterministic generation closure `g(CanonicalGraph) -> Projection`; `ProjectionRecord` is the admission boundary forbidding `CanonicalGraph + ManualPatch` |
 | Ledger | `Xaas.Ledger` (`lib/xaas/ledger.ex`) | 4 | Real financial ledger — `Balance`/`Account`/`Transfer` — deliberately unwired from `/api` (see below) |
-| Marketplace | `Xaas.Marketplace` (`lib/xaas/marketplace.ex`) | 2 | `Provider` + its approval resource; multitenant via `actor_org_matches`/`actor_org_filter` checks; provider lifecycle mutation is fenced behind the receipted actuation path |
+| Marketplace | `Xaas.Marketplace` (`lib/xaas/marketplace.ex`) | 3 | `Provider`, `ApprovalProviderStatusChange`, `Pack`; multitenant via `actor_org_matches`/`actor_org_filter` checks; provider lifecycle mutation is fenced behind the receipted actuation path |
 | Ocel | `Xaas.Ocel` (`lib/xaas/ocel.ex`) | 5 | Object-centric event log: typed events relate to sets of typed objects; object state is an append-only fold of deltas, never a mutated column |
-| Operations | `Xaas.Operations` (`lib/xaas/operations.ex`) | 20 | `AuditLogEntry`, capability-liveness receipts, actuation intents/receipts, incidents, project measurement, incident/route-castle lifecycle, and the AutofdePlanner cache/catalog/candidate/match resources |
+| Operations | `Xaas.Operations` (`lib/xaas/operations.ex`) | 21 | `AuditLogEntry`, capability-liveness receipts, actuation intents/receipts, incidents, project measurement, incident/route-castle lifecycle, and the AutofdePlanner cache/catalog/candidate/match resources |
 | Platform | `Xaas.Platform` (`lib/xaas/platform.ex`) | 7 | `Webhook` + `WebhookDelivery` (outbound HMAC dispatch), plus platform-level route/approval resources |
 | Governance | `Xaas.Governance` (`lib/xaas/governance.ex`) | 28 | The largest domain: `FreezeWindow`, `AuditExportToken`, `PentestFinding`, `InternalApiToken`, and the bulk of the `Approval*` maker-checker surface, including the 4 non-global-multitenancy resources (`ApprovalDrFailover`, `ApprovalLegalHoldRelease`, `ApprovalDeploymentQuarantine`, `ApprovalBackupRetentionChange`) |
 | Library | `Xaas.Library` (`lib/xaas/library.ex`) | 7 | Next Read case study: `Book`, `Checkout`, `HoldRequest`, `Curation`, `RecommendationLog`, `School`, `PersonaGrant` — powers 6-factor ML recommendation ranker, PubSub reactive LiveViews, Ash AI MCP tools, and the A2A persona agents |
 | TemporalMemory | `Xaas.TemporalMemory` (`lib/xaas/temporal_memory.ex`) | 1 | Bitemporal process memory: `Observation` with retroactive-observation-safe admission, `as_of` query, deterministic replay verifier |
-| Ultracode | `Xaas.Ultracode` (`lib/xaas/ultracode.ex`) | 3 | Run/Epoch/Receipt control plane for the autonomous execution fabric — runs, epochs, and the receipts that evidence them |
+| Ultracode | `Xaas.Ultracode` (`lib/xaas/ultracode.ex`) | 8 | Run/Epoch/Receipt control plane for the autonomous execution fabric, plus the five `CapitalCensus.*` resources (`ExperienceCluster`, `Gap`, `Resolution`, `WorkOrder`, `Episode`) |
+| A2a | `Xaas.A2a` (`lib/xaas/a2a.ex`) | 2 | `Agent` + `Task` — A2A protocol surface as Ash resources |
+| Conference | `Xaas.Conference` (`lib/xaas/conference.ex`) | 7 | `Event`, `Track`, `Session`, `Speaker`, `Sponsor`, `Attendee`, `Registration` — all Ets-backed private tables |
+| Graphlaw | `Xaas.Graphlaw` (`lib/xaas/graphlaw.ex`) | 2 | `EngineLimit` + `Capability` — graphlaw engine-registry surface |
+| Igniter | `Xaas.Igniter` (`lib/xaas/igniter.ex`) | 2 | `PackManifest` + `RefusalCode` — ggen_igniter surface catalog |
+| Security | `Xaas.Security` (`lib/xaas/security.ex`) | 2 | `Finding` + `Posture` — estate security posture domain |
+| Witness | `Xaas.Witness` (`lib/xaas/witness.ex`) | 2 | `CertifiedReceipt` + `VerificationKey` — certified-receipt witness surface |
 
 Extensions are no longer uniform: most domains use `AshJsonApi.Domain` +
 `AshGraphql.Domain` + `AshAdmin.Domain`; `Accounts`, `Billing`, `Marketplace`, and
@@ -57,13 +63,16 @@ gated by `XaasWeb.Plugs.RequireInternalApiToken` — a real Bearer token check a
    `XaasWeb.StripeWebhookController` itself).
 2. **Plain-JSON controller routes under `/internal-api`**: capability liveness, OCEL
    summary, Prometheus query, health, the AshTypescript `rpc/run`/`rpc/validate` pair, the
-   Ontop SPARQL proxy, and the execution-fabric endpoints (`execution/mcp` with its eight
-   lease verbs, `execution/hooks/:event`, org-scoped `execution/runs`, and the receipt read
+   Ontop SPARQL proxy, the EU AI Act evidence-pack export (`GET /internal-api/eu-ai-act/pack`,
+   `EuAiActExportController` — same fail-closed pack build as `mix xaas.eu_ai_act_pack`,
+   token-gated by this scope's floor), and the execution-fabric endpoints (`execution/mcp`
+   with its ten verbs, `execution/hooks/:event`, org-scoped `execution/runs`, and the receipt read
    path) — all registered *before* the catch-all forward below them because Phoenix
    `forward` matches every sub-path under its prefix and would otherwise shadow them.
 3. **Execution fabric**: `POST /internal-api/execution/mcp` is the worker-facing MCP
    surface (`claim_next`, `heartbeat`, `admit_tool`, `record_provider_event`,
-   `close_candidate`, `refuse`, `actuate`, `cancel_work`); `actuate` is the only provider-worker path into
+   `close_candidate`, `refuse`, `cancel_work`, `actuate`, `resolve_capability`, `surface`
+   — ten verbs, `claim_next` the only non-lease-token one); `actuate` is the only provider-worker path into
    the admitted `Xaas.Actuation.run/4` DO kernel — every consequential worker action is
    lease-gated and receipted.
 4. **Production MCP server** (`/mcp`): generated `XaasWeb.McpScope` forwarding to
@@ -113,16 +122,34 @@ behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside d
   Reactor steps, generating immutable audit receipts and supporting transactional rollback.
   Worker-side consequential mutation additionally passes through the Ultracode lease kernel
   (`Xaas.Ultracode.Lease.actuate/2`) via the execution-fabric MCP `actuate` verb.
-- **External capability bridges** (v26.10.6) — three read/admit-shaped edges to sibling
-  systems, all registered in `Xaas.Bridges.Registry` (`lib/xaas/bridges/registry.ex`) with
-  `state: :bridge` and standing UNKNOWN until a court upgrades them:
-  - **ferroplan planner** — `Xaas.Bridges.Ferroplan` (`lib/xaas/bridges/ferroplan.ex`) calls
+- **External capability bridges** (v26.10.6) — read/admit-shaped edges to sibling systems,
+  in three distinct mechanisms:
+  - **Registry rows** — `Xaas.Bridges.Registry` (`lib/xaas/bridges/registry.ex`) is a
+    static compile-time literal of exactly 5 bridge rows (`pplan, graphlaw, ex4pm, sa2a,
+    ferroplan`; `state: :bridge`, standing `"UNKNOWN"`, capability `{:bridge, module}`) plus
+    5 typed absences (`beam4pm, graphlaw_rust, affidavit_cli, ash_r2rml, wasm4pm`;
+    `state: :unsupported`, standing `"UNSUPPORTED"`, capability `{:unsupported, reason}`)
+    — 10 rows total (pinned by the W767 registry-deepening court,
+    `docs/sjira/v26.10.6/plans/w767-registry-deepening.md`, court (a); 14/14 ExUnit).
+    Every envelope carries the exact Chicago subject, `authority_ceiling: :none`, and nil
+    evidence/receipt refs. Standing-never-silent-upgrade is structural: the registry's
+    export surface is exactly the 0-arity projections (`all/0`, `ids/0`, `absences/0`), so
+    no code path accepts a receipt or standing argument — standing can only change by
+    recompiling the literal entries, an admitted code transition, never a runtime upgrade
+    (W767 court (d)).
+  - **Direct adapters** — in-process module adapters to a specific sibling that are *not*
+    registry rows.
+  - **Wire transports** — HTTP surfaces where the sibling protocol is spoken directly over
+    the wire.
+  - **ferroplan planner** (registry row `:ferroplan`) — `Xaas.Bridges.Ferroplan`
+    (`lib/xaas/bridges/ferroplan.ex`) calls
     the ferroplan FOND/HTN planner through a sha256-pinned `ferroplan-wasm` artifact,
     digest-verified at load (mismatch is the typed refusal
     `:ferroplan_artifact_digest_mismatch`, never a degraded pass). SELECT-only: the wired
     ops validate/plan, they never mutate a store; a missing runtime is the typed refusal
     `:ferroplan_runtime_unavailable`.
-  - **gymact executable-world adapter** — `Xaas.Operations.GymactSurface`
+  - **gymact executable-world adapter** (direct adapter, not a registry row — W767:
+    `UNSUPPORTED(absent-from-registry)`) — `Xaas.Operations.GymactSurface`
     (`lib/xaas/operations/gymact_surface.ex`), a fail-closed HTTP adapter over gymact's
     FastAPI surface (`config :xaas, :gymact_surface`; unconfigured is the typed refusal
     `:gymact_not_configured`, never a best-effort default). Reads go straight to gymact;
@@ -131,13 +158,43 @@ behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside d
     effect cannot pretend a Postgres rollback undoes it. Local Ash consequences keyed to a
     gymact subject route through `actuate_local/4` (a gated `Xaas.Actuation.run/4`
     passthrough); `:actuate_status` is not touched.
-  - **AshA2A v1 protocol surface** — `POST /a2a/v1` is served by `XaasWeb.A2A.V1TransportPlug`
+  - **AshA2A v1 protocol surface** (wire transport, not a registry row — W767:
+    `UNSUPPORTED(absent-from-registry)`) — `POST /a2a/v1` is served by `XaasWeb.A2A.V1TransportPlug`
     fronting `XaasWeb.A2A.NextReadAshAgent` (`lib/xaas_web/a2a/next_read_ash_agent.ex`), a
     `use AshA2A.Protocol.Agent` adapter over the shared hex-agent dispatch, supervised in
     `lib/xaas/application.ex` like its legacy `NextReadUserAgent` sibling. The router
     scope's `:require_internal_api_token` stays the single auth floor — AshA2A's own
     `Plug.Auth` is left unconfigured — so the v1 card (`GET /a2a/v1/.well-known/agent-card.json`)
-    and JSON-RPC surface sit behind the same Bearer gate as the rest of `/a2a`.
+    and JSON-RPC surface sit behind the same Bearer gate as the rest of `/a2a`. The
+    wrapper plug also restores the §8.6.1 card-caching contract the pinned dep hardcodes
+    away: the JSON agent card is served `Cache-Control: public, max-age=300`
+    (`lib/xaas_web/a2a/v1_transport_plug.ex:18-34`); SSE and error envelopes untouched.
 - **OCEL 2.0 telemetry** — every real Ash action emits an object-centric event correlated to
   its OpenTelemetry span (`lib/xaas/telemetry/`), rotation-bounded on disk and validated by
-  the conformance court; the fabric's audit judges campaigns against it.
+  the conformance court; the fabric's audit judges campaigns against it. Envelope
+  construction is generated — `Xaas.Telemetry.OcelEnvelope.build/3`
+  (`lib/xaas/telemetry/ocel_envelope.ex`, from `priv/packs/xaas_telemetry_pack/ontology.ttl`)
+  — and the forwarder calls the real `Ex4pm.OCEL.validate_envelope/1` before POSTing,
+  refusing (logged `{:error, reason}`, never a silent non-2xx) on an invalid envelope
+  (`lib/xaas/telemetry/ocel_forwarder.ex:135-161`; W702).
+- **A2A parse floor** — `XaasWeb.Plugs.A2AParseFloor`
+  (`lib/xaas_web/plugs/a2a_parse_floor.ex`, W150) runs in `XaasWeb.Endpoint` before
+  `Plug.Parsers` so malformed JSON on `/a2a` POSTs answers the JSON-RPC 2.0 `-32700`
+  envelope instead of a bare 400; SSE, GETs, and non-`/a2a` paths pass through untouched.
+- **EU AI Act admission gate** — `XaasWeb.Plugs.EuAiActAdmissionPlug`
+  (`lib/xaas_web/plugs/eu_ai_act_admission_plug.ex`, W521) runs after `Plug.Parsers` on
+  `/a2a` POSTs: Art. 5 structural admission over the JSON-RPC `params` before agent
+  dispatch. Refuse-only — it grants no authority and answers with the surface's JSON-RPC
+  error envelope (HTTP 200, code -32600) plus a typed refusal atom in `error.data`.
+- **Synthetic-content marking** — `XaasWeb.Plugs.SyntheticMarkingPlug`
+  (`lib/xaas_web/plugs/synthetic_marking_plug.ex`, W533) marks every POST response from
+  the AI surfaces (`/a2a`, `/mcp`) after the handler via `register_before_send`:
+  `x-ai-generated: true` header plus `"ai_generated": true` in JSON object bodies.
+  Mounted immediately *before* the W521 admission gate so refusal envelopes that halt
+  there are marked too (W703 plug-order court).
+- **Raw-body preservation** — `XaasWeb.Plugs.StripeRawBodyReader` is the endpoint-wide
+  `Plug.Parsers` `:body_reader` (`lib/xaas_web/endpoint.ex:83`); it caches the exact raw
+  request bytes into `conn.assigns[:raw_body]` for `["webhooks","stripe"]` (Stripe
+  signature verification) and — W794 — `["internal-api","sparql"]`, so the Ontop reverse
+  proxy forwards urlencoded/JSON POST bodies byte-exact instead of an empty body consumed
+  by the parsers.

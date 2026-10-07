@@ -1,5 +1,10 @@
 # How to Fix ash_admin and Drive Ash Codegen from the Ontology via ggen
 
+> Status at v26.10.6 (branch `feat/playwright-surface`, HEAD `a0723bf6`): verified
+> claim-by-claim against the tree by lane W841; see
+> `docs/sjira/v26.10.6/plans/w841-ashadmin-howto-verify.md`. Corrections made in place
+> are cited per claim in that receipt.
+
 This guide covers two real, related tasks in this repo: getting `ash_admin` working for a
 new `Ash.Domain`, and using `ggen sync` + `templates-hooks/ash-gen-resource.txt.tmpl` to
 drive `mix ash.gen.resource` from the project ontology instead of hand-invoking it.
@@ -10,31 +15,41 @@ drive `mix ash.gen.resource` from the project ontology instead of hand-invoking 
 
 `AshAdmin.Domain.show?/1` defaults to `false` (`deps/ash_admin/lib/ash_admin/domain.ex:47-49`).
 Adding the `AshAdmin.Domain` extension to a domain is not enough by itself — you must also
-add a real `admin do show? true end` block. Every one of this repo's 7 core domains (Marketplace included; ash_domains config now lists 12+) needed this
-fix (Accounts, Billing, Governance, Ledger, Operations, Platform). Example, from
-`lib/xaas/accounts.ex`:
+add a real `admin do show?(true) end` block. 17 of the 19 domains registered in
+`config :xaas, ash_domains` (`config/config.exs:13-33`) carry this block; the two
+exceptions are `Xaas.Generation` (`lib/xaas/generation.ex`) and `Xaas.TemporalMemory`
+(`lib/xaas/temporal_memory.ex`), which have no `AshAdmin.Domain` extension. Example, from
+`lib/xaas/accounts.ex:1-16` (note the repo-wide paren-call convention, applied by the
+consolidation-wave formatting):
 
 ```elixir
 defmodule Xaas.Accounts do
   use Ash.Domain,
     otp_app: :xaas,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do
-    show? true
+    show?(true)
+  end
+
+  typescript_rpc do
+    resource Xaas.Accounts.Org do
+      rpc_action(:list_accounts_orgs, :read)
+    end
   end
 
   resources do
-    resource Xaas.Accounts.Token
-    resource Xaas.Accounts.Token.RevokeNonce
-    resource Xaas.Accounts.User
+    resource(Xaas.Accounts.Org)
+    resource(Xaas.Accounts.OrgMembership)
+    resource(Xaas.Accounts.Token)
+    resource(Xaas.Accounts.Token.RevokeNonce)
   end
 end
 ```
 
 To add a new domain to the admin UI, do the same: put `AshAdmin.Domain` in `extensions`, add
-the `admin do show? true end` block, and confirm the domain is registered in
-`config :xaas, ash_domains: [...]` (see `docs/archive/ASH-MIGRATION-PLAN.md` (historical) Phase 2/3b for how
+the `admin do show?(true) end` block, and confirm the domain is registered in
+`config :xaas, ash_domains: [...]` (`config/config.exs:13-33`; see `docs/archive/ASH-MIGRATION-PLAN.md` (historical) Phase 2/3b for how
 this repo's domain list was originally wired).
 
 ### Why this matters — the misconfiguration masked a real upstream bug
@@ -76,7 +91,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4000/admin/
 ```
 
 A `200` confirms the fix; a `500`/`KeyError` means some domain still lacks
-`admin do show? true end`. `mix phx.routes | grep admin` should show
+`admin do show?(true) end`. `mix phx.routes | grep admin` should show
 `GET /admin/*route AshAdmin.PageLive :page`.
 
 ### The sidebar-duplicate-DOM gotcha (Playwright / any DOM-based test)
@@ -203,6 +218,13 @@ throughout the resource-generation history of this repo.
 cd ~/xaas && ggen sync
 ```
 
+(Status at v26.10.6: `ggen.toml` binds `[ontology] source = "ontology.ttl"` and
+`[templates] dir = "templates-hooks"` — the procedure below is unchanged — and additionally
+carries the locked `xaas_castle_bridge` marketplace pack (`518572b6`), whose templates are
+unioned into the same sync; the `xar:RenderTarget` projection is unaffected. The ontology
+currently declares 55 `xar:RenderTarget` individuals, and `.ash-gen-receipts/` is populated
+from prior syncs.)
+
 This re-runs the SPARQL query over `ontology.ttl`, and for every `xar:RenderTarget` row not
 already covered by an existing `.ash-gen-receipts/{{ moduleName }}.txt` receipt
 (`unless_exists: true`), shells out to `mix ash.gen.resource` and logs the real mix output
@@ -219,5 +241,11 @@ and `xar:domainModule`, then re-run `ggen sync` — no template or hook code nee
   Task 1.
 - `templates-hooks/ash-gen-resource.txt.tmpl` — the real template referenced in Task 2.
 - `lib/xaas_web/router.ex` — the real `AshAdmin.Router` mount and `dev_routes` guard.
-- `lib/xaas/accounts.ex` (and the other 5 domain modules under `lib/xaas/`) — the real
-  `admin do show? true end` fix, applied identically across all 7 core domains.
+- `lib/xaas/accounts.ex` (and the other 16 domain modules under `lib/xaas/` carrying the
+  block) — the real `admin do show?(true) end` fix, applied across 17 of the 19 registered
+  domains (`config/config.exs:13-33`).
+- `ggen.toml` — the sync entry point: `[ontology] source = "ontology.ttl"`,
+  `[templates] dir = "templates-hooks"`, plus the locked marketplace pack
+  `xaas_castle_bridge` pinned to ggen-marketplace `518572b6` (W636-era lock-closure
+  state; new reusable capabilities must prefer locked marketplace packs over new vendored
+  copies, per the ggen.toml header).
