@@ -1,8 +1,0 @@
-chore(release): v26.10.7 version bump seal — VERSION 26.10.6 -> 26.10.7 + changelog backfill
-
-Lane W632 lockfile convergence (v26.10.7 fleet seal). VERSION per W617;
-CHANGELOG v26.10.7 section per W619 (owner-complete, receipt on disk).
-mix.lock verified already converged: mix deps.get (MIX_ENV=test) EXIT=0,
-zero lockfile diff. Stale absinthe/absinthe_plug/ash_graphql entries persist
-lawfully via ash_authentication dev/test deps (deps/ash_authentication/mix.exs:238-239).
-Gate: MIX_ENV=test mix compile --force EXIT=0 (lane build root _build-laneW632).
