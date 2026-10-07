@@ -12,8 +12,8 @@ defmodule Xaas.Library.CheckoutPolicyDeepeningTest do
       `Xaas.Library.Changes.FulfillNextHold`: the oldest active hold is
       auto-fulfilled (status :fulfilled, fulfilled_at set, inventory
       re-decremented via HoldRequest :fulfill -> Book.borrow_copy). No
-      notification record is created and no new Checkout row is minted
-      for the waiting reader.
+      notification record is created; since W970b (W796-G3), fulfillment
+      mints exactly one open hand-off Checkout for the waiting reader.
   (c) return-of-unborrowed / double-return -- CLOSED by W809: `:return`
       now refuses typed (InvalidArgument on :status) unless the checkout
       is OPEN (:borrowed or :overdue). Previously a second :return
@@ -194,10 +194,16 @@ defmodule Xaas.Library.CheckoutPolicyDeepeningTest do
     # never rests on the shelf; it is handed straight to the hold reader.
     assert copies!(book.id) == 0
 
-    # No new Checkout row is minted for the waiting reader -- the hold
-    # itself is the fulfillment record. (Typed gap: converting a fulfilled
-    # hold into an actual borrowable state is left to the reader/librarian.)
-    assert open_checkouts_for(waiting.id) == []
+    # W970b (W796-G3 close): fulfillment really mints the physical hand-off
+    # Checkout for the waiting reader, in the same transaction as the
+    # inventory re-decrement. Exactly one open, correctly-bound row exists.
+    assert length(open_checkouts_for(waiting.id)) == 1
+
+    handoff = hd(open_checkouts_for(waiting.id))
+    assert handoff.status == :borrowed
+    assert handoff.book_id == book.id
+    assert handoff.user_id == waiting.id
+    assert handoff.returned_at == nil
   end
 
   test "only the OLDEST active hold is fulfilled; later holds stay active" do
@@ -238,12 +244,22 @@ defmodule Xaas.Library.CheckoutPolicyDeepeningTest do
     returned = return!(checkout, borrower)
 
     # No notification artifact is written anywhere: fulfillment's only
-    # side effects are the hold row's status/fulfilled_at, the inventory
-    # decrement, and an ephemeral PubSub broadcast (not asserted here --
-    # nothing durable is created; in particular no new Checkout row).
+    # durable side effects are the hold row's status/fulfilled_at, the
+    # inventory re-decrement, the W970b hand-off Checkout for the waiting
+    # reader, and an ephemeral PubSub broadcast (not asserted here).
     assert returned.status == :returned
     assert returned.returned_at != nil
-    assert open_checkouts_for(waiting.id) == []
+
+    # W970b (W796-G3 close): the one durable row fulfillment mints beyond
+    # the hold update is the hand-off Checkout -- open, for the waiting
+    # reader, bound to the same book.
+    assert length(open_checkouts_for(waiting.id)) == 1
+
+    handoff = hd(open_checkouts_for(waiting.id))
+    assert handoff.status == :borrowed
+    assert handoff.book_id == book.id
+    assert handoff.user_id == waiting.id
+    assert handoff.returned_at == nil
 
     hold = place_hold_parent(waiting, book)
     assert hold.status == :fulfilled

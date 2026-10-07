@@ -40,8 +40,6 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
   # AshEvents' single global advisory lock + open sandbox transactions
   # under async: true caused the full-suite Postgres deadlock flake.
 
-  require Ash.Query
-
   @resources [
     Xaas.Billing.ApprovalPricingOverride,
     Xaas.Billing.ApprovalQuotaOverride,
@@ -69,17 +67,16 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
 
   # Resources whose :approve carries a real DB-level transition guard
   # against re-approval (the `filter(expr(is_nil(approved_by)))`
-  # WHERE-clause filter, W746 corrected contract). As of 2026-10-07 HEAD
-  # this is exactly one of the 6; the rest are the typed
-  # REFUSED(guard-absent) finding, witnessed in 1b/3b.
-  @db_transition_guarded [Xaas.Billing.ApprovalSlaCreditApply]
-
-  @db_transition_unguarded [
+  # WHERE-clause filter, W746 corrected contract). W984k landed the guard
+  # on the 4 W982s finding-1b resources (pricing_override, quota_override,
+  # invoice_reconciliation_approve, patch_sla_credit_apply); tier_downgrade
+  # remains only incidentally guarded downstream. 1b/3b now assert the
+  # guarded contract on the fixed set (flipped from W982s finding pins).
+  @db_transition_guarded [
     Xaas.Billing.ApprovalPricingOverride,
     Xaas.Billing.ApprovalQuotaOverride,
     Xaas.Billing.ApprovalInvoiceReconciliationApprove,
-    Xaas.Billing.ApprovalPatchSlaCreditApply,
-    Xaas.Billing.ApprovalTierDowngrade
+    Xaas.Billing.ApprovalPatchSlaCreditApply
   ]
 
   setup do
@@ -127,7 +124,9 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
       end
 
     resource
-    |> Ash.Changeset.for_create(:create, Map.put(extra, :requested_by, requested_by),
+    |> Ash.Changeset.for_create(
+      :create,
+      extra |> Map.put(:requested_by, requested_by) |> Map.put(:org_id, tenant_id),
       tenant: tenant_id,
       authorize?: false
     )
@@ -146,11 +145,18 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
     |> Ash.update!(authorize?: false)
   end
 
+  # Zero-row UPDATE semantics under Ash 3.34: the typed error for a
+  # WHERE-clause filter that matches nothing is StaleRecord (Invalid
+  # class); older shapes surfaced NotFound. Both are the real typed
+  # zero-row refusal, so classify either.
+  defp zero_row_error?(errors) do
+    Enum.any?(errors, fn e ->
+      match?(%Ash.Error.Changes.StaleRecord{}, e) or match?(%Ash.Error.Query.NotFound{}, e)
+    end)
+  end
+
   defp classify_errors(errors) do
-    cond do
-      Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1)) -> :invalid_notfound
-      true -> :invalid_other
-    end
+    if zero_row_error?(errors), do: :invalid_zero_row, else: :invalid_other
   end
 
   # Two real :approve tasks, serialized onto the sandbox connection via
@@ -246,46 +252,35 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
     # (W746 corrected contract) matches zero rows -> typed NotFound.
     assert {:error, %Ash.Error.Invalid{} = err} = approve(first, "approver-b")
 
-    assert Enum.any?(err.errors, &match?(%Ash.Error.Query.NotFound{}, &1)),
-           "expected a typed NotFound in #{inspect(err.errors)}"
+    assert zero_row_error?(err.errors),
+           "expected a typed zero-row error in #{inspect(err.errors)}"
 
     reloaded = Ash.reload!(first, authorize?: false)
     assert reloaded.approved_by == "approver-a"
   end
 
-  # FINDING WITNESS (report-only, as of 2026-10-07 HEAD): 5 of the 6
-  # resources have NO approval-transition guard -- re-approval with a
-  # distinct second approver SUCCEEDS and overwrites approved_by, except
-  # tier_downgrade, refused only INCIDENTALLY by Subscription's
-  # downstream change_tier no-op validation (not an approval-lifecycle
-  # guard). If a guard lands later, this witness fails and the fix lane
-  # flips the assertions.
-  test "1b. FINDING WITNESS: unguarded resources accept re-approval (guard-absent)" do
-    for resource <- @db_transition_unguarded do
-      org = create_org!("trans-open")
-      record = fixture(resource, org.id, "req-trans-open")
+  # FLIPPED (W984k, was W982s finding-1b witness): the 4 previously
+  # unguarded resources now carry the W746 DB-level transition guard, so
+  # re-approval with a distinct second approver through a stale in-memory
+  # record must be refused typed zero-row, and the first approval must
+  # survive un-overwritten.
+  test "1b. re-approval is refused typed on every W984k-guarded resource" do
+    for resource <- @db_transition_guarded do
+      org = create_org!("trans-guarded")
+      record = fixture(resource, org.id, "req-trans-guarded")
 
       assert {:ok, first} = approve(record, "approver-a")
       assert first.approved_by == "approver-a"
 
-      result = approve(first, "approver-b")
+      assert {:error, %Ash.Error.Invalid{} = err} = approve(first, "approver-b")
 
-      case resource do
-        Xaas.Billing.ApprovalTierDowngrade ->
-          # Incidental downstream guard: SubscriptionChangeTierNotNoOp
-          # refuses the second change_tier to the same tier.
-          assert {:error, %Ash.Error.Invalid{}} = result
+      assert zero_row_error?(err.errors),
+             "expected typed zero-row refusal on re-approve for #{inspect(resource)}, " <>
+               "got #{inspect(err.errors)}"
 
-          reloaded = Ash.reload!(record, authorize?: false)
-          assert reloaded.approved_by == "approver-a"
-
-        _ ->
-          assert {:ok, overwritten} = result,
-                 "#{inspect(resource)} re-approval behavior changed -- update the W982s guard matrix"
-
-          reloaded = Ash.reload!(record, authorize?: false)
-          assert reloaded.approved_by == "approver-b"
-      end
+      reloaded = Ash.reload!(record, authorize?: false)
+      assert reloaded.approved_by == "approver-a",
+             "#{inspect(resource)} re-approval overwrote approved_by"
     end
   end
 
@@ -325,46 +320,38 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
     assert oks == 1,
            "expected exactly one race success on #{inspect(resource)}, got #{inspect(results)}"
 
-    assert Enum.any?(results, fn {_a, r} -> r == {:refused, :invalid_notfound} end),
-           "expected the race loser refused typed NotFound, got #{inspect(results)}"
+    assert Enum.any?(results, fn {_a, r} -> r == {:refused, :invalid_zero_row} end),
+           "expected the race loser refused typed zero-row error, got #{inspect(results)}"
 
     # Exactly one real approval persisted, under whichever approver won.
     reloaded = Ash.reload!(record, authorize?: false)
     assert reloaded.approved_by in ["race-approver-1", "race-approver-2"]
   end
 
-  # FINDING WITNESS (report-only, as of 2026-10-07 HEAD): on unguarded
-  # resources both race tasks succeed (last-write-wins on approved_by);
-  # tier_downgrade's second approve is refused incidentally (downstream
-  # change_tier no-op). Observed outcomes are pinned below -- if guards
-  # land, these witnesses fail and must be flipped with the fix.
-  test "3b. FINDING WITNESS: race outcomes on unguarded resources at HEAD" do
-    for resource <- @db_transition_unguarded do
-      org = create_org!("race-open")
-      record = fixture(resource, org.id, "req-race-open")
+  # FLIPPED (W984k, was W982s finding-3b witness): with the W746 guard in
+  # the UPDATE's WHERE clause, the double-approve race yields exactly one
+  # success; the loser is refused typed zero-row and exactly one approval
+  # persists.
+  test "3b. double-approve race: exactly one success on every W984k-guarded resource" do
+    for resource <- @db_transition_guarded do
+      org = create_org!("race-guarded-w984k")
+      record = fixture(resource, org.id, "req-race-w984k")
 
-      results = race_two_approves(resource, record, ["race-open-1", "race-open-2"])
+      results = race_two_approves(resource, record, ["race-w984k-1", "race-w984k-2"])
 
       assert length(results) == 2
 
-      case resource do
-        Xaas.Billing.ApprovalTierDowngrade ->
-          oks = Enum.count(results, fn {_a, r} -> match?({:ok, _}, r) end)
+      oks = Enum.count(results, fn {_a, r} -> match?({:ok, _}, r) end)
 
-          assert oks == 1,
-                 "tier_downgrade race shape changed -- update the W982s guard matrix: #{inspect(results)}"
+      assert oks == 1,
+             "expected exactly one race success on #{inspect(resource)}, got #{inspect(results)}"
 
-        _ ->
-          # Last-write-wins: both tasks succeed; the persisted approved_by
-          # is whichever serialized second.
-          Enum.each(results, fn {_a, r} ->
-            assert match?({:ok, _}, r),
-                   "#{inspect(resource)} race outcome changed -- update the W982s guard matrix: #{inspect(r)}"
-          end)
+      assert Enum.any?(results, fn {_a, r} -> r == {:refused, :invalid_zero_row} end),
+             "expected the race loser refused typed zero-row on #{inspect(resource)}, " <>
+               "got #{inspect(results)}"
 
-          reloaded = Ash.reload!(record, authorize?: false)
-          assert reloaded.approved_by in ["race-open-1", "race-open-2"]
-      end
+      reloaded = Ash.reload!(record, authorize?: false)
+      assert reloaded.approved_by in ["race-w984k-1", "race-w984k-2"]
     end
   end
 
@@ -394,8 +381,8 @@ defmodule Xaas.Billing.ApprovalLifecycleDeepeningCourtTest do
                )
                |> Ash.update()
 
-      assert Enum.any?(err.errors, &match?(%Ash.Error.Query.NotFound{}, &1)),
-             "expected typed NotFound on cross-tenant :approve for #{inspect(resource)}, " <>
+      assert zero_row_error?(err.errors),
+             "expected typed zero-row refusal on cross-tenant :approve for #{inspect(resource)}, " <>
                "got #{inspect(err.errors)}"
 
       # Untouched: no approval persisted, no side effects.
