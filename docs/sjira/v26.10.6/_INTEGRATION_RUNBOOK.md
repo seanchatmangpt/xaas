@@ -386,3 +386,96 @@ mitigations), w414 (empty-bearer kill executed under contention).
 build races (c) dominate residuals. The §Verification replay card must be
 executed at <10 load — a replay receipt minted at load >50 is not admissible as
 ALIVE evidence for contention-sensitive suites (a)/(c).
+
+## Lease cleanup — AUTHORITATIVE INPUT (W895, 2026-10-07)
+
+W878's census has landed: `plans/w878-lease-census.md` — 80 deletable entries /
+~31.71 GB across /Users/sac/xaas + sibling repos + /tmp, including a byte-verified
+65-path `rm` list. **The census (and its explicit rm list) supersedes every earlier
+lease inventory in this runbook**, including the "Lane-lease inventory 2026-10-07
+~04:5x" section below (18 roots / 5.7 GB — stale) and step 1's in-flight note
+below (W879 recount 70 roots / 29.5 GB — also superseded).
+
+**Operator execution note (W895, 2026-10-07)**: the census's explicit `rm` list
+IS the command — run it as written; do not re-derive paths by mtime, name
+similarity, or re-scan (`generated` loops proved flaky on the live tree per the
+census caveat). Census CHECK entries **W856 and W865 now resolve**: both receipts
+exist on disk (`test -f` verified by W895): `plans/w856-dev-config-pin.md` and
+`plans/w865-gap3-fix.md` — their lane roots are DELETABLE and should be treated
+as part of the deletable set. Census KEEP entries (W880, W888, in-flight at
+census time) remain held until their receipts land, per the fanout cleanup law.
+
+## Lane-lease inventory (coordinator, 2026-10-07 ~04:5x)
+
+18 `_build-lane*` roots in /Users/sac/xaas, 5.7 GB total (du -shc). Deletable NOW
+(completed lanes): _build-laneW663b, _build-laneW787, _build-laneW788 (~785 MB).
+Still-RUNNING lanes' leases (do NOT delete until their receipts land): W752, W775,
+W778, W779, W782, W785, W786, W789, W791, W792, W793, W794, W795 + others in
+~/ash_pplan, ~/beam4pm, ~/ash_a2a. Delete each at its lane's integration per the
+fanout cleanup law. Session rm permission was denied — this inventory is the
+coordinator handoff. Disk pressure event: 152 MiB free at 04:1x, recovered to
+61 Gi after a large compile finished; lease cleanup is mandatory before the next
+wave of test lanes.
+
+---
+
+## Integration sequence (W879, 2026-10-07)
+
+Assembled for the coordinator from landed receipts. Full per-item detail + standing table:
+`docs/sjira/v26.10.6/plans/w879-integration-sequence.md`.
+
+**Authority documents**: W867 commit manifest `docs/sjira/v26.10.6/_COMMIT_MANIFEST_W850.md`
+(299 lines, groups CG-01..CG-15; receipt `plans/w867-commit-manifest.md` — coverage "missing: 0"
+vs live git status, corruption sweep clean). W875 adjudication: **IN_FLIGHT** — no
+`plans/w875-*.md` receipt on disk as of this lane; step 5 must not start until it lands and any
+manifest corrections it makes are applied to `_COMMIT_MANIFEST_W850.md`.
+
+### Operator steps (in order)
+
+1. **Lease cleanup.** W878 census **IN_FLIGHT** (no `plans/w878-*.md` on disk). Until it lands,
+   use the earlier inventory in this runbook ("Lane-lease inventory, 2026-10-07 ~04:5x": 18
+   roots / 5.7 GB, of which W663b/W787/W788 deletable-now). Live recount by W879: the tree has
+   since grown to **70 `_build-lane*` roots ≈ 29.5 GB** (du -sh, 2026-10-07); W878's census must
+   certify the current set before deletion. Small roots W873 (31 MB) / W788 (48 MB) / W863,
+   W866, W869, W872 (partial) are mid-write or incomplete — do not delete on mtime alone;
+   hold for the census. Delete each remaining root only after its lane's receipt lands, per the
+   fanout cleanup law.
+   **[SUPERSEDED — W895, 2026-10-07]**: the census has landed at
+   `plans/w878-lease-census.md` (80 deletable / ~31.71 GB, explicit rm list = the command).
+   See the "Lease cleanup — AUTHORITATIVE INPUT" section above.
+2. **Dev migrate.** `PATH=$HOME/.asdf/shims:$PATH MIX_ENV=dev mix ecto.migrate` on `xaas_dev`.
+   Prescribed by W786 (`plans/w786-onetime-partition.md` — ash_onetime logical-partition
+   migration 20261007111457, verified on xaas_test only) and W804
+   (`plans/w804-epoch-dedup.md` — dedup+guarded-unique-index migration 20261007120000,
+   PARTIAL_ALIVE: "operator still must run mix ecto.migrate on xaas_dev"; keep-rule: earliest
+   inserted_at, smallest id). Both migrations are in manifest group CG-01.
+3. **ggen sync regen at new HEAD.** W756's pack edit (ggen-marketplace
+   `packs/xaas-castle-bridge-pack/ontology.ttl` line 101, rationale literal; receipt
+   `plans/w756-errc-rationale-refresh.md`, ALIVE pack-level, uncommitted upstream) requires:
+   commit the pack ontology change in ggen-marketplace first, then in /Users/sac/xaas run
+   `ggen sync`; the projected ERRC page must read "117 Ash resources via the Xaas.Resource
+   wrapper (152 total use Ash.Resource) and 19 domains" (W756's stated projection check).
+4. **The 7 operator decisions (W867)**: dev.exs cluster_size 1->3 (W803); W786/W804 migrations
+   vs xaas_dev (W804 deletes dup rows); platform route deletions (route_orgs_custom_domain*,
+   route_projects_backups*); transients deletion (cleanup-plan.json + test/w707_tmp/); test.exs
+   env port vs CI (W822); priv/semantic/generated generator-path question; semantics/
+   incident_report.ex attribution (no W-marker). The 9 HOLD items + system_actor.ex stay held.
+5. **Commits per manifest groups** — **GATED**: all ~17 in-flight lanes' receipts must land
+   first, and W875's adjudication must be applied to the manifest (IN_FLIGHT). Then commit in
+   CG-01..CG-15 order per `_COMMIT_MANIFEST_W850.md`; hold rows stay uncommitted.
+6. **Post-commit gate rerun** (W663b successor per `plans/w663b-postcommit-gates.md`):
+   full `MIX_ENV=test` suite (W663b threshold >=3247 green, failures classified only) + mock
+   gate `scan_mock_usage(["test","lib"]) == []` + `ggen sync` drift check + `mix compile
+   --warnings-as-errors` EXIT 0. Replay only at load <10 per this runbook's replay protocol.
+7. **Push** `feat/playwright-surface`.
+
+### Pre-conditions (all receipts on disk, verified by this lane)
+
+| Pre-condition | Receipt | Status |
+|---|---|---|
+| Census certified | `plans/w821-terminal-census-2.md` | MET — deterministic 1347/1348 + 1 open-gap, green gate 1347 exit 0 |
+| Priority e2e ALIVE | `plans/w842-e2e-revalidation.md` | MET — 24 passed / 1 skipped / 0 failed, exit 0, PW_PORT=4126 |
+| Gate green | `plans/w778-gate-fix-verify.md` | MET — F1 503 passed exit 0 (F2 verdict in receipt) |
+| Doctor statuses | `plans/w847-doctor-recal.md` | MET — PARTIAL_ALIVE, literal band 120..170, docstring check 5 updated |
+| W875 adjudication | `plans/w875-*.md` | **IN_FLIGHT** — not on disk |
+| W878 lease census | `plans/w878-*.md` | **LANDED** — `plans/w878-lease-census.md` (W895: authoritative cleanup input) |
