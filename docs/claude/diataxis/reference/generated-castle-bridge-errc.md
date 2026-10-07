@@ -14,7 +14,7 @@
 | RAISE | 20 | receipt nesting and replay evidence | outer XaaS intent/receipt binds the inner CASTLE construct, PREPARE/OUTCOME receipts and durable evidence identity | 10 |
 | RAISE | 30 | ggen-marketplace share of implementation | static contracts, topology, proof obligations, ERRC, docs and tests are manufactured rather than handwritten | 9.8 |
 | REDUCE | 10 | handwritten immutable bridge identity and topology | ggen manufactures contract, edge catalog, SHACL, ERRC and proof surfaces from one RDF source | 9.6 |
-| REDUCE | 20 | public mutation surface | RouteCastleRun remains read-only on JSON:API/GraphQL; execute stays private behind Reactor context | 9.4 |
+| REDUCE | 20 | public mutation surface | RouteCastleRun remains read-only on JSON:API (the SPEC-30/31 GraphQL surface was removed by operator directive 2026-10-07 — see `docs/sjira/v26.10.6/plans/w984ap-e2e-removal.md`, w984ao receipt pending); execute stays private behind Reactor context | 9.4 |
 | REDUCE | 30 | private semantic vocabulary standing | bridge runtime identities project to published PROV-O, ODRL, DCAT, DCTERMS, SKOS, SOSA, SHACL, ORG and Schema.org IRIs | 8.9 |
 
 
