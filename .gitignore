@@ -116,3 +116,14 @@ priv/chicago/.ggen-v2/
 priv/chicago/.clap-noun-verb/
 # Playwright artifacts
 playwright-report/
+
+# v26.10.6 campaign wave artifacts (W464 do-not-commit list)
+ggen.lock
+.ggen/
+.ggen_igniter/receipts/
+.clap-noun-verb/
+.oclnr-cache/
+_buildW*/
+GGEN-SH-*
+disk-audit.jsonocel
+snapshot-thin-receipt*.json
