@@ -677,6 +677,7 @@ export const XaasAttendee_read_schema = z.object({
 /** Zod boundary schema for `XaasAuditExportToken.issue` (input schema of the compiled IR.Schema.zod program). */
 export const XaasAuditExportToken_issue_schema = z.object({
   created_by: z.string(),
+  expires_at: z.unknown().optional().nullable(),
   org_id: z.string()
 }).passthrough();
 
@@ -687,6 +688,11 @@ export const XaasAuditExportToken_read_schema = z.object({
 
 /** Zod boundary schema for `XaasAuditExportToken.revoke` (input schema of the compiled IR.Schema.zod program). */
 export const XaasAuditExportToken_revoke_schema = z.object({
+
+}).passthrough();
+
+/** Zod boundary schema for `XaasAuditExportToken.use` (input schema of the compiled IR.Schema.zod program). */
+export const XaasAuditExportToken_use_schema = z.object({
 
 }).passthrough();
 
@@ -858,6 +864,7 @@ export const XaasBook_update_schema = z.object({
 /** Zod boundary schema for `XaasCapability.create` (input schema of the compiled IR.Schema.zod program). */
 export const XaasCapability_create_schema = z.object({
   algorithm: z.string(),
+  capability_class: z.unknown().optional().nullable(),
   name: z.string(),
   profile: z.string(),
   supported_in: z.array(z.unknown())
@@ -1503,6 +1510,7 @@ export const XaasIncident_read_schema = z.object({
 
 /** Zod boundary schema for `XaasIncident.update` (input schema of the compiled IR.Schema.zod program). */
 export const XaasIncident_update_schema = z.object({
+  castle_run_id: z.string().uuid().optional().nullable(),
   description: z.string().optional().nullable(),
   postmortem_remediation: z.string().optional().nullable(),
   postmortem_root_cause: z.string().optional().nullable(),
@@ -1906,6 +1914,11 @@ export const XaasRefusalCode_update_schema = z.object({
   retryable: z.boolean()
 }).passthrough();
 
+/** Zod boundary schema for `XaasRegistration.cancel` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRegistration_cancel_schema = z.object({
+
+}).passthrough();
+
 /** Zod boundary schema for `XaasRegistration.create` (input schema of the compiled IR.Schema.zod program). */
 export const XaasRegistration_create_schema = z.object({
   attendee_id: z.string().uuid(),
@@ -1982,6 +1995,11 @@ export const XaasRouteCastleSunset_read_schema = z.object({
 
 }).passthrough();
 
+/** Zod boundary schema for `XaasRouteFeatureFlags.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteFeatureFlags_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
 /** Zod boundary schema for `XaasRouteFeatureFlags.create` (input schema of the compiled IR.Schema.zod program). */
 export const XaasRouteFeatureFlags_create_schema = z.object({
   enabled: z.boolean(),
@@ -2019,6 +2037,16 @@ export const XaasRouteOrgsCustomDomain_update_schema = z.object({
   status: z.string()
 }).passthrough();
 
+/** Zod boundary schema for `XaasRouteProjects.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteProjects_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteProjects.create` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteProjects_create_schema = z.object({
+  requested_by: z.string()
+}).passthrough();
+
 /** Zod boundary schema for `XaasRouteProjects.read` (input schema of the compiled IR.Schema.zod program). */
 export const XaasRouteProjects_read_schema = z.object({
 
@@ -2036,9 +2064,19 @@ export const XaasRouteProjectsBackups_create_schema = z.object({
   taken_at: z.string()
 }).passthrough();
 
+/** Zod boundary schema for `XaasRouteProjectsBackups.purge_expired` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteProjectsBackups_purge_expired_schema = z.object({
+
+}).passthrough();
+
 /** Zod boundary schema for `XaasRouteProjectsBackups.read` (input schema of the compiled IR.Schema.zod program). */
 export const XaasRouteProjectsBackups_read_schema = z.object({
 
+}).passthrough();
+
+/** Zod boundary schema for `XaasRouteSecrets.approve` (input schema of the compiled IR.Schema.zod program). */
+export const XaasRouteSecrets_approve_schema = z.object({
+  approved_by: z.string().optional().nullable()
 }).passthrough();
 
 /** Zod boundary schema for `XaasRouteSecrets.create` (input schema of the compiled IR.Schema.zod program). */
@@ -2220,6 +2258,7 @@ export const XaasSchool_update_schema = z.object({
 
 /** Zod boundary schema for `XaasSession.create` (input schema of the compiled IR.Schema.zod program). */
 export const XaasSession_create_schema = z.object({
+  capacity: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   ends_at: z.string().optional().nullable(),
   slug: z.string(),
@@ -2424,6 +2463,11 @@ export const XaasTransfer_read_schema = z.object({
 /** Zod boundary schema for `XaasTransfer.read_transfers` (input schema of the compiled IR.Schema.zod program). */
 export const XaasTransfer_read_transfers_schema = z.object({
 
+}).passthrough();
+
+/** Zod boundary schema for `XaasTransfer.reverse` (input schema of the compiled IR.Schema.zod program). */
+export const XaasTransfer_reverse_schema = z.object({
+  transfer_id: z.unknown()
 }).passthrough();
 
 /** Zod boundary schema for `XaasTransfer.transfer` (input schema of the compiled IR.Schema.zod program). */
@@ -4370,11 +4414,12 @@ export const XaasAttendee = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `AuditExportToken` (3 actions: issue, read, revoke).
+ * JSDoc-typed namespace for resource `AuditExportToken` (4 actions: issue, read, revoke, use).
  * @typedef {Object} XaasAuditExportTokenNamespace
  * @property {Object} issue - `XaasAuditExportToken.issue` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read - `XaasAuditExportToken.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} revoke - `XaasAuditExportToken.revoke` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} use - `XaasAuditExportToken.use` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasAuditExportToken = Object.freeze({
   /** `XaasAuditExportToken.issue` — not delegated; no dispatch intent. */
@@ -4415,6 +4460,19 @@ export const XaasAuditExportToken = Object.freeze({
     capabilityIri: null,
     label: "Revoke",
     schema: XaasAuditExportToken_revoke_schema
+  }),
+  /** `XaasAuditExportToken.use` — not delegated; no dispatch intent. */
+  use: Object.freeze({
+    id: "XaasAuditExportToken.use",
+    resource: "AuditExportToken",
+    action: "use",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Use",
+    schema: XaasAuditExportToken_use_schema
   })
 });
 
@@ -7401,14 +7459,28 @@ export const XaasRefusalCode = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `Registration` (4 actions: create, destroy, read, update).
+ * JSDoc-typed namespace for resource `Registration` (5 actions: cancel, create, destroy, read, update).
  * @typedef {Object} XaasRegistrationNamespace
+ * @property {Object} cancel - `XaasRegistration.cancel` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} create - `XaasRegistration.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} destroy - `XaasRegistration.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read - `XaasRegistration.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} update - `XaasRegistration.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasRegistration = Object.freeze({
+  /** `XaasRegistration.cancel` — not delegated; no dispatch intent. */
+  cancel: Object.freeze({
+    id: "XaasRegistration.cancel",
+    resource: "Registration",
+    action: "cancel",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Cancel",
+    schema: XaasRegistration_cancel_schema
+  }),
   /** `XaasRegistration.create` — not delegated; no dispatch intent. */
   create: Object.freeze({
     id: "XaasRegistration.create",
@@ -7653,13 +7725,27 @@ export const XaasRouteCastleSunset = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `RouteFeatureFlags` (3 actions: create, read, update).
+ * JSDoc-typed namespace for resource `RouteFeatureFlags` (4 actions: approve, create, read, update).
  * @typedef {Object} XaasRouteFeatureFlagsNamespace
+ * @property {Object} approve - `XaasRouteFeatureFlags.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} create - `XaasRouteFeatureFlags.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read - `XaasRouteFeatureFlags.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} update - `XaasRouteFeatureFlags.update` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasRouteFeatureFlags = Object.freeze({
+  /** `XaasRouteFeatureFlags.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasRouteFeatureFlags.approve",
+    resource: "RouteFeatureFlags",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasRouteFeatureFlags_approve_schema
+  }),
   /** `XaasRouteFeatureFlags.create` — not delegated; no dispatch intent. */
   create: Object.freeze({
     id: "XaasRouteFeatureFlags.create",
@@ -7751,11 +7837,39 @@ export const XaasRouteOrgsCustomDomain = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `RouteProjects` (1 action: read).
+ * JSDoc-typed namespace for resource `RouteProjects` (3 actions: approve, create, read).
  * @typedef {Object} XaasRouteProjectsNamespace
+ * @property {Object} approve - `XaasRouteProjects.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} create - `XaasRouteProjects.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read - `XaasRouteProjects.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasRouteProjects = Object.freeze({
+  /** `XaasRouteProjects.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasRouteProjects.approve",
+    resource: "RouteProjects",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasRouteProjects_approve_schema
+  }),
+  /** `XaasRouteProjects.create` — not delegated; no dispatch intent. */
+  create: Object.freeze({
+    id: "XaasRouteProjects.create",
+    resource: "RouteProjects",
+    action: "create",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Create",
+    schema: XaasRouteProjects_create_schema
+  }),
   /** `XaasRouteProjects.read` — not delegated; no dispatch intent. */
   read: Object.freeze({
     id: "XaasRouteProjects.read",
@@ -7772,9 +7886,10 @@ export const XaasRouteProjects = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `RouteProjectsBackups` (2 actions: create, read).
+ * JSDoc-typed namespace for resource `RouteProjectsBackups` (3 actions: create, purge_expired, read).
  * @typedef {Object} XaasRouteProjectsBackupsNamespace
  * @property {Object} create - `XaasRouteProjectsBackups.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} purge_expired - `XaasRouteProjectsBackups.purge_expired` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read - `XaasRouteProjectsBackups.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasRouteProjectsBackups = Object.freeze({
@@ -7790,6 +7905,19 @@ export const XaasRouteProjectsBackups = Object.freeze({
     capabilityIri: null,
     label: "Create",
     schema: XaasRouteProjectsBackups_create_schema
+  }),
+  /** `XaasRouteProjectsBackups.purge_expired` — not delegated; no dispatch intent. */
+  purge_expired: Object.freeze({
+    id: "XaasRouteProjectsBackups.purge_expired",
+    resource: "RouteProjectsBackups",
+    action: "purge_expired",
+    actionType: "destroy",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Purge expired",
+    schema: XaasRouteProjectsBackups_purge_expired_schema
   }),
   /** `XaasRouteProjectsBackups.read` — not delegated; no dispatch intent. */
   read: Object.freeze({
@@ -7807,13 +7935,27 @@ export const XaasRouteProjectsBackups = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `RouteSecrets` (3 actions: create, destroy, read).
+ * JSDoc-typed namespace for resource `RouteSecrets` (4 actions: approve, create, destroy, read).
  * @typedef {Object} XaasRouteSecretsNamespace
+ * @property {Object} approve - `XaasRouteSecrets.approve` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} create - `XaasRouteSecrets.create` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} destroy - `XaasRouteSecrets.destroy` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read - `XaasRouteSecrets.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasRouteSecrets = Object.freeze({
+  /** `XaasRouteSecrets.approve` — not delegated; no dispatch intent. */
+  approve: Object.freeze({
+    id: "XaasRouteSecrets.approve",
+    resource: "RouteSecrets",
+    action: "approve",
+    actionType: "update",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Approve",
+    schema: XaasRouteSecrets_approve_schema
+  }),
   /** `XaasRouteSecrets.create` — not delegated; no dispatch intent. */
   create: Object.freeze({
     id: "XaasRouteSecrets.create",
@@ -8717,10 +8859,11 @@ export const XaasTrack = Object.freeze({
 });
 
 /**
- * JSDoc-typed namespace for resource `Transfer` (3 actions: read, read_transfers, transfer).
+ * JSDoc-typed namespace for resource `Transfer` (4 actions: read, read_transfers, reverse, transfer).
  * @typedef {Object} XaasTransferNamespace
  * @property {Object} read - `XaasTransfer.read` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} read_transfers - `XaasTransfer.read_transfers` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
+ * @property {Object} reverse - `XaasTransfer.reverse` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  * @property {Object} transfer - `XaasTransfer.transfer` (authorityBoundary: not delegated, descriptorKind: "DESCRIPTOR")
  */
 export const XaasTransfer = Object.freeze({
@@ -8749,6 +8892,19 @@ export const XaasTransfer = Object.freeze({
     capabilityIri: null,
     label: "Read transfers",
     schema: XaasTransfer_read_transfers_schema
+  }),
+  /** `XaasTransfer.reverse` — not delegated; no dispatch intent. */
+  reverse: Object.freeze({
+    id: "XaasTransfer.reverse",
+    resource: "Transfer",
+    action: "reverse",
+    actionType: "create",
+    authorityBoundary: null,
+    receiptRequired: false,
+    descriptorKind: "DESCRIPTOR",
+    capabilityIri: null,
+    label: "Reverse",
+    schema: XaasTransfer_reverse_schema
   }),
   /** `XaasTransfer.transfer` — not delegated; no dispatch intent. */
   transfer: Object.freeze({
@@ -9323,6 +9479,7 @@ export const ACTIONS = Object.freeze([
   XaasAuditExportToken.issue,
   XaasAuditExportToken.read,
   XaasAuditExportToken.revoke,
+  XaasAuditExportToken.use,
   XaasAuditLogEntry.create,
   XaasAuditLogEntry.read,
   XaasAutofdePlannerCacheHotset.read,
@@ -9508,6 +9665,7 @@ export const ACTIONS = Object.freeze([
   XaasRefusalCode.destroy,
   XaasRefusalCode.read,
   XaasRefusalCode.update,
+  XaasRegistration.cancel,
   XaasRegistration.create,
   XaasRegistration.destroy,
   XaasRegistration.read,
@@ -9522,15 +9680,20 @@ export const ACTIONS = Object.freeze([
   XaasRouteCastleRun.read,
   XaasRouteCastleSchedule.read,
   XaasRouteCastleSunset.read,
+  XaasRouteFeatureFlags.approve,
   XaasRouteFeatureFlags.create,
   XaasRouteFeatureFlags.read,
   XaasRouteFeatureFlags.update,
   XaasRouteOrgsCustomDomain.create,
   XaasRouteOrgsCustomDomain.read,
   XaasRouteOrgsCustomDomain.update,
+  XaasRouteProjects.approve,
+  XaasRouteProjects.create,
   XaasRouteProjects.read,
   XaasRouteProjectsBackups.create,
+  XaasRouteProjectsBackups.purge_expired,
   XaasRouteProjectsBackups.read,
+  XaasRouteSecrets.approve,
   XaasRouteSecrets.create,
   XaasRouteSecrets.destroy,
   XaasRouteSecrets.read,
@@ -9593,6 +9756,7 @@ export const ACTIONS = Object.freeze([
   XaasTrack.read,
   XaasTransfer.read,
   XaasTransfer.read_transfers,
+  XaasTransfer.reverse,
   XaasTransfer.transfer,
   XaasUser.change_password,
   XaasUser.confirm,
@@ -9737,6 +9901,7 @@ export const SCHEMAS = Object.freeze({
   "XaasAuditExportToken.issue": XaasAuditExportToken_issue_schema,
   "XaasAuditExportToken.read": XaasAuditExportToken_read_schema,
   "XaasAuditExportToken.revoke": XaasAuditExportToken_revoke_schema,
+  "XaasAuditExportToken.use": XaasAuditExportToken_use_schema,
   "XaasAuditLogEntry.create": XaasAuditLogEntry_create_schema,
   "XaasAuditLogEntry.read": XaasAuditLogEntry_read_schema,
   "XaasAutofdePlannerCacheHotset.read": XaasAutofdePlannerCacheHotset_read_schema,
@@ -9922,6 +10087,7 @@ export const SCHEMAS = Object.freeze({
   "XaasRefusalCode.destroy": XaasRefusalCode_destroy_schema,
   "XaasRefusalCode.read": XaasRefusalCode_read_schema,
   "XaasRefusalCode.update": XaasRefusalCode_update_schema,
+  "XaasRegistration.cancel": XaasRegistration_cancel_schema,
   "XaasRegistration.create": XaasRegistration_create_schema,
   "XaasRegistration.destroy": XaasRegistration_destroy_schema,
   "XaasRegistration.read": XaasRegistration_read_schema,
@@ -9936,15 +10102,20 @@ export const SCHEMAS = Object.freeze({
   "XaasRouteCastleRun.read": XaasRouteCastleRun_read_schema,
   "XaasRouteCastleSchedule.read": XaasRouteCastleSchedule_read_schema,
   "XaasRouteCastleSunset.read": XaasRouteCastleSunset_read_schema,
+  "XaasRouteFeatureFlags.approve": XaasRouteFeatureFlags_approve_schema,
   "XaasRouteFeatureFlags.create": XaasRouteFeatureFlags_create_schema,
   "XaasRouteFeatureFlags.read": XaasRouteFeatureFlags_read_schema,
   "XaasRouteFeatureFlags.update": XaasRouteFeatureFlags_update_schema,
   "XaasRouteOrgsCustomDomain.create": XaasRouteOrgsCustomDomain_create_schema,
   "XaasRouteOrgsCustomDomain.read": XaasRouteOrgsCustomDomain_read_schema,
   "XaasRouteOrgsCustomDomain.update": XaasRouteOrgsCustomDomain_update_schema,
+  "XaasRouteProjects.approve": XaasRouteProjects_approve_schema,
+  "XaasRouteProjects.create": XaasRouteProjects_create_schema,
   "XaasRouteProjects.read": XaasRouteProjects_read_schema,
   "XaasRouteProjectsBackups.create": XaasRouteProjectsBackups_create_schema,
+  "XaasRouteProjectsBackups.purge_expired": XaasRouteProjectsBackups_purge_expired_schema,
   "XaasRouteProjectsBackups.read": XaasRouteProjectsBackups_read_schema,
+  "XaasRouteSecrets.approve": XaasRouteSecrets_approve_schema,
   "XaasRouteSecrets.create": XaasRouteSecrets_create_schema,
   "XaasRouteSecrets.destroy": XaasRouteSecrets_destroy_schema,
   "XaasRouteSecrets.read": XaasRouteSecrets_read_schema,
@@ -10007,6 +10178,7 @@ export const SCHEMAS = Object.freeze({
   "XaasTrack.read": XaasTrack_read_schema,
   "XaasTransfer.read": XaasTransfer_read_schema,
   "XaasTransfer.read_transfers": XaasTransfer_read_transfers_schema,
+  "XaasTransfer.reverse": XaasTransfer_reverse_schema,
   "XaasTransfer.transfer": XaasTransfer_transfer_schema,
   "XaasUser.change_password": XaasUser_change_password_schema,
   "XaasUser.confirm": XaasUser_confirm_schema,
