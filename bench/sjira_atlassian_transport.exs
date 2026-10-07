@@ -14,7 +14,8 @@ items =
       "checkpoint_of" => "urn:bench:checkpoint:1",
       "capability" => "atlassian:jira.issue",
       "provider" => "atlassian",
-      "tuple_digest" => :crypto.hash(:sha256, Integer.to_string(n)) |> Base.encode16(case: :lower),
+      "tuple_digest" =>
+        :crypto.hash(:sha256, Integer.to_string(n)) |> Base.encode16(case: :lower),
       "classification" => "Successor",
       "resolve" => "ok",
       "route" => "KNOWN",

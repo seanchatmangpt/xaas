@@ -39,7 +39,15 @@ read = fn path ->
     decoded
   else
     error ->
-      IO.puts(Jason.encode!(%{"ok" => false, "reason" => "unreadable", "path" => path, "error" => inspect(error)}))
+      IO.puts(
+        Jason.encode!(%{
+          "ok" => false,
+          "reason" => "unreadable",
+          "path" => path,
+          "error" => inspect(error)
+        })
+      )
+
       System.halt(1)
   end
 end

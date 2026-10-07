@@ -30,7 +30,11 @@ n = 200
 :ok = :gen_tcp.close(listen_socket)
 
 System.put_env("PROMETHEUS_URL", "http://127.0.0.1:#{port}")
-System.put_env("INTERNAL_API_TOKEN", System.get_env("INTERNAL_API_TOKEN", "bench-only-internal-api-token"))
+
+System.put_env(
+  "INTERNAL_API_TOKEN",
+  System.get_env("INTERNAL_API_TOKEN", "bench-only-internal-api-token")
+)
 
 token = System.fetch_env!("INTERNAL_API_TOKEN")
 

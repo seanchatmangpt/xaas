@@ -4,11 +4,14 @@ policy = SubstitutionPolicy.policy()
 
 unless policy.admitted_standing == "ALIVE", do: raise("unexpected admitted standing")
 unless policy.unknown_standing == "UNKNOWN", do: raise("UNKNOWN must remain explicit")
-unless policy.required_fields == MapSet.new(~w(exactSubject verifierEvidenceDigest replayDigest standing)),
-  do: raise("required qualification fields drifted")
+
+unless policy.required_fields ==
+         MapSet.new(~w(exactSubject verifierEvidenceDigest replayDigest standing)),
+       do: raise("required qualification fields drifted")
 
 subject = "seanchatmangpt/xaas@" <> String.duplicate("a", 40)
 :ok = SubstitutionPolicy.admit_receipt(%{exact_subject: subject, standing: "ALIVE"})
+
 {:error, :qualification_unknown} =
   SubstitutionPolicy.admit_receipt(%{exact_subject: subject, standing: "UNKNOWN"})
 
