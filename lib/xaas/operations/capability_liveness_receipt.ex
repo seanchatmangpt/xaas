@@ -173,6 +173,11 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
 
       accept([:capability, :authority, :status, :executed, :exit_code, :subject, :detail])
 
+      # W768 (G1): mechanical ALIVE-requires-execution gate + standing
+      # status vocabulary. See
+      # Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate.
+      validate {Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate, []}
+
       upsert?(true)
       upsert_identity(:capability_subject)
     end
