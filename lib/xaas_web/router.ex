@@ -259,7 +259,19 @@ defmodule XaasWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:internal_api, :require_internal_api_token, :set_internal_api_system_actor])
+    # W739 (same class as W150/W299c): the token floor must precede content
+    # negotiation here too. `:internal_api` carries `plug(:accepts,
+    # ["json-api"])`; listed first, it answered 406 (leaking the accepted
+    # content types) to any unauthenticated probe whose Accept header was
+    # not json-api, before the token check ever ran. Pipeline order = plug
+    # order, so :require_internal_api_token is listed first. Authenticated
+    # negotiation behavior is unchanged: the floor passes authenticated
+    # requests through to the same :accepts check.
+    pipe_through([
+      :require_internal_api_token,
+      :internal_api,
+      :set_internal_api_system_actor
+    ])
 
     forward("/internal-api", XaasWeb.InternalApiRouter)
   end
