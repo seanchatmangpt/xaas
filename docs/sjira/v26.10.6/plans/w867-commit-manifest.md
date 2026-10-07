@@ -1,0 +1,17 @@
+# W867 — Commit-manifest staging (receipt)
+
+- **Subject**: /Users/sac/xaas @ feat/playwright-surface, HEAD a0723bf6, canonical checkout. Lane W867, no build root, no git operations, no commit.
+- **Deliverable**: docs/sjira/v26.10.6/_COMMIT_MANIFEST_W850.md (new, 274 lines, 16 sections).
+- **Method**: (a) git status --porcelain (108 tracked + ~165 untracked entries); (b) lane attribution from plan receipts' Subject/Files-written sections cross-checked with W-markers inside actual hunks (git diff HEAD); mention-only matches not treated as ownership.
+- **Groups**: CG-01 infra/config+migrations (W786/W803/W804/W822); CG-02 W740 governance guards; CG-03 W785/W746/W762/W799/W835 billing/ledger; CG-04 W794/W773/W780/W828/W831/W809/W801 core repairs; CG-05 W818/W707/W840/W824/W844 ops repairs; CG-06 W792 platform approver wiring; CG-07 semantics lib (W732/W676/W679/W630); CG-08 EU-AI-Act deepening tests (W665/W667/W669/W696/W710/W692/W706); CG-09 xaas_web surface courts (W745/W699/W723/W743/W813/W817/W836/W829/W837/W774/W771/W800/W766/W703/W775/W776); CG-10 domain deepening (W722/W787-W790/W795/W715/W721/W666/W764/W750/W728/W716/W767); CG-11 remaining deepening (W727/W717/W724/W730/W731/W733/W734/W735/W736/W744/W748/W789/W693/W697/W713/W719/W673/W709/W698); CG-12 e2e (W688/W823/W842/W848); CG-13 docs (W671/W830/W827/W820/W841/W862/W797/W850/W806/W807/W753/W759/W864); CG-14 sjira receipts (~160 files); CG-15 gap-closure rows.
+- **HOLD (9 items)**: lib/xaas_web/router.ex; lib/xaas/operations/validations/incident_resolved_is_terminal.ex; lib/xaas/ocel.ex; lib/xaas/semantics/computation.ex; lib/xaas/a2a/validations/; lib/xaas/ledger/validations/; lib/xaas/operations/validations/capability_liveness_receipt_status_gate.ex; platform deletion pair (route_orgs_custom_domain*, route_projects_backups*); priv/semantic/generated/. Plus transients cleanup-plan.json + test/w707_tmp/ (delete, do not commit). lib/xaas/checks/system_actor.ex unattributed — HOLD.
+- **Operator decisions (7)**: dev.exs cluster_size 1->3 (W803); W786/W804 migrations vs xaas_dev (W804 deletes dup rows); platform route deletions; transients deletion; test.exs env port vs CI (W822); priv/semantic/generated generator-path question; semantics/incident_report.ex diff lacks W-marker.
+- **Standing**:
+  - Manifest staging: ALIVE — file exists, 0 missing paths vs live git status, corruption sweep clean (programmatic check).
+  - Coverage: full — every non-sjira working-tree path is named in the manifest; sjira plan receipts covered by the CG-14 blanket row.
+  - Attribution: high confidence where receipt files-written or hunk W-markers exist; VERIFY-AT-COMMIT rows carry no hunk evidence and were flagged as such (~24 rows).
+  - Falsifier: run the coverage check — any git-status path absent from the manifest, or any sentinel/garbage row present, falsifies staging.
+  - Corruption disclosure: two earlier draft generations self-corrupted mid-stream (sentinel rows); file rebuilt in small chunks and programmatically swept; final scan clean.
+- **Commands/exits**: git status --porcelain (0); git diff HEAD per-file W-marker scan (python, exit 0); coverage check "missing: 0"; corruption scan [].
+- **Replay**: git status --porcelain | compare against manifest rows; python coverage snippet in the session transcript.
+- **Consequence**: staging only; no tree mutation besides the two new doc files (manifest + this receipt).

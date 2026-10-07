@@ -1,6 +1,6 @@
 # v26.10.6 Closure Plan — Receipts Index
 
-Integration lane W184b; last synced W659d (set-equality sweep: 94 rows appended for the W543–W661 EU-AI-Act/AIRo/OS-19/20/21 wave + W700–W706 cross-project gap wave; W544's base carried forward) (set-equality sweep: rows added for w316/w453–w474 files W469's pass missed + the full W500–W541 EU-AI-Act wave).
+Integration lane W184b; last synced W777 (set-equality sweep: 114 rows appended for the W640–W766 EU-AI-Act/AIRo/deepening wave — the prior "set-equal by W659d" claim did not hold, 114 receipts were on disk unindexed).
 One line per receipt file in this directory (except `_INDEX.md` itself); standing/deliverable
 taken from each file's own header. Companion: `_LANES.md`, `_FRONTIER.md`, `_WIRING_MATRIX.md`.
 
@@ -55,7 +55,7 @@ taken from each file's own header. Companion: `_LANES.md`, `_FRONTIER.md`, `_WIR
 | `x7-risk-register.md` | X7 | definition (risk register) | red-team risks ranked S0–S2; S0: "playwright-validate 12 of 13 repos" unfalsifiable — acceptance redefined per repo class |
 | `x8-ash-surface-gen.md` | X8 | audit x8 | ash-surface generation path: PARTIAL_ALIVE — full-app generation works at EA35, artifacts verified on disk |
 
-## Execution lanes (w6–w706)
+## Execution lanes (w6–w766)
 
 | file | lane | type | standing / deliverable |
 |---|---|---|---|
@@ -469,6 +469,119 @@ taken from each file's own header. Companion: `_LANES.md`, `_FRONTIER.md`, `_WIR
 | `w706-trio-gaps.md` | W706 | execution w706 | trio gap fill (ash_pplan + ash_r2rml + ash_affidavit → xaas) |
 | `w398-refusal-capstone-final.md` | W398b | execution w398b | Refusal Capstone Corpus receipt (final adjudication) |
 | `w291-ash-pplan-verdict.md` | W291 | execution w291 | ash_pplan patch landed, verdict receipt @ 414a393 |
+| `w640-os21-verify.md` | W640 | court w640 | OS-21 verification: 4/4 totality escapes typed-handled, fuzz suite green (OS-21 CLOSED) |
+| `w641-semantics-integration.md` | W641 | census w641 | full new-module integration run (EU-AI-Act wave) |
+| `w645c-euaia-aggregation-8.md` | W645c | census w645c | EU-AI-Act aggregation-8 gate + census receipt |
+| `w650b-ledger-terminal3.md` | W650b | docs w650b | implementation-wave ledger terminal-3 (post-classification/flips/deepening) |
+| `w650c-terminal-census.md` | W650c | census w650c | terminal census receipt (EU AI Act wave) |
+| `w653b-binary-leg.md` | W653b | pin w653b | eyerun_wasi release build + 55.1.d binary leg |
+| `w655b-tail-link-row.md` | W655b | deepening w655b | Art 12 tail-link row in the counterfactual harness (expected_head mitigation asserted) |
+| `w658b-beam4pm-admissions.md` | W658b | pin w658b | beam4pm remaining AuthorshipGate admissions (v26.10.6) |
+| `w658c-art12-chain.md` | W658c | court w658c | Art. 12(3) end-to-end chain court |
+| `w658d-census-fix.md` | W658d | repair w658d | W705 census tripwire fix |
+| `w659c-w705-test-fix.md` | W659c | repair w659c | W705 map_update_dual_safe_test.exs fix |
+| `w659d-lifecycle-fixes.md` | W659d | repair w659d | lifecycle contract test fixes (Art 15(5) / W540) |
+| `w659e-euaia-run.md` | W659e | census w659e | eu_ai_act suite receipt @ post-W631/W637b/W652 tree |
+| `w662-euaia-aggregation-9.md` | W662 | census w662 | EU-AI-Act aggregation-9 (final census receipt) |
+| `w663b-postcommit-gates.md` | W663b | court w663b | w464 §5 post-commit verification gates |
+| `w664b-os20-consolidation2.md` | W664b | docs w664b | OS-20 consolidation-2 |
+| `w664b-publish-deviations.md` | W664b | docs w664b | publish-deviations coordinator close-out |
+| `w665-art50-deepening.md` | W665 | deepening w665 | Art. 50 evidenced-line deepening |
+| `w666-ocel-egress-deepening.md` | W666 | deepening w666 | OCEL 2.0 egress deepening (Art. 12/19 evidence lines) |
+| `w667-art15-deepening.md` | W667 | deepening w667 | Art. 15 deepening (accuracy/robustness/cybersecurity) |
+| `w669-art73-chain-deepening.md` | W669 | deepening w669 | Art. 73 chain deepening |
+| `w670-euaia-gate-rerun.md` | W670 | census w670 | EU-AI-Act gate rerun (W645c gap-closure attempt) |
+| `w671-semantics-reference.md` | W671 | docs w671 | diataxis reference page for lib/xaas/semantics/ |
+| `w672-flake-adjudication.md` | W672 | court w672 | flake adjudication: counterfactual + title_vi_xiii (NON_REPRODUCED, external root cause) |
+| `w673-wasm4pm-serde-pin.md` | W673 | pin w673 | wasm4pm eu_gate serde surface pin |
+| `w674-gymact-deepening.md` | W674 | deepening w674 | gymact surface deepening |
+| `w675-ash-surface-airo-pin.md` | W675 | pin w675 | ash_surface AIRo surface pin |
+| `w676-margin-hardening.md` | W676 | repair w676 | margin/dataset hardening: typed refusals on malformed margin + extreme-float dataset features |
+| `w677-gymact-airo-pin.md` | W677 | pin w677 | gymact AIRo wiring pin |
+| `w678-autofde-lab-airo-pin.md` | W678 | pin w678 | autofde-lab AIRo wiring pin |
+| `w679-malfunction-fix.md` | W679 | repair w679 | IncidentReport :MALFUNCTION misclassification fix |
+| `w680-ex4pm-airo-pin.md` | W680 | pin w680 | ex4pm AIRo surface pin |
+| `w681-wasm4pm-airo-pin.md` | W681 | pin w681 | wasm4pm AIRo wiring pin test |
+| `w682-ash-pplan-airo-pin.md` | W682 | pin w682 | ash_pplan AIRo pin |
+| `w683-zcode-cli-airo-pin.md` | W683 | pin w683 | zcode-cli AIRo wiring pin (ledger CONSISTENT verification) |
+| `w684-check-airo-fail-closed.md` | W684 | repair w684 | check_airo.sh fail-closed (ggen + ferroplan) |
+| `w685-ash-r2rml-airo-pin.md` | W685 | pin w685 | ash_r2rml AIRo wiring pin |
+| `w686-ggen-igniter-airo-pin.md` | W686 | pin w686 | ggen_igniter AIRo wiring pin |
+| `w687-ggen-marketplace-airo-pin.md` | W687 | pin w687 | ggen-marketplace AIRo pin |
+| `w688-playwright-marking.md` | W688 | court w688 | playwright e2e for the synthetic-marking surface (W533), 5/5 against real server |
+| `w689-diataxis-reconciliation.md` | W689 | docs w689 | diataxis domain/resource count reconciliation |
+| `w690-ash-affidavit-airo-pin.md` | W690 | pin w690 | ash_affidavit AIRo pin (ledger-consistent) |
+| `w691-title-ii-deepening.md` | W691 | deepening w691 | Title II deepening (Art. 8/9/10 provider obligations) |
+| `w692-counterfactual-deepening.md` | W692 | deepening w692 | Pearl counterfactual calculus deepening |
+| `w693-ferroplan-airo-pin.md` | W693 | pin w693 | ferroplan AIRo pin test |
+| `w694-os-register-rederivation.md` | W694 | docs w694 | OS register re-derivation (OS-1..OS-21 from cited receipts + tree) |
+| `w695-ggen-airo-pin.md` | W695 | pin w695 | ggen AIRo pin test |
+| `w696-art99-deepening.md` | W696 | deepening w696 | Art 99/100 enforcement deepening |
+| `w697-declared-metrics-staleness.md` | W697 | court w697 | DeclaredMetrics fail-closed staleness courts |
+| `w698-witness-deepening.md` | W698 | deepening w698 | witness surface deepening (unit courts) |
+| `w699-a2a-v1-wire-deepening.md` | W699 | court w699 | A2A v1 wire deepening court (9/9, exit 0) |
+| `w700-closure-plan-refresh.md` | W700 | docs w700 | §4 OS register refresh of _CLOSURE_PLAN.md |
+| `w701-strict-closure-config.md` | W701 | court w701 | strict capability-release closure config RESOLVED-AT-HEAD (W645c BLOCKED-B) |
+| `w702-telemetry-docs-verify.md` | W702 | docs w702 | telemetry docs verification |
+| `w703-plug-order-court.md` | W703 | court w703 | plug mount order court (SyntheticMarkingPlug before EuAiActAdmissionPlug) |
+| `w704-quiescent-deepening.md` | W704 | deepening w704 | quiescent-stop deepening (Art. 27.3 court) |
+| `w705-ledger-refresh.md` | W705 | docs w705 | refusal ledger refresh (v26.10.6) |
+| `w706-eyerun-wire.md` | W706 | deepening w706 | eyerun_wasi wire-contract deepening (Art. 55.1.d) |
+| `w707-gymact-seal-fix.md` | W707 | repair w707 | gymact seal fix |
+| `w708-73x-alignment.md` | W708 | repair w708 | title_vi_xiii Art 73.x classification alignment (W641 finding #4) |
+| `w709-witness-durability.md` | W709 | court w709 | witness catalog ingest durability court |
+| `w710-art86-deepening.md` | W710 | deepening w710 | Art 86 rights deepening court |
+| `w711-claims-index-refresh.md` | W711 | docs w711 | evidence–claims index refresh |
+| `w712-actuation-doc-refresh.md` | W712 | docs w712 | actuation-and-semantics reference EU-AI-Act semantics-layer refresh |
+| `w713-refusal-census.md` | W713 | census w713 | refusal-atom census court |
+| `w714-sa2a-docs-verify.md` | W714 | docs w714 | sa2a-computation-boundary.md doc verification |
+| `w715-conference-deepening.md` | W715 | deepening w715 | conference domain deepening |
+| `w716-ferroplan-bridge-deepening.md` | W716 | court w716 | ferroplan bridge deepening (courts over doc claims) |
+| `w717-ultracode-deepening.md` | W717 | deepening w717 | ultracode run/epoch/receipt deepening |
+| `w718-persona-grant-deepening.md` | W718 | deepening w718 | PersonaGrant deepening courts |
+| `w719-me-stress.md` | W719 | census w719 | master-equation composition stress window |
+| `w720-runtime-config-court.md` | W720 | court w720 | ash_a2a runtime-config court |
+| `w721-ocel-deepening.md` | W721 | deepening w721 | Ocel deepening |
+| `w722-governance-deepening.md` | W722 | deepening w722 | governance multitenant approval deepening court |
+| `w723-token-floor-court.md` | W723 | court w723 | RequireInternalApiToken deepening court (16/16) |
+| `w724-temporal-deepening.md` | W724 | deepening w724 | temporal memory deepening |
+| `w725-webhook-deepening.md` | W725 | deepening w725 | webhook surface deepening |
+| `w726-witness-constraint-fix.md` | W726 | repair w726 | witness identity-constraint typed refusal fix |
+| `w727-accounts-deepening.md` | W727 | deepening w727 | accounts domain deepening |
+| `w728-audit-log-deepening.md` | W728 | deepening w728 | AuditLogEntry deepening (/mcp audit trail) |
+| `w729-billing-deepening.md` | W729 | deepening w729 | billing domain deepening |
+| `w730-security-deepening.md` | W730 | deepening w730 | security domain deepening |
+| `w731-graphlaw-deepening.md` | W731 | deepening w731 | graphlaw engine-registry deepening (PW6) |
+| `w732-closure-repair.md` | W732 | repair w732 | refusal-atom type-set closure repair |
+| `w733-marketplace-deepening.md` | W733 | deepening w733 | marketplace deepening |
+| `w734-igniter-deepening.md` | W734 | deepening w734 | Xaas.Igniter domain deepening (PackManifest + RefusalCode) |
+| `w735-coupling-deepening.md` | W735 | deepening w735 | coupling domain deepening (test-only lane) |
+| `w736-generation-deepening.md` | W736 | deepening w736 | Xaas.Generation deepening court |
+| `w737-run-cycle-index.md` | W737 | repair w737 | org-less (run_id, cycle) identity gap closed |
+| `w738-ledger-deepening.md` | W738 | deepening w738 | ledger domain deepening |
+| `w739-406-leak-fix.md` | W739 | repair w739 | /internal-api 406-before-auth leak fix (W723 finding 1) |
+| `w740-double-approve-guard.md` | W740 | repair w740 | double-approve guard on the 4 non-global-multitenancy Approval* resources |
+| `w741-sa2a-deepening.md` | W741 | deepening w741 | SA2A bridge/Executor error-surface deepening |
+| `w742-nextread-deepening.md` | W742 | deepening w742 | next-read library-domain atomic-concurrency deepening |
+| `w743-resolve-org-actor-deepening.md` | W743 | deepening w743 | ResolveOrgActor deepening |
+| `w744-zoe-deepening.md` | W744 | deepening w744 | zoe deepening (15 tests, one file) |
+| `w745-execution-fabric-deepening.md` | W745 | deepening w745 | execution-fabric deepening |
+| `w747-actuation-idempotency-deepening.md` | W747 | deepening w747 | actuation run/4 idempotency/replay deepening |
+| `w748-workbench-deepening.md` | W748 | deepening w748 | ggen workbench surface deepening |
+| `w749-runtime-contract-refresh.md` | W749 | docs w749 | runtime-contract reference refresh (how-to/reference) |
+| `w750-liveness-deepening.md` | W750 | court w750 | capability-liveness ALIVE-receipt composed court |
+| `w751-a2a-resources-deepening.md` | W751 | deepening w751 | A2A resources deepening |
+| `w753-cycle-log-refresh.md` | W753 | docs w753 | CRO cycle-log refresh |
+| `w754-castle-bridge-verify.md` | W754 | docs w754 | generated-castle-bridge-errc.md verification |
+| `w755-mock-gate-sweep.md` | W755 | census w755 | mock gate sweep (authoritative gate run) |
+| `w756-errc-rationale-refresh.md` | W756 | docs w756 | ERRC ELIMINATE-10 rationale refresh (xaas-castle-bridge-pack) |
+| `w758-ocel-fold.md` | W758 | repair w758 | OCEL object-state fold externalization (closes W721 typed gap) |
+| `w759-manifest-refresh.md` | W759 | docs w759 | CRO artifact-manifest refresh |
+| `w760-gate.md` | W760 | census w760 | fresh full gate after ~20 landed lanes |
+| `w761-howto-verify.md` | W761 | docs w761 | how-to verify receipt (provider lifecycle docs) |
+| `w764-forwarder-deepening.md` | W764 | deepening w764 | OcelForwarder deepening |
+| `w765-export-token-deepening.md` | W765 | deepening w765 | AuditExportToken + FreezeWindow deepening |
+| `w766-nextread-live-deepening.md` | W766 | deepening w766 | next-read LiveView deepening |
 
 ## Totals
 
@@ -478,7 +591,7 @@ taken from each file's own header. Companion: `_LANES.md`, `_FRONTIER.md`, `_WIR
 | Fleet audits r1–r11 | 11 |
 | Vectors 1–6 (incl. both vector3 files) | 7 |
 | X-lanes x1–x8 (incl. x1b) | 9 |
-| Execution lanes w6–w706 | 410 |
-| **Total receipt rows** | **441** |
+| Execution lanes w6–w766 | 524 |
+| **Total receipt rows** | **554** |
 
-(441 indexed rows cover all 437 non-underscore receipt `.md` files + 4 definition files (`_LANES.md`, `_FRONTIER.md`, `_WIRING_MATRIX.md`, `_CLOSURE_RECEIPT.md`); `_INDEX.md` itself is not indexed. Verified set-equal by W659d, 2026-10-07.)
+(554 indexed rows cover all 550 non-underscore receipt `.md` files + 4 definition files (`_LANES.md`, `_FRONTIER.md`, `_WIRING_MATRIX.md`, `_CLOSURE_RECEIPT.md`); `_INDEX.md` itself is not indexed. Set-equality re-verified by W777, 2026-10-07: 114 rows added for the W640–W766 wave; prior "set-equal by W659d" claim did not hold — 114 receipts W640–W766 were on disk but unindexed.)

@@ -49,7 +49,13 @@ PATH=$HOME/.asdf/shims:$PATH MIX_ENV=test MIX_BUILD_ROOT=_build-laneW659b \
   mix test test/xaas/semantics/airo_risk_mapping_test.exs
 ```
 
-Result recorded at the bottom (appended after the real run).
+Result (real run, exit 0):
+
+```
+Finished in 0.1 seconds (0.1s async, 0.00s sync)
+
+Result: 8 passed, 1 skipped
+```
 
 ## Standing
 

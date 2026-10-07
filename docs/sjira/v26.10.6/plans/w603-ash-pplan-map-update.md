@@ -57,10 +57,31 @@ fix flips the witness branch, forcing re-review instead of silent double-countin
 ## 4. Verification (real runs, private build root `_build-laneW603`)
 
 - `mix compile` under pinned toolchain (`PATH=$HOME/.asdf/shims:$PATH`,
-  elixir 1.20.4-otp-29 / erlang 29.1.1): exit 0, 152 files compiled clean.
-- Narrow gate `mix test test/manufacture_test.exs`: see §6 result line.
-- New regression module: see §6 result line.
-- Repo suite tail: see §6 result line.
+  elixir 1.20.4-otp-29 / erlang 29.1 post-compile clean; 152 files): exit 0.
+- Regression module `mix test test/map_update_absent_key_test.exs`: **5/5 passed, exit 0**.
+- Narrow gate `mix test test/manufacture_test.exs`: **9/10**. Sole failure:
+  `pack regeneration court: bin/manufacture-workflow` — ExUnit `TimeoutError` at the
+  court's hard-coded `@tag timeout: 600_000` (per-test tag; CLI `--timeout` cannot
+  lift it). Adjudication: standalone `bin/manufacture-workflow` run with the court's
+  exact env (`MANUFACTURE_MANIFEST_ROOT` + private `MIX_BUILD_ROOT`) **exits 0** in
+  12:35 wall / 652s user while the box ran at load average ~82 (other campaign
+  lanes' suites). The regeneration/byte-identity check itself PASSES (exit 0); the
+  failure is the wall-clock cap under multi-lane contention, not a semantic
+  regression — the patched sites are pure Map.fetch/put with identical data flow,
+  and the script's own compile+verify chain is green. Four court attempts during
+  load 73-82 all hit the same 600s cap; the standalone run is direct evidence the
+  manufactured output is correct.
+- Suite tail `mix test` (full suite, `_build-laneW603`): **killed at the 2h background
+  limit** (load average 74-92 throughout; other lanes' suites on the same host). Up to
+  the kill, 4 failure classes, none touching the 8 patched sites:
+  (1,2) `PackCourtsHarnessCourtTest` ×2 — external drift refusal
+  `marketplace HEAD 4bb5fbaf != pinned 6f779318` (marketplace checkout moved vs
+  ash_pplan's pin; external repo state, pre-existing);
+  (3) `MultiStoreStormTest` — `Task.yield_many` 540s timeout under load-86;
+  (4) `StressTest` Await-under-load — `Task.await` 30s timeout under contention.
+  Storm/stress timeouts are contention-class; the marketplace-pin refusal is
+  external-repo-state class. W291 observed the same killed-at-limit suite behavior on
+  its reruns (w291 receipt, runs 2-3).
 
 ## 5. Upgrade-safety note
 
@@ -74,4 +95,12 @@ repos' counts from w525d (beam4pm 3, ash_a2a 14, ex4pm 35 — other legs).
 
 ## 6. Result line
 
-`(filled at run completion)`
+Sites patched: 8/8 (commit `7eeaaa1` — coordinator integrated the lane's working-tree
+patches into the wave commit; lane itself made NO commits, per contract). Census after:
+only w525d's SAFE site (`fond/synthesis.ex` `min`) retains `Map.update/4`.
+Gates: compile exit 0 · regression module 5/5 exit 0 · manufacture_test 9/10 (sole
+failure = 600s wall-clock tag on `bin/manufacture-workflow`; script exits 0 standalone
+in 12:35 under load-82 — environmental, adjudicated in §4) · suite tail killed at 2h
+limit under load 74-92; 4 failures up to kill, all external-drift or contention class
+(§4), none referencing the 8 patched sites. Cleanup: `_build-laneW603` (795M) and all
+orphaned `_build-court-*` roots deleted (lease law).
