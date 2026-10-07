@@ -40,7 +40,7 @@ defmodule Xaas.Semantics.EuAiActAdmissionTest do
   end
 
   describe "admission surface contract" do
-    test "eight refusal atoms exposed in article order" do
+    test "nine refusal atoms exposed: 8 Art. 5(1) atoms in article order + malformed fallback" do
       assert EuAiActAdmission.refusal_atoms() == [
                :REFUSED_EUAIA_MANIPULATIVE,
                :REFUSED_EUAIA_VULNERABILITY_EXPLOIT,
@@ -49,14 +49,24 @@ defmodule Xaas.Semantics.EuAiActAdmissionTest do
                :REFUSED_EUAIA_FACIAL_SCRAPING,
                :REFUSED_EUAIA_EMOTION_RECOGNITION,
                :REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION,
-               :REFUSED_EUAIA_REALTIME_RBI
+               :REFUSED_EUAIA_REALTIME_RBI,
+               # W732 closure repair (W713 typed finding): the admit/1
+               # fallback verdict is a declared refusal atom.
+               :REFUSED_EUAIA_MALFORMED_CANDIDATE
              ]
     end
 
-    test "describe/1 maps every refusal atom to its Art. 5(1) partition" do
-      for atom <- EuAiActAdmission.refusal_atoms() do
+    test "describe/1 maps Art. 5(1) atoms to their partition; malformed atom to its schema-shape class" do
+      for atom <- EuAiActAdmission.refusal_atoms() -- [:REFUSED_EUAIA_MALFORMED_CANDIDATE] do
         assert String.starts_with?(EuAiActAdmission.describe(atom), "Art. 5(1)")
       end
+
+      # W732: the malformed fallback is a declared atom but not an Art. 5(1)
+      # prohibited-practice partition.
+      refute String.starts_with?(
+               EuAiActAdmission.describe(:REFUSED_EUAIA_MALFORMED_CANDIDATE),
+               "Art. 5(1)"
+             )
     end
 
     test "plain lawful candidate is admitted, not classified" do
@@ -66,6 +76,14 @@ defmodule Xaas.Semantics.EuAiActAdmissionTest do
     test "malformed (non-map) candidate is refused as malformed, not sniffed" do
       assert {:error, :REFUSED_EUAIA_MALFORMED_CANDIDATE} =
                EuAiActAdmission.admit("classify this text")
+
+      # W732 regression: the emitted atom is a member of the declared closed
+      # set and grounds through the W657 MALFORMED family to a real AIRo
+      # risk concept (no sentinel, no generic fallback).
+      assert :REFUSED_EUAIA_MALFORMED_CANDIDATE in EuAiActAdmission.refusal_atoms()
+
+      assert Xaas.Semantics.AiroRiskMapping.risk_concept_for("REFUSED_EUAIA_MALFORMED_CANDIDATE") ==
+               "MALFORMED_INPUT_CANDIDATE"
     end
 
     test "unknown extra fields never affect the verdict (content-blindness)" do

@@ -70,6 +70,44 @@ defmodule Xaas.Semantics.IncidentReportTest do
     end
   end
 
+  describe "EUAIA admission refusals are not MALFUNCTION (W679 regression)" do
+    test "a REFUSED_EUAIA_* refused receipt classifies without :MALFUNCTION" do
+      for atom <- Xaas.Semantics.EuAiActAdmission.refusal_atoms() do
+        receipt = %{
+          digest: "sha256:" <> Atom.to_string(atom),
+          refusal_atom: atom,
+          status: :refused,
+          observed_at: @t1
+        }
+
+        assert {:ok, report} = IncidentReport.build([receipt])
+
+        assert report.classification == [:INFRINGES_UNION_LAW],
+               "#{inspect(atom)} must not classify :MALFUNCTION"
+      end
+    end
+
+    test "a genuine non-EUAIA refusal is still :MALFUNCTION" do
+      receipt = %{
+        digest: "sha256:infra",
+        refusal_atom: :REFUSED_INFRASTRUCTURE_FAULT,
+        status: :refused,
+        observed_at: @t1
+      }
+
+      assert {:ok, report} = IncidentReport.build([receipt])
+
+      assert report.classification == [:MALFUNCTION]
+    end
+
+    test "an :error status alone is still :MALFUNCTION" do
+      receipt = %{digest: "d", status: :error, observed_at: @t1}
+
+      assert {:ok, report} = IncidentReport.build([receipt])
+      assert report.classification == [:MALFUNCTION]
+    end
+  end
+
   describe "transmit/1" do
     test "honestly reports PREPARED_NOT_TRANSMITTED (typed OPEN, corpus 73.4-73.5)" do
       {:ok, report} =

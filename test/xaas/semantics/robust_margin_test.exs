@@ -51,6 +51,23 @@ defmodule Xaas.Semantics.RobustMarginTest do
       assert RobustMargin.admit(100.0, {:error, :REFUSED_NO_CALIBRATION_DATA}, 1.0, 0.0) ==
                {:error, :REFUSED_NO_CALIBRATION_DATA}
     end
+
+    # W676 regression: before the guard fix, a non-numeric margin ("ten") or a
+    # non-0-arity closure reached the inner `case margin do` in the numeric
+    # clause and raised CaseClauseError — the outer catch-all clause was never
+    # reached because the numeric guards all passed. Mutation check: reverting
+    # the guard (dropping `(is_number(margin) or is_function(margin, 0)) and`
+    # from the first clause head) makes both assertions below raise
+    # CaseClauseError instead of returning the typed refusal.
+    test "non-numeric margin constant refuses typed MALFORMED_MARGIN_INPUT (W676)" do
+      assert RobustMargin.admit("ten", 1.0, 1.0, 1.0) ==
+               {:error, :REFUSED_MALFORMED_MARGIN_INPUT}
+    end
+
+    test "non-0-arity margin closure refuses typed MALFORMED_MARGIN_INPUT (W676)" do
+      assert RobustMargin.admit(fn x -> x end, 1.0, 1.0, 1.0) ==
+               {:error, :REFUSED_MALFORMED_MARGIN_INPUT}
+    end
   end
 
   describe "end-to-end Theorem 5.3 gate" do

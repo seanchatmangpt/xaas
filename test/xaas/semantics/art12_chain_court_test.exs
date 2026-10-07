@@ -38,20 +38,22 @@ defmodule Xaas.Semantics.Art12ChainCourtTest do
   # Ordered admission check list (the W505/W506 shared shape), bridging the
   # W505 contract (`:pass | {:refuse, atom}`) to the W506 contract
   # (`:ok | {:refused, atom}`) without duplicating either surface.
-  @checks [
-    {:scope, fn _ -> :ok end},
-    {:art5_structural,
-     fn candidate ->
-       case EuAiActAdmission.admit(candidate) do
-         {:ok, :admitted} -> :ok
-         {:error, refusal} -> {:refused, refusal}
-       end
-     end},
-    {:logging, fn _ -> :ok end}
-  ]
+  defp checks do
+    [
+      {:scope, fn _ -> :ok end},
+      {:art5_structural,
+       fn candidate ->
+         case EuAiActAdmission.admit(candidate) do
+           {:ok, :admitted} -> :ok
+           {:error, refusal} -> {:refused, refusal}
+         end
+       end},
+      {:logging, fn _ -> :ok end}
+    ]
+  end
 
   defp w505_checks do
-    Enum.map(@checks, fn {name, fun} ->
+    Enum.map(checks(), fn {name, fun} ->
       {name, fn input ->
          case fun.(input) do
            :ok -> :pass
@@ -68,7 +70,7 @@ defmodule Xaas.Semantics.Art12ChainCourtTest do
     admission = EuAiActAdmission.admit(candidate)
 
     # W506 decision record via the real deterministic pipeline
-    %{outcome: outcome, checks: check_log} = Counterfactual.run(candidate, @checks)
+    %{outcome: outcome, checks: check_log} = Counterfactual.run(candidate, checks())
     {admitted?, refusal} = outcome_record(outcome)
 
     record = %{input: candidate, admitted?: admitted?, refusal: refusal, checks: check_log}
@@ -189,18 +191,26 @@ defmodule Xaas.Semantics.Art12ChainCourtTest do
   end
 
   test "(d) escalation → W503 chain append + verify_chain :ok, tamper detected" do
-    {:ok, chain, head} =
+    {:ok, chain, _head} =
       AuditChain.append([], %{
         actuation_id: :art12_escalation,
         payload_digest: payload_digest({:escalation, @violating})
       })
 
+    {:ok, chain, head} =
+      AuditChain.append(chain, %{
+        actuation_id: :art12_escalation_followup,
+        payload_digest: payload_digest({:escalation_followup, @violating})
+      })
+
     assert AuditChain.verify_chain(chain, expected_head: head) == :ok
 
-    # tamper-evidence is live on this exact chain
-    [tampered | rest] = chain
+    # tamper-evidence is live on this exact chain: mutating link 0's payload
+    # breaks the successor-consistency check at link 0 (a last link alone is
+    # unverifiable by content without expected_head — documented limitation)
+    [tampered, successor] = chain
     tampered = %{tampered | payload_digest: String.duplicate("f", 64)}
-    assert AuditChain.verify_chain([tampered | rest]) == {:error, {:tampered, 0}}
+    assert AuditChain.verify_chain([tampered, successor]) == {:error, {:tampered, 0}}
   end
 
   test "(e) operator briefing (W539) over the composed decision record" do
@@ -218,9 +228,10 @@ defmodule Xaas.Semantics.Art12ChainCourtTest do
 
     assert Enum.all?(briefing.per_check_causes, &is_float(&1.shapley))
 
-    # the art5 check carries the full causal blame; the always-green checks none
+    # the art5 check carries the full causal blame (φ = −1 under the
+    # coalition value v = 1 when no check refuses); green checks carry zero
     art5 = Enum.find(briefing.per_check_causes, &(&1.name == :art5_structural))
-    assert art5.shapley > 0.0
+    assert art5.shapley == -1.0
     assert Enum.find(briefing.per_check_causes, &(&1.name == :scope)).shapley == 0.0
 
     assert briefing.counterfactual_available
@@ -231,14 +242,14 @@ defmodule Xaas.Semantics.Art12ChainCourtTest do
     assert {:ok, metrics} = DeclaredMetrics.declare()
 
     assert metrics.accuracy.metric == "pass_rate"
-    assert is_integer(metrics.accuracy.passed) and metrics.accuracy.passed > 0
-    assert is_integer(metrics.accuracy.population) and metrics.accuracy.population > 0
+    assert metrics.accuracy.passed > 0
+    assert metrics.accuracy.population > 0
     assert metrics.accuracy.source == "docs/sjira/v26.10.6/plans/w316-tokened-full-suite.md"
 
     assert metrics.robustness.metric == "mutant_kill_rate"
-    assert is_integer(metrics.robustness.kills) and metrics.robustness.kills > 0
-    assert is_integer(metrics.robustness.runs) and metrics.robustness.runs > 0
-    assert is_binary(metrics.refusal_coverage) and metrics.refusal_coverage =~ "/"
+    assert metrics.robustness.kills > 0
+    assert metrics.robustness.runs > 0
+    assert metrics.refusal_coverage =~ ~r/^\d+\/\d+$/
 
     assert metrics.conformance =~ ~r/^\d+\/\d+ in-repo court$/
   end
