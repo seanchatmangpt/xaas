@@ -73,8 +73,8 @@ defmodule Xaas.Hddl.Mermaid do
   The path is relative to the project root.
   """
   @spec for_file(String.t()) :: {:ok, String.t()} | {:error, term()}
-  def for_file(relative_path) do
-    abs_path = Path.join(:code.priv_dir(:xaas) |> Path.dirname() |> Path.dirname(), relative_path)
+  def for_file(path) do
+    abs_path = project_path(path)
 
     case File.read(abs_path) do
       {:ok, content} -> {:ok, content}
@@ -110,6 +110,16 @@ defmodule Xaas.Hddl.Mermaid do
 
   # --- Private Helpers ---
 
+  # Resolves a repo-relative path against the project root (File.cwd! under
+  # mix), leaving absolute paths untouched. Replaces the previous
+  # priv_dir double-dirname climb, which landed in the build lib/ dir.
+  defp project_path(path) do
+    case Path.type(path) do
+      :absolute -> path
+      _relative -> Path.join(File.cwd!(), path)
+    end
+  end
+
   defp module_to_filename(module) do
     module
     |> Module.split()
@@ -119,7 +129,7 @@ defmodule Xaas.Hddl.Mermaid do
   end
 
   defp read_static_mmd(path) do
-    abs_path = Path.join(:code.priv_dir(:xaas) |> Path.dirname() |> Path.dirname(), path)
+    abs_path = project_path(path)
 
     case File.read(abs_path) do
       {:ok, content} -> {:ok, content}
