@@ -79,7 +79,7 @@ defmodule Xaas.MixProject do
       # exact dep set (extensions: opentelemetry_ash, ash_ai, ash_onetime,
       # ash_iam, ash_rate_limiter, ash_cloak, ash_money/ash_double_entry,
       # ash_archival, ash_events, ash_paper_trail, ash_state_machine,
-      # ash_oban, ash_admin, ash_graphql, ash_json_api, ash_authentication)
+      # ash_oban, ash_admin, ash_json_api, ash_authentication)
       # confirmed via a real grep of `extensions:`/`use` across those files
       # in Phase 3 -- porting only ash/ash_postgres (Phase 1's original,
       # narrower guess) would not compile against the real resource files.
@@ -144,8 +144,6 @@ defmodule Xaas.MixProject do
       {:oban, "~> 2.0"},
       {:ash_oban, "~> 0.8"},
       {:ash_admin, "~> 1.3"},
-      {:ash_graphql, "~> 1.0"},
-      {:absinthe_plug, "~> 1.5"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
       {:ash_typescript, "~> 0.17"},

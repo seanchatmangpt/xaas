@@ -166,8 +166,6 @@ config :xaas, Oban,
     {Oban.Lifeline, rescue_after: {75, :minutes}}
   ]
 
-config :ash_graphql, authorize_update_destroy_with_error?: true
-
 config :ash_json_api,
   show_public_calculations_when_loaded?: false,
   authorize_update_destroy_with_error?: true
