@@ -133,11 +133,6 @@ defmodule Xaas.Semantics.DatasetAdmission do
   Seeded, deterministic sliced W1: mean over `k` pseudo-random unit directions
   of the exact 1-D W1 (sorted-quantile mean absolute deviation) between the
   A=0 and A=1 populations.
-  """
-  @doc """
-  Seeded, deterministic sliced W1: mean over `k` pseudo-random unit directions
-  of the exact 1-D W1 (sorted-quantile mean absolute deviation) between the
-  A=0 and A=1 populations.
 
   W865 helper-side overflow closure: extreme-magnitude features can overflow
   the quantile interpolation (`a + (b - a) * frac`) or the W1 aggregation.
