@@ -122,6 +122,10 @@ defmodule Xaas.MixProject do
        ref: "0d5320f6c5e9a43bb3e8dcb0f30d301b1ebb64d7",
        override: true},
       {:a2a, "~> 0.2"},
+      # W638 (v26.10.7 fleet seal): graphlaw WASM kernel host. Already in
+      # mix.lock (via ggen_igniter "~> 0.9" -> 0.15.1); declaring directly so
+      # Xaas.Semantics.GraphlawWasm can host it. Pin is a NO-OP on mix.lock.
+      {:wasmex, "~> 0.15"},
       # Fabric planes (law, evidence/process). Test/dev only: path deps would break the
       # Docker prod build (see the ex4pm note below); fabric adapters call them via apply/3.
       {:ash_graphlaw, path: "../ash_graphlaw", override: true},
