@@ -52,4 +52,6 @@
 
 ## Cleanup
 
-`_build-laneW984aj` deleted by lane at integration per fanout cleanup law.
+`_build-laneW984aj` LEFT IN TREE for coordinator deletion — lane `rm -rf`
+was denied by the permission system at integration time (two attempts).
+Build root is complete and green (strict compile EXIT=0); safe to delete.
