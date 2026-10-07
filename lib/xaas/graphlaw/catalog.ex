@@ -28,7 +28,8 @@ defmodule Xaas.Graphlaw.Catalog do
   capability-registry.json). Returns `{:ok, counts}` with
   `%{limits: n, capabilities: m}` on success.
   """
-  @spec ingest(Path.t()) :: {:ok, %{limits: non_neg_integer(), capabilities: non_neg_integer()}} | {:error, term()}
+  @spec ingest(Path.t()) ::
+          {:ok, %{limits: non_neg_integer(), capabilities: non_neg_integer()}} | {:error, term()}
   def ingest(path \\ default_registry_path()) do
     with {:ok, body} <- File.read(path),
          {:ok, registry} <- Jason.decode(body) do

@@ -380,7 +380,13 @@ defmodule Xaas.Actuation.Kernel do
 
     {:ok, result}
   rescue
-    error -> {:ok, {:error, {:exception, error.__struct__, Exception.message(error)}}}
+    error ->
+      message = Exception.message(error)
+
+      {:ok,
+       {:error,
+        {:exception, error.__struct__,
+         %{module: inspect(error.__struct__), message: message, readable?: message != ""}}}}
   catch
     kind, reason -> {:ok, {:error, {kind, reason}}}
   end
@@ -519,6 +525,16 @@ defmodule Xaas.Actuation.Kernel do
     end
   end
 
+  # Re-derives the admission's input hash from the carried raw input, exactly
+  # as `create_admission/4` derived it at admission time — the value the
+  # forged-pair forger cannot keep consistent without owning the honest input.
+  defp carried_input_hash(admission) do
+    fingerprint(
+      {admission.resource, admission.action, admission.subject_id, admission.raw_input,
+       admission.projection_hash}
+    )
+  end
+
   defp verify_external_prepared(intent, receipt, admission) do
     cond do
       intent.status != :executing ->
@@ -530,15 +546,27 @@ defmodule Xaas.Actuation.Kernel do
       to_string(receipt.intent_id) != to_string(intent.id) ->
         {:error, :external_receipt_intent_mismatch}
 
-      intent.id != admission.intent.id or receipt.id != admission.receipt.id ->
-        {:error, :external_admission_identity_mismatch}
-
       intent.ontology_projection_hash != admission.projection_hash or
           receipt.ontology_projection_hash != admission.projection_hash ->
         {:error, :external_projection_mismatch}
 
       intent.input_hash != receipt.input_hash ->
         {:error, :external_input_mismatch}
+
+      # Admission-identity check (W546/OS-18). The former clause here compared
+      # `intent.id != admission.intent.id or receipt.id != admission.receipt.id`
+      # — a tautology: checkpoint_external/2 loads both records BY the
+      # admission's own PKs, so those equalities could never be false. The live
+      # check compares the ADMISSION-CARRIED context against the LOADED rows:
+      # a forged {intent, receipt} pair that is internally consistent but does
+      # not belong to the admission the caller actually holds (different
+      # resource, action, subject, or input) is refused here.
+      inspect(admission.resource) != intent.resource_module or
+        Atom.to_string(admission.action) != intent.action or
+        stringify(admission.subject_id) != intent.subject_id or
+        carried_input_hash(admission) != intent.input_hash or
+          carried_input_hash(admission) != receipt.input_hash ->
+        {:error, :external_admission_identity_mismatch}
 
       true ->
         :ok

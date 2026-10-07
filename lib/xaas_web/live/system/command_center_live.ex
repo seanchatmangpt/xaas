@@ -83,10 +83,17 @@ defmodule XaasWeb.System.CommandCenterLive do
   @doc "Lifecycle/state chip classes for Run/Epoch rows."
   def state_chip_classes(value) do
     case to_string(value) do
-      "running" -> "rounded bg-amber-100 px-2 py-0.5 font-mono text-xs text-amber-800"
-      "completed" -> "rounded bg-green-100 px-2 py-0.5 font-mono text-xs text-green-800"
-      state when state in ["failed", "missed", "abandoned"] -> "rounded bg-red-100 px-2 py-0.5 font-mono text-xs text-red-800"
-      _ -> "rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-800"
+      "running" ->
+        "rounded bg-amber-100 px-2 py-0.5 font-mono text-xs text-amber-800"
+
+      "completed" ->
+        "rounded bg-green-100 px-2 py-0.5 font-mono text-xs text-green-800"
+
+      state when state in ["failed", "missed", "abandoned"] ->
+        "rounded bg-red-100 px-2 py-0.5 font-mono text-xs text-red-800"
+
+      _ ->
+        "rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-800"
     end
   end
 
@@ -156,11 +163,18 @@ defmodule XaasWeb.System.CommandCenterLive do
             </tr>
           </thead>
           <tbody>
-            <tr :for={layer <- @snap.layers} class="border-b border-slate-100" data-testid={"layer-row-" <> layer.id}>
+            <tr
+              :for={layer <- @snap.layers}
+              class="border-b border-slate-100"
+              data-testid={"layer-row-" <> layer.id}
+            >
               <td class="p-2 font-semibold">{layer.label}</td>
               <td class="p-2 font-mono text-xs">{layer.capability_id}</td>
               <td class="p-2">
-                <span class={standing_chip_classes(layer.status)} data-testid={"layer-standing-" <> layer.id}>
+                <span
+                  class={standing_chip_classes(layer.status)}
+                  data-testid={"layer-standing-" <> layer.id}
+                >
                   {layer.status}
                 </span>
               </td>
@@ -189,13 +203,23 @@ defmodule XaasWeb.System.CommandCenterLive do
             </tr>
           </thead>
           <tbody>
-            <tr :for={run <- @snap.runs} class="border-b border-slate-100" data-testid={"run-row-" <> run.id}>
+            <tr
+              :for={run <- @snap.runs}
+              class="border-b border-slate-100"
+              data-testid={"run-row-" <> run.id}
+            >
               <td class="p-2 font-mono text-xs">run</td>
               <td class="p-2">{run.goal}</td>
               <td class="p-2"><span class={state_chip_classes(run.state)}>{run.state}</span></td>
-              <td class="p-2"><span class={standing_chip_classes(run.standing)}>{run.standing}</span></td>
+              <td class="p-2">
+                <span class={standing_chip_classes(run.standing)}>{run.standing}</span>
+              </td>
             </tr>
-            <tr :for={epoch <- @snap.epochs} class="border-b border-slate-100" data-testid={"epoch-row-" <> epoch.id}>
+            <tr
+              :for={epoch <- @snap.epochs}
+              class="border-b border-slate-100"
+              data-testid={"epoch-row-" <> epoch.id}
+            >
               <td class="p-2 font-mono text-xs">epoch {epoch.cycle}</td>
               <td class="p-2 font-mono text-xs">{epoch.exact_subject}</td>
               <td class="p-2"><span class={state_chip_classes(epoch.state)}>{epoch.state}</span></td>
@@ -228,7 +252,9 @@ defmodule XaasWeb.System.CommandCenterLive do
               <td class="p-2 font-mono text-xs">{obligation.obligation_id}</td>
               <td class="p-2 font-mono text-xs">{obligation.capability_id}</td>
               <td class="p-2 font-mono text-xs">{obligation.cause_ref}</td>
-              <td class="p-2"><span class={state_chip_classes(to_string(obligation.status))}>{obligation.status}</span></td>
+              <td class="p-2">
+                <span class={state_chip_classes(to_string(obligation.status))}>{obligation.status}</span>
+              </td>
             </tr>
             <tr :if={@snap.command_center.obligations == []}>
               <td colspan="4" class="p-4 text-center text-slate-500">
@@ -266,7 +292,9 @@ defmodule XaasWeb.System.CommandCenterLive do
               </td>
             </tr>
             <tr :if={@snap.command_center.capabilities == []}>
-              <td colspan="4" class="p-4 text-center text-slate-500">no capabilities observed or projected</td>
+              <td colspan="4" class="p-4 text-center text-slate-500">
+                no capabilities observed or projected
+              </td>
             </tr>
           </tbody>
         </table>
@@ -291,7 +319,9 @@ defmodule XaasWeb.System.CommandCenterLive do
             >
               <td class="p-2 font-mono text-xs">{episode.episode_id}</td>
               <td class="p-2 font-mono text-xs">{episode.world_state_ref}</td>
-              <td class="p-2"><span class={standing_chip_classes(episode.policy_standing)}>{episode.policy_standing}</span></td>
+              <td class="p-2">
+                <span class={standing_chip_classes(episode.policy_standing)}>{episode.policy_standing}</span>
+              </td>
               <td class="p-2 font-mono text-xs">{episode.authority_ceiling}</td>
             </tr>
             <tr :if={@snap.command_center.planning_episodes == []}>
@@ -322,7 +352,9 @@ defmodule XaasWeb.System.CommandCenterLive do
               <td class="p-2 font-mono text-xs">{execution.work_order_id}</td>
               <td class="p-2 font-mono text-xs">{execution.capability}</td>
               <td class="p-2" data-testid={"replay-" <> execution.id}>
-                <span class={state_chip_classes(if execution.replay_verified, do: "completed", else: "other")}>
+                <span class={
+                  state_chip_classes(if execution.replay_verified, do: "completed", else: "other")
+                }>
                   {execution.replay_verified}
                 </span>
               </td>
@@ -381,10 +413,16 @@ defmodule XaasWeb.System.CommandCenterLive do
             </tr>
           </thead>
           <tbody>
-            <tr :for={receipt <- @snap.receipts} class="border-b border-slate-100" data-testid={"receipt-row-" <> receipt.id}>
+            <tr
+              :for={receipt <- @snap.receipts}
+              class="border-b border-slate-100"
+              data-testid={"receipt-row-" <> receipt.id}
+            >
               <td class="p-2 font-mono text-xs">{receipt.id}</td>
               <td class="p-2 font-mono text-xs">{receipt.subject}</td>
-              <td class="p-2"><span class={standing_chip_classes(receipt.outcome)}>{receipt.outcome}</span></td>
+              <td class="p-2">
+                <span class={standing_chip_classes(receipt.outcome)}>{receipt.outcome}</span>
+              </td>
               <td class="p-2 text-xs">{receipt.reason}</td>
             </tr>
             <tr :if={@snap.receipts == []}>
@@ -407,7 +445,11 @@ defmodule XaasWeb.System.CommandCenterLive do
             </tr>
           </thead>
           <tbody>
-            <tr :for={event <- @snap.ocel_events} class="border-b border-slate-100" data-testid={"ocel-row-" <> event.id}>
+            <tr
+              :for={event <- @snap.ocel_events}
+              class="border-b border-slate-100"
+              data-testid={"ocel-row-" <> event.id}
+            >
               <td class="p-2 font-mono text-xs">{event.event_type}</td>
               <td class="p-2 font-mono text-xs">{event.ocel_id}</td>
               <td class="p-2 text-slate-500">{event.occurred_at}</td>

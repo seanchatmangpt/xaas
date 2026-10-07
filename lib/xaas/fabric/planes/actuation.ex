@@ -50,7 +50,12 @@ defmodule Xaas.Fabric.Planes.Actuation do
     id = get_in(facts, ["actuation.result", Access.key(:receipt), Access.key(:id)])
     rows = Ash.read!(ActuationReceipt, authorize?: false)
     row = Enum.find(rows, &(&1.id == id))
-    {:ok, Map.put(facts, "actuation.observed", %{"receipt_durable" => row != nil, "status" => row && row.status})}
+
+    {:ok,
+     Map.put(facts, "actuation.observed", %{
+       "receipt_durable" => row != nil,
+       "status" => row && row.status
+     })}
   end
 
   def call(_stage, _env, _facts, _opts), do: {:error, :unsupported}

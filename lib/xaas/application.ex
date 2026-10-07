@@ -129,7 +129,20 @@ defmodule Xaas.Application do
         # persona -- see XaasWeb.A2A.NextReadUserAgent's moduledoc. Started
         # as a supervised GenServer per `use A2A.Agent`'s generated
         # `start_link/1`; served over HTTP via the `/a2a` router scope.
-        XaasWeb.A2A.NextReadUserAgent
+        XaasWeb.A2A.NextReadUserAgent,
+        # v26.10.6: the AshA2A v1 protocol adapter served at /a2a/v1
+        # (W10/W109). Same `use AshA2A.Protocol.Agent` start_link contract.
+        XaasWeb.A2A.NextReadAshAgent,
+        # W171: ZOE event simulation agent — same `use A2A.Agent` start_link
+        # contract as NextReadUserAgent; the /a2a/zoe-event forward calls its
+        # GenServer (:get_agent_card), so without supervision the agent card
+        # route 500s with `no process` (same class as W109's NextReadAshAgent).
+        XaasWeb.A2A.ZoeEventSimulationAgent,
+        # Durable-run store for the P-PLAN payment-spine bridge
+        # (Xaas.Bridges.PPlan): the ETS-backed durable store the
+        # AshPPlan.A2A.Facade reads/writes through
+        # `config :xaas, :pplan_durable_store`.
+        {AshPPlan.Reactor.Durable.Store.Ets, name: Xaas.Bridges.PPlan.Store}
         # Start a worker by calling: Xaas.Worker.start_link(arg)
         # {Xaas.Worker, arg}
       ] ++ sa2a_bridge_children

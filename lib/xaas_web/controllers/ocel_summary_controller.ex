@@ -35,39 +35,57 @@ defmodule XaasWeb.OcelSummaryController do
   def index(conn, _params) do
     path = Xaas.Telemetry.OcelAshEmitter.log_path()
 
-    {activity_counts, outcome_counts, total} =
+    lines =
       if File.exists?(path) do
         path
         |> File.stream!()
         |> Stream.map(&String.trim/1)
         |> Stream.reject(&(&1 == ""))
-        |> Enum.reduce({%{}, %{}, 0}, fn line, {activities, outcomes, count} ->
-          case Jason.decode(line) do
-            {:ok, %{"ocel:events" => events}} when is_list(events) ->
-              Enum.reduce(events, {activities, outcomes, count}, fn event, {acts, outs, c} ->
-                activity = event["type"]
-                outcome = get_in(event, ["attributes", "outcome"]) || "unknown"
-
-                {
-                  Map.update(acts, activity, 1, &(&1 + 1)),
-                  Map.update(outs, outcome, 1, &(&1 + 1)),
-                  c + 1
-                }
-              end)
-
-            _not_an_ocel_v2_document ->
-              {activities, outcomes, count}
-          end
-        end)
       else
-        {%{}, %{}, 0}
+        []
       end
 
+    {activity_counts, outcome_counts, total} = summarize(lines)
     json(conn, %{
       total_events: total,
       by_activity: activity_counts,
       by_outcome: outcome_counts,
       log_path: path
     })
+  end
+
+  # W659 dual-safe: the two absent-key-reliant Map.update/4 counter sites
+  # (w705 census ocel_summary_controller.ex:52,53) are now explicit case
+  # Map.fetch arms — absent key seeds 1 (no fun call, otp-28 Map.update/4
+  # semantics preserved), present key increments. Public so the real NDJSON
+  # aggregation is testable directly (Chicago-style, real lines no mock).
+  @doc false
+  def summarize(lines) do
+    lines
+    |> Enum.reduce({%{}, %{}, 0}, fn line, {activities, outcomes, count} ->
+      case Jason.decode(line) do
+        {:ok, %{"ocel:events" => events}} when is_list(events) ->
+          Enum.reduce(events, {activities, outcomes, count}, fn event, {acts, outs, c} ->
+            activity = event["type"]
+            outcome = get_in(event, ["attributes", "outcome"]) || "unknown"
+
+            {
+              bump(acts, activity),
+              bump(outs, outcome),
+              c + 1
+            }
+          end)
+
+        _not_an_ocel_v2_document ->
+          {activities, outcomes, count}
+      end
+    end)
+  end
+
+  defp bump(m, key) do
+    case Map.fetch(m, key) do
+      {:ok, n} -> Map.put(m, key, n + 1)
+      :error -> Map.put(m, key, 1)
+    end
   end
 end

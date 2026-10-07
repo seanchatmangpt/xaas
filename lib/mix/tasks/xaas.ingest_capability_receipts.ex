@@ -53,11 +53,15 @@ defmodule Mix.Tasks.Xaas.IngestCapabilityReceipts do
           detail: row["detail"]
         })
         # This is a system-internal autonomic ingest (real telemetry -> real
-        # Ash state), not a user-facing action -- explicitly bypasses the
-        # resource's real deny-by-default policy floor rather than weakening
-        # it. Any user-facing read/write of this resource still goes through
-        # the real policy (currently forbid-all pending domain-owner rules).
-        |> Ash.create(authorize?: false)
+        # Ash state), not a user-facing action. It runs THROUGH authorization
+        # as the same :oban_scheduler system authority the resource's own
+        # AshOban schedule uses; the resource's scoped :ingest policy admits
+        # exactly that actor and the deny-by-default floor refuses everyone
+        # else. No authorize?: false bypass remains.
+        |> Ash.create(
+          actor: Xaas.SystemAuthority.new(:oban_scheduler),
+          authorize?: true
+        )
       end)
 
     ok = Enum.count(results, &match?({:ok, _}, &1))

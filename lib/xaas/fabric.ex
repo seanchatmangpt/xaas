@@ -42,7 +42,11 @@ defmodule Xaas.Fabric do
   end
 
   defp finish_failed(failure, out) do
-    standing = if failure.class in [:semantic_refusal, :authority_refusal, :process_invalid], do: :refused, else: out.standing
+    standing =
+      if failure.class in [:semantic_refusal, :authority_refusal, :process_invalid],
+        do: :refused,
+        else: out.standing
+
     %{out | refusal: failure, standing: standing}
   end
 
@@ -80,7 +84,9 @@ defmodule Xaas.Fabric do
 
   defp construct(out, env, planes) do
     case step(out, env, planes, :law, :construct) do
-      {:ok, out} -> {:ok, push(push(out, :qualified), :constructed)}
+      {:ok, out} ->
+        {:ok, push(push(out, :qualified), :constructed)}
+
       {:error, failure, out} ->
         {_, out} = event_ignore(out, env, planes, "refused")
         {:error, failure, out}
@@ -106,8 +112,11 @@ defmodule Xaas.Fabric do
 
   defp step(out, env, planes, plane, stage, opts \\ []) do
     case drive(out, env, planes, plane, stage, opts) do
-      {:ok, {facts, served}} -> {:ok, %{out | facts: facts, served_by: Map.put(out.served_by, plane, served)}}
-      {:error, failure} -> {:error, failure, out}
+      {:ok, {facts, served}} ->
+        {:ok, %{out | facts: facts, served_by: Map.put(out.served_by, plane, served)}}
+
+      {:error, failure} ->
+        {:error, failure, out}
     end
   end
 
@@ -123,14 +132,23 @@ defmodule Xaas.Fabric do
 
     cond do
       not Plane.permit(contract, stage) ->
-        {:error, Failure.normalize({:authority_refusal, "#{stage}_exceeds_#{contract.ceiling}"}, contract.realization |> String.to_atom())}
+        {:error,
+         Failure.normalize(
+           {:authority_refusal, "#{stage}_exceeds_#{contract.ceiling}"},
+           contract.realization |> String.to_atom()
+         )}
 
       true ->
         case mod.call(stage, env, out.facts, opts) do
-          {:ok, facts} when is_map(facts) -> {:ok, {facts, contract.realization}}
-          :ok -> {:ok, {out.facts, contract.realization}}
+          {:ok, facts} when is_map(facts) ->
+            {:ok, {facts, contract.realization}}
+
+          :ok ->
+            {:ok, {out.facts, contract.realization}}
+
           {:error, raw} ->
             failure = Failure.normalize(raw, String.to_atom(contract.realization))
+
             if failover? and failure.transient? and rest != [],
               do: try_each(rest, out, env, stage, failover?, failure),
               else: {:error, failure}

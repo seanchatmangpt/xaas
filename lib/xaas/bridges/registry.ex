@@ -2,8 +2,9 @@ defmodule Xaas.Bridges.Registry do
   @moduledoc """
   Registry of Chicago layer bridge capability: real bridges and truthful absences.
 
-  Ten layer ids. Four carry real bridges (`Xaas.Bridges.PPlan`, `Graphlaw`,
-  `Ex4Pm`, and the `Sa2a` evidence reader). The rest carry `{:unsupported,
+  Ten layer ids. Five carry real bridges (`Xaas.Bridges.PPlan`, `Graphlaw`,
+  `Ex4Pm`, the `Sa2a` evidence reader, and `Ferroplan` — the digest-verified
+  bridge over the pinned ferroplan-wasm artifact). The rest carry `{:unsupported,
   reason}` — typed, truthful absences naming exactly what is missing. No entry
   claims evidence it does not hold: static registry entries have `nil` evidence
   and receipt refs, `authority_ceiling: :none`, and standing `"UNKNOWN"`
@@ -12,18 +13,21 @@ defmodule Xaas.Bridges.Registry do
   """
 
   @absences %{
-    beam4pm: "no ash membrane exists for beam4pm in this repository; the BEAM-native " <>
-               "process engine surface is projected only as a Chicago layer id",
-    ferroplan: "ferroplan (FOND/HTN planner) is a separate sibling repository; xaas has " <>
-                 "no bridge module and no vendored dep at this pin",
-    graphlaw_rust: "the graphlaw rust CLI is reached only through the pinned WASM engine " <>
-                     "via Xaas.Bridges.Graphlaw; no direct rust-process bridge exists",
-    affidavit_cli: "the affidavit CLI has no xaas bridge; ash_affidavit is a dev/test " <>
-                     "path dep consumed elsewhere, not wrapped here",
-    ash_r2rml: "no R2RML mapping bridge exists in xaas; RDF mapping remains owned by " <>
-                 "ggen/ontology tooling outside this repository",
-    wasm4pm: "wasm4pm is the named successor engine; it is reachable only inside ex4pm's " <>
-               "own :cmca_wasm engine path, not as an independent xaas bridge"
+    beam4pm:
+      "no ash membrane exists for beam4pm in this repository; the BEAM-native " <>
+        "process engine surface is projected only as a Chicago layer id",
+    graphlaw_rust:
+      "the graphlaw rust CLI is reached only through the pinned WASM engine " <>
+        "via Xaas.Bridges.Graphlaw; no direct rust-process bridge exists",
+    affidavit_cli:
+      "the affidavit CLI has no xaas bridge; ash_affidavit is a dev/test " <>
+        "path dep consumed elsewhere, not wrapped here",
+    ash_r2rml:
+      "no R2RML mapping bridge exists in xaas; RDF mapping remains owned by " <>
+        "ggen/ontology tooling outside this repository",
+    wasm4pm:
+      "wasm4pm is the named successor engine; it is reachable only inside ex4pm's " <>
+        "own :cmca_wasm engine path, not as an independent xaas bridge"
   }
 
   @doc "The truthful absence reasons, for audit."
@@ -79,6 +83,14 @@ defmodule Xaas.Bridges.Registry do
         state: :bridge,
         standing: "UNKNOWN",
         capability: {:bridge, Xaas.Bridges.Sa2a}
+      },
+      ferroplan: %{
+        claim:
+          "ferroplan FOND/HTN planner through the sha256-pinned ferroplan-wasm artifact " <>
+            "(digest-verified at load; runtime dep is the coordinator seam)",
+        state: :bridge,
+        standing: "UNKNOWN",
+        capability: {:bridge, Xaas.Bridges.Ferroplan}
       }
     ] ++
       Enum.map(@absences, fn {id, reason} ->

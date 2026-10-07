@@ -47,7 +47,7 @@ defmodule Xaas.Conference.Attendee do
   end
 
   identities do
-    identity(:unique_email, [:email])
+    identity(:unique_email, [:email], pre_check_with: Ash.DataLayer.Ets)
   end
 
   actions do

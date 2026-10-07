@@ -70,7 +70,9 @@ defmodule Mix.Tasks.Xaas.Sjira.EngineerWork do
           {:halt, {:refused, :jsonl_row_not_object, %{line: number, value: other}}}
 
         {:error, error} ->
-          {:halt, {:refused, :invalid_jsonl, %{line: number, error: Exception.message(error)}}}
+          {:halt,
+           {:refused, :invalid_jsonl,
+            %{line: number, error: %{type: error.__struct__, position: Map.get(error, :position)}}}}
       end
     end)
     |> case do

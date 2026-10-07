@@ -24,14 +24,21 @@ defmodule XaasWeb.MarketplaceCatalogLive do
   ash-admin structure map this table hand-renders. The generation path is
   WITNESSED in dev (compiler returns 10 IRs over `Xaas.Marketplace`;
   `project_ir/2` folds them into an `ash_admin` view over 3 resources / 10
-  actions), but the surface is not wired at runtime because `ash_surface`
-  is pinned `only: [:dev, :test]` in mix.exs, so the LiveView would not
-  compile under `MIX_ENV=prod`; promoting requires either
-  publishing `ash_surface` (or re-pointing the path dep to all envs) plus a
-  build-time generation step (a mix task that runs the compiler + projector
-  and writes the table/form contract the LiveView then consumes). Until that
-  promotion lands, this hand-written surface is the projection of record and
-  this module is the seam it replaces.
+  actions). The original stated blocker — `ash_surface` pinned
+  `only: [:dev, :test]` — is CLOSED: `mix.exs:115` now carries the path dep
+  all-envs, and ash_surface itself compiles under `MIX_ENV=prod`
+  (`_build/prod/lib/ash_surface/ebin` observed 2026-10-06). Remaining to
+  wire: (1) full `MIX_ENV=prod mix compile` must first go green — currently
+  red on unrelated files (`lib/xaas_web/a2a/next_read_ash_agent.ex`,
+  `lib/xaas_web/live/witness_live.ex`) that reference `AshA2A.Protocol.Agent`,
+  a module absent at the pinned ash_a2a ref `3325032` (no
+  `lib/ash_a2a/protocol/` tree at that ref); (2) run `mix xaas.ash_surface`
+  to write the projection of record into `priv/ash_surface/`
+  (surface_contract.json / live_view.json / aria.json / client .mjs);
+  (3) swap this hand-rendered table for the `live_view.json` structure map
+  (a full render replacement, not a small read-only patch). Until (1)-(3)
+  land, this hand-written surface is the projection of record and this
+  module is the seam it replaces.
 
   Like the p-plan explorer precedent, data comes from the real context; no
   external CDN scripts.
@@ -61,17 +68,27 @@ defmodule XaasWeb.MarketplaceCatalogLive do
     # Best-effort: the surface renders, surfacing any typed refusal in the
     # UI rather than crashing mount. Catalog.ingest/1 returns
     # {:error, %Catalog.Error{}} for malformed catalogs, but per-pack Ash
-    # validation failures raise; both become the same visible refusal.
+    # validation failures raise; both become the same structured refusal
+    # (machine-readable via the data-refusal / data-reason attributes).
     try do
       case Catalog.ingest(source) do
         {:ok, _count} ->
           socket
 
         {:error, %Catalog.Error{} = error} ->
-          assign(socket, :ingest_refusal, Exception.message(error))
+          assign(socket, :ingest_refusal, %{
+            refusal: :catalog_ingest,
+            reason: error.reason,
+            detail: error.detail
+          })
       end
     rescue
-      error -> assign(socket, :ingest_refusal, Exception.message(error))
+      error ->
+        assign(socket, :ingest_refusal, %{
+          refusal: :catalog_ingest,
+          reason: error.__struct__,
+          detail: Exception.message(error)
+        })
     end
   end
 
@@ -147,8 +164,14 @@ defmodule XaasWeb.MarketplaceCatalogLive do
               </td>
             </tr>
             <tr :if={assigns[:ingest_refusal]}>
-              <td colspan="5" class="py-3 text-center text-xs text-amber-500" id="ingest-refusal">
-                {assigns[:ingest_refusal]}
+              <td
+                colspan="5"
+                class="py-3 text-center text-xs text-amber-500"
+                id="ingest-refusal"
+                data-refusal={"#{@ingest_refusal.refusal}"}
+                data-reason={"#{@ingest_refusal.reason}"}
+              >
+                catalog ingest refused: {inspect(@ingest_refusal)}
               </td>
             </tr>
           </tbody>

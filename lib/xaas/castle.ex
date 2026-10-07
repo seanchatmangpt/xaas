@@ -106,6 +106,13 @@ defmodule Xaas.Castle.Contract do
   @castle_paas_pack_sha "238b408c5cf74e8334046165ac87102026bd8c1e"
   @ash_r2rml_sha "067954ad406fd637fd47646bdb10c4580809c79d"
   @protocol "CASTLE_PAAS_XAAS_BRIDGE_V1"
+  # GGEN:XAAS_CASTLE_CONTRACT:BEGIN
+  # Marketplace-owned immutable contract override. Do not hand-edit.
+  @castle_paas_source_sha "a71801dcc0c0783eb8a4544cbee8b40bb0b30296"
+  @castle_paas_pack_sha "238b408c5cf74e8334046165ac87102026bd8c1e"
+  @ash_r2rml_sha "067954ad406fd637fd47646bdb10c4580809c79d"
+  @protocol :CASTLE_PAAS_XAAS_BRIDGE_V2
+  # GGEN:XAAS_CASTLE_CONTRACT:END
 
   @spec identity() :: map()
   def identity do
@@ -938,7 +945,14 @@ defmodule Xaas.Castle.Kernel.CLI do
           {:error, {:REFUSED_CASTLE_EXIT, status, output}}
       end
     rescue
-      error -> {:error, {:BLOCKED_CASTLE_TRANSPORT, Exception.message(error)}}
+      error ->
+        {:error,
+         {:BLOCKED_CASTLE_TRANSPORT,
+          %{
+            exception: inspect(error.__struct__),
+            message: Exception.message(error),
+            executable: bin
+          }}}
     end
   end
 

@@ -18,6 +18,7 @@ defmodule Xaas.Witness.VerificationKey do
   attributes do
     uuid_primary_key(:id)
     attribute(:kid, :string, allow_nil?: false, public?: true)
+
     attribute(:algorithm, :atom,
       allow_nil?: false,
       public?: true,

@@ -120,6 +120,12 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
     end
   end
 
+  defp structured_error_detail(%{__struct__: struct, errors: errors}),
+    do: %{type: struct, errors: List.wrap(errors)}
+
+  defp structured_error_detail(error),
+    do: %{type: error.__struct__, message: Exception.message(error)}
+
   defp run(actor, command) do
     cond do
       match = Regex.run(~r/^(?:browse|recommend)\s+grade:(\d+)/, command) ->
@@ -156,7 +162,7 @@ defmodule XaasWeb.A2A.NextReadUserAgent do
         {:reply, [A2A.Part.Text.new(text)]}
 
       {:error, error} ->
-        {:error, "browse failed: #{Exception.message(error)}"}
+        {:error, %{refusal: :browse_failed, detail: structured_error_detail(error)}}
     end
   end
 

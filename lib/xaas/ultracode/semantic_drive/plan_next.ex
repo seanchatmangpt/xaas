@@ -314,8 +314,8 @@ defmodule Xaas.Ultracode.SemanticDrive.PlanNext do
         [
           "AshPPlan.FOND.validate_policy/4 refuses the candidate policy from " <>
             "initial=#{initial} under mode=#{mode} (goals=#{Enum.join(goals, ", ")})"
-        ]
-        ++ attempts_text
+        ] ++
+          attempts_text
 
       {:ok,
        %{

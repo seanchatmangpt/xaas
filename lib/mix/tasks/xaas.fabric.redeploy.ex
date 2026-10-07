@@ -56,7 +56,8 @@ defmodule Mix.Tasks.Xaas.Fabric.Redeploy do
         )
 
       {:error, reason} ->
-        Mix.shell().error("REFUSED:#{inspect(reason)}")
+        Mix.shell().error(render_refusal({:fabric_redeploy, %{reason: inspect(reason)}}))
+
         Mix.raise("xaas.fabric.redeploy refused: #{inspect(reason)}")
     end
   end
@@ -68,9 +69,19 @@ defmodule Mix.Tasks.Xaas.Fabric.Redeploy do
         Mix.shell().info(format_receipt(receipt))
 
       {:error, reason} ->
-        Mix.shell().error("REFUSED:#{inspect(reason)}")
+        Mix.shell().error(render_refusal({:fabric_redeploy, %{reason: inspect(reason)}}))
+
         Mix.raise("xaas.fabric.redeploy refused: #{inspect(reason)}")
     end
+  end
+
+  @doc """
+  Renders this task's typed-refusal line (Vector-2 §E): the machine-readable
+  `REFUSED(<code>, detail: %{...})` form emitted alongside the human text on
+  every refusal path. Refusal semantics are unchanged; output structure only.
+  """
+  def render_refusal({code, detail}) when is_atom(code) do
+    "REFUSED(#{code}, detail: #{inspect(detail)})"
   end
 
   defp format_plan(plan) do

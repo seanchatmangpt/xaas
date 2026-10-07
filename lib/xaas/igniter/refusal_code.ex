@@ -36,7 +36,7 @@ defmodule Xaas.Igniter.RefusalCode do
   end
 
   identities do
-    identity(:unique_code, [:code])
+    identity(:unique_code, [:code], pre_check_with: Ash.DataLayer.Ets)
   end
 
   actions do

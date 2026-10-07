@@ -302,7 +302,23 @@ defmodule Mix.Tasks.Xaas.SafeGenerateMigrations do
     |> Enum.uniq()
   end
 
+  @doc """
+  Renders this task's typed-refusal line (Vector-2 §E): the machine-readable
+  `REFUSED(<code>, detail: %{...})` form emitted alongside the human text on
+  every refusal path. Refusal semantics are unchanged; output structure only.
+  """
+  def render_refusal({code, detail}) when is_atom(code) do
+    "REFUSED(#{code}, detail: #{inspect(detail)})"
+  end
+
   defp report_refusal(file, path, target_table, cross_table, content) do
+    Mix.shell().error(
+      render_refusal(
+        {:cross_table_operations,
+         %{path: path, target_table: target_table, cross_table: cross_table}}
+      )
+    )
+
     Mix.shell().error("""
 
     [xaas.safe_generate_migrations] REFUSED -- cross-table operations detected

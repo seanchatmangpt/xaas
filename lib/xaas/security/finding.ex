@@ -48,7 +48,16 @@ defmodule Xaas.Security.Finding do
     defaults([:read])
 
     create :ingest do
-      accept([:severity, :source, :file, :line, :description, :disposition, :court_ref, :discovered_at])
+      accept([
+        :severity,
+        :source,
+        :file,
+        :line,
+        :description,
+        :disposition,
+        :court_ref,
+        :discovered_at
+      ])
     end
   end
 end

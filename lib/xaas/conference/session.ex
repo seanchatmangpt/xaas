@@ -53,7 +53,7 @@ defmodule Xaas.Conference.Session do
   end
 
   identities do
-    identity(:unique_slug, [:slug])
+    identity(:unique_slug, [:slug], pre_check_with: Ash.DataLayer.Ets)
   end
 
   actions do

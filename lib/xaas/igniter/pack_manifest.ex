@@ -32,7 +32,7 @@ defmodule Xaas.Igniter.PackManifest do
   end
 
   identities do
-    identity(:unique_pack_name, [:pack_name])
+    identity(:unique_pack_name, [:pack_name], pre_check_with: Ash.DataLayer.Ets)
   end
 
   actions do

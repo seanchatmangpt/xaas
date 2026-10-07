@@ -29,6 +29,7 @@ defmodule Xaas.Witness.CertifiedReceipt do
 
     attribute(:subject, :string, allow_nil?: false, public?: true)
     attribute(:payload_hash_hex, :string, allow_nil?: false, public?: true)
+
     attribute(:algorithm, :atom,
       allow_nil?: false,
       public?: true,
@@ -70,6 +71,7 @@ defmodule Xaas.Witness.CertifiedReceipt do
           )
         else
           now = DateTime.utc_now()
+
           changeset
           |> Changeset.force_change_attribute(:verified, true)
           |> Changeset.force_change_attribute(:verified_at, now)
@@ -93,6 +95,6 @@ defmodule Xaas.Witness.CertifiedReceipt do
 
     policy always() do
       forbid_if(always())
-      end
+    end
   end
 end

@@ -14,9 +14,14 @@ defmodule Mix.Tasks.Xaas.AshSurface do
 
       mix xaas.ash_surface
       mix xaas.ash_surface --resource Xaas.Marketplace.Pack
+      mix xaas.ash_surface --target-dir /tmp/ash_surface_out
 
   `--resource` filters the manifest entrypoints to a single resource before the
   surface contract is minted.
+
+  `--target-dir` redirects all artifact output (default `priv/ash_surface`);
+  intended for tests. With no options the output is byte-identical to the
+  hard-coded historical behavior.
 
   ## Exit codes
 
@@ -37,7 +42,9 @@ defmodule Mix.Tasks.Xaas.AshSurface do
   @impl Mix.Task
   def run(args) do
     {opts, _argv} =
-      OptionParser.parse!(args, strict: [resource: :string])
+      OptionParser.parse!(args, strict: [resource: :string, target_dir: :string])
+
+    out_dir = Keyword.get(opts, :target_dir, @out_dir)
 
     with {:ok, manifest} <- generate_manifest(opts),
          {:ok, surface} <- AshSurface.from_manifest(manifest, profile: profile()),
@@ -46,36 +53,50 @@ defmodule Mix.Tasks.Xaas.AshSurface do
          {:ok, _artifacts, js_meta} <-
            AshSurface.Projectors.JS.project_ir(
              irs,
-             [prefix: @js_prefix, target_dir: @out_dir] ++ js_projector_opts(manifest, opts)
+             [prefix: @js_prefix, target_dir: out_dir] ++ js_projector_opts(manifest, opts)
            ),
          {:ok, live_view, _} <- AshSurface.Projectors.LiveView.project_ir(irs, []),
          {:ok, aria, _} <- AshSurface.Projectors.ARIA.project_ir(irs) do
-      File.mkdir_p!(@out_dir)
+      File.mkdir_p!(out_dir)
 
-      write("surface_contract.json", Jason.encode!(surface.contract))
-      write("live_view.json", Jason.encode!(live_view))
-      write("aria.json", Jason.encode!(aria))
+      write(
+        out_dir,
+        "surface_contract.json",
+        Jason.encode!(Map.put(surface.contract, "surfaceDigest", surface.digest))
+      )
+
+      write(out_dir, "live_view.json", Jason.encode!(live_view))
+      write(out_dir, "aria.json", Jason.encode!(aria))
 
       {:ok, runtime} = AshSurface.runtime_source()
-      File.write!(Path.join(@out_dir, "ash_surface_runtime.mjs"), runtime)
+      File.write!(Path.join(out_dir, "ash_surface_runtime.mjs"), runtime)
 
       Mix.shell().info("""
       ash_surface generation complete
         entrypoints:     #{length(surface.action_ids)}
         surface digest:  #{surface.digest}
-        js artifact:     #{Path.join(@out_dir, "#{@js_prefix}.mjs")} (#{js_meta.action_count} actions, #{js_meta.namespace_count} namespaces)
-        live view:       #{Path.join(@out_dir, "live_view.json")}
-        aria:            #{Path.join(@out_dir, "aria.json")}
-        contract:        #{Path.join(@out_dir, "surface_contract.json")}
-        runtime:         #{Path.join(@out_dir, "ash_surface_runtime.mjs")}
+        js artifact:     #{Path.join(out_dir, "#{@js_prefix}.mjs")} (#{js_meta.action_count} actions, #{js_meta.namespace_count} namespaces)
+        live view:       #{Path.join(out_dir, "live_view.json")}
+        aria:            #{Path.join(out_dir, "aria.json")}
+        contract:        #{Path.join(out_dir, "surface_contract.json")}
+        runtime:         #{Path.join(out_dir, "ash_surface_runtime.mjs")}
       """)
 
       :ok
     else
       {:error, reason} ->
-        Mix.shell().error("xaas.ash_surface refused: #{inspect(reason)}")
+        Mix.shell().error(render_refusal({:ash_surface, %{reason: inspect(reason)}}))
         exit({:shutdown, 1})
     end
+  end
+
+  @doc """
+  Renders this task's typed-refusal line (Vector-2 §E): the machine-readable
+  `REFUSED(<code>, detail: %{...})` form emitted alongside the human text on
+  every refusal path. Refusal semantics are unchanged; output structure only.
+  """
+  def render_refusal({code, detail}) when is_atom(code) do
+    "REFUSED(#{code}, detail: #{inspect(detail)})"
   end
 
   # Full-app runs prefix every namespace with "Xaas" so short names that
@@ -153,8 +174,8 @@ defmodule Mix.Tasks.Xaas.AshSurface do
     }
   end
 
-  defp write(name, content) do
-    path = Path.join(@out_dir, name)
+  defp write(out_dir, name, content) do
+    path = Path.join(out_dir, name)
     File.write!(path, content)
     Mix.shell().info("wrote #{path}")
   end

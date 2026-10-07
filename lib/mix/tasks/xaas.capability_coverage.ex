@@ -48,18 +48,7 @@ defmodule Mix.Tasks.Xaas.CapabilityCoverage do
     rows =
       Enum.map(resources, fn resource ->
         table = AshPostgres.DataLayer.Info.table(resource) || "(no table)"
-
-        count =
-          try do
-            case Ash.count(resource, authorize?: false) do
-              {:ok, n} -> n
-              {:error, error} -> {:error, inspect(error)}
-            end
-          rescue
-            e -> {:error, Exception.message(e)}
-          end
-
-        {resource, table, count}
+        {resource, table, count_resource(resource)}
       end)
 
     total_resources = length(rows)
@@ -81,8 +70,14 @@ defmodule Mix.Tasks.Xaas.CapabilityCoverage do
     Enum.each(rows, fn {resource, table, count} ->
       count_str =
         case count do
-          {:error, msg} -> "ERROR: " <> msg
-          n -> Integer.to_string(n)
+          {:error, %{exception: exception, message: message}} ->
+            "ERROR: " <> exception <> ": " <> message
+
+          {:error, msg} ->
+            "ERROR: " <> msg
+
+          n ->
+            Integer.to_string(n)
         end
 
       Mix.shell().info(
@@ -102,5 +97,23 @@ defmodule Mix.Tasks.Xaas.CapabilityCoverage do
 
     Mix.shell().info("Coverage (resources with >=1 real row / total): #{coverage_pct}%")
     Mix.shell().info("")
+  end
+
+  @doc """
+  Real `Ash.count/2` against the real Postgres for one resource. Returns
+  the integer count, `{:error, inspect(binary)}` for an Ash-level error,
+  or `{:error, %{exception: ..., message: ...}}` structured detail when
+  counting raises -- machine-readable, never a flat stringified
+  `Exception.message/1`.
+  """
+  @spec count_resource(module()) ::
+          non_neg_integer() | {:error, String.t() | %{exception: String.t(), message: String.t()}}
+  def count_resource(resource) do
+    case Ash.count(resource, authorize?: false) do
+      {:ok, n} -> n
+      {:error, error} -> {:error, inspect(error)}
+    end
+  rescue
+    e -> {:error, %{exception: inspect(e.__struct__), message: Exception.message(e)}}
   end
 end

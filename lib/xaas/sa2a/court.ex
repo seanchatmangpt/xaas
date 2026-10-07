@@ -66,7 +66,14 @@ defmodule Xaas.Sa2a.Court do
   def normalize(request) when is_map(request) do
     {:ok, request |> Jason.encode!() |> Jason.decode!()}
   rescue
-    error -> {:error, {:refused, :malformed_request, Exception.message(error)}}
+    error ->
+      {:error,
+       {:refused, :malformed_request,
+        %{
+          reason: :not_json_encodable,
+          original: Exception.message(error),
+          exception_type: inspect(error.__struct__)
+        }}}
   end
 
   def normalize(other), do: {:error, {:refused, :malformed_request, inspect(other)}}

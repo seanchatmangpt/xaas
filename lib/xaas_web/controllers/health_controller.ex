@@ -41,10 +41,21 @@ defmodule XaasWeb.HealthController do
        an operator does not have to separately run
        `mix xaas.ultracode.tick_health` to see the same numbers.
 
-  Returns real JSON with a per-check `status` (`"ok"` / `"error"`) and
-  `latency_ms`, top-level `status` `"ok"` only when every check passed,
-  HTTP 200 when healthy and 503 otherwise -- the same fail-closed
-  convention this `/internal-api` scope already uses.
+  Returns real JSON with a per-check `status` (`"ok"` / `"skipped"` /
+  `"error"`) and `latency_ms`, top-level `status` `"ok"` when every check
+  is `"ok"` or config-gated-`"skipped"`, HTTP 200 when healthy and 503
+  otherwise -- the same fail-closed convention this `/internal-api`
+  scope already uses. The Ontop sub-check is config-gated on
+  `config :xaas, :ontop_endpoint`: absent natively -> `"skipped"
+  (:not_configured)`, present (docker-compose.ontop.yaml stack) ->
+  real reachability probe where configured-but-down still fails.
+
+  Warmup typing (W310h): the `ultracode_tick` sub-check distinguishes a
+  genuinely dead `:tick` cron from the post-boot warmup window where the
+  cron has simply not had its first fire opportunity yet -- a last-tick
+  predating node boot reports `skipped (:warming_up)` for
+  `stale_after_minutes + 2` minutes after boot, then a real error. See
+  the comment above `check_ultracode_tick/0`.
   """
 
   use XaasWeb, :controller
@@ -70,7 +81,10 @@ defmodule XaasWeb.HealthController do
       |> Map.put("ultracode_tick", timed(&check_ultracode_tick/0))
       |> Map.merge(domain_checks())
 
-    all_ok? = Enum.all?(checks, fn {_name, %{status: status}} -> status == "ok" end)
+    # Fail-closed aggregate: "skipped" (config-gated check, not configured)
+    # is not "down" -- only a real "error" degrades the endpoint.
+    all_ok? =
+      Enum.all?(checks, fn {_name, %{status: status}} -> status in ["ok", "skipped"] end)
 
     conn
     |> put_status(if all_ok?, do: 200, else: 503)
@@ -93,7 +107,8 @@ defmodule XaasWeb.HealthController do
       try do
         fun.()
       rescue
-        error -> {:error, Exception.message(error)}
+        error ->
+          {:error, %{exception: inspect(error.__struct__), message: Exception.message(error)}}
       catch
         kind, reason -> {:error, "#{kind}: #{inspect(reason)}"}
       end
@@ -101,9 +116,23 @@ defmodule XaasWeb.HealthController do
     latency_ms = (System.monotonic_time(:microsecond) - start) / 1000
 
     case result do
-      :ok -> %{status: "ok", latency_ms: latency_ms}
-      {:ok, extra} -> Map.merge(%{status: "ok", latency_ms: latency_ms}, extra)
-      {:error, reason} -> %{status: "error", latency_ms: latency_ms, detail: reason}
+      :ok ->
+        %{status: "ok", latency_ms: latency_ms}
+
+      {:ok, extra} ->
+        Map.merge(%{status: "ok", latency_ms: latency_ms}, extra)
+
+      # Map payloads merge to top level (same shape as the `{:ok, extra}`
+      # branch); bare atoms stay wrapped as `reason:` (ontop's
+      # `{:skipped, :not_configured}` shape).
+      {:skipped, extra} when is_map(extra) ->
+        Map.merge(%{status: "skipped", latency_ms: latency_ms}, extra)
+
+      {:skipped, reason} ->
+        %{status: "skipped", latency_ms: latency_ms, reason: reason}
+
+      {:error, reason} ->
+        %{status: "error", latency_ms: latency_ms, detail: reason}
     end
   end
 
@@ -112,29 +141,68 @@ defmodule XaasWeb.HealthController do
     :ok
   end
 
+  # Config-gated: the Ontop sub-check only runs when `config :xaas,
+  # :ontop_endpoint` is actually present (the docker-compose.ontop.yaml
+  # stack sets it). Native dev without Ontop leaves it absent -> the
+  # sub-check reports "skipped" (:not_configured), which is not a
+  # failure; configured-but-unreachable still fails the aggregate.
   defp check_ontop do
-    case req_module().request(method: "GET", url: ontop_base_url() <> "/sparql", retry: false) do
-      {:ok, %{status: status}} when status in 200..499 -> :ok
-      {:ok, %{status: status}} -> {:error, "unexpected status #{status}"}
-      {:error, reason} -> {:error, inspect(reason)}
+    if ontop_configured?() do
+      case req_module().request(method: "GET", url: ontop_base_url() <> "/sparql", retry: false) do
+        {:ok, %{status: status}} when status in 200..499 -> :ok
+        {:ok, %{status: status}} -> {:error, "unexpected status #{status}"}
+        {:error, reason} -> {:error, inspect(reason)}
+      end
+    else
+      {:skipped, :not_configured}
     end
   end
+
+  defp ontop_configured?, do: Application.get_env(:xaas, :ontop_endpoint) != nil
 
   defp check_ash_count(resource) do
     count = Ash.count!(resource, authorize?: false)
     {:ok, %{count: count}}
   end
 
+  # Warmup-window typing (W310h, per W174's own law "unconfigured != down"):
+  # a freshly-booted server has had no cron fire opportunity yet, so the
+  # newest `oban_jobs` evidence necessarily predates this node's start --
+  # counting pre-boot history against the 5-minute staleness window made
+  # every freshly-booted server report a deterministic 503 for up to the
+  # first cron minute (observed x3 on W310g's fresh boot, 2026-10-06
+  # 22:55Z: last_tick_at 22:36Z, elapsed 19.5min, while the tick cron was
+  # in fact healthy and completed job 28635 one poll later). A last-tick
+  # predating node boot is `skipped (:warming_up)` -- typed reason fields,
+  # aggregate-stays-ok -- until `stale_after_minutes + 2` minutes after
+  # boot; past that grace window, absence of post-boot tick evidence is a
+  # real error again (`Xaas.Ultracode.TickHealth`'s "silence is not
+  # liveness" law is preserved outside the boot window).
+  @tick_warmup_margin_minutes 2
+
   defp check_ultracode_tick do
-    case TickHealth.check() do
-      %{status: :healthy} = result ->
+    result = TickHealth.check()
+    boot_at = node_boot_at()
+
+    warming_up? =
+      is_nil(result.last_tick_at) or
+        DateTime.compare(result.last_tick_at, boot_at) == :lt
+
+    within_warmup_window? =
+      DateTime.compare(
+        DateTime.utc_now(),
+        DateTime.add(boot_at, @tick_warmup_margin_minutes + result.stale_after_minutes, :minute)
+      ) == :lt
+
+    cond do
+      not warming_up? and result.status == :healthy ->
         {:ok,
          %{
            last_tick_at: format_datetime(result.last_tick_at),
            elapsed_minutes: result.elapsed_minutes
          }}
 
-      %{status: :stale} = result ->
+      not warming_up? ->
         {:error,
          %{
            last_tick_at: format_datetime(result.last_tick_at),
@@ -142,6 +210,49 @@ defmodule XaasWeb.HealthController do
            stale_after_minutes: result.stale_after_minutes,
            reason: "no #{result.worker} job completed or started executing recently enough"
          }}
+
+      within_warmup_window? ->
+        {:skipped,
+         %{
+           reason: :warming_up,
+           last_tick_at: format_datetime(result.last_tick_at),
+           node_boot_at: format_datetime(boot_at),
+           warmup_until:
+             format_datetime(
+               DateTime.add(
+                 boot_at,
+                 @tick_warmup_margin_minutes + result.stale_after_minutes,
+                 :minute
+               )
+             )
+         }}
+
+      true ->
+        {:error,
+         %{
+           last_tick_at: format_datetime(result.last_tick_at),
+           node_boot_at: format_datetime(boot_at),
+           reason:
+             "no #{result.worker} job has completed or started executing since node boot " <>
+               "(#{format_datetime(boot_at)}); the :tick cron appears dead, not just warming up"
+         }}
+    end
+  end
+
+  # This node's real start wall-clock: `:erlang.statistics(:wall_clock)`
+  # element 1 is cumulative uptime in ms, so `now - uptime` is the boot
+  # instant. No new application-child or config key required.
+  # `config :xaas, :health_node_boot_at_override` is a test-only seam so
+  # the past-the-grace-window branch is deterministically exercisable
+  # without sleeping out the real warmup window.
+  defp node_boot_at do
+    case Application.get_env(:xaas, :health_node_boot_at_override) do
+      %DateTime{} = at ->
+        at
+
+      _ ->
+        {uptime_ms, _since_last} = :erlang.statistics(:wall_clock)
+        DateTime.add(DateTime.utc_now(), -uptime_ms, :millisecond)
     end
   end
 

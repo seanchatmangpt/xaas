@@ -40,9 +40,24 @@ defmodule Mix.Tasks.Xaas.SelfDigest do
         Mix.shell().info(Jason.encode!(summary, pretty: true))
 
       {:error, reason} ->
-        Mix.shell().error(Jason.encode!(%{"refused" => inspect(reason)}))
+        Mix.shell().error(refusal_json(reason))
         Mix.raise("xaas.self_digest refused: #{inspect(reason)}")
     end
+  end
+
+  defp refusal_json(reason) do
+    render_refusal({:self_digest, %{reason: inspect(reason)}})
+    |> then(&Jason.encode!(%{"refused" => inspect(reason), "refusal_code" => &1}))
+  end
+
+  @doc """
+  Renders this task's typed-refusal line (Vector-2 §E): the machine-readable
+  `REFUSED(<code>, detail: %{...})` form. Emitted as the additive JSON key
+  `"refusal_code"` alongside the pre-existing `"refused"` shape, so existing
+  consumers are unaffected.
+  """
+  def render_refusal({code, detail}) when is_atom(code) do
+    "REFUSED(#{code}, detail: #{inspect(detail)})"
   end
 
   defp put_arg(args, _key, nil), do: args

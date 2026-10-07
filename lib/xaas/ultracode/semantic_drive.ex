@@ -1504,6 +1504,14 @@ defmodule Xaas.Ultracode.SemanticDrive do
               contract_file,
               "--xaas-receipt",
               receipt_file,
+              # W227 root cause 2 (v26.10.6): required_evidence lives on the
+              # WORK ORDER (AdmissionBinding three-lists law); the bridge's
+              # requires carries only courts/acceptance/falsifiers. Without
+              # --work-orders the receipt's evidence_types can never witness
+              # the work order's required evidence IRI and reconcile refuses
+              # with promotion_refused [evidence].
+              "--work-orders",
+              ctx.work_graph,
               "--out",
               reconciler_file
             ])},
@@ -2115,7 +2123,8 @@ defmodule Xaas.Ultracode.SemanticDrive do
   defp plan_next_standing(ctx) do
     if Map.get(ctx, :plan_next_emitted, false),
       do: "CANDIDATE",
-      else: (ctx.plan_next_doc && ctx.plan_next_doc["standing"]) || "REFUSED(plan_next_unobserved)"
+      else:
+        (ctx.plan_next_doc && ctx.plan_next_doc["standing"]) || "REFUSED(plan_next_unobserved)"
   end
 
   # -- helpers --------------------------------------------------------------------
@@ -2459,19 +2468,20 @@ defmodule Xaas.Ultracode.SemanticDrive do
   end
 
   defp object(ctx, id, type, attributes, relationships \\ []) do
+    # W659 dual-safe: absent key seeds a fresh object descriptor (no fun call
+    # — otp-28 Map.update/4 semantics preserved), present key merges.
     objects =
-      Map.update(
-        ctx.objects,
-        id,
-        %{type: type, attributes: attributes, relationships: relationships},
-        fn existing ->
-          %{
+      case Map.fetch(ctx.objects, id) do
+        {:ok, existing} ->
+          Map.put(ctx.objects, id, %{
             existing
             | attributes: Map.merge(existing.attributes, attributes),
               relationships: Enum.uniq(existing.relationships ++ relationships)
-          }
-        end
-      )
+          })
+
+        :error ->
+          Map.put(ctx.objects, id, %{type: type, attributes: attributes, relationships: relationships})
+      end
 
     %{ctx | objects: objects}
   end

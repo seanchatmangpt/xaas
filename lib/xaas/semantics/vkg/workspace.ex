@@ -117,7 +117,13 @@ defmodule Xaas.Semantics.VKG.Workspace do
             "receipt_id" => witness.receipt_id
           })
 
-        Map.update(entities, subject, [annotated], &[annotated | &1])
+        # W659 dual-safe: absent key seeds [annotated] (no fun call — otp-28
+        # Map.update/4 semantics preserved), present key prepends (reversed
+        # by the Map.new below, so observed row order is unchanged).
+        case Map.fetch(entities, subject) do
+          {:ok, rows} -> Map.put(entities, subject, [annotated | rows])
+          :error -> Map.put(entities, subject, [annotated])
+        end
       end)
     end)
     |> Map.new(fn {subject, rows} -> {subject, Enum.reverse(rows)} end)

@@ -81,7 +81,7 @@ defmodule Xaas.Marketplace.Pack do
   end
 
   identities do
-    identity(:unique_name, [:name])
+    identity(:unique_name, [:name], pre_check_with: Ash.DataLayer.Ets)
   end
 
   actions do

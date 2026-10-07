@@ -145,7 +145,8 @@ defmodule XaasWeb.System.CommandCenterAdapter do
       refusals: refusal_rows,
       unknowns: unknown_rows,
       ocel_events: Enum.map(state.ocel_events, &ocel_row/1),
-      answers: answers(state, layers, obligations, episodes, capabilities, refusal_rows, unknown_rows)
+      answers:
+        answers(state, layers, obligations, episodes, capabilities, refusal_rows, unknown_rows)
     }
   end
 
@@ -291,8 +292,7 @@ defmodule XaasWeb.System.CommandCenterAdapter do
     %{
       id: id,
       label: f2(layer, :label, :label) || id,
-      capability_id:
-        f2(layer, :capabilityId, :capability_id) || "chicago:layer:" <> id,
+      capability_id: f2(layer, :capabilityId, :capability_id) || "chicago:layer:" <> id,
       status: to_string(f2(layer, :status, :status) || "UNKNOWN"),
       boundary_class: f2(layer, :boundaryClass, :boundary_class),
       authority_ceiling: f2(layer, :authorityCeiling, :authority_ceiling),
@@ -323,7 +323,11 @@ defmodule XaasWeb.System.CommandCenterAdapter do
         value
 
       :error ->
-        Map.get(map, snake, Map.get(map, Atom.to_string(camel), Map.get(map, Atom.to_string(snake))))
+        Map.get(
+          map,
+          snake,
+          Map.get(map, Atom.to_string(camel), Map.get(map, Atom.to_string(snake)))
+        )
     end
   end
 

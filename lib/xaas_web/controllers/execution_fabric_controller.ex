@@ -320,7 +320,29 @@ defmodule XaasWeb.ExecutionFabricController do
   # MCP surface (stateless JSON-RPC 2.0)
   # ------------------------------------------------------------------
 
-  def mcp(%{method: "POST"} = conn, _params) do
+  def mcp(%{method: "POST"} = conn, params) do
+    mcp_typed(conn, params)
+  rescue
+    # Fail-closed typed JSON, never the HTML DebugPage: any unexpected raise
+    # inside the MCP dispatch (a bad MatchError from a malformed tool payload,
+    # a Lease/Ash crash) must still answer the provider's MCP client with a
+    # machine-readable JSON-RPC error -- an HTML error page breaks every
+    # client that does `res.json()`.
+    e ->
+      Logger.error(
+        "XAAS_EXECUTION_MCP_CRASH class=#{inspect(e.__struct__)} msg=#{Exception.message(e)}"
+      )
+
+      conn
+      |> put_status(500)
+      |> json(%{
+        jsonrpc: "2.0",
+        id: nil,
+        error: %{code: -32_603, message: "internal error", data: inspect(e.__struct__)}
+      })
+  end
+
+  defp mcp_typed(%{method: "POST"} = conn, _params) do
     with {:ok, body, conn} <- read_json(conn),
          {:ok, response} <- rpc(body) do
       json(conn, response)

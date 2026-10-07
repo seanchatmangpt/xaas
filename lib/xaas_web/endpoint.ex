@@ -68,14 +68,36 @@ defmodule XaasWeb.Endpoint do
   plug(Plug.RequestId)
   plug(Plug.Telemetry, event_prefix: [:phoenix, :endpoint])
 
+  # W150 (W113 finding 2): JSON-RPC parse errors on /a2a must be -32700 per
+  # JSON-RPC 2.0. Plug.Parsers would raise ParseError (bare 400) on malformed
+  # application/json before AshA2A.Protocol.Plug's raw-body branch can
+  # classify it. See XaasWeb.Plugs.A2AParseFloor's moduledoc. Must run
+  # BEFORE Plug.Parsers.
+  plug(XaasWeb.Plugs.A2AParseFloor)
+
   plug(Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
+    length: 8_000_000,
     json_decoder: Phoenix.json_library(),
     body_reader: {XaasWeb.Plugs.StripeRawBodyReader, :read_body, []}
   )
 
-  plug(Plug.MethodOverride)
+  # W521 (EU AI Act wave): Art. 5 structural admission over /a2a JSON-RPC
+  # params before agent dispatch. Runs after Plug.Parsers so /a2a POST
+  # body_params are already decoded (the A2AParseFloor fetched them); only
+  # refuses, with the surface's JSON-RPC error envelope. See
+  # XaasWeb.Plugs.EuAiActAdmissionPlug's moduledoc.
+  # W533 (EU AI Act wave): Art. 50(2) machine-detectable synthetic-content
+  # marking. Every POST response from the AI surfaces (/a2a, /mcp) is
+  # marked after the handler (register_before_send): `x-ai-generated: true`
+  # header plus `"ai_generated": true` in JSON object bodies. Registered
+  # BEFORE the W521 admission gate so refusal envelopes that halt in that
+  # gate are marked too (Plug.Builder skips remaining plugs once halted;
+  # before_send callbacks registered here still run on the halted send).
+  # Zero-config, unconditional. See SyntheticMarkingPlug's moduledoc.
+  plug(XaasWeb.Plugs.SyntheticMarkingPlug)
+  plug(XaasWeb.Plugs.EuAiActAdmissionPlug)
   plug(Plug.Head)
   plug(Plug.Session, @session_options)
   plug(XaasWeb.Router)

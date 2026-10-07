@@ -144,9 +144,14 @@ defmodule Xaas.Bridges.Ex4Pm do
       {:ok, envelope}
     else
       case Ex4pm.Evidence.Store.start_link() do
-        {:ok, _pid} -> {:ok, envelope}
-        {:error, {:already_started, _pid}} -> {:ok, envelope}
-        {:error, reason} -> {:refused, Map.merge(envelope, %{code: :evidence_store_down, reason: inspect(reason)})}
+        {:ok, _pid} ->
+          {:ok, envelope}
+
+        {:error, {:already_started, _pid}} ->
+          {:ok, envelope}
+
+        {:error, reason} ->
+          {:refused, Map.merge(envelope, %{code: :evidence_store_down, reason: inspect(reason)})}
       end
     end
   end

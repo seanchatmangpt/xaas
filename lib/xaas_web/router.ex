@@ -59,6 +59,7 @@ defmodule XaasWeb.Router do
     get("/case-studies/wd-fa/stogaf.json", WdFaStogafController, :show)
     get("/case-studies/wd-fa/context/:case_id", WdFaContextController, :show)
     live("/chicago", Chicago.DrillDownLive)
+    live("/witness", WitnessLive)
     live("/chicago/seller", Chicago.SellerLive)
     live("/marketplace-pplan", MarketplacePplanExplorerLive)
     live("/marketplace-catalog", MarketplaceCatalogLive)
@@ -89,6 +90,12 @@ defmodule XaasWeb.Router do
 
     get("/capability_liveness_regressions", CapabilityRegressionsController, :index)
     get("/ocel_summary", OcelSummaryController, :index)
+
+    # OS-14 runtime export surface for the EU AI Act evidence pack (same
+    # fail-closed pack build as `mix xaas.eu_ai_act_pack`; token-gated by
+    # this scope's floor). Registered before the catch-all forward below
+    # for the same shadowing reason as the sibling routes above.
+    get("/eu-ai-act/pack", EuAiActExportController, :index)
     get("/prometheus/query", PrometheusQueryController, :query)
     get("/health", HealthController, :index)
     post("/rpc/run", AshTypescriptRpcController, :run)
@@ -203,6 +210,19 @@ defmodule XaasWeb.Router do
       base_url: (System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a") <> "/zoe-event"
     )
 
+    # v26.10.6: additive AshA2A v1 protocol surface (W10/R4). Gate-ordering
+    # auth per W10's stacked-auth analysis: the scope's
+    # :require_internal_api_token stays the single auth floor; AshA2A's own
+    # Plug.Auth is left unconfigured. Registered before the hex "/" catch-all.
+    # v26.10.6 W305 seam: mount the owned transport (TQ-05 — it streams every
+    # reply), not the vendored Protocol.Plug, which answers message/stream on a
+    # reply-backed agent with -32603 {:not_streaming, task}. Same agent, same
+    # auth floor (scope's :require_internal_api_token; no plug-level Auth).
+    forward("/v1", XaasWeb.A2A.V1TransportPlug,
+      agent: XaasWeb.A2A.NextReadAshAgent,
+      base_url: (System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a") <> "/v1"
+    )
+
     forward("/", A2A.Plug,
       agent: XaasWeb.A2A.NextReadUserAgent,
       base_url: System.get_env("A2A_BASE_URL") || "http://localhost:4000/a2a"
@@ -215,7 +235,11 @@ defmodule XaasWeb.Router do
   # vector to the private Fly worker; it does not grant shell or cloud
   # actuation authority.
   scope "/api/workbench", XaasWeb do
-    pipe_through([:api, :require_internal_api_token])
+    # W150 (W113 finding): the token floor must precede content negotiation,
+    # else unauthenticated probes learn the accepted content types via a 406
+    # before any auth check. Pipeline order = plug order, so the auth
+    # pipeline is listed before :api here.
+    pipe_through([:require_internal_api_token, :api])
 
     get("/ggen/health", GgenWorkbenchController, :health)
     post("/ggen", GgenWorkbenchController, :run)
@@ -252,9 +276,16 @@ defmodule XaasWeb.Router do
   end
 
   scope "/" do
+    # W299c (same class as W150): the token floor must precede content
+    # negotiation here too. `:internal_api` carries `plug(:accepts,
+    # ["json-api"])`; listed first, it answered 406 to any Accept header
+    # that is not json-api (e.g. application/json) BEFORE the token check,
+    # leaking the accepted content types to unauthenticated probes. GET on
+    # a POST-only workbench route falls through the workbench scope to this
+    # /api forward, so the leak was reachable from the workbench surface.
     pipe_through([
-      :internal_api,
       :require_internal_api_token,
+      :internal_api,
       :resolve_org_actor,
       :set_internal_api_system_actor
     ])

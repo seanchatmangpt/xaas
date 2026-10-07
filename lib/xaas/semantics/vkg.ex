@@ -49,6 +49,10 @@ defmodule Xaas.Semantics.VKG do
            }) do
       observe(query, opts)
     else
+      # Structurally unreachable: Manifest.from_json refuses [] contracts
+      # (ash_r2rml manifest.ex:49, REFUSED_VKG_MANIFEST), so Catalog.ids/1
+      # cannot return []. The real empty edge refuses earlier. Proven by
+      # w378/w626-era analysis; deletion candidate.
       [] -> {:error, :REFUSED_VKG_EMPTY_CATALOG}
       error -> error
     end

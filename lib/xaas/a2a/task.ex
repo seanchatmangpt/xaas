@@ -43,7 +43,7 @@ defmodule Xaas.A2a.Task do
   end
 
   identities do
-    identity(:unique_task_id, [:task_id])
+    identity(:unique_task_id, [:task_id], pre_check_with: Ash.DataLayer.Ets)
   end
 
   actions do

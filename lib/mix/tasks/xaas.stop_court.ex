@@ -1814,7 +1814,10 @@ defmodule Mix.Tasks.Xaas.StopCourt do
       `event_digest`) relates to no receipt a `ReceiptSealed` event sealed.
 
   An unreadable source (absent, not JSON, not an OCEL log, an unparseable
-  ledger line) makes its counters `nil` with the reason, never 0.
+  ledger line) makes its counters `nil` with the reason, never 0. A structured
+  failure (not JSON) additionally carries a `"detail"` map with stable keys
+  (`path`, `reason`, `message`, `original`, `exception_type`); the top-level
+  `"why"` string never embeds raw exception text.
   """
   @spec episode_counters(Path.t(), [String.t()]) :: %{String.t() => map()}
   def episode_counters(dir, known_reference) do
@@ -1837,21 +1840,25 @@ defmodule Mix.Tasks.Xaas.StopCourt do
 
           using = for {name, %{"llm_provider_events" => [_ | _]}} <- per, do: name
 
-          {%{"value" => total, "why" => nil, "episodes" => per},
-           %{"value" => length(using), "why" => nil, "items" => Enum.sort(using)}}
+          {%{"value" => total, "why" => nil, "episodes" => per, "detail" => nil},
+           %{"value" => length(using), "why" => nil, "items" => Enum.sort(using), "detail" => nil}}
 
         {:error, why} ->
-          {%{"value" => nil, "why" => why}, %{"value" => nil, "why" => why}}
+          # Structured read failures (not-JSON) carry a map with stable keys;
+          # string failures (not an OCEL log, unreadable) render as-is. The
+          # display string never embeds raw exception text at the top level.
+          {%{"value" => nil, "why" => why_reason(why), "detail" => why_detail(why)},
+           %{"value" => nil, "why" => why_reason(why), "detail" => why_detail(why)}}
       end
 
     actuation =
       case unreceipted_actuations(dir) do
         {:ok, per} ->
           total = per |> Map.values() |> Enum.map(&length(&1["unreceipted"])) |> Enum.sum()
-          %{"value" => total, "why" => nil, "episodes" => per}
+          %{"value" => total, "why" => nil, "episodes" => per, "detail" => nil}
 
         {:error, why} ->
-          %{"value" => nil, "why" => why}
+          %{"value" => nil, "why" => why_reason(why), "detail" => why_detail(why)}
       end
 
     %{
@@ -1953,10 +1960,27 @@ defmodule Mix.Tasks.Xaas.StopCourt do
           {:error, "#{path} is not an OCEL log (no ocel:events/ocel:objects lists)"}
 
         {:error, error} ->
-          {:error, "#{path} is not JSON: #{Exception.message(error)}"}
+          {:error,
+           %{
+             "path" => path,
+             "reason" => "not_json",
+             "message" => "#{path} is not JSON",
+             "original" => Exception.message(error),
+             "exception_type" => inspect(error.__struct__)
+           }}
       end
     end
   end
+
+  # A structured read failure (not JSON) is a map with stable keys; older
+  # string failures render as-is. `why_reason/1` is the display string (never
+  # embeds raw exception text); `why_detail/1` is the machine-readable detail
+  # (nil for string failures).
+  defp why_reason(%{"message" => message}), do: message
+  defp why_reason(why) when is_binary(why), do: why
+
+  defp why_detail(why) when is_map(why), do: why
+  defp why_detail(_why), do: nil
 
   defp ocel_item?(%{"id" => id, "type" => type} = item) when is_binary(id) and is_binary(type) do
     rels = relationships(item)

@@ -31,11 +31,21 @@ defmodule Mix.Tasks.Xaas.ReleaseSnapshot.Verify do
       )
     else
       {:error, reason} ->
+        Mix.shell().error(render_refusal({:release_snapshot, %{reason: inspect(reason)}}))
         Mix.raise("REFUSED:RELEASE_SNAPSHOT:" <> inspect(reason))
     end
   end
 
   def run(_args) do
     Mix.raise("usage: mix xaas.release_snapshot.verify <snapshot.json>")
+  end
+
+  @doc """
+  Renders this task's typed-refusal line (Vector-2 §E): the machine-readable
+  `REFUSED(<code>, detail: %{...})` form emitted alongside the human text on
+  every refusal path. Refusal semantics are unchanged; output structure only.
+  """
+  def render_refusal({code, detail}) when is_atom(code) do
+    "REFUSED(#{code}, detail: #{inspect(detail)})"
   end
 end

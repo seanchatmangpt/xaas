@@ -39,7 +39,11 @@ defmodule Xaas.Fabric.Planes.Evidence do
           {"executed", "do:#{inspect(facts["actuation.result"])}"}
         ]
         |> Enum.map(fn {type, payload} ->
-          %{"event_type" => type, "objects" => ["op:payment:#{env.operation_id}"], "payload" => payload}
+          %{
+            "event_type" => type,
+            "objects" => ["op:payment:#{env.operation_id}"],
+            "payload" => payload
+          }
         end)
 
       case affidavit(%{"op" => "assemble", "events" => events}, Keyword.get(opts, :affidavit, [])) do
@@ -50,7 +54,10 @@ defmodule Xaas.Fabric.Planes.Evidence do
   end
 
   def call(:replay, _env, facts, opts) do
-    case affidavit(%{"op" => "verify", "receipt" => facts["evidence.receipt"]}, Keyword.get(opts, :affidavit, [])) do
+    case affidavit(
+           %{"op" => "verify", "receipt" => facts["evidence.receipt"]},
+           Keyword.get(opts, :affidavit, [])
+         ) do
       {:ok, %{"accepted" => true}} -> :ok
       {:ok, other} -> {:error, {:evidence_insufficient, other["reason"] || :not_accepted}}
       other -> {:error, other}

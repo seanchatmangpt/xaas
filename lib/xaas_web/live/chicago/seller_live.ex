@@ -291,7 +291,10 @@ defmodule XaasWeb.Chicago.SellerLive do
               class="border-t"
               data-testid={"chicago-evidence-" <> item["layer"]}
             >
-              <td class="py-1 font-mono text-xs" data-testid={"chicago-evidence-layer-" <> item["layer"]}>
+              <td
+                class="py-1 font-mono text-xs"
+                data-testid={"chicago-evidence-layer-" <> item["layer"]}
+              >
                 {item["layer"]}
               </td>
               <td class="py-1" data-testid={"chicago-evidence-standing-" <> item["layer"]}>

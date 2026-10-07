@@ -55,7 +55,11 @@ defmodule XaasWeb.A2A.ZoeEventSimulationAgent do
       {:reply, [A2A.Part.Text.new(Jason.encode!(result))]}
     else
       {:error, %Jason.DecodeError{} = error} ->
-        {:error, "invalid simulation JSON: #{Exception.message(error)}"}
+        {:error,
+         %{
+           refusal: :invalid_simulation_json,
+           detail: %{type: error.__struct__, position: Map.get(error, :position)}
+         }}
 
       {:error, reason} ->
         {:error, "simulation refused: #{inspect(reason)}"}

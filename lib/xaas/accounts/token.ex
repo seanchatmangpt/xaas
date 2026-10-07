@@ -10,7 +10,7 @@ defmodule Xaas.Accounts.Token do
     revocation do
       # JS-unsafe name (`?` suffix): renamed for ash_surface JS projection;
       # AshAuthentication resolves it via is_revoked_action_name.
-      is_revoked_action_name :is_revoked
+      is_revoked_action_name(:is_revoked)
     end
   end
 

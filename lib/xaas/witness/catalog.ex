@@ -71,7 +71,9 @@ defmodule Xaas.Witness.Catalog do
   """
   def record_verification(%CertifiedReceipt{} = receipt, verified?, at \\ DateTime.utc_now()) do
     receipt
-    |> Ash.Changeset.for_update(:record_verification, %{}, context: %{verification_result: verified?, verified_at: at})
+    |> Ash.Changeset.for_update(:record_verification, %{},
+      context: %{verification_result: verified?, verified_at: at}
+    )
     |> Ash.update()
   end
 

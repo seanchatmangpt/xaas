@@ -795,8 +795,22 @@ defmodule Xaas.Ultracode.RunValidation do
     Enum.reduce(events, %{}, fn event, acc ->
       if event["type"] in @epoch_lifecycle_events do
         case epoch_of_event(event) do
-          {:ok, epoch_id} -> Map.update(acc, epoch_id, [event], &[event | &1])
-          :unbound -> Map.update(acc, {:unattributable, event["id"]}, [event], &[event | &1])
+          # W659 dual-safe: absent key seeds [event] (no fun call — otp-28
+          # Map.update/4 semantics preserved), present key prepends. The
+          # observed prepend-then-group order is unchanged downstream.
+          {:ok, epoch_id} ->
+            case Map.fetch(acc, epoch_id) do
+              {:ok, events} -> Map.put(acc, epoch_id, [event | events])
+              :error -> Map.put(acc, epoch_id, [event])
+            end
+
+          :unbound ->
+            key = {:unattributable, event["id"]}
+
+            case Map.fetch(acc, key) do
+              {:ok, events} -> Map.put(acc, key, [event | events])
+              :error -> Map.put(acc, key, [event])
+            end
         end
       else
         acc

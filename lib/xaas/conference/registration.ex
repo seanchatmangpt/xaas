@@ -46,7 +46,9 @@ defmodule Xaas.Conference.Registration do
   end
 
   identities do
-    identity(:unique_attendee_session, [:attendee_id, :session_id])
+    identity(:unique_attendee_session, [:attendee_id, :session_id],
+      pre_check_with: Ash.DataLayer.Ets
+    )
   end
 
   actions do

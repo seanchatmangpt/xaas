@@ -65,9 +65,13 @@ defmodule Xaas.Eds.Falsifier do
   Run the falsifier against observed evidence. Never raises to the
   caller -- an exception inside the predicate is itself evidence
   (a malformed falsifier), surfaced as `{:error, ...}`, not silently
-  treated as `:survived`.
+  treated as `:survived`. A raised exception surfaces as a structured
+  error map (`:phase`/`:error`/`:message`) rather than a flat string.
   """
-  @spec run(t(), map()) :: {:ok, verdict()} | {:error, String.t()}
+  @spec run(t(), map()) ::
+          {:ok, verdict()}
+          | {:error,
+             String.t() | %{phase: :predicate_execution, error: String.t(), message: String.t()}}
   def run(%__MODULE__{predicate: predicate}, evidence) when is_map(evidence) do
     case predicate.(evidence) do
       :survived ->
@@ -81,6 +85,12 @@ defmodule Xaas.Eds.Falsifier do
          "falsifier predicate returned #{inspect(other)}, expected :survived or :falsified"}
     end
   rescue
-    e -> {:error, "falsifier predicate raised: #{Exception.message(e)}"}
+    e ->
+      {:error,
+       %{
+         phase: :predicate_execution,
+         error: inspect(e.__struct__),
+         message: Exception.message(e)
+       }}
   end
 end

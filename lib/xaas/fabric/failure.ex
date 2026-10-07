@@ -36,7 +36,15 @@ defmodule Xaas.Fabric.Failure do
   def transient?(:realization_failed), do: MeshFailure.class(:unavailable) == :transient
   def transient?(_), do: false
 
-  @classes [:semantic_refusal, :authority_refusal, :process_invalid, :realization_failed, :evidence_insufficient, :unsupported, :capability_unavailable]
+  @classes [
+    :semantic_refusal,
+    :authority_refusal,
+    :process_invalid,
+    :realization_failed,
+    :evidence_insufficient,
+    :unsupported,
+    :capability_unavailable
+  ]
 
   defp classify({c, _}) when c in @classes, do: c
 
@@ -48,7 +56,10 @@ defmodule Xaas.Fabric.Failure do
   defp classify(%{__struct__: AshR2RML.Refusal}), do: :semantic_refusal
   defp classify({:trap, _}), do: :realization_failed
   defp classify(:unsupported), do: :unsupported
-  defp classify(raw) when is_binary(raw) or is_atom(raw) or is_tuple(raw), do: classify_text(inspect(raw))
+
+  defp classify(raw) when is_binary(raw) or is_atom(raw) or is_tuple(raw),
+    do: classify_text(inspect(raw))
+
   defp classify(_), do: :realization_failed
 
   defp classify_struct_class(c, tag) do
@@ -73,6 +84,9 @@ defmodule Xaas.Fabric.Failure do
 
   defp detail({_tag, %{} = r}), do: detail(r)
   defp detail(%{code: code}), do: code
-  defp detail(%{__struct__: _} = s), do: s |> Map.from_struct() |> Map.drop([:raw]) |> inspect(limit: 5)
+
+  defp detail(%{__struct__: _} = s),
+    do: s |> Map.from_struct() |> Map.drop([:raw]) |> inspect(limit: 5)
+
   defp detail(other), do: other
 end

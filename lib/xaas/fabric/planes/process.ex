@@ -23,7 +23,19 @@ defmodule Xaas.Fabric.Planes.Process do
   @impl true
   def call(:observe, _env, facts, _opts) do
     kind = facts["process.event"] || "unknown"
-    {:ok, Map.update(facts, "process.events", [kind], &(&1 ++ [kind]))}
+
+    # W659 dual-safe: absent key seeds [kind] (no fun call — otp-28
+    # Map.update/4 semantics preserved), present key appends. This is the
+    # w604-style SUSPECT shape: absent -> seed, then later arms consume the
+    # accumulated list (call/2 :receipt reads facts["process.events"] || []) —
+    # pinning that the absent path stores exactly [kind], never fun.([kind]).
+    kinds =
+      case Map.fetch(facts, "process.events") do
+        {:ok, kinds} -> kinds ++ [kind]
+        :error -> [kind]
+      end
+
+    {:ok, Map.put(facts, "process.events", kinds)}
   end
 
   def call(:receipt, env, facts, opts) do
@@ -32,8 +44,17 @@ defmodule Xaas.Fabric.Planes.Process do
 
     with {:ok, %{"receipt" => model}} <- assemble(env, @expected, aopts),
          {:ok, %{"receipt" => trace}} <- assemble(env, observed, aopts),
-         {:ok, conf} <- apply(AshAffidavit, :call, [%{"op" => "conform", "model" => [model], "trace" => trace}, aopts]) do
-      {:ok, Map.put(facts, "process.conformance", %{"conforms" => conf["verdict"] in ["conforms", "conformant", "ok", true] or conf["fitness"] == 1.0, "raw" => conf})}
+         {:ok, conf} <-
+           apply(AshAffidavit, :call, [
+             %{"op" => "conform", "model" => [model], "trace" => trace},
+             aopts
+           ]) do
+      {:ok,
+       Map.put(facts, "process.conformance", %{
+         "conforms" =>
+           conf["verdict"] in ["conforms", "conformant", "ok", true] or conf["fitness"] == 1.0,
+         "raw" => conf
+       })}
     else
       other -> {:error, other}
     end

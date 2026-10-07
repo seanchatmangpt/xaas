@@ -460,13 +460,17 @@ defmodule Xaas.Ultracode.Autonomic do
           else
             # Single-repo precedence, byte-for-byte the historical law:
             # explicit options win; an EXPLICIT nil `:canonical_suite` skips
-            # the canonical suite.
+            # the canonical suite. Precedence is read from `raw_opts`, NOT the
+            # defaults-merged `opts` -- `@defaults` pre-fills both keys, so a
+            # lookup against `opts` can never fall through to the repo's
+            # registered suite (the regression W194/W229 adjudication fixed).
             suite =
-              Keyword.get(opts, :suite) || (repos_entry && repos_entry.suite) || @defaults[:suite]
+              Keyword.get(raw_opts, :suite) || (repos_entry && repos_entry.suite) ||
+                @defaults[:suite]
 
             canonical =
               cond do
-                Keyword.has_key?(opts, :canonical_suite) -> opts[:canonical_suite]
+                Keyword.has_key?(raw_opts, :canonical_suite) -> raw_opts[:canonical_suite]
                 repos_entry && is_nil(repos_entry.canonical_suite) -> nil
                 repos_entry -> repos_entry.canonical_suite
                 true -> @defaults[:canonical_suite]

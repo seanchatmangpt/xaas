@@ -34,10 +34,22 @@ defmodule Xaas.Fabric.Planes.Law do
     data = %{"text" => facts["graph"], "dialect" => "turtle"}
 
     # apply/3: AshGraphLaw is an optional, test/dev-only dependency.
-    case apply(AshGraphLaw, :law, [data, [%{"step" => "shacl", "shapes" => shapes}], Keyword.get(opts, :graphlaw, [])]) do
+    case apply(AshGraphLaw, :law, [
+           data,
+           [%{"step" => "shacl", "shapes" => shapes}],
+           Keyword.get(opts, :graphlaw, [])
+         ]) do
       {:ok, admitted} ->
-        digest = :crypto.hash(:sha256, :erlang.term_to_binary(admitted.nquads)) |> Base.encode16(case: :lower)
-        {:ok, Map.merge(facts, %{"law.admitted" => true, "law.decision" => digest, "law.receipts" => length(admitted.receipts)})}
+        digest =
+          :crypto.hash(:sha256, :erlang.term_to_binary(admitted.nquads))
+          |> Base.encode16(case: :lower)
+
+        {:ok,
+         Map.merge(facts, %{
+           "law.admitted" => true,
+           "law.decision" => digest,
+           "law.receipts" => length(admitted.receipts)
+         })}
 
       {:error, refusal} ->
         {:error, refusal}

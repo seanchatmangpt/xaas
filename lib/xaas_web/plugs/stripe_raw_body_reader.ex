@@ -17,16 +17,20 @@ defmodule XaasWeb.Plugs.StripeRawBodyReader do
   """
 
   def read_body(conn, opts) do
-    {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+    case Plug.Conn.read_body(conn, opts) do
+      # Over-limit: return {:more, ...} so Plug.Parsers raises its typed
+      # RequestTooLargeError (413) instead of crashing with MatchError (500).
+      {:more, _body, _conn} = more -> more
+      {:ok, body, conn} -> {:ok, body, assign_raw_body(conn, body)}
+    end
+  end
 
-    conn =
-      if conn.path_info == ["webhooks", "stripe"] do
-        existing = Map.get(conn.assigns, :raw_body, "")
-        Plug.Conn.assign(conn, :raw_body, existing <> body)
-      else
-        conn
-      end
-
-    {:ok, body, conn}
+  defp assign_raw_body(conn, body) do
+    if conn.path_info == ["webhooks", "stripe"] do
+      existing = Map.get(conn.assigns, :raw_body, "")
+      Plug.Conn.assign(conn, :raw_body, existing <> body)
+    else
+      conn
+    end
   end
 end

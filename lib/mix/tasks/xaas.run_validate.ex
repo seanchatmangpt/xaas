@@ -74,6 +74,15 @@ defmodule Mix.Tasks.Xaas.RunValidate do
     end
   end
 
+  @doc """
+  Renders this task's typed-refusal line (Vector-2 §E): the machine-readable
+  `REFUSED(<code>, detail: %{...})` form emitted alongside the human text on
+  every refusal path. Refusal semantics are unchanged; output structure only.
+  """
+  def render_refusal({code, detail}) when is_atom(code) do
+    "REFUSED(#{code}, detail: #{inspect(detail)})"
+  end
+
   defp capacity_opts(opts) do
     []
     |> Kernel.++(if opts[:capacity], do: [capacity: opts[:capacity]], else: [])
@@ -102,7 +111,8 @@ defmodule Mix.Tasks.Xaas.RunValidate do
 
       {:error, :no_emitter} ->
         Mix.raise(
-          "REFUSED_NO_EMITTER: no OCEL log emitter is configured for run-id input " <>
+          render_refusal({:no_emitter, %{run_id: run_id}}) <>
+            "\nREFUSED_NO_EMITTER: no OCEL log emitter is configured for run-id input " <>
             "(config :xaas, :ultracode_ocel_log_emitter; expected a module exporting derive_run/1, " <>
             "default Xaas.Ultracode.OcelEgress). The run-to-log derivation is the emitter's owned " <>
             "mutation and is not re-derived here. Pass the log path instead: " <>

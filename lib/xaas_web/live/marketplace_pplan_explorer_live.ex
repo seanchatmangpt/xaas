@@ -208,6 +208,7 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
     |> Enum.with_index(1)
     |> Enum.map(fn {step_iri, n} ->
       step = Map.fetch!(steps_by_iri, step_iri)
+
       %{
         n: n,
         label: step.label,
@@ -324,8 +325,9 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
       <header>
         <h1 class="text-2xl font-bold">GCP Marketplace Lifecycle Explorer</h1>
         <p id="ontology-summary" class="text-slate-400 text-sm mt-1">
-          p-plan: {@plan_label} · {@variables_count} variables · {length(@steps)} steps ·
-          {length(@people)} agents · {length(@orgs)} organizations
+          p-plan: {@plan_label} · {@variables_count} variables · {length(@steps)} steps · {length(
+            @people
+          )} agents · {length(@orgs)} organizations
         </p>
       </header>
 
@@ -454,7 +456,15 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
           </div>
           <div>
             <label class="block text-sm text-slate-400 mb-1">Organic burn rate: {trunc(@sim["burn"])}%</label>
-            <input type="range" name="burn" min="30" max="100" step="1" value={@sim["burn"]} class="w-full" />
+            <input
+              type="range"
+              name="burn"
+              min="30"
+              max="100"
+              step="1"
+              value={@sim["burn"]}
+              class="w-full"
+            />
           </div>
         </form>
 
@@ -547,10 +557,21 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
       |> assign(:post_pts, svg_points(assigns.post))
 
     ~H"""
-    <svg viewBox="0 0 760 240" class="w-full" role="img" aria-label="Commit balance burn-down over 12 months">
+    <svg
+      viewBox="0 0 760 240"
+      class="w-full"
+      role="img"
+      aria-label="Commit balance burn-down over 12 months"
+    >
       <line x1="40" y1="200" x2="720" y2="200" stroke="#334155" />
       <line x1="40" y1="200" x2="40" y2="20" stroke="#334155" />
-      <polyline points={@baseline_pts} fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4" />
+      <polyline
+        points={@baseline_pts}
+        fill="none"
+        stroke="#64748b"
+        stroke-width="2"
+        stroke-dasharray="6 4"
+      />
       <polyline points={@post_pts} fill="none" stroke="#34d399" stroke-width="2.5" />
       <text x="56" y="35" fill="#94a3b8" font-size="12">baseline (organic only)</text>
       <text x="240" y="35" fill="#34d399" font-size="12">post-marketplace commit balance</text>
@@ -568,6 +589,7 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
     |> Enum.map_join(" ", fn {v, i} ->
       x = 40 + i * (680 / (length(series) - 1))
       y = 200 - v / y_max * 180
+
       "#{:erlang.float_to_binary(x * 1.0, decimals: 1)},#{:erlang.float_to_binary(y * 1.0, decimals: 1)}"
     end)
   end
@@ -603,7 +625,7 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
     |> Integer.to_string()
     |> reverse_groups()
     |> String.replace(",", ",")
-    |> then(&"$" <> &1)
+    |> then(&("$" <> &1))
   end
 
   defp fmt_usd(_), do: "$0"
@@ -624,4 +646,4 @@ defmodule XaasWeb.MarketplacePplanExplorerLive do
   end
 
   defp fmt_pct(_), do: "0.0%"
-  end
+end

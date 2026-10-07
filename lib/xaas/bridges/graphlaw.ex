@@ -123,7 +123,9 @@ defmodule Xaas.Bridges.Graphlaw do
   end
 
   defp receipt_ref(nil), do: nil
-  defp receipt_ref(receipt), do: "graphlaw.receipt:" <> to_string(receipt.plan_sha256 || receipt.index)
+
+  defp receipt_ref(receipt),
+    do: "graphlaw.receipt:" <> to_string(receipt.plan_sha256 || receipt.index)
 
   defp evidence_ref(nil), do: nil
   defp evidence_ref(receipt), do: "graphlaw.step:" <> to_string(receipt.step)

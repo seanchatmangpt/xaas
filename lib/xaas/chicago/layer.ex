@@ -59,7 +59,7 @@ defmodule Xaas.Chicago.Layer do
     Enum.any?(@required_ids ++ @successor_ids, fn a -> Atom.to_string(a) == id end)
   end
 
-  def known?(id) when is_atom(id), do: id in @required_ids ++ @successor_ids
+  def known?(id) when is_atom(id), do: id in (@required_ids ++ @successor_ids)
   def known?(_), do: false
 
   @doc "Keys a machine-projection layer object must carry (plus optional `status`)."

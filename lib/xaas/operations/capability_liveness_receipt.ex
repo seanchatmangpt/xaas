@@ -64,9 +64,12 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     # ingested autonomic-loop state is genuinely internal
     # self-observability, not a customer-facing business decision --
     # allowing :read here, alone, is the "explicit rule" the floor's
-    # comment below asks for. :ingest/:destroy remain forbidden to every
-    # actor; the ingest Mix task already bypasses this via
-    # authorize?: false as a deliberate system-internal exception.
+    # comment below asks for. :destroy remains forbidden to every actor.
+    # :ingest is lawfully reachable only by the system-internal autonomic
+    # ingest (mix xaas.ingest_capability_receipts) acting AS the same
+    # :oban_scheduler system authority this resource's own AshOban schedule
+    # already uses -- enforced by the scoped bypass below, so no caller
+    # bypasses authorization with authorize?: false any more.
     # `bypass` (not `policy`): a real, deliberate Ash mechanism -- without
     # it, this policy's authorize_if still ANDs against the catch-all
     # forbid_if always() below (confirmed via a real `Ash.read/2` returning
@@ -86,6 +89,16 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
       # always() -- the AshOban schedule above supplies the real
       # default_actor (%Xaas.SystemAuthority{service: :oban_scheduler}).
       authorize_if({Xaas.Checks.SystemActor, []})
+    end
+
+    # Real, scoped carve-out for the system-internal autonomic ingest:
+    # only the :oban_scheduler system authority (the same service actor the
+    # AshOban schedule above supplies for this resource) may run :ingest.
+    # Explicit `service:` opt is the check's documented path for subjects
+    # outside its canonical exact-subject map; deny floor still applies to
+    # every other actor.
+    bypass action(:ingest) do
+      authorize_if({Xaas.Checks.SystemActor, service: :oban_scheduler})
     end
 
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --

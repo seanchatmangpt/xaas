@@ -53,7 +53,10 @@ defmodule Xaas.Autofde.StatusParser do
     end
   end
 
-  @update_header ~r/^(?:Last|Prior) update:\s*\*\*pass\s+(\d+)\*\*\s*\((\d{4}-\d{2}-\d{2})\)\s*—\s*(.*)$/
+  # 2026-10-06 (v26.10.6): accept composite labels ("pass 26 / cap 11") and date
+  # ranges ("2026-09-25/26") seen in the real STATUS.md — both were silently
+  # dropped before (W63 receipt).
+  @update_header ~r/^(?:Last|Prior) update:\s*\*\*pass\s+(\d+)(?:\s*\/[^*]*)?\*\*\s*\((\d{4}-\d{2}-\d{2})(?:\/(?:\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}))?\)\s*—\s*(.*)$/
 
   @section_header ~r/^##\s*Pass\s+(\d+)\s*—\s*(.*?)\s*\((\d{4}-\d{2}-\d{2})\)\s*$/
 

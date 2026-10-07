@@ -23,11 +23,19 @@ defmodule Xaas.Vault do
       System.get_env("CLOAK_KEY", "4T4/f5PYK0d489Do8sNU8VNJHKD/1XVOLXyzHUlIkQY=")
       |> Base.decode64!()
 
-    config =
-      Keyword.put(config, :ciphers,
-        default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: key, iv_length: 12}
-      )
+    # Fail-closed in prod (OS-17, w393): the committed placeholder key is
+    # public — booting prod on it silently encrypts tokens and webhook
+    # secrets under a key any reader of this repo holds. Refuse to start;
+    # the :permanent child crash-loops the node with a typed reason.
+    if Mix.env() == :prod and System.get_env("CLOAK_KEY") in [nil, ""] do
+      {:stop, {:cloak_key_missing, :prod_refuses_placeholder_key}}
+    else
+      config =
+        Keyword.put(config, :ciphers,
+          default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: key, iv_length: 12}
+        )
 
-    {:ok, config}
+      {:ok, config}
+    end
   end
 end

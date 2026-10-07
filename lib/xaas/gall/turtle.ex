@@ -136,7 +136,7 @@ defmodule Xaas.Gall.Turtle do
       Enum.reduce(triples, %{}, fn {subject, predicate, object}, acc ->
         subject_iri = term_to_iri(subject)
         entry = {term_to_iri(predicate), term_to_object(object)}
-        Map.update(acc, subject_iri, [entry], &(&1 ++ [entry]))
+        map_append(acc, subject_iri, entry)
       end)
 
     checkpoint_subjects =
@@ -164,12 +164,12 @@ defmodule Xaas.Gall.Turtle do
         key
         when key in [:dependencies, :allowed_paths, :acceptance, :falsifiers, :required_evidence] ->
           value = object_value(object)
-          Map.update(acc, key, [value], &(&1 ++ [value]))
+          map_append(acc, key, value)
 
         # Vocabulary fields carry namespace-LOCAL names (gall:Read -> "Read").
         key when key in [:requires_capabilities, :forbids_capabilities] ->
           value = object_value(object) |> local_or_iri()
-          Map.update(acc, key, [value], &(&1 ++ [value]))
+          map_append(acc, key, value)
 
         :standing ->
           Map.put(acc, :standing, object_value(object) |> local_or_iri())
@@ -235,6 +235,16 @@ defmodule Xaas.Gall.Turtle do
       is_struct(object, RDF.IRI) -> {:iri, apply(RDF.IRI, :to_string, [object])}
       is_struct(object, RDF.Literal) -> {:literal, apply(RDF.Term, :value, [object])}
       true -> {:literal, to_string(object)}
+    end
+  end
+
+  # W659 dual-safe: replaces three absent-key-reliant Map.update/4 append
+  # sites (w705 census turtle.ex:139,167,172). Absent key seeds [entry] and
+  # never calls the update fun — otp-28 Map.update/4 semantics preserved.
+  defp map_append(acc, key, entry) do
+    case Map.fetch(acc, key) do
+      {:ok, list} -> Map.put(acc, key, list ++ [entry])
+      :error -> Map.put(acc, key, [entry])
     end
   end
 end

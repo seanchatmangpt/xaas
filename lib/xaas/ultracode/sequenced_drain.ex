@@ -236,7 +236,15 @@ defmodule Xaas.Ultracode.SequencedDrain do
             {:ok, {:drained, Enum.reverse(acc)}}
 
           ids ->
-            tries = Enum.reduce(ids, state.tries, fn id, t -> Map.update(t, id, 1, &(&1 + 1)) end)
+            # W659 dual-safe: absent key seeds 1 (no fun call — otp-28
+            # Map.update/4 semantics preserved), present key increments.
+            tries =
+              Enum.reduce(ids, state.tries, fn id, t ->
+                case Map.fetch(t, id) do
+                  {:ok, n} -> Map.put(t, id, n + 1)
+                  :error -> Map.put(t, id, 1)
+                end
+              end)
             loop(%{state | tries: tries}, n - 1, [ids | acc])
         end
 

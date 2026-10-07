@@ -146,19 +146,23 @@ defmodule XaasWeb.Chicago.DrillDownLive do
   refused solid red, admitted solid slate, unknown slate-dashed.
   """
   def lifecycle_classes(:candidate),
-    do: "rounded border border-dashed border-amber-500 bg-amber-50 px-2 py-0.5 font-mono text-xs text-amber-700"
+    do:
+      "rounded border border-dashed border-amber-500 bg-amber-50 px-2 py-0.5 font-mono text-xs text-amber-700"
 
   def lifecycle_classes(:executed),
-    do: "rounded border border-green-600 bg-green-100 px-2 py-0.5 font-mono text-xs text-green-800"
+    do:
+      "rounded border border-green-600 bg-green-100 px-2 py-0.5 font-mono text-xs text-green-800"
 
   def lifecycle_classes(:refused),
     do: "rounded border border-red-600 bg-red-100 px-2 py-0.5 font-mono text-xs text-red-800"
 
   def lifecycle_classes(:admitted),
-    do: "rounded border border-slate-600 bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-800"
+    do:
+      "rounded border border-slate-600 bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-800"
 
   def lifecycle_classes(_),
-    do: "rounded border border-dashed border-slate-400 bg-slate-50 px-2 py-0.5 font-mono text-xs text-slate-600"
+    do:
+      "rounded border border-dashed border-slate-400 bg-slate-50 px-2 py-0.5 font-mono text-xs text-slate-600"
 
   @doc """
   Standing chip classes for rows that HAVE a bridge. Absence rows carry no
