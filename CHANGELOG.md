@@ -4,6 +4,113 @@ Reconstructed 2026-09-26 from `git log v26.9.22..HEAD` (this file did not previo
 exist in the repository). Every entry traces to a witnessed commit or merge; anchors
 supplied without a witnessed commit are marked UNKNOWN.
 
+## [Unreleased] — v26.10.6 (convergence, branch `feat/playwright-surface`)
+
+Recorded 2026-10-06 at HEAD `d1db2b03179975213c14663b9dbd86b5ac2a14cf`
+(`main` = `5fc56da2`), reconciled against `git log main..HEAD` (20 commits) and the
+full working tree (`git status --porcelain`, 179 entries). Items listed are on disk
+at record time; purely in-flight future work is deliberately absent.
+
+### Added
+
+- Six new Ash domains registered in `config :xaas, :ash_domains`
+  (`config/config.exs:13-33`; 13 -> 19 domains, 98 -> 116 resources):
+  `Xaas.A2a` (PW4, `bab0f861`), `Xaas.Conference` (XA1r, `9fb8f020` + XA4r
+  projection pipeline `bedfa86e`), `Xaas.Graphlaw` (PW6, `cb65ce7b`),
+  `Xaas.Igniter` (PW7, `5fee7516`), `Xaas.Security` (PW10, `84099b8f` +
+  registration fix `01f4838f`), `Xaas.Witness` (PW5, `3508f427`).
+- Certified-receipt witness surface (PW5, `3508f427`): `Xaas.Witness.CertifiedReceipt`,
+  `Xaas.Witness.VerificationKey`, and the `Xaas.Witness.Catalog` ingest/verify context,
+  plus `WitnessLive` (`lib/xaas_web/live/witness_live.ex`) and a repair migration
+  (`priv/repo/migrations/20261006000000_repair_witness_certified_receipts.exs`).
+- Marketplace catalog surface: catalog projection resource + ingest/search context
+  (XL1, `0d948cd8`), `MarketplaceCatalogLive` browser route, and PW3 Playwright E2E
+  (`d24d48a1`); graphlaw/pplan explorer surfaces (`2d0be133`, `cb65ce7b`).
+- Playwright E2E surface over the real router: PW1 smoke (`b3dbdfaf`), PW8 cross-surface
+  journey (`f3873049`), spec renames `*.spec.js` -> `*.spec.cjs`
+  (`ash-admin-destroy`, `ash-admin-state-change`), and 16 new `.cjs` specs +
+  `global-setup.cjs` in the working tree (a2a-v1, ash-admin-matrix, ash-surface-client,
+  autofde-lab, chicago-pplan-deep, dev-routes, execution-fabric, ggen-workbench,
+  internal-api, mcp-a2a, sparql-proxy, stripe-webhook, system-deep, witness,
+  zcode-cli-fabric, next-read-ml/wd-fa-cs2 updates), run via `playwright.config.cjs`
+  and a new `playwright-e2e` GitHub Actions workflow.
+- Cross-repo bridge modules: `Xaas.Bridges.Ferroplan` (`lib/xaas/bridges/ferroplan.ex`)
+  and `Xaas.Operations.GymactSurface` (`lib/xaas/operations/gymact_surface.ex`) with
+  real-collaborator test suites (`test/xaas/bridges/`, `test/xaas/operations/`).
+- `XaasWeb.A2A.NextReadAshAgent` (`lib/xaas_web/a2a/next_read_ash_agent.ex`) alongside
+  the existing Next Read user-agent surface.
+- Differential/oracle CI lane (`oracle-tests` job in `.github/workflows/ci_cd.yaml`):
+  supplies `GGEN_IGNITER_DIR`, python3 rdflib, jq, and canonical ggen-marketplace /
+  ash_atlassian checkouts so the conditionally-skipped differential suites stop
+  skipping silently in CI; host-gated skips are disclosed in the job comment.
+- Ash surface generation over `Xaas.Marketplace.Pack` (`8056957a`): `priv/ash_surface/`
+  runtime artifacts, generated castle-bridge contract/edge modules
+  (`lib/xaas/generated/`), drift guard + generator tests, and `ggen.lock`.
+- `docs/sjira/v26.10.6/` plan/receipt directory (untracked) and
+  `docs/claude/diataxis/reference/generated-castle-bridge-errc.md`.
+- Refusal-typing negative-court batches: `castle_refusal_negative_test.exs` plus
+  batches 2-5, `actuation_refusal_negative_test.exs`, `vkg_refusal_negative_test.exs`,
+  and `xaas_refusal_render_test.exs`.
+- `closure-gates.yml` CI workflow (DoD 2 / P2-2 prod-compile + sync-drift gates;
+  `.github/workflows/closure-gates.yml`,
+  `docs/sjira/v26.10.6/plans/w327-ci-gates-draft.md`).
+- Digest manifest `priv/semantic/generated/MANIFEST.json` over the machine
+  registries (P2-5, `docs/sjira/v26.10.6/plans/w336-digest-manifest.md`).
+- Vault prod fail-closed guard (OS-17, `w393`/`w394` class): `Xaas.Vault`
+  refuses to boot in prod on the committed placeholder `CLOAK_KEY` — typed
+  `{:stop, {:cloak_key_missing, :prod_refuses_placeholder_key}}`; dev/test
+  fallback unchanged. Source pin in `test/xaas/vault_env_guard_test.exs`
+  (`docs/sjira/v26.10.6/plans/w349-cloak-key-guard.md`,
+  `w393-cloak-prod-wiring.md`).
+
+### Changed
+
+- Version advanced 26.10.2 -> 26.10.6 (`VERSION`).
+- Dependency pin advances (`mix.exs`/`mix.lock`): `ash_a2a` 3325032d -> 86214551,
+  `ash_r2rml` 36f25a30 -> 0d5320f6, `ex4pm` 17e7761f -> 9f7aecda,
+  `ash_pplan` b9da1ad -> 5f10c97 (ref advanced 2026-10-06, v26.10.6 convergence);
+  `ash_graphlaw`/`ash_affidavit`/`ex4pm` marked `override: true`.
+- `config/dev.exs`: `ultracode_repos` `autofde-lab` and `gymact` paths repointed from
+  `~/xaas/worktrees/repos/<repo>` (stale worktree layout) to the canonical checkouts
+  `~/autofde-lab` / `~/gymact`.
+- Docs truth repair (v26.10.6 vector 6): HTTP-surface recount (62 -> 70 `base(...)`
+  resources; `/marketplace-catalog` and sibling LiveViews added to the browser-surface
+  enumeration), 13 -> 19 domain recount with a per-domain resource table in the
+  diataxis reference and README, new Witness reference section.
+- `playwright.config.cjs` derives the server port from a `PW_PORT` lane lease so
+  concurrent PW lanes cannot collide on port 4000
+  (`docs/sjira/v26.10.6/plans/w310-lane-ports.md`).
+- Docs-truth backfill of the six-vector closure facts: EU-AI-Act e2e coverage
+  map (P3-2, `docs/sjira/v26.10.6/plans/w342-e2e-coverage-map.md`), zero-config
+  refusal/safety posture audit
+  (`docs/sjira/v26.10.6/plans/w322-zero-config-posture.md`), ontop health-check
+  typing (`docs/sjira/v26.10.6/plans/w174-ontop-health-typing.md`); ash_surface
+  C'/C" standing/health fixtures are sibling-repo-side
+  (`docs/sjira/v26.10.6/plans/w326-ash-surface-c-fixtures.md`).
+
+### Fixed
+
+- ash_surface prod-compile gates (EA34, `02ce3776`) and EA35 namespace plumbing that
+  unblocked full-app generation (`d1db2b03`), plus repo-wide prod-compile warning
+  cleanup across `lib/` (mix.exs elixirc paths, ~90 lib/test files touched).
+- TrimTab test-suite alignment with the real ContextBudget/domain API (EA80,
+  `995388a5`).
+- Garbled ash_surface TODO paragraph repaired in the marketplace catalog LiveView
+  (XL2, `f48d80ff`).
+- `Xaas.Security` domain missing from `ash_domains` at first registration
+  (`01f4838f`).
+
+### Removed
+
+- Legacy `*.spec.js` Playwright specs superseded by the `.cjs` rename
+  (`e2e/ash-admin-destroy.spec.js`, `e2e/ash-admin-state-change.spec.js`).
+
+### Adjacent (harness-side, not in this repo)
+
+- Receipt schema validator work lives in the harness
+  (`~/.claude/dfcm/receipt.schema.json` side), not this tree; noted here only as an
+  adjacency marker for the v26.10.6 convergence.
+
 ## [v26.9.28] — Integration (branch `claude/serene-wozniak-jwnj94`)
 
 Requirements: `docs/rfc/REQUIREMENTS-v26.9.28.md`.

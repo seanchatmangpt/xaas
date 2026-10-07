@@ -2,7 +2,7 @@
 
 XaaS is an Elixir/Phoenix platform built around Ash resources. Ash resources are executable application models with public-ontology projections, and consequential mutation is fenced behind a synchronous `Ash.Reactor` actuation path with durable intent/receipt records and idempotent replay. Around that control plane, the repository also ships an autonomous execution fabric (leases, campaigns, receipted worker actuation), OCEL 2.0 telemetry egress, and a generated ZCode integration plugin.
 
-Stack: Elixir ~> 1.18 (dev pinned via asdf `.tool-versions` to elixir 1.20.2-otp-28 / erlang 28.5.0.2), Phoenix ~> 1.7, Ash ~> 3.0, PostgreSQL. Version: [`VERSION`](VERSION). Thirteen Ash domains are configured in `config/config.exs` (Accounts, Billing, Coupling, Generation, Governance, Ledger, Library, Marketplace, Ocel, Operations, Platform, TemporalMemory, Ultracode).
+Stack: Elixir ~> 1.18 (dev pinned via asdf `.tool-versions` to elixir 1.20.2-otp-28 / erlang 28.5.0.2), Phoenix ~> 1.7, Ash ~> 3.0, PostgreSQL. Version: [`VERSION`](VERSION). Nineteen Ash domains are configured in `config/config.exs` (`config/config.exs:13-33`, re-verified 2026-10-06) — Accounts, A2a, Billing, Conference, Coupling, Generation, Graphlaw, Governance, Igniter, Ledger, Library, Marketplace, Ocel, Operations, Platform, Security, TemporalMemory, Ultracode, Witness.
 
 ## Documentation
 
