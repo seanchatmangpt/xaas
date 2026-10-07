@@ -17,7 +17,7 @@ defmodule Xaas.Billing.ApprovalQuotaOverride do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor).
@@ -53,10 +53,6 @@ defmodule Xaas.Billing.ApprovalQuotaOverride do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_quota_override)
   end
 
   json_api do
@@ -109,6 +105,14 @@ defmodule Xaas.Billing.ApprovalQuotaOverride do
     update :approve do
       accept([:approved_by])
       require_atomic?(false)
+
+      # Real, DB-level idempotency guard (W984k, gap 1b from
+      # docs/sjira/v26.10.6/plans/w982s-approval-deepening.md): only a row
+      # whose PERSISTED approved_by is still nil may be approved. The
+      # filter lands in the UPDATE's WHERE clause, so a repeat :approve
+      # through a stale record matches zero rows and is refused typed.
+      # Same shape as ApprovalSlaCreditApply (W746).
+      change(filter(expr(is_nil(approved_by))))
       validate(Xaas.Billing.Validations.ApprovalQuotaOverrideRequiresApprover)
     end
   end

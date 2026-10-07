@@ -102,14 +102,22 @@ defmodule Xaas.Library.Reactors.Steps.ScoreBook do
   defp compute_grade_fit(_book_grade, nil), do: 0.5
 
   defp compute_grade_fit(book_grade, student_grade) do
-    bg = if is_struct(book_grade, Decimal), do: Decimal.to_integer(book_grade), else: book_grade
+    # Fractional grade levels (e.g. Decimal.new("0.5") kindergarten-band books,
+    # see lib/xaas/library/book.ex's decimal grade_level) crashed the reactor
+    # scoring path: Decimal.to_integer/1 raises ArgumentError
+    # ("cannot convert ... without losing precision. Use Decimal.round/3
+    # first") on any non-integral Decimal, which surfaced as a
+    # RunStepError that killed the whole RecommendationPipelineReactor map.
+    # Decimal.to_float/1 mirrors Xaas.Library.Ranker.to_float/1's procedural
+    # path, which always handled fractional grade levels.
+    bg = if is_struct(book_grade, Decimal), do: Decimal.to_float(book_grade), else: book_grade
 
     sg =
       if is_struct(student_grade, Decimal),
-        do: Decimal.to_integer(student_grade),
+        do: Decimal.to_float(student_grade),
         else: student_grade
 
-    if is_integer(bg) and is_integer(sg) do
+    if is_number(bg) and is_number(sg) do
       delta = abs(bg - sg)
       max(0.0, 1.0 - delta * 0.3)
     else

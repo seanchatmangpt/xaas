@@ -4,7 +4,7 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshRateLimiter]
+    extensions: [AshJsonApi.Resource, AshRateLimiter]
 
   rate_limit do
     backend(Xaas.Hammer)
@@ -48,21 +48,6 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
 
     policy always() do
       forbid_if(always())
-    end
-  end
-
-  graphql do
-    type(:approval_pricing_override)
-
-    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
-    # Billing domain on Xaas.GraphqlSchema via this resource (the
-    # Subscription resource itself is lane-collided with W975b's in-flight
-    # SPEC-07 edits and is deliberately untouched). Read-only; the
-    # resource's real Ash policies are unchanged and still gate every
-    # resolution.
-    queries do
-      get(:approval_pricing_override, :read)
-      list(:approval_pricing_overrides, :read)
     end
   end
 
@@ -114,6 +99,15 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
     update :approve do
       accept([:approved_by])
       require_atomic?(false)
+
+      # Real, DB-level idempotency guard (W984k, gap 1b from
+      # docs/sjira/v26.10.6/plans/w982s-approval-deepening.md): only a row
+      # whose PERSISTED approved_by is still nil may be approved. The
+      # filter lands in the UPDATE's WHERE clause (Ash.Changeset.filter/2),
+      # so a repeat :approve through a stale in-memory record matches zero
+      # rows and is refused typed instead of overwriting approved_by.
+      # Same shape as ApprovalSlaCreditApply (W746).
+      change(filter(expr(is_nil(approved_by))))
       change(Xaas.Billing.Changes.ApprovalPricingOverrideApprove)
       validate(Xaas.Billing.Validations.ApprovalPricingOverrideRequiresApprover)
     end
