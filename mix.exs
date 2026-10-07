@@ -102,18 +102,18 @@ defmodule Xaas.MixProject do
       {:req_llm, "~> 1.18"},
       {:ash_a2a,
        git: "https://github.com/seanchatmangpt/ash_a2a.git",
-       ref: "3325032d9dea201e6deb82ef242c534aacb3b420",
+       ref: "86214551de93fc8ab395f5ed0b84d32922a5d99b",
        override: true},
       {:ash_r2rml,
        git: "https://github.com/seanchatmangpt/ash_r2rml.git",
-       ref: "36f25a30f2f60acde7da1a965626451dbc40b6f8",
+       ref: "0d5320f6c5e9a43bb3e8dcb0f30d301b1ebb64d7",
        override: true},
       {:a2a, "~> 0.2"},
       # Fabric planes (law, evidence/process). Test/dev only: path deps would break the
       # Docker prod build (see the ex4pm note below); fabric adapters call them via apply/3.
-      {:ash_graphlaw, path: "../ash_graphlaw"},
+      {:ash_graphlaw, path: "../ash_graphlaw", override: true},
       {:ash_surface, path: "../ash_surface"},
-      {:ash_affidavit, path: "../ash_affidavit", only: [:dev, :test]},
+      {:ash_affidavit, path: "../ash_affidavit", override: true},
       {:bandit, "~> 1.5"},
       {:ash_onetime, "~> 1.0"},
       {:ash_iam, "~> 2.0"},
@@ -243,14 +243,15 @@ defmodule Xaas.MixProject do
       # merge or publication standing for ex4pm.
       {:ex4pm,
        git: "https://github.com/seanchatmangpt/ex4pm.git",
-       ref: "17e7761ffff482ff1b2ec936ad9705a99356451a"},
+       ref: "9f7aecda87e5110f668f824bbae760f6c97f88e1",
+       override: true},
       # v26.9.27: ash_pplan owns FOND policy semantics (AshPPlan.FOND +
       # FOND.Synthesis, strong/strong-cyclic). XaaS consumes it for the
       # WaveLoop recovery policy instead of growing a second planner.
-      # Immutable ref = origin/main at b9da1ad (26.9.8 hardening + SA2A provider; includes PR #7 strong-cyclic synthesis).
+      # Ref advanced 2026-10-06 (v26.10.6 convergence): origin/main 5f10c97 — A2A durable Facade present at this ref.
       {:ash_pplan,
        git: "https://github.com/seanchatmangpt/ash_pplan.git",
-       ref: "b9da1ad7590d70afac5eace3bd7ba1a644f7249f"},
+       ref: "5f10c9798b783c2023a6bfaa892c000630476f05"},
       # MarketplacePplanExplorerLive parses priv/gcp/marketplace_lifecycle.ttl
       # (p-plan/prov workflow ontology) with RDF.Turtle and queries it with
       # SPARQL.ex. Both were already resolved transitively via ggen_igniter
