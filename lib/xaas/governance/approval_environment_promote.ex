@@ -38,6 +38,13 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
       # Xaas.SystemAuthority.new(:internal_api) actor AFTER the
       # RequireInternalApiToken Bearer check (HTTP gate unchanged), so the
       # action no longer authorizes literally any other actor/path.
+      # SPEC-18 (W765-GAP-D; lane W969b design-wave 2): the runtime freeze
+      # gate. forbid_if FIRST -- a bypass short-circuits on its first
+      # authorize_if, so the freeze check must run before SystemActor can
+      # authorize. An active freeze window with no approved emergency
+      # override refuses the :approve; outside a window the bypass behaves
+      # exactly as before (Chesterton fence: SystemActor untouched).
+      forbid_if({Xaas.Governance.Checks.FreezeWindowActive, []})
       authorize_if({Xaas.Checks.SystemActor, []})
     end
 
@@ -103,7 +110,10 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     # yet, so this is enforced only by the router-level Bearer token check;
     # (b) runs a real change-freeze guard (lib/freeze-windows.ts,
     # checkFreezeGuard) against the owning org before promoting -- xaas has
-    # not modeled a FreezeWindow resource, so that check is left undone
+    # not modeled a FreezeWindow resource. RESOLVED (lane W969b / SPEC-18):
+    # the FreezeWindow resource now exists and the guard is really wired as
+    # the Xaas.Governance.Checks.FreezeWindowActive policy check on
+    # `:approve`
     # rather than fabricated; (c) actually calls setProjectEnvironment
     # against the real k8s ServiceAccount to patch the live Project's
     # ENVIRONMENT_LABEL -- xaas has no equivalent live side effect here, this
@@ -111,6 +121,7 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     update :approve do
       accept([:approved_by])
       require_atomic?(false)
+
       validate(Xaas.Governance.Validations.ApprovalEnvironmentPromoteRequiresApprover)
       change(transition_state(:approved))
     end

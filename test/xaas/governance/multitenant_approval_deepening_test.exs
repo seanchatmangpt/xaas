@@ -28,6 +28,7 @@ defmodule Xaas.Governance.MultitenantApprovalDeepeningTest do
   alias Xaas.Governance.ApprovalDeploymentQuarantine
   alias Xaas.Governance.ApprovalDrFailover
   alias Xaas.Governance.ApprovalLegalHoldRelease
+  alias Xaas.Governance.InternalApiTokenAuth
   alias Xaas.Operations.Incident
 
   setup do
@@ -413,6 +414,94 @@ defmodule Xaas.Governance.MultitenantApprovalDeepeningTest do
         assert resp.status == 404
         assert json_response(resp, 404)["error"] == "org_not_found"
       end
+    end
+  end
+
+  # SPEC-04 (W722-GAP-2; lane W969b design-wave 2): authenticated org
+  # binding. A request authenticated via an org-carrying InternalApiToken
+  # (XaasWeb.Plugs.AuthenticateOrg binds conn.assigns[:authenticated_org])
+  # must REFUSE a forged X-Org-Id naming a different org, must bind the
+  # authenticated org with NO header at all, and must leave the legacy
+  # shared-token tier's caller-asserted behavior untouched.
+  describe "authenticated org binding (e)" do
+    defp org_token_conn(conn, raw_token, header_org_id) do
+      conn
+      |> put_req_header("authorization", "Bearer " <> raw_token)
+      |> put_req_header("accept", "application/vnd.api+json")
+      |> then(fn c ->
+        if header_org_id, do: put_req_header(c, "x-org-id", header_org_id), else: c
+      end)
+    end
+
+    test "forged X-Org-Id under an authenticated different org is a real 403 org_mismatch" do
+      org_a = real_org!("auth-org-a")
+      org_b = real_org!("auth-org-b")
+      row = create_pending!(ApprovalDrFailover, org_a.slug, "requester")
+      {:ok, raw_token, _token} = InternalApiTokenAuth.issue("w969b", nil, org_a)
+
+      resp =
+        org_token_conn(build_conn(), raw_token, org_b.slug)
+        |> get("/api/approval_dr_failover/#{row.id}")
+
+      assert resp.status == 403
+      body = json_response(resp, 403)
+      assert body["error"] == "org_mismatch"
+      assert body["detail"] =~ org_b.slug
+    end
+
+    test "authenticated org binds with NO X-Org-Id header (derive-from-authenticated-identity)" do
+      org_a = real_org!("auth-org-c")
+      row = create_pending!(ApprovalDrFailover, org_a.slug, "requester")
+      {:ok, raw_token, _token} = InternalApiTokenAuth.issue("w969b", nil, org_a)
+
+      resp =
+        org_token_conn(build_conn(), raw_token, nil)
+        |> get("/api/approval_dr_failover/#{row.id}")
+
+      assert resp.status == 200
+      assert json_response(resp, 200)["data"]["id"] == row.id
+    end
+
+    test "matching X-Org-Id under the authenticated org passes through (control)" do
+      org_a = real_org!("auth-org-d")
+      row = create_pending!(ApprovalDrFailover, org_a.slug, "requester")
+      {:ok, raw_token, _token} = InternalApiTokenAuth.issue("w969b", nil, org_a)
+
+      resp =
+        org_token_conn(build_conn(), raw_token, org_a.slug)
+        |> get("/api/approval_dr_failover/#{row.id}")
+
+      assert resp.status == 200
+    end
+
+    test "401/403 matrix: no bearer is 401; legacy shared token keeps caller-asserted resolution" do
+      org = real_org!("auth-org-e")
+      row = create_pending!(ApprovalDrFailover, org.slug, "requester")
+
+      # 401: no bearer at all.
+      resp =
+        build_conn()
+        |> put_req_header("accept", "application/vnd.api+json")
+        |> get("/api/approval_dr_failover/#{row.id}")
+
+      assert resp.status == 401
+
+      # Legacy tier: shared INTERNAL_API_TOKEN + forged header for a real
+      # other org still resolves as before (caller-asserted), because no
+      # authenticated org exists to contradict it. The forged header here
+      # names a REAL other org, so the legacy path 200s it — the exact
+      # limitation SPEC-04 closes for the org-token tier.
+      other = real_org!("auth-org-f")
+
+      resp_legacy =
+        build_conn()
+        |> put_req_header("authorization", "Bearer " <> System.fetch_env!("INTERNAL_API_TOKEN"))
+        |> put_req_header("accept", "application/vnd.api+json")
+        |> put_req_header("x-org-id", other.slug)
+        |> get("/api/approval_dr_failover/#{row.id}")
+
+      assert resp_legacy.status == 404
+      assert json_response(resp_legacy, 404)["error"] == "org_not_found"
     end
   end
 end

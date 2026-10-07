@@ -200,7 +200,7 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
       conn
       |> with_org_headers(org_id)
       |> put_req_header("content-type", "application/vnd.api+json")
-      |> patch("/api/audit_export_tokens/#{token.id}", body)
+      |> patch("/api/audit_export_tokens/#{token.id}/revoke", body)
 
     response = json_response(conn, 200)
     refute is_nil(response["data"]["attributes"]["revoked_at"])
@@ -227,7 +227,7 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
       conn
       |> with_org_headers(attacker_org)
       |> put_req_header("content-type", "application/vnd.api+json")
-      |> patch("/api/audit_export_tokens/#{token.id}", body)
+      |> patch("/api/audit_export_tokens/#{token.id}/revoke", body)
 
     assert conn.status == 403
 
@@ -258,7 +258,7 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
       conn
       |> with_org_headers(org_id)
       |> put_req_header("content-type", "application/vnd.api+json")
-      |> patch("/api/audit_export_tokens/#{already_revoked.id}", body)
+      |> patch("/api/audit_export_tokens/#{already_revoked.id}/revoke", body)
 
     assert conn.status == 400
   end
@@ -274,7 +274,7 @@ defmodule XaasWeb.AuditExportTokenControllerTest do
     conn =
       conn
       |> put_req_header("content-type", "application/vnd.api+json")
-      |> patch("/api/audit_export_tokens/#{token.id}", body)
+      |> patch("/api/audit_export_tokens/#{token.id}/revoke", body)
 
     assert conn.status == 401
 

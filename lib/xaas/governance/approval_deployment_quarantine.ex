@@ -56,6 +56,13 @@ defmodule Xaas.Governance.ApprovalDeploymentQuarantine do
     end
 
     bypass action(:approve) do
+      # SPEC-18 (W765-GAP-D; lane W969b design-wave 2): the runtime freeze
+      # gate. forbid_if FIRST — a bypass short-circuits on its first
+      # authorize_if, so the freeze check must run before ActorOrgMatches
+      # can authorize. An active freeze window with no approved emergency
+      # override refuses the :approve; outside a window the bypass behaves
+      # exactly as before (Chesterton fence: ActorOrgMatches untouched).
+      forbid_if({Xaas.Governance.Checks.FreezeWindowActive, []})
       authorize_if(Xaas.Governance.Checks.ActorOrgMatches)
     end
 
