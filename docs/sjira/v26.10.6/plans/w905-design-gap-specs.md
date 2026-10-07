@@ -245,3 +245,42 @@
 - L: SPEC-08, SPEC-10, SPEC-32, SPEC-34 (4)
 - Fan-out seams: SPEC-20/21 share the W770 family; SPEC-16/17 sequential same-file;
   SPEC-14 composes with CHEAP row 13; SPEC-30→31 sequential. All other lanes disjoint.
+
+## Design wave tracking (W982l reconciliation, 2026-10-07)
+
+W982l pass: every row re-verified from disk evidence (receipt files present, commit SHAs
+real via `git log`, implementation surfaces grepped on tree). Corrections vs the W971a
+table are marked CORRECTED. Receipt-or-commit references verified this pass.
+
+| spec id | wave lane | status | receipt-or-commit reference (verified W982l) |
+|---|---|---|---|
+| SPEC-04 | W969b | LANDED-COMMITTED | `5a853130` (receipt `w969b-design-wave2.md` on disk; `lib/xaas_web/plugs/authenticate_org.ex` on tree) |
+| SPEC-18 | W969b | LANDED-COMMITTED | `5a853130` (receipt `w969b-design-wave2.md`; check + wiring + court) |
+| SPEC-14 | W968c | LANDED-COMMITTED | `fd471722` (receipt `w968c-design-wave1.md` NOW ON DISK — W971a's "receipt file absent" note CORRECTED) |
+| SPEC-27 | W968c | LANDED-COMMITTED | `352cc34c` (receipt `w968c-design-wave1.md`; `lib/xaas/ledger/changes/reverse_transfer.ex` on tree) |
+| SPEC-21 | W969c | LANDED-COMMITTED | `b2758300` + `fc14f10b` (receipt `w969c-design-wave3.md`; `route_projects_create_court_test.exs` in `b2758300` stat) |
+| SPEC-09 | W912 (pre-wave) | LANDED-COMMITTED | `aa2b4022` (real, `git log` witnessed) |
+| SPEC-16 | w935 (pre-wave) | LANDED-COMMITTED | `fab56ae1` + `c3df69a8` (receipt `w935-spec16-impl.md` on disk) |
+| SPEC-17 | w935 (pre-wave) | LANDED-COMMITTED | `fab56ae1` (closed in-lane per `w935-spec16-impl.md` §SPEC-17 disposition; `c3df69a8` adjacent hardening) |
+| SPEC-20 | W970b | LANDED-COMMITTED | `b2758300` (receipt `w970b-open-sweep.md` row 1; shape deviation disclosed: `destroy :purge_expired` + retain_until validation, not generic `:update`/`:destroy`) |
+| SPEC-24 | W970b | LANDED-COMMITTED | `b2758300` (receipt `w970b-open-sweep.md` row 2; Incident-side `castle_run_id` + migration, per spec's predicted landing shape) |
+| SPEC-26 | W970b | LANDED-COMMITTED | `b2758300` (receipt `w970b-open-sweep.md` row 3; hold `:fulfill` mints real Checkout in-transaction) |
+| SPEC-07 | W970a + W975b | REPAIRED | Full SPEC-07 COMMITTED: W970a's 4 resources at `39c405fc` + court/fixture at `bf9f5cb9` (W982k integration, `w982k-spec07-integration.md`); W975b's second half (subscription, approval_sla_credit_apply, approval_patch_sla_credit_apply, revenue_recognition + court tests 4/5) landed at `ddb19522` (w982b integration, restoring content swept by `691e0a93`). Convention skew RESOLVED: all 8 billing resources use `global?(true)` (verified by grep at completion, w983o). Gates re-witnessed at HEAD by W983o: fresh-root `mix compile --force --warnings-as-errors` EXIT=0; billing dir 40 passed; court 5/5; `multitenancy_deepening_test.exs` 9 passed. `w975b-retroactive-mint.md` remains REFUSED(stale-evidence) (superseded by landed content, not needed). |
+| SPEC-08 | — | STILL-PENDING | no lane, no receipt, no atomic_update diff in `lib/xaas/billing/changes/` |
+| SPEC-10 | W976 (design-wave 5) | LANDED-UNCOMMITTED | receipt `w976-design-wave5.md` on disk; `lib/xaas/graphlaw/limit_gate.ex` + both consumer wires on tree (uncommitted; W982k integration) |
+| SPEC-30 | W975b (design-wave 4) | LANDED-UNCOMMITTED | receipt `w975b-design-wave4.md` §SPEC-30; `lib/xaas_web/router.ex:302-313` Absinthe.Plug forward + `mix.exs:148` `{:absinthe_plug, "~> 1.5"}` + `test/xaas_web/graphql_http_surface_test.exs` (5 tests, mutation-killed ×1) all on tree uncommitted |
+| SPEC-31 | W973c (design-wave 8) | LANDED-UNCOMMITTED | receipt `w973c-design-wave8.md`; `lib/xaas/graphql_schema.ex` 19 domains verified by grep; court `test/xaas/graphql_domain_wiring_court_test.exs` on tree |
+| SPEC-32 | — | STILL-PENDING | banned surface per `w969c-design-wave3.md`; no lane, no receipt |
+| SPEC-34 | — | STILL-PENDING | no CI leg, no regen-check task, no receipt |
+
+W982g is running — its spec attribution is left IN-FLIGHT (no W982g receipt on disk at
+writing time; do not pre-attribute). Historical W971a tracking table preserved in git
+history and in `w971a` receipts; superseded rows (e.g. SPEC-20 "IN-FLIGHT unattributed",
+SPEC-07 collision note, SPEC-31 "5 of 16") are resolved by the verified rows above.
+
+In-flight lanes W969e/W969f/W970a: W970a's receipt now exists on disk
+(`w970a-design-wave6.md`) and claims SPEC-07's half with `global?(true)` blocks — but the
+current tree shows a DIFFERENT convention (required tenant + `allow_global`, per its own
+file comments naming lane W975b as the converged convention). Reconcile convention skew
+at integration.
+
