@@ -41,6 +41,7 @@ const MARKETPLACE_CATALOG_PATH = path.join(
 );
 
 const WITNESS_SEED_PATH = path.join(__dirname, "seed-witness.exs");
+const LIBRARY_SEED_PATH = path.join(__dirname, "seed-library.exs");
 
 /** Run a shell step; return {ok, output} instead of throwing. */
 function tryStep(/** @type {string} */ name, /** @type {string} */ command, /** @type {any} */ options = undefined) {
@@ -113,6 +114,29 @@ function seedWitnessReceipts() {
   return ok;
 }
 
+/**
+ * Seed the /next-read fixture chain (Xaas.DevSeeds.run/0) via the committed
+ * e2e/seed-library.exs (W823). Failure-tolerant like every other step; a
+ * failed seed surfaces as the next-read-ml empty-shelf failures, not a
+ * setup crash. Runs in BOTH entry modes: the webServer boots before
+ * globalSetup, so catalogOnly() (the boot path) must seed up front too.
+ */
+function seedLibraryBooks() {
+  const result = tryStep(
+    "library seed (mix run e2e/seed-library.exs)",
+    'PATH="$HOME/.asdf/shims:$PATH" MIX_ENV=test mix run ' + LIBRARY_SEED_PATH
+  );
+  const ok = result.ok && result.output.includes("W823_SEED_OK");
+  if (ok) {
+    console.log("[global-setup] W823_SEED_OK: next-read library fixtures seeded");
+  } else {
+    console.warn(
+      "[global-setup] library seed did not report W823_SEED_OK (continuing)"
+    );
+  }
+  return ok;
+}
+
 /** Playwright globalSetup entry: always resolves, never throws. */
 async function globalSetup() {
   const count = generateMarketplaceCatalog();
@@ -120,11 +144,13 @@ async function globalSetup() {
     process.env.PW3_EXPECTED_PACK_COUNT = String(count);
   }
   seedWitnessReceipts();
+  seedLibraryBooks();
 }
 
 /** WebServer-boot helper mode: catalog file only; always exit 0. */
 function catalogOnly() {
   generateMarketplaceCatalog();
+  seedLibraryBooks();
   process.exit(0);
 }
 
@@ -132,6 +158,7 @@ module.exports = {
   MARKETPLACE_CATALOG_PATH,
   generateMarketplaceCatalog,
   seedWitnessReceipts,
+  seedLibraryBooks,
   default: globalSetup,
 };
 

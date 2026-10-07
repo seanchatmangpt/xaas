@@ -64,11 +64,17 @@ test.describe("Next Read Qvest Deck Experience & Dual-Persona Interface", () => 
   test("librarian pin action dynamically updates curation and student card spotlight", async ({ page }) => {
     await gotoNextRead(page);
 
-    const pinButtons = page.locator('[data-testid="pin-button"]');
-    await expect(pinButtons.first()).toBeVisible();
+    // Target the first *non-pinned* candidate: the seeded fixture chain
+    // (Xaas.DevSeeds, W823) pre-pins "The Last Cartographer", which can rank
+    // first — clicking an already-pinned book's button would UNPIN it and
+    // the "Pinned" assertion below would fail on its own seed.
+    const unpinnedPin = page
+      .locator('[data-testid="pin-button"]')
+      .filter({ hasNotText: "Pinned" })
+      .first();
+    await expect(unpinnedPin).toBeVisible();
 
-    const firstPin = pinButtons.first();
-    const bookId = await firstPin.getAttribute("data-book-id");
+    const bookId = await unpinnedPin.getAttribute("data-book-id");
 
     // Toggle pin for the *specific* first title (address by book-id so a
     // live re-render that swaps recommendation order mid-click cannot land

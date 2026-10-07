@@ -64,7 +64,7 @@ const PW_BASE_URL = `http://localhost:${PW_PORT}`;
 const BOOT = [
   'node ./e2e/global-setup.cjs --catalog',
   'PHX_SERVER=true PATH="$HOME/.asdf/shims:$PATH" mix run -e \'Application.put_env(:xaas, :marketplace_catalog_source, System.get_env("PW_MARKETPLACE_CATALOG"))\' --no-halt > /tmp/xaas-e2e-server.log 2>&1 & SRV=$!',
-  `PROBE_URL=http://localhost:${PW_PORT}\${INTERNAL_API_TOKEN:+/internal-api/health}; AUTH=""; [ -n "$INTERNAL_API_TOKEN" ] && AUTH="-H Authorization: Bearer $INTERNAL_API_TOKEN"; OK=""; for i in $(seq 1 180); do CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 5 $AUTH "$PROBE_URL"); if [ "$CODE" = "200" ]; then OK=1; break; fi; sleep 1; done; [ -n "$OK" ] || { echo "e2e readiness probe never returned 200 (last=$CODE)" >&2; kill $SRV 2>/dev/null; exit 1; }`,
+  `PROBE_URL=http://localhost:${PW_PORT}\${INTERNAL_API_TOKEN:+/internal-api/health}; OK=""; for i in $(seq 1 180); do CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 5 \${INTERNAL_API_TOKEN:+-H "Authorization: Bearer $INTERNAL_API_TOKEN"} "$PROBE_URL"); if [ "$CODE" = "200" ]; then OK=1; break; fi; sleep 1; done; [ -n "$OK" ] || { echo "e2e readiness probe never returned 200 (last=$CODE)" >&2; kill $SRV 2>/dev/null; exit 1; }`,
   'wait $SRV',
 ].join(" && ");
 
