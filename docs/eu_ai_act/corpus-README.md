@@ -132,6 +132,139 @@ Appended without rewriting the contract above; cited receipts live under
 Corpus counts unchanged since first build: 113 articles, 1068 lines
 (re-verified 2026-10-06 by JSON parse).
 
+## Current status (W797 refresh, 2026-10-07)
+
+Appended without rewriting earlier sections; cited receipts live under
+`docs/sjira/v26.10.6/plans/`, each `test -f`-verified at write time.
+
+### Test-file inventory (real `ls test/eu_ai_act/`, 2026-10-07)
+
+The deepening wave added dedicated court files beyond the per-title suites.
+File → landing receipt (each path verified present):
+
+| File (`test/eu_ai_act/`) | Receipt |
+|---|---|
+| `art50_deepening_test.exs` (167 loc) | `w665-art50-deepening.md` |
+| `art15_deepening_test.exs` (273 loc) | `w667-art15-deepening.md` |
+| `art73_chain_deepening_test.exs` (308 loc) | `w669-art73-chain-deepening.md` |
+| `art86_rights_deepening_test.exs` (183 loc) | `w710-art86-deepening.md` |
+| `art99_enforcement_deepening_test.exs` (274 loc) | `w696-art99-deepening.md` |
+| `title_ii_deepening_test.exs` (371 loc) | `w691-title-ii-deepening.md` |
+| `counterfactual_deepening_test.exs` (311 loc) | `w692-counterfactual-deepening.md` |
+| `eyerun_wire_deepening_test.exs` (170 loc) | `w706-eyerun-wire.md` |
+| (pre-deepening) `counterfactual_test.exs` (1014 loc) | built in the W5xx corpus wave |
+
+Semantics-side courts (outside `test/eu_ai_act/`, real path check):
+
+- `test/xaas/semantics/declared_metrics_staleness_test.exs` (10 tests,
+  `@moduletag :eu_ai_act` at line 16) — `w697-declared-metrics-staleness.md`.
+  In scope for the `--include eu_ai_act` gate.
+- `test/xaas/semantics/refusal_atom_census_test.exs` (6 tests) —
+  `w713-refusal-census.md`. **Not** tagged `:eu_ai_act` (grep-verified: no
+  `@moduletag` in the file), so it does not run under the `--include
+  eu_ai_act` gate; run it by path. Cited here for inventory completeness.
+
+### Run command convention (MANDATORY)
+
+`:eu_ai_act` is on the default exclude list in `test/test_helper.exs`
+(`exclude: [..., :eu_ai_act]`, real grep 2026-10-07). Every invocation MUST
+pass `--include eu_ai_act`; a bare `mix test test/eu_ai_act` reports "All
+tests have been excluded", exit 0 — a **vacuous pass**. This exact failure
+was disclosed in `w666-ocel-egress-deepening.md` ("plain `mix test <file>`
+reports 'All tests have been excluded', exit 0 — that is a vacuous pass and
+was disclosed here, not counted"). Gate convention:
+
+```bash
+mix test test/eu_ai_act --include eu_ai_act --exclude eu_ai_act_open_gap
+# census run: drop the open-gap exclude (but see the tag-status note below)
+```
+
+### Gate counts (as of the W760 receipt)
+
+- `w760-gate.md`: `mix test test/eu_ai_act --include eu_ai_act --exclude
+  eu_ai_act_open_gap` → **1198/1200 passed, 2 failed** (exit 2, 57.2s);
+  census run (without the exclude) gave the identical set and totals.
+  W760 HEAD `a0723bf6`, staged working tree at gate time.
+- W778 verification receipt: **not landed** at this refresh (no
+  `w778-*.md` under `docs/sjira/v26.10.6/plans/`, real `ls`). The 1198/1200
+  figure is **as of the W760 receipt** and must be re-stamped when W778's
+  verification lands.
+- W760's two deterministic failures: F1 title_i_test.exs:547 (3.49, W679
+  orphaned court expectation vs. MALFUNCTION suppression) and F2
+  title_iii_test.exs:766 via deepen_kind/1:1032 (15.5.s3, self-refuting
+  staged test hunk, discarded triaged struct). Both court-side repairs,
+  enumerated in `w760-gate.md`.
+
+### Open-gap tag mechanism status
+
+- **W760 runtime-inert finding**: the `@moduletag :eu_ai_act_open_gap`
+  declarations exist in source (title_i_test.exs:575, title_iii_test.exs:1132,
+  title_vi_xiii_test.exs:803, title_iv_v_test.exs:446 — grep-verified at gate
+  time) but the tag **selects 0 tests at runtime**
+  (`--only eu_ai_act_open_gap` → "0 tests selected, 1200 excluded",
+  `w760-gate.md`). The gate convention is currently self-consistent (no open
+  gap silently excluded) but the tag-based census mechanism is inert.
+- W779 diagnosis receipt: **not landed** at this refresh (no `w779-*.md`,
+  real `ls`). Status stays "runtime-inert, undiagnosed pending W779"; re-stamp
+  this section when it lands.
+
+Corpus counts unchanged: 113 articles, 1068 lines.
+
+## Current status (W815 refresh, 2026-10-07)
+
+Appended without rewriting earlier sections; cited receipts `test -f`-verified
+at write time (`w760-gate.md`, `w779-opengap-tag.md` under
+`docs/sjira/v26.10.6/plans/`).
+
+### Typed open-gap census: exactly 1 — Art. 49(3)
+
+- **49.3 — deployer EU-database registration duty** (Art. 49(3): before
+  putting into service or using a high-risk AI system listed in Annex III,
+  the deployer must register itself and the system in the EU database). The
+  line binds xaas and is not evidenced; there is **no registration seam in
+  this repo** — the honest refusal shape is the flunk row itself, not an
+  invented closure. Its flunk row now **generates honestly** since W779's
+  scope fix (`w779-opengap-tag.md`): the IV+V generator's title-num filter
+  had silently dropped every Art. 49 line from generation, making the
+  `@open_gaps["49.3"]` declaration dead; the filter is removed, all 10 Art. 49
+  corpus lines bind (9 as NOT_APPLICABLE, 49.3 as the sole real OPEN_GAP row,
+  tagged `:eu_ai_act_open_gap`).
+- All other gap inventories are genuinely empty (Title I `@gap_details ==
+  %{}` since W648b; Title III `Lines.open_gaps/0` → `[]`; Titles VI–XIII
+  likewise). **One typed open gap (49.3) + zero others.** This corrects any
+  earlier "zero open gaps" reading (W760's "0 open gaps is real" — see the
+  tag-status note above, now superseded).
+
+### Census-vs-gate delta mechanism (verified)
+
+The census convention — green gate = `--include eu_ai_act --exclude
+eu_ai_act_open_gap`, census = same without the exclude — is now witnessed,
+not inert. Per `w779-opengap-tag.md` (real runs, pinned toolchain,
+`MIX_BUILD_ROOT=_build-laneW779`):
+
+| Run | Result |
+|---|---|
+| `--only eu_ai_act_open_gap` | 1 selected / 1347 excluded, flunks honestly (0/1) |
+| green gate (`--exclude eu_ai_act_open_gap`) | 1346/1347 passed, 1 excluded |
+| census (no exclude) | 1346/1348 passed |
+
+Delta: census total (1348) − green-gate total (1347) = **1 = the real
+open-gap count**. The two runs differ by exactly the tag-selected set — the
+invariant the census convention requires. The pre-W779 state (0 selected /
+1200 excluded) had the tag selecting nothing, so the delta carried no bits.
+
+### Totals re-stamp
+
+Green gate / census totals are now **1347/1348** (was 1200 at the W760
+receipt). Movement is additive and disclosed in `w779-opengap-tag.md`:
++10 from W779's Art. 49 scope fix (this lane's attributable change) and
++137 from other lanes' consolidation waves landed in the shared tree during
+W779 (present identically in its before/after runs). The one green-gate
+failure remains pre-existing F2 (`EUAI-ACT 15.5.s3`, title_iii_test.exs,
+owned by the W540/W623 lane) — unchanged, not repaired by W779 or W815.
+
+Corpus counts unchanged: 113 articles, 1068 lines.
+
 ## See Also
 
 - `docs/eu_ai_act/corpus.json` — the corpus itself

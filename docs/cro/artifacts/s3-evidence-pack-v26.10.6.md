@@ -146,3 +146,29 @@ HTTP 401 `{"error":"unauthorized",...}`.
   affidavit". No "<15 ms WASI gate" (no latency receipt). No "FRE 902(14)"
   (no backing artifact). Caremark case-law framing is rhetorical, out of
   technical-evidence scope.
+
+## 6. Post-consolidation refresh (W861, 2026-10-07)
+
+Added after the consolidation wave; every row's file existence verified
+(`test -f`, 2026-10-07, HEAD `a0723bf6`). Pre-refresh pack sha256
+`aaab08f9ba5aa8ebb8bc5832062f9c88a4a3ddd2dc4e22c1850bb78735985260`;
+post-refresh sha256 recorded in the W861 receipt
+(`docs/sjira/v26.10.6/plans/w861-evidence-pack-refresh.md`). The pack carries
+no internal aggregate hash; the only hash it carries is this file's own
+sha256, recomputed honestly at each refresh.
+
+| Wave | Evidence path | One-line description | Standing (from receipt) |
+|---|---|---|---|
+| w821 | `test/eu_ai_act/title_i_test.exs`, `test/eu_ai_act/title_iii_test.exs`, `test/eu_ai_act/title_iv_v_test.exs` | Terminal census 2: census-minus-gate delta equals the open-gap count across the EU-AI-Act suite — census certified terminal | ALIVE |
+| w778 | `test/eu_ai_act/title_i_test.exs`, `test/eu_ai_act/title_iii_test.exs` | Gate-fix verification: F1 coordinator repair VERIFIED as-found; F2 direction-inverted repair corrected forward; gate ALIVE | Gate ALIVE; F1 VERIFIED; F2 PARTIAL (corrected forward) |
+| w780 | `lib/xaas/actuation.ex`, `test/xaas/sa2a_computation_boundary_test.exs` | Claim-shaped authority guard closing XAAS-W763-G1: `:w763_measured_gap` test flipped to assert the typed refusal | ALIVE (lane-local, uncommitted) |
+| w786 | `priv/repo/migrations/20261007111457_add_ash_onetime_logical_partitions.exs` | ash_onetime logical-partition migration: partition column + delete-guard triggers on all three authority tables; round-trip 21 passed | ALIVE (per receipt verification ladder) |
+| w801 | `lib/xaas/governance/validations/audit_export_token_no_active_freeze_window.ex`, `test/xaas/governance/freeze_window_test.exs` | FreezeWindow minimal enforcement wiring closing GAP-D: primary suite 16/16 exit 0 | PARTIAL_ALIVE |
+| w836 | `test/xaas_web/health_court_test.exs`, `lib/xaas_web_web/controllers/health_controller.ex` | Health-endpoint contract court: 11/11 across two consecutive real runs | ALIVE |
+| w837 | `test/xaas_web/ts_codegen_drift_court_test.exs` | TS codegen drift court: 3/3 passed on exact subject; PARTIAL_ALIVE fallback documented in receipt | ALIVE |
+| w829 | `test/xaas_web/sensitive_resources_routing_court_test.exs`, `lib/xaas_web/router.ex` | Sensitive-resources routing court: 5/5 both runs on HEAD a0723bf6; one typed gap declared in receipt | Court ALIVE (receipt status PARTIAL_ALIVE, one typed gap) |
+
+Existence verification: 15/16 referenced paths present; 1 MISSING
+(`lib/xaas/platform/changes/route_orgs_custom_domain_approve.ex`) — deleted
+by a concurrent sibling lane, documented as such inside the w780 receipt
+itself; it is not evidence for any row above.

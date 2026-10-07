@@ -25,7 +25,7 @@ are sha256-identical at
 | w601 | xaas | `lib/xaas/semantics/airo_risk_mapping.ex` + test | emitted graph rdflib round-trip: 642 triples, 73 subject nodes | 7 passed | plans/w601-airo-mapping.md |
 | w602 | ggen-marketplace | `packs/ggen-platform-pack/ontology/airo.ttl` | rdflib 558; `marketplace.py validate` exit 0 (305 packs, 503 ontologies) | n/a (validate) | plans/w602-airo-marketplace.md |
 | w603 | gymact | `src/gymact/ontology/airo_risk_description.ttl` (5,353 B) | rdflib 7.6.0 structure court, real parse | 4 passed | plans/w603-gymact-airo.md |
-| w604 | autofde-lab | `ontology/airo_risk_description.ttl` (8,071 B) | pytest court, real rdflib parse; 8/8 cited paths on disk | 6 passed | plans/w604-autofde-airo.md |
+| w604 | autofde-lab | `ontology/airo_risk_description.ttl` (8,071 B) | pytest court, real rdflib parse; 7/7 distinct cited paths on disk (9 seeAlso triples, 2 dupes) | 6 passed | plans/w604-autofde-airo.md |
 | w605 | ash_a2a | `priv/ontology/ash_a2a_airo.ttl` (8,917 B) | ExUnit court; 11 RiskSources / 5 Controls / 5 Risks | 9 passed | plans/w605-ash-a2a-airo.md |
 | w614 | ggen | `docs/airo-risk-description.ttl` (8,306 B) + `scripts/check_airo.sh` | 618 triples after vocab union; 15/15 vocab terms; 5/5 cited paths | script PASS | plans/w614-ggen-airo.md |
 | w615 | wasm4pm | `tests/ontology/airo_risk_description.ttl` (8,511 B) | rdflib parse + structure court | 4 passed | plans/w615-wasm4pm-zcode-airo.md |
@@ -33,6 +33,8 @@ are sha256-identical at
 | w618 | ggen_igniter | `priv/airo_risk_description.ttl` (10,296 B) | 4-test court; every `airo:` term from fetched vocab; cited paths asserted | 4 passed | plans/w618-ggen-igniter-airo.md |
 | w625d | ash_r2rml | `priv/airo_risk_description.ttl` + `test/fixtures/airo_vocabulary_snapshot.ttl` | 6-test court; snapshot sha asserted == pin; full suite 1004/0/9 skipped | 6 passed (+1004 full) | plans/w625d-ash-r2rml-airo.md |
 | w634 | beam4pm | `priv/airo_risk_description.ttl` (14,146 B) | rdflib 179 triples; sha verified vs pin | 11 passed (8 court + 3 canary) | plans/w634-beam4pm-airo.md |
+| w645b/W680 | ex4pm | `priv/ontologies/airo_risk_description.ttl` (7,956 B, own-sha 766059ce…, risk-description instance) | rdflib 77 solo / 635 unioned with canonical vocab 6274d2d8…; W680 pin court | 9 passed (4 pin + 5 w645b) | plans/w680-ex4pm-airo-pin.md |
+| W682 | ash_pplan | `priv/airo_risk_description.ttl` (11,609 B, own-sha 5d28a105…, header pins canonical vocab 6274d2d8…) | committed at HEAD 7eeaaa1; W682 pin court (sha/structure/VIA-path/module-load pins) | 10 passed (6 pin + 4 w635 court) | plans/w682-ash-pplan-airo-pin.md |
 | w637 | ash_affidavit | `ontology/airo_risk_description.ttl` (12,084 B) | 4-test ExUnit court; path-exists assertions; vocab per w600 pin | 4 passed | plans/w637-affidavit-surface-airo.md |
 | w637 | ash_surface | `priv/airo_risk_description.ttl` (11,271 B) | 4-test ExUnit court after 57-file compile; path-exists assertions | 4 passed | plans/w637-affidavit-surface-airo.md |
 | w638 | ferroplan | `docs/airo-risk-description.ttl` (5,417 B) + `scripts/check_airo.sh` | 592 triples after vocab union; 15/15 vocab terms; 5/5 cited paths | script PASS | plans/w638-ferroplan-airo.md |

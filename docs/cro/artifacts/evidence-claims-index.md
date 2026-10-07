@@ -1,8 +1,9 @@
-# Evidence–Claims Index (lane W405)
+# Evidence–Claims Index (lane W405; refreshed W711, W855)
 
 Campaign v26.10.6 CRO-loop, honest-numbers directive. Subject: branch
-`feat/playwright-surface`, head `d1db2b03179975213c14663b9dbd86b5ac2a14cf`,
-repo `/Users/sac/xaas`. Date 2026-10-06.
+`feat/playwright-surface`. W405 audit at head `d1db2b03…` 2026-10-06;
+W711 refresh at head `a0723bf6` 2026-10-07; W855 refresh (rows 33–58) at
+head `a0723bf6` 2026-10-07. Repo `/Users/sac/xaas`.
 
 Method: every pitch number checked against the on-disk artifact named in the
 table. "Real" = number as stated in the receipt file, not the pitch copy.
@@ -23,6 +24,97 @@ table. "Real" = number as stated in the receipt file, not the pitch copy.
 | 10 | "62/62 refusal tokens" | `docs/sjira/v26.10.6/eu-ai-act-nist-coverage-map.md` (5 rows) + `refusal-ledger-v26.10.6.jcs.json` `"coverage":"62/62"`, w202 delta-0 recount, w236 capstone. | **BACKED** |
 | 11 | "86/0 capstone" | `docs/sjira/v26.10.6/plans/w236-refusal-capstone.md`: "Result: 86 passed", 12 files, 0 failures, per-file sum 86, subject `feat/playwright-surface` 2026-10-06. | **BACKED** |
 | 12 | InMail: "uninsurable balance-sheet liability", "specialist talent blackmail", Caremark/Marchand/McDonald's case law | Out of technical-evidence scope; no artifact in repo. | **UNBACKED** (typed: rhetorical/legal — not a measured claim; outside this index's falsifier scope, flagged only) |
+
+## Claims table — W711 refresh (rows added 2026-10-07)
+
+Each row written after reading the cited receipt in full; the "witnesses"
+column records what the receipt actually observes, not the wave's intent.
+
+| # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
+|---|---|---|---|---|
+| 13 | OS-21 totality closures: 4 adversarial-input classes typed-refused, not raised | `docs/sjira/v26.10.6/plans/w640-os21-verify.md` | Fuzz suite 9 passed exit 0 (lane build `_build-laneW640`); 5 independent escape-probe recipes (P1–P4b) each run twice, deterministic typed verdicts (`REFUSED_MALFORMED_MARGIN_INPUT`, `REFUSED_BIAS_THRESHOLD`, `REFUSED_ARITHMETIC_OVERFLOW`, `ok: :admitted` for opaque list leaf); no FunctionClauseError/Protocol.UndefinedError/badarith. LANDED **on lane build, uncommitted** | witnessed |
+| 14 | §4 OS register refresh (OS-1/15/16/19/21 status flips + OS-5 count correction) | `docs/sjira/v26.10.6/plans/w700-closure-plan-refresh.md` | Existence/grep spot-verification only (router.ex:202-228, w423 absent → OS-15 repoint, beam4pm 2,576 dirty files, release_audit.ex:14, fuzz-test marker, w665:77). **No test execution** in this receipt; the flips themselves rest on the underlying lane receipts (w640, w665, w600) | grep/existence |
+| 15 | AIRo wiring ledger verified 14/14 repos, 0 drift | `docs/cro/artifacts/airo-wiring-ledger-verification-w668.md` | Read-only + real execution across 14 repos: 14 artifact paths exist at exact byte sizes; 3 durable vocab copies sha256 == pin `6274d2d8…8469`; 14 TTLs parse under real rdflib; cited test counts grep-verified; ggen + ferroplan `check_airo.sh` executed PASS; xaas mapping+pin tests 14 passed/1 skipped exit 0. Ledger rows cite "@ HEAD" with no pinned SHA (recorded, not counted as drift) | witnessed |
+| 16 | ash_surface AIRo pin | `docs/sjira/v26.10.6/plans/w675-ash-surface-airo-pin.md` | New 3-group pin test executed at ash_surface `d55c576d`: standings valid?/validate! round-trips, REFUSED_* vocabulary contract, all VIA-cited paths re-derived from TTL exist. Ledger row confirmed, no drift | witnessed |
+| 17 | gymact AIRo pin | `docs/sjira/v26.10.6/plans/w677-gymact-airo-pin.md` | Real pytest via repo venv rdflib 7.6.0: TTL size bounded, structure asserted (AISystem/Deployer/3 Risks/3 RiskSources/mapping); 4 cited test files exist, 7 passed 2 skipped. Ledger row CONFIRMED CONSISTENT | witnessed |
+| 18 | autofde-lab AIRo pin ("8/8 cited paths") | `docs/sjira/v26.10.6/plans/w678-autofde-lab-airo-pin.md` | 6 pin tests + 6 court tests pass exit 0 at `2a3d064e`. **DRIFT (minor):** graph has **7** distinct `file:` seeAlso citations, not 8 — the literal count is wrong; all 7 exist, substance holds | witnessed + DRIFT (8→7 cited paths) |
+| 19 | ex4pm AIRo pin | `docs/sjira/v26.10.6/plans/w680-ex4pm-airo-pin.md` | ex4pm surface is real and committed (`priv/ontologies/airo_risk_description.ttl` 7,956 B sha `766059ce…`, own w645b court, 77 triples, 20 pinned terms, pin tests pass). **DRIFT (coverage):** `airo-wiring-ledger.md` contains **no ex4pm row at all** — "ex4pm CONSISTENT" is unsupported by the ledger text; ledger coverage gap, not a wiring defect | witnessed + DRIFT (no ledger row) |
+| 20 | wasm4pm AIRo pin | `docs/sjira/v26.10.6/plans/w681-wasm4pm-airo-pin.md` | Pin test executed at `32deb59f`: 8,511 B exact, real rdflib parse, 4 court tests re-run pass, all 5 cited paths resolve; TTL sha `b9316af2…` pinned. No drift | witnessed |
+| 21 | ash_pplan AIRo pin | `docs/sjira/v26.10.6/plans/w682-ash-pplan-airo-pin.md` | Surface real and committed at `7eeaaa16` (11,609 B, sha `5d28a105…`, w635 court, vocab pin matches). **DRIFT (coverage):** ledger has **no ash_pplan row**; receipt's own standing PARTIAL_ALIVE pending a coordinator ledger row | witnessed + DRIFT (no ledger row) |
+| 22 | zcode-cli AIRo pin | `docs/sjira/v26.10.6/plans/w683-zcode-cli-airo-pin.md` | New 5-test W683 court PASS at `eb97f76b`: 8,022 B exact, w356 contract shas recomputed in-test. Prior W615 bun court confirmed present, not re-run as gate. No drift | witnessed |
+| 23 | ash_r2rml AIRo pin | `docs/sjira/v26.10.6/plans/w685-ash-r2rml-airo-pin.md` | Pin test executed at `b86a6a66`: fixture sha256 == `6274d2d8…8469` byte-verbatim vocab pin; standing ALIVE on exact subject | witnessed |
+| 24 | ggen_igniter AIRo pin | `docs/sjira/v26.10.6/plans/w686-ggen-igniter-airo-pin.md` | `wc -c` 10,296 exact; sha `81ddec22…` pinned; 27 `airo:` terms all in AIRo 1.0 set asserted; VIA-cited pack paths exist; W618 court re-run 8 tests 0 failures. No drift | witnessed |
+| 25 | ggen-marketplace AIRo pin | `docs/sjira/v26.10.6/plans/w687-ggen-marketplace-airo-pin.md` | Pin court at `4bb5fbaf`: sha256 byte-identical to `6274d2d8…8469`, 558 triples via real rdflib, real `marketplace.py validate` subprocess exit 0 (305 packs/503 ontologies). CONSISTENT | witnessed |
+| 26 | ash_affidavit AIRo pin | `docs/sjira/v26.10.6/plans/w690-ash-affidavit-airo-pin.md` | 12,084 B exact; TTL sha `71d4f706…` newly pinned; 13 cited paths exist; every VIA-cited lib path resolves to a loadable module (`Code.ensure_loaded/1`; real module name `AshAffidavit.ABI` discovered). CONSISTENT | witnessed |
+| 27 | ggen AIRo pin | `docs/sjira/v26.10.6/plans/w695-ggen-airo-pin.md` | Pin test at `bc4d2390` against w614 ledger row + w668 verification row (618 triples = 60 bare + 558 vocab; script PASS; 15/15 vocab terms; 5/5 cited paths) | witnessed |
+| 28 | Refusal ledger 71-variant JCS refresh, coverage 71/71 | `docs/sjira/v26.10.6/plans/w705-ledger-refresh.md` + `docs/cro/artifacts/refusal-ledger-v26.10.6.jcs.json` | 8 new entries, each source receipt read first; array 63→71, counts.declared corrected (was stale 62), coverage "71/71", mutant kills 9→12, mutation runs 10→13; final sha256 `96d539c2…` re-encoded and reproduced twice post-write | grep/existence (ledger) + witnessed (cited kills w676/w703/w640/w653b/w659d) |
+| 29 | Margin hardening: malformed margin → typed refusal, not CaseClauseError | `docs/sjira/v26.10.6/plans/w676-margin-hardening.md` | Real pre-fix reproduction (string and fn margins → CaseClauseError); 1-guard fix in `robust_margin.ex`; 3 regression tests; mutation check: guard removal → 10/12 with 2 CaseClauseError, restored 37/37 green. Note: extreme-float dataset feature already typed-refused pre-lane; the W659e ArithmeticError was a test-helper defect, not a lib defect | witnessed |
+| 30 | IncidentReport :MALFUNCTION misclassification fix | `docs/sjira/v26.10.6/plans/w679-malfunction-fix.md` | Fix reuses `EuAiActAdmission.refusal_atoms/0` closed set; 3 regression tests (all 8 EUAIA atoms → `[:INFRINGES_UNION_LAW]` exactly; non-EUAIA refusal and bare `:error` → `[:MALFUNCTION]`); mutation A killed (8/9), mutation B over-broad exclusion also killed | witnessed |
+| 31 | Plug mount order: SyntheticMarkingPlug before EuAiActAdmissionPlug, courted | `docs/sjira/v26.10.6/plans/w703-plug-order-court.md` | 4/4 Chicago-style courts green via real `XaasWeb.Endpoint` pipeline: refused Art-5 POST is both refusal-enveloped and marked; **reorder mutation executed live** (test d, Plug.Conn level, endpoint unmutated) — halted refusal envelope ships UNMARKED, the kill observable test (c) pins at endpoint.ex:99-100 | witnessed |
+| 32 | diataxis doc counts reconciled to code (19 domains / 116 resources) | `docs/sjira/v26.10.6/plans/w689-diataxis-reconciliation.md` | Grep derivation in this tree: 19 `ash_domains` entries (config.exs:13-33) + 19 `use Ash.Domain` files; per-domain `resource(` counts sum to 116; both docs corrected (13/92 → 19/116, 6 missing domain rows added, stale duplicate table deleted) | grep |
+
+## Claims table — W855 refresh (rows added 2026-10-07, post-W711 landings)
+
+Each row written after reading the cited receipt in full. "Grade" reflects
+the receipt's own standing vocabulary, not the wave's intent.
+
+| # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
+|---|---|---|---|---|
+| 33 | Fresh full gate green after repairs (census 1347/1348) | `docs/sjira/v26.10.6/plans/w778-gate-fix-verify.md` | F1 coordinator repair verified as-found (503/503 title_i+iii); F2 coordinator repair was **direction-inverted** (expected newest-first from `Enum.reverse |> take(2)`) — W778 corrected forward; then full gate `--exclude eu_ai_act_open_gap` → **1347 passed, 1 excluded, 0 failures, exit 0** on `_build-laneW778`. Mid-run concurrent-lane lib edits disclosed; final runs on settled tree | witnessed |
+| 34 | Terminal census CERTIFIED (1347/1348, deterministic) | `docs/sjira/v26.10.6/plans/w821-terminal-census-2.md` | Two census runs (incl. open gap) identical: 1347/1348, 1 failed = the 49.3 `flunk/1` open gap (W779/W815 ledger), via its own explicit flunk — not a regression; green gate 1347/1-excluded exit 0; delta 1348−1347=1 = open-gap count exactly. Closes the certification W662/W650c could not make | witnessed |
+| 35 | Checkout `:return` open-checkout guard (closes W796 (c)) | `docs/sjira/v26.10.6/plans/w809-return-guard.md` | Guard reads status FRESH FROM DB (in-memory variant proven vacuous by a real 10/12 failing run), 12/12 deepening courts + 19 pre-existing return-suite tests green; mutation rationale: guard-drop mutant killed by error-tuple AND inventory asserts independently. **Uncommitted**, PARTIAL_ALIVE | witnessed |
+| 36 | Incident lifecycle guards (closes W793 gaps (a)/(b)) | `docs/sjira/v26.10.6/plans/w818-incident-guards.md` | `:resolved`-at-:create refused outright (guard (a) on :create); resolved→reopen refused via new `IncidentResolvedIsTerminal` on :update (guard (b)); 29/29 across deepening + migrated fixture; per-guard mutation falsifiers stated; 3 typed gaps (NO_RESOLVED_AT_GUARD, NO_POSTMORTEM_STATUS_GUARD, NO_CROSS_REFERENCE) pinned open, unfixed. ALIVE | witnessed |
+| 37 | SA2A route exclusions guard (bare binary refused) | `docs/sjira/v26.10.6/plans/w831-exclusions-guard.md` | Terminal `admit_field("exclusions", _)` catch-all after the `is_list` clause routes non-lists to typed `{:refused, {:invalid_field, "exclusions"}}`; pinned-gap test converted to refusal court; 25/25 ×2 green. Clause-ordering bug (shadowing valid lists, 7 failures) caught and fixed in-lane. **Uncommitted**, PARTIAL_ALIVE | witnessed |
+| 38 | SLA-credit path unfunded-platform fix (W785 overdraft exemption) | `docs/sjira/v26.10.6/plans/w835-sla-exemption.md` | Root cause: W785 exemption list omitted the one flow transferring FROM `platform:revenue:sla-credits`; fix adds `xaas_ledger.allow_overdraft` context to both SLA-credit change modules (`approval_sla_credit_apply_approve.ex`, `approval_patch_…`); 5/5 (was 3/5) + neighbors green, zero test-side exemptions. Closes the pre-existing RED W799 disclosed. **Uncommitted**, PARTIAL_ALIVE | witnessed |
+| 39 | Fresh full gate status post-~20 lanes | `docs/sjira/v26.10.6/plans/w760-gate.md` | Real gate run: `--warnings-as-errors` exit 1 (268 warnings, baseline tree-wide); 2 deterministic court-side failures typed (F1 orphaned W538 expectation vs W679 suppression; F2 self-refuting staged test discarding the triaged struct); census tag `:eu_ai_act_open_gap` inert at runtime (0 selected). Standing **BLOCKED** at time of writing — both failures subsequently repaired (W778, row 33) | witnessed (superseded by #33) |
+| 40 | Platform route-resource deepening (5 un-covered Route* resources) | `docs/sjira/v26.10.6/plans/w770-platform-deepening.md` | 14 new tests green (+26 pre-existing platform/authority, no regression): SystemActor gating on FeatureFlags/Secrets, cross-org refusals, RFC 1123 rule, certificate-secret rule, determinism, open reads. Honest typed gaps asserted in-file: approvals are vacuous pass-throughs (maker-checker half absent), no transition path on backups, RouteProjects dead-write | witnessed |
+| 41 | Ledger reversal deepening (compensating-transfer round trip) | `docs/sjira/v26.10.6/plans/w799-reversal-deepening.md` | 5 tests green: credit→compensating-reverse round trip, conservation, determinism; no reversal action exists (grep 0 hits — UNSUPPORTED(reversal-action-absent)); double-reverse refusal is **by sufficiency accident**, not a guard (disclosed); SLA-credit path RED pre-existing (3/5) attributed to W785's lane — since closed by W835 (row 38) | witnessed |
+| 42 | AshGraphql HTTP surface | `docs/sjira/v26.10.6/plans/w802-graphql-surface.md` | Typed finding: schema compiles (3 of 19 domains wired) but **serves no HTTP** — 0 route/plug/endpoint references (grep matrix reproduced); standing **UNSUPPORTED(graphql-http-surface)**, receipt-only, no invented tests | grep |
+| 43 | Org-resolution coverage adjudication (W769 gap vs W743 courts) | `docs/sjira/v26.10.6/plans/w812-org-resolution-coverage.md` | Adjudicated genuinely distinct; 6 new Chicago courts on the token-mint org-binding path: 20/20 green; two new typed findings (dangling `%Org{}` struct escapes re-lookup — DB FK is the backstop; plug downgrade branch structurally unreachable under FK restrict); mock gate `[]`. RESOURCE_ALIVE | witnessed |
+| 44 | AshTypescript RPC surface deepening | `docs/sjira/v26.10.6/plans/w813-rpc-surface-deepening.md` | 11 tests green (real router + pipeline + sandboxed Postgres): happy envelope, validate errors, action_not_found/missing_required_parameter, W723 auth floor (401/503 fail-closed), W636 repoint regression, determinism; corrected against real output through 6→11 iterations. Typed gaps: nil-actor reads are empty-set-scoped, not refused; RPC controller never sets an Ash actor. ALIVE | witnessed |
+| 45 | JSON:API content-negotiation court | `docs/sjira/v26.10.6/plans/w817-negotiation-court.md` | 16/16 ×2 (different seeds), full unauthenticated×incompatible-Accept matrix: 401 floor never 406 (W739/W299c ordering holds both scopes); Content-Type discipline SPLIT (application/json → AshJsonApi 415 document; text/plain → Plug.Parsers raised UnsupportedMediaTypeError first); happy cells assert `application/vnd.api+json` response header. ALIVE | witnessed |
+| 46 | closure-gates.yml verification | `docs/sjira/v26.10.6/plans/w826-closure-gates-verify.md` | Findings-only: YAML parses, 4 jobs, all step paths exist, receipt upload path self-consistent, action pins match ci_cd.yaml, advisory posture confirmed (`continue-on-error` on 3 legs, never required), superseded claims all true. External ggen pin unverifiable locally (UNKNOWN, mirrored from admitted ci_cd). ALIVE | grep/existence |
+| 47 | Doctest surface verification | `docs/sjira/v26.10.6/plans/w832-doctest-verify.md` | Real run ×2: **6 doctests, 6/6 passed** (WorkerEnv 2 + ProviderRecovery 5 prompts→6 registered; the whole lib doctest surface is 2 modules); semantics modules carry zero doctests; top-3 doctest candidates identified, findings-only (no lib edits). ALIVE | witnessed |
+| 48 | TS codegen drift court | `docs/sjira/v26.10.6/plans/w837-ts-drift-court.md` | Real `ash_typescript.codegen` executed in-process; byte-compare against tracked `assets/js/ash_rpc.ts` (12064 B) / `ash_types.ts` (33891 B) — IDENTICAL; determinism ×2; typed failures DRIFT_ASSET_STALE / NONDETERMINISTIC_CODEGEN; tracked artifacts untouched after runs. ALIVE | witnessed |
+| 49 | Priority e2e revalidation post-W752 | `docs/sjira/v26.10.6/plans/w842-e2e-revalidation.md` | Fresh playwright boot on port 4126: 24 passed / 1 designed `test.fixme` skip / 0 failed across 6 priority specs — W752's PARTIAL_ALIVE closes to ALIVE; W822 fresh-boot acceptance closed. Typed finding W842-F1 (config-class, pre-existing): tokened boot probe header word-splits to a header REMOVAL in `playwright.config.cjs:67` — not fixed, recorded for coordinator | witnessed |
+| 50 | Open-gap registration in corpus-README (Art. 49(3)) | `docs/sjira/v26.10.6/plans/w815-gap-registration.md` | Doc-only: exactly 1 typed open gap (49.3) registered; "zero open gaps" reading (W760) corrected in-place by pointer; census-vs-gate delta mechanism (1348−1347=1) witnessed with W779's runs copied verbatim; totals re-stamped 1347/1348 (was 1200). No test run by design | grep/existence |
+| 51 | ash-configuration.md GraphQL overclaim fix | `docs/sjira/v26.10.6/plans/w819-graphql-doc-fix.md` | Doc-only correction from W802 evidence: "compiles, not mounted", 3-of-19 domains wired, standing UNSUPPORTED(graphql-http-surface) — falsifier was W802's own greps, reproduced pre-edit. ALIVE (doc) | grep |
+| 52 | architecture-overview.md refresh | `docs/claude/diataxis/explanation/architecture-overview.md` via `docs/sjira/v26.10.6/plans/w827-arch-overview-refresh.md` | 12-row per-claim table: "eight lease verbs" **CORRECTED to 10** (code-counted in controller); Ultracode 8 resources, /a2a/v1 routing, plug ordering, raw-body paths, OcelEnvelope validation, A2A parse floor, card caching all added/verified against source file:line. PARTIAL_ALIVE (prose, read-verified, no execution) | grep |
+| 53 | Standing-vocabulary diataxis reference page | `docs/claude/diataxis/reference/standing-vocabulary.md` via `docs/sjira/v26.10.6/plans/w830-standing-vocab-page.md` | New page; every code citation read live at a0723bf6 (status gate 8-member vocabulary + 2 typed refusals, registry 5 UNKNOWN / 5 UNSUPPORTED rows, w768/w768-prior receipts). Self-declared PARTIAL_ALIVE by its own ALIVE-requires-execution law | grep |
+| 54 | kanban→xaas rename residue sweep | `docs/sjira/v26.10.6/plans/w839-kanban-residue.md` | Full grep sweep of lib/+config/: exactly 1 hit = historically accurate rename-commit comment (LEAVE, rewriting would make it false); zero stale text; `mix compile --force` exit 0. ALIVE | grep/existence |
+| 55 | ash_admin/ggen how-to verification | `docs/claude/diataxis/how-to/fix-ash-admin-and-use-ggen-for-codegen.md` via `docs/sjira/v26.10.6/plans/w841-ashadmin-howto-verify.md` | 10-row per-claim table: stale counts **CORRECTED** (7 core / 12+ → 17 of 19 domains carry the admin block; "other 5" → 17 modules), example block replaced verbatim from `lib/xaas/accounts.ex:1-16`; verify commands form-verified only (no server run, no build root) | grep |
+| 56 | Generated-surface census | `docs/sjira/v26.10.6/plans/w849-generated-surface-census.md` | 12 surfaces: 8 DRIFT-CHECKED (sha pin or byte-compare courts), 4 PROVENANCE-ONLY (`mcp_scope.ex`, library.manufacture, capital_census facts, ocel_envelope), 0 UNPINNED; registry guard is a sha256 pin court, not regen-and-compare — only the W837 TS court does real regen; P2-2 CI/regen leg open | grep |
+| 57 | Next Read case-study README verify/correct | `docs/case-studies/next-read/README.md` via `docs/sjira/v26.10.6/plans/w850-nextread-readme-verify.md` | 4 corrections + 1 new section: stale seeds.exs claim corrected to DevSeeds chain, `.spec.js`→`.spec.cjs`, W809 return-guard + courts section added; W796 count discrepancy resolved receipt-wins (11/11, not the brief's 11/12); W838 marked in-flight, count not invented. PARTIAL_ALIVE (doc-only) | grep |
+| 58 | ERRC ELIMINATE-10 rationale refresh (fleet, ggen-marketplace) | `/Users/sac/ggen-marketplace/packs/xaas-castle-bridge-pack/ontology.ttl` via `docs/sjira/v26.10.6/plans/w756-errc-rationale-refresh.md` | Fresh grep derivation in xaas: **117** `Xaas.Resource` wrappers / **152** total `use Ash.Resource` / 19 domains (W754's 115/150 was itself copy-drift); single-line ontology edit, rdflib parse clean (332 triples), 12 ERRCDecision rows unchanged. **Uncommitted in ggen-marketplace**; `ggen sync` regeneration into xaas NOT run (coordinator-owned). ALIVE pack-level | witnessed + DRIFT (supersedes row 32's 116-resource count) |
+
+### DRIFT summary (W855)
+
+- #58 w756 vs row 32 (w689): W689 reconciled diataxis docs to **116** resources;
+  W756's fresh grep counts **117** `Xaas.Resource` wrapper resources (152 total
+  `use Ash.Resource`). RESOLVED (W855 follow-up, coordinator recount 2026-10-07):
+  the divergence is live-tree drift between two valid metrics — `resource(`
+  declarations across the 19 domain files counted **118** and `use Xaas.Resource`
+  wrapper files **115** at the same recount moment (the tree gains resources
+  continuously during the campaign). Both metrics are scope-valid; the shipped
+  docs should cite the metric they mean: W689's diataxis number = `resource(`
+  declarations; W756's pack rationale = `use Xaas.Resource` wrapper files. Re-grep
+  at use time; do not freeze either number into prose without a date stamp.
+- #39 w760's "0 open gaps is real" reading was itself corrected by W779/W815
+  (row 50): exactly 1 typed open gap (49.3). The gate convention was self-
+  consistent but the census mechanism was inert; totals moved 1200 → 1347/1348.
+- Uncommitted-landing caveat now spans #35 (W809), #37 (W831), #38 (W835),
+  #58 (W756, in ggen-marketplace) plus the prior W711 note — coordinator
+  integration still pending for all.
+
+### DRIFT summary (W711)
+
+- #18 w678: ledger's "8/8 cited paths" for autofde-lab is actually 7 distinct
+  citations (all exist — count error, substance holds).
+- #19 w680 / #21 w682: `airo-wiring-ledger.md` has no row for ex4pm or
+  ash_pplan, though both carry committed AIRo surfaces — ledger coverage gap;
+  the 14/14 verification (row 15) is over the ledger's own 14 repos only.
+- #14 w700: OS-21/OS-19 landings are on the uncommitted lane build at
+  a0723bf6 — coordinator integration still pending.
 
 ## Ship-list (use these wordings)
 
@@ -52,5 +144,28 @@ table. "Real" = number as stated in the receipt file, not the pitch copy.
 
 ## Counts
 
-BACKED 5 (#3, #8, #9, #10, #11) · BACKED-CORRECTED 3 (#2, #5, #6) ·
-UNBACKED 4 (#1, #4, #7, #12 — #12 scoped out as rhetorical).
+W405 original audit (rows 1–12): BACKED 5 (#3, #8, #9, #10, #11) ·
+BACKED-CORRECTED 3 (#2, #5, #6) · UNBACKED 4 (#1, #4, #7, #12 — #12 scoped
+out as rhetorical).
+
+W711 refresh (rows 13–32): witnessed 17 (#13, 15–27, 29–31 — of which
+3 carry a DRIFT annotation: #18, #19, #21) · grep/existence 3 (#14, #28
+ledger half — its kill evidence is witnessed in the source receipts — and
+#32).
+No row's receipt failed to support its claim outright; three DRIFT
+annotations (count off-by-one, two ledger coverage gaps) and one
+uncommitted-landing caveat (#13/#14, OS-19/OS-21) recorded above.
+
+W855 refresh (rows 33–58, post-W711 landings): witnessed 18 (#33, 34, 35,
+36, 37, 38, 39, 40, 41, 43, 44, 45, 47, 48, 49, 58 — of which #58 carries a
+DRIFT annotation vs row 32, and #39's BLOCKED standing is superseded by
+#33) · grep/existence 8 (#42, 46, 50, 51, 52, 53, 54, 55, 56, 57 — #42 is a
+grep-based typed UNSUPPORTED finding, #46/54 grep/existence with ALIVE
+standing, #50–53/55–57 doc-only lanes).
+Receipt-absent lanes skipped, not invented: **W840-check** (no
+`w840-*.md` in `docs/sjira/v26.10.6/plans/`) and **W854-check** (no
+`w854-*.md`). 26 receipts read in full; 26 rows added; no receipt diverged
+from its claim outright — one cross-row divergence (row 32's 116 vs W756's
+117 resources) recorded as DRIFT above.
+
+Total rows: 12 → 32 → 58.

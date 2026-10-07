@@ -181,6 +181,20 @@ provocation premise itself is dead, not the execution.**
 - `docs/cro/CYCLE-LOG.md` — cycle entries.
 - `docs/sjira/v26.10.6/eu-ai-act-nist-coverage-map.md` — clause-level evidence base.
 
+## Status / Changelog (pointer lines only — content lives in CYCLE-LOG.md)
+
+- **Last cycle**: `CYCLE-1-PREP` (2026-10-07) — `docs/cro/CYCLE-LOG.md`.
+  Consolidation wave W640–W780 prep: S3 evidence strengthened, S1/S2
+  refreshed in place; overall HOLD on terminal claims. Headline: 8 repairs
+  landed ALIVE (W676/W679/W708/W726/W732/W737/W739/W740; W746 NO_RECEIPT)
+  with 6 FMEA deltas and controls per `w781-wave-ledger-refresh.md`;
+  38 consolidation-wave rows tallied in §5 of `_CLOSURE_PLAN.md` per
+  `w798-closure-5-refresh.md`; cycle-log entry per
+  `w753-cycle-log-refresh.md`. Subject: `feat/playwright-surface` @
+  `a0723bf6` (uncommitted lane diffs; coordinator owns integration).
+- Next cycle open requires: operator picks target accounts (S1 precondition,
+  still unmet per CYCLE-1-PREP).
+
 ## Ship/Remove Annotations (w405 evidence-claims-index, 2026-10-06)
 
 The verbatim blocks above are operator source and are not edited in place.

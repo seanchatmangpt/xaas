@@ -268,3 +268,270 @@ any untagged failure in the honest census, flips this to residual.
 6. The 10 typed open gaps are the future-work inventory: 4.1, 8.1, FRIA
    schedule fields (27.1.b/27.1.e/27.1.f), Art 74 authority powers (74.12,
    74.13.a/b), Art 86.2/86.3 exceptions.
+
+## Terminal-3 (post-classification/flips/deepening)
+
+Lane W650b, 2026-10-07. Terminal-2 is stale for the W640s+: W608's 15 Art-56
+classifications, W648's 5 Art-74/86 classifications, W649b's 8.1 flip, W648b's
+ai-literacy/FRIA fields (in flight), and W616/W623/W626c deepening landed after
+its census. Everything below is re-derived from plan receipts + a fresh census
+run on this subject.
+
+### Lane inventory (complete, W500-W651; standing per receipt verdict lines)
+
+| lane(s) | standing | basis (receipt) |
+|---|---|---|
+| W500-W510 | ALIVE | Art 5/9/10/11/12/13/14/15 surfaces, WASI gate, ML-DSA signing receipts (w500-w510) |
+| W511 | PARTIAL | runner tail unfilled (carry-forward, unchanged) |
+| W512 | PARTIAL | final output unfilled (carry-forward, unchanged) |
+| W513, W514 | ALIVE | conformance pack, JCS |
+| W521-W526, W526b | ALIVE | Title generators + aggregation wiring (w521-w526b) |
+| W524b, W525b, W525d | ALIVE / PARTIAL / ALIVE | audit-chain integration; Title I suite green with open gaps (w525b); map sweep |
+| W527, W606, W611 | ALIVE | coverage audits: 0 uncovered corpus ids, 0 id-level duplicates |
+| W531, W532, W533, W534, W535, W536-W540 | ALIVE | Title II/III corpus loops + gap reductions (41→1 Art 9/13/14; 14 remaining Part 5 gaps typed) |
+| W538, W539, W540 | ALIVE | incident builder, automation-bias countermeasure, lifecycle metrics |
+| W543, W605, W622, W626b, W635 | ALIVE | aggregations 2/3/4/5/6 (real runs: 1035/1072 → 1068/1087 → 1100/1110 → ...) |
+| W545 | ALIVE | OCEL fitness, witnessed gate |
+| W546 | PARTIAL | fix + witness flip ALIVE; corpus run-log placeholder (carry-forward #1 stands) |
+| W547 | ALIVE | 13 gap flips, suite 37 → 24 |
+| W550, W624 | ALIVE | counterfactual harness 17+7 rows; one disclosed NOT_RUN (Art 9(2)(a)) |
+| W551 | PARTIAL | 6-mutant kill ledger PENDING (harness W550 ALIVE) |
+| W600-W605 | ALIVE | AIRo/AIRO vendor, mappings, marketplace, per-repo packs, aggregation-3 |
+| W607 | ALIVE | 3(49)+4.1 flips (5 lines), 4.1 honestly held open at the time |
+| W608 | ALIVE | 15 Art-56 lines typed NOT_APPLICABLE |
+| W609, W610 | ALIVE / GATED | oracle site closed; ash_pplan suite capture narrow-GREEN, load-gated |
+| W616, W623, W626c, W619 | ALIVE | deepening: Title II Art 5(1) partitions, Title III real-call bodies, IV-XIII real verdict strings |
+| W617 | ALIVE | property deepening |
+| W620-W621b, W625-W630 | ALIVE | OS fixes, admission fuzz, authority channel, master-equation check/soak (300/300) |
+| W625c | ALIVE | 9 Art-73 flips, file census 14 → 5 |
+| W630 | ALIVE | 4 fuzz escapes closed, total |
+| W631-W639 | ALIVE | rpc alignment, kanban/web drift, gettext, per-repo AIRO ledgers (W639 ledger byte-identical ×4) |
+| W645b | ALIVE | ex4pm AIRO ontology 15/15 (incl. W604 court + W609 canary) |
+| W646 | ALIVE | README refresh, receipt paths verified, corpus 1068 re-verified |
+| W647 | PARTIAL | semantics slice2: 229/232 green; 1 new convergence finding (F1 airo arm-order vs W657) + 2 out-of-slice failures (F2/F3, W705 lane) |
+| W648 | ALIVE | 5 Art-74/86 classifications (74.12, 74.13.a/b, 86.2, 86.3 → typed NOT_APPLICABLE); Title VI-XIII open-gap module generates zero tests; 476/476 |
+| W649 | PARTIAL | §5 refresh2: DoD 1-6 LANDED except DoD 4 clean-tree PENDING (coordinator); w551 mutant verdicts still open |
+| W649b | ALIVE | Art 8.1 flip to EVIDENCED (umbrella discharged by 36 evidenced children) |
+| W648b | IN FLIGHT | ai-literacy/FRIA fields — receipt on disk without a standing line; landing after this census |
+| W650 (terminal-2) | SUPERSEDED | terminal-2 census (10 open gaps) stale post-W648/W649b |
+| W651 | PARTIAL_ALIVE | README refresh; verified at run time, coverage audit stands at W611 0-uncovered |
+
+Counts: **ALIVE 44 lane groups (≈60 lanes), PARTIAL 6 (W511, W512, W546, W551,
+W647, W649), PARTIAL_ALIVE 1 (W651), IN FLIGHT 1 (W648b), SUPERSEDED 1
+(W650), BLOCKED 0.**
+
+### Terminal-3 typed open-gap census (real run, this subject)
+
+Command:
+```
+PATH=$HOME/.asdf/shims:$PATH MIX_ENV=test MIX_BUILD_ROOT=_build-laneW650b \
+  mix test --include eu_ai_act test/eu_ai_act/
+```
+Observation trail: first attempt failed compiling dep `:ash_a2a` in the fresh
+lane build root; `mix deps.compile ash_a2a` in-root, then rerun. Census tail
+(verbatim):
+```
+Finished in 15.3 seconds (15.3s async, 0.00s sync)
+
+Result: 1117/1119 passed
+Failed: 2 tests
+```
+Exit 2. **1117 passed / 2 failed / 0 excluded.** The zero-excluded result
+reflects the W648 + W649b flips: the prior 10 typed open gaps are now
+- 74.12, 74.13.a, 74.13.b, 86.2, 86.3 → typed NOT_APPLICABLE (w648),
+- 8.1 → EVIDENCED (w649b),
+- 4.1 and 27.1.b/27.1.e/27.1.f → W648b's contract (ai-literacy + FRIA fields),
+  landing after this census.
+
+The 2 failures are real, both on the `Xaas.Semantics.VulnerabilityLifecycle`
+REFUSED_LIFECYCLE_SKIP seam, with test files clean in the working tree:
+1. `test/eu_ai_act/counterfactual_test.exs:308` — `do(skip to respond from
+   DETECTED)` now returns `{:ok, :RESPONDED}` where the test asserts
+   `{:error, :REFUSED_LIFECYCLE_SKIP}`.
+2. `test/eu_ai_act/title_iii_test.exs:766` (W540 15.5.s3 deepen body) —
+   `respond(ticket, %{})` returns `:REFUSED_LIFECYCLE_EVIDENCE` where the test
+   asserts `:REFUSED_LIFECYCLE_SKIP`.
+Classification: seam-behavior regression on the committed lifecycle subject,
+not an EU-AI-Act corpus gap; both failing assertions predate this wave (no
+working-tree test edits touch them). Needs a coordinator-routed repair lane;
+until then the honest census is 1117/1119 with 2 typed seam failures, not a
+clean green-gate.
+
+### Carry-forward (terminal-3)
+
+1. (unchanged) Fill W546's corpus run-log placeholder before citing the corpus rerun.
+2. (unchanged) W511 runner tail + W512 final output unfilled before citation.
+3. (unchanged) Delete lane build roots at integration (cleanup law) — including
+   `_build-laneW650b`, minted for this census.
+4. (unchanged) Nothing committed by lanes — coordinator owns transitions/commits.
+5. W551's 6-mutant kill ledger + KillScore still PENDING (W649 confirms open).
+6. NEW: repair the VulnerabilityLifecycle REFUSED_LIFECYCLE_SKIP seam
+   regression (2 census failures above) — coordinator-routed repair lane.
+7. NEW: W647's F1 convergence finding (airo arm-order vs W657 test) + F2/F3
+   (W705 out-of-slice) need disposition.
+8. NEW: fold W648b's ai-literacy/FRIA flips into the next census after landing;
+   W649 §5 DoD 4 (clean tree) remains coordinator-gated.
+
+---
+
+## Terminal-4 (consolidation wave W640–W780; appended by lane W781, 2026-10-07)
+
+Subject: `/Users/sac/xaas` @ `a0723bf6`, branch `feat/playwright-surface`.
+Method: every standing below is re-read this lane from its receipt on disk
+(docs/sjira/v26.10.6/plans/); no row transcribed from memory. In-flight lanes
+marked IN_FLIGHT, not landed. No commit (lane contract).
+
+### Terminal-4 lane inventory (W640–W780; standing per receipt verdict lines)
+
+**Repairs (landed, ALIVE)**
+
+| lane | standing | basis (receipt) |
+|---|---|---|
+| W676 | ALIVE | margin hardening; typed refusals + mutation-killed regressions, 37/37 green final run (w676-margin-hardening.md) |
+| W679 | ALIVE | malfunction fix; 18/18 both files green, both mutants killed (w679-malfunction-fix.md) |
+| W708 | ALIVE | 7.3.x alignment; 9/9 composition + 476 existing, mutation-revert kill (w708-73x-alignment.md) |
+| W726 | ALIVE | witness constraint fix; 46 passed, 9 excluded (43 pre-existing + 3 new), constraint-mutation round-trip (w726-witness-constraint-fix.md) |
+| W732 | ALIVE | closure repair; all lane gates green on re-run (2 pre-existing ledger-count failures disclosed at uncommitted-tree state; 8 passed at HEAD) (w732-closure-repair.md) |
+| W737 | ALIVE | run-cycle index; 10/10 + 45, epoch.ex `custom_indexes` re-applied after overwrite — coordinator must retain the block at integration (w737-run-cycle-index.md) |
+| W739 | ALIVE | 406 leak fix; 16/16 held green before/after (w739-406-leak-fix.md) |
+| W740 | ALIVE | double-approve guard; 15/15 new, 51 across the approval surface, `mix compile` clean (w740-double-approve-guard.md) |
+| W746 | NO_RECEIPT | no receipt at docs/sjira/v26.10.6/plans/w746*.md — counted as not landed |
+
+**Repairs (in-flight)**
+
+| lane | standing | basis |
+|---|---|---|
+| W772 | IN_FLIGHT | no receipt on disk yet (docs/sjira/v26.10.6/plans/) |
+| W773 | IN_FLIGHT | no receipt on disk yet |
+| W780 | IN_FLIGHT | no receipt on disk yet |
+
+**Deepening courts (44 receipts with real green counts)**
+
+| lane | standing | green (from receipt) | receipt |
+|---|---|---|---|
+| W665 | ALIVE | 7/7 | w665-art50-deepening.md |
+| W666 | ALIVE | final run green (intermediates 4/6→5/6, fixed forward) | w666-ocel-egress-deepening.md |
+| W667 | ALIVE | 18/18 post-W676 (first run 15/18 on the then-defective margin module) | w667-art15-deepening.md |
+| W669 | ALIVE (PARTIAL_ALIVE→ALIVE on subject) | 8/8 isolated, two seeds (fleet run A 1144/1153) | w669-art73-chain-deepening.md |
+| W674 | ALIVE | 9/9 + 18/18 | w674-gymact-deepening.md |
+| W691 | PARTIAL_ALIVE | n/a (completeness 7/8 finding) | w691-title-ii-deepening.md |
+| W692 | ALIVE | 12/12 (first run 11/12, fixed forward) | w692-counterfactual-deepening.md |
+| W696 | PARTIAL_ALIVE | n/a (escalation chain verified; typed gaps) | w696-art99-deepening.md |
+| W698 | ALIVE | 8/8 new + 43 pre-existing (46 passed, 9 excluded) | w698-witness-deepening.md |
+| W699 | ALIVE | 9/9 | w699-a2a-v1-wire-deepening.md |
+| W704 | ALIVE | 7 + 5, exit 0 | w704-quiescent-deepening.md |
+| W710 | ALIVE | 4/4 | w710-art86-deepening.md |
+| W715 | ALIVE | 9/9 (cold-build first run also 9) | w715-conference-deepening.md |
+| W716 | ALIVE | courts a–d green; G1 typed gap (runtime-unavailable branch) | w716-ferroplan-bridge-deepening.md |
+| W717 | ALIVE | 10/10 sandbox-Postgres | w717-ultracode-deepening.md |
+| W718 | ALIVE (policy surface) | 5/5 | w718-persona-grant-deepening.md |
+| W720 | ALIVE | 8/8 | w720-runtime-config-court.md |
+| W721 | ALIVE | 8/8 (first run 6/8, fixed forward) | w721-ocel-deepening.md |
+| W722 | ALIVE | 9/9 | w722-governance-deepening.md |
+| W723 | ALIVE | 16/16 | w723-token-floor-court.md |
+| W724 | ALIVE | 10/10 | w724-temporal-deepening.md |
+| W725 | ALIVE | 4/4 real Bandit HTTP + Postgres | w725-webhook-deepening.md |
+| W727 | ALIVE (partial) | 15/15; one disclosed pre-existing lib-level BLOCK pinned in-test | w727-accounts-deepening.md |
+| W728 | ALIVE (lane-local) | 4/4 real plug pipeline + Postgres | w728-audit-log-deepening.md |
+| W729 | PARTIAL_ALIVE | 13/13 | w729-billing-deepening.md |
+| W730 | ALIVE | 12/12 | w730-security-deepening.md |
+| W731 | PARTIAL_ALIVE | 13/13 (projection surface as documented) | w731-graphlaw-deepening.md |
+| W733 | ALIVE | 17/17 (first run 13/17, fixed forward) | w733-marketplace-deepening.md |
+| W734 | ALIVE | 11/11 new + 21/21 pre-existing | w734-igniter-deepening.md |
+| W735 | ALIVE | 16/16 | w735-coupling-deepening.md |
+| W736 | ALIVE | 7/7; repo-wide g/1 traversal UNBUILT (typed gap) | w736-generation-deepening.md |
+| W738 | ALIVE on asserted surface | 10/10 | w738-ledger-deepening.md |
+| W741 | ALIVE | 14/14 | w741-sa2a-deepening.md |
+| W742 | ALIVE | 9/9 | w742-nextread-deepening.md |
+| W743 | ALIVE | 16/16 (first run 14/16, fixed forward) | w743-resolve-org-actor-deepening.md |
+| W744 | ALIVE | 15/15 | w744-zoe-deepening.md |
+| W745 | PARTIAL_ALIVE | 15/15 (+87 full fabric file) | w745-execution-fabric-deepening.md |
+| W747 | ALIVE | 9/9 new + 5/5 pre-existing | w747-actuation-idempotency-deepening.md |
+| W748 | ALIVE | 8/8 (first run 6/8, fixed forward) | w748-workbench-deepening.md |
+| W764 | PARTIAL_ALIVE | 5/5; one typed gap | w764-forwarder-deepening.md |
+| W765 | ALIVE | 11/11 | w765-export-token-deepening.md |
+| W766 | ALIVE | 4/4 | w766-nextread-live-deepening.md |
+| W767 | PARTIAL_ALIVE | 14/14 | w767-registry-deepening.md |
+| W771 | ALIVE | 10/10 | w771-export-deepening.md |
+
+**Docs lanes**
+
+| lane | standing | basis (receipt) |
+|---|---|---|
+| W671 | PARTIAL_ALIVE | semantics reference; corpus ids read not inferred (w671-semantics-reference.md) |
+| W689 | ALIVE | diataxis reconciliation; counts re-verified against this tree (w689-diataxis-reconciliation.md) |
+| W702 | ALIVE (verify lane) | 12 claims VERIFIED / 4 CORRECTED / 3 UNVERIFIABLE, marked in place (w702-telemetry-docs-verify.md) |
+| W712 | ALIVE | every claim file:line re-read at a0723bf6; page verified on disk post-edit (w712-actuation-doc-refresh.md) |
+| W714 | PARTIAL_ALIVE | xaas-local claims verified; sibling-repo claim UNVERIFIABLE, marked (w714-sa2a-docs-verify.md) |
+| W749 | ALIVE (docs lane) | 13-row VERIFIED table, no test run by design (w749-runtime-contract-refresh.md) |
+| W753 | ALIVE | cycle-log rows each trace to a receipt read this lane (w753-cycle-log-refresh.md) |
+| W754 | PARTIAL_ALIVE | page ALIVE as projection; generator-input F1 count drift open (w754-castle-bridge-verify.md) |
+| W756 | ALIVE (pack-level) | closes W754 F1 at upstream source; `ggen sync` into xaas not run (w756-errc-rationale-refresh.md) |
+| W759 | PARTIAL_ALIVE | every row path `test -f`-verified; JCS 71-variant count parse-verified (w759-manifest-refresh.md) |
+| W761 | ALIVE (docs lane) | static VERIFIED rows, Ash-level analogs verified; falsifier exists-not-executed (w761-howto-verify.md) |
+| W777 | PARTIAL_ALIVE | set-equality holds, 554 rows, 0 missing; anomaly 1 open finding (w777-index-refresh.md) |
+| W764-verify | (see deepening table) | docs-verify portion of w764-forwarder-deepening.md — no separate receipt |
+
+**Fleet pins**
+
+| item | standing | basis |
+|---|---|---|
+| AIRo fleet verdict 14/14 | RECEIPT ABSENT | w711-claims-index-refresh.md indexes the claim to w668; no w668 receipt on disk — treat as UNRECEIPTED claim, not landed standing |
+| w675 ash_surface | ALIVE | W637 court re-run 4/4 (w675-ash-surface-airo-pin.md) |
+| w677 gymact | ALIVE | row upgraded claimed→witnessed CONSISTENT (w677-gymact-airo-pin.md) |
+| w678 autofde-lab | ALIVE (pin) / PARTIAL_ALIVE (ledger row) | pin test exit 0; one count drift 8→7 (w678-autofde-lab-airo-pin.md) |
+| w680 ex4pm | ALIVE | main@46bfcc8 (w680-ex4pm-airo-pin.md) |
+| w681 wasm4pm | ALIVE | row w615 CONSISTENT (w681-wasm4pm-airo-pin.md) |
+| w682 ash_pplan | PARTIAL_ALIVE | real + pinned at exact subject, §6 suite unfilled (w682-ash-pplan-airo-pin.md) |
+| w683 zcode-cli | ALIVE | eb97f76b (w683-zcode-cli-airo-pin.md) |
+| w685 ash-r2rml | ALIVE | observed execution (w685-ash-r2rml-airo-pin.md) |
+| w686 ggen-igniter | ALIVE | feat/adr-0010-gate-convention (w686-ggen-igniter-airo-pin.md) |
+| w687 ggen-marketplace | ALIVE | 4bb5fbaff4ac (w687-ggen-marketplace-airo-pin.md) |
+| w690 ash_affidavit | ALIVE | sha256+byte+module pins at 8d90cc62 (w690-ash-affidavit-airo-pin.md) |
+| w695 ggen | ALIVE | observed (w695-ggen-airo-pin.md) |
+| (additional, outside the 12) w693 ferroplan | ALIVE | 8/8 pin tests at c0378768 (w693-ferroplan-airo-pin.md) |
+| w684 fail-closed check | ALIVE | both scripts fail-closed exit 1 (w684-check-airo-fail-closed.md) |
+| w673 wasm4pm serde pin | ALIVE | sibling subject 32deb59f (w673-wasm4pm-serde-pin.md) |
+
+### Terminal-4 totals
+
+Counted per lane group: **repairs 8 ALIVE landed (W676/W679/W708/W726/W732/
+W737/W739/W740), 1 NO_RECEIPT (W746), 3 IN_FLIGHT (W772/W773/W780); deepening
+courts 44 receipts — 37 ALIVE, 7 PARTIAL_ALIVE (W691/W696/W729/W731/W745/W764/
+W767); docs 12 lanes — 7 ALIVE, 5 PARTIAL_ALIVE (W671/W714/W754/W759/W777);
+fleet pins 12 per-repo — 9 ALIVE, 1 PARTIAL_ALIVE (w682), 2 mixed (w678, per
+ledger row), plus w693/w684/w673 additional ALIVE; AIRo 14/14 verdict
+UNRECEIPTED (w668 absent). BLOCKED 0; REFUSED 0.**
+
+### Terminal-4 carry-forward (coordinator)
+
+1. W772/W773/W780 land receipts or are re-dispatched; W746 needs a receipt or a
+   reclassification.
+2. w668 (AIRo 14/14) receipt missing — either produce it or downgrade the claim
+   in the evidence index (w711 row #18).
+3. Retain W737's `epoch.ex` `custom_indexes` block at integration.
+4. W648b ai-literacy/FRIA flips still to fold into the next census (Terminal-3
+   carry-forward 8, unchanged).
+5. W746-adjacent: VulnerabilityLifecycle REFUSED_LIFECYCLE_SKIP seam
+   disposition carried from Terminal-3 item 6 unless W746's absent receipt
+   covers it.
+
+### Batch execution status (W917, 2026-10-07)
+
+Facts from `docs/sjira/v26.10.6/plans/w916-receipt-gap-check.md`,
+`w891-gap-triage.md`, and `w914-triage-progress.md` (HEAD `a0723bf6`,
+`feat/playwright-surface`).
+
+Triage-execution lanes (in flight, per w916 and w914; receipts not on disk):
+
+| Lane | Row assignments (w891 top-10 order) |
+|---|---|
+| W897 | rows 29 (W804 dev migrate), 6 (W729 approve-idempotency), 1 (W665 kernel gap) |
+| W900 | rows 23 (W793 4-gap), 13 (W750-G1), 15 (W765 GAP-A) |
+| W902 | rows 19 (W770 vacuous approvals), 33 (W849 sha256 pins), 3 (W674-GAP-2), 25 (W796-G1) |
+
+Completed repair lanes all receipted (LANDED per w916): W840, W865, W886,
+W872, W845. W916 finding: zero NEEDS-MINT items — every COMPLETED lane in
+scope has a receipt file on disk; the 3 MISSING receipts (W897/W900/W902)
+are classified STILL-IN-FLIGHT. Register totals unchanged: 35 OPEN /
+5 REPAIRED / 2 TYPED-OPEN.

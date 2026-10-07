@@ -59,7 +59,9 @@ grep against this repo, not carried over from a prior description):
   `ReaderLive` — not a stubbed protocol handler. Ships with a disclosed authorization gap
   (self-asserted `as:<user_id>` actor claims, no cross-check against the caller's own
   identity) documented in the module's own `@moduledoc`.
-- Real seed data: `priv/repo/seeds.exs` seeds `Xaas.Library.Book` rows for `/next-read`
+- Real seed data: `priv/repo/seeds.exs` delegates to `Xaas.DevSeeds.run()`
+  (`lib/xaas/dev_seeds.ex`), whose fixture chain includes idempotent
+  `get_or_create_library_books/0` rows for `/next-read`
   (`IO.puts("Seeded #{length(fixtures.library_books)} Xaas.Library.Book row(s) for
   /next-read.")`).
 
@@ -104,7 +106,7 @@ real call currently fails and degrades to it.
 | LiveView UI | Real | `lib/xaas_web/live/next_read/reader_live.ex` |
 | ILS integration | ALIVE (fixture) / PARTIAL_ALIVE (SIP2, protocol-verified only) / UNSUPPORTED:missing-vendor-credentials (live vendor ILS) | `ILS-AND-EXPLANATION-SUBSTITUTION.md` |
 | LLM explanation generation | ALIVE (template) / PARTIAL_ALIVE (real Groq call attempted, failed with a real code defect — see below) | `ILS-AND-EXPLANATION-SUBSTITUTION.md` |
-| Playwright e2e coverage | Real | `e2e/next-read-ml.spec.js` |
+| Playwright e2e coverage | Real | `e2e/next-read-ml.spec.cjs` (renamed from `.js`, commit b71a3129) |
 
 ## Slide claims: real vs. scenario placeholder
 
@@ -137,7 +139,16 @@ score = w.collab*collab + w.semantic*semantic + w.gradeFit*gradeFit + w.availabl
   an auditable receipt, not a discarded computation.
 - Hold requests (`Xaas.Library.HoldRequest`) are real Ash-backed queue state, not a
   UI-only placeholder.
-- Verified end-to-end with Playwright browser tests (`e2e/next-read-ml.spec.js`).
+- Verified end-to-end with Playwright browser tests (`e2e/next-read-ml.spec.cjs`).
+- Circulation is guarded, not just decremented: `Checkout :return` refuses typed
+  (`Ash.Error.Changes.InvalidArgument` on `:status`) unless the checkout is OPEN —
+  status read fresh from the database in an `Ash.Changeset.before_action`
+  (`lib/xaas/library/checkout.ex:89-122`), closing the double-return /
+  return-of-never-borrowed inventory-inflation channel W796 proved open
+  (`docs/sjira/v26.10.6/plans/w809-return-guard.md`). Disclosed remaining gap:
+  there is still no per-student concurrent-checkout limit — one student can
+  borrow every copy of a book and any number of books
+  (`docs/sjira/v26.10.6/plans/w796-checkout-policy-deepening.md`, finding (a)).
 
 ## Interfaces Exposed
 
@@ -189,6 +200,18 @@ remaining, precisely-named gap).
 Full detail, scope, exact adapter boundaries, and the real (non-passing)
 `mix test test/xaas/library/` run this status is drawn from live in
 [`ILS-AND-EXPLANATION-SUBSTITUTION.md`](./ILS-AND-EXPLANATION-SUBSTITUTION.md#final-verification-pass-2026-09-09--real-state-per-resource).
+
+## Courts (v26.10.6)
+
+Real Postgres sandbox courts over the library surface (Chicago-style: real Ash
+actions, zero mocks), with pass counts from the named lane receipts:
+
+| Court | Count | Receipt |
+| --- | --- | --- |
+| Atomic borrow/return concurrency, DecrementBookInventory exactly-once, 6-factor RecommendationLog capture, Curation scoping | 9/9 | `docs/sjira/v26.10.6/plans/w742-nextread-deepening.md` |
+| Checkout circulation policy deepening (per-student limit absence pinned, hold auto-fulfillment, permissive-return bug-pinning) | 11/11 | `docs/sjira/v26.10.6/plans/w796-checkout-policy-deepening.md` |
+| `:return` open-checkout guard refusal courts (double return, never-borrowed, hold-queued, overdue-open) | 12/12 | `docs/sjira/v26.10.6/plans/w809-return-guard.md` |
+| PubSub publish-side topic-taxonomy courts (Book/Checkout/Curation documented topics, payload shapes, student-topic isolation) | 8 tests landed in `test/xaas/library/pubsub_publish_court_test.exs`; lane receipt not yet filed — counts pending W838's own receipt | `test/xaas/library/pubsub_publish_court_test.exs` (in-flight, lane W838) |
 
 ## See Also
 
