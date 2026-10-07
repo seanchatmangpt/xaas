@@ -299,7 +299,7 @@ defmodule Xaas.Operations.IncidentLifecycleDeepeningTest do
   # ---------------------------------------------------------------------------
 
   describe "(b) cross-resource integrity" do
-    test "GAP(NO_CROSS_REFERENCE): route-castle ledgers carry no incident reference and no relationship to Incident" do
+    test "W970b/W793 flip: the incident<->castle link now exists at the resource layer (Incident side only; ledgers stay untouched read-only projections)" do
       for module <- [RouteCastleDeploy, RouteCastleRun, RouteCastleSchedule, RouteCastleSunset] do
         attr_names =
           module |> Ash.Resource.Info.attributes() |> Enum.map(& &1.name)
@@ -310,12 +310,35 @@ defmodule Xaas.Operations.IncidentLifecycleDeepeningTest do
           module |> Ash.Resource.Info.relationships() |> Enum.map(& &1.name)
 
         refute Enum.any?(rel_names, &(&1 in [:incident, :incidents]))
-
-        incident_side =
-          Incident |> Ash.Resource.Info.relationships() |> Enum.map(& &1.name)
-
-        refute Enum.any?(incident_side, &(to_string(&1) =~ "castle"))
       end
+
+      # W970b repair: the Incident side now really carries the link
+      incident_rels =
+        Incident |> Ash.Resource.Info.relationships() |> Enum.map(& &1.name)
+
+      assert :castle_run in incident_rels
+
+      attr_names = Incident |> Ash.Resource.Info.attributes() |> Enum.map(& &1.name)
+      assert :castle_run_id in attr_names
+
+      # and the link is really writable through the real :update action
+      assert :castle_run_id in Ash.Resource.Info.action(Incident, :update).accept
+    end
+
+    test "W970b/W793 court: castle_run_id is really settable through :update and persists a real UUID value" do
+      incident = create_incident!(base_attrs())
+
+      castle_run_id = Ash.UUID.generate()
+
+      updated =
+        incident
+        |> Ash.Changeset.for_update(:update, %{castle_run_id: castle_run_id}, authorize?: false)
+        |> Ash.update!()
+
+      assert updated.castle_run_id == castle_run_id
+
+      assert %Incident{castle_run_id: ^castle_run_id} =
+               Ash.get!(Incident, incident.id, authorize?: false)
     end
 
     test "the real cross-resource coupling: lifecycle transition flips the ApprovalDrFailoverRequiresOpenIncident query outcome" do

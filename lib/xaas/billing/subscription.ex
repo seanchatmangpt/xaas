@@ -212,6 +212,11 @@ defmodule Xaas.Billing.Subscription do
     update :sync_from_stripe do
       accept([:stripe_subscription_id, :status, :current_period_end])
       require_atomic?(false)
+
+      # W897 (w729 UNSUPPORTED(lifecycle-state-machine) repair): refuse any
+      # non-admitted status edge (canceled is terminal). House idiom mirror
+      # of RunTransitionAllowed/ForwardOnlyTransition (W772).
+      validate(Xaas.Billing.Validations.SubscriptionStripeTransitionAllowed)
       change(Xaas.Billing.Changes.SubscriptionChargeOnActivate)
     end
 

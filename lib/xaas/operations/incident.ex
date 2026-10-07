@@ -174,8 +174,24 @@ defmodule Xaas.Operations.Incident do
         :resolved_at,
         :postmortem_root_cause,
         :postmortem_remediation,
-        :postmortem_status
+        :postmortem_status,
+        :castle_run_id
       ])
+    end
+  end
+
+  relationships do
+    # W970b (closing W793 GAP(NO_CROSS_REFERENCE)): the architecture's
+    # implied incident<->castle link now exists at the resource layer. A
+    # nullable reference to the route-castle run this incident is about (or
+    # that was actuated in response to it). The four route-castle ledgers
+    # stay read-only generated projections -- deliberately NOT touched --
+    # so the link is one-directional, owned by the Incident side.
+    belongs_to :castle_run, Xaas.Operations.RouteCastleRun do
+      public?(true)
+      attribute_public?(true)
+      attribute_writable?(true)
+      allow_nil?(true)
     end
   end
 

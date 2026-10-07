@@ -10,7 +10,20 @@
 defmodule Xaas.MixProject do
   use Mix.Project
 
-  @version File.read!("VERSION") |> String.trim()
+  # mix re-evaluates mix.exs on every invocation; an absent VERSION must
+  # refuse typed at boot, not crash untyped (File.Error) before any task runs.
+  version =
+    case File.read("VERSION") do
+      {:ok, contents} ->
+        String.trim(contents)
+
+      {:error, reason} ->
+        Mix.raise(
+          "REFUSED(mix_boot, detail: %{finding: \"required project boot input VERSION unreadable: #{inspect(reason)}\"})"
+        )
+    end
+
+  @version version
 
   def project do
     [
