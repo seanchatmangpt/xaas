@@ -1,7 +1,7 @@
 # Add a Real, Safe Read-Only JSON:API Route to an Ash Resource
 
 This guide walks through the real steps to expose a read-only `GET`/`index` JSON:API route
-on an existing Ash resource in this repo, using the pattern already applied to 44 of 49
+on an existing Ash resource in this repo, using the pattern already applied across the seven configured XaaS domains
 resources (see `lib/xaas_web/api_router.ex`'s moduledoc) and shown concretely by
 `lib/xaas/operations/capability_liveness_receipt.ex`.
 
@@ -103,7 +103,7 @@ files under `lib/xaas/**/*.ex`).
 Check whether the resource's domain module is already listed in
 `lib/xaas_web/api_router.ex`'s `domains:` list (`Xaas.Accounts`, `Xaas.Billing`,
 `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Marketplace`, `Xaas.Operations`, `Xaas.Platform` are already mounted).
-If the resource belongs to one of those 6 domains, no router change is needed — mounting a
+If the resource belongs to one of those 7 core domains, no router change is needed — mounting a
 domain does not itself expose anything; only resources with their own explicit
 `json_api do routes do ... end end` block are served.
 

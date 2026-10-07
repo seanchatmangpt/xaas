@@ -143,6 +143,88 @@ Worker use: `export PATH=$HOME/autofde-lab/.venv/bin:$PATH; mix xaas.sa2a.execut
 (exit 0 for `succeeded`/`replayed`; non-zero with a JSON `status` of `refused`, `blocked`,
 `forbidden` or `error`).
 
+## Sibling bridge: Ferroplan (pinned FOND/HTN planner WASM)
+
+`Xaas.Bridges.Ferroplan` is digest-verified access to the pinned `ferroplan-wasm`
+artifact (wasm32-wasip1, `fp_alloc`/`fp_call`/`fp_dealloc` JSON ABI) at the canonical
+path `../ferroplan/crates/ferroplan-wasm/registry/ferroplan_wasm.wasm` in the ferroplan
+sibling checkout. The registry lists it as a `:bridge` with standing `UNKNOWN`
+(`Xaas.Bridges.Registry`).
+
+- Digest pin: sha256 `088d9c3b0306e36123ddc1ee780ad7e9d4bd2ebb54f9726c43f40a2f6d718233`
+  (pin court, W45). The artifact is read from its canonical path and hashed before
+  anything else happens; a missing, unreadable, or mutated artifact is the same
+  fail-closed typed refusal `:ferroplan_artifact_digest_mismatch` — never a degraded
+  pass. `verify_bytes/1` is the exact gate.
+- Runtime seam: wasmex is reachable transitively (via `ash_graphlaw`), not declared in
+  xaas `mix.exs`. When no wasm runtime is loadable, the bridge stays digest-verified and
+  metadata-only, and every invoke returns the typed refusal
+  `:ferroplan_runtime_unavailable`. Other typed refusals: `:ferroplan_engine_compile_failed`
+  (pinned bytes did not compile) and `:ferroplan_abi_failure` (fp ABI transaction error).
+- Invoke path: the module is compiled once per verified digest (cached in
+  `:persistent_term`); each invoke instantiates a fresh WASI store + instance, speaks the
+  fp JSON ABI (request in, packed `(out_ptr << 32) | out_len` out, response freed via
+  `fp_dealloc`), 30s call timeout, WASI store limits (512 MiB memory).
+- Authority: bridges never authorize. `authority_ceiling` is `:none`, standing stays
+  `"UNKNOWN"` until a receipt from observed execution backs it. Entry points:
+  `metadata/0` (digest-verified metadata, no invocation), `validate/1` (the registry's
+  own `fond_validate` example as a smoke call), `invoke/1` (arbitrary op), each returning
+  a `Xaas.Bridges` envelope with `engine_sha256` provenance and an `evidence_ref`.
+
+## Gymact surface adapter (external DO, fail-closed config)
+
+`Xaas.Operations.GymactSurface` is a thin, fail-closed HTTP adapter over gymact's FastAPI
+surface:
+
+```elixir
+config :xaas, :gymact_surface, base_url: "http://127.0.0.1:8000"
+```
+
+with the bearer token from `token:` in the same config list or the `INTERNAL_API_TOKEN`
+environment variable (same bearer posture as `XaasWeb.Plugs.RequireInternalApiToken`).
+Every function is gated on that configuration BEFORE any HTTP call or ledger transition:
+unconfigured is the typed refusal `{:error, %Xaas.Actuation.Refusal{code:
+:gymact_not_configured}}`, never a best-effort default or string scraping.
+
+- Reads go straight to gymact: `health/0` (`GET /health`), `providers/0` (`GET
+  /providers`), `prepare_candidate/1` (`POST /candidates`), `open_episode/1` (`POST
+  /episodes`), `capabilities/1`, `verify/2`. `submit_action/2` is the canonical gymact DO
+  port (`POST /episodes/:id/actions/selected`); the payload is an opaque
+  court-manufactured gymact cut — the adapter never recomputes or forges cut digests and
+  never mints authority.
+- Consequential DO (`actuate/4`) never runs as a bare proxy: it runs the external
+  three-commit protocol — `Xaas.Actuation.prepare_external` (durable intent + prepared
+  receipt) -> gymact HTTP DO -> `Xaas.Actuation.seal_external` (durable outer seal) —
+  with a caller-supplied stable idempotency key (missing key →
+  `:idempotency_key_required`) and explicit authority evidence. `Xaas.Actuation.run/4`
+  itself is deliberately not used for the remote DO: external consequences cannot
+  lawfully pretend a Postgres rollback can undo a remote side effect. Local Ash
+  consequences keyed to a gymact subject route through `actuate_local/4`, a gated
+  `Xaas.Actuation.run/4` passthrough. `:actuate_status` is not touched by this module.
+- Transport: `Req`, bearer auth header, no retry, 15s receive timeout; non-2xx returns
+  `{:error, {:gymact_http_error, status, body}}`, transport failure
+  `{:error, {:gymact_transport_error, exception}}`.
+
+## AshA2A v1 protocol surface (`/a2a/v1`)
+
+The `/a2a` scope in `XaasWeb.Router` mounts `AshA2A.Protocol.Plug` additively at
+`/a2a/v1` (registered before the hex `A2A.Plug` `/` catch-all so the catch-all cannot
+shadow it), serving `XaasWeb.A2A.NextReadAshAgent` — an `AshA2A.Protocol.Agent` adapter
+over the SAME real skill surface as the legacy hex agent (`NextReadUserAgent` dispatch;
+generated card skills from `NextReadUserAgentSkills`). Surface: agent card at
+`GET /a2a/v1/.well-known/agent-card.json`, JSON-RPC at `POST /a2a/v1`, SSE at
+`POST /a2a/v1` `message/stream`. `base_url` honors `A2A_BASE_URL` (default
+`http://localhost:4000/a2a/v1`).
+
+Auth is gate-ordering: the scope's `:require_internal_api_token` stays the single auth
+floor (401s unauthenticated requests upstream of every plug path including SSE;
+`INTERNAL_API_TOKEN` absent config fails closed), and `AshA2A.Protocol.Plug.Auth` is
+deliberately left unconfigured on the mount — Auth is opt-in middleware, and a second
+auth stack would produce two different 401 shapes. The plug forwards
+`context.metadata["a2a.auth"] = nil`; the agent does its own explicit `as:<user_id>`
+persona-grant resolution inside message handling. (Pinned ash_a2a
+`86214551de93fc8ab395f5ed0b84d32922a5d99b`, v26.10.4.)
+
 ## Executable falsifiers
 
 `test/xaas/actuation_test.exs` exercises real Ash resources, real Reactor, and sandboxed Postgres. It asserts:

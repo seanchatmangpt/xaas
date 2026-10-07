@@ -11,7 +11,7 @@ why these choices were made, see the companion Explanation doc (`explanation/ash
 | Key | Value |
 |---|---|
 | `ecto_repos` | `[Xaas.LegacyRepo, Xaas.Repo]` |
-| `ash_domains` | `[Xaas.Library, Xaas.Accounts, Xaas.Billing, Xaas.Coupling, Xaas.Generation, Xaas.Governance, Xaas.Ledger, Xaas.Marketplace, Xaas.Ocel, Xaas.Operations, Xaas.Platform, Xaas.TemporalMemory, Xaas.Ultracode]` — 13 domains (`config/config.exs:13-27`, re-verified 2026-09-22) |
+| `ash_domains` | `[Xaas.Library, Xaas.Accounts, Xaas.A2a, Xaas.Billing, Xaas.Conference, Xaas.Coupling, Xaas.Generation, Xaas.Graphlaw, Xaas.Governance, Xaas.Igniter, Xaas.Ledger, Xaas.Marketplace, Xaas.Ocel, Xaas.Operations, Xaas.Platform, Xaas.Security, Xaas.TemporalMemory, Xaas.Ultracode, Xaas.Witness]` — 19 domains (`config/config.exs:13-33`, re-verified 2026-10-06) |
 | `ash_authentication` | `[return_error_on_invalid_magic_link_token?: true]` |
 | `base_resources` | `[Xaas.Resource]` |
 
@@ -55,12 +55,34 @@ custom_types: [
 | `:capability_class` | `Xaas.Governance.Types.CapabilityClass` | `lib/xaas/governance/types/capability_class.ex` — `use Ash.Type.Enum, values: [:observe, :select, :construct, :do]` |
 | `:interface` | `Xaas.Governance.Types.Interface` | `lib/xaas/governance/types/interface.ex` — `use Ash.Type.Enum, values: [:cli, :api, :mcp, :a2a]` |
 
-## The 13 real Ash domains and their extensions
+## The 19 real Ash domains and their extensions
 
-All 13 domains live directly under `lib/xaas/*.ex` (one file per domain), each
+All 19 domains live directly under `lib/xaas/*.ex` (one file per domain), each
 `use Ash.Domain, otp_app: :xaas, extensions: [...]`, each with `admin do show? true end`
 where extensions permit. Resource counts are read directly from each domain's real
-`resources do ... end` block (re-verified 2026-09-30 at HEAD fb5df43b; 98 resources total).
+`resources do ... end` block (re-verified 2026-10-06 at HEAD `d1db2b03`; 116 resources total).
+
+| Domain module | File | Extensions | Resource count |
+|---|---|---|---|
+| `Xaas.Library` | `lib/xaas/library.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshAi` | 7 |
+| `Xaas.Accounts` | `lib/xaas/accounts.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 5 |
+| `Xaas.A2a` | `lib/xaas/a2a.ex` | `AshAdmin.Domain` | 2 (`Xaas.A2a.Agent`, `Xaas.A2a.Task`) |
+| `Xaas.Billing` | `lib/xaas/billing.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 8 |
+| `Xaas.Conference` | `lib/xaas/conference.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 7 (`Event`, `Track`, `Session`, `Speaker`, `Sponsor`, `Attendee`, `Registration` — all Ets-backed) |
+| `Xaas.Coupling` | `lib/xaas/coupling.ex` | `AshAdmin.Domain` | 1 |
+| `Xaas.Generation` | `lib/xaas/generation.ex` | (none) | 1 |
+| `Xaas.Graphlaw` | `lib/xaas/graphlaw.ex` | `AshAdmin.Domain` | 2 (`Xaas.Graphlaw.EngineLimit`, `Xaas.Graphlaw.Capability`) |
+| `Xaas.Governance` | `lib/xaas/governance.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshPaperTrail.Domain`, `AshAdmin.Domain` | 28 |
+| `Xaas.Igniter` | `lib/xaas/igniter.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 2 (`Xaas.Igniter.PackManifest`, `Xaas.Igniter.RefusalCode`) |
+| `Xaas.Ledger` | `lib/xaas/ledger.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 4 |
+| `Xaas.Marketplace` | `lib/xaas/marketplace.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 3 |
+| `Xaas.Ocel` | `lib/xaas/ocel.ex` | `AshAdmin.Domain` | 5 |
+| `Xaas.Operations` | `lib/xaas/operations.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc`, `Xaas.Operations.ProjectMeasure.Extension` | 21 |
+| `Xaas.Platform` | `lib/xaas/platform.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 7 |
+| `Xaas.Security` | `lib/xaas/security.ex` | `AshAdmin.Domain` | 2 (`Xaas.Security.Finding`, `Xaas.Security.Posture`) |
+| `Xaas.TemporalMemory` | `lib/xaas/temporal_memory.ex` | (none) | 1 |
+| `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 8 |
+| `Xaas.Witness` | `lib/xaas/witness.ex` | `AshAdmin.Domain` | 2 (`Xaas.Witness.CertifiedReceipt`, `Xaas.Witness.VerificationKey`) |
 
 | Domain module | File | Extensions | Resource count |
 |---|---|---|---|
@@ -95,6 +117,24 @@ What the domains added since the original eight own:
   (`Run`, `Epoch`, `Receipt`, plus the five `CapitalCensus.*` resources
   `ExperienceCluster`, `Gap`, `Resolution`, `WorkOrder`, `Episode`; see `docs/ultracode/`).
 
+What the six domains added on `feat/playwright-surface` (v26.10.x convergence) own:
+
+- `Xaas.A2a` — A2A protocol surface as Ash resources (PW4):
+  `Xaas.A2a.Agent` and `Xaas.A2a.Task` (`lib/xaas/a2a.ex`, commit `bab0f861`).
+- `Xaas.Conference` — AGNTCon+MCPCon 2026 domain (XA1r): `Event`, `Track`, `Session`,
+  `Speaker`, `Sponsor`, `Attendee`, `Registration`, all Ets-backed private tables
+  (`lib/xaas/conference.ex`, commit `9fb8f020`).
+- `Xaas.Graphlaw` — graphlaw engine-registry surface as Ash resources (PW6):
+  `Xaas.Graphlaw.EngineLimit` and `Xaas.Graphlaw.Capability` (`lib/xaas/graphlaw.ex`,
+  commit `cb65ce7b`).
+- `Xaas.Igniter` — ggen_igniter surface catalog (PW7): `Xaas.Igniter.PackManifest` and
+  `Xaas.Igniter.RefusalCode` (`lib/xaas/igniter.ex`, commit `5fee7516`).
+- `Xaas.Security` — estate security posture domain (PW10): `Xaas.Security.Finding` and
+  `Xaas.Security.Posture` (`lib/xaas/security.ex`, commit `84099b8f`; domain registered in
+  `ash_domains` by `01f4838f`).
+- `Xaas.Witness` — certified-receipt witness surface (PW5); see
+  [Witness surface](#witness-surface-xaaswitness) below.
+
 ## Next Read Library Domain Specification (`Xaas.Library`)
 
 ### Resources
@@ -111,3 +151,37 @@ Exposed at `/mcp` via `AshAi.Mcp.Router`:
 - `:list_books` -> `Xaas.Library.Book.read`
 - `:books_by_grade_band` -> `Xaas.Library.Book.by_grade_band`
 - `:active_curations_for_grade` -> `Xaas.Library.Curation.active_for_grade`
+
+## Witness surface (`Xaas.Witness`)
+
+Added on `feat/playwright-surface` (PW5, commit `3508f427`). The authority for
+this surface is the code itself: `lib/xaas/witness.ex`,
+`lib/xaas/witness/catalog.ex`, `lib/xaas/witness/certified_receipt.ex`, and
+`lib/xaas/witness/verification_key.ex`. Domain extension: `AshAdmin.Domain`
+only — the domain is configured in `ash_domains` but is closed to HTTP (no
+router entry, not mounted in either JSON:API router; reachable through AshAdmin
+and direct Ash calls, not over the wire).
+
+Resources:
+
+- `Xaas.Witness.CertifiedReceipt` (`lib/xaas/witness/certified_receipt.ex`,
+  table `witness_certified_receipts`) — an immutable, signature-bearing
+  certified receipt over a subject. Payload fields (`subject`, `payload_hash_hex`,
+  `algorithm`, `signature_hex`, `verifying_key_hex`) are write-once at create
+  time; policies forbid every action except `:read`, create `:ingest`, and the
+  narrow `:record_verification` update, which refuses once `verified` is true
+  (verification results are also write-once). Algorithms: `es256`, `ed25519`,
+  `es256k`, `ml_dsa65`.
+- `Xaas.Witness.VerificationKey` (`lib/xaas/witness/verification_key.ex`) — a
+  registered verifying key (kid + algorithm + key material); registering the
+  same kid twice is refused by identity.
+- `Xaas.Witness.Catalog` (`lib/xaas/witness/catalog.ex`) — the context that
+  ingests affidavit's mutation-baseline JSON plus signing-surface metadata into
+  these resources and records verification results. Supported wire algorithms
+  additionally include `ES256K_RECOVERABLE` and `ML-DSA-65` aliases.
+
+E2E spec `e2e/witness.spec.cjs` (lane W1, v26.10.6) targets a read-only
+`/witness` LiveView; the route is mounted at `lib/xaas_web/router.ex:62`
+(`live("/witness", WitnessLive)`) and the LiveView is
+`lib/xaas_web/live/witness_live.ex`; the domain resources are real and
+AshAdmin-visible.

@@ -31,7 +31,7 @@ The real fix (visible in the shipped `lib/xaas_web/mcp_scope.ex`) was to not gen
 tools: [...], ...)`, and the moduledoc documents the real requirement instead — the consumer
 must define their own `pipeline :audit_mcp_tool_call do plug
 XaasWeb.Plugs.AuditMcpToolCall end` in their own `router.ex` (this repo's real one is wired at
-`lib/xaas_web/router.ex:37`) and reference it via `pipe_through`, rather than the template
+`lib/xaas_web/router.ex:49-50`) and reference it via `pipe_through`, rather than the template
 generating invalid code that pretends a macro body can inject a pipeline declaration from a
 `scope` call site.
 
@@ -62,7 +62,7 @@ purely-generated-file gate can see across the macro-expansion boundary.
 correct. Manually wire the generated macro into a real call site (a real router, a real
 module) and run `mix compile --warnings-as-errors` on **that** call site, not just on the
 generated file in isolation, before trusting the template. `XaasWeb.McpScope.mount/0` being
-actually `require`d and `import`ed at `lib/xaas_web/router.ex:113-114` and invoked inside a
+actually `require`d and `import`ed at `lib/xaas_web/router.ex:173-174` and invoked inside a
 real `scope "/mcp" do ... end` block is the concrete verification step that caught this
 exact defect class for this template.
 
@@ -119,7 +119,7 @@ capability row, not a one-off fix scoped only to this pack.
   `plug`-inside-`scope` limitation, and the real tool list.
 - `lib/xaas_web/a2a/next_read_user_agent_skills.ex` — the real generated A2A skills list and
   its regeneration command.
-- `lib/xaas_web/router.ex:37,113-114` — the real `pipeline :audit_mcp_tool_call` definition
+- `lib/xaas_web/router.ex:49-50,173-174` — the real `pipeline :audit_mcp_tool_call` definition
   and the real macro call site that verifies `mcp_scope.eex`'s output.
 - `~/ggen_igniter/lib/ggen_igniter/reactors/reconcile_reactor.ex` (`format_generated_content/2`,
   called from `render_target/3`) — the real in-process `Code.format_string!/1` auto-format

@@ -70,9 +70,12 @@ gated by `XaasWeb.Plugs.RequireInternalApiToken` — a real Bearer token check a
    `AshAi.Mcp.Router`, exposing read-only Library tools (`:list_books`,
    `:books_by_grade_band`, `:active_curations_for_grade`) to MCP clients; one audit row is
    written per request by `XaasWeb.Plugs.AuditMcpToolCall`.
-5. **Agent-to-Agent server** (`/a2a`): `POST /a2a/zoe-event` (ZOE event-simulation agent)
-   and `POST /a2a/` (`XaasWeb.A2A.NextReadUserAgent`) for multi-persona multi-turn
-   simulations.
+5. **Agent-to-Agent server** (`/a2a`): `POST /a2a/zoe-event` (ZOE event-simulation agent),
+   `POST /a2a/` (`XaasWeb.A2A.NextReadUserAgent`) for multi-persona multi-turn
+   simulations, and — v26.10.6 — `POST /a2a/v1` (`XaasWeb.A2A.V1TransportPlug` wrapping
+   `XaasWeb.A2A.NextReadAshAgent`, registered before the `/` catch-all). The scope's
+   `:require_internal_api_token` is the single auth floor; AshA2A's own `Plug.Auth` is
+   deliberately left unconfigured (see below).
 6. **GGen workbench** (`/api/workbench/ggen`): CONSTRUCT-only forward of bounded bundles
    and argv to a private Fly worker — no shell or cloud actuation authority.
 7. **General internal API**: `forward "/internal-api"` to
@@ -110,6 +113,31 @@ behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside d
   Reactor steps, generating immutable audit receipts and supporting transactional rollback.
   Worker-side consequential mutation additionally passes through the Ultracode lease kernel
   (`Xaas.Ultracode.Lease.actuate/2`) via the execution-fabric MCP `actuate` verb.
+- **External capability bridges** (v26.10.6) — three read/admit-shaped edges to sibling
+  systems, all registered in `Xaas.Bridges.Registry` (`lib/xaas/bridges/registry.ex`) with
+  `state: :bridge` and standing UNKNOWN until a court upgrades them:
+  - **ferroplan planner** — `Xaas.Bridges.Ferroplan` (`lib/xaas/bridges/ferroplan.ex`) calls
+    the ferroplan FOND/HTN planner through a sha256-pinned `ferroplan-wasm` artifact,
+    digest-verified at load (mismatch is the typed refusal
+    `:ferroplan_artifact_digest_mismatch`, never a degraded pass). SELECT-only: the wired
+    ops validate/plan, they never mutate a store; a missing runtime is the typed refusal
+    `:ferroplan_runtime_unavailable`.
+  - **gymact executable-world adapter** — `Xaas.Operations.GymactSurface`
+    (`lib/xaas/operations/gymact_surface.ex`), a fail-closed HTTP adapter over gymact's
+    FastAPI surface (`config :xaas, :gymact_surface`; unconfigured is the typed refusal
+    `:gymact_not_configured`, never a best-effort default). Reads go straight to gymact;
+    consequential DO runs the external three-commit protocol — `prepare_external` (durable
+    intent + prepared receipt) → gymact HTTP DO → `seal_external` — because a remote side
+    effect cannot pretend a Postgres rollback undoes it. Local Ash consequences keyed to a
+    gymact subject route through `actuate_local/4` (a gated `Xaas.Actuation.run/4`
+    passthrough); `:actuate_status` is not touched.
+  - **AshA2A v1 protocol surface** — `POST /a2a/v1` is served by `XaasWeb.A2A.V1TransportPlug`
+    fronting `XaasWeb.A2A.NextReadAshAgent` (`lib/xaas_web/a2a/next_read_ash_agent.ex`), a
+    `use AshA2A.Protocol.Agent` adapter over the shared hex-agent dispatch, supervised in
+    `lib/xaas/application.ex` like its legacy `NextReadUserAgent` sibling. The router
+    scope's `:require_internal_api_token` stays the single auth floor — AshA2A's own
+    `Plug.Auth` is left unconfigured — so the v1 card (`GET /a2a/v1/.well-known/agent-card.json`)
+    and JSON-RPC surface sit behind the same Bearer gate as the rest of `/a2a`.
 - **OCEL 2.0 telemetry** — every real Ash action emits an object-centric event correlated to
   its OpenTelemetry span (`lib/xaas/telemetry/`), rotation-bounded on disk and validated by
   the conformance court; the fabric's audit judges campaigns against it.

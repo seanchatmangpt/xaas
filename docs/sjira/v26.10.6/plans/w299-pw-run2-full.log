@@ -1,0 +1,576 @@
+[WebServer] Waiting for lock on the build directory (held by process 44297)
+[WebServer]      warning: module attribute @envelope_domain_tag was set but never used
+[WebServer]      │
+[WebServer]  312 │   @envelope_domain_tag "affidavit.crypto-trust-plane.v1"
+[WebServer]      │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[WebServer]      │
+[WebServer]      └─ lib/ash_affidavit/signing.ex:312: AshAffidavit.Signing (module)
+[WebServer] 
+[WebServer]     warning: redefining module Mix.Tasks.AshR2rml.Install (current version loaded from /Users/sac/xaas/_build/dev/lib/ash_r2rml/ebin/Elixir.Mix.Tasks.AshR2rml.Install.beam)
+[WebServer]     │
+[WebServer]   5 │ defmodule Mix.Tasks.AshR2rml.Install do
+[WebServer]     │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[WebServer]     │
+[WebServer]     └─ lib/mix/tasks/ash_r2rml.install.ex:5: Mix.Tasks.AshR2rml.Install (module)
+[WebServer] 
+[WebServer] Waiting for lock on the build directory (held by process 44123)
+[WebServer] ** (Mix) Could not start application xaas: Xaas.Application.start(:normal, []) returned an error: shutdown: failed to start child: XaasWeb.Endpoint
+[WebServer]     ** (EXIT) shutdown: failed to start child: {:ranch_embedded_sup, XaasWeb.Endpoint.HTTP}
+[WebServer]         ** (EXIT) shutdown: failed to start child: {:ranch_listener_sup, XaasWeb.Endpoint.HTTP}
+[WebServer]             ** (EXIT) shutdown: failed to start child: :ranch_acceptors_sup
+[WebServer]                 ** (EXIT) {:listen_error, XaasWeb.Endpoint.HTTP, :eaddrinuse}
+[global-setup] marketplace catalog written: /Users/sac/.cache/tmp/xaas-e2e-marketplace-catalog.json (13 packs)
+[global-setup] W55_SEED_OK: witness rows seeded
+
+Running 98 tests using 8 workers
+
+  ✓   5 e2e/ash-surface-client.spec.cjs:55:5 › ash_surface served projection › serves /surface_contract.json with 200 (46ms)
+  ✓   9 e2e/ash-surface-client.spec.cjs:55:5 › ash_surface served projection › serves /xaas_ash_surface_client.mjs with 200 (9ms)
+  ✓  10 e2e/ash-surface-client.spec.cjs:55:5 › ash_surface served projection › serves /ash_surface_runtime.mjs with 200 (5ms)
+  ✓  11 e2e/ash-surface-client.spec.cjs:71:3 › ash_surface served projection › surface_contract.json is machine-readable with generatorIdentity and manifestDigest (15ms)
+  ✓  12 e2e/ash-surface-client.spec.cjs:92:3 › ash_surface served projection › generated runtime .mjs compiles as valid JavaScript in the browser (110ms)
+  ✓  13 e2e/ash-surface-client.spec.cjs:122:3 › ash_surface served projection › generated client .mjs compiles as valid JavaScript in the browser (130ms)
+  ✓  14 e2e/execution-fabric.spec.cjs:29:3 › /internal-api/fabric authority ceiling › actuate is 403 REFUSED(authority_ceiling:actuate) with the env token (4.6s)
+  ✓   1 e2e/a2a-v1.spec.cjs:60:3 › A2A v1 surface (/a2a/v1) › agent card: 200 with required v1 fields (5.1s)
+  ✓   4 e2e/autofde-lab.spec.cjs:30:1 › autofde-lab dashboard renders real benchmark history panel (5.4s)
+  ✓   7 e2e/ash-admin-matrix.spec.cjs:52:1 › admin index renders: both real domains present in the admin chrome (5.5s)
+  ✓  15 e2e/execution-fabric.spec.cjs:52:3 › /internal-api/fabric authority ceiling › actuate without a token is fail-closed (401/503, typed body) (1.1s)
+  ✓  16 e2e/a2a-v1.spec.cjs:85:3 › A2A v1 surface (/a2a/v1) › agent card path rejects wrong method (405, Allow: GET) (1.1s)
+  ✓   8 e2e/chicago-pplan-deep.spec.cjs:52:3 › /chicago — layer drill-down (DrillDownLive) › renders the real subject and business outcome from the machine projection (6.6s)
+  ✓  17 e2e/autofde-lab.spec.cjs:55:1 › autofde-lab dashboard renders real webhook deliveries panel (1.2s)
+  ✓  19 e2e/execution-fabric.spec.cjs:74:3 › /internal-api/fabric authority ceiling › fabric probe is reachable with the env token and reports the actuate refusal in capabilities (770ms)
+  ✓  20 e2e/a2a-v1.spec.cjs:96:3 › A2A v1 surface (/a2a/v1) › refuses requests without a token (single auth floor) (767ms)
+  ✓   3 e2e/dev-routes.spec.cjs:37:1 › /dev/dashboard: Phoenix LiveDashboard renders its real home page (6.9s)
+  ✓  18 e2e/ash-admin-matrix.spec.cjs:84:1 › proven resource index renders read-only with its real table (1.6s)
+  ✓  24 e2e/a2a-v1.spec.cjs:114:3 › A2A v1 surface (/a2a/v1) › malformed JSON body -> JSON-RPC parse error -32700 (1.9s)
+  ✓  22 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: home (/) (2.3s)
+  ✓  26 e2e/ash-admin-matrix.spec.cjs:108:1 › second resource (Platform.WebhookDelivery) index renders read-only (3.3s)
+  ✓  27 e2e/a2a-v1.spec.cjs:129:3 › A2A v1 surface (/a2a/v1) › unknown method -> -32601 method not found (2.7s)
+  ✘  23 e2e/ggen-workbench.spec.cjs:47:5 › ggen workbench surface (token-gated) › typed auth refusal without token: /api/workbench/ggen/health (4.5s)
+  ✘   6 e2e/ash-admin-state-change.spec.cjs:26:1 › ash_admin: create a real CapabilityLivenessReceipt row and see it persist (11.3s)
+  ✘   2 e2e/ash-admin-destroy.spec.cjs:55:1 › ash_admin: destroy a real CapabilityLivenessReceipt row and see it genuinely gone (11.3s)
+  ✓  25 e2e/dev-routes.spec.cjs:71:1 › /admin: ash_admin mount renders under the dev server (5.0s)
+  ✓  28 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: next-read (/next-read) (3.1s)
+  ✓  21 e2e/chicago-pplan-deep.spec.cjs:77:3 › /chicago — layer drill-down (DrillDownLive) › renders exactly the 10 contract layers with UNKNOWN/CANDIDATE standings (6.0s)
+  ✘  31 e2e/ggen-workbench.spec.cjs:47:5 › ggen workbench surface (token-gated) › typed auth refusal without token: /api/workbench/ggen (1.2s)
+  ✓  32 e2e/internal-api.spec.cjs:33:3 › /internal-api token gate › refuses /internal-api/health without a token (fail-closed, typed body) (1.2s)
+  ✘  30 e2e/a2a-v1.spec.cjs:139:3 › A2A v1 surface (/a2a/v1) › message/send happy path -> result.task (shared hex-agent dispatch) (1.6s)
+  ✓  34 e2e/mcp-a2a.spec.cjs:51:3 › mcp surface › typed auth refusal without token on POST /mcp (1.7s)
+  ✓  29 e2e/ash-admin-matrix.spec.cjs:126:1 › record show panel renders read-only for a real persisted row (3.7s)
+  ✓  37 e2e/internal-api.spec.cjs:56:3 › /internal-api token gate › refuses /internal-api/ocel_summary with an invalid token (401, typed body) (1.6s)
+  ✓  38 e2e/ggen-workbench.spec.cjs:69:3 › ggen workbench surface (token-gated) › health with token: typed JSON + AsyncAPI service-desc Link header (1.3s)
+  ✓  39 e2e/a2a-v1.spec.cjs:167:3 › A2A v1 surface (/a2a/v1) › message/stream SSE smoke: at least one frame then close (1.3s)
+  ✓  33 e2e/marketplace.spec.ts:39:1 › (a) the pack table renders over the real ingested catalog (3.0s)
+  ✓  35 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: wd-fa case study (/case-studies/wd-fa) (2.8s)
+  ✓  40 e2e/mcp-a2a.spec.cjs:70:3 › mcp surface › with token: POST /mcp passes the real Bearer gate (not a 401/503 auth refusal) (1.5s)
+  ✓  43 e2e/ggen-workbench.spec.cjs:87:3 › ggen workbench surface (token-gated) › run with token: local admission fence refuses oversized argv as typed 422 REFUSED[ARGS_LIMIT] (997ms)
+  ✓  42 e2e/internal-api.spec.cjs:82:3 › /internal-api token gate › serves real health data with the env token (1.0s)
+  ✓  47 e2e/mcp-a2a.spec.cjs:101:3 › a2a surface › typed auth refusal without token on the agent card endpoint (718ms)
+  ✓  46 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: chicago drill-down (/chicago) (1.3s)
+  ✓  44 e2e/smoke.spec.cjs:5:1 › root page renders (1.5s)
+  ✓  48 e2e/ggen-workbench.spec.cjs:103:3 › ggen workbench surface (token-gated) › run with token: unsafe traversal path refused as typed 422 REFUSED[UNSAFE_PATH] (651ms)
+  ✓  36 e2e/chicago-pplan-deep.spec.cjs:112:3 › /chicago — layer drill-down (DrillDownLive) › selecting a layer opens its drill-down panel, then re-selecting swaps it (3.6s)
+  ✓  49 e2e/internal-api.spec.cjs:104:3 › /internal-api token gate › serves real OCEL summary data with the env token (736ms)
+  ✓  50 e2e/mcp-a2a.spec.cjs:112:3 › a2a surface › agent card with token: real A2A card fields from XaasWeb.A2A.NextReadUserAgent (615ms)
+  ✓  45 e2e/marketplace.spec.ts:60:1 › (b) searching "aaif" narrows to the matching real pack (2.1s)
+  ✓  52 e2e/sparql-proxy.spec.cjs:36:3 › /internal-api/sparql token gate › refuses the SPARQL proxy without a token (fail-closed, typed body) (792ms)
+  ✓  55 e2e/stripe-webhook.spec.cjs:42:3 › POST /webhooks/stripe › rejects a request with NO Stripe-Signature header (fail-closed, typed 400) (655ms)
+  ✓  53 e2e/ggen-workbench.spec.cjs:117:3 › ggen workbench surface (token-gated) › run with token: non-integer timeout refused as typed 422 REFUSED[INVALID_TIMEOUT] (782ms)
+  ✓  56 e2e/mcp-a2a.spec.cjs:141:3 › a2a surface › zoe-event agent card with token: zoe-event-simulation agent (836ms)
+  ✓  41 e2e/next-read-ml.spec.cjs:22:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › renders dual-persona layout with Student and Librarian views (3.2s)
+  ✓  59 e2e/stripe-webhook.spec.cjs:62:3 › POST /webhooks/stripe › rejects a garbage Stripe-Signature header (typed 400, before any Ash action) (776ms)
+  ✓  58 e2e/sparql-proxy.spec.cjs:61:3 › /internal-api/sparql token gate › refuses the SPARQL proxy with an invalid token (typed body) (780ms)
+  -  63 e2e/stripe-webhook.spec.cjs:87:3 › POST /webhooks/stripe › rejects a signature computed over a tampered body (typed 400)
+  -  65 e2e/stripe-webhook.spec.cjs:120:3 › POST /webhooks/stripe › accepts a real well-formed signature over the exact body (200, acked)
+  ✓  51 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: chicago seller (/chicago/seller) (2.9s)
+  ✓  57 e2e/marketplace.spec.ts:88:1 › (c) rendered pack count equals the ingested catalog pack count (2.3s)
+  ✓  60 e2e/system-deep.spec.cjs:51:1 › /system: renders the command center with real header content (2.4s)
+  ✓  64 e2e/sparql-proxy.spec.cjs:87:3 › /internal-api/sparql real query › answers a real SPARQL query with machine-readable results (4.0s)
+  ✓  54 e2e/chicago-pplan-deep.spec.cjs:158:3 › /chicago/seller — executive projection (SellerLive) › renders the executive header, narrative and authority over the committed executive JSON (5.6s)
+  ✓  67 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: marketplace pplan explorer (/marketplace-pplan) (4.5s)
+  ✓  69 e2e/system-deep.spec.cjs:75:1 › /system: the twelve questions all render with real answer values (4.5s)
+  ✓  70 e2e/zcode-cli-fabric.spec.cjs:77:3 › /internal-api/execution/mcp token gate › refuses /execution/mcp without a token (fail-closed, typed body) (5.5s)
+  ✓  72 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: marketplace catalog (/marketplace-catalog) (4.1s)
+  ✓  74 e2e/zcode-cli-fabric.spec.cjs:101:3 › /internal-api/execution/mcp token gate › refuses /execution/mcp with an invalid token (401, typed body) (879ms)
+  ✓  68 e2e/marketplace.spec.ts:109:1 › (d) pack detail fields (name / version / digest) render (9.0s)
+  ✓  73 e2e/system-deep.spec.cjs:98:1 › /system: layers table renders standing chips from the real vocabulary (4.2s)
+  ✓  61 e2e/wd-fa-cs2.spec.cjs:5:3 › WD Case Study 2 deterministic reference surface › proves KNOWN, PARTIAL, UNKNOWN and MachineExperience replay without an LLM (11.0s)
+  ✓  71 e2e/chicago-pplan-deep.spec.cjs:194:3 › /chicago/seller — executive projection (SellerLive) › renders 10 candidate cards, 2 successor cards, empty demonstrated list (6.6s)
+  ✓  75 e2e/full_surface.spec.ts:47:5 › PW8 full-surface journey › surface renders: system command center (dev routes) (/system) (832ms)
+  ✓  62 e2e/next-read-ml.spec.cjs:42:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › expands grounded 'Why this one?' explainability drawer with factor pill badges (11.3s)
+  ✓  79 e2e/full_surface.spec.ts:61:3 › PW8 full-surface journey › marketplace catalog renders packs (949ms)
+  ✓  77 e2e/system-deep.spec.cjs:137:1 › /system: running/obligations/capabilities/plans sections render real or typed-empty tables (1.3s)
+  ✓  78 e2e/chicago-pplan-deep.spec.cjs:256:3 › /chicago/seller — executive projection (SellerLive) › delivery state renders the committed UNKNOWN delivery numbers (1.5s)
+  ✓  81 e2e/full_surface.spec.ts:82:3 › PW8 full-surface journey › catalog search narrows results and clears back (1.2s)
+  ✓  76 e2e/zcode-cli-fabric.spec.cjs:131:3 › /internal-api/execution/mcp token gate › adversarial malformed bodies are typed JSON, never HTML (fail-closed) (2.6s)
+  ✘  85 e2e/zcode-cli-fabric.spec.cjs:172:3 › /internal-api/execution/mcp surface (with token) › initializes and lists the real lease/fabric tool set (36ms)
+  ✓  82 e2e/system-deep.spec.cjs:224:1 › /system: evidence sections render receipts, refusals, unknowns, OCEL, cases (1.4s)
+  ✘  87 e2e/zcode-cli-fabric.spec.cjs:204:3 › /internal-api/execution/mcp surface (with token) › unknown tool is a typed JSON-RPC tool error, never a silent success (34ms)
+  ✘  88 e2e/zcode-cli-fabric.spec.cjs:224:3 › /internal-api/execution/mcp surface (with token) › claim -> admit -> close -> sealed receipt read-back (or honest typed refusal) (32ms)
+  ✘  84 e2e/full_surface.spec.ts:117:3 › PW8 full-surface journey › full journey: catalog -> search -> detail -> back to catalog (1.1s)
+  ✘  86 e2e/system-deep.spec.cjs:327:1 › /system: Refresh button re-runs the read-only snapshot (state stays coherent) (1.1s)
+  ✘  80 e2e/next-read-ml.spec.cjs:64:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › librarian pin action dynamically updates curation and student card spotlight (3.4s)
+  ✘  66 e2e/witness.spec.cjs:109:3 › Witness certified-receipt surface › renders the read-only certified receipts table (1.1s)
+  ✘  89 e2e/next-read-ml.spec.cjs:91:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › executes student checkout, updates librarian metrics, and displays flash confirmation (1.1s)
+  ✘  91 e2e/next-read-ml.spec.cjs:127:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › executes 'Ask the Catalog' natural language semantic search and renders admitted candidates (1.1s)
+  ✘  92 e2e/next-read-ml.spec.cjs:147:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › switches between split, student-only, and librarian-only view modes (1.1s)
+  ✘  90 e2e/witness.spec.cjs:117:3 › Witness certified-receipt surface › renders real receipt rows when seeded, else the typed empty state (1.1s)
+  ✘  83 e2e/chicago-pplan-deep.spec.cjs:287:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › renders the ontology summary from the parsed TTL graph (16.1s)
+  ✘  94 e2e/chicago-pplan-deep.spec.cjs:296:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › stakeholder avatars render over the ontology people (1.1s)
+  ✘  95 e2e/chicago-pplan-deep.spec.cjs:308:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › domain filter narrows avatars to the selected domain (phx-change) (1.1s)
+  ✘  96 e2e/chicago-pplan-deep.spec.cjs:325:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › workflow inspector selects a step and swaps the detail panel (phx-click) (1.1s)
+  ✘  97 e2e/chicago-pplan-deep.spec.cjs:349:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › FinOps simulator recomputes KPIs when the pool slider changes (phx-change) (1.1s)
+  ✘  98 e2e/chicago-pplan-deep.spec.cjs:365:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › turtle viewer filters lines server-side (phx-change) (1.1s)
+  ✘  93 e2e/witness.spec.cjs:146:3 › Witness certified-receipt surface › at least the two deterministic seed rows are rendered (1.1s)
+
+
+  1) e2e/a2a-v1.spec.cjs:139:3 › A2A v1 surface (/a2a/v1) › message/send happy path -> result.task (shared hex-agent dispatch) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "TASK_STATE_COMPLETED"
+    Received: "TASK_STATE_WORKING"
+
+      157 |     expect(body.result.task).toBeTruthy();
+      158 |     expect(body.result.task.id).toBeTruthy();
+    > 159 |     expect(body.result.task.status.state).toBe("TASK_STATE_COMPLETED");
+          |                                           ^
+      160 |     const artifactParts =
+      161 |       body.result.task.artifacts?.[0]?.parts ??
+      162 |       body.result.task.artifact?.parts ??
+        at /Users/sac/xaas/e2e/a2a-v1.spec.cjs:159:43
+
+    Error Context: test-results/a2a-v1-A2A-v1-surface-a2a--347fb--shared-hex-agent-dispatch-/error-context.md
+
+  2) e2e/ash-admin-destroy.spec.cjs:55:1 › ash_admin: destroy a real CapabilityLivenessReceipt row and see it genuinely gone 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+      88 |   expect(beforeResponse.status()).toBe(200);
+      89 |   const beforeBody = await beforeResponse.json();
+    > 90 |   expect(beforeBody.data).toHaveLength(1);
+         |                           ^
+      91 |   const recordId = beforeBody.data[0].id;
+      92 |
+      93 |   // --- Real state-change action under test: destroy through ash_admin's
+        at /Users/sac/xaas/e2e/ash-admin-destroy.spec.cjs:90:27
+
+    Error Context: test-results/ash-admin-destroy-ash-admi-6801d-w-and-see-it-genuinely-gone/error-context.md
+
+  3) e2e/ash-admin-state-change.spec.cjs:26:1 › ash_admin: create a real CapabilityLivenessReceipt row and see it persist 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+      81 |   expect(apiResponse.status()).toBe(200);
+      82 |   const body = await apiResponse.json();
+    > 83 |   expect(body.data).toHaveLength(1);
+         |                     ^
+      84 |   expect(body.data[0].attributes.capability).toBe(CAPABILITY);
+      85 |   expect(body.data[0].attributes.status).toBe("ALIVE");
+      86 |   expect(body.data[0].attributes.subject).toBe("git:e2e-proof");
+        at /Users/sac/xaas/e2e/ash-admin-state-change.spec.cjs:83:21
+
+    Error Context: test-results/ash-admin-state-change-ash-0d437-eipt-row-and-see-it-persist/error-context.md
+
+  4) e2e/chicago-pplan-deep.spec.cjs:287:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › renders the ontology summary from the parsed TTL graph 
+
+    TimeoutError: page.waitForFunction: Timeout 15000ms exceeded.
+
+      34 | async function waitLiveViewConnected(page) {
+      35 |   await page.waitForLoadState("networkidle");
+    > 36 |   await page.waitForFunction(
+         |              ^
+      37 |     () => {
+      38 |       const root = document.querySelector("[data-phx-session]");
+      39 |       return !!root && root.classList.contains("phx-connected");
+        at waitLiveViewConnected (/Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:36:14)
+        at /Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:284:5
+
+    Error Context: test-results/chicago-pplan-deep--market-1d829-y-from-the-parsed-TTL-graph/error-context.md
+
+  5) e2e/chicago-pplan-deep.spec.cjs:296:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › stakeholder avatars render over the ontology people 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/marketplace-pplan
+    Call log:
+      - navigating to "http://localhost:4000/marketplace-pplan", waiting until "domcontentloaded"
+
+
+      281 | test.describe("/marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive)", () => {
+      282 |   test.beforeEach(async ({ page }) => {
+    > 283 |     await page.goto("/marketplace-pplan", { waitUntil: "domcontentloaded" });
+          |                ^
+      284 |     await waitLiveViewConnected(page);
+      285 |   });
+      286 |
+        at /Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:283:16
+
+    Error Context: test-results/chicago-pplan-deep--market-bc784-er-over-the-ontology-people/error-context.md
+
+  6) e2e/chicago-pplan-deep.spec.cjs:308:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › domain filter narrows avatars to the selected domain (phx-change) 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/marketplace-pplan
+    Call log:
+      - navigating to "http://localhost:4000/marketplace-pplan", waiting until "domcontentloaded"
+
+
+      281 | test.describe("/marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive)", () => {
+      282 |   test.beforeEach(async ({ page }) => {
+    > 283 |     await page.goto("/marketplace-pplan", { waitUntil: "domcontentloaded" });
+          |                ^
+      284 |     await waitLiveViewConnected(page);
+      285 |   });
+      286 |
+        at /Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:283:16
+
+    Error Context: test-results/chicago-pplan-deep--market-0be2e-selected-domain-phx-change-/error-context.md
+
+  7) e2e/chicago-pplan-deep.spec.cjs:325:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › workflow inspector selects a step and swaps the detail panel (phx-click) 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/marketplace-pplan
+    Call log:
+      - navigating to "http://localhost:4000/marketplace-pplan", waiting until "domcontentloaded"
+
+
+      281 | test.describe("/marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive)", () => {
+      282 |   test.beforeEach(async ({ page }) => {
+    > 283 |     await page.goto("/marketplace-pplan", { waitUntil: "domcontentloaded" });
+          |                ^
+      284 |     await waitLiveViewConnected(page);
+      285 |   });
+      286 |
+        at /Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:283:16
+
+    Error Context: test-results/chicago-pplan-deep--market-8c122-the-detail-panel-phx-click-/error-context.md
+
+  8) e2e/chicago-pplan-deep.spec.cjs:349:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › FinOps simulator recomputes KPIs when the pool slider changes (phx-change) 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/marketplace-pplan
+    Call log:
+      - navigating to "http://localhost:4000/marketplace-pplan", waiting until "domcontentloaded"
+
+
+      281 | test.describe("/marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive)", () => {
+      282 |   test.beforeEach(async ({ page }) => {
+    > 283 |     await page.goto("/marketplace-pplan", { waitUntil: "domcontentloaded" });
+          |                ^
+      284 |     await waitLiveViewConnected(page);
+      285 |   });
+      286 |
+        at /Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:283:16
+
+    Error Context: test-results/chicago-pplan-deep--market-26535--slider-changes-phx-change-/error-context.md
+
+  9) e2e/chicago-pplan-deep.spec.cjs:365:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › turtle viewer filters lines server-side (phx-change) 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/marketplace-pplan
+    Call log:
+      - navigating to "http://localhost:4000/marketplace-pplan", waiting until "domcontentloaded"
+
+
+      281 | test.describe("/marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive)", () => {
+      282 |   test.beforeEach(async ({ page }) => {
+    > 283 |     await page.goto("/marketplace-pplan", { waitUntil: "domcontentloaded" });
+          |                ^
+      284 |     await waitLiveViewConnected(page);
+      285 |   });
+      286 |
+        at /Users/sac/xaas/e2e/chicago-pplan-deep.spec.cjs:283:16
+
+    Error Context: test-results/chicago-pplan-deep--market-c40de-nes-server-side-phx-change-/error-context.md
+
+  10) e2e/full_surface.spec.ts:117:3 › PW8 full-surface journey › full journey: catalog -> search -> detail -> back to catalog 
+
+    Error: page.goto: net::ERR_EMPTY_RESPONSE at http://localhost:4000/marketplace-catalog
+    Call log:
+      - navigating to "http://localhost:4000/marketplace-catalog", waiting until "domcontentloaded"
+
+
+      116 |   // (d) the full journey: catalog -> search -> pack detail -> back to catalog
+      117 |   test("full journey: catalog -> search -> detail -> back to catalog", async ({ page }) => {
+    > 118 |     await page.goto("/marketplace-catalog", { waitUntil: "domcontentloaded" });
+          |                ^
+      119 |
+      120 |     const rows = page.locator("#pack-table tbody tr[id^='pack-row-']");
+      121 |     await expect(rows.first()).toBeVisible();
+        at /Users/sac/xaas/e2e/full_surface.spec.ts:118:16
+
+    Error Context: test-results/full_surface-PW8-full-surf-d15fe----detail---back-to-catalog/error-context.md
+
+  11) e2e/ggen-workbench.spec.cjs:47:5 › ggen workbench surface (token-gated) › typed auth refusal without token: /api/workbench/ggen/health 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected value: 406
+    Received array: [401, 503]
+
+      61 |         data: { args: ["--version"] },
+      62 |       });
+    > 63 |       expect([401, 503]).toContain(noAuthPost.status());
+         |                          ^
+      64 |       const postBody = await noAuthPost.json();
+      65 |       expect(["unauthorized", "internal_api_misconfigured"]).toContain(postBody.error);
+      66 |     });
+        at /Users/sac/xaas/e2e/ggen-workbench.spec.cjs:63:26
+
+    Error Context: test-results/ggen-workbench-ggen-workbe-f06ba-n-api-workbench-ggen-health/error-context.md
+
+  12) e2e/ggen-workbench.spec.cjs:47:5 › ggen workbench surface (token-gated) › typed auth refusal without token: /api/workbench/ggen 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected value: 406
+    Received array: [401, 503]
+
+      47 |     test(`typed auth refusal without token: ${route}`, async ({ request }) => {
+      48 |       const noAuth = await request.get(route, { headers: { Accept: "application/json" } });
+    > 49 |       expect([401, 503]).toContain(noAuth.status());
+         |                          ^
+      50 |       const body = await noAuth.json();
+      51 |       // Machine-readable typed refusal, never a string-scrape.
+      52 |       if (noAuth.status() === 401) {
+        at /Users/sac/xaas/e2e/ggen-workbench.spec.cjs:49:26
+
+    Error Context: test-results/ggen-workbench-ggen-workbe-7be2a-ut-token-api-workbench-ggen/error-context.md
+
+  13) e2e/next-read-ml.spec.cjs:64:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › librarian pin action dynamically updates curation and student card spotlight 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/next-read
+    Call log:
+      - navigating to "http://localhost:4000/next-read", waiting until "networkidle"
+
+
+      16 |   /** @param {import("@playwright/test").Page} page */
+      17 |   const gotoNextRead = async (page) => {
+    > 18 |     await page.goto("/next-read", { waitUntil: "networkidle" });
+         |                ^
+      19 |     await page.locator("[data-phx-main].phx-connected").waitFor({ state: "attached" });
+      20 |   };
+      21 |
+        at gotoNextRead (/Users/sac/xaas/e2e/next-read-ml.spec.cjs:18:16)
+        at /Users/sac/xaas/e2e/next-read-ml.spec.cjs:86:11
+
+    Error Context: test-results/next-read-ml-Next-Read-Qve-9b2e7--and-student-card-spotlight/error-context.md
+
+  14) e2e/next-read-ml.spec.cjs:91:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › executes student checkout, updates librarian metrics, and displays flash confirmation 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/next-read
+    Call log:
+      - navigating to "http://localhost:4000/next-read", waiting until "networkidle"
+
+
+      16 |   /** @param {import("@playwright/test").Page} page */
+      17 |   const gotoNextRead = async (page) => {
+    > 18 |     await page.goto("/next-read", { waitUntil: "networkidle" });
+         |                ^
+      19 |     await page.locator("[data-phx-main].phx-connected").waitFor({ state: "attached" });
+      20 |   };
+      21 |
+        at gotoNextRead (/Users/sac/xaas/e2e/next-read-ml.spec.cjs:18:16)
+        at /Users/sac/xaas/e2e/next-read-ml.spec.cjs:92:11
+
+    Error Context: test-results/next-read-ml-Next-Read-Qve-0cf4d-displays-flash-confirmation/error-context.md
+
+  15) e2e/next-read-ml.spec.cjs:127:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › executes 'Ask the Catalog' natural language semantic search and renders admitted candidates 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/next-read
+    Call log:
+      - navigating to "http://localhost:4000/next-read", waiting until "networkidle"
+
+
+      16 |   /** @param {import("@playwright/test").Page} page */
+      17 |   const gotoNextRead = async (page) => {
+    > 18 |     await page.goto("/next-read", { waitUntil: "networkidle" });
+         |                ^
+      19 |     await page.locator("[data-phx-main].phx-connected").waitFor({ state: "attached" });
+      20 |   };
+      21 |
+        at gotoNextRead (/Users/sac/xaas/e2e/next-read-ml.spec.cjs:18:16)
+        at /Users/sac/xaas/e2e/next-read-ml.spec.cjs:128:11
+
+    Error Context: test-results/next-read-ml-Next-Read-Qve-5f0f5-renders-admitted-candidates/error-context.md
+
+  16) e2e/next-read-ml.spec.cjs:147:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › switches between split, student-only, and librarian-only view modes 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/next-read
+    Call log:
+      - navigating to "http://localhost:4000/next-read", waiting until "networkidle"
+
+
+      16 |   /** @param {import("@playwright/test").Page} page */
+      17 |   const gotoNextRead = async (page) => {
+    > 18 |     await page.goto("/next-read", { waitUntil: "networkidle" });
+         |                ^
+      19 |     await page.locator("[data-phx-main].phx-connected").waitFor({ state: "attached" });
+      20 |   };
+      21 |
+        at gotoNextRead (/Users/sac/xaas/e2e/next-read-ml.spec.cjs:18:16)
+        at /Users/sac/xaas/e2e/next-read-ml.spec.cjs:148:11
+
+    Error Context: test-results/next-read-ml-Next-Read-Qve-c57e7-d-librarian-only-view-modes/error-context.md
+
+  17) e2e/system-deep.spec.cjs:327:1 › /system: Refresh button re-runs the read-only snapshot (state stays coherent) 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/system
+    Call log:
+      - navigating to "http://localhost:4000/system", waiting until "networkidle"
+
+
+      328 |   page,
+      329 | }) => {
+    > 330 |   await page.goto("/system", { waitUntil: "networkidle" });
+          |              ^
+      331 |
+      332 |   const digestBefore = await page
+      333 |     .getByTestId("state-digest")
+        at /Users/sac/xaas/e2e/system-deep.spec.cjs:330:14
+
+    Error Context: test-results/system-deep--system-Refres-5a6a2-pshot-state-stays-coherent-/error-context.md
+
+  18) e2e/witness.spec.cjs:109:3 › Witness certified-receipt surface › renders the read-only certified receipts table 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/witness
+    Call log:
+      - navigating to "http://localhost:4000/witness", waiting until "networkidle"
+
+
+      108 | test.describe("Witness certified-receipt surface", () => {
+      109 |   test("renders the read-only certified receipts table", async ({ page }) => {
+    > 110 |     await page.goto("/witness", { waitUntil: "networkidle" });
+          |                ^
+      111 |
+      112 |     const header = page.locator("h1");
+      113 |     await expect(header).toContainText("Certified Receipts");
+        at /Users/sac/xaas/e2e/witness.spec.cjs:110:16
+
+    Error Context: test-results/witness-Witness-certified--f8867-ly-certified-receipts-table/error-context.md
+
+  19) e2e/witness.spec.cjs:117:3 › Witness certified-receipt surface › renders real receipt rows when seeded, else the typed empty state 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/witness
+    Call log:
+      - navigating to "http://localhost:4000/witness", waiting until "networkidle"
+
+
+      116 |
+      117 |   test("renders real receipt rows when seeded, else the typed empty state", async ({ page }) => {
+    > 118 |     await page.goto("/witness", { waitUntil: "networkidle" });
+          |                ^
+      119 |
+      120 |     if (seedError !== null) {
+      121 |       // Honest degraded branch: attach the real seeding failure for the
+        at /Users/sac/xaas/e2e/witness.spec.cjs:118:16
+
+    Error Context: test-results/witness-Witness-certified--c41d7--else-the-typed-empty-state/error-context.md
+
+  20) e2e/witness.spec.cjs:146:3 › Witness certified-receipt surface › at least the two deterministic seed rows are rendered 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4000/witness
+    Call log:
+      - navigating to "http://localhost:4000/witness", waiting until "networkidle"
+
+
+      149 |       "W55 self-seeding could not run (dev-env mix blocked); see attached w55-seed-error.txt"
+      150 |     );
+    > 151 |     await page.goto("/witness", { waitUntil: "networkidle" });
+          |                ^
+      152 |
+      153 |     const rows = page.locator('[data-testid="witness-receipt-row"]');
+      154 |     expect(await rows.count()).toBeGreaterThanOrEqual(2);
+        at /Users/sac/xaas/e2e/witness.spec.cjs:151:16
+
+    Error Context: test-results/witness-Witness-certified--4f5da-stic-seed-rows-are-rendered/error-context.md
+
+  21) e2e/zcode-cli-fabric.spec.cjs:172:3 › /internal-api/execution/mcp surface (with token) › initializes and lists the real lease/fabric tool set 
+
+    Error: apiRequestContext.post: socket hang up
+    Call log:
+      - → POST http://localhost:4000/internal-api/execution/mcp
+        - user-agent: Playwright/1.63.0 (arm64; macOS 26.2) node/24.15
+        - accept: */*
+        - accept-encoding: gzip,deflate,br
+        - Authorization: Bearer dev-e2e-token
+        - content-type: application/json
+        - content-length: 58
+
+
+      172 |   test("initializes and lists the real lease/fabric tool set", async ({ request }) => {
+      173 |     const init = await (
+    > 174 |       await request.post("/internal-api/execution/mcp", {
+          |                     ^
+      175 |         headers: authHeaders(TOKEN),
+      176 |         data: { jsonrpc: "2.0", id: 1, method: "initialize", params: {} },
+      177 |       })
+        at /Users/sac/xaas/e2e/zcode-cli-fabric.spec.cjs:174:21
+
+    Error Context: test-results/zcode-cli-fabric--internal-05200--real-lease-fabric-tool-set/error-context.md
+
+  22) e2e/zcode-cli-fabric.spec.cjs:204:3 › /internal-api/execution/mcp surface (with token) › unknown tool is a typed JSON-RPC tool error, never a silent success 
+
+    AggregateError: apiRequestContext.post: connect ECONNREFUSED ::1:4000
+    connect ECONNREFUSED 127.0.0.1:4000
+    Call log:
+      - → POST http://localhost:4000/internal-api/execution/mcp
+        - user-agent: Playwright/1.63.0 (arm64; macOS 26.2) node/24.15
+        - accept: */*
+        - accept-encoding: gzip,deflate,br
+        - Authorization: Bearer dev-e2e-token
+        - content-type: application/json
+        - content-length: 101
+
+        at apiRequestContext.post: connect ECONNREFUSED ::1:4000
+        at /Users/sac/xaas/e2e/zcode-cli-fabric.spec.cjs:208:21
+
+    Error Context: test-results/zcode-cli-fabric--internal-3a983-rror-never-a-silent-success/error-context.md
+
+  23) e2e/zcode-cli-fabric.spec.cjs:224:3 › /internal-api/execution/mcp surface (with token) › claim -> admit -> close -> sealed receipt read-back (or honest typed refusal) 
+
+    AggregateError: apiRequestContext.post: connect ECONNREFUSED ::1:4000
+    connect ECONNREFUSED 127.0.0.1:4000
+    Call log:
+      - → POST http://localhost:4000/internal-api/execution/mcp
+        - user-agent: Playwright/1.63.0 (arm64; macOS 26.2) node/24.15
+        - accept: */*
+        - accept-encoding: gzip,deflate,br
+        - Authorization: Bearer dev-e2e-token
+        - content-type: application/json
+        - content-length: 147
+
+        at apiRequestContext.post: connect ECONNREFUSED ::1:4000
+        at /Users/sac/xaas/e2e/zcode-cli-fabric.spec.cjs:231:36
+
+    Error Context: test-results/zcode-cli-fabric--internal-1497b-ck-or-honest-typed-refusal-/error-context.md
+
+  23 failed
+    e2e/a2a-v1.spec.cjs:139:3 › A2A v1 surface (/a2a/v1) › message/send happy path -> result.task (shared hex-agent dispatch) 
+    e2e/ash-admin-destroy.spec.cjs:55:1 › ash_admin: destroy a real CapabilityLivenessReceipt row and see it genuinely gone 
+    e2e/ash-admin-state-change.spec.cjs:26:1 › ash_admin: create a real CapabilityLivenessReceipt row and see it persist 
+    e2e/chicago-pplan-deep.spec.cjs:287:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › renders the ontology summary from the parsed TTL graph 
+    e2e/chicago-pplan-deep.spec.cjs:296:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › stakeholder avatars render over the ontology people 
+    e2e/chicago-pplan-deep.spec.cjs:308:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › domain filter narrows avatars to the selected domain (phx-change) 
+    e2e/chicago-pplan-deep.spec.cjs:325:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › workflow inspector selects a step and swaps the detail panel (phx-click) 
+    e2e/chicago-pplan-deep.spec.cjs:349:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › FinOps simulator recomputes KPIs when the pool slider changes (phx-change) 
+    e2e/chicago-pplan-deep.spec.cjs:365:3 › /marketplace-pplan — ontology explorer (MarketplacePplanExplorerLive) › turtle viewer filters lines server-side (phx-change) 
+    e2e/full_surface.spec.ts:117:3 › PW8 full-surface journey › full journey: catalog -> search -> detail -> back to catalog 
+    e2e/ggen-workbench.spec.cjs:47:5 › ggen workbench surface (token-gated) › typed auth refusal without token: /api/workbench/ggen/health 
+    e2e/ggen-workbench.spec.cjs:47:5 › ggen workbench surface (token-gated) › typed auth refusal without token: /api/workbench/ggen 
+    e2e/next-read-ml.spec.cjs:64:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › librarian pin action dynamically updates curation and student card spotlight 
+    e2e/next-read-ml.spec.cjs:91:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › executes student checkout, updates librarian metrics, and displays flash confirmation 
+    e2e/next-read-ml.spec.cjs:127:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › executes 'Ask the Catalog' natural language semantic search and renders admitted candidates 
+    e2e/next-read-ml.spec.cjs:147:3 › Next Read Qvest Deck Experience & Dual-Persona Interface › switches between split, student-only, and librarian-only view modes 
+    e2e/system-deep.spec.cjs:327:1 › /system: Refresh button re-runs the read-only snapshot (state stays coherent) 
+    e2e/witness.spec.cjs:109:3 › Witness certified-receipt surface › renders the read-only certified receipts table 
+    e2e/witness.spec.cjs:117:3 › Witness certified-receipt surface › renders real receipt rows when seeded, else the typed empty state 
+    e2e/witness.spec.cjs:146:3 › Witness certified-receipt surface › at least the two deterministic seed rows are rendered 
+    e2e/zcode-cli-fabric.spec.cjs:172:3 › /internal-api/execution/mcp surface (with token) › initializes and lists the real lease/fabric tool set 
+    e2e/zcode-cli-fabric.spec.cjs:204:3 › /internal-api/execution/mcp surface (with token) › unknown tool is a typed JSON-RPC tool error, never a silent success 
+    e2e/zcode-cli-fabric.spec.cjs:224:3 › /internal-api/execution/mcp surface (with token) › claim -> admit -> close -> sealed receipt read-back (or honest typed refusal) 
+  2 skipped
+  73 passed (2.9m)

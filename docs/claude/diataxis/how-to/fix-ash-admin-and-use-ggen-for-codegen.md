@@ -10,7 +10,7 @@ drive `mix ash.gen.resource` from the project ontology instead of hand-invoking 
 
 `AshAdmin.Domain.show?/1` defaults to `false` (`deps/ash_admin/lib/ash_admin/domain.ex:47-49`).
 Adding the `AshAdmin.Domain` extension to a domain is not enough by itself — you must also
-add a real `admin do show? true end` block. Every one of this repo's 6 domains needed this
+add a real `admin do show? true end` block. Every one of this repo's 7 core domains (Marketplace included; ash_domains config now lists 12+) needed this
 fix (Accounts, Billing, Governance, Ledger, Operations, Platform). Example, from
 `lib/xaas/accounts.ex`:
 
@@ -86,7 +86,7 @@ off-screen mobile-drawer duplicate, plus the real desktop one. A plain
 `page.getByText("SomeResource")` or `page.getByRole("link", { name: /New/i })` locator
 matches both and Playwright's strict-mode click will fail or become ambiguous.
 
-Two real workarounds, both used in `e2e/ash-admin-state-change.spec.js`:
+Two real workarounds, both used in `e2e/ash-admin-state-change.spec.cjs`:
 
 1. **Prefer direct URLs** — `?domain=...&resource=...` are the real `href`s ash_admin's own
    links use, so navigating straight there sidesteps the duplicate-DOM issue entirely:
@@ -140,7 +140,7 @@ Other real details from that spec worth carrying into a new one:
   ```
 
 Run it with the server up separately (per the boot command in `CLAUDE.md` "Real commands" (the archived `docs/archive/ASH-MIGRATION-PLAN.md` is historical)) and
-`npx playwright test e2e/ash-admin-state-change.spec.js`.
+`npx playwright test e2e/ash-admin-state-change.spec.cjs`.
 
 ## Task 2: Drive Ash resource codegen from the ontology via ggen + Igniter
 
@@ -215,9 +215,9 @@ and `xar:domainModule`, then re-run `ggen sync` — no template or hook code nee
 - `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — the full real migration history: Phases 0-7 execution log,
   the ash_admin upstream-bug investigation and its later root-cause fix, and the
   `.ash-gen-receipts`/ggen porting decision in Phase 6.
-- `e2e/ash-admin-state-change.spec.js` — the real Playwright proof referenced throughout
+- `e2e/ash-admin-state-change.spec.cjs` — the real Playwright proof referenced throughout
   Task 1.
 - `templates-hooks/ash-gen-resource.txt.tmpl` — the real template referenced in Task 2.
 - `lib/xaas_web/router.ex` — the real `AshAdmin.Router` mount and `dev_routes` guard.
 - `lib/xaas/accounts.ex` (and the other 5 domain modules under `lib/xaas/`) — the real
-  `admin do show? true end` fix, applied identically across all 6 domains.
+  `admin do show? true end` fix, applied identically across all 7 core domains.

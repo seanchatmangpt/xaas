@@ -56,6 +56,7 @@ Reference pages not previously indexed:
 
 - [`reference/ex4pm-ontology-pin.md`](reference/ex4pm-ontology-pin.md) — config surface behind `Xaas.Ontology.Ex4pmStaleness` and `mix xaas.telemetry.check_ontology_staleness`.
 - [`reference/sa2a-computation-boundary.md`](reference/sa2a-computation-boundary.md) — SA2A computation boundary: runtime-neutral artifacts and candidate claims that cannot authorize actuation.
+- [`reference/generated-castle-bridge-errc.md`](reference/generated-castle-bridge-errc.md) — generated castle-bridge ERRC page (ggen sync projection; do not hand-edit).
 
 ## Case Studies
 

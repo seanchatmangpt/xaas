@@ -9,14 +9,19 @@ M=("seanchatmangpt/ggen-marketplace","f1c350b0b1dc732eb4d01cc5b66f186a6840849d")
 A=("seanchatmangpt/autofde-lab","2f4825a232bfea543764d13f3b75fcb0ff33da1f")
 G=("seanchatmangpt/gymact","4ab72e685302aa591f65fecad0ec73129ecd3589")
 COURTS=["compile","tests","chicago_no_mocks"]
-def wo(n,slug,title,repo,standing,desc,evidence,acceptance,falsifiers,dod,scope,deps=(),proj=("jira","verification","receipt"),courts=COURTS,ceiling="EXECUTED_VERIFIED"):
+# AC-04: a WorkOrder originates only from an admitted origin_authority pinned
+# by an sj:AuthorityTrustRoot of the canonical semantic-jira-pack ontology
+# (GgenIgniter.SemanticJira.admit_work_order/1 @required). Orders generated
+# without an explicit origin carry the pinned code-work authority by default.
+ORIGIN_AUTHORITY="https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority"
+def wo(n,slug,title,repo,standing,desc,evidence,acceptance,falsifiers,dod,scope,deps=(),proj=("jira","verification","receipt"),courts=COURTS,ceiling="EXECUTED_VERIFIED",origin_authority=ORIGIN_AUTHORITY):
     r,sha=repo
     return dict(n=n,slug=slug,md=dict(identity=f"SJ-{n:03d}",title=title,description=desc,subject=slug,repository=r,base_sha=sha,
       standing=standing,evidence_ceiling=ceiling,promotion_rule="verified_by_required_courts_then_receipted",
       replay_identity=f"sjira-v26.9.21-sj-{n:03d}",required_courts=courts,required_evidence=["command_exit_codes","real_output"],
       acceptance=acceptance,falsifiers=falsifiers,projections=list(proj),
       dependencies=[dict(upstream=f"SJ-{d:03d}",type="requiresReceipt") for d in deps],
-      authority_requirement="NONE",path_scope=scope,required_receipt_classes=["manufacture","verification"]),
+      authority_requirement="NONE",path_scope=scope,required_receipt_classes=["manufacture","verification"],origin_authority=origin_authority),
       evidence=evidence,dod=dod)
 W=[
 wo(1,"xaas-semantic-jira-e2e","xaas consumes a real Semantic Jira WorkOrder end to end",X,"PARTIAL_ALIVE",

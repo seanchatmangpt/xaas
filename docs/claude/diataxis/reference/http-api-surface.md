@@ -5,17 +5,22 @@ every resource with a real `json_api do routes do ... end end` block, the real a
 and the plain-JSON controller endpoints. Originally verified 2026-08-20; fully re-verified
 against `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
 `lib/xaas_web/internal_api_router.ex`, and grep sweeps over `lib/xaas/**/*.ex`
-(`base("/`, route verbs, `routes do`) on 2026-09-22.
+(`base("/`, route verbs, `routes do`) on 2026-10-06.
 
 ## Router topology
 
-`lib/xaas_web/router.ex` (re-verified 2026-09-22) defines these scopes:
+`lib/xaas_web/router.ex` (re-verified 2026-10-06) defines these scopes:
 
 - **Browser** (`pipe_through :browser`, unauthenticated): `GET /` (`PageController.home`),
-  the `GET /next-read` Next Read LiveView, and the WdFa case-study routes
+  the `GET /next-read` Next Read LiveView, the WdFa case-study routes
   (`router.ex:58-60`): `GET /case-studies/wd-fa` (`WdFa.CaseStudyLive`),
   `GET /case-studies/wd-fa/stogaf.json` (`WdFaStogafController.show`) and
-  `GET /case-studies/wd-fa/context/:case_id` (`WdFaContextController.show`).
+  `GET /case-studies/wd-fa/context/:case_id` (`WdFaContextController.show`), plus the
+  LiveViews added on `feat/playwright-surface` (`router.ex:61-64`):
+  `GET /chicago` (`Chicago.DrillDownLive`), `GET /chicago/seller` (`Chicago.SellerLive`),
+  `GET /marketplace-pplan` (`MarketplacePplanExplorerLive`) and
+  `GET /marketplace-catalog` (`MarketplaceCatalogLive` — the marketplace catalog surface
+  covered by the PW3 Playwright E2E, `e2e/marketplace.spec.ts`).
 - **`/webhooks`** (`:api` only — deliberately NOT behind the internal-api token, because
   Stripe is the caller and cannot supply it): `POST /webhooks/stripe`, authenticated by
   Stripe-signature verification inside `XaasWeb.StripeWebhookController`.
@@ -32,8 +37,12 @@ against `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
   :audit_mcp_tool_call]`): generated `XaasWeb.McpScope.mount()` forwarding to
   `AshAi.Mcp.Router` — read-only Library tools, one audit row per request.
 - **`/a2a`** (`[:api, :require_internal_api_token]`): `forward /zoe-event` to
-  `XaasWeb.A2A.ZoeEventPlug` (registered before the catch-all), then `forward /` to
-  `A2A.Plug` with `XaasWeb.A2A.NextReadUserAgent`.
+  `XaasWeb.A2A.ZoeEventPlug` (registered before the catch-all), `forward /v1` to
+  `XaasWeb.A2A.V1TransportPlug` (wrapping `AshA2A.Protocol.Plug`) with
+  `XaasWeb.A2A.NextReadAshAgent` (registered before the
+  catch-all; the scope token gate is the single auth floor — the plug's own
+  `Plug.Auth` is left unconfigured), then `forward /` to `A2A.Plug` with
+  `XaasWeb.A2A.NextReadUserAgent`.
 - **`/api/workbench`** (`[:api, :require_internal_api_token]`, before the `/api` forward):
   `GET /ggen/health` and `POST /ggen` — the CONSTRUCT-only GGen workbench forward to a
   private Fly worker; no shell or cloud actuation authority.
@@ -103,22 +112,36 @@ curl -H "Authorization: Bearer $INTERNAL_API_TOKEN" \
 
 `lib/xaas_web/api_router.ex` mounts `AshJsonApi.Router` for 7 domains:
 `Xaas.Accounts`, `Xaas.Billing`, `Xaas.Governance`, `Xaas.Ledger`, `Xaas.Marketplace`,
-`Xaas.Operations`, `Xaas.Platform` — of the 13 domains configured in `config/config.exs`
-(Library, Coupling, Generation, Ocel, TemporalMemory, and Ultracode are not mounted here;
+`Xaas.Operations`, `Xaas.Platform` — of the 19 domains configured in `config/config.exs`
+(Library, A2a, Conference, Coupling, Generation, Graphlaw, Igniter, Ocel, Security,
+TemporalMemory, Ultracode, and Witness are not mounted here;
 Library is served through the `/mcp` tools instead). Mounting a domain does not itself
 expose anything — only resources that declare their own
 `json_api do routes do ... end end` block are actually reachable.
 
-Recounted 2026-09-22 by the same grep method this doc has used before
+Recounted 2026-10-06 by the same grep method this doc has used before
 (`grep -rln 'base("/'` + route-verb sweeps over `lib/xaas/**/*.ex`):
 
-- **62** resources repo-wide declare a real `base(...)` path: **56 on `/api`**, **1 on
-  `/internal-api`** (`capability_liveness_receipts`), and **5 Library resources whose routes
-  are declared but whose domain is not mounted in either AshJsonApi router** (reachable via
-  `/mcp` tools and AshAdmin, not raw JSON:API).
-- **45 of the 56 `/api` resources expose a real mutation route** (`post(...)`,
+- **70** resources repo-wide declare a real `base(...)` path (up from 62 at the
+  2026-09-22 recount; `grep -rl 'base("/' lib/xaas | wc -l` = 70). By mount:
+  **58 belong to the seven `/api`-mounted domains** (Accounts 1, Billing 7, Governance 27,
+  Marketplace 3, Operations 13, Platform 7; Ledger declares no `base("/...")` route — its
+  route base is computed in code). Xaas.Operations is mounted on *both* AshJsonApi routers,
+  so those same 13 Operations resources also answer under `/internal-api` — including
+  `capability_liveness_receipts`, previously counted as the single `/internal-api` resource.
+  **5 Library resources** whose routes are declared but whose domain is not mounted in
+  either AshJsonApi router (reachable via `/mcp` tools and AshAdmin, not raw JSON:API).
+  **7 Conference resources** (new `approval`-free family added on this branch:
+  `/conference/events`, `/conference/tracks`, `/conference/sessions`, `/conference/speakers`,
+  `/conference/sponsors`, `/conference/attendees`, `/conference/registrations`) — declared
+  but the `Xaas.Conference` domain is not mounted in either JSON:API router, so these
+  routes are declared-but-unreachable over raw JSON:API (AshAdmin/Ets-backed only).
+  Families added since the 2026-09-22 recount: `approval_*` (billing/governance/operations),
+  `castle_verb_*` / `route_castle_*`, `route_*`, `marketplace/approval_provider_status_change`,
+  and the `conference/*` family.
+- **52 of the 70 resources expose a real mutation route** (`post(...)`,
   `patch(...)`, or `delete(...)` beyond `get`/`index`; routes use paren-call style). The
-  remaining 11 are read-only. `docs/archive/ASH-MIGRATION-PLAN.md` (historical) Phase 5 item 2 (a real
+  remaining 18 are read-only. `docs/archive/ASH-MIGRATION-PLAN.md` (historical) Phase 5 item 2 (a real
   customer-facing mutation surface) is accordingly **substantially addressed**, not fully
   resolved — the deliberately-unwired sensitive resources (`Ledger.Balance`/`Account`/
   `Transfer`, `Accounts.User`/`Token`) still have zero route regardless of mutation status,
@@ -591,13 +614,21 @@ submitted → executing → sealed → replayed — with typed illegal transitio
   tenant path-allowlist only matches `/api/...`); the actual read gate is the resources'
   `authorize_if always()` read policies — see the router's own corrected comment.
 - **`/a2a`** — Agent-to-Agent server: `POST /a2a/zoe-event` (the ZOE event-simulation
-  agent, authority-free SA2A-shaped trace) and `POST /a2a/` (the Next Read multi-persona
-  agent). Both token-gated.
+  agent, authority-free SA2A-shaped trace), the AshA2A v1 surface at `/a2a/v1`
+  (`XaasWeb.A2A.V1TransportPlug` wrapping `AshA2A.Protocol.Plug`, +
+  `XaasWeb.A2A.NextReadAshAgent`: card at
+  `GET /a2a/v1/.well-known/agent-card.json`, JSON-RPC and SSE `message/stream` at
+  `POST /a2a/v1`; gate-ordering auth — the scope's internal-api token gate is the single
+  auth floor, the plug's own `Plug.Auth` unconfigured), and `POST /a2a/` (the Next Read
+  multi-persona agent). All token-gated.
 - **`GET /api/workbench/ggen/health`, `POST /api/workbench/ggen`** — CONSTRUCT-only GGen
   workbench forward to a private Fly worker; ordinary authenticated JSON, not JSON:API.
-- **Browser surface** — `GET /`, the `GET /next-read` LiveView and the three WdFa
+- **Browser surface** — `GET /`, the `GET /next-read` LiveView, the three WdFa
   `/case-studies/wd-fa` routes (`/case-studies/wd-fa`, `.../stogaf.json`,
-  `.../context/:case_id`) (public, browser pipeline). Dev-only routes (`/dev/dashboard`, `/dev/mailbox`,
+  `.../context/:case_id`), and the five LiveViews added on this branch:
+  `/chicago`, `/witness`, `/chicago/seller`, `/marketplace-pplan`,
+  `/marketplace-catalog`
+  (public, browser pipeline). Dev-only routes (`/dev/dashboard`, `/dev/mailbox`,
   `/dev/dashboards/autofde-lab`, `/admin`) mount only under
   `Application.compile_env(:xaas, :dev_routes)`.
 

@@ -9,7 +9,10 @@
 alias GgenIgniter.SemanticJira.Shacl
 
 report = Shacl.validate_file(System.fetch_env!("TTL"))
-IO.puts("shapes_checked=#{length(report.shapes_checked)} focus_nodes=#{report.focus_node_count} violations=#{length(report.violations)}")
+
+IO.puts(
+  "shapes_checked=#{length(report.shapes_checked)} focus_nodes=#{report.focus_node_count} violations=#{length(report.violations)}"
+)
 
 if report.conforms do
   IO.puts("CONFORMS")

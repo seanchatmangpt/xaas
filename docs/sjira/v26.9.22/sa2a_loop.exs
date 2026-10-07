@@ -20,7 +20,16 @@ lanes = 8
 case System.argv() do
   ["plan" | rest] ->
     [ocel, orders_path, classes_path, repo] =
-      rest ++ Enum.drop(["#{root}/ocel/v26922.ocel.json", "#{root}/orders.json", "#{root}/order-classes.json", "xaas"], length(rest))
+      rest ++
+        Enum.drop(
+          [
+            "#{root}/ocel/v26922.ocel.json",
+            "#{root}/orders.json",
+            "#{root}/order-classes.json",
+            "xaas"
+          ],
+          length(rest)
+        )
 
     classes = if File.exists?(classes_path), do: Yield.load_classes!(classes_path), else: %{}
     mined = Yield.mine_file!(ocel, classes: classes, classes_source: classes_path)
@@ -31,8 +40,14 @@ case System.argv() do
       |> Yield.rank()
       |> Enum.take(lanes)
 
-    wire = Enum.map(ranked, &Map.take(&1, ~w(item_id description option_entropy estimated_cost historical_yield)))
-    {:ok, resp} = Bridge.plan(wire, plan_id: "sjira-v26.9.22", ticks: 5000, tokens: 500_000, experiments: 20)
+    wire =
+      Enum.map(
+        ranked,
+        &Map.take(&1, ~w(item_id description option_entropy estimated_cost historical_yield))
+      )
+
+    {:ok, resp} =
+      Bridge.plan(wire, plan_id: "sjira-v26.9.22", ticks: 5000, tokens: 500_000, experiments: 20)
 
     IO.puts(
       Jason.encode!(
@@ -47,20 +62,51 @@ case System.argv() do
     )
 
   ["admit", id, digest] ->
-    {:ok, resp} = Bridge.admit(id, "workorder:#{id} digest:#{digest} requires-construction",
-      query_id: "sjira-v26.9.22", source: "docs/sjira/v26.9.22", evidence: %{"digest" => digest})
+    {:ok, resp} =
+      Bridge.admit(id, "workorder:#{id} digest:#{digest} requires-construction",
+        query_id: "sjira-v26.9.22",
+        source: "docs/sjira/v26.9.22",
+        evidence: %{"digest" => digest}
+      )
+
     IO.puts(Jason.encode!(resp, pretty: true))
 
   ["replay", file | rest] ->
     manifest = File.read!(file) |> Jason.decode!()
-    expected = case rest do [h] -> h; _ -> nil end
+
+    expected =
+      case rest do
+        [h] -> h
+        _ -> nil
+      end
+
     # canonical form matches the port's sort_keys/compact sha256
-    sorted = fn f, v -> case v do
-      m when is_map(m) -> "{" <> (m |> Enum.sort_by(&elem(&1, 0)) |> Enum.map(fn {k, x} -> Jason.encode!(k) <> ":" <> f.(f, x) end) |> Enum.join(",")) <> "}"
-      l when is_list(l) -> "[" <> (l |> Enum.map(&f.(f, &1)) |> Enum.join(",")) <> "]"
-      x -> canon.(x) end end
-    hash = expected || Base.encode16(:crypto.hash(:sha256, sorted.(sorted, manifest)), case: :lower)
-    IO.puts(Jason.encode!(%{expected_hash: hash, result: Bridge.replay(manifest, hash) |> elem(1)}, pretty: true))
+    sorted = fn f, v ->
+      case v do
+        m when is_map(m) ->
+          "{" <>
+            (m
+             |> Enum.sort_by(&elem(&1, 0))
+             |> Enum.map(fn {k, x} -> Jason.encode!(k) <> ":" <> f.(f, x) end)
+             |> Enum.join(",")) <> "}"
+
+        l when is_list(l) ->
+          "[" <> (l |> Enum.map(&f.(f, &1)) |> Enum.join(",")) <> "]"
+
+        x ->
+          canon.(x)
+      end
+    end
+
+    hash =
+      expected || Base.encode16(:crypto.hash(:sha256, sorted.(sorted, manifest)), case: :lower)
+
+    IO.puts(
+      Jason.encode!(%{expected_hash: hash, result: Bridge.replay(manifest, hash) |> elem(1)},
+        pretty: true
+      )
+    )
+
     bad = Bridge.replay(manifest, String.duplicate("0", 64))
     IO.puts("wrong-hash: " <> inspect(bad))
 end

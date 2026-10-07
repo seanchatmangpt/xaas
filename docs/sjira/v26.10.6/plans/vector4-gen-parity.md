@@ -1,0 +1,42 @@
+# Vector 4: Canonical Specification & Code Generation Parity — v26.10.6
+
+Repos: `/Users/sac/xaas` @ `d1db2b03` (feat/playwright-surface), `/Users/sac/ash_surface` @ `db5a8899`.
+Method: real trees strictly read-only; sync runs in `/tmp/genpar/*` scratch trees
+materialized via `git archive HEAD` (topology-guard compliant); ggen 26.9.28.
+All findings are observed execution, not inspection.
+
+## Parity table
+
+| canonical source | generated target | sync command | drift | evidence |
+|---|---|---|---|---|
+| xaas `ontology.ttl` + `templates-hooks/` + pack `xaas_castle_bridge@git:518572b6` (root `ggen.toml`) | `lib/xaas/castle.ex` (tracked; injected block), `lib/xaas/generated/castle_bridge_{contract,edges}.ex`, `test/xaas/generated/castle_bridge_contract_test.exs`, `priv/semantic/generated/castle_bridge_shacl.ttl`, `docs/claude/diataxis/reference/generated-castle-bridge-errc.md`, `generated/castle_bridge/innovation.json` | `ggen sync run` (root manifest) | **YES** | Scratch sync (exit 0, 65 files) **injected the `GGEN:XAAS_CASTLE_CONTRACT` block into tracked `lib/xaas/castle.ex`**; block absent at HEAD and in the real working tree (grep exit 1). The other outputs are absent from the real tree and mostly untracked/unignored (`generated/` gitignored; `lib/xaas/generated/castle_bridge_*`, `test/xaas/generated/*`, shacl.ttl not tracked, not ignored). CI compensates: `castle-paas-bridge.yml` builds exact ggen, runs sync, asserts all 7 outputs exist, greps castle.ex for the injection marker, and proves within-run determinism (sha256 of 7 outputs, second sync, diff). But no gate compares sync output to the committed tree — the committed `castle.ex` at HEAD would FAIL the workflow's own `grep -F 'GGEN:XAAS_CASTLE_CONTRACT' lib/xa/castle.ex` assertion. |
+| `priv/chicago/ggen.toml` — sources `docs/sjira/v26.10.1/{goal,chicago,projections}.ttl` + ggen-marketplace pack templates | `priv/chicago/chicago.{machine,verification,executive,replay}.json` (4 tracked JSONs) | `cd priv/chicago && ggen sync run` | no | Scratch run exit 0; `diff -rq` pre/post sync: only `.ggen`, `.clap-noun-verb`, `.ggen-v2` added — **all four committed JSONs byte-identical** to fresh render from canonical TTLs. Manifest comment: "the consumer commit must stay byte-reproducible by `ggen sync run`" — holds. |
+| `priv/zcode_plugin/{ggen.toml,ontology.ttl}` + repo-local packs `zcode-plugin-pack`, `ultracode-actuation-lease-pack` | `priv/zcode_plugin/{ggen.lock, marketplace/, plugin-src/, templates/ outputs}` | `cd priv/zcode_plugin && ggen sync run` | no | Scratch run exit 0; diff pre/post: only `.ggen`/`.clap-noun-verb` dotdirs added; `ggen.lock` and all outputs byte-identical. Zero-diff. |
+| ash_surface `ontology.ttl` + pack `ash-extension@baa5f117` (root `ggen.toml`) | `lib/{ash_r2rml,audit_trail,notification_extension}/`, `lib/ash_surface/{info,persist,resource,verify}.ex`, `lib/mix/tasks/*.install.ex`, 4 composition tests | `ggen ash.sync run` — actually `ggen sync run` | **n/a — absent, not divergent** | Scratch sync exit 0 wrote 15 new files; none exist in real tree or at HEAD, none gitignored → if anyone ran sync in-tree it would dirty the tree with 15 untracked files. There is NO CI lane running the ash_surface root manifest sync + clean-tree diff. `manufacture.yml` runs the pinned reusable workflow `ggen-sync-run.yml@e2a5e887` (ggen_release v26.9.9, dry_run false); whether that fails on drift is a property of the ggen repo's reusable workflow (not verifiable from these two repos). Only clean-tree gate otherwise: `security.yml` (`git diff --exit-code mix.lock`); ci.yml asserts exact head SHA only, not generated-file parity. |
+| `ash_surface` source → xaas `priv/ash_surface/*` (JS/LiveView/ARIA client projections, tracked) | `priv/ash_surface/aria.json`, `live_view.json`, `xaas_ash_surface_client.mjs`, `conference/*` | `mix xaas.ash_surface` (xaas `lib/mix/tasks/xaas.ash_surface.ex`, digest-verified pipeline) | **NOT VERIFIED** | Requires `mix` run — excluded by audit constraints (no Elixir builds, toolchain risk). Task writes to `priv/ash_surface` by default (tracked dir); no CI lane runs it + `git diff --exit-code priv/ash_surface`. Separately, `project-measure-extension.yml` gates a different generated pair — Ash schema → `assets/js/ash_rpc.ts`, `assets/js/ash_types.ts` — via `git diff --exit-code` in CI. |
+| `priv/ontop/xaas-mapping.ttl` → `priv/ontop/xaas-mapping.generated.ttl` (tracked) | same | not located at shell level | NOT VERIFIED | Generator not located (no header, no workflow/mix task found at shell level). Marked UNKNOWN rather than guessed. |
+| `priv/packs/xaas_zcode_ocel_pack` ontology+template | `lib/xaas/generated/zcode_event_registry.ex` (tracked) | `mix ggen_igniter.sync --pack-dir priv/packs/xaas_zcode_ocel_pack ...` (per file header) | NOT VERIFIED | Requires mix — excluded (no Elixir builds in this audit). No CI drift gate found. |
+| `ggen-marketplace/sa2a-bridge-pack` | `lib/xaas/generated/sa2a_bridge_{contract,edges}.ex`, `lib/xaas/generated/sa2a_mcp_descriptor.ex` (tracked) | ggen_igniter renderer (mix) | NOT VERIFIED | File headers say "GENERATED by ggen-marketplace/sa2a-bridge-pack"; mix-only generators excluded here. No CI drift gate found. |
+| `templates-hooks/*.tmpl` with `unless_exists: true` | `.ash-gen-receipts/*`, `.agp-receipts/*`, `.terraform-validate-receipts/*` | root `ggen sync run` | n/a | First-run-only receipt files, not projections — not a parity surface (sync wrote 59 receipt files in scratch). |
+
+The `unless_exists` receipt templates are not parity surfaces (first-run receipts, not projections).
+
+## Pre-commit / clean-tree invariant enforcement
+
+- **xaas**: NO repo-wide clean-tree invariant. Only targeted gates: `castle-paas-bridge.yml` (within-run determinism for the 7 castle outputs; existence+content assertions; but runs on `workflow_dispatch`/specific triggers — does not gate PRs), `project-measure-extension.yml` (`git diff --exit-code assets/js/ash_rpc.ts ash_types.ts`), `security.yml` (mix.lock). `mix xaas.verify_and_commit` (mock gate + discipline) does not check generated-file drift. `mix.exs` aliases: no ggen-drift alias.
+- **ash_surface**: NO generated-code clean-tree gate at all. `manufacture.yml` calls reusable `ggen-sync-run.yml@e2a5e887` with `dry_run: false`; whether it fails on post-run drift is a property of the reusable workflow in the ggen repo (not verifiable from these two repos). `security.yml` gates only mix.lock. ci.yml asserts exact head SHA (gapfix-ci-009) but no generated-parity lane.
+- **Not enforced anywhere in either repo**: running `ggen sync run` at root manifest and `git diff --exit-code` over generated surfaces as a PR gate. The root-manifest sync is provably NOT zero-diff against HEAD (castle.ex injection missing at HEAD), so such a gate would currently fail — this is the single highest-signal gap.
+
+## Findings
+
+1. **Highest-signal drift**: xaas root `ggen sync run` writes the `GGEN:XAAS_CASTLE_CONTRACT` injection into tracked `lib/xaas/castle.ex` that the committed file does not contain → sync is not zero-diff against HEAD. Also: 6 of 7 castle-bridge outputs are not tracked at HEAD. The dedicated workflow `.github/workflows/castle-paas-bridge.yml` manufactures and asserts them, but is not a PR gate. Net: the committed tree diverges from its own generator.
+2. ash_surface root-manifest sync writes 15 files that exist nowhere (not committed, not ignored) — running the documented command in-tree would dirty the tree.
+3. Zero-diff surfaces verified byte-identical: `priv/chicago/*.json` (4 files) and `priv/zcode_plugin/*` — these two manifests are exemplary byte-reproducible consumer commits.
+4. `mix xaas.ash_surface` (ash_surface → xaas `priv/ash_surface/*`) parity NOT VERIFIED (mix excluded, toolchain risk). The task is digest-verified and re-runnable by design; the pair is flagged for follow-up with a BEAM-capable runner.
+
+## Falsifiers for follow-up
+
+- In CI on a PR: `ggen sync run` at xaas root + `git diff --exit-code` → fails today (castle.ex injection absent at HEAD).
+  Falsifier executed: yes — observed in /tmp/genpar/xaas scratch (exit 0, 65 writes incl. castle.ex injection).
+- ash_surface: add `ggen sync run` + `git diff --exit-code` lane — falsifier already observed: sync dirties a clean archive of HEAD with 15 untracked files.
+- `mix xaas.ash_surface` + `git diff --exit-code priv/ash_surface` as a CI lane (requires BEAM toolchain, excluded here).

@@ -43,7 +43,8 @@
   "required_receipt_classes": [
     "manufacture",
     "verification"
-  ]
+  ],
+  "origin_authority": "https://ggen-igniter.dev/ontology/semantic-jira#objective-code-work-authority"
 }
 ---
 
