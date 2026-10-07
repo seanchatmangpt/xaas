@@ -5,7 +5,7 @@ Completes W650h's conservative skip of ~60 `w984*` v26.10.6 plan receipts.
 Rule: receipt file exists = lane finished; ambiguous lanes (w984dh/di/dj/dj2-5)
 have no receipt files on disk → still running, excluded.
 
-## Staged (76 files)
+## Staged (77 files)
 
 ### docs/sjira/v26.10.6/plans/w984*.md (71)
 
@@ -28,7 +28,8 @@ w984cw3-depth, w984cw5-accounts-probe, w984cx-mermaid-depth,
 w984cy-r2rml-probe, w984cy2-families-probe, w984cy3-ultracode-probe,
 w984cy4-gov-73, w984cz-gov-changes, w984cz3-probe, w984d-reconcile-push,
 w984da-security-probe, w984db-a2a-probe, w984dc-probe, w984dd-probe,
-w984di2-capability-class, w984f-route-castle, w984g-regen-pins-upgrade,
+w984di2-capability-class, w984dj2-spg-gate (lane finished mid-sweep; receipt
+landed between enumeration and staging — included), w984f-route-castle, w984g-regen-pins-upgrade,
 w984i-avatar2-cascade, w984k-reapprove-guards, w984p-corpus-deepening-4,
 w984t-gate5-check, w984v-w849-ci-leg, w984x-mutation-wave2,
 w984z-ci-local-witness
@@ -47,7 +48,7 @@ w984z-ci-local-witness
 
 ## Still-running exclusion list (no receipt on disk, not staged)
 
-- w984dh, w984di, w984dj, w984dj2, w984dj3, w984dj4, w984dj5 — lanes running
+- w984dh, w984di, w984dj, w984dj3, w984dj4, w984dj5 — lanes running
   per W650h; no plan/receipt files exist yet.
 - w645, w650b, w650i — not landed; no files under docs/sjira/v26.10.7/plans/.
 - w613-pep-filter-spec.md — tracked but still modified; left for its lane.
