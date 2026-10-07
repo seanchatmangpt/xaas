@@ -4,6 +4,87 @@ Reconstructed 2026-09-26 from `git log v26.9.22..HEAD` (this file did not previo
 exist in the repository). Every entry traces to a witnessed commit or merge; anchors
 supplied without a witnessed commit are marked UNKNOWN.
 
+## [In progress] — v26.10.7 (release campaign, branch `release/v26.10.7`)
+
+Recorded 2026-10-07 by lane W619, grounded in receipts on disk under
+`docs/sjira/v26.10.7/plans/` (each read before citing). Items marked
+IN FLIGHT have no landed receipt yet; nothing here claims landed for an
+unlanded lane.
+
+### Removed
+
+- GraphQL surface removed by operator directive ("no GraphQL", fix-forward):
+  `/api/graphql` router scope, `Xaas.GraphqlSchema`, AshGraphql/absinthe deps
+  and config, and `graphql do` blocks across 88 resource/domain files
+  (receipt `docs/sjira/v26.10.6/plans/w984ao-graphql-removal.md`, ALIVE).
+  The `/api` catch-all forward now absorbs `/api/graphql` with
+  404 `no_route_found` (w984ao; pinned by the rewritten probe in
+  `route_castle_run_surface_test.exs`).
+
+### Added
+
+- OS-16 provenance headers (IN FLIGHT, w605): new `x-prov-o` response header
+  plug (`lib/xaas_web/plugs/prov_origin_header.ex`) wired to `/a2a` and `/api`
+  scopes only (`lib/xaas_web/router.ex:29,211-213,322`); PROV-O
+  `wasGeneratedBy`/`actedOnBehalfOf` constant config-driven identity
+  (EU AI Act Art. 50(2) machine-generated disclosure). Standing UNKNOWN,
+  pending court + mutation runs (`docs/sjira/v26.10.7/plans/w605-prov-o-plug.md`).
+- PEP seam spec (w613, PARTIAL_ALIVE, spec-only): fail-closed
+  agentgateway PEP filter over the eyerun_wasi wire — UDS NDJSON, 15 ms
+  watchdog, lease authority (`REFUSED_LEASE_ABSENT`), five falsifier
+  cases (`docs/sjira/v26.10.7/agentgateway/pep-eyerun-filter-spec.md`).
+- Prompt-injection fuzz harness (w614, PARTIAL_ALIVE):
+  `tests/goose_mutation_harness.py` + `tests/w614_stub_agent.py`; real
+  localhost HTTP socket, 10-case corpus, gate log
+  `docs/sjira/v26.10.7/plans/w614-gate-log.json` (10/10 `all_ok: true`,
+  interception 1.0 on non-conforming candidates; GOOSE-ABSENT — agent leg
+  pluggable via `AGENT_CMD`).
+
+### Changed
+
+- OS-20 four-repo Map.update sweep verdicts (w606-609 rubric; receipts
+  w608/w609 on disk, w606/w607 no receipt yet):
+  - `~/ash_a2a` (w608): probe on the pinned toolchain (OTP 29.1.1,
+    Elixir 1.20.4) shows **documented standard semantics** — the OS-20
+    deviation does NOT manifest in this repo; 42 sites classified, 0
+    patches (honest no-manifestation finding).
+  - `~/ash_pplan` (w609): deviation **confirmed live** on the same
+    pinned toolchain; 6 residual sites classified, one class-(b)
+    invariant left + disclosed (synthesis.ex:217); court 12 passed,
+    0 failures (second-fresh-root gate open).
+  - The two verdicts are per-repo and recorded as written; both lanes
+    claim the same toolchain identity, and the disagreement is disclosed
+    rather than reconciled here.
+- Fleet version bump to 26.10.7 (w618, PARTIAL_ALIVE, uncommitted):
+  ash_pplan, ash_a2a, gymact, ggen (Cargo.toml + ggen.toml),
+  ggen_igniter, wasm4pm (package.json), ash_graphlaw
+  (ontology.ttl + projection mix.exs); ferroplan/zcode-cli/
+  ggen-marketplace deliberately untouched (own cadence).
+- OS-20 dual-safe Map.update seal (w601p): ash_pplan main advanced by
+  fast-forward to `6dbd3b0` (carries OS-20 commit `7eeaaa1`); wasm4pm
+  branch pushed (`bf5d553b9`) but main advance BLOCKED(main-diverged,
+  PR #659 merge-commit topology) — resolution left to operator.
+- v26.10.6 sealed (w601q): gated commit `cf228da6` + annotated tag
+  `v26.10.6` (tag not pushed); branch `release/v26.10.7` cut from
+  the tagged subject.
+
+### Verified (no edits needed)
+
+- OS-13 `aex:fixtureOnly` marketplace markers (w610, PARTIAL_ALIVE):
+  all three named families already marked on disk in `~/ggen-marketplace`
+  (ash_r2rml, audit_trail, notification_extension); lane made zero edits
+  (`docs/sjira/v26.10.7/plans/w610-fixtureonly-markers.md`).
+
+### In flight, no receipt on disk yet
+
+- OS-18 tautology repair (w601), OS-14 authority-ledger export (w603),
+  OS-15 causal-anatomy operator surface (w604), OS-19 release-audit
+  live-tag validation (w612), AIRO-SHACL compilation (w615),
+  anti-vacuity ledger (w616), OS-20 rubric + remaining sweep lanes
+  (w606, w607) — dispatched IN FLIGHT by the campaign dispatcher;
+  their receipts are not on disk at record time, so no facts are
+  claimed for them here.
+
 ## [Unreleased] — v26.10.6 (convergence, branch `feat/playwright-surface`)
 
 Recorded 2026-10-06 at HEAD `d1db2b03179975213c14663b9dbd86b5ac2a14cf`
