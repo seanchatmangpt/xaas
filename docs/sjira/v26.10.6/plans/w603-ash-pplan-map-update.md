@@ -102,5 +102,16 @@ Gates: compile exit 0 · regression module 5/5 exit 0 · manufacture_test 9/10 (
 failure = 600s wall-clock tag on `bin/manufacture-workflow`; script exits 0 standalone
 in 12:35 under load-82 — environmental, adjudicated in §4) · suite tail killed at 2h
 limit under load 74-92; 4 failures up to kill, all external-drift or contention class
-(§4), none referencing the 8 patched sites. Cleanup: `_build-laneW603` (795M) and all
+(§4), none referencing the 8 patched sites. Independent re-capture (lane W658e,
+2026-10-07, subject 414a393 on `fix/ggen-verify-header`, `_build-laneW658e`): 3 full-suite
+attempts (plain, `--trace`, and `--exclude demonstration_court`) all killed at the 2h
+background limit under sustained fleet load 27-110 — the suite never reached a summary
+line. Partials show ZERO test failures: the `--trace` run executed 1955 tests across
+courts/pack_protocol, pack_dsl_smoke, case_study, demonstration, and more with no
+failure blocks; the exclusion run cleared burn-in and standing-churn courts with no F
+markers before its kill. One contention wedge observed: `DemonstrationCourtTest`'s
+nested `bin/demonstrate` chain (~8 min quiet) ran 75+ min past its own 30-min tag under
+load 70-90 before completing. Verdict: contention-class non-completion, consistent with
+W603's capture; no evidence against the 8 patched sites. W610's quiet-machine rerun
+remains the receipt-grade path. Cleanup: `_build-laneW603` (795M) and all
 orphaned `_build-court-*` roots deleted (lease law).

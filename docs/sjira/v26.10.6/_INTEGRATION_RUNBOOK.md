@@ -479,3 +479,183 @@ manifest corrections it makes are applied to `_COMMIT_MANIFEST_W850.md`.
 | Doctor statuses | `plans/w847-doctor-recal.md` | MET — PARTIAL_ALIVE, literal band 120..170, docstring check 5 updated |
 | W875 adjudication | `plans/w875-*.md` | **IN_FLIGHT** — not on disk |
 | W878 lease census | `plans/w878-*.md` | **LANDED** — `plans/w878-lease-census.md` (W895: authoritative cleanup input) |
+
+
+---
+
+# FINAL CONSOLIDATED INTEGRATION SECTION (W946d, 2026-10-07)
+
+**Supersedes** the interim W879 "Integration sequence" and W895 "Lease cleanup —
+AUTHORITATIVE INPUT" sections above, which remain as history only. This is the
+single authoritative integration section. Every claim is receipt-cited. Lane
+receipt: `plans/w946d-runbook-final.md`.
+
+## (a) xaas commit state (verified on disk 2026-10-07)
+
+- Branch `feat/playwright-surface`, HEAD `fab56ae1` (full: fab56ae19051c6bc2b501e4a1d6c91312344e2c3),
+  parent `910a2e22`. **No push performed** (W940 verification: zero push; W940b: no push).
+- **29 commits** by W940 (`plans/w940-xaas-commits.md`, standing ALIVE): base
+  `a0723bf6` → tip `910a2e22`, all manifest groups CG-01..CG-15 committed per
+  `_COMMIT_MANIFEST_W850.md` final (W881 reconciliation incl. W875 adjudication +
+  W889b addendum). Group SHAs replayable via `git show <sha>`.
+- **+1 commit** by W940b (`plans/w940b-spec16-commit.md`, standing ALIVE): `fab56ae1`
+  "feat(governance): SPEC-16/17 audit export token use action (w935)" — 4 files,
+  +58/−3; court suite 21 passed, per-path porcelain clean.
+- Total: **30 commits** on feat/playwright-surface since base a0723bf6. Transients
+  (cleanup-plan.json, test/w707_tmp/, test/xaas/w838_probe_test.exs) deleted,
+  verified absent on disk (W940).
+
+## (b) Fleet state (W937, `plans/w937-fleet-commits.md`, standing ALIVE)
+
+**12 commits across 11 repos + 1 vendored submodule, no push** (per-repo `@{push}`
+verified ahead-or-absent; zero `git push` executed):
+
+| # | repo | branch | commit |
+|---|---|---|---|
+| 1 | ggen-marketplace | feat/aaif-gcp-roadmap-v26.10.5 | b58d78541 |
+| 2 | ggen | feat/v26.10.5-release-cut | ba837d743 |
+| 3a | beam4pm/vendor/ggen-marketplace (submodule) | main | 6e4de9765 |
+| 3b | beam4pm | main | 56020248 |
+| 4 | ash_surface | main | b70da9e1c |
+| 5 | gymact | v26926/gymact-land-aloop-execution-kernel | 2fa947c |
+| 6 | autofde-lab | feat/doctrine-lab | 31e3decf |
+| 7 | wasm4pm | fix/v26.9.30-ci-fmt-tsc | d980a2a29 |
+| 8 | zcode-cli | fix/v26926-preview-publish-typed-skip | 1e40596 |
+| 9 | ex4pm | main | abac0d2 |
+| 10 | ash_pplan | fix/ggen-verify-header | 343e52a |
+| 11 | ferroplan | main | e2c48d3 |
+
+Execution order honored: ggen-marketplace first (its pack commit b58d78541 carries
+W756's castle-bridge ERRC rationale edit — the sync prerequisite), then ggen, then
+beam4pm submodule-before-superproject (gitlink equality verified), then the pin
+repos, then ferroplan. Beam4pm submodule template edits remain disclosed-dirty,
+out of scope (W937).
+
+## (c) Remaining operator steps, in exact order
+
+1. **Lease cleanup — run the W878 census rm list as written.**
+   `plans/w878-lease-census.md`: 80 deletable entries / ~31.71 GB (65 xaas
+   `_build-lane*` / ~28.01 GB + 9 sibling-repo lanes / ~3.19 GB + 6 /tmp lease dirs /
+   ~0.51 GB). The census's explicit byte-verified `rm` list IS the command — do not
+   re-derive by mtime/name/rescan (W895 execution note; census caveat: `generated`
+   loops proved flaky on the live tree). Census CHECK entries W856 and W865 are
+   resolved: both receipts exist on disk (`plans/w856-dev-config-pin.md`,
+   `plans/w865-gap3-fix.md`), so their lane roots join the deletable set (W895).
+   Census KEEP entries held at census time — W880, W888 — now have landed receipts
+   (`plans/w880-cf-doctests.md`, `plans/w888-witness-live-court.md`), so their roots
+   are deletable too. Still-no-receipt lanes from the late waves (W896b, W902, W917,
+   W908, W918b, W920, W921, W925, W927, W935, W940b, W943b/c, W945) have receipts on
+   disk now (all under `plans/`), but post-census lane roots (e.g. `_build-laneW902`,
+   `_build-laneW918b`) were NOT in the census — delete any root only after
+   confirming its owning receipt exists in `plans/`, per the fanout cleanup law.
+2. **Dev migrate.** `PATH=$HOME/.asdf/shims:$PATH MIX_ENV=dev mix ecto.migrate` on
+   `xaas_dev` — lands the two committed CG-01 migrations: W786
+   `20261007111457_add_ash_onetime_logical_partitions` (receipt
+   `plans/w786-onetime-partition.md`, verified on xaas_test only) and W804
+   `20261007120000_dedup_orgless_epochs_then_unique_index` (receipt
+   `plans/w804-epoch-dedup.md`, PARTIAL_ALIVE: "operator still must run mix
+   ecto.migrate on xaas_dev"; keep-rule: earliest inserted_at, smallest id). W804
+   deletes duplicate orgless-epoch rows — read its receipt before running.
+3. **ggen sync at new HEAD — one step, two parts (W918 + W919).**
+   Prerequisite already satisfied: W756's pack ontology edit is committed
+   upstream (ggen-marketplace b58d78541, W937). Two xaas-side actions ride the
+   same step:
+   a. Advance `ggen.toml` `[packs.xaas_castle_bridge]` `version` pin from
+      `518572b6...` (current value on disk, verified) to marketplace HEAD
+      `b58d78541`. Until the pin moves, `ggen sync` resolves the OLD rationale and
+      produces ZERO page delta (W918 §d.2 pin gate). Note W918 §d.3: one other
+      marketplace commit (0ce47cc39) sits between pin and HEAD — byte-compare
+      `templates/pack.toml` after the pin move, do not assume identical.
+   b. Run `ggen sync`. Predicted delta (W918 §c): exactly ONE line changes — page
+      line 10 of `docs/claude/diataxis/reference/generated-castle-bridge-errc.md`,
+      the ELIMINATE-10 "Why" cell, 69-resources rationale → "XaaS already owns 117
+      Ash resources via the Xaas.Resource wrapper (152 total use Ash.Resource) and
+      19 domains; ...". All other 12 rows byte-identical. Any larger diff =
+      investigate before proceeding.
+   c. Same step, before the drift check: execute W919's relocation plan
+      (`docs/claude/diataxis/reference/w849-census-relocate-plan.md`; receipt
+      `plans/w919-census-relocate-receipt.md`, PLAN-ONLY) — move the W849 census
+      section (currently generated-page lines 22-41) out of the generated page into
+      the new `reference/generated-surfaces.md`, census artifact to
+      `docs/cro/artifacts/generated-surface-census-v26.10.6.md`. W918's finding 2:
+      regen deletes the census section; relocating in the same step preserves it.
+      Falsifiers in the plan: grep counts + `ggen sync run && git diff --exit-code`.
+   W756 projection check after sync: the ERRC page must read "117 Ash resources via
+   the Xaas.Resource wrapper (152 total use Ash.Resource) and 19 domains"
+   (`plans/w756-errc-rationale-refresh.md`).
+4. **Post-commit gate, then push.** The w946 postcommit gate (W663b successor per
+   `plans/w663b-postcommit-gates.md`): full `MIX_ENV=test` suite (W663b threshold
+   >=3247 green, failures classified only) + mock gate
+   `scan_mock_usage(["test","lib"]) == []` + `ggen sync` drift check +
+   `mix compile --warnings-as-errors` EXIT 0. Compile blocker previously escalated
+   against W935 is **CLEARED** (W947: `increment(:use_count, amount: 1)` fix in
+   tree, `mix compile` EXIT=0 at HEAD 910a2e22 + working tree). Replay only at load
+   <10 per this runbook's replay protocol. **Push `feat/playwright-surface` only
+   after the gate lands.**
+   (W879 steps 4-5 — operator decisions and per-manifest commits — are COMPLETE:
+   the manifest was executed by W940. Remaining operator decisions reduce to: run
+   the census rm list, run dev migrate, advance the pin + sync + relocate, push.)
+
+## (d) Uncommitted-xaas residue (post-W940 enumeration, status re-verified 2026-10-07 @ fab56ae1)
+
+### Operator rows (unchanged from W940, untouched)
+
+- 4 platform deletion-pair files [D] (`route_orgs_custom_domain_approve.ex`,
+  `route_orgs_custom_domain_requires_approver.ex`, `route_projects_backups_approve.ex`,
+  `route_projects_backups_requires_approver.ex`) — W792 receipted, court-pinned;
+  awaiting operator staging.
+- `priv/repo/migrations/20261007111457...` + `20261007120000...` — awaiting W786/W804
+  dev-DB migrate (step 2 above).
+- `priv/semantic/generated/` — generated projection; lawful generator step only.
+
+### In-flight residuals (W940's 23-item list) — landing status
+
+| Residual file(s) | Owning lane | Receipt status | Landed? |
+|---|---|---|---|
+| `lib/xaas/governance/validations/audit_export_token_expired_token_refused.ex`, `audit_export_token_not_already_used.ex`, `priv/repo/migrations/20261007220000_add_used_at_and_use_count_to_audit_export_tokens.exs`, `lib/xaas/governance/audit_export_token.ex` | W935/W940b | `plans/w935-spec16-impl.md` ALIVE + `plans/w940b-spec16-commit.md` ALIVE | **COMMITTED** `fab56ae1` |
+| `lib/xaas/graphlaw/capability.ex` + `catalog.ex` [M], `priv/repo/migrations/20261007210000_add_capability_class_to_graphlaw_capabilities.exs` | W912 (SPEC-09) | `plans/w912-s-specs-impl.md` ALIVE | Receipt landed; **uncommitted** |
+| `lib/xaas/operations/validations/incident_postmortem_final_requires_resolved.ex` + `incident_resolved_at_requires_resolved.ex` | W902 (W793-after-split) | `plans/w902-batch3-repairs.md` PARTIAL_ALIVE (W793 row REPAIRED; mutation-killed) | Receipt landed; **uncommitted** |
+| `lib/xaas/billing/subscription.ex` [M] + `lib/xaas/billing/validations/subscription_stripe_transition_allowed.ex` | W917 | `plans/w917-ledger-batch-fold.md` | Receipt landed; **uncommitted** |
+| `mix.exs` [M] | W908 | `plans/w908-mixexs-version.md` | Receipt landed; **uncommitted** |
+| `lib/xaas/semantics/counterfactual.ex` [M] + `test/xaas/semantics/counterfactual_doctest_test.exs` | W880 | `plans/w880-cf-doctests.md` | Receipt landed; **uncommitted** |
+| `test/xaas/conference/enrollment_journey_court_test.exs` | W893 (file) + W925 (extension) | `plans/w893-enrollment-journey.md` + `plans/w925-slot-release.md` (register row W893 CancelDoesNotReleaseSlot → REPAIRED per w859 sweep 6) | Receipts landed; **uncommitted** |
+| `test/xaas/observation_witness_tie_test.exs` | W920 | `plans/w920-obs-witness-tie.md` ALIVE (3 passed, exit 0) | Receipt landed; **uncommitted** |
+| `test/xaas/vendor_pin_court_test.exs` | W894 | `plans/w894-vendor-pin-coverage.md` | Receipt landed; **uncommitted** |
+| `test/xaas_web/witness_live_court_test.exs` | W888 (+W934 note) | `plans/w888-witness-live-court.md` (4 passed ×2) + `plans/w934-witness-live-note.md` | Receipts landed; **uncommitted** |
+| `docs/claude/diataxis/reference/w849-census-relocate-plan.md` | W919 | `plans/w919-census-relocate-receipt.md` PLAN-ONLY | Receipt landed; **uncommitted** (consumed at step 3c) |
+| `docs/cro/artifacts/witness-live-court-note.md` | W934 | `plans/w934-witness-live-note.md` | Receipt landed; **uncommitted** |
+| Uncommitted receipt/plan files: `plans/w896b-court-fix.md`, `w897-cheap-repairs.md`, `w902-batch3-repairs.md`, `w918b-awaiter-hardening.md`, `w920-…`, `w921-…`, `w925-…`, `w927-docstring-sweep-2.md`, `w935-…`, `w940-…`, `w940b-…`, `w943b-…`, `w943c-…`, `w945-…`, `w947-…` (15 files) | their lanes | on disk, verified | **uncommitted docs** (ride the next docs/receipts commit) |
+| `lib/xaas/semantics/computation.ex` [M] | none found | W940: "manifest multi-lane VERIFY-AT-COMMIT row; unresolved owner" | **UNKNOWN owner** — adjudicate before any commit |
+| `docs/claude/diataxis/reference/http-api-surface.md` [M] | none found | no owning receipt in `plans/w9*.md` | **UNKNOWN owner** |
+| `e2e/internal-api.spec.cjs` [M] | none found | no owning receipt in `plans/w9*.md` | **UNKNOWN owner** |
+
+CG-coverage note on W902: its 4 assigned rows are resolved — row 8 closed
+verify-first (already repaired by W852), row 9 closed verify-first (W674 repair
+in-tree; suite red owned by W928), rows 10 and 23 REPAIRED by W902. The two untracked
+incident validation files above are W902's W793-after-split deliverables — they have
+receipt coverage (w902), but no CG row committed them; they ride the post-gate
+residual commit.
+
+## (e) Pre-condition receipts table (all landed ones checked)
+
+| Pre-condition | Receipt | Status |
+|---|---|---|
+| Manifest final/reconciled | `plans/w881-manifest-final.md` (+ `w875-hold-adjudication.md`, `w889b-addendum-receipt.md`) | MET — executed by W940 |
+| Manifest executed | `plans/w940-xaas-commits.md` | MET — 29 commits, per-group porcelain clean |
+| SPEC-16/17 commit | `plans/w940b-spec16-commit.md` | MET — fab56ae1, 21 tests passed |
+| Fleet commits | `plans/w937-fleet-commits.md` | MET — 12 commits / 11 repos, no push, submodule gitlink verified |
+| Lease census | `plans/w878-lease-census.md` | MET — 80 deletable / ~31.71 GB, byte-verified rm list |
+| Census CHECK resolution | `plans/w856-dev-config-pin.md`, `plans/w865-gap3-fix.md` | MET — receipts on disk (W895 verified) |
+| Census KEEP resolution | `plans/w880-cf-doctests.md`, `plans/w888-witness-live-court.md` | MET — receipts landed since census |
+| Dev-migrate prescriptions | `plans/w786-onetime-partition.md` + `plans/w804-epoch-dedup.md` | MET (prescribed); migrate itself NOT run on xaas_dev (W804 PARTIAL_ALIVE) |
+| Sync prediction | `plans/w918-sync-drift-precheck.md` | MET (PREDICTED standing); execution = step 3 |
+| Relocation plan | `plans/w919-census-relocate-receipt.md` + `w849-census-relocate-plan.md` | MET (PLAN-ONLY); execution = step 3c |
+| Sync prerequisite | `plans/w756-errc-rationale-refresh.md` + W937 b58d78541 | MET — pack edit committed upstream |
+| Compile blocker | `plans/w947-blocker-status.md` | MET — CLEARED, compile EXIT=0 |
+| Register currency | `plans/w943c-register-sweep-5.md` (sweep 6 noted) | MET — 16 REPAIRED rows incl. W893→W925 |
+| Terminal census | `plans/w821-terminal-census-2.md` | MET — 1347/1348 green gate |
+| Priority e2e | `plans/w842-e2e-revalidation.md` | MET — 24 passed / 1 skipped / 0 failed |
+| Gate green (F1) | `plans/w778-gate-fix-verify.md` | MET — 503 passed exit 0 |
+| Doctor statuses | `plans/w847-doctor-recal.md` | MET — PARTIAL_ALIVE, literal band 120..170 |
+| Postcommit gate | `plans/w663b-postcommit-gates.md` | NOT YET — step 4, replay at load <10 |
+| Push | — | NOT YET — gated on step 4 |
