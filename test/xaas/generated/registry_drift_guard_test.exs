@@ -35,7 +35,7 @@ defmodule Xaas.Generated.RegistryDriftGuardTest do
       "ggen-marketplace/xaas-castle-bridge-pack",
     # --- W852: provenance-only surfaces, hand-edit detection pins ---
     "lib/xaas_web/mcp_scope.ex" =>
-      "ggen_igniter from priv/ggen_igniter/mcp_a2a/xaas-surface.ttl (moduledoc provenance; regen command not in pack-dir form — see W849 backlog item 3)",
+      "ggen_igniter from priv/ggen_igniter/mcp_a2a/xaas-surface.ttl (moduledoc provenance, repo-relative regen command — W945b normalized from W849 backlog item 3; pack-dir migration is a deliberate non-goal to avoid forking the ontology)",
     "lib/mix/tasks/xaas.library.manufacture.ex" =>
       "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack",
     "lib/xaas/generated/capital_census/facts.ex" =>
@@ -61,7 +61,7 @@ defmodule Xaas.Generated.RegistryDriftGuardTest do
       "e711aed26e58b914183c198ca7b534feb5f4edc4f1737b8102758524e7362e71",
     # --- W852: provenance-only surfaces, hand-edit detection pins ---
     "lib/xaas_web/mcp_scope.ex" =>
-      "51d9d7cbf83d5aa7ef91f727e3a1d8283ed8e51047fe7867637ee85ca99b3780",
+      "8713a4bc8486a9459d94d1779aa338f79f4071cb7155114b8fce6747e20d6c52",
     "lib/mix/tasks/xaas.library.manufacture.ex" =>
       "5796cae051757de949bc543f20564809f0e453dd4916eeac7e94beb71c56eb21",
     "lib/xaas/generated/capital_census/facts.ex" =>

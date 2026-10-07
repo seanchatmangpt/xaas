@@ -20,8 +20,14 @@ defmodule Xaas.Graphlaw.Catalog do
 
   @default_registry_path "/Users/sac/graphlaw/registry/capability-registry.json"
 
+  # W897 (w731 GAP(graphlaw-registry-path-hardcoded) repair): the module
+  # attribute stays as the documented local default, but the path is now
+  # env-overridable — `config :xaas, :graphlaw_registry_path, path` — so
+  # ingest is no longer host-bound to one hardcoded absolute path.
   @spec default_registry_path() :: Path.t()
-  def default_registry_path, do: @default_registry_path
+  def default_registry_path do
+    Application.get_env(:xaas, :graphlaw_registry_path, @default_registry_path)
+  end
 
   @doc """
   Ingests the registry at `path` (default: the graphlaw checkout's
